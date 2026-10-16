@@ -35,17 +35,22 @@ affiliation or claim model/weight equivalence.
 - Implemented upstream: candidate recurrent-depth architecture, token generation,
   GQA/MLA, MoE, ACT and training entry points. Upstream code needs independent
   engineering verification before large GPU runs.
-- ACT-001 through ACT-004: working CPU diagnostics, 55 passing tests as of
-  user-provided ACT-004 Phase 2 log, tiny initialized models, synthetic tokens,
-  30-step A/B runs. **These do not establish actual Mythos architecture fidelity
-  or usable language-model ability.**
+- ACT-001 through ACT-004: CPU diagnostics and toy synthetic experiments; these
+  do **not** establish actual Mythos architecture fidelity or language-model ability.
+- R0 Gate A (2026-10-16): 67/67 tests PASS in Codespaces; a 6-token cached
+  prefix plus 2-token chunk fails under unchanged upstream GQA/MLA, while
+  an isolated research-only mask correction PASSes with max absolute logit
+  difference 2.9802322387695312e-08 for each attention mode. See
+  [R0 Gate A](R0_GATE_A_RESULT.md). GPU/FSDP remains unverified.
+- R1 first real-text pilot scripts have been committed; no real-text checkpoint
+  or heldout PPL result has yet been verified. See [R1 pilot](R1_REAL_TEXT_PILOT.md).
 - Community training proposal:
   <https://github.com/kyegomez/OpenMythos/pull/27>. Proposed ~117.8M
   MLA+MoE FineWeb-Edu experiment and loop-depth PPL tests; external reports
   are leads to reproduce, not verified project results. Review tokenizer
   consistency and bf16 issues before reuse.
 
-## Milestone R0 — Architecture and training readiness audit (NEXT)
+## Milestone R0 — Architecture and training readiness audit (IN PROGRESS)
 
 Deliver one evidence matrix with columns `feature`, `implementation path`,
 `source classification`, `test`, `status`, `risk`.
@@ -115,12 +120,14 @@ avoid unsupported claims of proprietary model extraction.
 
 ## Immediate work queue
 
-1. Create R0 architecture/training readiness matrix from repository source.
-2. Identify smallest GPU pretraining run that yields a real checkpoint and
-   a credible heldout PPL; expose resource requirements and blockers.
-3. Implement data and checkpoint provenance, real validation and smoke tests.
-4. Preserve ACT-001–004 as completed mechanism studies; **do not pursue
-   forced-final remainder optimization unless new evidence justifies it**.
+1. Run R1 WikiText-2 data preparation and actual tiny OpenMythos training;
+   verify a saved checkpoint, heldout NLL/PPL, and sample generation.
+2. Test R1 checkpoint resume against an uninterrupted run; retain dataset SHA
+   provenance and use immutable dataset revisions for strict reruns.
+3. Follow up on GPU/FSDP, per-step loader cursor and tokenizer revision gaps.
+4. Preserve ACT-001–004 as mechanism studies only; do not promote Forced Final
+   Remainder as a performance improvement without new evidence.
+5. Scale to 100M+ only after the real-text pilot and a feasible GPU budget.
 
 ## References
 
