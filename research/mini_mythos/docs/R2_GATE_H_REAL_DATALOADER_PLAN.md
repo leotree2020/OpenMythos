@@ -1,6 +1,6 @@
 # R2 Gate H — 真实双进程 PyTorch DataLoader 的预取中断与断点恢复
 
-**制定日期：2026-10-16。状态：研究层实验脚本及测试已提交，尚未在用户 Codespaces 运行。** 前一关 Gate G 已经在两个**逻辑** Worker 的单进程模拟中通过 156/156 项测试，但原始 PR27 使用的是实际 `DataLoader(num_workers=2)`，必须另行验证。
+**制定日期：2026-10-16。状态：已在用户 Codespaces 真实双进程实验中完成，162/162 tests PASS；三个运行分支分别见到两个真实 OS Worker PID，预取任务 5–8 被正确重放，全部训练状态逐位一致。实测见 [Gate H Result](R2_GATE_H_RESULT.md)。此页保留实验前协议。** 前一关 Gate G 已经在两个**逻辑** Worker 的单进程模拟中通过 156/156 项测试，但原始 PR27 使用的是实际 `DataLoader(num_workers=2)`，必须另行验证。
 
 ## 本轮核心问题
 
