@@ -107,12 +107,20 @@ affiliation or claim model/weight equivalence.
   0.00234181 / 0.00261885. Original upstream not patched; no real GPU run,
   no optimizer update or long-training performance validation.
   See [R2 Gate C](R2_GATE_C_RESULT.md).
-- R2 Gate D (research-only GPT2 tokenizer identity contract committed;
-  awaiting execution): SHA-pin PR27's GPT2 model revision, hash the actual
-  token-to-ID map, backend tokenizer config, special token IDs and encoding
-  probes; guard future checkpoint embedding/tokenizer consistency.
-  Not integrated into upstream train/eval yet.
-  See [Gate D plan](R2_GATE_D_TOKENIZER_PLAN.md).
+- R2 Gate D (VERIFIED 2026-10-16): 130/130 tests PASS; pinned PR27 GPT2
+  tokenizer to HF immutable revision 607a30d783dfa663caf39e06633721c8d4cfcd7e
+  and required 50257 embedding rows. Complete token-to-ID SHA256 is
+  56547338e1f0301492f97c9ec86f9ff477d96513336d9497331e1f58f4afd911;
+  backend SHA256 is 11e818f948f43497f364722def50c13f419158554961ee4bb095fbd3350895c3.
+  Frozen contract SHA256 d8c2780bf00fc7a224bfca89725ad9cc0522c48aa67cf796599ae6a04be3d3c9
+  reloaded OFFLINE and matched. Original PR27 checkpoint/eval is not patched.
+  See [Gate D result](R2_GATE_D_RESULT.md).
+- R2 Gate E (research-only guarded checkpoint IO candidate, awaiting tests):
+  write/read a minimal real-GPT2-vocab embedding + AdamW CPU toy checkpoint
+  with frozen tokenizer metadata and external checkpoint SHA256 sidecar.
+  Validate actual token IDs, metadata and SHA *before* torch.load weights_only.
+  Upstream PR27 still requires separate train/eval integration and stream
+  cursor/optimizer/RNG resumption checks. See [Gate E plan](R2_GATE_E_CHECKPOINT_PLAN.md).
 - Community training proposal:
   <https://github.com/kyegomez/OpenMythos/pull/27>. Proposed ~117.8M
   MLA+MoE FineWeb-Edu experiment and loop-depth PPL tests; external reports
@@ -189,20 +197,20 @@ avoid unsupported claims of proprietary model extraction.
 
 ## Immediate work queue
 
-1. Run new Gate D tokenizer-contract offline tests in Codespaces, freeze
-   immutable upstream PR27 `gpt2` HF revision, then re-load the pinned
-   version and verify full token-ID/backend/special-ID equality.
-2. Archive Gate C 120/120 actual CPU BF16 forward/backward results and
-   preserve frozen R1 official Test evidence. Do not retrain dim48 Toy.
-3. Integrate verified Tokenizer contract as REQUIRED metadata into a
-   separately tested PR27 research trainer checkpoint/eval adapter; reject
-   mismatched tokenizer at train, resume and evaluation boundaries.
-4. Reconstruct exact FineWeb-Edu stream cursor, RNG/data snapshot and
-   independently disjoint heldout; verify safe checkpoint round-trip on
-   CPU before any 118M model allocation.
-5. No GPU has been provisioned; require hardware/time budget, MoE routing
-   checks, real BF16/FlashAttention GPU smoke, and equal-FLOPs baselines
-   before PR27 scale-up.
+1. Run Gate E isolated tokenizer-bound checkpoint tests and real pinned
+   GPT2-tokenizer CPU smoke: save toy Embedding/AdamW, validate detached
+   manifest and file SHA, load only with torch.load(weights_only=True).
+2. Freeze current Gate D fingerprints and earlier R1 independent Test
+   evidence; never re-freeze to a new SHA because a later test fails.
+3. After Gate E passes, make an isolated PR27 train/eval research adapter
+   enforce mandatory checkpoint tokenizer metadata before any model restore;
+   deliberately reject mismatched tokenizer, missing metadata and wrong
+   embedding dimensions while preserving upstream original source.
+4. Fix dataset immutable revision, streaming cursor/RNG checkpoint recovery,
+   safe optimizer resume and strictly separate heldout evaluation next.
+5. GPU training is BLOCKED pending provisioned CUDA and source readiness.
+   Only after measurable BF16/FlashAttention/MoE and fair-compute smoke
+   should 100M+ training be considered.
 
 ## References
 
