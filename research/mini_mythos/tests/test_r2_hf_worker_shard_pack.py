@@ -177,6 +177,34 @@ class GateKTests(unittest.TestCase):
             self.assertEqual(already_sharded.num_shards, 1)
             self.assertLess(already_sharded.num_shards, WORKERS)
 
+    def test_four_shard_double_partition_skips_source_documents(self):
+        # Reproduce the *mechanism* also relevant to the upstream PR27
+        # remote dataset, which exposes many shards. Explicit shard in
+        # a worker followed by HF's automatic DataLoader shard selects
+        # fewer records than one complete source pass.
+        from datasets import Dataset
+        items = list(range(24))
+        source = Dataset.from_dict(
+            {"source_row": items}
+        ).to_iterable_dataset(num_shards=4)
+        correct = []
+        double = []
+        for worker_id in range(WORKERS):
+            native = source.shard(
+                num_shards=WORKERS, index=worker_id, contiguous=False
+            )
+            correct.extend(row["source_row"] for row in native)
+            manual = source.shard(
+                num_shards=WORKERS, index=worker_id
+            )
+            auto_again = manual.shard(
+                num_shards=WORKERS, index=worker_id, contiguous=False
+            )
+            double.extend(row["source_row"] for row in auto_again)
+        self.assertEqual(sorted(correct), items)
+        self.assertLess(len(double), len(items))
+        self.assertEqual(len(set(double)), len(double))
+
     def test_local_hf_dataset_rejects_duplicate_records(self):
         with self.assertRaisesRegex(ValueError, "duplicate"):
             build_local_hf_source(
