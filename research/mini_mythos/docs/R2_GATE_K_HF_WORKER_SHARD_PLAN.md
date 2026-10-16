@@ -30,7 +30,7 @@ if num_workers > 1:
 
 ### 实验边界
 
-1. 新 [r2_hf_worker_shard_pack.py](../scripts/r2_hf_worker_shard_pack.py) 先加载 Gate I/GTPT2 的所有不变条件，随后在**内存**构建 HF `Dataset.from_dict(...).to_iterable_dataset(num_shards=2)`。这是**本地 2 个 Arrow Shard** 的 HF 迭代接口，不是从官方远程 Parquet 文件得到原来的 2410 个 Shard。
+1. 新 [r2_hf_worker_shard_pack.py](../scripts/r2_hf_worker_shard_pack.py) 先加载 Gate I/GPT2 的所有不变条件，随后在**内存**构建 HF `Dataset.from_dict(...).to_iterable_dataset(num_shards=2)`。这是**本地 2 个 Arrow Shard** 的 HF 迭代接口，不是从官方远程 Parquet 文件得到原来的 2410 个 Shard。
 2. 真正 PyTorch `DataLoader(num_workers=2,prefetch_factor=2,in_order=True)` 生成两个 OS 子进程；每个 Worker 在 `__iter__` 调用 HF `.shard(num_shards=2,index=worker_id)`，然后独立 tokenize、添加 EOS、打包 seq_len+1 移动窗口。Worker 返回自己的 Chunk SHA、局部序号、PID，仅将摘要/进程信息写入报告。
 3. 恢复时**不依赖预取队列**：Checkpoint 在已成功完成第 5 次 `optimizer.step()` 后，将模型、AdamW、Python/Torch RNG、**全局已提交 5 条 Chunk SHA** 与冻结的 Source/Tokenizer SHA 保存到 Gate E 的安全权重文件和 Sidecar 中；重新启动双 Worker，从头依照相同分片/打包顺序逐条比较已提交 Chunk SHA 并跳过，再继续剩余 7 步。
 4. 比较与控制：连续 12 Steps 和 5+7 Steps 的每步 Chunk SHA、随机 Loops、随机 Noise Mask、Loss、最终模型/AdamW/Cursor/RNG 必须逐位完全相同。还需观察**真实已读取但未提交** Chunk（可来自两个 OS Worker），并验证同样输入下，全局 Pack 与各 Worker 独立 Pack 的前 12 个 Chunk 摘要**至少存在一处差异**。
@@ -53,6 +53,8 @@ CLI 成功时应出现两名真实 OS Worker PID（每条连续/中断/恢复路
 - `research/mini_mythos/results/r2/pr27_gate_k_worker_pack_report.json`
 
 ## Gate K 通过也不能关闭的上游问题
+
+本关使用 `DataLoader(batch_size=None)` 按单条 Token Window 比对，而 PR27 原版 `build_loader` 使用 `batch_size=32`、`persistent_workers=True` 和 `pin_memory=True`；此外本地 2 个 Arrow Shards 与原始远程文件级分片并不对应。这些差异意味着仅能确认 **shard-before-pack 的研究路径**，不能宣称已重现实训 Batch 排布或 Pre-fetch 状态。
 
 本实验仍然**不是**原版 PR #27 的真实 `HuggingFaceFW/fineweb-edu` 远程 `load_dataset(..., streaming=True)`：
 
