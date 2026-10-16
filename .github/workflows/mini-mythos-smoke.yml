@@ -24,7 +24,7 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install helpers requirements
-        run: python -m pip install 'torch>=2.1,<3'
+        run: python -m pip install 'torch>=2.1,<3' 'transformers>=4.40,<6'
       - name: Verify independent helper tests
         run: python -m unittest discover -s research/mini_mythos/tests -v
 
@@ -67,6 +67,20 @@ jobs:
       - name: Tiny upstream training pipeline check (GQA only)
         if: matrix.attention == 'gqa'
         run: python research/mini_mythos/scripts/pilot_train.py --repo . --steps 2 --train-depths 1 4 --out research/mini_mythos/results/pilot.json
+      - name: R0 cached-chunk differential regression
+        run: python research/mini_mythos/scripts/r0_cache_compare.py --repo . --attentions ${{ matrix.attention }} --strict
+      - name: R1 tiny text-pilot plumbing smoke (fixture, not real benchmark)
+        if: matrix.attention == 'gqa'
+        run: |
+          mkdir -p research/mini_mythos/results/r1/ci_fixture
+          printf 'The model trains on a few words for a pipeline check. This prose is a CI fixture.\n\nRepeating familiar English text tests only the software path.\n' > research/mini_mythos/results/r1/ci_fixture/train.txt
+          printf 'The validation fixture contains different English sentences. This is heldout from the tiny CI train fixture.\n\nNo claim of learned language ability is made here.\n' > research/mini_mythos/results/r1/ci_fixture/validation.txt
+          python research/mini_mythos/scripts/r1_text_pilot.py --repo . \
+            --train-text research/mini_mythos/results/r1/ci_fixture/train.txt \
+            --validation-text research/mini_mythos/results/r1/ci_fixture/validation.txt \
+            --attention gqa --seq-len 16 --batch-size 1 --steps 2 \
+            --eval-windows 2 --generate-tokens 2 \
+            --out-dir research/mini_mythos/results/r1/ci_smoke
       - name: Archive and verify partial CI evidence (synthetic outputs)
         run: |
           python research/mini_mythos/scripts/evidence_archive.py pack --repo . --allow-partial --out research/mini_mythos/archives/ci_${{ matrix.attention }}.zip
