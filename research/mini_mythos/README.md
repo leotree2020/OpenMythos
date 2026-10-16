@@ -453,10 +453,23 @@ Gate J 结果：`results/r2/pr27_gate_j_realtext_cpu.pt`、`pr27_gate_j_realtext
 
 2026-10-16 Gate K 修复重测：**190/190 tests PASS（39.748 秒）**，本地 HF IterableDataset 2 个 Arrow Shards 由两个真正 OS Worker 原生自动分片一次，开发来源 28/28 文档恰好被消费（14/14、无重叠或缺失）。连续/中断/恢复分别观测两个不同 PID；优化器提交位置 5，已预取尚未训练窗口数量 4，恢复从 5 开始，Tiny CPU 模型参数/AdamW/Cursor/Python+Torch RNG/训练 Trace 均逐位一致、Loss 差 0.0。Gate J 先全局 Packing 与 Gate K Worker 局部分片 Packing 的首 12 Chunk 中 11 条不同。[Gate K 通过结果](docs/R2_GATE_K_RESULT.md)。首次 187 项有 1 ERROR 的双重分片故障仍归档在 [Failure 001](docs/R2_GATE_K_FAILURE_001.md)。**原版 PR27 远程 HF Streaming、实际 Parquet Source Offset/SIGKILL/GPU 仍未验证。**
 
-**Gate L 已提交，但尚未在用户 Codespaces 运行。** [实验计划](docs/R2_GATE_L_DOUBLE_SHARD_COVERAGE_PLAN.md)、[代码](scripts/r2_pr27_double_shard_coverage.py)、[回归测试](tests/test_r2_pr27_double_shard_coverage.py)。本关没有模型训练，完全离线，只将 Gate I 真实文本来源验证后的 28 条开发文档转成 SHA Hash（**不把原始文本传给 Worker**），在本地创建 **8 个 HF Arrow Shards**，启动两组各两个真实 OS Worker：对照 A 只使用 HF 自动 Worker Sharding；负控 B 模拟上游 PR27 显式 Worker `.shard()` 然后 HF 又自动分片。重点不是 PID 是否存在，而是即便 B 组两个 Worker 都正常运行，是否仍然**漏读真实来源的 ID Hash**。
+**Gate L 已于 2026-10-16 在用户 Codespaces 实测：197/197 tests PASS；两个真实 OS Worker 都存活时，HF 原生分片为 28/28，模拟 PR27 双重分片只覆盖 14/28。具体记录见 [Gate L Result](docs/R2_GATE_L_RESULT.md)。** [实验计划](docs/R2_GATE_L_DOUBLE_SHARD_COVERAGE_PLAN.md)、[代码](scripts/r2_pr27_double_shard_coverage.py)、[回归测试](tests/test_r2_pr27_double_shard_coverage.py)。本关没有模型训练，完全离线，只将 Gate I 真实文本来源验证后的 28 条开发文档转成 SHA Hash（**不把原始文本传给 Worker**），在本地创建 **8 个 HF Arrow Shards**，启动两组各两个真实 OS Worker：对照 A 只使用 HF 自动 Worker Sharding；负控 B 模拟上游 PR27 显式 Worker `.shard()` 然后 HF 又自动分片。重点不是 PID 是否存在，而是即便 B 组两个 Worker 都正常运行，是否仍然**漏读真实来源的 ID Hash**。
 
     git pull --ff-only origin mini-mythos-research
     python -m unittest discover -s research/mini_mythos/tests -p 'test_*.py' -v
     python research/mini_mythos/scripts/r2_pr27_double_shard_coverage.py --repo .
 
-结果保存在 Git ignored `research/mini_mythos/results/r2/pr27_gate_l_double_shard_coverage.json`，报告不含真实正文。**不能先假定遗漏百分比**；就算 Gate L 在本地 8 Shards 证明 B 组静默漏读，也不能直接推定正式 2410 文件数据流的实际漏读比例。真实多 Shard 证据、原始 PR27 Loader 的修复与断点恢复依然属于后续 P0 工作。
+结果保存在 Git ignored `research/mini_mythos/results/r2/pr27_gate_l_double_shard_coverage.json`，报告不含真实正文。Gate L 在本地 8 Shards 实测 14/28 文档静默漏读，但**不能把这 50% 推定成正式远程 FineWeb-Edu 的遗漏比例**；`Resolving data files: 2410` 也不直接代表 `sample-10BT` 本身有 2410 个 Shards。真实多 Shard 证据、原始 PR27 Loader 的修复与断点恢复依然属于后续 P0 工作。
+
+## R2 Gate L 通过：197/197；Gate M 查询实际冻结 sample-10BT 文件元数据
+
+2026-10-16 用户 Codespaces：**197/197 tests PASS（48.077 秒）**。使用 Gate I 已冻结真实 FineWeb 快照里的 28 个内部训练文档 SHA，在本地 8 个 HF Arrow Shards 上启动两个真实 OS Worker 做源覆盖 A/B。Native auto-shard only **28/28**；PR27-like manual `.shard` + HF native auto-shard **14/28**，两个 Worker 均正常输出但**静默遗漏 14 个来源文档序号** `4,5,6,7,12,13,14,15,16,17,18,22,23,24`。实验没有读取线上 HF 数据、没有传递原始文本给 Worker，也没有运行任何模型训练。[Gate L 实测报告](docs/R2_GATE_L_RESULT.md)。**该 50% 比率不是原版 FineWeb-Edu 远程 Parquet 的实测遗漏率。**
+
+已提交 [Gate M 实验计划](docs/R2_GATE_M_REMOTE_FILE_INVENTORY_PLAN.md)、[仅元数据文件清单程序](scripts/r2_pr27_remote_parquet_inventory.py) 以及 [8 项离线测试](tests/test_r2_pr27_remote_parquet_inventory.py)。只查询已固定的 HF Commit `87f09149ef4734204d70ed1d046ddc9ca3f2b8f9` 下 `HuggingFaceFW/fineweb-edu` 的 `sample/10BT/*.parquet` 路径与 Size（不下载 Parquet 正文）；SHA 冻结清单，然后只对**文件 ID**做 HF 正常一次 Worker 分片与 PR27 风格双重分片的覆盖投影，`verify` 完全离线。正式 HF `IterableDataset.num_shards` 还需下一轮单独证明，不能把文件数量当成训练 Shard/文档/Token 数。
+
+    git pull --ff-only origin mini-mythos-research
+    python -m unittest discover -s research/mini_mythos/tests -p 'test_*.py' -v
+    python research/mini_mythos/scripts/r2_pr27_remote_parquet_inventory.py freeze --repo .
+    python research/mini_mythos/scripts/r2_pr27_remote_parquet_inventory.py verify --repo .
+
+Gate M 新文件位于 Git ignore `research/mini_mythos/results/r2/pr27_gate_m_remote_sample_file_inventory.json`，拒绝覆盖。**新代码尚未在用户 Codespaces 执行，实际 sample-10BT 文件数量与预测遗漏路径均待实测。**
