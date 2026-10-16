@@ -356,4 +356,16 @@ Codespaces 下一步（仅 CPU）：
     python research/mini_mythos/scripts/r2_pr27_guarded_checkpoint.py smoke --repo .
     python research/mini_mythos/scripts/r2_pr27_guarded_checkpoint.py verify --repo .
 
-生成 `research/mini_mythos/results/r2/pr27_bound_toy_checkpoint.pt` 和 `.manifest.json`，不覆盖之前的结果。**Gate E 新代码尚待 Codespaces 实测；仅隔离研究层 Demo，不等于 PR27 原始 trainer/eval 已保护，也不是 118M GPU 训练。**
+生成 `research/mini_mythos/results/r2/pr27_bound_toy_checkpoint.pt` 和 `.manifest.json`，不覆盖之前的结果。**Gate E 于 2026-10-16 实测 140/140 tests PASS；`smoke` 和独立 `verify` 均通过安全加载和完整性校验。真实结果归档见 [Gate E Result](docs/R2_GATE_E_RESULT.md)。仍仅隔离研究层 Demo，未修改 PR27 原始 trainer/eval，也没有 118M GPU 训练。**
+
+## R2 Gate E 完成：140/140 PASS；Gate F 恢复训练数据游标
+
+用户 Codespaces 实际执行：**140/140 tests PASS（4.036 秒）**；真实冻结 GPT-2 Tokenizer 下，CPU 4 维 Embedding/Head 进行一次合成 AdamW 更新，Loss **10.897187**；`smoke` 内置读取与独立 `verify` 均确认 Token-ID/backend 身份 MATCH、模型 Embedding 行数 50257、Checkpoint metadata 与文件 SHA256 PASS，并以 `weights_only=True` 安全加载原始 step1。未训练真实 OpenMythos，也没有 PR27 正式训练入口补丁。详见 [R2 Gate E 实测](docs/R2_GATE_E_RESULT.md)。
+
+[R2 Gate F：可保存/恢复数据流与 RNG 的单 Worker CPU 验证](docs/R2_GATE_F_STREAM_RESUME_PLAN.md) 现已提交。使用原冻结 GPT2 Tokenizer、合成的 PR27 形状文档和相同 EOS/packed-window 规则，保存来源和 buffer Cursor、Python/Torch RNG、真实 Tiny AdamW 模型/优化器状态；要求**连续 12 步**与**5 步 checkpoint + 恢复 7 步**的 Token、Loop 选择、随机性、Loss 和模型/优化器状态**逐位相同**。
+
+    git pull --ff-only origin mini-mythos-research
+    python -m unittest discover -s research/mini_mythos/tests -p 'test_*.py' -v
+    python research/mini_mythos/scripts/r2_pr27_stream_resume.py --repo .
+
+预计新文件在 Git 忽略的 `results/r2`：`pr27_gate_f_stream_cpu.pt`、`.manifest.json`、`pr27_gate_f_stream_comparison.json`。**Gate F 新代码尚未在 Codespaces 验证。** 这是受控**单 Worker、本地合成数据**流程，不等同于当前 PR27 `num_workers=2` 的 FineWeb-Edu Streaming Loader 可恢复；正式数据分片/预取与 GPU 训练依旧 BLOCKED。
