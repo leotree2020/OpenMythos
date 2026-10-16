@@ -294,3 +294,23 @@ Codespaces 下一步（**只读预检，不分配模型权重，不消耗 GPU �
       --out research/mini_mythos/results/r2/preflight.json
 
 报告包括 PyTorch/CUDA/GPU/VRAM/BF16、源码与依赖 SHA/版本、训练状态的数量级估算以及 P0/P1 审计清单。脚本已提交，**目前还没有 Codespaces 运行后的 R2 设备清单**。
+
+## R2 Gate A 实测：现有 Codespaces CPU only，先复现上游 PR #27
+
+2026-10-16 Codespaces：**110/110 tests PASS**，PyTorch `2.14.1+cu130` 但 **CUDA available=False，GPU=0**，仅余 **13.06 GiB** 本地空间。预训练不能在当前容器直接进行。正式训练仍有数据 cursor、Tokenizer 修订、Checkpoint 安全、Heldout Eval 和核心 KV Cache 的静态 GAP，以及 BF16/ACT/MoE 待确认事项。[R2 Gate A 原始日志记录](docs/R2_GATE_A_ENVIRONMENT.md)。
+
+已从 GitHub 读取上游 PR #27 **固定 Commit `2954bc275ffb8ad5c60f74f7299a9ad9e531d3e4`** 的真实 `experiments/config.py`、`data.py`、`train.py`、`evaluate.py`、`run_all.sh`、`README.md`。其中发现 tokenizer eval override、无法严格恢复训练游标、mutable dataset、伪称单循环为 plain Transformer 及**把 complex RoPE buffers 连同模型强制转 bf16 后虚部被丢弃**的风险。纯 PyTorch CPU buffer cast 已验证一般行为；还需用户 Codespaces 的真实 Tiny OpenMythos 微型模型诊断，详见 [R2 PR #27 固定源码审计](docs/R2_PR27_SOURCE_REVIEW.md)。
+
+### Codespaces 下步：只读取 PR 源码并执行 CPU 预检
+
+    git pull --ff-only origin mini-mythos-research
+    git fetch https://github.com/kyegomez/OpenMythos.git \
+      refs/pull/27/head:refs/remotes/pr27-audit
+    git rev-parse refs/remotes/pr27-audit
+    python -m unittest discover -s research/mini_mythos/tests -p 'test_*.py' -v
+    python research/mini_mythos/scripts/r2_pr27_static_audit.py --repo .
+    python research/mini_mythos/scripts/r2_rope_dtype_probe.py --repo .
+
+`git rev-parse` 应等于上面的冻结 SHA；如果 PR HEAD 变动，需要改为抓取固定提交，不要悄悄改研究对象。两项新工具只读取源码并实例化 dim48 CPU 微型模型作复数相位测试，结果位于 Git 忽略目录 `results/r2/`。**这两项还未在 Codespaces 跑过，不能把新脚本提交当作实测 PASS。**
+
+R2 仍采取“**先模仿、再验证、再超越**”：不直接 merge PR，不修改上游 `open_mythos/main.py`，不启动 PR 的 `run_all.sh` 或 3B 脚本，也不声称获得了 Anthropic 私有模型细节。
