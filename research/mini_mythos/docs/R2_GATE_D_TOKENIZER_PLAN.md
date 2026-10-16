@@ -1,6 +1,6 @@
 # R2 Gate D — 固定上游 PR #27 GPT-2 Tokenizer 身份契约
 
-**2026-10-16；状态：代码及离线单元测试已提交，真实 Hugging Face GPT-2 Tokenizer 下载、冻结、复验尚待用户 Codespaces 执行。** R2 Gate C 真实实测为 120/120 PASS；GQA 和 MLA BF16 autocast 在 CPU 微型完整序列上保留全部 Complex64 RoPE 相位并得到有限梯度。[Gate C Result](R2_GATE_C_RESULT.md)。
+**2026-10-16；状态：Gate D 已在 Codespaces 完整实测通过：130/130 单元测试 PASS，GPT-2 Tokenizer SHA 已固定且 Offline Verify 得到 MATCH。真实指标和 Content SHA 见 [Gate D 实测](R2_GATE_D_RESULT.md)；本页保留实验前的冻结协议。** R2 Gate C 真实实测为 120/120 PASS；GQA 和 MLA BF16 autocast 在 CPU 微型完整序列上保留全部 Complex64 RoPE 相位并得到有限梯度。[Gate C Result](R2_GATE_C_RESULT.md)。
 
 ## 目的与威胁模型
 
