@@ -181,15 +181,25 @@ affiliation or claim model/weight equivalence.
   This 50% loss belongs ONLY to this local 8-shard controlled test,
   NOT to the original remote HF sample-10BT Parquet source.
   See [Gate L result](R2_GATE_L_RESULT.md).
-- R2 Gate M (metadata-only candidate COMMITTED, awaiting Codespaces):
-  confirm actual FILE paths and sizes of sample/10BT/*.parquet in the
-  HF repo at Gate I pinned SHA 87f09149ef4734204d70ed1d046ddc9ca3f2b8f9
-  using HfApi dataset_info+list_repo_tree for ONLY sample/10BT; no data
-  read, no model/GPU. Hash sorted immutable file list. Apply proven HF
-  contiguous manual then noncontiguous native Worker split semantics to
-  FILE IDs as a projection, not measured true IterableDataset shard or
-  document/token omission. Offline verify manifest from separate CLI.
-  See [Gate M plan](R2_GATE_M_REMOTE_FILE_INVENTORY_PLAN.md).
+- R2 Gate M (VERIFIED 2026-10-16): 205/205 tests PASS in 47.955s.
+  Immutable dataset SHA 87f09149ef4734204d70ed1d046ddc9ca3f2b8f9,
+  REAL sample/10BT Parquet FILE count 14 (not repository-wide 2410).
+  Canonical filename+size inventory SHA256:
+  0b65e53aeb3c7c1d69debfcea0e7105fd5e7a1141b7f3bd7bc9bbc3957a44209.
+  Native worker FILE-ID projection covers 14/14; manual contiguous
+  .shard + HF native noncontiguous projection covers only 7/14, missing
+  odd-index paths 001,003,005,007,009,011,013. No Parquet body downloaded;
+  offline inventory verification PASS. These are FILE projections, not
+  observed streaming shard IDs/doc/token loss. See [Gate M result](R2_GATE_M_RESULT.md).
+- R2 Gate N (candidate committed, awaiting Codespaces): load REAL pinned
+  HF dataset via load_dataset(... streaming=True, revision=frozenSHA),
+  WITHOUT explicitly iterating source documents. Read actual
+  ds.num_shards and actual .shard(2,w) metadata counts, contrast with
+  frozen 14 Parquet files and project LOGICAL shard index coverage.
+  Verify input Gate I + M SHA contracts and package versions; freeze
+  a local report, then offline verify. Actual loader/Worker and
+  file-to-shard mapping NOT yet tested. HF initialization may read
+  metadata/schema/file headers. See [Gate N plan](R2_GATE_N_REAL_HF_SHARD_COUNT_PLAN.md).
 - Community training proposal:
   <https://github.com/kyegomez/OpenMythos/pull/27>. Proposed ~117.8M
   MLA+MoE FineWeb-Edu experiment and loop-depth PPL tests; external reports
@@ -266,23 +276,22 @@ avoid unsupported claims of proprietary model extraction.
 
 ## Immediate work queue
 
-1. Run R2 Gate M metadata-only pinned HF Hub sample/10BT Parquet file
-   inventory tests and `freeze`/offline `verify`; confirm actual count
-   and immutable file paths + sizes, project native-only vs PR27-style
-   manual+HF auto worker FILE-ID coverage. Do not download parquet bodies.
-2. Archive Gate L's verified 197/197 source-loss contrast (native
-   28/28 vs local double-shard 14/28 with both PIDs); never extrapolate
-   50% document omission to original remote FineWeb without evidence.
-3. Next confirm original HF `load_dataset(..., streaming=True)`
-   `num_shards` and manual `.shard(...).num_shards` on the SAME pinned
-   sample-10BT config and installed datasets version, without iterating
-   large Parquet content. File count != verified iterable shard count.
-4. Test true original Worker source path/shard identity and durable
-   optimizer-committed cursor with constrained streaming and SIGKILL
-   fault before any production PR27 trainer integration.
-5. No CUDA GPU in Codespaces; 118M+ training still blocked pending
-   data correctness, BF16/MoE/ACT readiness, budgeted hardware and
-   independent heldout evaluation provenance.
+1. Run Gate N 9 new OFFLINE shard-count tests plus original full suite;
+   then call frozen real HF load_dataset(streaming=True) WITHOUT example
+   iteration or DataLoader. Confirm actual ds.num_shards, manual/native
+   .shard(2,w).num_shards and projected logical IDs. Reverify offline.
+2. Archive verified Gate M 205/205 evidence: pinned sample-10BT 14 REAL
+   Parquet file inventory, exact SHA and file-ID 14/14 vs 7/14 projection.
+   Do NOT conflate that file count with actual HF IterableDataset shards.
+3. After actual logical-shard counts, separately verify immutable HF
+   source FileInstruction mapping and real remote Worker source coverage,
+   using explicit request/byte budgets; counting alone does not prove
+   7/14 official Parquet files actually skipped or 50% tokens missing.
+4. Correct PR27 manual+auto duplicate worker partition in an isolated
+   reviewed research copy and add source-coverage alarms before
+   genuine SIGKILL worker/checkpoint resume and heldout evaluation.
+5. No GPU in Codespaces; 118M+ training remains blocked pending
+   data correctness, BF16 complex RoPE, ACT/MoE validation and budget.
 
 ## References
 
