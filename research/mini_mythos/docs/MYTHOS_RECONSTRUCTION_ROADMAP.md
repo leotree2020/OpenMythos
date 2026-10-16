@@ -47,9 +47,12 @@ affiliation or claim model/weight equivalence.
   29.264 (1024 validation byte targets). The local checkpoint was saved;
   generated output was 24 spaces, so no demonstrated coherent language ability.
   See [R1 Gate A](R1_GATE_A_RESULT.md).
-- R1 Gate B read-only analysis (checkpoint NLL reproduction, unigram/bigram
-  baselines, nonspace loss, greedy/sample collapse checks) has been committed
-  but not yet executed. See [R1 pilot](R1_REAL_TEXT_PILOT.md).
+- R1 Gate B run (2026-10-16): model heldout PPL 29.264, but worse than
+  train-fitted Unigram 26.919 and Bigram 12.597 over the same 1024 byte targets;
+  predicted space for 100% of positions (target 19.4%). 79/80 unit tests passed,
+  with one test-only wrong key fixed in branch, awaiting rerun. Added a
+  controlled history-order sensitivity check to characterize contextual use.
+  See [R1 Gate B](R1_GATE_B_RESULT.md).
 - Community training proposal:
   <https://github.com/kyegomez/OpenMythos/pull/27>. Proposed ~117.8M
   MLA+MoE FineWeb-Edu experiment and loop-depth PPL tests; external reports
@@ -126,9 +129,8 @@ avoid unsupported claims of proprietary model extraction.
 
 ## Immediate work queue
 
-1. Run R1 Gate B read-only trained checkpoint evaluation; independently
-   reproduce heldout NLL and compare smoothed unigram/bigram baselines to
-   establish whether the model learned context beyond frequent characters.
+1. Rerun R1 Gate B tests after the wrong-key correction, and interpret
+   history-order ablation results before inferring contextual language learning.
 2. Test R1 checkpoint resume against an uninterrupted run; retain dataset SHA
    provenance and use immutable dataset revisions for strict reruns.
 3. Follow up on GPU/FSDP, per-step loader cursor and tokenizer revision gaps.
