@@ -77,12 +77,19 @@ affiliation or claim model/weight equivalence.
   nats/byte with exploratory window bootstrap [0.125281, 0.157897].
   RNG replay and test window counts verified. Validation was reused for model
   decisions; not an untouched test. See [Gate E result](R1_GATE_E_RESULT.md).
-- R1 Gate F (protocol frozen, awaiting Codespaces run): evaluate unchanged
-  step-600 checkpoint once on an official unseen WikiText-2 *test* split,
-  revision pinned before fetch; fixed first 1200 eligible text records,
-  first 250000 bytes, 256 x 64 nonoverlapping evaluation windows, Add-1
-  same-exposure n-grams. Output cannot overwrite earlier evidence. See
-  [Gate F plan](R1_GATE_F_PLAN.md).
+- R1 Gate F (VERIFIED 2026-10-16): 106/106 unit tests PASS. On the
+  separate official WikiText-2 *test* split, revision pinned at
+  b08601e04326c79dfdd32d625aee71d232d685c3 before download,
+  step-600 model PPL=10.852968 vs same SGD-exposure Add-1 Bigram
+  PPL=12.790071 and whole-train-prefix Bigram PPL=12.404059 across
+  256 windows / 16384 byte targets. Model lower NLL in 253/256 windows;
+  mean paired NLL improvement +0.164231 nats/byte, exploratory window
+  bootstrap [0.154229,0.174337]. No training/test leakage by protocol;
+  one tiny seed/limited byte-level claim. See [Gate F result](R1_GATE_F_RESULT.md).
+- R2 (planned): freeze tiny-model artifacts; audit upstream PR #27's 117.8M
+  MLA+MoE training proposal, PR #26 bf16 dtype issue, actual tokenizer and
+  resume/heldout readiness, and available GPU before running any large model.
+  See [R2 upstream readiness](R2_UPSTREAM_READINESS.md).
 - Community training proposal:
   <https://github.com/kyegomez/OpenMythos/pull/27>. Proposed ~117.8M
   MLA+MoE FineWeb-Edu experiment and loop-depth PPL tests; external reports
@@ -159,20 +166,22 @@ avoid unsupported claims of proprietary model extraction.
 
 ## Immediate work queue
 
-1. Run all offline tests, resolve and pin the official WikiText-2 test-split
-   revision, then execute **once** the frozen 600-step model on 256 x 64
-   official test byte-target windows, compared with exact observed SGD
-   byte-pair Add-1 unigram/bigram baselines; do not tune or retrain on test.
-2. Preserve all Gate A-F evidence, original model checkpoints and
-   data/revision SHA-256; stop 48-dim CPU Toy experiments at step 600.
-3. Audit upstream tokenizer/model dimensions, production pretraining script,
-   MoE load balance and GPU/FSDP/FlashAttention behavior before scaling.
-4. Plan a licensed-data, pinned-real-tokenizer 100M+ GPU pilot with
-   independent holdout, parameter/compute-aware non-recurrent Transformer
-   baseline, true generation benchmarks and resume reproducibility.
-5. Keep the project's main goal in view: an independently trained and
-   behaviorally assessed public-evidence reconstruction, not an inferred
-   copy of Anthropic proprietary Mythos weights/architecture.
+1. Freeze and archive the R1 Gate F test report and 600-step Checkpoint.
+   Do not use official test scores for additional model selection.
+2. Run the source/GPU environment inventory `r2_preflight.py` in Codespaces;
+   report CUDA availability/VRAM and audited source SHA before deciding cloud
+   compute capacity; the preflight does not train or download weights.
+3. Inspect the complete source of OpenMythos upstream PR #27 (~117.8M
+   MLA+MoE FineWeb-Edu pilot) against PR #26 bf16 compatibility and
+   tokenizer revision/evaluation consistency. Pin a reviewed commit;
+   reproduce, do not reimplement the core from scratch.
+4. Require a real pinned tokenizer, data/license provenance, independent
+   heldout PPL, safe recovery of model/optimizer/dataset cursor/RNG, verified
+   MoE routing, actual GPU memory/tokens/s and a finite compute budget
+   before launching any 100M+ candidate.
+5. Compare any trained OpenMythos candidate with a non-recurrent Transformer
+   at comparable data and measured training/inference FLOPs, not just
+   nominal step counts or tied parameter totals.
 
 ## References
 
