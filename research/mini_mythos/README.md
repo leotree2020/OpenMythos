@@ -419,6 +419,18 @@ Gate H 的单测包含**真正启动两个 DataLoader 子进程**的测试，耗
     python -m unittest discover -s research/mini_mythos/tests -p 'test_*.py' -v
     python research/mini_mythos/scripts/r2_fineweb_local_replay.py --repo .
 
-Gate J 结果：`results/r2/pr27_gate_j_realtext_cpu.pt`、`pr27_gate_j_realtext_cpu.manifest.json`、`pr27_gate_j_realtext_replay.json`（均在 Git ignore 下）。**新实验还未在用户 Codespaces 执行，不能提前报告 PASS。**
+Gate J 结果：`results/r2/pr27_gate_j_realtext_cpu.pt`、`pr27_gate_j_realtext_cpu.manifest.json`、`pr27_gate_j_realtext_replay.json`（均在 Git ignore 下）。**Gate J 于 2026-10-16 已在用户 Codespaces 实测：179/179 tests PASS（26.679 秒），冻结真实 FineWeb 文本上的 Tiny CPU AdamW 12 vs 5+7 Step 双进程恢复完整逐位一致，Loss 差 0.0。详见 [Gate J 实测](docs/R2_GATE_J_RESULT.md)。**
 
 非常重要：Gate J 在真实文本上会执行**小型 CPU 训练管线 smoke**，但不计算正式模型质量分数，也没有构建独立 Test Split。Gate J 是先在全局内容上 Pack Tokens 再交给 Worker，PR27 原版是各 HF Worker 分片后分别 Token Pack；它们的数据顺序并不相同。**Gate J 不能证明 PR27 原版 IterableDataset/SIGKILL 恢复，也不能解锁 118M GPU 实训。**
+
+## R2 Gate J 已验证：179/179；Gate K 测试原版的 Worker 分片→各 Worker 独立 Packing
+
+2026-10-16 Codespaces：**179/179 tests PASS（26.679 秒）**。HF FineWeb-Edu 32 条真实冻结文档（内部仅用 28 条做 Tiny CPU 训练、4 条被排除，**不是正式独立 Test**），官方数据 SHA `87f09149ef4734204d70ed1d046ddc9ca3f2b8f9`，GPT2 Contract `d8c2780bf00fc7a224bfca89725ad9cc0522c48aa67cf796599ae6a04be3d3c9`。连续/5步断点/恢复7步都观察到两个真实 OS Worker PID，任务 5–8 预取但未提交，恢复从 5 开始，Trace/参数/AdamW/Cursor/Python+Torch RNG 逐位一致，Loss 差 **0.0**。没有 GPU 或正式模型质量评估，也没有远程 HF Streaming 或 PR27 代码修改。[Gate J 实测报告](docs/R2_GATE_J_RESULT.md)。
+
+下一项 [R2 Gate K](docs/R2_GATE_K_HF_WORKER_SHARD_PLAN.md) 专门验证上游 PR27 `experiments/data.py` 的不同步骤顺序：**先让每个 Worker 在 HF IterableDataset 上调用 `.shard(num_shards=2,index=worker_id)`，再在 Worker 内独立 Tokenize、追加 EOS 和打包**。将前一步真实文档做成仅本地的**两个 Arrow HF IterableDataset 分片**，让真正双 OS 子进程消费，并通过保存已提交的 Chunk SHA 在重新建立 Worker 后重放 5 条已提交 Chunk，继续 7 步；要求所有训练状态逐位一致，同时证实与 Gate J 全局预先 Pack 的窗口不同。
+
+    git pull --ff-only origin mini-mythos-research
+    python -m unittest discover -s research/mini_mythos/tests -p 'test_*.py' -v
+    python research/mini_mythos/scripts/r2_hf_worker_shard_pack.py --repo .
+
+本地新文件：`research/mini_mythos/results/r2/pr27_gate_k_worker_pack_cpu.pt`、`.manifest.json`、`pr27_gate_k_worker_pack_report.json`。**Gate K 已提交，尚未由用户 Codespaces 实际运行，不能预先报告 PASS。** 该方案从开头 O(N) 重放已提交 Batch 的摘要，只适用于小规模本地快照，不具备生产大规模 IterableDataset 精确 shard seek 的性质，也没有真实 SIGKILL 或远程 Parquet 断点恢复。
