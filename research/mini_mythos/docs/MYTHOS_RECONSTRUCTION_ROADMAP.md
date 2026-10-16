@@ -91,15 +91,20 @@ affiliation or claim model/weight equivalence.
   still has DATA_CURSOR, TOKENIZER_REVISION, CHECKPOINT_TRUST, HELDOUT_EVAL,
   CACHE_CHUNK static GAP flags; BF16/ACT/MoE require runtime review.
   See [R2 Gate A](R2_GATE_A_ENVIRONMENT.md).
-- R2 Gate B (upstream source review completed, Codespaces probes pending):
-  OpenMythos community PR #27 immutable commit 2954bc275ffb8ad5c60f74f7299a9ad9e531d3e4
-  contains candidate ~117.8M MLA+MoE training code. Found tokenizer override,
-  no data cursor/RNG resume, mutable streaming data, and whole-model BF16
-  casting of complex RoPE phase buffers. CPU minimal PyTorch confirmed loss
-  of complex imaginary components on dtype conversion, model-level Codespaces
-  probe pending. Single-loop baseline also differs in compute/LoRA parameters
-  and is not an independent dense Transformer. See
-  [PR27 source review](R2_PR27_SOURCE_REVIEW.md).
+- R2 Gate B (VERIFIED 2026-10-16): 114/114 tests PASS. Immutable PR #27
+  commit 2954bc275ffb8ad5c60f74f7299a9ad9e531d3e4 audit found 14/14
+  selected source patterns; no GPU run. Tiny original GQA/MLA RoPE buffers
+  `freqs_cis`/`freqs_cis_mla` both started as complex64 (imaginary max ~1)
+  and LOST imaginary phase when the whole model was cast to BF16, as PR27
+  training code requests. This is a confirmed CPU numerical correctness bug,
+  not proof of GPU performance or other pattern flags causing runtime errors.
+  See [R2 Gate B evidence](R2_GATE_B_RESULT.md) and
+  [PR27 review](R2_PR27_SOURCE_REVIEW.md).
+- R2 Gate C (research-only BF16 candidate committed; unverified): preserve
+  FP32 master weights and complex64 RoPE phase via autocast, with temporary
+  BF16 full-sequence attention causal mask; run tiny GQA/MLA CPU forward,
+  backward and gradient checks before attempting any upstream integration.
+  See [Gate B evidence](R2_GATE_B_RESULT.md).
 - Community training proposal:
   <https://github.com/kyegomez/OpenMythos/pull/27>. Proposed ~117.8M
   MLA+MoE FineWeb-Edu experiment and loop-depth PPL tests; external reports
@@ -176,20 +181,19 @@ avoid unsupported claims of proprietary model extraction.
 
 ## Immediate work queue
 
-1. Reproduce pinned upstream PR #27 source audit without merging or running it:
-   fetch `refs/pull/27/head`, confirm exact SHA, run CPU-only
-   `r2_pr27_static_audit.py` and `r2_rope_dtype_probe.py` and tests.
-2. Freeze R1 Gate F independent test evidence; no further tuning or 48-dim
-   CPU language training. Keep all Test scores out of model selection.
-3. Fix, separately in the research layer, P0 source correctness: preserve
-   complex RoPE buffers under BF16, enforce exact tokenizer mapping and
-   pinned data source, implement checkpoint RNG/dataset cursor recovery and
-   real heldout eval. Use focused CPU tests first, then authorized GPU smoke.
-4. Obtain real GPU hardware/time/budget before allocating any 100M+ model;
-   0 CUDA devices in the current Codespaces means **do not run** PR27
-   `run_all.sh` or the production 3B training script in this environment.
-5. Reproduce upstream 117.8M claims and compare with a real non-recurrent
-   Transformer at a compute-aware budget, only after source/gpu gates pass.
+1. Run the newly added **R2 Gate C BF16 candidate** CPU tests and
+   `r2_bf16_autocast_candidate.py` using both GQA and MLA; confirm no complex
+   RoPE phase damage, finite BF16 forward/backward, FP32 master weights and
+   causal-mask consistency. This is a tiny/no-cache experiment only.
+2. Preserve frozen PR27 source SHA and R2 Gate B evidence; do not modify
+   upstream `open_mythos/main.py` or execute GPU PR27 train/run_all.sh yet.
+3. Address other P0 source risks separately after Gate C: train/eval exact
+   tokenizer revision and token-ID mapping, immutable dataset and disjoint
+   heldout, safe model/optimizer/RNG/data-cursor recovery.
+4. Design measurable MoE router load metrics and compare real fixed-loop
+   model to a genuinely non-recurrent baseline at equal token/GPU FLOP budget.
+5. With GPU actually provisioned and signed-off source changes, run a
+   tiny 1–10-step GPU smoke prior to any 100M+ extended pretraining.
 
 ## References
 
