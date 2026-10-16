@@ -407,4 +407,18 @@ Gate H 的单测包含**真正启动两个 DataLoader 子进程**的测试，耗
 
 文件仅存 Git 忽略目录 `research/mini_mythos/results/r2/fineweb_gate_i_32`，内含 `snapshot.jsonl`（**原始真实文本不得 commit**）和 `manifest.json`。冻结文档限制不代表 Hugging Face 后端 Parquet 缓存/网络带宽的绝对上限。如果获取失败，请保留失败日志，不要改动原定 32 条/版本/数据源约束。
 
-**Gate I 新代码和无网络测试已提交，但尚未在 Codespaces 实际执行，暂不能声称真实数据已获取或验证。** 即便通过，也仍然没有修复原版 PR27 FineWeb-Edu IterableDataset 多 Worker 的真实 Shard/Offset/队列恢复。
+**Gate I 于 2026-10-16 已在 Codespaces 实测通过：171/171 tests PASS，32 条官方 FineWeb-Edu 文档冻结并完成离线 SHA-256 复验。详见 [Gate I 实测结果](docs/R2_GATE_I_RESULT.md)。** 即便通过，也仍然没有修复原版 PR27 FineWeb-Edu IterableDataset 多 Worker 的真实 Shard/Offset/队列恢复。
+
+## R2 Gate I 通过：171/171；下一关真实文本双进程 CPU 重放
+
+2026-10-16 Codespaces 实测：**171/171 tests PASS（15.046 秒）**。官方 `HuggingFaceFW/fineweb-edu` 的 `sample-10BT/train` 实际版本冻结为 `87f09149ef4734204d70ed1d046ddc9ca3f2b8f9`，前 32 条源文档全部捕获，真实 UTF-8 文本 **111361 bytes**，本地 JSONL **119588 bytes**，SHA256 `dbd98514fa4de0df2271fe9ddc214a295108492f20fa993fa33bbe6db5d366e1`；离线重新验证 **VERIFIED**。没有训练模型，也没有修改原始 PR27 Streaming Loader。[R2 Gate I 实测](docs/R2_GATE_I_RESULT.md)。
+
+已新增 [R2 Gate J](docs/R2_GATE_J_REALTEXT_REPLAY_PLAN.md) 脚本 [r2_fineweb_local_replay.py](scripts/r2_fineweb_local_replay.py) 及配套 [回归测试](tests/test_r2_fineweb_local_replay.py)。运行时先检查上述真实数据不可变 SHA/正文大小和现有 GPT2 Tokenizer Contract，再把原样 32 条文本转成本地固定的 PR27 形状 Token/ID 索引，使用 Gate H 的真实双进程 DataLoader，在**真实 FineWeb 文本**上运行 Tiny 4D Embedding/Head CPU AdamW 的 12 vs 5+7 步一致性实验。不会重新访问 HF 数据集或下载模型权重。
+
+    git pull --ff-only origin mini-mythos-research
+    python -m unittest discover -s research/mini_mythos/tests -p 'test_*.py' -v
+    python research/mini_mythos/scripts/r2_fineweb_local_replay.py --repo .
+
+Gate J 结果：`results/r2/pr27_gate_j_realtext_cpu.pt`、`pr27_gate_j_realtext_cpu.manifest.json`、`pr27_gate_j_realtext_replay.json`（均在 Git ignore 下）。**新实验还未在用户 Codespaces 执行，不能提前报告 PASS。**
+
+非常重要：Gate J 在真实文本上会执行**小型 CPU 训练管线 smoke**，但不计算正式模型质量分数，也没有构建独立 Test Split。Gate J 是先在全局内容上 Pack Tokens 再交给 Worker，PR27 原版是各 HF Worker 分片后分别 Token Pack；它们的数据顺序并不相同。**Gate J 不能证明 PR27 原版 IterableDataset/SIGKILL 恢复，也不能解锁 118M GPU 实训。**
