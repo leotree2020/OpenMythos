@@ -176,3 +176,19 @@ python research/mini_mythos/scripts/r1_text_pilot.py --repo . \
 ```
 
 WikiText-2 的默认 `main` 版本可变；真实可复现性需固定 Hugging Face 数据仓库 revision SHA 和保留数据 SHA-256。此 Pilot 使用固定的 **257-token UTF-8 byte tokenizer**，属于微型训练链路验证，不应将其 PPL 和正式 subword 模型 PPL 直接比较。运行结果保持本地忽略，不会自动上传 GitHub。**代码已提交，用户 Codespaces 还未运行本次 R1 Pilot。**
+
+## R1 Gate A 完成（2026-10-16）：第一次真实文本训练
+
+Codespaces 实测 **73/73 tests PASS**。数据：WikiText-2 train 2000 篇（995396 bytes；SHA-256 4790992d8539e04893b3e066ff65f07750517d68484fd4cb28665c5e71b0fa8b）、validation 300 篇（120904 bytes；SHA-256 3508547d6576f65c2ba10f0e3ca7ac23f1cd1a6593db45b65395d7aa60e32c1b）。微模型仅使用两个文本文件的**选定前缀**（默认最多 train 250000 bytes、validation 50000 bytes）。GQA Depth 2、60 steps、16 validation windows 共 1024 计分 byte tokens，heldout NLL **5.51615 → 3.37635**，PPL **248.675 → 29.264**，本地 Checkpoint 和报告已保存。生成 24 个空格，不具备可信流畅语言证据。详见 [R1 Gate A 结果](docs/R1_GATE_A_RESULT.md)。
+
+## R1 Gate B：检查是否只是学习高频字符
+
+[诊断脚本](scripts/r1_language_diagnostics.py)（只读取 Checkpoint，不继续训练）比较模型、train-fitted Smoothed Unigram/Bigram 和均匀基线，检查非空格 Loss、空格预测率，以及三条提示词的 greedy/sample 输出。
+
+    git pull --ff-only origin mini-mythos-research
+    python -m unittest discover -s research/mini_mythos/tests -p 'test_*.py' -v
+    python research/mini_mythos/scripts/r1_language_diagnostics.py --repo . \
+      --pilot-dir research/mini_mythos/results/r1/pilot_gqa \
+      --eval-windows 16 --generated-bytes 64
+
+结果：research/mini_mythos/results/r1/pilot_gqa/diagnostics.json。新的诊断脚本尚未在 Codespaces 实际执行，不应猜测 unigram/bigram 对照结果。
