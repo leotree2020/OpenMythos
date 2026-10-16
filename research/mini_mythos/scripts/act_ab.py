@@ -53,7 +53,8 @@ def evaluate_pair(original, candidate, depth, device, seeds):
             'heldout_batches': len(seeds)}
 
 
-def run_arm(module, attention, depth, *, device, seed, steps, lr, heldout_seeds=None):
+def run_arm(module, attention, depth, *, device, seed, steps, lr, heldout_seeds=None,
+            benchmark_repeats=0, benchmark_warmup=3):
     torch.manual_seed(seed)
     cfg = tiny_config(module, attention)
     original = module.OpenMythos(cfg).to(device)
@@ -127,6 +128,11 @@ def run_arm(module, attention, depth, *, device, seed, steps, lr, heldout_seeds=
     if heldout_seeds is None:
         heldout_seeds = (99001, 99002, 99003)
     heldout = evaluate_pair(original, candidate, depth, device, heldout_seeds)
+    benchmark = None
+    if benchmark_repeats:
+        from act_compute_benchmark import paired_benchmark
+        benchmark = paired_benchmark(original, candidate, depth, device=device,
+                                     warmup=benchmark_warmup, repeats=benchmark_repeats)
     dynamics = {
         'first_original_mass_deficit_step': first_trace_event(
             train_trace, 'original_act_mass_deficit_max', threshold=1e-6),
@@ -142,6 +148,7 @@ def run_arm(module, attention, depth, *, device, seed, steps, lr, heldout_seeds=
     return {'attention': attention, 'requested_depth': depth,
             'params': sum(p.numel() for p in original.parameters()),
             'initial': initial, 'train_trace': train_trace, 'heldout': heldout,
+            'benchmark': benchmark,
             'dynamics': dynamics,
             'trained_parameter_l2_difference': float(torch.linalg.vector_norm(
                 parameter_vector(original) - parameter_vector(candidate)))}
