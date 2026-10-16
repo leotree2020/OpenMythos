@@ -314,3 +314,18 @@ Codespaces 下一步（**只读预检，不分配模型权重，不消耗 GPU �
 `git rev-parse` 应等于上面的冻结 SHA；如果 PR HEAD 变动，需要改为抓取固定提交，不要悄悄改研究对象。两项新工具只读取源码并实例化 dim48 CPU 微型模型作复数相位测试，结果位于 Git 忽略目录 `results/r2/`。**这两项还未在 Codespaces 跑过，不能把新脚本提交当作实测 PASS。**
 
 R2 仍采取“**先模仿、再验证、再超越**”：不直接 merge PR，不修改上游 `open_mythos/main.py`，不启动 PR 的 `run_all.sh` 或 3B 脚本，也不声称获得了 Anthropic 私有模型细节。
+
+## R2 Gate B 验收：114/114 测试，PR27 BF16 RoPE 相位损坏已动态确认
+
+Codespaces（2026-10-16）实际输出：**114/114 tests PASS**。固定 PR27 Commit `2954bc275ffb8ad5c60f74f7299a9ad9e531d3e4` 上，全部 14 项源码风险规则 FOUND；这些 `FOUND` 只是源码证据。**另有真实动态错误证据**：PyTorch 2.14.1+cu130 CPU tiny 上，`freqs_cis` 和 `freqs_cis_mla` 的 Complex64 RoPE 频率表均在 `.to(dtype=torch.bfloat16)` 后变成没有虚部的实数 BF16，`phase_information_lost=True`；源文件未修改、GPU 训练未执行。[Gate B 结果与下一步](docs/R2_GATE_B_RESULT.md)。
+
+为降低修改范围，我们先提交了 [BF16 autocast 研究候选](scripts/r2_bf16_autocast_candidate.py) 与 [GQA/MLA CPU 回归测试](tests/test_r2_bf16_autocast_candidate.py)：**保持 FP32 主权重、Complex64 RoPE buffer，不直接 BF16 cast 整个模型；临时改全序列 causal mask 为 BF16，使用 BF16 autocast 进行前向/反向、检查梯度**。这是有限的研究 smoke，不包含 PR27 118M GPU 训练，不直接修改 `open_mythos/main.py`。
+
+Codespaces 下一步（仅 CPU）：
+
+    git pull --ff-only origin mini-mythos-research
+    python -m unittest discover -s research/mini_mythos/tests -p 'test_*.py' -v
+    python research/mini_mythos/scripts/r2_bf16_autocast_candidate.py \
+      --repo . --device cpu --attentions gqa mla
+
+产生的本地证据：`research/mini_mythos/results/r2/bf16_autocast_candidate.json`。**新脚本尚未在用户 Codespaces 执行，结果不预设 PASS。** 上游完整的 Tokenizer pin、可恢复 Streaming 数据游标、安全 Checkpoint、MoE expert load 和真实 GPU BF16 smoke 仍需后续 Gate 完成。
