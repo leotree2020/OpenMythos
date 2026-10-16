@@ -15,10 +15,17 @@ class StubConfig:
         self.act_threshold = .99
 
 
+class SqueezeLast(torch.nn.Module):
+    """Match upstream ACTHalting.forward: (B, T, 1) -> (B, T)."""
+
+    def forward(self, x):
+        return x.squeeze(-1)
+
+
 class StubRecurrent(torch.nn.Module):
     def __init__(self, dim):
         super().__init__()
-        self.act = torch.nn.Sequential(torch.nn.Linear(dim, 1), torch.nn.Sigmoid())
+        self.act = torch.nn.Sequential(torch.nn.Linear(dim, 1), torch.nn.Sigmoid(), SqueezeLast())
         with torch.no_grad():
             self.act[0].weight.zero_()
             self.act[0].bias.fill_(torch.logit(torch.tensor(.4)))
@@ -30,7 +37,7 @@ class StubRecurrent(torch.nn.Module):
         out = torch.zeros_like(h)
         for step in range(loops):
             h = torch.tanh(h + 0.1 * (step + 1))
-            p = self.act(h).squeeze(-1)
+            p = self.act(h)
             running = ~halted
             remainder = (1.0 - cumulative).clamp(min=0)
             w = torch.where(cumulative + p >= threshold, remainder, p) * running.float()
@@ -60,6 +67,8 @@ class CounterfactualIntegrationTests(unittest.TestCase):
     def test_four_cells_reconstruct_before_training_update(self):
         torch.set_num_threads(1)
         module = types.SimpleNamespace(OpenMythos=StubModel, MythosConfig=StubConfig)
+        self.assertEqual(StubModel(StubConfig(vocab_size=96, dim=48, max_loop_iters=8)).recurrent.act(
+            torch.zeros(2, 16, 48)).shape, (2, 16))
         r = run_experiment(module, 'gqa', 2, seed=22, steps=2, lr=0.003, device='cpu')
         self.assertEqual(len(r['train_trace']), 2)
         self.assertAlmostEqual(r['train_trace'][0]['parameter_l2_difference_pre_update'], 0.0)
