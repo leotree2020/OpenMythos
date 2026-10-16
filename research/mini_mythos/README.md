@@ -115,3 +115,13 @@ Actions workflow. This is a micro-model, synthetic-data mechanism experiment,
 结果存放于 Git 忽略的 research/mini_mythos/results/act003_gate_b/，包括每个种子的原始 JSON 和 summary.json。正的 ΔLoss = Forced Final Loss − Original Loss 表示原版更低；负值则相反。Bootstrap 区间以**训练种子**为重采样单位，不把重复使用的 Heldout 批次错误地当作独立训练样本。结果仍然是小型合成实验，不代表真实预训练模型的性能结论。
 
 为便于快速检查运行链路，可先执行 --seeds 22 --attentions gqa --depths 2 --steps 3 --heldout-batches 5 --out-dir research/mini_mythos/results/act003_gate_b_smoke。完整运行请使用上面的默认设计。
+
+## ACT-004 · Compute-aware depth sweep
+
+[ACT-004 实验设计与运行说明](docs/ACT_004.md) / [脚本](scripts/act_compute_sweep.py)。在 Codespaces 中运行：
+
+    python research/mini_mythos/scripts/act_compute_sweep.py --repo . \
+      --seeds 11 22 33 --attentions gqa mla --depths 1 2 4 \
+      --steps 30 --heldout-batches 30
+
+此阶段记录**整组 A/B 实验耗时**、循环调用次数和 Loss 差异，不把整组耗时解释成某个策略的独立加速比，也不声称 FLOPs 已经匹配。
