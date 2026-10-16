@@ -140,3 +140,17 @@ python research/mini_mythos/scripts/r0_probe.py --repo .
 ```
 
 重点检查实际训练评估链路、Tokenizer 版本固定、Checkpoint/数据恢复、MoE bias 更新，以及 KV Cache 的多 Token 分块一致性。探针只测试微型 CPU 模型，尚未在此回合运行，不能据此宣称 R0 完整验收或具备真实语言能力。
+
+## R0 Gate A · KV Cache 故障复现与隔离修复验证
+
+2026-10-16 Codespaces 运行：60/60 测试通过；GQA/MLA 微模型 Checkpoint 恢复均 PASS；多 Token（6 前缀 + 2 新 chunk）KV Cache 路径均报告 8 vs 2 尺寸不匹配。证据与源码分析见 [R0 Gate A 结果](docs/R0_GATE_A_RESULT.md)。
+
+已在研究层新增 [r0_cache_mask.py](scripts/r0_cache_mask.py) 临时因果掩码覆盖及 [r0_cache_compare.py](scripts/r0_cache_compare.py) 的原版/修复版数值对照。**不是上游核心修复或生产环境补丁，尚待 Codespaces 执行验证。**
+
+```bash
+git pull --ff-only origin mini-mythos-research
+python -m unittest discover -s research/mini_mythos/tests -p 'test_*.py' -v
+python research/mini_mythos/scripts/r0_cache_compare.py --repo . --attentions gqa mla --strict
+```
+
+实验结果写入 `research/mini_mythos/results/r0/cache_mask_comparison.json`。
