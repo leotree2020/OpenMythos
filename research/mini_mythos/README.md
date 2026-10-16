@@ -82,3 +82,19 @@ Actions workflow. This is a micro-model, synthetic-data mechanism experiment,
 ## ACT-001 / ACT-002 研究报告
 
 已完成 ACT 质量截断诊断、5 随机种子的合成任务 A/B、GQA/MLA 同权重反事实实验及 MLA 阴性/阳性对照。完整数据与结论边界参见 [ACT-001 / ACT-002 研究报告](docs/ACT_001_002_RESEARCH_REPORT.md)。未在真实预训练模型上证明性能收益。
+
+
+## ACT-003：原始 JSON 归档与复跑
+
+先阅读 [ACT-003 归档与受控复跑说明](docs/ACT_003_ARCHIVE_REPLAY.md)。
+
+在现有 Codespaces 的仓库根目录执行：
+
+    python research/mini_mythos/scripts/evidence_archive.py pack --repo .
+    python research/mini_mythos/scripts/evidence_archive.py verify \
+      research/mini_mythos/archives/act001_act002_evidence.zip
+    python research/mini_mythos/scripts/evidence_replay.py --repo . \
+      --archive research/mini_mythos/archives/act001_act002_evidence.zip \
+      --cases gqa22 mla22 mla44
+
+该流程只打包已列入白名单的历史合成数据 JSON；归档 ZIP 及验证结果保存在 Git 忽略的 archives/ 目录，**不会自动推送到 GitHub**。默认要求 10 个历史必需结果齐全，且需要当前环境的源码及依赖版本与归档快照一致。
