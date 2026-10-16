@@ -1,6 +1,6 @@
 # R2 Gate M — 固定 FineWeb-Edu sample-10BT 的真实 Parquet 文件名/大小清单及文件级 Shard 覆盖投影
 
-**制定日期：2026-10-16；状态：研究脚本和 8 项无网络回归测试已提交；Codespaces 仍未执行真实 Hub 文件树查询。** 前一关 [Gate L 已验证结果](R2_GATE_L_RESULT.md)：197/197 tests PASS；两个真实 OS Worker 均存活时，8 个本地 HF Arrow Shards 上原生分片 28/28，显式 `.shard` 再自动分片只有 14/28；这是受控反例而非正式远程数据遗漏比例。
+**制定日期：2026-10-16；状态：已在用户 Codespaces 实测 205/205 tests PASS、真正固定官方 `sample/10BT` Parquet 文件数 14、清单 SHA `0b65e53aeb3c7c1d69debfcea0e7105fd5e7a1141b7f3bd7bc9bbc3957a44209`，原生文件投影 14/14、上游式双重分片投影 7/14，离线复验 PASS。见 [Gate M Result](R2_GATE_M_RESULT.md)。本页保留原始设计。** 前一关 [Gate L 已验证结果](R2_GATE_L_RESULT.md)：197/197 tests PASS；两个真实 OS Worker 均存活时，8 个本地 HF Arrow Shards 上原生分片 28/28，显式 `.shard` 再自动分片只有 14/28；这是受控反例而非正式远程数据遗漏比例。
 
 ## Gate M 的最小可证范围
 
