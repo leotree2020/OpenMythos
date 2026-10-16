@@ -41,6 +41,8 @@ SOURCES = (
     "research/mini_mythos/scripts/act_ab.py",
     "research/mini_mythos/scripts/act_counterfactual.py",
     "research/mini_mythos/scripts/act_counterfactual_math.py",
+    "research/mini_mythos/scripts/evidence_archive.py",
+    "research/mini_mythos/scripts/evidence_replay.py",
 )
 MAX_ITEM_BYTES = 15 * 1024 * 1024
 MAX_TOTAL_BYTES = 75 * 1024 * 1024
