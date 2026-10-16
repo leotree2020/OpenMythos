@@ -129,14 +129,18 @@ avoid unsupported claims of proprietary model extraction.
 
 ## Immediate work queue
 
-1. Rerun R1 Gate B tests after the wrong-key correction, and interpret
-   history-order ablation results before inferring contextual language learning.
-2. Test R1 checkpoint resume against an uninterrupted run; retain dataset SHA
+1. R1 Gate B now verified 82/82 PASS: reverse-history last-position delta NLL
+   +3.58e-7 and mean prediction TV 2.17e-5. Model remains below train-fitted
+   unigram/bigram heldout baselines and greedy generates spaces only.
+2. Freeze the 60-step checkpoint and resume the same architecture, corpus,
+   byte tokenizer and seed to 200 steps in a copied experiment directory;
+   compare context sensitivity and heldout PPL against the unchanged bigram.
+3. Test checkpoint resume against an uninterrupted run; retain dataset SHA
    provenance and use immutable dataset revisions for strict reruns.
-3. Follow up on GPU/FSDP, per-step loader cursor and tokenizer revision gaps.
-4. Preserve ACT-001–004 as mechanism studies only; do not promote Forced Final
+4. Follow up on GPU/FSDP, per-step loader cursor and tokenizer revision gaps.
+5. Preserve ACT-001–004 as mechanism studies only; do not promote Forced Final
    Remainder as a performance improvement without new evidence.
-5. Scale to 100M+ only after the real-text pilot and a feasible GPU budget.
+6. Scale to 100M+ only after the real-text pilot and a feasible GPU budget.
 
 ## References
 
