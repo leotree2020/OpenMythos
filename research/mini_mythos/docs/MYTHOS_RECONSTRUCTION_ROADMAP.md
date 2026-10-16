@@ -53,12 +53,17 @@ affiliation or claim model/weight equivalence.
   changed next-byte predicted probability TV by just 2.17e-5. See
   [R1 Gate B](R1_GATE_B_RESULT.md).
 - R1 Gate C at 200 steps (2026-10-16): checkpoint resume succeeded;
-  heldout PPL improved to 25.167, now slightly better than full-corpus Unigram
-  (26.919), but still far behind Bigram (12.597). Order TV rose to 0.002449;
-  greedy output remains all spaces. Exposures differ: ngrams fit all 250K
-  training bytes; model processed 51200 sampled target positions. A strict
-  sample-exposure matched ngram control is committed but awaiting execution.
-  See [R1 Gate C](R1_GATE_C_RESULT.md).
+  heldout PPL improved to 25.167, history-order TV 0.002449; greedy output
+  remains all spaces. **86/86 tests PASS**. Exact SGD offset replays matched
+  checkpoint RNG states at steps 60 and 200, with respectively 15360/51200
+  observed supervised targets. Same-exposure unigram/bigram PPL at 60 were
+  27.513/19.158 versus model 29.264; at 200 were 26.951/14.812 versus model
+  25.167. The 200-step model beats the matched unigram but not the matched
+  bigram. See [R1 Gate C](R1_GATE_C_RESULT.md).
+- R1 Gate D (planned): a final bounded tiny-model continuation 200→600 steps,
+  with strict 60/200/600 comparability checks; stop long-running CPU Toy
+  research afterwards and plan proper tokenizer/capacity/GPU training.
+  See [Gate D plan](R1_GATE_D_PLAN.md).
 - Community training proposal:
   <https://github.com/kyegomez/OpenMythos/pull/27>. Proposed ~117.8M
   MLA+MoE FineWeb-Edu experiment and loop-depth PPL tests; external reports
@@ -135,15 +140,18 @@ avoid unsupported claims of proprietary model extraction.
 
 ## Immediate work queue
 
-1. Run strict 60-step and 200-step n-gram comparisons fitted only on exact
-   supervised byte pairs replayed from checkpoint RNG and reject provenance drift.
-2. Based on exposure-matched results, decide whether to continue to 600
-   identical-config steps or diagnose model gradients/capacity/architecture.
-3. Test checkpoint resume against an uninterrupted run; retain dataset SHA
-   provenance and use immutable dataset revisions for strict reruns.
-4. Plan feasible 100M+ real-tokenizer GPU training with validation PPL,
-   gradient/attention diagnostics, and measurable budget before scaling.
-5. Preserve ACT-001–004 as mechanism studies only, not primary optimization.
+1. Run all unit tests, preserve the 60/200-step checkpoint evidence, then
+   resume an independent copy from 200→600 steps using identical configuration,
+   seeds and training data; capture exact heldout and generation results.
+2. Run Gate D diagnostics and exact data-exposure ngrams at 600; verify the
+   entire checkpoint resume chain and plot an apples-to-apples learning curve.
+3. **Stop this tiny CPU training line at 600 steps**; if no basic language
+   modeling emerges, investigate gradients, attention learning, capacity and
+   tokenizer instead of indefinitely tweaking ACT probabilities.
+4. Plan a reproducible 100M+ GPU pretraining pilot with a pinned real tokenizer,
+   train/heldout provenance, checkpoint/optimizer recovery and baseline tests.
+5. Preserve ACT-001–004 as mechanism studies only; never claim reconstructed
+   proprietary architecture without independent public evidence.
 
 ## References
 
