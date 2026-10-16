@@ -44,7 +44,7 @@ class R1LanguageDiagnosticsTests(unittest.TestCase):
 
     def test_nll_perplexity_math(self):
         d = metrics_from_sums(math.log(16) * 2, 2)
-        self.assertAlmostEqual(d["perplexity"], 16., places=8)
+        self.assertAlmostEqual(d["ppl"], 16., places=8)
         self.assertIsNone(metrics_from_sums(0., 0)["nll"])
 
     def test_live_tiny_model_heldout_counts(self):
