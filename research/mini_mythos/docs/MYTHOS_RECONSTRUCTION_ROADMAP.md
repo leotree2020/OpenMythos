@@ -47,12 +47,18 @@ affiliation or claim model/weight equivalence.
   29.264 (1024 validation byte targets). The local checkpoint was saved;
   generated output was 24 spaces, so no demonstrated coherent language ability.
   See [R1 Gate A](R1_GATE_A_RESULT.md).
-- R1 Gate B run (2026-10-16): model heldout PPL 29.264, but worse than
-  train-fitted Unigram 26.919 and Bigram 12.597 over the same 1024 byte targets;
-  predicted space for 100% of positions (target 19.4%). 79/80 unit tests passed,
-  with one test-only wrong key fixed in branch, awaiting rerun. Added a
-  controlled history-order sensitivity check to characterize contextual use.
-  See [R1 Gate B](R1_GATE_B_RESULT.md).
+- R1 Gate B rechecked (2026-10-16): 82/82 unit tests PASS. The 60-step
+  model heldout PPL 29.264 was worse than train-fitted Unigram 26.919 and
+  Bigram 12.597; argmax always predicted spaces. Reversing history order
+  changed next-byte predicted probability TV by just 2.17e-5. See
+  [R1 Gate B](R1_GATE_B_RESULT.md).
+- R1 Gate C at 200 steps (2026-10-16): checkpoint resume succeeded;
+  heldout PPL improved to 25.167, now slightly better than full-corpus Unigram
+  (26.919), but still far behind Bigram (12.597). Order TV rose to 0.002449;
+  greedy output remains all spaces. Exposures differ: ngrams fit all 250K
+  training bytes; model processed 51200 sampled target positions. A strict
+  sample-exposure matched ngram control is committed but awaiting execution.
+  See [R1 Gate C](R1_GATE_C_RESULT.md).
 - Community training proposal:
   <https://github.com/kyegomez/OpenMythos/pull/27>. Proposed ~117.8M
   MLA+MoE FineWeb-Edu experiment and loop-depth PPL tests; external reports
@@ -129,18 +135,15 @@ avoid unsupported claims of proprietary model extraction.
 
 ## Immediate work queue
 
-1. R1 Gate B now verified 82/82 PASS: reverse-history last-position delta NLL
-   +3.58e-7 and mean prediction TV 2.17e-5. Model remains below train-fitted
-   unigram/bigram heldout baselines and greedy generates spaces only.
-2. Freeze the 60-step checkpoint and resume the same architecture, corpus,
-   byte tokenizer and seed to 200 steps in a copied experiment directory;
-   compare context sensitivity and heldout PPL against the unchanged bigram.
+1. Run strict 60-step and 200-step n-gram comparisons fitted only on exact
+   supervised byte pairs replayed from checkpoint RNG and reject provenance drift.
+2. Based on exposure-matched results, decide whether to continue to 600
+   identical-config steps or diagnose model gradients/capacity/architecture.
 3. Test checkpoint resume against an uninterrupted run; retain dataset SHA
    provenance and use immutable dataset revisions for strict reruns.
-4. Follow up on GPU/FSDP, per-step loader cursor and tokenizer revision gaps.
-5. Preserve ACT-001–004 as mechanism studies only; do not promote Forced Final
-   Remainder as a performance improvement without new evidence.
-6. Scale to 100M+ only after the real-text pilot and a feasible GPU budget.
+4. Plan feasible 100M+ real-tokenizer GPU training with validation PPL,
+   gradient/attention diagnostics, and measurable budget before scaling.
+5. Preserve ACT-001–004 as mechanism studies only, not primary optimization.
 
 ## References
 
