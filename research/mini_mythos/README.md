@@ -100,3 +100,18 @@ Actions workflow. This is a micro-model, synthetic-data mechanism experiment,
 该流程只打包已列入白名单的历史合成数据 JSON；归档 ZIP 及验证结果保存在 Git 忽略的 archives/ 目录，**不会自动推送到 GitHub**。默认要求 10 个历史必需结果齐全，且需要当前环境的源码及依赖版本与归档快照一致。
 
 **Gate A 验证结果（2026-10-16）：** Codespaces 中 42/42 单元测试通过；14 份 JSON 证据归档校验 complete；GQA22 / MLA22 / MLA44 受控复跑均 PASS。详见 [ACT-003 Gate A 验证记录](docs/ACT_003_GATE_A_RESULT.md)。归档 ZIP 仍保存在本地 Codespaces，未上传本仓库。
+
+
+## ACT-003 Gate B：扩大 Heldout 样本和多种子对照
+
+[act_gate_b.py](scripts/act_gate_b.py) 复用 ACT-001 的原版/Forced Final 训练逻辑；唯一的实验参数扩展是 Heldout 批次数量。默认五个训练随机种子（11/22/33/44/55）、GQA/MLA、深度 1/2、30 个训练步骤，以及每组 **100 个固定合成 Heldout 批次**。
+
+    git pull --ff-only origin mini-mythos-research
+    python -m unittest discover -s research/mini_mythos/tests -p 'test_*.py' -v
+    python research/mini_mythos/scripts/act_gate_b.py --repo . --device cpu \
+      --seeds 11 22 33 44 55 --attentions gqa mla --depths 1 2 \
+      --steps 30 --heldout-batches 100
+
+结果存放于 Git 忽略的 research/mini_mythos/results/act003_gate_b/，包括每个种子的原始 JSON 和 summary.json。正的 ΔLoss = Forced Final Loss − Original Loss 表示原版更低；负值则相反。Bootstrap 区间以**训练种子**为重采样单位，不把重复使用的 Heldout 批次错误地当作独立训练样本。结果仍然是小型合成实验，不代表真实预训练模型的性能结论。
+
+为便于快速检查运行链路，可先执行 --seeds 22 --attentions gqa --depths 2 --steps 3 --heldout-batches 5 --out-dir research/mini_mythos/results/act003_gate_b_smoke。完整运行请使用上面的默认设计。
