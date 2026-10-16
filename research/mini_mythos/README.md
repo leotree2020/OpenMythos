@@ -206,3 +206,21 @@ Codespaces 实测 **73/73 tests PASS**。数据：WikiText-2 train 2000 篇（99
       --eval-windows 16 --generated-bytes 64
 
 当前不应宣称已有有效自然语言模型或 Mythos 复刻的能力；下一步需要具备统计基线优势、训练步数/Tokenizer 的合理扩展与可复现实测。
+
+## R1 Gate B 二次验证和 Gate C 控制性续训
+
+2026-10-16 真实 Codespaces 实测：**82/82 tests PASS**；60-step GQA 重新载入后的 heldout PPL 29.26364。Unigram PPL 26.91942、Bigram PPL 12.59717，模型仍落后于这两个 train-fitted 统计基线；argmax 预测空格比例 100%，历史顺序反转的目标 NLL 变化约 3.58e-7，平均概率 TV 约 2.17e-5。详见 [Gate B 报告](docs/R1_GATE_B_RESULT.md)。
+
+Gate C（**方案，尚未执行**）：保留 60-step 原始 checkpoint，复制该目录后仅增加训练步数到 200，对比 heldout、Bigram、空格塌缩与上下文敏感性；若观察到实质改善再考虑 600 steps，避免无目标地做局部 ACT 修改。
+
+    git pull --ff-only origin mini-mythos-research
+    cp -a research/mini_mythos/results/r1/pilot_gqa research/mini_mythos/results/r1/pilot_gqa_step200
+    python research/mini_mythos/scripts/r1_text_pilot.py --repo . \
+      --train-text research/mini_mythos/results/r1/data/train.txt \
+      --validation-text research/mini_mythos/results/r1/data/validation.txt \
+      --attention gqa --depth 2 --seq-len 64 --batch-size 4 \
+      --steps 200 --eval-windows 16 --resume \
+      --out-dir research/mini_mythos/results/r1/pilot_gqa_step200
+    python research/mini_mythos/scripts/r1_language_diagnostics.py \
+      --repo . --pilot-dir research/mini_mythos/results/r1/pilot_gqa_step200 \
+      --eval-windows 16 --generated-bytes 64
