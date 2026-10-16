@@ -279,3 +279,18 @@ Codespaces 真实执行：**86/86 PASS**。两个 Checkpoint 的训练窗口随�
       --out research/mini_mythos/results/r1/gate_f_result.json
 
 Gate F 工具会拒绝覆盖 test 结果或修改冻结的步数、Tokenizer 和评估窗口。这是本代 tiny CPU 模型的最终独立测试；随后回到上游 OpenMythos 的真实 Tokenizer 与 GPU 训练链路审计。
+
+## R1 Gate F 独立测试已通过 — R2 上游优先正式开启（2026-10-16）
+
+官方 WikiText-2 Test Split（独立于此前反复使用的 validation）已经一经冻结就执行：**106/106 tests PASS**。测试源仓库版本 `b08601e04326c79dfdd32d625aee71d232d685c3`、1200 条合格记录、256 x 64 = 16384 评分目标。600-step GQA dim48 的 **Test PPL=10.852968**，同训练样本暴露量 Add-1 Bigram **12.790071**，全前缀 Add-1 Bigram **12.404059**；模型在 253/256 个窗口胜出，paired NLL = +0.164231 nats/byte。结果文件仍位于 Codespaces 忽略目录。详见 [Gate F 实测](docs/R1_GATE_F_RESULT.md)。
+
+**R1 最小字节级训练/测试门槛完成，CPU Tiny 训练关闭。** 不应据此声称获得 Claude Mythos 的真实架构、权重或对话/推理能力。下一条主线是 [R2 OpenMythos 上游/Tokenizer/GPU 训练准备审计](docs/R2_UPSTREAM_READINESS.md)。优先分析社区 [PR #27](https://github.com/kyegomez/OpenMythos/pull/27) 约 117.8M 参数 MLA+MoE 训练先例，关联 [PR #26](https://github.com/kyegomez/OpenMythos/pull/26) BF16 源码兼容性与 Tokenizer 一致性问题，不直接从头造新架构，也不贸然运行内置 3B 脚本。
+
+Codespaces 下一步（**只读预检，不分配模型权重，不消耗 GPU 预训练预算**）：
+
+    git pull --ff-only origin mini-mythos-research
+    python -m unittest discover -s research/mini_mythos/tests -p 'test_*.py' -v
+    python research/mini_mythos/scripts/r2_preflight.py --repo . \
+      --out research/mini_mythos/results/r2/preflight.json
+
+报告包括 PyTorch/CUDA/GPU/VRAM/BF16、源码与依赖 SHA/版本、训练状态的数量级估算以及 P0/P1 审计清单。脚本已提交，**目前还没有 Codespaces 运行后的 R2 设备清单**。
