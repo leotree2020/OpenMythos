@@ -162,15 +162,20 @@ affiliation or claim model/weight equivalence.
   identical traces/model/optimizer/cursor/RNG, max loss delta 0.0. Data
   globally PACKED first; NOT upstream worker-sharded IterableDataset.
   See [Gate J result](R2_GATE_J_RESULT.md).
-- R2 Gate K (committed, unverified): on that SAME pinned local real text
-  and tokenizer, build a local HF Dataset.to_iterable_dataset(num_shards=2)
-  and call HF .shard inside each REAL OS DataLoader worker BEFORE independent
-  PR27-style Token packing. Check worker PID, speculative prefetch,
-  12 vs 5+7 bitwise AdamW replay via checkpointed optimizer committed batch
-  IDs and chunk SHA; contrast with Gate J global pack-first sequence.
-  This is local 2-shard Arrow data, NOT the original remote HF Parquet
-  IterableDataset; production source offsets still unaddressed.
-  See [Gate K plan](R2_GATE_K_HF_WORKER_SHARD_PLAN.md).
+- R2 Gate K (FIRST CODE RUN FAILED 2026-10-16; native HF worker
+  auto-shard correction COMMITTED, pending Codespaces retest): all 187
+  tests except the real two-worker integration passed; HF reported
+  'Too many dataloader workers: 2 (max is dataset.num_shards=1)'
+  and CLI failed. Cause: manually .shard(2,worker_id) within workers on
+  a 2-shard HF IterableDataset, then HF's own _iter_pytorch() split it
+  AGAIN and stopped one OS worker. Corrected research path keeps 2 local
+  Arrow shards and uses HF native automatic worker sharding exactly ONCE
+  before per-worker GPT2 EOS/packing. New audit and negative controls
+  detect overlap, missing documents, and double-shard source loss.
+  Need full tests + real worker PID/12 vs 5+7 bitwise rerun. Original PR27
+  explicit .shard may have related multi-file loss: NOT yet quantified.
+  See [failure evidence](R2_GATE_K_FAILURE_001.md) and
+  [Gate K revised plan](R2_GATE_K_HF_WORKER_SHARD_PLAN.md).
 - Community training proposal:
   <https://github.com/kyegomez/OpenMythos/pull/27>. Proposed ~117.8M
   MLA+MoE FineWeb-Edu experiment and loop-depth PPL tests; external reports
@@ -247,23 +252,24 @@ avoid unsupported claims of proprietary model extraction.
 
 ## Immediate work queue
 
-1. Run Gate K complete tests + `r2_hf_worker_shard_pack.py` in Linux
-   Codespaces: two real Worker PIDs; each worker calls HF local
-   IterableDataset.shard THEN packs GPT2 EOS windows; assert full 12 vs
-   5+7 resume exactly matches, and that first 12 worker-shard-pack chunks
-   differ from Gate J global-pack-first batch sequence.
-2. Preserve Gate J's VERIFIED 179/179 tests and its real-text checkpoint;
-   never overwrite existing artifacts or commit frozen JSONL source text.
-3. Escalate from local two Arrow shards to original pinned remote HF
-   Parquet shard/file/index/worker assignment. Test genuine IterableDataset
-   restart and abrupt-worker/process failure; simply storing global batch
-   ID and replaying from document zero is NOT production-ready.
-4. Independently develop a true disjoint heldout/test source and lock the
-   source/Tokenizer + safe checkpoint/optimizer/RNG contracts into a
-   separate PR27 trainer/evaluator copy. Address BF16 complex RoPE and
-   ACT/MoE issues before real GPU use.
-5. Current Codespaces has no visible CUDA GPU: NO 118M+ training authorized.
-   GPU scale-up requires provisioned hardware, cost and real smoke checks.
+1. Pull corrected Gate K source/tests and run full `unittest` followed by
+   `r2_hf_worker_shard_pack.py`: verify BOTH OS worker PIDs and HF NATIVE
+   source coverage once (no overlap/omission), prefetch, 12 vs 5+7
+   exact CPU optimizer/trace/RNG replay, distinct global-pack token stream.
+   FAILED before fix: 187 tests / 1 error; do not mark PASS until real logs.
+2. Preserve Gate J's VERIFIED 179/179 and earlier pinned 32-doc FineWeb
+   snapshot/GPT2 contract. Do not overwrite prior local artifacts or
+   commit JSONL real text. No live remote HF stream or GPU required.
+3. Investigate PR27's explicit `.shard()` followed by HF automatic worker
+   sharding under the exact installed datasets version: with many remote
+   shards it may SILENTLY drop source files. Verify real shard/document
+   coverage, not just that both worker PIDs remain alive.
+4. For production streaming checkpoint design: pinned remote Parquet
+   file offsets, worker-to-source assignment, committed batch ACK,
+   reproducible ordering and SIGKILL/restart tests; local small Arrow
+   shard replay is insufficient to close P0.
+5. GPU unavailable in Codespaces. No 118M model training until original
+   pipeline readiness, mixed BF16/MoE checks and budgeted GPU environment.
 
 ## References
 
