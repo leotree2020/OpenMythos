@@ -447,4 +447,16 @@ Gate J 结果：`results/r2/pr27_gate_j_realtext_cpu.pt`、`pr27_gate_j_realtext
     python -m unittest discover -s research/mini_mythos/tests -p 'test_*.py' -v
     python research/mini_mythos/scripts/r2_hf_worker_shard_pack.py --repo .
 
-验收重点：`Source docs covered once: True`、三个运行阶段两名真实 Worker PID、`Global-pack vs shard-then-pack differing chunks` 大于 0、Trace/Model/AdamW/Cursor/RNG True 和 Loss 差 0.0。**修复尚未在 Codespaces 实测，绝不预先报告成功。** 实验仍然是**本地 HF IterableDataset 2 个 Arrow Shards**，不是原始 remote FineWeb IterableDataset/O(1) shard seek，也没有 GPU。
+验收重点：`Source docs covered once: True`、三个运行阶段两名真实 Worker PID、`Global-pack vs shard-then-pack differing chunks` 大于 0、Trace/Model/AdamW/Cursor/RNG True 和 Loss 差 0.0。**修复后 Gate K 已实际验证通过：190/190 tests PASS，真实双 Worker source document 28/28 恰好覆盖一次，模型/AdamW/Cursor/RNG 恢复逐位一致。详见 [Gate K Result](docs/R2_GATE_K_RESULT.md)。** 实验仍然是**本地 HF IterableDataset 2 个 Arrow Shards**，不是原始 remote FineWeb IterableDataset/O(1) shard seek，也没有 GPU。
+
+## R2 Gate K 最终通过：190/190；Gate L 验证 PR27 多 Shard 静默数据漏读风险
+
+2026-10-16 Gate K 修复重测：**190/190 tests PASS（39.748 秒）**，本地 HF IterableDataset 2 个 Arrow Shards 由两个真正 OS Worker 原生自动分片一次，开发来源 28/28 文档恰好被消费（14/14、无重叠或缺失）。连续/中断/恢复分别观测两个不同 PID；优化器提交位置 5，已预取尚未训练窗口数量 4，恢复从 5 开始，Tiny CPU 模型参数/AdamW/Cursor/Python+Torch RNG/训练 Trace 均逐位一致、Loss 差 0.0。Gate J 先全局 Packing 与 Gate K Worker 局部分片 Packing 的首 12 Chunk 中 11 条不同。[Gate K 通过结果](docs/R2_GATE_K_RESULT.md)。首次 187 项有 1 ERROR 的双重分片故障仍归档在 [Failure 001](docs/R2_GATE_K_FAILURE_001.md)。**原版 PR27 远程 HF Streaming、实际 Parquet Source Offset/SIGKILL/GPU 仍未验证。**
+
+**Gate L 已提交，但尚未在用户 Codespaces 运行。** [实验计划](docs/R2_GATE_L_DOUBLE_SHARD_COVERAGE_PLAN.md)、[代码](scripts/r2_pr27_double_shard_coverage.py)、[回归测试](tests/test_r2_pr27_double_shard_coverage.py)。本关没有模型训练，完全离线，只将 Gate I 真实文本来源验证后的 28 条开发文档转成 SHA Hash（**不把原始文本传给 Worker**），在本地创建 **8 个 HF Arrow Shards**，启动两组各两个真实 OS Worker：对照 A 只使用 HF 自动 Worker Sharding；负控 B 模拟上游 PR27 显式 Worker `.shard()` 然后 HF 又自动分片。重点不是 PID 是否存在，而是即便 B 组两个 Worker 都正常运行，是否仍然**漏读真实来源的 ID Hash**。
+
+    git pull --ff-only origin mini-mythos-research
+    python -m unittest discover -s research/mini_mythos/tests -p 'test_*.py' -v
+    python research/mini_mythos/scripts/r2_pr27_double_shard_coverage.py --repo .
+
+结果保存在 Git ignored `research/mini_mythos/results/r2/pr27_gate_l_double_shard_coverage.json`，报告不含真实正文。**不能先假定遗漏百分比**；就算 Gate L 在本地 8 Shards 证明 B 组静默漏读，也不能直接推定正式 2410 文件数据流的实际漏读比例。真实多 Shard 证据、原始 PR27 Loader 的修复与断点恢复依然属于后续 P0 工作。
