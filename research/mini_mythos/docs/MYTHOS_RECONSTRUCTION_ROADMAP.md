@@ -70,11 +70,19 @@ affiliation or claim model/weight equivalence.
   This is evidence of limited byte-level predictive learning, not fluent
   language or the proprietary Mythos architecture. See
   [Gate D result](R1_GATE_D_RESULT.md).
-- R1 Gate E (planned, scripts committed): verify the step-600 checkpoint on
-  128 non-overlapping deterministic validation windows (8192 target bytes),
-  compare exact paired model vs same-exposure Add-1 Bigram NLL per window,
-  and report exploratory window-bootstrap intervals without overwriting
-  prior 16-window reports. See [Gate E plan](R1_GATE_E_PLAN.md).
+- R1 Gate E (verified 2026-10-16): 97/97 tests PASS; fixed 600-step
+  checkpoint on 128 validation windows (8192 byte targets): model PPL 11.648557,
+  same-exposure Add-1 Bigram 13.417210, full-corpus Bigram 12.977333.
+  Model lower NLL in 121/128 windows; paired bigram-minus-model +0.141356
+  nats/byte with exploratory window bootstrap [0.125281, 0.157897].
+  RNG replay and test window counts verified. Validation was reused for model
+  decisions; not an untouched test. See [Gate E result](R1_GATE_E_RESULT.md).
+- R1 Gate F (protocol frozen, awaiting Codespaces run): evaluate unchanged
+  step-600 checkpoint once on an official unseen WikiText-2 *test* split,
+  revision pinned before fetch; fixed first 1200 eligible text records,
+  first 250000 bytes, 256 x 64 nonoverlapping evaluation windows, Add-1
+  same-exposure n-grams. Output cannot overwrite earlier evidence. See
+  [Gate F plan](R1_GATE_F_PLAN.md).
 - Community training proposal:
   <https://github.com/kyegomez/OpenMythos/pull/27>. Proposed ~117.8M
   MLA+MoE FineWeb-Edu experiment and loop-depth PPL tests; external reports
@@ -151,19 +159,20 @@ avoid unsupported claims of proprietary model extraction.
 
 ## Immediate work queue
 
-1. Run Gate E read-only 128-window heldout validation at the frozen 600-step
-   checkpoint and examine paired model minus same-exposure Bigram NLL without
-   changing the data, architecture or training step count.
-2. Finalize this dim48 CPU pilot: archive model/optimizer checkpoint hashes
-   and evaluation evidence; stop Toy training at 600 steps as planned.
-3. Return to upstream-first implementation audit: tokenizer revision, training
-   recipe, actual MoE routing and recurrent computation, FlashAttention /
-   cached-chunk behavior, and checkpoints of a feasible 100M+ GPU run.
-4. Design a budgeted 100M+ language training pilot using a real pinned
-   tokenizer and authorized public corpus, plus a parameter/compute-aware
-   non-recurrent Transformer baseline. Reserve untouched test data for final
-   results and avoid overfitting to WikiText validation.
-5. Preserve ACT-001–004 as mechanism studies, not core optimization.
+1. Run all offline tests, resolve and pin the official WikiText-2 test-split
+   revision, then execute **once** the frozen 600-step model on 256 x 64
+   official test byte-target windows, compared with exact observed SGD
+   byte-pair Add-1 unigram/bigram baselines; do not tune or retrain on test.
+2. Preserve all Gate A-F evidence, original model checkpoints and
+   data/revision SHA-256; stop 48-dim CPU Toy experiments at step 600.
+3. Audit upstream tokenizer/model dimensions, production pretraining script,
+   MoE load balance and GPU/FSDP/FlashAttention behavior before scaling.
+4. Plan a licensed-data, pinned-real-tokenizer 100M+ GPU pilot with
+   independent holdout, parameter/compute-aware non-recurrent Transformer
+   baseline, true generation benchmarks and resume reproducibility.
+5. Keep the project's main goal in view: an independently trained and
+   behaviorally assessed public-evidence reconstruction, not an inferred
+   copy of Anthropic proprietary Mythos weights/architecture.
 
 ## References
 
