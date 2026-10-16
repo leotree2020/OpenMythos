@@ -67,3 +67,21 @@ python research/mini_mythos/scripts/r1_exposure_baselines.py \
 ### 后续决定
 
 分析 60/200 步的 matched n-gram 结果后再考虑续训到 600 步，或尽快构建更加合适的正式 Tokenizer 与 100M+ GPU Pilot。在目前证据下，不能宣称已经复刻了 Anthropic Mythos。
+
+## Gate C 同暴露量对照：已在 Codespaces 验证（2026-10-16）
+
+- 86/86 项单元测试 PASS（4.571 秒）。
+- 60 步：offset RNG 重放与 checkpoint **完全一致**，15,360 个监督目标位置；matched Unigram PPL **27.512917**，matched Bigram PPL **19.158092**，模型 PPL **29.26364156**。
+- 200 步：offset RNG 重放与 checkpoint **完全一致**，51,200 个监督目标位置；matched Unigram PPL **26.951090**，matched Bigram PPL **14.811675**，模型 PPL **25.16696192**。
+- 全训练前缀参考统计基线保持 Unigram **26.919420**、Bigram **12.597172**。两组 Checkpoint 均记录了本地 `exposure_baselines.json`。
+
+| 预测方法 | Step 60 PPL | Step 200 PPL |
+|---|---:|---:|
+| 模型 | 29.263642 | **25.166962** |
+| **匹配 SGD 样本暴露**的 Unigram | 27.512917 | 26.951090 |
+| **匹配 SGD 样本暴露**的 Bigram | **19.158092** | **14.811675** |
+| 全前缀 Bigram（非同暴露量，仅参考） | 12.597172 | 12.597172 |
+
+结论：模型在 200 步后超过同暴露量 Unigram，但明显落后于同暴露量 Bigram（PPL 25.167 vs 14.812）。该比较**严格匹配 SGD 所用训练字节对及其重复次数**，依然不匹配参数量、训练目标或优化计算量，不是架构优劣的结论。
+
+由于 60→200 步的 Heldout PPL 和历史顺序敏感度均改善，而 Greedy 仍 100% 预测空格，下一项只执行一次有上限的 **Gate D 600-step 同配置续训**；若未摆脱空格塌缩或仍明显弱于 Bigram，即停止无限延长微模型训练，回到注意力梯度、容量和正式 Tokenizer/GPU 配置审计。Gate D 结果尚未运行。
