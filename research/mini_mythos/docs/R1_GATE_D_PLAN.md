@@ -1,6 +1,6 @@
 # R1 Gate D — 600 步受控训练与闭环验收
 
-**日期：2026-10-16；状态：准备完成，600-step 尚未执行。** Gate C 86/86 tests PASS；60/200 checkpoint 的 RNG 恢复重放均匹配、15,360 / 51,200 个监督目标。当前模型 200-step heldout PPL=25.166962，matched unigram=26.951090，matched bigram=14.811675；argmax 全空格。详见 [Gate C 结果](R1_GATE_C_RESULT.md)。
+**日期：2026-10-16；状态：600-step 已经在 Codespaces 完成；实测结果请以 [R1 Gate D Result](R1_GATE_D_RESULT.md) 为准。** Gate C 86/86 tests PASS；60/200 checkpoint 的 RNG 恢复重放均匹配、15,360 / 51,200 个监督目标。当前模型 200-step heldout PPL=25.166962，matched unigram=26.951090，matched bigram=14.811675；argmax 全空格。详见 [Gate C 结果](R1_GATE_C_RESULT.md)。
 
 ## 为什么只追加一次到 600 steps
 
