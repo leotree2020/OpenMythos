@@ -56,3 +56,25 @@ git push -u origin mini-mythos-research
 `act_diagnostics.py` 的**候选**“强制补齐最后 ACT 余量”只分析概率质量，不修改上游源码，也不声明改善准确率。在真实预训练权重和 held-out 测试完成前，不应该直接合入生产或主分支。
 
 参考上游：<https://github.com/kyegomez/OpenMythos> / 社区实验：<https://github.com/kyegomez/OpenMythos/pull/27>
+
+
+## ACT-002 · Same-weight counterfactual (research extension)
+
+See [ACT_002.md](docs/ACT_002.md). The experimental script evaluates the same
+two parameter snapshots under both the original and final-remainder ACT rules,
+then records the direct ACT policy contrast, parameter-history contrast, and
+their interaction before each optimizer step. No upstream model source edits.
+
+```bash
+python research/mini_mythos/scripts/act_counterfactual.py \
+  --repo . --device cpu --attentions gqa --depths 2 \
+  --seed 22 --steps 30 \
+  --out research/mini_mythos/results/act002_gqa_seed22.json
+
+python research/mini_mythos/scripts/act_counterfactual_summary.py \
+  research/mini_mythos/results/act002_gqa_seed22.json --first 15
+```
+
+The short-run GQA and MLA correctness checks are also included in the GitHub
+Actions workflow. This is a micro-model, synthetic-data mechanism experiment,
+**not** evidence of better language-model accuracy.
