@@ -59,3 +59,41 @@ python research/mini_mythos/scripts/r1_language_diagnostics.py \
 **预期**：测试错误解除、诊断仍复现既有 NLL/PPL，新增 `Reversed-context last-token delta NLL` 和 `Reversed-context mean probability TV`。结果仍需用户实际执行确认。诊断程序不会更新或覆盖已有 Checkpoint。
 
 **下一研究优先级**：根据语境敏感性结果，决定是否进入更充足文本训练与更可信 Tokenizer 的架构复刻 Pilot；不再把 ACT 概率补全作为主线。
+## Gate B 第二次验证 — 已通过（2026-10-16）
+
+用户在 Codespaces 重新运行单元测试及只读诊断：
+
+- **82/82 tests PASS**（3.920 秒），旧的测试字段名错误已消除。
+- 已训练 60-step GQA Checkpoint 的 NLL 3.376345852506347、PPL 29.26364183593556，已重载复现。
+- Unigram NLL 3.292847949025204、PPL 26.91941972542853；Bigram NLL 2.533472320287023、PPL 12.597171697232753。
+- Model nonspace NLL 3.72312668800354；目标空格比例 0.1943359375，模型 argmax 预测空格比例 1.0。
+- 三条提示词 greedy 继续生成 64 个空格，同采样种子的 top-k 输出是同一个乱序字节序列。
+- **历史顺序消融**（16 个 heldout 窗口各一个最后目标位置，固定末尾输入字节及目标、历史字节直方图，反转前面的 63 个历史字节）：
+  - reversed_minus_original_target_nll = 3.5762786865234375e-07
+  - mean_probability_total_variation = 2.172332642658148e-05
+
+**解释**：当前模型对这组历史字节的**顺序**改变几乎不敏感。这不能证明完全无视历史内容，也不能证明社区递归架构在合理规模下无效。当前训练仅 60 steps、约 15,360 个训练目标 Token 位置，重复抽样可能存在。R1 Gate B 工程正确性 PASS；语言模型能力门槛 FAIL（未超过相同 heldout windows 的 unigram/bigram 基线）。
+
+## Gate C — 对现有架构进行控制性续训（方案，未执行）
+
+为了区分训练步数严重不足与架构/训练实现问题，应先冻结原 60-step evidence，再以**完全相同的模型配置、随机种子、数据输入和 Tokenizer**续训到 200 步。目标是观察模型是否开始超过 Bigram 基线、减少空格塌缩，以及历史顺序敏感性是否上升。只能根据实际运行结果决定是否继续到 600 步。
+
+以下命令保留原目录不变，复制 checkpoint 和结果后在单独目录续训；不修改核心 OpenMythos 代码：
+
+```bash
+git pull --ff-only origin mini-mythos-research
+python -m unittest discover -s research/mini_mythos/tests -p 'test_*.py' -v
+cp -a research/mini_mythos/results/r1/pilot_gqa research/mini_mythos/results/r1/pilot_gqa_step200
+python research/mini_mythos/scripts/r1_text_pilot.py \
+  --repo . \
+  --train-text research/mini_mythos/results/r1/data/train.txt \
+  --validation-text research/mini_mythos/results/r1/data/validation.txt \
+  --attention gqa --depth 2 --seq-len 64 --batch-size 4 \
+  --steps 200 --eval-windows 16 --resume \
+  --out-dir research/mini_mythos/results/r1/pilot_gqa_step200
+python research/mini_mythos/scripts/r1_language_diagnostics.py \
+  --repo . --pilot-dir research/mini_mythos/results/r1/pilot_gqa_step200 \
+  --eval-windows 16 --generated-bytes 64
+```
+
+步数扩展不等于独立数据量扩展，验证目标仍仅 1,024 个字节。续训可能过拟合；每轮必须保留原数据 SHA、基线结果和新 Checkpoint。如果 200 步仍失败，不能单凭这个否定架构，也不能无限增加轮数；应检查注意力梯度、参数规模、数据分布及基线 Transformer。
