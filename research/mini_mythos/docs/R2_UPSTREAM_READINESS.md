@@ -1,6 +1,6 @@
 # R2 — OpenMythos 上游优先的规模化准备审计
 
-**创建：2026-10-16。阶段状态：R1 Gate F 一次性独立 test 已通过；本 R2 文档和脚本已提交，但当前 Codespaces 硬件预检尚未运行。**
+**创建：2026-10-16。阶段状态：R1 Gate F 通过，Codespaces R2 Gate A 已实测（110/110 tests PASS；CPU only，CUDA devices=0，磁盘空余 13.06 GiB）。上游 PR #27 固定 Commit 已在 GitHub 读取，独立审计及 RoPE CPU 探针代码已提交、尚待用户 Codespaces 实际执行。**
 
 ## 1. 从何开始，而不是重造基础模型
 
@@ -73,3 +73,21 @@ python research/mini_mythos/scripts/r2_preflight.py --repo . \
 先运行 `r2_preflight.py`，发回其中 GPU 是否可用、GPU 型号与 VRAM、PyTorch 版本、静态差距列表即可。**不要在本阶段运行 `training/3b_fine_web_edu.py`；它不是已经验证过的 100M GPU Pilot。**
 
 补充：本项目的 R1 Gate F 是真正验证小模型字节级预测的可信终点，但**还不具备与 Claude Mythos 黑箱行为比较的语言能力**。后续验收必须包括文本生成、任务能力与高质量多个独立测试集，而不仅是字节级 PPL。
+
+## 最新执行状态（R2 Gate A 以后）
+
+[R2 Gate A 已实测环境](R2_GATE_A_ENVIRONMENT.md)：PyTorch `2.14.1+cu130` **不代表**有 CUDA GPU；`torch.cuda.is_available()` 为 False，GPU 个数 0，尚不能执行大模型 GPU 训练。当前 GPU `GO=false`。
+
+已查阅 [PR #27 固定 SHA 2954bc275ffb8ad5c60f74f7299a9ad9e531d3e4](R2_PR27_SOURCE_REVIEW.md) 的全部 6 个 `experiments/` 源码文件，并发现模型 `.to(dtype=torch.bfloat16)` 可能破坏 upstream `complex64` RoPE buffers 的复数相位、eval Tokenizer 可独立覆盖、Streaming 数据修订/游标没有固定、运行脚本不能恢复训练等问题。**纯 PyTorch CPU 的复数 cast 已复现，相应真实 Tiny OpenMythos buffer 探针尚未由用户运行。**
+
+Codespaces 直接运行（只拉取 PR 的 Git 对象，不合并、不启动训练）：
+
+    git pull --ff-only origin mini-mythos-research
+    git fetch https://github.com/kyegomez/OpenMythos.git \
+      refs/pull/27/head:refs/remotes/pr27-audit
+    git rev-parse refs/remotes/pr27-audit
+    python -m unittest discover -s research/mini_mythos/tests -p 'test_*.py' -v
+    python research/mini_mythos/scripts/r2_pr27_static_audit.py --repo .
+    python research/mini_mythos/scripts/r2_rope_dtype_probe.py --repo .
+
+应优先检查 `git rev-parse` 的值是否等于上面的冻结 SHA；这一步仅下载 PR 源码，最多使用 CPU 微型模型执行 dtype 探针。切勿直接执行 PR 的 `run_all.sh`。
