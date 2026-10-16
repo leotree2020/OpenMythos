@@ -53,7 +53,7 @@ def evaluate_pair(original, candidate, depth, device, seeds):
             'heldout_batches': len(seeds)}
 
 
-def run_arm(module, attention, depth, *, device, seed, steps, lr):
+def run_arm(module, attention, depth, *, device, seed, steps, lr, heldout_seeds=None):
     torch.manual_seed(seed)
     cfg = tiny_config(module, attention)
     original = module.OpenMythos(cfg).to(device)
@@ -124,7 +124,9 @@ def run_arm(module, attention, depth, *, device, seed, steps, lr):
         optimizer_a.step()
         optimizer_b.step()
 
-    heldout = evaluate_pair(original, candidate, depth, device, (99001, 99002, 99003))
+    if heldout_seeds is None:
+        heldout_seeds = (99001, 99002, 99003)
+    heldout = evaluate_pair(original, candidate, depth, device, heldout_seeds)
     dynamics = {
         'first_original_mass_deficit_step': first_trace_event(
             train_trace, 'original_act_mass_deficit_max', threshold=1e-6),
@@ -154,10 +156,14 @@ def main():
     p.add_argument('--seed', type=int, default=42)
     p.add_argument('--steps', type=int, default=3)
     p.add_argument('--lr', type=float, default=0.003)
+    p.add_argument('--heldout-batches', type=int, default=3)
+    p.add_argument('--heldout-seed-start', type=int, default=99001)
     p.add_argument('--out', default='research/mini_mythos/results/act_ab.json')
     a = p.parse_args()
     if a.steps < 1 or not a.depths or min(a.depths) < 1 or max(a.depths) > 8:
         p.error('steps >= 1 and depths must be in 1..8 for the tiny configuration')
+    if a.heldout_batches < 1 or a.heldout_batches > 10000 or a.heldout_seed_start < 0:
+        p.error('--heldout-batches must be 1..10000 and seed start must be nonnegative')
     if not math.isfinite(a.lr) or a.lr <= 0:
         p.error('--lr must be finite and positive')
     torch.set_num_threads(min(4, torch.get_num_threads()))
@@ -177,6 +183,8 @@ def main():
     report = {'experiment': 'act_final_remainder_ab', 'upstream_commit': commit_id(root),
               'torch': torch.__version__, 'device': a.device, 'seed': a.seed,
               'steps_per_arm': a.steps, 'lr': a.lr,
+              'heldout_seed_start': a.heldout_seed_start,
+              'heldout_batches': a.heldout_batches,
               'method': 'On the final allowed ACT call, a temporary hook replaces p with 1; no upstream source or weights are edited.',
               'limitations': 'Random untrained tiny models, deterministic toy tokens; not a reasoning benchmark. Tiny heldout batches; no statistical significance.',
               'trace_notes': 'ACT mass and logits/gradient differences are measured before each optimizer step on the same toy batch. First-event thresholds are numerical diagnostics, not statistical tests.',
@@ -184,7 +192,8 @@ def main():
     for attention in a.attentions:
         for depth in a.depths:
             start = time.perf_counter()
-            row = run_arm(module, attention, depth, device=a.device, seed=a.seed, steps=a.steps, lr=a.lr)
+            row = run_arm(module, attention, depth, device=a.device, seed=a.seed, steps=a.steps, lr=a.lr,
+                          heldout_seeds=range(a.heldout_seed_start, a.heldout_seed_start + a.heldout_batches))
             row['seconds'] = round(time.perf_counter() - start, 3)
             report['results'].append(row)
             print(f"{attention} depth={depth} original_mass={row['initial']['original_mass_mean']:.4f} "
