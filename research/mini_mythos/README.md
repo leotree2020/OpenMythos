@@ -192,3 +192,17 @@ Codespaces 实测 **73/73 tests PASS**。数据：WikiText-2 train 2000 篇（99
       --eval-windows 16 --generated-bytes 64
 
 结果：research/mini_mythos/results/r1/pilot_gqa/diagnostics.json。新的诊断脚本尚未在 Codespaces 实际执行，不应猜测 unigram/bigram 对照结果。
+
+## R1 Gate B 结果（2026-10-16）
+
+[R1 Gate B 报告](docs/R1_GATE_B_RESULT.md)：用户 Codespaces 结果复现了训练后的模型 PPL 29.264，但它比 train-fitted Unigram PPL 26.919 和 Bigram PPL 12.597 更差；1024 个 heldout 位置的 argmax 全部预测为空格（实际空格 19.4%），greedy 生成也全部是空格。80 项测试中 79 PASS、1 ERROR；Error 是测试字段名 `perplexity` 与真实 API `ppl` 不符，修复已提交，等待重新验证。
+
+已新增同一 Checkpoint 的无训练历史顺序消融 `context_order_probe`，比较保持最后字节不变、仅反转前置上下文顺序时的 logits / NLL 差异，判断模型是否仅在字节频率层面拟合。不会更新现有 `latest.pt`。
+
+    git pull --ff-only origin mini-mythos-research
+    python -m unittest discover -s research/mini_mythos/tests -p 'test_*.py' -v
+    python research/mini_mythos/scripts/r1_language_diagnostics.py --repo . \
+      --pilot-dir research/mini_mythos/results/r1/pilot_gqa \
+      --eval-windows 16 --generated-bytes 64
+
+当前不应宣称已有有效自然语言模型或 Mythos 复刻的能力；下一步需要具备统计基线优势、训练步数/Tokenizer 的合理扩展与可复现实测。
