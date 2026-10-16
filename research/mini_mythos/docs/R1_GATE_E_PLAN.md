@@ -1,6 +1,6 @@
 # R1 Gate E — 扩展验证窗口与配对统计测试
 
-**2026-10-16；新实验代码已提交，但尚待 Codespaces 执行。** R1 Gate D 已在真实 WikiText-2 validation 的 16 个各 64 字节窗口上得到 600-step PPL 11.219663，优于 matched Add-1 Bigram 13.021447；依然 Greedy 重复 `the`，不能声称是有实际语言能力的 Mythos。
+**2026-10-16；实验已在 Codespaces 完成，97/97 tests PASS；结果详见 [Gate E Result](R1_GATE_E_RESULT.md)。** R1 Gate D 已在真实 WikiText-2 validation 的 16 个各 64 字节窗口上得到 600-step PPL 11.219663，优于 matched Add-1 Bigram 13.021447；依然 Greedy 重复 `the`，不能声称是有实际语言能力的 Mythos。
 
 ## 目标
 
