@@ -67,10 +67,16 @@ jobs:
       - name: Tiny upstream training pipeline check (GQA only)
         if: matrix.attention == 'gqa'
         run: python research/mini_mythos/scripts/pilot_train.py --repo . --steps 2 --train-depths 1 4 --out research/mini_mythos/results/pilot.json
+      - name: Archive and verify partial CI evidence (synthetic outputs)
+        run: |
+          python research/mini_mythos/scripts/evidence_archive.py pack --repo . --allow-partial --out research/mini_mythos/archives/ci_${{ matrix.attention }}.zip
+          python research/mini_mythos/scripts/evidence_archive.py verify research/mini_mythos/archives/ci_${{ matrix.attention }}.zip
       - name: Upload reports even on failure
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: mini-mythos-${{ matrix.attention }}-report
-          path: research/mini_mythos/results/
+          path: |
+            research/mini_mythos/results/
+            research/mini_mythos/archives/
           if-no-files-found: ignore
