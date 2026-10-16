@@ -25,7 +25,7 @@ class R1LanguageDiagnosticsTests(unittest.TestCase):
         self.assertTrue(torch.allclose(b.sum(dim=1), torch.ones(257, dtype=torch.double)))
         self.assertGreater(float(u[65]), float(u[7]))
         self.assertGreater(float(b[65, 66]), float(b[65, 7]))
-        self.assertGreater(float(b[65, 66]), float(b[66, 65]))
+        self.assertGreater(float(b[66, 65]), float(b[66, 7]))
 
     def test_invalid_train_and_smoothing(self):
         with self.assertRaises(ValueError):
