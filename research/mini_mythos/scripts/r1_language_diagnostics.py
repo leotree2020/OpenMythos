@@ -173,6 +173,62 @@ def generate_diagnostic(model, prompt, *, n_loops, max_new_tokens, seq_len,
     }
 
 
+
+@torch.no_grad()
+def context_order_probe(model, validation, *, seq_len, n_loops, n_windows, device):
+    """Controlled same-length context-order ablation at the last token of each window.
+
+    Reverse *only* the previous seq_len-1 bytes; preserve the current last
+    input byte and target, both lengths, and the exact multiset of history
+    bytes. A nonzero change measures history-order sensitivity, not semantic
+    understanding. Positive ΔNLL means original history predicts better.
+    """
+    if n_windows < 1:
+        raise ValueError("n_windows must be positive")
+    model.eval()
+    actual_nll = reversed_nll = abs_max_total = tv_total = 0.0
+    switches = 0
+    offsets = validation_offsets(len(validation), seq_len, n_windows)
+    for start in offsets:
+        x = validation[start:start + seq_len].long()
+        target = int(validation[start + seq_len])
+        reversed_x = x.clone()
+        reversed_x[:-1] = x[:-1].flip(0)
+
+        logits_actual = model(
+            x.unsqueeze(0).to(device), n_loops=n_loops
+        )[0, -1].float().cpu()
+        logits_reversed = model(
+            reversed_x.unsqueeze(0).to(device), n_loops=n_loops
+        )[0, -1].float().cpu()
+        a_lp = torch.log_softmax(logits_actual, dim=-1)
+        r_lp = torch.log_softmax(logits_reversed, dim=-1)
+        actual_nll -= float(a_lp[target])
+        reversed_nll -= float(r_lp[target])
+        abs_max_total += float((logits_actual - logits_reversed).abs().max())
+        tv_total += float(
+            (a_lp.exp() - r_lp.exp()).abs().sum() * 0.5
+        )
+        switches += int(int(logits_actual.argmax()) != int(logits_reversed.argmax()))
+
+    count = len(offsets)
+    result = {
+        "windows": count,
+        "original_context_last_token_nll": actual_nll / count,
+        "reversed_history_last_token_nll": reversed_nll / count,
+        "reversed_minus_original_target_nll": (reversed_nll - actual_nll) / count,
+        "mean_logits_max_abs_change": abs_max_total / count,
+        "mean_probability_total_variation": tv_total / count,
+        "argmax_changed_fraction": switches / count,
+        "control": "Same window length, same final input byte and target; "
+                   "earlier input bytes reversed (same histogram, changed order).",
+        "interpretation": "Nonzero sensitivity does not prove beneficial context "
+                          "understanding. Positive NLL delta favors original context "
+                          "on selected last-token targets only.",
+    }
+    return result
+
+
 def validate_checkpoint(checkpoint, report, config, train_meta, valid_meta):
     if checkpoint.get("format_version") != 1:
         raise ValueError("Unsupported checkpoint format")
@@ -240,6 +296,10 @@ def main():
                 f"Checkpoint heldout NLL {stats['model']['nll']:.6f} "
                 f"does not reproduce recorded report NLL {prior:.6f}"
             )
+    order_sensitivity = context_order_probe(
+        model, validation, seq_len=seq_len, n_loops=depth,
+        n_windows=a.eval_windows, device=a.device
+    )
     examples = []
     for prompt in ("The ", "Once upon a time, ", "In the beginning, "):
         examples.append(generate_diagnostic(
@@ -256,6 +316,7 @@ def main():
         "torch_version": torch.__version__, "tokenizer": TOKENIZER_ID,
         "train_bytes": len(train), "validation_bytes": len(validation),
         "model_heldout_and_baselines": stats,
+        "context_order_probe": order_sensitivity,
         "generated_examples": examples,
         "limitations": "Byte-level PPL not comparable with other tokenizers. "
                        "Small validation sample and 60-step tiny training only. "
@@ -271,6 +332,10 @@ def main():
     print("Model nonspace NLL:", stats["model_nonspace"]["nll"])
     print("Target space fraction:", stats["token_statistics"]["target_space_fraction"])
     print("Model predicts space fraction:", stats["token_statistics"]["predicted_space_fraction"])
+    print("Reversed-context last-token delta NLL:",
+          order_sensitivity["reversed_minus_original_target_nll"])
+    print("Reversed-context mean probability TV:",
+          order_sensitivity["mean_probability_total_variation"])
     for item in examples:
         print(item["mode"], repr(item["prompt"]),
               repr(item["generated_text"]),
