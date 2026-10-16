@@ -259,4 +259,23 @@ Codespaces 真实执行：**86/86 PASS**。两个 Checkpoint 的训练窗口随�
       --eval-windows 128 \
       --out research/mini_mythos/results/r1/gate_e_validation_128.json
 
-新脚本只读权重、核对数据和 RNG 后写入新的 JSON，不覆盖 16-window 既有报告。**Gate E 新代码尚待 Codespaces 测试；不得预先宣称 128-window 结果。**
+新脚本只读权重、核对数据和 RNG 后写入新的 JSON，不覆盖 16-window 既有报告。**Gate E 已于 2026-10-16 在 Codespaces 完成，结果见 [Gate E 实测](docs/R1_GATE_E_RESULT.md)。**
+
+## R1 Gate E 已验证：97/97；下一步冻结独立测试（Gate F）
+
+**97/97 tests PASS**。Step-600 GQA 模型在 128 个确定性 WikiText-2 validation 窗口（8192 个字节目标）上取得 **NLL 2.455182 / PPL 11.648557**，优于同训练样本暴露量的 Add-1 Bigram **PPL 13.417210** 和全训练前缀 Bigram **PPL 12.977333**。模型赢下 121/128 个窗口，paired NLL 优势 +0.141356 nats/byte；探索性 window-bootstrap 95% 区间 [0.125281, 0.157897]。这是**已反复使用的 validation**，不能替代一次未参与决策的 test。记录见 [Gate E Report](docs/R1_GATE_E_RESULT.md)。
+
+[Gate F 预注册协议](docs/R1_GATE_F_PLAN.md)：不再训练、不改 Checkpoint；下载官方 WikiText-2 **test** split（下载前解析不可变修订 SHA），固定前 1200 个合格 text 项，只取最多 250000 bytes 并评估 256 个各 64 字节的目标窗口，与相同训练曝光量 Add-1 统计基线对照。以下操作**尚未在 Codespaces 运行**：
+
+    git pull --ff-only origin mini-mythos-research
+    python -m unittest discover -s research/mini_mythos/tests -p 'test_*.py' -v
+    python research/mini_mythos/scripts/r1_gate_f_prepare_test.py \
+      --repo . --revision main --test-docs 1200 \
+      --out-dir research/mini_mythos/results/r1/gate_f_test
+    python research/mini_mythos/scripts/r1_gate_f_test.py \
+      --repo . --pilot-dir research/mini_mythos/results/r1/pilot_gqa_step600 \
+      --test-dir research/mini_mythos/results/r1/gate_f_test \
+      --test-windows 256 --max-test-bytes 250000 \
+      --out research/mini_mythos/results/r1/gate_f_result.json
+
+Gate F 工具会拒绝覆盖 test 结果或修改冻结的步数、Tokenizer 和评估窗口。这是本代 tiny CPU 模型的最终独立测试；随后回到上游 OpenMythos 的真实 Tokenizer 与 GPU 训练链路审计。
