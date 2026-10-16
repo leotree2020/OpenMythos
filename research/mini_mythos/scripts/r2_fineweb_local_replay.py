@@ -123,16 +123,22 @@ def assemble_provenance_report(
         raise ValueError("Gate J source partition differs from actual trainer")
     if set(d["id"] for d in train) & set(d["id"] for d in excluded):
         raise AssertionError("Development partition leaked overlapping document IDs")
-    # Gate H was designed for synthetic records and always marks its own
-    # default source as NOT FineWeb. Gate J explicitly passes real frozen
-    # FineWeb text, so relabel these inherited diagnostic fields to avoid
-    # reporting a false negative about actual local source provenance.
+    # Gate H always labels its default source as synthetic. Gate J's CLI
+    # requires the external, frozen REAL Gate I source, while offline tests
+    # intentionally inject synthetic fixtures with different pinned SHA.
+    # Distinguish those two cases in machine-readable output as well.
+    verified_real_source = bool(
+        source.get("snapshot_sha256") == SOURCE_SNAPSHOT_SHA256 and
+        source.get("revision") == SOURCE_REVISION and
+        source.get("source_document_count") == SELECTED_DOCS
+    )
     loader_report = dict(loader_report)
     loader_report["data"] = (
         "REAL pinned FineWeb-Edu text from Gate I LOCAL 32-doc snapshot; "
         "already indexed before DataLoader creation"
+        if verified_real_source else "SYNTHETIC OFFLINE UNIT-TEST FIXTURE"
     )
-    loader_report["fineweb_data_consumed"] = True
+    loader_report["fineweb_data_consumed"] = verified_real_source
     loader_report["live_hf_streaming_consumed"] = False
     return {
         "protocol": PROTOCOL,
@@ -143,7 +149,7 @@ def assemble_provenance_report(
         "official_heldout_or_test_set_created": False,
         "model_quality_evaluation_performed": False,
         "tiny_cpu_adamw_training_performed": True,
-        "data_source": "REAL FineWeb-Edu TEXT from Gate I; locally indexed after freezing",
+        "data_source": loader_report["data"],
         "original_upstream_hf_iterableloader_modified": False,
         "new_online_hf_requests": False,
         "gpu_training": "NOT_PERFORMED",
