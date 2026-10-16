@@ -222,9 +222,11 @@ class R2GateJTests(unittest.TestCase):
             self.assertFalse(report["official_heldout_or_test_set_created"])
             self.assertFalse(report["model_quality_evaluation_performed"])
             self.assertTrue(report["tiny_cpu_adamw_training_performed"])
-            self.assertTrue(report["real_multiprocess_replay"]["fineweb_data_consumed"])
+            # This test intentionally supplies synthetic data. Never label it
+            # as real FineWeb in a machine-readable result or test assertion.
+            self.assertFalse(report["real_multiprocess_replay"]["fineweb_data_consumed"])
             self.assertFalse(report["real_multiprocess_replay"]["live_hf_streaming_consumed"])
-            self.assertIn("REAL pinned FineWeb-Edu", report["real_multiprocess_replay"]["data"])
+            self.assertIn("SYNTHETIC", report["real_multiprocess_replay"]["data"])
             self.assertTrue(report["real_multiprocess_replay"]["trace_bitwise_equal"])
             self.assertEqual(report["real_multiprocess_replay"]["max_abs_loss_difference"], 0)
             self.assertEqual(report["real_multiprocess_replay"]["first_resumed_task_id"], 5)
