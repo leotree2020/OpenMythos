@@ -129,14 +129,20 @@ affiliation or claim model/weight equivalence.
   uninterrupted 12-step run: trace identical, loss delta 0.0, params,
   optimizer, cursor and RNG bitwise equal. No FineWeb-Edu or GPU used.
   See [Gate F result](R2_GATE_F_RESULT.md).
-- R2 Gate G (CPU two-LOGICAL-worker candidate committed; awaiting tests):
-  simulate bounded out-of-order prefetch and an interruption with already
-  completed but UNCOMMITTED tasks. Persist the optimizer COMMITTED task ID
-  with model/RNG and replay speculatively dispatched tasks from a fixed
-  immutable source, comparing 12 steps uninterrupted vs 5+7 resumed
-  bitwise. Unlike a real PR27 DataLoader, this starts NO child processes;
-  actual HF multiworker cursor/Python queue durability remains blocked.
-  See [Gate G plan](R2_GATE_G_PREFETCH_PLAN.md).
+- R2 Gate G (VERIFIED 2026-10-16): 156/156 tests PASS. Two LOGICAL
+  workers, ZERO OS processes: committed frontier 5 vs dispatched frontier 9,
+  completed-but-UNCOMMITTED task IDs 5/6/7/8. Restarting from 9 would skip
+  unused training samples; restarting from 5 yielded identical traces,
+  max loss delta 0.0, exact model/AdamW/cursor/Python-Torch RNG states.
+  No FineWeb/GPU; not original PR27 DataLoader. See [Gate G result](R2_GATE_G_RESULT.md).
+- R2 Gate H (REAL two OS worker CPU experiment committed; unverified): use
+  PyTorch DataLoader(num_workers=2,prefetch_factor=2,in_order=True), fixed
+  indexed local PR27-shaped tokens, shared fetch-count evidence, and
+  full/resume bitwise AdamW comparison under a controlled interruption.
+  Save only optimizer COMMITTED task index, not worker speculative queues.
+  Requires proof of distinct worker PIDs in all three runs. Still NOT a
+  restoration of actual HF FineWeb-Edu IterableDataset/shard cursor or a
+  SIGKILL fault; see [Gate H plan](R2_GATE_H_REAL_DATALOADER_PLAN.md).
 - Community training proposal:
   <https://github.com/kyegomez/OpenMythos/pull/27>. Proposed ~117.8M
   MLA+MoE FineWeb-Edu experiment and loop-depth PPL tests; external reports
@@ -213,21 +219,22 @@ avoid unsupported claims of proprietary model extraction.
 
 ## Immediate work queue
 
-1. Run Gate G CPU two-logical-worker out-of-order speculative prefetch
-   tests. At checkpoint step 5, log dispatched frontier and completed-but-
-   uncommitted task IDs; resume from optimizer COMMITTED index 5, not from
-   last-dispatched frontier. Compare full/resumed trace and AdamW bitwise.
-2. Archive Gate F's verified 148/148 synthetic single-worker results and
-   retain original frozen GPT2 tokenizer contract and checkpoints.
-3. Do NOT call the simulation true HF DataLoader(num_workers=2) recovery.
-   Next test must isolate real multiprocess worker queues/prefetch and
-   immutable FineWeb-Edu shards / document IDs, with crash fault injection.
-4. Require exact data commit ACK + optimizer checkpoint transaction, true
-   heldout split, source/tokenizer revision, and safe model/optimizer/RNG
-   state before a production PR27 train/eval integration.
-5. CUDA device count is still zero in current Codespaces. Defer 118M GPU
-   allocation pending reviewed source, actual GPU, cost, BF16/MoE profiling
-   and fair-compute Transformer baseline.
+1. Run Gate H new REAL two-process PyTorch DataLoader CPU tests and
+   `r2_pr27_real_dataloader_resume.py` on Linux Codespaces. Assert
+   different worker PIDs, observe true fetched-but-uncommitted IDs,
+   restart from committed ID 5 with fresh workers, and verify model/
+   AdamW/RNG/cursor and trace bitwise; no HF or GPU.
+2. Archive Gate G's verified 156/156 logical prefetch results, preserving
+   previous R1 test and all R2 frozen tokenizer/checkpoint artifacts.
+3. The next unsolved P0 is TRUE HF FineWeb-Edu streamed IterableDataset:
+   pin repository+file revision, shard/doc IDs, split provenance and
+   worker/prefetch lifecycle. Gate H's indexed map-style data is not
+   proof that arbitrary streaming loaders can replay exact source.
+4. Refactor a separate PR27 trainer research copy only after authentic
+   tokenizer/checkpoint/stream boundary integration and tests; do not
+   change upstream source or run 118M weights in present Codespaces.
+5. Actual CUDA device count is still zero. GPU runs need budgeted compute,
+   BF16/FlashAttention/MoE smoke and a fair-compute Transformer baseline.
 
 ## References
 
