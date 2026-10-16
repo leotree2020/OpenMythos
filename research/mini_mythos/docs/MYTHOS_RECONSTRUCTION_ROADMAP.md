@@ -143,13 +143,23 @@ affiliation or claim model/weight equivalence.
   trajectories, model, AdamW, cursor, Python/Torch RNG bitwise identical,
   maximum loss delta 0.0. LOCAL INDEXED SYNTHETIC source, no HF training
   and no SIGKILL. See [Gate H result](R2_GATE_H_RESULT.md).
-- R2 Gate I (new code committed, awaiting real HF stream): pin official
-  HuggingFaceFW/fineweb-edu sample-10BT/train repo immutable SHA *before*
-  streaming. Capture at most 32 eligible real source documents within strict
-  document and text byte budgets; store source-index/doc SHA and canonical
-  JSONL locally, then offline verify every doc and frozen policy. No model
-  training or upstream production loader integration. See
-  [Gate I plan](R2_GATE_I_FINEWEB_SNAPSHOT_PLAN.md).
+- R2 Gate I (VERIFIED 2026-10-16): 171/171 tests PASS (15.046s).
+  Official HuggingFaceFW/fineweb-edu sample-10BT/train repo immutable SHA
+  87f09149ef4734204d70ed1d046ddc9ca3f2b8f9 resolved before streaming.
+  First 32/32 source records captured with 111361 real UTF-8 text bytes,
+  119588-byte canonical JSONL; SHA256
+  dbd98514fa4de0df2271fe9ddc214a295108492f20fa993fa33bbe6db5d366e1.
+  Offline VERIFY matched and license metadata odc-by captured. No model
+  training, no PR27 loader changes or true streaming cursor.
+  See [Gate I result](R2_GATE_I_RESULT.md).
+- R2 Gate J (committed, unverified): take that EXACT pinned 32-document
+  LOCAL real-text snapshot and Gate D GPT2 tokenizer, fully verify source
+  SHA/revision/bytes and token mapping, then reproduce Gate H's REAL 2-OS-
+  worker DataLoader CPU toy-AdamW 12 vs 5+7 step bitwise replay. Only an
+  internal fixed split for recovery testing, NOT independent heldout/eval.
+  It indexes all source text BEFORE launching workers; thus it is NOT
+  equivalent to original PR27 worker-sharded HF IterableDataset streaming.
+  See [Gate J plan](R2_GATE_J_REALTEXT_REPLAY_PLAN.md).
 - Community training proposal:
   <https://github.com/kyegomez/OpenMythos/pull/27>. Proposed ~117.8M
   MLA+MoE FineWeb-Edu experiment and loop-depth PPL tests; external reports
@@ -226,21 +236,23 @@ avoid unsupported claims of proprietary model extraction.
 
 ## Immediate work queue
 
-1. Run R2 Gate I *offline* unit tests, then obtain the first strictly
-   bounded real 32-document snapshot from upstream FineWeb-Edu sample-10BT
-   after resolving the dataset revision to an immutable HF commit SHA.
-   Verify local JSONL + Manifest SHA offline. DO NOT commit real text.
-2. Archive Gate H verified 162/162 dual-OS-worker DataLoader results.
-   Retain frozen GPT2 contract, source SHA, and earlier checkpoint evidence.
-3. Build a bounded PR27 packing/replay test on this real pinned source
-   snapshot. Actual HF IterableDataset shards have NOT yet been restored.
-4. Investigate authentic immutable Parquet shard/document offsets,
-   multiprocessing prefetch lifecycle, and fail-closed checkpoint metadata
-   for true HF Streaming resume. Next real fault gate must include actual
-   process crash or forced termination, not just controlled new iterator.
-5. GPU unavailable in Codespaces; no 118M+ weights allocated or trained.
-   Training scale-up remains dependent on real GPU, source fixes, MoE/BF16
-   smoke, data licensing, and compute-matched Transformer baseline.
+1. Run R2 Gate J full tests, then the CPU offline real-text replay tool
+   using Gate I exact frozen source and Gate D pinned GPT2 tokenizer.
+   Report true two-worker PIDs, committed-frontier replay, bitwise
+   model/AdamW/RNG/trace identity. No new HF download or GPU.
+2. Preserve Gate I's confirmed 171/171 tests, pinned dataset SHA and
+   32-doc JSONL SHA. DO NOT re-freeze or upload the actual source texts.
+3. Clarify the remaining PRODUCTION data gap: PR27's original
+   HF IterableDataset sharding by worker happens BEFORE per-worker token
+   packing; the Gate J globally indexed source is a different batch order.
+   Require real immutable shard/document-offset replay tests on the true
+   streaming implementation and abrupt-kill recovery, not only snapshots.
+4. Implement a reviewed PR27 research-only trainer/eval integration with
+   fixed tokenizer, GPU-safe BF16 RoPE path, guarded checkpoint, dataset
+   commit cursor and actual independent heldout/test provenance.
+5. Current Codespaces still has no CUDA GPU. A 118M+ pretraining run
+   requires separate GPU provisioning, cost controls, MoE/ACT/FlashAttention
+   smoke and compute-matched ordinary Transformer baseline.
 
 ## References
 
