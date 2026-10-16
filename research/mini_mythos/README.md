@@ -392,4 +392,19 @@ GitHub Codespaces 实测：**148/148 单元测试 PASS（4.110 秒）**。本地
     python -m unittest discover -s research/mini_mythos/tests -p 'test_*.py' -v
     python research/mini_mythos/scripts/r2_pr27_real_dataloader_resume.py --repo .
 
-Gate H 的单测包含**真正启动两个 DataLoader 子进程**的测试，耗时可能比先前纯 Python 测试更长。本地新证据：`research/mini_mythos/results/r2/pr27_gate_h_real_loader_cpu.pt`、`.manifest.json`、`pr27_gate_h_real_loader_comparison.json`。**Gate H 代码已提交，但还未在 Codespaces 实测。** 研究对象仍然是 Map-style 已索引的本地合成任务，绝不是原版 FineWeb-Edu IterableDataset 或断电/进程杀死的生产恢复证明。
+Gate H 的单测包含**真正启动两个 DataLoader 子进程**的测试，耗时可能比先前纯 Python 测试更长。本地新证据：`research/mini_mythos/results/r2/pr27_gate_h_real_loader_cpu.pt`、`.manifest.json`、`pr27_gate_h_real_loader_comparison.json`。**Gate H 已在 Codespaces 真实双进程环境实测通过：162/162 tests PASS，任务 5–8 已预取未提交，恢复从任务 5 开始，Trace/AdamW/模型/RNG/Cursor 全部逐位相同；详见 [Gate H Result](docs/R2_GATE_H_RESULT.md)。** 研究对象仍然是 Map-style 已索引的本地合成任务，绝不是原版 FineWeb-Edu IterableDataset 或断电/进程杀死的生产恢复证明。
+
+## R2 Gate H 完成：162/162 PASS；Gate I 真实 FineWeb-Edu 数据来源固定
+
+2026-10-16 Codespaces：**162/162 tests PASS（14.719 秒）**。确实启动了 2 个 OS 子进程的 DataLoader：连续路径 PIDs `[82311,82312]`，中断路径 `[82348,82349]`，恢复路径 `[82398,82399]`。第 5 次 optimizer 提交后，Worker 已取 Task 5–8 但未用于更新；从已提交 index **5** 重建 DataLoader，连续 12 与 5+7 恢复的 Trace、模型/AdamW、Cursor、Python/Torch RNG 完全逐位一致，Loss 最大差 **0.0**。数据为可索引的本地合成文档，**未使用 FineWeb-Edu 或 GPU**。详见 [Gate H 实测](docs/R2_GATE_H_RESULT.md)。
+
+下一项 [Gate I：真实 FineWeb-Edu Source Snapshot](docs/R2_GATE_I_FINEWEB_SNAPSHOT_PLAN.md) 只冻结**数据来源**，不启动训练：先解析官方 `HuggingFaceFW/fineweb-edu` / `sample-10BT` / `train` 的不可变 HF Commit SHA，再流式选最早的 32 条合格文本（至多扫描 128 行、单文档最多 256KiB、选中的总文本最多 4MiB），生成本地 JSONL 以及来源/正文/SHA256/授权元数据 Manifest。`verify` 完全离线复验，不重读线上最新版本。
+
+    git pull --ff-only origin mini-mythos-research
+    python -m unittest discover -s research/mini_mythos/tests -p 'test_*.py' -v
+    python research/mini_mythos/scripts/r2_fineweb_source_snapshot.py freeze --repo . --revision main
+    python research/mini_mythos/scripts/r2_fineweb_source_snapshot.py verify --repo .
+
+文件仅存 Git 忽略目录 `research/mini_mythos/results/r2/fineweb_gate_i_32`，内含 `snapshot.jsonl`（**原始真实文本不得 commit**）和 `manifest.json`。冻结文档限制不代表 Hugging Face 后端 Parquet 缓存/网络带宽的绝对上限。如果获取失败，请保留失败日志，不要改动原定 32 条/版本/数据源约束。
+
+**Gate I 新代码和无网络测试已提交，但尚未在 Codespaces 实际执行，暂不能声称真实数据已获取或验证。** 即便通过，也仍然没有修复原版 PR27 FineWeb-Edu IterableDataset 多 Worker 的真实 Shard/Offset/队列恢复。
