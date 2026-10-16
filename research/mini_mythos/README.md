@@ -328,4 +328,19 @@ Codespaces 下一步（仅 CPU）：
     python research/mini_mythos/scripts/r2_bf16_autocast_candidate.py \
       --repo . --device cpu --attentions gqa mla
 
-产生的本地证据：`research/mini_mythos/results/r2/bf16_autocast_candidate.json`。**新脚本尚未在用户 Codespaces 执行，结果不预设 PASS。** 上游完整的 Tokenizer pin、可恢复 Streaming 数据游标、安全 Checkpoint、MoE expert load 和真实 GPU BF16 smoke 仍需后续 Gate 完成。
+产生的本地证据：`research/mini_mythos/results/r2/bf16_autocast_candidate.json`。**Gate C 已于 2026-10-16 实际执行：120/120 tests PASS，GQA/MLA 两种注意力的 BF16 前后向、非零有限梯度和 RoPE 相位保持均 PASS。详见 [Gate C 实测](docs/R2_GATE_C_RESULT.md)。** 上游完整的 Tokenizer pin、可恢复 Streaming 数据游标、安全 Checkpoint、MoE expert load 和真实 GPU BF16 smoke 仍需后续 Gate 完成。
+
+## R2 Gate C 完成：120/120 PASS；Gate D 固定 Tokenizer
+
+用户 Codespaces 运行 Gate C：**120/120 tests PASS（4.398 秒）**，GQA BF16 Loss=4.521300、grad_norm=1.924440、RoPE 相位保留、logits 对 FP32 max abs delta=0.00234181；MLA Loss=4.605480、grad_norm=1.942811、相位保留、delta=0.00261885。来源代码未修改，无实际 GPU 训练。详见 [R2 Gate C 实测报告](docs/R2_GATE_C_RESULT.md)。
+
+下步 [R2 Gate D Tokenizer 身份检查](docs/R2_GATE_D_TOKENIZER_PLAN.md)：不训练模型，按 HF 不可变 SHA 固定 PR #27 的 GPT2 tokenizer，把所有 Token→ID、fast backend config、special ID 和六个固定文本编码 probe 的 SHA/明细写入只读 Contract；复验同一版本，拒绝替换 Tokenizer 与 embeddings 大小不符。
+
+    git pull --ff-only origin mini-mythos-research
+    python -m unittest discover -s research/mini_mythos/tests -p 'test_*.py' -v
+    python research/mini_mythos/scripts/r2_pr27_tokenizer_contract.py freeze \
+      --repo . --revision main
+    python research/mini_mythos/scripts/r2_pr27_tokenizer_contract.py verify \
+      --repo . --offline
+
+预期新报告：`research/mini_mythos/results/r2/pr27_gpt2_tokenizer_contract.json`。该脚本尚未在用户 Codespaces 实测；只锁定 Tokenizer，不自动修改或保护 PR #27 的原始 train/evaluate checkpoint 流程。后续会单独接入严格校验，再研究 FineWeb-Edu 数据位置与 RNG 恢复。
