@@ -1,6 +1,6 @@
 # R2 Gate B — 上游 PR #27 源码冻结审计（CPU 优先）
 
-**2026-10-16；审计对象是社区 [OpenMythos PR #27](https://github.com/kyegomez/OpenMythos/pull/27) 的原始提交，固定完整 SHA `2954bc275ffb8ad5c60f74f7299a9ad9e531d3e4`。** 本报告已通过 GitHub 读取该 Commit 中的 6 个 `experiments/` 文件及当前 fork `open_mythos/main.py`；**尚未在用户 Codespaces 运行审计脚本，也没有训练 117.8M 模型或验证作者报告的性能**。
+**2026-10-16；固定上游 PR #27 Commit SHA 为 `2954bc275ffb8ad5c60f74f7299a9ad9e531d3e4`。用户已经在 Codespaces 实际完成固定源码静态审计与复杂 RoPE BF16 CPU 探针：114/114 tests PASS，全部 14 项源码标记 FOUND，两个 RoPE complex64 buffer 转成 BF16 后均丢失虚部。详细实测证据见 [R2 Gate B Result](R2_GATE_B_RESULT.md)。未进行 117.8M GPU 训练。**
 
 ## R2 Gate A 当前容器结论
 
@@ -32,7 +32,7 @@ self.register_buffer('freqs_cis', freqs)
 self.register_buffer('freqs_cis_mla', freqs_mla)
 ```
 
-PyTorch 的 `nn.Module.to(dtype=torch.bfloat16)` 会将**复数 Buffer 转成实数 BF16 并丢失虚部**。我们已在单独 CPU PyTorch 2.10.0 的极简 4 元素 buffer 上**动态复现该一般 PyTorch 行为**：`complex64 → bfloat16`，触发 `Casting complex values to real discards the imaginary part` 警告。**对于真实 OpenMythos buffer 在用户 PyTorch 2.14.1+cu130 上的表现，尚需新 `r2_rope_dtype_probe.py` 测试确认。**
+PyTorch 的 `nn.Module.to(dtype=torch.bfloat16)` 会将**复数 Buffer 转成实数 BF16 并丢失虚部**。我们已在单独 CPU PyTorch 2.10.0 的极简 4 元素 buffer 上**动态复现该一般 PyTorch 行为**：`complex64 → bfloat16`，触发 `Casting complex values to real discards the imaginary part` 警告。**真实 OpenMythos buffer 在用户 PyTorch 2.14.1+cu130 上已经动态确认同样的问题（详见 Gate B Result）。**
 
 如果复现，RoPE 不再是完整单位复数相位旋转，而变成与位置相关的实数缩放，可能造成训练质量和位置编码数学错误；即使 forward 没抛异常也不意味着正确。此风险**独立于** [PR #26](https://github.com/kyegomez/OpenMythos/pull/26) 所述 ACT FP32 promotion / mask dtype 问题，单纯合并 PR26 不能证明保护了复数 RoPE。修复思路须先经审查：保留复数 RoPE buffer 的 `complex64`，让真实 Linear 层 BF16 路径与 ACT 计算保持兼容，或采用混合精度 autocast 而非盲目强制转换整个 Module；在真实 GPU 评估精度/速度前不修改上游核心源码。
 
@@ -68,10 +68,21 @@ python research/mini_mythos/scripts/r2_pr27_static_audit.py --repo .
 python research/mini_mythos/scripts/r2_rope_dtype_probe.py --repo .
 ```
 
-结果写到 `research/mini_mythos/results/r2/pr27_static_audit.json` 和 `rope_bf16_cpu_probe.json`，记录上游各个源码文件 SHA256、静态问题标记、实际 CPU RoPE buffer 转换现象。**这些新脚本已提交但还未得到用户 Codespaces 运行结果**；若静态规则 FOUND，仅表示某段源码存在对应证据，不代表 GPU 训练已发生。
+结果写到 `research/mini_mythos/results/r2/pr27_static_audit.json` 和 `rope_bf16_cpu_probe.json`，记录上游各个源码文件 SHA256、静态问题标记、实际 CPU RoPE buffer 转换现象。**这两项已在用户 Codespaces 执行，日志确认静态发现与相位损坏；下方命令保留为复现步骤**；若静态规则 FOUND，仅表示某段源码存在对应证据，不代表 GPU 训练已发生。
 
 ## R2 真正的放大门槛
 
 在选择/申请云 GPU 之前，必须完成：固定 PR 源码、保护复数 RoPE 相位、BF16 数学一致性、Tokenizer ID/hash、真正 Test/heldout 隔离、Resume + Data Cursor + RNG、MoE 负载追踪、显卡显存与预算；之后才可以批准小规模 GPU smoke（1–10 steps），而不是立刻跑 15k steps × 多组。项目不自动创建云资源，不要求在本地或公司 PC 安装软件。
 
 **开源 PR 不等于 Anthropic 内部 Mythos 架构。** 当前结论仅属于社区独立实现代码的可靠性与复现研究。
+
+## Gate C：在研究层验证 BF16 精度转换候选（尚未运行）
+
+已提交 [r2_bf16_autocast_candidate.py](../scripts/r2_bf16_autocast_candidate.py) 与 [回归测试](../tests/test_r2_bf16_autocast_candidate.py)，目标是在不修改上游源文件的前提下，保留 FP32 model 参数、`complex64` RoPE buffers，再在全序列前向/反向中使用 BF16 autocast；临时将 causal mask 精度调为 BF16，避免之前 FP32 mask + BF16 attention score 的 dtype promotion。
+
+    git pull --ff-only origin mini-mythos-research
+    python -m unittest discover -s research/mini_mythos/tests -p 'test_*.py' -v
+    python research/mini_mythos/scripts/r2_bf16_autocast_candidate.py \
+      --repo . --device cpu --attentions gqa mla
+
+Gate C 的执行输出**尚未经过用户 Codespaces 验证**。该研究候选不能自动推广到 FlashAttention、PR27 117.8M GPU 训练、ACT 混合精度或 KV Cache 分块；审计与修复在获得直接证据后逐个推进。
