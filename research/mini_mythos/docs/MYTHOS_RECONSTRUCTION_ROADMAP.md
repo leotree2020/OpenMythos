@@ -135,14 +135,21 @@ affiliation or claim model/weight equivalence.
   unused training samples; restarting from 5 yielded identical traces,
   max loss delta 0.0, exact model/AdamW/cursor/Python-Torch RNG states.
   No FineWeb/GPU; not original PR27 DataLoader. See [Gate G result](R2_GATE_G_RESULT.md).
-- R2 Gate H (REAL two OS worker CPU experiment committed; unverified): use
-  PyTorch DataLoader(num_workers=2,prefetch_factor=2,in_order=True), fixed
-  indexed local PR27-shaped tokens, shared fetch-count evidence, and
-  full/resume bitwise AdamW comparison under a controlled interruption.
-  Save only optimizer COMMITTED task index, not worker speculative queues.
-  Requires proof of distinct worker PIDs in all three runs. Still NOT a
-  restoration of actual HF FineWeb-Edu IterableDataset/shard cursor or a
-  SIGKILL fault; see [Gate H plan](R2_GATE_H_REAL_DATALOADER_PLAN.md).
+- R2 Gate H (VERIFIED 2026-10-16): 162/162 tests PASS. Actual Linux
+  torch DataLoader with 2 distinct OS worker PIDs per continuous, prefix,
+  and resumed runs; num_workers=2, prefetch_factor=2. At checkpoint,
+  optimizer commit=5 but real __getitem__ workers had already fetched
+  tasks 5/6/7/8. Resumed from committed task 5; complete 12 vs 5+7
+  trajectories, model, AdamW, cursor, Python/Torch RNG bitwise identical,
+  maximum loss delta 0.0. LOCAL INDEXED SYNTHETIC source, no HF training
+  and no SIGKILL. See [Gate H result](R2_GATE_H_RESULT.md).
+- R2 Gate I (new code committed, awaiting real HF stream): pin official
+  HuggingFaceFW/fineweb-edu sample-10BT/train repo immutable SHA *before*
+  streaming. Capture at most 32 eligible real source documents within strict
+  document and text byte budgets; store source-index/doc SHA and canonical
+  JSONL locally, then offline verify every doc and frozen policy. No model
+  training or upstream production loader integration. See
+  [Gate I plan](R2_GATE_I_FINEWEB_SNAPSHOT_PLAN.md).
 - Community training proposal:
   <https://github.com/kyegomez/OpenMythos/pull/27>. Proposed ~117.8M
   MLA+MoE FineWeb-Edu experiment and loop-depth PPL tests; external reports
@@ -219,22 +226,21 @@ avoid unsupported claims of proprietary model extraction.
 
 ## Immediate work queue
 
-1. Run Gate H new REAL two-process PyTorch DataLoader CPU tests and
-   `r2_pr27_real_dataloader_resume.py` on Linux Codespaces. Assert
-   different worker PIDs, observe true fetched-but-uncommitted IDs,
-   restart from committed ID 5 with fresh workers, and verify model/
-   AdamW/RNG/cursor and trace bitwise; no HF or GPU.
-2. Archive Gate G's verified 156/156 logical prefetch results, preserving
-   previous R1 test and all R2 frozen tokenizer/checkpoint artifacts.
-3. The next unsolved P0 is TRUE HF FineWeb-Edu streamed IterableDataset:
-   pin repository+file revision, shard/doc IDs, split provenance and
-   worker/prefetch lifecycle. Gate H's indexed map-style data is not
-   proof that arbitrary streaming loaders can replay exact source.
-4. Refactor a separate PR27 trainer research copy only after authentic
-   tokenizer/checkpoint/stream boundary integration and tests; do not
-   change upstream source or run 118M weights in present Codespaces.
-5. Actual CUDA device count is still zero. GPU runs need budgeted compute,
-   BF16/FlashAttention/MoE smoke and a fair-compute Transformer baseline.
+1. Run R2 Gate I *offline* unit tests, then obtain the first strictly
+   bounded real 32-document snapshot from upstream FineWeb-Edu sample-10BT
+   after resolving the dataset revision to an immutable HF commit SHA.
+   Verify local JSONL + Manifest SHA offline. DO NOT commit real text.
+2. Archive Gate H verified 162/162 dual-OS-worker DataLoader results.
+   Retain frozen GPT2 contract, source SHA, and earlier checkpoint evidence.
+3. Build a bounded PR27 packing/replay test on this real pinned source
+   snapshot. Actual HF IterableDataset shards have NOT yet been restored.
+4. Investigate authentic immutable Parquet shard/document offsets,
+   multiprocessing prefetch lifecycle, and fail-closed checkpoint metadata
+   for true HF Streaming resume. Next real fault gate must include actual
+   process crash or forced termination, not just controlled new iterator.
+5. GPU unavailable in Codespaces; no 118M+ weights allocated or trained.
+   Training scale-up remains dependent on real GPU, source fixes, MoE/BF16
+   smoke, data licensing, and compute-matched Transformer baseline.
 
 ## References
 
