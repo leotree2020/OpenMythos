@@ -154,3 +154,25 @@ python research/mini_mythos/scripts/r0_cache_compare.py --repo . --attentions gq
 ```
 
 实验结果写入 `research/mini_mythos/results/r0/cache_mask_comparison.json`。
+
+## R0 Gate A 验收更新（2026-10-16）
+
+最新 Codespaces 实测：**67/67 单元测试通过**；`r0_cache_compare.py --strict` 对 GQA/MLA 都得到 **upstream=FAIL、research_mask=PASS**，最大绝对偏差均为 `2.9802322387695312e-08`。证据已归档至 [R0 Gate A](docs/R0_GATE_A_RESULT.md)。这是 CPU 微模型的缓存分块缺陷隔离修复，不是整个 R0 或 Mythos 复刻完成。
+
+## R1：真正文本训练 Pilot（新主线）
+
+[R1 执行计划和完整命令](docs/R1_REAL_TEXT_PILOT.md) | [公开文本数据准备](scripts/r1_prepare_wikitext.py) | [训练 / 验证 PPL / 安全 Checkpoint / 生成](scripts/r1_text_pilot.py)
+
+```bash
+git pull --ff-only origin mini-mythos-research
+python -m unittest discover -s research/mini_mythos/tests -p 'test_*.py' -v
+python research/mini_mythos/scripts/r1_prepare_wikitext.py --repo . --revision main
+python research/mini_mythos/scripts/r1_text_pilot.py --repo . \
+  --train-text research/mini_mythos/results/r1/data/train.txt \
+  --validation-text research/mini_mythos/results/r1/data/validation.txt \
+  --attention gqa --depth 2 --seq-len 64 --batch-size 4 \
+  --steps 60 --eval-windows 16 \
+  --out-dir research/mini_mythos/results/r1/pilot_gqa
+```
+
+WikiText-2 的默认 `main` 版本可变；真实可复现性需固定 Hugging Face 数据仓库 revision SHA 和保留数据 SHA-256。此 Pilot 使用固定的 **257-token UTF-8 byte tokenizer**，属于微型训练链路验证，不应将其 PPL 和正式 subword 模型 PPL 直接比较。运行结果保持本地忽略，不会自动上传 GitHub。**代码已提交，用户 Codespaces 还未运行本次 R1 Pilot。**
