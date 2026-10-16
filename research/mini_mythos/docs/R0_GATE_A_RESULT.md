@@ -65,3 +65,22 @@ python research/mini_mythos/scripts/r0_cache_compare.py \
 **尚未完成**：隔离修复动态复核、真实训练脚本恢复一致性、Heldout PPL、Tokenizer revision 固定、3B FSDP/BF16 检验，以及 GPU 版本多 token Cache 等价。不能宣布 R0 完整通过，也没有任何真正 Claude Mythos 架构一致性证据。
 
 下一阶段 R1 的硬性要求仍是：真正的文本训练、可加载权重、稳定的 Heldout NLL/PPL、真实生成样例与训练数据来源可复现。
+
+
+## 6. R0 Gate A 第二轮：隔离掩码修复已经通过（2026-10-16）
+
+用户在 Codespaces 执行了：
+
+    python research/mini_mythos/scripts/r0_cache_compare.py --repo . --attentions gqa mla --strict
+
+收到的终端输出：
+
+    gqa: upstream=FAIL research_mask=PASS research_max_abs=2.9802322387695312e-08
+    mla: upstream=FAIL research_mask=PASS research_max_abs=2.9802322387695312e-08
+    Saved: /workspaces/OpenMythos/research/mini_mythos/results/r0/cache_mask_comparison.json
+
+配套单元测试此前已在 Codespaces 执行，**67/67 PASS**（3.245 秒）。原版在“6-token 前缀 + 2-token chunk”的模型场景触发掩码维度不匹配；独立研究修复后 GQA/MLA 的最大绝对 logits 偏差均为 2.9802322387695312e-08，远小于预设 5e-4 容差。
+
+**结论：R0 多 token cached-chunk causal-mask 缺陷的定位及 CPU 微模型隔离修复验证完成。** 原版实现仍存在相同缺陷，且未直接修改 open_mythos/main.py。
+
+**尚存边界：** 单一初始化种子、单一长度切分、随机 tiny model、CPU；GPU FlashAttention 路径、非等长分块、实际长上下文以及生产服务安全性尚未验证；只校正 attention mask，不代表实现了完整的目标 Mythos。原始 JSON 仍留在用户 Codespaces，本报告以用户终端日志为依据。
