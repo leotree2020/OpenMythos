@@ -1,6 +1,6 @@
 # R2 Gate J — 已冻结真实 FineWeb-Edu 文本 + 实际双进程 CPU 恢复实验
 
-**制定日期：2026-10-16。状态：代码与回归测试已提交，但用户 Codespaces 尚未运行 Gate J。** 上一关 [R2 Gate I](R2_GATE_I_RESULT.md) 已在 Codespaces 实测 171/171 tests PASS，真正官方 32 文档冻结、离线 SHA 一致。Gate H 的真实双进程 DataLoader/AdamW 断点恢复已在合成文本上 162/162 tests PASS。
+**制定日期：2026-10-16。状态：Gate J 已在用户 Codespaces 完成：179/179 tests PASS（26.679 秒），真实冻结 FineWeb 文本+GPT2+两名真实 OS Worker 的 12 vs 5+7 CPU AdamW 训练恢复全状态逐位一致。实测见 [Gate J Result](R2_GATE_J_RESULT.md)。本页保留原实验设计。** 上一关 [R2 Gate I](R2_GATE_I_RESULT.md) 已在 Codespaces 实测 171/171 tests PASS，真正官方 32 文档冻结、离线 SHA 一致。Gate H 的真实双进程 DataLoader/AdamW 断点恢复已在合成文本上 162/162 tests PASS。
 
 ## 目标和约束
 
