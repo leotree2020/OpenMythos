@@ -62,6 +62,8 @@ jobs:
         run: python research/mini_mythos/scripts/act_diagnostics.py --repo . --attention ${{ matrix.attention }} --out research/mini_mythos/results/act_${{ matrix.attention }}.json
       - name: ACT final remainder A/B experiment (toy CPU)
         run: python research/mini_mythos/scripts/act_ab.py --repo . --device cpu --attentions ${{ matrix.attention }} --depths 1 2 4 8 --steps 3 --out research/mini_mythos/results/act_ab_${{ matrix.attention }}.json
+      - name: ACT-002 same-weight counterfactual (toy CPU)
+        run: python research/mini_mythos/scripts/act_counterfactual.py --repo . --device cpu --attentions ${{ matrix.attention }} --depths 2 --seed 22 --steps 4 --out research/mini_mythos/results/act_counterfactual_${{ matrix.attention }}.json
       - name: Tiny upstream training pipeline check (GQA only)
         if: matrix.attention == 'gqa'
         run: python research/mini_mythos/scripts/pilot_train.py --repo . --steps 2 --train-depths 1 4 --out research/mini_mythos/results/pilot.json
