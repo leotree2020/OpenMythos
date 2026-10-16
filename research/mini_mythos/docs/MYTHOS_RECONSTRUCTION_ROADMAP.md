@@ -122,13 +122,21 @@ affiliation or claim model/weight equivalence.
   metadata and checkpoint SHA256 sidecar; weights_only=True, step=1.
   Research-layer guard only, upstream PR27 train/eval still unmodified.
   See [Gate E result](R2_GATE_E_RESULT.md).
-- R2 Gate F (bounded research candidate committed, awaiting Codespaces run):
-  PR27-shaped single-worker synthetic stream packs EOS and seq_len+1 windows,
-  records replayable data cursor, source/tokenizer hashes, Python/Torch RNG,
-  tiny real AdamW optimizer states. Compare uninterrupted 12 CPU steps vs
-  checkpoint at 5 and resume 7; require bitwise equality. This does NOT
-  repair real FineWeb-Edu num_workers=2 prefetch/cursor or permit 118M training.
-  See [Gate F plan](R2_GATE_F_STREAM_RESUME_PLAN.md).
+- R2 Gate F (VERIFIED 2026-10-16): 148/148 tests PASS. Synthetic
+  PR27-shaped 55 train/9 heldout docs with pinned real GPT2 tokenizer.
+  A single-worker packed source, model/AdamW, Python/Torch RNG and cursor
+  checkpoint after step 5 resumed through step 12, precisely matching the
+  uninterrupted 12-step run: trace identical, loss delta 0.0, params,
+  optimizer, cursor and RNG bitwise equal. No FineWeb-Edu or GPU used.
+  See [Gate F result](R2_GATE_F_RESULT.md).
+- R2 Gate G (CPU two-LOGICAL-worker candidate committed; awaiting tests):
+  simulate bounded out-of-order prefetch and an interruption with already
+  completed but UNCOMMITTED tasks. Persist the optimizer COMMITTED task ID
+  with model/RNG and replay speculatively dispatched tasks from a fixed
+  immutable source, comparing 12 steps uninterrupted vs 5+7 resumed
+  bitwise. Unlike a real PR27 DataLoader, this starts NO child processes;
+  actual HF multiworker cursor/Python queue durability remains blocked.
+  See [Gate G plan](R2_GATE_G_PREFETCH_PLAN.md).
 - Community training proposal:
   <https://github.com/kyegomez/OpenMythos/pull/27>. Proposed ~117.8M
   MLA+MoE FineWeb-Edu experiment and loop-depth PPL tests; external reports
@@ -205,22 +213,21 @@ avoid unsupported claims of proprietary model extraction.
 
 ## Immediate work queue
 
-1. Run R2 Gate F CPU synthetic one-worker stream+RNG+AdamW resume tests,
-   compare uninterrupted 12 steps against 5+7 resumed steps from a
-   tokenizer-bound, SHA-guarded checkpoint. Require bitwise identical
-   batches, loop sampling, randomness, optimizer state and final params.
-2. Preserve Gate E 140/140 checkpoint evidence and pinned GPT2 SHA; do not
-   rerun earlier smoke into the same outputs or modify upstream train/eval.
-3. Address the actual P0 FineWeb-Edu stream via pinned immutable revision,
-   explicit shard/document IDs, true split disjointness and reproducible
-   data cursor. Test prefetched-but-not-consumed batches if using
-   num_workers=2, rather than extrapolating from synthetic single-worker.
-4. Only then integrate into an isolated, reviewed PR27 train/resume/eval
-   copy with mandatory tokenizer fingerprint, safe checkpoint, optimizer
-   and RNG state; verify at CPU scale before GPU.
-5. There is still no available CUDA device in Codespaces. Keep 118M+
-   pretraining blocked pending real GPU budget, BF16/FlashAttention/MoE
-   smoke and fair-compute non-recurrent baseline design.
+1. Run Gate G CPU two-logical-worker out-of-order speculative prefetch
+   tests. At checkpoint step 5, log dispatched frontier and completed-but-
+   uncommitted task IDs; resume from optimizer COMMITTED index 5, not from
+   last-dispatched frontier. Compare full/resumed trace and AdamW bitwise.
+2. Archive Gate F's verified 148/148 synthetic single-worker results and
+   retain original frozen GPT2 tokenizer contract and checkpoints.
+3. Do NOT call the simulation true HF DataLoader(num_workers=2) recovery.
+   Next test must isolate real multiprocess worker queues/prefetch and
+   immutable FineWeb-Edu shards / document IDs, with crash fault injection.
+4. Require exact data commit ACK + optimizer checkpoint transaction, true
+   heldout split, source/tokenizer revision, and safe model/optimizer/RNG
+   state before a production PR27 train/eval integration.
+5. CUDA device count is still zero in current Codespaces. Defer 118M GPU
+   allocation pending reviewed source, actual GPU, cost, BF16/MoE profiling
+   and fair-compute Transformer baseline.
 
 ## References
 
