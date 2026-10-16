@@ -78,3 +78,7 @@ python research/mini_mythos/scripts/act_counterfactual_summary.py \
 The short-run GQA and MLA correctness checks are also included in the GitHub
 Actions workflow. This is a micro-model, synthetic-data mechanism experiment,
 **not** evidence of better language-model accuracy.
+
+## ACT-001 / ACT-002 研究报告
+
+已完成 ACT 质量截断诊断、5 随机种子的合成任务 A/B、GQA/MLA 同权重反事实实验及 MLA 阴性/阳性对照。完整数据与结论边界参见 [ACT-001 / ACT-002 研究报告](docs/ACT_001_002_RESEARCH_REPORT.md)。未在真实预训练模型上证明性能收益。
