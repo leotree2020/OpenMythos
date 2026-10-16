@@ -343,4 +343,17 @@ Codespaces 下一步（仅 CPU）：
     python research/mini_mythos/scripts/r2_pr27_tokenizer_contract.py verify \
       --repo . --offline
 
-预期新报告：`research/mini_mythos/results/r2/pr27_gpt2_tokenizer_contract.json`。该脚本尚未在用户 Codespaces 实测；只锁定 Tokenizer，不自动修改或保护 PR #27 的原始 train/evaluate checkpoint 流程。后续会单独接入严格校验，再研究 FineWeb-Edu 数据位置与 RNG 恢复。
+预期新报告：`research/mini_mythos/results/r2/pr27_gpt2_tokenizer_contract.json`。Gate D 已实测：130/130 tests PASS，HF GPT2 Commit 不可变固定，并通过离线二次校验；PR27 原始 train/evaluate 仍未接入。详见 [Gate D 实测](docs/R2_GATE_D_RESULT.md)。后续会单独接入严格校验，再研究 FineWeb-Edu 数据位置与 RNG 恢复。
+
+## R2 Gate D 完成：130/130 PASS；Gate E 绑定 Tokenizer 的研究层 Checkpoint
+
+2026-10-16 真实 Codespaces：130/130 tests PASS。PR27 `gpt2` Tokenizer 固定 HF Commit `607a30d783dfa663caf39e06633721c8d4cfcd7e`，embedding rows **50257**，完整 Token→ID SHA256 `56547338e1f0301492f97c9ec86f9ff477d96513336d9497331e1f58f4afd911`，backend SHA256 `11e818f948f43497f364722def50c13f419158554961ee4bb095fbd3350895c3`；整份 Contract SHA256 `d8c2780bf00fc7a224bfca89725ad9cc0522c48aa67cf796599ae6a04be3d3c9`，离线再加载完全 MATCH。[Gate D 实测报告](docs/R2_GATE_D_RESULT.md)。
+
+下一实验 [Gate E：绑定 Tokenizer 的研究 Checkpoint/评估入口](docs/R2_GATE_E_CHECKPOINT_PLAN.md)：使用缓存中的真实 GPT2 Tokenizer，执行 CPU 4维 Embedding/Head 合成一轮 AdamW，在保存的权重文件上附加独立的 Tokenizer metadata + SHA256 JSON manifest。resume/eval 读取权重**之前**先比对冻结的 Token ID/Backend/特殊 Token、model vocab 与权重内容 SHA；随后仅使用 `torch.load(weights_only=True)` 并检查模型张量实际行数。严格拒绝错误 revision、缺失元数据或损坏 checkpoint。
+
+    git pull --ff-only origin mini-mythos-research
+    python -m unittest discover -s research/mini_mythos/tests -p 'test_*.py' -v
+    python research/mini_mythos/scripts/r2_pr27_guarded_checkpoint.py smoke --repo .
+    python research/mini_mythos/scripts/r2_pr27_guarded_checkpoint.py verify --repo .
+
+生成 `research/mini_mythos/results/r2/pr27_bound_toy_checkpoint.pt` 和 `.manifest.json`，不覆盖之前的结果。**Gate E 新代码尚待 Codespaces 实测；仅隔离研究层 Demo，不等于 PR27 原始 trainer/eval 已保护，也不是 118M GPU 训练。**
