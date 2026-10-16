@@ -127,3 +127,16 @@ Actions workflow. This is a micro-model, synthetic-data mechanism experiment,
       --steps 30 --heldout-batches 30
 
 此阶段记录**整组 A/B 实验耗时**、循环调用次数和 Loss 差异，不把整组耗时解释成某个策略的独立加速比，也不声称 FLOPs 已经匹配。
+
+## R0 · 复刻准备度审计（第一轮）
+
+[源码审计报告](docs/R0_ARCHITECTURE_TRAINING_AUDIT.md) | [自动静态审计](scripts/r0_audit.py) | [CPU 动态探针](scripts/r0_probe.py)
+
+```bash
+git pull --ff-only origin mini-mythos-research
+python -m unittest discover -s research/mini_mythos/tests -p 'test_*.py' -v
+python research/mini_mythos/scripts/r0_audit.py --repo .
+python research/mini_mythos/scripts/r0_probe.py --repo .
+```
+
+重点检查实际训练评估链路、Tokenizer 版本固定、Checkpoint/数据恢复、MoE bias 更新，以及 KV Cache 的多 Token 分块一致性。探针只测试微型 CPU 模型，尚未在此回合运行，不能据此宣称 R0 完整验收或具备真实语言能力。
