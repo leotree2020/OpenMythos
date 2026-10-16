@@ -86,10 +86,20 @@ affiliation or claim model/weight equivalence.
   mean paired NLL improvement +0.164231 nats/byte, exploratory window
   bootstrap [0.154229,0.174337]. No training/test leakage by protocol;
   one tiny seed/limited byte-level claim. See [Gate F result](R1_GATE_F_RESULT.md).
-- R2 (planned): freeze tiny-model artifacts; audit upstream PR #27's 117.8M
-  MLA+MoE training proposal, PR #26 bf16 dtype issue, actual tokenizer and
-  resume/heldout readiness, and available GPU before running any large model.
-  See [R2 upstream readiness](R2_UPSTREAM_READINESS.md).
+- R2 Gate A (verified 2026-10-16): 110/110 tests PASS, PyTorch
+  2.14.1+cu130 but no CUDA device; 13.06 GiB free disk. Production training
+  still has DATA_CURSOR, TOKENIZER_REVISION, CHECKPOINT_TRUST, HELDOUT_EVAL,
+  CACHE_CHUNK static GAP flags; BF16/ACT/MoE require runtime review.
+  See [R2 Gate A](R2_GATE_A_ENVIRONMENT.md).
+- R2 Gate B (upstream source review completed, Codespaces probes pending):
+  OpenMythos community PR #27 immutable commit 2954bc275ffb8ad5c60f74f7299a9ad9e531d3e4
+  contains candidate ~117.8M MLA+MoE training code. Found tokenizer override,
+  no data cursor/RNG resume, mutable streaming data, and whole-model BF16
+  casting of complex RoPE phase buffers. CPU minimal PyTorch confirmed loss
+  of complex imaginary components on dtype conversion, model-level Codespaces
+  probe pending. Single-loop baseline also differs in compute/LoRA parameters
+  and is not an independent dense Transformer. See
+  [PR27 source review](R2_PR27_SOURCE_REVIEW.md).
 - Community training proposal:
   <https://github.com/kyegomez/OpenMythos/pull/27>. Proposed ~117.8M
   MLA+MoE FineWeb-Edu experiment and loop-depth PPL tests; external reports
@@ -166,22 +176,20 @@ avoid unsupported claims of proprietary model extraction.
 
 ## Immediate work queue
 
-1. Freeze and archive the R1 Gate F test report and 600-step Checkpoint.
-   Do not use official test scores for additional model selection.
-2. Run the source/GPU environment inventory `r2_preflight.py` in Codespaces;
-   report CUDA availability/VRAM and audited source SHA before deciding cloud
-   compute capacity; the preflight does not train or download weights.
-3. Inspect the complete source of OpenMythos upstream PR #27 (~117.8M
-   MLA+MoE FineWeb-Edu pilot) against PR #26 bf16 compatibility and
-   tokenizer revision/evaluation consistency. Pin a reviewed commit;
-   reproduce, do not reimplement the core from scratch.
-4. Require a real pinned tokenizer, data/license provenance, independent
-   heldout PPL, safe recovery of model/optimizer/dataset cursor/RNG, verified
-   MoE routing, actual GPU memory/tokens/s and a finite compute budget
-   before launching any 100M+ candidate.
-5. Compare any trained OpenMythos candidate with a non-recurrent Transformer
-   at comparable data and measured training/inference FLOPs, not just
-   nominal step counts or tied parameter totals.
+1. Reproduce pinned upstream PR #27 source audit without merging or running it:
+   fetch `refs/pull/27/head`, confirm exact SHA, run CPU-only
+   `r2_pr27_static_audit.py` and `r2_rope_dtype_probe.py` and tests.
+2. Freeze R1 Gate F independent test evidence; no further tuning or 48-dim
+   CPU language training. Keep all Test scores out of model selection.
+3. Fix, separately in the research layer, P0 source correctness: preserve
+   complex RoPE buffers under BF16, enforce exact tokenizer mapping and
+   pinned data source, implement checkpoint RNG/dataset cursor recovery and
+   real heldout eval. Use focused CPU tests first, then authorized GPU smoke.
+4. Obtain real GPU hardware/time/budget before allocating any 100M+ model;
+   0 CUDA devices in the current Codespaces means **do not run** PR27
+   `run_all.sh` or the production 3B training script in this environment.
+5. Reproduce upstream 117.8M claims and compare with a real non-recurrent
+   Transformer at a compute-aware budget, only after source/gpu gates pass.
 
 ## References
 
