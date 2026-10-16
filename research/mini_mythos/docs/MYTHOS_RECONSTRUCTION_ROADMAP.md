@@ -152,14 +152,25 @@ affiliation or claim model/weight equivalence.
   Offline VERIFY matched and license metadata odc-by captured. No model
   training, no PR27 loader changes or true streaming cursor.
   See [Gate I result](R2_GATE_I_RESULT.md).
-- R2 Gate J (committed, unverified): take that EXACT pinned 32-document
-  LOCAL real-text snapshot and Gate D GPT2 tokenizer, fully verify source
-  SHA/revision/bytes and token mapping, then reproduce Gate H's REAL 2-OS-
-  worker DataLoader CPU toy-AdamW 12 vs 5+7 step bitwise replay. Only an
-  internal fixed split for recovery testing, NOT independent heldout/eval.
-  It indexes all source text BEFORE launching workers; thus it is NOT
-  equivalent to original PR27 worker-sharded HF IterableDataset streaming.
-  See [Gate J plan](R2_GATE_J_REALTEXT_REPLAY_PLAN.md).
+- R2 Gate J (VERIFIED 2026-10-16): 179/179 tests PASS in 26.679s.
+  REAL frozen 32-document FineWeb text, immutable dataset SHA
+  87f09149ef4734204d70ed1d046ddc9ca3f2b8f9 and GPT2 contract SHA
+  d8c2780bf00fc7a224bfca89725ad9cc0522c48aa67cf796599ae6a04be3d3c9.
+  28 train/4 excluded INTERNAL development-only docs (NOT heldout/eval).
+  Three runs used two real OS PIDs each. Prefetched uncommitted batch IDs
+  5-8, resume started at 5. Full vs 5+7 CPU Tiny AdamW runs had bitwise
+  identical traces/model/optimizer/cursor/RNG, max loss delta 0.0. Data
+  globally PACKED first; NOT upstream worker-sharded IterableDataset.
+  See [Gate J result](R2_GATE_J_RESULT.md).
+- R2 Gate K (committed, unverified): on that SAME pinned local real text
+  and tokenizer, build a local HF Dataset.to_iterable_dataset(num_shards=2)
+  and call HF .shard inside each REAL OS DataLoader worker BEFORE independent
+  PR27-style Token packing. Check worker PID, speculative prefetch,
+  12 vs 5+7 bitwise AdamW replay via checkpointed optimizer committed batch
+  IDs and chunk SHA; contrast with Gate J global pack-first sequence.
+  This is local 2-shard Arrow data, NOT the original remote HF Parquet
+  IterableDataset; production source offsets still unaddressed.
+  See [Gate K plan](R2_GATE_K_HF_WORKER_SHARD_PLAN.md).
 - Community training proposal:
   <https://github.com/kyegomez/OpenMythos/pull/27>. Proposed ~117.8M
   MLA+MoE FineWeb-Edu experiment and loop-depth PPL tests; external reports
@@ -236,23 +247,23 @@ avoid unsupported claims of proprietary model extraction.
 
 ## Immediate work queue
 
-1. Run R2 Gate J full tests, then the CPU offline real-text replay tool
-   using Gate I exact frozen source and Gate D pinned GPT2 tokenizer.
-   Report true two-worker PIDs, committed-frontier replay, bitwise
-   model/AdamW/RNG/trace identity. No new HF download or GPU.
-2. Preserve Gate I's confirmed 171/171 tests, pinned dataset SHA and
-   32-doc JSONL SHA. DO NOT re-freeze or upload the actual source texts.
-3. Clarify the remaining PRODUCTION data gap: PR27's original
-   HF IterableDataset sharding by worker happens BEFORE per-worker token
-   packing; the Gate J globally indexed source is a different batch order.
-   Require real immutable shard/document-offset replay tests on the true
-   streaming implementation and abrupt-kill recovery, not only snapshots.
-4. Implement a reviewed PR27 research-only trainer/eval integration with
-   fixed tokenizer, GPU-safe BF16 RoPE path, guarded checkpoint, dataset
-   commit cursor and actual independent heldout/test provenance.
-5. Current Codespaces still has no CUDA GPU. A 118M+ pretraining run
-   requires separate GPU provisioning, cost controls, MoE/ACT/FlashAttention
-   smoke and compute-matched ordinary Transformer baseline.
+1. Run Gate K complete tests + `r2_hf_worker_shard_pack.py` in Linux
+   Codespaces: two real Worker PIDs; each worker calls HF local
+   IterableDataset.shard THEN packs GPT2 EOS windows; assert full 12 vs
+   5+7 resume exactly matches, and that first 12 worker-shard-pack chunks
+   differ from Gate J global-pack-first batch sequence.
+2. Preserve Gate J's VERIFIED 179/179 tests and its real-text checkpoint;
+   never overwrite existing artifacts or commit frozen JSONL source text.
+3. Escalate from local two Arrow shards to original pinned remote HF
+   Parquet shard/file/index/worker assignment. Test genuine IterableDataset
+   restart and abrupt-worker/process failure; simply storing global batch
+   ID and replaying from document zero is NOT production-ready.
+4. Independently develop a true disjoint heldout/test source and lock the
+   source/Tokenizer + safe checkpoint/optimizer/RNG contracts into a
+   separate PR27 trainer/evaluator copy. Address BF16 complex RoPE and
+   ACT/MoE issues before real GPU use.
+5. Current Codespaces has no visible CUDA GPU: NO 118M+ training authorized.
+   GPU scale-up requires provisioned hardware, cost and real smoke checks.
 
 ## References
 
