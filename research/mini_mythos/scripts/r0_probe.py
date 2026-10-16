@@ -62,7 +62,7 @@ def checkpoint_roundtrip(module, attention):
     nx, ny = toy_batch(torch, 73012, seq_len=8)
     loss_a = train_step(first, first_optim, nx, ny)
     loss_b = train_step(second, second_optim, nx, ny)
-    max_delta = max(float((a - b).abs().max())
+    max_delta = max(float((a.detach() - b.detach()).abs().max())
                     for a, b in zip(first.parameters(), second.parameters()))
     good = max(pre_diff, max_delta, abs(loss_a - loss_b)) <= 1e-5
     return {
