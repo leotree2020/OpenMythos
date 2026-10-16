@@ -1,0 +1,72 @@
+name: Mini-Mythos upstream validation
+on:
+  workflow_dispatch:
+  push:
+    branches: [mini-mythos-research]
+    paths:
+      - 'research/mini_mythos/**'
+      - '.github/workflows/mini-mythos-smoke.yml'
+  pull_request:
+    paths:
+      - 'research/mini_mythos/**'
+      - '.github/workflows/mini-mythos-smoke.yml'
+permissions:
+  contents: read
+jobs:
+  offline-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install helpers requirements
+        run: python -m pip install 'torch>=2.1,<3'
+      - name: Verify independent helper tests
+        run: python -m unittest discover -s research/mini_mythos/tests -v
+
+  upstream-smoke:
+    needs: offline-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        attention: [gqa, mla]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install upstream import and CPU runtime dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install 'torch>=2.1,<3' 'transformers>=4.40,<6'
+      - name: Capture provenance
+        run: |
+          git rev-parse HEAD
+          python -c 'import torch, transformers; print("torch",torch.__version__,"transformers",transformers.__version__)'
+      - name: Capture verified local source provenance
+        run: python research/mini_mythos/scripts/provenance.py --repo . --out research/mini_mythos/results/provenance.json --strict
+      - name: Static audit (findings, not proof)
+        run: python research/mini_mythos/scripts/static_audit.py --repo . --out research/mini_mythos/results/static_audit.json
+      - name: Test upstream forward, backward, causal mask, cache
+        run: python research/mini_mythos/scripts/smoke.py --repo . --attention ${{ matrix.attention }} --out research/mini_mythos/results/smoke_${{ matrix.attention }}.json
+      - name: Examine ACT weight mass on actual upstream model
+        if: always()
+        run: python research/mini_mythos/scripts/act_diagnostics.py --repo . --attention ${{ matrix.attention }} --out research/mini_mythos/results/act_${{ matrix.attention }}.json
+      - name: Tiny upstream training pipeline check (GQA only)
+        if: matrix.attention == 'gqa'
+        run: python research/mini_mythos/scripts/pilot_train.py --repo . --steps 2 --train-depths 1 4 --out research/mini_mythos/results/pilot.json
+      - name: Upload reports even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mini-mythos-${{ matrix.attention }}-report
+          path: research/mini_mythos/results/
+          if-no-files-found: ignore
