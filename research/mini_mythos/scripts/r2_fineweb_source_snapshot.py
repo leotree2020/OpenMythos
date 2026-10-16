@@ -9,6 +9,7 @@ Online requests happen only for freeze; verify runs strictly offline.
 """
 import argparse
 import hashlib
+from itertools import islice
 import json
 import os
 from pathlib import Path
@@ -56,8 +57,8 @@ def capture_bounded_documents(records, *, limit=SELECTED_DOCS,
     if not 1 <= limit <= max_scan or max_doc_bytes <= 0 or max_total_bytes <= 0:
         raise ValueError("Invalid capture bounds")
     out, scanned, empty, too_large, total = [], 0, 0, 0, 0
-    for item in records:
-        if scanned >= max_scan or len(out) >= limit:
+    for item in islice(records, max_scan):
+        if len(out) >= limit:
             break
         index = scanned
         scanned += 1
