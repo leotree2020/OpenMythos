@@ -14,7 +14,8 @@ import torch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 from r2_hf_worker_shard_pack import (
-    CHUNK_LEN, CommittedHFStream, WORKERS, build_local_hf_source,
+    CHUNK_LEN, CommittedHFStream, WORKERS,
+    audit_local_hf_worker_partition, build_local_hf_source,
     compare_worker_shard_resume,
 )
 from r2_pr27_stream_resume import digest, local_documents, split_documents
@@ -150,6 +151,32 @@ class GateKTests(unittest.TestCase):
                          sorted([d["text"] for d in train]))
         self.assertEqual(len(part0) + len(part1), len(train))
 
+    def test_native_hf_worker_partitions_cover_all_docs_without_duplicates(self):
+        train, _ = split_documents(self.docs)
+        source = build_local_hf_source(train)
+        audit = audit_local_hf_worker_partition(
+            source, [item["id"] for item in train]
+        )
+        self.assertTrue(audit["all_source_doc_ids_covered_once"])
+        self.assertEqual(audit["dataset_source_shards"], WORKERS)
+        self.assertEqual(sum(audit["per_worker_document_counts"]), len(train))
+        self.assertTrue(all(n > 0 for n in audit["per_worker_document_counts"]))
+        self.assertIn("NATIVE_AUTOSHARD", audit["partition_policy"])
+
+    def test_explicit_worker_shard_would_leave_only_one_native_hf_shard(self):
+        # Catches the documented GitHub Codespaces Gate K failure:
+        # HF source.shard(2, worker_id) => 1 shard; HF will automatically
+        # split that ONE shard again between TWO DataLoader workers.
+        train, _ = split_documents(self.docs)
+        source = build_local_hf_source(train)
+        self.assertEqual(source.num_shards, 2)
+        for worker_id in range(WORKERS):
+            already_sharded = source.shard(
+                num_shards=WORKERS, index=worker_id
+            )
+            self.assertEqual(already_sharded.num_shards, 1)
+            self.assertLess(already_sharded.num_shards, WORKERS)
+
     def test_local_hf_dataset_rejects_duplicate_records(self):
         with self.assertRaisesRegex(ValueError, "duplicate"):
             build_local_hf_source(
@@ -169,6 +196,14 @@ class GateKTests(unittest.TestCase):
             self.assertTrue(ckpt.is_file())
             self.assertTrue(manifest.is_file())
             self.assertEqual(report["actual_os_workers"], WORKERS)
+            self.assertTrue(
+                report["hf_native_auto_shard_audit"]["all_source_doc_ids_covered_once"]
+            )
+            self.assertEqual(
+                sum(report["hf_native_auto_shard_audit"]["per_worker_document_counts"]),
+                report["development_training_documents"]
+            )
+            self.assertTrue(report["upstream_explicit_shard_double_partition_risk"])
             for pids in report["worker_pids"].values():
                 self.assertEqual(len(pids), 2)
                 self.assertNotEqual(pids[0], pids[1])
