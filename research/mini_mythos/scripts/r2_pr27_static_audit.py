@@ -63,7 +63,7 @@ def check_pr27_sources(sources, main_source):
          "weights_only=False" in eval_code,
          "Do not unpickle externally sourced checkpoint; use tensor/primitive-only format."),
         ("PR27_LORA_PARAM_DRIFT", "P1", "Loop depth changes per-loop adapter parameters",
-         "max_loop_iters=1" in runner and "max_loop_iters=8" in runner
+         "--max_loop_iters 1" in runner and "--max_loop_iters 8" in runner
          and "self.scale = nn.Embedding(max_loops, rank)" in main_source,
          "The single-loop and eight-loop arms differ in adapter embedding "
          "parameters (7 * lora_rank) and active compute budget."),
