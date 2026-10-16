@@ -162,20 +162,23 @@ affiliation or claim model/weight equivalence.
   identical traces/model/optimizer/cursor/RNG, max loss delta 0.0. Data
   globally PACKED first; NOT upstream worker-sharded IterableDataset.
   See [Gate J result](R2_GATE_J_RESULT.md).
-- R2 Gate K (FIRST CODE RUN FAILED 2026-10-16; native HF worker
-  auto-shard correction COMMITTED, pending Codespaces retest): all 187
-  tests except the real two-worker integration passed; HF reported
-  'Too many dataloader workers: 2 (max is dataset.num_shards=1)'
-  and CLI failed. Cause: manually .shard(2,worker_id) within workers on
-  a 2-shard HF IterableDataset, then HF's own _iter_pytorch() split it
-  AGAIN and stopped one OS worker. Corrected research path keeps 2 local
-  Arrow shards and uses HF native automatic worker sharding exactly ONCE
-  before per-worker GPT2 EOS/packing. New audit and negative controls
-  detect overlap, missing documents, and double-shard source loss.
-  Need full tests + real worker PID/12 vs 5+7 bitwise rerun. Original PR27
-  explicit .shard may have related multi-file loss: NOT yet quantified.
-  See [failure evidence](R2_GATE_K_FAILURE_001.md) and
-  [Gate K revised plan](R2_GATE_K_HF_WORKER_SHARD_PLAN.md).
+- R2 Gate K (VERIFIED 2026-10-16 AFTER FAILED FIRST RUN): original
+  187-test suite had one double-shard integration ERROR, documented as
+  Failure 001. HF native-auto-only fix then passed 190/190 tests in
+  39.748s; Gate I real 32-doc snapshot yielded internal 28 train/4
+  excluded records, covered ONCE by two OS workers (14/14). Three
+  Loader runs saw distinct worker PIDs, four speculative prefetched
+  windows discarded, resumed global batch 5. Tiny CPU 12 vs 5+7 model/
+  AdamW/cursor/Python-Torch RNG bitwise equal, max loss delta 0.0.
+  Worker-local sharding vs global pack differed at 11 of 12 windows.
+  Real remote HF IterableDataset NOT tested. See [Gate K result](R2_GATE_K_RESULT.md).
+- R2 Gate L (committed, unverified): use SAME pinned Gate I snapshot but
+  pass only hash-based document IDs to 8 LOCAL HF Arrow shards. With two
+  REAL OS DataLoader workers compare HF NATIVE auto-shard ONCE versus PR27-
+  style explicit per-worker .shard() PLUS HF auto-shard. Both arms must
+  show two PID workers; record exact document coverage and silent missing
+  source indices in the double-shard arm. No text to workers, no training,
+  no live Parquet. See [Gate L plan](R2_GATE_L_DOUBLE_SHARD_COVERAGE_PLAN.md).
 - Community training proposal:
   <https://github.com/kyegomez/OpenMythos/pull/27>. Proposed ~117.8M
   MLA+MoE FineWeb-Edu experiment and loop-depth PPL tests; external reports
@@ -252,24 +255,22 @@ avoid unsupported claims of proprietary model extraction.
 
 ## Immediate work queue
 
-1. Pull corrected Gate K source/tests and run full `unittest` followed by
-   `r2_hf_worker_shard_pack.py`: verify BOTH OS worker PIDs and HF NATIVE
-   source coverage once (no overlap/omission), prefetch, 12 vs 5+7
-   exact CPU optimizer/trace/RNG replay, distinct global-pack token stream.
-   FAILED before fix: 187 tests / 1 error; do not mark PASS until real logs.
-2. Preserve Gate J's VERIFIED 179/179 and earlier pinned 32-doc FineWeb
-   snapshot/GPT2 contract. Do not overwrite prior local artifacts or
-   commit JSONL real text. No live remote HF stream or GPU required.
-3. Investigate PR27's explicit `.shard()` followed by HF automatic worker
-   sharding under the exact installed datasets version: with many remote
-   shards it may SILENTLY drop source files. Verify real shard/document
-   coverage, not just that both worker PIDs remain alive.
-4. For production streaming checkpoint design: pinned remote Parquet
-   file offsets, worker-to-source assignment, committed batch ACK,
-   reproducible ordering and SIGKILL/restart tests; local small Arrow
-   shard replay is insufficient to close P0.
-5. GPU unavailable in Codespaces. No 118M model training until original
-   pipeline readiness, mixed BF16/MoE checks and budgeted GPU environment.
+1. Run Gate L full unit tests + 2-real-worker 8-local-HF-shard coverage
+   A/B to demonstrate whether PR27-style MANUAL per-worker sharding
+   compounded by HF's automatic worker partition silently omits source
+   documents even while both worker PIDs are active. Run only in Linux
+   Codespaces, using Gate I source SHA; never send real text to workers.
+2. Keep verified Gate K 190/190 evidence (28/28 docs, two true OS
+   workers per run, 12 vs 5+7 bitwise Tiny AdamW recovery); retain
+   its first 187-test/1-error failure report as provenance.
+3. Next validate the ORIGINAL pinned remote HF FineWeb-Edu dataset file
+   shard identities/assignment at the installed HF datasets version.
+   Do not extrapolate local 8-shard omission rate to 2410 remote files.
+4. Only with immutable real source + single worker sharding + source
+   cursor + optimizer COMMITTED ACK should an isolated PR27 training
+   adapter attempt SIGKILL fault and authentic streaming resume.
+5. CUDA still absent in Codespaces. Budgeted GPU, BF16/FlashAttention,
+   MoE/ACT computation and independent heldout PPL are separate blockers.
 
 ## References
 
