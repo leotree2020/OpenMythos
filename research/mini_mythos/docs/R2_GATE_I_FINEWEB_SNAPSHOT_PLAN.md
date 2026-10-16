@@ -1,6 +1,6 @@
 # R2 Gate I — 官方 FineWeb-Edu 不可变数据源与受限真实文档快照
 
-**2026-10-16；状态：源码与 9 项无网络单元测试已提交，Codespaces 尚未执行真实 HF 数据读取。** 前一关 Gate H 已验证真实两个 OS Worker 的本地 Indexed Dataset 恢复（**162/162 tests PASS**）：已预取但未提交的 Task 5–8 正确从 Task 5 重放，最终连续/恢复训练全状态逐位一致。见 [R2 Gate H 实测结果](R2_GATE_H_RESULT.md)。
+**2026-10-16；状态：已在用户 Codespaces 实测通过：171/171 单测 PASS，冻结官方 32 条 FineWeb-Edu 文档，HF revision `87f09149ef4734204d70ed1d046ddc9ca3f2b8f9`，本地快照 SHA `dbd98514fa4de0df2271fe9ddc214a295108492f20fa993fa33bbe6db5d366e1`，离线 verify 成功。完整结果见 [Gate I Result](R2_GATE_I_RESULT.md)。本页保留实验前协议。** 前一关 Gate H 已验证真实两个 OS Worker 的本地 Indexed Dataset 恢复（**162/162 tests PASS**）：已预取但未提交的 Task 5–8 正确从 Task 5 重放，最终连续/恢复训练全状态逐位一致。见 [R2 Gate H 实测结果](R2_GATE_H_RESULT.md)。
 
 ## 研究目标：先保证来源可辨认，而不是马上下载整个数据集
 
