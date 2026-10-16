@@ -43,11 +43,13 @@ def _parameter_difference(original, fixed):
 
 
 def _gradient_difference(original, fixed):
+    # A missing gradient is interpreted as zero, never silently dropped.
     with torch.no_grad():
         squared = sum(
-            ((p.grad.detach().float() - q.grad.detach().float()) ** 2).sum()
+            ((p.grad.detach().float() if p.grad is not None else torch.zeros_like(p, dtype=torch.float32))
+             - (q.grad.detach().float() if q.grad is not None else torch.zeros_like(q, dtype=torch.float32))
+             ).square().sum()
             for p, q in zip(original.parameters(), fixed.parameters())
-            if p.grad is not None and q.grad is not None
         )
         return float(torch.sqrt(squared))
 
