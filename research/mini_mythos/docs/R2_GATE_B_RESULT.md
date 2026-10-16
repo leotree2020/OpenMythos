@@ -42,7 +42,7 @@
 
 我们新增独立 [r2_bf16_autocast_candidate.py](../scripts/r2_bf16_autocast_candidate.py) 及 [CPU 单元测试](../tests/test_r2_bf16_autocast_candidate.py)，不修改 `open_mythos/main.py` 或 PR27 源码。测试同一微型 GQA/MLA 模型 FP32 与 BF16 autocast full-sequence forward，确认 logits/loss 有限、梯度非零且有限、master params 始终 FP32，以及 `freqs_cis`/`freqs_cis_mla` 的 **complex64 相位逐元素精确保留**。因已知 FP32 mask 会把 BF16 Attention score 提升 dtype、导致某些 matmul 失败，在研究层临时只覆写全序列因果 mask dtype 成 BF16，运行结束强制恢复。
 
-**限制：此方案只用于无 KV Cache 的全序列 tiny smoke；并非正式 PR27 整模型 BF16 修复，不代表 FlashAttention、GPU BF16、完整 ACT 精度、长上下文和 118M 混合精度训练已经验证。** 新增脚本仍需用户 Codespaces 实际运行和审阅结果；不预先报告 PASS。
+**限制：此方案只用于无 KV Cache 的全序列 tiny smoke；并非正式 PR27 整模型 BF16 修复，不代表 FlashAttention、GPU BF16、完整 ACT 精度、长上下文和 118M 混合精度训练已经验证。** Gate C 候选已经在用户 Codespaces 完成实际 CPU 验证：120/120 tests PASS，GQA/MLA 的前向反向与相位完整性均 PASS。详见 [R2 Gate C Result](R2_GATE_C_RESULT.md)。
 
 ```bash
 git pull --ff-only origin mini-mythos-research
