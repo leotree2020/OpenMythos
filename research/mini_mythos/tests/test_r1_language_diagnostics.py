@@ -11,8 +11,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 from common import get_repo, load_upstream
 from r1_language_diagnostics import (
-    byte_metrics, compare_heldout, fitted_byte_models, generate_diagnostic,
-    metrics_from_sums, validate_checkpoint
+    byte_metrics, compare_heldout, context_order_probe, fitted_byte_models,
+    generate_diagnostic, metrics_from_sums, validate_checkpoint
 )
 from r1_text_pilot import TOKENIZER_ID, make_config
 
@@ -76,6 +76,49 @@ class R1LanguageDiagnosticsTests(unittest.TestCase):
         a = generate_diagnostic(model, "The ", **kwargs)
         b = generate_diagnostic(model, "The ", **kwargs)
         self.assertEqual(a["generated_byte_ids"], b["generated_byte_ids"])
+
+
+    def test_context_order_control_last_token_only_is_invariant(self):
+        class LastTokenOnly:
+            def eval(self):
+                return self
+
+            def __call__(self, x, n_loops):
+                return torch.nn.functional.one_hot(
+                    x.long(), num_classes=257
+                ).float()
+
+        validation = torch.arange(65, dtype=torch.long)
+        outcome = context_order_probe(
+            LastTokenOnly(), validation, seq_len=64, n_loops=2,
+            n_windows=1, device="cpu"
+        )
+        self.assertEqual(outcome["windows"], 1)
+        self.assertEqual(outcome["mean_logits_max_abs_change"], 0.)
+        self.assertEqual(outcome["mean_probability_total_variation"], 0.)
+        self.assertEqual(outcome["reversed_minus_original_target_nll"], 0.)
+
+    def test_context_order_control_detects_first_token_dependence(self):
+        class FirstTokenBased:
+            def eval(self):
+                return self
+
+            def __call__(self, x, n_loops):
+                logits = torch.zeros(
+                    (x.shape[0], x.shape[1], 257), dtype=torch.float32
+                )
+                for i in range(x.shape[0]):
+                    logits[i, :, int(x[i, 0])] = 5.
+                return logits
+
+        validation = torch.arange(65, dtype=torch.long)
+        outcome = context_order_probe(
+            FirstTokenBased(), validation, seq_len=64, n_loops=2,
+            n_windows=1, device="cpu"
+        )
+        self.assertGreater(outcome["mean_logits_max_abs_change"], 0.)
+        self.assertGreater(outcome["mean_probability_total_variation"], 0.)
+        self.assertEqual(outcome["argmax_changed_fraction"], 1.)
 
     def test_fingerprint_and_checkpoint_step_guard(self):
         module = load_upstream(get_repo("."))
