@@ -1,6 +1,6 @@
 # R1 Gate F — 官方 WikiText-2 Test Split 一次性冻结评估
 
-**制定日期：2026-10-16。状态：协议已冻结，代码已提交；Test Split 尚未被当前研究分支实验读取或评分，结果不能预报。**
+**制定日期：2026-10-16。状态：协议已经在 Codespaces 一次性执行且通过；实际指标及数据 SHA 详见 [R1 Gate F Result](R1_GATE_F_RESULT.md)。本页保留原先测试前冻结的协议与命令用于审计。**
 
 ## 为什么需要 Gate F
 
