@@ -433,11 +433,11 @@ Gate J 结果：`results/r2/pr27_gate_j_realtext_cpu.pt`、`pr27_gate_j_realtext
     python -m unittest discover -s research/mini_mythos/tests -p 'test_*.py' -v
     python research/mini_mythos/scripts/r2_hf_worker_shard_pack.py --repo .
 
-本地新文件：`research/mini_mythos/results/r2/pr27_gate_k_worker_pack_cpu.pt`、`.manifest.json`、`pr27_gate_k_worker_pack_report.json`。**Gate K 首次已运行，但发生双重分片错误：187 项测试有 1 ERROR，CLI 同样 FAIL。研究代码已修正为 HF 原生 Worker 自动分片一次，并新增来源文档覆盖审计和负控测试；**修复尚待 Codespaces 复验**。详见 [Gate K Failure 001](docs/R2_GATE_K_FAILURE_001.md)。** 该方案从开头 O(N) 重放已提交 Batch 的摘要，只适用于小规模本地快照，不具备生产大规模 IterableDataset 精确 shard seek 的性质，也没有真实 SIGKILL 或远程 Parquet 断点恢复。
+本地新文件：`research/mini_mythos/results/r2/pr27_gate_k_worker_pack_cpu.pt`、`.manifest.json`、`pr27_gate_k_worker_pack_report.json`。**Gate K 首次运行（187 项测试 1 ERROR）发现 HF 双重分片，详见 [Failure 001](docs/R2_GATE_K_FAILURE_001.md)；随后修复版本已于 2026-10-16 重测 190/190 tests PASS，详见 [Gate K Result](docs/R2_GATE_K_RESULT.md)。** 该方案从开头 O(N) 重放已提交 Batch 的摘要，只适用于小规模本地快照，不具备生产大规模 IterableDataset 精确 shard seek 的性质，也没有真实 SIGKILL 或远程 Parquet 断点恢复。
 
 ## R2 Gate K 首次失败：HF 手动 + 自动双重 Sharding；修复待验证
 
-2026-10-16 用户 Codespaces 上传的完整运行日志：**187 tests，1 ERROR（33.794 秒）**；唯一失败是 `GateKTests.test_real_worker_shard_then_pack_resume_matches_full_run`。HF 提示 `Too many dataloader workers: 2 (max is dataset.num_shards=1). Stopping 1 dataloader workers.` 单独运行 Gate K CLI 也返回 `RuntimeError: Missing one of two actual DataLoader worker PIDs`。**Gate K 尚未通过**；此前 Gate J 的 179/179 PASS 独立保留。[失败根因和修复记录](docs/R2_GATE_K_FAILURE_001.md)。
+2026-10-16 用户 Codespaces 上传的完整运行日志：**187 tests，1 ERROR（33.794 秒）**；唯一失败是 `GateKTests.test_real_worker_shard_then_pack_resume_matches_full_run`。HF 提示 `Too many dataloader workers: 2 (max is dataset.num_shards=1). Stopping 1 dataloader workers.` 单独运行 Gate K CLI 也返回 `RuntimeError: Missing one of two actual DataLoader worker PIDs`。**首次 Gate K 运行尚未通过；该历史失败记录已保留，后续修复于 2026-10-16 获得 190/190 PASS**；此前 Gate J 的 179/179 PASS 独立保留。[失败根因和修复记录](docs/R2_GATE_K_FAILURE_001.md)。
 
 原因：Gate K 将本地数据预先变成 2 个 HF IterableDataset Arrow Shards，随后 Worker 中又调用显式 `.shard(2,worker_id)`，每个 Worker 减至 1 Shard；HF 自己的 `_iter_pytorch()` 又按 2 Worker 自动 Sharding，终止多余 Worker。本次研究修复不修改上游 PR27：让 **HF 原生 Worker 自动分片恰好一次**，随后分别 GPT2 Tokenize、EOS、Pack。新增主进程真实 HF 分片审计（所有训练文档 ID 散列恰好被两个 Worker 分区覆盖，不遗漏不交叉）与两个显式/自动双重分片负控，涵盖 4 Shards 时的源文档遗漏演示。**这也提示 PR27 原版手动 `.shard` 可能存在生产数据覆盖 P0，需要额外核查真实远程 Shards。**
 
