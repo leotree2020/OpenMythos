@@ -148,15 +148,22 @@ def summarize(expected, records, pids):
     }
 
 
-def compare_modes(records, *, source_sha, revision):
-    """Both true worker experiments use exactly the SAME frozen identities."""
+def compare_modes(
+    records, *, source_sha, revision,
+    expected_train=28, expected_excluded=4,
+):
+    """Both true worker experiments use exactly the SAME frozen identities.
+
+    The CLI freezes 28/4 from real Gate I. Optional expected counts exist
+    solely for tests with synthetic, never-sourced-from-HF fixture IDs.
+    """
     if not isinstance(source_sha, str) or len(source_sha) != 64:
         raise ValueError("Frozen source digest missing")
     if not isinstance(revision, str) or len(revision) != 40:
         raise ValueError("Frozen source version missing")
     train, excluded = split_documents(records)
-    if len(train) != 28 or len(excluded) != 4:
-        raise ValueError("Gate L requires exact Gate I 28/4 source partition")
+    if len(train) != expected_train or len(excluded) != expected_excluded:
+        raise ValueError("Gate L source partition count differs from frozen protocol")
     source, expected = make_digest_source(train)
     native_rows, native_pids = collect_worker_coverage(source, "native_once")
     double_rows, double_pids = collect_worker_coverage(
