@@ -60,10 +60,21 @@ affiliation or claim model/weight equivalence.
   27.513/19.158 versus model 29.264; at 200 were 26.951/14.812 versus model
   25.167. The 200-step model beats the matched unigram but not the matched
   bigram. See [R1 Gate C](R1_GATE_C_RESULT.md).
-- R1 Gate D (planned): a final bounded tiny-model continuation 200→600 steps,
-  with strict 60/200/600 comparability checks; stop long-running CPU Toy
-  research afterwards and plan proper tokenizer/capacity/GPU training.
-  See [Gate D plan](R1_GATE_D_PLAN.md).
+- R1 Gate D (verified 2026-10-16): 200→600 step resume succeeded. All
+  three checkpoints passed the comparator's configuration, data fingerprint,
+  resume-step and RNG replay checks. Step-600 tiny GQA heldout PPL=11.219663
+  on 1024 byte targets, beating same-exposure Add-1 Bigram PPL=13.021447
+  and full-corpus Add-1 Bigram PPL=12.597172. Argmax-space prediction fell
+  from 100% to 32.5% and history-order TV rose to 0.214781; greedy still
+  loops 'the the the' and reversed-history last-target delta NLL was -0.03650.
+  This is evidence of limited byte-level predictive learning, not fluent
+  language or the proprietary Mythos architecture. See
+  [Gate D result](R1_GATE_D_RESULT.md).
+- R1 Gate E (planned, scripts committed): verify the step-600 checkpoint on
+  128 non-overlapping deterministic validation windows (8192 target bytes),
+  compare exact paired model vs same-exposure Add-1 Bigram NLL per window,
+  and report exploratory window-bootstrap intervals without overwriting
+  prior 16-window reports. See [Gate E plan](R1_GATE_E_PLAN.md).
 - Community training proposal:
   <https://github.com/kyegomez/OpenMythos/pull/27>. Proposed ~117.8M
   MLA+MoE FineWeb-Edu experiment and loop-depth PPL tests; external reports
@@ -140,18 +151,19 @@ avoid unsupported claims of proprietary model extraction.
 
 ## Immediate work queue
 
-1. Run all unit tests, preserve the 60/200-step checkpoint evidence, then
-   resume an independent copy from 200→600 steps using identical configuration,
-   seeds and training data; capture exact heldout and generation results.
-2. Run Gate D diagnostics and exact data-exposure ngrams at 600; verify the
-   entire checkpoint resume chain and plot an apples-to-apples learning curve.
-3. **Stop this tiny CPU training line at 600 steps**; if no basic language
-   modeling emerges, investigate gradients, attention learning, capacity and
-   tokenizer instead of indefinitely tweaking ACT probabilities.
-4. Plan a reproducible 100M+ GPU pretraining pilot with a pinned real tokenizer,
-   train/heldout provenance, checkpoint/optimizer recovery and baseline tests.
-5. Preserve ACT-001–004 as mechanism studies only; never claim reconstructed
-   proprietary architecture without independent public evidence.
+1. Run Gate E read-only 128-window heldout validation at the frozen 600-step
+   checkpoint and examine paired model minus same-exposure Bigram NLL without
+   changing the data, architecture or training step count.
+2. Finalize this dim48 CPU pilot: archive model/optimizer checkpoint hashes
+   and evaluation evidence; stop Toy training at 600 steps as planned.
+3. Return to upstream-first implementation audit: tokenizer revision, training
+   recipe, actual MoE routing and recurrent computation, FlashAttention /
+   cached-chunk behavior, and checkpoints of a feasible 100M+ GPU run.
+4. Design a budgeted 100M+ language training pilot using a real pinned
+   tokenizer and authorized public corpus, plus a parameter/compute-aware
+   non-recurrent Transformer baseline. Reserve untouched test data for final
+   results and avoid overfitting to WikiText validation.
+5. Preserve ACT-001–004 as mechanism studies, not core optimization.
 
 ## References
 
