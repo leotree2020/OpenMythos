@@ -244,4 +244,19 @@ Gate C（**200-step 已执行并保存结果**）：保留 60-step 原始 checkp
 
 Codespaces 真实执行：**86/86 PASS**。两个 Checkpoint 的训练窗口随机数状态均严格重放一致。60-step 15360 次监督目标：模型 PPL **29.264**，matched Unigram **27.513**，matched Bigram **19.158**。200-step 51200 次监督目标：模型 PPL **25.167**，matched Unigram **26.951**，matched Bigram **14.812**。模型已超过 matched Unigram，但尚未超过 Bigram；Greedy 始终为空格。记录见 [R1 Gate C](docs/R1_GATE_C_RESULT.md)。
 
-[R1 Gate D 完整执行计划](docs/R1_GATE_D_PLAN.md)规定最后一次本配置小模型 200→600 步续训、匹配暴露量的 n-gram 检查，以及 [60/200/600 比较器](scripts/r1_gate_d_compare.py) 的配置/Checkpoint/数据/恢复链一致性守卫（附 [离线测试](tests/test_r1_gate_d_compare.py)）。**新增脚本和 Gate D 计划已提交，但 600-step 尚未运行。**
+[R1 Gate D 完整执行计划](docs/R1_GATE_D_PLAN.md)规定最后一次本配置小模型 200→600 步续训、匹配暴露量的 n-gram 检查，以及 [60/200/600 比较器](scripts/r1_gate_d_compare.py) 的配置/Checkpoint/数据/恢复链一致性守卫（附 [离线测试](tests/test_r1_gate_d_compare.py)）。**Gate D 已于 2026-10-16 在 Codespaces 完成，结果见 [Gate D 实测](docs/R1_GATE_D_RESULT.md)。**
+
+## R1 Gate D 完成与 R1 Gate E 扩展验证
+
+600-step Checkpoint 已实测：`Resumed from step 200`，最终验证 **NLL 2.417668 / PPL 11.219663**；同模型 SGD 窗口精确重放 **153600 目标位置**（RNG 状态匹配），**matched Bigram PPL 13.021447**，全语料前缀 Bigram PPL 12.597172。训练后 argmax 空格占比从 100% 降至 **32.52%**，反转历史上下文 mean probability TV 达到 **0.214781**；但 Greedy 生成仍陷入 `the the the`，并非具备流畅自然语言能力。60/200/600 模型数据/超参数/恢复链校验全部通过。详见 [R1 Gate D Result](docs/R1_GATE_D_RESULT.md)。
+
+依据预设停止规则，**不再无止境训练这只 dim48 CPU Tiny 模型**。[R1 Gate E](docs/R1_GATE_E_PLAN.md) 将在同一 600-step Checkpoint 上扩大固定 Heldout 检查到 128 个窗口（8192 个字节目标），同时做逐窗口的模型和 matched Bigram NLL 对比及探索性配对 bootstrap，避免只凭先前 1024 个目标作较强结论。
+
+    git pull --ff-only origin mini-mythos-research
+    python -m unittest discover -s research/mini_mythos/tests -p 'test_*.py' -v
+    python research/mini_mythos/scripts/r1_gate_e_validation.py --repo . \
+      --pilot-dir research/mini_mythos/results/r1/pilot_gqa_step600 \
+      --eval-windows 128 \
+      --out research/mini_mythos/results/r1/gate_e_validation_128.json
+
+新脚本只读权重、核对数据和 RNG 后写入新的 JSON，不覆盖 16-window 既有报告。**Gate E 新代码尚待 Codespaces 测试；不得预先宣称 128-window 结果。**
