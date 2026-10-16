@@ -211,7 +211,7 @@ Codespaces 实测 **73/73 tests PASS**。数据：WikiText-2 train 2000 篇（99
 
 2026-10-16 真实 Codespaces 实测：**82/82 tests PASS**；60-step GQA 重新载入后的 heldout PPL 29.26364。Unigram PPL 26.91942、Bigram PPL 12.59717，模型仍落后于这两个 train-fitted 统计基线；argmax 预测空格比例 100%，历史顺序反转的目标 NLL 变化约 3.58e-7，平均概率 TV 约 2.17e-5。详见 [Gate B 报告](docs/R1_GATE_B_RESULT.md)。
 
-Gate C（**方案，尚未执行**）：保留 60-step 原始 checkpoint，复制该目录后仅增加训练步数到 200，对比 heldout、Bigram、空格塌缩与上下文敏感性；若观察到实质改善再考虑 600 steps，避免无目标地做局部 ACT 修改。
+Gate C（**200-step 已执行并保存结果**）：保留 60-step 原始 checkpoint，在副本中仅增加训练步数到 200；记录 heldout、Bigram、空格塌缩与上下文敏感性。历史命令保留下方供审计。
 
     git pull --ff-only origin mini-mythos-research
     cp -a research/mini_mythos/results/r1/pilot_gqa research/mini_mythos/results/r1/pilot_gqa_step200
@@ -238,4 +238,10 @@ Gate C（**方案，尚未执行**）：保留 60-step 原始 checkpoint，复�
     python research/mini_mythos/scripts/r1_exposure_baselines.py --repo . \
       --pilot-dir research/mini_mythos/results/r1/pilot_gqa_step200 --eval-windows 16
 
-新代码已提交，但尚未在 Codespaces 执行，不能预报 exposure-matched n-gram 的具体结果。
+2026-10-16 已经在 Codespaces 成功执行：86/86 tests PASS，60 和 200 步的 RNG 状态与重放严格一致，结果详见 Gate C 报告。
+
+## R1 Gate C 同训练样本对照已完成；Gate D 受控续训准备
+
+Codespaces 真实执行：**86/86 PASS**。两个 Checkpoint 的训练窗口随机数状态均严格重放一致。60-step 15360 次监督目标：模型 PPL **29.264**，matched Unigram **27.513**，matched Bigram **19.158**。200-step 51200 次监督目标：模型 PPL **25.167**，matched Unigram **26.951**，matched Bigram **14.812**。模型已超过 matched Unigram，但尚未超过 Bigram；Greedy 始终为空格。记录见 [R1 Gate C](docs/R1_GATE_C_RESULT.md)。
+
+[R1 Gate D 完整执行计划](docs/R1_GATE_D_PLAN.md)规定最后一次本配置小模型 200→600 步续训、匹配暴露量的 n-gram 检查，以及 [60/200/600 比较器](scripts/r1_gate_d_compare.py) 的配置/Checkpoint/数据/恢复链一致性守卫（附 [离线测试](tests/test_r1_gate_d_compare.py)）。**新增脚本和 Gate D 计划已提交，但 600-step 尚未运行。**
