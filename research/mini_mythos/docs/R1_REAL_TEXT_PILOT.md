@@ -1,6 +1,6 @@
 # R1 第一阶段：真实文本训练 Pilot
 
-日期：2026-10-16。状态：**研究代码已提交，尚未在用户 Codespaces 执行；不能宣称已训练出 Checkpoint**。
+日期：2026-10-16。状态：**GQA CPU Pilot 已在用户 Codespaces 完成真实文本训练（60 steps）、保存 Checkpoint，并报告 Heldout PPL 29.264。** 原始 Checkpoint/JSON 文件尚未独立取回验证。参见 [R1 Gate A 结果](R1_GATE_A_RESULT.md)。
 
 ## 目标与证据界限
 
@@ -103,3 +103,16 @@ python research/mini_mythos/scripts/r1_text_pilot.py \
 | Mythos 真实性 | 使用社区推测的架构 | 公开证据矩阵和有条件的黑箱行为比较 |
 
 最后的判定要求：**实际 Codespaces 运行 PASS、持久化 Checkpoint 可加载、真实 Heldout PPL 可重算、生成输出可复查**。代码提交本身不满足这一关卡。
+
+## Gate B：已训练 Checkpoint 的诊断对照
+
+首轮成功训练后，`The ` 后续 24 个 Token 全是空格。为了区分真实上下文学习和字节频率拟合，现在使用 [r1_language_diagnostics.py](../scripts/r1_language_diagnostics.py) 在**完全相同的验证窗口**计算模型相对于 train-fitted 平滑 Unigram/Bigram、均匀随机基线的 NLL，分别测量空格及非空格目标上的 Loss，并分别显示 greedy 和固定种子的 top-k sampling 文本。执行：
+
+```bash
+python research/mini_mythos/scripts/r1_language_diagnostics.py \
+  --repo . \
+  --pilot-dir research/mini_mythos/results/r1/pilot_gqa \
+  --eval-windows 16 --generated-bytes 64
+```
+
+诊断只读取本地 Checkpoint 和语料，不执行训练或修改上游架构；会校验训练数据完整 SHA、模型配置、训练步数及已有报告的 Heldout NLL，再生成 `diagnostics.json`。增加 7 项独立离线测试。该新代码尚待 Codespaces 运行。
