@@ -368,4 +368,16 @@ Codespaces 下一步（仅 CPU）：
     python -m unittest discover -s research/mini_mythos/tests -p 'test_*.py' -v
     python research/mini_mythos/scripts/r2_pr27_stream_resume.py --repo .
 
-预计新文件在 Git 忽略的 `results/r2`：`pr27_gate_f_stream_cpu.pt`、`.manifest.json`、`pr27_gate_f_stream_comparison.json`。**Gate F 新代码尚未在 Codespaces 验证。** 这是受控**单 Worker、本地合成数据**流程，不等同于当前 PR27 `num_workers=2` 的 FineWeb-Edu Streaming Loader 可恢复；正式数据分片/预取与 GPU 训练依旧 BLOCKED。
+预计新文件在 Git 忽略的 `results/r2`：`pr27_gate_f_stream_cpu.pt`、`.manifest.json`、`pr27_gate_f_stream_comparison.json`。**Gate F 已于 2026-10-16 在 Codespaces 实测：148/148 tests PASS，连续 12 步与 5+7 步恢复的 Loss 差为 0.0，模型/AdamW/游标/Python+Torch RNG 全部逐位一致。详见 [Gate F Result](docs/R2_GATE_F_RESULT.md)。** 这是受控**单 Worker、本地合成数据**流程，不等同于当前 PR27 `num_workers=2` 的 FineWeb-Edu Streaming Loader 可恢复；正式数据分片/预取与 GPU 训练依旧 BLOCKED。
+
+## R2 Gate F 结果归档：148/148 PASS；下一关模拟多 Worker 预取与已提交数据位置
+
+GitHub Codespaces 实测：**148/148 单元测试 PASS（4.110 秒）**。本地固定 64 条 PR27 形状文档，55 Train/9 Heldout，真实固定 GPT2 Tokenizer；单 Worker PackedCursor 上连续训练 12 steps 与 5 steps 后保存并恢复 7 steps，**Loss 差 0.0，Trace、模型参数、AdamW Optimizer、Cursor 与 Python/Torch RNG 均逐位完全相同**。没有读取 FineWeb-Edu，没有 GPU，也没有修改上游原版 DataLoader。[Gate F 实测报告](docs/R2_GATE_F_RESULT.md)。
+
+下一项 [R2 Gate G](docs/R2_GATE_G_PREFETCH_PLAN.md) 是**两个逻辑 Worker** 的 CPU 故障注入模拟：任务从固定 SHA 的全局索引派发，Worker 完成顺序故意乱序，程序在 optimizer step 5 后 checkpoint，而多个任务已完成预取却**还没有参与 optimizer.step()**。恢复时必须从已提交的 task 5 重新发放，不能根据最后派发的 task 9 跳过 5–8。再次强制 12 vs 5+7 steps 的 Tiny AdamW 全状态逐位一致。
+
+    git pull --ff-only origin mini-mythos-research
+    python -m unittest discover -s research/mini_mythos/tests -p 'test_*.py' -v
+    python research/mini_mythos/scripts/r2_pr27_prefetch_commit.py --repo .
+
+新结果写入 Git 忽略目录的 `pr27_gate_g_prefetch_cpu.pt`、`.manifest.json`、`pr27_gate_g_prefetch_comparison.json`，不会覆盖 Gate F。**Gate G 新代码尚待 Codespaces 验证。** 本实验**不会启动真实子进程、HF Streaming 或 CUDA**；真正 FineWeb-Edu 多 Worker/预取及生产 GPU 恢复仍属于 P0 阻塞项。
