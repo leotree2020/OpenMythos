@@ -472,4 +472,17 @@ Gate J 结果：`results/r2/pr27_gate_j_realtext_cpu.pt`、`pr27_gate_j_realtext
     python research/mini_mythos/scripts/r2_pr27_remote_parquet_inventory.py freeze --repo .
     python research/mini_mythos/scripts/r2_pr27_remote_parquet_inventory.py verify --repo .
 
-Gate M 新文件位于 Git ignore `research/mini_mythos/results/r2/pr27_gate_m_remote_sample_file_inventory.json`，拒绝覆盖。**新代码尚未在用户 Codespaces 执行，实际 sample-10BT 文件数量与预测遗漏路径均待实测。**
+Gate M 新文件位于 Git ignore `research/mini_mythos/results/r2/pr27_gate_m_remote_sample_file_inventory.json`，拒绝覆盖。**Gate M 已于 2026-10-16 实测 205/205 tests PASS：真实 `sample-10BT` Parquet 文件数为 14、清单 SHA 固定、文件 ID 分片投影原生 14/14、双重分片 7/14，离线 VERIFY 通过；见 [Gate M Result](docs/R2_GATE_M_RESULT.md)。**
+
+## R2 Gate M 已实测：205/205 PASS；Gate N 直接查看真正的 HF Streaming num_shards
+
+2026-10-16 Codespaces：**205/205 tests PASS（47.955 秒）**。固定 HuggingFaceFW/fineweb-edu 的 HF Commit `87f09149ef4734204d70ed1d046ddc9ca3f2b8f9`，真实 `sample/10BT` 目录中是 **14 个 Parquet 文件**，文件名+Size SHA `0b65e53aeb3c7c1d69debfcea0e7105fd5e7a1141b7f3bd7bc9bbc3957a44209`，离线清单验证成功。对 14 个**文件 ID**按 HF Worker 已知分片规则投影：Native HF auto 一次 **14/14**、PR27 manual+auto 两次 **7/14**，预测跳过文件编号 `001,003,005,007,009,011,013`。**这些不是已测得的远端 IterableDataset 逻辑 Shard 位置或缺失文档/Token 比例**；用户没有下载 Parquet 文件正文、训练模型或运行原版 PR27。[Gate M 实测](docs/R2_GATE_M_RESULT.md)。
+
+已提交 [Gate N](docs/R2_GATE_N_REAL_HF_SHARD_COUNT_PLAN.md)：[真实 HF Streaming Metadata Probe](scripts/r2_pr27_live_hf_shard_metadata.py) 和 [9 项离线回归测试](tests/test_r2_pr27_live_hf_shard_metadata.py)。此关复核 Gate I Snapshot SHA、Gate M 的 14 文件清单外部 SHA，再调用**真正版本固定**的 `datasets.load_dataset(...,streaming=True,revision=SOURCE_REVISION)` **只构造 Dataset 对象**。从主进程读取 `ds.num_shards`，调用 `.shard(2,w,contiguous=True/False)` 后读取子视图的 Shard 计数，不显式迭代源文档、不建 DataLoader、不训练模型。保存包版本与逻辑 Shard-ID 预测，支持独立离线 Verify。
+
+    git pull --ff-only origin mini-mythos-research
+    python -m unittest discover -s research/mini_mythos/tests -p 'test_*.py' -v
+    python research/mini_mythos/scripts/r2_pr27_live_hf_shard_metadata.py freeze --repo .
+    python research/mini_mythos/scripts/r2_pr27_live_hf_shard_metadata.py verify --repo .
+
+新报告位于 Git ignored `research/mini_mythos/results/r2/pr27_gate_n_live_hf_shard_metadata.json`，拒绝覆盖。**Gate N 已提交但未实际运行，不能提前声称 `ds.num_shards=14` 或远端真实漏读率=50%。** 即便 `num_shards` 与文件数相等，也只是数量吻合，不代表真实 Shard ID/Parquet 文件路径一一对应。构建 HF Streaming Dataset 可能自动读取在线元数据/Schema/File Header，因此不得绝对保证零 Parquet 网络字节；本工具不会显式迭代任何真实文档。
