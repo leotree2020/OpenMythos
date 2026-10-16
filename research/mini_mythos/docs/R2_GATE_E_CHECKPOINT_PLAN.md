@@ -1,6 +1,6 @@
 # R2 Gate E — 研究层 Tokenizer 绑定的 Checkpoint / Eval / Resume 接口
 
-**创建：2026-10-16。状态：隔离研究层代码及 10 项新离线测试已提交，但 Codespaces 尚未执行。** Gate D 的真实 GPT-2 Tokenizer 身份已通过 130/130 tests + online freeze + offline verify，并且固定了 immutable SHA `607a30d783dfa663caf39e06633721c8d4cfcd7e`。见 [Gate D 实测](R2_GATE_D_RESULT.md)。
+**创建：2026-10-16。状态：已在 Codespaces 实测 140/140 tests PASS，并分别成功完成 `smoke` 与独立 `verify`；实际结果见 [Gate E Result](R2_GATE_E_RESULT.md)。本页保留实验前的协议。** Gate D 的真实 GPT-2 Tokenizer 身份已通过 130/130 tests + online freeze + offline verify，并且固定了 immutable SHA `607a30d783dfa663caf39e06633721c8d4cfcd7e`。见 [Gate D 实测](R2_GATE_D_RESULT.md)。
 
 ## 为什么还需要这一关
 
