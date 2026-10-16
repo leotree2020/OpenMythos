@@ -1,6 +1,6 @@
 # R2 Gate K — HF IterableDataset 每 Worker 分片后打包的真实双进程恢复
 
-**2026-10-16；状态：首次 Codespaces 运行 187 tests / 1 ERROR；Gate K CLI 因手动+自动双重分片失败。修复及新增测试已提交，但还未复测。详见 [Failure 001](R2_GATE_K_FAILURE_001.md)。** [Gate J](R2_GATE_J_RESULT.md) 实测 **179/179 tests PASS**，使用真实 HF FineWeb 文本的本地快照，在全局预打包 Map Dataset 上执行真实双 OS Worker 的 CPU AdamW 精确断点恢复。
+**2026-10-16；状态：首次 Codespaces 运行 187 tests / 1 ERROR，已归档 [Failure 001](R2_GATE_K_FAILURE_001.md)。经过修复后用户重新实测：**190/190 tests PASS（39.748 秒）**，双 OS Worker 各覆盖 14/14 文档且合计 28/28，12 vs 5+7 训练恢复逐位一致、Loss 差 0.0，详见 [Gate K Result](R2_GATE_K_RESULT.md)。本页保留最初设计与后续修订原因。** [Gate J](R2_GATE_J_RESULT.md) 实测 **179/179 tests PASS**，使用真实 HF FineWeb 文本的本地快照，在全局预打包 Map Dataset 上执行真实双 OS Worker 的 CPU AdamW 精确断点恢复。
 
 ## 与前一关相比，这次新增什么
 
