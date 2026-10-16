@@ -179,9 +179,12 @@ def checkpoint_tokenizer_guard(checkpoint_metadata, contract):
         contract["fingerprint"]["pinned_revision"]
     ):
         raise ValueError("Checkpoint tokenizer revision absent or inconsistent")
+    rows = checkpoint_metadata.get("embedding_vocab_rows")
+    if not isinstance(rows, int) or rows <= 0:
+        raise ValueError("Checkpoint must explicitly record embedding_vocab_rows")
     validate_contract(
         contract, candidate=contract["fingerprint"],
-        embedding_rows=checkpoint_metadata.get("embedding_vocab_rows")
+        embedding_rows=rows
     )
     return True
 
