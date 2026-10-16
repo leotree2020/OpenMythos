@@ -172,13 +172,24 @@ affiliation or claim model/weight equivalence.
   AdamW/cursor/Python-Torch RNG bitwise equal, max loss delta 0.0.
   Worker-local sharding vs global pack differed at 11 of 12 windows.
   Real remote HF IterableDataset NOT tested. See [Gate K result](R2_GATE_K_RESULT.md).
-- R2 Gate L (committed, unverified): use SAME pinned Gate I snapshot but
-  pass only hash-based document IDs to 8 LOCAL HF Arrow shards. With two
-  REAL OS DataLoader workers compare HF NATIVE auto-shard ONCE versus PR27-
-  style explicit per-worker .shard() PLUS HF auto-shard. Both arms must
-  show two PID workers; record exact document coverage and silent missing
-  source indices in the double-shard arm. No text to workers, no training,
-  no live Parquet. See [Gate L plan](R2_GATE_L_DOUBLE_SHARD_COVERAGE_PLAN.md).
+- R2 Gate L (VERIFIED 2026-10-16): 197/197 tests PASS in 48.077s.
+  Gate I real source validated then only 28 hashed development source
+  IDs sent to 8 LOCAL HF Arrow shards. Two REAL OS workers appeared in
+  both arms. Native HF auto-shard ONCE covered 28/28; PR27-style manual
+  per-worker `.shard()` PLUS native auto only covered 14/28, silently
+  missing source indices 4,5,6,7,12,13,14,15,16,17,18,22,23,24.
+  This 50% loss belongs ONLY to this local 8-shard controlled test,
+  NOT to the original remote HF sample-10BT Parquet source.
+  See [Gate L result](R2_GATE_L_RESULT.md).
+- R2 Gate M (metadata-only candidate COMMITTED, awaiting Codespaces):
+  confirm actual FILE paths and sizes of sample/10BT/*.parquet in the
+  HF repo at Gate I pinned SHA 87f09149ef4734204d70ed1d046ddc9ca3f2b8f9
+  using HfApi dataset_info+list_repo_tree for ONLY sample/10BT; no data
+  read, no model/GPU. Hash sorted immutable file list. Apply proven HF
+  contiguous manual then noncontiguous native Worker split semantics to
+  FILE IDs as a projection, not measured true IterableDataset shard or
+  document/token omission. Offline verify manifest from separate CLI.
+  See [Gate M plan](R2_GATE_M_REMOTE_FILE_INVENTORY_PLAN.md).
 - Community training proposal:
   <https://github.com/kyegomez/OpenMythos/pull/27>. Proposed ~117.8M
   MLA+MoE FineWeb-Edu experiment and loop-depth PPL tests; external reports
@@ -255,22 +266,23 @@ avoid unsupported claims of proprietary model extraction.
 
 ## Immediate work queue
 
-1. Run Gate L full unit tests + 2-real-worker 8-local-HF-shard coverage
-   A/B to demonstrate whether PR27-style MANUAL per-worker sharding
-   compounded by HF's automatic worker partition silently omits source
-   documents even while both worker PIDs are active. Run only in Linux
-   Codespaces, using Gate I source SHA; never send real text to workers.
-2. Keep verified Gate K 190/190 evidence (28/28 docs, two true OS
-   workers per run, 12 vs 5+7 bitwise Tiny AdamW recovery); retain
-   its first 187-test/1-error failure report as provenance.
-3. Next validate the ORIGINAL pinned remote HF FineWeb-Edu dataset file
-   shard identities/assignment at the installed HF datasets version.
-   Do not extrapolate local 8-shard omission rate to 2410 remote files.
-4. Only with immutable real source + single worker sharding + source
-   cursor + optimizer COMMITTED ACK should an isolated PR27 training
-   adapter attempt SIGKILL fault and authentic streaming resume.
-5. CUDA still absent in Codespaces. Budgeted GPU, BF16/FlashAttention,
-   MoE/ACT computation and independent heldout PPL are separate blockers.
+1. Run R2 Gate M metadata-only pinned HF Hub sample/10BT Parquet file
+   inventory tests and `freeze`/offline `verify`; confirm actual count
+   and immutable file paths + sizes, project native-only vs PR27-style
+   manual+HF auto worker FILE-ID coverage. Do not download parquet bodies.
+2. Archive Gate L's verified 197/197 source-loss contrast (native
+   28/28 vs local double-shard 14/28 with both PIDs); never extrapolate
+   50% document omission to original remote FineWeb without evidence.
+3. Next confirm original HF `load_dataset(..., streaming=True)`
+   `num_shards` and manual `.shard(...).num_shards` on the SAME pinned
+   sample-10BT config and installed datasets version, without iterating
+   large Parquet content. File count != verified iterable shard count.
+4. Test true original Worker source path/shard identity and durable
+   optimizer-committed cursor with constrained streaming and SIGKILL
+   fault before any production PR27 trainer integration.
+5. No CUDA GPU in Codespaces; 118M+ training still blocked pending
+   data correctness, BF16/MoE/ACT readiness, budgeted hardware and
+   independent heldout evaluation provenance.
 
 ## References
 
