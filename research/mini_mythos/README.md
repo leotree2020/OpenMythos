@@ -1,5 +1,7 @@
 # Mini-Mythos Research Overlay v0.4 — Reproduce before optimizing
 
+> **项目主目标（2026-10-16 纠偏）：** 以开源 OpenMythos 为基础，根据公开证据研究、训练并评估 Claude Mythos 的独立功能性复刻。ACT-001–004 仅为机制实验，非项目最终目标。研究路线及证据边界见 [Mythos Reconstruction Roadmap](docs/MYTHOS_RECONSTRUCTION_ROADMAP.md)。
+
 这是可以**直接叠加到你自己的 OpenMythos Fork 根目录**的增量工程，不覆盖任何上游核心模型源码。
 
 ## 文件结构
