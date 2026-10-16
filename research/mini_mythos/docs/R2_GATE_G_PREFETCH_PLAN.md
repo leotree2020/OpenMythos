@@ -1,6 +1,6 @@
 # R2 Gate G — 预取任务与已提交训练位置分离（双逻辑 Worker CPU 故障注入）
 
-**设计日期：2026-10-16；状态：研究层代码与离线测试已提交，尚待用户 Codespaces 实际运行。** 继 [R2 Gate F 已验证结果](R2_GATE_F_RESULT.md)：148/148 tests PASS，CPU 单 Worker 的真实 Tiny AdamW 模型、优化器、数据 packer 游标和 Python/Torch RNG 在 12 vs 5+7 步恢复中完全一致。
+**设计日期：2026-10-16；状态：已在用户 Codespaces 实测通过，156/156 tests PASS，任务 5–8 已预取未提交，真实恢复从任务 5 开始且训练轨迹/模型/AdamW/RNG 全部逐位一致。完整日志归档见 [Gate G Result](R2_GATE_G_RESULT.md)。本页保留实验前的方案。** 继 [R2 Gate F 已验证结果](R2_GATE_F_RESULT.md)：148/148 tests PASS，CPU 单 Worker 的真实 Tiny AdamW 模型、优化器、数据 packer 游标和 Python/Torch RNG 在 12 vs 5+7 步恢复中完全一致。
 
 ## 为什么要继续这一关
 
