@@ -1,6 +1,6 @@
 # R2 Gate L — 多分片 HF IterableDataset 的真实双进程来源覆盖 A/B 审计
 
-**制定：2026-10-16。状态：新脚本与测试已提交，Codespaces 尚未运行；不得提前宣称漏读量已经实测。** Gate K 修复后已在用户 Codespaces 确认 **190/190 PASS**：2 个真实 OS Worker 各 14 条开发来源文档（共 28/28 覆盖）、预取 4 个未提交 Token Windows、5+7 vs 12 Step CPU Tiny AdamW 恢复 Trace/Model/AdamW/Cursor/RNG 完全一致，Loss 差 0.0。详见 [Gate K Result](R2_GATE_K_RESULT.md)。
+**制定：2026-10-16。状态：已经在 Codespaces 完成 197/197 tests PASS（48.077 秒），真正两个 OS Worker 均运行时，HF 原生分片覆盖 28/28，重复分片只覆盖 14/28，静默漏读 14 条。完整证据见 [Gate L 实测](R2_GATE_L_RESULT.md)。本页保留实验前方案及约束。** Gate K 修复后已在用户 Codespaces 确认 **190/190 PASS**：2 个真实 OS Worker 各 14 条开发来源文档（共 28/28 覆盖）、预取 4 个未提交 Token Windows、5+7 vs 12 Step CPU Tiny AdamW 恢复 Trace/Model/AdamW/Cursor/RNG 完全一致，Loss 差 0.0。详见 [Gate K Result](R2_GATE_K_RESULT.md)。
 
 ## 要解决的真实风险
 
