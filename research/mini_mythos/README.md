@@ -380,4 +380,16 @@ GitHub Codespaces 实测：**148/148 单元测试 PASS（4.110 秒）**。本地
     python -m unittest discover -s research/mini_mythos/tests -p 'test_*.py' -v
     python research/mini_mythos/scripts/r2_pr27_prefetch_commit.py --repo .
 
-新结果写入 Git 忽略目录的 `pr27_gate_g_prefetch_cpu.pt`、`.manifest.json`、`pr27_gate_g_prefetch_comparison.json`，不会覆盖 Gate F。**Gate G 新代码尚待 Codespaces 验证。** 本实验**不会启动真实子进程、HF Streaming 或 CUDA**；真正 FineWeb-Edu 多 Worker/预取及生产 GPU 恢复仍属于 P0 阻塞项。
+新结果写入 Git 忽略目录的 `pr27_gate_g_prefetch_cpu.pt`、`.manifest.json`、`pr27_gate_g_prefetch_comparison.json`，不会覆盖 Gate F。**Gate G 于 2026-10-16 在 Codespaces 实测 156/156 项测试 PASS；Task 5–8 已预取但未提交，错误派发游标 9 会跳过数据；从 committed 5 恢复后全部状态与训练轨迹逐位一致。详见 [Gate G Result](docs/R2_GATE_G_RESULT.md)。** 本实验**不会启动真实子进程、HF Streaming 或 CUDA**；真正 FineWeb-Edu 多 Worker/预取及生产 GPU 恢复仍属于 P0 阻塞项。
+
+## R2 Gate G 通过：156/156；Gate H 真正 2 个 DataLoader 子进程
+
+2026-10-16 用户 Codespaces：**156/156 tests PASS（4.183 秒）**。两个**逻辑** Worker 在 0 OS 子进程的模拟中，optimizer committed frontier 5、派发 frontier 9，预取任务 5–8 尚未进入优化器。若从派发 index 9 恢复就会跳过这些任务；按 committed index 5 恢复后 `Trace=True`、Loss 差 **0.0**，模型、AdamW、cursor、Python/Torch RNG 全部逐位一致。**没有真实 HF FineWeb-Edu、没有真实多进程 DataLoader、没有 GPU 训练**。[Gate G 实测结果](docs/R2_GATE_G_RESULT.md)。
+
+下一项 [R2 Gate H](docs/R2_GATE_H_REAL_DATALOADER_PLAN.md) 已提交，使用真实 Linux PyTorch **`DataLoader(num_workers=2, prefetch_factor=2, in_order=True)`**，从数据集的子进程 `__getitem__` 共享读取计数，要求主训练器实际看到不同 OS Worker PID，并且在 checkpoint 时检测已经被子进程 fetch 但尚未应用优化器的 Task。中断后丢弃旧迭代器，使用**不可变本地合成 Task 索引**从 committed index 重新构造全新 DataLoader，比较 Tiny CPU AdamW 连续 12 steps 与恢复 5+7 steps 的逐位轨迹。
+
+    git pull --ff-only origin mini-mythos-research
+    python -m unittest discover -s research/mini_mythos/tests -p 'test_*.py' -v
+    python research/mini_mythos/scripts/r2_pr27_real_dataloader_resume.py --repo .
+
+Gate H 的单测包含**真正启动两个 DataLoader 子进程**的测试，耗时可能比先前纯 Python 测试更长。本地新证据：`research/mini_mythos/results/r2/pr27_gate_h_real_loader_cpu.pt`、`.manifest.json`、`pr27_gate_h_real_loader_comparison.json`。**Gate H 代码已提交，但还未在 Codespaces 实测。** 研究对象仍然是 Map-style 已索引的本地合成任务，绝不是原版 FineWeb-Edu IterableDataset 或断电/进程杀死的生产恢复证明。
