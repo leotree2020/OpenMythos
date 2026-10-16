@@ -2,8 +2,9 @@
 """R2 Gate K: actual HF IterableDataset worker SHARD-THEN-PACK resume.
 
 Unlike Gate J, this offline study puts a *locally constructed* Hugging Face
-IterableDataset inside TWO actual PyTorch DataLoader OS workers. Each worker
-calls HF .shard(num_shards=2, index=worker_id), THEN independently tokenizes,
+IterableDataset inside TWO actual PyTorch DataLoader OS workers. HF's own
+worker-aware __iter__ automatically shards data exactly once; each worker
+THEN independently tokenizes,
 appends EOS, and packs seq_len+1 chunks (as PR27 experiments/data.py does).
 
 Data are the EXACT frozen 32-document Gate I REAL FineWeb source, but are
@@ -57,10 +58,13 @@ CUTOFF = 5
 
 
 class HFWorkerShardPacker(IterableDataset):
-    """Worker-local HF .shard() followed by worker-local PR27-style packing.
+    """HF-native worker auto-sharding followed by PR27-style worker-local packing.
 
-    Local HF IterableDataset is created in the main process and passed to
-    child processes. No child worker ever accesses Hugging Face network.
+    The HF IterableDataset is built in the main process with two Arrow shards.
+    Its __iter__ calls _iter_pytorch() under DataLoader workers and distributes
+    one shard to each worker. Explicitly calling .shard(2, worker_id) here
+    reduces to 1 shard and HF would AUTO-SHARD that AGAIN for 2 workers,
+    stopping one process. Do not double shard; no child accesses HF network.
     """
 
     def __init__(self, local_hf_source, tokenizer, seq_len, read_counts):
@@ -80,15 +84,19 @@ class HFWorkerShardPacker(IterableDataset):
         if worker is None or worker.num_workers != WORKERS:
             raise RuntimeError("Gate K requires two real PyTorch worker processes")
         worker_id = worker.id
-        # This ordering is the important PR27 structural property:
-        # HF Dataset shard first -> tokenize/pack in each worker separately.
-        shard = self.source.shard(
-            num_shards=worker.num_workers, index=worker_id
-        )
+        # HF's native IterableDataset.__iter__ detects PyTorch worker_info
+        # and calls _iter_pytorch(), which partitions the two Arrow shards
+        # BEFORE yielding documents. An explicit .shard() here causes DOUBLE
+        # SHARDING and prematurely stops one of the two workers.
+        if self.source.num_shards != WORKERS:
+            raise RuntimeError(
+                "Gate K requires exactly two source shards for HF native "
+                "DataLoader worker partition"
+            )
         buffer = []
         need = self.seq_len + 1
         local_chunk_index = 0
-        for document in shard:
+        for document in self.source:
             text = document.get("text", "")
             if not text:
                 continue
@@ -184,10 +192,53 @@ def build_local_hf_source(records):
     from datasets import Dataset
     if not records or len({r["id"] for r in records}) != len(records):
         raise ValueError("Local source has no records or duplicate IDs")
-    # Avoid writing the actual source text to the Git-tracked repository.
-    return Dataset.from_dict({
-        "text": [r["text"] for r in records]
+    # Only a stable hash is used for audit, never output any actual text/ID.
+    source = Dataset.from_dict({
+        "text": [r["text"] for r in records],
+        "source_doc_hash": [digest(r["id"]) for r in records],
     }).to_iterable_dataset(num_shards=WORKERS)
+    if source.num_shards != WORKERS:
+        raise RuntimeError("HF did not create exactly 2 iterable Arrow shards")
+    return source
+
+
+def audit_local_hf_worker_partition(source, expected_ids):
+    """Check no duplicate/missing source rows under HF's native shard policy.
+
+    The worker-aware HF IterableDataset iterator uses contiguous=False
+    when distributing dataset Arrow shards to PyTorch workers.
+    We audit precisely those shards outside workers, WITHOUT storing text.
+    """
+    if source.num_shards != WORKERS:
+        raise ValueError("Source must expose exactly two native HF shards")
+    expected = [digest(v) for v in expected_ids]
+    if len(set(expected)) != len(expected):
+        raise ValueError("Duplicate expected source ID")
+    shard_hashes = []
+    for worker_id in range(WORKERS):
+        part = source.shard(
+            num_shards=WORKERS, index=worker_id, contiguous=False
+        )
+        # Note: this .shard() is for MAIN-PROCESS AUDIT ONLY. The actual
+        # DataLoader workers must iterate unmodified self.source.
+        if part.num_shards != 1:
+            raise RuntimeError("Unexpected HF shard count in partition audit")
+        ids = [row["source_doc_hash"] for row in part]
+        if not ids:
+            raise ValueError("HF worker assigned an empty source partition")
+        shard_hashes.append(ids)
+    flattened = [v for part in shard_hashes for v in part]
+    if len(flattened) != len(expected) or set(flattened) != set(expected):
+        raise ValueError("HF native worker partitions omit or duplicate documents")
+    if set(shard_hashes[0]) & set(shard_hashes[1]):
+        raise ValueError("HF native worker partitions overlap")
+    return {
+        "partition_policy": "HF_ITERABLE_DATASET_NATIVE_AUTOSHARD_ON_TORCH_WORKERS",
+        "dataset_source_shards": WORKERS,
+        "per_worker_document_counts": [len(x) for x in shard_hashes],
+        "all_source_doc_ids_covered_once": True,
+        "source_doc_id_hashes_sha256": digest(sorted(flattened)),
+    }
 
 
 def run_real_hf_workers(
@@ -295,6 +346,9 @@ def compare_worker_shard_resume(
     fingerprint = require_real_tokenizer_identity(tokenizer, contract)
     train, excluded = split_documents(records)
     source = build_local_hf_source(train)
+    source_audit = audit_local_hf_worker_partition(
+        source, [r["id"] for r in train]
+    )
     vocab = contract["fingerprint"]["len_tokenizer"]
     torch.set_num_threads(min(4, torch.get_num_threads()))
 
@@ -387,6 +441,8 @@ def compare_worker_shard_resume(
             "resumed": suffix["worker_pids"],
         },
         "local_hf_source_shards": WORKERS,
+        "hf_native_auto_shard_audit": source_audit,
+        "upstream_explicit_shard_double_partition_risk": True,
         "checkpoint_optimizer_committed_batches": cutoff,
         "worker_local_prefetched_but_uncommitted_count": prefetch_count,
         "first_resumed_global_batch": suffix["trace"][0]["global_batch_id"],
@@ -452,6 +508,9 @@ def main():
     print("Source: REAL FineWeb-Edu 32-document frozen LOCAL snapshot")
     print("Source SHA:", report["source_snapshot_sha256"])
     print("HF IterableDataset: LOCAL two Arrow shards, NOT live Parquet")
+    print("Partition policy:", report["hf_native_auto_shard_audit"]["partition_policy"])
+    print("Source docs covered once:", report["hf_native_auto_shard_audit"]["all_source_doc_ids_covered_once"])
+    print("Worker source document counts:", report["hf_native_auto_shard_audit"]["per_worker_document_counts"])
     for name, pids in report["worker_pids"].items():
         print(name, "real Worker PIDs:", pids)
     print("Optimizer committed frontier:", report["checkpoint_optimizer_committed_batches"])
