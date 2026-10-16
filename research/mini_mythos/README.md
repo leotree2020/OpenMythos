@@ -224,3 +224,18 @@ Gate C（**方案，尚未执行**）：保留 60-step 原始 checkpoint，复�
     python research/mini_mythos/scripts/r1_language_diagnostics.py \
       --repo . --pilot-dir research/mini_mythos/results/r1/pilot_gqa_step200 \
       --eval-windows 16 --generated-bytes 64
+
+## R1 Gate C：200-step 实测与精确样本暴露对照
+
+2026-10-16 Codespaces 已将 GQA（dim48、depth2、byte tokenizer）的 60-step Checkpoint 完整续训到 **200 steps**。Heldout PPL 从 **29.26364 → 25.16696**；较 Unigram **26.91942** 更优，但仍差于 Bigram **12.59717**。目标空格占比 19.4%、argmax 预测空格占比依然 **100%**。历史顺序反转的概率 TV 从 2.17e-5 增至 0.002449，证明这类输入敏感性上升，尚不等于有有效语言能力。详见 [R1 Gate C 报告](docs/R1_GATE_C_RESULT.md)。
+
+下一项是**训练样本暴露量匹配**的统计基线：此前 n-gram 统计了整段约 25 万字节的训练前缀，而模型在 200 steps 只看到 51,200 个监督位置（含重复）。新脚本使用保存的训练随机偏移发生器状态，精确重放模型实际看到的 `(previous byte, next byte)` 对，检查 RNG 状态完全一致后估计 n-gram。
+
+    git pull --ff-only origin mini-mythos-research
+    python -m unittest discover -s research/mini_mythos/tests -p 'test_*.py' -v
+    python research/mini_mythos/scripts/r1_exposure_baselines.py --repo . \
+      --pilot-dir research/mini_mythos/results/r1/pilot_gqa --eval-windows 16
+    python research/mini_mythos/scripts/r1_exposure_baselines.py --repo . \
+      --pilot-dir research/mini_mythos/results/r1/pilot_gqa_step200 --eval-windows 16
+
+新代码已提交，但尚未在 Codespaces 执行，不能预报 exposure-matched n-gram 的具体结果。
