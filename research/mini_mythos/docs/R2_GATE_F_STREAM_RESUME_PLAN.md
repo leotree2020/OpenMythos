@@ -1,6 +1,6 @@
 # R2 Gate F — 精确数据游标与训练断点恢复（CPU 单 Worker 证明）
 
-**设计日期：2026-10-16。状态：代码与离线单元测试已提交；用户 Codespaces 尚未运行。** R2 Gate E 已通过 140/140 tests，真实已缓存 GPT2 Tokenizer + CPU 4 维 Embedding/Head 的模型/Optimizer Checkpoint 保存后验证通过。[Gate E Result](R2_GATE_E_RESULT.md)。
+**设计日期：2026-10-16。状态：已在用户 Codespaces 实测通过，148/148 项单元测试 PASS，数据、模型、AdamW、随机状态逐位恢复；详见 [Gate F Result](R2_GATE_F_RESULT.md)。本页保留实验前冻结的协议。** R2 Gate E 已通过 140/140 tests，真实已缓存 GPT2 Tokenizer + CPU 4 维 Embedding/Head 的模型/Optimizer Checkpoint 保存后验证通过。[Gate E Result](R2_GATE_E_RESULT.md)。
 
 ## 目标：比“可以加载 Checkpoint”再进一步
 
