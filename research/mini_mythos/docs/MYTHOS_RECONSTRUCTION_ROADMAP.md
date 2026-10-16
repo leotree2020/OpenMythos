@@ -100,11 +100,19 @@ affiliation or claim model/weight equivalence.
   not proof of GPU performance or other pattern flags causing runtime errors.
   See [R2 Gate B evidence](R2_GATE_B_RESULT.md) and
   [PR27 review](R2_PR27_SOURCE_REVIEW.md).
-- R2 Gate C (research-only BF16 candidate committed; unverified): preserve
-  FP32 master weights and complex64 RoPE phase via autocast, with temporary
-  BF16 full-sequence attention causal mask; run tiny GQA/MLA CPU forward,
-  backward and gradient checks before attempting any upstream integration.
-  See [Gate B evidence](R2_GATE_B_RESULT.md).
+- R2 Gate C (VERIFIED 2026-10-16): 120/120 tests PASS. CPU tiny GQA/MLA
+  BF16 autocast retained FP32 master parameters and both Complex64 RoPE
+  buffers bit-identically; finite losses 4.521300 / 4.605480 and gradient
+  norms 1.924440 / 1.942811; FP32-vs-BF16 logits max abs delta
+  0.00234181 / 0.00261885. Original upstream not patched; no real GPU run,
+  no optimizer update or long-training performance validation.
+  See [R2 Gate C](R2_GATE_C_RESULT.md).
+- R2 Gate D (research-only GPT2 tokenizer identity contract committed;
+  awaiting execution): SHA-pin PR27's GPT2 model revision, hash the actual
+  token-to-ID map, backend tokenizer config, special token IDs and encoding
+  probes; guard future checkpoint embedding/tokenizer consistency.
+  Not integrated into upstream train/eval yet.
+  See [Gate D plan](R2_GATE_D_TOKENIZER_PLAN.md).
 - Community training proposal:
   <https://github.com/kyegomez/OpenMythos/pull/27>. Proposed ~117.8M
   MLA+MoE FineWeb-Edu experiment and loop-depth PPL tests; external reports
@@ -181,19 +189,20 @@ avoid unsupported claims of proprietary model extraction.
 
 ## Immediate work queue
 
-1. Run the newly added **R2 Gate C BF16 candidate** CPU tests and
-   `r2_bf16_autocast_candidate.py` using both GQA and MLA; confirm no complex
-   RoPE phase damage, finite BF16 forward/backward, FP32 master weights and
-   causal-mask consistency. This is a tiny/no-cache experiment only.
-2. Preserve frozen PR27 source SHA and R2 Gate B evidence; do not modify
-   upstream `open_mythos/main.py` or execute GPU PR27 train/run_all.sh yet.
-3. Address other P0 source risks separately after Gate C: train/eval exact
-   tokenizer revision and token-ID mapping, immutable dataset and disjoint
-   heldout, safe model/optimizer/RNG/data-cursor recovery.
-4. Design measurable MoE router load metrics and compare real fixed-loop
-   model to a genuinely non-recurrent baseline at equal token/GPU FLOP budget.
-5. With GPU actually provisioned and signed-off source changes, run a
-   tiny 1–10-step GPU smoke prior to any 100M+ extended pretraining.
+1. Run new Gate D tokenizer-contract offline tests in Codespaces, freeze
+   immutable upstream PR27 `gpt2` HF revision, then re-load the pinned
+   version and verify full token-ID/backend/special-ID equality.
+2. Archive Gate C 120/120 actual CPU BF16 forward/backward results and
+   preserve frozen R1 official Test evidence. Do not retrain dim48 Toy.
+3. Integrate verified Tokenizer contract as REQUIRED metadata into a
+   separately tested PR27 research trainer checkpoint/eval adapter; reject
+   mismatched tokenizer at train, resume and evaluation boundaries.
+4. Reconstruct exact FineWeb-Edu stream cursor, RNG/data snapshot and
+   independently disjoint heldout; verify safe checkpoint round-trip on
+   CPU before any 118M model allocation.
+5. No GPU has been provisioned; require hardware/time budget, MoE routing
+   checks, real BF16/FlashAttention GPU smoke, and equal-FLOPs baselines
+   before PR27 scale-up.
 
 ## References
 
