@@ -115,12 +115,20 @@ affiliation or claim model/weight equivalence.
   Frozen contract SHA256 d8c2780bf00fc7a224bfca89725ad9cc0522c48aa67cf796599ae6a04be3d3c9
   reloaded OFFLINE and matched. Original PR27 checkpoint/eval is not patched.
   See [Gate D result](R2_GATE_D_RESULT.md).
-- R2 Gate E (research-only guarded checkpoint IO candidate, awaiting tests):
-  write/read a minimal real-GPT2-vocab embedding + AdamW CPU toy checkpoint
-  with frozen tokenizer metadata and external checkpoint SHA256 sidecar.
-  Validate actual token IDs, metadata and SHA *before* torch.load weights_only.
-  Upstream PR27 still requires separate train/eval integration and stream
-  cursor/optimizer/RNG resumption checks. See [Gate E plan](R2_GATE_E_CHECKPOINT_PLAN.md).
+- R2 Gate E (VERIFIED 2026-10-16): 140/140 tests PASS. Real offline
+  pinned GPT2 tokenizer used with 50257-row, dim4 CPU Embedding/Head,
+  one synthetic AdamW update loss=10.897187; both first save/reload and
+  independent verify passed full tokenizer ID/backend fingerprint,
+  metadata and checkpoint SHA256 sidecar; weights_only=True, step=1.
+  Research-layer guard only, upstream PR27 train/eval still unmodified.
+  See [Gate E result](R2_GATE_E_RESULT.md).
+- R2 Gate F (bounded research candidate committed, awaiting Codespaces run):
+  PR27-shaped single-worker synthetic stream packs EOS and seq_len+1 windows,
+  records replayable data cursor, source/tokenizer hashes, Python/Torch RNG,
+  tiny real AdamW optimizer states. Compare uninterrupted 12 CPU steps vs
+  checkpoint at 5 and resume 7; require bitwise equality. This does NOT
+  repair real FineWeb-Edu num_workers=2 prefetch/cursor or permit 118M training.
+  See [Gate F plan](R2_GATE_F_STREAM_RESUME_PLAN.md).
 - Community training proposal:
   <https://github.com/kyegomez/OpenMythos/pull/27>. Proposed ~117.8M
   MLA+MoE FineWeb-Edu experiment and loop-depth PPL tests; external reports
@@ -197,20 +205,22 @@ avoid unsupported claims of proprietary model extraction.
 
 ## Immediate work queue
 
-1. Run Gate E isolated tokenizer-bound checkpoint tests and real pinned
-   GPT2-tokenizer CPU smoke: save toy Embedding/AdamW, validate detached
-   manifest and file SHA, load only with torch.load(weights_only=True).
-2. Freeze current Gate D fingerprints and earlier R1 independent Test
-   evidence; never re-freeze to a new SHA because a later test fails.
-3. After Gate E passes, make an isolated PR27 train/eval research adapter
-   enforce mandatory checkpoint tokenizer metadata before any model restore;
-   deliberately reject mismatched tokenizer, missing metadata and wrong
-   embedding dimensions while preserving upstream original source.
-4. Fix dataset immutable revision, streaming cursor/RNG checkpoint recovery,
-   safe optimizer resume and strictly separate heldout evaluation next.
-5. GPU training is BLOCKED pending provisioned CUDA and source readiness.
-   Only after measurable BF16/FlashAttention/MoE and fair-compute smoke
-   should 100M+ training be considered.
+1. Run R2 Gate F CPU synthetic one-worker stream+RNG+AdamW resume tests,
+   compare uninterrupted 12 steps against 5+7 resumed steps from a
+   tokenizer-bound, SHA-guarded checkpoint. Require bitwise identical
+   batches, loop sampling, randomness, optimizer state and final params.
+2. Preserve Gate E 140/140 checkpoint evidence and pinned GPT2 SHA; do not
+   rerun earlier smoke into the same outputs or modify upstream train/eval.
+3. Address the actual P0 FineWeb-Edu stream via pinned immutable revision,
+   explicit shard/document IDs, true split disjointness and reproducible
+   data cursor. Test prefetched-but-not-consumed batches if using
+   num_workers=2, rather than extrapolating from synthetic single-worker.
+4. Only then integrate into an isolated, reviewed PR27 train/resume/eval
+   copy with mandatory tokenizer fingerprint, safe checkpoint, optimizer
+   and RNG state; verify at CPU scale before GPU.
+5. There is still no available CUDA device in Codespaces. Keep 118M+
+   pretraining blocked pending real GPU budget, BF16/FlashAttention/MoE
+   smoke and fair-compute non-recurrent baseline design.
 
 ## References
 
