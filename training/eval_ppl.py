@@ -66,6 +66,15 @@ def load_docs(path: str, text_field: str, max_docs: int) -> list[str]:
         return [f.read()]
 
 
+class ByteTokenizer:
+    """UTF-8 bytes as token ids (vocab 256); for small local experiments."""
+
+    vocab_size = 256
+
+    def encode(self, text: str) -> list[int]:
+        return list(text.encode("utf-8"))
+
+
 def build_stream(docs: list[str], tokenizer) -> tuple[torch.Tensor, int]:
     """Concatenate per-doc token ids; return (ids, total UTF-8 bytes)."""
     ids = []
@@ -172,7 +181,9 @@ def main():
     )
     ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     ap.add_argument("--dtype", default="bf16", choices=["bf16", "fp16", "fp32"])
-    ap.add_argument("--tokenizer", default=None, help="HF tokenizer id/path")
+    ap.add_argument(
+        "--tokenizer", default=None, help='HF tokenizer id/path, or "bytes"'
+    )
     ap.add_argument("--out", default=None, help="append one JSON line per cell")
     args = ap.parse_args()
 
@@ -182,7 +193,12 @@ def main():
         if a not in ABLATIONS:
             ap.error(f"unknown ablation {a!r}; choose from {list(ABLATIONS)}")
 
-    tokenizer = MythosTokenizer(args.tokenizer) if args.tokenizer else MythosTokenizer()
+    if args.tokenizer == "bytes":
+        tokenizer = ByteTokenizer()
+    elif args.tokenizer:
+        tokenizer = MythosTokenizer(args.tokenizer)
+    else:
+        tokenizer = MythosTokenizer()
     docs = load_docs(args.data, args.text_field, args.max_docs)
     ids, n_bytes = build_stream(docs, tokenizer)
     windows = make_windows(ids, args.seq_len)
