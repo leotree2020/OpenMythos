@@ -1,6 +1,6 @@
 # R2 Gate N — 真正的固定 HF Streaming Dataset Shard 数量与非迭代 Shard 视图验证
 
-**实验设计：2026-10-16；代码与 9 个离线回归测试已提交，Codespaces 尚未执行。** [Gate M 真实结果](R2_GATE_M_RESULT.md) 证明 HF Hub 固定 SHA `87f09149ef4734204d70ed1d046ddc9ca3f2b8f9` 下 `sample/10BT` 的**实际 Parquet 文件数量 = 14**，完整文件路径/Size Hash `0b65e53aeb3c7c1d69debfcea0e7105fd5e7a1141b7f3bd7bc9bbc3957a44209`；文件级投影原生 14/14、模拟重复分片 7/14。**这不是实际 HF IterableDataset.num_shards 的测量**，更不是实际漏读的文档/Token 数。
+**实验设计：2026-10-16；2026-10-17 用户 Codespaces 实测已通过：214/214 tests PASS（74.424 秒），真实 HF Streaming `num_shards=14`，手动 7+7 后自动分片为 4+3，离线 verify VERIFIED。见 [Gate N Result](R2_GATE_N_RESULT.md)。本页保留原始预注册方案。** [Gate M 真实结果](R2_GATE_M_RESULT.md) 证明 HF Hub 固定 SHA `87f09149ef4734204d70ed1d046ddc9ca3f2b8f9` 下 `sample/10BT` 的**实际 Parquet 文件数量 = 14**，完整文件路径/Size Hash `0b65e53aeb3c7c1d69debfcea0e7105fd5e7a1141b7f3bd7bc9bbc3957a44209`；文件级投影原生 14/14、模拟重复分片 7/14。**这不是实际 HF IterableDataset.num_shards 的测量**，更不是实际漏读的文档/Token 数。
 
 ## 唯一要回答的问题
 
