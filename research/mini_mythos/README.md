@@ -528,4 +528,13 @@ Git ignored 输出 `research/mini_mythos/results/r2/pr27_gate_p_os_worker_file_i
     python -m unittest discover -s research/mini_mythos/tests -p 'test_r2_pr27_native_once_data_candidate.py' -v
     python -m unittest discover -s research/mini_mythos/tests -p 'test_*.py' -v
 
-全量测试预计 **241 项**，这是新 Gate Q 加入后的计划数量，不是已通过结果。**Gate Q 暂未在 Codespaces 执行；未直接修改上游 PR #27，也没有模型训练。**
+**Gate Q 原始候选已经由用户 Codespaces 实测通过：专项 8/8 PASS、全量 241/241 PASS（58.202 秒）**，见 [Gate Q 实测](docs/R2_GATE_Q_RESULT.md)。此次 `fork` 双 Worker 测试虽通过，但 Python 3.14 多线程环境报告 DeprecationWarning。现另已提交 [Gate Q spawn 加固计划](docs/R2_GATE_Q_SPAWN_HARDENING_PLAN.md) 与独立 [仅合成数据的子进程工厂](scripts/r2_pr27_spawn_local_fixture.py)，原测试已改为 `spawn` 并增加 1 项来源约束回归。当前**9 项 Q 测试 / 预计 242 项全量测试尚未重测**。原始 PR27 不修改，依然无远端 Parquet 正文实验或模型训练。
+
+### Gate Q `spawn` 加固版重测指令（未验证）
+
+    git status --short
+    git pull --ff-only origin mini-mythos-research
+    python -m unittest discover -s research/mini_mythos/tests -p 'test_r2_pr27_native_once_data_candidate.py' -v
+    python -m unittest discover -s research/mini_mythos/tests -p 'test_*.py' -v
+
+本次以 `spawn` 启动真正的两个 Linux Worker，而不是继承已启动多线程父进程的 fork+monkeypatch。子进程经顶层 `worker_init_fn` 注入仅 14 条本地合成 `ID:0...13`、14 个 HF Arrow Shards；应当保持 `7+7=14` 无重复、每个 Worker PID 不同、严格 Frozen FineWeb Source 检查，且不访问网络。计划增加 1 个来源 Revision 错误拒绝用例；全量 **242 是预期非实测**。遇到新进程 pickle/import 错误，请提交完整终端日志，不能为求通过把 `spawn` 改回 `fork`。
