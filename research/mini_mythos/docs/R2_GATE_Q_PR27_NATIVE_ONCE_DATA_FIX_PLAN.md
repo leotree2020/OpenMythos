@@ -1,6 +1,6 @@
 # R2 Gate Q — 修正上游 PR #27 双重数据分片：候选最小修复与真实 Worker 回归
 
-**设计：2026-10-17。当前状态：候选研究副本与 8 项离线/本地 Worker 测试已提交，但未在用户 Codespaces 执行。原版 upstream PR #27 文件没有改动。**
+**设计：2026-10-17。用户 Codespaces 已在首次 Gate Q 版本完成专项 8/8、全量 241/241 PASS（58.202 秒），见 [Q Result](R2_GATE_Q_RESULT.md)。测试过程中 Python 3.14 `fork()` 多线程产生非致命 DeprecationWarning；后续已提交 [spawn 加固方案](R2_GATE_Q_SPAWN_HARDENING_PLAN.md)，目前改为 9 项 Q 测试、预计 242 项全量测试，但尚未在 Codespaces 重测，禁止提前称 PASS。原版 upstream PR #27 文件仍未改动。**
 
 ## 研究目标
 
