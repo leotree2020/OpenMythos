@@ -339,25 +339,48 @@ prove that all fork warnings vanished. See
 [248 test baseline](CODE_QUALITY_AUDIT_248_TEST_BASELINE.md).
 See [Code Quality Audit and Training Plan](CODE_QUALITY_AUDIT_AND_TRAINING_PLAN.md).
 
+
+### Whole-repo maintainability audit: real result (2026-10-17)
+
+Codespaces read-only AST audit completed: **105 Python files**,
+**889 functions/methods**, **85 hotspots**, **23 nested functions**,
+**5 risk patterns**, **2 missing __all__ bindings**, **2 test-only
+static-call candidates**, **0 unreferenced private candidates**.
+Highest priority by CC-like score is the audit tool's own `scan`
+(110 lines, CC~48), followed by source snapshot verification (CC~41),
+and the root training `main` (CC~33, ~237 AST lines). High risk in root
+`training/3b_fine_web_edu.py`: Worker manual HF shard+native auto
+risk, mutable data provenance, unsafe general pickle checkpoint
+loading. This does NOT prove actual distributed data loss. Details:
+[real AST scan](CODE_QUALITY_AST_SCAN_2026-10-17_RESULT.md).
+
+An isolated candidate refactor now splits AST auditor `scan` into
+single-file analyzer, worker-risk detector, usage-reference classifier
+and report rendering; retains V1 schema. This self-referential scan
+will change the auditor's OWN function counts, so its old/new total
+metrics are not expected to be bitwise equal. It has **NOT** yet
+been rerun or validated in Codespaces: see
+[candidate refactor plan](MAINTENANCE_SCANNER_REFACTOR_001_PLAN.md).
+
 ## Immediate work queue
 
-1. Run **in parallel** the model-training track and read-only
-   maintainability audit: no unreviewed deletions or big refactors.
-2. **248/248 whole research suite VERIFIED** in Codespaces (62.136s).
-   Preserve the result and do NOT infer whether fork warnings remain
-   from a summary without the actual stderr.
-3. Run the actual read-only `maintenance_ast_audit.py --repo . --out
-   research/mini_mythos/results/quality/ast_audit_2026-10-17.json`.
-   Return console report, triage each risk file+line and false positives.
-4. Priority P0: root 3B training code checkpoint trust and distributed
-   rank+worker sharding; do not infer 2-rank behavior from PR27 alone.
-   P1: fixed data revision, committed cursor, invalid __all__ exports.
-5. Prepare smallest real-data CPU end-to-end train/eval benchmark
-   contrasting standard Transformer against recurrent candidate under
-   fixed tokenizer, source, token count and compute; heldout metrics
-   are required before scaling, no GPU assumed available.
-6. Reduce complexity incrementally, preserving model logits/gradient
-   checks, named imports, immutable evidence, and resume equivalence.
+1. Preserve **verified 248/248 tests** and actual **105/889/85/23**
+   full-repo AST audit baseline; NEVER infer code is dead from static
+   name-only calls.
+2. Pull audit-scanner refactor and rerun its 6 focused tests and full
+   suite (expected 248; no new tests); generate a SECOND JSON report
+   without overwriting original. Current refactor is UNVERIFIED.
+3. Extract two specific test-only candidate functions, 23 nested
+   functions, and first ~20 hotspots from ORIGINAL ignored JSON.
+   Review function signatures, dispatch and external API uses.
+4. Compare scanner reports: all findings outside scanner file
+   must be invariant. Auditor's own functions/summary may change.
+5. Prioritize root 3B training loader (DDP-aware source assignment),
+   dangerous checkpoint deserialization, mutable HF source commit
+   and durable resume cursor. Add tests before changes.
+6. In parallel, build one small real-data train/eval comparison
+   against a plain Transformer with fixed source/token budget and
+   heldout metrics, without pretending this clones proprietary Mythos.
 
 ## References
 
