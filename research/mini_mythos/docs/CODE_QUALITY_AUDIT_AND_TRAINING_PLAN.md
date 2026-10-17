@@ -38,7 +38,7 @@ python research/mini_mythos/scripts/maintenance_ast_audit.py --repo . --out rese
 python -m unittest discover -s research/mini_mythos/tests -p 'test_*.py' -v
 ```
 
-**2026-10-17 用户 Codespaces 已返回全量 `248/248 PASS（62.136 秒）`**，其中包含 Gate Q spawn 和六项 AST 审计工具回归。见 [全量测试证据归档](CODE_QUALITY_AUDIT_248_TEST_BASELINE.md)。目前**仍没有用户执行针对真实仓库的 `maintenance_ast_audit.py --repo .` 的扫描结果**，所以真实复杂度分布、仅测试调用名单和可安全删除的代码范围暂未确认。
+**2026-10-17 用户 Codespaces 已返回全量 `248/248 PASS（62.136 秒）`**，其中包含 Gate Q spawn 和六项 AST 审计工具回归。见 [全量测试证据归档](CODE_QUALITY_AUDIT_248_TEST_BASELINE.md)。**现已收到真实仓库只读 AST 扫描结果（2026-10-17）**：105 Python 文件、889 函数/方法、85 个复杂度热点、23 个嵌套函数、5 项风险模式、2 项失效 `__all__` 导出、2 项仅测试静态调用候选、0 项未引用私有函数候选。详见 [真实 AST 扫描结果](CODE_QUALITY_AST_SCAN_2026-10-17_RESULT.md)。但完整 JSON 是 Codespaces 本地 Git ignored 文件，当前尚未获得两个仅测试函数和 23 个内嵌函数身份清单；不能据此自动删除任何代码。第一项候选重构为审计器本身 `scan` CC~48 的职责拆分，见 [重构预注册方案](MAINTENANCE_SCANNER_REFACTOR_001_PLAN.md)，尚未由 Codespaces 测试。
 
 ## 删除/重构治理规则
 
