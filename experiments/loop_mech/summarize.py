@@ -28,6 +28,8 @@ def main():
     rows, conv = [], []
     for line in open(args.results):
         r = json.loads(line)
+        if r.get("type") == "baselines":
+            continue
         (conv if "rel_step" in r else rows).append(r)
 
     by = defaultdict(list)  # (mech, T) -> rows over seeds
