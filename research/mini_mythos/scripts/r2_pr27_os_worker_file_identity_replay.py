@@ -28,7 +28,9 @@ import sys
 from torch.utils.data import DataLoader, IterableDataset, get_worker_info
 
 from common import atomic_json, commit_id, get_repo
-from r2_fineweb_local_replay import SOURCE_REVISION, verified_real_records
+from r2_fineweb_local_replay import (
+    SOURCE_REVISION, SOURCE_SNAPSHOT_SHA256, verified_real_records,
+)
 from r2_pr27_live_hf_shard_metadata import (
     SOURCE_FILE_COUNT, SOURCE_FILE_INVENTORY_SHA256, verify_frozen_gate_m_inventory,
     verify_report as verify_n,
@@ -196,8 +198,13 @@ def build_report(*, gate_m, gate_n, gate_o, source_snapshot_sha, versions,
         raise ValueError("Gate O source SHA mismatch")
     if gate_o["gate_m_inventory_sha256"] != SOURCE_FILE_INVENTORY_SHA256:
         raise ValueError("Gate M file SHA mismatch")
-    if not isinstance(versions, dict) or versions.get("datasets") != DATASETS_VERSION:
-        raise ValueError("Gate P requires verified HF 5.1.0 dataset semantics")
+    if source_snapshot_sha != SOURCE_SNAPSHOT_SHA256:
+        raise ValueError("Gate P Gate I immutable source snapshot SHA differs")
+    if (not isinstance(versions, dict)
+            or versions.get("datasets") != DATASETS_VERSION
+            or versions != gate_n.get("package_versions")
+            or versions != gate_o.get("library_versions")):
+        raise ValueError("Gate P actual library versions differ from Gate N/O")
     paths = gate_o["mapping"]["actual_hf_source_order"]
     source = source_from_frozen_paths(paths)
     native_rows, native_pid = collect(source, MODES[0])
@@ -262,10 +269,12 @@ def verify_report(report, *, gate_m, gate_n, gate_o):
     if core.get("real_hf_source_order") != names:
         raise ValueError("Gate P source paths differ from live Gate O verified metadata")
     if (not isinstance(core.get("package_versions"),dict)
+            or core["package_versions"] != gate_n.get("package_versions")
+            or core["package_versions"] != gate_o.get("library_versions")
             or core["package_versions"].get("datasets") != DATASETS_VERSION):
-        raise ValueError("Gate P installed version evidence missing")
-    if not isinstance(core.get("real_fineweb_snapshot_sha256"),str) or len(core["real_fineweb_snapshot_sha256"])!=64:
-        raise ValueError("Gate P original immutable source snapshot SHA missing")
+        raise ValueError("Gate P installed versions mismatch Gate N/O")
+    if core.get("real_fineweb_snapshot_sha256") != SOURCE_SNAPSHOT_SHA256:
+        raise ValueError("Gate P Gate I immutable source snapshot SHA mismatch")
     if any(core.get(key) is not val for key,val in [
         ("local_one_id_per_arrow_shard", True),
         ("no_source_text_sent_to_workers", True),
