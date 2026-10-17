@@ -538,3 +538,21 @@ Git ignored 输出 `research/mini_mythos/results/r2/pr27_gate_p_os_worker_file_i
     python -m unittest discover -s research/mini_mythos/tests -p 'test_*.py' -v
 
 本次以 `spawn` 启动真正的两个 Linux Worker，而不是继承已启动多线程父进程的 fork+monkeypatch。子进程经顶层 `worker_init_fn` 注入仅 14 条本地合成 `ID:0...13`、14 个 HF Arrow Shards；应当保持 `7+7=14` 无重复、每个 Worker PID 不同、严格 Frozen FineWeb Source 检查，且不访问网络。计划增加 1 个来源 Revision 错误拒绝用例；全量 **242 是预期非实测**。遇到新进程 pickle/import 错误，请提交完整终端日志，不能为求通过把 `spawn` 改回 `fork`。
+
+## 双轨开发：模型真实训练 + 代码质量审计（2026-10-17）
+
+项目不仅要训练出具备语言能力的独立模型，也必须审计代码调用关系、仅测试调用的历史函数、过度嵌套、复杂长函数、重复实现以及训练安全风险。此后以**端到端真实训练/独立评估**和**工程质量审计**两条主线并行推进，避免单纯增加测试 Gate 数量却不提升模型能力。
+
+已人工审查 GitHub 研究分支的 103 个 Python 文件目录，初步发现：`training/3b_fine_web_edu.py` 主入口约 242 行；同文件存在 Worker 内手动 HF `.shard` 后再次由 HF Worker 自分片的风险（跨 DDP rank 不能简单删除全部分片）、未固定数据集 `revision`、`torch.load(weights_only=False)`；`open_mythos/__init__.py` 的 `__all__` 列出没有绑定的 `load_tokenizer`/`get_vocab_size`；两个核心模型模块 `open_mythos/main.py` 与 `open_mythos/moda.py` 超过千行。完整背景及修复优先级见 [代码质量审计与训练计划](docs/CODE_QUALITY_AUDIT_AND_TRAINING_PLAN.md)。这些是**人工源码观察/待验证风险**，不等于真实分布式训练或恶意文件利用实验。
+
+已提交零运行时依赖的 [只读 AST 审计脚本](scripts/maintenance_ast_audit.py) 及 [六项新回归测试](tests/test_maintenance_ast_audit.py)：分析 Python 文件/函数数量，函数真正 `end_lineno`、圈复杂度近似值、嵌套层数、候选“仅测试调用”/“没有静态引用”、`__all__` 导出问题以及 HF/Checkpoint 风险。**从静态分析不能确认函数真的无人调用，绝对不能按扫描结果直接删除代码。** 要结合动态调用、测试覆盖、公开 API、CLI 与真实训练追踪核实。
+
+在 Codespaces 从仓库根目录执行：
+
+    git status --short
+    git pull --ff-only origin mini-mythos-research
+    python -m unittest discover -s research/mini_mythos/tests -p 'test_maintenance_ast_audit.py' -v
+    python research/mini_mythos/scripts/maintenance_ast_audit.py --repo . --out research/mini_mythos/results/quality/ast_audit_2026-10-17.json
+    python -m unittest discover -s research/mini_mythos/tests -p 'test_*.py' -v
+
+截至提交时 Gate Q 原始候选 241/241 已实测通过；Q `spawn` 加固版预计 242 项仍待重新测试，加上六项审计用例后全量测试预计 **248 项**。全部新代码尚未在用户 Codespaces 实测，不能提前写 PASS。研究脚本只读取源码生成 Git ignored JSON，不删除/修改上游核心模型文件。
