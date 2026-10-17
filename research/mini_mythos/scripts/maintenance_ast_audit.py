@@ -178,80 +178,88 @@ class Collector(ast.NodeVisitor):
         self.generic_visit(node)
 
 
-def scan(root):
-    root = Path(root).resolve()
-    records = []
-    calls, references = Counter(), Counter()
-    production_calls, test_calls = Counter(), Counter()
-    patterns, missing_exports = [], []
-    files = py_files(root)
-    for file in files:
-        rel = file.relative_to(root).as_posix()
-        content = file.read_text(encoding="utf-8")
-        tree = ast.parse(content, filename=rel)
-        finder = Collector()
-        finder.visit(tree)
-        calls.update(finder.calls)
-        references.update(finder.names_used)
-        if rel.startswith("tests/") or "/tests/" in rel:
-            test_calls.update(finder.calls)
-        else:
-            production_calls.update(finder.calls)
-        for func in finder.functions:
-            func["file"] = rel
-            func["in_test"] = rel.startswith("tests/") or "/tests/" in rel
-            records.append(func)
-        for risk in finder.risk_patterns:
-            patterns.append(dict(risk, file=rel))
-        for name in sorted(set(finder.exports) - finder.declared):
-            missing_exports.append({"file": rel, "symbol": name,
-                                    "finding": "__all__ missing binding"})
-        if rel.startswith("training/"):
-            # This is a REVIEW FLAG, not proof the two partitions overlap.
-            for node in ast.walk(tree):
-                if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) or node.name != "__iter__":
-                    continue
-                own_calls = [x for x in walk_own_body(node) if isinstance(x, ast.Call)]
-                if (any(isinstance(x.func, ast.Attribute) and x.func.attr == "shard"
-                        for x in own_calls)
-                    and any(isinstance(x.func, ast.Name) and x.func.id == "load_dataset"
-                            for x in own_calls)):
-                    patterns.append({
-                        "file": rel, "line": node.lineno,
-                        "kind": "hf_manual_shard_inside_iter",
-                        "detail": "HF IterableDataset may auto-shard in PyTorch workers; trace exact policy",
-                    })
-    flags = []
+def _analyze_file(file, root):
+    """One AST parsing pass per file; no imports or execution."""
+    rel = file.relative_to(root).as_posix()
+    content = file.read_text(encoding="utf-8")
+    tree = ast.parse(content, filename=rel)
+    finder = Collector()
+    finder.visit(tree)
+    in_test = rel.startswith("tests/") or "/tests/" in rel
+    for func in finder.functions:
+        func["file"] = rel
+        func["in_test"] = in_test
+    missing_exports = [
+        {"file": rel, "symbol": name, "finding": "__all__ missing binding"}
+        for name in sorted(set(finder.exports) - finder.declared)
+    ]
+    patterns = [dict(risk, file=rel) for risk in finder.risk_patterns]
+    if rel.startswith("training/"):
+        patterns.extend(_training_shard_risks(tree, rel))
+    return finder, in_test, missing_exports, patterns, len(content.splitlines())
+
+
+def _training_shard_risks(tree, rel):
+    """Identify suspicious shape; leave semantic correctness to runtime tests."""
+    output = []
+    for node in ast.walk(tree):
+        if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            continue
+        if node.name != "__iter__":
+            continue
+        own_calls = [x for x in walk_own_body(node) if isinstance(x, ast.Call)]
+        if (any(isinstance(x.func, ast.Attribute) and x.func.attr == "shard"
+                for x in own_calls)
+            and any(isinstance(x.func, ast.Name) and x.func.id == "load_dataset"
+                    for x in own_calls)):
+            output.append({
+                "file": rel, "line": node.lineno,
+                "kind": "hf_manual_shard_inside_iter",
+                "detail": "HF IterableDataset may auto-shard in PyTorch workers; trace exact policy",
+            })
+    return output
+
+
+def _reference_candidates(records, calls, references, production_calls, test_calls):
+    """Conservative name-only triage; never assert that code is dead."""
+    flags, test_only = [], []
     for func in records:
-        # No claim that dynamic dispatch/callback/CLI entrypoints are unused.
         name = func["name"]
         if (name.startswith("_") and not name.startswith("__")
                 and name not in FRAMEWORK_METHODS and not func["in_test"]
                 and calls[name] == 0 and references[name] == 0
                 and not func["decorated"]):
-            flags.append({"file": func["file"], "qualname": func["qualname"],
-                          "line": func["line"], "finding": "no_static_reference_candidate",
-                          "confidence": "low: reflection, callbacks and external users not traced"})
-    test_only = [
-        {"file": f["file"], "qualname": f["qualname"],
-         "line": f["line"], "finding": "test_only_static_call_candidate",
-         "confidence": "low: name-based AST cannot see dynamic/external calls"}
-        for f in records if not f["in_test"] and f["name"] not in FRAMEWORK_METHODS
-        and not f["name"].startswith("__")
-        and production_calls[f["name"]] == 0 and test_calls[f["name"]] > 0
+            flags.append({
+                "file": func["file"], "qualname": func["qualname"],
+                "line": func["line"], "finding": "no_static_reference_candidate",
+                "confidence": "low: reflection, callbacks and external users not traced",
+            })
+        if (not func["in_test"] and name not in FRAMEWORK_METHODS
+                and not name.startswith("__")
+                and production_calls[name] == 0 and test_calls[name] > 0):
+            test_only.append({
+                "file": func["file"], "qualname": func["qualname"],
+                "line": func["line"], "finding": "test_only_static_call_candidate",
+                "confidence": "low: name-based AST cannot see dynamic/external calls",
+            })
+    return flags, test_only
+
+
+def _build_report(files, sizes, records, patterns, missing_exports,
+                  flags, test_only):
+    """Pure report formatting. Keep this schema stable for evidence diffs."""
+    public = [f for f in records if not f["in_test"]]
+    ranked = sorted(public, key=lambda f: (
+        -f["complexity_approx"], -f["lines"], f["file"], f["line"]
+    ))
+    hotspots = [
+        f for f in ranked if (
+            f["complexity_approx"] >= 12 or f["lines"] >= 70
+            or f["max_control_nesting"] >= 4
+            or f["lexical_parent"] == "function"
+        )
     ]
-    ranked = sorted((f for f in records if not f["in_test"]),
-                    key=lambda f: (-f["complexity_approx"], -f["lines"],
-                                   f["file"], f["line"]))
-    hotspots = sorted((
-        f for f in records if not f["in_test"] and
-        (f["complexity_approx"] >= 12 or f["lines"] >= 70
-         or f["max_control_nesting"] >= 4
-         or f["lexical_parent"] == "function")
-    ), key=lambda f: (-f["complexity_approx"], -f["lines"], f["file"], f["line"]))
-    sizes = [{"file": p.relative_to(root).as_posix(),
-              "lines": len(p.read_text(encoding="utf-8").splitlines())}
-             for p in files]
+    nested = [f for f in records if f["lexical_parent"] == "function"]
     return {
         "protocol": "MYTHOS_READ_ONLY_AST_MAINTENANCE_AUDIT_V1",
         "limits": [
@@ -264,23 +272,26 @@ def scan(root):
         "summary": {
             "python_files": len(files),
             "functions_and_methods": len(records),
-            "nested_function_definitions": sum(f["lexical_parent"] == "function" for f in records),
+            "nested_function_definitions": len(nested),
             "hotspot_count": len(hotspots),
             "low_confidence_unreferenced_private_candidates": len(flags),
             "test_only_static_call_candidates": len(test_only),
             "missing_declared_exports": len(missing_exports),
             "review_risk_patterns": len(patterns),
         },
-        "long_files": sorted((x for x in sizes if x["lines"] >= 400),
-                             key=lambda x: (-x["lines"], x["file"])),
+        "long_files": sorted(
+            (x for x in sizes if x["lines"] >= 400),
+            key=lambda x: (-x["lines"], x["file"])
+        ),
         "complexity_hotspots": hotspots,
-        "nested_function_definitions": [f for f in records
-                                        if f["lexical_parent"] == "function"],
+        "nested_function_definitions": nested,
         "top_20_by_complexity": ranked[:20],
-        "missing_exports": sorted(missing_exports,
-                                  key=lambda x: (x["file"], x["symbol"])),
-        "review_patterns": sorted(patterns,
-                                  key=lambda x: (x["file"], x["line"], x["kind"])),
+        "missing_exports": sorted(
+            missing_exports, key=lambda x: (x["file"], x["symbol"])
+        ),
+        "review_patterns": sorted(
+            patterns, key=lambda x: (x["file"], x["line"], x["kind"])
+        ),
         "potential_unreferenced_private": sorted(
             flags, key=lambda x: (x["file"], x["line"])
         ),
@@ -288,6 +299,30 @@ def scan(root):
             test_only, key=lambda x: (x["file"], x["line"])
         ),
     }
+
+
+def scan(root):
+    """Collect AST evidence, classify references, then render one report."""
+    root = Path(root).resolve()
+    files = py_files(root)
+    sizes, records, patterns, missing_exports = [], [], [], []
+    calls, references = Counter(), Counter()
+    production_calls, test_calls = Counter(), Counter()
+    for file in files:
+        finder, in_test, exports, risks, lines = _analyze_file(file, root)
+        sizes.append({"file": file.relative_to(root).as_posix(), "lines": lines})
+        records.extend(finder.functions)
+        missing_exports.extend(exports)
+        patterns.extend(risks)
+        calls.update(finder.calls)
+        references.update(finder.names_used)
+        (test_calls if in_test else production_calls).update(finder.calls)
+    flags, test_only = _reference_candidates(
+        records, calls, references, production_calls, test_calls
+    )
+    return _build_report(
+        files, sizes, records, patterns, missing_exports, flags, test_only
+    )
 
 
 def main():
