@@ -178,3 +178,13 @@ def test_stats(n_loops, executed, halt_idx, below):
     assert s["loop_calls"][:executed].tolist() == [1] * executed
     assert s["loop_calls"][executed:].sum() == 0
     check_matches_original(block, h, e, freqs, None, n_loops)
+
+
+def test_all_halted_output_is_depth_invariant():
+    # Every position halts on loop 1 (p ≈ 1): deeper T must not change the
+    # output, so any T_ref→T change must come from positions unhalted at T_ref.
+    model = apply_depth_ablation(OpenMythos(cfg(attn_type="gqa")).eval())
+    _const_halting(model.recurrent, 0.999)
+    ids = torch.randint(0, 200, (B, T))
+    with torch.no_grad():
+        assert torch.equal(model(ids, n_loops=4), model(ids, n_loops=16))

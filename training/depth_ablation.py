@@ -46,7 +46,7 @@ RULES = {
 }
 
 
-def new_stats(max_loops: int) -> dict:
+def new_stats(max_loops: int, keep_tokens: bool = False) -> dict:
     """
     Accumulator filled by the patched forward when assigned to `block.stats`.
 
@@ -55,6 +55,8 @@ def new_stats(max_loops: int) -> dict:
     the ACT weight sum actually applied before any B2 normalization. Per loop
     index t: sum of squared hidden-state entries and of squared change
     h_t - h_{t-1} (h_{-1} = Prelude output), over the calls that executed t.
+    With keep_tokens, per-call (B, T) halt-step and weight-sum tensors are
+    also kept in "token_halt_step" / "token_weight_sum", in call order.
     """
     return {
         "forward_calls": 0,
@@ -64,6 +66,9 @@ def new_stats(max_loops: int) -> dict:
         "halt_step_hist": torch.zeros(max_loops + 1, dtype=torch.long),
         "weight_sum_sum": 0.0,
         "weight_sum_below_0_99": 0,
+        "keep_tokens": keep_tokens,
+        "token_halt_step": [],
+        "token_weight_sum": [],
         "loop_calls": torch.zeros(max_loops, dtype=torch.long),
         "loop_elems": torch.zeros(max_loops, dtype=torch.float64),
         "h_sq": torch.zeros(max_loops, dtype=torch.float64),
@@ -151,6 +156,9 @@ def _ablated_forward(
         )[: len(stats["halt_step_hist"])]
         stats["weight_sum_sum"] += w_sum.sum().item()
         stats["weight_sum_below_0_99"] += (w_sum < 0.99).sum().item()
+        if stats["keep_tokens"]:
+            stats["token_halt_step"].append(halt_step.cpu())
+            stats["token_weight_sum"].append(w_sum.cpu())
     if self.act_normalize:
         h_out = h_out / w_sum.clamp(min=1e-6).unsqueeze(-1).to(h_out.dtype)
     return h_out
