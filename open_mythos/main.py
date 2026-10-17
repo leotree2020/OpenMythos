@@ -44,6 +44,10 @@ class MythosConfig:
 
     Other:
         act_threshold   -- ACT halting threshold (cumulative probability to stop looping)
+        act_final_remainder -- assign the leftover halting mass to the last loop so
+                           every position's ACT weights sum to 1 at any n_loops
+        clamp_loop_emb  -- clamp the loop-index embedding to max_loop_iters - 1
+                           (mirrors the LoRA scale clamp) when n_loops exceeds it
         rope_theta      -- RoPE base frequency
         lora_rank       -- rank of the per-loop depth-wise LoRA adapter
     """
@@ -71,6 +75,11 @@ class MythosConfig:
     expert_dim: int = 512  # fine-grained: dim // (n_experts // n_experts_per_tok)
     # ACT halting
     act_threshold: float = 0.99
+    # Depth-extrapolation switches; both off by default so existing
+    # checkpoints keep their trained behavior. Neither adds parameters, so
+    # they can be toggled on a loaded checkpoint at eval time.
+    act_final_remainder: bool = False
+    clamp_loop_emb: bool = False
     # RoPE
     rope_theta: float = 500000.0
     # LoRA depth adaptation
@@ -855,7 +864,10 @@ class RecurrentBlock(nn.Module):
         h_out = torch.zeros_like(h)
 
         for t in range(n_loops):
-            h_loop = loop_index_embedding(h, t, self.loop_dim)
+            emb_t = t
+            if self.cfg.clamp_loop_emb:
+                emb_t = min(t, self.cfg.max_loop_iters - 1)
+            h_loop = loop_index_embedding(h, emb_t, self.loop_dim)
             combined = self.norm(h_loop + e)
             cache_key = f"recurrent_loop_{t}"
             trans_out = self.block(combined, freqs_cis, mask, kv_cache, cache_key)
@@ -871,11 +883,17 @@ class RecurrentBlock(nn.Module):
             # once (on the halting step) and zero thereafter — otherwise
             # threshold<1 leaves a non-zero remainder that leaks every step.
             remainder = (1.0 - cumulative_p).clamp(min=0)
-            weight = torch.where(
-                cumulative_p + p >= self.cfg.act_threshold,
-                remainder,
-                p,
-            )
+            if self.cfg.act_final_remainder and t == n_loops - 1:
+                # Positions that never crossed the threshold would otherwise
+                # end with weights summing to cumulative_p < 1, so h_out's
+                # scale would depend on n_loops.
+                weight = remainder
+            else:
+                weight = torch.where(
+                    cumulative_p + p >= self.cfg.act_threshold,
+                    remainder,
+                    p,
+                )
             weight = weight * still_running.float()
             h_out = h_out + weight.unsqueeze(-1) * h
 
@@ -888,6 +906,9 @@ class RecurrentBlock(nn.Module):
             if halted.all() and kv_cache is None:
                 break
 
+        # Loops actually executed on the last call (may be < n_loops after
+        # ACT early exit); read by eval scripts.
+        self.last_loops_run = t + 1
         return h_out
 
 

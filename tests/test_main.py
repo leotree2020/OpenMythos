@@ -542,6 +542,61 @@ class TestRecurrentBlock:
         out = self.block(h, e, self.freqs, n_loops=1)
         assert out.shape == (B, T, self.cfg.dim)
 
+    def _zero_halting(self, block):
+        # p = 0 everywhere: no position ever crosses the threshold
+        block.act.halt.weight.data.zero_()
+        block.act.halt.bias.data.fill_(-1e4)
+
+    def test_no_final_remainder_leaves_mass_unassigned(self):
+        self._zero_halting(self.block)
+        h = torch.randn(B, T, self.cfg.dim)
+        e = torch.randn(B, T, self.cfg.dim)
+        out = self.block(h, e, self.freqs[:T], n_loops=5)
+        assert torch.allclose(out, torch.zeros_like(out))
+
+    def test_final_remainder_assigns_mass_to_last_loop(self):
+        block = RecurrentBlock(gqa_cfg(act_final_remainder=True))
+        self._zero_halting(block)
+        states = []
+        block.injection.register_forward_hook(lambda m, i, o: states.append(o))
+        h = torch.randn(B, T, self.cfg.dim)
+        e = torch.randn(B, T, self.cfg.dim)
+        out = block(h, e, self.freqs[:T], n_loops=5)
+        assert len(states) == 5
+        assert torch.allclose(out, states[-1])
+
+    def test_clamp_loop_emb(self, monkeypatch):
+        import open_mythos.main as m
+
+        seen = []
+        orig = m.loop_index_embedding
+
+        def spy(h, loop_t, loop_dim, theta=10000.0):
+            seen.append(loop_t)
+            return orig(h, loop_t, loop_dim, theta)
+
+        monkeypatch.setattr(m, "loop_index_embedding", spy)
+        h = torch.randn(B, T, self.cfg.dim)
+        e = torch.randn(B, T, self.cfg.dim)
+        block = RecurrentBlock(gqa_cfg(clamp_loop_emb=True, act_threshold=2.0))
+        block(h, e, self.freqs[:T], n_loops=6)
+        assert seen == [0, 1, 2, 2, 2, 2]  # max_loop_iters=3
+
+        seen.clear()
+        block = RecurrentBlock(gqa_cfg(act_threshold=2.0))
+        block(h, e, self.freqs[:T], n_loops=6)
+        assert seen == [0, 1, 2, 3, 4, 5]
+
+    def test_last_loops_run(self):
+        h = torch.randn(B, T, self.cfg.dim)
+        e = torch.randn(B, T, self.cfg.dim)
+        block = RecurrentBlock(gqa_cfg(act_threshold=2.0))
+        block(h, e, self.freqs[:T], n_loops=6)
+        assert block.last_loops_run == 6
+        block = RecurrentBlock(gqa_cfg(act_threshold=0.0))
+        block(h, e, self.freqs[:T], n_loops=6)
+        assert block.last_loops_run == 1
+
 
 # ---------------------------------------------------------------------------
 # OpenMythos — GQA mode
