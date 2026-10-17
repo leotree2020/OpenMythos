@@ -564,3 +564,16 @@ Git ignored 输出 `research/mini_mythos/results/r2/pr27_gate_p_os_worker_file_i
     python research/mini_mythos/scripts/maintenance_ast_audit.py --repo . --out research/mini_mythos/results/quality/ast_audit_2026-10-17.json
 
 下一步先审查完整静态报告，再按最高风险的训练数据分片、Checkpoint 信任边界、HF revision 和公开 API 错误建立小步修复计划；任何疑似死代码只标记、不得直接删除。
+
+### 全仓 AST 审计实测 2026-10-17：105 文件 / 85 热点；首次减复杂度候选已提交
+
+用户 Codespaces 真正运行了 `maintenance_ast_audit.py`：**105 Python 文件、889 函数及方法、85 复杂度热点、23 个内嵌函数、5 项人工审核风险、2 项 `__all__` 缺失绑定、2 项仅测试静态调用候选、0 项未引用私有函数候选**。审计控制台前 3 热点：`maintenance_ast_audit.py:scan` **CC~48**、`r2_fineweb_source_snapshot.py:check_manifest_and_snapshot` **CC~41**、`training/3b_fine_web_edu.py:main` **CC~33**。详细原始数据与风险定位见 [AST 实测报告](docs/CODE_QUALITY_AST_SCAN_2026-10-17_RESULT.md)。此结论不代表所有代码均被运行，也不意味着两个“仅测试”候选可删除。
+
+已提交 [第一轮审计器职责拆分](scripts/maintenance_ast_audit.py) 与 [行为保持预注册计划](docs/MAINTENANCE_SCANNER_REFACTOR_001_PLAN.md)，将 `scan` 重构成独立的单文件解析、Worker 风险识别、引用候选分类及报告输出，保留原 V1 JSON 字段与扫描策略；但**重构后的工具尚未在 Codespaces 重跑**。由于工具扫描自身，工具的函数数及热点指标预期会变化；其他文件的审计结果应不变。保留已生成的旧 JSON，不直接删除业务代码。
+
+    git pull --ff-only origin mini-mythos-research
+    python -m unittest discover -s research/mini_mythos/tests -p 'test_maintenance_ast_audit.py' -v
+    python -m unittest discover -s research/mini_mythos/tests -p 'test_*.py' -v
+    python research/mini_mythos/scripts/maintenance_ast_audit.py --repo . --out research/mini_mythos/results/quality/ast_audit_refactor_2026-10-17.json
+
+目标先比较新旧报告（旧 `ast_audit_2026-10-17.json` 不改动），在证明扫描器行为等价后再审计主训练分布式加载、Checkpoint 信任、静态/动态调用链，与真实模型训练评价并行。
