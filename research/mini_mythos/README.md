@@ -485,4 +485,19 @@ Gate M 新文件位于 Git ignore `research/mini_mythos/results/r2/pr27_gate_m_r
     python research/mini_mythos/scripts/r2_pr27_live_hf_shard_metadata.py freeze --repo .
     python research/mini_mythos/scripts/r2_pr27_live_hf_shard_metadata.py verify --repo .
 
-新报告位于 Git ignored `research/mini_mythos/results/r2/pr27_gate_n_live_hf_shard_metadata.json`，拒绝覆盖。**Gate N 已提交但未实际运行，不能提前声称 `ds.num_shards=14` 或远端真实漏读率=50%。** 即便 `num_shards` 与文件数相等，也只是数量吻合，不代表真实 Shard ID/Parquet 文件路径一一对应。构建 HF Streaming Dataset 可能自动读取在线元数据/Schema/File Header，因此不得绝对保证零 Parquet 网络字节；本工具不会显式迭代任何真实文档。
+新报告位于 Git ignored `research/mini_mythos/results/r2/pr27_gate_n_live_hf_shard_metadata.json`，拒绝覆盖。**Gate N 已于 2026-10-17 用户 Codespaces 实测通过：214/214 tests PASS、真实 HF `ds.num_shards=14`、手动+自动 `.shard()` 真实 API 视图计数 4+3，离线 VERIFY 成功，见 [Gate N Result](docs/R2_GATE_N_RESULT.md)。仍不能宣称远端实际文档/Token 漏读率=50%。** 即便 `num_shards` 与文件数相等，也只是数量吻合，不代表真实 Shard ID/Parquet 文件路径一一对应。构建 HF Streaming Dataset 可能自动读取在线元数据/Schema/File Header，因此不得绝对保证零 Parquet 网络字节；本工具不会显式迭代任何真实文档。
+
+## R2 Gate N 已实测通过：214/214；Gate O 解析真实文件到逻辑 Shard 的元数据映射
+
+2026-10-17 用户 Codespaces：**Gate N 专项 9/9 PASS，完整 214/214 tests PASS（74.424 秒）**。固定 `HuggingFaceFW/fineweb-edu` 同一不可变 Commit，真实 `load_dataset(...,streaming=True)` 的 Dataset `num_shards=14`，恰与 Gate M 的 14 个 Parquet 文件数量一致。调用**真实 HF API** `.shard(2,w,contiguous=True)`/`contiguous=False` 各 7/7；手动后再 noncontiguous 的真实元数据视图计数 **4+3**。根据 Shard 分配规则预测原生 14/14、双重 7/14，漏失逻辑 Index 1,3,5,7,9,11,13。`verify` 完全离线 PASS。环境 Python 3.14.2、`datasets` 5.1.0、torch 2.14.1、huggingface_hub 2.2.0、pyarrow 26.0.0；没有迭代文档、运行原版 PR27 Worker 或训练。详见 [Gate N 实测结果](docs/R2_GATE_N_RESULT.md)。
+
+已提交 [Gate O 预注册方案](docs/R2_GATE_O_REAL_HF_FILE_SHARD_MAPPING_PLAN.md)、[Gate O 文件路径映射脚本](scripts/r2_pr27_real_hf_file_shard_mapping.py)、[10 项离线单测](tests/test_r2_pr27_real_hf_file_shard_mapping.py)。此关使用**安装版本固定的 HF `datasets==5.1.0` 源码结构**，通过真实 Streaming Dataset 的内部 Parquet `files` 元数据和原生 `.shard()` 子视图，审计每个逻辑 Shard 实际对应哪个 Parquet 文件相对路径；只保留经过白名单校验的 `sample/10BT/NNN_00000.parquet`，不写出 URL Token、远程完整 URL 或正文。不主动迭代文档、不创建 DataLoader、不训练模型。使用 Gate I/M/N 已验证本地证据，发现未知结构就停止。
+
+    git status --short
+    git pull --ff-only origin mini-mythos-research
+    python -m unittest discover -s research/mini_mythos/tests -p 'test_r2_pr27_real_hf_file_shard_mapping.py' -v
+    python -m unittest discover -s research/mini_mythos/tests -p 'test_*.py' -v
+    python research/mini_mythos/scripts/r2_pr27_real_hf_file_shard_mapping.py freeze --repo .
+    python research/mini_mythos/scripts/r2_pr27_real_hf_file_shard_mapping.py verify --repo .
+
+结果：`research/mini_mythos/results/r2/pr27_gate_o_real_hf_file_shard_mapping.json`（Git ignored、不覆盖）。**Gate O 代码已提交，但 Codespaces 尚未实际执行，不能预告哪些具体 Parquet 路径必定映射到漏失 Shard。** 即使源路径映射成功，也不是实际原版 PR27 Worker 漏读文档或 Token 的计量。用户工作区里原有未跟踪 `SETUP_LEOTREE2020.md` / `mini_mythos_leotree2020_overlay_v04.zip` 应原样保留。
