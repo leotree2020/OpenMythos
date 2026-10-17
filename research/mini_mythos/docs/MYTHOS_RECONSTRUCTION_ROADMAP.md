@@ -191,15 +191,25 @@ affiliation or claim model/weight equivalence.
   odd-index paths 001,003,005,007,009,011,013. No Parquet body downloaded;
   offline inventory verification PASS. These are FILE projections, not
   observed streaming shard IDs/doc/token loss. See [Gate M result](R2_GATE_M_RESULT.md).
-- R2 Gate N (candidate committed, awaiting Codespaces): load REAL pinned
-  HF dataset via load_dataset(... streaming=True, revision=frozenSHA),
-  WITHOUT explicitly iterating source documents. Read actual
-  ds.num_shards and actual .shard(2,w) metadata counts, contrast with
-  frozen 14 Parquet files and project LOGICAL shard index coverage.
-  Verify input Gate I + M SHA contracts and package versions; freeze
-  a local report, then offline verify. Actual loader/Worker and
-  file-to-shard mapping NOT yet tested. HF initialization may read
-  metadata/schema/file headers. See [Gate N plan](R2_GATE_N_REAL_HF_SHARD_COUNT_PLAN.md).
+- R2 Gate N (VERIFIED 2026-10-17): 9/9 new offline tests PASS;
+  full suite 214/214 PASS in 74.424s. REAL pinned HF Streaming
+  Dataset initialized WITHOUT example iteration; actual ds.num_shards=14,
+  matches 14 real Parquet files. Actual native .shard(2,w) counts 7/7;
+  actual manual.contiguous then native.noncontiguous view counts 4/3.
+  Logical shard-ID projection native 14/14 vs double 7/14, missing
+  indices 1,3,5,7,9,11,13. Offline VERIFY PASS. Python 3.14.2,
+  datasets 5.1.0, torch 2.14.1, HF Hub 2.2.0, pyarrow 26.0.0.
+  No file-to-logical-shard identity mapping or real Worker reading.
+  See [Gate N result](R2_GATE_N_RESULT.md).
+- R2 Gate O (candidate committed, awaiting Codespaces): inspect the REAL
+  pinned HF IterableDataset's Parquet `files` source metadata under the
+  exact datasets 5.1.0 implementation, and verify each actual `.shard()`
+  view's source paths against immutable Gate M inventory and Gate N
+  num_shards. Strictly whitelist private Iterable class/wrapper, never
+  print raw remote URLs or auth query, never iterate rows or run model.
+  10 isolated offline tests; no real worker run yet. Next real test:
+  Codespaces full tests + Gate O freeze/offline verify.
+  See [Gate O plan](R2_GATE_O_REAL_HF_FILE_SHARD_MAPPING_PLAN.md).
 - Community training proposal:
   <https://github.com/kyegomez/OpenMythos/pull/27>. Proposed ~117.8M
   MLA+MoE FineWeb-Edu experiment and loop-depth PPL tests; external reports
@@ -276,22 +286,19 @@ avoid unsupported claims of proprietary model extraction.
 
 ## Immediate work queue
 
-1. Run Gate N 9 new OFFLINE shard-count tests plus original full suite;
-   then call frozen real HF load_dataset(streaming=True) WITHOUT example
-   iteration or DataLoader. Confirm actual ds.num_shards, manual/native
-   .shard(2,w).num_shards and projected logical IDs. Reverify offline.
-2. Archive verified Gate M 205/205 evidence: pinned sample-10BT 14 REAL
-   Parquet file inventory, exact SHA and file-ID 14/14 vs 7/14 projection.
-   Do NOT conflate that file count with actual HF IterableDataset shards.
-3. After actual logical-shard counts, separately verify immutable HF
-   source FileInstruction mapping and real remote Worker source coverage,
-   using explicit request/byte budgets; counting alone does not prove
-   7/14 official Parquet files actually skipped or 50% tokens missing.
-4. Correct PR27 manual+auto duplicate worker partition in an isolated
-   reviewed research copy and add source-coverage alarms before
-   genuine SIGKILL worker/checkpoint resume and heldout evaluation.
-5. No GPU in Codespaces; 118M+ training remains blocked pending
-   data correctness, BF16 complex RoPE, ACT/MoE validation and budget.
+1. Execute Gate O exact datasets==5.1.0 private source-metadata path
+   mapping tests, then real pinned `load_dataset(..., streaming=True)`
+   metadata-only .shard views and offline verify. No row iteration;
+   fail closed on schema/wrapper/path surprises.
+2. Retain verified Gate N 214/214 evidence and untouched user
+   untracked SETUP_LEOTREE2020.md and mini_mythos_leotree2020_overlay_v04.zip.
+3. After O, plan actual PR27 multiworker remote source-coverage proof
+   with explicit request caps, read-budget and auditable source identity;
+   metadata shard paths alone do not measure skipped docs or tokens.
+4. Propose researched correction of manual + HF automatic worker
+   double-partition, and guarded SIGKILL recovery on immutable data.
+5. GPU absent; 118M training and proper heldout evaluation remain
+   blocked pending compute resources and source/data correctness.
 
 ## References
 
