@@ -500,4 +500,19 @@ Gate M 新文件位于 Git ignore `research/mini_mythos/results/r2/pr27_gate_m_r
     python research/mini_mythos/scripts/r2_pr27_real_hf_file_shard_mapping.py freeze --repo .
     python research/mini_mythos/scripts/r2_pr27_real_hf_file_shard_mapping.py verify --repo .
 
-结果：`research/mini_mythos/results/r2/pr27_gate_o_real_hf_file_shard_mapping.json`（Git ignored、不覆盖）。**Gate O 首次 Codespaces 定向单测执行：10 项中 9 PASS、1 FAIL，原因是 Gate N 准备阶段与 Gate O 正式测试复用了相同 FakeDataset，累积 `.shard()` 调用计数 8 而断言期待 4，详见 [Gate O Failure 001](docs/R2_GATE_O_FAILURE_001.md)。已提交隔离测试夹具的候选修复并新增 1 项防回归测试，目前 11 项；尚未重新测试，更未运行 Gate O freeze/verify。** 即使源路径映射成功，也不是实际原版 PR27 Worker 漏读文档或 Token 的计量。用户工作区里原有未跟踪 `SETUP_LEOTREE2020.md` / `mini_mythos_leotree2020_overlay_v04.zip` 应原样保留。
+结果：`research/mini_mythos/results/r2/pr27_gate_o_real_hf_file_shard_mapping.json`（Git ignored、不覆盖）。**Gate O 已于 2026-10-17 实测通过：专项 11/11 PASS、全量 225/225 PASS（48.712 秒），真实 HF Source 文件路径映射 Native 14/14、双重分片视图 7/14，离线 VERIFY 成功，详见 [Gate O Result](docs/R2_GATE_O_RESULT.md)。首次 10 项中 9 PASS、1 FAIL 的 FakeDataset 计数污染问题仍在 [Failure 001](docs/R2_GATE_O_FAILURE_001.md) 归档，经过隔离夹具修复才重新通过全部 11 项。** 即使源路径映射成功，也不是实际原版 PR27 Worker 漏读文档或 Token 的计量。用户工作区里原有未跟踪 `SETUP_LEOTREE2020.md` / `mini_mythos_leotree2020_overlay_v04.zip` 应原样保留。
+
+## R2 Gate O 正式通过：225/225；Gate P 两个真实 Linux Worker 只重放真实来源文件身份
+
+2026-10-17 Codespaces：Gate O 专项 **11/11 tests PASS**；全量 **225/225 tests PASS（48.712 秒）**。真实固定 `sample-10BT` HF Streaming 的 `_ex_iterable.kwargs['files']` 源元数据以及真正 `.shard()` 的文件路径视图审核成功，实际 Parquet 身份 Native 14/14、手动 contiguous + HF native auto 路径 **7/14**。元数据视图中缺失七条真实文件身份：`001_00000.parquet`、`003_00000.parquet`、`005_00000.parquet`、`007_00000.parquet`、`009_00000.parquet`、`011_00000.parquet`、`013_00000.parquet`。`freeze` 与 `verify` 均运行成功，`Offline Gate O HF real file-shard mapping: VERIFIED`。[正式结果](docs/R2_GATE_O_RESULT.md)。**未运行原版 PR27 双 OS Worker 远端读行，因此不是已测得的文档或 Token 漏读比例。**
+
+已提交 [Gate P 实验计划](docs/R2_GATE_P_OS_WORKER_REAL_FILE_ID_REPLAY_PLAN.md)、[Gate P 真实 OS Worker 身份重放工具](scripts/r2_pr27_os_worker_file_identity_replay.py)、[8 项新回归测试](tests/test_r2_pr27_os_worker_file_identity_replay.py)。从严格验证过的 Gate O JSON 提取原始 HF 14 个 Parquet 文件**路径 ID**，将它们作为 14 条本地 Arrow 身份记录（14 个本地 Shards），让两个真的 Linux `DataLoader` Worker 分别执行 HF 自动分片或先手动后自动分片；仅检查文件身份的覆盖、worker PID、顺序和缺失，**不从远端下载 Parquet 正文、不让 Worker 读取真实文本、不训练模型**。这一关是本地身份重放，而不是原版远端 Worker。
+
+    git status --short
+    git pull --ff-only origin mini-mythos-research
+    python -m unittest discover -s research/mini_mythos/tests -p 'test_r2_pr27_os_worker_file_identity_replay.py' -v
+    python -m unittest discover -s research/mini_mythos/tests -p 'test_*.py' -v
+    python research/mini_mythos/scripts/r2_pr27_os_worker_file_identity_replay.py freeze --repo .
+    python research/mini_mythos/scripts/r2_pr27_os_worker_file_identity_replay.py verify --repo .
+
+Git ignored 输出 `research/mini_mythos/results/r2/pr27_gate_p_os_worker_file_identity_replay.json`，拒绝覆盖。**Gate P 目前只提交候选代码，尚未在用户 Codespaces 运行。总测试数预计 233（包含 8 个 Gate P 测试），不得提前宣称成功。** 用户现有未跟踪的 `SETUP_LEOTREE2020.md` 与 `mini_mythos_leotree2020_overlay_v04.zip` 原样保留。
