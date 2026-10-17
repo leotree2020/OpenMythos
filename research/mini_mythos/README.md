@@ -515,4 +515,17 @@ Gate M 新文件位于 Git ignore `research/mini_mythos/results/r2/pr27_gate_m_r
     python research/mini_mythos/scripts/r2_pr27_os_worker_file_identity_replay.py freeze --repo .
     python research/mini_mythos/scripts/r2_pr27_os_worker_file_identity_replay.py verify --repo .
 
-Git ignored 输出 `research/mini_mythos/results/r2/pr27_gate_p_os_worker_file_identity_replay.json`，拒绝覆盖。**Gate P 目前只提交候选代码，尚未在用户 Codespaces 运行。总测试数预计 233（包含 8 个 Gate P 测试），不得提前宣称成功。** 用户现有未跟踪的 `SETUP_LEOTREE2020.md` 与 `mini_mythos_leotree2020_overlay_v04.zip` 原样保留。
+Git ignored 输出 `research/mini_mythos/results/r2/pr27_gate_p_os_worker_file_identity_replay.json`，拒绝覆盖。**Gate P 已于 2026-10-17 用户 Codespaces 实测通过：完整 233/233 tests PASS（61.532 秒）；真实 Linux Worker Native PIDs 31186/31187、双重 PIDs 31241/31242，来源文件身份重放覆盖 14/14 对 7/14，离线 VERIFY 成功。见 [Gate P Result](docs/R2_GATE_P_RESULT.md)。仍然没有真实远程 Parquet 正文读取，不能声称原版 PR27 训练漏掉 50% 文档或 Token。** 用户现有未跟踪的 `SETUP_LEOTREE2020.md` 与 `mini_mythos_leotree2020_overlay_v04.zip` 原样保留。
+
+## R2 Gate Q 候选：消除上游 PR #27 DataLoader 的双重分片
+
+固定 [upstream PR #27 / experiments/data.py](https://github.com/kyegomez/OpenMythos/blob/2954bc275ffb8ad5c60f74f7299a9ad9e531d3e4/experiments/data.py) 中 `FineWebEduStream.__iter__` 先对 2 Worker 手动调用 `ds.shard(2,worker_id)`，之后 `for doc in ds` 又让 HF 在同一 OS Worker 内执行自动分片；`experiments/train.py` 原版使用 `num_workers=2`。Gate P 已确认相同逻辑在 14 个固定真实文件身份的**本地** OS Worker 重放会只覆盖 7/14，但不是远程真实文档漏读率。
+
+已提交研究-only [Gate Q native-once 候选](scripts/r2_pr27_native_once_data_candidate.py) 和 [Gate Q 8 项离线/本地 Worker 回归测试](tests/test_r2_pr27_native_once_data_candidate.py)，详见 [Gate Q 预注册方案](docs/R2_GATE_Q_PR27_NATIVE_ONCE_DATA_FIX_PLAN.md)。方案：保留 `for doc in ds` 及原本拼接/shift/EOS，**删去显式 `ds.shard`**、由 HF 自动 Worker 分片一次；固定 Hugging Face FineWeb 版本，`skip_docs>0` 限制单 Worker。测试使用 14 个本地合成文本 Shards（无远端 Parquet I/O），真实 Linux 2 Worker 检验各 7 条并完整覆盖 14 条。
+
+    git status --short
+    git pull --ff-only origin mini-mythos-research
+    python -m unittest discover -s research/mini_mythos/tests -p 'test_r2_pr27_native_once_data_candidate.py' -v
+    python -m unittest discover -s research/mini_mythos/tests -p 'test_*.py' -v
+
+全量测试预计 **241 项**，这是新 Gate Q 加入后的计划数量，不是已通过结果。**Gate Q 暂未在 Codespaces 执行；未直接修改上游 PR #27，也没有模型训练。**
