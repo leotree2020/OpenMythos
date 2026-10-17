@@ -328,24 +328,27 @@ cursor not durable. `open_mythos/__init__.py` lists two unbound
 `open_mythos/main.py` and `moda.py` ~1086/~1064 lines each.
 
 A new **read-only Python stdlib AST scanner** and six tests are now
-committed, NOT YET RUN by the user in Codespaces. It lists actual
-function AST spans, branch complexity, nesting, module exports,
-dangerous checkpoint loading and loader shard patterns. Suspected
-unused and test-only call names are LOW-CONFIDENCE review candidates,
-not permission to delete. The newly expected full suite is 248
-tests (previously 242 pending spawn tests + 6 audit tests), NOT PASS.
+committed. **2026-10-17 Codespaces whole 248-test suite PASS (62.136s)**,
+covering newly added Q spawn and AST scanner test modules. The actual
+whole-repository AST scan has NOT yet been run/reported by the user.
+It lists actual function AST spans, branch complexity, nesting, module
+exports, dangerous checkpoint loading and loader shard patterns.
+Suspected unused and test-only call names are LOW-CONFIDENCE review
+candidates, not permission to delete. The full-suite-only log does not
+prove that all fork warnings vanished. See
+[248 test baseline](CODE_QUALITY_AUDIT_248_TEST_BASELINE.md).
 See [Code Quality Audit and Training Plan](CODE_QUALITY_AUDIT_AND_TRAINING_PLAN.md).
 
 ## Immediate work queue
 
 1. Run **in parallel** the model-training track and read-only
    maintainability audit: no unreviewed deletions or big refactors.
-2. Pull latest branch; run Q spawn 9 focused tests, maintenance audit
-   six focused tests, full expected 248-suite. All newly committed
-   tests remain UNVERIFIED until real Codespaces terminal outputs.
-3. Run `maintenance_ast_audit.py --repo . --out
+2. **248/248 whole research suite VERIFIED** in Codespaces (62.136s).
+   Preserve the result and do NOT infer whether fork warnings remain
+   from a summary without the actual stderr.
+3. Run the actual read-only `maintenance_ast_audit.py --repo . --out
    research/mini_mythos/results/quality/ast_audit_2026-10-17.json`.
-   Review emitted risk file+line list and false positives explicitly.
+   Return console report, triage each risk file+line and false positives.
 4. Priority P0: root 3B training code checkpoint trust and distributed
    rank+worker sharding; do not infer 2-rank behavior from PR27 alone.
    P1: fixed data revision, committed cursor, invalid __all__ exports.
