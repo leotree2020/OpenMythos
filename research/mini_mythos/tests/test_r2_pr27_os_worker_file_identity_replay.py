@@ -191,7 +191,7 @@ class GatePTests(unittest.TestCase):
             "source_dataset": o["source_dataset"],
             "dataset_config": o["config"],
             "source_revision": gate.SOURCE_REVISION,
-            "real_fineweb_snapshot_sha256": "a"*64,
+            "real_fineweb_snapshot_sha256": gate.SOURCE_SNAPSHOT_SHA256,
             "gate_m_inventory_sha256": gate.SOURCE_FILE_INVENTORY_SHA256,
             "gate_n_report_sha256": n["report_sha256"],
             "gate_o_report_sha256": o["report_sha256"],
@@ -222,6 +222,13 @@ class GatePTests(unittest.TestCase):
                 gate.verify_report(json.loads(file.read_text()),
                                    gate_m=m,gate_n=n,gate_o=o),report
             )
+        tampered = copy.deepcopy(report)
+        tampered["real_fineweb_snapshot_sha256"] = "a" * 64
+        tampered["report_sha256"] = canonical_digest({
+            k:v for k,v in tampered.items() if k!="report_sha256"
+        })
+        with self.assertRaisesRegex(ValueError, "snapshot SHA mismatch"):
+            gate.verify_report(tampered,gate_m=m,gate_n=n,gate_o=o)
         tampered = copy.deepcopy(report)
         tampered["no_remote_parquet_rows_read"] = False
         tampered["report_sha256"] = canonical_digest({
