@@ -362,25 +362,50 @@ metrics are not expected to be bitwise equal. It has **NOT** yet
 been rerun or validated in Codespaces: see
 [candidate refactor plan](MAINTENANCE_SCANNER_REFACTOR_001_PLAN.md).
 
+### Audit refactor acceptance and public export correction (2026-10-17)
+
+Codespaces verified **248/248 full research tests PASS in 62.335s**
+after the scanner's `scan()` decomposition. A new real audit scan
+reported 105 files, **893** functions/methods (previously 889), **87**
+static hotspots (previously 85), 23 nested functions, five risk
+patterns, two invalid `__all__` members and two static test-only
+candidate functions. Original scanner's CC~48 `scan` dropped from
+top-12 ranking; overall hotspot count INCREASED, so no global
+complexity reduction claimed. See
+[refactor verified result](MAINTENANCE_SCANNER_REFACTOR_001_RESULT.md).
+
+Both test-only static candidates are required or retained:
+`build_loader_native_once` is the research candidate entrypoint
+not yet wired into main training; `load_local_hf_dataset` is a
+callback-valued synthetic source factory installed by worker_init_fn.
+Neither is dead-code deletion evidence. 23 nested scopes include
+hooks, microbenchmarks, tests and 3 checkpoint `cursor()` closures.
+
+**Next small production code change committed, NOT TESTED yet:**
+`open_mythos/__init__.py` had two listed but undefined
+`__all__` names `load_tokenizer` and `get_vocab_size`; removed ONLY
+those phantom strings, preserving 23 real exports. Three
+`test_open_mythos_public_exports.py` offline public-star-import tests
+were added. Full expected research suite is **251 tests**, not PASS.
+See [public API fix plan](CODE_QUALITY_PUBLIC_API_FIX_002_PLAN.md).
+
 ## Immediate work queue
 
-1. Preserve **verified 248/248 tests** and actual **105/889/85/23**
-   full-repo AST audit baseline; NEVER infer code is dead from static
-   name-only calls.
-2. Pull audit-scanner refactor and rerun its 6 focused tests and full
-   suite (expected 248; no new tests); generate a SECOND JSON report
-   without overwriting original. Current refactor is UNVERIFIED.
-3. Extract two specific test-only candidate functions, 23 nested
-   functions, and first ~20 hotspots from ORIGINAL ignored JSON.
-   Review function signatures, dispatch and external API uses.
-4. Compare scanner reports: all findings outside scanner file
-   must be invariant. Auditor's own functions/summary may change.
-5. Prioritize root 3B training loader (DDP-aware source assignment),
-   dangerous checkpoint deserialization, mutable HF source commit
-   and durable resume cursor. Add tests before changes.
-6. In parallel, build one small real-data train/eval comparison
-   against a plain Transformer with fixed source/token budget and
-   heldout metrics, without pretending this clones proprietary Mythos.
+1. Preserve verified scanner-refactor 248/248 (62.335s), and actual
+   AST 105/893/87/23. Never delete code solely from AST name counts.
+2. Pull the committed **public export fix** and execute 3 focused
+   API tests, full expected 251 research-suite tests and read-only
+   AST audit to NEW ignored JSON. All this API change is UNVERIFIED.
+3. Audit the two test-only static candidates as KEEP (candidate loader
+   and spawn worker factory) and review 23 nested closures by role,
+   not by a mechanical no-nesting policy.
+4. Separate high-risk root `training/3b_fine_web_edu.py` changes:
+   DDP rank×worker HF sharding, trusted checkpoint policy and
+   weights_only, immutable HF revision and durable optimizer cursor.
+   Write CPU/local tests before modifying production training.
+5. Continue CPU-feasible real-data minimal train/eval comparison
+   against standard Transformer with fixed token count and heldout
+   metrics; no proprietary Anthropic architecture fidelity claims.
 
 ## References
 
