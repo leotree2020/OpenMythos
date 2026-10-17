@@ -38,7 +38,7 @@ python research/mini_mythos/scripts/maintenance_ast_audit.py --repo . --out rese
 python -m unittest discover -s research/mini_mythos/tests -p 'test_*.py' -v
 ```
 
-此前有尚未复验的 Gate Q `spawn` 加固，预计 242 项；本次新增 6 个只读审计测试后，预期全量 **248 项**，仅是规划，不可冒充已 PASS。
+**2026-10-17 用户 Codespaces 已返回全量 `248/248 PASS（62.136 秒）`**，其中包含 Gate Q spawn 和六项 AST 审计工具回归。见 [全量测试证据归档](CODE_QUALITY_AUDIT_248_TEST_BASELINE.md)。目前**仍没有用户执行针对真实仓库的 `maintenance_ast_audit.py --repo .` 的扫描结果**，所以真实复杂度分布、仅测试调用名单和可安全删除的代码范围暂未确认。
 
 ## 删除/重构治理规则
 
