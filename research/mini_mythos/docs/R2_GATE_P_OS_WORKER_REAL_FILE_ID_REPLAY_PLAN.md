@@ -1,6 +1,6 @@
 # R2 Gate P — 使用真实冻结 Parquet 文件身份的双 Linux Worker 分片重放
 
-**设计日期：2026-10-17；状态：候选脚本 + 8 项新离线/本地多进程回归测试已提交；Codespaces 还没有执行 Gate P。**
+**设计日期：2026-10-17；已于同日用户 Codespaces 实测通过：233/233 tests PASS（61.532 秒），两组各两个真实 Linux Worker，正常来源文件身份覆盖 14/14、双重分片仅 7/14，离线 VERIFY 成功。见 [Gate P Result](R2_GATE_P_RESULT.md)。本页保留原始预注册设计。**
 
 ## 最直接的研究问题
 
