@@ -100,6 +100,24 @@ class Source:
         self.assertIn("hf_load_dataset_unpinned_revision", kinds)
         self.assertIn("hf_manual_shard_inside_iter", kinds)
 
+    def test_only_called_from_tests_is_tentative_not_deleted(self):
+        self.write("open_mythos/feature.py", '''
+def specialized_api():
+    return 5
+''')
+        self.write("research/mini_mythos/tests/test_feature.py", '''
+from open_mythos.feature import specialized_api
+def test_feature():
+    assert specialized_api() == 5
+''')
+        report = scan(self.root)
+        self.assertTrue(any(
+            f["qualname"] == "specialized_api"
+            and f["finding"] == "test_only_static_call_candidate"
+            for f in report["test_only_static_call_candidates"]
+        ))
+        self.assertEqual(report["potential_unreferenced_private"], [])
+
     def test_public_functions_not_falsely_marked_dead(self):
         self.write("open_mythos/api.py", """
 def public_extension_point():
