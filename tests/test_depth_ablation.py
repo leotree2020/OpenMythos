@@ -130,3 +130,51 @@ def test_last_loops_run():
     block = apply_depth_ablation(RecurrentBlock(cfg(act_threshold=0.0)))
     block(h, e, freqs, n_loops=6)
     assert block.last_loops_run == 1
+
+
+def _const_halting(block, p):
+    block.act.halt.weight.data.zero_()
+    block.act.halt.bias.data.fill_(float(torch.logit(torch.tensor(p))))
+
+
+def test_b2_normalizes_to_convex_combination():
+    from depth_ablation import RULES
+
+    c = cfg(act_threshold=1e9)  # never halts: every weight is p
+    block = apply_depth_ablation(RecurrentBlock(c), **RULES["B2"])
+    _const_halting(block, 0.1)
+    states = []
+    block.injection.register_forward_hook(lambda m, i, o: states.append(o))
+    h, e, freqs = inputs(c)
+    out = block(h, e, freqs, n_loops=5)
+    assert torch.allclose(out, torch.stack(states).mean(0), atol=1e-5)
+
+
+def test_b1_and_b2_exclusive():
+    with pytest.raises(ValueError):
+        apply_depth_ablation(
+            RecurrentBlock(cfg()), act_final_remainder=True, act_normalize=True
+        )
+
+
+@pytest.mark.parametrize(
+    "n_loops,executed,halt_idx,below", [(6, 4, 4, 0.0), (3, 3, 0, 1.0)]
+)
+def test_stats(n_loops, executed, halt_idx, below):
+    from depth_ablation import new_stats
+
+    c = cfg()  # threshold 0.99; p = 0.3 → crosses on loop 4 (cum 1.2)
+    block = apply_depth_ablation(RecurrentBlock(c))
+    _const_halting(block, 0.3)
+    h, e, freqs = inputs(c)
+    ref = block(h, e, freqs, n_loops=n_loops)
+    block.stats = new_stats(8)
+    out = block(h, e, freqs, n_loops=n_loops)
+    s = block.stats
+    assert torch.equal(out, ref)  # recording does not change the output
+    assert s["forward_calls"] == 1 and s["loops_executed_sum"] == executed
+    assert s["halt_step_hist"][halt_idx] == B * T
+    assert s["weight_sum_below_0_99"] / s["tokens"] == below
+    assert s["loop_calls"][:executed].tolist() == [1] * executed
+    assert s["loop_calls"][executed:].sum() == 0
+    check_matches_original(block, h, e, freqs, None, n_loops)
