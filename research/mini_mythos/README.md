@@ -556,3 +556,11 @@ Git ignored 输出 `research/mini_mythos/results/r2/pr27_gate_p_os_worker_file_i
     python -m unittest discover -s research/mini_mythos/tests -p 'test_*.py' -v
 
 截至提交时 Gate Q 原始候选 241/241 已实测通过；Q `spawn` 加固版预计 242 项仍待重新测试，加上六项审计用例后全量测试预计 **248 项**。全部新代码尚未在用户 Codespaces 实测，不能提前写 PASS。研究脚本只读取源码生成 Git ignored JSON，不删除/修改上游核心模型文件。
+
+### 审计轨首个全量测试基线正式通过
+
+**2026-10-17 用户 Codespaces 报告：`Ran 248 tests in 62.136s` / `OK`。** Gate Q spawn 加固版和静态审计工具新测试现已包含于全量通过结果；见 [正式回归基线](docs/CODE_QUALITY_AUDIT_248_TEST_BASELINE.md)。本次用户仅发测试尾部，没有提供**真实仓库 AST 扫描输出**，因此尚不能判断哪几个函数确实只在测试中被调用、核心训练最复杂函数的实测 CC 近似值及模块依赖问题。原版 PR27、根训练脚本尚未重构，不能视为已实现端到端模型能力提升。
+
+    python research/mini_mythos/scripts/maintenance_ast_audit.py --repo . --out research/mini_mythos/results/quality/ast_audit_2026-10-17.json
+
+下一步先审查完整静态报告，再按最高风险的训练数据分片、Checkpoint 信任边界、HF revision 和公开 API 错误建立小步修复计划；任何疑似死代码只标记、不得直接删除。
