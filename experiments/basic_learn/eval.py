@@ -24,9 +24,10 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 sys.path.insert(0, os.path.join(HERE, "..", "loop_mech"))
 
-from eval_task import baselines, counterfactual  # noqa: E402
+from eval_task import baselines  # noqa: E402
 from models import build  # noqa: E402
-from task_v2 import make_batch  # noqa: E402
+from task_v2 import STMT, counterfactual, make_batch  # noqa: E402
+from validate import chains_of  # noqa: E402
 
 
 @torch.no_grad()
@@ -49,7 +50,7 @@ def main():
             model.load_state_dict(ck["model"])
             model.eval()
             if data is None:
-                data = {}
+                data, eq = {}, {}
                 for h in hops_list:
                     x, y = make_batch(
                         random.Random(args.data_seed + h),
@@ -58,6 +59,27 @@ def main():
                         ck["n_statements"],
                     )
                     data[h] = (x, y, *counterfactual(x, args.data_seed + 50 + h))
+                    # prompts whose chains all have the same length carry no
+                    # chain-length cue (see validate.py / PREREGISTRATION.md)
+                    eq[h] = torch.tensor(
+                        [
+                            len(
+                                set(
+                                    chains_of(
+                                        dict(
+                                            STMT.findall(
+                                                bytes(r[:-1].tolist())
+                                                .decode()
+                                                .split("|")[0]
+                                            )
+                                        )
+                                    ).values()
+                                )
+                            )
+                            == 1
+                            for r in x
+                        ]
+                    )
                     out.write(
                         json.dumps({"type": "baselines", "hops": h, **baselines(x, y)})
                         + "\n"
@@ -78,6 +100,9 @@ def main():
                     "acc": {},
                     "cf_both": {},
                     "cf_follow": {},
+                    "acc_equal_len": {},
+                    "cf_both_equal_len": {},
+                    "n_equal_len": {},
                 }
                 for h, (x, y, xc, yc) in data.items():
                     p = model(x[:, :-1], n_loops=T)[:, -1].argmax(-1)
@@ -85,6 +110,13 @@ def main():
                     row["acc"][h] = (p == y).float().mean().item()
                     row["cf_both"][h] = ((p == y) & (pc == yc)).float().mean().item()
                     row["cf_follow"][h] = (pc == yc).float().mean().item()
+                    m = eq[h]
+                    row["n_equal_len"][h] = int(m.sum())
+                    if m.any():
+                        row["acc_equal_len"][h] = (p == y)[m].float().mean().item()
+                        row["cf_both_equal_len"][h] = (
+                            ((p == y) & (pc == yc))[m].float().mean().item()
+                        )
                 out.write(json.dumps(row) + "\n")
                 out.flush()
                 print(

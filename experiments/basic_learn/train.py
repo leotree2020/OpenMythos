@@ -33,9 +33,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 sys.path.insert(0, os.path.join(HERE, "..", "loop_mech"))
 
-from eval_task import counterfactual  # noqa: E402
 from models import block_applications, build  # noqa: E402
-from task_v2 import make_batch  # noqa: E402
+from task_v2 import counterfactual, make_batch  # noqa: E402
 
 PROBE_SEED = 777
 

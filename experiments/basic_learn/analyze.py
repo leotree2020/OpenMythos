@@ -45,6 +45,15 @@ def main():
         + " |"
     )
 
+    print("\n**1 跳中链长全部相同的子集（不存在链长线索）**\n")
+    for arm, T in main_rows:
+        for s in seeds:
+            r = cells[(arm, s, T)]
+            print(
+                f"- {arm} 种子 {s}：准确率 {pct(r['acc_equal_len']['1'])}，"
+                f"双对率 {pct(r['cf_both_equal_len']['1'])}（n={r['n_equal_len']['1']}）"
+            )
+
     print("\n## OpenMythos 不同 T 的准确率（参考，不参与判定）\n")
     Ts = sorted(k[2] for k in cells if k[0] == "openmythos" and k[1] == seeds[0])
     print("| 种子 | 跳数 | " + " | ".join(f"T={t}" for t in Ts) + " |")
@@ -72,7 +81,11 @@ def main():
         two = []
         for s in seeds:
             r = cells[(arm, s, T)]
-            one.append(r["acc"]["1"] >= 0.90 and r["cf_both"]["1"] >= 0.80)
+            one.append(
+                r["acc"]["1"] >= 0.90
+                and r["cf_both"]["1"] >= 0.80
+                and r["acc_equal_len"]["1"] >= 0.90
+            )
             two.append(r["acc"]["2"] >= 0.80 and r["cf_both"]["2"] >= 0.70)
         lab = lambda v: (
             "学会"
