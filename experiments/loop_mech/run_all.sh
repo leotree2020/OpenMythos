@@ -17,4 +17,4 @@ done; done | xargs -P "$JOBS" -n 2 sh -c '
 
 rm -f $D/results.jsonl
 python $D/eval_task.py --ckpt $D/ckpts/*.pt --out $D/results.jsonl > $D/logs/eval.log 2>&1
-python $D/summarize.py $D/results.jsonl
+python $D/analyze.py $D/results.jsonl --budget $D/train_budget.json --json $D/analysis.json > $D/analysis.md
