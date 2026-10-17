@@ -201,20 +201,27 @@ affiliation or claim model/weight equivalence.
   datasets 5.1.0, torch 2.14.1, HF Hub 2.2.0, pyarrow 26.0.0.
   No file-to-logical-shard identity mapping or real Worker reading.
   See [Gate N result](R2_GATE_N_RESULT.md).
-- R2 Gate O (candidate committed, awaiting Codespaces): inspect the REAL
-  pinned HF IterableDataset's Parquet `files` source metadata under the
-  exact datasets 5.1.0 implementation, and verify each actual `.shard()`
-  view's source paths against immutable Gate M inventory and Gate N
-  num_shards. Strictly whitelist private Iterable class/wrapper, never
-  print raw remote URLs or auth query, never iterate rows or run model.
-  First Codespaces isolated run on 2026-10-17: 9/10 PASS, 1 FAIL
-  due to Gate N fixture calling `.shard()` 4 times on the SAME fake
-  dataset before Gate O counted another 4. This is test isolation, not
-  observed remote data loss. Candidate fixture isolation fix committed
-  with an 11th regression guard; NO user retest yet. Whole suite and
-  actual Gate O freeze/verify NOT EXECUTED. Preserve
-  [Failure 001](R2_GATE_O_FAILURE_001.md) and
-  [Gate O plan](R2_GATE_O_REAL_HF_FILE_SHARD_MAPPING_PLAN.md).
+- R2 Gate O (VERIFIED 2026-10-17): revised focused tests 11/11 PASS,
+  full suite 225/225 PASS (48.712s). True datasets==5.1.0 pinned
+  FineWeb-Edu HF Streaming internal Parquet source `files` mapping
+  inspected WITHOUT row iteration. Real source file identities and HF
+  `.shard` view paths native once cover 14/14, explicit contiguous
+  then HF native noncontiguous cover 7/14, specifically missing files
+  001,003,005,007,009,011,013. Real `freeze` success; fully offline
+  verify success. This is actual SOURCE METADATA, not a measured remote
+  PR27 DataLoader or document/token omission. Retain first 9/10
+  failed test due to fixture counter pollution, then isolated fixture
+  fix and successful 11/11 retest. See [Gate O Result](R2_GATE_O_RESULT.md)
+  and [Failure 001](R2_GATE_O_FAILURE_001.md).
+- R2 Gate P (candidate committed, awaiting Codespaces): strictly revalidate
+  Gate I/M/N/O; replay Gate O's 14 REAL pinned HF Parquet path identities
+  as 14 local Arrow one-ID shards, with REAL two Linux OS PyTorch
+  DataLoader workers per arm. HF native auto once vs PR27-style manual
+  + HF auto should produce 14/14 vs 7/14 identity coverage.
+  Eight new synthetic/offline tests, one exercises real OS workers.
+  No Parquet rows, source text, network (beyond local files), training,
+  or real remote PR27 worker execution. Expected full suite 233 tests
+  NOT YET VERIFIED. See [Gate P plan](R2_GATE_P_OS_WORKER_REAL_FILE_ID_REPLAY_PLAN.md).
 - Community training proposal:
   <https://github.com/kyegomez/OpenMythos/pull/27>. Proposed ~117.8M
   MLA+MoE FineWeb-Edu experiment and loop-depth PPL tests; external reports
@@ -291,22 +298,19 @@ avoid unsupported claims of proprietary model extraction.
 
 ## Immediate work queue
 
-1. Pull Gate O fixture isolation hotfix; rerun all 11 targeted offline
-   tests (first 10 run had one `8 != 4` false assertion) and full 225
-   expected tests; only after PASS execute real metadata-only Gate O
-   `freeze`/offline `verify`. The 225 count is an expectation, NOT PASS.
-   Run real pinned `load_dataset(..., streaming=True)`
-   metadata-only .shard views and offline verify. No row iteration;
-   fail closed on schema/wrapper/path surprises.
-2. Retain verified Gate N 214/214 evidence and untouched user
-   untracked SETUP_LEOTREE2020.md and mini_mythos_leotree2020_overlay_v04.zip.
-3. After O, plan actual PR27 multiworker remote source-coverage proof
-   with explicit request caps, read-budget and auditable source identity;
-   metadata shard paths alone do not measure skipped docs or tokens.
-4. Propose researched correction of manual + HF automatic worker
-   double-partition, and guarded SIGKILL recovery on immutable data.
-5. GPU absent; 118M training and proper heldout evaluation remain
-   blocked pending compute resources and source/data correctness.
+1. Run Gate P 8 focused synthetic/OS-worker tests and entire expected
+   233-test suite; only if PASS run Gate P `freeze` and offline `verify`.
+   Gate P uses 14 real HF Parquet PATH IDENTITIES from Gate O but
+   replays them as local Arrow ID-only records, NOT remote Parquet data.
+2. Preserve Gate O VERIFIED 225/225 source-metadata file mapping
+   evidence; retain the original Gate O 9/10 fixture failure history.
+3. Once Gate P worker path results are grounded, assess whether bounded
+   true remote PR27 worker data/row probes are justified: explicit
+   request budget, authorization and source identity audit required.
+4. Isolate/fix double Worker partition in a research-only PR27 copy;
+   later test durable committed cursor recovery / actual SIGKILL.
+5. No GPU in Codespaces; 118M+ training waits for resources,
+   verified source accounting, evaluation protocol and correctness.
 
 ## References
 
