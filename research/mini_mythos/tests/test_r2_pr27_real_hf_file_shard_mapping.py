@@ -89,6 +89,12 @@ class GateOTests(unittest.TestCase):
             versions=self.versions, git_commit="synthetic"
         )
 
+    def test_gate_n_prerequisite_does_not_pollute_gate_o_probe(self):
+        # Gate N prepares four shard views on a DIFFERENT fake dataset.
+        # The Gate O mapping probe must begin with a clean call history.
+        self.assertEqual(self.ds.calls, [])
+        self.assertEqual(self.gate_n["actual_hf_iterable_num_shards"], 14)
+
     def test_safe_path_normalization_strips_secrets_from_output(self):
         source = "hf://datasets/HuggingFaceFW/fineweb-edu@pin/sample/10BT/001_00000.parquet?token=SECRET"
         self.assertEqual(gate.safe_relative_parquet_path(source), self.paths[1])
