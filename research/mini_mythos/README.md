@@ -577,3 +577,19 @@ Git ignored 输出 `research/mini_mythos/results/r2/pr27_gate_p_os_worker_file_i
     python research/mini_mythos/scripts/maintenance_ast_audit.py --repo . --out research/mini_mythos/results/quality/ast_audit_refactor_2026-10-17.json
 
 目标先比较新旧报告（旧 `ast_audit_2026-10-17.json` 不改动），在证明扫描器行为等价后再审计主训练分布式加载、Checkpoint 信任、静态/动态调用链，与真实模型训练评价并行。
+
+### 实测维护性审计重构 001：248/248；公开 API 最小修复 002 待重测
+
+2026-10-17 Codespaces：静态审计器职责拆分后，用户实测**全量 248/248 PASS（62.335 秒）**。真实 AST 再扫描：**105 文件、893 函数、87 热点、23 内嵌函数、5 风险模式、2 个未绑定的 `__all__`、2 个仅测试静态候选**。旧基线 889 函数 / 85 热点，所以即使审计器最大 CC~48 的 `scan()` 不再位居前 12，**不能声称整个仓库热点数下降**。见 [重构 001 正式结果](docs/MAINTENANCE_SCANNER_REFACTOR_001_RESULT.md)。
+
+“仅测试调用”的两个函数已获人工复核：`build_loader_native_once` 是待主训练整合的研究加载器 API；`load_local_hf_dataset` 是 spawn 子进程 Worker 安装的本地数据工厂，因函数对象赋值而被名字级静态分析误分类。**两者保留，不删除。**
+
+已提交 [公开 API 修复 002](docs/CODE_QUALITY_PUBLIC_API_FIX_002_PLAN.md)：真实 `open_mythos/__init__.py` 的 `__all__` 曾声明两个从未绑定的 `load_tokenizer`/`get_vocab_size`，已仅删除这两个无效导出字符串；保留 23 个实际存在的公共模型/Tokenizer 导出。新增 [3 项真实 `from open_mythos import *` Smoke Tests](tests/test_open_mythos_public_exports.py)；不下载 Tokenizer、不改模型数学。**这一新变更还没有 Codespaces 运行证据：全量预计 251 项，严禁标记 PASS。**
+
+    git status --short
+    git pull --ff-only origin mini-mythos-research
+    python -m unittest discover -s research/mini_mythos/tests -p 'test_open_mythos_public_exports.py' -v
+    python -m unittest discover -s research/mini_mythos/tests -p 'test_*.py' -v
+    python research/mini_mythos/scripts/maintenance_ast_audit.py --repo . --out research/mini_mythos/results/quality/ast_audit_api_fix_2026-10-17.json
+
+下一步优先处理 `training/3b_fine_web_edu.py` 的 DDP×Worker 分片正确性、冻结训练数据来源和不可信 `weights_only=False` Checkpoint 风险，**但不将 PR27 的 2 Worker 结论直接当作 2 rank×2 Worker 的分布式实测证据**。模型端到端训练与独立 Transformer 基线性能评估并行开展。
