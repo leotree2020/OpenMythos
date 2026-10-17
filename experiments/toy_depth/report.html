@@ -1,0 +1,574 @@
+<title>OpenMythos 递归深度诊断</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600;700&family=Noto+Sans+SC:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a single reading column (~44em) with wide figures; research-notebook feel —
+   cool blue-grey paper, ink text, one steel accent; seed colors only inside charts. */
+:root {
+  --paper: #f6f7f9;
+  --sheet: #fcfcfb;
+  --ink: #15181d;
+  --ink-2: #4a505a;
+  --ink-3: #737a86;
+  --rule: #dde1e7;
+  --rule-strong: #c4cad3;
+  --accent: #2f4f78;
+  --accent-soft: #e6ecf4;
+  --good: #1f7a3d;
+  --good-soft: #e5f3ea;
+  --warn: #8a5a00;
+  --warn-soft: #fbf1dc;
+  --crit: #a1312f;
+  --crit-soft: #f9e6e5;
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a;
+  --seq1: #cde2fb; --seq2: #9ec5f4; --seq3: #5598e7; --seq4: #256abf; --seq5: #104281; --seq0: #c4cad3;
+  --f-display: "Noto Serif SC", "Songti SC", "SimSun", serif;
+  --f-body: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --paper: #121417; --sheet: #1a1a19; --ink: #eceef1; --ink-2: #b8bec8; --ink-3: #8b929d;
+  --rule: #2b3038; --rule-strong: #3b414b; --accent: #8fb1dc; --accent-soft: #1d2735;
+  --good: #6cc48a; --good-soft: #15281d; --warn: #e2b04a; --warn-soft: #2b2312; --crit: #ef8a87; --crit-soft: #2e1918;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70;
+  --seq1: #184f95; --seq2: #256abf; --seq3: #3987e5; --seq4: #6da7ec; --seq5: #b7d3f6; --seq0: #3b414b;
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --paper: #121417; --sheet: #1a1a19; --ink: #eceef1; --ink-2: #b8bec8; --ink-3: #8b929d;
+  --rule: #2b3038; --rule-strong: #3b414b; --accent: #8fb1dc; --accent-soft: #1d2735;
+  --good: #6cc48a; --good-soft: #15281d; --warn: #e2b04a; --warn-soft: #2b2312; --crit: #ef8a87; --crit-soft: #2e1918;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70;
+  --seq1: #184f95; --seq2: #256abf; --seq3: #3987e5; --seq4: #6da7ec; --seq5: #b7d3f6; --seq0: #3b414b;
+  color-scheme: dark; }
+
+body { background: var(--paper); color: var(--ink); font-family: var(--f-body); font-size: 16px; line-height: 1.75;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0 64px; }
+.wrap { max-width: 980px; margin: 0 auto; }
+.col { max-width: 46em; }
+header.top { padding-block: 48px 28px; border-bottom: 1px solid var(--rule); display: grid; gap: 14px; }
+.eyebrow { font-family: var(--f-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+h1 { font-family: var(--f-display); font-weight: 700; font-size: clamp(28px, 5vw, 42px); line-height: 1.25; margin: 0; text-wrap: balance; }
+.lede { color: var(--ink-2); font-size: 17px; margin: 0; max-width: 44em; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { font-size: 13px; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--rule-strong); color: var(--ink-2); display: inline-flex; gap: 6px; align-items: center; }
+.chip b { font-weight: 500; color: var(--ink); }
+.chip .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ink-3); }
+.chip.ok .dot { background: var(--good); } .chip.wait .dot { background: var(--warn); } .chip.run .dot { background: var(--accent); }
+nav.toc { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 14px; padding-top: 6px; }
+nav.toc a { color: var(--accent); text-decoration: none; } nav.toc a:hover, nav.toc a:focus-visible { text-decoration: underline; }
+
+section { padding-block: 40px 8px; border-bottom: 1px solid var(--rule); }
+section:last-of-type { border-bottom: 0; }
+h2 { font-family: var(--f-display); font-size: 26px; line-height: 1.35; margin: 0 0 6px; text-wrap: balance; display: flex; gap: 12px; align-items: baseline; }
+h2 .n { font-family: var(--f-mono); font-size: 14px; color: var(--ink-3); font-weight: 400; }
+h3 { font-size: 18px; margin: 28px 0 6px; text-wrap: balance; }
+p { margin: 10px 0; }
+.muted { color: var(--ink-2); }
+.small { font-size: 14px; }
+code, .mono { font-family: var(--f-mono); font-size: .9em; }
+code { background: var(--accent-soft); padding: 1px 5px; border-radius: 4px; word-break: break-all; }
+pre { font-family: var(--f-mono); font-size: 13px; line-height: 1.6; background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; padding: 12px 14px; overflow-x: auto; margin: 10px 0; }
+ul, ol { padding-left: 1.3em; margin: 8px 0; } li { margin: 4px 0; }
+strong { font-weight: 700; }
+
+.verdict { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin: 18px 0 8px; }
+.v { background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; padding: 14px 16px; display: grid; gap: 4px; align-content: start; min-width: 0; }
+.v .k { font-size: 13px; color: var(--ink-3); }
+.v .t { font-weight: 700; font-size: 17px; line-height: 1.45; }
+.v .d { font-size: 14px; color: var(--ink-2); }
+.v .tag { justify-self: start; font-size: 12px; padding: 1px 8px; border-radius: 4px; font-weight: 500; }
+.tag.ok { background: var(--good-soft); color: var(--good); } .tag.wait { background: var(--warn-soft); color: var(--warn); }
+.tag.crit { background: var(--crit-soft); color: var(--crit); } .tag.info { background: var(--accent-soft); color: var(--accent); }
+
+.figure { background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; padding: 16px 16px 12px; margin: 18px 0; min-width: 0; position: relative; }
+.figure .ft { font-weight: 700; font-size: 15px; }
+.figure .fs { font-size: 13px; color: var(--ink-2); margin: 2px 0 8px; }
+.figure .src { font-size: 12px; color: var(--ink-3); margin-top: 6px; font-family: var(--f-mono); }
+.chart { width: 100%; overflow-x: auto; }
+.chart svg { display: block; width: 100%; height: auto; min-width: 520px; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--ink-2); margin: 4px 0 6px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 18px; height: 0; border-top: 2px solid; display: inline-block; }
+.sw.dash { border-top-style: dashed; }
+.sq { width: 11px; height: 11px; border-radius: 2px; display: inline-block; }
+svg text { font-family: var(--f-body); }
+.tip { position: absolute; pointer-events: none; background: var(--ink); color: var(--paper); font-size: 12.5px; line-height: 1.5; padding: 7px 10px; border-radius: 6px; white-space: nowrap; z-index: 5; font-family: var(--f-body); font-variant-numeric: tabular-nums; }
+.tip[hidden] { display: none !important; }
+
+.tw { overflow-x: auto; margin: 12px 0; border: 1px solid var(--rule); border-radius: 8px; background: var(--sheet); }
+table { border-collapse: collapse; width: 100%; font-size: 14px; font-variant-numeric: tabular-nums; }
+th, td { padding: 7px 10px; text-align: right; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+th { font-weight: 500; color: var(--ink-2); background: var(--paper); font-size: 13px; }
+td:first-child, th:first-child { text-align: left; }
+tr:last-child td { border-bottom: 0; }
+td.l { text-align: left; white-space: normal; min-width: 14em; }
+.z { color: var(--ink-3); }
+
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin: 14px 0; }
+.stat { background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; padding: 14px 16px; min-width: 0; }
+.stat .lab { font-size: 13px; color: var(--ink-2); }
+.stat .row { display: flex; gap: 14px; align-items: baseline; flex-wrap: wrap; margin-top: 6px; font-variant-numeric: tabular-nums; }
+.stat .num { font-family: var(--f-mono); font-size: 22px; font-weight: 500; }
+.stat .unit { font-size: 12px; color: var(--ink-3); }
+.stat .note { font-size: 13px; color: var(--ink-3); margin-top: 6px; }
+
+.callout { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 12px 16px; border-radius: 0 6px 6px 0; margin: 16px 0; }
+.callout.warn { border-left-color: var(--warn); background: var(--warn-soft); }
+.callout .h { font-weight: 700; margin-bottom: 4px; }
+
+.stage { display: grid; grid-template-columns: 92px 1fr; gap: 6px 18px; padding: 18px 0; border-top: 1px solid var(--rule); }
+.stage:first-of-type { border-top: 0; }
+.stage .when { font-family: var(--f-mono); font-size: 13px; color: var(--ink-3); padding-top: 3px; }
+.stage .body { min-width: 0; }
+.stage h3 { margin: 0 0 4px; }
+@media (max-width: 560px) { .stage { grid-template-columns: 1fr; } }
+.cand { display: grid; gap: 10px; margin: 10px 0; }
+.c { border: 1px solid var(--rule); background: var(--sheet); border-radius: 8px; padding: 12px 14px; display: grid; gap: 4px; min-width: 0; }
+.c .ch { display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; justify-content: space-between; }
+.c .cn { font-weight: 700; }
+.c .meta { font-size: 13px; color: var(--ink-2); }
+.c p { margin: 2px 0; font-size: 15px; }
+.check { list-style: none; padding: 0; }
+.check li { padding-left: 1.6em; position: relative; }
+.check li::before { content: "□"; position: absolute; left: 0; color: var(--ink-3); }
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+footer { padding-top: 28px; font-size: 13px; color: var(--ink-3); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+<header class="top">
+  <div class="eyebrow">OpenMythos · 递归深度外推 · Claude 侧独立结果 · 2026-10-17</div>
+  <h1>OpenMythos 递归深度诊断</h1>
+  <p class="lede">在小型 OpenMythos（tiny Shakespeare）上，按统一测试协议检验 BASE、B1、B2、C 四种规则在 T=4、8、16 下的表现，并据此给出寻找改善办法的路线。本页供 Work 对齐使用，绝对 PPL 不与正式模型直接比较。</p>
+  <div class="chips">
+    <span class="chip ok"><span class="dot"></span><b>Claude 侧协议评测</b>已完成</span>
+    <span class="chip wait"><span class="dot"></span><b>Work 侧正式模型</b>等待诊断数据</span>
+    <span class="chip run"><span class="dot"></span><b>训练机制对比</b>进行中，无结果</span>
+  </div>
+  <nav class="toc" aria-label="目录">
+    <a href="#summary">结论</a><a href="#setup">实验设置</a><a href="#observed">观察到的现象</a><a href="#effects">干预效果</a><a href="#inference">可检验的推论</a><a href="#unproven">未证明的解释</a><a href="#roadmap">改善路线</a><a href="#ask">需要 Work 提供</a><a href="#notes">更正与说明</a><a href="#repro">复现信息</a>
+  </nav>
+</header>
+
+<section id="summary">
+  <h2><span class="n">§0</span>结论</h2>
+  <div class="verdict">
+    <div class="v"><span class="tag ok">现象</span><div class="t">小模型没有深度退化</div><div class="d">三个种子在 T=4、8、16 下 PPL 相同，差异在 ±0.01% 以内。</div></div>
+    <div class="v"><span class="tag crit">现象</span><div class="t">多给的轮数没被使用</div><div class="d">token 平均在第 2.15–2.66 轮首次停机；T≥8 多花 27% 循环计算，收益为 0。</div></div>
+    <div class="v"><span class="tag info">干预</span><div class="t">B1、B2、C 都没有可测效果</div><div class="d">它们的作用对象（T=4 时未停机的 0.1–2% 位置、第 5 轮之后的状态）在这个模型上几乎不存在。</div></div>
+    <div class="v"><span class="tag wait">推论</span><div class="t">正式模型的退化只能来自 T=4 时未停机的位置</div><div class="d">这是代码层面的必然结论，可以用 Work 的诊断数据直接检验。</div></div>
+  </div>
+  <div class="col">
+    <p><strong>对改善方向的含义：</strong>推理时的规则最多能做到"多给的轮数不帮倒忙"，做不到"让多给的轮数有用"。本轮目标是找到能稳定利用额外计算的循环机制，这需要改变训练方式。推理侧规则的价值在于诊断，以及在正式模型上止损。详见 <a href="#roadmap">§6 改善路线</a>。</p>
+  </div>
+</section>
+
+<section id="setup">
+  <h2><span class="n">§1</span>实验设置</h2>
+  <div class="tw"><table>
+    <tbody>
+      <tr><td>模型</td><td class="l">OpenMythos 原版结构：GQA 注意力；MoE（4 个路由专家 + 1 个共享专家，每 token 激活 2 个）；prelude 1 层 + 循环块 + coda 1 层；dim 128；约 0.61M 参数</td></tr>
+      <tr><td>训练</td><td class="l">固定 T=4；字节级分词（vocab 256）；tinyshakespeare 前 90%；2500 步，batch 32，seq 128；AdamW，lr 2e-3；warmup 加余弦退火；只用 next-token CE，没有 ponder cost</td></tr>
+      <tr><td>种子</td><td class="l">1、2、3（与正式实验相同的三种子设计）</td></tr>
+      <tr><td>测试集</td><td class="l">tinyshakespeare 后 10%（按段落边界切分），111,606 字节</td></tr>
+      <tr><td>评测</td><td class="l">seq 128，batch 16，CPU fp32；评测时没有其他训练进程争用 CPU</td></tr>
+      <tr><td>PPL 口径</td><td class="l">分子：除 token 流第一个 token 外，所有 token 的 NLL 之和；分母：测试文本的 UTF-8 字节数。所有规则、所有 T 都相同。字节分词下 token PPL 与 byte PPL 只差这一个 token</td></tr>
+      <tr><td>规则</td><td class="l">BASE（原版）；B1 最后一轮补齐剩余权重；B2 按实际 ACT 权重和归一化；C 超过训练深度后截断轮次编码。B1+C、B2+C 按协议"按需执行"，因独立消融均无效果而未运行</td></tr>
+      <tr><td>等价性</td><td class="l">三个 checkpoint 均验证：所有开关关闭时，外部适配层的前向与原版逐位相同（<code>torch.equal</code>）</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="observed">
+  <h2><span class="n">§2</span>观察到的现象</h2>
+
+  <h3>2.1 PPL 随推理深度的变化</h3>
+  <div class="figure" data-fig="ppl">
+    <div class="ft">字节级 PPL 与推理深度 T（训练深度 T=4，纵轴为对数刻度）</div>
+    <div class="fs">实线为 BASE，虚线为 B1。T≥4 时所有曲线重合并保持平坦；B1 只在 T 低于训练深度时有作用。</div>
+    <div class="legend" id="lg-ppl"></div>
+    <div class="chart" id="ch-ppl"></div>
+    <div class="src">来源：experiments/toy_depth/results.jsonl（扩展深度评测，base=BASE，remainder=B1）</div>
+  </div>
+
+  <h3>2.2 ACT 停机分布</h3>
+  <div class="figure" data-fig="halt">
+    <div class="ft">各 token 首次达到停机阈值的轮次（BASE，T=8）</div>
+    <div class="fs">大部分 token 在第 2 轮就停机，几乎全部在训练深度 T=4 之前或刚超过时停机。</div>
+    <div class="legend" id="lg-halt"></div>
+    <div class="chart" id="ch-halt"></div>
+    <div class="src">来源：experiments/toy_depth/protocol.jsonl，字段 act_halt_hist</div>
+  </div>
+
+  <h3>2.3 三种深度与计算量指标</h3>
+  <p class="col muted">协议要求区分这三者。下面是三个种子的值；它们差别很大，所以不能互相替代。</p>
+  <div class="stats" id="depth-stats"></div>
+  <div class="col">
+    <p>差距的来源：提前退出要等<strong>整个 batch</strong>里所有位置都停机。token 平均约 2.3 轮就停，但 T=4 时每次前向都跑满 4 轮，因为每个 batch 里总有少数位置没停。T≥8 时，前向调用在约 5 轮处结束。所以实际计算成本由每个 batch 里最慢的位置决定，而不是由平均停机深度决定。</p>
+  </div>
+
+  <h3>2.4 ACT 输出权重和</h3>
+  <div class="tw"><table id="tb-ws"></table></div>
+  <p class="col small muted">T=4 时，未达到停机阈值的位置占 0.1%–2.0%，平均权重和是 0.998–1.000。T≥8 时，所有位置都达到了阈值。按协议，权重和小于 1 不预设为必须修复的错误；在这个模型上，它涉及的位置太少，修与不修都没有影响。</p>
+
+  <h3>2.5 隐藏状态是否在超出训练深度后出现异常</h3>
+  <div class="figure" data-fig="rel">
+    <div class="ft">每轮隐藏状态的相对变化量 ‖h<sub>t</sub> − h<sub>t−1</sub>‖ / ‖h<sub>t−1</sub>‖（强制跑满 16 轮，不提前退出）</div>
+    <div class="fs">三个种子都单调下降，越过训练深度（虚线）时没有跳变。状态在缓慢收敛，到第 16 轮仍有约 4–7% 的变化，还没收敛到不动点。</div>
+    <div class="legend" id="lg-rel"></div>
+    <div class="chart" id="ch-rel"></div>
+    <div class="src">来源：experiments/toy_depth/act_stats.json（钩子观测，停机阈值临时设为无穷大）</div>
+  </div>
+  <p class="col small muted">每轮隐藏状态的 RMS 保持在 1.4–1.8 之间，没有增长（详见 protocol_summary.md 的诊断表）。C 确实改变了第 5、6 轮的隐藏状态（例如种子一第 6 轮的相对变化量从 0.106 降到 0.100），但这些轮次的 ACT 输出权重都是 0，所以不影响输出。</p>
+</section>
+
+<section id="effects">
+  <h2><span class="n">§3</span>干预效果</h2>
+  <p class="col">按协议的三层判断方法。数值为相对变化，取种子均值；单个种子的数值见 protocol_summary.md。</p>
+  <h3>第一层：与同 T 下的 BASE 相比</h3>
+  <div class="tw"><table id="tb-l1"></table></div>
+  <h3>第二层：同一规则，更深的 T 与 T=4 相比</h3>
+  <div class="tw"><table id="tb-l2"></table></div>
+  <p class="col small muted">没有任何规则的 T=4 比 BASE 的 T=4 更差，所以不存在"T=4 变差、导致 4→8 差距缩小"的假改善。</p>
+  <h3>第三层：增加的计算是否划算</h3>
+  <div class="tw"><table id="tb-l3"></table></div>
+  <p class="col small muted">墙钟时间是单次 CPU 测量，有噪声；以循环计算量（执行轮数 × token 数）为准。</p>
+  <div class="callout warn col">
+    <div class="h">B1 在低于训练深度时的作用，不算深度外推的改善</div>
+    B1 让 T=1 的 PPL 从 12.12 降到 5.13，T=2 从 5.80 降到 4.66。这是 T 小于训练深度时的读出补偿，与"超出训练深度后能否利用额外计算"无关。
+  </div>
+</section>
+
+<section id="inference">
+  <h2><span class="n">§4</span>一个可以检验的推论</h2>
+  <div class="col">
+    <p>原版循环块里，一个位置停机后，在后续轮次的输出权重为 0；同一个 batch 里的不同序列也不会互相做注意力。因此在<strong>不使用 KV cache 的评测</strong>中：</p>
+    <div class="callout">
+      <div class="h">如果 T=4 时某个序列的所有位置都已停机，这个序列在任何 T≥4 下的输出都与 T=4 逐位相同。</div>
+      已有单元测试固定了这一点（<code>test_all_halted_output_is_depth_invariant</code>）。
+    </div>
+    <p>由此可以推出三件事：</p>
+    <ol>
+      <li><strong>正式模型 T=4→8 的退化，只能从 T=4 时未停机的位置开始。</strong>已停机的位置只能通过 coda 层对这些位置的注意力被间接影响。</li>
+      <li><strong>可以检验的预测：</strong>三个种子的退化幅度（+7.2%、+0.4%、+50.0%）应该与 T=4 时未停机位置的比例或权重质量正相关，种子三应该最高。如果不是这样，就说明有别的机制（例如数值精度、评测时用了 KV cache），需要重新排查。</li>
+      <li><strong>batch 大小不影响 PPL，只影响计算成本。</strong>这一条更正了此前的说法，见 <a href="#notes">§8</a>。</li>
+    </ol>
+    <p>为了直接检验，新增了归因工具 <code>training/depth_attribution.py</code>：它逐 token 计算 T=4→T 的 NLL 变化，并按 T=4 时的 ACT 状态拆分，具体是"已停机"和"未停机"两组；未停机的再按权重和分档，以及按在更深的 T 下第几轮停机分档。</p>
+  </div>
+</section>
+
+<section id="unproven">
+  <h2><span class="n">§5</span>尚未证明的因果解释</h2>
+  <div class="col">
+    <ul>
+      <li><strong>规则无效是因为没有作用对象。</strong>B1、B2 只影响 T=4 时未停机的位置（0.1–2%）；C 只影响第 5 轮之后，而那时所有位置的权重都已是 0。这能解释小模型上的"零效果"，但不能推出这些规则在正式模型上也无效。</li>
+      <li><strong>ACT 在训练中学会了"早停"。</strong>平均停机深度约为训练深度的一半，T=4 时已有约一半的轮次权重为 0。可能的原因包括：没有 ponder cost 约束、停机阈值的设定、模型容量小、任务太容易。目前都没有验证。</li>
+      <li><strong>小模型和正式模型的差异可能出在 ACT 行为上。</strong>正式模型 T=4 时很可能有相当多的位置没停机。在 Work 的诊断数据出来之前，这只是推测。</li>
+      <li><strong>"多给的轮数没有用"是否因为任务本身不需要更深的计算。</strong>字符级 Shakespeare 可能主要依赖局部模式。为此另开了多跳变量追踪实验，那个任务的深度不够就一定做不对，见 §6 阶段 2。</li>
+    </ul>
+  </div>
+</section>
+
+<section id="roadmap">
+  <h2><span class="n">§6</span>改善路线</h2>
+  <p class="col">目标不是修出一个 PPL 好看的版本，而是找到能稳定利用额外思考计算的循环机制。"成功"按以下三条判断：</p>
+  <div class="tw"><table>
+    <thead><tr><th>标准</th><th style="text-align:left">含义</th><th style="text-align:left">本模型现状</th></tr></thead>
+    <tbody>
+      <tr><td>不过度思考</td><td class="l">T 超过训练深度后，所有种子的 PPL 都不升高</td><td class="l">满足（但原因是额外轮数没被使用）</td></tr>
+      <tr><td>真的有收益</td><td class="l">在需要多步计算的任务上，T 越大越好，并能处理比训练时更难的样本</td><td class="l">不满足：T≥8 收益为 0</td></tr>
+      <tr><td>稳定</td><td class="l">多循环时隐藏状态收敛而不是发散，三个种子的结论一致</td><td class="l">满足：变化量单调下降，三种子一致</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="stage">
+    <div class="when">阶段 0<br>诊断</div>
+    <div class="body">
+      <h3>在正式模型上定位退化来源（Work，不需要训练）</h3>
+      <p>用 <code>depth_protocol_eval.py</code> 和 <code>depth_attribution.py</code> 跑三个正式 checkpoint。根据结果，按下表决定下一步：</p>
+      <div class="tw"><table>
+        <thead><tr><th>如果诊断结果显示</th><th style="text-align:left">说明</th><th style="text-align:left">下一步</th></tr></thead>
+        <tbody>
+          <tr><td class="l">T=4 未停机比例高，且 ΔNLL 主要来自这些位置</td><td class="l">退化来自"未停机位置在第 5 轮之后得到的权重"</td><td class="l">在正式模型上比较 B1、B2；同时检查这些位置在第 5–8 轮的隐藏状态</td></tr>
+          <tr><td class="l">第 5 轮之后隐藏状态 RMS 增大或变化量反弹</td><td class="l">循环本身在训练深度之外不稳定</td><td class="l">比较 C；考虑状态归一化或收缩约束（需要训练）</td></tr>
+          <tr><td class="l">退化幅度与未停机比例不相关</td><td class="l">§4 的推论不成立，存在别的机制</td><td class="l">先排查评测是否用了 KV cache、数值精度、batch 内的提前退出逻辑</td></tr>
+          <tr><td class="l">B1、B2、C 都救不回来</td><td class="l">推理侧补丁无法解决</td><td class="l">直接进入阶段 2</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <div class="stage">
+    <div class="when">阶段 1<br>止损</div>
+    <div class="body">
+      <h3>推理侧安全默认值（不重训）</h3>
+      <p>在找到有效机制之前，正式模型推理时把实际深度限制为 min(T, 训练深度)。这保证不会退化，但也不会有收益，只是一条基线。B1、B2、C 只有在阶段 0 证明对正式模型有效后才采用；采用时必须同时报告它们对 T=4 本身的影响。</p>
+    </div>
+  </div>
+
+  <div class="stage">
+    <div class="when">阶段 2<br>机制</div>
+    <div class="body">
+      <h3>改变训练方式，让额外的轮数有用</h3>
+      <p>这是本轮目标的核心。推理侧规则做不到，因为 ACT 读出会让已停机位置在后续轮次的权重为 0。候选方向如下（引用是凭记忆给出，细节需要核对原文）：</p>
+      <div class="cand">
+        <div class="c"><div class="ch"><span class="cn">A. 训练时随机采样循环深度</span><span class="tag info">对比实验进行中</span></div>
+          <p>每一步随机选 T，让模型学会在任意深度下都可用，而不是只在 T=4 可用。Geiping 等人（2025）的循环深度模型采用了这一思路，并只对最后几轮反向传播以控制成本。</p>
+          <div class="meta">检验：PPL 随 T 的曲线在超出训练平均深度后是否继续下降；三个种子是否一致。</div></div>
+        <div class="c"><div class="ch"><span class="cn">B. 用最后一轮状态做读出，ACT 只负责提前退出</span><span class="tag info">对比实验进行中</span></div>
+          <p>取消各轮加权和，输出直接取最后一轮的状态；ACT 只决定"可以提前退出"，不参与输出。这样每多跑一轮都会影响输出，额外计算在结构上不再被屏蔽。</p>
+          <div class="meta">检验：与 A 组合（2×2 设计）；额外轮数是否带来收益，状态是否收敛。</div></div>
+        <div class="c"><div class="ch"><span class="cn">C. 给停机加约束（ponder cost 或停机正则）</span><span class="tag wait">待设计</span></div>
+          <p>原版训练只用 CE，没有约束停机行为。本模型平均在第 2.3 轮就停机，可能是无约束训练的结果。加入 ponder cost（Graves, 2016）或对停机深度的正则，可以研究"停机深度是否随样本难度变化"。</p>
+          <div class="meta">检验：停机深度分布与样本难度的相关性；正式模型的未停机比例是否下降。</div></div>
+        <div class="c"><div class="ch"><span class="cn">D. 渐进式训练与重新注入输入</span><span class="tag wait">待设计</span></div>
+          <p>Bansal 等人（2022）用"从中间状态继续算，并在每一轮重新注入原始输入"的训练方式，专门解决"算得越久越差"的过度思考问题。OpenMythos 的 LTI 注入已在每轮注入输入，缺的是渐进式训练这一部分。</p>
+          <div class="meta">检验：在多跳任务上，测试跳数超过训练跳数时，增加 T 能否提高准确率。</div></div>
+      </div>
+      <p class="small muted">A×B 的 2×2 对比正在 <code>experiments/loop_mech/</code> 中运行：多跳变量追踪任务，训练 1–4 跳、测试 1–12 跳，序列长度固定，每种机制 3 个种子。目前每个机制的种子一大约训练到 600/3000 步，尚无结果。</p>
+    </div>
+  </div>
+
+  <div class="stage">
+    <div class="when">阶段 3<br>扩大</div>
+    <div class="body">
+      <h3>扩大规模的门槛</h3>
+      <p><strong>现在不值得扩大。</strong>两边都还没有证据表明这套循环机制能利用额外计算。建议的门槛是：某个机制在小规模上同时满足上表的三条标准，并在三个种子上一致，然后再在正式规模上验证一个种子，最后才考虑扩大。</p>
+    </div>
+  </div>
+</section>
+
+<section id="ask">
+  <h2><span class="n">§7</span>需要 Work 提供</h2>
+  <div class="col">
+    <p>协议要求比较方向，不比较绝对值。以下几项决定两边结果能否对齐，以及阶段 0 的走向：</p>
+    <ul class="check">
+      <li>BASE 在 T=4 下的停机轮次分布、未达阈值的比例、平均权重和（三个种子分别给出）</li>
+      <li>T=8、T=16 下每次前向实际执行的循环数，以及第 5 轮之后隐藏状态的 RMS 和变化量</li>
+      <li>归因结果：T=4→8 和 T=4→16 的 ΔNLL 中，有多少来自 T=4 时未停机的位置</li>
+      <li>B1、B2、C 的第一层和第二层结果</li>
+      <li>评测是否使用了 KV cache；seq-len 和 batch size 与原评测是否一致</li>
+    </ul>
+    <p>命令示例（GPU、HF 分词器；<code>--seq-len</code> 和 <code>--batch-size</code> 请与原评测一致）：</p>
+<pre>git checkout claude/openmythos-research
+export PYTHONPATH=training:.
+python training/depth_protocol_eval.py --ckpt s1.pt s2.pt s3.pt \
+  --data test.jsonl --rules BASE,B1,B2,C --n-loops 4,8,16 \
+  --seq-len &lt;原值&gt; --batch-size &lt;原值&gt; --out protocol.jsonl
+python training/depth_protocol_summary.py protocol.jsonl &gt; protocol_summary.md
+python training/depth_attribution.py --ckpt s1.pt s2.pt s3.pt \
+  --data test.jsonl --ref-t 4 --n-loops 8,16 \
+  --seq-len &lt;原值&gt; --batch-size &lt;原值&gt; --out attribution.jsonl</pre>
+    <p class="small muted">每个 checkpoint 正式评测前，脚本会先核对"开关全关 = 原版前向"，不一致就直接报错。结果文件的 meta 行记录了模型配置、源码 commit、checkpoint 的 sha256 和数据集指纹。</p>
+  </div>
+</section>
+
+<section id="notes">
+  <h2><span class="n">§8</span>更正与说明</h2>
+  <div class="col">
+    <ul>
+      <li><strong>更正：</strong>此前我说过"batch 大小会略微影响 PPL"，这是错的。batch 级提前退出只影响每次前向执行的轮数，即计算成本，不改变任何位置的输出（理由见 §4）。</li>
+      <li><strong>B2 是新补充的规则</strong>，由外部适配层实现，与 B1 互斥。原版源码和原始 checkpoint 均未修改。</li>
+      <li><strong>本轮协议之前已启动的扩展深度评测</strong>（T=1、2、3、4、6、8、12、16）按协议没有打断，结果作为补充数据；名称对应关系：base=BASE，remainder=B1，clamp=C，both=B1+C。</li>
+      <li><strong>运行过程中的两次操作失误</strong>，都已处理、不影响结果：暂停训练进程时，误把执行命令的 shell 也暂停了，已恢复；误判排队任务的状态，导致协议评测同时启动了两份并写入同一个文件，两份都已丢弃，本页数据来自之后单独重跑的一份。</li>
+      <li><strong>墙钟时间</strong>是单次 CPU 测量，只作参考；计算成本以循环计算量为准。</li>
+    </ul>
+  </div>
+</section>
+
+<section id="repro">
+  <h2><span class="n">§9</span>复现信息</h2>
+  <div class="tw"><table id="tb-meta"></table></div>
+  <p class="col small muted">分支 <code>claude/openmythos-research</code>。数据与报告：<code>experiments/toy_depth/</code>（protocol.jsonl、protocol_summary.md、results.jsonl、act_stats.json、REPORT.md）。工具：<code>training/depth_ablation.py</code>、<code>depth_protocol_eval.py</code>、<code>depth_protocol_summary.py</code>、<code>depth_attribution.py</code>。</p>
+</section>
+
+<footer>由 Claude 根据 Claude 侧实验结果整理。与 Work 侧的一致性判断，在双方独立结果都齐全后再做。</footer>
+</div>
+
+<script>
+const D = {"ppl": {"base": {"seed1": {"1": 10.8584, "2": 5.2196, "3": 4.6413, "4": 4.5986, "6": 4.5988, "8": 4.5988, "12": 4.5988, "16": 4.5988}, "seed2": {"1": 7.7163, "2": 4.781, "3": 4.6489, "4": 4.639, "6": 4.6389, "8": 4.6389, "12": 4.6389, "16": 4.6389}, "seed3": {"1": 17.7796, "2": 7.3885, "3": 4.9252, "4": 4.5815, "6": 4.5814, "8": 4.5814, "12": 4.5814, "16": 4.5814}}, "remainder": {"seed1": {"1": 5.059, "2": 4.6325, "3": 4.6016, "4": 4.5988, "6": 4.5988, "8": 4.5988, "12": 4.5988, "16": 4.5988}, "seed2": {"1": 4.8237, "2": 4.6458, "3": 4.6391, "4": 4.6389, "6": 4.6389, "8": 4.6389, "12": 4.6389, "16": 4.6389}, "seed3": {"1": 5.4941, "2": 4.7033, "3": 4.5919, "4": 4.5813, "6": 4.5814, "8": 4.5814, "12": 4.5814, "16": 4.5814}}}, "halt": {"seed1": {"4": [0.0028, 0.002, 0.7569, 0.1781, 0.0602], "8": [0.0, 0.002, 0.7569, 0.1781, 0.0602, 0.0028, 0.0, 0.0, 0.0], "16": [0.0, 0.002, 0.7569, 0.1781, 0.0602, 0.0028, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]}, "seed2": {"4": [0.0014, 0.0255, 0.8192, 0.1362, 0.0177], "8": [0.0, 0.0255, 0.8192, 0.1362, 0.0177, 0.0013, 0.0001, 0.0, 0.0], "16": [0.0, 0.0255, 0.8192, 0.1362, 0.0177, 0.0013, 0.0001, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]}, "seed3": {"4": [0.0198, 0.0, 0.5617, 0.2406, 0.1779], "8": [0.0, 0.0, 0.5617, 0.2406, 0.1779, 0.0198, 0.0, 0.0, 0.0], "16": [0.0, 0.0, 0.5617, 0.2406, 0.1779, 0.0198, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]}}, "depth": {}, "rel": {"seed1": [0.352, 0.2073, 0.1655, 0.1306, 0.104, 0.084, 0.0742, 0.0687, 0.0645, 0.0611, 0.0546, 0.0491, 0.0501, 0.0494, 0.0438], "seed2": [0.3955, 0.244, 0.1897, 0.1501, 0.1264, 0.11, 0.0996, 0.0932, 0.0867, 0.0806, 0.0778, 0.0741, 0.0709, 0.0718, 0.0683], "seed3": [0.421, 0.2508, 0.2042, 0.1504, 0.123, 0.1058, 0.0959, 0.0873, 0.0818, 0.0797, 0.0751, 0.0694, 0.0678, 0.0654, 0.0632]}, "p": {"seed1": [0.625, 0.753, 0.826, 0.884, 0.907, 0.916, 0.918, 0.917, 0.914, 0.913, 0.914, 0.915, 0.915, 0.913, 0.911, 0.91], "seed2": [0.69, 0.793, 0.823, 0.871, 0.884, 0.887, 0.886, 0.887, 0.89, 0.894, 0.897, 0.898, 0.899, 0.899, 0.9, 0.902], "seed3": [0.5, 0.59, 0.691, 0.758, 0.773, 0.775, 0.776, 0.777, 0.777, 0.777, 0.775, 0.771, 0.769, 0.768, 0.768, 0.769]}, "rms": {"seed1": [1.43, 1.587, 1.594, 1.61, 1.607, 1.606, 1.605, 1.604, 1.606, 1.609, 1.612, 1.613, 1.611, 1.609, 1.608, 1.609], "seed2": [1.819, 1.832, 1.789, 1.789, 1.761, 1.746, 1.745, 1.753, 1.759, 1.758, 1.751, 1.745, 1.747, 1.756, 1.764, 1.765], "seed3": [1.638, 1.735, 1.751, 1.741, 1.728, 1.723, 1.721, 1.723, 1.725, 1.726, 1.726, 1.726, 1.726, 1.727, 1.727, 1.727]}, "meta": [{"seed": "seed1", "sha": "e2c62eca4c0d", "commit": "cb64586455", "dirty": false, "data": "84fafd9c8f37", "bytes": 111606, "tokens": 111606}, {"seed": "seed2", "sha": "3223d6ee1328", "commit": "cb64586455", "dirty": false, "data": "84fafd9c8f37", "bytes": 111606, "tokens": 111606}, {"seed": "seed3", "sha": "1b8b707fc4b6", "commit": "cb64586455", "dirty": false, "data": "84fafd9c8f37", "bytes": 111606, "tokens": 111606}], "cells": [{"seed": "seed1", "rule": "BASE", "T": 4, "ppl": 4.5986, "lpc": 4.0, "lt": 446420, "sec": 5.39, "halt": 2.297, "unh": 0.0028, "ws": 0.9997, "w99": 0.0028}, {"seed": "seed1", "rule": "BASE", "T": 8, "ppl": 4.5988, "lpc": 5.05, "lt": 564169, "sec": 6.27, "halt": 2.305, "unh": 0.0, "ws": 1.0, "w99": 0.0}, {"seed": "seed1", "rule": "BASE", "T": 16, "ppl": 4.5988, "lpc": 5.05, "lt": 564169, "sec": 5.67, "halt": 2.305, "unh": 0.0, "ws": 1.0, "w99": 0.0}, {"seed": "seed1", "rule": "B1", "T": 4, "ppl": 4.5988, "lpc": 4.0, "lt": 446420, "sec": 5.35, "halt": 2.297, "unh": 0.0028, "ws": 1.0, "w99": 0.0}, {"seed": "seed1", "rule": "B1", "T": 8, "ppl": 4.5988, "lpc": 5.05, "lt": 564169, "sec": 6.69, "halt": 2.305, "unh": 0.0, "ws": 1.0, "w99": 0.0}, {"seed": "seed1", "rule": "B1", "T": 16, "ppl": 4.5988, "lpc": 5.05, "lt": 564169, "sec": 6.68, "halt": 2.305, "unh": 0.0, "ws": 1.0, "w99": 0.0}, {"seed": "seed1", "rule": "B2", "T": 4, "ppl": 4.5988, "lpc": 4.0, "lt": 446420, "sec": 5.32, "halt": 2.297, "unh": 0.0028, "ws": 0.9997, "w99": 0.0028}, {"seed": "seed1", "rule": "B2", "T": 8, "ppl": 4.5988, "lpc": 5.05, "lt": 564169, "sec": 7.0, "halt": 2.305, "unh": 0.0, "ws": 1.0, "w99": 0.0}, {"seed": "seed1", "rule": "B2", "T": 16, "ppl": 4.5988, "lpc": 5.05, "lt": 564169, "sec": 7.52, "halt": 2.305, "unh": 0.0, "ws": 1.0, "w99": 0.0}, {"seed": "seed1", "rule": "C", "T": 4, "ppl": 4.5986, "lpc": 4.0, "lt": 446420, "sec": 4.96, "halt": 2.297, "unh": 0.0028, "ws": 0.9997, "w99": 0.0028}, {"seed": "seed1", "rule": "C", "T": 8, "ppl": 4.5988, "lpc": 5.05, "lt": 564169, "sec": 6.48, "halt": 2.305, "unh": 0.0, "ws": 1.0, "w99": 0.0}, {"seed": "seed1", "rule": "C", "T": 16, "ppl": 4.5988, "lpc": 5.05, "lt": 564169, "sec": 5.59, "halt": 2.305, "unh": 0.0, "ws": 1.0, "w99": 0.0}, {"seed": "seed2", "rule": "BASE", "T": 4, "ppl": 4.639, "lpc": 4.0, "lt": 446420, "sec": 4.63, "halt": 2.146, "unh": 0.0014, "ws": 0.9998, "w99": 0.0014}, {"seed": "seed2", "rule": "BASE", "T": 8, "ppl": 4.6389, "lpc": 5.11, "lt": 572244, "sec": 6.75, "halt": 2.15, "unh": 0.0, "ws": 1.0, "w99": 0.0}, {"seed": "seed2", "rule": "BASE", "T": 16, "ppl": 4.6389, "lpc": 5.11, "lt": 572244, "sec": 5.87, "halt": 2.15, "unh": 0.0, "ws": 1.0, "w99": 0.0}, {"seed": "seed2", "rule": "B1", "T": 4, "ppl": 4.6389, "lpc": 4.0, "lt": 446420, "sec": 5.31, "halt": 2.146, "unh": 0.0014, "ws": 1.0, "w99": 0.0}, {"seed": "seed2", "rule": "B1", "T": 8, "ppl": 4.6389, "lpc": 5.11, "lt": 572244, "sec": 5.98, "halt": 2.15, "unh": 0.0, "ws": 1.0, "w99": 0.0}, {"seed": "seed2", "rule": "B1", "T": 16, "ppl": 4.6389, "lpc": 5.11, "lt": 572244, "sec": 6.31, "halt": 2.15, "unh": 0.0, "ws": 1.0, "w99": 0.0}, {"seed": "seed2", "rule": "B2", "T": 4, "ppl": 4.639, "lpc": 4.0, "lt": 446420, "sec": 5.1, "halt": 2.146, "unh": 0.0014, "ws": 0.9998, "w99": 0.0014}, {"seed": "seed2", "rule": "B2", "T": 8, "ppl": 4.6389, "lpc": 5.11, "lt": 572244, "sec": 6.52, "halt": 2.15, "unh": 0.0, "ws": 1.0, "w99": 0.0}, {"seed": "seed2", "rule": "B2", "T": 16, "ppl": 4.6389, "lpc": 5.11, "lt": 572244, "sec": 6.12, "halt": 2.15, "unh": 0.0, "ws": 1.0, "w99": 0.0}, {"seed": "seed2", "rule": "C", "T": 4, "ppl": 4.639, "lpc": 4.0, "lt": 446420, "sec": 5.34, "halt": 2.146, "unh": 0.0014, "ws": 0.9998, "w99": 0.0014}, {"seed": "seed2", "rule": "C", "T": 8, "ppl": 4.6389, "lpc": 5.11, "lt": 572244, "sec": 6.58, "halt": 2.15, "unh": 0.0, "ws": 1.0, "w99": 0.0}, {"seed": "seed2", "rule": "C", "T": 16, "ppl": 4.6389, "lpc": 5.11, "lt": 572244, "sec": 6.68, "halt": 2.15, "unh": 0.0, "ws": 1.0, "w99": 0.0}, {"seed": "seed3", "rule": "BASE", "T": 4, "ppl": 4.5815, "lpc": 4.0, "lt": 446420, "sec": 5.17, "halt": 2.608, "unh": 0.0198, "ws": 0.9981, "w99": 0.0198}, {"seed": "seed3", "rule": "BASE", "T": 8, "ppl": 4.5814, "lpc": 5.02, "lt": 562004, "sec": 5.39, "halt": 2.656, "unh": 0.0, "ws": 1.0, "w99": 0.0}, {"seed": "seed3", "rule": "BASE", "T": 16, "ppl": 4.5814, "lpc": 5.02, "lt": 562004, "sec": 5.27, "halt": 2.656, "unh": 0.0, "ws": 1.0, "w99": 0.0}, {"seed": "seed3", "rule": "B1", "T": 4, "ppl": 4.5813, "lpc": 4.0, "lt": 446420, "sec": 4.96, "halt": 2.608, "unh": 0.0198, "ws": 1.0, "w99": 0.0}, {"seed": "seed3", "rule": "B1", "T": 8, "ppl": 4.5814, "lpc": 5.02, "lt": 562004, "sec": 5.57, "halt": 2.656, "unh": 0.0, "ws": 1.0, "w99": 0.0}, {"seed": "seed3", "rule": "B1", "T": 16, "ppl": 4.5814, "lpc": 5.02, "lt": 562004, "sec": 6.12, "halt": 2.656, "unh": 0.0, "ws": 1.0, "w99": 0.0}, {"seed": "seed3", "rule": "B2", "T": 4, "ppl": 4.5812, "lpc": 4.0, "lt": 446420, "sec": 5.08, "halt": 2.608, "unh": 0.0198, "ws": 0.9981, "w99": 0.0198}, {"seed": "seed3", "rule": "B2", "T": 8, "ppl": 4.5814, "lpc": 5.02, "lt": 562004, "sec": 6.13, "halt": 2.656, "unh": 0.0, "ws": 1.0, "w99": 0.0}, {"seed": "seed3", "rule": "B2", "T": 16, "ppl": 4.5814, "lpc": 5.02, "lt": 562004, "sec": 5.55, "halt": 2.656, "unh": 0.0, "ws": 1.0, "w99": 0.0}, {"seed": "seed3", "rule": "C", "T": 4, "ppl": 4.5815, "lpc": 4.0, "lt": 446420, "sec": 4.4, "halt": 2.608, "unh": 0.0198, "ws": 0.9981, "w99": 0.0198}, {"seed": "seed3", "rule": "C", "T": 8, "ppl": 4.5814, "lpc": 5.02, "lt": 562004, "sec": 5.36, "halt": 2.656, "unh": 0.0, "ws": 1.0, "w99": 0.0}, {"seed": "seed3", "rule": "C", "T": 16, "ppl": 4.5814, "lpc": 5.02, "lt": 562004, "sec": 5.09, "halt": 2.656, "unh": 0.0, "ws": 1.0, "w99": 0.0}]};
+const SEEDS = ["seed1", "seed2", "seed3"];
+const SNAME = { seed1: "种子一", seed2: "种子二", seed3: "种子三" };
+const SVAR = { seed1: "--s1", seed2: "--s2", seed3: "--s3" };
+const NS = "http://www.w3.org/2000/svg";
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const el = (tag, attrs = {}, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
+const fmtPct = x => (x >= 0 ? "+" : "−") + Math.abs(100 * x).toFixed(2) + "%";
+const mean = a => a.reduce((s, x) => s + x, 0) / a.length;
+
+function tooltip(fig) {
+  let t = fig.querySelector(".tip");
+  if (!t) { t = document.createElement("div"); t.className = "tip"; t.hidden = true; fig.appendChild(t); }
+  return {
+    show(html, evt) {
+      t.innerHTML = html; t.hidden = false;
+      const r = fig.getBoundingClientRect();
+      let x = evt.clientX - r.left + 14, y = evt.clientY - r.top + 14;
+      const w = t.offsetWidth;
+      if (x + w > r.width - 8) x = evt.clientX - r.left - w - 14;
+      t.style.left = Math.max(4, x) + "px"; t.style.top = y + "px";
+    },
+    hide() { t.hidden = true; }
+  };
+}
+
+function legend(id, items) {
+  const lg = document.getElementById(id);
+  lg.innerHTML = items.map(i => i.square
+    ? `<span><i class="sq" style="background:var(${i.c})"></i>${i.label}</span>`
+    : `<span><i class="sw${i.dash ? " dash" : ""}" style="border-color:var(${i.c})"></i>${i.label}</span>`).join("");
+}
+
+/* Line chart with categorical x positions, one shared y-scale, crosshair tooltip. */
+function lineChart({ host, xs, xLabel, series, yLog = false, yTicks, yFmt, marker, tipRow, vline, height = 300 }) {
+  const fig = host.closest(".figure");
+  const tip = tooltip(fig);
+  const W = 720, H = height, m = { l: 52, r: 74, t: 14, b: 40 };
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img" }, host);
+  const allY = series.flatMap(s => s.ys.filter(v => v != null));
+  const y0 = Math.min(...yTicks, ...allY), y1 = Math.max(...yTicks, ...allY);
+  const f = v => yLog ? Math.log(v) : v;
+  const Y = v => m.t + (H - m.t - m.b) * (1 - (f(v) - f(y0)) / (f(y1) - f(y0)));
+  const X = i => m.l + (W - m.l - m.r) * (xs.length === 1 ? 0.5 : i / (xs.length - 1));
+  const ink3 = css("--ink-3"), rule = css("--rule"), ink2 = css("--ink-2");
+  yTicks.forEach(v => {
+    el("line", { x1: m.l, x2: W - m.r, y1: Y(v), y2: Y(v), stroke: rule, "stroke-width": 1 }, svg);
+    const t = el("text", { x: m.l - 8, y: Y(v) + 4, "text-anchor": "end", "font-size": 12, fill: ink3 }, svg); t.textContent = yFmt(v);
+  });
+  xs.forEach((x, i) => { const t = el("text", { x: X(i), y: H - m.b + 18, "text-anchor": "middle", "font-size": 12, fill: ink3 }, svg); t.textContent = x; });
+  const xl = el("text", { x: (m.l + W - m.r) / 2, y: H - 4, "text-anchor": "middle", "font-size": 12, fill: ink2 }, svg); xl.textContent = xLabel;
+  if (vline != null) {
+    const xi = xs.indexOf(vline.at);
+    el("line", { x1: X(xi), x2: X(xi), y1: m.t, y2: H - m.b, stroke: ink3, "stroke-width": 1, "stroke-dasharray": "4 4" }, svg);
+    const t = el("text", { x: X(xi) + 6, y: m.t + 12, "font-size": 12, fill: ink2 }, svg); t.textContent = vline.label;
+  }
+  const lab = [];
+  series.forEach(s => {
+    const col = css(s.c);
+    const pts = s.ys.map((v, i) => v == null ? null : [X(i), Y(v)]).filter(Boolean);
+    el("path", { d: pts.map((p, i) => (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" "), fill: "none", stroke: col, "stroke-width": 2, "stroke-linejoin": "round", "stroke-dasharray": s.dash ? "6 5" : "none" }, svg);
+    if (marker) pts.forEach(p => el("circle", { cx: p[0], cy: p[1], r: 3.2, fill: col, stroke: css("--sheet"), "stroke-width": 1.5 }, svg));
+    if (s.endLabel) { const last = pts[pts.length - 1]; lab.push({ y: last[1], x: last[0], text: s.endLabel }); }
+  });
+  lab.sort((a, b) => a.y - b.y);
+  for (let i = 1; i < lab.length; i++) if (lab[i].y - lab[i - 1].y < 14) lab[i].y = lab[i - 1].y + 14;
+  lab.forEach(l => { const t = el("text", { x: l.x + 8, y: l.y + 4, "font-size": 12, fill: ink2 }, svg); t.textContent = l.text; });
+  const cross = el("line", { y1: m.t, y2: H - m.b, stroke: ink3, "stroke-width": 1, opacity: 0 }, svg);
+  const hit = el("rect", { x: m.l - 10, y: m.t, width: W - m.l - m.r + 20, height: H - m.t - m.b, fill: "transparent" }, svg);
+  const pick = evt => {
+    const r = svg.getBoundingClientRect(); const px = (evt.clientX - r.left) * W / r.width;
+    let bi = 0, bd = 1e9; xs.forEach((_, i) => { const d = Math.abs(X(i) - px); if (d < bd) { bd = d; bi = i; } });
+    cross.setAttribute("x1", X(bi)); cross.setAttribute("x2", X(bi)); cross.setAttribute("opacity", 1);
+    tip.show(tipRow(bi), evt);
+  };
+  hit.addEventListener("pointermove", pick); hit.addEventListener("pointerdown", pick);
+  hit.addEventListener("pointerleave", () => { cross.setAttribute("opacity", 0); tip.hide(); });
+}
+
+function drawAll() {
+  ["ch-ppl", "ch-halt", "ch-rel"].forEach(id => { const h = document.getElementById(id); h.innerHTML = ""; });
+
+  /* 2.1 PPL vs T */
+  const Ts = ["1", "2", "3", "4", "6", "8", "12", "16"];
+  const ser = [];
+  SEEDS.forEach(s => {
+    ser.push({ c: SVAR[s], ys: Ts.map(t => D.ppl.base[s][t]) });
+    ser.push({ c: SVAR[s], dash: true, ys: Ts.map(t => D.ppl.remainder[s][t]) });
+  });
+  legend("lg-ppl", SEEDS.flatMap(s => [{ c: SVAR[s], label: SNAME[s] + " BASE" }, { c: SVAR[s], dash: true, label: SNAME[s] + " B1" }]));
+  lineChart({
+    host: document.getElementById("ch-ppl"), xs: Ts, xLabel: "推理深度 T", series: ser, yLog: true,
+    yTicks: [5, 6, 8, 10, 12, 16], yFmt: v => v, marker: true, vline: { at: "4", label: "训练深度" },
+    tipRow: i => `<b>T = ${Ts[i]}</b><br>` + SEEDS.map(s => `${SNAME[s]}：BASE ${D.ppl.base[s][Ts[i]].toFixed(4)} · B1 ${D.ppl.remainder[s][Ts[i]].toFixed(4)}`).join("<br>")
+  });
+
+  /* 2.2 halting distribution, stacked horizontal bars */
+  (function () {
+    const host = document.getElementById("ch-halt"), fig = host.closest(".figure"), tip = tooltip(fig);
+    const W = 720, rowH = 34, m = { l: 70, r: 20, t: 8, b: 34 }, H = m.t + m.b + SEEDS.length * (rowH + 14);
+    const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img" }, host);
+    const X = v => m.l + (W - m.l - m.r) * v;
+    const cols = ["--seq1", "--seq2", "--seq3", "--seq4", "--seq5"];
+    const ink3 = css("--ink-3"), rule = css("--rule"), sheet = css("--sheet");
+    [0, .25, .5, .75, 1].forEach(v => {
+      el("line", { x1: X(v), x2: X(v), y1: m.t, y2: H - m.b, stroke: rule }, svg);
+      const t = el("text", { x: X(v), y: H - m.b + 18, "text-anchor": "middle", "font-size": 12, fill: ink3 }, svg); t.textContent = (v * 100) + "%";
+    });
+    SEEDS.forEach((s, r) => {
+      const h = D.halt[s]["8"]; const y = m.t + r * (rowH + 14);
+      const t = el("text", { x: m.l - 10, y: y + rowH / 2 + 4, "text-anchor": "end", "font-size": 13, fill: css("--ink-2") }, svg); t.textContent = SNAME[s];
+      let acc = 0;
+      for (let k = 1; k <= 5; k++) {
+        const v = h[k] || 0; if (v <= 0) continue;
+        const x0 = X(acc), x1 = X(acc + v);
+        const rect = el("rect", { x: x0, y, width: Math.max(0, x1 - x0 - 2), height: rowH, fill: css(cols[k - 1]), rx: 2 }, svg);
+        rect.addEventListener("pointermove", e => tip.show(`<b>${SNAME[s]}</b><br>第 ${k} 轮停机：${(v * 100).toFixed(1)}%`, e));
+        rect.addEventListener("pointerleave", () => tip.hide());
+        if (v > 0.07) { const tt = el("text", { x: (x0 + x1) / 2, y: y + rowH / 2 + 4, "text-anchor": "middle", "font-size": 12, fill: k >= 3 ? sheet : css("--ink") }, svg); tt.textContent = (v * 100).toFixed(0) + "%"; tt.style.pointerEvents = "none"; }
+        acc += v;
+      }
+    });
+    legend("lg-halt", [1, 2, 3, 4, 5].map(k => ({ c: cols[k - 1], label: `第 ${k} 轮`, square: true })));
+  })();
+
+  /* 2.5 rel change per loop */
+  const L = D.rel.seed1.map((_, i) => String(i + 2));
+  lineChart({
+    host: document.getElementById("ch-rel"), xs: L, xLabel: "循环轮次 t", height: 280,
+    series: SEEDS.map(s => ({ c: SVAR[s], ys: D.rel[s], endLabel: SNAME[s] })),
+    yTicks: [0, 0.1, 0.2, 0.3, 0.4], yFmt: v => v.toFixed(2), marker: false, vline: { at: "4", label: "训练深度" },
+    tipRow: i => `<b>第 ${L[i]} 轮</b><br>` + SEEDS.map(s => `${SNAME[s]}：${D.rel[s][i].toFixed(3)}`).join("<br>")
+  });
+}
+
+/* tables */
+function cell(s, rule, T) { return D.cells.find(c => c.seed === s && c.rule === rule && c.T === T); }
+const RULES = ["BASE", "B1", "B2", "C"], TS = [4, 8, 16];
+(function stats() {
+  const box = document.getElementById("depth-stats");
+  const items = [
+    { lab: "ACT 有效停机深度（token 首次停机轮次均值）", f: (s, T) => cell(s, "BASE", T).halt.toFixed(2), unit: "轮", note: "T 增大几乎不变：停机行为在训练深度内已经确定。" },
+    { lab: "前向调用实际执行的循环数", f: (s, T) => cell(s, "BASE", T).lpc.toFixed(2), unit: "轮/次", note: "整个 batch 都停机才提前退出，所以明显高于平均停机深度。" },
+    { lab: "实际循环计算量（相对 T=4）", f: (s, T) => (cell(s, "BASE", T).lt / cell(s, "BASE", 4).lt).toFixed(2), unit: "×", note: "执行轮数 × token 数。T≥8 多出约 27%，换来的 PPL 变化为 0。" }
+  ];
+  const head = `<div class="row"><span class="unit" style="width:3.2em"></span>` + SEEDS.map(s => `<span class="unit" style="width:4.1em;text-align:center">${SNAME[s]}</span>`).join("") + `</div>`;
+  box.innerHTML = items.map(it => `<div class="stat"><div class="lab">${it.lab}</div>` + head +
+    TS.map(T => `<div class="row"><span class="unit" style="width:3.2em">T=${T}</span>` + SEEDS.map(s => `<span class="num" style="width:3.4em;text-align:center">${it.f(s, T)}</span>`).join("") + `<span class="unit">${it.unit}</span></div>`).join("") +
+    `<div class="note">${it.note}</div></div>`).join("");
+})();
+(function tables() {
+  const ws = document.getElementById("tb-ws");
+  ws.innerHTML = `<thead><tr><th>T</th>${SEEDS.map(s => `<th>${SNAME[s]} 未停机</th><th>${SNAME[s]} 权重和</th>`).join("")}</tr></thead><tbody>` +
+    TS.map(T => `<tr><td>${T}</td>${SEEDS.map(s => { const c = cell(s, "BASE", T); return `<td>${(c.unh * 100).toFixed(1)}%</td><td>${c.ws.toFixed(3)}</td>`; }).join("")}</tr>`).join("") + "</tbody>";
+
+  const pc = x => `<span class="${Math.abs(x) < 5e-5 ? "z" : ""}">${fmtPct(x)}</span>`;
+  const l1 = document.getElementById("tb-l1");
+  l1.innerHTML = `<thead><tr><th>规则</th>${TS.map(T => `<th>T=${T}</th>`).join("")}</tr></thead><tbody>` +
+    RULES.filter(r => r !== "BASE").map(r => `<tr><td>${r}</td>${TS.map(T => pc(mean(SEEDS.map(s => cell(s, r, T).ppl / cell(s, "BASE", T).ppl - 1)))).map(x => `<td>${x}</td>`).join("")}</tr>`).join("") + "</tbody>";
+
+  const l2 = document.getElementById("tb-l2");
+  l2.innerHTML = `<thead><tr><th>规则</th><th>T=8 vs 4</th><th>T=16 vs 4</th><th>自身 T=4 vs BASE T=4</th></tr></thead><tbody>` +
+    RULES.map(r => `<tr><td>${r}</td>` + [8, 16].map(T => `<td>${pc(mean(SEEDS.map(s => cell(s, r, T).ppl / cell(s, r, 4).ppl - 1)))}</td>`).join("") +
+      `<td>${pc(mean(SEEDS.map(s => cell(s, r, 4).ppl / cell(s, "BASE", 4).ppl - 1)))}</td></tr>`).join("") + "</tbody>";
+
+  const l3 = document.getElementById("tb-l3");
+  l3.innerHTML = `<thead><tr><th>规则</th><th>T</th><th>循环数/次</th><th>循环计算量 ×</th><th>墙钟时间 ×</th><th>PPL 变化（对自身 T=4）</th></tr></thead><tbody>` +
+    RULES.flatMap(r => [8, 16].map(T => `<tr><td>${r}</td><td>${T}</td><td>${mean(SEEDS.map(s => cell(s, r, T).lpc)).toFixed(2)}</td>` +
+      `<td>${mean(SEEDS.map(s => cell(s, r, T).lt / cell(s, r, 4).lt)).toFixed(2)}</td>` +
+      `<td>${mean(SEEDS.map(s => cell(s, r, T).sec / cell(s, r, 4).sec)).toFixed(2)}</td>` +
+      `<td>${pc(mean(SEEDS.map(s => cell(s, r, T).ppl / cell(s, r, 4).ppl - 1)))}</td></tr>`)).join("") + "</tbody>";
+
+  const mt = document.getElementById("tb-meta");
+  mt.innerHTML = `<thead><tr><th>种子</th><th>checkpoint sha256</th><th>源码 commit</th><th>工作区</th><th>数据 token sha256</th><th>字节数</th></tr></thead><tbody>` +
+    D.meta.map(m => `<tr><td>${SNAME[m.seed]}</td><td class="mono">${m.sha}…</td><td class="mono">${m.commit}</td><td>${m.dirty ? "有未提交修改" : "干净"}</td><td class="mono">${m.data}…</td><td>${m.bytes.toLocaleString()}</td></tr>`).join("") + "</tbody>";
+})();
+
+drawAll();
+const mq = window.matchMedia("(prefers-color-scheme: dark)");
+if (mq.addEventListener) mq.addEventListener("change", drawAll);
+new MutationObserver(drawAll).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+</script>
