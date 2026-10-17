@@ -1,6 +1,6 @@
 # R2 Gate O — 固定 HF 5.1.0 的真实文件来源 → 逻辑 Shard 对应关系检查（仅元数据）
 
-**方案提交：2026-10-17；状态：代码 + 10 项离线单元测试已提交，用户 Codespaces 尚未运行。** 前一关 [Gate N Verified](R2_GATE_N_RESULT.md)：214/214 项测试通过；真实 `load_dataset(streaming=True,revision=frozenSHA)` 的 `ds.num_shards=14`；`.shard(2,w)` 的实际元数据计数 7/7，手动之后再 HF 自动分片 4/3；无文档遍历、无训练。
+**方案提交：2026-10-17；首次 Codespaces 测试 10 项中 9 PASS、1 FAIL，详见 [Failure 001](R2_GATE_O_FAILURE_001.md)；已提交隔离夹具修复及新增 1 项回归测试，目前共 11 项，尚未重测。Gate O NOT VERIFIED，未运行真实 freeze/verify。** 前一关 [Gate N Verified](R2_GATE_N_RESULT.md)：214/214 项测试通过；真实 `load_dataset(streaming=True,revision=frozenSHA)` 的 `ds.num_shards=14`；`.shard(2,w)` 的实际元数据计数 7/7，手动之后再 HF 自动分片 4/3；无文档遍历、无训练。
 
 ## 为什么需要 Gate O
 
