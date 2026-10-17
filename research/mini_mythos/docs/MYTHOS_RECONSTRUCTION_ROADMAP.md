@@ -310,22 +310,51 @@ real-data evaluation and an actual hardware budget are known. Continue with
 distillation or fine-tuning **only within applicable terms and permissions**;
 avoid unsupported claims of proprietary model extraction.
 
+## Parallel track — Maintainability and code audit (new 2026-10-17)
+
+User requirement: train a demonstrably useful independent OpenMythos
+model while independently reducing maintenance complexity, dead-code
+uncertainty, accidental nesting, duplicated logic, and unsafe data
+interfaces. The two tracks need separate evidence but shared CI gates.
+
+Repository has 103 Python files in the 2026-10-17 inspected branch
+(including research/tests). Initial manual source findings:
+`training/3b_fine_web_edu.py` 242-line main; Worker-internal explicit
+HF `.shard` followed by HF native auto-worker iteration (risk requiring
+special handling of distributed ranks); `torch.load(weights_only=False)`
+on pickle-compatible checkpoint; unpinned HF data revision; source
+cursor not durable. `open_mythos/__init__.py` lists two unbound
+`__all__` names (`load_tokenizer`,`get_vocab_size`). Major sources
+`open_mythos/main.py` and `moda.py` ~1086/~1064 lines each.
+
+A new **read-only Python stdlib AST scanner** and six tests are now
+committed, NOT YET RUN by the user in Codespaces. It lists actual
+function AST spans, branch complexity, nesting, module exports,
+dangerous checkpoint loading and loader shard patterns. Suspected
+unused and test-only call names are LOW-CONFIDENCE review candidates,
+not permission to delete. The newly expected full suite is 248
+tests (previously 242 pending spawn tests + 6 audit tests), NOT PASS.
+See [Code Quality Audit and Training Plan](CODE_QUALITY_AUDIT_AND_TRAINING_PLAN.md).
+
 ## Immediate work queue
 
-1. Pull Q spawn-only test-hardening changes; run 9 targeted tests and
-   full expected 242-test suite in Linux Codespaces. Do not invent
-   PASS until tests finish; inspect whether Python 3.14 fork warning
-   disappears and that real 2-worker 7+7 synthetic coverage remains.
-2. Preserve initial Q verified 241/241 result separately from the
-   newly unverified spawn patch. Original PR27 remains unmodified.
-3. If spawn results PASS, review a minimal explicit upstream PR27
-   data.py patch comparison and the separate skip_docs single-worker
-   semantics; do not mix token-level evaluations with source ID replay.
-4. Only after correct loader and checkpoint audit, consider bounded
-   live Parquet reader/worker provenance pilot. New real read must have
-   strict budgets, document counts, source IDs and an authorized scope.
-5. Move towards heldout performance/decoder correctness and, when
-   actually available, GPU training. No proprietary architecture claims.
+1. Run **in parallel** the model-training track and read-only
+   maintainability audit: no unreviewed deletions or big refactors.
+2. Pull latest branch; run Q spawn 9 focused tests, maintenance audit
+   six focused tests, full expected 248-suite. All newly committed
+   tests remain UNVERIFIED until real Codespaces terminal outputs.
+3. Run `maintenance_ast_audit.py --repo . --out
+   research/mini_mythos/results/quality/ast_audit_2026-10-17.json`.
+   Review emitted risk file+line list and false positives explicitly.
+4. Priority P0: root 3B training code checkpoint trust and distributed
+   rank+worker sharding; do not infer 2-rank behavior from PR27 alone.
+   P1: fixed data revision, committed cursor, invalid __all__ exports.
+5. Prepare smallest real-data CPU end-to-end train/eval benchmark
+   contrasting standard Transformer against recurrent candidate under
+   fixed tokenizer, source, token count and compute; heldout metrics
+   are required before scaling, no GPU assumed available.
+6. Reduce complexity incrementally, preserving model logits/gradient
+   checks, named imports, immutable evidence, and resume equivalence.
 
 ## References
 
