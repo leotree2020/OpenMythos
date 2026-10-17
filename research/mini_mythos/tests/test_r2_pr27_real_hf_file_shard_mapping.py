@@ -70,8 +70,12 @@ class GateOTests(unittest.TestCase):
             "file_inventory_sha256": gate.SOURCE_FILE_INVENTORY_SHA256,
             "file_metadata": [{"path": f, "size": 10000+i} for i,f in enumerate(self.paths)]
         }
+        # Gate N prerequisite preparation must not mutate the Gate O probe.
+        # Otherwise Gate N's four .shard() calls pollute the exact-call
+        # assertion in test_actual_source_paths_exact_native_and_twice.
+        gate_n_source = FakeDataset(self.paths)
         self.gate_n = prev.build_report(
-            self.ds,
+            gate_n_source,
             source_sha=gate.SOURCE_REVISION,
             file_count=14,
             file_inventory_sha=gate.SOURCE_FILE_INVENTORY_SHA256,
