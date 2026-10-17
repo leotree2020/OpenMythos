@@ -207,9 +207,14 @@ affiliation or claim model/weight equivalence.
   view's source paths against immutable Gate M inventory and Gate N
   num_shards. Strictly whitelist private Iterable class/wrapper, never
   print raw remote URLs or auth query, never iterate rows or run model.
-  10 isolated offline tests; no real worker run yet. Next real test:
-  Codespaces full tests + Gate O freeze/offline verify.
-  See [Gate O plan](R2_GATE_O_REAL_HF_FILE_SHARD_MAPPING_PLAN.md).
+  First Codespaces isolated run on 2026-10-17: 9/10 PASS, 1 FAIL
+  due to Gate N fixture calling `.shard()` 4 times on the SAME fake
+  dataset before Gate O counted another 4. This is test isolation, not
+  observed remote data loss. Candidate fixture isolation fix committed
+  with an 11th regression guard; NO user retest yet. Whole suite and
+  actual Gate O freeze/verify NOT EXECUTED. Preserve
+  [Failure 001](R2_GATE_O_FAILURE_001.md) and
+  [Gate O plan](R2_GATE_O_REAL_HF_FILE_SHARD_MAPPING_PLAN.md).
 - Community training proposal:
   <https://github.com/kyegomez/OpenMythos/pull/27>. Proposed ~117.8M
   MLA+MoE FineWeb-Edu experiment and loop-depth PPL tests; external reports
@@ -286,8 +291,11 @@ avoid unsupported claims of proprietary model extraction.
 
 ## Immediate work queue
 
-1. Execute Gate O exact datasets==5.1.0 private source-metadata path
-   mapping tests, then real pinned `load_dataset(..., streaming=True)`
+1. Pull Gate O fixture isolation hotfix; rerun all 11 targeted offline
+   tests (first 10 run had one `8 != 4` false assertion) and full 225
+   expected tests; only after PASS execute real metadata-only Gate O
+   `freeze`/offline `verify`. The 225 count is an expectation, NOT PASS.
+   Run real pinned `load_dataset(..., streaming=True)`
    metadata-only .shard views and offline verify. No row iteration;
    fail closed on schema/wrapper/path surprises.
 2. Retain verified Gate N 214/214 evidence and untouched user
