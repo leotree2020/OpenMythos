@@ -182,6 +182,7 @@ def scan(root):
     root = Path(root).resolve()
     records = []
     calls, references = Counter(), Counter()
+    production_calls, test_calls = Counter(), Counter()
     patterns, missing_exports = [], []
     files = py_files(root)
     for file in files:
@@ -192,6 +193,10 @@ def scan(root):
         finder.visit(tree)
         calls.update(finder.calls)
         references.update(finder.names_used)
+        if rel.startswith("tests/") or "/tests/" in rel:
+            test_calls.update(finder.calls)
+        else:
+            production_calls.update(finder.calls)
         for func in finder.functions:
             func["file"] = rel
             func["in_test"] = rel.startswith("tests/") or "/tests/" in rel
@@ -227,6 +232,14 @@ def scan(root):
             flags.append({"file": func["file"], "qualname": func["qualname"],
                           "line": func["line"], "finding": "no_static_reference_candidate",
                           "confidence": "low: reflection, callbacks and external users not traced"})
+    test_only = [
+        {"file": f["file"], "qualname": f["qualname"],
+         "line": f["line"], "finding": "test_only_static_call_candidate",
+         "confidence": "low: name-based AST cannot see dynamic/external calls"}
+        for f in records if not f["in_test"] and f["name"] not in FRAMEWORK_METHODS
+        and not f["name"].startswith("__")
+        and production_calls[f["name"]] == 0 and test_calls[f["name"]] > 0
+    ]
     ranked = sorted((f for f in records if not f["in_test"]),
                     key=lambda f: (-f["complexity_approx"], -f["lines"],
                                    f["file"], f["line"]))
@@ -254,12 +267,15 @@ def scan(root):
             "nested_function_definitions": sum(f["lexical_parent"] == "function" for f in records),
             "hotspot_count": len(hotspots),
             "low_confidence_unreferenced_private_candidates": len(flags),
+            "test_only_static_call_candidates": len(test_only),
             "missing_declared_exports": len(missing_exports),
             "review_risk_patterns": len(patterns),
         },
         "long_files": sorted((x for x in sizes if x["lines"] >= 400),
                              key=lambda x: (-x["lines"], x["file"])),
         "complexity_hotspots": hotspots,
+        "nested_function_definitions": [f for f in records
+                                        if f["lexical_parent"] == "function"],
         "top_20_by_complexity": ranked[:20],
         "missing_exports": sorted(missing_exports,
                                   key=lambda x: (x["file"], x["symbol"])),
@@ -267,6 +283,9 @@ def scan(root):
                                   key=lambda x: (x["file"], x["line"], x["kind"])),
         "potential_unreferenced_private": sorted(
             flags, key=lambda x: (x["file"], x["line"])
+        ),
+        "test_only_static_call_candidates": sorted(
+            test_only, key=lambda x: (x["file"], x["line"])
         ),
     }
 
