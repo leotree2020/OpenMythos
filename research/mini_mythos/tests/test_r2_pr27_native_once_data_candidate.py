@@ -1,10 +1,9 @@
 """R2 Gate Q: isolated PR27 native-only Worker data-loader repair tests.
 
-Everything uses SYNTHETIC text. Real OS worker test uses a local in-memory
-HF Dataset (14 Arrow shards), never the remote FineWeb Parquet source.
+Everything uses SYNTHETIC text. Real OS worker test uses spawn-safe
+local HF Dataset (14 Arrow shards), never remote FineWeb Parquet source.
 The candidate remains a research adapter; original PR #27 is untouched.
 """
-import os
 import sys
 import unittest
 from pathlib import Path
@@ -14,18 +13,13 @@ from unittest.mock import patch
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"scripts"))
 
 import torch
-from torch.utils.data import DataLoader, IterableDataset, get_worker_info
+from torch.utils.data import DataLoader
 
 import r2_pr27_native_once_data_candidate as q
-
-
-class ToyTokenizer:
-    eos_token_id=1
-
-    def encode(self,text,add_special_tokens=False):
-        if add_special_tokens:
-            raise AssertionError("No special tokens when encoding")
-        return [500+int(text.split(":")[1])]
+from r2_pr27_spawn_local_fixture import (
+    ToyTokenizer, WorkerPathProbe, load_local_hf_dataset,
+    install_local_source_in_spawn_worker,
+)
 
 
 class FakeHfSource:
@@ -43,27 +37,6 @@ class FakeHfSource:
 
     def __iter__(self):
         yield from self.docs
-
-
-class WorkerPathProbe(IterableDataset):
-    """Actual process identities and synthetic first input token IDs."""
-    def __init__(self, source_stream):
-        super().__init__()
-        self.stream=source_stream
-
-    def __iter__(self):
-        info=get_worker_info()
-        if info is None:
-            raise AssertionError("A real PyTorch DataLoader Worker is required")
-        for x,y in self.stream:
-            source_token=int(x[0].item())
-            if source_token != ToyTokenizer.eos_token_id:
-                yield {
-                    "source_token": source_token,
-                    "worker_id": info.id,
-                    "worker_pid": os.getpid(),
-                    "target": int(y[0].item()),
-                }
 
 
 class GateQTests(unittest.TestCase):
@@ -171,27 +144,44 @@ class GateQTests(unittest.TestCase):
         self.assertIsInstance(loader.dataset,q.FineWebEduStreamNativeOnce)
         # Constructing a loader must not access Hub or iterate Dataset.
 
+    def test_spawn_local_factory_fails_closed_on_source_and_revision(self):
+        # Offline synthetic local dataset is allowed only at the pin.
+        fake = load_local_hf_dataset(
+            q.FROZEN_DATASET_ID,
+            name=q.FROZEN_DATASET_CONFIG,
+            split=q.FROZEN_DATASET_SPLIT,
+            streaming=True,
+            revision=q.FROZEN_DATASET_REVISION
+        )
+        self.assertEqual(fake.num_shards,14)
+        self.assertEqual(len(list(fake)),14)
+        with self.assertRaisesRegex(AssertionError, "source identity"):
+            load_local_hf_dataset(
+                q.FROZEN_DATASET_ID,
+                name=q.FROZEN_DATASET_CONFIG,
+                split=q.FROZEN_DATASET_SPLIT,
+                streaming=True,
+                revision="main"
+            )
+
     @unittest.skipUnless(sys.platform=="linux", "Real OS workers need Linux")
     def test_actual_two_os_workers_cover_all_14_local_hf_shards_once(self):
-        # Fork inherits the mocked load_dataset and the LOCAL ID source.
-        # This is not remote Parquet and not a GPU or model training test.
-        from datasets import Dataset
-        texts=[f"ID:{i}" for i in range(14)]
-        local=Dataset.from_dict({"text":texts}).to_iterable_dataset(
-            num_shards=14
+        # Python 3.14 safely starts clean subprocesses using spawn.
+        # A module-level worker_init_fn injects a 14-shard local-only
+        # HF source in each worker. No monkeypatch crosses processes,
+        # no remote Hub/Parquet bytes, and no model/GPU.
+        loader=DataLoader(
+            WorkerPathProbe(self.make_stream()),
+            batch_size=None,num_workers=2,
+            multiprocessing_context="spawn",
+            worker_init_fn=install_local_source_in_spawn_worker,
+            prefetch_factor=2,persistent_workers=False,
+            in_order=True,timeout=45
         )
-        with patch.object(q,"load_dataset",return_value=local):
-            loader=DataLoader(
-                WorkerPathProbe(self.make_stream()),
-                batch_size=None,num_workers=2,
-                multiprocessing_context="fork",
-                prefetch_factor=2,persistent_workers=False,
-                in_order=True,timeout=45
-            )
-            try:
-                rows=list(loader)
-            finally:
-                del loader
+        try:
+            rows=list(loader)
+        finally:
+            del loader
         all_ids=[int(r["source_token"])-500 for r in rows]
         self.assertEqual(len(all_ids),14)
         self.assertEqual(sorted(all_ids),list(range(14)))
