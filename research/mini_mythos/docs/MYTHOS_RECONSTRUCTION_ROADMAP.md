@@ -221,16 +221,21 @@ affiliation or claim model/weight equivalence.
   specific missing file paths 001,003,005,007,009,011,013.
   Offline freeze/verify VERIFIED, no remote Parquet body read and no
   original PR27 data loader run. See [Gate P result](R2_GATE_P_RESULT.md).
-- R2 Gate Q (candidate committed, NOT TESTED in Codespaces): reviewed
-  actual upstream PR27 experiments/data.py at frozen head 2954bc2.
-  Its per-worker manual ds.shard followed by HF IterableDataset.__iter__
-  creates the double-partition path; original train.py uses 2 workers.
-  Created research-only FineWebEduStreamNativeOnce adapter that removes
-  explicit manual sharding, pins source revision, retains original
-  EOS/target packing, refuses multi-worker skip_docs>0; 8 new offline
-  tests incl. real two-Linux-worker local 14 synthetic Arrow shards.
-  Expected full suite 241 tests, NOT YET VERIFIED. Source upstream
-  file remains unmodified; see [Gate Q plan](R2_GATE_Q_PR27_NATIVE_ONCE_DATA_FIX_PLAN.md).
+- R2 Gate Q (VERIFIED ORIGINAL CANDIDATE 2026-10-17): after
+  inspecting pinned upstream PR27 experiments/data.py (head 2954bc2),
+  native-once research adapter removes explicit ds.shard, preserves
+  fixed source/revision and original EOS/shift-target packing, guards
+  multiworker skip_docs. Codespaces targeted **8/8 PASS**, full
+  **241/241 PASS** (58.202s); real OS workers each covered 7 local
+  synthetic Arrow shard identities, 14/14 once. No remote Parquet
+  read or original PR27 edits. One warning: Python 3.14 multithreaded
+  `fork` may deadlock (DeprecationWarning). See [Q Result](R2_GATE_Q_RESULT.md).
+- R2 Gate Q spawn hardening (candidate committed, NOT YET RETESTED):
+  replaced parent monkeypatch + fork with pickleable module-level
+  synthetic local HF factory installed by spawn `worker_init_fn` in
+  EACH real child; retain worker PID/7+7 coverage; added negative
+  source-revision assertion. Expected Gate Q 9 tests, suite 242;
+  these are targets, not PASS. See [Q spawn plan](R2_GATE_Q_SPAWN_HARDENING_PLAN.md).
 - Community training proposal:
   <https://github.com/kyegomez/OpenMythos/pull/27>. Proposed ~117.8M
   MLA+MoE FineWeb-Edu experiment and loop-depth PPL tests; external reports
@@ -307,21 +312,20 @@ avoid unsupported claims of proprietary model extraction.
 
 ## Immediate work queue
 
-1. Pull Gate Q research-only native-once PR27 data-loader candidate.
-   Run its 8 focused regression tests, including real 2 Linux OS
-   Workers over 14 LOCAL synthetic Arrow shards, then all ~241 tests.
-   Do not claim PASS until user's Codespaces reports it.
-2. After Q tests pass, audit exact upstream PR27 data.py delta and
-   prepare minimal research-only patch (remove manual .shard, HF
-   automatically partitions once). Retain pinned provenance and
-   the eval skip_docs/Worker guard. Never silently overwrite upstream.
-3. Preserve Gate P VERIFIED evidence: 233/233, real 2 PIDs per arm,
-   real source file ID local replay 14/14 vs 7/14. NOT remote docs.
-4. Design strict bounded actual remote worker provenance probe only
-   if source-accounting requirements justify network cost; require
-   real document/Token counts and data budget for loss-rate claims.
-5. Continue model/optimizer/decoder and heldout eval fidelity once
-   loader correctness and compute resources are grounded; no GPU yet.
+1. Pull Q spawn-only test-hardening changes; run 9 targeted tests and
+   full expected 242-test suite in Linux Codespaces. Do not invent
+   PASS until tests finish; inspect whether Python 3.14 fork warning
+   disappears and that real 2-worker 7+7 synthetic coverage remains.
+2. Preserve initial Q verified 241/241 result separately from the
+   newly unverified spawn patch. Original PR27 remains unmodified.
+3. If spawn results PASS, review a minimal explicit upstream PR27
+   data.py patch comparison and the separate skip_docs single-worker
+   semantics; do not mix token-level evaluations with source ID replay.
+4. Only after correct loader and checkpoint audit, consider bounded
+   live Parquet reader/worker provenance pilot. New real read must have
+   strict budgets, document counts, source IDs and an authorized scope.
+5. Move towards heldout performance/decoder correctness and, when
+   actually available, GPU training. No proprietary architecture claims.
 
 ## References
 
