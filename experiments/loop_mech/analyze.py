@@ -78,6 +78,50 @@ def main():
         out["baselines"][grp] = row
         P(f"| {grp} 跳 | " + " | ".join(f(x) for x in row) + " |")
 
+    cols = [
+        ("1 跳", [1]),
+        ("2 跳", [2]),
+        ("3 跳", [3]),
+        ("4 跳", [4]),
+        ("5–8 跳", list(range(5, 9))),
+        ("9–12 跳", list(range(9, 13))),
+    ]
+
+    def gh(mech, seed, T, key, hs):
+        r = cells.get((mech, seed, T))
+        return (
+            None
+            if r is None
+            else m([r[key].get(str(h)) for h in hs if h in hops_avail])
+        )
+
+    out["core"] = {}
+    for key, title in (
+        ("acc", "准确率"),
+        ("cf_both", "反事实双对率 cf_both（原题与改根后的题都答对）"),
+        ("cf_follow", "反事实跟随率 cf_follow（改根后答案跟着变成新根）"),
+    ):
+        for T in (4, 8):
+            P(f"\n## 核心表：逐跳{title}，T={T}（每个种子分别列出）\n")
+            P("| 机制 | 种子 | " + " | ".join(c for c, _ in cols) + " |")
+            P("|---|---|" + "---|" * len(cols))
+            for mech in mechs:
+                for s in seeds:
+                    v = [gh(mech, s, T, key, hs) for _, hs in cols]
+                    out["core"].setdefault(key, {}).setdefault(str(T), {}).setdefault(
+                        mech, {}
+                    )[str(s)] = v
+                    P(f"| {mech} | {s} | " + " | ".join(f(x) for x in v) + " |")
+            if key == "acc":
+                for bk, bn in (
+                    ("majority_root", "捷径基线：猜出现最多的根"),
+                    ("random_root", "参照：随机猜出现过的根"),
+                    ("uniform", "参照：均匀随机"),
+                ):
+                    v = [m([base[h][bk] for h in hs if h in base]) for _, hs in cols]
+                    P(f"| {bn} | – | " + " | ".join(f(x) for x in v) + " |")
+    out["core_cols"] = [c for c, _ in cols]
+
     P("\n## B. 绝对准确率（每个种子；T=4 / 8 / 16 / 24）\n")
     for grp in ["1–4", "5–8", "9–12"]:
         P(f"\n**{grp} 跳**（猜出现最多的根：{f(bl(grp))}）\n")
