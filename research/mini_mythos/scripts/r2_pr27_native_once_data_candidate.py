@@ -133,5 +133,5 @@ def build_loader_native_once(
     )
     return DataLoader(
         ds, batch_size=batch_size, num_workers=num_workers,
-        pin_memory=False, persistent_workers=(num_workers > 0),
+        pin_memory=True, persistent_workers=(num_workers > 0),
     )
