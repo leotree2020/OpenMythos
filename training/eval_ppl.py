@@ -12,8 +12,9 @@ concatenated without separators (same packing as training), then scored in
 non-overlapping windows of `--seq-len` predicted tokens. Every token except
 the very first one of the stream is scored.
 
-Ablations (both toggle MythosConfig flags that add no parameters, so they
-apply to any existing checkpoint):
+Ablations (switches from training/depth_ablation.py, patched onto the loaded
+model so open_mythos is unchanged; neither adds parameters, so they apply to
+any existing checkpoint):
     base       -- checkpoint as trained
     remainder  -- act_final_remainder=True
     clamp      -- clamp_loop_emb=True
@@ -27,13 +28,13 @@ Examples:
 """
 
 import argparse
-import copy
 import json
 import math
 import time
 
 import torch
 import torch.nn.functional as F
+from depth_ablation import apply_depth_ablation, check_matches_original
 from loguru import logger
 
 from open_mythos import OpenMythos
@@ -88,18 +89,24 @@ def make_windows(ids: torch.Tensor, seq_len: int) -> list[torch.Tensor]:
 
 
 def load_model(path: str, device: str, flags: dict) -> OpenMythos:
-    """
-    Rebuild the model from the cfg pickled in the checkpoint, with the
-    ablation flags applied. Checkpoints saved before the flags existed
-    unpickle without them and fall back to the class defaults (off).
-    """
+    """Rebuild the model from the cfg pickled in the checkpoint and patch it."""
     ckpt = torch.load(path, map_location="cpu", weights_only=False)
-    cfg = copy.copy(ckpt["cfg"])
-    for k, v in flags.items():
-        setattr(cfg, k, v)
-    model = OpenMythos(cfg)
+    model = OpenMythos(ckpt["cfg"])
     model.load_state_dict(ckpt["model"])
-    return model.to(device).eval()
+    return apply_depth_ablation(model.to(device).eval(), **flags)
+
+
+@torch.no_grad()
+def verify_patch(model: OpenMythos, window: torch.Tensor, n_loops: int, device):
+    """Check the patched loop matches the library's on one real input."""
+    captured = {}
+    hook = model.recurrent.register_forward_pre_hook(
+        lambda m, args: captured.setdefault("args", args)
+    )
+    model(window[None, :-1].to(device), n_loops=n_loops)
+    hook.remove()
+    h, e, freqs_cis, mask = captured["args"][:4]
+    check_matches_original(model.recurrent, h, e, freqs_cis, mask, n_loops)
 
 
 @torch.no_grad()
@@ -197,6 +204,7 @@ def main():
             model = load_model(ckpt_path, args.device, ABLATIONS[ablation])
             if model.cfg.max_seq_len < args.seq_len:
                 ap.error(f"--seq-len exceeds cfg.max_seq_len={model.cfg.max_seq_len}")
+            verify_patch(model, windows[0], max(n_loops_list), args.device)
             for n_loops in n_loops_list:
                 r = evaluate(
                     model, windows, n_loops, args.batch_size, args.device, amp_ctx
