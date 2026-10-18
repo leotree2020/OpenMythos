@@ -8,23 +8,36 @@
 #     non-zero stops the run: nothing new is started, running states are
 #     killed, nothing is analysed (exit 3 integrity failure, exit 4 other)
 #   - exit 6 if any of the 30 result files is missing afterwards
+# Fault-injection tests only (launcher_tests.sh): with GATE_D_TEST_DIR set,
+# results and logs go to that directory and GATE_D_TEST_CMD replaces
+# diag_state.py; the analysis step is skipped. Without GATE_D_TEST_DIR,
+# GATE_D_TEST_CMD is refused.
 set -euo pipefail
 cd "$(dirname "$0")"
 export PYTHONPATH=../..
-R=results LOGS=logs STATUS=logs/run_status.txt
-if [ -e "$R" ] && [ -n "$(ls -A "$R")" ]; then echo "REFUSED: $R is not empty"; exit 5; fi
-python -c "import json,sys; sys.exit(0 if json.load(open('timing.json')).get('frozen_workload') else 1)" \
+if [ -n "${GATE_D_TEST_DIR:-}" ]; then
+  R=$GATE_D_TEST_DIR/results LOGS=$GATE_D_TEST_DIR/logs CMD=${GATE_D_TEST_CMD:?}
+  WL=$GATE_D_TEST_DIR/timing.json
+else
+  [ -z "${GATE_D_TEST_CMD:-}" ] || { echo "REFUSED: GATE_D_TEST_CMD only with GATE_D_TEST_DIR"; exit 5; }
+  R=results LOGS=logs CMD="python diag_state.py" WL=timing.json
+fi
+STATUS=$LOGS/run_status.txt
+for p in "$R" "$LOGS"; do
+  if [ -e "$p" ] && [ -n "$(ls -A "$p")" ]; then echo "REFUSED: $p is not empty"; exit 5; fi
+done
+python -c "import json,sys; sys.exit(0 if json.load(open('$WL')).get('frozen_workload') else 1)" \
   || { echo "REFUSED: no frozen workload in timing.json"; exit 5; }
 mkdir -p "$R" "$LOGS"
 log() { echo "$(date -u +%FT%TZ) $*" | tee -a "$STATUS"; }
-log "launch gate D: workload $(python -c "import json; print(json.load(open('timing.json'))['frozen_workload'])")"
+log "launch gate D: workload $(python -c "import json; print(json.load(open('$WL'))['frozen_workload'])")"
 
 declare -A JOB=()
 queue=()
 for a in openmythos transformer; do for s in 1 2 3; do for t in 12000 9000 6000 3000 0; do
   queue+=("$a $s $t"); done; done; done
 launch() {
-  python diag_state.py --arm "$1" --seed "$2" --step "$3" > "$LOGS/$1_s$2_step$3.log" 2>&1 &
+  $CMD --arm "$1" --seed "$2" --step "$3" --out-dir "$R" > "$LOGS/$1_s$2_step$3.log" 2>&1 &
   JOB[$!]="$1 $2 $3"
   log "started $1_s$2_step$3 (pid $!)"
 }
@@ -51,8 +64,8 @@ while :; do
   break
 done
 if [ $fail -ne 0 ]; then log "stopped with exit $fail; nothing analysed"; exit $fail; fi
-n=$(ls "$R"/*.json | wc -l)
+n=$(find "$R" -maxdepth 1 -name '*.json' | wc -l)
 [ "$n" -eq 30 ] || { log "RESULT CHECK FAILED: $n of 30 result files"; exit 6; }
 log "all 30 states done"
-python analyze.py > "$LOGS/analyze.log" 2>&1
+if [ -z "${GATE_D_TEST_DIR:-}" ]; then python analyze.py > "$LOGS/analyze.log" 2>&1; fi
 log DONE

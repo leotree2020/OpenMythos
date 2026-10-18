@@ -6,10 +6,12 @@ Non-formal models only (seed 99: random initialization and the 60-step
 budget_a smoke checkpoint, both arms); non-diagnostic data drawn from
 Random(50000) with the formal shapes (500 + 500 bodies, pool_b-like batches,
 1000 pool_c bodies). Each D1-D5 component is timed single-threaded at full
-scale on the slower of the two timing models per arm. The OpenMythos D5 time
-is scaled by (2 + 4) / (2 + L), L = mean number of loops the timing model's
-original forward executes (formal models may run all 4). Parallel estimate:
-max(sum of states / 4, longest state) x 1.2 (contention margin).
+scale; the four timing jobs run in parallel, as the formal run does, so CPU
+contention is included. The slower of the two timing models per arm is used.
+The OpenMythos D5 time is scaled by (2 + 4) / (2 + L), L = mean number of
+loops the timing model's original forward executes (formal models may run
+all 4). Estimate: simulated makespan of the launcher's queue on 4 workers,
+x 1.2 margin. Peak memory of the timing jobs is taken from timing_rss.log.
 Ladder (applied in this order until the estimate is <= 4 h):
     1 D5(a) bodies 500 -> 250     2 D5(b) R 200 -> 100
     3 D5 only at steps 0, 3000, 12000     4 D3 permutations 1000 -> 500
@@ -86,16 +88,24 @@ def time_model(model, fit, ev, pb, pc):
 
 
 def estimate(per_arm, level):
-    total, longest = 0.0, 0.0
+    """Simulated makespan of the launcher's own queue (run_gate_d.sh order:
+    arm, seed, steps 12000..0; 4 workers, each takes the next state when it
+    becomes free), x 1.2 margin. Per-state times come from the four timing
+    jobs, which already ran in parallel like the formal run."""
     d5_steps = STEPS if level < 3 else (0, 3000, 12000)
-    for arm, t in per_arm.items():
+    queue = []
+    for arm in ("openmythos", "transformer"):
+        t = per_arm[arm]
         d3 = t["D3_500"] if level >= 4 else t["D3_1000"]
         d5 = t["D5_full"] if level == 0 else t["D5_a250"] if level == 1 else t["D5_a250_R100"]
-        for step in STEPS:
-            st = t["D1"] + t["D2"] + d3 + t["D4"] + (d5 if step in d5_steps else 0.0)
-            total += 3 * st
-            longest = max(longest, st)
-    return max(total / 4, longest) * 1.2 / 3600
+        for _seed in (1, 2, 3):
+            for step in (12000, 9000, 6000, 3000, 0):
+                queue.append(t["D1"] + t["D2"] + d3 + t["D4"] + (d5 if step in d5_steps else 0.0))
+    free = [0.0] * 4
+    for job in queue:
+        i = free.index(min(free))
+        free[i] += job
+    return max(free) * 1.2 / 3600
 
 
 PARTS = os.path.join(HERE, "timing_parts")
@@ -135,6 +145,11 @@ def main():
         keys = ("D1", "D2", "D3_1000", "D3_500", "D4", "D5_full", "D5_a250", "D5_a250_R100")
         rep["per_arm_seconds"][arm] = {k: max(c[k] for c in cand.values()) for k in keys}
     est = {lvl: estimate(rep["per_arm_seconds"], lvl) for lvl in range(5)}
+    rss_path = os.path.join(HERE, "timing_rss.log")
+    rss = [l.split() for l in open(rss_path)] if os.path.exists(rss_path) else []
+    rep["memory_mb"] = {"peak_total_4_jobs": max((float(r[1]) for r in rss), default=None),
+                        "peak_single_job": max((float(r[2]) for r in rss), default=None),
+                        "machine_total": 15 * 1024}
     rep["estimated_hours_by_level"] = est
     level = next((lvl for lvl in range(5) if est[lvl] <= LIMIT_H), None)
     rep["chosen_level"] = level
