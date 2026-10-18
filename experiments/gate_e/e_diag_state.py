@@ -32,6 +32,11 @@ from e_m5 import run_m5  # noqa: E402
 from e_masks import m6_summary  # noqa: E402
 from runner import Runner  # noqa: E402  gate_d
 
+# PREREGISTRATION 11.3, option A (approved): the first 500 bodies of diag_eval in
+# file order (K=4: all 500 of diag_eval_k4), all K queries each; fixed here,
+# never taken from the workload file
+M5A_BODIES = 500
+
 SETS_BY_K = {2: ("diag_fit", "diag_eval", "minpair", "pool_b_k2", "pool_c_k2"),
              4: ("diag_fit_k4", "diag_eval_k4", "minpair_k4", "pool_b_k4", "pool_c_k4")}
 
@@ -95,8 +100,10 @@ def main():
             out["seconds"]["M4"] = time.time() - t
         if "M5" in only:
             t = time.time()
+            if wl.get("m5a_bodies", M5A_BODIES) != M5A_BODIES:
+                raise SystemExit(f"workload asks for m5a_bodies={wl['m5a_bodies']}; frozen at {M5A_BODIES} (11.3)")
             out["M5"] = run_m5(model, ev_rows, fit_rows, load_set(pb_n), load_set(pc_n), g,
-                               n_bodies_a=wl["m5a_bodies"], R=wl["m5b_batches"])
+                               n_bodies_a=M5A_BODIES, R=wl["m5b_batches"])
             out["seconds"]["M5"] = time.time() - t
     except IntegrityError as e:
         print(f"INTEGRITY FAILURE {name}: {e}", file=sys.stderr)
