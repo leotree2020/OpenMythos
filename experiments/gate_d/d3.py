@@ -58,6 +58,7 @@ def shares_test(S, Vq, slot, n_perm=1000, seed=0):
     descriptively. Decision: p <= 0.05 and statistic >= 0.5."""
     N, L = Vq.shape
     V = torch.stack([complete_family_mask(Vq[:, i]) for i in range(L)], 1).double()
+    n_complete = (V.sum(0) / 4).tolist()  # before excluding layers (descriptive)
     used = V.sum(0) >= 0.5 * N
     V = V * used.double()
     nv = V.sum(0).clamp_min(1)
@@ -82,7 +83,7 @@ def shares_test(S, Vq, slot, n_perm=1000, seed=0):
         "mismatch_reference_p95": float(np.percentile(mism, 95)),
         "mismatch_reference_mean": float(mism.mean()),
         "layers_used": used.tolist(),
-        "n_complete_bodies_by_layer": (V.sum(0) / 4).tolist(),
+        "n_complete_bodies_by_layer": n_complete,
         "decision": "检测到按查询定向的注意力" if (used.any() and p <= 0.05 and o_max >= 0.5) else "未检测到",
         "obs_by_layer_head": obs,
     }
