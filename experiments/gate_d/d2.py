@@ -13,8 +13,9 @@ diag_fit, accuracy on diag_eval with body-grouped bootstrap CIs. Grouped
 shuffled-label control for every probe; planted-signal sensitivity at the last
 probe point; one-hidden-layer MLP probe (width 256, fixed settings) only where
 the linear probe gives "not detected", voided unless the same MLP is at
-baseline on the emb record point (P1/P3 at position 18; P2 at the digit
-positions, an analogous control added in the analysis plan).
+baseline on the emb record point of the same fit / eval questions (P1/P3 at
+position 18; P2 at the digit positions); since revision 6 every MLP probe has
+its own control on its own D2-E or D2-F subset.
 OpenMythos loop points (revision 6, PREREGISTRATION 13.3; all ACT masks with
 single-sample semantics, act_masks.py):
     D2-E existence (main, graded)   the state exists: valid{t}; complete families
@@ -151,6 +152,27 @@ def masks_for(masks, R, p, mode):
     return q, body
 
 
+def mlp_with_control(train, control, probe):
+    """MLP probe on train = (Xf, yf, bf, Xe, ye, be) with its emb control on
+    control (the same questions, emb features). The probe result is void
+    unless the control is at baseline (CI upper bound <= c0 + 0.10)."""
+    c0 = C_DECISION[probe]
+    Xf, yf, bf, Xe, ye, be = train
+    Cf, cyf, cbf, Ce, cye, cbe = control
+    assert torch.equal(yf, cyf) and torch.equal(ye, cye) and (bf == cbf).all() and (be == cbe).all(), \
+        "control must use the probe's own fit / eval questions"
+    fc = fit_mlp(Cf, cyf, N_CLASSES[probe])
+    ctrl = acc_ci(fc(Ce) == cye, cbe)
+    ctrl["at_baseline"] = ctrl["ci95"][1] <= c0 + 0.10
+    f = fit_mlp(Xf, yf, N_CLASSES[probe])
+    r = acc_ci(f(Xe) == ye, be)
+    r["emb_control"] = ctrl
+    r["void"] = not ctrl["at_baseline"]
+    c_hi = max(c0, majority_share(yf))
+    r["decision"] = "作废（控制未通过）" if r["void"] else decide(r, None, c_hi, c0)
+    return r
+
+
 def labels(fam, rows):
     x, y, slot, bid, roots = fam
     letters = torch.tensor([LETTERS.index(chr(c)) for c in x[:, Q_POS].tolist()])
@@ -171,17 +193,20 @@ def run_d2(runner, fit_fam, fit_rows, ev_fam, ev_rows):
     res = {"probes": {}, "probes_F": {}, "mlp": {}, "mlp_F": {}, "planted": {},
            "semantics": "single-sample ACT masks; D2-E graded, D2-F conditional/descriptive"}
 
-    def data(probe, p, mode):
-        """(Xfit, yfit, gfit, Xev, yev, gev, eval question indices)."""
+    def data(probe, p, mode, feat_point=None):
+        """(Xfit, yfit, gfit, Xev, yev, gev, eval question indices). The subset
+        comes from point p (and mode); the features from feat_point (default p),
+        so a control can use other features on exactly the same questions."""
+        fp = feat_point or p
         qf, bf_mask = masks_for(Mf, Rf, p, mode)
         qe, be_mask = masks_for(Me, Re, p, mode)
         if probe in ("P0", "P1", "P3"):
             key = "query" if probe == "P0" else "read"
             idx_e = torch.nonzero(qe).squeeze(1)
-            return (Ff[p][key][qf], Lf[probe][qf], gf[qf.numpy()],
-                    Fe[p][key][qe], Le[probe][qe], ge[qe.numpy()], idx_e)
-        Xf = Ff[p]["digits"][first_f][bf_mask].reshape(-1, Ff[p]["digits"].shape[-1])
-        Xe = Fe[p]["digits"][first_e][be_mask].reshape(-1, Fe[p]["digits"].shape[-1])
+            return (Ff[fp][key][qf], Lf[probe][qf], gf[qf.numpy()],
+                    Fe[fp][key][qe], Le[probe][qe], ge[qe.numpy()], idx_e)
+        Xf = Ff[fp]["digits"][first_f][bf_mask].reshape(-1, Ff[fp]["digits"].shape[-1])
+        Xe = Fe[fp]["digits"][first_e][be_mask].reshape(-1, Fe[fp]["digits"].shape[-1])
         yf = Lf["P2"][bf_mask].reshape(-1)
         ye = Le["P2"][be_mask].reshape(-1)
         bf = np.repeat(np.flatnonzero(bf_mask.numpy()), 4)
@@ -225,28 +250,15 @@ def run_d2(runner, fit_fam, fit_rows, ev_fam, ev_rows):
         if probe != "P0" and loop_index(p) is not None:
             res["probes_F"][f"{probe}@{p}"] = probe_once(probe, p, "F")
 
-    # MLP probes where the linear probe detected nothing (same subset and rules)
+    # MLP probes where the linear probe detected nothing. Each MLP probe gets
+    # its own emb control on exactly the same fit / eval questions (its
+    # D2-E or D2-F subset; review of 053a771), with the same rules.
     need = [("E", k) for k, v in res["probes"].items() if v.get("decision") == "未检测到足够的可线性解码信息"]
     need += [("F", k) for k, v in res["probes_F"].items() if v.get("decision") == "未检测到足够的可线性解码信息"]
-    if need:
-        ctrl = {}
-        for probe in ("P1", "P3", "P2"):
-            Xf, yf, bf, Xe, ye, be, _ = data(probe, "emb", "E")
-            f = fit_mlp(Xf, yf, N_CLASSES[probe])
-            cr = acc_ci(f(Xe) == ye, be)
-            cr["at_baseline"] = cr["ci95"][1] <= C_DECISION[probe] + 0.10
-            ctrl[probe] = cr
-        res["mlp"]["emb_controls"] = ctrl
-        for mode, key in need:
-            probe, p = key.split("@")
-            Xf, yf, bf, Xe, ye, be, _ = data(probe, p, mode)
-            f = fit_mlp(Xf, yf, N_CLASSES[probe])
-            r = acc_ci(f(Xe) == ye, be)
-            r["void"] = not ctrl[probe]["at_baseline"]
-            c0 = C_DECISION[probe]
-            c_hi = max(c0, majority_share(yf))
-            r["decision"] = "作废（控制未通过）" if r["void"] else decide(r, None, c_hi, c0)
-            res["mlp" if mode == "E" else "mlp_F"][key] = r
+    for mode, key in need:
+        probe, p = key.split("@")
+        out = mlp_with_control(data(probe, p, mode)[:6], data(probe, p, mode, feat_point="emb")[:6], probe)
+        res["mlp" if mode == "E" else "mlp_F"][key] = out
 
     # planted-signal sensitivity at the last probe point (outside the loop)
     last = points[-1]
