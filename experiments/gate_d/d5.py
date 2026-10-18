@@ -28,6 +28,9 @@ from common import DIGIT_POS, Q_POS, READ_POS, encode, flat_grad, flat_params, g
 
 # ------------------------------------------------------------ estimators
 
+# independent, fixed bootstrap seeds per batch scheme (D5(b)); (a) uses seed 0
+SCHEME_SEED = {"O": 21, "P": 22, "F": 23}
+
 
 def gram_trvar(G, idx, n_boot=2000, seed=0):
     """G (n, P) float32 rows = samples. Unbiased tr Var of the rows on the
@@ -98,9 +101,11 @@ class FamilyAccumulator:
         return out
 
 
-def batch_stats(grad_batch, batches, idx, u, n_boot=2000):
+def batch_stats(grad_batch, batches, idx, u, n_boot=2000, seed=2):
     """grad_batch(batch) -> mean gradient over its 64 answers (flat). Returns
-    per-group tr Var with bootstrap over batches, and s = -G.u statistics."""
+    per-group tr Var with bootstrap over batches, and s = -G.u statistics.
+    Each scheme passes its own seed, so the bootstrap resamples of the
+    independently drawn O / P / F batches are independent (P - O CIs)."""
     R = len(batches)
     G = None
     s = []
@@ -112,11 +117,11 @@ def batch_stats(grad_batch, batches, idx, u, n_boot=2000):
         s.append(float(-(g.double() @ u)))
     out = {"trvar": {}, "trvar_boot": {}}
     for g, ix in idx.items():
-        est, boot = gram_trvar(G, ix, n_boot=n_boot, seed=2)
+        est, boot = gram_trvar(G, ix, n_boot=n_boot, seed=seed)
         out["trvar"][g] = est
         out["trvar_boot"][g] = boot
     s = np.asarray(s)
-    rng = np.random.default_rng(3)
+    rng = np.random.default_rng(seed + 1000)
     mb = [s[rng.integers(0, R, R)].mean() for _ in range(n_boot)]
     out["s_along_u"] = {"mean": float(s.mean()), "std": float(s.std(ddof=1)),
                         "snr": float(s.mean() / s.std(ddof=1)), "p_positive": float((s > 0).mean()),
@@ -315,7 +320,7 @@ def run_d5(model, ev_rows, fit_rows, pool_b, pool_c, n_bodies_a=500, R=200, n_bo
     for scheme in ("O", "P", "F"):
         batches = [by_scheme[scheme][b] for b in range(R)]
         st = batch_stats(lambda rows: mg.mean_grad(*_prompts(rows, [r["slots"] for r in rows])),
-                         batches, idx, u, n_boot=n_boot)
+                         batches, idx, u, n_boot=n_boot, seed=SCHEME_SEED[scheme])
         measured_boot[scheme] = st.pop("trvar_boot")
         res["b_batches"][scheme] = st
     cmp = {}

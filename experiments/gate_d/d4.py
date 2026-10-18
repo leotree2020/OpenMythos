@@ -139,5 +139,15 @@ def run_d4(runner, fam, chunk_bodies=125):
     if total_ok:
         for key, r in out["interfaces"].items():
             if "skipped" not in r:
-                r["relative_d_logit_diff"] = r["d_logit_diff"]["mean"] / total["d_logit_diff"]["mean"]
+                r["relative_d_logit_diff"] = relative_effect(
+                    r["d_logit_diff"]["mean"], total["d_logit_diff"]["mean"], eps["d_logit_diff"])
     return out
+
+
+def relative_effect(num, den, eps):
+    """num / den, reported only when the total effect's mean logit difference
+    lies above the numerical noise floor (|den| > 10 eps, the 10.3 rule) and
+    is non-zero; otherwise the ratio cannot be estimated stably."""
+    if den == 0 or abs(den) <= 10 * eps:
+        return "无法稳定估计"
+    return num / den

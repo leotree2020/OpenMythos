@@ -4,9 +4,11 @@ D3: attention patterns from reconstructed weights (PREREGISTRATION 3, 8.5, 9.4).
 Primary statistic per model state: over all attention layers / loop
 iterations and all heads, the maximum of the mean (over diag_eval questions)
 share of the readout position's statement attention that falls on the queried
-statement's 4 characters. Null: 1000 body-level permutations in which the
-"queried" statement is replaced by a random other statement of the same body,
-taking the same max over layers x heads each time. Detected iff the observed
+statement's 4 characters. Null: 1000 body-level permutations. In each, every
+body draws one non-zero cyclic shift (1, 2 or 3) applied to all 4 of its
+questions, so the 4 replacement statements of a body are a complete
+permutation of its statements with no question keeping its own (body_shift);
+the same max over layers x heads is taken each time. Detected iff the observed
 max exceeds the null's 95th percentile and is >= 0.5. Everything else
 (per layer / head values, ? -> 17, digit -> own variable) is descriptive.
 OpenMythos loop iterations use only questions for which that loop ran.
@@ -17,6 +19,14 @@ import torch
 
 from common import DIGIT_POS, Q_POS, READ_POS
 from runner import attn_layers
+
+
+def body_shift(slot, g):
+    """Replacement slots for one body-level permutation: one shift in {1, 2, 3}
+    per body (questions are body-major, 4 per body, in slot order)."""
+    n_bodies = len(slot) // 4
+    shift = torch.randint(1, 4, (n_bodies,), generator=g)
+    return ((slot.view(n_bodies, 4) + shift[:, None]) % 4).reshape(-1)
 
 
 def run_d3(runner, fam, n_perm=1000, seed=0):
@@ -52,7 +62,7 @@ def run_d3(runner, fam, n_perm=1000, seed=0):
     g = torch.Generator().manual_seed(seed)
     null = []
     for _ in range(n_perm):
-        alt = (slot + torch.randint(1, 4, (N,), generator=g)) % 4
+        alt = body_shift(slot, g)
         st = stat(alt)
         st[~used] = float("-inf")
         null.append(st.max().item())

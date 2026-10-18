@@ -14,6 +14,9 @@ O / P / F batches (bodies drawn with replacement). Checks:
      its 95% bootstrap CI, for O, P and F
   3. two settings, one with S > 3 V and one with S < 3 V: the measured sign of
      tr Var(P) - tr Var(O) agrees with the analytic sign
+  4. (fix after review of 8a2bc7d) with independent bootstrap seeds per scheme
+     (d5.SCHEME_SEED), the 95% CI of the measured tr Var(P) - tr Var(O)
+     contains the analytic difference
 Writes validation/synthetic_d5.json; exits 1 on any failure.
 """
 
@@ -25,7 +28,7 @@ import numpy as np
 import torch
 
 from common import HERE
-from d5 import FamilyAccumulator, batch_stats
+from d5 import SCHEME_SEED, FamilyAccumulator, batch_stats
 
 D, NB, R = 16, 400, 4000
 
@@ -92,7 +95,7 @@ def main():
         for scheme in ("O", "P", "F"):
             batches = sample_batches(rng, scheme)
             gb = lambda bt: torch.stack([grads[b, q] for b, qs in bt for q in qs]).mean(0).float()  # noqa: E731
-            st = batch_stats(gb, batches, idx, u, n_boot=500)
+            st = batch_stats(gb, batches, idx, u, n_boot=500, seed=SCHEME_SEED[scheme])
             bt = st["trvar_boot"]["total"]
             boot[scheme] = bt
             ci = [float(np.percentile(bt, 2.5)), float(np.percentile(bt, 97.5))]
@@ -100,12 +103,17 @@ def main():
             r["measured"][scheme] = {"trvar": st["trvar"]["total"], "ci95": ci, "analytic_inside_ci": inside}
             if not inside:
                 fail.append((name, scheme, an[scheme], ci))
-        sign_meas = float(np.median(boot["P"] - boot["O"]))
+        diff = boot["P"] - boot["O"]
+        sign_meas = float(np.median(diff))
         sign_an = an["P"] - an["O"]
-        r["P_minus_O"] = {"analytic": sign_an, "measured_median": sign_meas,
-                          "same_sign": (sign_meas > 0) == (sign_an > 0)}
+        d_ci = [float(np.percentile(diff, 2.5)), float(np.percentile(diff, 97.5))]
+        r["P_minus_O"] = {"analytic": sign_an, "measured_median": sign_meas, "measured_ci95": d_ci,
+                          "same_sign": (sign_meas > 0) == (sign_an > 0),
+                          "analytic_inside_ci": d_ci[0] <= sign_an <= d_ci[1]}
         if not r["P_minus_O"]["same_sign"]:
             fail.append((name, "sign", sign_an, sign_meas))
+        if not r["P_minus_O"]["analytic_inside_ci"]:
+            fail.append((name, "P-O ci", sign_an, d_ci))
         rep[name] = r
     rep["failures"] = [str(f) for f in fail]
     os.makedirs(os.path.join(HERE, "validation"), exist_ok=True)
