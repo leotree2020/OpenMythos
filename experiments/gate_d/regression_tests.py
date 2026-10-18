@@ -16,6 +16,9 @@ validation/regression_fixes.json; exits 1 on any failure.
      the P - O CI against the analytic difference.
   3. D4: relative_effect - zero and near-zero denominators give
      "无法稳定估计", valid denominators give the ratio.
+  4. D3 readout validity (revision 4): D3 counts loop t for a question only
+     if position 18 was still running; reports how often the sequence-level
+     flag would have counted a question whose readout had already halted.
 """
 
 import json
@@ -86,6 +89,24 @@ res["d4_relative_effect_guard"] = out
 if not (out["zero_den"] == out["near_zero_den"] == out["den_at_10eps"] == "无法稳定估计"
         and abs(out["valid_negative_den"] + 5e5) < 1e-6 and out["valid_den"] == 0.5):
     fail.append("d4")
+
+# 4. D3 readout-position validity (revision 4): loop t counts for a question
+#    only if position 18 was still running; the sequence-level flag is not used
+from d3 import readout_valid  # noqa: E402
+
+rec = Runner(model).run(fam[0], record=True)[1]
+r4 = {}
+for t in range(4):
+    seq = rec[f"valid{t}"]
+    ro = readout_valid(rec, t)
+    r4[f"loop{t}"] = {"sequence_level_valid": int(seq.sum()), "readout_still_running": int(ro.sum()),
+                      "sequence_valid_but_readout_halted": int((seq & ~ro).sum()),
+                      "readout_running_but_sequence_halted": int((ro & ~seq).sum())}
+d3r = run_d3(Runner(model), fam, n_perm=50, seed=0)["descriptive"]["n_valid_questions_by_layer(readout_still_running)"]
+r4["d3_uses_readout_validity"] = all(d3r[f"loop{t}"] == r4[f"loop{t}"]["readout_still_running"] for t in range(4))
+res["d3_readout_validity"] = r4
+if not r4["d3_uses_readout_validity"] or any(r4[f"loop{t}"]["readout_running_but_sequence_halted"] for t in range(4)):
+    fail.append("d3_readout")
 
 res["failures"] = fail
 with open(os.path.join(HERE, "validation", "regression_fixes.json"), "w") as f:

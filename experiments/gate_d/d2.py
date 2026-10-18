@@ -15,15 +15,14 @@ probe point; one-hidden-layer MLP probe (width 256, fixed settings) only where
 the linear probe gives "not detected", voided unless the same MLP is at
 baseline on the emb record point (P1/P3 at position 18; P2 at the digit
 positions, an analogous control added in the analysis plan).
-OpenMythos loop points use only complete families: bodies for which that
-loop was executed for all 4 queries (revision 4; was per question).
+OpenMythos loop points use only questions for which that loop was executed.
 """
 
 import numpy as np
 import torch
 import torch.nn.functional as F
 
-from common import DIGIT_POS, LETTERS, Q_POS, READ_POS, complete_family_mask, grouped_bootstrap
+from common import DIGIT_POS, LETTERS, Q_POS, READ_POS, grouped_bootstrap
 from runner import probe_points
 
 LAMBDA = 1e-3
@@ -122,8 +121,7 @@ def features(runner, fam, points):
     valid = {}
     for p in points:
         if p.startswith("h") and p[1:].isdigit():
-            # revision 4: complete families only (all 4 queries ran the loop)
-            valid[p] = complete_family_mask(rec[f"valid{int(p[1:]) - 1}"])
+            valid[p] = rec[f"valid{int(p[1:]) - 1}"]
         else:
             valid[p] = torch.ones(len(x), dtype=torch.bool)
     return feats, valid

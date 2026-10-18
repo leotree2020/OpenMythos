@@ -19,15 +19,13 @@ change of logit(y') - logit(y), TV, KL(clean || patched). Body-grouped CIs.
 Noise floor eps: the same metrics between two clean runs that differ only in
 batch composition (chunk vs 4 questions per batch); |mean| <= 10 eps is
 reported as numerically indistinguishable. Partial patches (I1-I3) are local
-path effects, exploratory, not the total query effect. OpenMythos loop
-interfaces use only complete families (all 4 queries of the body ran that
-loop; revision 4).
+path effects, exploratory, not the total query effect.
 """
 
 import numpy as np
 import torch
 
-from common import Q_POS, READ_POS, complete_family_mask, summary
+from common import Q_POS, READ_POS, summary
 
 TOL_FULL = 1e-6
 METRICS = ("d_logit_target", "d_logit_orig", "d_logit_diff", "d_p_target", "d_p_orig", "tv", "kl")
@@ -110,8 +108,7 @@ def run_d4(runner, fam, chunk_bodies=125):
                 per[key][m].append(v)
             if point.startswith(("blk_in", "h")) and point[-1].isdigit() and arm == "openmythos":
                 t = int(point[6:]) if point.startswith("blk_in") else int(point[1:]) - 1
-                # revision 4: complete families only (all 4 queries ran the loop)
-                valid_mask[key].append(complete_family_mask(rc[f"valid{t}"]))
+                valid_mask[key].append(rc[f"valid{t}"])
             else:
                 valid_mask[key].append(torch.ones(len(xc), dtype=torch.bool))
     bad = [k for k, c in controls.items()

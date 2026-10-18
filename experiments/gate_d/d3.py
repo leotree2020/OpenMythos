@@ -5,9 +5,11 @@ Primary statistic per model state: over all attention layers / loop
 iterations and all heads, the maximum of the mean (over diag_eval questions)
 share of the readout position's statement attention that falls on the queried
 statement's 4 characters (shares_test).
-Revision 4 (proposed after the review of 53e5492, pending approval):
-  - OpenMythos loop iterations keep only complete families (bodies whose 4
-    questions all ran that loop); a loop enters if >= half of the bodies do
+Revision 4 (PREREGISTRATION 11, approved for D3 only):
+  - OpenMythos loop iteration t counts for a question only if the readout
+    position 18 was still running at loop t (readout_valid); only complete
+    families (all 4 questions of a body valid) enter; a loop iteration enters
+    the primary statistic only if >= half of the bodies are complete
   - exact randomization test: one cyclic shift per body uniform on
     {0, 1, 2, 3}; p-value from the max over layers x heads; decision
     p <= 0.05 and statistic >= 0.5; the non-zero-shift mismatch reference of
@@ -21,6 +23,15 @@ import torch
 
 from common import DIGIT_POS, Q_POS, READ_POS, complete_family_mask
 from runner import attn_layers
+
+
+def readout_valid(rec, t):
+    """Revision 4: loop t counts for a question only if the readout position
+    (18) had not halted before loop t, i.e. its ACT weight at loop t can be
+    non-zero (still{t} at position 18). The sequence-level valid{t} (some
+    position still running) is not used: position 18 may have halted while
+    other positions continue."""
+    return rec[f"still{t}"][:, READ_POS]
 
 
 def body_shift(slot, g, include_identity=True):
@@ -90,7 +101,7 @@ def run_d3(runner, fam, n_perm=1000, seed=0):
         w18_17[name] = w[:, :, READ_POS, Q_POS].mean(0).tolist()
         dig_var[name] = torch.stack([w[0::4, :, p, p - 2] for p in DIGIT_POS], 0).mean((0, 1)).tolist()
         if name.startswith("loop"):
-            valid.append(rec[f"valid{int(name[4:])}"])
+            valid.append(readout_valid(rec, int(name[4:])))
         else:
             valid.append(torch.ones(N, dtype=torch.bool))
     S = torch.stack(shares, 1).double()  # (N, L, H, 4)
@@ -104,7 +115,10 @@ def run_d3(runner, fam, n_perm=1000, seed=0):
     t["descriptive"] = {
         "share_by_layer_head": {layers[i]: obs[i].tolist() for i in range(len(layers)) if used[i]},
         "layers_left_out_not_executed": [layers[i] for i in range(len(layers)) if not used[i]],
-        "n_valid_questions_by_layer": {layers[i]: int(Vq[:, i].sum()) for i in range(len(layers))},
+        "n_valid_questions_by_layer(readout_still_running)": {layers[i]: int(Vq[:, i].sum()) for i in range(len(layers))},
+        "n_valid_questions_by_layer(sequence_level, not used)": {
+            layers[i]: int(rec[f"valid{int(layers[i][4:])}"].sum()) if layers[i].startswith("loop") else N
+            for i in range(len(layers))},
         "n_complete_bodies_by_layer": dict(zip(layers, t.pop("n_complete_bodies_by_layer"))),
         "attn_readout_to_query_token": w18_17,
         "attn_digit_to_own_variable": dig_var,

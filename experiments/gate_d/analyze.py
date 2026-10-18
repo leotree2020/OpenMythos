@@ -77,7 +77,7 @@ def i2_keys(r):
     return [k for k, v in r["D4"]["interfaces"].items() if k.startswith("I2") and "skipped" not in v]
 
 
-def classes(r, arm, d0, synth):
+def classes(r, arm, d0, synth, d3_calibrated=False):
     """Per hypothesis: {class: result} for one 12,000-step state."""
     out = {}
     rp = read_points(arm)
@@ -101,8 +101,13 @@ def classes(r, arm, d0, synth):
     out["H2"] = {"D2": all_none_detected(r, "P2", [p for p in rp if p != "e"] + (["e"] if arm == "openmythos" else [])) if ok2 else UNC}
     # H3
     d3 = r["D3"]["decision"]
-    out["H3"] = {"D2": all_none_detected(r, "P3", rp) if ok2 else UNC,
-                 "D3": (SUP if d3 == "未检测到" else OPP) if ok3 else UNC}
+    # revision 4: D3 enters the grading only if its randomization test passed
+    # the calibration / negative-control validation (d3_calibration.json);
+    # otherwise it is descriptive and does not count as a diagnostic class
+    h3 = {"D2": all_none_detected(r, "P3", rp) if ok2 else UNC}
+    if d3_calibrated:
+        h3["D3"] = (SUP if d3 == "未检测到" else OPP) if ok3 else UNC
+    out["H3"] = h3
     # H4
     det = [p for p in rp if DET in (probe_status(r, "P1", p), probe_status(r, "P3", p))]
     if not det or not ok2:
@@ -166,17 +171,20 @@ def main():
         sys.exit(1)
     d0 = json.load(open(os.path.join(HERE, "validation", "d0_rev3.json")))
     synth = not json.load(open(os.path.join(HERE, "validation", "synthetic_d5.json")))["failures"]
-    out = {"per_seed": {}, "per_arm": {}, "cross_arm": {}}
+    cal_path = os.path.join(HERE, "validation", "d3_calibration.json")
+    d3_cal = os.path.exists(cal_path) and not json.load(open(cal_path))["failures"]
+    out = {"per_seed": {}, "per_arm": {}, "cross_arm": {}, "d3_counts_as_class": None}
     for a in ARMS:
         seeds = []
         for s in SEEDS:
             r = res[(a, s, 12000)]
             r["_seed"] = s
-            cl = classes(r, a, d0, synth)
+            cl = classes(r, a, d0, synth, d3_cal)
             out["per_seed"][f"{a}_s{s}"] = {h: {"classes": c, "direction": seed_direction(c)[0],
                                                 "n_classes": seed_direction(c)[1]} for h, c in cl.items()}
             seeds.append(cl)
         out["per_arm"][a] = {h: grade([seed_direction(cl[h]) for cl in seeds]) for h in seeds[0]}
+    out["d3_counts_as_class"] = d3_cal
     for h in out["per_arm"]["openmythos"]:
         g1, g2 = out["per_arm"]["openmythos"][h], out["per_arm"]["transformer"][h]
         if g1["grade"] == g2["grade"] == "强" and g1["direction"] == g2["direction"]:
