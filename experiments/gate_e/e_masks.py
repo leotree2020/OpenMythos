@@ -9,6 +9,7 @@ Transformer models have no ACT: every mask is True.
 M6 (ACT summary) is computed from the same masks.
 """
 
+import e_common  # noqa: F401,E402  (first: puts the archived modules on sys.path)
 import torch
 
 from act_masks import reachability  # noqa: F401  gate_d (archived), generic in shape

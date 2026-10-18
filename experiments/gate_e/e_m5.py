@@ -17,6 +17,7 @@ unchanged. Family-size dependent parts:
       update.
 """
 
+import e_common  # noqa: F401,E402  (first: puts the archived modules on sys.path)
 import time
 
 import numpy as np

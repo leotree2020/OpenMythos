@@ -31,6 +31,7 @@ A loop record point counts a pair only if both prompts still execute that
 loop when run alone (Gate D revision 6 single-sample semantics).
 """
 
+import e_common  # noqa: F401,E402  (first: puts the archived modules on sys.path)
 import numpy as np
 import torch
 
@@ -129,7 +130,20 @@ def pooled(cells, bodies_by_cell, heldout_by_cell):
     return out
 
 
-def run_m3(runner, ev_rows, mp_rows, g):
+def t_m3_condition(digit_labels):
+    """Event t_M3 (9.4, 10.1): every digit-position record point except emb
+    with sigma > 0 is "not detected"; sigma = 0 points are excluded and
+    listed. Pure function (tested in val_m2m3.py)."""
+    pts = [p for p in digit_labels if p != "emb"]
+    computable = {p: digit_labels[p] for p in pts if digit_labels[p] in (FOUND, NOT_DETECTED)}
+    return {"digit_labels": {p: digit_labels[p] for p in pts},
+            "excluded_not_computable": [p for p in pts if p not in computable],
+            "all_not_detected": bool(computable) and all(v == NOT_DETECTED for v in computable.values())}
+
+
+def run_m3(runner, ev_rows, mp_rows, g, enforce_controls=True):
+    """enforce_controls=False only in validation (constructed models whose
+    letter embeddings are erased on purpose, so the positive control fails)."""
     K = g.K
     points = probe_points(runner.arm)
     N = len(ev_rows)
@@ -211,14 +225,7 @@ def run_m3(runner, ev_rows, mp_rows, g):
                        "positive_own_letter_emb": {"pass": ok_pos, "detail": pos_detail}}
     res["validity"] = {"pairs": len(mp_rows), "loop_valid_share_x": V0.float().mean(0).tolist(),
                        "loop_valid_share_xprime": VM.float().mean(0).tolist()}
-    digit_points = [p for p in points if p != "emb"]
-    labels = {p: res["pooled"][p]["digit"]["label"] for p in digit_points}
-    computable = {p: lab for p, lab in labels.items() if lab in (FOUND, NOT_DETECTED)}
-    res["t_M3_condition"] = {
-        "digit_labels": labels,
-        "excluded_not_computable": [p for p in digit_points if p not in computable],
-        "all_not_detected": bool(computable) and all(v == NOT_DETECTED for v in computable.values()),
-    }
-    if not (ok_neg and ok_pos):
+    res["t_M3_condition"] = t_m3_condition({p: res["pooled"][p]["digit"]["label"] for p in points})
+    if enforce_controls and not (ok_neg and ok_pos):
         raise IntegrityError(f"M3 control failed (negative {ok_neg}, positive {ok_pos})")
     return res

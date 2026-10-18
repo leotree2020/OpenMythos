@@ -10,6 +10,7 @@ training trajectory as the archived budget_a run only if all three hold:
      weights equals that of the archived checkpoint
 """
 
+import e_common  # noqa: F401,E402  (first: puts the archived modules on sys.path)
 import json
 import os
 

@@ -13,6 +13,7 @@ numerically indistinguishable. Simple prediction rules are descriptive only;
 the formal baseline is the fixed 50% of revision 2 (10.2).
 """
 
+import e_common  # noqa: F401,E402  (first: puts the archived modules on sys.path)
 import numpy as np
 import torch
 

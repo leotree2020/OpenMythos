@@ -8,6 +8,7 @@ any "pass": False stops the state (exit 3). causal_value_monitor fails only
 on a difference that does not start at an MoE block output (as in Gate D).
 """
 
+import e_common  # noqa: F401,E402  (first: puts the archived modules on sys.path)
 import torch
 
 from d0 import (TOL_ATTN, TOL_ROPE, TOL_TIED, _moe_modules, later_position_grad,  # gate_d

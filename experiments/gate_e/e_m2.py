@@ -23,6 +23,7 @@ c0 + 0.10 and > the shuffled control's upper bound) never replaces
 sample valid{t}, complete families); D2-F is not part of E1.
 """
 
+import e_common  # noqa: F401,E402  (first: puts the archived modules on sys.path)
 import numpy as np
 import torch
 import torch.nn.functional as F

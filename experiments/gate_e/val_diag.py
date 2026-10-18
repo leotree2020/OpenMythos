@@ -28,6 +28,8 @@ import torch
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
+import e_common  # noqa: F401,E402  (first: puts the archived modules on sys.path)
+
 from e_common import Geom, family_tensors, jsonable, load_state, rebuild_init  # noqa: E402
 from e_m0 import model_checks  # noqa: E402
 from e_m1 import per_question  # noqa: E402

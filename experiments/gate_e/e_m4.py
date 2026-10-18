@@ -12,6 +12,7 @@ From the reconstructed attention weights (gate_d runner):
     indicator), per head, and its max over heads
 """
 
+import e_common  # noqa: F401,E402  (first: puts the archived modules on sys.path)
 import torch
 
 from e_masks import complete
