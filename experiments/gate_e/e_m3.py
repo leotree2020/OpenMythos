@@ -26,7 +26,8 @@ Controls (hard; a failure raises IntegrityError):
     negative  query swap only: positions before the query, every body,
               delta <= tau (sigma > 0 combinations)
     positive  emb record point at the replaced letter's own position: every
-              pair delta > tau
+              pair delta > tau; it must run at one position at least (all
+              positions with sigma = 0 = not executed = failure)
 A loop record point counts a pair only if both prompts still execute that
 loop when run alone (Gate D revision 6 single-sample semantics).
 """
@@ -221,8 +222,16 @@ def run_m3(runner, ev_rows, mp_rows, g, enforce_controls=True):
         passed = bool((d > tau).all())
         pos_detail[str(pos)] = {"min_delta": float(d.min()), "tau": tau, "pass": passed}
         ok_pos &= passed
-    res["controls"] = {"negative_query_swap": {"pass": ok_neg, "detail": neg_detail},
-                       "positive_own_letter_emb": {"pass": ok_pos, "detail": pos_detail}}
+    # the positive control must actually run somewhere: if every letter position
+    # had sigma = 0 it was not executed, which counts as a failure (run 1 of
+    # val_m2m3.py showed that skipping alone would pass vacuously)
+    n_pos_run = sum(1 for v in pos_detail.values() if "pass" in v)
+    ok_pos = ok_pos and n_pos_run > 0
+    n_neg_run = sum(1 for d in neg_detail.values() for v in d.values() if "pass" in v)
+    ok_neg = ok_neg and n_neg_run > 0
+    res["controls"] = {"negative_query_swap": {"pass": ok_neg, "n_cells_run": n_neg_run, "detail": neg_detail},
+                       "positive_own_letter_emb": {"pass": ok_pos, "n_positions_run": n_pos_run,
+                                                   "detail": pos_detail}}
     res["validity"] = {"pairs": len(mp_rows), "loop_valid_share_x": V0.float().mean(0).tolist(),
                        "loop_valid_share_xprime": VM.float().mean(0).tolist()}
     res["t_M3_condition"] = t_m3_condition({p: res["pooled"][p]["digit"]["label"] for p in points})

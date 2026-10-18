@@ -20,9 +20,11 @@ M3 (non-formal models, K=2 and K=4, both arms, init and 200 steps)
   controls       negative (query swap) and positive (own letter at emb)
                  controls pass with the hard rule; the emb '=' position has
                  sigma = 0 and is reported as not computable
-  erased model   all letter embeddings set to their mean: positive control
-                 fails (as it must), every digit-position record point "not
-                 detected", t_M3 condition true
+  erased model   all letter embeddings set to their mean: the letter positions
+                 have sigma = 0, so the positive control cannot run and counts
+                 as failed (run 1 expected a plain failure and found the
+                 vacuous pass this check now guards against); every
+                 digit-position record point "not detected", t_M3 true
   scaled model   letter embeddings shrunk to 1e-3 of their spread around the
                  mean: controls pass, digit positions after emb "found"
 """
@@ -151,9 +153,12 @@ def m3_models(scratch):
                 out[key] = r
                 ok &= r["pass"]
                 if label == "step200" and K == 2:
-                    er = summarize(run_m3(Runner(modify_letters(model, 0.0)), ev, mp, g, enforce_controls=False))
+                    r_er = run_m3(Runner(modify_letters(model, 0.0)), ev, mp, g, enforce_controls=False)
+                    er = summarize(r_er)
                     dig = {p: v for p, v in er["digit_labels"].items() if p != "emb" and v != NO_PAIRS}
+                    er["positive_control_detail"] = r_er["controls"]["positive_own_letter_emb"]
                     er["pass"] = (not er["controls"]["positive_own_letter_emb"]
+                                  and r_er["controls"]["positive_own_letter_emb"]["n_positions_run"] == 0
                                   and all(v == NOT_DETECTED for v in dig.values())
                                   and er["t_M3"]["all_not_detected"] is True)
                     out[f"{key}_erased"] = er
