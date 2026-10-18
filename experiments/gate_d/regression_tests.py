@@ -5,9 +5,12 @@ Regression tests for the three fixes made after the pre-launch review of
 hypothesis, threshold or frozen data changed). Non-formal models and data
 only (seed-99 smoke checkpoints, the timing set). Writes
 validation/regression_fixes.json; exits 1 on any failure.
-  1. D3: body-level permutation (body_shift) - every body's 4 replacement
-     slots form a complete permutation with no fixed point; the null
-     distribution is reproducible for a fixed seed and differs for another.
+  1. D3: body-level relabelling (body_shift) - one cyclic shift per body, so
+     every body's 4 replacement slots form a complete permutation; without
+     the identity (mismatch reference) no question keeps its own slot; with
+     it (revision-4 randomization test) all 4 shifts occur; outputs are
+     reproducible for a fixed seed and differ for another. The ACT selection
+     counterexample and calibration are in d3_calibration.py.
   2. D5: bootstrap resamples of the O / P / F schemes are independent
      (different index sequences); synthetic_d5.py (rerun separately) checks
      the P - O CI against the analytic difference.
@@ -30,29 +33,35 @@ from runner import Runner
 
 res, fail = {}, []
 
-# 1. D3
+# 1. D3 (body-level relabelling; revision 4 adds the identity shift to the
+#    randomization group, the non-zero-shift reference is kept descriptively)
 slot = torch.arange(4).repeat(500)
 g = torch.Generator().manual_seed(0)
-perm_ok, fixed_points, shifts = True, 0, set()
-for _ in range(200):
-    alt = body_shift(slot, g).view(500, 4)
-    perm_ok &= bool((alt.sort(1).values == torch.arange(4)).all())
-    fixed_points += int((alt == torch.arange(4)).sum())
-    shifts |= set(((alt[:, 0] - 0) % 4).tolist())
-    perm_ok &= bool(((alt - torch.arange(4)) % 4 == ((alt[:, :1] - 0) % 4)).all())  # one shift per body
+checks = {}
+for mode in (False, True):
+    perm_ok, fixed_points, shifts = True, 0, set()
+    for _ in range(200):
+        alt = body_shift(slot, g, include_identity=mode).view(500, 4)
+        sh = (alt - torch.arange(4)) % 4
+        perm_ok &= bool((alt.sort(1).values == torch.arange(4)).all())  # complete permutation
+        perm_ok &= bool((sh == sh[:, :1]).all())  # one cyclic shift per body
+        fixed_points += int((sh == 0).sum())
+        shifts |= set(sh[:, 0].tolist())
+    checks["with_identity" if mode else "mismatch_reference"] = {
+        "complete_permutation_one_shift_per_body": perm_ok, "shifts_seen": sorted(shifts), "fixed_points": fixed_points}
 model = load_state("openmythos", 99, 60, path=os.path.join(HERE, "..", "budget_a", "smoke", "run1_openmythos.pt"))
 fam = family_tensors(load_diag("timing"))
 a = run_d3(Runner(model), fam, n_perm=200, seed=0)
 b = run_d3(Runner(model), fam, n_perm=200, seed=0)
 c = run_d3(Runner(model), fam, n_perm=200, seed=1)
-res["d3_body_level_permutation"] = {
-    "complete_permutation_one_shift_per_body": perm_ok, "fixed_points": fixed_points,
-    "shifts_seen": sorted(shifts), "reproducible_same_seed": a["null_p95"] == b["null_p95"] and a["p_value"] == b["p_value"],
-    "differs_other_seed": a["null_mean"] != c["null_mean"],
-}
-r = res["d3_body_level_permutation"]
-if not (r["complete_permutation_one_shift_per_body"] and r["fixed_points"] == 0 and r["shifts_seen"] == [1, 2, 3]
-        and r["reproducible_same_seed"] and r["differs_other_seed"]):
+checks["reproducible_same_seed"] = (a["p_value_randomization"] == b["p_value_randomization"]
+                                    and a["mismatch_reference_p95"] == b["mismatch_reference_p95"])
+checks["differs_other_seed"] = a["mismatch_reference_mean"] != c["mismatch_reference_mean"]
+res["d3_body_level_relabelling"] = checks
+mr, wi = checks["mismatch_reference"], checks["with_identity"]
+if not (mr["complete_permutation_one_shift_per_body"] and mr["fixed_points"] == 0 and mr["shifts_seen"] == [1, 2, 3]
+        and wi["complete_permutation_one_shift_per_body"] and wi["shifts_seen"] == [0, 1, 2, 3]
+        and checks["reproducible_same_seed"] and checks["differs_other_seed"]):
     fail.append("d3")
 
 # 2. D5 independent bootstrap seeds

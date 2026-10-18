@@ -211,3 +211,12 @@ def grouped_bootstrap(values, groups, stat=np.mean, n_boot=2000, seed=0):
 def summary(values, groups, n_boot=2000):
     v = np.asarray(values, dtype=np.float64)
     return {"mean": float(v.mean()), "ci95": grouped_bootstrap(v, groups, n_boot=n_boot)}
+
+
+def complete_family_mask(valid_q):
+    """Question-level loop validity (4N,) body-major -> mask keeping only the
+    questions of bodies for which the loop ran for all 4 queries (revision 4).
+    The rule is symmetric in the slot labels, so the selection cannot depend
+    on which statement is the queried one."""
+    v = valid_q.view(-1, 4).all(1)
+    return v.repeat_interleave(4)
