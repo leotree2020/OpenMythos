@@ -72,12 +72,20 @@ def main():
         qs = tuple(r["query_swap"]) if r["query_swap"] else None
         fail.extend(check_cf(p, a, 0, tuple(r["root_swap"]), qs, "A_test2"))
     new = {r["prompt"] for r in rows}
-    old = {}
+    # counterfactual prompts of the new set (the answers and structure of each
+    # were checked above by check_cf)
+    new_cf = {r["root_swap"][0] for r in rows} | {
+        r["query_swap"][0] for r in rows if r["query_swap"]
+    }
+    old, old_all = {}, {}
     for name in ("A_test", "A_dev"):
-        old[name] = {
-            json.loads(l)["prompt"]
-            for l in open(os.path.join(GA, "sets", f"{name}.jsonl"))
-        }
+        olds = [json.loads(l) for l in open(os.path.join(GA, "sets", f"{name}.jsonl"))]
+        old[name] = {o["prompt"] for o in olds}
+        old_all[name] = (
+            old[name]
+            | {o["root_swap"][0] for o in olds}
+            | {o["query_swap"][0] for o in olds if o["query_swap"]}
+        )
     train = set()
     for s in SEEDS:
         tr = train_rng("A", s)
@@ -89,8 +97,26 @@ def main():
         "test2∩train_12000": len(new & train),
         "train_12000_unique": len(train),
         "A_dev∩train_12000": len(old["A_dev"] & train),
+        "test2_counterfactual_prompts": len(new_cf),
+        "test2_cf∩train_12000": len(new_cf & train),
+        "test2_cf∩A_test(incl. its cf)": len(new_cf & old_all["A_test"]),
+        "test2_cf∩A_dev(incl. its cf)": len(new_cf & old_all["A_dev"]),
+        "test2∩A_test_cf": len(new & (old_all["A_test"] - old["A_test"])),
+        "test2∩A_dev_cf": len(new & (old_all["A_dev"] - old["A_dev"])),
+        "test2_cf∩test2": len(new_cf & new),
     }
-    for k in ("test2∩A_test", "test2∩A_dev", "test2∩train_12000", "A_dev∩train_12000"):
+    for k in (
+        "test2∩A_test",
+        "test2∩A_dev",
+        "test2∩train_12000",
+        "A_dev∩train_12000",
+        "test2_cf∩train_12000",
+        "test2_cf∩A_test(incl. its cf)",
+        "test2_cf∩A_dev(incl. its cf)",
+        "test2∩A_test_cf",
+        "test2∩A_dev_cf",
+        "test2_cf∩test2",
+    ):
         if ov[k]:
             fail.append(("overlap", k, ov[k]))
     if len(new) != N_TEST:

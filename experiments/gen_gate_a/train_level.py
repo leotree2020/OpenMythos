@@ -38,6 +38,9 @@ from models import block_applications, build  # noqa: E402
 from splits import train_rng  # noqa: E402
 from train_mem import expert_grad_status, get_lr, grad_report  # noqa: E402
 
+sys.path.append(os.path.join(HERE, "..", "budget_a"))
+from schedule import extended_lr  # noqa: E402
+
 from open_mythos.main import MoEFFN  # noqa: E402
 
 
@@ -56,8 +59,48 @@ def probe(model, ds):
         out["query_swap_both"] = (
             (ok[ds["qs_idx"]] & (pq == ds["y_qs"])).float().mean().item()
         )
+        # share of predictions unchanged when only the query variable changes
+        out["query_insensitivity"] = (p[ds["qs_idx"]] == pq).float().mean().item()
     model.train()
     return out
+
+
+@torch.no_grad()
+def compare_to_reference(model, ref_path, dev, tol):
+    """Comparability of the current weights with a reference checkpoint:
+    bitwise equality, else max |difference| <= tol and identical dev-set
+    predictions (original, root-swap and query-swap prompts)."""
+    import copy
+
+    ref = torch.load(ref_path, map_location="cpu", weights_only=False)["model"]
+    cur = model.state_dict()
+    same_keys = set(cur) == set(ref)
+    bitwise = same_keys and all(torch.equal(cur[k], ref[k]) for k in ref)
+    max_abs = (
+        max((cur[k].double() - ref[k].double()).abs().max().item() for k in ref)
+        if same_keys
+        else float("inf")
+    )
+    other = copy.deepcopy(model)
+    other.load_state_dict(ref)
+    model.eval()
+    other.eval()
+    preds_equal = True
+    for key in ("x", "x_rs", "x_qs"):
+        if dev[key] is None:
+            continue
+        a = model(dev[key][:, :-1])[:, -1].argmax(-1)
+        b = other(dev[key][:, :-1])[:, -1].argmax(-1)
+        preds_equal &= bool(torch.equal(a, b))
+    model.train()
+    return {
+        "reference": ref_path,
+        "bitwise_equal": bitwise,
+        "max_abs_diff": max_abs,
+        "tolerance": tol,
+        "dev_predictions_identical": preds_equal,
+        "passed": bitwise or (max_abs <= tol and preds_equal),
+    }
 
 
 def main():
@@ -72,6 +115,13 @@ def main():
     ap.add_argument("--probe-every", type=int, default=250)
     ap.add_argument("--threads", type=int, default=1)
     ap.add_argument("--out", required=True)
+    # options for the level-A training-budget diagnostic; defaults keep the
+    # Gate A behaviour unchanged
+    ap.add_argument("--schedule", default="cosine", choices=["cosine", "extended"])
+    ap.add_argument("--save-at", default="", help="comma-separated steps")
+    ap.add_argument("--compare-at", type=int, default=0)
+    ap.add_argument("--compare-ckpt", default="")
+    ap.add_argument("--compare-tol", type=float, default=1e-5)
     args = ap.parse_args()
 
     torch.set_num_threads(args.threads)
@@ -113,7 +163,10 @@ def main():
     model.train()
     for step in range(args.steps):
         for g in opt.param_groups:
-            g["lr"] = get_lr(step, args.warmup, args.steps, args.lr)
+            if args.schedule == "extended":
+                g["lr"] = extended_lr(step)
+            else:
+                g["lr"] = get_lr(step, args.warmup, args.steps, args.lr)
         rows = [make_sample(args.level, rng, "train") for _ in range(args.batch_size)]
         x, y = encode_rows(rows)
         if step == 0:
@@ -138,6 +191,35 @@ def main():
             d[kind] += 1
         torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
         opt.step()
+        if str(step + 1) in args.save_at.split(","):
+            torch.save(
+                {
+                    "level": args.level,
+                    "arm": args.arm,
+                    "seed": args.seed,
+                    "step": step + 1,
+                    "model": model.state_dict(),
+                },
+                args.out.replace(".json", f"_step{step + 1}.pt"),
+            )
+        if args.compare_at and step + 1 == args.compare_at:
+            comparability = compare_to_reference(
+                model, args.compare_ckpt, dev, args.compare_tol
+            )
+            logger.info(f"comparability at step {step + 1}: {comparability}")
+            if not comparability["passed"]:
+                os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
+                with open(args.out.replace(".json", "_ABORTED.json"), "w") as f:
+                    json.dump(
+                        {
+                            "aborted_at_step": step + 1,
+                            "comparability": comparability,
+                            "log": log,
+                        },
+                        f,
+                    )
+                logger.error("comparability check failed; run aborted")
+                sys.exit(3)
         loss_sum += loss.item()
         acc_sum += (logits.argmax(-1) == y).float().mean().item()
         n_since += 1
@@ -177,6 +259,8 @@ def main():
         "steps": args.steps,
         "params": n_params,
         "first_batch_sha256": first_batch_sha,
+        "schedule": args.schedule,
+        "comparability": comparability if args.compare_at else None,
         "block_token_steps": block_token_steps,
         "wall_seconds": time.perf_counter() - t0,
         "expert_grad_status_counts": status_counts,
