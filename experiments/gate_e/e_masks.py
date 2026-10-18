@@ -12,7 +12,7 @@ M6 (ACT summary) is computed from the same masks.
 import e_common  # noqa: F401,E402  (first: puts the archived modules on sys.path)
 import torch
 
-from act_masks import reachability  # noqa: F401  gate_d (archived), generic in shape
+from act_masks import reachability  # noqa: F401  gate_d (archived), generic in shape; used by e_m2 (D2-F)
 
 
 @torch.no_grad()

@@ -20,7 +20,13 @@ Decisions: gate_d d2.decide (revision 6 rules, c_hi for "detected", c0 for
 "not detected"). The descriptive flag "明确高于随机" (lower CI bound >
 c0 + 0.10 and > the shuffled control's upper bound) never replaces
 "detected". OpenMythos loop points use D2-E existence semantics (single-
-sample valid{t}, complete families); D2-F is not part of E1.
+sample valid{t}, complete families) for every probe above. D2-F (functional
+reachability, Gate D revision 6 13.3: a loop state enters only if it can
+still reach the answer, R(t, readout) for P1 / P3, all K digit positions x
+K queries reachable for P2) is computed as in Gate D, conditional and
+descriptive only: linear_std with its shuffled control, and an MLP with its
+own emb control where that linear probe detects nothing ("linear_std_F",
+"mlp_F"). No event or judgment uses D2-F.
 """
 
 import e_common  # noqa: F401,E402  (first: puts the archived modules on sys.path)
@@ -31,7 +37,7 @@ import torch.nn.functional as F
 from d2 import (ALPHAS, LAMBDA, acc_ci, decide, fit_linear, fit_mlp, grouped_shuffle,  # gate_d
                 majority_share, predict_linear)
 from e_common import LETTERS
-from e_masks import act_masks, complete
+from e_masks import act_masks, complete, reachability
 from runner import probe_points  # gate_d
 
 DETECTED = "检测到可线性解码的信息"
@@ -88,6 +94,7 @@ def run_m2(runner, fit_fam, fit_rows, ev_fam, ev_rows, g, mlp_p13_when_detected=
                     "digits": rec[p][:, list(g.DIGIT_POS)]} for p in points}
 
     Ff, Fe = features(fit_fam), features(ev_fam)
+    Rf, Re = reachability(Mf), reachability(Me)
 
     def labels(fam, rows):
         x, y, slot, bid, roots = fam
@@ -99,18 +106,22 @@ def run_m2(runner, fit_fam, fit_rows, ev_fam, ev_rows, g, mlp_p13_when_detected=
     gf, ge = fit_fam[3].numpy(), ev_fam[3].numpy()
     first_f, first_e = torch.arange(0, len(gf), K), torch.arange(0, len(ge), K)
 
-    def masks_for(M, p):
+    def masks_for(M, R, p, mode):
         n = M["valid"].shape[0]
         t = loop_index(p)
         if t is None:
             return torch.ones(n, dtype=torch.bool), torch.ones(n // K, dtype=torch.bool)
-        q = complete(M["valid"][:, t], K)
-        return q, q.view(-1, K)[:, 0]
+        if mode == "E":
+            q = complete(M["valid"][:, t], K)
+            return q, q.view(-1, K)[:, 0]
+        q = complete(R[:, t, g.READ_POS], K)
+        body = R[:, t][:, list(g.DIGIT_POS)].all(1).view(-1, K).all(1)  # K positions x K queries
+        return q, body
 
-    def data(probe, p, feat_point=None):
+    def data(probe, p, feat_point=None, mode="E"):
         fp = feat_point or p
-        qf, bfm = masks_for(Mf, p)
-        qe, bem = masks_for(Me, p)
+        qf, bfm = masks_for(Mf, Rf, p, mode)
+        qe, bem = masks_for(Me, Re, p, mode)
         if probe in ("P0", "P1", "P3"):
             key = "query" if probe == "P0" else "read"
             return (Ff[fp][key][qf], Lf[probe][qf], gf[qf.numpy()],
@@ -145,10 +156,10 @@ def run_m2(runner, fit_fam, fit_rows, ev_fam, ev_rows, g, mlp_p13_when_detected=
             r["clearly_above_chance(descriptive)"] = clearly_above_chance(r, sh, c0)
         return r
 
-    def mlp(probe, p):
+    def mlp(probe, p, mode="E"):
         c0 = C_DECISION[probe]
-        Xf, yf, bf, Xe, ye, be = data(probe, p)
-        Cf, cyf, cbf, Ce, cye, cbe = data(probe, p, feat_point="emb")
+        Xf, yf, bf, Xe, ye, be = data(probe, p, mode=mode)
+        Cf, cyf, cbf, Ce, cye, cbe = data(probe, p, feat_point="emb", mode=mode)
         assert torch.equal(yf, cyf) and torch.equal(ye, cye) and (bf == cbf).all() and (be == cbe).all()
         fc = fit_mlp(Cf, cyf, N_CLASSES[probe])
         ctrl = acc_ci(fc(Ce) == cye, cbe)
@@ -162,8 +173,8 @@ def run_m2(runner, fit_fam, fit_rows, ev_fam, ev_rows, g, mlp_p13_when_detected=
         r["clearly_above_chance(descriptive)"] = (not r["void"]) and clearly_above_chance(r, None, c0)
         return r
 
-    res = {"linear_std": {}, "linear_raw": {}, "mlp": {}, "planted": {},
-           "semantics": "single-sample ACT masks; D2-E existence; D2-F not part of E1"}
+    res = {"linear_std": {}, "linear_raw": {}, "mlp": {}, "linear_std_F": {}, "mlp_F": {}, "planted": {},
+           "semantics": "single-sample ACT masks; D2-E existence for every probe; D2-F conditional, descriptive"}
     plan = [("P0", "emb")] + [(pr, p) for pr in ("P1", "P2", "P3") for p in points]
     for probe, p in plan:
         key = f"{probe}@{p}"
@@ -184,6 +195,20 @@ def run_m2(runner, fit_fam, fit_rows, ev_fam, ev_rows, g, mlp_p13_when_detected=
             res["mlp"][key] = {"skipped": "workload level: linear probe detected (P1/P3 only)"}
             continue
         res["mlp"][key] = mlp(probe, p)
+
+    # D2-F (OpenMythos loop points; Gate D rules: MLP only where linear detects nothing)
+    for probe, p in plan:
+        if probe == "P0" or loop_index(p) is None:
+            continue
+        key = f"{probe}@{p}"
+        Xf, yf, bf, Xe, ye, be = data(probe, p, mode="F")
+        if len(np.unique(bf)) < 0.5 * len(fit_rows) or len(np.unique(be)) < 0.5 * len(ev_rows):
+            res["linear_std_F"][key] = {"skipped": "fewer than half of the bodies are complete for this point",
+                                        "n_fit_bodies": int(len(np.unique(bf))), "n_eval_bodies": int(len(np.unique(be)))}
+            continue
+        res["linear_std_F"][key] = linear(probe, Xf, yf, bf, Xe, ye, be, raw=False)
+        if res["linear_std_F"][key]["decision"] == NOT_DETECTED:
+            res["mlp_F"][key] = mlp(probe, p, mode="F")
 
     last = points[-1]
     gen = torch.Generator().manual_seed(7)

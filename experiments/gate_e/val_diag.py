@@ -6,8 +6,9 @@ diagnostic code must reproduce the archived Gate D code on Gate D's own
 diagnostic sets (read only):
     M0 vs d0.model_checks    every pass flag; numeric details equal
     M1 vs d1                 every per-question array bitwise equal
-    M2 vs d2 (D2-E)          linear_std = d2 "probes", mlp = d2 "mlp" (where
-                             Gate D ran it), planted = d2 "planted"
+    M2 vs d2                 D2-E: linear_std = d2 "probes", mlp = d2 "mlp"
+                             (where Gate D ran it); D2-F: linear_std_F = d2
+                             "probes_F", mlp_F = d2 "mlp_F"; planted
     M4 vs d3 (descriptive)   statement shares of the layers Gate D uses,
                              readout -> query token, digit -> own letter
     M5 vs d5                 on reduced sizes (20 bodies, R = 8, 40 pool_c
@@ -105,6 +106,19 @@ def compare_state(model, label, c):
         c.num(f"{label}:M2:mlp:{k}:acc", v["acc"], m2r["mlp"][k]["acc"])
         c.num(f"{label}:M2:mlp:{k}:control", v["emb_control"]["acc"], m2r["mlp"][k]["emb_control"]["acc"])
         c.eq(f"{label}:M2:mlp:{k}:decision", v["decision"], m2r["mlp"][k]["decision"])
+    for k, v in d2r["probes_F"].items():  # D2-F (OpenMythos loop points)
+        e = m2r["linear_std_F"][k]
+        if "acc" in v:
+            c.num(f"{label}:M2F:linear:{k}:acc", v["acc"], e["acc"])
+            c.num(f"{label}:M2F:linear:{k}:shuffled", v["shuffled"]["acc"], e["shuffled"]["acc"])
+            c.eq(f"{label}:M2F:linear:{k}:decision", v["decision"], e["decision"])
+        else:
+            c.eq(f"{label}:M2F:linear:{k}:skipped", "skipped" in e, True)
+    c.eq(f"{label}:M2F:keys", sorted(d2r["probes_F"]), sorted(m2r["linear_std_F"]))
+    c.eq(f"{label}:M2F:mlp_keys", sorted(d2r["mlp_F"]), sorted(m2r["mlp_F"]))
+    for k, v in d2r["mlp_F"].items():
+        c.num(f"{label}:M2F:mlp:{k}:acc", v["acc"], m2r["mlp_F"][k]["acc"])
+        c.eq(f"{label}:M2F:mlp:{k}:decision", v["decision"], m2r["mlp_F"][k]["decision"])
     for k, v in d2r["planted"].items():
         for a, rr in v["by_alpha"].items():
             c.num(f"{label}:M2:planted:{k}:{a}", rr["acc"], m2r["planted"][k]["by_alpha"][a]["acc"])
