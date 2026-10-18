@@ -36,6 +36,23 @@ E1 正式训练：**未获批准**。
 - 失败记录保留在 `validation/storage_test.json`，不覆盖。
 - 需要由仓库所有者决定替代方案（见报告）。
 
+## 产物仓库存储测试，第 1 次（失败，记录保留）
+
+- 仓库 `leotree2020/openmythos-artifacts` 已由所有者创建（私有，`fork: false`），已加入本会话，并浅克隆到 `/home/user/openmythos-artifacts`。
+- 2026-10-18 12:37 UTC 运行 `val_storage.py`（目标：该仓库 `main` 分支）。
+  - 提交在本地完成，暂存的文件确认是 LFS 指针。
+  - 推送失败：`Post "https://lfs.github.com/leotree2020/openmythos-artifacts/objects/b638…/verify": Forbidden`。
+  - 代理状态记录显示，每次都是网关对 `lfs.github.com:443` 的 CONNECT 返回 403。也就是说，本会话环境的网络策略拒绝了这个主机，而不是 GitHub 拒绝了仓库或权限。
+- 远端 `main` 没有变化，只有仓库的初始提交。
+- 记录：`validation/storage_test_artifacts_repo_run1.json`。
+- 需要所有者在环境的网络设置中允许 `lfs.github.com`。取回 LFS 对象时，可能还要用到别的下载主机，下一次测试会如实记录。
+
+## 与 Gate D 代码的逐项对照，第 1 次运行（通过）
+
+- 使用补回 D2-F 之前的代码：4 个非正式 K=4 状态共 2019 项比较，0 处不一致。
+- 记录：`validation/diag_equivalence_run1.json`。
+- 用最终代码（含 D2-F 对照）的第 2 次运行正在进行，结果写入 `validation/diag_equivalence_run2.json`。
+
 ## M2/M3 验证第 1 次运行：构造检验暴露的对照漏洞（已修复，记录保留）
 
 - 第 1 次运行 `val_m2m3.py` 的结果保存在 `validation/m2m3_checks_run1.json`，原样保留。

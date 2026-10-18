@@ -1,10 +1,15 @@
 """
-Checkpoint storage (PREREGISTRATION 9.7; storage approved in the review of
-7a0d89e): the research branch keeps only the hash manifest; the checkpoint
-files go through Git LFS to the dedicated branch artifacts/gate-e-checkpoints,
-handled in a separate clone directory so the research checkout is never
-touched. A file counts as archived only after it was pushed, retrieved again
-into a fresh directory and both hashes (file sha256, parameter hash) match.
+Checkpoint storage (PREREGISTRATION 9.7). The research branch keeps only the
+hash manifest; the checkpoint files go through Git LFS to a separate
+repository, handled in its own clone directory so the research checkout is
+never touched. A file counts as archived only after it was pushed, retrieved
+again into a fresh directory and both hashes (file sha256, parameter hash)
+match.
+  first plan    branch artifacts/gate-e-checkpoints of leotree2020/OpenMythos:
+                refused by GitHub (no new LFS objects on a public fork;
+                validation/storage_test.json)
+  owner's choice (after that failure): the private, non-fork repository
+                leotree2020/openmythos-artifacts, branch main
 """
 
 import hashlib
@@ -18,7 +23,9 @@ import torch
 from e_common import param_hash
 from models import build
 
-BRANCH = "artifacts/gate-e-checkpoints"
+BRANCH = "main"
+ARTIFACTS_URL = "https://github.com/leotree2020/openmythos-artifacts"
+FIRST_PLAN_BRANCH = "artifacts/gate-e-checkpoints"  # on the public fork; refused
 LFS_HEADER = b"version https://git-lfs.github.com/spec/v1"
 
 
@@ -54,10 +61,11 @@ def remote_url(repo):
     return git(["remote", "get-url", "origin"], repo).stdout.strip()
 
 
-def push_files(files, workdir, url, message, retries=4):
+def push_files(files, workdir, url, message, retries=4, branch=BRANCH):
     """files: list of (local path, published path inside the branch). Pushes
-    them as LFS objects to BRANCH from a separate clone directory. Returns the
-    pushed commit."""
+    them as LFS objects to `branch` from a separate clone directory. Returns
+    the pushed commit."""
+    BRANCH = branch  # noqa: N806
     if not os.path.isdir(os.path.join(workdir, ".git")):
         os.makedirs(workdir, exist_ok=True)
         git(["init", "-q"], workdir)
@@ -92,9 +100,11 @@ def push_files(files, workdir, url, message, retries=4):
     return git(["rev-parse", "HEAD"], workdir).stdout.strip()
 
 
-def retrieve_and_verify(entries, url, fresh_dir):
-    """Clone BRANCH into a new empty directory, fetch the LFS objects and check
-    file sha256 and parameter hash of every entry. Returns {published: ok}."""
+def retrieve_and_verify(entries, url, fresh_dir, branch=BRANCH):
+    """Clone `branch` into a new empty directory, fetch the LFS objects and
+    check file sha256 and parameter hash of every entry. Returns
+    {published: ok}."""
+    BRANCH = branch  # noqa: N806
     if os.path.exists(fresh_dir):
         raise RuntimeError(f"{fresh_dir} exists; retrieval must use a fresh directory")
     subprocess.run(["git", "clone", "-q", "--single-branch", "--branch", BRANCH, url, fresh_dir],
