@@ -156,6 +156,7 @@ def compare_state(model, label, c):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--scratch", required=True, help="directory of val_train.py (200-step K=4 models)")
+    ap.add_argument("--out", default=os.path.join(HERE, "validation", "diag_equivalence.json"))
     args = ap.parse_args()
     torch.set_num_threads(1)
     out, ok = {"tolerance": TOL, "states": {}}, True
@@ -170,7 +171,7 @@ def main():
             ok &= not c.bad
             print(label, c.n, "comparisons,", len(c.bad), "mismatches", flush=True)
     out["pass"] = ok
-    with open(os.path.join(HERE, "validation", "diag_equivalence.json"), "w") as f:
+    with open(args.out, "w") as f:
         json.dump(jsonable(out), f, indent=1, ensure_ascii=False)
     sys.exit(0 if ok else 1)
 
