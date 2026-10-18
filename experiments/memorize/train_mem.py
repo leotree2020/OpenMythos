@@ -40,6 +40,8 @@ sys.path.insert(0, os.path.join(HERE, "..", "basic_learn"))
 from fixed_sets import digest, fixed_set, heldout_set, root_candidates  # noqa: E402
 from models import block_applications, build  # noqa: E402
 
+from open_mythos.main import MoEFFN  # noqa: E402
+
 PARTS = {  # parameter-name prefix -> reported part
     "openmythos": [
         ("embed", "embed/head"),
@@ -93,6 +95,27 @@ def grad_report(model, arm):
     return math.sqrt(sq), {k: math.sqrt(v) for k, v in parts.items()}, missing
 
 
+def expert_grad_status(model):
+    """Per MoE expert: "none" (no gradient: not in the backward graph), "zero"
+    (gradient present but all zeros) or its gradient norm; plus router norm."""
+    out = {}
+    for name, m in model.named_modules():
+        if not isinstance(m, MoEFFN):
+            continue
+        groups = [(f"routed{i}", e) for i, e in enumerate(m.routed_experts)]
+        groups += [(f"shared{i}", e) for i, e in enumerate(m.shared_experts)]
+        groups += [("router", m.router)]
+        for lab, mod in groups:
+            gs = [p.grad for p in mod.parameters()]
+            if all(g is None for g in gs):
+                st = "none"
+            else:
+                n = math.sqrt(sum(g.pow(2).sum().item() for g in gs if g is not None))
+                st = "zero" if n == 0 else n
+            out[f"{name}.{lab}"] = st
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--arm", required=True, choices=["openmythos", "transformer"])
@@ -124,6 +147,28 @@ def main():
             lambda m, i, o: calls.__setitem__(0, calls[0] + 1)
         )
 
+    # Routing counts during training forwards only (not evaluation). For the
+    # OpenMythos recurrent MoE the loop index is calls[0] when its router runs.
+    routing = {"active": False, "interval": {}, "total": {}}
+
+    def router_hook(name, moe):
+        def hook(mod, inp, out):
+            if not routing["active"]:
+                return
+            idx = (out + moe.router_bias).topk(moe.topk, dim=-1).indices
+            loop = calls[0] if name.startswith("recurrent") else 0
+            key = f"{name}@loop{loop}"
+            c = torch.bincount(idx.flatten(), minlength=moe.n_experts)
+            for d in (routing["interval"], routing["total"]):
+                d[key] = d.get(key, 0) + c
+
+        return hook
+
+    for name, m in model.named_modules():
+        if isinstance(m, MoEFFN):
+            m.router.register_forward_hook(router_hook(name, m))
+    status_counts = {}  # expert -> {"none": n, "zero": n, "nonzero": n} over steps
+
     tok_per_row = x.shape[1] - 1
     block_token_steps = 0
     order, pos = [], 0
@@ -147,7 +192,9 @@ def main():
             pos += args.batch_size
         xb, yb = x[idx], y[idx]
         calls[0] = 0
+        routing["active"] = True
         logits = model(xb[:, :-1])[:, -1]
+        routing["active"] = False
         block_token_steps += (
             block_applications(model, calls[0]) * len(idx) * tok_per_row
         )
@@ -155,6 +202,11 @@ def main():
         opt.zero_grad(set_to_none=True)
         loss.backward()
         gnorm, parts, missing = grad_report(model, args.arm)
+        estat = expert_grad_status(model)
+        for k, v in estat.items():
+            kind = v if isinstance(v, str) else "nonzero"
+            d = status_counts.setdefault(k, {"none": 0, "zero": 0, "nonzero": 0})
+            d[kind] += 1
         torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
         opt.step()
 
@@ -169,10 +221,15 @@ def main():
                 "grad_norm": gnorm,
                 "grad_norm_parts": parts,
                 "params_without_grad": missing,
+                "expert_grad_last_step": estat,
+                "routing_counts_interval": {
+                    k: v.tolist() for k, v in routing["interval"].items()
+                },
                 "block_token_steps": block_token_steps,
                 "data_unchanged": digest(x, y) == ref_hash,
             }
             log.append(rec)
+            routing["interval"] = {}
             logger.info(
                 f"{args.arm} s{args.seed} n={args.n} | step {step + 1}/{args.steps} | "
                 f"set loss {s['loss']:.4f} acc {s['acc']:.3f} ({s['n_correct']}/{args.n}) "
@@ -196,11 +253,22 @@ def main():
         "heldout_info_only": held,
         "block_token_steps": block_token_steps,
         "wall_seconds": time.perf_counter() - t0,
+        "expert_grad_status_counts": status_counts,
+        "routing_counts_total": {k: v.tolist() for k, v in routing["total"].items()},
+        "router_bias_final": {
+            n: m.router_bias.tolist()
+            for n, m in model.named_modules()
+            if isinstance(m, MoEFFN)
+        },
         "log": log,
     }
     os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
     with open(args.out, "w") as f:
         json.dump(result, f)
+    torch.save(
+        {"arm": args.arm, "seed": args.seed, "n": args.n, "model": model.state_dict()},
+        args.out.replace(".json", ".pt"),
+    )
     logger.success(
         f"{args.arm} s{args.seed} n={args.n} final acc {final['acc']:.3f} loss {final['loss']:.4f}"
     )
