@@ -101,9 +101,9 @@ def classes(r, arm, d0, synth, d3_calibrated=False):
     out["H2"] = {"D2": all_none_detected(r, "P2", [p for p in rp if p != "e"] + (["e"] if arm == "openmythos" else [])) if ok2 else UNC}
     # H3
     d3 = r["D3"]["decision"]
-    # revision 4: D3 enters the grading only if its randomization test passed
-    # the calibration / negative-control validation (d3_calibration.json);
-    # otherwise it is descriptive and does not count as a diagnostic class
+    # D3 enters the grading only if the D3 gate (d3_gate.py, PREREGISTRATION
+    # 12.4) is open; otherwise it is descriptive and not a diagnostic class.
+    # A "未检测到" counts only for the layers / heads / bodies that entered.
     h3 = {"D2": all_none_detected(r, "P3", rp) if ok2 else UNC}
     if d3_calibrated:
         h3["D3"] = (SUP if d3 == "未检测到" else OPP) if ok3 else UNC
@@ -171,8 +171,11 @@ def main():
         sys.exit(1)
     d0 = json.load(open(os.path.join(HERE, "validation", "d0_rev3.json")))
     synth = not json.load(open(os.path.join(HERE, "validation", "synthetic_d5.json")))["failures"]
-    cal_path = os.path.join(HERE, "validation", "d3_calibration.json")
-    d3_cal = os.path.exists(cal_path) and not json.load(open(cal_path))["failures"]
+    # D3 gate (PREREGISTRATION 12.4): recomputed from the numbers of the
+    # original and the supplementary calibration, status fields not trusted
+    from d3_gate import d3_gate
+
+    d3_cal, d3_why = d3_gate()
     out = {"per_seed": {}, "per_arm": {}, "cross_arm": {}, "d3_counts_as_class": None}
     for a in ARMS:
         seeds = []
@@ -185,6 +188,7 @@ def main():
             seeds.append(cl)
         out["per_arm"][a] = {h: grade([seed_direction(cl[h]) for cl in seeds]) for h in seeds[0]}
     out["d3_counts_as_class"] = d3_cal
+    out["d3_gate_checks"] = d3_why
     for h in out["per_arm"]["openmythos"]:
         g1, g2 = out["per_arm"]["openmythos"][h], out["per_arm"]["transformer"][h]
         if g1["grade"] == g2["grade"] == "强" and g1["direction"] == g2["direction"]:
