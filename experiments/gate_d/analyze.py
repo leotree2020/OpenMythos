@@ -73,8 +73,87 @@ def negligible(i):
     return i["tv"]["mean"] < 0.02 or i["indistinguishable"]["tv"]
 
 
-def i2_keys(r):
-    return [k for k, v in r["D4"]["interfaces"].items() if k.startswith("I2") and "skipped" not in v]
+def readout_keys(r):
+    """All I2 interfaces (all at the readout position 18), skipped or not."""
+    return [k for k in r["D4"]["interfaces"] if k.startswith("I2") and k.endswith("@18")]
+
+
+def h1_d4(r):
+    """Revision 6 (PREREGISTRATION 13.5, definition B). Support only if every
+    readout interface has no reachable pair left unevaluated (skipped
+    interface or incomplete body), at least one is evaluated, every evaluated
+    one is negligible on its subset, the same-subset I0 is negligible, and the
+    all-question I0 is negligible. Oppose: an evaluated I2 with TV >= 0.02.
+    Otherwise uncertain; evaluated interfaces are then reported as
+    conditional results."""
+    I = r["D4"]["interfaces"]
+    keys = readout_keys(r)
+    evaluated = [k for k in keys if "skipped" not in I[k]]
+    unevaluated = {k: I[k]["coverage"]["n_reachable_not_evaluated"] for k in keys
+                   if I[k]["coverage"]["n_reachable_not_evaluated"] > 0}
+    notes = {"evaluated": evaluated, "reachable_pairs_not_evaluated": unevaluated,
+             "conditional": {k: {"negligible": negligible(I[k]), "n_bodies": I[k]["coverage"]["n_included_bodies"]}
+                             for k in evaluated}}
+    if any(I[k]["tv"]["mean"] >= 0.02 for k in evaluated):
+        return OPP, notes
+    i0_all = r["D4"]["I0_all_questions"]["tv"]["mean"] < 0.02 or \
+        abs(r["D4"]["I0_all_questions"]["tv"]["mean"]) <= 10 * r["D4"]["noise_eps"]["tv"]
+    if (evaluated and not unevaluated and i0_all
+            and all(negligible(I[k]) and I[k]["I0_same_subset_negligible"] for k in evaluated)):
+        return SUP, notes
+    return UNC, notes
+
+
+def rescore(probe, subset):
+    """Re-score a fitted D2-E probe on the questions of subset (same decision
+    rules, body-grouped CI); returns the decision or None if too small."""
+    import numpy as np
+
+    from common import grouped_bootstrap
+
+    idx = np.asarray(probe["eval_question_index"])
+    keep = np.isin(idx, np.asarray(subset))
+    if keep.sum() < 8:
+        return None
+    c = np.asarray(probe["eval_correct"], dtype=float)[keep]
+    sh = np.asarray(probe["eval_correct_shuffled"], dtype=float)[keep]
+    g = idx[keep] // 4
+    r = {"ci95": grouped_bootstrap(c, g)}
+    shr = {"ci95": grouped_bootstrap(sh, g)}
+    from d2 import decide
+
+    return decide(r, shr, probe["baseline_c_hi"], probe["baseline_c0"])
+
+
+def h4_d4(r, det):
+    """Revision 6: for each read point X with a D2-E detection, re-score the
+    fitted probe on the D4 subset S_X of interface X@18. Confirmed and
+    negligible -> support; confirmed and TV >= 0.02 -> oppose; otherwise
+    uncertain. Combined: support only if every point supports."""
+    I = r["D4"]["interfaces"]
+    per = {}
+    for p in det:
+        k = next((k for k in I if k.startswith("I2") and k.split(":")[1] == f"{p}@18"), None)
+        if k is None or "skipped" in I[k]:
+            per[p] = UNC
+            continue
+        confirmed = False
+        for probe in ("P1", "P3"):
+            pr = r["D2"]["probes"].get(f"{probe}@{p}", {})
+            if pr.get("decision") == DET and "eval_question_index" in pr:
+                confirmed |= rescore(pr, I[k]["included_question_index"]) == DET
+        if not confirmed:
+            per[p] = UNC
+        elif I[k]["tv"]["mean"] >= 0.02:
+            per[p] = OPP
+        else:
+            per[p] = SUP if negligible(I[k]) else UNC
+    vals = list(per.values())
+    if vals and all(v == SUP for v in vals):
+        return SUP, per
+    if vals and all(v == OPP for v in vals):
+        return OPP, per
+    return UNC, per
 
 
 def classes(r, arm, d0, synth, d3_calibrated=False):
@@ -89,13 +168,7 @@ def classes(r, arm, d0, synth, d3_calibrated=False):
     # H1
     h1 = {"D2": all_none_detected(r, "P1", rp) if ok2 else UNC}
     I = r["D4"]["interfaces"]
-    i0 = I["I0:emb@17"]
-    if any(I[k]["tv"]["mean"] >= 0.02 for k in i2_keys(r)):
-        h1["D4"] = OPP
-    elif negligible(i0) and all(negligible(I[k]) for k in i2_keys(r)):
-        h1["D4"] = SUP
-    else:
-        h1["D4"] = UNC
+    h1["D4"], r["_h1_d4_notes"] = h1_d4(r)
     out["H1"] = h1
     # H2
     out["H2"] = {"D2": all_none_detected(r, "P2", [p for p in rp if p != "e"] + (["e"] if arm == "openmythos" else [])) if ok2 else UNC}
@@ -108,19 +181,13 @@ def classes(r, arm, d0, synth, d3_calibrated=False):
     if d3_calibrated:
         h3["D3"] = (SUP if d3 == "未检测到" else OPP) if ok3 else UNC
     out["H3"] = h3
-    # H4
+    # H4 (revision 6: detection re-scored on the same D4 subset)
     det = [p for p in rp if DET in (probe_status(r, "P1", p), probe_status(r, "P3", p))]
     if not det or not ok2:
         out["H4"] = {"D2": NA if ok2 else UNC}
     else:
-        h4 = {"D2": SUP}
-        effects = []
-        for p in det:
-            k = next((k for k in i2_keys(r) if k.split(":")[1] == f"{p}@18"), None)
-            if k:
-                effects.append(negligible(I[k]))
-        h4["D4"] = UNC if not effects else SUP if all(effects) else OPP if not any(effects) else UNC
-        out["H4"] = h4
+        out["H4"] = {"D2": SUP}
+        out["H4"]["D4"], r["_h4_d4_notes"] = h4_d4(r, det)
     # H5, H6
     if ok5:
         c = d5["c_local_direction"]["groups"]["total"]
@@ -185,6 +252,8 @@ def main():
             cl = classes(r, a, d0, synth, d3_cal)
             out["per_seed"][f"{a}_s{s}"] = {h: {"classes": c, "direction": seed_direction(c)[0],
                                                 "n_classes": seed_direction(c)[1]} for h, c in cl.items()}
+            out["per_seed"][f"{a}_s{s}"]["H1"]["d4_notes"] = r.get("_h1_d4_notes")
+            out["per_seed"][f"{a}_s{s}"]["H4"]["d4_notes"] = r.get("_h4_d4_notes")
             seeds.append(cl)
         out["per_arm"][a] = {h: grade([seed_direction(cl[h]) for cl in seeds]) for h in seeds[0]}
     out["d3_counts_as_class"] = d3_cal

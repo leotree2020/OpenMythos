@@ -15,7 +15,15 @@ probe point; one-hidden-layer MLP probe (width 256, fixed settings) only where
 the linear probe gives "not detected", voided unless the same MLP is at
 baseline on the emb record point (P1/P3 at position 18; P2 at the digit
 positions, an analogous control added in the analysis plan).
-OpenMythos loop points use only questions for which that loop was executed.
+OpenMythos loop points (revision 6, PREREGISTRATION 13.3; all ACT masks with
+single-sample semantics, act_masks.py):
+    D2-E existence (main, graded)   the state exists: valid{t}; complete families
+    D2-F functional reachability    the state can reach the answer: R(t, 18) for
+         (conditional, descriptive)  P1 / P3; for P2 a body enters only if all
+                                     4 digit positions x 4 queries are reachable
+Decision baselines by direction: "detected" uses c_hi = max(c0, majority share
+of the selected fit labels), "not detected" uses the fixed c0; the same subset
+and rules apply to the linear probe, the shuffled control and the MLP probe.
 """
 
 import numpy as np
@@ -23,6 +31,7 @@ import torch
 import torch.nn.functional as F
 
 from common import DIGIT_POS, LETTERS, Q_POS, READ_POS, grouped_bootstrap
+from act_masks import act_masks, complete, reachability
 from runner import probe_points
 
 LAMBDA = 1e-3
@@ -79,13 +88,20 @@ def acc_ci(correct, groups):
     return {"acc": float(c.mean()), "ci95": grouped_bootstrap(c, groups), "n": int(len(c))}
 
 
-def decide(r, shuffled, c):
+def decide(r, shuffled, c_hi, c0=None):
+    """Revision 6: detection against c_hi, non-detection against the fixed c0
+    (each conclusion can only become harder). c0 defaults to c_hi."""
+    c0 = c_hi if c0 is None else c0
     lo, hi = r["ci95"]
-    if lo >= c + 0.5 * (1 - c) and (shuffled is None or lo > shuffled["ci95"][1]):
+    if lo >= c_hi + 0.5 * (1 - c_hi) and (shuffled is None or lo > shuffled["ci95"][1]):
         return "检测到可线性解码的信息"
-    if hi <= c + 0.10:
+    if hi <= c0 + 0.10:
         return "未检测到足够的可线性解码信息"
     return "结果不确定"
+
+
+def majority_share(y):
+    return float(torch.bincount(y).max()) / len(y) if len(y) else 0.0
 
 
 def grouped_shuffle(y, groups, kind, seed=1):
@@ -110,21 +126,29 @@ def grouped_shuffle(y, groups, kind, seed=1):
 
 
 def features(runner, fam, points):
-    """Records at the probe points (positions READ_POS, Q_POS, DIGIT_POS) and
-    per-question loop validity."""
-    x = fam[0]
-    rec = runner.run(x, record=set(points) | {f"valid{t}" for t in range(8)})[1]
-    feats = {}
-    for p in points:
-        r = rec[p]
-        feats[p] = {"read": r[:, READ_POS], "query": r[:, Q_POS], "digits": r[:, list(DIGIT_POS)]}
-    valid = {}
-    for p in points:
-        if p.startswith("h") and p[1:].isdigit():
-            valid[p] = rec[f"valid{int(p[1:]) - 1}"]
-        else:
-            valid[p] = torch.ones(len(x), dtype=torch.bool)
-    return feats, valid
+    """Records at the probe points (positions READ_POS, Q_POS, DIGIT_POS)."""
+    rec = runner.run(fam[0], record=set(points))[1]
+    return {p: {"read": rec[p][:, READ_POS], "query": rec[p][:, Q_POS],
+                "digits": rec[p][:, list(DIGIT_POS)]} for p in points}
+
+
+def loop_index(p):
+    """h{t+1} -> t; None for points outside the loop."""
+    return int(p[1:]) - 1 if p.startswith("h") and p[1:].isdigit() else None
+
+
+def masks_for(masks, R, p, mode):
+    """Question-level masks (4N,) for P1/P3 and body-level (N,) for P2."""
+    N4 = masks["valid"].shape[0]
+    t = loop_index(p)
+    if t is None:
+        return torch.ones(N4, dtype=torch.bool), torch.ones(N4 // 4, dtype=torch.bool)
+    if mode == "E":
+        q = complete(masks["valid"][:, t])
+        return q, q.view(-1, 4)[:, 0]
+    q = complete(R[:, t, READ_POS])
+    body = R[:, t][:, list(DIGIT_POS)].all(1).view(-1, 4).all(1)  # 4 positions x 4 queries
+    return q, body
 
 
 def labels(fam, rows):
@@ -137,91 +161,114 @@ def labels(fam, rows):
 
 def run_d2(runner, fit_fam, fit_rows, ev_fam, ev_rows):
     points = probe_points(runner.arm)
-    Ff, Vf = features(runner, fit_fam, points)
-    Fe, Ve = features(runner, ev_fam, points)
+    Ff, Fe = features(runner, fit_fam, points), features(runner, ev_fam, points)
+    Mf, Me = act_masks(runner, fit_fam[0]), act_masks(runner, ev_fam[0])
+    Rf, Re = reachability(Mf), reachability(Me)
     Lf, Le = labels(fit_fam, fit_rows), labels(ev_fam, ev_rows)
     gf, ge = fit_fam[3].numpy(), ev_fam[3].numpy()
     first_f = torch.arange(0, len(gf), 4)  # first question of each body
     first_e = torch.arange(0, len(ge), 4)
-    res = {"probes": {}, "mlp": {}, "planted": {}}
+    res = {"probes": {}, "probes_F": {}, "mlp": {}, "mlp_F": {}, "planted": {},
+           "semantics": "single-sample ACT masks; D2-E graded, D2-F conditional/descriptive"}
 
-    def data(probe, p):
-        """(Xfit, yfit, gfit, Xev, yev, gev) for a probe at point p."""
+    def data(probe, p, mode):
+        """(Xfit, yfit, gfit, Xev, yev, gev, eval question indices)."""
+        qf, bf_mask = masks_for(Mf, Rf, p, mode)
+        qe, be_mask = masks_for(Me, Re, p, mode)
         if probe in ("P0", "P1", "P3"):
             key = "query" if probe == "P0" else "read"
-            mf, me = Vf[p], Ve[p]
-            return (Ff[p][key][mf], Lf[probe][mf], gf[mf.numpy()],
-                    Fe[p][key][me], Le[probe][me], ge[me.numpy()])
-        mf, me = Vf[p][first_f], Ve[p][first_e]
-        Xf = Ff[p]["digits"][first_f][mf].reshape(-1, Ff[p]["digits"].shape[-1])
-        Xe = Fe[p]["digits"][first_e][me].reshape(-1, Fe[p]["digits"].shape[-1])
-        yf = Lf["P2"][mf].reshape(-1)
-        ye = Le["P2"][me].reshape(-1)
-        bf = np.repeat(np.flatnonzero(mf.numpy()), 4)
-        be = np.repeat(np.flatnonzero(me.numpy()), 4)
-        return Xf, yf, bf, Xe, ye, be
+            idx_e = torch.nonzero(qe).squeeze(1)
+            return (Ff[p][key][qf], Lf[probe][qf], gf[qf.numpy()],
+                    Fe[p][key][qe], Le[probe][qe], ge[qe.numpy()], idx_e)
+        Xf = Ff[p]["digits"][first_f][bf_mask].reshape(-1, Ff[p]["digits"].shape[-1])
+        Xe = Fe[p]["digits"][first_e][be_mask].reshape(-1, Fe[p]["digits"].shape[-1])
+        yf = Lf["P2"][bf_mask].reshape(-1)
+        ye = Le["P2"][be_mask].reshape(-1)
+        bf = np.repeat(np.flatnonzero(bf_mask.numpy()), 4)
+        be = np.repeat(np.flatnonzero(be_mask.numpy()), 4)
+        return Xf, yf, bf, Xe, ye, be, None
 
-    plan = [("P0", "emb")] + [(pr, p) for pr in ("P1", "P2", "P3") for p in points]
-    for probe, p in plan:
-        Xf, yf, bf, Xe, ye, be = data(probe, p)
-        key = f"{probe}@{p}"
+    def probe_once(probe, p, mode):
+        Xf, yf, bf, Xe, ye, be, idx_e = data(probe, p, mode)
         if len(np.unique(bf)) < 0.5 * len(fit_rows) or len(np.unique(be)) < 0.5 * len(ev_rows):
-            res["probes"][key] = {"skipped": "loop not executed for most questions",
-                                  "n_fit_bodies": int(len(np.unique(bf))), "n_eval_bodies": int(len(np.unique(be)))}
-            continue
+            return {"skipped": "fewer than half of the bodies are complete for this point",
+                    "n_fit_bodies": int(len(np.unique(bf))), "n_eval_bodies": int(len(np.unique(be)))}
         C = N_CLASSES[probe]
         m = fit_linear(Xf, yf, C)
-        r = acc_ci(predict_linear(m, Xe) == ye, be)
+        correct = predict_linear(m, Xe) == ye
+        r = acc_ci(correct, be)
         r["fit_grad_max"] = m["grad_max"]
         kind = "within" if probe == "P1" else "across"
         ms = fit_linear(Xf, grouped_shuffle(yf, bf, kind), C)
-        sh = acc_ci(predict_linear(ms, Xe) == ye, be)
+        correct_sh = predict_linear(ms, Xe) == ye
+        sh = acc_ci(correct_sh, be)
         r["shuffled"] = sh
-        c = C_DECISION[probe]
-        r["baseline_decision"] = c
+        c0 = C_DECISION[probe]
+        mshare = majority_share(yf)
+        c_hi = max(c0, mshare)
+        r.update({"baseline_c0": c0, "baseline_c_hi": c_hi, "fit_majority_share": mshare,
+                  "n_eval_bodies": int(len(np.unique(be)))})
         if probe == "P3":
             r["baseline_unconditional"] = 0.10
-        r["decision"] = decide(r, sh, c) if probe != "P0" else (
+        r["decision"] = decide(r, sh, c_hi, c0) if probe != "P0" else (
             "正对照通过" if r["acc"] >= 0.95 else "正对照未通过")
-        res["probes"][key] = r
+        if idx_e is not None and mode == "E" and probe in ("P1", "P3"):
+            # per-question scores for re-scoring on the D4 subset (H4)
+            r["eval_question_index"] = idx_e.tolist()
+            r["eval_correct"] = correct.int().tolist()
+            r["eval_correct_shuffled"] = correct_sh.int().tolist()
+        return r
 
-    # MLP probes where the linear probe detected nothing
-    need = [k for k, v in res["probes"].items()
-            if v.get("decision") == "未检测到足够的可线性解码信息"]
+    plan = [("P0", "emb")] + [(pr, p) for pr in ("P1", "P2", "P3") for p in points]
+    for probe, p in plan:
+        res["probes"][f"{probe}@{p}"] = probe_once(probe, p, "E")
+        if probe != "P0" and loop_index(p) is not None:
+            res["probes_F"][f"{probe}@{p}"] = probe_once(probe, p, "F")
+
+    # MLP probes where the linear probe detected nothing (same subset and rules)
+    need = [("E", k) for k, v in res["probes"].items() if v.get("decision") == "未检测到足够的可线性解码信息"]
+    need += [("F", k) for k, v in res["probes_F"].items() if v.get("decision") == "未检测到足够的可线性解码信息"]
     if need:
         ctrl = {}
         for probe in ("P1", "P3", "P2"):
-            Xf, yf, bf, Xe, ye, be = data(probe, "emb")
+            Xf, yf, bf, Xe, ye, be, _ = data(probe, "emb", "E")
             f = fit_mlp(Xf, yf, N_CLASSES[probe])
             cr = acc_ci(f(Xe) == ye, be)
             cr["at_baseline"] = cr["ci95"][1] <= C_DECISION[probe] + 0.10
             ctrl[probe] = cr
         res["mlp"]["emb_controls"] = ctrl
-        for key in need:
+        for mode, key in need:
             probe, p = key.split("@")
-            Xf, yf, bf, Xe, ye, be = data(probe, p)
+            Xf, yf, bf, Xe, ye, be, _ = data(probe, p, mode)
             f = fit_mlp(Xf, yf, N_CLASSES[probe])
             r = acc_ci(f(Xe) == ye, be)
             r["void"] = not ctrl[probe]["at_baseline"]
-            r["decision"] = "作废（控制未通过）" if r["void"] else decide(r, None, C_DECISION[probe])
-            res["mlp"][key] = r
+            c0 = C_DECISION[probe]
+            c_hi = max(c0, majority_share(yf))
+            r["decision"] = "作废（控制未通过）" if r["void"] else decide(r, None, c_hi, c0)
+            res["mlp" if mode == "E" else "mlp_F"][key] = r
 
-    # planted-signal sensitivity at the last probe point (P1 at pos 18, P2 at digits)
+    # planted-signal sensitivity at the last probe point (outside the loop)
     last = points[-1]
     g = torch.Generator().manual_seed(7)
     for probe in ("P1", "P2"):
-        Xf, yf, bf, Xe, ye, be = data(probe, last)
+        Xf, yf, bf, Xe, ye, be, _ = data(probe, last, "E")
         C = N_CLASSES[probe]
-        R = torch.randn(C, Xf.shape[1], generator=g)
-        R = R / R.norm(dim=1, keepdim=True)
+        Rp = torch.randn(C, Xf.shape[1], generator=g)
+        Rp = Rp / Rp.norm(dim=1, keepdim=True)
         scale = Xf.norm(dim=1).mean()
         out = {}
         for a in ALPHAS:
-            m = fit_linear(Xf + a * scale * R[yf], yf, C)
-            r = acc_ci(predict_linear(m, Xe + a * scale * R[ye]) == ye, be)
+            m = fit_linear(Xf + a * scale * Rp[yf], yf, C)
+            r = acc_ci(predict_linear(m, Xe + a * scale * Rp[ye]) == ye, be)
             r["decision"] = decide(r, None, C_DECISION[probe])
             out[str(a)] = r
         det = [a for a in ALPHAS if out[str(a)]["decision"] == "检测到可线性解码的信息"]
         res["planted"][f"{probe}@{last}"] = {"by_alpha": out, "smallest_detected_alpha": det[0] if det else None,
                                             "mean_feature_norm": float(scale)}
+    res["masks_summary"] = {
+        "eval_valid_by_loop": Me["valid"].float().mean(0).tolist(),
+        "eval_complete_valid_bodies_by_loop": [float(complete(Me["valid"][:, t]).float().mean()) for t in range(Me["valid"].shape[1])],
+        "eval_reachable_readout_by_loop": Re[:, :, READ_POS].float().mean(0).tolist(),
+    }
     return res

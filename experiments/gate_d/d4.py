@@ -20,11 +20,18 @@ Noise floor eps: the same metrics between two clean runs that differ only in
 batch composition (chunk vs 4 questions per batch); |mean| <= 10 eps is
 reported as numerically indistinguishable. Partial patches (I1-I3) are local
 path effects, exploratory, not the total query effect.
+Revision 6 (PREREGISTRATION 13.4): reachability of each interface from
+single-sample clean ACT masks; conditional effects on reachable complete
+families (coverage and subset-I0 reported); hard checks: every unreachable
+pair within 10 eps (TV), every record before the patch point bitwise equal to
+the clean run; the share of pairs whose ACT trajectory changed after the
+patch is reported.
 """
 
 import numpy as np
 import torch
 
+from act_masks import act_masks, complete, reachability, suffix_any
 from common import Q_POS, READ_POS, summary
 
 TOL_FULL = 1e-6
@@ -82,15 +89,21 @@ def run_d4(runner, fam, chunk_bodies=125):
     arm = runner.arm
     ifs = interfaces(arm)
     per = {f"{k}:{p}@{pos}": {m: [] for m in METRICS} for k, p, pos in ifs}
-    valid_mask = {key: [] for key in per}
     noise = {m: [] for m in METRICS}
-    controls = {key: {"identity_bitwise": True, "full_state_max_diff": 0.0} for key in per}
+    controls = {key: {"identity_bitwise": True, "full_state_max_diff": 0.0,
+                      "pre_intervention_bitwise": True} for key in per}
+    act_changed = {key: [] for key in per}
+    # revision 6: reachability of every interface from single-sample clean ACT masks
+    masks = act_masks(runner, x)
+    R = reachability(masks)
+    reach = {f"{k}:{p}@{pos}": interface_reach(arm, p, pos, R) for k, p, pos in ifs}
     for c0 in range(0, N, 4 * chunk_bodies):
         sl = slice(c0, c0 + 4 * chunk_bodies)
         xc, xs = x[sl], x[src_idx[sl]]
         Lc, rc, _ = runner.run(xc, record=True)
         Ls, rs, _ = runner.run(xs, record=True)
         Lc, Ls = Lc[:, READ_POS].double(), Ls[:, READ_POS].double()
+        order = list(rc)
         # noise floor: clean run recomputed with 4 questions per batch
         Lb = torch.cat([runner.run(xc[i : i + 4])[0][:, READ_POS] for i in range(0, len(xc), 4)]).double()
         for m, v in metrics(Lb, Lc, y[sl], yt[sl]).items():
@@ -103,45 +116,83 @@ def run_d4(runner, fam, chunk_bodies=125):
             Lf = runner.run(xc, patch=full_state_patch(arm, point, rs))[0][:, READ_POS].double()
             controls[key]["full_state_max_diff"] = max(
                 controls[key]["full_state_max_diff"], (Lf - Ls).abs().max().item())
-            Lp = runner.run(xc, patch={point: (pos, rs[point])})[0][:, READ_POS].double()
+            Lp, rp, _ = runner.run(xc, patch={point: (pos, rs[point])}, record=True)
+            Lp = Lp[:, READ_POS].double()
+            # every record computed before the patch point equals the clean run
+            for k in order[: order.index(point)]:
+                if not torch.equal(rp[k], rc[k]):
+                    controls[key]["pre_intervention_bitwise"] = False
+            if arm == "openmythos":  # post-intervention ACT trajectory may change (reported)
+                ch = torch.zeros(len(xc), dtype=torch.bool)
+                for t in range(4):
+                    ch |= (rp[f"still{t}"] != rc[f"still{t}"]).any(1)
+                ch |= (rp["halted_final"] != rc["halted_final"]).any(1)
+                act_changed[key].append(ch)
+            else:
+                act_changed[key].append(torch.zeros(len(xc), dtype=torch.bool))
             for m, v in metrics(Lp, Lc, y[sl], yt[sl]).items():
                 per[key][m].append(v)
-            if point.startswith(("blk_in", "h")) and point[-1].isdigit() and arm == "openmythos":
-                t = int(point[6:]) if point.startswith("blk_in") else int(point[1:]) - 1
-                valid_mask[key].append(rc[f"valid{t}"])
-            else:
-                valid_mask[key].append(torch.ones(len(xc), dtype=torch.bool))
     bad = [k for k, c in controls.items()
-           if not c["identity_bitwise"] or c["full_state_max_diff"] > TOL_FULL]
+           if not c["identity_bitwise"] or c["full_state_max_diff"] > TOL_FULL or not c["pre_intervention_bitwise"]]
     if bad:
         raise IntegrityError(f"D4 integrity control failed for {bad}: {[controls[k] for k in bad]}")
     groups = bid.numpy()
     eps = {m: float(torch.cat(v).abs().max()) for m, v in noise.items()}
-    out = {"noise_eps": eps, "controls": controls, "interfaces": {}}
-    total = None
+    vals_all = {key: {m: torch.cat(v) for m, v in d.items()} for key, d in per.items()}
+    # unreachable pairs: every pair must stay within the numerical noise (hard)
+    unreach = {}
     for key in per:
-        vm = torch.cat(valid_mask[key])
-        n_valid = int(vm.sum())
-        if n_valid < 0.5 * N:
-            out["interfaces"][key] = {"skipped": "loop not executed for most questions", "n_valid": n_valid}
+        u = ~reach[key]
+        tv = vals_all[key]["tv"][u]
+        unreach[key] = {"n_pairs": int(u.sum()),
+                        "max_tv": float(tv.max()) if len(tv) else 0.0,
+                        "mean_tv": float(tv.mean()) if len(tv) else 0.0,
+                        "max_abs_d_logit_diff": float(vals_all[key]["d_logit_diff"][u].abs().max()) if len(tv) else 0.0}
+        if len(tv) and unreach[key]["max_tv"] > 10 * eps["tv"]:
+            raise IntegrityError(f"D4 unreachable pairs changed the output at {key}: {unreach[key]}, eps_tv {eps['tv']}")
+    out = {"noise_eps": eps, "controls": controls, "unreachable_pairs": unreach, "interfaces": {},
+           "semantics": "single-sample ACT masks; conditional effects on reachable complete families"}
+    i0 = "I0:emb@17"
+    i0_all = {m: summary(vals_all[i0][m].numpy(), groups) for m in METRICS}
+    out["I0_all_questions"] = i0_all
+    for key in per:
+        inc = complete(reach[key])
+        n_reach, n_inc = int(reach[key].sum()), int(inc.sum())
+        cov = {"n_reachable_questions": n_reach, "n_included_questions": n_inc,
+               "n_included_bodies": n_inc // 4,
+               "n_reachable_not_evaluated": int((reach[key] & ~inc).sum())}
+        if n_inc < 0.5 * N:
+            cov["n_reachable_not_evaluated"] = n_reach
+            out["interfaces"][key] = {"skipped": "fewer than half of the bodies are reachable complete families",
+                                      "coverage": cov}
             continue
-        vals = {m: torch.cat(v)[vm].numpy() for m, v in per[key].items()}
-        g = groups[vm.numpy()]
-        r = {m: summary(v, g) for m, v in vals.items()}
-        r["n_valid"] = n_valid
+        g = groups[inc.numpy()]
+        r = {m: summary(vals_all[key][m][inc].numpy(), g) for m in METRICS}
+        r["coverage"] = cov
         r["indistinguishable"] = {m: abs(r[m]["mean"]) <= 10 * eps[m] for m in METRICS}
         r["negligible_tv_lt_0.02"] = r["tv"]["mean"] < 0.02
+        r["I0_same_subset"] = {m: summary(vals_all[i0][m][inc].numpy(), g) for m in METRICS}
+        r["I0_same_subset_negligible"] = (r["I0_same_subset"]["tv"]["mean"] < 0.02
+                                          or abs(r["I0_same_subset"]["tv"]["mean"]) <= 10 * eps["tv"])
+        r["share_pairs_act_trajectory_changed"] = float(torch.cat(act_changed[key])[inc].double().mean())
+        r["included_question_index"] = torch.nonzero(inc).squeeze(1).tolist()
+        sub = r["I0_same_subset"]
+        if sub["tv"]["ci95"][0] > 0 and sub["tv"]["mean"] >= 0.02:
+            r["relative_d_logit_diff"] = relative_effect(
+                r["d_logit_diff"]["mean"], sub["d_logit_diff"]["mean"], eps["d_logit_diff"])
         out["interfaces"][key] = r
-        if key.startswith("I0"):
-            total = r
-    total_ok = total["tv"]["ci95"][0] > 0 and total["tv"]["mean"] >= 0.02
-    out["relative_effect_reported"] = total_ok
-    if total_ok:
-        for key, r in out["interfaces"].items():
-            if "skipped" not in r:
-                r["relative_d_logit_diff"] = relative_effect(
-                    r["d_logit_diff"]["mean"], total["d_logit_diff"]["mean"], eps["d_logit_diff"])
     return out
+
+
+def interface_reach(arm, point, pos, R):
+    """(4N,) clean questions for which the patched state has a path to the
+    readout (PREREGISTRATION 13.4); always True outside the ACT loop."""
+    N = R.shape[0]
+    if arm == "openmythos" and point.startswith("blk_in"):
+        return suffix_any(R[:, int(point[6:])])[:, pos]
+    if arm == "openmythos" and point.startswith("h") and point[1:].isdigit():
+        return R[:, int(point[1:]) - 1, pos]
+    return torch.ones(N, dtype=torch.bool)
 
 
 def relative_effect(num, den, eps):
