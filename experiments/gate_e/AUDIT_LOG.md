@@ -60,7 +60,11 @@ E1 正式训练：**未获批准**。
 
 - 使用补回 D2-F 之前的代码：4 个非正式 K=4 状态共 2019 项比较，0 处不一致。
 - 记录：`validation/diag_equivalence_run1.json`。
-- 用最终代码（含 D2-F 对照）的第 2 次运行正在进行，结果写入 `validation/diag_equivalence_run2.json`。
+- 用最终代码（含 D2-F 对照）的第 2 次运行：**通过**。
+  - 4 个状态共 2093 项比较，0 处不一致，容差事先固定为 1e-6。
+  - OpenMythos 初始化 593 项、第 200 步 558 项（含 D2-F 的 `probes_F`、`mlp_F`）；Transformer 两个状态各 471 项。
+  - 记录：`validation/diag_equivalence_run2.json`。
+  - 所测代码：`e_common`、`e_masks`、`e_m0`、`e_m1`、`e_m2`、`e_m4`、`e_m5` 自提交 8ab347a（恢复 D2-F）以来没有改动；`val_diag.py` 之后只增加了 `--out` 参数。
 
 ## M2/M3 验证第 1 次运行：构造检验暴露的对照漏洞（已修复，记录保留）
 
