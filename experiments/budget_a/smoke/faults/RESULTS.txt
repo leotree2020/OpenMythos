@@ -1,0 +1,37 @@
+PASS | T1 normal launch | expected 0, got 0 | verdict.md: written
+PASS | T2 stale outputs present -> refuse | expected 5, got 5 | REFUSED: experiments/budget_a/smoke/faults/t1/runs is not empty (earlier outputs must be moved away first)
+PASS | T3 comparability failure -> exit 3 | expected 3, got 3 | 2026-10-18T02:36:20Z COMPARABILITY FAILED: A_transformer_s97 at step 40 (see experiments/budget_a/smoke/faults/t3/runs/A_transformer_s97_ABORTED.json)
+PASS | T3 seed-99 runs never started | expected 4, got 4 | started=4 of 6
+PASS | T3 running trainings killed | expected 3, got 3 | killed=3
+PASS | T3 nothing evaluated | expected no, got no | 
+PASS | T3 no trainer left running | expected 0, got 0 | 
+PASS | T4 trainer SIGKILL -> exit 4 | expected 4, got 4 | 2026-10-18T02:36:24Z RUN ERROR: A_openmythos_s98 exited with status 137 (no comparability record)
+PASS | T4 seed-99 runs never started | expected 4, got 4 | started=4
+PASS | T4 running trainings killed | expected 3, got 3 | killed=3
+PASS | T4 no trainer left running | expected 0, got 0 | 
+PASS | T5 trainer exception -> exit 4 | expected 4, got 4 | 2026-10-18T02:36:34Z RUN ERROR: A_transformer_s97 exited with status 1 (no comparability record)
+PASS | T5 no ABORTED record written | expected no, got no | 
+PASS | T5 no trainer left running | expected 0, got 0 | 
+PASS | T6 launcher SIGTERM -> exit 130 | expected 130, got 130 | 2026-10-18T02:36:42Z launcher interrupted
+PASS | T6 no trainer left running | expected 0, got 0 | 
+PASS | T7 override without test mode -> refuse | expected 5, got 5 | STEPS may only be set with BUDGET_TEST_DIR
+PASS | T8 verify: untouched T1 results | expected 0, got 0 | verify_runs: 0 problem(s), 24 expected files
+PASS | T8 verify: schedule | expected 1, got 1 | FAIL A_openmythos_s97.json: schedule='cosine', expected 'extended' 
+PASS | T8 verify: steps | expected 1, got 1 | FAIL A_transformer_s98.json: steps=50, expected 250 
+PASS | T8 verify: seed_in_json | expected 1, got 1 | FAIL A_transformer_s99.json: seed=98, expected 99 
+PASS | T8 verify: comparability | expected 1, got 1 | FAIL A_openmythos_s99.json: comparability not passed: {'reference': 'experiments/budget_a/smoke/faults/refs/A_openmythos_s99.pt', 'bitwise_equal': True, 'max_abs_diff': 0.0, 'tolerance': 1e-05, 'dev_predictions_identical': True, 'passed': False} 
+PASS | T8 verify: no_comparability | expected 1, got 1 | FAIL A_openmythos_s98.json: comparability not passed: {} FAIL A_openmythos_s98.json: comparability reference None, expected 'experiments/budget_a/smoke/faults/refs/A_openmythos_s98.pt' 
+PASS | T8 verify: ckpt_wrong_arm | expected 1, got 1 | FAIL A_openmythos_s97.pt: names A/transformer/s97 
+PASS | T8 verify: ckpt_wrong_step | expected 1, got 1 | FAIL A_transformer_s97_step40.pt: step 20, expected 40 
+PASS | T8 verify: stale_file | expected 1, got 1 | FAIL older than this launch (stale): A_transformer_s97.pt 
+PASS | T8 verify: extra_file | expected 1, got 1 | FAIL unexpected file in run directory: A_transformer_s97_old.json 
+PASS | T8 verify: aborted_record | expected 1, got 1 | FAIL unexpected file in run directory: A_openmythos_s97_ABORTED.json 
+PASS | T8 verify: missing_ckpt | expected 1, got 1 | FAIL missing: A_openmythos_s98_step20.pt 
+PASS | T9 analyze: untouched records | expected 0, got 0 | 
+PASS | T9 analyze: duplicate | expected 1, got 1 | AssertionError: decision records [('openmythos', 97), ('openmythos', 97), ('openmythos', 98), ('openmythos', 99), ('transformer', 97), ('transformer', 98), ('transformer', 99)], expected [('openmythos', 97), ('openmythos', 98), ('openmythos', 99), ('transformer', 97), ('transformer', 98), ('transformer', 99)]
+PASS | T9 analyze: missing | expected 1, got 1 | AssertionError: decision records [('openmythos', 98), ('openmythos', 99), ('transformer', 97), ('transformer', 98), ('transformer', 99)], expected [('openmythos', 97), ('openmythos', 98), ('openmythos', 99), ('transformer', 97), ('transformer', 98), ('transformer', 99)]
+PASS | T9 analyze: foreign_seed | expected 1, got 1 | AssertionError: decision records [('openmythos', 5), ('openmythos', 98), ('openmythos', 99), ('transformer', 97), ('transformer', 98), ('transformer', 99)], expected [('openmythos', 97), ('openmythos', 98), ('openmythos', 99), ('transformer', 97), ('transformer', 98), ('transformer', 99)]
+PASS | T9 analyze: arm_swapped | expected 1, got 1 | AssertionError: decision records [('openmythos', 98), ('openmythos', 99), ('transformer', 97), ('transformer', 97), ('transformer', 98), ('transformer', 99)], expected [('openmythos', 97), ('openmythos', 98), ('openmythos', 99), ('transformer', 97), ('transformer', 98), ('transformer', 99)]
+PASS | T9 analyze: wrong_ckpt | expected 1, got 1 | AssertionError: ('elsewhere/A_x.pt', 'experiments/budget_a/smoke/faults/t1/runs/A_openmythos_s97.pt')
+PASS | T9 analyze: test2_split_claimed | expected 1, got 1 | AssertionError: test2
+TOTAL: 36 passed, 0 failed

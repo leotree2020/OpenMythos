@@ -1,0 +1,23 @@
+2026-10-18 02:36:28.571 | INFO     | __main__:main:162 - A transformer s97 | params 607104
+Traceback (most recent call last):
+  File "/home/user/OpenMythos/experiments/gen_gate_a/train_level.py", line 291, in <module>
+    main()
+    ~~~~^^
+  File "/home/user/OpenMythos/experiments/gen_gate_a/train_level.py", line 206, in main
+    comparability = compare_to_reference(
+        model, args.compare_ckpt, dev, args.compare_tol
+    )
+  File "/usr/local/lib/python3.13/dist-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+    return func(*args, **kwargs)
+  File "/home/user/OpenMythos/experiments/gen_gate_a/train_level.py", line 75, in compare_to_reference
+    ref = torch.load(ref_path, map_location="cpu", weights_only=False)["model"]
+          ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/dist-packages/torch/serialization.py", line 1565, in load
+    with _open_file_like(f, "rb") as opened_file:
+         ~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/usr/local/lib/python3.13/dist-packages/torch/serialization.py", line 795, in _open_file_like
+    return _open_file(name_or_buffer, mode)
+  File "/usr/local/lib/python3.13/dist-packages/torch/serialization.py", line 776, in __init__
+    super().__init__(open(name, mode))  # noqa: SIM115
+                     ~~~~^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'experiments/budget_a/smoke/faults/refs_missing/A_transformer_s97.pt'

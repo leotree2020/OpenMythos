@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 """Apply PREREGISTRATION.md (with revision 1) to the test2 evaluation."""
 
+import argparse
 import json
-import sys
+import os
+
+HERE = os.path.dirname(os.path.abspath(__file__))
 
 CHANCE = 0.25
 NEXT = {
@@ -29,8 +32,22 @@ def pct(x):
 
 
 def main():
-    rows = [json.loads(l) for l in open(sys.argv[1])]
-    base = next(r for r in rows if r["type"] == "baselines")
+    ap = argparse.ArgumentParser()
+    ap.add_argument("eval_jsonl")
+    ap.add_argument("--split", default="test2", choices=["test2", "dev"])
+    ap.add_argument("--seeds", default="1,2,3")
+    ap.add_argument("--runs-dir", default=None)
+    args = ap.parse_args()
+    seeds = [int(s) for s in args.seeds.split(",")]
+    rows = [json.loads(l) for l in open(args.eval_jsonl)]
+    bases = [r for r in rows if r["type"] == "baselines"]
+    assert len(bases) == 1, f"expected 1 baselines record, got {len(bases)}"
+    base = bases[0]
+    assert base["split"] == args.split, base["split"]
+    if args.split == "test2":
+        man = json.load(open(os.path.join(HERE, "sets", "manifest.json")))["A_test2"]
+        assert base["set_sha256"] == man["sha256"], "test2 hash differs from manifest"
+        assert base["n"] == man["rows"] == 1000, base["n"]
     best = max(
         v
         for k, v in base.items()
@@ -39,14 +56,21 @@ def main():
     cells = [
         r
         for r in rows
-        if r["type"] == "cell" and r["n_loops"] in (4, None) and r["split"] == "test2"
+        if r["type"] == "cell" and r["n_loops"] in (4, None) and r["split"] == args.split
     ]
-    keys = [(r["arm"], r["seed"]) for r in cells]
-    assert (
-        len(keys) == 6 and len(set(keys)) == 6
-    ), f"expected 6 unique decision records, got {keys}"
+    keys = sorted((r["arm"], r["seed"]) for r in cells)
+    want = sorted((a, s) for a in ("openmythos", "transformer") for s in seeds)
+    # exactly one decision record for each of OpenMythos and Transformer x
+    # each pre-registered seed: no missing, duplicated or foreign records
+    assert keys == want, f"decision records {keys}, expected {want}"
+    for r in cells:
+        assert r["n"] == base["n"], (r["arm"], r["seed"], r["n"])
+        assert (r["n_loops"] == 4) == (r["arm"] == "openmythos"), r
+        if args.runs_dir:
+            ck = os.path.join(args.runs_dir, f"A_{r['arm']}_s{r['seed']}.pt")
+            assert os.path.normpath(r["ckpt"]) == os.path.normpath(ck), (r["ckpt"], ck)
     print(
-        f"## A 级训练预算诊断：判定（新测试集，n={base['n']}，哈希 {base['set_sha256'][:12]}）\n"
+        f"## A 级训练预算诊断：判定（{'新测试集' if args.split == 'test2' else '开发集（仅测试流程，不是正式判定）'}，n={base['n']}，哈希 {base['set_sha256'][:12]}）\n"
     )
     print(f"最强的不看答案猜法：{pct(best)}\n")
     print(
