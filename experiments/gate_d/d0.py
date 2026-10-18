@@ -167,6 +167,7 @@ def tool_checks():
         res["tied_decomposition_tiny"]["max_diff"] <= TOL_TIED
         and res["tied_decomposition_tiny"]["missing_output_side_diff"] > TOL_TIED
     )
+    res["structural_checker_negative_controls"] = negative_controls()
     return res
 
 
@@ -220,15 +221,13 @@ def model_checks(model, rows):
                 h = layer(h, freqs, mask, None, f"coda_{i}")
             fin = model.head(model.norm(h))
     res["record_point_consistency"] = {"pass": bool(torch.equal(fin, lg))}
-    # causal mask: replacing token j leaves every record at positions < j unchanged
-    tensors = lambda r: {k: v for k, v in r.items() if v.dim() >= 2 and v.shape[1] == L_PROMPT}  # noqa: E731
-    fn = lambda ids: tensors(run.run(ids, record=True)[1]) | {"logits": run.run(ids)[0]}  # noqa: E731
-    sub = x[:64]
-    diffs = {}
-    for j, tok in ((Q_POS, ord("Z")), (10, ord("0")), (3, ord("z"))):
-        repl = torch.full((sub.shape[0],), tok)
-        diffs[str(j)] = causal_diff(fn, sub, j, repl)
-    res["causal_mask"] = {"max_diff_by_position": diffs, "pass": max(diffs.values()) == 0.0}
+    # causal mask (revision 3, PREREGISTRATION 10.2): structural check per record
+    # point (hard), forward value differences (monitor), attention / MoE structure
+    res["causal_structural"] = structural_causal_check(run, x[:32])
+    res["causal_value_monitor"] = causal_value_monitor(run, x[:64])
+    res["attention_future_zero"] = attention_future_zero(run, x)
+    res["moe_token_independence"] = moe_token_independence(model, x[:32])
+    res["moe_row_rounding_evidence"] = moe_row_rounding(model, x[:32])
     # RoPE: relative-position property with the model's own frequencies, and the
     # frequencies every attention call of the original forward receives
     hd = model.cfg.dim // model.cfg.n_heads
@@ -307,3 +306,168 @@ def causal_structural(model, x, j):
     model.zero_grad(set_to_none=True)
     return {"max_grad_from_later_positions": g[:, j:].abs().max().item(),
             "max_grad_from_earlier_positions": g[:, :j].abs().max().item()}
+
+
+# ------------------------------------------- revision 3 (PREREGISTRATION 10.2)
+
+CAUSAL_J = ((Q_POS, ord("Z")), (10, ord("0")), (3, ord("z")))
+
+
+def later_position_grad(outputs, inp, j, n_proj=2, seed=0):
+    """For each output (B, T, ...) separately: gradient of <v, out[:, :j]> with
+    random Gaussian v (n_proj independent draws) w.r.t. inp (B, T, D). Returns
+    {name: (max |grad| at positions >= j, max |grad| at positions < j)}.
+    A non-zero Jacobian from later to earlier positions gives a non-zero
+    gradient with probability 1, so contributions cannot cancel."""
+    g = torch.Generator().manual_seed(seed)
+    res = {}
+    for name, out in outputs.items():
+        late, early = 0.0, 0.0
+        for _ in range(n_proj):
+            v = torch.randn(out[:, :j].shape, generator=g)
+            (gr,) = torch.autograd.grad((out[:, :j] * v).sum(), inp, retain_graph=True,
+                                        allow_unused=True)
+            if gr is None:
+                continue
+            late = max(late, gr[:, j:].abs().max().item())
+            early = max(early, gr[:, :j].abs().max().item())
+        res[name] = (late, early)
+    return res
+
+
+def _float_records(rec, logits):
+    out = {k: v for k, v in rec.items()
+           if v.dim() >= 2 and v.shape[1] == L_PROMPT and v.is_floating_point() and v.requires_grad}
+    out["logits"] = logits
+    return out
+
+
+def structural_causal_check(run, x):
+    """Hard check: every float record point and the logits at positions < j
+    have exactly zero gradient w.r.t. the input embeddings at positions >= j."""
+    detail, worst = {}, 0.0
+    for j, _ in CAUSAL_J:
+        lg, rec, _ = run.run(x, record=True, grad=True)
+        g = later_position_grad(_float_records(rec, lg), rec["emb"], j)
+        worst = max(worst, max(v[0] for v in g.values()))
+        detail[str(j)] = {"n_record_points": len(g),
+                          "max_grad_from_later": max(v[0] for v in g.values()),
+                          "nonzero_points": [k for k, v in g.items() if v[0] != 0.0]}
+    return {"by_position": detail, "pass": worst == 0.0}
+
+
+def moe_points(arm):
+    return {"out1"} if arm == "transformer" else {f"blk_out{t}" for t in range(16)}
+
+
+def causal_value_monitor(run, x):
+    """Monitor (revision 3): forward value differences at positions < j when
+    token j is replaced. Fails only if the first differing record point is not
+    an MoE block output (a new kind of difference)."""
+    detail, ok = {}, True
+    for j, tok in CAUSAL_J:
+        x2 = x.clone()
+        x2[:, j] = tok
+        la, a, _ = run.run(x, record=True)
+        lb, b, _ = run.run(x2, record=True)
+        a["logits"], b["logits"] = la, lb
+        first, max_abs, max_rel = None, 0.0, 0.0
+        for k in a:
+            if not (a[k].dim() >= 2 and a[k].shape[1] == L_PROMPT):
+                continue
+            d = (a[k][:, :j].float() - b[k][:, :j].float()).abs().max().item()
+            if d > 0:
+                scale = a[k][:, :j].float().abs().max().item()
+                max_rel = max(max_rel, d / scale if scale > 0 else float("inf"))
+                first = first or k
+            max_abs = max(max_abs, d)
+        from_moe = first is None or first in moe_points(run.arm)
+        ok &= from_moe
+        detail[str(j)] = {"max_abs_diff": max_abs, "max_rel_diff": max_rel,
+                          "first_differing_point": first, "first_is_moe_output": from_moe}
+    return {"by_position": detail, "pass": ok}
+
+
+def attention_future_zero(run, x):
+    """Reconstructed attention weights above the diagonal are exactly 0."""
+    _, _, att = run.run(x, want_attn=True)
+    T = L_PROMPT
+    upper = torch.triu(torch.ones(T, T, dtype=torch.bool), 1)
+    worst = {k: w[..., upper].abs().max().item() for k, w in att.items()}
+    return {"max_future_weight": worst, "pass": max(worst.values()) == 0.0}
+
+
+def _moe_modules(model):
+    from open_mythos.main import MoEFFN
+
+    return [(n, m) for n, m in model.named_modules() if isinstance(m, MoEFFN)]
+
+
+def moe_token_independence(model, x):
+    """(b) No cross-token aggregation in MoE: per MoE layer, output at position
+    i has zero gradient w.r.t. inputs at k != i; the experts chosen for a token
+    are the same when it is routed alone as in the batch."""
+    res, ok = {}, True
+    for name, moe in _moe_modules(model):
+        cap = []
+        h = moe.register_forward_pre_hook(lambda m, a: cap.append(a[0].detach()))
+        with torch.no_grad():
+            model(x)
+        h.remove()
+        inp = cap[0].clone().requires_grad_(True)  # first call (loop 0 for OpenMythos)
+        out = moe(inp)
+        g = torch.Generator().manual_seed(0)
+        cross = 0.0
+        for i in range(L_PROMPT):
+            for _ in range(2):
+                v = torch.randn(out[:, i].shape, generator=g)
+                (gr,) = torch.autograd.grad((out[:, i] * v).sum(), inp, retain_graph=True)
+                mask = torch.ones(L_PROMPT, dtype=torch.bool)
+                mask[i] = False
+                cross = max(cross, gr[:, mask].abs().max().item())
+        with torch.no_grad():
+            flat = inp.detach().reshape(-1, inp.shape[-1])
+            lb = moe.router(flat) + moe.router_bias
+            idx_batch = lb.topk(moe.topk, dim=-1).indices
+            idx_alone = torch.cat(
+                [(moe.router(flat[r : r + 1]) + moe.router_bias).topk(moe.topk, dim=-1).indices
+                 for r in range(flat.shape[0])]
+            )
+        mism = int((idx_batch != idx_alone).any(dim=-1).sum())
+        res[name] = {"max_cross_token_grad": cross, "routing_mismatches": mism,
+                     "n_tokens": int(flat.shape[0])}
+        ok &= cross == 0.0 and mism == 0
+    return {"layers": res, "pass": ok}
+
+
+def moe_row_rounding(model, x):
+    """(c) Evidence only (no pass/fail): one routed expert applied to the first
+    5 vs the first 7 rows of a real MoE input; difference on the shared rows."""
+    name, moe = _moe_modules(model)[0]
+    cap = []
+    h = moe.register_forward_pre_hook(lambda m, a: cap.append(a[0].detach()))
+    with torch.no_grad():
+        model(x)
+        h.remove()
+        flat = cap[0].reshape(-1, cap[0].shape[-1])
+        ex = moe.routed_experts[0]
+        d = (ex(flat[:5]) - ex(flat[:7])[:5]).abs().max().item()
+    return {"layer": name, "expert": 0, "max_diff_shared_rows_5_vs_7": d}
+
+
+def negative_controls():
+    """Tool check: the structural checker reports exactly 0 for causal
+    attention and a non-zero gradient for (a) attention without a mask and
+    (b) a cross-token mean."""
+    cfg = MythosConfig(vocab_size=8, dim=8, n_heads=2, n_kv_heads=1, max_seq_len=6,
+                       attn_type="gqa", dropout=0.0)
+    att = GQAttention(cfg)
+    freqs = precompute_rope_freqs(4, 6, 10000.0)
+    mask = torch.triu(torch.full((1, 1, 6, 6), float("-inf")), 1)
+    x = torch.randn(2, 6, 8, generator=torch.Generator().manual_seed(3), requires_grad=True)
+    causal = later_position_grad({"o": att(x, freqs, mask)}, x, 3)["o"][0]
+    no_mask = later_position_grad({"o": att(x, freqs, None)}, x, 3)["o"][0]
+    mean_leak = later_position_grad({"o": x + x.mean(1, keepdim=True)}, x, 3)["o"][0]
+    return {"causal_attention": causal, "attention_without_mask": no_mask,
+            "cross_token_mean": mean_leak,
+            "pass": causal == 0.0 and no_mask > 0 and mean_leak > 0}

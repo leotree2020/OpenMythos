@@ -83,15 +83,16 @@ class Runner:
         return t
 
     # -------------------------------------------------------------- forward
-    @torch.no_grad()
-    def run(self, ids, patch=None, record=False, want_attn=False, n_loops=None):
-        """Returns (logits at every position, records dict, attention dict)."""
+    def run(self, ids, patch=None, record=False, want_attn=False, n_loops=None, grad=False):
+        """Returns (logits at every position, records dict, attention dict).
+        grad=True keeps the autograd graph (D0 structural checks only)."""
         ctx = {"patch": patch or {}, "record": record, "rec": {}, "attn": {},
                "want_attn": want_attn}
-        if self.arm == "transformer":
-            logits = self._run_transformer(ids, ctx)
-        else:
-            logits = self._run_openmythos(ids, ctx, n_loops)
+        with torch.set_grad_enabled(grad):
+            if self.arm == "transformer":
+                logits = self._run_transformer(ids, ctx)
+            else:
+                logits = self._run_openmythos(ids, ctx, n_loops)
         return logits, ctx["rec"], ctx["attn"]
 
     def _run_transformer(self, ids, ctx):
