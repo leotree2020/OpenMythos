@@ -155,6 +155,30 @@ def family_tensors(rows, g):
             torch.tensor(roots))
 
 
+def atomic_write_json(path, obj, **kw):
+    """Write JSON to a temporary file in the same directory, fsync, then rename
+    (PREREGISTRATION 12.4.5): an interruption never leaves a half-written file
+    under the final name."""
+    d = os.path.dirname(os.path.abspath(path))
+    os.makedirs(d, exist_ok=True)
+    tmp = os.path.join(d, f".{os.path.basename(path)}.tmp.{os.getpid()}")
+    with open(tmp, "w") as f:
+        json.dump(obj, f, **kw)
+        f.flush()
+        os.fsync(f.fileno())
+    os.replace(tmp, path)
+
+
+def atomic_torch_save(obj, path):
+    d = os.path.dirname(os.path.abspath(path))
+    tmp = os.path.join(d, f".{os.path.basename(path)}.tmp.{os.getpid()}")
+    with open(tmp, "wb") as f:
+        torch.save(obj, f)
+        f.flush()
+        os.fsync(f.fileno())
+    os.replace(tmp, path)
+
+
 def jsonable(o):
     if isinstance(o, dict):
         return {str(k): jsonable(v) for k, v in o.items()}

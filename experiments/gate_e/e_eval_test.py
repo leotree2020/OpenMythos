@@ -30,7 +30,7 @@ sys.path.insert(0, HERE)
 
 import e_common  # noqa: F401,E402  (first: puts the archived modules on sys.path)
 from common import grouped_bootstrap  # noqa: E402  gate_d
-from e_common import Geom, encode, family_tensors, jsonable, load_set, load_state  # noqa: E402
+from e_common import Geom, atomic_write_json, encode, family_tensors, jsonable, load_set, load_state  # noqa: E402
 
 BASELINE = 0.5
 
@@ -85,6 +85,9 @@ def main():
     ap.add_argument("--set", default="test_heldout")
     ap.add_argument("--out", required=True)
     args = ap.parse_args()
+    if os.path.exists(args.out):  # PREREGISTRATION 12.4.7: a judgment is written once, never redone
+        print(f"REFUSED: {args.out} exists; the formal judgment is never repeated", file=sys.stderr)
+        sys.exit(3)
     torch.set_num_threads(1)
     g = Geom(2)
     model = load_state(args.arm, 2, args.seed, args.step, path=args.ckpt)
@@ -99,9 +102,7 @@ def main():
                              m["query_swap_both"]["mean"], m["query_insensitivity"]["mean"])
     if args.arm == "openmythos":
         res["reference_loops"] = {str(T): evaluate(model, rows, g, n_loops=T)["accuracy"] for T in (1, 2, 8)}
-    os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
-    with open(args.out, "w") as f:
-        json.dump(jsonable(res), f, indent=1, ensure_ascii=False)
+    atomic_write_json(args.out, jsonable(res), indent=1, ensure_ascii=False)
     print(args.arm, args.seed, res["level"], m["accuracy"])
 
 

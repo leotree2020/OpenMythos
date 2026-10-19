@@ -31,7 +31,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
 import e_common  # noqa: F401,E402
-from e_common import ARMS, BRIDGE_SEEDS, BRIDGE_STEPS, K2_SEEDS, K2_STEPS, state_name  # noqa: E402
+from e_common import ARMS, BRIDGE_SEEDS, BRIDGE_STEPS, K2_SEEDS, K2_STEPS, atomic_write_json, state_name  # noqa: E402
 
 C0_P2 = 1 / 52
 NOT_HAPPENED = "未发生"
@@ -136,8 +136,7 @@ def main():
     ap.add_argument("--out", default=os.path.join(HERE, "events.json"))
     args = ap.parse_args()
     out = analyse(args.results, args.runs)
-    with open(args.out, "w") as f:
-        json.dump(out, f, indent=1, ensure_ascii=False)
+    atomic_write_json(args.out, out, indent=1, ensure_ascii=False)
     print(json.dumps({k: v["across_seeds"] for k, v in out.items()}, indent=1, ensure_ascii=False))
 
 

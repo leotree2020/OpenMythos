@@ -22,7 +22,8 @@ import torch
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
-from e_common import Geom, family_tensors, jsonable, load_set, load_state, param_hash, state_name  # noqa: E402
+from e_common import (Geom, atomic_write_json, family_tensors, jsonable, load_set, load_state,  # noqa: E402
+                      param_hash, state_name)
 from e_m0 import model_checks  # noqa: E402
 from e_m1 import run_m1  # noqa: E402
 from e_m2 import run_m2  # noqa: E402
@@ -113,9 +114,7 @@ def main():
             print(f"INTEGRITY FAILURE {name}: {e}", file=sys.stderr)
             sys.exit(3)
         raise
-    os.makedirs(args.out_dir, exist_ok=True)
-    with open(os.path.join(args.out_dir, f"{name}.json"), "w") as f:
-        json.dump(jsonable(out), f)
+    atomic_write_json(os.path.join(args.out_dir, f"{name}.json"), jsonable(out))
     print(f"{name} done in {sum(out['seconds'].values()):.0f}s {out['seconds']}")
 
 

@@ -37,7 +37,7 @@ import torch.nn.functional as F
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
-from e_common import RUNS, Geom, family_tensors, load_set  # noqa: E402
+from e_common import RUNS, Geom, atomic_torch_save, atomic_write_json, family_tensors, load_set  # noqa: E402
 from e_task import train_rng_k2, train_sample_k2  # noqa: E402
 from data import encode_rows, load_set as load_level_set, roots_of  # noqa: E402  gen_gate_a
 from levels import make_sample  # noqa: E402  gen_gate_a
@@ -123,8 +123,8 @@ def main():
 
     def save(step):
         path = os.path.join(args.ckpt_dir, f"K{K}_{args.arm}_s{args.seed}_step{step}.pt")
-        torch.save({"K": K, "task": args.task, "arm": args.arm, "seed": args.seed, "step": step,
-                    "model": model.state_dict()}, path)
+        atomic_torch_save({"K": K, "task": args.task, "arm": args.arm, "seed": args.seed, "step": step,
+                           "model": model.state_dict()}, path)
 
     save(0)
     losses, light, devlog = [], [], []
@@ -158,9 +158,7 @@ def main():
               "save_at": sorted(save_at | {0}), "first_batch_sha256": first_batch_sha,
               "wall_seconds": time.perf_counter() - t0, "loss_every_step": losses,
               "light_log": light, "dev_log": devlog}
-    os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
-    with open(args.out, "w") as f:
-        json.dump(result, f)
+    atomic_write_json(args.out, result)
     print(f"saved {args.out} ({result['wall_seconds']:.0f}s)")
 
 
