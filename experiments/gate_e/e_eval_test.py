@@ -49,16 +49,20 @@ def evaluate(model, rows, g, n_loops=None):
     pred = model(x, n_loops=n_loops)[:, g.READ_POS].argmax(-1) if n_loops else model(x)[:, g.READ_POS].argmax(-1)
     N = len(rows)
     ok = (pred == y).view(N, 2)
-    xr = encode([r["root_swap"][k]["body"] + "|" + r["queries"][k] + "?" for r in rows for k in range(2)], g)
-    yr = torch.tensor([ord(r["root_swap"][k]["answer"]) for r in rows for k in range(2)])
-    pr = (model(xr, n_loops=n_loops) if n_loops else model(xr))[:, g.READ_POS].argmax(-1)
-    rs_both = (ok.reshape(-1) & (pr == yr)).double().numpy()
+    if "root_swap" in rows[0]:
+        xr = encode([r["root_swap"][k]["body"] + "|" + r["queries"][k] + "?" for r in rows for k in range(2)], g)
+        yr = torch.tensor([ord(r["root_swap"][k]["answer"]) for r in rows for k in range(2)])
+        pr = (model(xr, n_loops=n_loops) if n_loops else model(xr))[:, g.READ_POS].argmax(-1)
+        rs_both = (ok.reshape(-1) & (pr == yr)).double().numpy()
+    else:  # sets without counterfactuals (timing on dev_heldout only); never the formal test set
+        rs_both = np.full(2 * N, np.nan)
     qs_both = ok.all(1).repeat_interleave(2).double().numpy()  # partner of question q: the other query
     insens = (pred.view(N, 2)[:, 0] == pred.view(N, 2)[:, 1]).double().numpy()
     groups = bid.numpy()
     acc = ok.reshape(-1).double().numpy()
     out = {"accuracy": {"mean": float(acc.mean()), "ci95": grouped_bootstrap(acc, groups)},
-           "root_swap_both": {"mean": float(rs_both.mean()), "ci95": grouped_bootstrap(rs_both, groups)},
+           "root_swap_both": ({"mean": float(rs_both.mean()), "ci95": grouped_bootstrap(rs_both, groups)}
+                              if not np.isnan(rs_both).any() else None),
            "query_swap_both": {"mean": float(qs_both.mean()), "ci95": grouped_bootstrap(qs_both, groups)},
            "query_insensitivity": {"mean": float(insens.mean()), "ci95": grouped_bootstrap(insens, np.arange(N))},
            "pred_in_roots": float((pred.view(N, 2, 1) == roots.view(N, 1, 2)).any(-1).double().mean())}
@@ -88,8 +92,11 @@ def main():
     res = {"arm": args.arm, "seed": args.seed, "step": args.step, "set": args.set, "baseline": BASELINE,
            "main": evaluate(model, rows, g)}
     m = res["main"]
-    res["level"] = level(m["accuracy"]["mean"], m["accuracy"]["ci95"][0], m["root_swap_both"]["mean"],
-                         m["query_swap_both"]["mean"], m["query_insensitivity"]["mean"])
+    if m["root_swap_both"] is None:
+        res["level"] = "not judged: set without root-swap counterfactuals (timing only)"
+    else:
+        res["level"] = level(m["accuracy"]["mean"], m["accuracy"]["ci95"][0], m["root_swap_both"]["mean"],
+                             m["query_swap_both"]["mean"], m["query_insensitivity"]["mean"])
     if args.arm == "openmythos":
         res["reference_loops"] = {str(T): evaluate(model, rows, g, n_loops=T)["accuracy"] for T in (1, 2, 8)}
     os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
