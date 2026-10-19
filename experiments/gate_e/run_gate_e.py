@@ -190,6 +190,7 @@ def archive_run(L, name, manifest):
             raise Stop(3, f"INTEGRITY FAILURE: archive of {name} (stub exit {rc})")
         for t, f, pub in files:
             manifest["states"][state_name(arm, K, seed, t)] = {"param_sha256": f"stub-{name}-{t}", "published": pub}
+        manifest["archived_runs"][name] = {"stub": True, "files": len(files)}
         return
     from e_bridge import accept
     from e_storage import ARTIFACTS_URL, ckpt_param_hash, entry, push_files, retrieve_and_verify
@@ -265,6 +266,8 @@ def main():
         try:
             wl = json.load(open(p["timing"]))["frozen_workload"]
         except (OSError, KeyError, ValueError):
+            wl = None
+        if not wl:
             raise Stop(5, "REFUSED: no frozen workload in timing.json")
         if wl.get("m5a_bodies") != 500:
             raise Stop(5, "REFUSED: frozen workload does not keep M5(a) at 500 bodies (11.3)")

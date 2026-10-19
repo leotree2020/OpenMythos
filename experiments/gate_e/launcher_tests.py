@@ -31,7 +31,7 @@ if target:
 
 
 def case(label, env_extra, expect_code, expect_in_status=(), expect_not_started=None, prepare=None,
-         workload=None, with_test_dir=True, cmds=True):
+         workload=None, with_test_dir=True, cmds=True, expect_stderr=None):
     d = tempfile.mkdtemp(prefix="gate_e_launcher_")
     stub = os.path.join(d, "stub.py")
     open(stub, "w").write(STUB)
@@ -59,6 +59,8 @@ def case(label, env_extra, expect_code, expect_in_status=(), expect_not_started=
     status_path = os.path.join(d, "logs", "run_status.txt")
     status = open(status_path).read() if os.path.exists(status_path) else ""
     ok = p.returncode == expect_code and all(s in status for s in expect_in_status)
+    if expect_stderr:
+        ok &= expect_stderr in p.stderr
     if expect_not_started:
         ok &= f"started {expect_not_started}" not in status
     res = {"exit": p.returncode, "expected": expect_code, "status_tail": status.splitlines()[-3:],
@@ -73,9 +75,10 @@ def main():
         case("refuse_nonempty_results", {}, 5,
              prepare=lambda d: (os.makedirs(os.path.join(d, "results")),
                                 open(os.path.join(d, "results", "x.json"), "w").write("{}"))),
-        case("refuse_no_frozen_workload", {}, 5, workload={}),
+        case("refuse_no_frozen_workload", {}, 5, workload={}, expect_stderr="no frozen workload"),
         case("refuse_m5a_not_500", {}, 5, workload={"level": 0, "m5a_bodies": 1000, "m5b_batches": 200,
-                                                     "mlp_p13_when_linear_detected": True}),
+                                                     "mlp_p13_when_linear_detected": True},
+             expect_stderr="M5(a) at 500"),
         case("refuse_cmds_without_test_dir", {}, 5, with_test_dir=False),
         case("training_integrity_failure", {"STUB_FAIL_NAME": "train_K2_transformer_s3", "STUB_FAIL_CODE": "3"}, 3,
              ("INTEGRITY FAILURE: train_K2_transformer_s3", "stopped with exit 3"), expect_not_started="diag_"),
