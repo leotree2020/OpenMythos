@@ -65,7 +65,27 @@ E1 正式训练：**未获批准**。
   - 修正检查条件后，第 2 轮 **26/26 通过**（`validation/launcher_tests_v2.json`）。
   - 诊断确定性：通过（`validation/determinism.json`）。
   - 判定只写一次：通过（`validation/judgment_write_once.json`；只用了 `dev_heldout`）。
-  - 训练检查：在改为原子保存的 `train_k.py` 上重跑；第 1 次的记录保留在 `validation/train_checks_run1.json`。
+  - 训练检查：在改为原子保存的 `train_k.py` 上重跑，**全部通过**（`validation/train_checks.json`）。
+    - 与 `train_level.py` 逐位等价（两组，第 100、200 步）；
+    - K=2 可逐位复现（第 0、25、100、200 步），第 0 步与重建一致；
+    - 初始化配对；桥接命令与验收逻辑。
+    - 第 1 次的记录保留在 `validation/train_checks_run1.json`。
+- 等待训练检查结束的后台命令，因 `pgrep -f` 匹配到自身而无法退出（与 Gate D 内存记录器相同的问题），已手动停止。它不影响任何验证结果，后台也没有残留进程。
+
+## 工作量冻结（2026-10-19；所有实现验证通过之后）
+
+- 文件：`workload_freeze.json`，sha256 `a4089553cefe7763cf8c1548bc00a6ce6a0688aa7a297ae9e89c2232bfb23094`。
+- 内容：
+  - 等级 0；M5(a) = 500；M5(b) R = 200；所有记录点运行 MLP；
+  - 4 个并行进程；诊断硬上限 24 小时（累计）；
+  - K=2 种子 1–5 × 12,000 步、19 个检查点；桥接种子 1–3 × 3,000 步、15 个检查点；共 280 个状态。
+- 冻结依据（写在文件内）：
+  - 代码树 sha256 `3365454826b1991780850da3b8ed512be4a6adee491d21f1e02d691ffc3b3e9f`（73 个文件：Gate E 全部 Python 文件和被调用的已归档模块，含 `open_mythos/`）；
+  - 冻结时的代码提交 `24470671b2a5acd6c0eaf730d6b0bd07d7cf7d28`；
+  - `PREREGISTRATION.md`、`sets/manifest.json`、`timing.json` 的 sha256。
+- 首次正式启动时，`run_freeze.json` 会再次记录这些哈希；之后每次续跑都逐项核对。
+- 正式启动前仍待确认：Git LFS 的可用存储和带宽额度。
+- 正式训练：**未授权**。冻结文件写入后，没有启动过 `run_gate_e.py` 的正式模式，也没有读取正式留出测试集。
 
 ## 性能计时与预算（2026-10-19；未冻结工作量）
 
