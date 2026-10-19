@@ -335,9 +335,11 @@ def checkpoint_restore_fails(d):
          if x not in led and x.startswith("K2_openmythos")][0]
     m = json.load(open(os.path.join(d, "checkpoints_manifest.json")))["states"][s]
     os.remove(m["local"])
+    before = sum(1 for c in calls(d) if c == f"start diag diag_{s}")  # it may have started before the interruption
     rc, _ = launch(d, resume=True, STUB_RESTORE_FAIL=1)
-    started = [c for c in calls(d) if c == f"start diag diag_{s}"]
-    return rc == 3 and f"restore of {s} failed" in status(d) and not started, {"exit": rc}
+    after = sum(1 for c in calls(d) if c == f"start diag diag_{s}")
+    return rc == 3 and f"restore of {s} failed" in status(d) and after == before, \
+        {"exit": rc, "starts_before_resume": before, "starts_after_resume": after}
 
 
 def workload_changed(d):
