@@ -46,6 +46,18 @@ E1 正式训练：**未获批准**。
   - 本会话无法修改云环境的网络设置，只能由账户所有者在 Claude Code 的环境设置中保存。现有会话可能不会应用新设置，所以建议在更新后的环境中新开会话做存储验证。
 - 正式训练：NO-GO。
 
+## 产物仓库存储测试，第 2 次（通过）
+
+- 2026-10-19 10:03 UTC：本会话连接 `lfs.github.com` 返回 HTTP 302，说明所有者的网络设置已生效。
+- 10:05 UTC 运行 `val_storage.py`（目标：`leotree2020/openmythos-artifacts` 的 `main` 分支），**通过**：
+  - 推送：提交 `b55df920cad4dae92a613486d733f8a8cd1b2ff2`，已与远端 `refs/heads/main` 核对一致。`.gitattributes` 为 `*.pt filter=lfs diff=lfs merge=lfs -text`，文件以 LFS 对象存储。
+  - 在全新目录克隆后执行 `git lfs pull`，取回完整文件（2,465,209 字节，不是指针文件）。
+  - 文件 sha256（`b6382467c5c324a9618571de4c842188422221016ae450a1ad04954ea04bc207`）一致，参数哈希（`deb296f751ded51f752cd3526098c678d4afada0d5fd5bf3365c8e4330a5c5de`）一致。
+  - 研究分支没有跟踪 `.pt` 文件，历史中也没有提交过。
+- 推送前，产物仓库本地克隆中第 1 次测试留下的未推送提交 `316d11b`，被重置为 `origin/main`。第 1 次的失败记录保存在 `validation/storage_test_artifacts_repo_run1.json`，未改动。
+- 记录：`validation/storage_test_artifacts_repo.json`。
+- 尚未完成：Git LFS 的可用存储和带宽额度，需要所有者在 GitHub Billing & Licensing → Usage 中确认。本会话无法读取。
+
 ## 产物仓库存储测试，第 1 次（失败，记录保留）
 
 - 仓库 `leotree2020/openmythos-artifacts` 已由所有者创建（私有，`fork: false`），已加入本会话，并浅克隆到 `/home/user/openmythos-artifacts`。
