@@ -87,6 +87,58 @@ E1 正式训练：**未获批准**。
 - 正式启动前仍待确认：Git LFS 的可用存储和带宽额度。
 - 正式训练：**未授权**。冻结文件写入后，没有启动过 `run_gate_e.py` 的正式模式，也没有读取正式留出测试集。
 
+## 启动前基线核对的补强（2026-10-19；最终启动审核之前）
+
+- **Git LFS 额度**：所有者已确认。
+  - 存储：已用 0 GB / 含额 10 GB；带宽：已用 0 GB / 含额 10 GB；计费 $0。
+  - 12.6 的待确认项因此已解决。上一节"正式启动前仍待确认"的原文保持不变。
+- **检查结果：首次启动缺少基线核对**。
+  - bfdc4fa 的启动器在首次启动时，只把当时的状态写入 `run_freeze.json`，不与 `workload_freeze.json` 中的 `basis` 比较；只有续跑才与 `run_freeze.json` 比较。
+  - 后果：冻结之后如果代码或数据集清单被改动，首次启动不会发现。
+- **补强**（预注册 12.8，提交 9beeb41）：
+  - 每次启动（首次和续跑），`run_gate_e.py` 在启动任何任务之前逐项核对：
+    - 代码树、预注册、数据集清单、计时记录的 sha256；代码树不同时，列出改动的文件；
+    - 工作量、诊断上限和并行进程数，与启动器代码中写定的批准值比较；
+    - K=2 和桥接的种子、步数、检查点，状态数，以及代码中的 M5(a)，与基线文件比较。
+  - 任何一项不同：退出码 5，不写 `run_freeze.json`，不启动任何任务。
+  - 续跑时与 `run_freeze.json` 的比较照旧进行，并加入计时记录。
+  - 启动器中原本为测试准备的路径覆盖已去掉。测试改为复制完整代码树，运行副本自己的启动器。
+- **冻结记录**：
+  - `workload_freeze.json`（v1）保持不变，sha256 仍为 `a4089553cefe7763cf8c1548bc00a6ce6a0688aa7a297ae9e89c2232bfb23094`。
+  - 新文件 `workload_freeze_v2.json`，sha256 `60b1fe590b717d1dbf19ad50469c0702b5e42accd3ce1d1d07e07269b689b6d4`。
+    - 工作量与 v1 逐项相同：等级 0，M5(a) = 500，M5(b) R = 200，所有记录点运行 MLP，4 个并行进程，诊断上限 24 小时（累计），K=2 种子 1–5 × 12,000 步，桥接种子 1–3 × 3,000 步，共 280 个状态。
+    - `supersedes` 记录 v1 的路径、sha256 和替代原因。
+  - v2 的基线：
+    - 代码树 sha256 `f2f8536278d09a492687e33f9e02366acde5b995f475241c305d8cf604777a82`（73 个文件）；
+    - 代码提交 `9beeb41c809da6cabcbfecb150447dfef95a1d27`；
+    - `PREREGISTRATION.md` `b07831a2ea3ebb8df1b07f4d515ed48995ee07be02e233667005303517eb85fe`（含 12.8）；
+    - `sets/manifest.json` `d22fcdab84c0ae85b49f0c7fd8c578a3f753b9b824a50654e8427f88ca4c259e`，与 v1 相同；
+    - `timing.json` `c37a19314bbfb7cda60a7367d7e444f124cb05ba0538a1739ccd751269a19130`，与 v1 相同。
+  - 启动器只读 v2。
+- **验证**：
+  - 故障注入第 3 轮：**32/32 通过**。
+    - 记录：`validation/launcher_tests_v3.json`，sha256 `b8d4c51a69c5296904c6d386a1fb50da8ad9a3c3846bc86dcc0683fc77e9f3f7`。
+    - 只用桩任务，用时 10.5 分钟。
+  - 原有 26 项全部通过。`workload_changed` 现在在基线核对处就被拒绝。
+  - 正常首次启动（复制的代码树）：
+    - 基线核对通过；280 个状态、10 个判定、16 次训练全部完成；
+    - 副本的基线与仓库的基线相同，`run_freeze.json` 与基线相同。
+  - 冻结后修改 `experiments/gate_e/e_m3.py`：退出码 5，指出 `code_tree_sha256` 和该文件；没有启动任何任务，也没有写 `run_freeze.json`。
+  - 冻结后修改 `open_mythos/main.py`：结果同上。
+  - 冻结后修改 `sets/manifest.json`（改动 `diag_eval` 的哈希）：退出码 5，指出 `sets_manifest_sha256`；没有启动任何任务。
+  - 首次启动被中断后修改 `experiments/gate_e/e_m2.py`：续跑退出码 5，之后没有任何任务启动。
+  - 基线文件的 13 种不一致，首次启动全部退出码 5、没有启动任何任务：
+    - 等级、M5(b)、MLP、诊断上限、进程数；
+    - K=2 步数、桥接种子、状态数；
+    - 四个哈希；
+    - 缺少 `basis`。
+  - 之前的记录 `launcher_tests_v2.json`、`launcher_tests_v2_run1.json`、`launcher_tests.json`、`launcher_tests_run1.json` 保留不动。
+  - 仓库与 v2 的核对（不启动）：0 处不同，记录在 `validation/baseline_check_v2.json`。只在进程内调用 `check_baseline`，没有启动任何任务，也没有写运行记录。
+- **正式训练：未授权**。
+  - 没有启动过 `run_gate_e.py` 的正式模式；`run_freeze.json`、`runs/`、`results/`、`judgments/` 都不存在。
+  - 没有读取正式留出测试集。
+  - 等待最终 GO/NO-GO 审核。
+
 ## 性能计时与预算（2026-10-19；未冻结工作量）
 
 - 获批进入计时与预算冻结阶段（不包括正式训练，也不包括用正式留出测试集评估）。

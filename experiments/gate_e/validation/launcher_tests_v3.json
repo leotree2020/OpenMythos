@@ -1,0 +1,367 @@
+{
+ "cases": {
+  "all_succeed": {
+   "pass": true,
+   "exit": 0,
+   "status_tail": [
+    "2026-10-19T12:03:48Z started events (pid 1011)",
+    "2026-10-19T12:03:48Z finished events",
+    "2026-10-19T12:03:48Z DONE"
+   ]
+  },
+  "refuse_fresh_when_frozen": {
+   "pass": true,
+   "exit": 5,
+   "status_tail": [
+    "2026-10-19T12:04:14Z started events (pid 1438)",
+    "2026-10-19T12:04:14Z finished events",
+    "2026-10-19T12:04:14Z DONE"
+   ]
+  },
+  "refuse_resume_without_freeze": {
+   "pass": true,
+   "exit": 5,
+   "status_tail": []
+  },
+  "refuse_nonempty_results": {
+   "pass": true,
+   "exit": 5,
+   "status_tail": []
+  },
+  "refuse_no_workload": {
+   "pass": true,
+   "exit": 5
+  },
+  "refuse_m5a": {
+   "pass": true,
+   "exit": 5
+  },
+  "refuse_no_cap": {
+   "pass": true,
+   "exit": 5
+  },
+  "refuse_cmds_without_test_dir": {
+   "pass": true,
+   "exit": 5,
+   "status_tail": []
+  },
+  "training_integrity_failure": {
+   "pass": true,
+   "exit": 3,
+   "status_tail": [
+    "2026-10-19T12:05:02Z finished train_K2_transformer_s2",
+    "2026-10-19T12:05:02Z INTEGRITY FAILURE: train_K2_transformer_s3 (see /tmp/gate_e_resume_2u1kwwxe/logs)",
+    "2026-10-19T12:05:02Z stopped with exit 3"
+   ]
+  },
+  "archive_failure": {
+   "pass": true,
+   "exit": 3,
+   "status_tail": [
+    "2026-10-19T12:05:08Z finished train_K2_openmythos_s2",
+    "2026-10-19T12:05:08Z INTEGRITY FAILURE: archive of train_K2_openmythos_s2 (stub exit 1)",
+    "2026-10-19T12:05:08Z stopped with exit 3"
+   ]
+  },
+  "diag_integrity_failure": {
+   "pass": true,
+   "exit": 3,
+   "status_tail": [
+    "2026-10-19T12:05:18Z finished diag_K2_openmythos_s2_step200",
+    "2026-10-19T12:05:18Z INTEGRITY FAILURE: diag_K2_openmythos_s2_step300 (see /tmp/gate_e_resume_6x3qdp5d/logs)",
+    "2026-10-19T12:05:18Z stopped with exit 3"
+   ]
+  },
+  "interrupt_during_diagnostics_then_resume": {
+   "pass": true,
+   "exit_first": 130,
+   "exit_resume": 0,
+   "ledgered_before_interrupt": 36,
+   "finished_but_unledgered": 4,
+   "ledgered_rerun": 0,
+   "unledgered_rerun_and_verified_equal": 4,
+   "status_tail": [
+    "2026-10-19T12:05:49Z started events (pid 2099)",
+    "2026-10-19T12:05:49Z finished events",
+    "2026-10-19T12:05:49Z DONE"
+   ]
+  },
+  "half_written_result": {
+   "pass": true,
+   "exit": 0,
+   "status_tail": [
+    "2026-10-19T12:06:21Z started events (pid 2508)",
+    "2026-10-19T12:06:21Z finished events",
+    "2026-10-19T12:06:21Z DONE"
+   ]
+  },
+  "unledgered_valid_result_differs": {
+   "pass": true,
+   "exit": 3,
+   "status_tail": [
+    "2026-10-19T12:06:36Z finished diag_K2_openmythos_s1_step6000",
+    "2026-10-19T12:06:36Z INTEGRITY FAILURE: re-diagnosed K2_openmythos_s1_step6000 differs from the kept result",
+    "2026-10-19T12:06:36Z stopped with exit 3"
+   ]
+  },
+  "unledgered_valid_result_equal": {
+   "pass": true,
+   "exit": 0,
+   "status_tail": [
+    "2026-10-19T12:07:08Z started events (pid 3011)",
+    "2026-10-19T12:07:09Z finished events",
+    "2026-10-19T12:07:09Z DONE"
+   ]
+  },
+  "ledger_hash_mismatch": {
+   "pass": true,
+   "exit": 3,
+   "status_tail": [
+    "2026-10-19T12:07:41Z all 16 training runs done and archived",
+    "2026-10-19T12:07:41Z INTEGRITY FAILURE: K2_openmythos_s1_step300 result differs from its ledger entry (file left untouched)",
+    "2026-10-19T12:07:41Z stopped with exit 3"
+   ]
+  },
+  "checkpoint_restored": {
+   "pass": true,
+   "exit": 0,
+   "status_tail": [
+    "2026-10-19T12:08:14Z started events (pid 3832)",
+    "2026-10-19T12:08:14Z finished events",
+    "2026-10-19T12:08:14Z DONE"
+   ]
+  },
+  "checkpoint_restore_fails": {
+   "pass": true,
+   "exit": 3,
+   "starts_before_resume": 1,
+   "starts_after_resume": 1,
+   "status_tail": [
+    "2026-10-19T12:08:28Z diagnostics: 4 states already complete, 276 to run",
+    "2026-10-19T12:08:28Z INTEGRITY FAILURE: restore of K2_openmythos_s1_step100 failed (stub exit 1)",
+    "2026-10-19T12:08:28Z stopped with exit 3"
+   ]
+  },
+  "workload_changed": {
+   "pass": true,
+   "exit": 5,
+   "refusal": "REFUSED: the current state differs from the approved freeze baseline (workload_freeze_v2.json): frozen_workload: {'level': 0, 'm5a_bodies': 500, 'm5b_batches': 100, 'mlp_p13_when_linear_detected': True} != approved {'level': 0, 'm5a_bodies': 500, 'm5b_batches': 200, 'mlp_p13_when_linear_detected': T",
+   "status_tail": [
+    "2026-10-19T12:08:36Z started diag_K2_openmythos_s1_step200 (pid 3973)",
+    "2026-10-19T12:08:36Z started diag_K2_openmythos_s1_step300 (pid 3974)",
+    "2026-10-19T12:08:36Z launcher interrupted (signal 15)"
+   ]
+  },
+  "freeze_item_changed": {
+   "pass": true,
+   "exit": 5,
+   "refusal": "REFUSED: frozen items changed since the first launch: ['preregistration_sha256'] []",
+   "status_tail": [
+    "2026-10-19T12:08:49Z killed diag_K2_openmythos_s1_step150 (pid 4043)",
+    "2026-10-19T12:08:49Z killed diag_K2_openmythos_s1_step200 (pid 4044)",
+    "2026-10-19T12:08:49Z killed diag_K2_openmythos_s1_step300 (pid 4045)"
+   ]
+  },
+  "budget_cap_not_reset": {
+   "pass": true,
+   "exit_first": 7,
+   "exit_resume": 7,
+   "diag_seconds": 1.6652188301086426,
+   "states_started": 12,
+   "status_tail": [
+    "2026-10-19T12:09:10Z diagnostics: 8 states already complete, 272 to run",
+    "2026-10-19T12:09:10Z BUDGET EXCEEDED: cumulative diagnostic time 0.00 h >= cap 0.00 h",
+    "2026-10-19T12:09:10Z stopped with exit 7"
+   ]
+  },
+  "repeated_restarts_during_judgment": {
+   "pass": true,
+   "exits": [
+    130,
+    130,
+    0,
+    0
+   ],
+   "judgments_written": 10,
+   "attempts": {
+    "judge_openmythos_s1": 1,
+    "judge_openmythos_s2": 1,
+    "judge_openmythos_s3": 1,
+    "judge_openmythos_s4": 1,
+    "judge_openmythos_s5": 1,
+    "judge_transformer_s1": 1,
+    "judge_transformer_s2": 1,
+    "judge_transformer_s3": 1,
+    "judge_transformer_s4": 1,
+    "judge_transformer_s5": 1
+   },
+   "status_tail": [
+    "2026-10-19T12:09:52Z started events (pid 4549)",
+    "2026-10-19T12:09:52Z finished events",
+    "2026-10-19T12:09:52Z DONE"
+   ]
+  },
+  "judgment_without_ledger_recovered": {
+   "pass": true,
+   "exit": 0,
+   "status_tail": [
+    "2026-10-19T12:10:23Z started events (pid 4960)",
+    "2026-10-19T12:10:24Z finished events",
+    "2026-10-19T12:10:24Z DONE"
+   ]
+  },
+  "retrain_after_interruption_equal": {
+   "pass": true,
+   "exits": [
+    130,
+    0
+   ],
+   "unarchived_attempts": [
+    "train_K2_transformer_s3",
+    "train_K2_transformer_s1",
+    "train_K2_transformer_s2",
+    "train_K2_openmythos_s5"
+   ],
+   "status_tail": [
+    "2026-10-19T12:10:55Z started events (pid 5372)",
+    "2026-10-19T12:10:55Z finished events",
+    "2026-10-19T12:10:55Z DONE"
+   ]
+  },
+  "retrain_after_interruption_differs": {
+   "pass": true,
+   "exit": 3,
+   "victim": "train_K2_transformer_s1",
+   "status_tail": [
+    "2026-10-19T12:11:08Z finished train_K2_transformer_s1",
+    "2026-10-19T12:11:08Z INTEGRITY FAILURE: re-trained K2_transformer_s1_step0.pt differs from the kept attempt",
+    "2026-10-19T12:11:08Z stopped with exit 3"
+   ]
+  },
+  "first_launch_matches_baseline": {
+   "pass": true,
+   "exit": 0,
+   "copy_equals_repository_baseline": true,
+   "run_freeze_equals_baseline": true,
+   "status": [
+    "2026-10-19T12:11:24Z baseline check passed (workload_freeze_v2.json): code tree f2f8536278d0, preregistration b07831a2ea3e, sets d22fcdab84c0, timing c37a19314bbf, workload and run parameters as approved",
+    "2026-10-19T12:11:44Z DONE"
+   ]
+  },
+  "code_modified_after_freeze": {
+   "pass": true,
+   "exit": 5,
+   "changed": "experiments/gate_e/e_m3.py",
+   "nothing_started": true,
+   "refusal": "REFUSED: the current state differs from the approved freeze baseline (workload_freeze_v2.json): code_tree_sha256: baseline f2f8536278d0 != now 809bc62307ef; code files changed since the freeze: ['experiments/gate_e/e_m3.py']"
+  },
+  "native_code_modified_after_freeze": {
+   "pass": true,
+   "exit": 5,
+   "changed": "open_mythos/main.py",
+   "nothing_started": true,
+   "refusal": "REFUSED: the current state differs from the approved freeze baseline (workload_freeze_v2.json): code_tree_sha256: baseline f2f8536278d0 != now 2862d0a915d6; code files changed since the freeze: ['open_mythos/main.py']"
+  },
+  "sets_manifest_modified_after_freeze": {
+   "pass": true,
+   "exit": 5,
+   "changed": "experiments/gate_e/sets/manifest.json",
+   "nothing_started": true,
+   "refusal": "REFUSED: the current state differs from the approved freeze baseline (workload_freeze_v2.json): sets_manifest_sha256: baseline d22fcdab84c0 != now 6f5b3a02118b"
+  },
+  "code_modified_before_resume": {
+   "pass": true,
+   "exit_first": 130,
+   "exit_resume": 5,
+   "calls_after_resume": 0,
+   "refusal": "REFUSED: the current state differs from the approved freeze baseline (workload_freeze_v2.json): code_tree_sha256: baseline f2f8536278d0 != now bdb29fb18f97; code files changed since the freeze: ['experiments/gate_e/e_m2.py']"
+  },
+  "first_launch_baseline_items": {
+   "pass": true,
+   "variants": {
+    "workload_level_1": {
+     "pass": true,
+     "exit": 5,
+     "refusal": "REFUSED: the current state differs from the approved freeze baseline (workload_freeze_v2.json): frozen_workload: {'level': 1, 'm5a_bodies': 500, 'm5b_batches': 200, 'mlp_p13_when_linear_detected': True} != approved {'level': 0, 'm5a_bodies': 500, 'm5b_batches': 200, 'mlp_p13_when_linear_detected': T"
+    },
+    "workload_m5b_100": {
+     "pass": true,
+     "exit": 5,
+     "refusal": "REFUSED: the current state differs from the approved freeze baseline (workload_freeze_v2.json): frozen_workload: {'level': 0, 'm5a_bodies': 500, 'm5b_batches': 100, 'mlp_p13_when_linear_detected': True} != approved {'level': 0, 'm5a_bodies': 500, 'm5b_batches': 200, 'mlp_p13_when_linear_detected': T"
+    },
+    "workload_mlp_off": {
+     "pass": true,
+     "exit": 5,
+     "refusal": "REFUSED: the current state differs from the approved freeze baseline (workload_freeze_v2.json): frozen_workload: {'level': 0, 'm5a_bodies': 500, 'm5b_batches': 200, 'mlp_p13_when_linear_detected': False} != approved {'level': 0, 'm5a_bodies': 500, 'm5b_batches': 200, 'mlp_p13_when_linear_detected': "
+    },
+    "diag_cap_48h": {
+     "pass": true,
+     "exit": 5,
+     "refusal": "REFUSED: the current state differs from the approved freeze baseline (workload_freeze_v2.json): diag_cap_hours: 48 != approved 24"
+    },
+    "parallel_workers_8": {
+     "pass": true,
+     "exit": 5,
+     "refusal": "REFUSED: the current state differs from the approved freeze baseline (workload_freeze_v2.json): parallel_workers: 8 != approved 4; parallel_workers: baseline 8 != launcher 4"
+    },
+    "k2_train_steps_6000": {
+     "pass": true,
+     "exit": 5,
+     "refusal": "REFUSED: the current state differs from the approved freeze baseline (workload_freeze_v2.json): k2: baseline {'seeds': [1, 2, 3, 4, 5], 'train_steps': 6000, 'checkpoints': [0, 25, 50, 75, 100, 150, 200, 300, 400, 500, 750, 1000, 1500, 2000, 3000, 4500, 6000, 9000, 12000]} != launcher {'seeds': [1, 2"
+    },
+    "bridge_seeds_1_2": {
+     "pass": true,
+     "exit": 5,
+     "refusal": "REFUSED: the current state differs from the approved freeze baseline (workload_freeze_v2.json): bridge: baseline {'seeds': [1, 2], 'train_steps': 3000, 'checkpoints': [0, 25, 50, 75, 100, 150, 200, 300, 400, 500, 750, 1000, 1500, 2000, 3000]} != launcher {'seeds': [1, 2, 3], 'train_steps': 3000, 'ch"
+    },
+    "n_states_279": {
+     "pass": true,
+     "exit": 5,
+     "refusal": "REFUSED: the current state differs from the approved freeze baseline (workload_freeze_v2.json): n_states: baseline 279 != launcher 280"
+    },
+    "basis_code_tree": {
+     "pass": true,
+     "exit": 5,
+     "refusal": "REFUSED: the current state differs from the approved freeze baseline (workload_freeze_v2.json): code_tree_sha256: baseline 000000000000 != now f2f8536278d0; no file differs from the baseline's per-file hashes, but its tree hash does not match them"
+    },
+    "basis_preregistration": {
+     "pass": true,
+     "exit": 5,
+     "refusal": "REFUSED: the current state differs from the approved freeze baseline (workload_freeze_v2.json): preregistration_sha256: baseline 000000000000 != now b07831a2ea3e"
+    },
+    "basis_sets_manifest": {
+     "pass": true,
+     "exit": 5,
+     "refusal": "REFUSED: the current state differs from the approved freeze baseline (workload_freeze_v2.json): sets_manifest_sha256: baseline 000000000000 != now d22fcdab84c0"
+    },
+    "basis_timing": {
+     "pass": true,
+     "exit": 5,
+     "refusal": "REFUSED: the current state differs from the approved freeze baseline (workload_freeze_v2.json): timing_json_sha256: baseline 000000000000 != now c37a19314bbf"
+    },
+    "no_basis": {
+     "pass": true,
+     "exit": 5,
+     "refusal": "REFUSED: the current state differs from the approved freeze baseline (workload_freeze_v2.json): the workload file carries no approved baseline (basis)"
+    }
+   }
+  },
+  "sync_never_includes_checkpoints": {
+   "pass": true,
+   "items": [
+    "logs/run_status.txt",
+    "quarantine/2026/r.json",
+    "results/a.json",
+    "run_freeze.json",
+    "runs/K2_x.json"
+   ]
+  }
+ },
+ "pass": true,
+ "tested_baseline": {
+  "code_tree_sha256": "f2f8536278d09a492687e33f9e02366acde5b995f475241c305d8cf604777a82",
+  "preregistration_sha256": "b07831a2ea3ebb8df1b07f4d515ed48995ee07be02e233667005303517eb85fe",
+  "sets_manifest_sha256": "d22fcdab84c0ae85b49f0c7fd8c578a3f753b9b824a50654e8427f88ca4c259e",
+  "timing_json_sha256": "c37a19314bbfb7cda60a7367d7e444f124cb05ba0538a1739ccd751269a19130"
+ }
+}
