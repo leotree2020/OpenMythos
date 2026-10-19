@@ -1,18 +1,26 @@
 #!/usr/bin/env python3
 """
 Fault-injection tests of the resumable launcher run_gate_e.py
-(PREREGISTRATION 6.6, 12.4). Stub jobs only, in temporary test directories
-(GATE_E_TEST_DIR / GATE_E_TEST_CMDS): nothing is trained, diagnosed,
-evaluated on the formal test set, pushed or committed. Writes
-validation/launcher_tests_v2.json (the record of the earlier, non-resumable
-launcher is validation/launcher_tests.json and _run1.json); exits non-zero if
-any case does not end as expected.
+(PREREGISTRATION 6.6, 12.4, 12.8). Stub jobs only, in temporary test
+directories (GATE_E_TEST_DIR / GATE_E_TEST_CMDS): nothing is trained,
+diagnosed, evaluated on the formal test set, pushed or committed. Writes
+validation/launcher_tests_v3.json (earlier records, kept: launcher_tests_v2.json
+and _v2_run1.json for the resumable launcher before the baseline check,
+launcher_tests.json and _run1.json for the non-resumable one); exits non-zero
+if any case does not end as expected.
+
+Every test directory gets a workload_freeze_v2.json whose baseline is made by
+the launcher's own make_baseline. The 12.8 cases that change a file after the
+freeze copy the whole code tree (with the preregistration, timing record and
+set manifest) to a temporary directory and run that copy's own launcher, so
+the code or the manifest is really changed, never the repository's.
 
 Each case checks the exit code, the status log, and the stub call log
 (calls.log): which jobs started and finished, so that a skipped, duplicated
 or repeated job is visible.
 """
 
+import glob
 import hashlib
 import json
 import os
@@ -70,7 +78,7 @@ elif kind == "restore":
     shutil.copyfile(os.path.join(D, "remote", os.path.basename(local)), local)
 elif kind == "diag":
     st = name[5:]
-    wl = json.load(open(os.path.join(D, "workload_freeze.json")))["frozen_workload"]
+    wl = json.load(open(os.path.join(D, "workload_freeze_v2.json")))["frozen_workload"]
     r = {"state": st, "param_sha256": f"stub-{st}", "workload": wl, "seconds": {"M0": random.random()},
          "M0": {"pass": True}, "M1": {"x": st + extra}, "M2": {}, "M4": {}, "M6": {},
          "M3": {"controls": {"negative_query_swap": {"pass": True}, "positive_own_letter_emb": {"pass": True}}},
@@ -87,15 +95,46 @@ elif kind == "events":
 call(f"done {kind} {name}")
 '''
 
-WL = {"frozen_workload": {"level": 0, "m5a_bodies": 500, "m5b_batches": 200, "mlp_p13_when_linear_detected": True},
-      "diag_cap_hours": 24}
+WL_FILE = "workload_freeze_v2.json"
 
 
-def setup(workload=WL):
+def baseline(here=HERE):
+    """The approved baseline as the launcher in `here` computes it (its own
+    code tree, preregistration, set manifest and timing record)."""
+    e = {k: v for k, v in os.environ.items() if not k.startswith(("GATE_E_TEST", "STUB_"))}
+    e["PYTHONPATH"] = os.path.abspath(os.path.join(here, "..", ".."))
+    code = ("import json, sys; sys.path.insert(0, sys.argv[1]); import run_gate_e as r; "
+            "print(json.dumps(r.make_baseline(r.paths())))")
+    out = subprocess.run(["python", "-c", code, here], env=e, capture_output=True, text=True, check=True,
+                         cwd=e["PYTHONPATH"])
+    return json.loads(out.stdout)
+
+
+WL = baseline()
+
+
+def copy_tree():
+    """A complete copy of the frozen code tree with the files of the baseline;
+    returns the copy's experiments/gate_e directory."""
+    from run_gate_e import CODE_GLOBS
+
+    root = tempfile.mkdtemp(prefix="gate_e_tree_")
+    files = {os.path.relpath(f, ROOT) for g in CODE_GLOBS for f in glob.glob(os.path.join(ROOT, g))}
+    files |= {"experiments/gate_e/PREREGISTRATION.md", "experiments/gate_e/timing.json",
+              "experiments/gate_e/sets/manifest.json"}
+    for rel in files:
+        os.makedirs(os.path.dirname(os.path.join(root, rel)), exist_ok=True)
+        shutil.copyfile(os.path.join(ROOT, rel), os.path.join(root, rel))
+    return os.path.join(root, "experiments", "gate_e")
+
+
+def setup(workload=None, default=True):
     d = tempfile.mkdtemp(prefix="gate_e_resume_")
     open(os.path.join(d, "stub.py"), "w").write(STUB)
+    if workload is None and default:
+        workload = WL
     if workload is not None:
-        json.dump(workload, open(os.path.join(d, "workload_freeze.json"), "w"))
+        json.dump(workload, open(os.path.join(d, WL_FILE), "w"))
     st = os.path.join(d, "stub.py")
     json.dump({"train": f"python {st} train {{name}}",
                "archive": f"python {st} archive {{name}}",
@@ -107,23 +146,25 @@ def setup(workload=WL):
     return d
 
 
-def env_for(d, **extra):
-    e = dict(os.environ, PYTHONPATH=ROOT, GATE_E_TEST_DIR=d, GATE_E_TEST_CMDS=os.path.join(d, "cmds.json"),
-             STUB_DIR=d)
+def env_for(d, here=HERE, **extra):
+    e = dict(os.environ, PYTHONPATH=os.path.abspath(os.path.join(here, "..", "..")), GATE_E_TEST_DIR=d,
+             GATE_E_TEST_CMDS=os.path.join(d, "cmds.json"), STUB_DIR=d)
     e.update({k: str(v) for k, v in extra.items()})
     return e
 
 
-def launch(d, resume=False, **extra):
-    argv = ["python", os.path.join(HERE, "run_gate_e.py")] + (["--resume"] if resume else [])
-    p = subprocess.run(argv, env=env_for(d, **extra), capture_output=True, text=True, timeout=1200)
+def launch(d, resume=False, here=HERE, **extra):
+    """Run the launcher in `here` (the repository's, or a copied tree's)."""
+    argv = ["python", os.path.join(here, "run_gate_e.py")] + (["--resume"] if resume else [])
+    p = subprocess.run(argv, env=env_for(d, here, **extra), capture_output=True, text=True, timeout=1200)
     return p.returncode, p.stderr
 
 
-def launch_and_interrupt(d, resume, when, **extra):
+def launch_and_interrupt(d, resume, when, here=HERE, **extra):
     """Start the launcher, send SIGTERM once when(calls) is true."""
-    argv = ["python", os.path.join(HERE, "run_gate_e.py")] + (["--resume"] if resume else [])
-    p = subprocess.Popen(argv, env=env_for(d, **extra), stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True)
+    argv = ["python", os.path.join(here, "run_gate_e.py")] + (["--resume"] if resume else [])
+    p = subprocess.Popen(argv, env=env_for(d, here, **extra), stdout=subprocess.DEVNULL, stderr=subprocess.PIPE,
+                         text=True)
     t0 = time.time()
     while p.poll() is None and time.time() - t0 < 600:
         if when(calls(d)):
@@ -152,8 +193,13 @@ def sha(path):
     return hashlib.sha256(open(path, "rb").read()).hexdigest()
 
 
+OWN_SETUP = ("refuse_no_workload", "refuse_m5a", "refuse_no_cap", "first_launch_matches_baseline",
+             "code_modified_after_freeze", "native_code_modified_after_freeze", "sets_manifest_modified_after_freeze",
+             "code_modified_before_resume", "first_launch_baseline_items")
+
+
 def run_case(fn):
-    d = setup() if fn.__name__ not in ("refuse_no_workload", "refuse_m5a", "refuse_no_cap") else None
+    d = setup() if fn.__name__ not in OWN_SETUP else None
     try:
         ok, info = fn(d)
     except Exception as err:  # noqa: BLE001
@@ -169,7 +215,7 @@ def run_case(fn):
 
 def all_succeed(d):
     rc, _ = launch(d)
-    ok = rc == 0 and "DONE" in status(d)
+    ok = rc == 0 and "DONE" in status(d) and "baseline check passed" in status(d)
     ok &= count(d, "done diag") == 280 and count(d, "start diag") == 280
     ok &= count(d, "done judge") == 10 and count(d, "done train") == 16 and count(d, "start sync") > 0
     return ok, {"exit": rc}
@@ -194,7 +240,7 @@ def refuse_nonempty_results(d):
 
 
 def refuse_no_workload(_):
-    d = setup(workload=None)
+    d = setup(default=False)
     rc, err = launch(d)
     shutil.rmtree(d)
     return rc == 5 and "no frozen workload" in err, {"exit": rc}
@@ -279,7 +325,7 @@ def unledgered_valid_result_differs(d):
     launch_and_interrupt(d, False, lambda c: sum(x.startswith("done diag") for x in c) >= 20)
     led = json.load(open(os.path.join(d, "results_ledger.json")))
     s = [x for x in json.load(open(os.path.join(d, "run_freeze.json")))["states"] if x not in led][0]
-    wl = json.load(open(os.path.join(d, "workload_freeze.json")))["frozen_workload"]
+    wl = json.load(open(os.path.join(d, WL_FILE)))["frozen_workload"]
     r = {"state": s, "param_sha256": f"stub-{s}", "workload": wl, "seconds": {}, "M0": {"pass": True},
          "M1": {"x": "SOMETHING ELSE"}, "M2": {}, "M4": {}, "M6": {},
          "M3": {"controls": {"negative_query_swap": {"pass": True}, "positive_own_letter_emb": {"pass": True}}},
@@ -293,7 +339,7 @@ def unledgered_valid_result_equal(d):
     launch_and_interrupt(d, False, lambda c: sum(x.startswith("done diag") for x in c) >= 20)
     led = json.load(open(os.path.join(d, "results_ledger.json")))
     s = [x for x in json.load(open(os.path.join(d, "run_freeze.json")))["states"] if x not in led][0]
-    wl = json.load(open(os.path.join(d, "workload_freeze.json")))["frozen_workload"]
+    wl = json.load(open(os.path.join(d, WL_FILE)))["frozen_workload"]
     r = {"state": s, "param_sha256": f"stub-{s}", "workload": wl, "seconds": {"M0": 123.0}, "M0": {"pass": True},
          "M1": {"x": s}, "M2": {}, "M4": {}, "M6": {},
          "M3": {"controls": {"negative_query_swap": {"pass": True}, "positive_own_letter_emb": {"pass": True}}},
@@ -344,11 +390,11 @@ def checkpoint_restore_fails(d):
 
 def workload_changed(d):
     launch_and_interrupt(d, False, lambda c: sum(x.startswith("done diag") for x in c) >= 5)
-    w = json.load(open(os.path.join(d, "workload_freeze.json")))
+    w = json.load(open(os.path.join(d, WL_FILE)))
     w["frozen_workload"]["m5b_batches"] = 100
-    json.dump(w, open(os.path.join(d, "workload_freeze.json"), "w"))
+    json.dump(w, open(os.path.join(d, WL_FILE), "w"))
     rc, err = launch(d, resume=True)
-    return rc == 5 and "workload" in err, {"exit": rc}
+    return rc == 5 and "workload" in err, {"exit": rc, "refusal": err.strip()[:300]}
 
 
 def freeze_item_changed(d):
@@ -357,7 +403,7 @@ def freeze_item_changed(d):
     f["preregistration_sha256"] = "0" * 64
     json.dump(f, open(os.path.join(d, "run_freeze.json"), "w"))
     rc, err = launch(d, resume=True)
-    return rc == 5 and "preregistration_sha256" in err, {"exit": rc}
+    return rc == 5 and "preregistration_sha256" in err, {"exit": rc, "refusal": err.strip()[:300]}
 
 
 def budget_cap_not_reset(d):
@@ -431,6 +477,127 @@ def retrain_after_interruption_differs(d):
     return rc == 3 and "differs from the kept attempt" in status(d), {"exit": rc, "victim": victims[0]}
 
 
+# ------------------------------------------------- 12.8: the approved freeze baseline
+
+
+def nothing_started(d):
+    return not calls(d) and not os.path.exists(os.path.join(d, "run_freeze.json"))
+
+
+def in_copied_tree(body):
+    """Copy the code tree, write the baseline of the copy (the freeze), then
+    run body(d, here); `here` is the copy's experiments/gate_e."""
+    here = copy_tree()
+    d = setup(workload=baseline(here))
+    try:
+        return body(d, here)
+    finally:
+        shutil.rmtree(d, ignore_errors=True)
+        shutil.rmtree(os.path.dirname(os.path.dirname(here)), ignore_errors=True)
+
+
+def first_launch_matches_baseline(_):
+    """Normal first launch: the copy is unchanged after its freeze."""
+    def body(d, here):
+        b = json.load(open(os.path.join(d, WL_FILE)))["basis"]
+        keys = ("code_tree_sha256", "preregistration_sha256", "sets_manifest_sha256", "timing_json_sha256")
+        copy_same = all(b[k] == WL["basis"][k] for k in keys)  # the copy is the repository's code
+        rc, _ = launch(d, here=here)
+        st = status(d)
+        f = json.load(open(os.path.join(d, "run_freeze.json")))
+        freeze_same = all(f[k] == b[k] for k in keys)
+        ok = rc == 0 and copy_same and freeze_same and "baseline check passed" in st and "DONE" in st
+        ok &= count(d, "done diag") == 280 and count(d, "done judge") == 10 and count(d, "done train") == 16
+        return ok, {"exit": rc, "copy_equals_repository_baseline": copy_same, "run_freeze_equals_baseline": freeze_same,
+                    "status": [x for x in st.splitlines() if "baseline check" in x or "DONE" in x]}
+    return in_copied_tree(body)
+
+
+def modified_after_freeze(rel, change, expect, absent=()):
+    def body(d, here):
+        path = os.path.join(os.path.dirname(os.path.dirname(here)), rel)
+        change(path)
+        rc, err = launch(d, here=here)
+        ok = rc == 5 and "approved freeze baseline" in err and all(x in err for x in expect)
+        ok &= not any(x in err for x in absent) and nothing_started(d)
+        return ok, {"exit": rc, "changed": rel, "nothing_started": nothing_started(d), "refusal": err.strip()[:500]}
+    return in_copied_tree(body)
+
+
+def append_comment(path):
+    with open(path, "a") as f:
+        f.write("\n# changed after the freeze\n")
+
+
+def code_modified_after_freeze(_):
+    rel = "experiments/gate_e/e_m3.py"
+    return modified_after_freeze(rel, append_comment, ("code_tree_sha256", rel), ("sets_manifest_sha256",))
+
+
+def native_code_modified_after_freeze(_):
+    rel = "open_mythos/main.py"
+    return modified_after_freeze(rel, append_comment, ("code_tree_sha256", rel), ("sets_manifest_sha256",))
+
+
+def sets_manifest_modified_after_freeze(_):
+    def change(path):
+        m = json.load(open(path))
+        m["diag_eval"]["sha256"] = "0" * 64  # as if a set had been regenerated
+        json.dump(m, open(path, "w"), indent=1)
+    return modified_after_freeze("experiments/gate_e/sets/manifest.json", change, ("sets_manifest_sha256",),
+                                 ("code_tree_sha256",))
+
+
+def code_modified_before_resume(_):
+    def body(d, here):
+        rc1 = launch_and_interrupt(d, False, lambda c: sum(x.startswith("done diag") for x in c) >= 5, here=here)
+        n = len(calls(d))
+        rel = "experiments/gate_e/e_m2.py"
+        append_comment(os.path.join(os.path.dirname(os.path.dirname(here)), rel))
+        rc, err = launch(d, resume=True, here=here)
+        ok = rc1 == 130 and rc == 5 and "code_tree_sha256" in err and rel in err and len(calls(d)) == n
+        return ok, {"exit_first": rc1, "exit_resume": rc, "calls_after_resume": len(calls(d)) - n,
+                    "refusal": err.strip()[:500]}
+    return in_copied_tree(body)
+
+
+def first_launch_baseline_items(_):
+    """Every item of the baseline file is checked at the first launch."""
+    def put(*keys, value):
+        def f(w):
+            for k in keys[:-1]:
+                w = w[k]
+            w[keys[-1]] = value
+        return f
+
+    variants = {
+        "workload_level_1": (put("frozen_workload", "level", value=1), "frozen_workload"),
+        "workload_m5b_100": (put("frozen_workload", "m5b_batches", value=100), "frozen_workload"),
+        "workload_mlp_off": (put("frozen_workload", "mlp_p13_when_linear_detected", value=False), "frozen_workload"),
+        "diag_cap_48h": (put("diag_cap_hours", value=48), "diag_cap_hours"),
+        "parallel_workers_8": (put("parallel_workers", value=8), "parallel_workers"),
+        "k2_train_steps_6000": (put("k2", "train_steps", value=6000), "k2"),
+        "bridge_seeds_1_2": (put("bridge", "seeds", value=[1, 2]), "bridge"),
+        "n_states_279": (put("n_states", value=279), "n_states"),
+        "basis_code_tree": (put("basis", "code_tree_sha256", value="0" * 64), "code_tree_sha256"),
+        "basis_preregistration": (put("basis", "preregistration_sha256", value="0" * 64), "preregistration_sha256"),
+        "basis_sets_manifest": (put("basis", "sets_manifest_sha256", value="0" * 64), "sets_manifest_sha256"),
+        "basis_timing": (put("basis", "timing_json_sha256", value="0" * 64), "timing_json_sha256"),
+        "no_basis": (lambda w: w.pop("basis"), "no approved baseline"),
+    }
+    out, ok = {}, True
+    for name, (change, expect) in variants.items():
+        w = json.loads(json.dumps(WL))
+        change(w)
+        d = setup(workload=w)
+        rc, err = launch(d)
+        sub = rc == 5 and "approved freeze baseline" in err and expect in err and nothing_started(d)
+        out[name] = {"pass": sub, "exit": rc, "refusal": err.strip()[:300]}
+        ok &= sub
+        shutil.rmtree(d, ignore_errors=True)
+    return ok, {"variants": out}
+
+
 def sync_never_includes_checkpoints(_):
     from run_gate_e import sync_items
 
@@ -454,7 +621,10 @@ CASES = [all_succeed, refuse_fresh_when_frozen, refuse_resume_without_freeze, re
          unledgered_valid_result_differs, unledgered_valid_result_equal, ledger_hash_mismatch, checkpoint_restored,
          checkpoint_restore_fails, workload_changed, freeze_item_changed, budget_cap_not_reset,
          repeated_restarts_during_judgment, judgment_without_ledger_recovered, retrain_after_interruption_equal,
-         retrain_after_interruption_differs]
+         retrain_after_interruption_differs,
+         # 12.8
+         first_launch_matches_baseline, code_modified_after_freeze, native_code_modified_after_freeze,
+         sets_manifest_modified_after_freeze, code_modified_before_resume, first_launch_baseline_items]
 
 
 def main():
@@ -467,8 +637,9 @@ def main():
     name, r = "sync_never_includes_checkpoints", sync_never_includes_checkpoints(None)
     out[name] = {"pass": bool(r[0]), **r[1]}
     print(f"{name}: {'pass' if r[0] else 'FAIL'}", flush=True)
-    res = {"cases": out, "pass": all(v["pass"] for v in out.values())}
-    with open(os.path.join(HERE, "validation", "launcher_tests_v2.json"), "w") as f:
+    res = {"cases": out, "pass": all(v["pass"] for v in out.values()),
+           "tested_baseline": {k: v for k, v in WL["basis"].items() if k != "code_files"}}
+    with open(os.path.join(HERE, "validation", "launcher_tests_v3.json"), "w") as f:
         json.dump(res, f, indent=1)
     print("PASS" if res["pass"] else "FAIL")
     sys.exit(0 if res["pass"] else 1)

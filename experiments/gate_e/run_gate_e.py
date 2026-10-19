@@ -7,10 +7,14 @@ Gate E formal launcher with resumption (PREREGISTRATION 2, 4, 5, 6.6, 9.6,
     python experiments/gate_e/run_gate_e.py --resume   every later launch
 
 Exit codes (gate_d/run_gate_d.sh conventions, plus 7):
-    5  refused: first launch over existing outputs / freeze, resume without a
-       freeze, any freeze item changed (code tree, preregistration, set
-       manifest, workload, state list), no frozen workload, M5(a) not 500,
-       test commands without the test directory
+    5  refused: the current code tree, preregistration, set manifest, timing
+       record, workload or run parameters differ from the approved freeze
+       baseline in workload_freeze_v2.json (12.8; checked at every launch,
+       the first included), first launch over existing outputs / freeze,
+       resume without a freeze, any freeze item changed since the first
+       launch (code tree, preregistration, set manifest, timing record,
+       workload, state list), no frozen workload, M5(a) not 500, test
+       commands without the test directory
     3  integrity failure: bridge not bitwise identical; checkpoint push,
        retrieval or hash check failed; a re-trained or re-diagnosed file
        differs from what was kept; a result or judgment differs from its
@@ -23,7 +27,8 @@ killed, nothing later is done. Every step is in logs/run_status.txt.
 
 Records (all written atomically: temporary file, fsync, rename):
     run_freeze.json        hashes of the code tree, the preregistration, the
-                           set manifest; workload; state list (12.4.1)
+                           set manifest, the timing record; workload; state
+                           list (12.4.1, 12.8)
     checkpoints_manifest.json  per state: file sha256, parameter hash, where
                            it is archived; per run: archive record
     results_ledger.json    per diagnosed state: sha256 of its result file
@@ -68,6 +73,13 @@ CODE_GLOBS = ("experiments/gate_e/*.py", "experiments/gate_d/*.py", "experiments
               "experiments/gen_gate_a/*.py", "experiments/budget_a/schedule.py", "experiments/loop_mech/*.py",
               "open_mythos/*.py")
 SYNC_EVERY_STATES, SYNC_EVERY_S = 10, 1200
+# the approved freeze baseline (PREREGISTRATION 12.8). workload_freeze.json (v1, sha256 a4089553...) is the
+# original record and stays unchanged; v2 carries the same approved workload with the baseline of the
+# code that adds the first-launch baseline check
+WORKLOAD_FILE = "workload_freeze_v2.json"
+K2_TRAIN_STEPS = 12000
+APPROVED = {"frozen_workload": {"level": 0, "m5a_bodies": 500, "m5b_batches": 200, "mlp_p13_when_linear_detected": True},
+            "diag_cap_hours": 24, "parallel_workers": 4}
 
 
 class Stop(Exception):
@@ -114,7 +126,11 @@ def paths():
     for k in ("run_freeze", "checkpoints_manifest", "results_ledger", "judgments_ledger", "budget_ledger"):
         p[k] = os.path.join(base, f"{k}.json")
     p["events"] = os.path.join(base, "events.json")
-    p["workload"] = os.path.join(base if test else HERE, "workload_freeze.json")
+    p["workload"] = os.path.join(base if test else HERE, WORKLOAD_FILE)
+    p["prereg"] = os.path.join(HERE, "PREREGISTRATION.md")
+    p["timing_json"] = os.path.join(HERE, "timing.json")
+    p["code_root"] = os.path.abspath(ROOT)
+    p["sets_manifest"] = os.path.join(HERE, "sets", "manifest.json")
     p["test"] = bool(test)
     p["stubs"] = json.load(open(cmds)) if cmds else {}
     p["base"] = base
@@ -123,9 +139,10 @@ def paths():
     return p
 
 
-def code_tree():
-    files = sorted({f for g in CODE_GLOBS for f in glob.glob(os.path.join(os.path.abspath(ROOT), g))})
-    per = {os.path.relpath(f, os.path.abspath(ROOT)): sha256_file(f) for f in files}
+def code_tree(root=None):
+    root = os.path.abspath(root or ROOT)
+    files = sorted({f for g in CODE_GLOBS for f in glob.glob(os.path.join(root, g))})
+    per = {os.path.relpath(f, root): sha256_file(f) for f in files}
     tree = hashlib.sha256("".join(f"{k}:{v}\n" for k, v in per.items()).encode()).hexdigest()
     return tree, per
 
@@ -136,12 +153,70 @@ def state_list():
     return out
 
 
-def make_freeze(wl_file):
-    tree, per = code_tree()
+def make_freeze(wl_file, p):
+    tree, per = code_tree(p["code_root"])
     return {"code_tree_sha256": tree, "code_files": per,
-            "preregistration_sha256": sha256_file(os.path.join(HERE, "PREREGISTRATION.md")),
-            "sets_manifest_sha256": sha256_file(os.path.join(HERE, "sets", "manifest.json")),
+            "preregistration_sha256": sha256_file(p["prereg"]),
+            "sets_manifest_sha256": sha256_file(p["sets_manifest"]),
+            "timing_json_sha256": sha256_file(p["timing_json"]),
             "workload": wl_file, "states": state_list()}
+
+
+def run_parameters():
+    """What the launcher will actually run, from the code (compared with the baseline)."""
+    from e_bridge import bridge_command
+    from e_diag_state import M5A_BODIES
+
+    bc = bridge_command("x", 1, "o", "r")
+    return {"parallel_workers": WIDTH, "m5a_bodies_in_code": M5A_BODIES,
+            "k2": {"seeds": list(K2_SEEDS), "train_steps": K2_TRAIN_STEPS, "checkpoints": list(K2_STEPS)},
+            "bridge": {"seeds": list(BRIDGE_SEEDS), "train_steps": int(bc[bc.index("--steps") + 1]),
+                       "checkpoints": list(BRIDGE_STEPS)},
+            "n_states": len(state_list())}
+
+
+def make_baseline(p, frozen_utc=None, supersedes=None):
+    """The approved freeze baseline file content (PREREGISTRATION 12.8)."""
+    f = make_freeze(None, p)
+    rp = run_parameters()
+    out = {"frozen_workload": dict(APPROVED["frozen_workload"]), "diag_cap_hours": APPROVED["diag_cap_hours"],
+           "parallel_workers": APPROVED["parallel_workers"], "k2": rp["k2"], "bridge": rp["bridge"],
+           "n_states": rp["n_states"],
+           "basis": {k: f[k] for k in ("code_tree_sha256", "code_files", "preregistration_sha256",
+                                       "sets_manifest_sha256", "timing_json_sha256")}}
+    if frozen_utc:
+        out["frozen_utc"] = frozen_utc
+    if supersedes:
+        out["supersedes"] = supersedes
+    return out
+
+
+def check_baseline(wl_file, freeze_now, p):
+    """12.8: the current code tree, preregistration, set manifest, timing record
+    and the parameters the launcher will run must equal the approved freeze
+    baseline, item by item. Returns the list of differences (empty: passed)."""
+    diff = []
+    b = wl_file.get("basis") or {}
+    if not b:
+        return ["the workload file carries no approved baseline (basis)"]
+    for k in ("code_tree_sha256", "preregistration_sha256", "sets_manifest_sha256", "timing_json_sha256"):
+        if b.get(k) != freeze_now[k]:
+            diff.append(f"{k}: baseline {str(b.get(k))[:12]} != now {freeze_now[k][:12]}")
+    if b.get("code_tree_sha256") != freeze_now["code_tree_sha256"]:
+        old, new = b.get("code_files", {}), freeze_now["code_files"]
+        changed = sorted(f for f in set(old) | set(new) if old.get(f) != new.get(f))
+        diff.append(f"code files changed since the freeze: {changed[:10]}" if changed else
+                    "no file differs from the baseline's per-file hashes, but its tree hash does not match them")
+    for k in ("frozen_workload", "diag_cap_hours", "parallel_workers"):
+        if wl_file.get(k) != APPROVED[k]:
+            diff.append(f"{k}: {wl_file.get(k)} != approved {APPROVED[k]}")
+    rp = run_parameters()
+    for k in ("k2", "bridge", "n_states", "parallel_workers"):
+        if wl_file.get(k) != rp[k]:
+            diff.append(f"{k}: baseline {wl_file.get(k)} != launcher {rp[k]}")
+    if rp["m5a_bodies_in_code"] != APPROVED["frozen_workload"]["m5a_bodies"]:
+        diff.append(f"M5(a) in code {rp['m5a_bodies_in_code']} != approved 500")
+    return diff
 
 
 class Launcher:
@@ -462,13 +537,17 @@ def main():
         wl_file = load_json(p["workload"])
         wl = (wl_file or {}).get("frozen_workload")
         if not wl:
-            raise Stop(5, "REFUSED: no frozen workload (workload_freeze.json)")
+            raise Stop(5, f"REFUSED: no frozen workload ({WORKLOAD_FILE})")
         if wl.get("m5a_bodies") != 500:
             raise Stop(5, "REFUSED: frozen workload does not keep M5(a) at 500 bodies (11.3)")
         cap_s = p["cap_override"] or float(wl_file.get("diag_cap_hours", 0)) * 3600
         if cap_s <= 0:
-            raise Stop(5, "REFUSED: no diagnostic budget cap in workload_freeze.json")
-        freeze_now = make_freeze(wl_file)
+            raise Stop(5, f"REFUSED: no diagnostic budget cap in {WORKLOAD_FILE}")
+        freeze_now = make_freeze(wl_file, p)
+        diffs = check_baseline(wl_file, freeze_now, p)
+        if diffs:
+            raise Stop(5, "REFUSED: the current state differs from the approved freeze baseline "
+                          f"({WORKLOAD_FILE}): " + "; ".join(diffs))
         if not resume:
             if os.path.exists(p["run_freeze"]):
                 raise Stop(5, "REFUSED: a run freeze exists; continue with --resume")
@@ -479,8 +558,8 @@ def main():
             old = load_json(p["run_freeze"])
             if not old:
                 raise Stop(5, "REFUSED: --resume without a run freeze")
-            changed = [k for k in ("code_tree_sha256", "preregistration_sha256", "sets_manifest_sha256", "workload",
-                                   "states") if old.get(k) != freeze_now[k]]
+            changed = [k for k in ("code_tree_sha256", "preregistration_sha256", "sets_manifest_sha256",
+                                   "timing_json_sha256", "workload", "states") if old.get(k) != freeze_now[k]]
             if changed:
                 files = [f for f in set(old.get("code_files", {})) | set(freeze_now["code_files"])
                          if old.get("code_files", {}).get(f) != freeze_now["code_files"].get(f)]
@@ -514,6 +593,9 @@ def main():
     signal.signal(signal.SIGINT, handler)
     signal.signal(signal.SIGTERM, handler)
     try:
+        L.log(f"baseline check passed ({WORKLOAD_FILE}): code tree {freeze_now['code_tree_sha256'][:12]}, "
+              f"preregistration {freeze_now['preregistration_sha256'][:12]}, sets {freeze_now['sets_manifest_sha256'][:12]}, "
+              f"timing {freeze_now['timing_json_sha256'][:12]}, workload and run parameters as approved")
         L.log(f"{'resume' if resume else 'launch'} gate E: workload {wl}, diagnostic cap {cap_s / 3600:.2f} h, "
               f"used so far {budget['diag_seconds'] / 3600:.2f} h")
         save(p["budget_ledger"], budget)
@@ -534,7 +616,7 @@ def main():
             seed = int(s[1:])
             if K == "K2":
                 argv = ["python", "experiments/gate_e/train_k.py", "--task", "k2", "--arm", arm, "--seed", str(seed),
-                        "--steps", "12000", "--save-at", k2_save, "--ckpt-dir", p["runs"],
+                        "--steps", str(K2_TRAIN_STEPS), "--save-at", k2_save, "--ckpt-dir", p["runs"],
                         "--out", os.path.join(p["runs"], f"K2_{arm}_s{seed}.json")]
                 out = p["runs"]
             else:
