@@ -240,15 +240,24 @@ def diag_integrity_failure(d):
 
 
 def interrupt_during_diagnostics_then_resume(d):
+    """A state recorded in the results ledger before the interruption is never
+    run again. A state that finished but was not yet recorded (the launcher had
+    not polled it) may run again only through quarantine + re-diagnosis +
+    equality with the kept result (12.4.2)."""
     rc1 = launch_and_interrupt(d, False, lambda c: sum(x.startswith("done diag") for x in c) >= 40)
-    done_before = {c.split()[2] for c in calls(d) if c.startswith("done diag")}
+    ledgered = set(json.load(open(os.path.join(d, "results_ledger.json"))))
+    done_before = {c.split()[2][5:] for c in calls(d) if c.startswith("done diag")}
     rc2, _ = launch(d, resume=True)
-    starts = [c.split()[2] for c in calls(d) if c.startswith("start diag")]
-    dup_completed = [s for s in done_before if starts.count(s) > 1]
-    ok = rc1 == 130 and rc2 == 0 and not dup_completed and count(d, "done judge") == 10
+    starts = [c.split()[2][5:] for c in calls(d) if c.startswith("start diag")]
+    rerun_ledgered = [s for s in ledgered if starts.count(s) > 1]
+    rerun_unledgered = [s for s in done_before - ledgered if starts.count(s) > 1]
+    st = status(d)
+    verified = all(f"re-diagnosed {s} equals the kept result" in st for s in rerun_unledgered)
+    ok = rc1 == 130 and rc2 == 0 and not rerun_ledgered and verified and count(d, "done judge") == 10
     ok &= len(json.load(open(os.path.join(d, "results_ledger.json")))) == 280
-    return ok, {"exit_first": rc1, "exit_resume": rc2, "completed_before_interrupt": len(done_before),
-                "completed_states_rerun": len(dup_completed)}
+    return ok, {"exit_first": rc1, "exit_resume": rc2, "ledgered_before_interrupt": len(ledgered),
+                "finished_but_unledgered": len(done_before - ledgered), "ledgered_rerun": len(rerun_ledgered),
+                "unledgered_rerun_and_verified_equal": len(rerun_unledgered) if verified else "NOT VERIFIED"}
 
 
 def half_written_result(d):
