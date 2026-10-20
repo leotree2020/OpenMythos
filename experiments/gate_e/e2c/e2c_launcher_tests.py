@@ -17,7 +17,8 @@ pool of NON-held-out keys only (never in R*): determinism per salt, every key
 in the pool, 1-2 counterfactuals per body, fallback counting, and one
 evaluation of a freshly initialized model.
 
-Writes stage1/v4/launcher_tests.json; exit 0 only if every case ends as expected.
+Writes stage1/v4/launcher_tests.json, or the file given by --out (never over an
+existing file); exit 0 only if every case ends as expected.
 """
 
 import hashlib
@@ -113,6 +114,7 @@ elif kind == "judge":
     out = sys.argv[3]
     if os.path.exists(out):
         sys.exit(3)
+    time.sleep(float(os.environ.get("STUB_SLEEP_JUDGE", "0")))
     cond, arm, s = name.split("_")
     t2 = sha(os.path.join(D, "judgments", "test2_heldout.jsonl"))
     write(out, json.dumps({"cond": cond, "arm": arm, "seed": int(s[1:]), "set": "test2_heldout", "test2_sha256": t2, "main": {}}))
@@ -475,22 +477,49 @@ def judgment_never_redone(d):
             f"exit {r.returncode}")
 
 
+def judgment_ledgered(d):
+    try:
+        return any(v.get("sha256") for v in json.load(open(os.path.join(d, "judgments_ledger.json"))).values())
+    except (OSError, ValueError):
+        return False
+
+
 def judgment_without_ledger_recovered(d):
+    # interrupt only once the launcher has written at least one judgment hash into its ledger (the first version
+    # interrupted on the stub's own "done" lines, which could come before any ledger write: no hash to remove)
     launch(d)
-    rc = launch_and_interrupt(d, 4, False, lambda d: count(d, "done judge") >= 3, STUB_SLEEP_DIAG=0)
+    rc = launch_and_interrupt(d, 4, False, judgment_ledgered, STUB_SLEEP_JUDGE=0.3)
     jl = json.load(open(os.path.join(d, "judgments_ledger.json")))
     done = [k for k, v in jl.items() if v.get("sha256")]
     if done:
         jl[done[0]].pop("sha256")
         json.dump(jl, open(os.path.join(d, "judgments_ledger.json"), "w"))
+    existing = {f[:-5] for f in os.listdir(os.path.join(d, "judgments")) if f.endswith(".json") and "_s" in f
+                and not f.startswith(("keyspace", "test2"))}
+    mark = len(calls(d))
     r = launch(d, stage=4, resume=True)
-    dn = [c for c in calls(d) if c.startswith("done judge")]
+    restarted = [c.split()[-1] for c in calls(d)[mark:] if c.startswith("start judge")]
+    files = {f[:-5] for f in os.listdir(os.path.join(d, "judgments")) if f.endswith(".json") and "_s" in f
+             and not f.startswith(("keyspace", "test2"))}
     rec = json.load(open(os.path.join(d, "judgments_ledger.json")))
     recovered = [k for k, v in rec.items() if v.get("recovered")]
+    dn = sorted(files)
     # every judgment file found without a ledger hash is recorded, never redone: the one whose hash was removed,
     # and any whose file was written just before the interruption
-    return (r.returncode == 0 and len(dn) == len(set(dn)) == N_JUDGE and bool(done) and done[0] in recovered,
-            f"interrupted {rc}, resume {r.returncode}, judgments written {len(dn)} (each once), recovered {recovered}")
+    return (r.returncode == 0 and len(files) == N_JUDGE and all(rec.get(k, {}).get("sha256") for k in files) and bool(done)
+            and done[0] in recovered and not (existing & set(restarted)),
+            f"interrupted {rc}, resume {r.returncode}, judgment files {len(files)}, ledgered before the interruption {len(done)}, "
+            f"recovered {recovered}, re-started after the resume {sorted(restarted)} (none of them had a file)")
+
+
+def judgment_without_ledger_invalid(d):
+    launch(d)
+    os.makedirs(os.path.join(d, "judgments"), exist_ok=True)
+    open(os.path.join(d, "judgments", "C1_openmythos_s201.json"), "w").write(
+        json.dumps({"cond": "C1", "arm": "openmythos", "seed": 202, "set": "test2_heldout", "test2_sha256": "0" * 64}))
+    r = launch(d, stage=4)
+    return (r.returncode == 3 and "not a complete judgment of this run" in status(d) and count(d, "start judge C1_openmythos_s201") == 0,
+            f"exit {r.returncode}")
 
 
 def keyspace_guard():
@@ -550,13 +579,19 @@ CASES = [all_succeed, refuse_fresh_when_frozen, refuse_resume_without_freeze, re
          diag_integrity_failure, interrupt_during_diagnostics_then_resume, retrain_after_interruption_equal,
          retrain_after_interruption_differs, half_written_result, unledgered_result_differs, unledgered_result_equal,
          ledger_hash_mismatch, checkpoint_restored, checkpoint_restore_fails, budget_cap_not_reset, stage4_before_stage3,
-         salt_mismatch, commitment_mismatch, isolation_not_zero, judgment_never_redone, judgment_without_ledger_recovered]
+         salt_mismatch, commitment_mismatch, isolation_not_zero, judgment_never_redone, judgment_without_ledger_recovered,
+         judgment_without_ledger_invalid]
 
 
 def main():
     global BASE_FREEZE
     out_dir = os.path.join(HERE, "stage1", "v4")
     os.makedirs(out_dir, exist_ok=True)
+    out_path = os.path.join(out_dir, "launcher_tests.json")
+    if "--out" in sys.argv:
+        out_path = os.path.abspath(sys.argv[sys.argv.index("--out") + 1])
+        if os.path.exists(out_path):
+            sys.exit(f"REFUSED: {out_path} exists; an earlier result is never overwritten")
     d0 = tempfile.mkdtemp(prefix="e2c_v4_base_")
     BASE_FREEZE = freeze_content(d0)
     shutil.rmtree(d0, ignore_errors=True)
@@ -582,7 +617,7 @@ def main():
         res[fn.__name__] = {"pass": bool(ok), "info": info}
         print(f"{'PASS' if ok else 'FAIL'} {fn.__name__}: {info[:300]}", flush=True)
     res["all_pass"] = all(v["pass"] for v in res.values() if isinstance(v, dict))
-    json.dump(res, open(os.path.join(out_dir, "launcher_tests.json"), "w"), indent=1, ensure_ascii=False)
+    json.dump(res, open(out_path, "w"), indent=1, ensure_ascii=False)
     print("V4", "PASS" if res["all_pass"] else "FAIL", f"{sum(v['pass'] for v in res.values() if isinstance(v, dict))}/{len(res) - 1}")
     sys.exit(0 if res["all_pass"] else 3)
 

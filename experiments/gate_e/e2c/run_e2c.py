@@ -595,6 +595,14 @@ def stage3(L, p, fz, tick, save):
     L.log(f"all {len(states_planned())} states diagnosed")
 
 
+def judgment_invalid(path, run, test2_sha):
+    j = load_json(path) or {}
+    cond, arm, seed = split(run)
+    if (j.get("cond"), j.get("arm"), j.get("seed"), j.get("set"), j.get("test2_sha256")) != (cond, arm, seed, "test2_heldout", test2_sha):
+        return "not a complete judgment of this run on this test2"
+    return None
+
+
 def stage4(L, p, fz, salt_file, tick, save):
     salt = open(salt_file).read().strip()
     if hashlib.sha256(salt.encode()).hexdigest() != fz["salt_commitment_sha256"]:
@@ -642,9 +650,13 @@ def stage4(L, p, fz, salt_file, tick, save):
             if not os.path.exists(path) or sha256_file(path) != led["sha256"]:
                 raise Stop(3, f"INTEGRITY FAILURE (F5): judgment {run} missing or differs from its ledger; never redone")
             continue
-        if os.path.exists(path):
+        if os.path.exists(path):  # written but not ledgered (interrupted): checked like a finished one, never redone
+            why = judgment_invalid(path, run, rec["sha256"])
+            if why:
+                raise Stop(3, f"INTEGRITY FAILURE: judgment of {run} found without ledger entry is {why}; never redone")
             jl[run] = {"sha256": sha256_file(path), "recovered": True, "attempts": (led or {}).get("attempts", 1)}
             save(p["judgments_ledger"], jl)
+            L.log(f"judgment {run} found complete without ledger entry: recorded, not redone")
             continue
         hist_c0 = cond == "C0" and seed in APPROVED["seeds"]["historical"]
         if hist_c0:  # E1's run (R2 reproduced it); its archived step-12000 checkpoint, both hashes verified
@@ -674,10 +686,9 @@ def stage4(L, p, fz, salt_file, tick, save):
         path = os.path.join(p["judgments"], f"{run}.json")
         if not os.path.exists(path):
             raise Stop(6, f"RESULT CHECK FAILED: {run} wrote no judgment")
-        j = load_json(path) or {}
-        cond, arm, seed = split(run)
-        if (j.get("cond"), j.get("arm"), j.get("seed"), j.get("set"), j.get("test2_sha256")) != (cond, arm, seed, "test2_heldout", rec["sha256"]):
-            raise Stop(3, f"INTEGRITY FAILURE: judgment of {run} is not a complete judgment of this run on this test2")
+        why = judgment_invalid(path, run, rec["sha256"])
+        if why:
+            raise Stop(3, f"INTEGRITY FAILURE: judgment of {run} is {why}")
         jl[run]["sha256"] = sha256_file(path)
         save(p["judgments_ledger"], jl)
         L.sync(f"judgment {run}")
