@@ -3,10 +3,19 @@
 > **DRAFT / NOT APPROVED**（第四版）
 > - 历史版本：第一版 eecb750、第二版 bb6aadf，审核结论都是 REVISION REQUIRED。
 > - 第三版 0f85125：冻结拒绝域通过审核；多重检验的错误率控制和 p 值算法需修订。
+> - 第四版 5d477d8：冻结拒绝域与认证算法（D8）、全局多重比较控制通过审核；科学设计原则接受；定稿前需三处文档小修。本文是第四版的小修订。
 > - 本文只是设计草案，未获批准。
 > - 只授权设计：不实现、不生成数据、不训练、不评测、不校准。
 > - E2-c 的实现、数据生成、校准、训练、正式判定和预算执行，都需要以后逐项单独授权。
 > - 本文不修改 E1 的冻结代码、报告、原始结果、判定或预注册文件。E1 已于 4b33c86 接受归档。
+
+## 第四版小修订说明（对应 5d477d8 的审核意见；不改动设计、拒绝域、α 分配和任何数值）
+
+| 审核意见 | 处理 | 位置 |
+|---|---|---|
+| 1. 附录 F 的 `up6()` 经过浮点数取整 | 改为完全基于 `Fraction` 的整数向上取整（输入为 `Fraction`，不经过浮点数）。脚本 sha256 已更新；重新运行，输出与 5d477d8 中的逐字相同 | 附录 F |
+| 2. 第 10、14 节遗留旧版本标签 | 第 10 节阶段 0 改为第四版；第 14 节表头改为当前版本，D8 记录 5d477d8 的审核结论 | 10、14 |
+| 3. 附录 B2 脚本仍计算旧的 Newcombe 排除计数 | 在附录 B2 和脚本注释中写明：该计数已弃用，不输出，不参与任何确认性分析。脚本 sha256 已更新；重新运行，输出与 5d477d8 中的逐字相同 | 附录 B2 |
 
 ## 第四版修订说明（对应 0f85125 的审核意见；其余已接受的设计不变）
 
@@ -480,7 +489,7 @@ R2 不通过时，停止并报告。这时不能把 E1 运行当作历史队列�
   - 不使用随机化；
   - 同值的统计量一并计入（取"≤"），检验偏保守；
   - 实际水平低于名义值的部分不作调整。
-- **报告的 p 值**：只报告附录 F 算法给出的**认证上界 p̄**，即 {(b′, c′)：Z(b′, c′) ≤ Z(b, c)} 在边界上的概率上确界的有理数上界，向上取整到 6 位小数。
+- **报告的 p 值**：只报告附录 F 算法给出的**认证上界 p̄**，即 {(b′, c′)：Z(b′, c′) ≤ Z(b, c)} 在边界上的概率上确界的有理数上界，用 `Fraction` 的整数运算向上取整到 6 位小数（不经过浮点数，附录 F 的 `up6()`）。
   - 算法的适用条件：所用的 Tango 下集都关于 b 递减。附录 F 已对 N = 20、24、30 的全部下集逐一核对。
   - 与冻结表的一致性：冻结表本身就是 Tango 下集，所以表内任何 (b, c) 的 p̄ 都不超过表的认证水平（< 0.025）。表外的 (b, c)，网格上的 p 值（上确界的下界）已经 > 0.025。因此 p̄ 与表的判定不会矛盾；阶段 1 的 V7 再核对一次。
 - **不报告反演置信上界**：把检验对 Δ₀ 取反，需要对每个 Δ₀ 都做认证，并且需要拒绝域随 Δ₀ 嵌套。本版没有经过验证的算法，所以不报告。效应估计只用描述性的 Newcombe 95% 区间（5.1）。
@@ -753,7 +762,7 @@ D2c 单次耗时的来源：按 E1 各模块的实测耗时推算。
 
 | 阶段 | 内容 | 授权 |
 |---|---|---|
-| 0 | 本预注册设计（第三版） | 当前阶段，待审核 |
+| 0 | 本预注册设计（第四版，含小修订） | 当前阶段，待最终差异审核 |
 | 1 | 实现与非正式验证：R1、R1′、R1″、R2、R3、V1、V3、V4、V5、V7，以及 λ、λ₂ 校准（3.5） | 需要单独授权 |
 | 2 | 键空间计数与哈希、盐值承诺登记、隔离核对、冻结 | 需要单独授权 |
 | 3 | 正式训练与诊断（预算执行），用续跑启动器 | 需要单独授权 |
@@ -856,9 +865,9 @@ D2c 单次耗时的来源：按 E1 各模块的实测耗时推算。
   - 能枚举 R* / M1* 的代码只有阶段 2 的哈希脚本和判定脚本，判定之前的日志中没有在 R* 题面上运行模型的记录。
 - **审计日志**：记录每个阶段的审核结论、验证、偏差和失败。失败记录一律保留，不覆盖。
 
-## 14. 待审核决定（含 bb6aadf、0f85125 审核的意见）
+## 14. 待审核决定（含 bb6aadf、0f85125、5d477d8 审核的意见）
 
-| 编号 | 问题 | 上一轮审核意见 | 第三版的处理 |
+| 编号 | 问题 | 上一轮审核意见 | 当前版本（第四版）的处理 |
 |---|---|---|---|
 | D1 | 非绑定对照 | 条件认可 C2 数字编码，降低因果措辞的强度 | 保留 C2；措辞按 1.3、7.1 收紧。C3-N、C2-L 仍为可选（各约 +9.9 小时） |
 | D2 | 辅助强度的控制方式 | 原则认可固定权重和早期能量校准 | 保留；W 按更新编号精确定义（3.5） |
@@ -867,7 +876,7 @@ D2c 单次耗时的来源：按 E1 各模块的实测耗时推算。
 | D5 | 测试集封存 | 原则认可方案 S | 盐值由审核方生成，≥ 128 位，只登记承诺（7.4） |
 | D6 | Git LFS | 认可全部归档、每次取回核验；终局 20% 复核须固定抽样规则 | 规则：路径 sha256 mod 5 = 0，另加全部第 12000 步（8.3） |
 | D7 | 历史队列 | 认可，作为探索性队列 | 保留 |
-| D8 | 统计判定 | 第三版：冻结拒绝域通过；多重检验与 p 值算法需修订 | 第四版：α 分配为优越性族 0.025 + 排除检验 0.025；确认性判定以表为准；p 值只报认证上界；不报反演上界（7.1、附录 F）。**待审核** |
+| D8 | 统计判定 | 第三版：冻结拒绝域通过；多重检验与 p 值算法需修订。第四版 5d477d8：冻结拒绝域与认证算法 PASS；全局多重比较控制 PASS | 第四版：α 分配为优越性族 0.025 + 排除检验 0.025；确认性判定以表为准；p 值只报认证上界；不报反演上界（7.1、附录 F）。小修订：`up6()` 改为 `Fraction` 整数向上取整（附录 F） |
 | D9 | 测量用题集 | 认可沿用 E1 题集，正式 test2 必须独立封存 | 保留；E1 题集只作测量（7.4） |
 
 ---
@@ -1091,8 +1100,10 @@ true +0.30                 p0=0.4 p1=0.7 p2=0.4 rho=0.0: N=20: joint 0.17 P1 0.2
 
 ## 附录 B2：联合功效模拟（第四版：优越性族 α = 0.025；取代附录 B）
 
-- 运行方式：`python3 -I power_v4.py 20000`，sha256 = `7d1f95de13cad4d03602b13500e3094bb5afebda62a3794c0768b90032901eec`。
+- 运行方式：`python3 -I power_v4.py 20000`，sha256 = `c220e67f643ff60f348e309389add3875cbe5dc916108aaff1a6ce5e97119282`。
 - 与附录 B 相同的情景、潜变量模型和随机种子 `random.Random(0)`；只把 Holm 的族水平改为 0.025（较小的 p ≤ 0.0125，较大的 p ≤ 0.025）。
+- **旧的 Newcombe 排除计数已弃用**：脚本沿用 `power.py` 的结构，`sim` 的第三个返回值 `excl` 仍按第一版的规则（Newcombe 95% 区间上限 < 0.30）计数。这个计数不输出，不参与任何确认性分析，也不用于功效或样本量的论证。确认性的排除判定只用 7.1 的冻结拒绝域表（附录 D、F）。
+- 小修订（对应 5d477d8 的审核意见）：只在文档字符串和 `excl` 那一行加了说明，代码逻辑未变。重新运行后，输出与 5d477d8 中的逐字相同。
 
 ```python
 """Joint power of the E2-c superiority family at family alpha 0.025 (fourth
@@ -1101,7 +1112,11 @@ rho all conditions share one uniform u, otherwise each condition draws its own;
 Y_c = 1[u_c < p_c]. Exact two-sided McNemar per contrast, Holm over the two
 contrasts at family alpha 0.025 (smaller p <= 0.0125, larger p <= 0.025), both
 in the direction C1 > other. 'P1' = P1 rejected by the Holm procedure with
-C1 > C0."""
+C1 > C0.
+The third value returned by sim, 'excl', is the old Newcombe exclusion count
+carried over from power.py (rule of the first version). It is deprecated: it is
+not printed and plays no part in any confirmatory analysis; the confirmatory
+exclusion test is the frozen rejection table of 7.1 (Appendices D and F)."""
 import math, random, sys
 from functools import lru_cache
 Z = 1.959963984540054
@@ -1146,7 +1161,7 @@ def sim(N, p0, p1, p2, rho, reps, rng):
         only1 += s1
         a = sum(1 for a0, a1, _ in y if a1 and a0); d = N - a - b10 - c10
         lo, hi = newcombe(a, b10, c10, d)
-        excl += (pa > 0.05 or not (b10 > c10)) and hi < 0.30
+        excl += (pa > 0.05 or not (b10 > c10)) and hi < 0.30  # deprecated Newcombe count, not printed or used
     return joint / reps, only1 / reps, excl / reps
 rng = random.Random(0)
 REPS = int(sys.argv[1]) if len(sys.argv) > 1 else 20000
@@ -1450,14 +1465,16 @@ root-swap pairs 2000 distinct keys 1895 distinct bodies 1944
 
 ## 附录 F：排除检验的认证上界（第四版）
 
-- 运行方式：`python3 -I certify.py`，sha256 = `3fa03cac4d4ef94c2e2f542a32ccdef07bdd1c6f0b9a7dfc5e15e32313a22718`。全部运算用 `fractions.Fraction` 精确有理数完成。
+- 运行方式：`python3 -I certify.py`，sha256 = `d8d5135f88e1b0d770f078874c9d35fcf49701d02ca5043ad26dfd27c7e7abd4`。全部运算用 `fractions.Fraction` 精确有理数完成。
 - 冻结表直接按 7.1 硬编码，不依赖网格代码。
 - 认证的内容：
   1. 冻结表关于 b 递减，并且是 Tango 下集；
   2. N = 20、24、30 的全部 Tango 下集都关于 b 递减（这是 p̄ 可以归约到边界的条件）；
   3. 冻结表在原假设区域上拒绝概率的认证上界；
   4. N = 24 时，表边缘内外若干格子的认证 p 值上界 p̄。
-- 算法：把边界上的概率写成伯恩斯坦形式，用 de Casteljau 二分做分支定界，直到上界与下界之差 ≤ 1e-7。上界向上取整到 6 位小数。
+- 算法：把边界上的概率写成伯恩斯坦形式，用 de Casteljau 二分做分支定界，直到上界与下界之差 ≤ 1e-7。
+- 取整：`up6()` 只接受 `Fraction`，用整数运算 ⌈x · 10⁶⌉ / 10⁶ 向上取整到 6 位小数，不经过浮点数。输出中"certified upper bound"后的数就是这个结果。方括号内的区间端点只是转成浮点数、四舍五入到 7 位的显示值，不作认证用。
+- 小修订（对应 5d477d8 的审核意见）：只改了 `up6()` 及其两处调用。重新运行后，输出与 5d477d8 中的逐字相同。
 - 拒绝域判定用表；p̄ 只作报告，二者的一致性见 7.1。
 
 ```python
@@ -1514,7 +1531,10 @@ def tango_z(b, c, n, d=0.3):
     A = 2 * n; B = -b - c + (2 * n - b + c) * d; C = -c * d * (1 - d)
     pc = (math.sqrt(B * B - 4 * A * C) - B) / (2 * A)
     return (b - c - n * d) / math.sqrt(n * (2 * pc + d * (1 - d)))
-def up6(x): return math.ceil(x * 10**6) / 10**6
+def up6(x):  # exact ceiling of a nonnegative Fraction to 6 decimals, integer arithmetic only (no float)
+    assert isinstance(x, Fr) and x >= 0
+    k = -((-x.numerator * 10**6) // x.denominator)
+    return f"{k // 10**6}.{k % 10**6:06d}"
 for n in (20, 24, 30):
     R = region(n)
     lo, ub = certified_sup(bernstein(R, n))
@@ -1526,7 +1546,7 @@ for n in (20, 24, 30):
     zmax_in = max(z[x] for x in R); is_lower = R == {x for x in cells if z[x] <= zmax_in + 1e-12}
     print(f"N={n}: |R|={len(R)} R decreasing in b: {decreasing_in_b(R)}; R is a Tango lower set: {is_lower}; "
           f"all Tango lower sets decreasing in b: {zl_ok}; certified sup over H0 of P(reject) in "
-          f"[{float(lo):.7f}, {float(ub):.7f}] -> certified upper bound {up6(float(ub)):.6f} (nominal 0.025)", flush=True)
+          f"[{float(lo):.7f}, {float(ub):.7f}] -> certified upper bound {up6(ub)} (nominal 0.025)", flush=True)
 # certified p-value upper bounds for N = 24 at the edge cells of the table and just outside it
 n = 24
 cells = [(b, c) for b in range(n + 1) for c in range(n + 1 - b)]
@@ -1534,7 +1554,7 @@ z = {bc: tango_z(*bc, n) for bc in cells}
 for bc in ((0, 0), (2, 0), (3, 0), (3, 1), (5, 5), (5, 4), (10, 13), (10, 12), (11, 13)):
     A = {x for x in cells if z[x] <= z[bc] + 1e-12}
     lo, ub = certified_sup(bernstein(A, n))
-    print(f"N=24 (b,c)={bc}: in frozen table {bc in region(n)}; certified p-value upper bound {up6(float(ub)):.6f} (sup in [{float(lo):.7f}, {float(ub):.7f}])", flush=True)
+    print(f"N=24 (b,c)={bc}: in frozen table {bc in region(n)}; certified p-value upper bound {up6(ub)} (sup in [{float(lo):.7f}, {float(ub):.7f}])", flush=True)
 ```
 
 输出（逐字）：
