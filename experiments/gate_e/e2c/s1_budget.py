@@ -17,7 +17,11 @@ unique id, and an open interval of a process that is still alive is left
 open. Version 1 (kept as stage1/s1_budget_v1_used_until_gate2.py) had no
 cross-process lock and closed every open interval at a start, which wrote two
 spurious "closed_after_interruption" entries for jobs still running (their
-intervals kept being refreshed and closed normally; see "corrections").
+intervals kept being refreshed and closed normally; see the interim audit).
+Supplements (version 2, after the interim audit): time known to have run but
+not covered by any interval is added as a named supplement; the total is the
+union of the intervals plus the supplements (gate 2's first launch: 15 s,
+at most one heartbeat between its last heartbeat 10:53:30 and its kill).
 
     with Ledger().job("gate1"):
         run_pool([...], ledger)
@@ -106,11 +110,18 @@ class Ledger:
             try:
                 d = json.load(open(self.path))
                 fn(d)
-                d["total_seconds"] = union_seconds(d["intervals"])
+                d["total_seconds"] = union_seconds(d["intervals"]) + sum(x["seconds"] for x in d.get("supplements", []))
                 _atomic(self.path, d)
                 return d
             finally:
                 fcntl.flock(lf, fcntl.LOCK_UN)
+
+    def add_supplement(self, label, seconds, note):
+        def add(d):
+            sup = d.setdefault("supplements", [])
+            if not any(x["label"] == label for x in sup):
+                sup.append({"label": label, "seconds": seconds, "note": note, "added": time.time()})
+        return self._rw(add)
 
     def total(self):
         return json.load(open(self.path))["total_seconds"]
