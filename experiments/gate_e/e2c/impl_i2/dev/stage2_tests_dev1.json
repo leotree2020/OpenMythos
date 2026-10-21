@@ -1,0 +1,233 @@
+{
+ "started_utc": "2026-10-21T01:24:45Z",
+ "cases": {
+  "verify_pass": {
+   "pass": true,
+   "info": "exit 0; 33 seeds, chain points compared 12; keyspace stub env [\"E2C_S2_STUB_KEYSPACE_STAGE\", \"E2C_S2_TEST_DIR\", \"E2C_TEST_DIR\"]",
+   "seconds": 12.8,
+   "invocations": 1
+  },
+  "verify_deterministic": {
+   "pass": true,
+   "info": "exits 0, 0; records equal True",
+   "seconds": 21.1,
+   "invocations": 2
+  },
+  "freeze_pass_launcher_accepts": {
+   "pass": true,
+   "info": "check 0, stage3 0, stage4 0; freeze fc182af83239 at b6e4669224a8",
+   "seconds": 41.4,
+   "invocations": 5
+  },
+  "freeze_replaced_refused_by_launcher": {
+   "pass": true,
+   "info": "exits 5, 5, 5: REFUSED: the freeze file is not the approved one: e2c_workload_freeze.json must be added once, by the approved commit, and never changed after it",
+   "seconds": 28.5,
+   "invocations": 5
+  },
+  "freeze_written_once": {
+   "pass": true,
+   "info": "second freeze exit 5: REFUSED: e2c_workload_freeze.json exists; the freeze is written once",
+   "seconds": 19.1,
+   "invocations": 3
+  },
+  "freeze_needs_approved_record": {
+   "pass": true,
+   "info": "verify 0; freeze exits [5, 5, 5, 5]",
+   "seconds": 27.5,
+   "invocations": 5
+  },
+  "freeze_commitment_only": {
+   "pass": true,
+   "info": "malformed commitments [5, 5, 5, 5, 5, 5, 5]; salt arguments rejected by the parser [2, 2, 2]; valid commitment 0",
+   "seconds": 45.2,
+   "invocations": 12
+  },
+  "freeze_code_changed_since_verify": {
+   "pass": true,
+   "info": "verify 0, freeze 5: REFUSED: the code tree or a frozen document changed since the approved verify",
+   "seconds": 14.3,
+   "invocations": 2
+  },
+  "f11_counts": {
+   "pass": true,
+   "info": "[('H', 3, 'F11', True, False, 5), ('U', 3, 'F11', True, False, 5), ('R_star', 3, 'F11', True, False, 5), ('M1_star', 3, 'F11', True, False, 5)] (exit, stop status, no record, V2 started, later launch)",
+   "seconds": 34.8,
+   "invocations": 8
+  },
+  "f11_appendix_output": {
+   "pass": true,
+   "info": "exit 3, stop F11",
+   "seconds": 4.4,
+   "invocations": 1
+  },
+  "keyspace_record_format": {
+   "pass": true,
+   "info": "[(3, 'INTEGRITY_FAILURE'), (3, 'INTEGRITY_FAILURE'), (3, 'INTEGRITY_FAILURE')] (an integrity failure, not F11)",
+   "seconds": 13.4,
+   "invocations": 3
+  },
+  "prereg_changed": {
+   "pass": true,
+   "info": "exit 5: REFUSED: preregistration 6b67b6e03dd6 is not the approved 434f586996e4",
+   "seconds": 4.2,
+   "invocations": 1
+  },
+  "e1_sets_mismatch": {
+   "pass": true,
+   "info": "[('byte', 5, False), ('extra_file', 5, False), ('anchor', 5, False), ('uncommitted', 5, False)] (exit, attempt made)",
+   "seconds": 17.8,
+   "invocations": 4
+  },
+  "e1_set_changed_during_run": {
+   "pass": true,
+   "info": "exit 3: INTEGRITY FAILURE: E1's set files changed during the run",
+   "seconds": 10.3,
+   "invocations": 1
+  },
+  "v2_heldout_in_stream": {
+   "pass": true,
+   "info": "exit 3, stop INTEGRITY_FAILURE_V2: INTEGRITY FAILURE (V2): seed 205: 1 held-out samples in the training stream",
+   "seconds": 10.2,
+   "invocations": 1
+  },
+  "v2_reference_chain_mismatch": {
+   "pass": true,
+   "info": "exit 3: INTEGRITY FAILURE (V2): refs/run_s99.json: batch chain at update 2 differs",
+   "seconds": 9.9,
+   "invocations": 1
+  },
+  "v2_reference_files_changed": {
+   "pass": true,
+   "info": "exit 5: REFUSED: stage-1 reference chains: 4 files, digest dd654cf35bdc; approved 4, 33acc05c5c8b",
+   "seconds": 4.6,
+   "invocations": 1
+  },
+  "v2_non_u_set_heldout": {
+   "pass": true,
+   "info": "exit 3, stop INTEGRITY_FAILURE_V2: INTEGRITY FAILURE (V2): E1's non-U set dev_seen holds 1 held-out keys",
+   "seconds": 9.8,
+   "invocations": 1
+  },
+  "v2_missing_seed": {
+   "pass": true,
+   "info": "exit 6: RESULT CHECK FAILED: V2 wrote no result for seed 224",
+   "seconds": 9.7,
+   "invocations": 1
+  },
+  "v2_seed_table": {
+   "pass": true,
+   "info": "33 seeds = run_e2c.training_stream_seeds() True",
+   "seconds": 0.0,
+   "invocations": 0
+  },
+  "interrupt_and_resume": {
+   "pass": true,
+   "info": "interrupted 130 (INTERRUPTED), resume 0; intervals ['INTERRUPTED', 'PASS']",
+   "seconds": 20.5,
+   "invocations": 2
+  },
+  "resume_nondeterministic": {
+   "pass": true,
+   "info": "interrupted 130, resume 3: INTEGRITY FAILURE: v2/seed_002.json of this attempt differs from attempt 01",
+   "seconds": 19.5,
+   "invocations": 2
+  },
+  "crash_then_resume": {
+   "pass": true,
+   "info": "crash exit 9, resume 0; first interval stale (process gone: closed at its last heartbeat)",
+   "seconds": 18.9,
+   "invocations": 2
+  },
+  "budget_cap": {
+   "pass": true,
+   "info": "exits 7, 7; used 1.134 s of 1 s over 2 launches",
+   "seconds": 10.0,
+   "invocations": 2
+  },
+  "stale_interval": {
+   "pass": true,
+   "info": "dead pid: exit 0, interval stale; live pid: exit 5",
+   "seconds": 13.4,
+   "invocations": 2
+  },
+  "launch_state": {
+   "pass": true,
+   "info": "first launch over an attempt 5, resume without attempt 5, pass 0, after pass 5",
+   "seconds": 23.4,
+   "invocations": 4
+  },
+  "git_state": {
+   "pass": true,
+   "info": "wrong HEAD 5, dirty tree 5, unallowed code change 5, allowed 0",
+   "seconds": 23.1,
+   "invocations": 4
+  },
+  "inputs_mismatch": {
+   "pass": true,
+   "info": "[('environment', 5), ('lambda_file', 5), ('calibration_file', 5)]",
+   "seconds": 13.4,
+   "invocations": 3
+  },
+  "key_rules_mismatch": {
+   "pass": true,
+   "info": "exit 3: INTEGRITY FAILURE: key rules {'letters': 10, 'keys': 4050, 'heldout': 404, 'mismatches': 0, 'pass': False}, expected 4050 keys, 405 held-out, letters as Appendix A",
+   "seconds": 4.2,
+   "invocations": 1
+  },
+  "leak_scan_hit": {
+   "pass": true,
+   "info": "exit 3: INTEGRITY FAILURE: 1 key-like strings in the outputs (no key list is written)",
+   "seconds": 9.6,
+   "invocations": 1
+  },
+  "checkpoint_access_blocked": {
+   "pass": true,
+   "info": "exit 3, x.pt created False: V2 worker exited 3 (see v2_worker_*.txt)",
+   "seconds": 9.1,
+   "invocations": 1
+  },
+  "real_entry_refuses": {
+   "pass": true,
+   "info": "{'verify': 5, 'verify_with_text_only': 5, 'freeze': 5, 'worker': 5, 'test_dir_in_real_mode': 5, 'keyspace_variable_set': 5, 'test_mode_with_authorization': 5}; e2c/stage2 and the real freeze exist before / after: (False, False) / (False, False)",
+   "seconds": 0.4,
+   "invocations": 7
+  },
+  "unit_write_once": {
+   "pass": true,
+   "info": "second write refused, different content exit 3; race of 6 writers ['lost', 'lost', 'lost', 'lost', 'lost', 'won']; temporary files left []",
+   "seconds": 0.1,
+   "invocations": 0
+  },
+  "unit_appendix_a": {
+   "pass": true,
+   "info": "script dfa649e37b21 rebuilt from the preregistration text; tampered copy exit 5",
+   "seconds": 0.0,
+   "invocations": 0
+  },
+  "unit_tripwires": {
+   "pass": true,
+   "info": "guard,tripwire,tripwire,tripwire,audit (keyspace() refuses without E2C_KEYSPACE_STAGE; test-mode tripwires; checkpoint audit hook)",
+   "seconds": 4.4,
+   "invocations": 0
+  },
+  "unit_chain_definition": {
+   "pass": true,
+   "info": "train_e2c.py and e2c_stage2.stream_check share the stream and chain lines",
+   "seconds": 0.0,
+   "invocations": 0
+  }
+ },
+ "finished_utc": "2026-10-21T01:33:16Z",
+ "seconds": 511.3,
+ "invocations": 89,
+ "passed": 36,
+ "total": 36,
+ "code_sha256": {
+  "e2c_stage2.py": "bcaffd6f6a86770c6dd86ced26dc8ab51b33d6b8dc187d3f0fe15d4da50cadd0",
+  "e2c_stage2_tests.py": "86e3f5182983c75b2879d1b8cbd65ba74aa97597f44388b9eedecfc53858ddfc",
+  "run_e2c.py": "33711975ad72b07913bbdbc25091e80fa1d76e8e06fc8325e9a195fe7a170f05",
+  "e2c_launcher_tests.py": "f8106be20929a9eddca854a9adbda37e9b50fbee8a7526884937b67dba23715e"
+ },
+ "all_pass": true
+}

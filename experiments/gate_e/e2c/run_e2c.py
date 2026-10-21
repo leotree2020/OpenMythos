@@ -3,19 +3,31 @@
 E2-c launcher with resumption (E2C_PREREG_DRAFT 3.5, 7.4, 8.4, 9, 13).
 Written and fault-tested in stage 1 (V4); not run on real data before the
 stage-3 / stage-4 authorizations. The freeze file e2c_workload_freeze.json is
-made in stage 2.
+made in stage 2 (e2c_stage2.py freeze).
 
-    python experiments/gate_e/e2c/run_e2c.py --stage 3             first launch of stage 3
-    python experiments/gate_e/e2c/run_e2c.py --stage 3 --resume    every later launch
-    python experiments/gate_e/e2c/run_e2c.py --stage 4 --salt-file F [--resume]
+    python experiments/gate_e/e2c/run_e2c.py --stage 3 A             first launch of stage 3
+    python experiments/gate_e/e2c/run_e2c.py --stage 3 A --resume    every later launch
+    python experiments/gate_e/e2c/run_e2c.py --stage 4 A --salt-file F [--resume]
+    A = --approved-stage2-commit C --approved-freeze-sha256 S, both taken from
+        the stage-2 review, never from a file of the working tree
+
+Every launch checks that the freeze file has sha256 S and was added by commit
+C (an ancestor of HEAD, not a shallow clone) and never changed after it; the
+first launch of stage 3 binds C and S in run_freeze.json, and stage 4 runs
+only with the C, S and freeze sha256 bound there.
 
 Exit codes (E1 conventions; 9 of the preregistration):
     5  refused (F1): the code tree, preregistration, design record or E1 set
        manifest differs from the freeze; a frozen item is missing (lambda,
        lambda2, salt commitment, R* / M1* hashes) or differs from the
-       approved constants; first launch over existing outputs; resume without
-       a run freeze or after a frozen item changed; stage 4 before stage 3 is
-       complete; test stubs without a test directory
+       approved constants; the R* / M1* record is not in the stage-4
+       keyspace job's format with Appendix A's H, U, R_star, M1_star counts;
+       the salt commitment is not 64 lowercase hex digits (or hashes an empty
+       line); the approvals are missing, the freeze is not the approved one,
+       or stage 4's freeze / approvals differ from those bound at stage 3;
+       first launch over existing outputs; resume without a run freeze or
+       after a frozen item changed; stage 4 before stage 3 is complete; test
+       stubs without a test directory
     3  integrity failure: pairing (F8: common items, heads, lambda, digit code,
        E_W^C1 = 0 / not finite), a re-trained run differing from its kept
        attempt (F8), a non-finite loss or gradient (F7), checkpoint push /
@@ -40,6 +52,7 @@ import hashlib
 import json
 import math
 import os
+import re
 import shutil
 import signal
 import subprocess
@@ -74,6 +87,11 @@ APPROVED = {
     "lambda_candidates": list(C.LAMBDA_CANDIDATES), "early_window_updates": C.W_UPDATES,
 }
 ARMS = ("openmythos", "transformer")
+# stage-2 interface: the R* / M1* record is the stage-4 keyspace job's output with Appendix A's counts (B2);
+# the salt commitment is sha256(salt) as 64 lowercase hex digits, never the salt (B3)
+KEYSPACE_COUNTS = {"H": 12006, "U": 5093, "R_star": 6913, "M1_star": 4129}
+HEX64, HEX40 = re.compile(r"[0-9a-f]{64}\Z"), re.compile(r"[0-9a-f]{40}\Z")
+EMPTY_LINE_HASHES = (hashlib.sha256(b"").hexdigest(), hashlib.sha256(b"\n").hexdigest())
 ARTIFACT_PREFIX = "gate_e/e2c"
 SYNC_EVERY_STATES, SYNC_EVERY_S = 10, 1200
 
@@ -140,12 +158,82 @@ def check_baseline(fz, now):
         if isinstance(lam, (int, float)) and isinstance(lam2, (int, float)) and not (lam / 10 - 1e-12 <= lam2 <= 10 * lam + 1e-12):
             diff.append(f"lambda2 for {arm} outside [lambda/10, 10 lambda]")
     sc = fz.get("salt_commitment_sha256")
-    if not (isinstance(sc, str) and len(sc) == 64):
+    if sc is None:
         diff.append("salt commitment missing")
-    ks = fz.get("keyspace") or {}
-    if not (ks.get("R_star_sha256") and ks.get("M1_star_sha256") and ks.get("counts")):
-        diff.append("R* / M1* hashes missing")
+    elif commitment_problem(sc):
+        diff.append(f"salt commitment malformed: {commitment_problem(sc)}")
+    bad = keyspace_format_problem(fz.get("keyspace"))
+    if bad:
+        diff.append(bad)
+    elif fz["keyspace"]["counts"] != KEYSPACE_COUNTS:
+        diff.append(f"R* / M1* counts {fz['keyspace']['counts']} differ from Appendix A {KEYSPACE_COUNTS}")
     return diff
+
+
+def commitment_problem(sc):
+    if not (isinstance(sc, str) and HEX64.match(sc)):
+        return "not 64 lowercase hex digits"
+    if sc in EMPTY_LINE_HASHES:
+        return "the sha256 of an empty line, not of a salt"
+    return None
+
+
+def keyspace_format_problem(ks):
+    """B2: the record must have exactly the fields of the stage-4 keyspace job (e2c_stage4.py keyspace), which
+    stage 4 compares as a whole: two 64-hex hashes and the four counts H, U, R_star, M1_star."""
+    if not (isinstance(ks, dict) and ks.get("R_star_sha256") and ks.get("M1_star_sha256") and ks.get("counts")):
+        return "R* / M1* hashes missing"
+    if set(ks) != {"R_star_sha256", "M1_star_sha256", "counts"} or not all(
+            isinstance(ks[k], str) and HEX64.match(ks[k]) for k in ("R_star_sha256", "M1_star_sha256")):
+        return "R* / M1* record not in the format of the stage-4 keyspace job"
+    c = ks["counts"]
+    if not (isinstance(c, dict) and set(c) == set(KEYSPACE_COUNTS) and all(type(v) is int for v in c.values())):
+        return f"R* / M1* counts {c} are not the full H, U, R_star, M1_star structure"
+    return None
+
+
+def _git(cwd, *args):
+    r = subprocess.run(["git", *args], cwd=cwd, capture_output=True)
+    return r.returncode, r.stdout
+
+
+def git_anchor(path, commit, sha):
+    """B1: path must have sha256 `sha` and be added by `commit` (an ancestor of HEAD) and never changed after it.
+    commit and sha come from the review (command line), not from any file of the working tree. Returns problems."""
+    if not (isinstance(commit, str) and HEX40.match(commit)):
+        return ["the approved commit is not a 40-digit lowercase hex sha"]
+    if not (isinstance(sha, str) and HEX64.match(sha)):
+        return ["the approved sha256 is not 64 lowercase hex digits"]
+    if not os.path.isfile(path):
+        return [f"{os.path.basename(path)} missing"]
+    bad = []
+    if sha256_file(path) != sha:
+        bad.append(f"{os.path.basename(path)} has sha256 {sha256_file(path)[:12]}, not the approved {sha[:12]}")
+    rc, top = _git(os.path.dirname(os.path.abspath(path)), "rev-parse", "--show-toplevel")
+    if rc:
+        return bad + ["not inside a git repository"]
+    top = top.decode().strip()
+    rel = os.path.relpath(os.path.realpath(path), os.path.realpath(top))
+    if _git(top, "rev-parse", "--is-shallow-repository")[1].decode().strip() != "false":
+        return bad + ["the clone is shallow (run git fetch --unshallow first): the history cannot be checked"]
+    if _git(top, "cat-file", "-e", commit + "^{commit}")[0]:
+        return bad + [f"the approved commit {commit[:12]} does not exist here"]
+    if _git(top, "merge-base", "--is-ancestor", commit, "HEAD")[0]:
+        bad.append(f"the approved commit {commit[:12]} is not an ancestor of HEAD")
+    rc, blob = _git(top, "show", f"{commit}:{rel}")
+    if rc or hashlib.sha256(blob).hexdigest() != sha:
+        bad.append(f"{rel} at the approved commit does not have the approved sha256")
+    if _git(top, "rev-list", "HEAD", "--", rel)[1].decode().split() != [commit]:
+        bad.append(f"{rel} must be added once, by the approved commit, and never changed after it")
+    if _git(top, "status", "--porcelain", "--", rel)[1].strip():
+        bad.append(f"{rel} differs from its committed version")
+    return bad
+
+
+def training_stream_seeds():
+    """The 33 seeds whose training streams V2 (stage 2) and the test2 isolation check (stage 4) cover."""
+    s = APPROVED["seeds"]
+    return sorted(set(s["openmythos"] + s["transformer"] + s["historical"] + APPROVED["calibration_seeds"] + [C.IMPL_SEED]))
 
 
 def runs_planned():
@@ -400,6 +488,8 @@ def main():
     ap.add_argument("--stage", type=int, required=True, choices=[3, 4])
     ap.add_argument("--resume", action="store_true")
     ap.add_argument("--salt-file")
+    ap.add_argument("--approved-stage2-commit", help="commit that added the freeze file, from the stage-2 review")
+    ap.add_argument("--approved-freeze-sha256", help="sha256 of the freeze file, from the stage-2 review")
     a = ap.parse_args()
     try:
         p = paths()
@@ -433,6 +523,19 @@ def main():
                 raise Stop(5, "REFUSED: stage 4 before stage 3 is complete")
             if not a.salt_file or not os.path.exists(a.salt_file):
                 raise Stop(5, "REFUSED: stage 4 needs --salt-file")
+        # B1: the freeze is trusted only through the review's approvals and the git history, not the working tree
+        approvals = {"approved_stage2_commit": a.approved_stage2_commit, "approved_freeze_sha256": a.approved_freeze_sha256}
+        if not all(approvals.values()):
+            raise Stop(5, f"REFUSED: stage {a.stage} needs --approved-stage2-commit and --approved-freeze-sha256 from the stage-2 review")
+        bad = git_anchor(p["freeze"], a.approved_stage2_commit, a.approved_freeze_sha256)
+        if bad:
+            raise Stop(5, "REFUSED: the freeze file is not the approved one: " + "; ".join(bad))
+        if a.resume and any(rf[rf_key].get(k) != v for k, v in approvals.items()):
+            raise Stop(5, f"REFUSED: the approvals differ from the first launch of stage {a.stage}")
+        if a.stage == 4:
+            s3 = rf.get("stage3") or {}
+            if any(s3.get(k) != v for k, v in approvals.items()) or s3.get("freeze_file_sha256") != now["freeze_file_sha256"]:
+                raise Stop(5, "REFUSED: the freeze or its approvals differ from those bound at the first launch of stage 3")
         for d in ("runs", "results", "judgments", "logs"):
             os.makedirs(p[d], exist_ok=True)
         L = Launcher(p)
@@ -440,7 +543,7 @@ def main():
         print(s, file=sys.stderr)
         return s.code
     if not a.resume:
-        rf[rf_key] = dict(now, created_utc=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()))
+        rf[rf_key] = dict(now, **approvals, created_utc=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()))
         atomic_write_json(p["run_freeze"], rf, indent=1)
     cap_s = p["cap_override"] or APPROVED["caps_hours"][rf_key] * 3600
     budget = load_json(p["budget_ledger"], {})
@@ -621,8 +724,7 @@ def stage4(L, p, fz, salt_file, tick, save):
     L.log("R* and M1* equal the frozen hashes and counts")
     t2_out = os.path.join(p["judgments"], "test2_generation.json")
     if not os.path.exists(t2_out):
-        seeds = sorted(set(APPROVED["seeds"]["openmythos"] + APPROVED["seeds"]["transformer"] + APPROVED["seeds"]["historical"]
-                           + APPROVED["calibration_seeds"] + [C.IMPL_SEED]))
+        seeds = training_stream_seeds()
         L.run_queue([("test2", L.cmd("test2", ["python", "experiments/gate_e/e2c/e2c_stage4.py", "test2", "--salt-file", salt_file,
                                                "--seeds", ",".join(map(str, seeds)), "--out", t2_out], out=t2_out))], tick=tick)
     t2 = load_json(t2_out) or {}

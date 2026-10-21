@@ -11,7 +11,14 @@ authorization). The cases follow E1's launcher tests and add the E2-c ones:
 pairing hash mismatch, heads mismatch, lambda mismatch, lambda2 missing,
 digit code changed, E_W^C1 = 0, re-trained run differing from its kept
 attempt, salt mismatch, R* / M1* commitment mismatch, test2 isolation not
-zero, stage 4 before stage 3, judgments written once.
+zero, stage 4 before stage 3, judgments written once. Stage-2 interface (I2):
+each test directory is a git repository whose first commit adds the freeze,
+and every launch passes that commit and the freeze sha256 as the approvals;
+the I2 cases replace the freeze (alone, or with the recorded approvals, or
+re-committed), approve a commit that did not add it, rebind it between
+stages 3 and 4, change the approvals on resume, give an incomplete or wrong
+R* / M1* count structure or a malformed salt commitment, and use a shallow
+clone.
 A second part runs the test2 generation and evaluation code on a synthetic
 pool of NON-held-out keys only (never in R*): determinism per salt, every key
 in the pool, 1-2 counterfactuals per body, fallback counting, and one
@@ -143,15 +150,29 @@ def freeze_content(d, **change):
 BASE_FREEZE = None
 
 
-def setup(**change):
-    d = tempfile.mkdtemp(prefix="e2c_v4_")
-    fz = json.loads(json.dumps(BASE_FREEZE))
-    for k, v in change.items():
-        if v is None:
-            fz.pop(k, None)
-        else:
-            fz[k] = v
-    json.dump(fz, open(os.path.join(d, "e2c_workload_freeze.json"), "w"), indent=1)
+GIT_ID = ["-c", "user.name=e2c-tests", "-c", "user.email=e2c-tests@invalid", "-c", "commit.gpgsign=false"]
+
+
+def git(d, *args):
+    return subprocess.run(["git", *GIT_ID, *args], cwd=d, capture_output=True, text=True, check=True).stdout.strip()
+
+
+def commit_freeze(d, fz, msg="simulated stage-2 freeze"):
+    """Write the freeze and add it in a fresh one-commit history of d (the approved stage-2 commit of the tests);
+    the approvals, as the review would give them, go to approvals.json (read by launch(), never by the launcher)."""
+    path = os.path.join(d, "e2c_workload_freeze.json")
+    json.dump(fz, open(path, "w"), indent=1)
+    shutil.rmtree(os.path.join(d, ".git"), ignore_errors=True)
+    git(d, "init", "-q")
+    git(d, "add", "e2c_workload_freeze.json")
+    git(d, "commit", "-q", "-m", msg)
+    ap = {"commit": git(d, "rev-parse", "HEAD"), "freeze_sha256": hashlib.sha256(open(path, "rb").read()).hexdigest()}
+    json.dump(ap, open(os.path.join(d, "approvals.json"), "w"))
+    return ap
+
+
+def prepare(d):
+    """Stub jobs, their commands and the simulated salt in test directory d."""
     open(os.path.join(d, "stub.py"), "w").write(STUB)
     py = sys.executable
     stub = f"{py} {d}/stub.py"
@@ -161,7 +182,26 @@ def setup(**change):
             "judge": stub + " judge {name} {out}", "sync": stub + " sync {msg}"}
     json.dump(cmds, open(os.path.join(d, "cmds.json"), "w"))
     open(os.path.join(d, "salt.txt"), "w").write(SALT)
+
+
+def setup(**change):
+    d = tempfile.mkdtemp(prefix="e2c_v4_")
+    fz = json.loads(json.dumps(BASE_FREEZE))
+    for k, v in change.items():
+        if v is None:
+            fz.pop(k, None)
+        else:
+            fz[k] = v
+    commit_freeze(d, fz)
+    prepare(d)
     return d
+
+
+def approval_args(d, stage, approvals):
+    if stage not in (3, 4) or approvals is None:
+        return []
+    ap = json.load(open(os.path.join(d, "approvals.json"))) if approvals is True else approvals
+    return ["--approved-stage2-commit", ap["commit"], "--approved-freeze-sha256", ap["freeze_sha256"]]
 
 
 def env_for(d, **extra):
@@ -174,10 +214,11 @@ def env_for(d, **extra):
     return e
 
 
-def launch(d, stage=3, resume=False, salt=None, **extra):
+def launch(d, stage=3, resume=False, salt=None, approvals=True, **extra):
     argv = [sys.executable, os.path.join(HERE, "run_e2c.py"), "--stage", str(stage)] + (["--resume"] if resume else [])
     if stage == 4:
         argv += ["--salt-file", salt or os.path.join(d, "salt.txt")]
+    argv += approval_args(d, stage, approvals)
     return subprocess.run(argv, env=env_for(d, **extra), capture_output=True, text=True, cwd=ROOT)
 
 
@@ -185,6 +226,7 @@ def launch_and_interrupt(d, stage, resume, when, **extra):
     argv = [sys.executable, os.path.join(HERE, "run_e2c.py"), "--stage", str(stage)] + (["--resume"] if resume else [])
     if stage == 4:
         argv += ["--salt-file", os.path.join(d, "salt.txt")]
+    argv += approval_args(d, stage, True)
     p = subprocess.Popen(argv, env=env_for(d, **extra), cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     t0 = time.time()
     while time.time() - t0 < 60 and not when(d):
@@ -522,6 +564,116 @@ def judgment_without_ledger_invalid(d):
             f"exit {r.returncode}")
 
 
+# ------------------------------------------------------------ I2: stage-2 interface (B1 approvals, B2 counts, B3 commitment)
+
+
+def load_freeze(d):
+    return json.load(open(os.path.join(d, "e2c_workload_freeze.json")))
+
+
+def other_commitment():
+    return hashlib.sha256(b"another simulated salt").hexdigest()
+
+
+def approvals_missing(d):
+    r1 = launch(d, approvals=None)
+    ap = json.load(open(os.path.join(d, "approvals.json")))
+    r2 = launch(d, approvals={"commit": ap["commit"], "freeze_sha256": ""})
+    return (r1.returncode == 5 and r2.returncode == 5 and "needs --approved-stage2-commit" in r1.stderr and not calls(d),
+            f"exits {r1.returncode}, {r2.returncode}")
+
+
+def freeze_replaced_unapproved(d):
+    fz = load_freeze(d)
+    fz["salt_commitment_sha256"] = other_commitment()  # a valid freeze, but not the approved one
+    json.dump(fz, open(os.path.join(d, "e2c_workload_freeze.json"), "w"), indent=1)
+    r = launch(d)
+    return r.returncode == 5 and "not the approved one" in r.stderr and not calls(d), f"exit {r.returncode}: {r.stderr.strip()[-160:]}"
+
+
+def freeze_and_sidecar_replaced(d):
+    # the freeze is edited and committed on top, and the recorded approvals are rewritten to match it: refused
+    # with the new values (changed after its first commit) and with the original ones (sha256 differs)
+    old = json.load(open(os.path.join(d, "approvals.json")))
+    fz = load_freeze(d)
+    fz["salt_commitment_sha256"] = other_commitment()
+    path = os.path.join(d, "e2c_workload_freeze.json")
+    json.dump(fz, open(path, "w"), indent=1)
+    git(d, "commit", "-q", "-am", "edited freeze")
+    new = {"commit": git(d, "rev-parse", "HEAD"), "freeze_sha256": hashlib.sha256(open(path, "rb").read()).hexdigest()}
+    json.dump(new, open(os.path.join(d, "approvals.json"), "w"))
+    r1 = launch(d)
+    r2 = launch(d, approvals=old)
+    return (r1.returncode == 5 and r2.returncode == 5 and "added once, by the approved commit" in r1.stderr
+            and "not the approved" in r2.stderr and not calls(d), f"exits {r1.returncode}, {r2.returncode}")
+
+
+def approved_commit_without_freeze(d):
+    ap = json.load(open(os.path.join(d, "approvals.json")))
+    open(os.path.join(d, "note.txt"), "w").write("a later commit that does not add the freeze\n")
+    git(d, "add", "note.txt")
+    git(d, "commit", "-q", "-m", "unrelated")
+    r = launch(d, approvals={"commit": git(d, "rev-parse", "HEAD"), "freeze_sha256": ap["freeze_sha256"]})
+    return r.returncode == 5 and "added once, by the approved commit" in r.stderr and not calls(d), f"exit {r.returncode}"
+
+
+def stage4_freeze_rebound(d):
+    # stage 3 complete; then a different freeze (another salt commitment) gets a clean one-commit history and its
+    # own approvals: stage 4 refuses because stage 3 bound another freeze and other approvals
+    r3 = launch(d)
+    fz = load_freeze(d)
+    fz["salt_commitment_sha256"] = hashlib.sha256(b"another-simulated-salt").hexdigest()
+    commit_freeze(d, fz)
+    other = os.path.join(d, "other_salt.txt")
+    open(other, "w").write("another-simulated-salt")
+    r4 = launch(d, stage=4, salt=other)
+    return (r3.returncode == 0 and r4.returncode == 5 and "bound at the first launch of stage 3" in r4.stderr
+            and count(d, "start keyspace") == 0 and count(d, "start judge") == 0, f"stage3 {r3.returncode}, stage4 {r4.returncode}")
+
+
+def resume_with_other_approvals(d):
+    rc = launch_and_interrupt(d, 3, False, lambda d: count(d, "done train") >= 2, STUB_SLEEP_TRAIN=0.3)
+    commit_freeze(d, load_freeze(d), msg="identical freeze, re-committed")  # valid in itself, not the commit approved at launch
+    r = launch(d, resume=True)
+    return r.returncode == 5 and "approvals differ from the first launch" in r.stderr, f"interrupted {rc}, resume exit {r.returncode}"
+
+
+def keyspace_counts_structure(d):
+    out = []
+    for counts in ({"R_star": 6913, "M1_star": 4129}, dict(KS["counts"], H=12005), dict(KS["counts"], U=5093.0)):
+        commit_freeze(d, dict(BASE_FREEZE, keyspace=dict(KS, counts=counts)))
+        r = launch(d)
+        out.append((r.returncode, "R* / M1* counts" in r.stderr))
+    commit_freeze(d, dict(BASE_FREEZE, keyspace=dict(KS, extra="x")))
+    r = launch(d)
+    out.append((r.returncode, "format of the stage-4 keyspace job" in r.stderr))
+    return all(rc == 5 and m for rc, m in out) and not calls(d), f"{out}"
+
+
+def salt_commitment_malformed(d):
+    good = BASE_FREEZE["salt_commitment_sha256"]
+    out = []
+    for bad in (good.upper(), good[:63], "g" * 64, hashlib.sha256(b"").hexdigest(), hashlib.sha256(b"\n").hexdigest(), SALT):
+        commit_freeze(d, dict(BASE_FREEZE, salt_commitment_sha256=bad))
+        r = launch(d)
+        out.append((r.returncode, "salt commitment malformed" in r.stderr))
+    return all(rc == 5 and m for rc, m in out) and not calls(d), f"{out}"
+
+
+def shallow_clone_refused(d):
+    ap = json.load(open(os.path.join(d, "approvals.json")))
+    open(os.path.join(d, "note.txt"), "w").write("second commit\n")
+    git(d, "add", "note.txt")
+    git(d, "commit", "-q", "-m", "second")
+    c = tempfile.mkdtemp(prefix="e2c_v4_shallow_")
+    subprocess.run(["git", "clone", "-q", "--depth", "1", "file://" + d, c + "/repo"], check=True, capture_output=True)
+    c = c + "/repo"
+    prepare(c)
+    r = launch(c, approvals=ap)
+    shutil.rmtree(os.path.dirname(c), ignore_errors=True)
+    return r.returncode == 5 and "shallow" in r.stderr, f"exit {r.returncode}"
+
+
 def keyspace_guard():
     import e2c_test2 as T
     os.environ.pop("E2C_KEYSPACE_STAGE", None)
@@ -580,7 +732,10 @@ CASES = [all_succeed, refuse_fresh_when_frozen, refuse_resume_without_freeze, re
          retrain_after_interruption_differs, half_written_result, unledgered_result_differs, unledgered_result_equal,
          ledger_hash_mismatch, checkpoint_restored, checkpoint_restore_fails, budget_cap_not_reset, stage4_before_stage3,
          salt_mismatch, commitment_mismatch, isolation_not_zero, judgment_never_redone, judgment_without_ledger_recovered,
-         judgment_without_ledger_invalid]
+         judgment_without_ledger_invalid,
+         approvals_missing, freeze_replaced_unapproved, freeze_and_sidecar_replaced, approved_commit_without_freeze,
+         stage4_freeze_rebound, resume_with_other_approvals, keyspace_counts_structure, salt_commitment_malformed,
+         shallow_clone_refused]
 
 
 def main():
