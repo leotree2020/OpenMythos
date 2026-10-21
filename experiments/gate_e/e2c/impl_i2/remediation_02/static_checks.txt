@@ -1,0 +1,32 @@
+# I2-R2 static checks (2026-10-21T05:04:53Z)
+## py_compile
+ok e2c_stage2.py
+ok e2c_stage2_tests.py
+ok run_e2c.py
+ok e2c_launcher_tests.py
+## pyflakes 4.0.3 Python 3.13.16 on Linux (session scratchpad, not in the repository)
+e2c_launcher_tests.py:550:5: local variable 'dn' is assigned to but never used
+pyflakes exit 1 (the one warning is in code unchanged since f7a0ffe)
+## preexec_fn in the driver (comments only)
+41:wrapper (no preexec_fn in this threaded driver) that sets PR_SET_PDEATHSIG,
+235:# Every child (the two jobs, the V2 workers) starts through this wrapper instead of a preexec_fn: no Python code runs
+## process calls in the real jobs and the V2 worker path (all 0)
+e2c_stage4.py 0
+e2c_test2.py 0
+e2c_common.py 0
+../e_common.py 0
+../e_task.py 0
+../../gen_gate_a/levels.py 0
+../../gen_gate_a/data.py 0
+## run_e2c.py and e2c_launcher_tests.py since f1f1b0b
+unchanged (V4 52/52 of I2-R1 stands; not re-run)
+## the code of the formal run
+b5223f18637881bcd1a8a18a4d249e09946ad61bde9073c8fc50d6ac60ad967d  e2c_stage2.py
+3384cf5b409555fd6aa8e4f8ece4d7f9121f71f37670c5595e5bfb714b52f6a5  e2c_stage2_tests.py
+5978efc2d1df2716a4307b12b13d888caa69f3ae6b0fe426286c8cf0063a9712  run_e2c.py
+4f10682e267c92bc6f3594c891c14d81313c68cafb6aadb4f9a963f281467244  e2c_launcher_tests.py
+## the code now
+b5223f18637881bcd1a8a18a4d249e09946ad61bde9073c8fc50d6ac60ad967d  e2c_stage2.py
+3384cf5b409555fd6aa8e4f8ece4d7f9121f71f37670c5595e5bfb714b52f6a5  e2c_stage2_tests.py
+5978efc2d1df2716a4307b12b13d888caa69f3ae6b0fe426286c8cf0063a9712  run_e2c.py
+4f10682e267c92bc6f3594c891c14d81313c68cafb6aadb4f9a963f281467244  e2c_launcher_tests.py

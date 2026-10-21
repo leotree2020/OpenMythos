@@ -24,7 +24,12 @@ explicit check (watchdog off), and a cap crossed inside the publish window
 with SIGKILL (its jobs and workers die with it); and the stale-interval rule
 (kept as it was and reported, refused until a conservative supplement is
 accepted). Stub pids and logs go to a scratch directory outside the test
-repository.
+repository. I2-R2: a launch that ends past the cap after publishing (inside
+the publish window, or before the ledger closes) is BUDGET_CAP_REVIEW_REQUIRED,
+not PASS, for verify and freeze; its review record blocks freeze, also after
+resume, deletion (committed or not) or an edited ledger; children start
+through an exec wrapper (stress test under the driver's threads, the
+wrapper's parent check), and a job's left-behind descendants are ended.
 
     python3 e2c_stage2_tests.py --out PATH     (never over an existing file)
 
@@ -85,6 +90,10 @@ d = os.environ["E2C_S2_TEST_DIR"]
 cfg = json.load(open(os.path.join(d, "config.json")))
 if cfg.get("stub_keyspace_sleep"):
     hold(cfg["stub_scratch"], "keyspace_stub", cfg["stub_keyspace_sleep"])
+if cfg.get("stub_keyspace_orphan"):  # I2-R2: a job that ends and leaves a running descendant behind
+    hold(cfg["stub_scratch"], "keyspace_orphan", 0)
+    if cfg["stub_keyspace_orphan"] == "fail":
+        sys.exit(1)
 with open(os.path.join(cfg["stub_scratch"], "stub_env.log"), "a") as f:
     f.write(json.dumps(sorted(k for k in os.environ if k.startswith("E2C"))) + "\n")
 if cfg.get("stub_leak"):
@@ -315,8 +324,8 @@ def wait_for(cond, limit=120):
         time.sleep(0.05)
 
 
-def tail(r):
-    return (r.stderr or "").strip().splitlines()[-1][:220] if (r.stderr or "").strip() else ""
+def tail(r, width=220):
+    return (r.stderr or "").strip().splitlines()[-1][:width] if (r.stderr or "").strip() else ""
 
 
 # ------------------------------------------------------------ cases: normal path
@@ -333,7 +342,10 @@ def verify_pass(d):
           and [iv["status"] for iv in led["intervals"]] == ["PASS"] and all(iv["end"] for iv in led["intervals"])
           and "E2C_KEYSPACE_STAGE" not in env_log and "E2C_S2_STUB_KEYSPACE_STAGE" in env_log
           and os.path.exists(os.path.join(d, "stage2", "v2_streams.json")) and summary(d, "01")["publish_window_seconds"] < 0.5
-          and not glob_tmp(d))
+          and not glob_tmp(d) and summary(d, "01")["status"] == "PASS" and led["intervals"][0]["status"] == "PASS"
+          and led["intervals"][0]["published"]["stage2_verify.json"] == sha(os.path.join(d, "stage2", "stage2_verify.json"))
+          and led["intervals"][0]["used_seconds_at_end"] < led["intervals"][0]["cap_seconds"]
+          and not any(os.path.exists(os.path.join(d, "stage2", n)) for n in S2.REVIEW_RECORDS.values()))
     return ok, f"exit {r.returncode}; 33 seeds, chain points compared {rec and rec['v2']['stage1_chain_points_compared']}; " \
                f"keyspace stub env {env_log.strip()}; publish window {summary(d, '01').get('publish_window_seconds')} s"
 
@@ -754,19 +766,6 @@ def verify_budget_last_check(d):
     return ok, f"exit {r.returncode}: {tail(r)}; used {led['used_seconds']} s of 30 s; no record, no temporary file, no PASS summary"
 
 
-def verify_budget_inside_publish_window(d):
-    # the boundary: the cap passes after the last check, inside the publish window (stretched here to 41 s by a test hook;
-    # without it the window is the link() calls only). The watchdog cannot split the publication; the outputs decided at
-    # the last check are published and the crossing is recorded for the review.
-    set_cfg(d, cap_seconds=40, stub_delay_before_final_write={"verify_inside_window": 41})
-    r = verify(d)
-    sm = summary(d, "01")
-    ok = (r.returncode == 0 and record(d) is not None and os.path.exists(os.path.join(d, "stage2", "v2_streams.json"))
-          and sm.get("cap_crossed_inside_publish_window_seconds", 0) > 0 and "REVIEW: the cap was crossed" in r.stderr and not glob_tmp(d))
-    return ok, (f"exit {r.returncode}; both files published as decided at the last check; cap crossed "
-                f"{sm.get('cap_crossed_inside_publish_window_seconds')} s inside the window, recorded for the review")
-
-
 def freeze_budget_before_write(d):
     out = []
     for watchdog in (True, False):
@@ -803,6 +802,158 @@ def sigterm_during_job(d):
         drop(e)
     ok = all(rc == 130 and gone and st == "INTERRUPTED" and ivs == ["INTERRUPTED"] and rr == 0 for _, rc, gone, st, ivs, rr in out)
     return ok, f"{out} (job, exit, job and child gone, summary, intervals, resume)"
+
+
+def review_state(d, command="verify"):
+    """(exit-relevant facts) of a launch that ended past the cap after publishing."""
+    rr = os.path.join(d, "stage2", S2.REVIEW_RECORDS[command])
+    return json.load(open(rr)) if os.path.exists(rr) else None
+
+
+def verify_budget_inside_publish_window(d):
+    # the boundary: the cap passes after the last check, inside the publish window (stretched here to 41 s by a test hook;
+    # without it the window is the link() calls only). The publication is not split; the files stay as written; the
+    # final status is BUDGET_CAP_REVIEW_REQUIRED (exit 7), with a review record bound to their sha256
+    set_cfg(d, cap_seconds=40, stub_delay_before_final_write={"verify_inside_window": 41})
+    r = verify(d)
+    rv, led, sm = review_state(d), ledger(d), summary(d, "01")
+    rp, sp = os.path.join(d, "stage2", "stage2_verify.json"), os.path.join(d, "stage2", "v2_streams.json")
+    ok = (r.returncode == 7 and os.path.exists(rp) and os.path.exists(sp) and rv is not None
+          and rv["verify_record_sha256"] == sha(rp) == sm["record_sha256"] and rv["v2_streams_sha256"] == sha(sp)
+          and rv["where"].startswith("inside the publish window") and rv["crossed_by_seconds"] > 0
+          and sm["status"] == S2.REVIEW_STATUS and led["intervals"][0]["status"] == S2.REVIEW_STATUS
+          and record(d)["status"] == "PASS" and not glob_tmp(d))
+    return ok, (f"exit {r.returncode}; files kept ({sha(rp)[:12]}); final status {sm.get('status')}; review record: crossed "
+                f"{rv and rv['crossed_by_seconds']} s {rv and rv['where']}"), \
+        {"review_record": rv, "ledger_interval": led["intervals"][0], "summary": sm, "stderr_tail": r.stderr.strip().splitlines()[-3:]}
+
+
+def verify_budget_after_publish_before_close(d):
+    # the cap passes after the files are published and before the ledger interval is closed: not a PASS either
+    set_cfg(d, cap_seconds=40, stub_delay_before_final_write={"verify_before_close": 41})
+    r = verify(d)
+    rv, led, sm = review_state(d), ledger(d), summary(d, "01")
+    rp = os.path.join(d, "stage2", "stage2_verify.json")
+    iv = led["intervals"][0]
+    ok = (r.returncode == 7 and os.path.exists(rp) and rv is not None and rv["verify_record_sha256"] == sha(rp)
+          and rv["where"] == "after the publication, before the ledger closed" and iv["status"] == S2.REVIEW_STATUS
+          and iv["status_before_close"] == "PASS" and iv["used_seconds_at_end"] >= iv["cap_seconds"] and sm["status"] == S2.REVIEW_STATUS
+          and f"final status {S2.REVIEW_STATUS}" in r.stderr)
+    return ok, (f"exit {r.returncode}; ledger {iv['status_before_close']} -> {iv['status']} at {iv['used_seconds_at_end']:.3f} s of "
+                f"{iv['cap_seconds']:.0f} s; review record {rv and rv['where']}"), \
+        {"review_record": rv, "ledger_interval": iv, "summary": sm, "stderr_tail": r.stderr.strip().splitlines()[-3:]}
+
+
+def freeze_budget_after_publish(d):
+    # a freeze that ends past the cap after writing: the freeze and receipt stay as written, exit 7, review record
+    r0 = verify(d)
+    vc, vs = approve_verify(d)
+    used = ledger(d)["used_seconds"]
+    set_cfg(d, cap_seconds=used + 15, stub_delay_before_final_write={"freeze_before_close": 20})
+    r = freeze(d, vc, vs)
+    rv, iv = review_state(d, "freeze"), ledger(d)["intervals"][-1]
+    fp = os.path.join(d, "e2c_workload_freeze.json")
+    ok = (r0.returncode == 0 and r.returncode == 7 and os.path.exists(fp) and rv is not None and rv["freeze_sha256"] == sha(fp)
+          and iv["status"] == S2.REVIEW_STATUS and iv["published"]["e2c_workload_freeze.json"] == sha(fp) and "freeze_sha256" not in r.stdout)
+    return ok, f"verify {r0.returncode}; freeze exit {r.returncode}, freeze kept ({sha(fp)[:12]}), review record {rv and rv['where']}", \
+        {"review_record": rv, "ledger_interval": iv, "stderr_tail": r.stderr.strip().splitlines()[-2:]}
+
+
+def review_blocks_freeze_and_resume(d):
+    # a verify that ended past the cap: freeze refuses, and neither resume nor editing the sidecar or the ledger gets past it
+    set_cfg(d, cap_seconds=40, stub_delay_before_final_write={"verify_before_close": 41})
+    r0 = verify(d)
+    set_cfg(d, cap_seconds=300, stub_delay_before_final_write=None)
+    vc, vs = approve_verify(d)  # the review record and the ledger are committed with the record
+    out, said = {}, {}
+    r = freeze(d, vc, vs)
+    out["freeze"] = (r.returncode, "budget does not admit" in r.stderr)
+    said["freeze"] = tail(r, 1000)
+    r = verify(d, resume=True)
+    out["resume"] = (r.returncode, "budget review is pending" in r.stderr)
+    said["resume"] = tail(r, 1000)
+    rr = os.path.join(d, "stage2", S2.REVIEW_RECORDS["verify"])
+    os.remove(rr)  # the sidecar deleted in the working tree
+    r = freeze(d, vc, vs)
+    out["record_deleted"] = (r.returncode, "is in the history" in r.stderr)
+    said["record_deleted"] = tail(r, 1000)
+    r = verify(d, resume=True)
+    out["resume_after_delete"] = (r.returncode, "written once" in r.stderr)
+    said["resume_after_delete"] = tail(r, 1000)
+    git(d, "add", "-A")
+    git(d, "commit", "-q", "-m", "review record deleted")  # ... and the deletion committed
+    r = freeze(d, vc, vs, commit=head(d))
+    out["deletion_committed"] = (r.returncode, "is in the history" in r.stderr)
+    said["deletion_committed"] = tail(r, 1000)
+    lp = os.path.join(d, "stage2", "budget_ledger_s2.json")
+    led = json.load(open(lp))
+    led["intervals"][0].update(status="PASS", used_seconds_at_end=1.0)  # the ledger edited to look like a PASS
+    jdump(lp, led)
+    r = freeze(d, vc, vs, commit=head(d))
+    out["ledger_edited"] = (r.returncode, "differs from the committed one" in r.stderr and "ended as" in r.stderr)
+    said["ledger_edited"] = tail(r, 1000)
+    none = not os.path.exists(os.path.join(d, "e2c_workload_freeze.json"))
+    ok = r0.returncode == 7 and none and all(v == (5, True) for v in out.values())
+    return ok, f"verify {r0.returncode} ({S2.REVIEW_STATUS}); {out}; no freeze written: {none}", {"refusals": said}
+
+
+# ------------------------------------------------------------ I2-R2: process start without preexec_fn
+
+
+def spawn_stress(d):
+    """200 jobs started one after another and 25 bursts of 4 at once (as the V2 workers), from a driver with its
+    heartbeat and watchdog threads running and the ledger lock in use: no start may hang."""
+    code = r'''
+import json, os, signal, subprocess, sys, time
+sys.path.insert(0, sys.argv[1])
+import e2c_stage2 as S
+d = sys.argv[2]
+signal.signal(signal.SIGUSR1, S._on_budget_signal)
+L = S.Ledger(os.path.join(d, "ledger.json"), 600.0, 0.01, "stress")
+L.open()
+att = os.path.join(d, "att"); os.makedirs(att)
+worst, t0 = 0.0, time.time()
+for i in range(200):
+    t = time.time()
+    rc, out, _ = S.run_bounded([sys.executable, "-c", "print(1)"], L, f"j{i % 7}", att, d, dict(os.environ))
+    assert rc == 0 and out.strip() == "1", (rc, out)
+    worst = max(worst, time.time() - t)
+for b in range(25):
+    t = time.time()
+    ps = [subprocess.Popen(S.child_argv([sys.executable, "-c", "pass"]), start_new_session=True) for _ in range(4)]
+    assert all(p.wait(timeout=30) == 0 for p in ps)
+    worst = max(worst, time.time() - t)
+L.close("PASS")
+print(json.dumps({"jobs": 200 + 100, "seconds": round(time.time() - t0, 2), "worst_single_seconds": round(worst, 3)}))
+'''
+    t = time.time()
+    r = subprocess.run([sys.executable, "-c", code, HERE, d], capture_output=True, text=True, timeout=300)
+    res = json.loads(r.stdout) if r.returncode == 0 else {}
+    ok = r.returncode == 0 and res.get("jobs") == 300 and res.get("worst_single_seconds", 99) < 5
+    return ok, f"{res or r.stderr[-300:]} (wall {time.time() - t:.1f} s); no hang"
+
+
+def wrapper_parent_check(d):
+    """The exec wrapper refuses to run a job whose driver is already gone (the race between fork and prctl)."""
+    marker = os.path.join(scratch(d), "ran")
+    argv = S2.child_argv([sys.executable, "-c", f"open({marker!r}, 'w').close()"])
+    argv[4] = "1"  # a parent pid that is not the real parent
+    r = subprocess.run(argv, capture_output=True)
+    good = subprocess.run(S2.child_argv([sys.executable, "-c", f"open({marker!r} + '2', 'w').close()"]))
+    ok = r.returncode == 70 and not os.path.exists(marker) and good.returncode == 0 and os.path.exists(marker + "2")
+    return ok, f"wrong parent: exit {r.returncode}, job ran {os.path.exists(marker)}; right parent: exit {good.returncode}"
+
+
+def job_leaves_descendant(d):
+    out = []
+    for mode, want in (("ok", 0), ("fail", 4)):
+        e = make_env(stub_keyspace_orphan=mode)
+        r = verify(e)
+        pids = pids_of(e, "keyspace_orphan")
+        out.append((mode, r.returncode, pids and all_gone(pids[1:], 3.0), not leftover_processes(e)))
+        drop(e)
+    ok = out[0][1:] == (0, True, True) and out[1][1:] == (4, True, True)
+    return ok, f"{out} (job ends ok / with an error: verify exit, its left-behind descendant ended, no process left)"
 
 
 def sigkill_driver(d):
@@ -1032,7 +1183,9 @@ CASES = [verify_pass, verify_deterministic, freeze_pass_launcher_accepts, freeze
          unit_appendix_a, unit_tripwires, unit_chain_definition,
          appendix_job_budget_cap, keyspace_job_budget_cap, freeze_budget_before_write,
          sigterm_during_job, budget_cumulative_two_launches, verify_budget_watchdog, verify_budget_last_check,
-         verify_budget_inside_publish_window, sigkill_driver]
+         verify_budget_inside_publish_window, sigkill_driver,
+         verify_budget_after_publish_before_close, freeze_budget_after_publish, review_blocks_freeze_and_resume, spawn_stress,
+         wrapper_parent_check, job_leaves_descendant]
 
 
 def main():
@@ -1051,12 +1204,16 @@ def main():
             continue
         d = make_env()
         n0, t = INVOCATIONS[0], time.time()
+        evidence = None
         try:
-            ok, info = fn(d)
+            ok, info, *rest = fn(d)
+            evidence = rest[0] if rest else None
         except Exception as e:  # noqa: BLE001
             ok, info = False, f"exception {e!r}"
         res["cases"][fn.__name__] = {"pass": bool(ok), "info": info, "seconds": round(time.time() - t, 1),
                                      "invocations": INVOCATIONS[0] - n0}
+        if evidence is not None:
+            res["cases"][fn.__name__]["evidence"] = evidence
         print(f"{'PASS' if ok else 'FAIL'} {fn.__name__}: {info}", flush=True)
         if ok:
             drop(d)

@@ -36,15 +36,23 @@ opened, and the cap checked, before the heavy imports. A watchdog thread
 interrupts the running step at the cap (SIGUSR1 -> BudgetExceeded, a
 BaseException); every wait for a job (the Appendix A script, the keyspace job,
 the V2 workers) also checks the cap every 0.1-0.2 s. At the cap, on an
-interruption or an error the job's whole process group is terminated; every
-child also dies with the driver (PR_SET_PDEATHSIG), even if the driver is
-killed. Outputs that cannot be undone (v2_streams.json / stage2_verify.json,
-the freeze and its receipt) are written and fsynced under temporary names
-first; the last check is then followed only by link() calls, which the
-watchdog cannot split (the publish window, measured and logged). An interval
-left open by a process that is gone is kept as it was and reported; the next
-launch refuses until --accept-stale-supplement books a conservative
-supplement of two heartbeat periods for it (or the review decides otherwise).
+interruption or an error the job's whole process group is terminated, and
+after a job ends its group is ended too. Every child starts through an exec
+wrapper (no preexec_fn in this threaded driver) that sets PR_SET_PDEATHSIG,
+so a direct child dies if the driver is killed; its own descendants are not
+covered by that (the real jobs start none). Outputs that cannot be undone
+(v2_streams.json / stage2_verify.json, the freeze and its receipt) are
+written and fsynced under temporary names first; the last check is then
+followed only by link() calls, which no signal can split (the publish
+window). The final status is decided when the ledger interval is closed: if
+the launch ended at or past the cap (inside the publish window, or after the
+publication), it is BUDGET_CAP_REVIEW_REQUIRED (exit 7), not PASS; the
+published files stay as written and a review record bound to their sha256
+(budget_review_required[_freeze].json) blocks verify --resume and freeze,
+also once deleted (the history is checked). An interval left open by a
+process that is gone is kept as it was and reported; the next launch
+refuses until --accept-stale-supplement books a conservative supplement of
+two heartbeat periods for it (or the review decides otherwise).
 
 Exit codes: 0 pass; 3 F11 (counts differ from Appendix A), V2 integrity
 failure (recorded as such, not as F11) or another integrity failure: nothing
@@ -129,6 +137,10 @@ DIG = "0123456789"
 KEY_LIKE = re.compile(r"[A-Za-z]=[0-9];[A-Za-z]=[0-9]")
 FORBIDDEN_REAL_ENV = ("E2C_TEST_DIR", "E2C_TEST_CMDS", "E2C_TEST_PLAN", "E2C_TEST_CAP_SECONDS", "E2C_KEYSPACE_STAGE", "E2C_S2_WORKER")
 STATUS = {0: "PASS", 3: "INTEGRITY_FAILURE", 4: "ERROR", 5: "REFUSED", 6: "MISSING_OUTPUT", 7: "BUDGET_CAP", 130: "INTERRUPTED"}
+# I2-R2: outputs published, but the launch ended past the cap (inside the publish window, or after the publication and
+# before the ledger closed): exit 7, the outputs stay as written, a review record bound to their sha256 blocks freeze
+REVIEW_STATUS = "BUDGET_CAP_REVIEW_REQUIRED"
+REVIEW_RECORDS = {"verify": "budget_review_required.json", "freeze": "budget_review_required_freeze.json"}
 
 
 class S2Stop(Exception):
@@ -220,19 +232,29 @@ def _alive(pid):
         return False
 
 
-_PRCTL = []
+# Every child (the two jobs, the V2 workers) starts through this wrapper instead of a preexec_fn: no Python code runs
+# between fork and exec in the driver (which has threads), so subprocess can use vfork / posix_spawn. The wrapper, a
+# fresh single-threaded interpreter, asks the kernel for SIGKILL when its parent dies (PR_SET_PDEATHSIG, kept across
+# execve for ordinary binaries), exits at once if the driver is already gone, then executes the real command with
+# its arguments and environment unchanged. This covers the direct child only: a descendant of a job is not covered
+# (on a normal stop the job's whole process group is terminated; the real jobs start no processes of their own).
+EXEC_WRAPPER = ("import ctypes, os, signal, sys\n"
+                "if ctypes.CDLL(None, use_errno=True).prctl(1, signal.SIGKILL) != 0: os._exit(71)\n"
+                "if os.getppid() != int(sys.argv[1]): os._exit(70)\n"
+                "os.execv(sys.argv[2], sys.argv[2:])\n")
 
 
-def die_with_parent():
-    """preexec_fn of every child (jobs, V2 workers): the kernel sends it SIGKILL if the driver dies, even by SIGKILL,
-    so no job runs on unledgered. The prctl function is resolved in the parent beforehand."""
-    if _PRCTL:
-        _PRCTL[0](1, int(signal.SIGKILL))  # PR_SET_PDEATHSIG
+def child_argv(argv):
+    """argv of a child that dies with the driver; argv[0] must be an absolute path (sys.executable)."""
+    return [sys.executable, "-I", "-c", EXEC_WRAPPER, str(os.getpid()), *argv]
 
 
-def prepare_children():
-    import ctypes
-    _PRCTL[:] = [ctypes.CDLL(None, use_errno=True).prctl]
+def end_group(p):
+    """After a job's leader has exited (normally or not): no member of its process group may run on."""
+    try:
+        os.killpg(p.pid, signal.SIGKILL)
+    except ProcessLookupError:
+        pass
 
 
 def kill_group(p, grace=5.0):
@@ -260,7 +282,7 @@ def run_bounded(argv, ledger, label, att, cwd, env):
     of the attempt. Returns (exit code, stdout, stderr)."""
     paths = [os.path.join(att, f"job_{label}.{x}.txt") for x in ("stdout", "stderr")]
     with open(paths[0], "wb") as fo, open(paths[1], "wb") as fe:
-        p = subprocess.Popen(argv, cwd=cwd, env=env, stdout=fo, stderr=fe, start_new_session=True, preexec_fn=die_with_parent)
+        p = subprocess.Popen(child_argv(argv), cwd=cwd, env=env, stdout=fo, stderr=fe, start_new_session=True)
         try:
             t0 = time.time()
             while p.poll() is None:
@@ -271,6 +293,10 @@ def run_bounded(argv, ledger, label, att, cwd, env):
         finally:
             if p.poll() is None:
                 kill_group(p)
+            else:
+                end_group(p)  # a descendant the job left behind does not run on
+    if p.returncode in (70, 71):
+        raise S2Stop(4, f"RUN ERROR: the {label} job could not be tied to the driver (wrapper exit {p.returncode})")
     return p.returncode, open(paths[0], encoding="utf-8", errors="replace").read(), open(paths[1], errors="replace").read()
 
 
@@ -480,7 +506,7 @@ class Ledger:
 
     def __init__(self, path, cap, heartbeat, label, watchdog=True):
         self.path, self.cap, self.hb, self.label, self.watchdog = path, cap, heartbeat, label, watchdog
-        self.iv_id, self.base, self.t0, self._stop = None, 0.0, None, threading.Event()
+        self.iv_id, self.base, self.t0, self._stop, self.published = None, 0.0, None, threading.Event(), {}
 
     @contextlib.contextmanager
     def _locked(self):
@@ -510,7 +536,7 @@ class Ledger:
         with self._locked() as d:
             iv = {"id": len(d["intervals"]) + 1, "label": self.label, "pid": os.getpid(), "pid_start": _proc_start(os.getpid()),
                   "start": T_PROCESS, "start_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(T_PROCESS)), "heartbeat": now,
-                  "heartbeat_seconds": self.hb, "end": None, "status": None}
+                  "heartbeat_seconds": self.hb, "cap_seconds": self.cap, "end": None, "status": None}
             stale = []
             for old in d["intervals"]:
                 if old["end"] is None and "stale" not in old:
@@ -579,13 +605,23 @@ class Ledger:
                                  + (f" ({where})" if where else ""))
 
     def close(self, status):
+        """End the interval and decide the final status: a PASS whose launch ends at or past the cap becomes
+        BUDGET_CAP_REVIEW_REQUIRED (whatever it published stays as written). Returns (final status, cumulative use)."""
         if self.iv_id is None:
-            return
+            return status, None
         self._stop.set()
         with self._locked() as d:
             t = time.time()
-            d["intervals"][self.iv_id - 1].update(end=t, heartbeat=t, end_utc=utc(), status=status)
-            d["used_seconds"] = round(self.total(d), 3)
+            iv = d["intervals"][self.iv_id - 1]
+            iv.update(end=t, heartbeat=t, end_utc=utc())
+            used = self.total(d)
+            if status == "PASS" and used >= self.cap:
+                iv["status_before_close"], status = "PASS", REVIEW_STATUS
+            iv.update(status=status, used_seconds_at_end=round(used, 6))
+            if self.published:
+                iv["published"] = dict(self.published)
+            d["used_seconds"] = round(used, 3)
+        return status, used
 
 
 # ------------------------------------------------------------ inputs
@@ -892,8 +928,8 @@ def run_v2(ctx, att, ledger, log):
         for i, ch in enumerate(chunks):
             f = open(os.path.join(att, f"v2_worker_{i}.txt"), "w")
             argv = [sys.executable, os.path.abspath(__file__), "_v2-worker", "--attempt", att, "--seeds", ",".join(map(str, ch))]
-            procs.append((subprocess.Popen(argv, cwd=ROOT, env=env, stdout=f, stderr=f, start_new_session=True,
-                                           preexec_fn=die_with_parent), f))
+            assert os.path.isabs(argv[0])
+            procs.append((subprocess.Popen(child_argv(argv), cwd=ROOT, env=env, stdout=f, stderr=f, start_new_session=True), f))
         log(f"V2: {len(SEEDS_33)} seeds in {len(procs)} worker processes, {ctx['updates']} x {ctx['batch']} samples each")
         while any(p.poll() is None for p, _ in procs):
             ledger.check("while the V2 workers run")
@@ -908,6 +944,8 @@ def run_v2(ctx, att, ledger, log):
         for p, f in procs:
             if p.poll() is None:
                 kill_group(p)
+            else:
+                end_group(p)
             f.close()
     res = {}
     for s in SEEDS_33:
@@ -987,6 +1025,9 @@ def sweep_temporaries(dirs, dest, log):
 
 
 def verify_state_problem(out, a, record_path, stop_path):
+    for name in REVIEW_RECORDS.values():
+        if os.path.exists(os.path.join(out, name)):
+            return f"REFUSED: {name} exists: a budget review is pending; only the review resolves it (no resume)"
     if os.path.exists(record_path):
         return "REFUSED: verify is complete; stage2_verify.json is written once"
     if os.path.exists(stop_path):
@@ -1001,7 +1042,7 @@ def verify_state_problem(out, a, record_path, stop_path):
 def cmd_verify(a, ctx, ledger):
     out, R = ctx["out"], ctx["R"]
     record_path, stop_path = os.path.join(out, "stage2_verify.json"), os.path.join(out, "verify_stop.json")
-    att, status, code, summary = None, "ERROR", 4, {}
+    att, status, code, summary, review = None, "ERROR", 4, {}, None
 
     def log(msg):
         if att:
@@ -1111,19 +1152,22 @@ def cmd_verify(a, ctx, ledger):
                 publish(staged[1], record_path)
                 staged[1] = None
                 _SIG["published"] = True
+                ledger.published = {"stage2_verify.json": sha256_bytes(data), "v2_streams.json": sha256_bytes(streams)}
                 window, over = time.time() - t_check, ledger.used() - ledger.cap
         finally:
             discard(*staged)
-        summary = {"status": "PASS", "record_sha256": sha256_bytes(data), "publish_window_seconds": round(window, 6)}
+        summary = {"record_sha256": sha256_bytes(data), "v2_streams_sha256": sha256_bytes(streams),
+                   "publish_window_seconds": round(window, 6)}
         if _SIG["note"]:
             summary["signal_inside_publish_window"] = _SIG["note"]
             log(_SIG["note"])
-        if over > 0:  # the cap passed inside the publish window: the outputs were decided at the last check
-            summary["cap_crossed_inside_publish_window_seconds"] = round(over, 6)
-            log(f"REVIEW: the cap was crossed {over:.3f} s inside the publish window (outputs decided at the last check)")
-        status, code = "PASS", 0
-        log(f"PASS: stage2_verify.json sha256 {sha256_bytes(data)}; budget used {ledger.used():.1f} s of {ledger.cap:.0f} s; "
-            f"last budget check to both files published: {window * 1000:.2f} ms")
+        log(f"published stage2_verify.json {sha256_bytes(data)} and v2_streams.json; last budget check to both published: "
+            f"{window * 1000:.2f} ms; budget used {ledger.used():.3f} s of {ledger.cap:.0f} s")
+        if over >= 0:  # the cap passed inside the publish window: published as decided at the last check, but not a PASS
+            status, code = REVIEW_STATUS, 7
+            review = {"where": "inside the publish window, after the last budget check", "crossed_by_seconds": round(over, 6)}
+        else:
+            status, code = "PASS", 0
         print(json.dumps({"stage2_verify_sha256": sha256_bytes(data), "v2_streams_sha256": sha256_bytes(streams)}))
     except (S2Stop, BudgetExceeded) as s:
         status, code = s.status, s.code
@@ -1140,28 +1184,88 @@ def cmd_verify(a, ctx, ledger):
     finally:
         shield()
         try:
-            if att:
-                write_once(os.path.join(att, "summary.json"), canon(dict(summary, status=status, exit=code, end_utc=utc())))
-                if code == 3:
-                    write_once_or_same(stop_path, canon({"status": status, "attempt": os.path.basename(att)}))
+            if att and code == 3:
+                write_once_or_same(stop_path, canon({"status": status, "attempt": os.path.basename(att)}))
+            test_delay(ctx, "verify_before_close")
         finally:
-            ledger.close(status)  # last: the clean-up is ledgered too
+            final, used = ledger.close(status)  # the final decision: a PASS that ends past the cap is not a PASS
+        if final != status:
+            status, code = final, 7
+            review = {"where": "after the publication, before the ledger closed", "crossed_by_seconds": round(used - ledger.cap, 6)}
+        # bookkeeping of the decision (milliseconds, after the interval): it cannot turn a status into PASS
+        if review:
+            write_review_record(out, "verify", dict(review, verify_record_sha256=summary["record_sha256"],
+                                                    v2_streams_sha256=summary["v2_streams_sha256"],
+                                                    attempt=os.path.basename(att), interval=ledger.iv_id, cap_seconds=ledger.cap,
+                                                    used_seconds_at_end=round(used, 6)))
+            log(f"{REVIEW_STATUS}: the cap was crossed {review['where']} by {review['crossed_by_seconds']:.6f} s; the published "
+                f"files stay as written; freeze refuses until the review resolves {REVIEW_RECORDS['verify']}")
+        if att:
+            write_once(os.path.join(att, "summary.json"), canon(dict(summary, status=status, exit=code, end_utc=utc())))
+            log(f"final status {status} (exit {code})")
     return code
+
+
+def write_review_record(out, command, fields):
+    write_once_or_same(os.path.join(out, REVIEW_RECORDS[command]), canon(dict(
+        fields, status=REVIEW_STATUS, command=command, written_utc=utc(),
+        resolution="only by the review: verify (also with --resume) and freeze refuse while this record exists or "
+                   "existed in the history; the published files are never rewritten")))
 
 
 # ------------------------------------------------------------ freeze
 
 
+def budget_admission(ctx, record_sha, commit):
+    """I2-R2: a freeze needs the stage-2 budget to stand behind the approved verify record. Checked against the
+    ledger as committed in the approved commit (not only the working-tree copy, which the launch itself extends):
+    the launch that published this record ended as PASS below its cap; no launch is waiting for a budget review;
+    the working-tree ledger continues the committed one unchanged; no review or stop record exists, or ever
+    existed in the history (deleting one does not resolve it). Returns problems."""
+    out, bad = ctx["out"], []
+    top = git(out, "rev-parse", "--show-toplevel").strip()
+    rel = lambda p: os.path.relpath(os.path.realpath(p), os.path.realpath(top))  # noqa: E731
+    for name in list(REVIEW_RECORDS.values()) + ["verify_stop.json"]:
+        path = os.path.join(out, name)
+        if os.path.exists(path):
+            bad.append(f"{name} exists (unresolved)")
+        if git(top, "log", "--format=%H", "HEAD", "--", rel(path)).strip():
+            bad.append(f"{name} is in the history (only the review resolves it)")
+    lpath = os.path.join(out, "budget_ledger_s2.json")
+    r = subprocess.run(["git", "show", f"{commit}:{rel(lpath)}"], cwd=top, capture_output=True)
+    if r.returncode:
+        return bad + ["the budget ledger is not committed with the approved verify record"]
+    approved = json.loads(r.stdout)
+    pub = [iv for iv in approved["intervals"] if (iv.get("published") or {}).get("stage2_verify.json") == record_sha]
+    if len(pub) != 1:
+        bad.append("the committed ledger does not name exactly one launch that published the approved record")
+    elif not (pub[0].get("status") == "PASS" and pub[0].get("used_seconds_at_end", float("inf")) < pub[0].get("cap_seconds", 0)):
+        bad.append(f"the launch that published the record ended as {pub[0].get('status')} at {pub[0].get('used_seconds_at_end')} s "
+                   f"of {pub[0].get('cap_seconds')} s")
+    if any(iv.get("status") == REVIEW_STATUS for iv in approved["intervals"]):
+        bad.append(f"a launch in the committed ledger is {REVIEW_STATUS}")
+    now = json.load(open(lpath))["intervals"]
+    for i, iv in enumerate(approved["intervals"]):
+        cur = now[i] if i < len(now) else None
+        if cur != iv and not (cur and iv["end"] is None and "stale" in cur and {k: v for k, v in cur.items() if k != "stale"} == iv):
+            bad.append(f"interval {iv['id']} of the working-tree ledger differs from the committed one")
+            break
+    return bad
+
+
 def cmd_freeze(a, ctx, ledger):
     out, R, p = ctx["out"], ctx["R"], ctx["p"]
     record_path, receipt_path = os.path.join(out, "stage2_verify.json"), os.path.join(out, "stage2_freeze_receipt.json")
-    status, code = "ERROR", 4
+    status, code, review = "ERROR", 4, None
     try:
         if os.path.exists(p["freeze"]) or os.path.exists(receipt_path):
             raise S2Stop(5, f"REFUSED: {os.path.basename(p['freeze'])} exists; the freeze is written once")
         bad = R.git_anchor(record_path, a.approved_verify_commit, a.approved_verify_sha256)
         if bad:
             raise S2Stop(5, "REFUSED: stage2_verify.json is not the approved record: " + "; ".join(bad))
+        bad = budget_admission(ctx, a.approved_verify_sha256, a.approved_verify_commit)
+        if bad:
+            raise S2Stop(5, "REFUSED: the stage-2 budget does not admit a freeze: " + "; ".join(bad))
         rec = json.load(open(record_path))
         if rec.get("status") != "PASS" or rec.get("mode") != ("test" if ctx["test"] else "real"):
             raise S2Stop(5, "REFUSED: the approved record is not a passed verify of this mode")
@@ -1216,20 +1320,20 @@ def cmd_freeze(a, ctx, ledger):
                 publish(staged[1], receipt_path)
                 staged[1] = None
                 _SIG["published"] = True
+                ledger.published = {"e2c_workload_freeze.json": sha256_bytes(text),
+                                    "stage2_freeze_receipt.json": sha256_file(receipt_path)}
                 window, over = time.time() - t_check, ledger.used() - ledger.cap
         finally:
             discard(*staged)
-        if over > 0:
-            print(f"REVIEW: the cap was crossed {over:.3f} s inside the publish window (the freeze was decided at the last check)",
-                  file=sys.stderr)
         fsha = sha256_file(p["freeze"])
         if fsha != sha256_bytes(text):
             raise S2Stop(3, "INTEGRITY FAILURE: the written freeze differs from the built one")
         print(f"last budget check to freeze and receipt published: {window * 1000:.2f} ms", file=sys.stderr)
-        status, code = "PASS", 0
-        print(json.dumps({"freeze_sha256": fsha}))
-        print(f"freeze written once ({fsha}); commit it on its own, push, and pass that commit and this sha256 from the review "
-              "to run_e2c.py (--approved-stage2-commit / --approved-freeze-sha256)", file=sys.stderr)
+        if over >= 0:  # the cap passed inside the publish window: written as decided at the last check, but not a PASS
+            status, code = REVIEW_STATUS, 7
+            review = {"where": "inside the publish window, after the last budget check", "crossed_by_seconds": round(over, 6)}
+        else:
+            status, code = "PASS", 0
     except (S2Stop, BudgetExceeded) as s:
         status, code = s.status, s.code
         print(s, file=sys.stderr)
@@ -1240,7 +1344,24 @@ def cmd_freeze(a, ctx, ledger):
         print(f"RUN ERROR: {e!r}", file=sys.stderr)
     finally:
         shield()
-        ledger.close(status)
+        try:
+            test_delay(ctx, "freeze_before_close")
+        finally:
+            final, used = ledger.close(status)  # the final decision: a PASS that ends past the cap is not a PASS
+    if final != status:
+        status, code = final, 7
+        review = {"where": "after the publication, before the ledger closed", "crossed_by_seconds": round(used - ledger.cap, 6)}
+    if review:
+        write_review_record(out, "freeze", dict(review, freeze_sha256=ledger.published.get("e2c_workload_freeze.json"),
+                                                receipt_sha256=ledger.published.get("stage2_freeze_receipt.json"),
+                                                verify_record_sha256=a.approved_verify_sha256, interval=ledger.iv_id,
+                                                cap_seconds=ledger.cap, used_seconds_at_end=round(used, 6)))
+        print(f"{REVIEW_STATUS}: the cap was crossed {review['where']} by {review['crossed_by_seconds']:.6f} s; the freeze and its "
+              f"receipt stay as written; {REVIEW_RECORDS['freeze']} is for the review (exit 7)", file=sys.stderr)
+    if code == 0:
+        print(json.dumps({"freeze_sha256": ledger.published["e2c_workload_freeze.json"]}))
+        print("freeze written once; commit it on its own, push, and pass that commit and its sha256 from the review "
+              "to run_e2c.py (--approved-stage2-commit / --approved-freeze-sha256)", file=sys.stderr)
     return code
 
 
@@ -1251,6 +1372,15 @@ def cmd_freeze(a, ctx, ledger):
 def cmd_check(a, ctx):
     R, p, out = ctx["R"], ctx["p"], ctx["out"]
     rep, ok = {}, True
+    pending = [n for n in list(REVIEW_RECORDS.values()) + ["verify_stop.json"] if os.path.exists(os.path.join(out, n))]
+    lp = os.path.join(out, "budget_ledger_s2.json")
+    if os.path.exists(lp):
+        led = json.load(open(lp))
+        rep["budget"] = {"used_seconds": led.get("used_seconds"), "intervals": [(iv["id"], iv["label"], iv["status"]) for iv in led["intervals"]]}
+        if any(iv["status"] == REVIEW_STATUS for iv in led["intervals"]):
+            pending.append(f"a ledger interval is {REVIEW_STATUS}")
+    if pending:
+        rep["review_pending"], ok = pending, False
     rp = os.path.join(out, "stage2_verify.json")
     if os.path.exists(rp):
         rec = json.load(open(rp))
@@ -1306,7 +1436,6 @@ def main(argv=None):
     a = ap.parse_args(argv)
     try:
         env_checks(a.command, getattr(a, "authorization", ""))
-        prepare_children()
         if a.command == "_v2-worker":
             install_guards(bool(TEST_DIR))
             try:
