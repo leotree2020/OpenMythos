@@ -29,6 +29,23 @@ starts them with E2C_KEYSPACE_STAGE=2 in their own environment only. Nothing
 writes a key list; every output is scanned for key-like text; no checkpoint
 is ever opened (audit hook).
 
+Budget (8.4, F9): one ledger for verify and freeze, 3600 s over all launches,
+never reset. Each launch is counted from the start of its process (kernel
+start time), interpreter start-up and imports included, and the ledger is
+opened, and the cap checked, before the heavy imports. A watchdog thread
+interrupts the running step at the cap (SIGUSR1 -> BudgetExceeded, a
+BaseException); every wait for a job (the Appendix A script, the keyspace job,
+the V2 workers) also checks the cap every 0.1-0.2 s. At the cap, on an
+interruption or an error the job's whole process group is terminated; every
+child also dies with the driver (PR_SET_PDEATHSIG), even if the driver is
+killed. Outputs that cannot be undone (v2_streams.json / stage2_verify.json,
+the freeze and its receipt) are written and fsynced under temporary names
+first; the last check is then followed only by link() calls, which the
+watchdog cannot split (the publish window, measured and logged). An interval
+left open by a process that is gone is kept as it was and reported; the next
+launch refuses until --accept-stale-supplement books a conservative
+supplement of two heartbeat periods for it (or the review decides otherwise).
+
 Exit codes: 0 pass; 3 F11 (counts differ from Appendix A), V2 integrity
 failure (recorded as such, not as F11) or another integrity failure: nothing
 is frozen and stage2/verify_stop.json makes later verify launches refuse
@@ -68,6 +85,19 @@ sys.path.insert(0, GE)
 
 TEST_DIR = os.environ.get("E2C_S2_TEST_DIR")
 
+
+def process_start():
+    """Wall-clock time at which this process started (kernel start time in /proc against CLOCK_BOOTTIME, 10 ms
+    resolution): every launch is ledgered from it, interpreter start-up and imports included (8.4)."""
+    try:
+        ticks = int(open("/proc/self/stat").read().rsplit(")", 1)[1].split()[19])
+        return time.time() - (time.clock_gettime(time.CLOCK_BOOTTIME) - ticks / os.sysconf("SC_CLK_TCK"))
+    except (OSError, ValueError, IndexError):
+        return None
+
+
+T_PROCESS = min(t for t in (process_start(), time.time()) if t is not None)
+
 PREREG_SHA256 = "434f586996e49b5a493b5a346839756da7c653fc451bcba2b14438bfb00d6681"
 DESIGN_REVIEW_SHA256 = "96f0df4883276b105a3026ed06f7ee09e1e9d3348895faf659fc689e4ed8d7d4"
 LAMBDA_SELECTED_SHA256 = "6c23606ebec922dcfe9a577260b9830ffac002da778e27ea39865cce30fff43f"
@@ -94,7 +124,7 @@ SEEDS_33 = list(range(1, 6)) + [91, 92, 93, 99] + list(range(201, 225))
 U_SETS = ("dev_heldout", "test_heldout", "diag_fit", "diag_eval", "minpair")
 NON_U_K2_SETS = ("dev_seen", "pool_b_k2", "pool_c_k2")
 V2_UPDATES, V2_BATCH, V2_WORKERS = 12000, 64, 4
-CAP_SECONDS, HEARTBEAT_SECONDS = 3600.0, 10.0
+CAP_SECONDS, HEARTBEAT_SECONDS, JOB_TIMEOUT_SECONDS = 3600.0, 10.0, 1800.0
 DIG = "0123456789"
 KEY_LIKE = re.compile(r"[A-Za-z]=[0-9];[A-Za-z]=[0-9]")
 FORBIDDEN_REAL_ENV = ("E2C_TEST_DIR", "E2C_TEST_CMDS", "E2C_TEST_PLAN", "E2C_TEST_CAP_SECONDS", "E2C_KEYSPACE_STAGE", "E2C_S2_WORKER")
@@ -111,6 +141,38 @@ class Interrupted(Exception):
     pass
 
 
+class BudgetExceeded(BaseException):
+    """F9 (exit 7). A BaseException, so that no `except Exception` on the way can swallow it."""
+    code, status = 7, "BUDGET_CAP"
+
+
+# Signal state. CPython runs every Python-level handler in the main thread, whichever thread the kernel delivered the
+# signal to, so a signal mask alone does not protect a section: the handlers consult these flags. "shielded": the
+# process is cleaning up and stops nothing more; "window": the publish window, where a signal is deferred;
+# "published": the outputs are visible; "stopping": a budget stop is already under way.
+_SIG = {"shielded": False, "window": False, "published": False, "stopping": False, "deferred": None, "note": None,
+        "message": "BUDGET EXCEEDED (F9)"}
+
+
+def _on_term(signum, frame):
+    if _SIG["shielded"]:
+        return
+    if _SIG["window"]:
+        _SIG["deferred"] = _SIG["deferred"] or Interrupted(signum)
+        return
+    raise Interrupted(signum)
+
+
+def _on_budget_signal(signum, frame):
+    if _SIG["shielded"] or _SIG["published"] or _SIG["stopping"]:
+        return
+    if _SIG["window"]:
+        _SIG["deferred"] = _SIG["deferred"] or BudgetExceeded(_SIG["message"])
+        return
+    _SIG["stopping"] = True
+    raise BudgetExceeded(_SIG["message"])
+
+
 class CheckpointAccess(RuntimeError):
     pass
 
@@ -124,6 +186,99 @@ def _audit(event, args):
 
 def _tripwire(*a, **k):
     raise RuntimeError("TRIPWIRE: a function of the real key space or training streams was called in test mode")
+
+
+def shield():
+    """The process is shutting down: a further SIGTERM / SIGINT / budget signal must not interrupt the cleanup."""
+    _SIG["shielded"] = True
+    signal.pthread_sigmask(signal.SIG_BLOCK, {signal.SIGTERM, signal.SIGINT, signal.SIGUSR1})
+
+
+@contextlib.contextmanager
+def publish_window():
+    """The only section that neither the budget watchdog nor SIGTERM / SIGINT can split: the last budget check and the
+    link() calls that make staged outputs visible. A signal arriving here is deferred: raised when the window closes
+    if the outputs were not published, recorded (and not raised) if they were."""
+    _SIG["window"] = True
+    try:
+        yield
+    finally:
+        _SIG["window"] = False
+    deferred, _SIG["deferred"] = _SIG["deferred"], None  # reached only when the block ended without an exception
+    if deferred is not None:
+        if not _SIG["published"]:
+            _SIG["stopping"] = True
+            raise deferred
+        _SIG["note"] = f"{type(deferred).__name__} arrived inside the publish window after the outputs were decided; deferred"
+
+
+def _alive(pid):
+    try:
+        with open(f"/proc/{pid}/stat") as f:
+            return f.read().rsplit(")", 1)[1].split()[0] != "Z"
+    except (OSError, IndexError):
+        return False
+
+
+_PRCTL = []
+
+
+def die_with_parent():
+    """preexec_fn of every child (jobs, V2 workers): the kernel sends it SIGKILL if the driver dies, even by SIGKILL,
+    so no job runs on unledgered. The prctl function is resolved in the parent beforehand."""
+    if _PRCTL:
+        _PRCTL[0](1, int(signal.SIGKILL))  # PR_SET_PDEATHSIG
+
+
+def prepare_children():
+    import ctypes
+    _PRCTL[:] = [ctypes.CDLL(None, use_errno=True).prctl]
+
+
+def kill_group(p, grace=5.0):
+    """Terminate the whole process group of a job started with start_new_session=True: SIGTERM, then SIGKILL."""
+    shield()
+    for sig in (signal.SIGTERM, signal.SIGKILL):
+        try:
+            os.killpg(p.pid, sig)
+        except ProcessLookupError:
+            break
+        try:
+            p.wait(timeout=grace)
+        except subprocess.TimeoutExpired:
+            pass
+    try:
+        os.killpg(p.pid, signal.SIGKILL)  # members that outlived the leader
+    except ProcessLookupError:
+        pass
+    p.wait()
+
+
+def run_bounded(argv, ledger, label, att, cwd, env):
+    """A job in its own process group, waited for in steps of 0.1 s with the stage-2 cap checked at each step; at the
+    cap (F9, exit 7), on an interruption, a timeout or any error the whole group is terminated. Output goes to files
+    of the attempt. Returns (exit code, stdout, stderr)."""
+    paths = [os.path.join(att, f"job_{label}.{x}.txt") for x in ("stdout", "stderr")]
+    with open(paths[0], "wb") as fo, open(paths[1], "wb") as fe:
+        p = subprocess.Popen(argv, cwd=cwd, env=env, stdout=fo, stderr=fe, start_new_session=True, preexec_fn=die_with_parent)
+        try:
+            t0 = time.time()
+            while p.poll() is None:
+                ledger.check(f"while the {label} job runs")
+                if time.time() - t0 > JOB_TIMEOUT_SECONDS:
+                    raise S2Stop(4, f"RUN ERROR: the {label} job did not finish within {JOB_TIMEOUT_SECONDS:.0f} s")
+                time.sleep(0.1)
+        finally:
+            if p.poll() is None:
+                kill_group(p)
+    return p.returncode, open(paths[0], encoding="utf-8", errors="replace").read(), open(paths[1], errors="replace").read()
+
+
+def test_delay(ctx, where):
+    """Tests only: a slow step just before the last budget check ("verify", "freeze"), or inside the publish window
+    ("verify_inside_window"), to reach the boundaries of the budget rule."""
+    if ctx["test"] and ctx["cfg"].get("stub_delay_before_final_write", {}).get(where):
+        time.sleep(ctx["cfg"]["stub_delay_before_final_write"][where])
 
 
 def install_guards(test):
@@ -153,9 +308,8 @@ def utc():
     return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
 
-def write_once(path, data):
-    """Write bytes to path only if it does not exist: temporary file, fsync, link (fails if the name exists, never
-    replaces it), unlink the temporary name, fsync the directory."""
+def stage_file(path, data):
+    """First half of a write-once: the content in a temporary file of the same directory, written and fsynced."""
     d = os.path.dirname(os.path.abspath(path))
     os.makedirs(d, exist_ok=True)
     fd, tmp = tempfile.mkstemp(dir=d, prefix=f".{os.path.basename(path)}.tmp.")
@@ -164,12 +318,33 @@ def write_once(path, data):
             f.write(data)
             f.flush()
             os.fsync(f.fileno())
+    except BaseException:
+        os.unlink(tmp)
+        raise
+    return tmp
+
+
+def publish(tmp, path):
+    """Second half: link (atomic; fails if the name exists, never replaces it), drop the temporary name, fsync the
+    directory. Only the link() call decides whether the file exists."""
+    try:
         os.link(tmp, path)
     finally:
         os.unlink(tmp)
-    dfd = os.open(d, os.O_RDONLY)
+    dfd = os.open(os.path.dirname(os.path.abspath(path)), os.O_RDONLY)
     os.fsync(dfd)
     os.close(dfd)
+
+
+def discard(*tmps):
+    for t in tmps:
+        if t and os.path.exists(t):
+            os.unlink(t)
+
+
+def write_once(path, data):
+    """Write bytes to path only if it does not exist."""
+    publish(stage_file(path, data), path)
 
 
 def write_once_or_same(path, data):
@@ -208,7 +383,16 @@ def files_under(d):
 
 
 PATH_KEYS = ("code_root", "prereg", "design_review", "sets_manifest", "git_root", "sets_dir", "code_git_root", "lambda_file",
-             "calibration_file", "environment_file", "reference_root", "stub_appendix_stdout", "stub_keyspace_job")
+             "calibration_file", "environment_file", "reference_root", "stub_appendix_stdout", "stub_appendix_script",
+             "stub_keyspace_job")
+
+
+def ledger_location():
+    """Where the stage-2 ledger is, its cap and heartbeat, without the heavy imports of context() (they are ledgered
+    too). Tests may switch the watchdog off to reach the last explicit check; a real run always has it."""
+    cfg = json.load(open(os.path.join(TEST_DIR, "config.json"))) if TEST_DIR else {}
+    return (os.path.join(TEST_DIR or HERE, "stage2", "budget_ledger_s2.json"), float(cfg.get("cap_seconds", CAP_SECONDS)),
+            float(cfg.get("heartbeat_seconds", HEARTBEAT_SECONDS)), not (TEST_DIR and cfg.get("stub_no_watchdog")))
 
 
 def context():
@@ -289,11 +473,13 @@ def _union(intervals):
 
 
 class Ledger:
-    """Union of launch intervals (fcntl lock, interval ids, alive check by pid and process start time, heartbeat);
-    an interval left open by a process that is gone is closed at its last heartbeat and marked."""
+    """Union of launch intervals plus supplements (fcntl lock, interval ids, alive check by pid and process start
+    time, heartbeat). An interval left open by a process that is gone keeps its original fields; it is counted up
+    to its last heartbeat, and the next launch refuses until the stale interval is accepted with a conservative
+    supplement of two heartbeat periods (recorded with the authorization), or the review decides."""
 
-    def __init__(self, path, cap, heartbeat, label):
-        self.path, self.cap, self.hb, self.label = path, cap, heartbeat, label
+    def __init__(self, path, cap, heartbeat, label, watchdog=True):
+        self.path, self.cap, self.hb, self.label, self.watchdog = path, cap, heartbeat, label, watchdog
         self.iv_id, self.base, self.t0, self._stop = None, 0.0, None, threading.Event()
 
     @contextlib.contextmanager
@@ -302,7 +488,8 @@ class Ledger:
         fd = os.open(self.path + ".lock", os.O_CREAT | os.O_RDWR)
         try:
             fcntl.flock(fd, fcntl.LOCK_EX)
-            d = json.load(open(self.path)) if os.path.exists(self.path) else {"stage": 2, "cap_seconds": self.cap, "intervals": []}
+            d = json.load(open(self.path)) if os.path.exists(self.path) else {"stage": 2, "cap_seconds": self.cap, "intervals": [],
+                                                                              "supplements": []}
             yield d
             tmp = f"{self.path}.tmp.{os.getpid()}"
             with open(tmp, "w") as f:
@@ -314,29 +501,68 @@ class Ledger:
             fcntl.flock(fd, fcntl.LOCK_UN)
             os.close(fd)
 
-    def open(self):
+    @staticmethod
+    def total(d):
+        return _union(d["intervals"]) + sum(x["seconds"] for x in d.get("supplements", []))
+
+    def open(self, accept_stale=False, authorization=""):
         now, refused = time.time(), None
         with self._locked() as d:
-            for iv in d["intervals"]:
-                if iv["end"] is None:
-                    if iv.get("pid_start") and _proc_start(iv["pid"]) == iv["pid_start"]:
-                        refused = S2Stop(5, f"REFUSED: another stage-2 process is running (pid {iv['pid']}, interval {iv['id']})")
-                        break
-                    iv.update(end=iv["heartbeat"], status="stale", closed_by="process gone: closed at its last heartbeat",
-                              possibly_unledgered_seconds_max=self.hb)
-            if refused is None:
-                self.base = _union(d["intervals"])
-                iv = {"id": len(d["intervals"]) + 1, "label": self.label, "pid": os.getpid(), "pid_start": _proc_start(os.getpid()),
-                      "start": now, "start_utc": utc(), "heartbeat": now, "end": None, "status": None}
-                d["intervals"].append(iv)
-                if self.base >= self.cap:  # the launch is recorded, then refused
-                    iv.update(end=now, status="BUDGET_CAP")
-                    refused = S2Stop(7, f"BUDGET EXCEEDED (F9): stage 2 used {self.base:.1f} s of {self.cap:.0f} s")
-                else:
-                    self.iv_id, self.t0 = iv["id"], now
+            iv = {"id": len(d["intervals"]) + 1, "label": self.label, "pid": os.getpid(), "pid_start": _proc_start(os.getpid()),
+                  "start": T_PROCESS, "start_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(T_PROCESS)), "heartbeat": now,
+                  "heartbeat_seconds": self.hb, "end": None, "status": None}
+            stale = []
+            for old in d["intervals"]:
+                if old["end"] is None and "stale" not in old:
+                    if old.get("pid_start") and _proc_start(old["pid"]) == old["pid_start"]:
+                        refused = S2Stop(5, f"REFUSED: another stage-2 process is running (pid {old['pid']}, interval {old['id']})")
+                    else:
+                        stale.append(old)
+            if refused is None and stale and not accept_stale:
+                for x in stale:
+                    d.setdefault("stale_reports", []).append({
+                        "interval": x["id"], "reported_by_interval": iv["id"], "reported_utc": utc(), "last_heartbeat": x["heartbeat"],
+                        "counted_until": x["heartbeat"], "proposed_supplement_seconds": 2 * float(x.get("heartbeat_seconds", self.hb)),
+                        "seconds_since_last_heartbeat": round(now - x["heartbeat"], 3),
+                        "note": "not ledgered after the last heartbeat; booked only when accepted (--accept-stale-supplement) "
+                                "or as the review decides"})
+                refused = S2Stop(5, "REFUSED: interval(s) " + ", ".join(
+                    f"{x['id']} ({x['label']}, last heartbeat {time.strftime('%H:%M:%SZ', time.gmtime(x['heartbeat']))})" for x in stale)
+                    + " were left open by a process that is gone; the time after the last heartbeat is not ledgered. Relaunch with "
+                    "--accept-stale-supplement to book a conservative supplement of two heartbeat periods each, or submit it to the review")
+            elif refused is None:
+                for x in stale:
+                    sup = 2 * float(x.get("heartbeat_seconds", self.hb))
+                    x["stale"] = {"detected_utc": utc(), "accepted_by_interval": iv["id"], "counted_until": x["heartbeat"],
+                                  "supplement_seconds": sup}
+                    d.setdefault("supplements", []).append({"interval": x["id"], "seconds": sup, "accepted_utc": utc(),
+                                                            "authorization": authorization or "-",
+                                                            "reason": "process gone: conservative supplement for the time after "
+                                                                      "its last heartbeat (two heartbeat periods)"})
+            self.base = self.total(d)
+            d["intervals"].append(iv)
+            if refused is None and self.base + (now - T_PROCESS) >= self.cap:
+                refused = BudgetExceeded(f"BUDGET EXCEEDED (F9): stage 2 used {self.base + now - T_PROCESS:.1f} s of {self.cap:.0f} s "
+                                         "(refused at the start of the launch)")
+            if refused:  # the launch is recorded, then refused
+                iv.update(end=now, status=refused.status)
+            else:
+                self.iv_id, self.t0 = iv["id"], T_PROCESS
+            d["used_seconds"] = round(self.total(d), 3)
         if refused:  # raised after the ledger was saved
             raise refused
         threading.Thread(target=self._beat, daemon=True).start()
+        if self.watchdog:
+            threading.Thread(target=self._watch, daemon=True).start()
+
+    def _watch(self):
+        """At the cap, interrupt the main thread whatever it is doing (an import, hashing, a loop, a wait)."""
+        while not self._stop.wait(0.05):
+            if self.used() >= self.cap:
+                _SIG["message"] = (f"BUDGET EXCEEDED (F9): stage 2 reached its cap of {self.cap:.0f} s "
+                                   "(watchdog: the running step was interrupted)")
+                signal.pthread_kill(threading.main_thread().ident, signal.SIGUSR1)
+                return
 
     def _beat(self):
         while not self._stop.wait(self.hb):
@@ -346,9 +572,11 @@ class Ledger:
     def used(self):
         return self.base + (time.time() - self.t0)
 
-    def check(self):
+    def check(self, where=""):
         if self.used() >= self.cap:
-            raise S2Stop(7, f"BUDGET EXCEEDED (F9): stage 2 used {self.used():.1f} s of {self.cap:.0f} s")
+            _SIG["stopping"] = True
+            raise BudgetExceeded(f"BUDGET EXCEEDED (F9): stage 2 used {self.used():.1f} s of {self.cap:.0f} s"
+                                 + (f" ({where})" if where else ""))
 
     def close(self, status):
         if self.iv_id is None:
@@ -357,7 +585,7 @@ class Ledger:
         with self._locked() as d:
             t = time.time()
             d["intervals"][self.iv_id - 1].update(end=t, heartbeat=t, end_utc=utc(), status=status)
-            d["used_seconds"] = round(_union(d["intervals"]), 3)
+            d["used_seconds"] = round(self.total(d), 3)
 
 
 # ------------------------------------------------------------ inputs
@@ -498,23 +726,23 @@ def appendix_a(prereg_path):
 # ------------------------------------------------------------ the enumerating jobs (real) and their stubs (tests)
 
 
-def run_appendix_a(ctx, script, att):
+def run_appendix_a(ctx, script, att, ledger):
     d = os.path.join(att, "appendix_a_run")
     os.mkdir(d)
     env = {"PATH": os.environ.get("PATH", "/usr/bin:/bin"), "LANG": "C.UTF-8"}
     if ctx["test"]:
-        argv = [sys.executable, "-I", "-c", "import sys; sys.stdout.write(open(sys.argv[1]).read())", ctx["cfg"]["stub_appendix_stdout"]]
+        argv = [sys.executable, "-I", ctx["cfg"]["stub_appendix_script"], ctx["cfg"]["stub_appendix_stdout"], TEST_DIR]
     else:
         path = os.path.join(d, "keyspace.py")  # the design-stage name; sha256 checked above
         open(path, "w").write(script)
         argv = [sys.executable, "-I", path, ctx["sets_dir"]]
-    r = subprocess.run(argv, cwd=d, env=env, capture_output=True, text=True, timeout=1800)
-    if r.returncode:
-        raise S2Stop(4, f"RUN ERROR: Appendix A script exited {r.returncode}: {r.stderr.strip()[-300:]}")
-    return r.stdout
+    rc, out, err = run_bounded(argv, ledger, "appendix_a", att, d, env)
+    if rc:
+        raise S2Stop(4, f"RUN ERROR: Appendix A script exited {rc}: {err.strip()[-300:]}")
+    return out
 
 
-def run_keyspace_job(ctx, att):
+def run_keyspace_job(ctx, att, ledger):
     out = os.path.join(att, "keyspace_stage2.json")
     if ctx["test"]:
         argv = [sys.executable, ctx["cfg"]["stub_keyspace_job"], out]
@@ -522,15 +750,15 @@ def run_keyspace_job(ctx, att):
     else:
         argv = [sys.executable, os.path.join(HERE, "e2c_stage4.py"), "keyspace", "--out", out]
         env = dict(os.environ, E2C_KEYSPACE_STAGE="2")  # only in the job's own environment
-    r = subprocess.run(argv, cwd=ROOT, env=env, capture_output=True, text=True, timeout=1800)
-    if r.returncode:
-        raise S2Stop(4, f"RUN ERROR: keyspace job exited {r.returncode}: {r.stderr.strip()[-300:]}")
+    rc, _, err = run_bounded(argv, ledger, "keyspace", att, ROOT, env)
+    if rc:
+        raise S2Stop(4, f"RUN ERROR: keyspace job exited {rc}: {err.strip()[-300:]}")
     if not os.path.exists(out):
         raise S2Stop(6, "RESULT CHECK FAILED: the keyspace job wrote no record")
     return json.load(open(out))
 
 
-def key_rules(letters):
+def key_rules(letters, tick=lambda: None):
     """e2c_test2.key / held against E1's body_key / is_heldout on both statement orders of every key."""
     import e2c_test2 as T
     from e_common import body_key, is_heldout
@@ -541,6 +769,8 @@ def key_rules(letters):
                 if d1 == d2:
                     continue
                 total += 1
+                if total % 2000 == 0:
+                    tick()
                 k = T.key([(l1, d1), (l2, d2)])
                 h = T.held(k)
                 held += h
@@ -628,7 +858,7 @@ def test_hooks(cfg, seed, step1, rows):
         with open(mut["path"], "a") as f:
             f.write(mut.get("text", " "))
     if cfg.get("stub_open_checkpoint") == seed and step1 == 1:
-        open(os.path.join(TEST_DIR, "x.pt"), "w").close()
+        open(os.path.join(cfg["stub_scratch"], "x.pt"), "w").close()
     return rows
 
 
@@ -662,10 +892,11 @@ def run_v2(ctx, att, ledger, log):
         for i, ch in enumerate(chunks):
             f = open(os.path.join(att, f"v2_worker_{i}.txt"), "w")
             argv = [sys.executable, os.path.abspath(__file__), "_v2-worker", "--attempt", att, "--seeds", ",".join(map(str, ch))]
-            procs.append((subprocess.Popen(argv, cwd=ROOT, env=env, stdout=f, stderr=f, start_new_session=True), f))
+            procs.append((subprocess.Popen(argv, cwd=ROOT, env=env, stdout=f, stderr=f, start_new_session=True,
+                                           preexec_fn=die_with_parent), f))
         log(f"V2: {len(SEEDS_33)} seeds in {len(procs)} worker processes, {ctx['updates']} x {ctx['batch']} samples each")
         while any(p.poll() is None for p, _ in procs):
-            ledger.check()
+            ledger.check("while the V2 workers run")
             for p, _ in procs:
                 if p.poll() not in (None, 0):
                     raise S2Stop(3 if p.returncode == 3 else 4, f"V2 worker exited {p.returncode} (see v2_worker_*.txt)")
@@ -676,8 +907,7 @@ def run_v2(ctx, att, ledger, log):
     finally:
         for p, f in procs:
             if p.poll() is None:
-                os.killpg(p.pid, signal.SIGTERM)
-                p.wait()
+                kill_group(p)
             f.close()
     res = {}
     for s in SEEDS_33:
@@ -747,19 +977,30 @@ def compare_attempts(out, att):
                 raise S2Stop(3, f"INTEGRITY FAILURE: {n} of this attempt differs from attempt {prev}")
 
 
-def cmd_verify(a, ctx):
+def sweep_temporaries(dirs, dest, log):
+    """Temporary names of a write-once that a crash interrupted (never published): kept, moved out of the way."""
+    for d in dirs:
+        for f in sorted(glob.glob(os.path.join(d, ".*.tmp.*"))):
+            os.makedirs(dest, exist_ok=True)
+            os.replace(f, os.path.join(dest, os.path.basename(f)))
+            log(f"moved {os.path.basename(f)} (a temporary file of an interrupted write) to {os.path.relpath(dest, d)}")
+
+
+def verify_state_problem(out, a, record_path, stop_path):
+    if os.path.exists(record_path):
+        return "REFUSED: verify is complete; stage2_verify.json is written once"
+    if os.path.exists(stop_path):
+        return f"REFUSED: a verify attempt stopped ({json.load(open(stop_path)).get('status')}); the review decides"
+    if attempts_of(out) and not a.resume:
+        return "REFUSED: verify was launched before; continue with --resume"
+    if a.resume and not attempts_of(out):
+        return "REFUSED: --resume without an earlier attempt"
+    return None
+
+
+def cmd_verify(a, ctx, ledger):
     out, R = ctx["out"], ctx["R"]
     record_path, stop_path = os.path.join(out, "stage2_verify.json"), os.path.join(out, "verify_stop.json")
-    if os.path.exists(record_path):
-        raise S2Stop(5, "REFUSED: verify is complete; stage2_verify.json is written once")
-    if os.path.exists(stop_path):
-        raise S2Stop(5, f"REFUSED: a verify attempt stopped ({json.load(open(stop_path)).get('status')}); the review decides")
-    if attempts_of(out) and not a.resume:
-        raise S2Stop(5, "REFUSED: verify was launched before; continue with --resume")
-    if a.resume and not attempts_of(out):
-        raise S2Stop(5, "REFUSED: --resume without an earlier attempt")
-    ledger = Ledger(os.path.join(out, "budget_ledger_s2.json"), ctx["cap"], ctx["heartbeat"], "verify")
-    ledger.open()
     att, status, code, summary = None, "ERROR", 4, {}
 
     def log(msg):
@@ -773,33 +1014,36 @@ def cmd_verify(a, ctx):
         write_once(os.path.join(att, name), data)
 
     try:
+        bad = verify_state_problem(out, a, record_path, stop_path)
+        if bad:
+            raise S2Stop(5, bad)
         inp = prestart(ctx, a.expected_commit)
         ctx["refs"] = inp["references"]
         e1, bad = e1_sets(ctx)
         if bad:
             raise S2Stop(5, "REFUSED: " + "; ".join(bad))
+        ledger.check("after the start checks")
         att = new_attempt(out)
+        sweep_temporaries([out], os.path.join(att, "temporaries_of_an_interrupted_write"), log)
         log(f"verify ({'test' if ctx['test'] else 'real'}) attempt {os.path.basename(att)} at {inp['head'][:12]}; "
-            f"authorization: {a.authorization or '-'}")
+            f"authorization: {a.authorization or '-'}; budget used {ledger.used():.1f} s of {ledger.cap:.0f} s")
         save("e1_sets.json", e1)
         log(f"E1 sets: {len(e1['files'])} files equal to the manifest {e1['manifest_sha256'][:12]}")
         script, expected, letters = appendix_a(ctx["p"]["prereg"])
-        ledger.check()
-        stdout = run_appendix_a(ctx, script, att)
+        stdout = run_appendix_a(ctx, script, att, ledger)
         save("appendix_a_stdout.txt", stdout)
         if stdout != expected:
             raise S2Stop(3, "F11: the Appendix A script's output differs from Appendix A", "F11")
         log("F11: Appendix A output verbatim")
-        ks = run_keyspace_job(ctx, att)
+        ks = run_keyspace_job(ctx, att, ledger)
         fmt = R.keyspace_format_problem(ks)
         if fmt:
             raise S2Stop(3, f"INTEGRITY FAILURE: keyspace job output: {fmt}")
         if ks["counts"] != R.KEYSPACE_COUNTS:
             raise S2Stop(3, f"F11: counts {ks['counts']} differ from Appendix A {R.KEYSPACE_COUNTS}", "F11")
         log(f"F11: counts equal to Appendix A {ks['counts']}")
-        ledger.check()
         kl = ctx["cfg"].get("key_rule_letters") if ctx["test"] else letters
-        kr = key_rules(kl)
+        kr = key_rules(kl, tick=lambda: ledger.check("during the key-rule check"))
         import e2c_test2 as T
         from e_common import LETTERS
         want_keys = len(kl) * (len(kl) - 1) // 2 * 90
@@ -812,6 +1056,7 @@ def cmd_verify(a, ctx):
         log(f"key rules: {kr['keys']} keys, {kr['heldout']} held-out, no mismatch")
         nonu = non_u_heldout(ctx["sets_dir"])
         save("non_u_sets.json", nonu)
+        ledger.check("before V2")
         res = run_v2(ctx, att, ledger, log)
         bad, compared = v2_check(ctx, res, nonu)
         if bad:
@@ -845,15 +1090,42 @@ def cmd_verify(a, ctx):
             raise S2Stop(3, f"INTEGRITY FAILURE: {scan['key_like_hits']} key-like strings in the outputs (no key list is written)")
         record["leak_scan"] = scan
         data = canon(record)
-        write_once_or_same(os.path.join(out, "v2_streams.json"), streams)
-        if ctx["test"] and ctx["cfg"].get("stub_crash_after") == "v2_streams":
-            os._exit(9)
-        summary = {"status": "PASS", "record_sha256": sha256_bytes(data)}
-        write_once(record_path, data)
+        sp = os.path.join(out, "v2_streams.json")
+        if os.path.exists(sp) and open(sp, "rb").read() != streams:
+            raise S2Stop(3, "INTEGRITY FAILURE: v2_streams.json exists with other content (written once)")
+        # both files are written and fsynced under temporary names first; after the last budget check only link()
+        staged = [None, None]
+        try:
+            staged[0] = None if os.path.exists(sp) else stage_file(sp, streams)
+            staged[1] = stage_file(record_path, data)
+            test_delay(ctx, "verify")
+            with publish_window():
+                ledger.check("before writing v2_streams.json and stage2_verify.json")
+                t_check = time.time()
+                test_delay(ctx, "verify_inside_window")
+                if staged[0]:
+                    publish(staged[0], sp)
+                    staged[0] = None
+                if ctx["test"] and ctx["cfg"].get("stub_crash_after") == "v2_streams":
+                    os._exit(9)
+                publish(staged[1], record_path)
+                staged[1] = None
+                _SIG["published"] = True
+                window, over = time.time() - t_check, ledger.used() - ledger.cap
+        finally:
+            discard(*staged)
+        summary = {"status": "PASS", "record_sha256": sha256_bytes(data), "publish_window_seconds": round(window, 6)}
+        if _SIG["note"]:
+            summary["signal_inside_publish_window"] = _SIG["note"]
+            log(_SIG["note"])
+        if over > 0:  # the cap passed inside the publish window: the outputs were decided at the last check
+            summary["cap_crossed_inside_publish_window_seconds"] = round(over, 6)
+            log(f"REVIEW: the cap was crossed {over:.3f} s inside the publish window (outputs decided at the last check)")
         status, code = "PASS", 0
-        log(f"PASS: stage2_verify.json sha256 {sha256_bytes(data)}")
+        log(f"PASS: stage2_verify.json sha256 {sha256_bytes(data)}; budget used {ledger.used():.1f} s of {ledger.cap:.0f} s; "
+            f"last budget check to both files published: {window * 1000:.2f} ms")
         print(json.dumps({"stage2_verify_sha256": sha256_bytes(data), "v2_streams_sha256": sha256_bytes(streams)}))
-    except S2Stop as s:
+    except (S2Stop, BudgetExceeded) as s:
         status, code = s.status, s.code
         log(str(s))
     except Interrupted:
@@ -866,26 +1138,27 @@ def cmd_verify(a, ctx):
         status, code = "ERROR", 4
         log(f"RUN ERROR: {e!r}")
     finally:
-        ledger.close(status)
-        if att:
-            write_once(os.path.join(att, "summary.json"), canon(dict(summary, status=status, exit=code, end_utc=utc())))
-            if code == 3:
-                write_once_or_same(stop_path, canon({"status": status, "attempt": os.path.basename(att)}))
+        shield()
+        try:
+            if att:
+                write_once(os.path.join(att, "summary.json"), canon(dict(summary, status=status, exit=code, end_utc=utc())))
+                if code == 3:
+                    write_once_or_same(stop_path, canon({"status": status, "attempt": os.path.basename(att)}))
+        finally:
+            ledger.close(status)  # last: the clean-up is ledgered too
     return code
 
 
 # ------------------------------------------------------------ freeze
 
 
-def cmd_freeze(a, ctx):
+def cmd_freeze(a, ctx, ledger):
     out, R, p = ctx["out"], ctx["R"], ctx["p"]
     record_path, receipt_path = os.path.join(out, "stage2_verify.json"), os.path.join(out, "stage2_freeze_receipt.json")
-    if os.path.exists(p["freeze"]) or os.path.exists(receipt_path):
-        raise S2Stop(5, f"REFUSED: {os.path.basename(p['freeze'])} exists; the freeze is written once")
-    ledger = Ledger(os.path.join(out, "budget_ledger_s2.json"), ctx["cap"], ctx["heartbeat"], "freeze")
-    ledger.open()
     status, code = "ERROR", 4
     try:
+        if os.path.exists(p["freeze"]) or os.path.exists(receipt_path):
+            raise S2Stop(5, f"REFUSED: {os.path.basename(p['freeze'])} exists; the freeze is written once")
         bad = R.git_anchor(record_path, a.approved_verify_commit, a.approved_verify_sha256)
         if bad:
             raise S2Stop(5, "REFUSED: stage2_verify.json is not the approved record: " + "; ".join(bad))
@@ -898,12 +1171,14 @@ def cmd_freeze(a, ctx):
         cp = R.commitment_problem(a.salt_commitment_sha256)
         if cp:
             raise S2Stop(5, f"REFUSED: salt commitment {cp} (only sha256(salt) is accepted, never a salt)")
+        ledger.check("after the record checks")
         inp = prestart(ctx, a.expected_commit)
         if inp["basis"] != rec["basis"]:
             raise S2Stop(5, "REFUSED: the code tree or a frozen document changed since the approved verify")
         e1, bad = e1_sets(ctx)
         if bad or e1 != rec["e1_sets"]:
             raise S2Stop(5, "REFUSED: E1's set files differ from the approved verify")
+        ledger.check("after the start checks")
         fz = R.make_baseline(p, inp["lambda"], inp["lambda2"], a.salt_commitment_sha256, rec["keyspace"])
         fz["stage2"] = {"verify_record_sha256": a.approved_verify_sha256, "verify_commit": a.approved_verify_commit,
                         "v2_streams_sha256": rec["v2"]["streams_sha256"], "training_stream_seeds": SEEDS_33,
@@ -916,22 +1191,46 @@ def cmd_freeze(a, ctx):
         text = canon(fz)
         if leak_scan(texts=[text])["key_like_hits"]:
             raise S2Stop(3, "INTEGRITY FAILURE: key-like text in the freeze")
+        receipt = {"freeze_sha256": sha256_bytes(text), "verify_record_sha256": a.approved_verify_sha256,
+                   "verify_commit": a.approved_verify_commit, "salt_commitment_sha256": a.salt_commitment_sha256,
+                   "authorization": a.authorization or "-", "staged_utc": utc(), "budget_used_seconds_at_staging": round(ledger.used(), 1),
+                   "note": "not trusted by the launcher: stage 3 takes the commit and sha256 from the review"}
+        sweep_temporaries([out, os.path.dirname(os.path.abspath(p["freeze"]))],
+                          os.path.join(out, f"temporaries_of_an_interrupted_write_{time.strftime('%Y%m%dT%H%M%SZ', time.gmtime())}"),
+                          lambda m: print(m, file=sys.stderr))
+        # freeze and receipt are written and fsynced under temporary names first; after the last budget check only link()
+        staged = [None, None]
         try:
-            write_once(p["freeze"], text)
-        except FileExistsError:
-            raise S2Stop(5, "REFUSED: the freeze file appeared meanwhile; it is written once")
+            staged[0] = stage_file(p["freeze"], text)
+            staged[1] = stage_file(receipt_path, canon(receipt))
+            test_delay(ctx, "freeze")
+            with publish_window():
+                ledger.check("before writing the freeze")
+                t_check = time.time()
+                try:
+                    publish(staged[0], p["freeze"])
+                except FileExistsError:
+                    raise S2Stop(5, "REFUSED: the freeze file appeared meanwhile; it is written once")
+                finally:
+                    staged[0] = None
+                publish(staged[1], receipt_path)
+                staged[1] = None
+                _SIG["published"] = True
+                window, over = time.time() - t_check, ledger.used() - ledger.cap
+        finally:
+            discard(*staged)
+        if over > 0:
+            print(f"REVIEW: the cap was crossed {over:.3f} s inside the publish window (the freeze was decided at the last check)",
+                  file=sys.stderr)
         fsha = sha256_file(p["freeze"])
         if fsha != sha256_bytes(text):
             raise S2Stop(3, "INTEGRITY FAILURE: the written freeze differs from the built one")
-        write_once(receipt_path, canon({"freeze_sha256": fsha, "verify_record_sha256": a.approved_verify_sha256,
-                                        "verify_commit": a.approved_verify_commit, "salt_commitment_sha256": a.salt_commitment_sha256,
-                                        "authorization": a.authorization or "-", "written_utc": utc(),
-                                        "note": "not trusted by the launcher: stage 3 takes the commit and sha256 from the review"}))
+        print(f"last budget check to freeze and receipt published: {window * 1000:.2f} ms", file=sys.stderr)
         status, code = "PASS", 0
         print(json.dumps({"freeze_sha256": fsha}))
         print(f"freeze written once ({fsha}); commit it on its own, push, and pass that commit and this sha256 from the review "
               "to run_e2c.py (--approved-stage2-commit / --approved-freeze-sha256)", file=sys.stderr)
-    except S2Stop as s:
+    except (S2Stop, BudgetExceeded) as s:
         status, code = s.status, s.code
         print(s, file=sys.stderr)
     except Interrupted:
@@ -940,8 +1239,10 @@ def cmd_freeze(a, ctx):
         status, code = "ERROR", 4
         print(f"RUN ERROR: {e!r}", file=sys.stderr)
     finally:
+        shield()
         ledger.close(status)
     return code
+
 
 
 # ------------------------------------------------------------ check (read-only)
@@ -987,12 +1288,15 @@ def main(argv=None):
     v.add_argument("--expected-commit", required=True, help="the reviewed implementation commit (40 hex)")
     v.add_argument("--authorization", default="")
     v.add_argument("--resume", action="store_true")
+    v.add_argument("--accept-stale-supplement", action="store_true",
+                   help="book a conservative supplement for intervals left open by a process that is gone")
     f = sub.add_parser("freeze", allow_abbrev=False)
     f.add_argument("--expected-commit", required=True)
     f.add_argument("--approved-verify-commit", required=True)
     f.add_argument("--approved-verify-sha256", required=True)
     f.add_argument("--salt-commitment-sha256", required=True, help="sha256(salt), 64 lowercase hex; never the salt")
     f.add_argument("--authorization", default="")
+    f.add_argument("--accept-stale-supplement", action="store_true")
     c = sub.add_parser("check", allow_abbrev=False)
     for k in ("--approved-verify-commit", "--approved-verify-sha256", "--approved-freeze-commit", "--approved-freeze-sha256"):
         c.add_argument(k)
@@ -1002,22 +1306,37 @@ def main(argv=None):
     a = ap.parse_args(argv)
     try:
         env_checks(a.command, getattr(a, "authorization", ""))
-        install_guards(bool(TEST_DIR))
+        prepare_children()
         if a.command == "_v2-worker":
+            install_guards(bool(TEST_DIR))
             try:
                 v2_worker(a)
             except CheckpointAccess as e:
                 print(f"INTEGRITY FAILURE: {e}", file=sys.stderr)
                 return 3
             return 0
-
-        def handler(signum, frame):
-            raise Interrupted(signum)
-        signal.signal(signal.SIGTERM, handler)
-        signal.signal(signal.SIGINT, handler)
-        ctx = context()
-        return {"verify": cmd_verify, "freeze": cmd_freeze, "check": cmd_check}[a.command](a, ctx)
-    except S2Stop as s:
+        signal.signal(signal.SIGTERM, _on_term)
+        signal.signal(signal.SIGINT, _on_term)
+        signal.signal(signal.SIGUSR1, _on_budget_signal)
+        if a.command == "check":  # read-only: not a stage-2 run, not ledgered
+            install_guards(bool(TEST_DIR))
+            return cmd_check(a, context())
+        # verify / freeze: the launch is ledgered from the start of its process; the ledger (with its watchdog) is
+        # opened before anything heavy is imported, and a refused launch is ledgered too
+        path, cap, hb, watchdog = ledger_location()
+        ledger = Ledger(path, cap, hb, a.command, watchdog)
+        ledger.open(a.accept_stale_supplement, a.authorization)
+        try:
+            install_guards(bool(TEST_DIR))
+            ctx = context()
+            ledger.check("after loading the code")
+        except BaseException as e:
+            shield()
+            ledger.close(e.status if isinstance(e, (S2Stop, BudgetExceeded)) else "INTERRUPTED" if isinstance(e, Interrupted)
+                         else "ERROR")
+            raise
+        return {"verify": cmd_verify, "freeze": cmd_freeze}[a.command](a, ctx, ledger)
+    except (S2Stop, BudgetExceeded) as s:
         print(s, file=sys.stderr)
         return s.code
     except Interrupted:
@@ -1025,7 +1344,6 @@ def main(argv=None):
     except Exception as e:  # noqa: BLE001
         print(f"RUN ERROR: {e!r}", file=sys.stderr)
         return 4
-
 
 if __name__ == "__main__":
     sys.exit(main())

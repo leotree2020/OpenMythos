@@ -1,0 +1,18 @@
+PASS verify_pass: exit 0; 33 seeds, chain points compared 12; keyspace stub env ["E2C_S2_STUB_KEYSPACE_STAGE", "E2C_S2_TEST_DIR", "E2C_TEST_DIR"]; publish window 0.000314 s
+PASS freeze_pass_launcher_accepts: check 0, stage3 0, stage4 0; freeze 85a76773e6c1 at 3fc4f7493ba9
+PASS interrupt_and_resume: interrupted 130 (INTERRUPTED), V2 workers left [], resume 0; intervals ['INTERRUPTED', 'PASS']
+FAIL crash_then_resume: crash exit 9; resume without acceptance 5, with it 0; interval 1 kept (end None), supplement 0.4 s booked
+FAIL budget_cap: launch 1 exit 7 after 3.66 s (cap 1 s); launch 2 exit 7, refused at its start after 3.58 s; cumulative 7.233 s
+PASS stale_interval: dead pid: without acceptance 5 (interval kept as it was: True), with it 0 (supplement 2 x 10 s booked: True); live pid: exit 5
+PASS checkpoint_access_blocked: exit 3, x.pt created False: V2 worker exited 3 (see v2_worker_*.txt)
+PASS appendix_job_budget_cap: exit 7: BUDGET EXCEEDED (F9): stage 2 used 10.0 s of 10 s (while the appendix_a job runs); job and its child [1216, 1217] gone: True; used 10.024 s of 10 s
+PASS keyspace_job_budget_cap: exit 7: BUDGET EXCEEDED (F9): stage 2 used 10.0 s of 10 s (while the keyspace job runs); job and its child [1244, 1245] gone: True; used 10.047 s of 10 s
+PASS freeze_budget_before_write: [(True, 0, 7, 'watchdog', True, ['PASS', 'BUDGET_CAP']), (False, 0, 7, 'last check', True, ['PASS', 'BUDGET_CAP'])] (watchdog on, verify, freeze, stopped by, no freeze / receipt / temporary file, intervals)
+PASS sigterm_during_job: [('appendix_stub', 130, True, 'INTERRUPTED', ['INTERRUPTED'], 0), ('keyspace_stub', 130, True, 'INTERRUPTED', ['INTERRUPTED'], 0)] (job, exit, job and child gone, summary, intervals, resume)
+PASS budget_cumulative_two_launches: launch 1 exit 130 (9.6 s), launch 2 exit 7 (3.7 s alone); cumulative 13.255 s of 12 s
+PASS verify_budget_watchdog: exit 7: BUDGET EXCEEDED (F9): stage 2 reached its cap of 25 s (watchdog: the running step was interrupted); used 25.003 s of 25 s (over by 0.003 s); nothing written
+PASS verify_budget_last_check: exit 7: BUDGET EXCEEDED (F9): stage 2 used 45.0 s of 30 s (before writing v2_streams.json and stage2_verify.json); used 44.962 s of 30 s; no record, no temporary file, no PASS summary
+FAIL verify_budget_inside_publish_window: exit 7; both files published as decided at the last check; cap crossed None s inside the window, recorded for the review
+PASS sigkill_driver: [('keyspace job', -9, True, True, 5, [1], None), ('V2 workers', -9, True, None, None, None, None)] (what ran, driver exit, gone with the driver, the job's own child alive, next launch, stale reports, interval end kept)
+I2 stage-2 tests FAIL 13/16, 35 invocations
+rc=3

@@ -18,7 +18,9 @@ the I2 cases replace the freeze (alone, or with the recorded approvals, or
 re-committed), approve a commit that did not add it, rebind it between
 stages 3 and 4, change the approvals on resume, give an incomplete or wrong
 R* / M1* count structure or a malformed salt commitment, and use a shallow
-clone.
+clone. I2-R1: the simulated salt has the format of the real one (48 lowercase
+hex digits); salts of another format are refused at stage 4 before keyspace,
+test2 or a judgment starts, even when their sha256 matches the commitment.
 A second part runs the test2 generation and evaluation code on a synthetic
 pool of NON-held-out keys only (never in R*): determinism per salt, every key
 in the pool, 1-2 counterfactuals per body, fallback counting, and one
@@ -47,7 +49,7 @@ sys.path.insert(0, GE)
 import e2c_common as C  # noqa: E402
 
 PLAN = {"openmythos": [201, 202], "transformer": [201], "historical": [1]}
-SALT = "simulated-salt-for-launcher-tests-only-0123456789abcdef"
+SALT = "0123456789abcdef" * 3  # simulated, in the format of the real salt (48 lowercase hex digits)
 KS = {"R_star_sha256": "a" * 64, "M1_star_sha256": "b" * 64, "counts": {"H": 12006, "U": 5093, "R_star": 6913, "M1_star": 4129}}
 LAM, LAM2 = {"openmythos": 0.3, "transformer": 0.1}, {"openmythos": 0.5, "transformer": 0.2}
 
@@ -490,7 +492,7 @@ def stage4_before_stage3(d):
 def salt_mismatch(d):
     launch(d)
     bad = os.path.join(d, "wrong_salt.txt")
-    open(bad, "w").write("another-simulated-salt")
+    open(bad, "w").write("fedcba9876543210" * 3)  # the right format, another value
     r = launch(d, stage=4, salt=bad)
     return (r.returncode == 3 and "differs from the frozen commitment" in status(d) and count(d, "start keyspace") == 0
             and count(d, "start judge") == 0, f"exit {r.returncode}")
@@ -674,6 +676,32 @@ def shallow_clone_refused(d):
     return r.returncode == 5 and "shallow" in r.stderr, f"exit {r.returncode}"
 
 
+def salt_format_invalid(d):
+    # salts of another format, against the frozen commitment of the simulated salt: refused at stage 4 before keyspace,
+    # test2 or a judgment starts (the first stage-4 launch records the run freeze; the next ones resume)
+    r3 = launch(d)
+    out = []
+    for i, bad in enumerate((SALT.upper(), SALT[:47], SALT + "0", hashlib.sha256(SALT.encode()).hexdigest(), "simulated-salt", " ")):
+        path = os.path.join(d, f"bad_salt_{i}.txt")
+        open(path, "w").write(bad)
+        r = launch(d, stage=4, salt=path, resume=i > 0)
+        out.append((r.returncode, status(d).count("not 48 lowercase hex digits") == i + 1))
+    return (r3.returncode == 0 and all(rc == 3 and m for rc, m in out) and count(d, "start keyspace") == 0
+            and count(d, "start test2") == 0 and count(d, "start judge") == 0, f"stage3 {r3.returncode}; stage4 {out}")
+
+
+def salt_format_checked_before_hash(d):
+    # the commitment is the sha256 of a salt in the wrong format: the hash matches, the format check still refuses
+    upper = SALT.upper()
+    commit_freeze(d, dict(BASE_FREEZE, salt_commitment_sha256=hashlib.sha256(upper.encode()).hexdigest()))
+    r3 = launch(d)
+    path = os.path.join(d, "upper_salt.txt")
+    open(path, "w").write(upper + "\n")
+    r4 = launch(d, stage=4, salt=path)
+    return (r3.returncode == 0 and r4.returncode == 3 and "not 48 lowercase hex digits" in status(d) and count(d, "start keyspace") == 0
+            and count(d, "start test2") == 0, f"stage3 {r3.returncode}, stage4 {r4.returncode}")
+
+
 def keyspace_guard():
     import e2c_test2 as T
     os.environ.pop("E2C_KEYSPACE_STAGE", None)
@@ -735,7 +763,8 @@ CASES = [all_succeed, refuse_fresh_when_frozen, refuse_resume_without_freeze, re
          judgment_without_ledger_invalid,
          approvals_missing, freeze_replaced_unapproved, freeze_and_sidecar_replaced, approved_commit_without_freeze,
          stage4_freeze_rebound, resume_with_other_approvals, keyspace_counts_structure, salt_commitment_malformed,
-         shallow_clone_refused]
+         shallow_clone_refused,
+         salt_format_invalid, salt_format_checked_before_hash]
 
 
 def main():

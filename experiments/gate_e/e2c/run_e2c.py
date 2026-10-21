@@ -32,8 +32,9 @@ Exit codes (E1 conventions; 9 of the preregistration):
        E_W^C1 = 0 / not finite), a re-trained run differing from its kept
        attempt (F8), a non-finite loss or gradient (F7), checkpoint push /
        retrieval / hash (F5), a result or judgment differing from its ledger
-       (F5), a diagnostic hard check (F6), salt / R* / M1* hashes / isolation
-       of test2 (F10, nothing judged)
+       (F5), a diagnostic hard check (F6), a salt that is not 48 lowercase hex
+       digits or does not match the commitment, R* / M1* hashes, isolation of
+       test2 (F10, nothing judged; all checked before test2 is generated)
     4  any other error; 6 outputs missing after a stage
     7  the stage's cumulative cap is reached (F9: stage 3 42 h, stage 4 2 h)
 Records (atomic writes): run_freeze.json, checkpoints_manifest.json,
@@ -88,9 +89,10 @@ APPROVED = {
 }
 ARMS = ("openmythos", "transformer")
 # stage-2 interface: the R* / M1* record is the stage-4 keyspace job's output with Appendix A's counts (B2);
-# the salt commitment is sha256(salt) as 64 lowercase hex digits, never the salt (B3)
+# the salt commitment is sha256(salt) as 64 lowercase hex digits, never the salt (B3); the salt itself, revealed only
+# in stage 4, is 48 lowercase hex digits (192 bits, secrets.token_hex(24)), so it cannot be mistaken for a commitment
 KEYSPACE_COUNTS = {"H": 12006, "U": 5093, "R_star": 6913, "M1_star": 4129}
-HEX64, HEX40 = re.compile(r"[0-9a-f]{64}\Z"), re.compile(r"[0-9a-f]{40}\Z")
+HEX64, HEX40, SALT_FORMAT = re.compile(r"[0-9a-f]{64}\Z"), re.compile(r"[0-9a-f]{40}\Z"), re.compile(r"[0-9a-f]{48}\Z")
 EMPTY_LINE_HASHES = (hashlib.sha256(b"").hexdigest(), hashlib.sha256(b"\n").hexdigest())
 ARTIFACT_PREFIX = "gate_e/e2c"
 SYNC_EVERY_STATES, SYNC_EVERY_S = 10, 1200
@@ -708,7 +710,9 @@ def judgment_invalid(path, run, test2_sha):
 
 def stage4(L, p, fz, salt_file, tick, save):
     salt = open(salt_file).read().strip()
-    if hashlib.sha256(salt.encode()).hexdigest() != fz["salt_commitment_sha256"]:
+    if not SALT_FORMAT.match(salt):
+        raise Stop(3, "INTEGRITY FAILURE (F10): the salt is not 48 lowercase hex digits (192 bits); nothing is judged")
+    if hashlib.sha256(salt.encode("ascii")).hexdigest() != fz["salt_commitment_sha256"]:
         raise Stop(3, "INTEGRITY FAILURE (F10): sha256(salt) differs from the frozen commitment; nothing is judged")
     L.log("salt matches the frozen commitment")
     os.environ["E2C_KEYSPACE_STAGE"] = "4"  # inherited by the stage-4 jobs (Launcher.start)

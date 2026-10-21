@@ -1,0 +1,116 @@
+{
+ "started_utc": "2026-10-21T03:42:33Z",
+ "cases": {
+  "verify_pass": {
+   "pass": true,
+   "info": "exit 0; 33 seeds, chain points compared 12; keyspace stub env [\"E2C_S2_STUB_KEYSPACE_STAGE\", \"E2C_S2_TEST_DIR\", \"E2C_TEST_DIR\"]; publish window 0.000314 s",
+   "seconds": 23.4,
+   "invocations": 1
+  },
+  "freeze_pass_launcher_accepts": {
+   "pass": true,
+   "info": "check 0, stage3 0, stage4 0; freeze 85a76773e6c1 at 3fc4f7493ba9",
+   "seconds": 43.8,
+   "invocations": 5
+  },
+  "interrupt_and_resume": {
+   "pass": true,
+   "info": "interrupted 130 (INTERRUPTED), V2 workers left [], resume 0; intervals ['INTERRUPTED', 'PASS']",
+   "seconds": 22.5,
+   "invocations": 2
+  },
+  "crash_then_resume": {
+   "pass": false,
+   "info": "crash exit 9; resume without acceptance 5, with it 0; interval 1 kept (end None), supplement 0.4 s booked",
+   "seconds": 24.2,
+   "invocations": 3,
+   "dir": "/tmp/e2c_s2_jy90piiz"
+  },
+  "budget_cap": {
+   "pass": false,
+   "info": "launch 1 exit 7 after 3.66 s (cap 1 s); launch 2 exit 7, refused at its start after 3.58 s; cumulative 7.233 s",
+   "seconds": 8.5,
+   "invocations": 2,
+   "dir": "/tmp/e2c_s2_qkk38rme"
+  },
+  "stale_interval": {
+   "pass": true,
+   "info": "dead pid: without acceptance 5 (interval kept as it was: True), with it 0 (supplement 2 x 10 s booked: True); live pid: exit 5",
+   "seconds": 19.3,
+   "invocations": 3
+  },
+  "checkpoint_access_blocked": {
+   "pass": true,
+   "info": "exit 3, x.pt created False: V2 worker exited 3 (see v2_worker_*.txt)",
+   "seconds": 10.1,
+   "invocations": 1
+  },
+  "appendix_job_budget_cap": {
+   "pass": true,
+   "info": "exit 7: BUDGET EXCEEDED (F9): stage 2 used 10.0 s of 10 s (while the appendix_a job runs); job and its child [1216, 1217] gone: True; used 10.024 s of 10 s",
+   "seconds": 10.8,
+   "invocations": 1
+  },
+  "keyspace_job_budget_cap": {
+   "pass": true,
+   "info": "exit 7: BUDGET EXCEEDED (F9): stage 2 used 10.0 s of 10 s (while the keyspace job runs); job and its child [1244, 1245] gone: True; used 10.047 s of 10 s",
+   "seconds": 10.8,
+   "invocations": 1
+  },
+  "freeze_budget_before_write": {
+   "pass": true,
+   "info": "[(True, 0, 7, 'watchdog', True, ['PASS', 'BUDGET_CAP']), (False, 0, 7, 'last check', True, ['PASS', 'BUDGET_CAP'])] (watchdog on, verify, freeze, stopped by, no freeze / receipt / temporary file, intervals)",
+   "seconds": 60.5,
+   "invocations": 4
+  },
+  "sigterm_during_job": {
+   "pass": true,
+   "info": "[('appendix_stub', 130, True, 'INTERRUPTED', ['INTERRUPTED'], 0), ('keyspace_stub', 130, True, 'INTERRUPTED', ['INTERRUPTED'], 0)] (job, exit, job and child gone, summary, intervals, resume)",
+   "seconds": 30.6,
+   "invocations": 4
+  },
+  "budget_cumulative_two_launches": {
+   "pass": true,
+   "info": "launch 1 exit 130 (9.6 s), launch 2 exit 7 (3.7 s alone); cumulative 13.255 s of 12 s",
+   "seconds": 14.6,
+   "invocations": 2
+  },
+  "verify_budget_watchdog": {
+   "pass": true,
+   "info": "exit 7: BUDGET EXCEEDED (F9): stage 2 reached its cap of 25 s (watchdog: the running step was interrupted); used 25.003 s of 25 s (over by 0.003 s); nothing written",
+   "seconds": 25.8,
+   "invocations": 1
+  },
+  "verify_budget_last_check": {
+   "pass": true,
+   "info": "exit 7: BUDGET EXCEEDED (F9): stage 2 used 45.0 s of 30 s (before writing v2_streams.json and stage2_verify.json); used 44.962 s of 30 s; no record, no temporary file, no PASS summary",
+   "seconds": 45.7,
+   "invocations": 1
+  },
+  "verify_budget_inside_publish_window": {
+   "pass": false,
+   "info": "exit 7; both files published as decided at the last check; cap crossed None s inside the window, recorded for the review",
+   "seconds": 51.5,
+   "invocations": 1,
+   "dir": "/tmp/e2c_s2_ktzdv73c"
+  },
+  "sigkill_driver": {
+   "pass": true,
+   "info": "[('keyspace job', -9, True, True, 5, [1], None), ('V2 workers', -9, True, None, None, None, None)] (what ran, driver exit, gone with the driver, the job's own child alive, next launch, stale reports, interval end kept)",
+   "seconds": 21.0,
+   "invocations": 3
+  }
+ },
+ "finished_utc": "2026-10-21T03:49:38Z",
+ "seconds": 424.8,
+ "invocations": 35,
+ "passed": 13,
+ "total": 16,
+ "code_sha256": {
+  "e2c_stage2.py": "843b82b69f291055ca2fa086822b512a4c9d1dd8999cff37d27ab0c900047fca",
+  "e2c_stage2_tests.py": "8261270031a89b01be9c6cd472d8a4de0f3e60758390e846524482c59ad654c6",
+  "run_e2c.py": "5978efc2d1df2716a4307b12b13d888caa69f3ae6b0fe426286c8cf0063a9712",
+  "e2c_launcher_tests.py": "4f10682e267c92bc6f3594c891c14d81313c68cafb6aadb4f9a963f281467244"
+ },
+ "all_pass": false
+}

@@ -1,0 +1,14 @@
+PASS verify_pass: exit 0; 33 seeds, chain points compared 12; keyspace stub env ["E2C_S2_STUB_KEYSPACE_STAGE", "E2C_S2_TEST_DIR", "E2C_TEST_DIR"]
+PASS freeze_pass_launcher_accepts: check 0, stage3 0, stage4 0; freeze 08012379448c at 7b8eaa75d443
+PASS interrupt_and_resume: interrupted 130 (INTERRUPTED), V2 workers left [], resume 0; intervals ['INTERRUPTED', 'PASS']
+PASS crash_then_resume: crash exit 9; resume without acceptance 5, with it 0; interval 1 kept (end None), supplement 0.4 s booked
+PASS budget_cap: exits 7, 7; used 7.628 s of 1 s over 2 launches
+PASS stale_interval: dead pid: without acceptance 5 (interval kept as it was: True), with it 0 (supplement 2 x 10 s booked: True); live pid: exit 5
+PASS launch_state: first launch over an attempt 5, resume without attempt 5, pass 0, after pass 5
+PASS appendix_job_budget_cap: exit 7; stub and its child [1212, 1213] gone: True; used 10.047 s of 10 s
+PASS keyspace_job_budget_cap: exit 7; stub and its child [1238, 1239] gone: True; used 10.008 s of 10 s
+PASS verify_budget_before_record: exit 7: BUDGET EXCEEDED (F9): stage 2 used 45.1 s of 30 s (before writing v2_streams.json and stage2_verify.json); used 45.098 s of 30 s; no record, no PASS summary
+PASS freeze_budget_before_write: verify 0; freeze 7: BUDGET EXCEEDED (F9): stage 2 used 34.6 s of 25 s (before writing the freeze); no freeze, no receipt
+FAIL sigterm_during_job: [('appendix_stub', 130, True, 'INTERRUPTED', ['INTERRUPTED'], 5), ('keyspace_stub', 130, True, 'INTERRUPTED', ['INTERRUPTED'], 5)] (job, exit, job and child gone, summary, intervals, resume)
+PASS budget_cumulative_two_launches: launch 1 exit 130 (10.2 s), launch 2 exit 7 (4.1 s alone); cumulative 14.221 s of 12 s
+I2 stage-2 tests FAIL 12/13, 31 invocations

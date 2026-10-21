@@ -14,6 +14,17 @@ streams are never drawn: V2 runs the 33 seeds on a synthetic stream of 3
 updates x 4 samples. No salt exists, only commitments of simulated strings;
 no test2 and no real freeze file is written. The real-mode entry points are
 called only to show that they refuse before reading or writing anything.
+I2-R1 adds the F9 cases: the cap reached while the Appendix A or the
+keyspace job runs (the job and its own child are terminated), just before
+v2_streams.json / stage2_verify.json or the freeze would be written (nothing
+is written), SIGTERM while a job runs, and a cap reached by two launches
+together; the watchdog interrupting an in-process step at the cap, the last
+explicit check (watchdog off), and a cap crossed inside the publish window
+(the signal is deferred, the publication is not split); the driver killed
+with SIGKILL (its jobs and workers die with it); and the stale-interval rule
+(kept as it was and reported, refused until a conservative supplement is
+accepted). Stub pids and logs go to a scratch directory outside the test
+repository.
 
     python3 e2c_stage2_tests.py --out PATH     (never over an existing file)
 
@@ -49,13 +60,32 @@ COMMITMENT = hashlib.sha256(LT.SALT.encode()).hexdigest()  # the launcher tests'
 SETS = {"dev_heldout": 6, "test_heldout": 6, "diag_fit": 6, "diag_eval": 6, "minpair": 8, "dev_seen": 6, "pool_b_k2": 6,
         "pool_c_k2": 6, "diag_fit_k4": 3}
 REF_SEEDS = (1, 91, 99, 201)
-EXCLUDE = ["/config.json", "/stubs/", "/stub_env.log", "/stub.py", "/cmds.json", "/salt.txt", "/other_salt.txt", "/calls.log",
+EXCLUDE = ["/config.json", "/stubs/", "/stub.py", "/cmds.json", "/salt.txt", "/other_salt.txt", "/calls.log",
            "/runs/", "/results/", "/judgments/", "/logs/", "/quarantine/", "/lfs_tmp/", "/*_ledger.json", "/run_freeze.json",
-           "/checkpoints_manifest.json", "/test2_record.json", "/approvals.json", "/x.pt", "*.lock"]
+           "/checkpoints_manifest.json", "/test2_record.json", "/approvals.json", "*.lock"]
+HOLD = r'''
+def hold(d, name, seconds):
+    """I2-R1: a stub job that runs long and has a child of its own (same process group); both pids are recorded."""
+    import subprocess, time
+    child = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(600)"])
+    open(os.path.join(d, name + ".pids"), "w").write(f"{os.getpid()} {child.pid}\n")
+    time.sleep(seconds)
+'''
+APPENDIX_STUB = r'''import json, os, sys
+''' + HOLD + r'''
+out_path, d = sys.argv[1], sys.argv[2]
+cfg = json.load(open(os.path.join(d, "config.json")))
+if cfg.get("stub_appendix_sleep"):
+    hold(cfg["stub_scratch"], "appendix_stub", cfg["stub_appendix_sleep"])
+sys.stdout.write(open(out_path).read())
+'''
 KEYSPACE_STUB = r'''import json, os, sys
+''' + HOLD + r'''
 d = os.environ["E2C_S2_TEST_DIR"]
 cfg = json.load(open(os.path.join(d, "config.json")))
-with open(os.path.join(d, "stub_env.log"), "a") as f:
+if cfg.get("stub_keyspace_sleep"):
+    hold(cfg["stub_scratch"], "keyspace_stub", cfg["stub_keyspace_sleep"])
+with open(os.path.join(cfg["stub_scratch"], "stub_env.log"), "a") as f:
     f.write(json.dumps(sorted(k for k in os.environ if k.startswith("E2C"))) + "\n")
 if cfg.get("stub_leak"):
     open(os.path.join(os.path.dirname(sys.argv[1]), "leak.txt"), "w").write("a=1;b=2\n")
@@ -152,8 +182,10 @@ def make_env(nonu_held=0, **cfg_change):
     first = commit_all(d, "synthetic E1 archive and stage-1 records")
     os.makedirs(os.path.join(d, "stubs"))
     open(os.path.join(d, "stubs", "keyspace_job.py"), "w").write(KEYSPACE_STUB)
+    open(os.path.join(d, "stubs", "appendix_stub.py"), "w").write(APPENDIX_STUB)
     open(os.path.join(d, "stubs", "appendix_stdout.txt"), "w").write(appendix_stdout())
     cfg.update({
+        "stub_scratch": tempfile.mkdtemp(prefix="e2c_s2_scratch_"),  # stub pids and logs: outside the test repository
         "git_root": ".", "sets_dir": "sets", "e1_anchors": [["e1/workload_freeze.json", ["basis", "sets_manifest_sha256"]],
                                                           ["e1/workload_freeze_v2.json", ["basis", "sets_manifest_sha256"]],
                                                           ["e1/run_freeze.json", ["sets_manifest_sha256"]],
@@ -163,11 +195,25 @@ def make_env(nonu_held=0, **cfg_change):
         "environment_file": "environment.json", "reference_root": ".", "reference_globs": ["refs/*.json", "refs/*.json.gz"],
         "cap_seconds": 300, "heartbeat_seconds": 0.2, "updates": 3, "batch": 4, "workers": 2,
         "key_rule_expected_heldout": S2.key_rules(SYN)["heldout"], "stub_keyspace": LT.KS,
-        "stub_appendix_stdout": "stubs/appendix_stdout.txt", "stub_keyspace_job": "stubs/keyspace_job.py"})
+        "stub_appendix_stdout": "stubs/appendix_stdout.txt", "stub_appendix_script": "stubs/appendix_stub.py",
+        "stub_keyspace_job": "stubs/keyspace_job.py"})
     cfg["reference_count"], cfg["reference_digest"] = refs_digest(d, cfg)
     cfg.update(cfg_change)
     jdump(os.path.join(d, "config.json"), cfg)
     return d
+
+
+def scratch(d):
+    return json.load(open(os.path.join(d, "config.json")))["stub_scratch"]
+
+
+def drop(d):
+    """Remove a test directory and its scratch directory."""
+    try:
+        shutil.rmtree(scratch(d), ignore_errors=True)
+    except OSError:
+        pass
+    shutil.rmtree(d, ignore_errors=True)
 
 
 def refs_digest(d, cfg):
@@ -198,9 +244,9 @@ def run(d, *args, env=None, timeout=300):
                           timeout=timeout)
 
 
-def verify(d, resume=False, commit=None, **kw):
+def verify(d, resume=False, commit=None, accept_stale=False, **kw):
     return run(d, "verify", "--expected-commit", commit or head(d), "--authorization", "synthetic test",
-               *(["--resume"] if resume else []), **kw)
+               *(["--resume"] if resume else []), *(["--accept-stale-supplement"] if accept_stale else []), **kw)
 
 
 def popen_verify(d, resume=False):
@@ -279,16 +325,17 @@ def tail(r):
 def verify_pass(d):
     r = verify(d)
     rec, led = record(d), ledger(d)
-    env_log = open(os.path.join(d, "stub_env.log")).read()
+    env_log = open(os.path.join(scratch(d), "stub_env.log")).read()
     ok = (r.returncode == 0 and rec["status"] == "PASS" and rec["mode"] == "test" and rec["v2"]["seeds"] == S2.SEEDS_33
           and rec["v2"]["unique_seeds"] == 33 and rec["f11"]["pass"] and rec["keyspace"] == LT.KS and rec["key_rules"]["pass"]
           and rec["v2"]["accepted_samples_per_seed"] == 12 and rec["v2"]["stage1_chain_points_compared"] == 12
           and rec["leak_scan"]["key_like_hits"] == 0 and attempts(d) == ["01"] and stop_status(d) is None
           and [iv["status"] for iv in led["intervals"]] == ["PASS"] and all(iv["end"] for iv in led["intervals"])
           and "E2C_KEYSPACE_STAGE" not in env_log and "E2C_S2_STUB_KEYSPACE_STAGE" in env_log
-          and os.path.exists(os.path.join(d, "stage2", "v2_streams.json")))
+          and os.path.exists(os.path.join(d, "stage2", "v2_streams.json")) and summary(d, "01")["publish_window_seconds"] < 0.5
+          and not glob_tmp(d))
     return ok, f"exit {r.returncode}; 33 seeds, chain points compared {rec and rec['v2']['stage1_chain_points_compared']}; " \
-               f"keyspace stub env {env_log.strip()}"
+               f"keyspace stub env {env_log.strip()}; publish window {summary(d, '01').get('publish_window_seconds')} s"
 
 
 def verify_deterministic(d):
@@ -409,7 +456,7 @@ def f11_counts(d):
         v2_started = os.path.isdir(os.path.join(e, "stage2", "attempts", "01", "v2"))
         again = verify(e, resume=True)
         out.append((k, r.returncode, stop_status(e), record(e) is None, v2_started, again.returncode))
-        shutil.rmtree(e, ignore_errors=True)
+        drop(e)
     ok = all(rc == 3 and st == "F11" and norec and not v2 and ag == 5 for _, rc, st, norec, v2, ag in out)
     return ok, f"{out} (exit, stop status, no record, V2 started, later launch)"
 
@@ -427,7 +474,7 @@ def keyspace_record_format(d):
         e = make_env(stub_keyspace=ks)
         r = verify(e)
         out.append((r.returncode, stop_status(e)))
-        shutil.rmtree(e, ignore_errors=True)
+        drop(e)
     return all(o == (3, "INTEGRITY_FAILURE") for o in out), f"{out} (an integrity failure, not F11)"
 
 
@@ -461,7 +508,7 @@ def e1_sets_mismatch(d):
             open(os.path.join(e, "sets", "pool_b_k2.jsonl"), "a").write(" ")
         r = verify(e)
         out.append((how, r.returncode, bool(attempts(e))))
-        shutil.rmtree(e, ignore_errors=True)
+        drop(e)
     return all(rc == 5 and not att for _, rc, att in out), f"{out} (exit, attempt made)"
 
 
@@ -508,7 +555,7 @@ def v2_non_u_set_heldout(d):
     e = make_env(nonu_held=1)
     r = verify(e)
     st = stop_status(e)
-    shutil.rmtree(e, ignore_errors=True)
+    drop(e)
     return r.returncode == 3 and st == "INTEGRITY_FAILURE_V2" and "dev_seen" in r.stderr, f"exit {r.returncode}, stop {st}: {tail(r)}"
 
 
@@ -527,6 +574,19 @@ def v2_seed_table(d):
 # ------------------------------------------------------------ interruption, resumption, budget, launch state
 
 
+def leftover_processes(d):
+    """Processes whose command line names the test directory (driver, workers, jobs), zombies excluded."""
+    out = []
+    for x in os.listdir("/proc"):
+        if x.isdigit() and int(x) != os.getpid():
+            try:
+                if d.encode() in open(f"/proc/{x}/cmdline", "rb").read() and S2._alive(int(x)):
+                    out.append(int(x))
+            except OSError:
+                pass
+    return out
+
+
 def interrupt_and_resume(d):
     set_cfg(d, stub_sleep_per_update=0.3)
     p = popen_verify(d)
@@ -534,14 +594,16 @@ def interrupt_and_resume(d):
     wait_for(lambda: os.path.isdir(v2) and len(os.listdir(v2)) >= 2)
     p.send_signal(signal.SIGTERM)
     p.wait()
+    left = leftover_processes(d)
     st1 = summary(d, "01")["status"]
     set_cfg(d, stub_sleep_per_update=None)
     r = verify(d, resume=True)
     led = ledger(d)
-    ok = (p.returncode == 130 and st1 == "INTERRUPTED" and r.returncode == 0 and attempts(d) == ["01", "02"]
+    ok = (p.returncode == 130 and st1 == "INTERRUPTED" and not left and r.returncode == 0 and attempts(d) == ["01", "02"]
           and [iv["status"] for iv in led["intervals"]] == ["INTERRUPTED", "PASS"] and led["used_seconds"] > 0
           and record(d)["status"] == "PASS")
-    return ok, f"interrupted {p.returncode} ({st1}), resume {r.returncode}; intervals {[iv['status'] for iv in led['intervals']]}"
+    return ok, (f"interrupted {p.returncode} ({st1}), V2 workers left {left}, resume {r.returncode}; "
+                f"intervals {[iv['status'] for iv in led['intervals']]}")
 
 
 def resume_nondeterministic(d):
@@ -558,43 +620,242 @@ def resume_nondeterministic(d):
 
 
 def crash_then_resume(d):
+    # a process that is gone leaves its interval open: kept as it was, the resume refuses until the conservative
+    # supplement is accepted, then books it
     set_cfg(d, stub_crash_after="v2_streams")
     r1 = verify(d)
     set_cfg(d, stub_crash_after=None)
     r2 = verify(d, resume=True)
+    iv_before = ledger(d)["intervals"][0]
+    r3 = verify(d, resume=True, accept_stale=True)
     led = ledger(d)
-    iv1 = led["intervals"][0]
-    ok = (r1.returncode == 9 and r2.returncode == 0 and iv1["status"] == "stale" and "process gone" in iv1["closed_by"]
-          and record(d)["status"] == "PASS" and attempts(d) == ["01", "02"])
-    return ok, f"crash exit {r1.returncode}, resume {r2.returncode}; first interval {iv1['status']} ({iv1.get('closed_by')})"
+    iv1, sup = led["intervals"][0], led.get("supplements", [])
+    swept = os.path.join(d, "stage2", "attempts", "02", "temporaries_of_an_interrupted_write")
+    reports = led.get("stale_reports", [])
+    ok = (r1.returncode == 9 and r2.returncode == 5 and "left open by a process that is gone" in r2.stderr
+          and [x["interval"] for x in reports] == [1] and reports[0]["proposed_supplement_seconds"] == 0.4
+          and os.path.isdir(swept) and any(f.startswith(".stage2_verify.json.tmp.") for f in os.listdir(swept)) and not glob_tmp(d)
+          and iv_before["end"] is None and "stale" not in iv_before and r3.returncode == 0
+          and iv1["end"] is None and iv1["status"] is None and iv1["stale"]["supplement_seconds"] == 0.4
+          and [x["interval"] for x in sup] == [1] and sup[0]["seconds"] == 0.4 and record(d)["status"] == "PASS"
+          and attempts(d) == ["01", "02"])
+    return ok, (f"crash exit {r1.returncode}; resume without acceptance {r2.returncode}, with it {r3.returncode}; interval 1 kept "
+                f"(end {iv1['end']}), supplement {sup and sup[0]['seconds']} s booked")
 
 
 def budget_cap(d):
+    # the first launch reaches the cap while it is still loading (the watchdog interrupts the import); the second launch
+    # is refused at its start, before any work, and the budget is not reset
     set_cfg(d, cap_seconds=1.0, stub_sleep_per_update=0.2)
     r1 = verify(d)
-    r2 = verify(d, resume=True)
+    r2 = verify(d)
     led = ledger(d)
-    ok = (r1.returncode == 7 and r2.returncode == 7 and [iv["status"] for iv in led["intervals"]] == ["BUDGET_CAP", "BUDGET_CAP"]
-          and led["used_seconds"] >= 1.0 and record(d) is None and stop_status(d) is None)
-    return ok, f"exits {r1.returncode}, {r2.returncode}; used {led['used_seconds']} s of 1 s over {len(led['intervals'])} launches"
+    ivs = led["intervals"]
+    ok = (r1.returncode == 7 and r2.returncode == 7 and [iv["status"] for iv in ivs] == ["BUDGET_CAP", "BUDGET_CAP"]
+          and interval_seconds(ivs[0]) - 1.0 < 1.0 and interval_seconds(ivs[1]) < 1.5 and "refused at the start" in r2.stderr
+          and attempts(d) == [] and led["used_seconds"] >= 1.0 and record(d) is None and stop_status(d) is None)
+    return ok, (f"launch 1 exit {r1.returncode} after {interval_seconds(ivs[0]):.2f} s (cap 1 s); launch 2 exit {r2.returncode}, "
+                f"refused at its start after {interval_seconds(ivs[1]):.2f} s; cumulative {led['used_seconds']} s")
 
 
 def stale_interval(d):
     os.makedirs(os.path.join(d, "stage2"))
     base = {"stage": 2, "cap_seconds": 300, "intervals": [{"id": 1, "label": "verify", "pid": 999999, "pid_start": "1",
                                                            "start": time.time() - 5, "heartbeat": time.time() - 4, "end": None,
-                                                           "status": None}]}
+                                                           "status": None, "heartbeat_seconds": 10.0}]}
     jdump(os.path.join(d, "stage2", "budget_ledger_s2.json"), base)
-    r1 = verify(d)
-    iv = ledger(d)["intervals"][0]
+    r0 = verify(d)
+    kept = ledger(d)["intervals"][0] == base["intervals"][0]
+    r1 = verify(d, accept_stale=True)
+    led = ledger(d)
+    iv = dict(led["intervals"][0], status="stale" if led["intervals"][0].get("stale") else None)
+    booked = [x["seconds"] for x in led.get("supplements", [])] == [20.0] and led["used_seconds"] >= 21.0
     e = make_env()
     os.makedirs(os.path.join(e, "stage2"))
     live = dict(base["intervals"][0], pid=os.getpid(), pid_start=S2._proc_start(os.getpid()))
     jdump(os.path.join(e, "stage2", "budget_ledger_s2.json"), dict(base, intervals=[live]))
     r2 = verify(e)
-    shutil.rmtree(e, ignore_errors=True)
-    return (r1.returncode == 0 and iv["status"] == "stale" and r2.returncode == 5 and "another stage-2 process" in r2.stderr,
-            f"dead pid: exit {r1.returncode}, interval {iv['status']}; live pid: exit {r2.returncode}")
+    drop(e)
+    return (r0.returncode == 5 and kept and r1.returncode == 0 and iv["status"] == "stale" and booked and r2.returncode == 5
+            and "another stage-2 process" in r2.stderr,
+            f"dead pid: without acceptance {r0.returncode} (interval kept as it was: {kept}), with it {r1.returncode} "
+            f"(supplement 2 x 10 s booked: {booked}); live pid: exit {r2.returncode}")
+
+
+# ------------------------------------------------------------ I2-R1: F9 at every wait and before every irreversible write
+
+
+def pids_of(d, name):
+    p = os.path.join(scratch(d), name + ".pids")
+    return [int(x) for x in open(p).read().split()] if os.path.exists(p) else []
+
+
+def glob_tmp(d):
+    """Temporary files of a write-once left in the test repository (those the driver moved into an attempt's
+    temporaries_of_an_interrupted_write folder are kept on purpose and not counted)."""
+    return [os.path.join(r, f) for r, _, fs in os.walk(d) if ".git" not in r and "temporaries_of_an_interrupted_write" not in r
+            for f in fs if ".tmp." in f]
+
+
+def interval_seconds(iv):
+    return (iv["end"] if iv["end"] is not None else iv["heartbeat"]) - iv["start"]
+
+
+def all_gone(pids, limit=5.0):
+    t = time.time()
+    while time.time() - t < limit and any(S2._alive(x) for x in pids):
+        time.sleep(0.05)
+    return bool(pids) and not any(S2._alive(x) for x in pids)
+
+
+def appendix_job_budget_cap(d):
+    set_cfg(d, cap_seconds=10, stub_appendix_sleep=600)
+    r = verify(d)
+    pids = pids_of(d, "appendix_stub")
+    led = ledger(d)
+    over = led["used_seconds"] - 10
+    ok = (r.returncode == 7 and "BUDGET EXCEEDED" in r.stderr and all_gone(pids) and not leftover_processes(d) and record(d) is None
+          and not os.path.exists(os.path.join(scratch(d), "stub_env.log")) and summary(d, "01")["status"] == "BUDGET_CAP"
+          and [iv["status"] for iv in led["intervals"]] == ["BUDGET_CAP"] and stop_status(d) is None and over < 1.0)
+    return ok, f"exit {r.returncode}: {tail(r)}; job and its child {pids} gone: {all_gone(pids)}; used {led['used_seconds']} s of 10 s"
+
+
+def keyspace_job_budget_cap(d):
+    set_cfg(d, cap_seconds=10, stub_keyspace_sleep=600)
+    r = verify(d)
+    pids = pids_of(d, "keyspace_stub")
+    led = ledger(d)
+    over = led["used_seconds"] - 10
+    ok = (r.returncode == 7 and "BUDGET EXCEEDED" in r.stderr and all_gone(pids) and not leftover_processes(d) and record(d) is None
+          and not os.path.isdir(os.path.join(d, "stage2", "attempts", "01", "v2")) and summary(d, "01")["status"] == "BUDGET_CAP"
+          and over < 1.0)
+    return ok, f"exit {r.returncode}: {tail(r)}; job and its child {pids} gone: {all_gone(pids)}; used {led['used_seconds']} s of 10 s"
+
+
+def verify_budget_watchdog(d):
+    # an in-process step (here a sleep) runs past the cap: the watchdog interrupts it; nothing is written
+    set_cfg(d, cap_seconds=25, stub_delay_before_final_write={"verify": 60})
+    r = verify(d)
+    led = ledger(d)
+    over = led["used_seconds"] - 25
+    ok = (r.returncode == 7 and "watchdog" in r.stderr and record(d) is None and not os.path.exists(os.path.join(d, "stage2", "v2_streams.json"))
+          and not glob_tmp(d) and summary(d, "01")["status"] == "BUDGET_CAP" and over < 0.5)
+    return ok, f"exit {r.returncode}: {tail(r)}; used {led['used_seconds']} s of 25 s (over by {over:.3f} s); nothing written"
+
+
+def verify_budget_last_check(d):
+    # with the watchdog switched off (tests only), the last explicit check before the publish window stops the run
+    set_cfg(d, cap_seconds=30, stub_no_watchdog=True, stub_delay_before_final_write={"verify": 35})
+    r = verify(d)
+    led = ledger(d)
+    ok = (r.returncode == 7 and "before writing v2_streams.json and stage2_verify.json" in r.stderr and record(d) is None
+          and not os.path.exists(os.path.join(d, "stage2", "v2_streams.json")) and not glob_tmp(d)
+          and summary(d, "01")["status"] == "BUDGET_CAP" and "record_sha256" not in summary(d, "01"))
+    return ok, f"exit {r.returncode}: {tail(r)}; used {led['used_seconds']} s of 30 s; no record, no temporary file, no PASS summary"
+
+
+def verify_budget_inside_publish_window(d):
+    # the boundary: the cap passes after the last check, inside the publish window (stretched here to 41 s by a test hook;
+    # without it the window is the link() calls only). The watchdog cannot split the publication; the outputs decided at
+    # the last check are published and the crossing is recorded for the review.
+    set_cfg(d, cap_seconds=40, stub_delay_before_final_write={"verify_inside_window": 41})
+    r = verify(d)
+    sm = summary(d, "01")
+    ok = (r.returncode == 0 and record(d) is not None and os.path.exists(os.path.join(d, "stage2", "v2_streams.json"))
+          and sm.get("cap_crossed_inside_publish_window_seconds", 0) > 0 and "REVIEW: the cap was crossed" in r.stderr and not glob_tmp(d))
+    return ok, (f"exit {r.returncode}; both files published as decided at the last check; cap crossed "
+                f"{sm.get('cap_crossed_inside_publish_window_seconds')} s inside the window, recorded for the review")
+
+
+def freeze_budget_before_write(d):
+    out = []
+    for watchdog in (True, False):
+        e = make_env(**({} if watchdog else {"stub_no_watchdog": True}))
+        r0 = verify(e)
+        vc, vs = approve_verify(e)
+        used = ledger(e)["used_seconds"]
+        set_cfg(e, cap_seconds=used + 15, stub_delay_before_final_write={"freeze": 20})
+        r = freeze(e, vc, vs)
+        led = ledger(e)
+        nothing = not any(os.path.exists(x) for x in (os.path.join(e, "e2c_workload_freeze.json"),
+                                                      os.path.join(e, "stage2", "stage2_freeze_receipt.json"))) and not glob_tmp(e)
+        how = "watchdog" if "watchdog" in r.stderr else "last check" if "before writing the freeze" in r.stderr else tail(r)
+        out.append((watchdog, r0.returncode, r.returncode, how, nothing, [iv["status"] for iv in led["intervals"]]))
+        drop(e)
+    ok = (out[0][1:] == (0, 7, "watchdog", True, ["PASS", "BUDGET_CAP"]) and out[1][1:] == (0, 7, "last check", True, ["PASS", "BUDGET_CAP"]))
+    return ok, f"{out} (watchdog on, verify, freeze, stopped by, no freeze / receipt / temporary file, intervals)"
+
+
+def sigterm_during_job(d):
+    out = []
+    for stub, key in (("appendix_stub", "stub_appendix_sleep"), ("keyspace_stub", "stub_keyspace_sleep")):
+        e = make_env(**{key: 600})
+        p = popen_verify(e)
+        wait_for(lambda: len(pids_of(e, stub)) == 2)
+        p.send_signal(signal.SIGTERM)
+        p.communicate(timeout=60)
+        pids = pids_of(e, stub)
+        led = ledger(e)
+        st = summary(e, "01")["status"]
+        set_cfg(e, **{key: None})
+        r = verify(e, resume=True)
+        out.append((stub, p.returncode, all_gone(pids), st, [iv["status"] for iv in led["intervals"]], r.returncode))
+        drop(e)
+    ok = all(rc == 130 and gone and st == "INTERRUPTED" and ivs == ["INTERRUPTED"] and rr == 0 for _, rc, gone, st, ivs, rr in out)
+    return ok, f"{out} (job, exit, job and child gone, summary, intervals, resume)"
+
+
+def sigkill_driver(d):
+    out = []
+    e = make_env(stub_keyspace_sleep=600)
+    p = popen_verify(e)
+    wait_for(lambda: len(pids_of(e, "keyspace_stub")) == 2)
+    p.kill()
+    p.communicate(timeout=60)
+    job, child = pids_of(e, "keyspace_stub")
+    job_gone = all_gone([job])
+    child_alive = S2._alive(child)  # the job's own descendant: not covered by PR_SET_PDEATHSIG (real jobs have none)
+    if child_alive:
+        os.kill(child, signal.SIGKILL)
+    set_cfg(e, stub_keyspace_sleep=None)
+    r = verify(e, resume=True)
+    led = ledger(e)
+    out.append(("keyspace job", p.returncode, job_gone, child_alive, r.returncode, [x["interval"] for x in led.get("stale_reports", [])],
+                led["intervals"][0]["end"]))
+    drop(e)
+    e = make_env(stub_sleep_per_update=0.3)
+    p = popen_verify(e)
+    v2 = os.path.join(e, "stage2", "attempts", "01", "v2")
+    wait_for(lambda: os.path.isdir(v2) and any(f.startswith("seed_") for f in os.listdir(v2)))
+    p.kill()
+    p.communicate(timeout=60)
+    time.sleep(1.0)
+    left = leftover_processes(e)
+    for x in left:
+        os.kill(x, signal.SIGKILL)
+    out.append(("V2 workers", p.returncode, not left, None, None, None, None))
+    drop(e)
+    ok = (out[0][1] == -9 and out[0][2] and out[0][4] == 5 and out[0][5] == [1] and out[0][6] is None
+          and out[1][1] == -9 and out[1][2])
+    return ok, (f"{out} (what ran, driver exit, gone with the driver, the job's own child alive, next launch, stale reports, "
+                f"interval end kept)")
+
+
+def budget_cumulative_two_launches(d):
+    set_cfg(d, cap_seconds=12, stub_sleep_per_update=0.3)
+    p = popen_verify(d)
+    v2 = os.path.join(d, "stage2", "attempts", "01", "v2")
+    wait_for(lambda: os.path.isdir(v2) and len([f for f in os.listdir(v2) if f.startswith("seed_")]) >= 1)
+    p.send_signal(signal.SIGTERM)
+    p.communicate(timeout=60)
+    r = verify(d, resume=True)
+    led = ledger(d)
+    ivs = led["intervals"]
+    second = ivs[1]["end"] - ivs[1]["start"]
+    ok = (p.returncode == 130 and r.returncode == 7 and [iv["status"] for iv in ivs] == ["INTERRUPTED", "BUDGET_CAP"]
+          and second < 12 - 1 and led["used_seconds"] >= 12 and record(d) is None)
+    return ok, (f"launch 1 exit {p.returncode} ({ivs[0]['end'] - ivs[0]['start']:.1f} s), launch 2 exit {r.returncode} "
+                f"({second:.1f} s alone); cumulative {led['used_seconds']} s of 12 s")
 
 
 def launch_state(d):
@@ -632,7 +893,7 @@ def inputs_mismatch(d):
     jdump(os.path.join(e, "environment.json"), dict(rec, torch="0.0"))
     commit_all(e, "another environment")
     out.append(("environment", verify(e).returncode))
-    shutil.rmtree(e, ignore_errors=True)
+    drop(e)
     for key, src in (("lambda_file", "stage1/gate4/lambda_selected.json"), ("calibration_file", "stage1/gate4/calibration.json")):
         e = make_env()
         c = json.load(open(os.path.join(HERE, src)))
@@ -644,7 +905,7 @@ def inputs_mismatch(d):
         commit_all(e, "a changed copy")
         set_cfg(e, **{key: "copy.json"})
         out.append((key, verify(e).returncode))
-        shutil.rmtree(e, ignore_errors=True)
+        drop(e)
     return all(rc == 5 for _, rc in out), f"{out}"
 
 
@@ -663,8 +924,9 @@ def leak_scan_hit(d):
 def checkpoint_access_blocked(d):
     set_cfg(d, stub_open_checkpoint=201)
     r = verify(d)
-    return (r.returncode == 3 and stop_status(d) == "INTEGRITY_FAILURE" and not os.path.exists(os.path.join(d, "x.pt")),
-            f"exit {r.returncode}, x.pt created {os.path.exists(os.path.join(d, 'x.pt'))}: {tail(r)}")
+    x = os.path.join(scratch(d), "x.pt")
+    return (r.returncode == 3 and stop_status(d) == "INTEGRITY_FAILURE" and not os.path.exists(x),
+            f"exit {r.returncode}, x.pt created {os.path.exists(x)}: {tail(r)}")
 
 
 # ------------------------------------------------------------ real entry points refuse; units
@@ -767,7 +1029,10 @@ CASES = [verify_pass, verify_deterministic, freeze_pass_launcher_accepts, freeze
          v2_reference_chain_mismatch, v2_reference_files_changed, v2_non_u_set_heldout, v2_missing_seed, v2_seed_table,
          interrupt_and_resume, resume_nondeterministic, crash_then_resume, budget_cap, stale_interval, launch_state, git_state,
          inputs_mismatch, key_rules_mismatch, leak_scan_hit, checkpoint_access_blocked, real_entry_refuses, unit_write_once,
-         unit_appendix_a, unit_tripwires, unit_chain_definition]
+         unit_appendix_a, unit_tripwires, unit_chain_definition,
+         appendix_job_budget_cap, keyspace_job_budget_cap, freeze_budget_before_write,
+         sigterm_during_job, budget_cumulative_two_launches, verify_budget_watchdog, verify_budget_last_check,
+         verify_budget_inside_publish_window, sigkill_driver]
 
 
 def main():
@@ -794,7 +1059,7 @@ def main():
                                      "invocations": INVOCATIONS[0] - n0}
         print(f"{'PASS' if ok else 'FAIL'} {fn.__name__}: {info}", flush=True)
         if ok:
-            shutil.rmtree(d, ignore_errors=True)
+            drop(d)
         else:
             res["cases"][fn.__name__]["dir"] = d
     res.update(finished_utc=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), seconds=round(time.time() - t0, 1),
