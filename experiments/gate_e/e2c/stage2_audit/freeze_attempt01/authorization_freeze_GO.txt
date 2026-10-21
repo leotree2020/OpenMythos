@@ -1,0 +1,63 @@
+E2-c Stage 2 Formal Freeze — GO
+本消息授权首次、单次正式 freeze，以及运行后的只读核验和结果归档。不得据此启动阶段 3 或阶段 4。
+一、批准对象
+已独立验收的 verify 提交：
+e79acc6e7a39e1ec4e720d9a66ec05bc8848f150
+批准使用的 r2 准备包 SHA256：
+5b3e84ce34f576847c355c9acc132ffa97a5e1605c29b7e6b770ee50bca6e0e2
+stage2_verify.json 的正确 64 位 SHA256：
+6331b06a73071c1a8d464a96fe47c4c8499bf1456e0c1f87dfbfbee16611564a
+审核方盐值承诺：
+52d1b31e99a7a277ab4bc8cec1ee736994c79606ffce6aa0c5a73176d8d181bc
+盐值明文由审核方保管。不得生成替代盐值、索取明文或生成 test2。
+二、启动
+使用已审核的目录：
+/home/user/e2c_stage2_freeze_attempt01_r2/
+启动前核对批准脚本的校验值，确认正式启动标记和启动记录均不存在。不得修改脚本或项目实现。
+设置：
+REVIEWER_SALT_COMMITMENT_SHA256=52d1b31e99a7a277ab4bc8cec1ee736994c79606ffce6aa0c5a73176d8d181bc
+FREEZE_GO_REFERENCE 使用本条授权消息的实际标识；若无法取得消息标识，记录本条授权标题和收到时间，并在仓库外保存授权原文。
+通过 setsid/nohup 启动 r2 的 run_freeze.sh 一次，完整保存包装器输出。由它执行启动瞬间的 guards，并启动正式驱动。
+确认两个提交参数都使用：
+--expected-commit e79acc6e7a39e1ec4e720d9a66ec05bc8848f150
+--approved-verify-commit e79acc6e7a39e1ec4e720d9a66ec05bc8848f150
+--approved-verify-sha256 必须使用上面的完整 64 位值。
+若任何启动检查失败，即 NO-GO。保留标记和日志，不删除标记、不重试、不换目录再次启动。
+三、预算与范围
+沿用现有阶段 2 账本：
+
+* 累计硬上限：3600 秒；
+* verify 已用：113.339170 秒；
+* 启动前剩余：3486.660830 秒。
+
+不得重置账本、新开独立预算或修改旧区间。由已批准驱动维护累计计时，沿用已验收的收尾约定。
+只允许本次 freeze；禁止重跑 verify、重新枚举键空间、重新生成训练流、生成 test2、训练或正式判定。不得使用 resume 或 stale-supplement。
+四、运行后核验
+等待驱动实际结束，保存真实退出码，再以简单命令调用 r2 的 postrun_freeze_checks.py；不要把测试源码嵌入外层命令行。
+核对：
+
+* 退出码 0；
+* 原 verify 区间及两个主输出不变；
+* 新 freeze 区间关闭且为 PASS；
+* 累计用时严格小于 3600 秒，与账本记录精度一致；
+* 冻结文件、receipt、账本和 stdout 的哈希一致；
+* 承诺值、verify 提交及哈希、输入基线全部准确；
+* 无未解决的停止或审核记录，无遗留工作进程；
+* 收尾正常，记录实际时长，不推测其原因。
+
+运行后检查必须在添加仓库内审计文件之前完成，以保持“三项预期变化”的检查有效。
+任何异常、非零退出、ABORTED、预算问题或进程报告均保留原始证据并停止。不得自动重试 freeze，不得删除、覆盖或修补已生成产物。进程扫描若疑似误报，保存 PID 和可取得的进程信息供审核，不自行忽略。
+五、归档与交付
+全部运行后检查通过后，允许将本次 freeze 的结果作为独立提交推送到 claude/openmythos-research：
+
+* e2c_workload_freeze.json；
+* stage2/stage2_freeze_receipt.json；
+* 更新后的 stage2/budget_ledger_s2.json；
+* stage2_audit/freeze_attempt01/ 下的本次授权、启动、控制台、核验及校验材料。
+
+不得改写旧 verify 审计文件，不提交镜像仓库、模拟测试目录、checkpoint 或无关文件。提交前检查暂存清单，推送后核对远端提交。
+若失败，只归档已有失败证据并报告，不继续成功提交流程或重启实验。
+最终报告完整命令、起止时间、退出码、累计预算、冻结文件与 receipt 的 SHA256、核验结果、提交号及所有偏差，并提供可下载的原始证据包。
+成功时仅标记：
+Stage 2 Freeze PASS Candidate — Pending Independent Acceptance
+完成后停止。冻结结果仍需独立验收，阶段 3 和阶段 4 均未授权。
