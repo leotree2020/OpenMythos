@@ -1,0 +1,55 @@
+2026-10-21T04:47:47Z
+PASS verify_pass: exit 0; 33 seeds, chain points compared 12; keyspace stub env ["E2C_S2_STUB_KEYSPACE_STAGE", "E2C_S2_TEST_DIR", "E2C_TEST_DIR"]; publish window 0.000359 s
+PASS verify_deterministic: exits 0, 0; records equal True
+PASS freeze_pass_launcher_accepts: check 0, stage3 0, stage4 0; freeze da5787736bcd at 7297e7ae6d62
+PASS freeze_replaced_refused_by_launcher: exits 5, 5, 5: REFUSED: the freeze file is not the approved one: e2c_workload_freeze.json must be added once, by the approved commit, and never changed after it
+PASS freeze_written_once: second freeze exit 5: REFUSED: e2c_workload_freeze.json exists; the freeze is written once
+PASS freeze_needs_approved_record: verify 0; freeze exits [5, 5, 5, 5]
+PASS freeze_commitment_only: malformed commitments [5, 5, 5, 5, 5, 5, 5]; salt arguments rejected by the parser [2, 2, 2]; valid commitment 0
+PASS freeze_code_changed_since_verify: verify 0, freeze 5: REFUSED: the code tree or a frozen document changed since the approved verify
+PASS f11_counts: [('H', 3, 'F11', True, False, 5), ('U', 3, 'F11', True, False, 5), ('R_star', 3, 'F11', True, False, 5), ('M1_star', 3, 'F11', True, False, 5)] (exit, stop status, no record, V2 started, later launch)
+PASS f11_appendix_output: exit 3, stop F11
+PASS keyspace_record_format: [(3, 'INTEGRITY_FAILURE'), (3, 'INTEGRITY_FAILURE'), (3, 'INTEGRITY_FAILURE')] (an integrity failure, not F11)
+PASS prereg_changed: exit 5: REFUSED: preregistration 6b67b6e03dd6 is not the approved 434f586996e4
+PASS e1_sets_mismatch: [('byte', 5, False), ('extra_file', 5, False), ('anchor', 5, False), ('uncommitted', 5, False)] (exit, attempt made)
+PASS e1_set_changed_during_run: exit 3: final status INTEGRITY_FAILURE (exit 3)
+PASS v2_heldout_in_stream: exit 3, stop INTEGRITY_FAILURE_V2: final status INTEGRITY_FAILURE_V2 (exit 3)
+PASS v2_reference_chain_mismatch: exit 3: final status INTEGRITY_FAILURE_V2 (exit 3)
+PASS v2_reference_files_changed: exit 5: REFUSED: stage-1 reference chains: 4 files, digest dd654cf35bdc; approved 4, 33acc05c5c8b
+PASS v2_non_u_set_heldout: exit 3, stop INTEGRITY_FAILURE_V2: final status INTEGRITY_FAILURE_V2 (exit 3)
+PASS v2_missing_seed: exit 6: final status MISSING_OUTPUT (exit 6)
+PASS v2_seed_table: 33 seeds = run_e2c.training_stream_seeds() True
+PASS interrupt_and_resume: interrupted 130 (INTERRUPTED), V2 workers left [], resume 0; intervals ['INTERRUPTED', 'PASS']
+PASS resume_nondeterministic: interrupted 130, resume 3: final status INTEGRITY_FAILURE (exit 3)
+PASS crash_then_resume: crash exit 9; resume without acceptance 5, with it 0; interval 1 kept (end None), supplement 0.4 s booked
+PASS budget_cap: launch 1 exit 7 after 1.11 s (cap 1 s); launch 2 exit 7, refused at its start after 0.06 s; cumulative 1.171 s
+PASS stale_interval: dead pid: without acceptance 5 (interval kept as it was: True), with it 0 (supplement 2 x 10 s booked: True); live pid: exit 5
+PASS launch_state: first launch over an attempt 5, resume without attempt 5, pass 0, after pass 5
+PASS git_state: wrong HEAD 5, dirty tree 5, unallowed code change 5, allowed 0
+PASS inputs_mismatch: [('environment', 5), ('lambda_file', 5), ('calibration_file', 5)]
+PASS key_rules_mismatch: exit 3: final status INTEGRITY_FAILURE (exit 3)
+PASS leak_scan_hit: exit 3: final status INTEGRITY_FAILURE (exit 3)
+PASS checkpoint_access_blocked: exit 3, x.pt created False: final status INTEGRITY_FAILURE (exit 3)
+PASS real_entry_refuses: {'verify': 5, 'verify_with_text_only': 5, 'freeze': 5, 'worker': 5, 'test_dir_in_real_mode': 5, 'keyspace_variable_set': 5, 'test_mode_with_authorization': 5}; e2c/stage2 and the real freeze exist before / after: (False, False) / (False, False)
+PASS unit_write_once: second write refused, different content exit 3; race of 6 writers ['lost', 'lost', 'lost', 'lost', 'lost', 'won']; temporary files left []
+PASS unit_appendix_a: script dfa649e37b21 rebuilt from the preregistration text; tampered copy exit 5
+PASS unit_tripwires: guard,tripwire,tripwire,tripwire,audit (keyspace() refuses without E2C_KEYSPACE_STAGE; test-mode tripwires; checkpoint audit hook)
+PASS unit_chain_definition: train_e2c.py and e2c_stage2.stream_check share the stream and chain lines
+PASS appendix_job_budget_cap: exit 7: final status BUDGET_CAP (exit 7); job and its child [18819, 18820] gone: True; used 10.011 s of 10 s
+PASS keyspace_job_budget_cap: exit 7: final status BUDGET_CAP (exit 7); job and its child [18851, 18852] gone: True; used 10.01 s of 10 s
+PASS freeze_budget_before_write: [(True, 0, 7, 'watchdog', True, ['PASS', 'BUDGET_CAP']), (False, 0, 7, 'last check', True, ['PASS', 'BUDGET_CAP'])] (watchdog on, verify, freeze, stopped by, no freeze / receipt / temporary file, intervals)
+PASS sigterm_during_job: [('appendix_stub', 130, True, 'INTERRUPTED', ['INTERRUPTED'], 0), ('keyspace_stub', 130, True, 'INTERRUPTED', ['INTERRUPTED'], 0)] (job, exit, job and child gone, summary, intervals, resume)
+PASS budget_cumulative_two_launches: launch 1 exit 130 (9.1 s), launch 2 exit 7 (2.9 s alone); cumulative 12.03 s of 12 s
+PASS verify_budget_watchdog: exit 7: final status BUDGET_CAP (exit 7); used 25.028 s of 25 s (over by 0.028 s); nothing written
+PASS verify_budget_last_check: exit 7: final status BUDGET_CAP (exit 7); used 44.374 s of 30 s; no record, no temporary file, no PASS summary
+PASS verify_budget_inside_publish_window: exit 7; files kept (f83c2a9b5647); final status BUDGET_CAP_REVIEW_REQUIRED; review record: crossed 10.076606 s inside the publish window, after the last budget check
+PASS sigkill_driver: [('keyspace job', -9, True, True, 5, [1], None), ('V2 workers', -9, True, None, None, None, None)] (what ran, driver exit, gone with the driver, the job's own child alive, next launch, stale reports, interval end kept)
+PASS verify_budget_after_publish_before_close: exit 7; ledger PASS -> BUDGET_CAP_REVIEW_REQUIRED at 49.955 s of 40 s; review record after the publication, before the ledger closed
+PASS freeze_budget_after_publish: verify 0; freeze exit 7, freeze kept (9b5393fe2626), review record after the publication, before the ledger closed
+PASS review_blocks_freeze_and_resume: verify 7 (BUDGET_CAP_REVIEW_REQUIRED); {'freeze': (5, True), 'resume': (5, True), 'record_deleted': (5, True), 'resume_after_delete': (5, True), 'deletion_committed': (5, True), 'ledger_edited': (5, True)}; no freeze written: True
+PASS spawn_stress: {'jobs': 300, 'seconds': 21.81, 'worst_single_seconds': 0.105} (wall 21.9 s); no hang
+PASS wrapper_parent_check: wrong parent: exit 70, job ran False; right parent: exit 0
+PASS job_leaves_descendant: [('ok', 0, True, True), ('fail', 4, True, True)] (job ends ok / with an error: verify exit, its left-behind descendant ended, no process left)
+I2 stage-2 tests PASS 51/51, 121 invocations
+S2 rc=0
+2026-10-21T05:04:13Z

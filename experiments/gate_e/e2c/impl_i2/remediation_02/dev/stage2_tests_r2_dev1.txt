@@ -1,0 +1,16 @@
+PASS verify_pass: exit 0; 33 seeds, chain points compared 12; keyspace stub env ["E2C_S2_STUB_KEYSPACE_STAGE", "E2C_S2_TEST_DIR", "E2C_TEST_DIR"]; publish window 0.000344 s
+PASS freeze_pass_launcher_accepts: check 0, stage3 0, stage4 0; freeze d064dc5c0713 at db4d51a7a939
+PASS freeze_needs_approved_record: verify 0; freeze exits [5, 5, 5, 5]
+PASS freeze_commitment_only: malformed commitments [5, 5, 5, 5, 5, 5, 5]; salt arguments rejected by the parser [2, 2, 2]; valid commitment 0
+PASS freeze_budget_before_write: [(True, 0, 7, 'watchdog', True, ['PASS', 'BUDGET_CAP']), (False, 0, 7, 'last check', True, ['PASS', 'BUDGET_CAP'])] (watchdog on, verify, freeze, stopped by, no freeze / receipt / temporary file, intervals)
+PASS sigterm_during_job: [('appendix_stub', 130, True, 'INTERRUPTED', ['INTERRUPTED'], 0), ('keyspace_stub', 130, True, 'INTERRUPTED', ['INTERRUPTED'], 0)] (job, exit, job and child gone, summary, intervals, resume)
+PASS verify_budget_inside_publish_window: exit 7; files kept (a8626beeb095); final status BUDGET_CAP_REVIEW_REQUIRED; review record: crossed 11.354696 s inside the publish window, after the last budget check
+PASS sigkill_driver: [('keyspace job', -9, True, True, 5, [1], None), ('V2 workers', -9, True, None, None, None, None)] (what ran, driver exit, gone with the driver, the job's own child alive, next launch, stale reports, interval end kept)
+PASS verify_budget_after_publish_before_close: exit 7; ledger PASS -> BUDGET_CAP_REVIEW_REQUIRED at 51.236 s of 40 s; review record after the publication, before the ledger closed
+PASS freeze_budget_after_publish: verify 0; freeze exit 7, freeze kept (97bef42f7d4b), review record after the publication, before the ledger closed
+PASS review_blocks_freeze_and_resume: verify 7 (BUDGET_CAP_REVIEW_REQUIRED); {'freeze': (5, True), 'resume': (5, True), 'record_deleted': (5, True), 'resume_after_delete': (5, True), 'deletion_committed': (5, True), 'ledger_edited': (5, True)}; no freeze written: True
+PASS spawn_stress: {'jobs': 300, 'seconds': 21.84, 'worst_single_seconds': 0.103} (wall 21.9 s); no hang
+PASS wrapper_parent_check: wrong parent: exit 70, job ran False; right parent: exit 0
+PASS job_leaves_descendant: [('ok', 0, True, True), ('fail', 4, True, True)] (job ends ok / with an error: verify exit, its left-behind descendant ended, no process left)
+I2 stage-2 tests PASS 14/14, 47 invocations
+rc=0

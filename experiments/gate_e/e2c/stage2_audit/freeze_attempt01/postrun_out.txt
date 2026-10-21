@@ -1,0 +1,23 @@
+launch record: {'start_utc': '2026-10-21T12:19:57.346Z', 'go_reference': "session message uuid a2916bd6-6d44-4871-a3f2-80fc30364bc2 (2026-10-21T12:18:57.293Z, 'E2-c Stage 2 Formal Freeze — GO'; text saved in authorization_freeze_GO.txt)", 'driver_pid': '376', 'end_utc': '2026-10-21T12:21:21.030Z', 'exit_code': '0'}
+PASS 1 exit code 0: 0
+PASS 2 working-tree changes are exactly: freeze (new), receipt (new), ledger (modified): [' M experiments/gate_e/e2c/stage2/budget_ledger_s2.json', '?? experiments/gate_e/e2c/e2c_workload_freeze.json', '?? experiments/gate_e/e2c/stage2/stage2_freeze_receipt.json']
+PASS 3 verify outputs unchanged (and stage2_verify.json byte-equal to e79acc6)
+PASS 4 interval 1 (verify) unchanged
+PASS 5 interval 2: freeze, PASS, closed, its pid = the launched driver: {'label': 'freeze', 'status': 'PASS', 'end_utc': '2026-10-21T12:21:11Z', 'pid': 376, 'used_seconds_at_end': 187.296214}
+PASS 6a caps: top level and every interval are 3600 s: [3600.0, 3600.0, 3600.0]
+PASS 6b cumulative use recomputed from the intervals: strictly below 3600 s; no supplement, no stale report: 187.296214 s
+PASS 6c recomputed cumulative = ledger used_seconds (recorded to 0.001 s): recomputed 187.296214, ledger 187.296
+PASS 6d recomputed cumulative = freeze interval used_seconds_at_end (recorded to 0.000001 s): recomputed 187.296214, interval 187.296214
+PASS 7 no stop or review record; no temporaries directory
+PASS 8 no E2-c process left: []
+PASS 9 freeze sha256 = ledger.published = receipt = stdout; receipt sha256 = ledger.published: freeze d0ffdab01a7e66e0dfe6a55cdddcfa163c39a5645ed43e49a0c03784853ec5f1; receipt 5a5c6933c686ef09e6f2f40be56290cb0c35b44ae3ff3b15f31cc8df79209837
+PASS 10a command commitment = the approved commitment: 52d1b31e99a7a277ab4bc8cec1ee736994c79606ffce6aa0c5a73176d8d181bc
+PASS 10b receipt commitment = the approved commitment: 52d1b31e99a7a277ab4bc8cec1ee736994c79606ffce6aa0c5a73176d8d181bc
+PASS 10c freeze commitment = the approved commitment: 52d1b31e99a7a277ab4bc8cec1ee736994c79606ffce6aa0c5a73176d8d181bc
+PASS 10d receipt binds the accepted verify (sha256 and commit)
+PASS 11a freeze binds: verify sha/commit, v2 streams, 33 seeds, E1 manifest, basis, keyspace, lambda/lambda2
+PASS 11b freeze stage2.e1_sets_sha256 = the accepted verify's per-set sha256 map: 13 sets
+PASS 12 launcher baseline check of the written freeze against the tree now: no difference: []
+PASS 13 no key-like text in freeze, receipt, stdout, stderr
+closing: ledger interval 2 end 2026-10-21T12:21:11Z (1792585271.3012753); process end 2026-10-21T12:21:21.030Z; difference 9.729 s (recorded only; the cause is not asserted)
+post-run freeze checks: ALL PASS (20/20)

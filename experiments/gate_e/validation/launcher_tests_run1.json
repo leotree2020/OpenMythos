@@ -1,0 +1,109 @@
+{
+ "cases": {
+  "all_succeed": {
+   "exit": 6,
+   "expected": 0,
+   "status_tail": [
+    "2026-10-19T10:44:35Z finished train_K4_transformer_s3",
+    "2026-10-19T10:44:35Z RESULT CHECK FAILED: 0 of 16 runs archived",
+    "2026-10-19T10:44:35Z stopped with exit 6"
+   ],
+   "stderr_tail": "",
+   "pass": false
+  },
+  "refuse_nonempty_results": {
+   "exit": 5,
+   "expected": 5,
+   "status_tail": [],
+   "stderr_tail": "REFUSED: /tmp/gate_e_launcher_so3ohn0x/results is not empty\n",
+   "pass": true
+  },
+  "refuse_no_frozen_workload": {
+   "exit": 5,
+   "expected": 5,
+   "status_tail": [],
+   "stderr_tail": "REFUSED: frozen workload does not keep M5(a) at 500 bodies (11.3)\n",
+   "pass": true
+  },
+  "refuse_m5a_not_500": {
+   "exit": 5,
+   "expected": 5,
+   "status_tail": [],
+   "stderr_tail": "REFUSED: frozen workload does not keep M5(a) at 500 bodies (11.3)\n",
+   "pass": true
+  },
+  "refuse_cmds_without_test_dir": {
+   "exit": 5,
+   "expected": 5,
+   "status_tail": [],
+   "stderr_tail": "REFUSED: GATE_E_TEST_CMDS only with GATE_E_TEST_DIR\n",
+   "pass": true
+  },
+  "training_integrity_failure": {
+   "exit": 3,
+   "expected": 3,
+   "status_tail": [
+    "2026-10-19T10:45:04Z finished train_K2_transformer_s2",
+    "2026-10-19T10:45:04Z INTEGRITY FAILURE: train_K2_transformer_s3 (see /tmp/gate_e_launcher_n3fhqbx8/logs)",
+    "2026-10-19T10:45:04Z stopped with exit 3"
+   ],
+   "stderr_tail": "",
+   "pass": true
+  },
+  "training_other_error": {
+   "exit": 4,
+   "expected": 4,
+   "status_tail": [
+    "2026-10-19T10:45:10Z finished train_K2_transformer_s5",
+    "2026-10-19T10:45:10Z RUN ERROR: train_K4_openmythos_s1 exited with status 1",
+    "2026-10-19T10:45:10Z stopped with exit 4"
+   ],
+   "stderr_tail": "",
+   "pass": true
+  },
+  "diag_integrity_failure": {
+   "exit": 6,
+   "expected": 3,
+   "status_tail": [
+    "2026-10-19T10:45:17Z finished train_K4_transformer_s3",
+    "2026-10-19T10:45:17Z RESULT CHECK FAILED: 0 of 16 runs archived",
+    "2026-10-19T10:45:17Z stopped with exit 6"
+   ],
+   "stderr_tail": "",
+   "pass": false
+  },
+  "diag_missing_result": {
+   "exit": 6,
+   "expected": 6,
+   "status_tail": [
+    "2026-10-19T10:45:23Z finished train_K4_transformer_s3",
+    "2026-10-19T10:45:23Z RESULT CHECK FAILED: 0 of 16 runs archived",
+    "2026-10-19T10:45:23Z stopped with exit 6"
+   ],
+   "stderr_tail": "",
+   "pass": false
+  },
+  "judge_missing": {
+   "exit": 6,
+   "expected": 6,
+   "status_tail": [
+    "2026-10-19T10:45:30Z finished train_K4_transformer_s3",
+    "2026-10-19T10:45:30Z RESULT CHECK FAILED: 0 of 16 runs archived",
+    "2026-10-19T10:45:30Z stopped with exit 6"
+   ],
+   "stderr_tail": "",
+   "pass": false
+  },
+  "archive_failure": {
+   "exit": 3,
+   "expected": 3,
+   "status_tail": [
+    "2026-10-19T10:45:36Z finished train_K2_openmythos_s2",
+    "2026-10-19T10:45:36Z INTEGRITY FAILURE: archive of train_K2_openmythos_s2 (stub exit 1)",
+    "2026-10-19T10:45:36Z stopped with exit 3"
+   ],
+   "pass": true
+  }
+ },
+ "pass": false
+}

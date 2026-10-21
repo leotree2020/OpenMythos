@@ -1,0 +1,251 @@
+{
+ "cases": {
+  "all_succeed": {
+   "pass": true,
+   "exit": 0,
+   "status_tail": [
+    "2026-10-19T11:26:05Z started events (pid 7224)",
+    "2026-10-19T11:26:05Z finished events",
+    "2026-10-19T11:26:05Z DONE"
+   ]
+  },
+  "refuse_fresh_when_frozen": {
+   "pass": true,
+   "exit": 5,
+   "status_tail": [
+    "2026-10-19T11:26:32Z started events (pid 7712)",
+    "2026-10-19T11:26:32Z finished events",
+    "2026-10-19T11:26:32Z DONE"
+   ]
+  },
+  "refuse_resume_without_freeze": {
+   "pass": true,
+   "exit": 5,
+   "status_tail": []
+  },
+  "refuse_nonempty_results": {
+   "pass": true,
+   "exit": 5,
+   "status_tail": []
+  },
+  "refuse_no_workload": {
+   "pass": true,
+   "exit": 5
+  },
+  "refuse_m5a": {
+   "pass": true,
+   "exit": 5
+  },
+  "refuse_no_cap": {
+   "pass": true,
+   "exit": 5
+  },
+  "refuse_cmds_without_test_dir": {
+   "pass": true,
+   "exit": 5,
+   "status_tail": []
+  },
+  "training_integrity_failure": {
+   "pass": true,
+   "exit": 3,
+   "status_tail": [
+    "2026-10-19T11:27:18Z finished train_K2_transformer_s2",
+    "2026-10-19T11:27:19Z INTEGRITY FAILURE: train_K2_transformer_s3 (see /tmp/gate_e_resume_lsafbbsh/logs)",
+    "2026-10-19T11:27:19Z stopped with exit 3"
+   ]
+  },
+  "archive_failure": {
+   "pass": true,
+   "exit": 3,
+   "status_tail": [
+    "2026-10-19T11:27:25Z finished train_K2_openmythos_s2",
+    "2026-10-19T11:27:25Z INTEGRITY FAILURE: archive of train_K2_openmythos_s2 (stub exit 1)",
+    "2026-10-19T11:27:25Z stopped with exit 3"
+   ]
+  },
+  "diag_integrity_failure": {
+   "pass": true,
+   "exit": 3,
+   "status_tail": [
+    "2026-10-19T11:27:35Z finished diag_K2_openmythos_s2_step200",
+    "2026-10-19T11:27:35Z INTEGRITY FAILURE: diag_K2_openmythos_s2_step300 (see /tmp/gate_e_resume_3bnvt_pr/logs)",
+    "2026-10-19T11:27:35Z stopped with exit 3"
+   ]
+  },
+  "interrupt_during_diagnostics_then_resume": {
+   "pass": true,
+   "exit_first": 130,
+   "exit_resume": 0,
+   "ledgered_before_interrupt": 36,
+   "finished_but_unledgered": 4,
+   "ledgered_rerun": 0,
+   "unledgered_rerun_and_verified_equal": 4,
+   "status_tail": [
+    "2026-10-19T11:28:07Z started events (pid 8599)",
+    "2026-10-19T11:28:07Z finished events",
+    "2026-10-19T11:28:07Z DONE"
+   ]
+  },
+  "half_written_result": {
+   "pass": true,
+   "exit": 0,
+   "status_tail": [
+    "2026-10-19T11:28:43Z started events (pid 9114)",
+    "2026-10-19T11:28:43Z finished events",
+    "2026-10-19T11:28:43Z DONE"
+   ]
+  },
+  "unledgered_valid_result_differs": {
+   "pass": true,
+   "exit": 3,
+   "status_tail": [
+    "2026-10-19T11:28:59Z finished diag_K2_openmythos_s1_step6000",
+    "2026-10-19T11:28:59Z INTEGRITY FAILURE: re-diagnosed K2_openmythos_s1_step6000 differs from the kept result",
+    "2026-10-19T11:28:59Z stopped with exit 3"
+   ]
+  },
+  "unledgered_valid_result_equal": {
+   "pass": true,
+   "exit": 0,
+   "status_tail": [
+    "2026-10-19T11:29:31Z started events (pid 9754)",
+    "2026-10-19T11:29:32Z finished events",
+    "2026-10-19T11:29:32Z DONE"
+   ]
+  },
+  "ledger_hash_mismatch": {
+   "pass": true,
+   "exit": 3,
+   "status_tail": [
+    "2026-10-19T11:30:04Z all 16 training runs done and archived",
+    "2026-10-19T11:30:04Z INTEGRITY FAILURE: K2_openmythos_s1_step300 result differs from its ledger entry (file left untouched)",
+    "2026-10-19T11:30:04Z stopped with exit 3"
+   ]
+  },
+  "checkpoint_restored": {
+   "pass": true,
+   "exit": 0,
+   "status_tail": [
+    "2026-10-19T11:30:36Z started events (pid 10759)",
+    "2026-10-19T11:30:36Z finished events",
+    "2026-10-19T11:30:36Z DONE"
+   ]
+  },
+  "checkpoint_restore_fails": {
+   "pass": true,
+   "exit": 3,
+   "starts_before_resume": 1,
+   "starts_after_resume": 1,
+   "status_tail": [
+    "2026-10-19T11:30:49Z diagnostics: 4 states already complete, 276 to run",
+    "2026-10-19T11:30:49Z INTEGRITY FAILURE: restore of K2_openmythos_s1_step100 failed (stub exit 1)",
+    "2026-10-19T11:30:49Z stopped with exit 3"
+   ]
+  },
+  "workload_changed": {
+   "pass": true,
+   "exit": 5,
+   "status_tail": [
+    "2026-10-19T11:30:56Z started diag_K2_openmythos_s1_step200 (pid 10981)",
+    "2026-10-19T11:30:56Z started diag_K2_openmythos_s1_step300 (pid 10982)",
+    "2026-10-19T11:30:56Z launcher interrupted (signal 15)"
+   ]
+  },
+  "freeze_item_changed": {
+   "pass": true,
+   "exit": 5,
+   "status_tail": [
+    "2026-10-19T11:31:09Z started diag_K2_openmythos_s1_step200 (pid 11096)",
+    "2026-10-19T11:31:09Z started diag_K2_openmythos_s1_step300 (pid 11097)",
+    "2026-10-19T11:31:09Z launcher interrupted (signal 15)"
+   ]
+  },
+  "budget_cap_not_reset": {
+   "pass": true,
+   "exit_first": 7,
+   "exit_resume": 7,
+   "diag_seconds": 1.6861302852630615,
+   "states_started": 12,
+   "status_tail": [
+    "2026-10-19T11:31:30Z diagnostics: 8 states already complete, 272 to run",
+    "2026-10-19T11:31:30Z BUDGET EXCEEDED: cumulative diagnostic time 0.00 h >= cap 0.00 h",
+    "2026-10-19T11:31:30Z stopped with exit 7"
+   ]
+  },
+  "repeated_restarts_during_judgment": {
+   "pass": true,
+   "exits": [
+    130,
+    130,
+    0,
+    0
+   ],
+   "judgments_written": 10,
+   "attempts": {
+    "judge_openmythos_s1": 1,
+    "judge_openmythos_s2": 1,
+    "judge_openmythos_s3": 1,
+    "judge_openmythos_s4": 1,
+    "judge_openmythos_s5": 1,
+    "judge_transformer_s1": 1,
+    "judge_transformer_s2": 1,
+    "judge_transformer_s3": 1,
+    "judge_transformer_s4": 1,
+    "judge_transformer_s5": 1
+   },
+   "status_tail": [
+    "2026-10-19T11:32:12Z started events (pid 11784)",
+    "2026-10-19T11:32:12Z finished events",
+    "2026-10-19T11:32:12Z DONE"
+   ]
+  },
+  "judgment_without_ledger_recovered": {
+   "pass": true,
+   "exit": 0,
+   "status_tail": [
+    "2026-10-19T11:32:43Z started events (pid 12236)",
+    "2026-10-19T11:32:43Z finished events",
+    "2026-10-19T11:32:43Z DONE"
+   ]
+  },
+  "retrain_after_interruption_equal": {
+   "pass": true,
+   "exits": [
+    130,
+    0
+   ],
+   "unarchived_attempts": [
+    "train_K2_openmythos_s5",
+    "train_K2_transformer_s1",
+    "train_K2_transformer_s2",
+    "train_K2_transformer_s3"
+   ],
+   "status_tail": [
+    "2026-10-19T11:33:15Z started events (pid 12689)",
+    "2026-10-19T11:33:15Z finished events",
+    "2026-10-19T11:33:15Z DONE"
+   ]
+  },
+  "retrain_after_interruption_differs": {
+   "pass": true,
+   "exit": 3,
+   "victim": "train_K2_transformer_s1",
+   "status_tail": [
+    "2026-10-19T11:33:27Z finished train_K2_transformer_s1",
+    "2026-10-19T11:33:27Z INTEGRITY FAILURE: re-trained K2_transformer_s1_step0.pt differs from the kept attempt",
+    "2026-10-19T11:33:27Z stopped with exit 3"
+   ]
+  },
+  "sync_never_includes_checkpoints": {
+   "pass": true,
+   "items": [
+    "logs/run_status.txt",
+    "quarantine/2026/r.json",
+    "results/a.json",
+    "run_freeze.json",
+    "runs/K2_x.json"
+   ]
+  }
+ },
+ "pass": true
+}
