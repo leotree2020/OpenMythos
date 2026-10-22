@@ -8,8 +8,9 @@
 |---|---|---|
 | P1-B 六项必需检查 | PASS | commit `b3b5053846e257aadc4d313f6998ae9798540f07`，`P1_B_RESULT.md` |
 | P1-B 复跑一致性 | PASS | 第二个进程 + fresh clone 复跑，4 个 JSON 完全一致 |
-| 仓库 CI `offline-tests`（PR #4） | 待重跑 | 首次失败原因是既有 workflow 缺 `datasets`，与 P1-B 无关；修复见 PR #5 |
-| 仓库 CI `upstream-smoke`（PR #4） | 待重跑 | 首次因 `offline-tests` 失败被跳过 |
+| 仓库 CI `offline-tests`（PR #4） | PASS | run 39775119073（head `5da33ff`）：Ran 251 tests，OK；首次失败原因是既有 workflow 缺 `datasets`，与 P1-B 无关，修复见 PR #5 |
+| 仓库 CI `upstream-smoke (gqa)`（PR #4） | PASS | run 39775119073：全部步骤 success |
+| 仓库 CI `upstream-smoke (mla)`（PR #4） | PASS | run 39775119073：全部步骤 success（GQA-only 的两步按 workflow 条件跳过） |
 
 PR #4 保持 Draft，不合并。
 
@@ -37,7 +38,7 @@ PR #4 保持 Draft，不合并。
 - 改动：`offline-tests` 的安装行加上 `'datasets>=2.18.0,<6'`。只改这一行 workflow，不改测试、断言、模型或 Parcae。
 - Run：https://github.com/leotree2020/OpenMythos/actions/runs/39774588958
   - `offline-tests`：Ran 251 tests，OK（datasets 5.1.0）。完整日志：`ci/run39774588958_offline-tests.txt`。
-  - `upstream-smoke`：见下文更新。
+  - `upstream-smoke (gqa)` / `upstream-smoke (mla)`：success。这是 `upstream-smoke` 多轮以来第一次真正执行。
 
 ## 3. 本地复现与验证（Python 3.11 venv，与 CI 相同的安装行）
 
@@ -54,4 +55,29 @@ PR #4 保持 Draft，不合并。
 
 为了不把 CI 修改混入 P1-B 分支，PR #4 的 base 暂时改为 `mini-mythos-ci-datasets-fix-20261022`。PR #4 的 diff 仍然只有 P1-B 文件。PR #5 合并进 `mini-mythos-research` 后，PR #4 的 base 改回 `mini-mythos-research`。
 
-重跑结果：待本次 push 触发的 run 完成后补充。
+| Run | PR #4 head | `offline-tests` | `upstream-smoke (gqa)` | `upstream-smoke (mla)` |
+|---|---|---|---|---|
+| [39775075145](https://github.com/leotree2020/OpenMythos/actions/runs/39775075145) | `f3d315a` | success，Ran 251 tests，OK | success | success |
+| [39775119073](https://github.com/leotree2020/OpenMythos/actions/runs/39775119073) | `5da33ff` | success，Ran 251 tests，OK | success | success |
+
+两次 run 都用修复后的 workflow（安装行含 `datasets>=2.18.0,<6`，实际装上 datasets 5.1.0）。P1-B 内容 commit 是 `b3b5053`；之后的 `f3d315a`、`5da33ff` 只添加本记录和日志文件。
+
+run 39775119073 的完整日志：
+- `ci/run39775119073_offline-tests.txt`
+- `ci/run39775119073_upstream-smoke-gqa.txt`
+- `ci/run39775119073_upstream-smoke-mla.txt`
+
+### `upstream-smoke` 中需要说明的输出
+
+`R0 cached-chunk differential regression` 步骤成功，但日志打印的是 `upstream=FAIL research_mask=PASS research_max_abs=2.9802322387695312e-08`（gqa 与 mla 相同）。这是已记录的 R0 Gate A 结论，不是新问题：
+- 原版 OpenMythos 的缓存分块掩码仍有尺寸缺陷，所以 `upstream=FAIL`；研究层修正 mask 后通过。
+- `--strict` 只要求 `research_mask=PASS`。
+- 偏差值与 `docs/R0_GATE_A_RESULT.md` 记录的完全一致。
+
+另有 GitHub 的 Node.js 20 弃用 warning（`actions/checkout@v4` 等被强制在 Node.js 24 上运行），不影响结果。
+
+## 5. 之后
+
+- PR #4 保持 Draft，不合并，不进入 P1-C。
+- PR #5 合并后，把 PR #4 的 base 改回 `mini-mythos-research`；如果合并时删除了修复分支，GitHub 会自动改回。改回后 CI 会再跑一次。
+- 本记录 commit 之后的 run 结果会写在 PR #4 描述中，不再为此单独提交。
