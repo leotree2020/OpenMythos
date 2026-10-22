@@ -1,0 +1,66 @@
+### STEP provenance
+origin: leotree2020/OpenMythos
+branch: mini-mythos-p1b-parcae-cpu-check-20261022
+commit: b3b5053846e257aadc4d313f6998ae9798540f07
+wrote: research/mini_mythos/results/provenance.json
+### RESULT provenance rc=0
+### STEP static_audit
+Upstream: b3b5053846e257aadc4d313f6998ae9798540f07
+FOUND      ARCH_RDT - RDT block names exist (structural presence, not behavior proof).
+FOUND      ARCH_GQA_MLA - Both attention classes are present.
+FOUND      MODEL_TIED_EMBED - Language-model head and embedding use tied weights.
+FOUND      MASK_DTYPE - Causal mask is requested in activation dtype; check entire path dynamically.
+FOUND      ACT_DTYPE_RISK - ACT accumulator created without explicit dtype (potential mixed-precision promotion).
+FOUND      ACT_TRUNCATION_RISK - ACT weighted output has no explicit final-step residual at n_loops exhaustion.
+NOT FOUND  TRAIN_SCALER - FP16 GradScaler path found; if absent, validate stability before using FP16.
+NOT FOUND  TRAIN_VALIDATION - Validation logging token found; manually inspect actual eval path.
+NOT FOUND  TRAIN_DATA_RESUME - Dataset position recovery found; if absent, resumed streaming repeats earlier samples.
+FOUND      TRAIN_FSDP - FSDP is imported.
+FOUND      TOKENIZER_EXTERNAL - Tokenizer downloaded from a separate provider; pin name/revision + vocab.
+FOUND      CHECKPOINT_PICKLE - Checkpoint uses pickle-compatible load: load only trusted checkpoints.
+Saved to research/mini_mythos/results/static_audit.json
+### RESULT static_audit rc=0
+### STEP smoke
+/home/user/mini_mythos/OpenMythos_p1b/research/mini_mythos/scripts/smoke.py:34: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /__w/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:820.)
+  'train_loss': float(loss), 'grad_norm_before_clip': float(norm)}
+forward_backward PASS
+causal_invariance PASS
+kv_cache_equivalence PASS
+act_weight_mass PASS
+Saved: research/mini_mythos/results/smoke_mla.json
+### RESULT smoke rc=0
+### STEP act_diagnostics
+depth= 1 actual= 1 mean_mass= 0.4728
+depth= 2 actual= 2 mean_mass= 0.9319
+depth= 4 actual= 3 mean_mass= 1.0
+depth= 8 actual= 3 mean_mass= 1.0
+Saved: research/mini_mythos/results/act_mla.json
+### RESULT act_diagnostics rc=0
+### STEP act_ab
+mla depth=1 original_mass=0.5433 forced_mass=1.0000 logits_delta=0.00349877 grad_delta=0.0288484 first_mass_deficit=1 first_loss_split=1
+mla depth=2 original_mass=1.0000 forced_mass=1.0000 logits_delta=0 grad_delta=0 first_mass_deficit=None first_loss_split=None
+mla depth=4 original_mass=1.0000 forced_mass=1.0000 logits_delta=0 grad_delta=0 first_mass_deficit=None first_loss_split=None
+mla depth=8 original_mass=1.0000 forced_mass=1.0000 logits_delta=0 grad_delta=0 first_mass_deficit=None first_loss_split=None
+Saved: research/mini_mythos/results/act_ab_mla.json
+### RESULT act_ab rc=0
+### STEP act_counterfactual
+mla depth=2 first_mass_deficit=None first_direct_effect=None first_parameter_divergence=None
+Saved: research/mini_mythos/results/act_counterfactual_mla.json
+### RESULT act_counterfactual rc=0
+### STEP r0_cache_compare
+mla: upstream=FAIL research_mask=PASS research_max_abs=2.9802322387695312e-08
+Saved: /home/user/mini_mythos/OpenMythos_p1b/research/mini_mythos/results/r0/cache_mask_comparison.json
+### RESULT r0_cache_compare rc=0
+### STEP archive_pack
+Archived 4 JSON files; completeness=partial
+Archive: /home/user/mini_mythos/OpenMythos_p1b/research/mini_mythos/archives/ci_mla.zip
+Archive SHA-256: ebdd1b7e3e64a9733f97a0b5c2ee72f2eafb6b6d56e26680f9ab8c423b20b17d
+No files were uploaded to GitHub.
+### RESULT archive_pack rc=0
+### STEP archive_verify
+PASS: verified 4 JSON files
+Completeness: partial
+SHA-256: ebdd1b7e3e64a9733f97a0b5c2ee72f2eafb6b6d56e26680f9ab8c423b20b17d
+### RESULT archive_verify rc=0
+### OVERALL mla fail=0

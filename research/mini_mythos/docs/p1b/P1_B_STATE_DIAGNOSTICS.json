@@ -1,0 +1,1001 @@
+{
+  "schema": "P1_B_STATE_DIAGNOSTICS_V1",
+  "checks": {
+    "check_4_loop_states": {
+      "items": [
+        {
+          "name": "init: loops [1, 2, 4, 8] run with finite states and loss",
+          "required": true,
+          "status": "PASS",
+          "criterion": "all states and losses finite",
+          "observed": {
+            "1": {
+              "loss": 5.771858215332031,
+              "final_state_norm_mean": 6.438852787017822,
+              "final_delta_norm_mean": 6.440333843231201
+            },
+            "2": {
+              "loss": 5.776025772094727,
+              "final_state_norm_mean": 9.310083389282227,
+              "final_delta_norm_mean": 2.880204916000366
+            },
+            "4": {
+              "loss": 5.777573108673096,
+              "final_state_norm_mean": 11.170846939086914,
+              "final_delta_norm_mean": 0.5760409832000732
+            },
+            "8": {
+              "loss": 5.777870178222656,
+              "final_state_norm_mean": 11.61758804321289,
+              "final_delta_norm_mean": 0.023041633889079094
+            }
+          }
+        },
+        {
+          "name": "init: native monitoring agrees with hook-measured states",
+          "required": true,
+          "status": "PASS",
+          "criterion": "relative difference <= 1e-5 for recurrent_state_norm, recurrent_residual, rel_residual",
+          "observed": {
+            "1": {
+              "recurrent_state_norm": 0.0,
+              "recurrent_residual": 0.0,
+              "rel_residual": 0.0
+            },
+            "2": {
+              "recurrent_state_norm": 0.0,
+              "recurrent_residual": 0.0,
+              "rel_residual": 0.0
+            },
+            "4": {
+              "recurrent_state_norm": 0.0,
+              "recurrent_residual": 0.0,
+              "rel_residual": 0.0
+            },
+            "8": {
+              "recurrent_state_norm": 0.0,
+              "recurrent_residual": 0.0,
+              "rel_residual": 0.0
+            }
+          }
+        },
+        {
+          "name": "init: state threading (iteration j input = iteration j-1 output, C input = final state)",
+          "required": true,
+          "status": "PASS",
+          "criterion": "max abs diff exactly 0",
+          "observed": {
+            "1": [
+              0.0,
+              0.0
+            ],
+            "2": [
+              0.0,
+              0.0
+            ],
+            "4": [
+              0.0,
+              0.0
+            ],
+            "8": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        {
+          "name": "init: shorter runs are exact prefixes of the 8-loop trajectory",
+          "required": true,
+          "status": "PASS",
+          "criterion": "same x0 seed: states of iteration j identical across loop counts (max abs diff 0)",
+          "observed": {
+            "1": 0.0,
+            "2": 0.0,
+            "4": 0.0,
+            "8": 0.0
+          }
+        },
+        {
+          "name": "init: scaled-zero core is an exact identity, so each state change shrinks by the injection decay",
+          "required": true,
+          "status": "PASS",
+          "criterion": "core output == injection output exactly; |delta ratio - decay| <= 1e-5",
+          "observed": {
+            "core_output_minus_injection_max_abs_diff": 0.0,
+            "delta_ratio_to_previous": [
+              0.44721360508779606,
+              0.44721357763428615,
+              0.4472136133656305,
+              0.44721359832887086,
+              0.4472135811024205,
+              0.4472135775622063,
+              0.44721351944262944
+            ],
+            "injection_decay": 0.44721361994743347
+          }
+        },
+        {
+          "name": "after_adamw_steps: loops [1, 2, 4, 8] run with finite states and loss",
+          "required": true,
+          "status": "PASS",
+          "criterion": "all states and losses finite",
+          "observed": {
+            "1": {
+              "loss": 3.6044998168945312,
+              "final_state_norm_mean": 6.813050270080566,
+              "final_delta_norm_mean": 6.807308673858643
+            },
+            "2": {
+              "loss": 3.6442439556121826,
+              "final_state_norm_mean": 9.84862232208252,
+              "final_delta_norm_mean": 3.0440762042999268
+            },
+            "4": {
+              "loss": 3.6608197689056396,
+              "final_state_norm_mean": 11.815730094909668,
+              "final_delta_norm_mean": 0.6088913679122925
+            },
+            "8": {
+              "loss": 3.6642844676971436,
+              "final_state_norm_mean": 12.288086891174316,
+              "final_delta_norm_mean": 0.024367470294237137
+            }
+          }
+        },
+        {
+          "name": "after_adamw_steps: native monitoring agrees with hook-measured states",
+          "required": true,
+          "status": "PASS",
+          "criterion": "relative difference <= 1e-5 for recurrent_state_norm, recurrent_residual, rel_residual",
+          "observed": {
+            "1": {
+              "recurrent_state_norm": 0.0,
+              "recurrent_residual": 0.0,
+              "rel_residual": 0.0
+            },
+            "2": {
+              "recurrent_state_norm": 0.0,
+              "recurrent_residual": 0.0,
+              "rel_residual": 0.0
+            },
+            "4": {
+              "recurrent_state_norm": 0.0,
+              "recurrent_residual": 0.0,
+              "rel_residual": 0.0
+            },
+            "8": {
+              "recurrent_state_norm": 0.0,
+              "recurrent_residual": 0.0,
+              "rel_residual": 0.0
+            }
+          }
+        },
+        {
+          "name": "after_adamw_steps: state threading (iteration j input = iteration j-1 output, C input = final state)",
+          "required": true,
+          "status": "PASS",
+          "criterion": "max abs diff exactly 0",
+          "observed": {
+            "1": [
+              0.0,
+              0.0
+            ],
+            "2": [
+              0.0,
+              0.0
+            ],
+            "4": [
+              0.0,
+              0.0
+            ],
+            "8": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        {
+          "name": "after_adamw_steps: shorter runs are exact prefixes of the 8-loop trajectory",
+          "required": true,
+          "status": "PASS",
+          "criterion": "same x0 seed: states of iteration j identical across loop counts (max abs diff 0)",
+          "observed": {
+            "1": 0.0,
+            "2": 0.0,
+            "4": 0.0,
+            "8": 0.0
+          }
+        }
+      ],
+      "status": "PASS"
+    },
+    "check_5_injection_decay": {
+      "items": [
+        {
+          "name": "init: every channel decays strictly inside (0, 1)",
+          "required": true,
+          "status": "PASS",
+          "criterion": "0 < decay_i < 1 for all channels",
+          "observed": {
+            "min": 0.4472135901451111,
+            "max": 0.4472135901451111,
+            "mean": 0.44721361994743347,
+            "std": 3.003791704259129e-08
+          }
+        },
+        {
+          "name": "init: native get_spectral_norm / get_contraction_factor match the probed decay",
+          "required": true,
+          "status": "PASS",
+          "criterion": "spectral = max(decay), contraction = mean(decay), forward probe = exp(-softplus(dt_bias)*exp(A_log))",
+          "observed": {
+            "spectral_norm": 0.4472135901451111,
+            "contraction_factor": 0.44721361994743347,
+            "probe_vs_formula_max_abs_diff": 0.0
+          }
+        },
+        {
+          "name": "init: decay equals the Parcae default ssm_decay sqrt(1/5)",
+          "required": true,
+          "status": "PASS",
+          "criterion": "|decay - 0.4472136| <= 1e-6 on every channel, A_log = 0, B = I",
+          "observed": {
+            "target": 0.4472135954999579,
+            "min": 0.4472135901451111,
+            "max": 0.4472135901451111,
+            "A_log": {
+              "min": 0.0,
+              "max": 0.0
+            },
+            "dt_mean": 0.8047189712524414,
+            "B_minus_identity_max_abs": 0.0
+          }
+        },
+        {
+          "name": "after_adamw_steps: every channel decays strictly inside (0, 1)",
+          "required": true,
+          "status": "PASS",
+          "criterion": "0 < decay_i < 1 for all channels",
+          "observed": {
+            "min": 0.4468480348587036,
+            "max": 0.4483002722263336,
+            "mean": 0.4473196864128113,
+            "std": 0.0004522307135630399
+          }
+        },
+        {
+          "name": "after_adamw_steps: native get_spectral_norm / get_contraction_factor match the probed decay",
+          "required": true,
+          "status": "PASS",
+          "criterion": "spectral = max(decay), contraction = mean(decay), forward probe = exp(-softplus(dt_bias)*exp(A_log))",
+          "observed": {
+            "spectral_norm": 0.4483002722263336,
+            "contraction_factor": 0.4473196864128113,
+            "probe_vs_formula_max_abs_diff": 0.0
+          }
+        },
+        {
+          "name": "official parcae-small-140m config, DiagonalInjection only: every channel decays strictly inside (0, 1)",
+          "required": true,
+          "status": "PASS",
+          "criterion": "0 < decay_i < 1 for all channels",
+          "observed": {
+            "min": 0.4472135901451111,
+            "max": 0.4472135901451111,
+            "mean": 0.4472135603427887,
+            "std": 2.9821745073377315e-08
+          }
+        },
+        {
+          "name": "official parcae-small-140m config, DiagonalInjection only: native get_spectral_norm / get_contraction_factor match the probed decay",
+          "required": true,
+          "status": "PASS",
+          "criterion": "spectral = max(decay), contraction = mean(decay), forward probe = exp(-softplus(dt_bias)*exp(A_log))",
+          "observed": {
+            "spectral_norm": 0.4472135901451111,
+            "contraction_factor": 0.4472135603427887,
+            "probe_vs_formula_max_abs_diff": 0.0
+          }
+        },
+        {
+          "name": "official parcae-small-140m config, DiagonalInjection only: decay equals the Parcae default ssm_decay sqrt(1/5)",
+          "required": true,
+          "status": "PASS",
+          "criterion": "|decay - 0.4472136| <= 1e-6 on every channel, A_log = 0, B = I",
+          "observed": {
+            "target": 0.4472135954999579,
+            "min": 0.4472135901451111,
+            "max": 0.4472135901451111,
+            "A_log": {
+              "min": 0.0,
+              "max": 0.0
+            },
+            "dt_mean": 0.8047189712524414,
+            "B_minus_identity_max_abs": 0.0
+          }
+        },
+        {
+          "name": "after_adamw_steps: decay parameters are trainable (moved from init)",
+          "required": false,
+          "status": "PASS",
+          "criterion": "max |decay_after - decay_init| > 0",
+          "observed": {
+            "max_abs_change": 0.0010866820812225342
+          }
+        }
+      ],
+      "status": "PASS"
+    }
+  },
+  "loop_state_trajectories": {
+    "init": {
+      "runs": [
+        {
+          "loops": 1,
+          "num_steps_pair": [
+            0,
+            1
+          ],
+          "loss": 5.771858215332031,
+          "all_finite": true,
+          "trajectory": [
+            {
+              "iteration": 0,
+              "state_norm_mean": 0.61518794298172
+            },
+            {
+              "iteration": 1,
+              "state_norm_mean": 6.438852787017822,
+              "delta_norm_mean": 6.440333843231201,
+              "rel_delta_mean": 1.0003087520599365
+            }
+          ],
+          "final_state_norm_mean": 6.438852787017822,
+          "final_delta_norm_mean": 6.440333843231201,
+          "native_monitoring": {
+            "last_hidden_token_corr": 0.01256018877029419,
+            "recurrent_state_token_corr": 0.011183984577655792,
+            "last_hidden_norm": 7.9998459815979,
+            "recurrent_state_norm": 6.438852787017822,
+            "recurrent_diff": 9.060990333557129,
+            "num_steps_no_grad": 0.0,
+            "num_steps_with_grad": 1.0,
+            "recurrent_residual": 6.440333843231201,
+            "rel_residual": 1.0003087520599365
+          },
+          "native_vs_hook_rel_diff": {
+            "recurrent_state_norm": 0.0,
+            "recurrent_residual": 0.0,
+            "rel_residual": 0.0
+          },
+          "C_input_vs_final_state_max_abs_diff": 0.0,
+          "state_threading_max_abs_diff": 0.0,
+          "core_output_minus_injection_max_abs_diff": [
+            0.0
+          ],
+          "grad_norms": {
+            "adapter": 0.6163036314150184,
+            "core_block": 0.7974881449249822
+          }
+        },
+        {
+          "loops": 2,
+          "num_steps_pair": [
+            0,
+            2
+          ],
+          "loss": 5.776025772094727,
+          "all_finite": true,
+          "trajectory": [
+            {
+              "iteration": 0,
+              "state_norm_mean": 0.61518794298172
+            },
+            {
+              "iteration": 1,
+              "state_norm_mean": 6.438852787017822,
+              "delta_norm_mean": 6.440333843231201,
+              "rel_delta_mean": 1.0003087520599365
+            },
+            {
+              "iteration": 2,
+              "state_norm_mean": 9.310083389282227,
+              "delta_norm_mean": 2.880204916000366,
+              "rel_delta_mean": 0.3093693256378174,
+              "delta_ratio_to_previous": 0.44721360508779606
+            }
+          ],
+          "final_state_norm_mean": 9.310083389282227,
+          "final_delta_norm_mean": 2.880204916000366,
+          "native_monitoring": {
+            "last_hidden_token_corr": 0.012400113046169281,
+            "recurrent_state_token_corr": 0.010998725891113281,
+            "last_hidden_norm": 7.999926567077637,
+            "recurrent_state_norm": 9.310083389282227,
+            "recurrent_diff": 10.044717788696289,
+            "num_steps_no_grad": 0.0,
+            "num_steps_with_grad": 2.0,
+            "recurrent_residual": 2.880204916000366,
+            "rel_residual": 0.3093693256378174
+          },
+          "native_vs_hook_rel_diff": {
+            "recurrent_state_norm": 0.0,
+            "recurrent_residual": 0.0,
+            "rel_residual": 0.0
+          },
+          "C_input_vs_final_state_max_abs_diff": 0.0,
+          "state_threading_max_abs_diff": 0.0,
+          "core_output_minus_injection_max_abs_diff": [
+            0.0,
+            0.0
+          ],
+          "grad_norms": {
+            "adapter": 0.6162804737252787,
+            "core_block": 0.7978942440809794
+          }
+        },
+        {
+          "loops": 4,
+          "num_steps_pair": [
+            0,
+            4
+          ],
+          "loss": 5.777573108673096,
+          "all_finite": true,
+          "trajectory": [
+            {
+              "iteration": 0,
+              "state_norm_mean": 0.61518794298172
+            },
+            {
+              "iteration": 1,
+              "state_norm_mean": 6.438852787017822,
+              "delta_norm_mean": 6.440333843231201,
+              "rel_delta_mean": 1.0003087520599365
+            },
+            {
+              "iteration": 2,
+              "state_norm_mean": 9.310083389282227,
+              "delta_norm_mean": 2.880204916000366,
+              "rel_delta_mean": 0.3093693256378174,
+              "delta_ratio_to_previous": 0.44721360508779606
+            },
+            {
+              "iteration": 3,
+              "state_norm_mean": 10.595714569091797,
+              "delta_norm_mean": 1.2880667448043823,
+              "rel_delta_mean": 0.12156562507152557,
+              "delta_ratio_to_previous": 0.44721357763428615
+            },
+            {
+              "iteration": 4,
+              "state_norm_mean": 11.170846939086914,
+              "delta_norm_mean": 0.5760409832000732,
+              "rel_delta_mean": 0.05156659334897995,
+              "delta_ratio_to_previous": 0.4472136133656305
+            }
+          ],
+          "final_state_norm_mean": 11.170846939086914,
+          "final_delta_norm_mean": 0.5760409832000732,
+          "native_monitoring": {
+            "last_hidden_token_corr": 0.012332826852798462,
+            "recurrent_state_token_corr": 0.010922431945800781,
+            "last_hidden_norm": 7.999948024749756,
+            "recurrent_state_norm": 11.170846939086914,
+            "recurrent_diff": 10.798335075378418,
+            "num_steps_no_grad": 0.0,
+            "num_steps_with_grad": 4.0,
+            "recurrent_residual": 0.5760409832000732,
+            "rel_residual": 0.05156659334897995
+          },
+          "native_vs_hook_rel_diff": {
+            "recurrent_state_norm": 0.0,
+            "recurrent_residual": 0.0,
+            "rel_residual": 0.0
+          },
+          "C_input_vs_final_state_max_abs_diff": 0.0,
+          "state_threading_max_abs_diff": 0.0,
+          "core_output_minus_injection_max_abs_diff": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "grad_norms": {
+            "adapter": 0.6165846676291264,
+            "core_block": 0.7978185394319806
+          }
+        },
+        {
+          "loops": 8,
+          "num_steps_pair": [
+            0,
+            8
+          ],
+          "loss": 5.777870178222656,
+          "all_finite": true,
+          "trajectory": [
+            {
+              "iteration": 0,
+              "state_norm_mean": 0.61518794298172
+            },
+            {
+              "iteration": 1,
+              "state_norm_mean": 6.438852787017822,
+              "delta_norm_mean": 6.440333843231201,
+              "rel_delta_mean": 1.0003087520599365
+            },
+            {
+              "iteration": 2,
+              "state_norm_mean": 9.310083389282227,
+              "delta_norm_mean": 2.880204916000366,
+              "rel_delta_mean": 0.3093693256378174,
+              "delta_ratio_to_previous": 0.44721360508779606
+            },
+            {
+              "iteration": 3,
+              "state_norm_mean": 10.595714569091797,
+              "delta_norm_mean": 1.2880667448043823,
+              "rel_delta_mean": 0.12156562507152557,
+              "delta_ratio_to_previous": 0.44721357763428615
+            },
+            {
+              "iteration": 4,
+              "state_norm_mean": 11.170846939086914,
+              "delta_norm_mean": 0.5760409832000732,
+              "rel_delta_mean": 0.05156659334897995,
+              "delta_ratio_to_previous": 0.4472136133656305
+            },
+            {
+              "iteration": 5,
+              "state_norm_mean": 11.428083419799805,
+              "delta_norm_mean": 0.2576133608818054,
+              "rel_delta_mean": 0.022542156279087067,
+              "delta_ratio_to_previous": 0.44721359832887086
+            },
+            {
+              "iteration": 6,
+              "state_norm_mean": 11.54312801361084,
+              "delta_norm_mean": 0.11520819365978241,
+              "rel_delta_mean": 0.009980680420994759,
+              "delta_ratio_to_previous": 0.4472135811024205
+            },
+            {
+              "iteration": 7,
+              "state_norm_mean": 11.594578742980957,
+              "delta_norm_mean": 0.051522668451070786,
+              "rel_delta_mean": 0.00444368738681078,
+              "delta_ratio_to_previous": 0.4472135775622063
+            },
+            {
+              "iteration": 8,
+              "state_norm_mean": 11.61758804321289,
+              "delta_norm_mean": 0.023041633889079094,
+              "rel_delta_mean": 0.0019833410624414682,
+              "delta_ratio_to_previous": 0.44721351944262944
+            }
+          ],
+          "final_state_norm_mean": 11.61758804321289,
+          "final_delta_norm_mean": 0.023041633889079094,
+          "native_monitoring": {
+            "last_hidden_token_corr": 0.012319423258304596,
+            "recurrent_state_token_corr": 0.01090732216835022,
+            "last_hidden_norm": 7.999953269958496,
+            "recurrent_state_norm": 11.61758804321289,
+            "recurrent_diff": 10.99039363861084,
+            "num_steps_no_grad": 0.0,
+            "num_steps_with_grad": 8.0,
+            "recurrent_residual": 0.023041633889079094,
+            "rel_residual": 0.0019833410624414682
+          },
+          "native_vs_hook_rel_diff": {
+            "recurrent_state_norm": 0.0,
+            "recurrent_residual": 0.0,
+            "rel_residual": 0.0
+          },
+          "C_input_vs_final_state_max_abs_diff": 0.0,
+          "state_threading_max_abs_diff": 0.0,
+          "core_output_minus_injection_max_abs_diff": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "grad_norms": {
+            "adapter": 0.6169985256228531,
+            "core_block": 0.7977753899719506
+          }
+        }
+      ],
+      "prefix_max_abs_diff_vs_longest": {
+        "1": 0.0,
+        "2": 0.0,
+        "4": 0.0,
+        "8": 0.0
+      }
+    },
+    "after_adamw_steps": {
+      "runs": [
+        {
+          "loops": 1,
+          "num_steps_pair": [
+            0,
+            1
+          ],
+          "loss": 3.6044998168945312,
+          "all_finite": true,
+          "trajectory": [
+            {
+              "iteration": 0,
+              "state_norm_mean": 0.61518794298172
+            },
+            {
+              "iteration": 1,
+              "state_norm_mean": 6.813050270080566,
+              "delta_norm_mean": 6.807308673858643,
+              "rel_delta_mean": 0.9992691278457642
+            }
+          ],
+          "final_state_norm_mean": 6.813050270080566,
+          "final_delta_norm_mean": 6.807308673858643,
+          "native_monitoring": {
+            "last_hidden_token_corr": 0.2325429916381836,
+            "recurrent_state_token_corr": 0.18771183490753174,
+            "last_hidden_norm": 7.9994001388549805,
+            "recurrent_state_norm": 6.813050270080566,
+            "recurrent_diff": 8.942021369934082,
+            "num_steps_no_grad": 0.0,
+            "num_steps_with_grad": 1.0,
+            "recurrent_residual": 6.807308673858643,
+            "rel_residual": 0.9992691278457642
+          },
+          "native_vs_hook_rel_diff": {
+            "recurrent_state_norm": 0.0,
+            "recurrent_residual": 0.0,
+            "rel_residual": 0.0
+          },
+          "C_input_vs_final_state_max_abs_diff": 0.0,
+          "state_threading_max_abs_diff": 0.0,
+          "core_output_minus_injection_max_abs_diff": [
+            0.3077458143234253
+          ],
+          "grad_norms": {
+            "adapter": 0.4252692257731345,
+            "core_block": 0.5836198770060578
+          }
+        },
+        {
+          "loops": 2,
+          "num_steps_pair": [
+            0,
+            2
+          ],
+          "loss": 3.6442439556121826,
+          "all_finite": true,
+          "trajectory": [
+            {
+              "iteration": 0,
+              "state_norm_mean": 0.61518794298172
+            },
+            {
+              "iteration": 1,
+              "state_norm_mean": 6.813050270080566,
+              "delta_norm_mean": 6.807308673858643,
+              "rel_delta_mean": 0.9992691278457642
+            },
+            {
+              "iteration": 2,
+              "state_norm_mean": 9.84862232208252,
+              "delta_norm_mean": 3.0440762042999268,
+              "rel_delta_mean": 0.3091002106666565,
+              "delta_ratio_to_previous": 0.4471776365878276
+            }
+          ],
+          "final_state_norm_mean": 9.84862232208252,
+          "final_delta_norm_mean": 3.0440762042999268,
+          "native_monitoring": {
+            "last_hidden_token_corr": 0.21940302848815918,
+            "recurrent_state_token_corr": 0.18780916929244995,
+            "last_hidden_norm": 7.9994401931762695,
+            "recurrent_state_norm": 9.84862232208252,
+            "recurrent_diff": 9.967451095581055,
+            "num_steps_no_grad": 0.0,
+            "num_steps_with_grad": 2.0,
+            "recurrent_residual": 3.0440762042999268,
+            "rel_residual": 0.3091002106666565
+          },
+          "native_vs_hook_rel_diff": {
+            "recurrent_state_norm": 0.0,
+            "recurrent_residual": 0.0,
+            "rel_residual": 0.0
+          },
+          "C_input_vs_final_state_max_abs_diff": 0.0,
+          "state_threading_max_abs_diff": 0.0,
+          "core_output_minus_injection_max_abs_diff": [
+            0.3077458143234253,
+            0.3068101406097412
+          ],
+          "grad_norms": {
+            "adapter": 0.4278734040007586,
+            "core_block": 0.582297032164044
+          }
+        },
+        {
+          "loops": 4,
+          "num_steps_pair": [
+            0,
+            4
+          ],
+          "loss": 3.6608197689056396,
+          "all_finite": true,
+          "trajectory": [
+            {
+              "iteration": 0,
+              "state_norm_mean": 0.61518794298172
+            },
+            {
+              "iteration": 1,
+              "state_norm_mean": 6.813050270080566,
+              "delta_norm_mean": 6.807308673858643,
+              "rel_delta_mean": 0.9992691278457642
+            },
+            {
+              "iteration": 2,
+              "state_norm_mean": 9.84862232208252,
+              "delta_norm_mean": 3.0440762042999268,
+              "rel_delta_mean": 0.3091002106666565,
+              "delta_ratio_to_previous": 0.4471776365878276
+            },
+            {
+              "iteration": 3,
+              "state_norm_mean": 11.207711219787598,
+              "delta_norm_mean": 1.3614089488983154,
+              "rel_delta_mean": 0.12147443741559982,
+              "delta_ratio_to_previous": 0.4472322167806606
+            },
+            {
+              "iteration": 4,
+              "state_norm_mean": 11.815730094909668,
+              "delta_norm_mean": 0.6088913679122925,
+              "rel_delta_mean": 0.05153356492519379,
+              "delta_ratio_to_previous": 0.44725089283791025
+            }
+          ],
+          "final_state_norm_mean": 11.815730094909668,
+          "final_delta_norm_mean": 0.6088913679122925,
+          "native_monitoring": {
+            "last_hidden_token_corr": 0.21442687511444092,
+            "recurrent_state_token_corr": 0.1877831518650055,
+            "last_hidden_norm": 7.999449253082275,
+            "recurrent_state_norm": 11.815730094909668,
+            "recurrent_diff": 10.769217491149902,
+            "num_steps_no_grad": 0.0,
+            "num_steps_with_grad": 4.0,
+            "recurrent_residual": 0.6088913679122925,
+            "rel_residual": 0.05153356492519379
+          },
+          "native_vs_hook_rel_diff": {
+            "recurrent_state_norm": 0.0,
+            "recurrent_residual": 0.0,
+            "rel_residual": 0.0
+          },
+          "C_input_vs_final_state_max_abs_diff": 0.0,
+          "state_threading_max_abs_diff": 0.0,
+          "core_output_minus_injection_max_abs_diff": [
+            0.3077458143234253,
+            0.3068101406097412,
+            0.3065187931060791,
+            0.30640649795532227
+          ],
+          "grad_norms": {
+            "adapter": 0.4297268431482737,
+            "core_block": 0.5827493930712325
+          }
+        },
+        {
+          "loops": 8,
+          "num_steps_pair": [
+            0,
+            8
+          ],
+          "loss": 3.6642844676971436,
+          "all_finite": true,
+          "trajectory": [
+            {
+              "iteration": 0,
+              "state_norm_mean": 0.61518794298172
+            },
+            {
+              "iteration": 1,
+              "state_norm_mean": 6.813050270080566,
+              "delta_norm_mean": 6.807308673858643,
+              "rel_delta_mean": 0.9992691278457642
+            },
+            {
+              "iteration": 2,
+              "state_norm_mean": 9.84862232208252,
+              "delta_norm_mean": 3.0440762042999268,
+              "rel_delta_mean": 0.3091002106666565,
+              "delta_ratio_to_previous": 0.4471776365878276
+            },
+            {
+              "iteration": 3,
+              "state_norm_mean": 11.207711219787598,
+              "delta_norm_mean": 1.3614089488983154,
+              "rel_delta_mean": 0.12147443741559982,
+              "delta_ratio_to_previous": 0.4472322167806606
+            },
+            {
+              "iteration": 4,
+              "state_norm_mean": 11.815730094909668,
+              "delta_norm_mean": 0.6088913679122925,
+              "rel_delta_mean": 0.05153356492519379,
+              "delta_ratio_to_previous": 0.44725089283791025
+            },
+            {
+              "iteration": 5,
+              "state_norm_mean": 12.087698936462402,
+              "delta_norm_mean": 0.2723327577114105,
+              "rel_delta_mean": 0.02253025770187378,
+              "delta_ratio_to_previous": 0.44726000738877053
+            },
+            {
+              "iteration": 6,
+              "state_norm_mean": 12.209344863891602,
+              "delta_norm_mean": 0.12180524319410324,
+              "rel_delta_mean": 0.009976604953408241,
+              "delta_ratio_to_previous": 0.4472662202583046
+            },
+            {
+              "iteration": 7,
+              "state_norm_mean": 12.263751983642578,
+              "delta_norm_mean": 0.05447988212108612,
+              "rel_delta_mean": 0.004442438017576933,
+              "delta_ratio_to_previous": 0.4472704186819732
+            },
+            {
+              "iteration": 8,
+              "state_norm_mean": 12.288086891174316,
+              "delta_norm_mean": 0.024367470294237137,
+              "rel_delta_mean": 0.0019830530509352684,
+              "delta_ratio_to_previous": 0.447274651587505
+            }
+          ],
+          "final_state_norm_mean": 12.288086891174316,
+          "final_delta_norm_mean": 0.024367470294237137,
+          "native_monitoring": {
+            "last_hidden_token_corr": 0.21347078680992126,
+            "recurrent_state_token_corr": 0.1877773106098175,
+            "last_hidden_norm": 7.99945068359375,
+            "recurrent_state_norm": 12.288086891174316,
+            "recurrent_diff": 10.974725723266602,
+            "num_steps_no_grad": 0.0,
+            "num_steps_with_grad": 8.0,
+            "recurrent_residual": 0.024367470294237137,
+            "rel_residual": 0.0019830530509352684
+          },
+          "native_vs_hook_rel_diff": {
+            "recurrent_state_norm": 0.0,
+            "recurrent_residual": 0.0,
+            "rel_residual": 0.0
+          },
+          "C_input_vs_final_state_max_abs_diff": 0.0,
+          "state_threading_max_abs_diff": 0.0,
+          "core_output_minus_injection_max_abs_diff": [
+            0.3077458143234253,
+            0.3068101406097412,
+            0.3065187931060791,
+            0.30640649795532227,
+            0.30635929107666016,
+            0.3063392639160156,
+            0.30632996559143066,
+            0.30632591247558594
+          ],
+          "grad_norms": {
+            "adapter": 0.43053951779158833,
+            "core_block": 0.5831324916763215
+          }
+        }
+      ],
+      "prefix_max_abs_diff_vs_longest": {
+        "1": 0.0,
+        "2": 0.0,
+        "4": 0.0,
+        "8": 0.0
+      }
+    }
+  },
+  "injection_decay_reports": {
+    "init": {
+      "state_dim": 64,
+      "input_dim": 64,
+      "native_get_spectral_norm": 0.4472135901451111,
+      "native_get_contraction_factor": 0.44721361994743347,
+      "probe_decay": {
+        "min": 0.4472135901451111,
+        "max": 0.4472135901451111,
+        "mean": 0.44721361994743347,
+        "std": 3.003791704259129e-08
+      },
+      "probe_vs_formula_max_abs_diff": 0.0,
+      "dt": {
+        "min": 0.8047189712524414,
+        "max": 0.8047189712524414,
+        "mean": 0.8047189712524414
+      },
+      "A_log": {
+        "min": 0.0,
+        "max": 0.0
+      },
+      "dt_bias": {
+        "min": 0.2119354009628296,
+        "max": 0.2119354009628296
+      },
+      "B_minus_identity_max_abs": 0.0,
+      "B_spectral_norm": 1.0
+    },
+    "after_adamw_steps": {
+      "state_dim": 64,
+      "input_dim": 64,
+      "native_get_spectral_norm": 0.4483002722263336,
+      "native_get_contraction_factor": 0.4473196864128113,
+      "probe_decay": {
+        "min": 0.4468480348587036,
+        "max": 0.4483002722263336,
+        "mean": 0.4473196864128113,
+        "std": 0.0004522307135630399
+      },
+      "probe_vs_formula_max_abs_diff": 0.0,
+      "dt": {
+        "min": 0.8030599355697632,
+        "max": 0.8063648343086243,
+        "mean": 0.8043774962425232
+      },
+      "A_log": {
+        "min": -0.002999842632561922,
+        "max": 0.003004510886967182
+      },
+      "dt_bias": {
+        "min": 0.20893216133117676,
+        "max": 0.21491080522537231
+      },
+      "B_minus_identity_max_abs": 0.0030049504712224007,
+      "B_spectral_norm": 1.0316189527511597
+    },
+    "official_parcae-small-140m_injection": {
+      "state_dim": 768,
+      "input_dim": 768,
+      "native_get_spectral_norm": 0.4472135901451111,
+      "native_get_contraction_factor": 0.4472135603427887,
+      "probe_decay": {
+        "min": 0.4472135901451111,
+        "max": 0.4472135901451111,
+        "mean": 0.4472135603427887,
+        "std": 2.9821745073377315e-08
+      },
+      "probe_vs_formula_max_abs_diff": 0.0,
+      "dt": {
+        "min": 0.8047189712524414,
+        "max": 0.8047189712524414,
+        "mean": 0.8047189712524414
+      },
+      "A_log": {
+        "min": 0.0,
+        "max": 0.0
+      },
+      "dt_bias": {
+        "min": 0.2119354009628296,
+        "max": 0.2119354009628296
+      },
+      "B_minus_identity_max_abs": 0.0,
+      "B_spectral_norm": 1.0
+    }
+  },
+  "run_meta": {
+    "finished_utc": "2026-10-22T11:32:22Z"
+  }
+}

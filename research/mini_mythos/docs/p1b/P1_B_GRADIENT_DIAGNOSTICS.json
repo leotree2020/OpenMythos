@@ -1,0 +1,980 @@
+{
+  "schema": "P1_B_GRADIENT_DIAGNOSTICS_V1",
+  "checks": {
+    "check_3_backprop_reach": {
+      "items": [
+        {
+          "name": "init: injection parameters A_log, dt_bias, B receive non-zero finite gradients",
+          "required": true,
+          "status": "PASS",
+          "criterion": "3 parameters, each grad norm > 0 and finite",
+          "observed": {
+            "transformer.adapter.A_log": 0.04519423842430115,
+            "transformer.adapter.dt_bias": 0.017036737874150276,
+            "transformer.adapter.B": 0.591317892074585
+          }
+        },
+        {
+          "name": "init: gradients reach the shared recurrent core",
+          "required": true,
+          "status": "PASS",
+          "criterion": "every core attn.c_proj / mlp.proj weight has a non-zero finite gradient (other core weights sit behind these zero-initialised projections)",
+          "observed": {
+            "transformer.core_block.0.attn.c_proj.weight": 0.4944508671760559,
+            "transformer.core_block.0.mlp.proj.weight": 0.36136725544929504,
+            "transformer.core_block.1.attn.c_proj.weight": 0.28157666325569153,
+            "transformer.core_block.1.mlp.proj.weight": 0.3661605715751648
+          }
+        },
+        {
+          "name": "init: gradient arrives at every with-grad loop iteration",
+          "required": true,
+          "status": "PASS",
+          "criterion": "grad hooks fire for iterations [4, 5, 6, 7] only, each norm > 0 and finite",
+          "observed": {
+            "iteration_to_state_grad_norm": {
+              "4": 0.004740195814520121,
+              "5": 0.010599398985505104,
+              "6": 0.023700978606939316,
+              "7": 0.052997004240751266
+            }
+          }
+        },
+        {
+          "name": "init: parameters with all-zero or missing gradient (informational)",
+          "required": false,
+          "status": "PASS",
+          "criterion": "at init scaled-zero sets attn.c_proj/mlp.proj to 0, so weights upstream of them get exactly zero gradient",
+          "observed": [
+            "transformer.prelude.0.norm_1.weight",
+            "transformer.prelude.0.attn.c_q.weight",
+            "transformer.prelude.0.attn.c_k.weight",
+            "transformer.prelude.0.attn.c_v.weight",
+            "transformer.prelude.0.norm_2.weight",
+            "transformer.prelude.0.mlp.fc.weight",
+            "transformer.core_block.0.norm_1.weight",
+            "transformer.core_block.0.attn.c_q.weight",
+            "transformer.core_block.0.attn.c_k.weight",
+            "transformer.core_block.0.attn.c_v.weight",
+            "transformer.core_block.0.attn.ve_gate.weight",
+            "transformer.core_block.0.norm_2.weight",
+            "transformer.core_block.0.mlp.fc.weight",
+            "transformer.core_block.1.norm_1.weight",
+            "transformer.core_block.1.attn.c_q.weight",
+            "transformer.core_block.1.attn.c_k.weight",
+            "transformer.core_block.1.attn.c_v.weight",
+            "transformer.core_block.1.norm_2.weight",
+            "transformer.core_block.1.mlp.fc.weight",
+            "transformer.coda.0.norm_1.weight",
+            "transformer.coda.0.attn.c_q.weight",
+            "transformer.coda.0.attn.c_k.weight",
+            "transformer.coda.0.attn.c_v.weight",
+            "transformer.coda.0.attn.ve_gate.weight",
+            "transformer.coda.0.norm_2.weight",
+            "transformer.coda.0.mlp.fc.weight",
+            "value_embeds.1.weight",
+            "value_embeds.3.weight"
+          ]
+        },
+        {
+          "name": "after_adamw_steps: injection parameters A_log, dt_bias, B receive non-zero finite gradients",
+          "required": true,
+          "status": "PASS",
+          "criterion": "3 parameters, each grad norm > 0 and finite",
+          "observed": {
+            "transformer.adapter.A_log": 0.03950200229883194,
+            "transformer.adapter.dt_bias": 0.018354950472712517,
+            "transformer.adapter.B": 0.41148442029953003
+          }
+        },
+        {
+          "name": "after_adamw_steps: gradients reach the shared recurrent core",
+          "required": true,
+          "status": "PASS",
+          "criterion": "every shared-core parameter has a non-zero finite gradient",
+          "observed": {
+            "transformer.core_block.0.norm_1.weight": 0.003456425853073597,
+            "transformer.core_block.0.attn.c_q.weight": 0.01462308969348669,
+            "transformer.core_block.0.attn.c_k.weight": 0.014932154677808285,
+            "transformer.core_block.0.attn.c_v.weight": 0.012382524088025093,
+            "transformer.core_block.0.attn.c_proj.weight": 0.36813995242118835,
+            "transformer.core_block.0.attn.ve_gate.weight": 0.015912873670458794,
+            "transformer.core_block.0.norm_2.weight": 0.010497423820197582,
+            "transformer.core_block.0.mlp.fc.weight": 0.02451673522591591,
+            "transformer.core_block.0.mlp.proj.weight": 0.25644955039024353,
+            "transformer.core_block.1.norm_1.weight": 0.0023693647235631943,
+            "transformer.core_block.1.attn.c_q.weight": 0.0070319827646017075,
+            "transformer.core_block.1.attn.c_k.weight": 0.007649398874491453,
+            "transformer.core_block.1.attn.c_v.weight": 0.012970509938895702,
+            "transformer.core_block.1.attn.c_proj.weight": 0.19788818061351776,
+            "transformer.core_block.1.norm_2.weight": 0.01104007102549076,
+            "transformer.core_block.1.mlp.fc.weight": 0.02526279352605343,
+            "transformer.core_block.1.mlp.proj.weight": 0.26471567153930664
+          }
+        },
+        {
+          "name": "after_adamw_steps: gradient arrives at every with-grad loop iteration",
+          "required": true,
+          "status": "PASS",
+          "criterion": "grad hooks fire for iterations [4, 5, 6, 7] only, each norm > 0 and finite",
+          "observed": {
+            "iteration_to_state_grad_norm": {
+              "4": 0.003683541901409626,
+              "5": 0.008270234800875187,
+              "6": 0.018594060093164444,
+              "7": 0.04186287522315979
+            }
+          }
+        },
+        {
+          "name": "after_adamw_steps: every parameter has a finite gradient",
+          "required": true,
+          "status": "PASS",
+          "criterion": "no missing or non-finite gradient",
+          "observed": {
+            "missing_or_nonfinite": []
+          }
+        },
+        {
+          "name": "after_adamw_steps: parameters with all-zero or missing gradient (informational)",
+          "required": false,
+          "status": "PASS",
+          "criterion": "at init scaled-zero sets attn.c_proj/mlp.proj to 0, so weights upstream of them get exactly zero gradient",
+          "observed": []
+        }
+      ],
+      "status": "PASS"
+    }
+  },
+  "per_parameter_gradients": {
+    "init": {
+      "num_steps_pair": [
+        4,
+        4
+      ],
+      "parameters": [
+        {
+          "name": "transformer.wte.weight",
+          "group": "wte",
+          "grad_norm": 1.3792529106140137,
+          "grad_max_abs": 0.09044743329286575,
+          "finite": true,
+          "nonzero": 16384,
+          "numel": 16384
+        },
+        {
+          "name": "transformer.prelude.0.norm_1.weight",
+          "group": "prelude",
+          "grad_norm": 0.0,
+          "grad_max_abs": 0.0,
+          "finite": true,
+          "nonzero": 0,
+          "numel": 64
+        },
+        {
+          "name": "transformer.prelude.0.attn.c_q.weight",
+          "group": "prelude",
+          "grad_norm": 0.0,
+          "grad_max_abs": 0.0,
+          "finite": true,
+          "nonzero": 0,
+          "numel": 4096
+        },
+        {
+          "name": "transformer.prelude.0.attn.c_k.weight",
+          "group": "prelude",
+          "grad_norm": 0.0,
+          "grad_max_abs": 0.0,
+          "finite": true,
+          "nonzero": 0,
+          "numel": 4096
+        },
+        {
+          "name": "transformer.prelude.0.attn.c_v.weight",
+          "group": "prelude",
+          "grad_norm": 0.0,
+          "grad_max_abs": 0.0,
+          "finite": true,
+          "nonzero": 0,
+          "numel": 4096
+        },
+        {
+          "name": "transformer.prelude.0.attn.c_proj.weight",
+          "group": "prelude",
+          "grad_norm": 2.743978261947632,
+          "grad_max_abs": 0.1508336216211319,
+          "finite": true,
+          "nonzero": 4096,
+          "numel": 4096
+        },
+        {
+          "name": "transformer.prelude.0.norm_2.weight",
+          "group": "prelude",
+          "grad_norm": 0.0,
+          "grad_max_abs": 0.0,
+          "finite": true,
+          "nonzero": 0,
+          "numel": 64
+        },
+        {
+          "name": "transformer.prelude.0.mlp.fc.weight",
+          "group": "prelude",
+          "grad_norm": 0.0,
+          "grad_max_abs": 0.0,
+          "finite": true,
+          "nonzero": 0,
+          "numel": 16384
+        },
+        {
+          "name": "transformer.prelude.0.mlp.proj.weight",
+          "group": "prelude",
+          "grad_norm": 3.7489030361175537,
+          "grad_max_abs": 0.15907707810401917,
+          "finite": true,
+          "nonzero": 16384,
+          "numel": 16384
+        },
+        {
+          "name": "transformer.adapter.A_log",
+          "group": "adapter",
+          "grad_norm": 0.04519423842430115,
+          "grad_max_abs": 0.012020520865917206,
+          "finite": true,
+          "nonzero": 64,
+          "numel": 64
+        },
+        {
+          "name": "transformer.adapter.dt_bias",
+          "group": "adapter",
+          "grad_norm": 0.017036737874150276,
+          "grad_max_abs": 0.004534598905593157,
+          "finite": true,
+          "nonzero": 64,
+          "numel": 64
+        },
+        {
+          "name": "transformer.adapter.B",
+          "group": "adapter",
+          "grad_norm": 0.591317892074585,
+          "grad_max_abs": 0.03293847292661667,
+          "finite": true,
+          "nonzero": 4096,
+          "numel": 4096
+        },
+        {
+          "name": "transformer.core_block.0.norm_1.weight",
+          "group": "core_block",
+          "grad_norm": 0.0,
+          "grad_max_abs": 0.0,
+          "finite": true,
+          "nonzero": 0,
+          "numel": 64
+        },
+        {
+          "name": "transformer.core_block.0.attn.c_q.weight",
+          "group": "core_block",
+          "grad_norm": 0.0,
+          "grad_max_abs": 0.0,
+          "finite": true,
+          "nonzero": 0,
+          "numel": 4096
+        },
+        {
+          "name": "transformer.core_block.0.attn.c_k.weight",
+          "group": "core_block",
+          "grad_norm": 0.0,
+          "grad_max_abs": 0.0,
+          "finite": true,
+          "nonzero": 0,
+          "numel": 4096
+        },
+        {
+          "name": "transformer.core_block.0.attn.c_v.weight",
+          "group": "core_block",
+          "grad_norm": 0.0,
+          "grad_max_abs": 0.0,
+          "finite": true,
+          "nonzero": 0,
+          "numel": 4096
+        },
+        {
+          "name": "transformer.core_block.0.attn.c_proj.weight",
+          "group": "core_block",
+          "grad_norm": 0.4944508671760559,
+          "grad_max_abs": 0.03652099147439003,
+          "finite": true,
+          "nonzero": 4096,
+          "numel": 4096
+        },
+        {
+          "name": "transformer.core_block.0.attn.ve_gate.weight",
+          "group": "core_block",
+          "grad_norm": 0.0,
+          "grad_max_abs": 0.0,
+          "finite": true,
+          "nonzero": 0,
+          "numel": 128
+        },
+        {
+          "name": "transformer.core_block.0.norm_2.weight",
+          "group": "core_block",
+          "grad_norm": 0.0,
+          "grad_max_abs": 0.0,
+          "finite": true,
+          "nonzero": 0,
+          "numel": 64
+        },
+        {
+          "name": "transformer.core_block.0.mlp.fc.weight",
+          "group": "core_block",
+          "grad_norm": 0.0,
+          "grad_max_abs": 0.0,
+          "finite": true,
+          "nonzero": 0,
+          "numel": 16384
+        },
+        {
+          "name": "transformer.core_block.0.mlp.proj.weight",
+          "group": "core_block",
+          "grad_norm": 0.36136725544929504,
+          "grad_max_abs": 0.015401667915284634,
+          "finite": true,
+          "nonzero": 16384,
+          "numel": 16384
+        },
+        {
+          "name": "transformer.core_block.1.norm_1.weight",
+          "group": "core_block",
+          "grad_norm": 0.0,
+          "grad_max_abs": 0.0,
+          "finite": true,
+          "nonzero": 0,
+          "numel": 64
+        },
+        {
+          "name": "transformer.core_block.1.attn.c_q.weight",
+          "group": "core_block",
+          "grad_norm": 0.0,
+          "grad_max_abs": 0.0,
+          "finite": true,
+          "nonzero": 0,
+          "numel": 4096
+        },
+        {
+          "name": "transformer.core_block.1.attn.c_k.weight",
+          "group": "core_block",
+          "grad_norm": 0.0,
+          "grad_max_abs": 0.0,
+          "finite": true,
+          "nonzero": 0,
+          "numel": 4096
+        },
+        {
+          "name": "transformer.core_block.1.attn.c_v.weight",
+          "group": "core_block",
+          "grad_norm": 0.0,
+          "grad_max_abs": 0.0,
+          "finite": true,
+          "nonzero": 0,
+          "numel": 4096
+        },
+        {
+          "name": "transformer.core_block.1.attn.c_proj.weight",
+          "group": "core_block",
+          "grad_norm": 0.28157666325569153,
+          "grad_max_abs": 0.01818140223622322,
+          "finite": true,
+          "nonzero": 4096,
+          "numel": 4096
+        },
+        {
+          "name": "transformer.core_block.1.norm_2.weight",
+          "group": "core_block",
+          "grad_norm": 0.0,
+          "grad_max_abs": 0.0,
+          "finite": true,
+          "nonzero": 0,
+          "numel": 64
+        },
+        {
+          "name": "transformer.core_block.1.mlp.fc.weight",
+          "group": "core_block",
+          "grad_norm": 0.0,
+          "grad_max_abs": 0.0,
+          "finite": true,
+          "nonzero": 0,
+          "numel": 16384
+        },
+        {
+          "name": "transformer.core_block.1.mlp.proj.weight",
+          "group": "core_block",
+          "grad_norm": 0.3661605715751648,
+          "grad_max_abs": 0.0161853339523077,
+          "finite": true,
+          "nonzero": 16384,
+          "numel": 16384
+        },
+        {
+          "name": "transformer.C.weight",
+          "group": "C",
+          "grad_norm": 0.9723554253578186,
+          "grad_max_abs": 0.06571643799543381,
+          "finite": true,
+          "nonzero": 4096,
+          "numel": 4096
+        },
+        {
+          "name": "transformer.coda.0.norm_1.weight",
+          "group": "coda",
+          "grad_norm": 0.0,
+          "grad_max_abs": 0.0,
+          "finite": true,
+          "nonzero": 0,
+          "numel": 64
+        },
+        {
+          "name": "transformer.coda.0.attn.c_q.weight",
+          "group": "coda",
+          "grad_norm": 0.0,
+          "grad_max_abs": 0.0,
+          "finite": true,
+          "nonzero": 0,
+          "numel": 4096
+        },
+        {
+          "name": "transformer.coda.0.attn.c_k.weight",
+          "group": "coda",
+          "grad_norm": 0.0,
+          "grad_max_abs": 0.0,
+          "finite": true,
+          "nonzero": 0,
+          "numel": 4096
+        },
+        {
+          "name": "transformer.coda.0.attn.c_v.weight",
+          "group": "coda",
+          "grad_norm": 0.0,
+          "grad_max_abs": 0.0,
+          "finite": true,
+          "nonzero": 0,
+          "numel": 4096
+        },
+        {
+          "name": "transformer.coda.0.attn.c_proj.weight",
+          "group": "coda",
+          "grad_norm": 0.4763348698616028,
+          "grad_max_abs": 0.02706892602145672,
+          "finite": true,
+          "nonzero": 4096,
+          "numel": 4096
+        },
+        {
+          "name": "transformer.coda.0.attn.ve_gate.weight",
+          "group": "coda",
+          "grad_norm": 0.0,
+          "grad_max_abs": 0.0,
+          "finite": true,
+          "nonzero": 0,
+          "numel": 128
+        },
+        {
+          "name": "transformer.coda.0.norm_2.weight",
+          "group": "coda",
+          "grad_norm": 0.0,
+          "grad_max_abs": 0.0,
+          "finite": true,
+          "nonzero": 0,
+          "numel": 64
+        },
+        {
+          "name": "transformer.coda.0.mlp.fc.weight",
+          "group": "coda",
+          "grad_norm": 0.0,
+          "grad_max_abs": 0.0,
+          "finite": true,
+          "nonzero": 0,
+          "numel": 16384
+        },
+        {
+          "name": "transformer.coda.0.mlp.proj.weight",
+          "group": "coda",
+          "grad_norm": 0.3343023359775543,
+          "grad_max_abs": 0.015226110816001892,
+          "finite": true,
+          "nonzero": 16384,
+          "numel": 16384
+        },
+        {
+          "name": "transformer.ln_f.weight",
+          "group": "ln_f",
+          "grad_norm": 0.08879893273115158,
+          "grad_max_abs": 0.02461256831884384,
+          "finite": true,
+          "nonzero": 64,
+          "numel": 64
+        },
+        {
+          "name": "transformer.ln_prelude.weight",
+          "group": "ln_prelude",
+          "grad_norm": 0.0699954554438591,
+          "grad_max_abs": 0.018621766939759254,
+          "finite": true,
+          "nonzero": 64,
+          "numel": 64
+        },
+        {
+          "name": "value_embeds.1.weight",
+          "group": "value_embeds.1",
+          "grad_norm": 0.0,
+          "grad_max_abs": 0.0,
+          "finite": true,
+          "nonzero": 0,
+          "numel": 16384
+        },
+        {
+          "name": "value_embeds.3.weight",
+          "group": "value_embeds.3",
+          "grad_norm": 0.0,
+          "grad_max_abs": 0.0,
+          "finite": true,
+          "nonzero": 0,
+          "numel": 16384
+        }
+      ],
+      "group_grad_norms": {
+        "wte": 1.3792529106140137,
+        "prelude": 4.6458250802470555,
+        "adapter": 0.5932871304113005,
+        "core_block": 0.7670899131318115,
+        "C": 0.9723554253578186,
+        "coda": 0.5819389659458453,
+        "ln_f": 0.08879893273115158,
+        "ln_prelude": 0.0699954554438591,
+        "value_embeds.1": 0.0,
+        "value_embeds.3": 0.0
+      },
+      "iteration_to_state_grad_norm": {
+        "4": 0.004740195814520121,
+        "5": 0.010599398985505104,
+        "6": 0.023700978606939316,
+        "7": 0.052997004240751266
+      }
+    },
+    "after_adamw_steps": {
+      "num_steps_pair": [
+        4,
+        4
+      ],
+      "parameters": [
+        {
+          "name": "transformer.wte.weight",
+          "group": "wte",
+          "grad_norm": 1.102554440498352,
+          "grad_max_abs": 0.06837582588195801,
+          "finite": true,
+          "nonzero": 16384,
+          "numel": 16384
+        },
+        {
+          "name": "transformer.prelude.0.norm_1.weight",
+          "group": "prelude",
+          "grad_norm": 0.02410176210105419,
+          "grad_max_abs": 0.005158291198313236,
+          "finite": true,
+          "nonzero": 64,
+          "numel": 64
+        },
+        {
+          "name": "transformer.prelude.0.attn.c_q.weight",
+          "group": "prelude",
+          "grad_norm": 0.06739966571331024,
+          "grad_max_abs": 0.003988051321357489,
+          "finite": true,
+          "nonzero": 4096,
+          "numel": 4096
+        },
+        {
+          "name": "transformer.prelude.0.attn.c_k.weight",
+          "group": "prelude",
+          "grad_norm": 0.07042751461267471,
+          "grad_max_abs": 0.006485041696578264,
+          "finite": true,
+          "nonzero": 4096,
+          "numel": 4096
+        },
+        {
+          "name": "transformer.prelude.0.attn.c_v.weight",
+          "group": "prelude",
+          "grad_norm": 0.0979897528886795,
+          "grad_max_abs": 0.005804241634905338,
+          "finite": true,
+          "nonzero": 4096,
+          "numel": 4096
+        },
+        {
+          "name": "transformer.prelude.0.attn.c_proj.weight",
+          "group": "prelude",
+          "grad_norm": 1.7114176750183105,
+          "grad_max_abs": 0.10520022362470627,
+          "finite": true,
+          "nonzero": 4096,
+          "numel": 4096
+        },
+        {
+          "name": "transformer.prelude.0.norm_2.weight",
+          "group": "prelude",
+          "grad_norm": 0.12995459139347076,
+          "grad_max_abs": 0.022510875016450882,
+          "finite": true,
+          "nonzero": 64,
+          "numel": 64
+        },
+        {
+          "name": "transformer.prelude.0.mlp.fc.weight",
+          "group": "prelude",
+          "grad_norm": 0.23823262751102448,
+          "grad_max_abs": 0.009956604801118374,
+          "finite": true,
+          "nonzero": 16384,
+          "numel": 16384
+        },
+        {
+          "name": "transformer.prelude.0.mlp.proj.weight",
+          "group": "prelude",
+          "grad_norm": 2.4943041801452637,
+          "grad_max_abs": 0.1253773719072342,
+          "finite": true,
+          "nonzero": 16384,
+          "numel": 16384
+        },
+        {
+          "name": "transformer.adapter.A_log",
+          "group": "adapter",
+          "grad_norm": 0.03950200229883194,
+          "grad_max_abs": 0.012896795757114887,
+          "finite": true,
+          "nonzero": 64,
+          "numel": 64
+        },
+        {
+          "name": "transformer.adapter.dt_bias",
+          "group": "adapter",
+          "grad_norm": 0.018354950472712517,
+          "grad_max_abs": 0.004911782685667276,
+          "finite": true,
+          "nonzero": 64,
+          "numel": 64
+        },
+        {
+          "name": "transformer.adapter.B",
+          "group": "adapter",
+          "grad_norm": 0.41148442029953003,
+          "grad_max_abs": 0.026550762355327606,
+          "finite": true,
+          "nonzero": 4096,
+          "numel": 4096
+        },
+        {
+          "name": "transformer.core_block.0.norm_1.weight",
+          "group": "core_block",
+          "grad_norm": 0.003456425853073597,
+          "grad_max_abs": 0.0016671812627464533,
+          "finite": true,
+          "nonzero": 64,
+          "numel": 64
+        },
+        {
+          "name": "transformer.core_block.0.attn.c_q.weight",
+          "group": "core_block",
+          "grad_norm": 0.01462308969348669,
+          "grad_max_abs": 0.0011145283933728933,
+          "finite": true,
+          "nonzero": 4096,
+          "numel": 4096
+        },
+        {
+          "name": "transformer.core_block.0.attn.c_k.weight",
+          "group": "core_block",
+          "grad_norm": 0.014932154677808285,
+          "grad_max_abs": 0.0010198538657277822,
+          "finite": true,
+          "nonzero": 4096,
+          "numel": 4096
+        },
+        {
+          "name": "transformer.core_block.0.attn.c_v.weight",
+          "group": "core_block",
+          "grad_norm": 0.012382524088025093,
+          "grad_max_abs": 0.0008446440333500504,
+          "finite": true,
+          "nonzero": 4096,
+          "numel": 4096
+        },
+        {
+          "name": "transformer.core_block.0.attn.c_proj.weight",
+          "group": "core_block",
+          "grad_norm": 0.36813995242118835,
+          "grad_max_abs": 0.02377956733107567,
+          "finite": true,
+          "nonzero": 4096,
+          "numel": 4096
+        },
+        {
+          "name": "transformer.core_block.0.attn.ve_gate.weight",
+          "group": "core_block",
+          "grad_norm": 0.015912873670458794,
+          "grad_max_abs": 0.0035239863209426403,
+          "finite": true,
+          "nonzero": 128,
+          "numel": 128
+        },
+        {
+          "name": "transformer.core_block.0.norm_2.weight",
+          "group": "core_block",
+          "grad_norm": 0.010497423820197582,
+          "grad_max_abs": 0.0021366903092712164,
+          "finite": true,
+          "nonzero": 64,
+          "numel": 64
+        },
+        {
+          "name": "transformer.core_block.0.mlp.fc.weight",
+          "group": "core_block",
+          "grad_norm": 0.02451673522591591,
+          "grad_max_abs": 0.0012188076507300138,
+          "finite": true,
+          "nonzero": 16384,
+          "numel": 16384
+        },
+        {
+          "name": "transformer.core_block.0.mlp.proj.weight",
+          "group": "core_block",
+          "grad_norm": 0.25644955039024353,
+          "grad_max_abs": 0.011730510741472244,
+          "finite": true,
+          "nonzero": 16384,
+          "numel": 16384
+        },
+        {
+          "name": "transformer.core_block.1.norm_1.weight",
+          "group": "core_block",
+          "grad_norm": 0.0023693647235631943,
+          "grad_max_abs": 0.0005655401619151235,
+          "finite": true,
+          "nonzero": 64,
+          "numel": 64
+        },
+        {
+          "name": "transformer.core_block.1.attn.c_q.weight",
+          "group": "core_block",
+          "grad_norm": 0.0070319827646017075,
+          "grad_max_abs": 0.0006289767334237695,
+          "finite": true,
+          "nonzero": 4096,
+          "numel": 4096
+        },
+        {
+          "name": "transformer.core_block.1.attn.c_k.weight",
+          "group": "core_block",
+          "grad_norm": 0.007649398874491453,
+          "grad_max_abs": 0.0005666947108693421,
+          "finite": true,
+          "nonzero": 4096,
+          "numel": 4096
+        },
+        {
+          "name": "transformer.core_block.1.attn.c_v.weight",
+          "group": "core_block",
+          "grad_norm": 0.012970509938895702,
+          "grad_max_abs": 0.0007599611417390406,
+          "finite": true,
+          "nonzero": 4096,
+          "numel": 4096
+        },
+        {
+          "name": "transformer.core_block.1.attn.c_proj.weight",
+          "group": "core_block",
+          "grad_norm": 0.19788818061351776,
+          "grad_max_abs": 0.014234739355742931,
+          "finite": true,
+          "nonzero": 4096,
+          "numel": 4096
+        },
+        {
+          "name": "transformer.core_block.1.norm_2.weight",
+          "group": "core_block",
+          "grad_norm": 0.01104007102549076,
+          "grad_max_abs": 0.00315484800375998,
+          "finite": true,
+          "nonzero": 64,
+          "numel": 64
+        },
+        {
+          "name": "transformer.core_block.1.mlp.fc.weight",
+          "group": "core_block",
+          "grad_norm": 0.02526279352605343,
+          "grad_max_abs": 0.0011612315429374576,
+          "finite": true,
+          "nonzero": 16384,
+          "numel": 16384
+        },
+        {
+          "name": "transformer.core_block.1.mlp.proj.weight",
+          "group": "core_block",
+          "grad_norm": 0.26471567153930664,
+          "grad_max_abs": 0.016259843483567238,
+          "finite": true,
+          "nonzero": 16384,
+          "numel": 16384
+        },
+        {
+          "name": "transformer.C.weight",
+          "group": "C",
+          "grad_norm": 0.7037695646286011,
+          "grad_max_abs": 0.04425188899040222,
+          "finite": true,
+          "nonzero": 4096,
+          "numel": 4096
+        },
+        {
+          "name": "transformer.coda.0.norm_1.weight",
+          "group": "coda",
+          "grad_norm": 0.0025036330334842205,
+          "grad_max_abs": 0.0008535466622561216,
+          "finite": true,
+          "nonzero": 64,
+          "numel": 64
+        },
+        {
+          "name": "transformer.coda.0.attn.c_q.weight",
+          "group": "coda",
+          "grad_norm": 0.014273079112172127,
+          "grad_max_abs": 0.0012183142825961113,
+          "finite": true,
+          "nonzero": 4096,
+          "numel": 4096
+        },
+        {
+          "name": "transformer.coda.0.attn.c_k.weight",
+          "group": "coda",
+          "grad_norm": 0.01362138893455267,
+          "grad_max_abs": 0.0012095539132133126,
+          "finite": true,
+          "nonzero": 4096,
+          "numel": 4096
+        },
+        {
+          "name": "transformer.coda.0.attn.c_v.weight",
+          "group": "coda",
+          "grad_norm": 0.011127345263957977,
+          "grad_max_abs": 0.000638855155557394,
+          "finite": true,
+          "nonzero": 4096,
+          "numel": 4096
+        },
+        {
+          "name": "transformer.coda.0.attn.c_proj.weight",
+          "group": "coda",
+          "grad_norm": 0.31274911761283875,
+          "grad_max_abs": 0.019566670060157776,
+          "finite": true,
+          "nonzero": 4096,
+          "numel": 4096
+        },
+        {
+          "name": "transformer.coda.0.attn.ve_gate.weight",
+          "group": "coda",
+          "grad_norm": 0.0143623361364007,
+          "grad_max_abs": 0.003768202615901828,
+          "finite": true,
+          "nonzero": 128,
+          "numel": 128
+        },
+        {
+          "name": "transformer.coda.0.norm_2.weight",
+          "group": "coda",
+          "grad_norm": 0.010153621435165405,
+          "grad_max_abs": 0.001965506235137582,
+          "finite": true,
+          "nonzero": 64,
+          "numel": 64
+        },
+        {
+          "name": "transformer.coda.0.mlp.fc.weight",
+          "group": "coda",
+          "grad_norm": 0.02403867430984974,
+          "grad_max_abs": 0.0012483512982726097,
+          "finite": true,
+          "nonzero": 16384,
+          "numel": 16384
+        },
+        {
+          "name": "transformer.coda.0.mlp.proj.weight",
+          "group": "coda",
+          "grad_norm": 0.23197174072265625,
+          "grad_max_abs": 0.011312396265566349,
+          "finite": true,
+          "nonzero": 16384,
+          "numel": 16384
+        },
+        {
+          "name": "transformer.ln_f.weight",
+          "group": "ln_f",
+          "grad_norm": 0.21768614649772644,
+          "grad_max_abs": 0.05122801288962364,
+          "finite": true,
+          "nonzero": 64,
+          "numel": 64
+        },
+        {
+          "name": "transformer.ln_prelude.weight",
+          "group": "ln_prelude",
+          "grad_norm": 0.061766188591718674,
+          "grad_max_abs": 0.019934941083192825,
+          "finite": true,
+          "nonzero": 64,
+          "numel": 64
+        },
+        {
+          "name": "value_embeds.1.weight",
+          "group": "value_embeds.1",
+          "grad_norm": 0.0015139117604121566,
+          "grad_max_abs": 0.00018771571922115982,
+          "finite": true,
+          "nonzero": 3648,
+          "numel": 16384
+        },
+        {
+          "name": "value_embeds.3.weight",
+          "group": "value_embeds.3",
+          "grad_norm": 0.0013107330305501819,
+          "grad_max_abs": 0.0001802118931664154,
+          "finite": true,
+          "nonzero": 3648,
+          "numel": 16384
+        }
+      ],
+      "group_grad_norms": {
+        "wte": 1.102554440498352,
+        "prelude": 3.040367151916132,
+        "adapter": 0.4137834464326877,
+        "core_block": 0.5595855437692172,
+        "C": 0.7037695646286011,
+        "coda": 0.39118982433911226,
+        "ln_f": 0.21768614649772644,
+        "ln_prelude": 0.061766188591718674,
+        "value_embeds.1": 0.0015139117604121566,
+        "value_embeds.3": 0.0013107330305501819
+      },
+      "iteration_to_state_grad_norm": {
+        "4": 0.003683541901409626,
+        "5": 0.008270234800875187,
+        "6": 0.018594060093164444,
+        "7": 0.04186287522315979
+      }
+    }
+  },
+  "run_meta": {
+    "finished_utc": "2026-10-22T11:32:22Z"
+  }
+}

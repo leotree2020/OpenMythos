@@ -1,0 +1,1716 @@
+{
+  "schema": "P1_B_FORWARD_BACKWARD_V1",
+  "model_config": {
+    "base_config": "parcae-small-140m",
+    "size_overrides": {
+      "block_size": {
+        "official": 2048,
+        "p1b": 32
+      },
+      "vocab_size": {
+        "official": 32768,
+        "p1b": 256
+      },
+      "n_embd": {
+        "official": 768,
+        "p1b": 64
+      },
+      "num_attention_heads": {
+        "official": 6,
+        "p1b": 4
+      },
+      "num_key_value_heads": {
+        "official": 6,
+        "p1b": 4
+      },
+      "intermediate_size": {
+        "official": 3072,
+        "p1b": 256
+      },
+      "recurrent_embedding_dimension": {
+        "official": 768,
+        "p1b": 64
+      },
+      "recurrent_intermediation_embedding_dimension": {
+        "official": 3072,
+        "p1b": 256
+      },
+      "n_layers_in_prelude": {
+        "official": 2,
+        "p1b": 1
+      },
+      "n_layers_in_recurrent_block": {
+        "official": 2,
+        "p1b": 2
+      },
+      "n_layers_in_coda": {
+        "official": 2,
+        "p1b": 1
+      }
+    },
+    "unchanged_mechanism_fields": {
+      "block_class_name": "TransformerPreNormBlock",
+      "norm_class_name": "RMSNorm",
+      "norm_eps": 1e-05,
+      "mlp_class_name": "BaseMLP",
+      "nonlin_name": "ReLU2",
+      "qk_norm": true,
+      "logit_softcap": null,
+      "prelude_norm": true,
+      "bias": false,
+      "tie_embeddings": true,
+      "padding_multiple": 64,
+      "init_strategy": "scaled-zero",
+      "init_orthogonal": true,
+      "injection_type": "diagonal",
+      "state_init": "like-init",
+      "mean_recurrence": 8,
+      "mean_backprop_depth": 4,
+      "sampling_scheme": "poisson-truncated-full",
+      "recurrent_iteration_method": "per-sequence",
+      "attn_impl": "flash",
+      "use_fused_head": "pytorch",
+      "activation_checkpoint_impl": "per-iteration",
+      "lockstep_n": false,
+      "lockstep_k": false,
+      "curriculum_target": "forward"
+    },
+    "mechanism_fields_equal_official": true,
+    "padded_vocab_size": 256,
+    "init": "ParcaeInit(scaled-zero) 64x256x16-18",
+    "recurrent_block_init": "ParcaeInit(scaled-zero) 64x256x16-18",
+    "logit_scale": 1.0,
+    "embedding_scale": 1.0
+  },
+  "batch": {
+    "batch_size": 4,
+    "seq_len": 16,
+    "data": "uniform random token ids, torch.Generator seed 20261023; labels = next token",
+    "mixed_depth_model_step": 0,
+    "mixed_step_per_sample_n": [
+      2,
+      5,
+      0,
+      3
+    ],
+    "mixed_step_per_sample_k": [
+      4,
+      4,
+      3,
+      4
+    ]
+  },
+  "parameter_inventory": {
+    "total_parameters": 254976,
+    "parameters_by_group": {
+      "wte": 16384,
+      "prelude": 49280,
+      "adapter": 4224,
+      "core_block": 98688,
+      "C": 4096,
+      "coda": 49408,
+      "ln_f": 64,
+      "ln_prelude": 64,
+      "value_embeds.1": 16384,
+      "value_embeds.3": 16384
+    },
+    "tied_lm_head_to_wte": true,
+    "parameters": [
+      {
+        "name": "transformer.wte.weight",
+        "group": "wte",
+        "shape": [
+          256,
+          64
+        ],
+        "init_mean": -1.8806596926879138e-05,
+        "init_std": 0.07905935496091843,
+        "init_all_zero": false
+      },
+      {
+        "name": "transformer.prelude.0.norm_1.weight",
+        "group": "prelude",
+        "shape": [
+          64
+        ],
+        "init_mean": 1.0,
+        "init_std": 0.0,
+        "init_all_zero": false
+      },
+      {
+        "name": "transformer.prelude.0.attn.c_q.weight",
+        "group": "prelude",
+        "shape": [
+          64,
+          64
+        ],
+        "init_mean": 0.0006475322879850864,
+        "init_std": 0.07906394451856613,
+        "init_all_zero": false
+      },
+      {
+        "name": "transformer.prelude.0.attn.c_k.weight",
+        "group": "prelude",
+        "shape": [
+          64,
+          64
+        ],
+        "init_mean": 0.00041576242074370384,
+        "init_std": 0.07906550168991089,
+        "init_all_zero": false
+      },
+      {
+        "name": "transformer.prelude.0.attn.c_v.weight",
+        "group": "prelude",
+        "shape": [
+          64,
+          64
+        ],
+        "init_mean": -0.00033315003383904696,
+        "init_std": 0.07906588912010193,
+        "init_all_zero": false
+      },
+      {
+        "name": "transformer.prelude.0.attn.c_proj.weight",
+        "group": "prelude",
+        "shape": [
+          64,
+          64
+        ],
+        "init_mean": 0.0,
+        "init_std": 0.0,
+        "init_all_zero": true
+      },
+      {
+        "name": "transformer.prelude.0.norm_2.weight",
+        "group": "prelude",
+        "shape": [
+          64
+        ],
+        "init_mean": 1.0,
+        "init_std": 0.0,
+        "init_all_zero": false
+      },
+      {
+        "name": "transformer.prelude.0.mlp.fc.weight",
+        "group": "prelude",
+        "shape": [
+          256,
+          64
+        ],
+        "init_mean": 0.0008688125526532531,
+        "init_std": 0.0790545791387558,
+        "init_all_zero": false
+      },
+      {
+        "name": "transformer.prelude.0.mlp.proj.weight",
+        "group": "prelude",
+        "shape": [
+          64,
+          256
+        ],
+        "init_mean": 0.0,
+        "init_std": 0.0,
+        "init_all_zero": true
+      },
+      {
+        "name": "transformer.adapter.A_log",
+        "group": "adapter",
+        "shape": [
+          64
+        ],
+        "init_mean": 0.0,
+        "init_std": 0.0,
+        "init_all_zero": true
+      },
+      {
+        "name": "transformer.adapter.dt_bias",
+        "group": "adapter",
+        "shape": [
+          64
+        ],
+        "init_mean": 0.2119354009628296,
+        "init_std": 0.0,
+        "init_all_zero": false
+      },
+      {
+        "name": "transformer.adapter.B",
+        "group": "adapter",
+        "shape": [
+          64,
+          64
+        ],
+        "init_mean": 0.015625,
+        "init_std": 0.12403473258018494,
+        "init_all_zero": false
+      },
+      {
+        "name": "transformer.core_block.0.norm_1.weight",
+        "group": "core_block",
+        "shape": [
+          64
+        ],
+        "init_mean": 1.0,
+        "init_std": 0.0,
+        "init_all_zero": false
+      },
+      {
+        "name": "transformer.core_block.0.attn.c_q.weight",
+        "group": "core_block",
+        "shape": [
+          64,
+          64
+        ],
+        "init_mean": -0.0006294339546002448,
+        "init_std": 0.07906408607959747,
+        "init_all_zero": false
+      },
+      {
+        "name": "transformer.core_block.0.attn.c_k.weight",
+        "group": "core_block",
+        "shape": [
+          64,
+          64
+        ],
+        "init_mean": 0.0010364055633544922,
+        "init_std": 0.07905980199575424,
+        "init_all_zero": false
+      },
+      {
+        "name": "transformer.core_block.0.attn.c_v.weight",
+        "group": "core_block",
+        "shape": [
+          64,
+          64
+        ],
+        "init_mean": 0.0013663683785125613,
+        "init_std": 0.07905478775501251,
+        "init_all_zero": false
+      },
+      {
+        "name": "transformer.core_block.0.attn.c_proj.weight",
+        "group": "core_block",
+        "shape": [
+          64,
+          64
+        ],
+        "init_mean": 0.0,
+        "init_std": 0.0,
+        "init_all_zero": true
+      },
+      {
+        "name": "transformer.core_block.0.attn.ve_gate.weight",
+        "group": "core_block",
+        "shape": [
+          4,
+          32
+        ],
+        "init_mean": -0.015866730362176895,
+        "init_std": 0.09919599443674088,
+        "init_all_zero": false
+      },
+      {
+        "name": "transformer.core_block.0.norm_2.weight",
+        "group": "core_block",
+        "shape": [
+          64
+        ],
+        "init_mean": 1.0,
+        "init_std": 0.0,
+        "init_all_zero": false
+      },
+      {
+        "name": "transformer.core_block.0.mlp.fc.weight",
+        "group": "core_block",
+        "shape": [
+          256,
+          64
+        ],
+        "init_mean": 0.00020194592070765793,
+        "init_std": 0.07905909419059753,
+        "init_all_zero": false
+      },
+      {
+        "name": "transformer.core_block.0.mlp.proj.weight",
+        "group": "core_block",
+        "shape": [
+          64,
+          256
+        ],
+        "init_mean": 0.0,
+        "init_std": 0.0,
+        "init_all_zero": true
+      },
+      {
+        "name": "transformer.core_block.1.norm_1.weight",
+        "group": "core_block",
+        "shape": [
+          64
+        ],
+        "init_mean": 1.0,
+        "init_std": 0.0,
+        "init_all_zero": false
+      },
+      {
+        "name": "transformer.core_block.1.attn.c_q.weight",
+        "group": "core_block",
+        "shape": [
+          64,
+          64
+        ],
+        "init_mean": 0.0021024642046540976,
+        "init_std": 0.07903862744569778,
+        "init_all_zero": false
+      },
+      {
+        "name": "transformer.core_block.1.attn.c_k.weight",
+        "group": "core_block",
+        "shape": [
+          64,
+          64
+        ],
+        "init_mean": -0.0006888129282742739,
+        "init_std": 0.07906359434127808,
+        "init_all_zero": false
+      },
+      {
+        "name": "transformer.core_block.1.attn.c_v.weight",
+        "group": "core_block",
+        "shape": [
+          64,
+          64
+        ],
+        "init_mean": -0.0007963455864228308,
+        "init_std": 0.0790625810623169,
+        "init_all_zero": false
+      },
+      {
+        "name": "transformer.core_block.1.attn.c_proj.weight",
+        "group": "core_block",
+        "shape": [
+          64,
+          64
+        ],
+        "init_mean": 0.0,
+        "init_std": 0.0,
+        "init_all_zero": true
+      },
+      {
+        "name": "transformer.core_block.1.norm_2.weight",
+        "group": "core_block",
+        "shape": [
+          64
+        ],
+        "init_mean": 1.0,
+        "init_std": 0.0,
+        "init_all_zero": false
+      },
+      {
+        "name": "transformer.core_block.1.mlp.fc.weight",
+        "group": "core_block",
+        "shape": [
+          256,
+          64
+        ],
+        "init_mean": 0.0004567085998132825,
+        "init_std": 0.07905803620815277,
+        "init_all_zero": false
+      },
+      {
+        "name": "transformer.core_block.1.mlp.proj.weight",
+        "group": "core_block",
+        "shape": [
+          64,
+          256
+        ],
+        "init_mean": 0.0,
+        "init_std": 0.0,
+        "init_all_zero": true
+      },
+      {
+        "name": "transformer.C.weight",
+        "group": "C",
+        "shape": [
+          64,
+          64
+        ],
+        "init_mean": -0.000825806288048625,
+        "init_std": 0.07906228303909302,
+        "init_all_zero": false
+      },
+      {
+        "name": "transformer.coda.0.norm_1.weight",
+        "group": "coda",
+        "shape": [
+          64
+        ],
+        "init_mean": 1.0,
+        "init_std": 0.0,
+        "init_all_zero": false
+      },
+      {
+        "name": "transformer.coda.0.attn.c_q.weight",
+        "group": "coda",
+        "shape": [
+          64,
+          64
+        ],
+        "init_mean": 0.00015001198335085064,
+        "init_std": 0.0790664553642273,
+        "init_all_zero": false
+      },
+      {
+        "name": "transformer.coda.0.attn.c_k.weight",
+        "group": "coda",
+        "shape": [
+          64,
+          64
+        ],
+        "init_mean": -0.0009171103592962027,
+        "init_std": 0.07906127721071243,
+        "init_all_zero": false
+      },
+      {
+        "name": "transformer.coda.0.attn.c_v.weight",
+        "group": "coda",
+        "shape": [
+          64,
+          64
+        ],
+        "init_mean": 4.037073813378811e-05,
+        "init_std": 0.07906658202409744,
+        "init_all_zero": false
+      },
+      {
+        "name": "transformer.coda.0.attn.c_proj.weight",
+        "group": "coda",
+        "shape": [
+          64,
+          64
+        ],
+        "init_mean": 0.0,
+        "init_std": 0.0,
+        "init_all_zero": true
+      },
+      {
+        "name": "transformer.coda.0.attn.ve_gate.weight",
+        "group": "coda",
+        "shape": [
+          4,
+          32
+        ],
+        "init_mean": 0.013125792145729065,
+        "init_std": 0.09962083399295807,
+        "init_all_zero": false
+      },
+      {
+        "name": "transformer.coda.0.norm_2.weight",
+        "group": "coda",
+        "shape": [
+          64
+        ],
+        "init_mean": 1.0,
+        "init_std": 0.0,
+        "init_all_zero": false
+      },
+      {
+        "name": "transformer.coda.0.mlp.fc.weight",
+        "group": "coda",
+        "shape": [
+          256,
+          64
+        ],
+        "init_mean": 0.0006982643390074372,
+        "init_std": 0.0790562704205513,
+        "init_all_zero": false
+      },
+      {
+        "name": "transformer.coda.0.mlp.proj.weight",
+        "group": "coda",
+        "shape": [
+          64,
+          256
+        ],
+        "init_mean": 0.0,
+        "init_std": 0.0,
+        "init_all_zero": true
+      },
+      {
+        "name": "transformer.ln_f.weight",
+        "group": "ln_f",
+        "shape": [
+          64
+        ],
+        "init_mean": 1.0,
+        "init_std": 0.0,
+        "init_all_zero": false
+      },
+      {
+        "name": "transformer.ln_prelude.weight",
+        "group": "ln_prelude",
+        "shape": [
+          64
+        ],
+        "init_mean": 1.0,
+        "init_std": 0.0,
+        "init_all_zero": false
+      },
+      {
+        "name": "value_embeds.1.weight",
+        "group": "value_embeds.1",
+        "shape": [
+          256,
+          64
+        ],
+        "init_mean": -0.004414721857756376,
+        "init_std": 1.0011671781539917,
+        "init_all_zero": false
+      },
+      {
+        "name": "value_embeds.3.weight",
+        "group": "value_embeds.3",
+        "shape": [
+          256,
+          64
+        ],
+        "init_mean": 0.007701449561864138,
+        "init_std": 1.0012449026107788,
+        "init_all_zero": false
+      }
+    ]
+  },
+  "checks": {
+    "check_1_forward_path": {
+      "items": [
+        {
+          "name": "module call order, train mode, num_steps_pair=[4, 4]",
+          "required": true,
+          "status": "PASS",
+          "criterion": "exact match: wte, prelude, ln_prelude, (adapter, core_block.*) x 8, C, coda, ln_f, lm_head",
+          "observed": {
+            "observed": [
+              "transformer.wte",
+              "transformer.prelude.0",
+              "transformer.ln_prelude",
+              "transformer.adapter",
+              "transformer.core_block.0",
+              "transformer.core_block.1",
+              "transformer.adapter",
+              "transformer.core_block.0",
+              "transformer.core_block.1",
+              "transformer.adapter",
+              "transformer.core_block.0",
+              "transformer.core_block.1",
+              "transformer.adapter",
+              "transformer.core_block.0",
+              "transformer.core_block.1",
+              "transformer.adapter",
+              "transformer.core_block.0",
+              "transformer.core_block.1",
+              "transformer.adapter",
+              "transformer.core_block.0",
+              "transformer.core_block.1",
+              "transformer.adapter",
+              "transformer.core_block.0",
+              "transformer.core_block.1",
+              "transformer.adapter",
+              "transformer.core_block.0",
+              "transformer.core_block.1",
+              "transformer.C",
+              "transformer.coda.0",
+              "transformer.ln_f",
+              "lm_head"
+            ]
+          }
+        },
+        {
+          "name": "module output shapes",
+          "required": true,
+          "status": "PASS",
+          "criterion": "[B, T, d]: d=64 outside the core, 64 for adapter/core, 256 for lm_head",
+          "observed": {
+            "transformer.wte": [
+              4,
+              16,
+              64
+            ],
+            "transformer.prelude.0": [
+              4,
+              16,
+              64
+            ],
+            "transformer.ln_prelude": [
+              4,
+              16,
+              64
+            ],
+            "transformer.adapter": [
+              4,
+              16,
+              64
+            ],
+            "transformer.core_block.0": [
+              4,
+              16,
+              64
+            ],
+            "transformer.core_block.1": [
+              4,
+              16,
+              64
+            ],
+            "transformer.C": [
+              4,
+              16,
+              64
+            ],
+            "transformer.coda.0": [
+              4,
+              16,
+              64
+            ],
+            "transformer.ln_f": [
+              4,
+              16,
+              64
+            ],
+            "lm_head": [
+              4,
+              16,
+              256
+            ]
+          }
+        },
+        {
+          "name": "core layers and injection are one shared set of modules reused each loop",
+          "required": true,
+          "status": "PASS",
+          "criterion": "each core layer and the adapter called exactly 8 times through one module object",
+          "observed": {
+            "calls_per_module": {
+              "transformer.core_block.0": 8,
+              "transformer.core_block.1": 8,
+              "transformer.adapter": 8
+            },
+            "distinct_module_objects_per_name": 1,
+            "n_core_layers": 2
+          }
+        },
+        {
+          "name": "logits and loss shape",
+          "required": true,
+          "status": "PASS",
+          "criterion": "logits [4, 16, 256], scalar loss",
+          "observed": {
+            "logits_shape": [
+              4,
+              16,
+              256
+            ],
+            "loss": 5.777870178222656
+          }
+        },
+        {
+          "name": "eval mode with upstream eval pair num_steps_pair=[8, 0]",
+          "required": true,
+          "status": "PASS",
+          "criterion": "same path with 8 loops (pair used by upstream receval/scripts/train.py eval)",
+          "observed": {
+            "adapter_calls": 8,
+            "loss": 5.777870178222656
+          }
+        }
+      ],
+      "status": "PASS"
+    },
+    "check_2_finite": {
+      "items": [
+        {
+          "name": "init: fixed num_steps_pair=[4, 4]",
+          "required": true,
+          "status": "PASS",
+          "criterion": "finite loss/log_ppl/logits; every parameter has a finite gradient",
+          "observed": {
+            "loss": 5.777870178222656,
+            "loss_finite": true,
+            "log_ppl_finite": true,
+            "logits_finite": true,
+            "logits_abs_max": 2.467153549194336,
+            "params_with_grad": 43,
+            "params_total": 43,
+            "params_grad_none": [],
+            "params_grad_nonfinite": []
+          }
+        },
+        {
+          "name": "init: native sampled depths (train, model.step=0)",
+          "required": true,
+          "status": "PASS",
+          "criterion": "finite loss/logits; no non-finite gradient",
+          "observed": {
+            "loss": 5.777433395385742,
+            "loss_finite": true,
+            "log_ppl_finite": true,
+            "logits_finite": true,
+            "logits_abs_max": 2.4671616554260254,
+            "params_with_grad": 43,
+            "params_total": 43,
+            "params_grad_none": [],
+            "params_grad_nonfinite": []
+          }
+        },
+        {
+          "name": "init: deeper recurrence 16 loops (supplementary)",
+          "required": false,
+          "status": "PASS",
+          "criterion": "finite loss/logits and gradients",
+          "observed": {
+            "loss": 5.777881622314453,
+            "loss_finite": true,
+            "log_ppl_finite": true,
+            "logits_finite": true,
+            "logits_abs_max": 2.4671688079833984,
+            "params_with_grad": 43,
+            "params_total": 43,
+            "params_grad_none": [],
+            "params_grad_nonfinite": []
+          }
+        },
+        {
+          "name": "init: deeper recurrence 32 loops (supplementary)",
+          "required": false,
+          "status": "PASS",
+          "criterion": "finite loss/logits and gradients",
+          "observed": {
+            "loss": 5.777881622314453,
+            "loss_finite": true,
+            "log_ppl_finite": true,
+            "logits_finite": true,
+            "logits_abs_max": 2.4671683311462402,
+            "params_with_grad": 43,
+            "params_total": 43,
+            "params_grad_none": [],
+            "params_grad_nonfinite": []
+          }
+        },
+        {
+          "name": "after_adamw_steps: fixed num_steps_pair=[4, 4]",
+          "required": true,
+          "status": "PASS",
+          "criterion": "finite loss/log_ppl/logits; every parameter has a finite gradient",
+          "observed": {
+            "loss": 3.6642844676971436,
+            "loss_finite": true,
+            "log_ppl_finite": true,
+            "logits_finite": true,
+            "logits_abs_max": 3.977747678756714,
+            "params_with_grad": 43,
+            "params_total": 43,
+            "params_grad_none": [],
+            "params_grad_nonfinite": []
+          }
+        },
+        {
+          "name": "after_adamw_steps: native sampled depths (train, model.step=0)",
+          "required": true,
+          "status": "PASS",
+          "criterion": "finite loss/logits; no non-finite gradient",
+          "observed": {
+            "loss": 3.6619198322296143,
+            "loss_finite": true,
+            "log_ppl_finite": true,
+            "logits_finite": true,
+            "logits_abs_max": 3.977989912033081,
+            "params_with_grad": 43,
+            "params_total": 43,
+            "params_grad_none": [],
+            "params_grad_nonfinite": []
+          }
+        },
+        {
+          "name": "after_adamw_steps: deeper recurrence 16 loops (supplementary)",
+          "required": false,
+          "status": "PASS",
+          "criterion": "finite loss/logits and gradients",
+          "observed": {
+            "loss": 3.6644372940063477,
+            "loss_finite": true,
+            "log_ppl_finite": true,
+            "logits_finite": true,
+            "logits_abs_max": 3.9775516986846924,
+            "params_with_grad": 43,
+            "params_total": 43,
+            "params_grad_none": [],
+            "params_grad_nonfinite": []
+          }
+        },
+        {
+          "name": "after_adamw_steps: deeper recurrence 32 loops (supplementary)",
+          "required": false,
+          "status": "PASS",
+          "criterion": "finite loss/logits and gradients",
+          "observed": {
+            "loss": 3.6644372940063477,
+            "loss_finite": true,
+            "log_ppl_finite": true,
+            "logits_finite": true,
+            "logits_abs_max": 3.9775514602661133,
+            "params_with_grad": 43,
+            "params_total": 43,
+            "params_grad_none": [],
+            "params_grad_nonfinite": []
+          }
+        }
+      ],
+      "status": "PASS"
+    },
+    "check_6_no_grad_with_grad": {
+      "items": [
+        {
+          "name": "init: forward is identical whatever the no-grad / with-grad split",
+          "required": true,
+          "status": "PASS",
+          "criterion": "same x0 seed and 8 loops: loss and logits differ by <= 1e-6 across splits",
+          "observed": {
+            "[8, 0]": {
+              "loss": 5.777870178222656,
+              "loss_abs_diff_vs_8_0": 0.0,
+              "logits_max_abs_diff_vs_8_0": 0.0
+            },
+            "[6, 2]": {
+              "loss": 5.777870178222656,
+              "loss_abs_diff_vs_8_0": 0.0,
+              "logits_max_abs_diff_vs_8_0": 0.0
+            },
+            "[4, 4]": {
+              "loss": 5.777870178222656,
+              "loss_abs_diff_vs_8_0": 0.0,
+              "logits_max_abs_diff_vs_8_0": 0.0
+            },
+            "[2, 6]": {
+              "loss": 5.777870178222656,
+              "loss_abs_diff_vs_8_0": 0.0,
+              "logits_max_abs_diff_vs_8_0": 0.0
+            },
+            "[0, 8]": {
+              "loss": 5.777870178222656,
+              "loss_abs_diff_vs_8_0": 0.0,
+              "logits_max_abs_diff_vs_8_0": 0.0
+            }
+          }
+        },
+        {
+          "name": "init: first n loops run under torch.no_grad, last k with grad enabled",
+          "required": true,
+          "status": "PASS",
+          "criterion": "adapter grad_enabled flags = [False]*n + [True]*k; prelude/coda/head always grad-enabled",
+          "observed": {
+            "[8, 0]": [
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false
+            ],
+            "[6, 2]": [
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              true,
+              true
+            ],
+            "[4, 4]": [
+              false,
+              false,
+              false,
+              false,
+              true,
+              true,
+              true,
+              true
+            ],
+            "[2, 6]": [
+              false,
+              false,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ],
+            "[0, 8]": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          }
+        },
+        {
+          "name": "init: backward reaches exactly the with-grad iterations",
+          "required": true,
+          "status": "PASS",
+          "criterion": "state grad hooks fire for iterations n..n+k-1 only",
+          "observed": {
+            "[8, 0]": [],
+            "[6, 2]": [
+              6,
+              7
+            ],
+            "[4, 4]": [
+              4,
+              5,
+              6,
+              7
+            ],
+            "[2, 6]": [
+              2,
+              3,
+              4,
+              5,
+              6,
+              7
+            ],
+            "[0, 8]": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7
+            ]
+          }
+        },
+        {
+          "name": "init: truncation is an exact stop-gradient at loop n",
+          "required": true,
+          "status": "PASS",
+          "criterion": "state gradients on the shared with-grad iterations agree within 1e-6",
+          "observed": {
+            "iterations_4_to_7_rel_diff_(4,4)_vs_(0,8)": {
+              "4": 0.0,
+              "5": 0.0,
+              "6": 0.0,
+              "7": 0.0
+            }
+          }
+        },
+        {
+          "name": "init: (8, 0) all-no-grad recurrence leaves prelude/injection/core without gradient",
+          "required": true,
+          "status": "PASS",
+          "criterion": "no gradient before C; C, coda, ln_f and tied wte/lm_head still get gradients",
+          "observed": {
+            "pre_C_params_with_nonzero_grad": [],
+            "post_C_group_grad_norms": {
+              "wte": 1.000969409942627,
+              "C": 0.9723554253578186,
+              "coda": 0.5819389659458453,
+              "ln_f": 0.08879893273115158
+            }
+          }
+        },
+        {
+          "name": "init: with k > 0 gradients reach prelude, injection and core",
+          "required": true,
+          "status": "PASS",
+          "criterion": "group grad norms > 0 for (4, 4) and (0, 8)",
+          "observed": {
+            "[4, 4]": {
+              "prelude": 4.6458250802470555,
+              "adapter": 0.5932871304113005,
+              "core_block": 0.7670899131318115
+            },
+            "[0, 8]": {
+              "prelude": 4.831659055953551,
+              "adapter": 0.6169985256228531,
+              "core_block": 0.7977753899719506
+            }
+          }
+        },
+        {
+          "name": "init: backprop depth k changes the gradient ((4, 4) vs (0, 8))",
+          "required": true,
+          "status": "PASS",
+          "criterion": "relative gradient difference > 1e-6 for adapter and core",
+          "observed": {
+            "adapter": 0.03843638673424721,
+            "core_block": 0.03846462815999985
+          }
+        },
+        {
+          "name": "after_adamw_steps: forward is identical whatever the no-grad / with-grad split",
+          "required": true,
+          "status": "PASS",
+          "criterion": "same x0 seed and 8 loops: loss and logits differ by <= 1e-6 across splits",
+          "observed": {
+            "[8, 0]": {
+              "loss": 3.6642844676971436,
+              "loss_abs_diff_vs_8_0": 0.0,
+              "logits_max_abs_diff_vs_8_0": 0.0
+            },
+            "[6, 2]": {
+              "loss": 3.6642844676971436,
+              "loss_abs_diff_vs_8_0": 0.0,
+              "logits_max_abs_diff_vs_8_0": 0.0
+            },
+            "[4, 4]": {
+              "loss": 3.6642844676971436,
+              "loss_abs_diff_vs_8_0": 0.0,
+              "logits_max_abs_diff_vs_8_0": 0.0
+            },
+            "[2, 6]": {
+              "loss": 3.6642844676971436,
+              "loss_abs_diff_vs_8_0": 0.0,
+              "logits_max_abs_diff_vs_8_0": 0.0
+            },
+            "[0, 8]": {
+              "loss": 3.6642844676971436,
+              "loss_abs_diff_vs_8_0": 0.0,
+              "logits_max_abs_diff_vs_8_0": 0.0
+            }
+          }
+        },
+        {
+          "name": "after_adamw_steps: first n loops run under torch.no_grad, last k with grad enabled",
+          "required": true,
+          "status": "PASS",
+          "criterion": "adapter grad_enabled flags = [False]*n + [True]*k; prelude/coda/head always grad-enabled",
+          "observed": {
+            "[8, 0]": [
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false
+            ],
+            "[6, 2]": [
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              true,
+              true
+            ],
+            "[4, 4]": [
+              false,
+              false,
+              false,
+              false,
+              true,
+              true,
+              true,
+              true
+            ],
+            "[2, 6]": [
+              false,
+              false,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ],
+            "[0, 8]": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          }
+        },
+        {
+          "name": "after_adamw_steps: backward reaches exactly the with-grad iterations",
+          "required": true,
+          "status": "PASS",
+          "criterion": "state grad hooks fire for iterations n..n+k-1 only",
+          "observed": {
+            "[8, 0]": [],
+            "[6, 2]": [
+              6,
+              7
+            ],
+            "[4, 4]": [
+              4,
+              5,
+              6,
+              7
+            ],
+            "[2, 6]": [
+              2,
+              3,
+              4,
+              5,
+              6,
+              7
+            ],
+            "[0, 8]": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7
+            ]
+          }
+        },
+        {
+          "name": "after_adamw_steps: truncation is an exact stop-gradient at loop n",
+          "required": true,
+          "status": "PASS",
+          "criterion": "state gradients on the shared with-grad iterations agree within 1e-6",
+          "observed": {
+            "iterations_4_to_7_rel_diff_(4,4)_vs_(0,8)": {
+              "4": 0.0,
+              "5": 0.0,
+              "6": 0.0,
+              "7": 0.0
+            }
+          }
+        },
+        {
+          "name": "after_adamw_steps: (8, 0) all-no-grad recurrence leaves prelude/injection/core without gradient",
+          "required": true,
+          "status": "PASS",
+          "criterion": "no gradient before C; C, coda, ln_f and tied wte/lm_head still get gradients",
+          "observed": {
+            "pre_C_params_with_nonzero_grad": [],
+            "post_C_group_grad_norms": {
+              "wte": 0.9533544778823853,
+              "C": 0.7037695646286011,
+              "coda": 0.39118982433911226,
+              "ln_f": 0.21768614649772644
+            }
+          }
+        },
+        {
+          "name": "after_adamw_steps: with k > 0 gradients reach prelude, injection and core",
+          "required": true,
+          "status": "PASS",
+          "criterion": "group grad norms > 0 for (4, 4) and (0, 8)",
+          "observed": {
+            "[4, 4]": {
+              "prelude": 3.040367151916132,
+              "adapter": 0.4137834464326877,
+              "core_block": 0.5595855437692172
+            },
+            "[0, 8]": {
+              "prelude": 3.1640779818889277,
+              "adapter": 0.43053951779158833,
+              "core_block": 0.5831324916763215
+            }
+          }
+        },
+        {
+          "name": "after_adamw_steps: backprop depth k changes the gradient ((4, 4) vs (0, 8))",
+          "required": true,
+          "status": "PASS",
+          "criterion": "relative gradient difference > 1e-6 for adapter and core",
+          "observed": {
+            "adapter": 0.040008943527936935,
+            "core_block": 0.04220043867826462
+          }
+        },
+        {
+          "name": "native config of parcae-small-140m is kept",
+          "required": true,
+          "status": "PASS",
+          "criterion": "mean_recurrence 8, mean_backprop_depth 4, poisson-truncated-full, per-sequence",
+          "observed": {
+            "mean_recurrence": 8,
+            "mean_backprop_depth": 4,
+            "sampling_scheme": "poisson-truncated-full",
+            "recurrent_iteration_method": "per-sequence",
+            "activation_checkpoint_impl": "per-iteration"
+          }
+        },
+        {
+          "name": "per-sequence sampler (_sample_batch_depths): total ~ clamp(Poisson(t+s), 1), k = min(total, s), n = total - k",
+          "required": true,
+          "status": "PASS",
+          "criterion": "0 rule violations over 1000 steps x batch 4; same step resamples identically; |mean total - 8| <= 0.3",
+          "observed": {
+            "samples": 4000,
+            "mean_no_grad_n": 4.07875,
+            "mean_with_grad_k": 3.94275,
+            "mean_total": 8.0215,
+            "max_k": 4,
+            "min_total": 1,
+            "max_total": 19,
+            "rule_violations": 0,
+            "nondeterministic_resamples": 0,
+            "total_histogram": {
+              "1": 16,
+              "2": 41,
+              "3": 99,
+              "4": 228,
+              "5": 367,
+              "6": 484,
+              "7": 557,
+              "8": 564,
+              "9": 521,
+              "10": 400,
+              "11": 272,
+              "12": 188,
+              "13": 119,
+              "14": 72,
+              "15": 38,
+              "16": 21,
+              "17": 7,
+              "18": 2,
+              "19": 4
+            }
+          }
+        },
+        {
+          "name": "per-batch sampler (randomized_iteration_sampler): n = clamp(Poisson(t+s), 1), k = min(n, s)",
+          "required": false,
+          "status": "PASS",
+          "criterion": "0 rule violations; deterministic per step; |mean n - 8| <= 0.5 (not the 140M mode)",
+          "observed": {
+            "samples": 1000,
+            "mean_no_grad_n": 7.834,
+            "mean_with_grad_k": 3.939,
+            "mean_total": 11.773,
+            "max_k": 4,
+            "min_total": 2,
+            "max_total": 20,
+            "rule_violations": 0,
+            "nondeterministic_resamples": 0,
+            "total_histogram": {
+              "2": 3,
+              "4": 13,
+              "6": 26,
+              "8": 65,
+              "9": 81,
+              "10": 139,
+              "11": 153,
+              "12": 142,
+              "13": 126,
+              "14": 90,
+              "15": 54,
+              "16": 54,
+              "17": 27,
+              "18": 15,
+              "19": 8,
+              "20": 4
+            }
+          }
+        },
+        {
+          "name": "eval mode randomized_iteration_sampler returns (mean_recurrence, 0)",
+          "required": false,
+          "status": "PASS",
+          "criterion": "[8, 0]",
+          "observed": [
+            8,
+            0
+          ]
+        },
+        {
+          "name": "native sampled train forward (no num_steps_pair): per-sample torch.where gating matches the sampled (n, k)",
+          "required": true,
+          "status": "PASS",
+          "criterion": "0 gating mismatches; max(n) no-grad calls then max(k) grad calls; finite loss/grads; core grad > 0",
+          "observed": {
+            "model_step": 0,
+            "per_sample_n": [
+              2,
+              5,
+              0,
+              3
+            ],
+            "per_sample_k": [
+              4,
+              4,
+              3,
+              4
+            ],
+            "loop_calls": 9,
+            "expected_loop_calls": 9,
+            "grad_flags": [
+              false,
+              false,
+              false,
+              false,
+              false,
+              true,
+              true,
+              true,
+              true
+            ],
+            "gating_mismatches": 0,
+            "loss": 3.6619198322296143,
+            "loss_finite": true,
+            "grads_finite": true,
+            "core_grad_norm": 0.5664541759816211,
+            "native_monitoring": {
+              "last_hidden_token_corr": 0.21414920687675476,
+              "recurrent_state_token_corr": 0.18779128789901733,
+              "last_hidden_norm": 7.999447345733643,
+              "recurrent_state_norm": 11.995241165161133,
+              "recurrent_diff": 10.85085391998291,
+              "num_steps_no_grad": 2.0,
+              "num_steps_with_grad": 3.0,
+              "recurrent_residual": 0.046682052314281464,
+              "rel_residual": 0.003825141116976738
+            }
+          }
+        },
+        {
+          "name": "observation: eval mode without num_steps_pair still samples per-sequence depths",
+          "required": false,
+          "status": "PASS",
+          "criterion": "informational only",
+          "observed": {
+            "loop_calls": 9,
+            "model_step": 0,
+            "note": "upstream eval passes num_steps_pair=[mean_recurrence, 0] explicitly (receval/tasks/core_eval.py, scripts/train.py)"
+          }
+        },
+        {
+          "name": "supplementary: gradient_checkpointing (per-iteration) gives the same loss and grads",
+          "required": false,
+          "status": "PASS",
+          "criterion": "loss diff <= 1e-6, grad max abs diff <= 1e-5",
+          "observed": {
+            "loss_plain": 3.6642844676971436,
+            "loss_checkpointed": 3.6642844676971436,
+            "grad_max_abs_diff": 0.0
+          }
+        },
+        {
+          "name": "supplementary: per-batch mode native forward runs n no-grad then k grad loops",
+          "required": false,
+          "status": "PASS",
+          "criterion": "flags = [False]*n + [True]*k, finite loss",
+          "observed": {
+            "model_step": 3,
+            "n": 8,
+            "k": 4,
+            "grad_flags": [
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              true,
+              true,
+              true,
+              true
+            ],
+            "loss": 3.664430856704712
+          }
+        }
+      ],
+      "status": "PASS"
+    }
+  },
+  "adamw_diagnostic_steps": {
+    "optimizer": "torch.optim.AdamW",
+    "lr": 0.001,
+    "weight_decay": 0.0,
+    "steps": 3,
+    "num_steps_pair": [
+      4,
+      4
+    ],
+    "same_fixed_batch_each_step": true,
+    "losses_before_each_step": [
+      5.77787446975708,
+      4.955189228057861,
+      4.238644123077393
+    ],
+    "purpose": "break scaled-zero symmetry for diagnostics only; not a training run"
+  },
+  "native_sampler_statistics": {
+    "t": 4,
+    "s": 4,
+    "per_sequence": {
+      "samples": 4000,
+      "mean_no_grad_n": 4.07875,
+      "mean_with_grad_k": 3.94275,
+      "mean_total": 8.0215,
+      "max_k": 4,
+      "min_total": 1,
+      "max_total": 19,
+      "rule_violations": 0,
+      "nondeterministic_resamples": 0,
+      "total_histogram": {
+        "1": 16,
+        "2": 41,
+        "3": 99,
+        "4": 228,
+        "5": 367,
+        "6": 484,
+        "7": 557,
+        "8": 564,
+        "9": 521,
+        "10": 400,
+        "11": 272,
+        "12": 188,
+        "13": 119,
+        "14": 72,
+        "15": 38,
+        "16": 21,
+        "17": 7,
+        "18": 2,
+        "19": 4
+      }
+    },
+    "per_batch": {
+      "samples": 1000,
+      "mean_no_grad_n": 7.834,
+      "mean_with_grad_k": 3.939,
+      "mean_total": 11.773,
+      "max_k": 4,
+      "min_total": 2,
+      "max_total": 20,
+      "rule_violations": 0,
+      "nondeterministic_resamples": 0,
+      "total_histogram": {
+        "2": 3,
+        "4": 13,
+        "6": 26,
+        "8": 65,
+        "9": 81,
+        "10": 139,
+        "11": 153,
+        "12": 142,
+        "13": 126,
+        "14": 90,
+        "15": 54,
+        "16": 54,
+        "17": 27,
+        "18": 15,
+        "19": 8,
+        "20": 4
+      }
+    },
+    "eval_mode_randomized_iteration_sampler": [
+      8,
+      0
+    ]
+  },
+  "native_gating_run": {
+    "model_step": 0,
+    "per_sample_n": [
+      2,
+      5,
+      0,
+      3
+    ],
+    "per_sample_k": [
+      4,
+      4,
+      3,
+      4
+    ],
+    "loop_calls": 9,
+    "expected_loop_calls": 9,
+    "grad_flags": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true
+    ],
+    "gating_mismatches": 0,
+    "gating_table": [
+      {
+        "loop_call": 0,
+        "phase": "no_grad",
+        "samples_updated": [
+          true,
+          true,
+          false,
+          true
+        ],
+        "expected": [
+          true,
+          true,
+          false,
+          true
+        ]
+      },
+      {
+        "loop_call": 1,
+        "phase": "no_grad",
+        "samples_updated": [
+          true,
+          true,
+          false,
+          true
+        ],
+        "expected": [
+          true,
+          true,
+          false,
+          true
+        ]
+      },
+      {
+        "loop_call": 2,
+        "phase": "no_grad",
+        "samples_updated": [
+          false,
+          true,
+          false,
+          true
+        ],
+        "expected": [
+          false,
+          true,
+          false,
+          true
+        ]
+      },
+      {
+        "loop_call": 3,
+        "phase": "no_grad",
+        "samples_updated": [
+          false,
+          true,
+          false,
+          false
+        ],
+        "expected": [
+          false,
+          true,
+          false,
+          false
+        ]
+      },
+      {
+        "loop_call": 4,
+        "phase": "no_grad",
+        "samples_updated": [
+          false,
+          true,
+          false,
+          false
+        ],
+        "expected": [
+          false,
+          true,
+          false,
+          false
+        ]
+      },
+      {
+        "loop_call": 5,
+        "phase": "with_grad",
+        "samples_updated": [
+          true,
+          true,
+          true,
+          true
+        ],
+        "expected": [
+          true,
+          true,
+          true,
+          true
+        ]
+      },
+      {
+        "loop_call": 6,
+        "phase": "with_grad",
+        "samples_updated": [
+          true,
+          true,
+          true,
+          true
+        ],
+        "expected": [
+          true,
+          true,
+          true,
+          true
+        ]
+      },
+      {
+        "loop_call": 7,
+        "phase": "with_grad",
+        "samples_updated": [
+          true,
+          true,
+          true,
+          true
+        ],
+        "expected": [
+          true,
+          true,
+          true,
+          true
+        ]
+      },
+      {
+        "loop_call": 8,
+        "phase": "with_grad",
+        "samples_updated": [
+          true,
+          true,
+          false,
+          true
+        ],
+        "expected": [
+          true,
+          true,
+          false,
+          true
+        ]
+      }
+    ],
+    "loss": 3.6619198322296143,
+    "loss_finite": true,
+    "grads_finite": true,
+    "core_grad_norm": 0.5664541759816211,
+    "native_monitoring": {
+      "last_hidden_token_corr": 0.21414920687675476,
+      "recurrent_state_token_corr": 0.18779128789901733,
+      "last_hidden_norm": 7.999447345733643,
+      "recurrent_state_norm": 11.995241165161133,
+      "recurrent_diff": 10.85085391998291,
+      "num_steps_no_grad": 2.0,
+      "num_steps_with_grad": 3.0,
+      "recurrent_residual": 0.046682052314281464,
+      "rel_residual": 0.003825141116976738
+    }
+  },
+  "run_meta": {
+    "finished_utc": "2026-10-22T11:32:22Z"
+  }
+}
