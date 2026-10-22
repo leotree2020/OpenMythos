@@ -1,0 +1,13 @@
+# P1-B isolated environment (Python 3.12). Kept separate from OpenMythos's own
+# requirements; install into its own venv with p1b_setup_env.sh.
+#
+# Upstream source (not a pip package; checked out by p1b_setup_env.sh):
+#   https://github.com/sandyresearch/parcae @ 69284c13746e849104f738d6d1a347b1f457df76
+#
+# Only what the Parcae model path imports on CPU. torch matches the OpenMythos
+# pin and provides SDPA enable_gqa (>= 2.5); numpy follows Parcae's numpy<2.0.
+# The PyPI torch wheel is CUDA-enabled and also pulls nvidia-* runtime wheels;
+# P1-B runs it on CPU only.
+torch==2.11.0
+numpy==1.26.4
+einops==0.8.0
