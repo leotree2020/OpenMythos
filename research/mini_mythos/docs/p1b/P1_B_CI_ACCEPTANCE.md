@@ -23,7 +23,7 @@ PR #4 保持 Draft，不合并。
   - `test_r2_pr27_os_worker_file_identity_replay`：3 个测试
 - `upstream-smoke (gqa/mla)`：因 `needs: offline-tests` 被跳过，无日志。
 - 236 与本地 251 的差额来自上面两处整类 / 整模块未执行。
-- 完整日志：`ci/run39771515620_offline-tests.log`。安装步骤只装了 `torch>=2.1,<3` 和 `transformers>=4.40,<6`。
+- 完整日志：`ci/run39771515620_offline-tests.txt`。安装步骤只装了 `torch>=2.1,<3` 和 `transformers>=4.40,<6`。
 
 ### 原因
 
@@ -36,17 +36,17 @@ PR #4 保持 Draft，不合并。
 - PR：https://github.com/leotree2020/OpenMythos/pull/5 （分支 `mini-mythos-ci-datasets-fix-20261022`，commit `ecb5921a0f3ed845fd985d8fd40b3c16d0877af2`）
 - 改动：`offline-tests` 的安装行加上 `'datasets>=2.18.0,<6'`。只改这一行 workflow，不改测试、断言、模型或 Parcae。
 - Run：https://github.com/leotree2020/OpenMythos/actions/runs/39774588958
-  - `offline-tests`：Ran 251 tests，OK（datasets 5.1.0）。完整日志：`ci/run39774588958_offline-tests.log`。
+  - `offline-tests`：Ran 251 tests，OK（datasets 5.1.0）。完整日志：`ci/run39774588958_offline-tests.txt`。
   - `upstream-smoke`：见下文更新。
 
 ## 3. 本地复现与验证（Python 3.11 venv，与 CI 相同的安装行）
 
 | 环境 | 结果 | 日志 |
 |---|---|---|
-| torch 2.14.1 + transformers 5.20.2，无 datasets | Ran 236 tests，FAILED (errors=11)，与 CI 一致 | `ci/local_py311_without_datasets.log` |
-| 另装 datasets 5.1.0（pyarrow 26.0.0），P1-B 分支 | Ran 251 tests，OK | `ci/local_py311_with_datasets_p1b_branch.log` |
-| `upstream-smoke` 全部步骤本地镜像，gqa | 11 步全部 rc=0 | `ci/local_upstream_smoke_gqa.log` |
-| `upstream-smoke` 全部步骤本地镜像，mla | 9 步全部 rc=0 | `ci/local_upstream_smoke_mla.log` |
+| torch 2.14.1 + transformers 5.20.2，无 datasets | Ran 236 tests，FAILED (errors=11)，与 CI 一致 | `ci/local_py311_without_datasets.txt` |
+| 另装 datasets 5.1.0（pyarrow 26.0.0），P1-B 分支 | Ran 251 tests，OK | `ci/local_py311_with_datasets_p1b_branch.txt` |
+| `upstream-smoke` 全部步骤本地镜像，gqa | 11 步全部 rc=0 | `ci/local_upstream_smoke_gqa.txt` |
+| `upstream-smoke` 全部步骤本地镜像，mla | 9 步全部 rc=0 | `ci/local_upstream_smoke_mla.txt` |
 
 修复分支（base + workflow 修改）本地同样是 Ran 251 tests，OK。
 
