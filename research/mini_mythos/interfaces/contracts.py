@@ -3,18 +3,17 @@ Mini-Mythos baseline interface contracts aligned with pinned Parcae.
 
 Pinned upstream: 69284c13746e849104f738d6d1a347b1f457df76
 
-Two layers are provided:
-
 1. INTERFACE STUB — MiniMythosInterfaceStub
-   Linear-based toy for shape and sharing checks only.
-   Must never be treated as a Mini-Mythos model or Parcae reproduction.
+   Linear-based toy for shape, sharing, and call-count checks only.
+   Never treat as a Mini-Mythos model or Parcae reproduction.
 
 2. ParcaeBaselineAdapter
-   Thin wrapper around an official Parcae instance.
-   Reuses transformer.prelude, .adapter, .core_block, .C, .coda, .ln_f
-   without re-implementing Block, DiagonalInjection, scheduling, or state init.
+   Thin wrapper. Holds a single official Parcae instance.
+   Exposes prelude / adapter / core_block / C / coda / ln_f via read-only properties.
+   Does not re-implement Block, DiagonalInjection, scheduling, or state init.
+   Does not duplicate parameter registration.
 
-Neither performs language learning. Official Parcae remains the experimental baseline.
+Neither performs language learning.
 """
 
 from dataclasses import dataclass
@@ -32,8 +31,6 @@ except ImportError:
 
 @dataclass(frozen=True)
 class RecurrenceConfig:
-    """Subset of ParcaeConfig fields relevant to the three-module contract."""
-
     n_layers_in_prelude: int = 2
     n_layers_in_recurrent_block: int = 2
     n_layers_in_coda: int = 2
@@ -64,13 +61,7 @@ if TORCH_AVAILABLE:
                     attention_mask: Optional[Tensor] = None) -> Tensor: ...
 
     class MiniMythosInterfaceStub(nn.Module):
-        """
-        INTERFACE STUB only.
-
-        Linear layers stand in for real Blocks. Used exclusively for
-        CPU contract tests of shapes, sharing, and return structure.
-        Do not treat results as Mini-Mythos or Parcae reproduction.
-        """
+        """INTERFACE STUB only. Linear stand-ins for contract tests."""
 
         def __init__(self, config: RecurrenceConfig, n_embd: int = 64, vocab: int = 128):
             super().__init__()
@@ -129,7 +120,6 @@ if TORCH_AVAILABLE:
             return_logits: bool = False,
             num_steps_pair: Optional[Tensor] = None,
         ) -> dict:
-            """Aligned with native Parcae.forward signature and return semantics."""
             embeds = self.wte(input_ids)
             prelude_out = self.prelude_forward(embeds)
 
@@ -161,21 +151,39 @@ if TORCH_AVAILABLE:
 
     class ParcaeBaselineAdapter(nn.Module):
         """
-        Thin adapter that reuses an official Parcae instance.
-
-        It does not re-implement Block, DiagonalInjection, iteration sampling,
-        or state initialization. Those remain inside the wrapped Parcae model.
+        Thin adapter. Registers only the official Parcae instance.
+        Submodules are exposed as read-only properties so they are not
+        re-registered and do not create duplicate state_dict keys.
         """
 
         def __init__(self, parcae_model: nn.Module):
             super().__init__()
+            # Single registration of the native model
             self.parcae = parcae_model
-            self.prelude = parcae_model.transformer.prelude
-            self.adapter = parcae_model.transformer.adapter
-            self.core_block = parcae_model.transformer.core_block
-            self.C = parcae_model.transformer.C
-            self.coda = parcae_model.transformer.coda
-            self.ln_f = parcae_model.transformer.ln_f
+
+        @property
+        def prelude(self):
+            return self.parcae.transformer.prelude
+
+        @property
+        def adapter(self):
+            return self.parcae.transformer.adapter
+
+        @property
+        def core_block(self):
+            return self.parcae.transformer.core_block
+
+        @property
+        def C(self):
+            return self.parcae.transformer.C
+
+        @property
+        def coda(self):
+            return self.parcae.transformer.coda
+
+        @property
+        def ln_f(self):
+            return self.parcae.transformer.ln_f
 
         def forward(
             self,
@@ -194,11 +202,7 @@ if TORCH_AVAILABLE:
                 return_logits=return_logits,
                 num_steps_pair=num_steps_pair,
             )
-
-        def core_parameters_shared(self) -> bool:
-            return True
 else:
-    # Placeholders so the module can still be imported for static checks
     PreludeContract = None  # type: ignore
     RecurrentCoreContract = None  # type: ignore
     CodaContract = None  # type: ignore
