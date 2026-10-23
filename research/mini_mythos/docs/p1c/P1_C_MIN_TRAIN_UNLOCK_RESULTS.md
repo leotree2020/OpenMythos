@@ -19,10 +19,10 @@ Actual load results (Parcae `Tokenizer.from_directory` and `Tokenizer(checkpoint
 - both loader paths succeed
 - ignore_index can use real pad_id=2 (no BOS fallback)
 
-SHA-256:
+SHA-256 (from `make_alt_test_tokenizer.py` output):
 - tokenizer.json: `e061ba38cf7585fbd82db3f8914446fdfbfbad5bbf8ed27c79620b3b37dd189b`
-- tokenizer_config.json: `be063b992ada697f1d6f91f59bbaf7d7b2e01a383f665fceaf4d9f103706f3df`
-- special_tokens_map.json: `622416ea7a870fd29173724ded966edde73440e2abe3900be72394080e31e9a7`
+- tokenizer_config.json: `0ebfbf2190d2375669056a65a8a5984fbf49f72483fb178db6f263d9276589d3`
+- special_tokens_map.json: `3a1c4d3094025c80439a41ee607530f77b51abc3552284dec76a8bcfba6caf51`
 
 Marked **ALTERNATIVE TEST TOKENIZER**. Official HF tokenizer remains BLOCKED.
 
@@ -32,7 +32,7 @@ Marked **ALTERNATIVE TEST TOKENIZER**. Official HF tokenizer remains BLOCKED.
 
 Command (CPU, LOCAL_WORLD_SIZE=1):
 ```bash
-python -c "from jsonargparse import CLI; from recpre.settings import CLISettings; import sys; sys.argv=['t','--config','/tmp/test_cfg.yaml']; cfg=CLI(CLISettings); print(type(cfg), cfg.block_size, cfg.devices, cfg.gradient_accumulation_steps)"
+python -c "from jsonargparse import CLI; from recpre.settings import CLISettings; import sys; sys.argv=['t','--config','/tmp/test_cfg.yaml']; cfg=CLI(CLISettings); print(isinstance(cfg, CLISettings), cfg.devices, cfg.gradient_accumulation_steps)"
 ```
 Exit code: 0
 
