@@ -1,51 +1,57 @@
-# P1-C Gate 2B — Launch Configuration Audit (Memory & Blockers Update)
+# P1-C Gate 2B — Launch Configuration Audit (Dependency & Tokenizer Correction)
 
-**Status**: Free static checks only. No GPU, no training.
+**Status**: Free static / public-metadata checks only. No GPU, no containers started, no training.
 
-## Memory budget (corrected)
+## Memory budget (unchanged)
 
-`RandomTokensDataset` pre-allocates `1_000_000` rows of `int32`.
+| Length | Size per dataset | Train + Val |
+|--------|------------------|-------------|
+| 128    | 488.28 MiB       | 976.56 MiB  |
+| 129    | 492.10 MiB       | 984.19 MiB  |
 
-| Length | Bytes per row | Size per dataset | Train + Val |
-|--------|---------------|------------------|-------------|
-| 128    | 512           | **488.28 MiB**   | 976.56 MiB  |
-| 129    | 516           | **492.10 MiB**   | **984.19 MiB** |
+## Dependencies
 
-Calculation: `1e6 * N * 4 / (1024*1024)`.
+| Package   | Constraint                  | Status                                      | Runtime   |
+|-----------|-----------------------------|---------------------------------------------|-----------|
+| lightning | ==2.3.0.dev20240328         | **PACKAGE AVAILABLE** (PyPI wheel + sdist)  | NOT TESTED |
+| torchdata | unpinned                    | Available                                   | NOT TESTED |
+| wandb     | unpinned                    | Available                                   | NOT TESTED |
+| torch     | extras / Gate 1 used 2.8    | Available                                   | NOT TESTED |
+| numpy     | <2.0                        | Available                                   | NOT TESTED |
 
-Host RAM must accommodate ~984 MiB for the two rngds instances plus model/optimizer overhead. Do not modify upstream `RandomTokensDataset`.
+PyPI JSON API confirms `lightning-2.3.0.dev20240328` provides both a wheel and an sdist. The Dockerfile also installs this exact pin. Do not claim it is unavailable from standard PyPI.
+
+## Official Docker image
+
+- `launch_interactive.sh` default: `ghcr.io/sandyresearch/parcae:sha-49c27cb`
+- Tag maps to commit `49c27cbd639362b59336ea3981fb127ac8e464c8` ("updated for docker").
+- Pinned research commit is `69284c13746e849104f738d6d1a347b1f457df76`.
+- **Mismatch**: the published image tag is not built from the pinned commit.
+- Dockerfile base is `nvcr.io/nvidia/pytorch:26.02-py3` and installs the lightning pin plus other deps.
+- Suitability as a fixed-commit reproduction environment: **NOT CONFIRMED** without rebuilding from the pinned commit or verifying image contents. Public metadata only; container not started.
 
 ## Tokenizer
 
-- Public HF repository exists: `SandyResearch/parcae-tokenizer`.
-- No model card, no license file, no visible file list on the public page.
-- Parcae GitHub repo itself is MIT, but the tokenizer repository is separate and its license is not stated.
-- Minimal files expected by `parcae_lm/tokenizer.py`: `tokenizer.json` (plus optional `tokenizer_config.json` / `special_tokens_map.json`).
-- Vocab size expected: 32768.
+- Public HF repo `SandyResearch/parcae-tokenizer` exists.
+- No model card, no license file visible.
+- **Status: BLOCKED** because of missing license declaration. This is **not** the same as a confirmed prohibition.
+- Do not download until license is reviewed.
 
-**Status: BLOCKED**. License cannot be confirmed from public metadata. Do not download until license is explicitly reviewed and accepted.
+### Alternative test path (not official)
 
-## Dependencies (installability, free check)
+`scripts/tok_train.py` can train a BPE tokenizer (vocab 32768, special tokens `<|bos|>`, `<|eos|>`, `<|pad|>`) from any directory of parquet files containing a `text` column.
 
-From pinned `pyproject.toml`:
+- If a clearly licensed small text corpus is supplied, a test tokenizer can be generated.
+- Any such tokenizer **must** be labeled as an **alternative test path**.
+- It cannot be presented as the official Parcae tokenizer or as full reproduction of the official training data pipeline.
 
-| Package     | Constraint                      | PyPI status                          | Runtime |
-|-------------|---------------------------------|--------------------------------------|---------|
-| lightning   | ==2.3.0.dev20240328             | Dated dev pin; not in stable index   | NOT TESTED |
-| torchdata   | unpinned                        | Available (0.11.0 latest)            | NOT TESTED |
-| wandb       | unpinned                        | Available (0.31.0 latest)            | NOT TESTED |
-| torch       | extras torch221 / torchgte240   | Available (2.8.0 used in Gate 1)     | NOT TESTED |
-| numpy       | <2.0                            | Available                            | NOT TESTED |
+## Remaining launch blockers
 
-Lightning pin is the highest install risk. All runtime behavior remains NOT TESTED.
+1. Official Tokenizer license declaration missing → **BLOCKED** (not confirmed prohibited).
+2. Published Docker image tag does not match pinned commit → image suitability **NOT CONFIRMED**.
+3. Official `train.py` entry not yet started → **NOT TESTED**.
+4. MuonAdamW runtime behavior → **NOT TESTED**.
+5. Checkpoint save/resume with rngds → **NOT TESTED**.
+6. Target-environment integration of available packages → **NOT TESTED**.
 
-## Remaining launch blockers (short)
-
-1. Official Tokenizer license unconfirmed → BLOCKED (no download).
-2. Lightning 2.3.0.dev20240328 may require non-standard install → NOT TESTED.
-3. Official `train.py` entry has not been started (CUDA gate) → NOT TESTED.
-4. MuonAdamW runtime grouping and finite updates → NOT TESTED.
-5. Checkpoint save/resume with rngds → NOT TESTED.
-6. Target-environment WandB offline mode and torchdata StatefulDataLoader → NOT TESTED.
-
-No further planning documents added.
+No new research plans added.
