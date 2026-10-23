@@ -1,7 +1,7 @@
-# EXECUTABLE CONFIG (CPU-parsed) / NOT YET EXECUTED ON GPU
+# CONFIG (CLI-parsed on CPU) / GPU EXECUTION NOT TESTED
 # Pinned Parcae: 69284c13746e849104f738d6d1a347b1f457df76
-# Requires LOCAL_WORLD_SIZE=1 (or real GPU count) before CLISettings init.
-# tokenizer_path must point to an ALTERNATIVE TEST TOKENIZER or a reviewed official one.
+# Requires LOCAL_WORLD_SIZE=1 before CLISettings init on CPU.
+# tokenizer_path must point to an ALTERNATIVE TEST TOKENIZER directory.
 
 run_name: p1c-min-train-alt-tok
 resume: false
@@ -13,13 +13,13 @@ model_impl: dynamic
 
 block_size: 128
 model_overwrite:
-  vocab_size: 32768          # will be overridden if tokenizer vocab differs
+  vocab_size: 32768
   prelude_norm: true
   block_size: 128
 
 world_batch_size: 8
 micro_batch_size: 2
-# gradient_accumulation_steps computed as 4 when devices=1, num_nodes=1
+# gradient_accumulation_steps = 4 when devices=1, num_nodes=1
 
 optimizer: MuonAdamW
 optim_config:
@@ -60,16 +60,25 @@ data_config:
       prefix: ""
       weight: 1
 
-# ALTERNATIVE TEST TOKENIZER path (fill after generation)
+# ALTERNATIVE TEST TOKENIZER (fill after generation)
 # tokenizer_path: /path/to/alt_tok/tokenizer
 
 logger_name: wandb
 logger_project: parcae
 log_step_interval: 1
 
-# Launch notes (NOT EXECUTED):
+# PREDICTED / NOT RUNTIME VERIFIED (source derivation):
+# max_steps=6, gradient_accumulation_steps=4
+# predicted microbatch_step = 20
+# predicted optimizer_step = 5
+# predicted actual optimizer.step() = 4  (first optimizer_step skips)
+# predicted regular save boundaries: microbatch 4, 8, 12, 16, 20
+#
+# rngds uses tokenizer vocab_size (actual 489 for the alt tokenizer).
+# model_overwrite vocab_size remains 32768. Not full-vocab training.
+# Not language learning.
+#
+# Launch (NOT EXECUTED):
 #   export LOCAL_WORLD_SIZE=1
 #   export WANDB_MODE=offline
 #   bash runs/run_training.sh <this-file> p1c-min-train group 1
-# First optimizer_step skips parameter update.
-# Effective saves at microbatch multiples of 4.
