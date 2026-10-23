@@ -1,7 +1,6 @@
 # PROPOSED / NOT EXECUTED
-# Single-GPU minimal official Parcae training override
+# Single-GPU minimal official Parcae training override (revised notes)
 # Pinned Parcae commit: 69284c13746e849104f738d6d1a347b1f457df76
-# Do not treat as a ready-to-run command. Additional environment setup required.
 
 run_name: p1c-gate2b-single-gpu-proposed
 resume: false
@@ -11,17 +10,15 @@ out_dir: outputs/p1c-gate2b-proposed
 model_name: parcae-small-140m
 model_impl: dynamic
 
-# Sequence length consistency: override both
 block_size: 128
 model_overwrite:
   vocab_size: 32768
   prelude_norm: true
   block_size: 128
 
-# Single GPU arithmetic (illustrative)
 world_batch_size: 8
 micro_batch_size: 2
-# => gradient_accumulation_steps = 4 when devices=1, num_nodes=1
+# gradient_accumulation_steps = 4 (devices=1, num_nodes=1)
 
 optimizer: MuonAdamW
 optim_config:
@@ -40,20 +37,18 @@ lr_schedule: trapezoid
 min_lr: 0
 grad_clip: 1.0
 
-fabric_strategy: ddp          # prefer single-GPU DDP so process group exists
+fabric_strategy: ddp
 fabric_precision: bf16-mixed
 
-compile_model: false          # reduce first-step compile cost for minimal smoke
+compile_model: false
 gradient_checkpointing: false
 
-# Short run; remember first optimizer_step skips step()
 max_steps: 6
-save_step_interval: 2         # microbatch-oriented; verify actual cadence at runtime
+save_step_interval: 2   # effective saves only at microbatch multiples of 4 (not is_accumulating)
 save_last_step: true
-eval_step_interval: 1000      # effectively disable mid-run eval for minimal smoke
+eval_step_interval: 1000
 eval_iters: 1
 
-# Synthetic data — both train and val required
 data_config:
   train_data:
     - type: rngds
@@ -64,16 +59,24 @@ data_config:
       prefix: ""
       weight: 1
 
-# Tokenizer still required for vocab_size; path must be supplied at runtime
-# tokenizer_path: /path/to/parcae_tokenizer   # BLOCKED until license + files confirmed
+# tokenizer_path: <verified path required before launch>
+# License of official Parcae tokenizer remains BLOCKED until reviewed.
+# Expected files: tokenizer.json (+ optional config/special tokens map)
+# Must confirm vocab size matches 32768.
 
 logger_name: wandb
-# Use WANDB_MODE=offline at launch
+# WANDB_MODE=offline
 logger_project: parcae
 log_step_interval: 1
 
-# Notes:
-# - Launch via: bash runs/run_training.sh <this-file-or-base> <run-name> <group> 1
-# - First optimizer step is a no-op for parameter update.
-# - Do not reuse Gate 1 throughput numbers.
-# - PROPOSED / NOT EXECUTED
+# Memory note:
+# Each rngds pre-allocates 1e6 rows × block_size int32.
+# block_size=128 → ~492–512 MiB each; train+val ≈ 984 MiB host RAM.
+# Ensure sufficient CPU RAM before launch.
+#
+# Save note:
+# save_at_interval requires not is_accumulating AND microbatch_step % save_step_interval == 0.
+# With accum=4, saves occur at microbatch multiples of 4.
+# First optimizer_step skips parameter update.
+#
+# PROPOSED / NOT EXECUTED

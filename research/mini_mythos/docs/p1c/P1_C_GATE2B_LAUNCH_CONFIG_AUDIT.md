@@ -1,66 +1,87 @@
-# P1-C Gate 2B — Single-GPU Launch Configuration Audit
+# P1-C Gate 2B — Single-GPU Launch Configuration Audit (Final Corrections)
 
-**Status**: Free static / CPU checks only. All items that require GPU or full environment are NOT TESTED.
+**Status**: Free static analysis only. No GPU, no training.
 
 Pinned Parcae: `69284c13746e849104f738d6d1a347b1f457df76`
 
-## 1. Sequence length consistency
+## 1. Synthetic data memory budget
 
-From `scripts/train.py`:
+`RandomTokensDataset.__init__` (source):
 ```python
-if not cfg.ignore_block_size_mismatch:
-    assert cfg.block_size == cfg.model_config.block_size, "cfg.block_size must match config.block_size"
+self.data = torch.randint(0, vocab_size, (int(1e6), block_size), dtype=torch.int32, generator=generator)
 ```
 
-- `cfg.block_size` is the training sequence length.
-- `cfg.model_config.block_size` comes from the model definition (default 2048 for parcae-small-140m).
-- For a short-sequence experiment, **both** must be overridden at launch time, **or** `ignore_block_size_mismatch: true` must be set.
-- Recommended: set both to the same short value (e.g. 128) via model_overwrite / CLI override. Do not modify Parcae model source.
+- Pre-allocates **1,000,000** rows.
+- For `block_size=128`: raw size ≈ 1e6 × 128 × 4 bytes = **512 MiB** per dataset.
+- User-reported effective size with `loader_block_size=129` accounting: ≈ **492 MiB** per rngds.
+- **train + val** ≈ **984 MiB** host RAM.
 
-**Static check**: logic confirmed from source. Runtime override application **NOT TESTED**.
+**Requirement for next GPU experiment**:
+- Host RAM must comfortably exceed ~1 GiB for the two rngds instances plus model/optimizer overhead.
+- Record actual RSS at startup in the experiment log.
+- Do **not** modify upstream `RandomTokensDataset`.
 
-## 2. Synthetic train + val data (rngds)
+## 2. Tokenizer startup conditions
 
-`RandomTokensDataset` (debug path):
-- Requires a tokenizer only to obtain `vocab_size`.
-- Generates random tokens of length `block_size`.
-- Does not use real text or special-token packing.
-- Checkpoint state: simple; does not invoke `ParquetStreamPure` distributed CUDA gather.
+Official path expects a directory containing at least:
+- `tokenizer.json`
+- (optional but recommended) `tokenizer_config.json`, `special_tokens_map.json`
 
-**Minimal config requirement**:
-- Both `train_data` and `val_data` must be non-empty lists of type `rngds`.
-- Empty `val_data` risks failure at the end of training when evaluation is attempted.
+- Vocab size must match model `vocab_size` (32768 in the pinned small config).
+- PAD / EOS / BOS ids are read from the tokenizer processor; rngds itself only needs `vocab_size`, but the training entry still requires a valid tokenizer path.
+- License of the official Parcae tokenizer remains **unconfirmed** → **BLOCKED** for download.
 
-**Static check**: source path confirmed. Actual dataloader construction **NOT TESTED**.
+**Legal acquisition plan (not executed)**:
+1. Prefer any tokenizer already present on the target machine or previously approved by the user.
+2. If none exists, obtain only the minimal tokenizer files from a source whose license has been explicitly reviewed and accepted.
+3. Verify `len(tokenizer) == 32768` (or documented padded size) and presence of required special tokens before training.
+4. Do **not** substitute another model's pretrained weights as a stand-in for Mini-Mythos training results.
 
-## 3. Single-GPU DDP and save/resume
+Current Proposed YAML leaves `tokenizer_path` commented → **cannot launch until a verified path is supplied**.
 
-- Prefer single-GPU DDP (`torchrun --nproc_per_node=1` or `run_training.sh ... 1`) so that `torch.distributed` is initialized.
-- This reduces risk when any residual dataset state save is invoked.
-- `rngds` itself bypasses `ParquetStreamPure`, further lowering risk.
+## 3. rngds Checkpoint resume risk
+
+`RandomTokensDataset`:
+```python
+def state_dict(self):
+    return {"idx": self.idx}
+def load_state_dict(self, state_dict):
+    self.idx = state_dict["idx"]
+```
+
+- State is a simple integer cursor.
+- `train.py` `load_checkpoint` restores `train_dataloader` state; when `dataset_state` is present it is applied.
+- Whether the StatefulDataLoader wrapper correctly calls `load_state_dict` on an rngds instance is **static-plausible but NOT TESTED**.
+- Extra batch skip on resume (documented in Gate 2A) still applies and may advance the cursor by one additional sample. Effect on rngds is deterministic but must be measured.
+
+**Conclusion**: rngds resume is simpler than ParquetStreamPure and avoids the CUDA distributed gather. Residual risk remains the extra batch skip and the exact StatefulDataLoader integration. Runtime verification **NOT TESTED**.
+
+## 4. Checkpoint save boundary
+
+From `maybe_save_checkpoint`:
+```python
+save_at_interval = not is_accumulating and state["microbatch_step"] % cfg.save_step_interval == 0
+```
+
+With proposed numbers:
+- `micro_batch_size=2`, `world_batch_size=8` → `gradient_accumulation_steps=4`
+- `save_step_interval=2`
+- Save occurs only when **both**:
+  - `not is_accumulating` (i.e. `microbatch_step % 4 == 0`)
+  - `microbatch_step % 2 == 0`
+
+→ Effective save points are at microbatch multiples of **4**, not every 2 microbatches.
+
+Additionally:
 - First `optimizer_step == 0` skips `optimizer.step()`.
-- `save_step_interval` counts microbatch / fabric steps, not pure optimizer steps.
-- Initial model save (if enabled) occurs before any updates.
+- All logs must distinguish `microbatch_step`, `optimizer_step`, and actual parameter update count.
 
-**Static check**: behavior confirmed from prior source reads. Runtime save/resume **NOT TESTED**.
+## 5. Free checks performed
 
-## 4. Required dependencies (NOT TESTED on target image)
-
-- Lightning (pinned dev version)
-- torchdata (StatefulDataLoader)
-- WandB (offline mode recommended)
-- Tokenizer files (small; license still BLOCKED)
-- Matching torch + CUDA
-
-## Free static checks performed
-
-| Check | Result |
-|-------|--------|
-| block_size assert exists in train.py | PASS (source) |
-| rngds path exists and uses RandomTokensDataset | PASS (source) |
-| val_data referenced in train.py | PASS (source) |
-| YAML override parses as valid YAML | PASS (see companion file) |
-| Official train entry starts on CPU | NOT TESTED (blocked by CUDA check) |
-| Single-GPU DDP process group | NOT TESTED |
-| Checkpoint save/resume | NOT TESTED |
-| MuonAdamW runtime grouping | NOT TESTED |
+| Item | Result |
+|------|--------|
+| RandomTokensDataset preallocation size | PASS (source) |
+| rngds state_dict returns idx | PASS (source) |
+| save requires not is_accumulating | PASS (source) |
+| Tokenizer path still required | PASS (source) |
+| Full launch / resume / memory RSS | NOT TESTED |
