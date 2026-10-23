@@ -1,0 +1,75 @@
+# EXECUTABLE CONFIG (CPU-parsed) / NOT YET EXECUTED ON GPU
+# Pinned Parcae: 69284c13746e849104f738d6d1a347b1f457df76
+# Requires LOCAL_WORLD_SIZE=1 (or real GPU count) before CLISettings init.
+# tokenizer_path must point to an ALTERNATIVE TEST TOKENIZER or a reviewed official one.
+
+run_name: p1c-min-train-alt-tok
+resume: false
+seed: 42
+out_dir: outputs/p1c-min-train
+
+model_name: parcae-small-140m
+model_impl: dynamic
+
+block_size: 128
+model_overwrite:
+  vocab_size: 32768          # will be overridden if tokenizer vocab differs
+  prelude_norm: true
+  block_size: 128
+
+world_batch_size: 8
+micro_batch_size: 2
+# gradient_accumulation_steps computed as 4 when devices=1, num_nodes=1
+
+optimizer: MuonAdamW
+optim_config:
+  lr: 8e-3
+  weight_decay: 0.0
+  betas: [0.8, 0.95]
+  eps: 1e-10
+  muon_lr: 8e-3
+  muon_momentum: 0.95
+  muon_wd: 0.2
+  muon_ns_steps: 5
+
+warmup_steps: 0
+cooldown_steps: 0
+lr_schedule: trapezoid
+min_lr: 0
+grad_clip: 1.0
+
+fabric_strategy: ddp
+fabric_precision: bf16-mixed
+
+compile_model: false
+gradient_checkpointing: false
+
+max_steps: 6
+save_step_interval: 2
+save_last_step: true
+eval_step_interval: 1000
+eval_iters: 1
+
+data_config:
+  train_data:
+    - type: rngds
+      prefix: ""
+      weight: 1
+  val_data:
+    - type: rngds
+      prefix: ""
+      weight: 1
+
+# ALTERNATIVE TEST TOKENIZER path (fill after generation)
+# tokenizer_path: /path/to/alt_tok/tokenizer
+
+logger_name: wandb
+logger_project: parcae
+log_step_interval: 1
+
+# Launch notes (NOT EXECUTED):
+#   export LOCAL_WORLD_SIZE=1
+#   export WANDB_MODE=offline
+#   bash runs/run_training.sh <this-file> p1c-min-train group 1
+# First optimizer_step skips parameter update.
+# Effective saves at microbatch multiples of 4.
