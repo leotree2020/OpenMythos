@@ -1,31 +1,41 @@
-# P1-C GPU & Cost Analysis
+# P1-C GPU & Cost Analysis (Revised)
 
-**Status**: ESTIMATED / NOT TESTED. No actual GPU inventory or training performed.
+**Status**: ESTIMATED / NOT TESTED. No measured throughput or GPU inventory.
 
-## Current environment (this session)
+## Recurrent FLOPs adjustment (ESTIMATED)
 
-- NOT TESTED: GPU presence, model, VRAM, CUDA version, driver, PyTorch build.
-- Env probe script runs safely without torch (see tests).
-- Disk / network / cloud billing unknown.
+Standard Transformer proxy `6 × params × tokens` undercounts Parcae because the recurrent core is executed multiple times.
 
-## Effective batch & token math (VERIFIED from config)
+From pinned upstream config (and HF model card):
+- `mean_recurrence`: 8
+- `mean_backprop_depth`: 4
+- Recurrent block layers: 2 (of total ~6 effective layers)
 
-From `parcae-small-140m.yaml`:
-- world_batch_size: 256
-- micro_batch_size: 32
-- block_size: 2048
-- Effective tokens per optimizer step = 256 × 2048 = **524,288** (VERIFIED arithmetic)
+Approximate multiplier for the recurrent portion (ESTIMATED):
+- Forward passes over core: ~mean_recurrence
+- Backward passes over core: ~mean_backprop_depth
+- Prelude + Coda: once each
 
-## Rough ESTIMATED budgets (single ~40 GB-class GPU, typical throughput assumptions)
+Conservative training FLOPs range (ESTIMATED):
+- Lower bound: ~2–3× the plain Transformer proxy (if only partial core is recurrent)
+- Upper bound: ~4–6× (full core looped at mean_recurrence with backprop depth)
 
-| Stage | Steps | Tokens (ESTIMATED) | GPU-hours (ESTIMATED) | FLOPs proxy (ESTIMATED, 6×params×tokens) | Notes |
-|-------|-------|--------------------|-----------------------|------------------------------------------|-------|
-| 1 Smoke | 40 | ~21 M | < 0.1 | ~1.8e16 | Force frequent ckpt; may reduce micro-batch |
-| 2 Short | 1,000 | ~524 M | 1–3 | ~4.4e17 | Depends on measured tok/s |
-| 3 Candidate | 10,000 | ~5.2 B | 10–40 | ~4.4e18 | Full scale; user approval required |
+Exact multiplier requires source-level FLOP counting or profiler (NOT TESTED).
 
-- Param count: ~140 M (VERIFIED from README table)
-- Checkpoint size: ESTIMATED 0.5–1 GB per full ckpt (bf16)
-- Throughput assumptions are typical literature values, **not measured**.
+## Token math (VERIFIED arithmetic)
 
-**Any paid GPU or training run requires explicit user approval.**
+world_batch_size=256, block_size=2048 → **524,288 tokens / optimizer step**.
+
+## Stage budgets (ESTIMATED ranges only)
+
+| Stage | Steps | Tokens | Training FLOPs range (ESTIMATED) | GPU-hours range (ESTIMATED)* |
+|-------|-------|--------|----------------------------------|------------------------------|
+| 1 Smoke | 40 | ~21 M | 3.6e16 – 1.1e17 | 0.05 – 0.5 |
+| 2 Short | 1,000 | ~524 M | 8.8e17 – 2.6e18 | 1 – 8 |
+| 3 Candidate | 10,000 | ~5.2 B | 8.8e18 – 2.6e19 | 10 – 80 |
+
+*GPU-hours ranges assume typical 40 GB-class single-GPU throughput of 5k–50k tokens/s. **Actual time requires measurement** on the target hardware. No fixed claim is made.
+
+Measurement plan: once Stage 1 is authorized, record tokens/sec and peak memory on the real GPU; then revise ranges.
+
+Any paid resource requires separate approval.

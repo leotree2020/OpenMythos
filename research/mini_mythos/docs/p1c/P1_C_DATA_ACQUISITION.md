@@ -1,17 +1,23 @@
-# P1-C Data & Tokenizer Acquisition Notes
+# P1-C Data & Tokenizer Acquisition (Updated)
 
-## FineWeb-Edu
+## FineWeb-Edu / Shuffled variant
 
-- Official Parcae config points to local paths under `/resource/data/fineweb-edu-100b-shuffle/`.
-- Upstream `scripts/download_data.py` downloads from HF dataset `SandyResearch/fineweb-edu-shuffled` (sample-100BT / 350BT / val).
-- Full HuggingFaceFW/fineweb-edu is ~5.84 TB (ODC-By v1.0 + CommonCrawl ToS).
-- **Status: BLOCKED** — requires explicit user approval for download volume, storage, and network.
+- Official download target: `SandyResearch/fineweb-edu-shuffled` on Hugging Face.
+  - Configs: sample-100BT (~100B tokens), sample-350BT, val.
+  - License: inherits ODC-By v1.0 from HuggingFaceFW/fineweb-edu (+ CommonCrawl ToS).
+- Full HuggingFaceFW/fineweb-edu: ~5.84 TB.
+- **Status**: Available on HF, but download of even the 100BT sample is large. **BLOCKED** until user approves storage, bandwidth, and any cost.
+- Alternatives for Stage 1 smoke only:
+  - Tiny synthetic sequences (no real data needed for pure mechanism check).
+  - Stream a few shards if network allows (still needs approval).
 
-## Tokenizer
+## Parcae Tokenizer
 
-- Config expects `/resource/tokenizer/parcae_tokenizer`.
-- Upstream provides `scripts/tok_train.py` for training a 32k BPE tokenizer.
-- No confirmed public pretrained tokenizer artifact located in this audit.
-- **Status: BLOCKED** pending user confirmation of source or local generation plan.
+- Official HF artifact: `SandyResearch/parcae-tokenizer` (exists, no model card).
+- Also generatable via upstream `scripts/tok_train.py` (32k BPE).
+- License: not explicitly stated in the short card; assume compatible with Parcae project unless contradicted.
+- **Status**: Available on HF. Download still **BLOCKED** pending approval, but size is expected to be small (tokenizer files).
 
-For Stage 1 pure mechanism smoke, synthetic data is acceptable if real data remains blocked.
+## Recommendation
+
+For Stage 1 pure smoke, synthetic data + local tokenizer generation is sufficient and avoids large downloads. Real data can be introduced after Stage 1 passes and approval is given.
