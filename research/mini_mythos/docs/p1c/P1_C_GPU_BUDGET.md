@@ -1,21 +1,29 @@
-# P1-C GPU & Cost Analysis (Arithmetic Corrected)
+# P1-C GPU & Cost Analysis
 
-**All numbers ESTIMATED / NOT TESTED until Gate 1 JSON is produced.**
+## Measured Gate 1 Smoke Data (2026-10-23, A100-SXM4-80GB)
 
-## Consistent example (do not treat as measured)
+These numbers are **measured** for the specific smoke configuration only (micro-batch=2, seq_len=128, 4 steps, synthetic labels, AdamW). They must **not** be extrapolated to official full training (effective batch 256, seq 2048, MuonAdamW, etc.).
 
-Assumption for illustration only: 10,000 tokens/s on A100 80GB.
-- Tokens/step (official effective) = 256 × 2048 = 524,288
-- Stage 1 (40 steps) = 20,971,520 tokens → ~35 min → ~0.58 GPU-hours
-- At 200 JPY/hr → ~116 JPY for the compute portion of Stage 1
+- Peak VRAM Allocated: 3.256 GiB
+- Peak VRAM Reserved: 3.502 GiB
+- Average Step Time: 0.2173 s
+- Throughput: 1178.2 tokens/sec
+- Historical RunPod price observed during the run period: approximately **$1.80/hr** (not a permanent quote; re-check before any future launch)
 
-Real throughput, peak VRAM, and cost must be taken from `p1c_gate1_smoke.json` after an authorized run.
+## Future Estimates (NOT MEASURED — for planning only)
 
-## Cost control
+Any projection for official Stage 1 / Gate 2 training (40 optimizer steps, full effective batch, real or properly shifted data) is **unmeasured**.
 
-- Set alerts, but **alerts are not hard stops**.
-- After any run: Stop/Terminate Pod in dashboard.
-- Delete unused Network Volumes and Volume Disks (they continue billing).
-- Verify billing page shows zero active compute.
+- Do **not** use the Gate 1 1178.2 tokens/sec figure to estimate official 40-step runtime.
+- Do **not** use any unmeasured assumption such as 10,000 tokens/s.
+- Before Gate 2 execution, the target configuration must be re-measured for throughput and cost on the actual instance.
+- Hard cumulative budget cap remains 5,000 JPY. Exceeding it is a stop condition.
 
-Hard cumulative cap remains 5,000 JPY. Exceeding it is a stop condition.
+## Cost Control
+
+- Billing alerts are **not** hard stops.
+- After any run: manually Terminate the Pod in the dashboard.
+- Delete unused Network Volumes and Volume Disks (storage continues to bill).
+- Confirm the billing page shows no active compute charges.
+
+All future runtime and cost numbers remain ESTIMATED until measured under the target configuration.

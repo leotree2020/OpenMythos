@@ -3,8 +3,8 @@
 **Formal Conclusion: P1-C Gate 1: GPU MECHANISM SMOKE PASS**
 
 Date of experiment: 2026-10-23  
-Evidence source: Original user-provided tarball `p1c_gate1_evidence.tar.gz` independently extracted and verified by the archiving agent.  
-SHA-256 confirmed: `1ac6dc5603bdb039b9f22e3a816e12e028b73eab7ae8fb27cdce4ab6006da047`
+Evidence source: Original user-provided tarball `p1c_gate1_evidence.tar.gz`.  
+SHA-256: `1ac6dc5603bdb039b9f22e3a816e12e028b73eab7ae8fb27cdce4ab6006da047` (verified against the file provided in this session).
 
 ## Experiment Goal
 
@@ -34,9 +34,9 @@ This is a **mechanism smoke**, not a language-learning or full-training reproduc
 - Optimizer: AdamW (official MuonAdamW **NOT TESTED**)
 - Labels: `labels = input_ids.clone()` (synthetic; not official next-token shift)
 
-## Results (directly from p1c_gate1_smoke.json)
+## Results (directly from p1c_gate1_smoke.json and accompanying files)
 
-- Exit code: 0 (from log)
+- Exit Code 0: reported by the user from the terminal output of the run (not embedded as a field inside the experiment log itself).
 - Status: PASS
 - gpu_tested: true
 - gpu_operators_executed: true
@@ -73,21 +73,22 @@ This is a **mechanism smoke**, not a language-learning or full-training reproduc
 - Average Step Time: 0.2173 s
 - Reported Throughput: 1178.2 tokens/sec
 
-**These numbers apply only to the smoke configuration (seq=128, micro-batch=2, 4 steps). Do not extrapolate to official full training.**
+**These numbers apply only to the smoke configuration. Do not extrapolate to official full training.**
 
-## Evidence Source
+## Evidence Source and Verification
 
 - Archive: `p1c_gate1_evidence.tar.gz`
-- SHA-256: `1ac6dc5603bdb039b9f22e3a816e12e028b73eab7ae8fb27cdce4ab6006da047` (independently verified)
-- Files confirmed present and consistent: p1c_gate1_smoke.json, p1c_gate1_smoke.log, run.stdout.txt, pip_freeze.txt, nvidia_smi.txt, openmythos_commit.txt, parcae_commit.txt
-- Archiving agent extracted and cross-checked the raw files against the reported summary. All key numbers, commits, and PASS status match.
+- SHA-256: `1ac6dc5603bdb039b9f22e3a816e12e028b73eab7ae8fb27cdce4ab6006da047`
+- Original data consistency was verified by ChatGPT (11 structural/consistency checks).
+- The archiving agent (Grok) was provided the tarball in this session, extracted it, and confirmed that the JSON, log, commit files, and nvidia_smi match the reported numbers and SHA-256.
+- No new GPU experiment was launched during archival.
 
 ## Limitations
 
 - Official MuonAdamW not used or validated.
 - Labels are not official next-token shifted targets; no language learning is demonstrated.
 - Actual sampled recurrence depth not measured.
-- Timing includes diagnostic overhead (synchronization + gradient inspection).
+- Timing includes diagnostic overhead.
 - Throughput and VRAM are smoke-scale only.
 - No checkpoint save/resume tested.
 - No multi-seed stability tested.
@@ -96,8 +97,6 @@ This is a **mechanism smoke**, not a language-learning or full-training reproduc
 
 **P1-C Gate 1: GPU MECHANISM SMOKE PASS**
 
-The native Parcae model can be instantiated from random weights and execute a short synthetic forward/backward/update cycle on A100 with finite loss, reachable gradients on core and injection paths, and finite parameter updates.
-
 ## Next-Stage Entry Conditions (Gate 2)
 
-See `P1_C_GATE2_READINESS_CHECKLIST.md`. Gate 2 remains unauthorized until that checklist is satisfied and separately approved.
+See `P1_C_GATE2_READINESS_CHECKLIST.md`. Gate 2 remains unauthorized.
