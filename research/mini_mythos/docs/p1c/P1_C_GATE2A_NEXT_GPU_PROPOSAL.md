@@ -1,48 +1,48 @@
-# P1-C Gate 2A — Next Minimal Official Training Verification Proposal
+# P1-C Gate 2A — Next Minimal Official Training Verification Proposal (Revised)
 
 **Not authorized. Not executed. Proposal only.**
 
 ## Goal
 
-Minimal official-entry smoke that verifies:
-1. Official `scripts/train.py` starts on single GPU.
-2. MuonAdamW is instantiated and produces finite updates.
-3. Next-token (shifted) loss is used.
-4. At least one checkpoint save + resume cycle succeeds with state consistency.
+Minimal official-entry verification on a single GPU that confirms:
+1. Official `scripts/train.py` starts.
+2. MuonAdamW is used with correct grouping (special recurrent params in AdamW).
+3. Next-token (shifted) loss path is exercised.
+4. At least one checkpoint save + resume succeeds (prefer single-GPU DDP to satisfy ParquetStreamPure distributed calls, or use synthetic/rngds to bypass).
 
-## Proposed config overrides (launch-time only)
+## Suggested launch form (illustrative, not ready-to-run)
 
-- `NUM_GPUS=1`
-- `fabric_strategy: single` (or ddp with 1 device)
-- `micro_batch_size: 2`
-- `world_batch_size: 8` → gradient_accumulation_steps = 4
-- `block_size: 128` (or 256) for memory safety
-- `max_steps: 8` (or exit_at_step)
-- `save_step_interval: 4` (microbatch-aware; verify actual save cadence)
-- `logger_name` + `WANDB_MODE=offline`
-- Synthetic or tiny local parquet if full data still BLOCKED
-- `optimizer: MuonAdamW` (official)
+```bash
+bash runs/run_training.sh <config-or-override> <run-name> <group> 1
+```
+Additional overrides (YAML or CLI) for micro-batch, world batch, sequence length, max_steps, save interval, offline logger, etc. must be determined and validated at runtime.
 
-## Measurement plan
+## Step and save strategy
 
-- Peak allocated / reserved VRAM (`nvidia-smi` + torch)
-- Step time with and without diagnostics
-- Actual sampled recurrence (if monitoring enabled)
-- Tokens/sec **measured on this run only** — do **not** reuse Gate 1 1178.2 tokens/s
-- GPU-hours and JPY cost from actual runtime
+- Prefer a small number of microbatch steps that produces at least 2–4 actual parameter updates (accounting for the skipped first optimizer step).
+- Record microbatch_step, optimizer_step, and actual update count.
+- Set `save_step_interval` low enough to trigger at least one save before exit (remember it is microbatch-oriented).
+- After resume, compare next batch identity and LR.
+
+## Measurement
+
+- Peak allocated / reserved VRAM
+- Step time (including first-step compile cost)
+- Actual sampled recurrence if available
+- Tokens/sec measured on **this** run only — do **not** reuse Gate 1 1178.2 tokens/s
+- GPU-hours and JPY from actual wall time
 
 ## Cost control
 
-- Hard cumulative cap remains **¥5,000**.
+- Cumulative hard cap remains ¥5,000.
 - User must manually terminate Pod and delete unused storage.
-- Billing alerts ≠ hard stop.
-- Prefer smallest step count that still exercises save/resume (e.g., 8 optimizer steps).
+- Billing alerts are not hard stops.
 
-## Prerequisites before launch
+## Remaining prerequisites
 
-- Resolve data path mismatch or use synthetic.
-- Confirm MuonAdamW import and grouping on the target environment.
-- Confirm WandB offline or alternative logger.
-- Confirm lightning/torch compatibility on the A100 image.
+- Data path mismatch resolved or synthetic/rngds used.
+- WandB offline or alternative logger confirmed.
+- Lightning/torch compatibility confirmed on target image.
+- Single-GPU DDP vs single strategy decision made with checkpoint path in mind.
 
-**This proposal does not authorize execution. Gate 2 remains blocked until ChatGPT review and user approval.**
+**This proposal does not authorize execution.**

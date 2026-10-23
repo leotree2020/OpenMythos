@@ -1,57 +1,40 @@
-# P1-C Gate 2A — Official Training Entry Audit
+# P1-C Gate 2A — Official Training Entry Audit (Revised)
 
-**Status**: Static analysis only. No claim that the official training entry has been successfully launched on CPU or GPU.
+**Status**: Static analysis only. No claim of successful official training launch.
 
-Pinned Parcae: `69284c13746e849104f738d6d1a347b1f457df76`
+## Launch parameters
 
-## Key files examined
+`runs/run_training.sh` signature:
+```bash
+./run_training.sh [CONFIG] [RUN_NAME] [RUN_GROUP] [NUM_GPUS]
+```
+`NUM_GPUS` is the **fourth positional argument** (default 8). It does **not** automatically read an external environment variable of the same name.
 
-- `runs/run_training.sh`
-- `scripts/train.py` (partial, via prior reads + structure)
-- `launch_configs/parcae-small-140m.yaml`
-- `recpre/settings.py`
-- `pyproject.toml`
+Correct single-GPU invocation form (illustrative only — **not** a ready-to-run command):
+```bash
+bash runs/run_training.sh launch_configs/parcae-small-140m.yaml my-run parcae 1
+```
+Additional YAML overrides or environment variables may still be required and have **not** been runtime-validated.
 
-## Findings
+## Step counting
 
-### Single-GPU overrides (do not modify official YAML)
+From `scripts/train.py` (prior inspection):
+- On the first `optimizer_step == 0` the code **skips** `optimizer.step()`.
+- Therefore `max_steps=8` does **not** equal 8 effective weight updates.
+- Future experiments must record:
+  - `microbatch_step`
+  - `optimizer_step`
+  - actual parameter update count
+  - checkpoint save positions
+  - post-resume data batch and LR
 
-Official `run_training.sh` defaults to `NUM_GPUS=8` and calls `torchrun --nproc_per_node=${NUM_GPUS}`.
+## CPU limitations
 
-For single GPU, override at launch:
-- `NUM_GPUS=1` (or call `torchrun --nproc_per_node=1`)
-- `fabric_strategy: single` or keep `ddp` with 1 device (SingleDeviceStrategy is supported in train.py)
-- `world_batch_size` must be divisible by `micro_batch_size * devices * num_nodes`. For 1 GPU: set `world_batch_size = micro_batch_size * gradient_accumulation_steps`.
-- Example minimal: `micro_batch_size: 2`, `world_batch_size: 8` → accumulation = 4.
+- `scripts/train.py` performs an early CUDA device check and **cannot** be fully started on pure CPU.
+- `CLISettings.devices` can be influenced by environment variables (`SLURM_NTASKS_PER_NODE`, `LOCAL_WORLD_SIZE`) or `torch.cuda.device_count()`. It is not accurate to claim a mock is always required; however pure CPU remains blocked by the import-time check.
+- Lightning / torchdata / AxoNN / WandB compatibility: **NOT TESTED**.
+- Tokenizer license and real data layout: **BLOCKED**.
 
-`settings.py` derives `devices` from `torch.cuda.device_count()` or SLURM env. On a pure CPU machine this will be 0 → batch math fails. **CPU cannot fully instantiate CLISettings without mocking device count.**
+## torch.compile
 
-### What can be done on CPU vs requires GPU
-
-| Check | CPU possible? | Notes |
-|-------|---------------|-------|
-| Import train.py | NO | Early `torch.cuda._device_count_*` check raises if no GPU |
-| Parse YAML / CLISettings (with mock) | Partial | Device count hard dependency |
-| Model construct (small) | Possible if torch+cuda absent path patched | Not official |
-| Forward/backward | GPU preferred | Gate 1 already did synthetic |
-| Full train loop | GPU only | |
-
-**BLOCKED on pure CPU**: Official `scripts/train.py` aborts at module level if no CUDA device is detected.
-
-### WandB
-
-`setup_fabric` requires `WandbLogger` when `logger_name=wandb` (default).
-- Offline mode: `WANDB_MODE=offline` (no token required).
-- Alternative: temporarily set `logger_name` to a non-wandb value if supported, or provide a dummy logger. Do **not** expose tokens.
-- Status: **NOT TESTED** on this environment.
-
-### Dependency risks (see matrix doc)
-
-- `lightning==2.3.0.dev20240328` (dev pin) vs current PyTorch 2.8 used in Gate 1.
-- `axonn` git pin.
-- `torchdata` StatefulDataLoader.
-- `numpy<2.0`.
-
-## Conclusion
-
-Single-GPU path is feasible via launch overrides, but official entry is GPU-gated at import. No CPU launch evidence exists. Do not claim successful official training start.
+First-step compilation cost is expected and is distinct from the Gate 1 pure-mechanism smoke (which did not exercise the official training entry or compile path).

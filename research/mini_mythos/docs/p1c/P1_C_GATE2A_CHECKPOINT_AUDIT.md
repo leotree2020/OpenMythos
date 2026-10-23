@@ -1,40 +1,38 @@
-# P1-C Gate 2A — Checkpoint / Resume Integrity Audit
+# P1-C Gate 2A — Checkpoint / Resume Integrity Audit (Revised)
 
-**Static analysis. No checkpoint created or loaded. All runtime behavior NOT TESTED.**
+**Static analysis. No checkpoint created or loaded. Runtime behavior NOT TESTED.**
 
-## Known upstream behaviors (from prior train.py inspection and task notes)
+## ParquetStreamPure distributed dependency
 
-1. **LR Scheduler on resume**: Upstream restore logic may keep the newly created scheduler rather than fully restoring the checkpointed scheduler state. Impact: LR trajectory after resume may diverge from continuous training. **Risk: Medium. Must be measured.**
-2. **Extra batch skip on resume**: Code contains logic that advances the dataloader by one batch on resume. Correctness depends on whether the saved cursor already points past the last consumed batch. **Risk: Medium. Requires exact next-batch comparison.**
-3. **Save interval vs microbatch**: `save_step_interval` is tied to microbatch / fabric step counting, not pure optimizer steps. A setting of 1024 does **not** guarantee a save every 1024 optimizer steps. **Risk: High for smoke planning.**
+`recpre/huggingface_dataset.py` `ParquetStreamPure.state_dict` / `load_state_dict`:
 
-## Future test definition (not executed)
+- Creates a CUDA tensor: `torch.tensor([...], device="cuda")`
+- Calls `torch.distributed.all_gather` and `torch.distributed.get_world_size()` / `get_rank()`
 
-### Continuous baseline
-- Train N optimizer steps from seed S, save final state.
+### Implications for single GPU
 
-### Resume baseline
-- Train N/2 steps, checkpoint, resume, continue to N.
+| Strategy | Static observation | Risk |
+|----------|--------------------|------|
+| `fabric_strategy=single` | May not initialize a full process group | **Potential failure** if dataset state save/load is invoked |
+| Single-GPU DDP (`torchrun --nproc_per_node=1`) | Initializes process group (world size 1) | Lower risk; all_gather on 1 rank should succeed |
+| `rngds` / synthetic | Bypasses ParquetStreamPure | Avoids this path |
 
-### Comparisons (PASS if all hold)
-- Model parameters: relative tolerance 1e-5 (or exact for bf16).
-- MuonAdamW optimizer state: momentum buffers match within 1e-5.
-- Scheduler state: current step and LR match (or document intentional divergence).
-- RNG: torch, cuda, numpy, python match so next sample is identical.
-- Sampled recurrence depths: next batch depths match.
-- Next training batch: exact token match.
-- Loss / grad norm continue without jump beyond tolerance.
+**Static conclusion**: Using `fabric_strategy=single` with a real `pqds-pure` dataset carries a non-zero risk of checkpoint failure due to uninitialized distributed group. Single-GPU DDP is safer for the upstream checkpoint path. Runtime confirmation **NOT TESTED**.
 
-**Any mismatch → FAIL.**
+## Other known risks (unchanged)
 
-## Required state to capture for resume verification
+1. Resume may retain newly created LR scheduler instead of full checkpointed scheduler state.
+2. Extra batch skip on resume; correctness depends on saved cursor.
+3. `save_step_interval` counts microbatch / fabric steps, not pure optimizer steps.
 
-- model.state_dict()
-- optimizer.state_dict() (Muon + AdamW groups)
-- scheduler.state_dict() if available
-- torch.random.get_rng_state(), torch.cuda.get_rng_state(), numpy, random
-- dataloader state (StatefulDataLoader)
-- current microbatch / optimizer step counters
-- last sampled depth pair
+## Future verification requirements
 
-**Do not modify upstream checkpoint code to hide issues.**
+Record on any future run:
+- microbatch_step
+- optimizer_step
+- actual parameter update count
+- checkpoint save location / step
+- post-resume next data batch identity
+- LR value after resume
+
+**Do not modify upstream checkpoint code.**
