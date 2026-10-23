@@ -1,58 +1,65 @@
 # P1-C Gate 1 GPU Smoke — Reproducible Execution Guide
 
-**Pinned Parcae**: `69284c13746e849104f738d6d1a347b1f457df76`  
-**Pinned OpenMythos HEAD**: (current P1-C branch)
+**Pinned Parcae**: `69284c13746e849104f738d6d1a347b1f457df76`
 
-## Full commands from a clean instance
+## Full commands from a clean Linux instance
 
 ```bash
-# 1. Clone OpenMythos and switch to P1-C branch / known HEAD
+# Work in a known directory
+mkdir -p $HOME/mini-mythos-gate1 && cd $HOME/mini-mythos-gate1
+
+# 1. Clone OpenMythos and switch to P1-C branch
 git clone https://github.com/leotree2020/OpenMythos.git
 cd OpenMythos
 git checkout mini-mythos-p1c-parcae-training-plan
-# or: git checkout <exact-sha-from-PR>
 
-# 2. Clone Parcae and pin commit
+# 2. Clone Parcae and pin commit (sibling directory)
+cd $HOME/mini-mythos-gate1
 git clone https://github.com/sandyresearch/parcae.git
 cd parcae
 git checkout 69284c13746e849104f738d6d1a347b1f457df76
+# Verify: git rev-parse HEAD   # must equal 69284c13746e849104f738d6d1a347b1f457df76
 
-# 3. Install compatible dependencies (record exact versions)
+# 3. Install
 pip install -e .
-# Typical additional: torch (CUDA build matching instance), lightning, etc.
-# pip install torch --index-url https://download.pytorch.org/whl/cu124
-pip freeze > /tmp/env_freeze.txt
+# Install matching CUDA torch if needed, then:
+pip freeze > $HOME/mini-mythos-gate1/env_freeze.txt
 
-# 4. Return to OpenMythos and run smoke (import path assumes parcae installed)
-cd /path/to/OpenMythos
+# 4. Run smoke from OpenMythos, pointing at Parcae clone for HEAD check
+cd $HOME/mini-mythos-gate1/OpenMythos
 python research/mini_mythos/scripts/p1c_gpu_smoke.py \
+  --parcae-dir $HOME/mini-mythos-gate1/parcae \
   --steps 4 --micro-batch 2 --seq-len 128 \
-  --out p1c_gate1_smoke.json --log p1c_gate1_smoke.log
+  --out $HOME/mini-mythos-gate1/p1c_gate1_smoke.json \
+  --log $HOME/mini-mythos-gate1/p1c_gate1_smoke.log
 
-# 5. Save results
-cat p1c_gate1_smoke.json
-cat p1c_gate1_smoke.log
+# 5. Inspect
+cat $HOME/mini-mythos-gate1/p1c_gate1_smoke.json
 ```
 
-## CPU contract check (no GPU, no torch required for basic)
+## CPU contract check (no GPU)
 
 ```bash
+cd $HOME/mini-mythos-gate1/OpenMythos
 python research/mini_mythos/scripts/p1c_cpu_contract_check.py
 ```
 
-## Fail-closed behavior
+## Failure path simulation (CPU)
 
-Script returns non-zero exit code on:
-- forward exception or wrong return shape
-- nonfinite loss or gradients
-- Recurrent Core gradient not observed
-- DiagonalInjection / adapter gradient not observed
-- no parameters updated
-- invalid args
-- unhandled exceptions
+```bash
+python research/mini_mythos/scripts/p1c_gpu_smoke.py --simulate-fail nonfinite --out /tmp/sim.json
+# expect exit 1 and status FAIL in JSON
+```
 
-`status: PASS` only when all checks succeed. Official MuonAdamW is explicitly `NOT_TESTED`.
+## Notes
+
+- Synthetic labels are used. This is a mechanism smoke, **not** a language-learning validation.
+- Official training shifts labels for next-token prediction; smoke uses identical tensors for interface check only.
+- Timing includes gradient diagnostic loops.
+- `gpu_tested=true` only after GPU operators executed **and** all checks completed.
+- Official MuonAdamW remains NOT TESTED.
+- Actual sampled recurrence remains NOT MEASURED unless explicitly captured.
 
 ## Cost control
 
-Billing alerts ≠ hard stop. After run: manually Terminate Pod and delete unused storage volumes, then confirm billing page.
+After any run: manually Terminate the Pod in the dashboard and delete unused Network Volumes / Volume Disks. Confirm the billing page shows no active charges. Alerts are not hard stops.
