@@ -1,0 +1,82 @@
+# PROPOSED / NOT EXECUTED
+# Single-GPU minimal official Parcae training override (revised notes)
+# Pinned Parcae commit: 69284c13746e849104f738d6d1a347b1f457df76
+
+run_name: p1c-gate2b-single-gpu-proposed
+resume: false
+seed: 42
+out_dir: outputs/p1c-gate2b-proposed
+
+model_name: parcae-small-140m
+model_impl: dynamic
+
+block_size: 128
+model_overwrite:
+  vocab_size: 32768
+  prelude_norm: true
+  block_size: 128
+
+world_batch_size: 8
+micro_batch_size: 2
+# gradient_accumulation_steps = 4 (devices=1, num_nodes=1)
+
+optimizer: MuonAdamW
+optim_config:
+  lr: 8e-3
+  weight_decay: 0.0
+  betas: [0.8, 0.95]
+  eps: 1e-10
+  muon_lr: 8e-3
+  muon_momentum: 0.95
+  muon_wd: 0.2
+  muon_ns_steps: 5
+
+warmup_steps: 0
+cooldown_steps: 0
+lr_schedule: trapezoid
+min_lr: 0
+grad_clip: 1.0
+
+fabric_strategy: ddp
+fabric_precision: bf16-mixed
+
+compile_model: false
+gradient_checkpointing: false
+
+max_steps: 6
+save_step_interval: 2   # effective saves only at microbatch multiples of 4 (not is_accumulating)
+save_last_step: true
+eval_step_interval: 1000
+eval_iters: 1
+
+data_config:
+  train_data:
+    - type: rngds
+      prefix: ""
+      weight: 1
+  val_data:
+    - type: rngds
+      prefix: ""
+      weight: 1
+
+# tokenizer_path: <verified path required before launch>
+# License of official Parcae tokenizer remains BLOCKED until reviewed.
+# Expected files: tokenizer.json (+ optional config/special tokens map)
+# Must confirm vocab size matches 32768.
+
+logger_name: wandb
+# WANDB_MODE=offline
+logger_project: parcae
+log_step_interval: 1
+
+# Memory note:
+# Each rngds pre-allocates 1e6 rows × block_size int32.
+# block_size=128 → ~492–512 MiB each; train+val ≈ 984 MiB host RAM.
+# Ensure sufficient CPU RAM before launch.
+#
+# Save note:
+# save_at_interval requires not is_accumulating AND microbatch_step % save_step_interval == 0.
+# With accum=4, saves occur at microbatch multiples of 4.
+# First optimizer_step skips parameter update.
+#
+# PROPOSED / NOT EXECUTED
