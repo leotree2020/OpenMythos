@@ -3,8 +3,8 @@
 **Formal Conclusion: P1-C Gate 1: GPU MECHANISM SMOKE PASS**
 
 Date of experiment: 2026-10-23  
-Evidence source: User-provided experimental results summary (original tarball verified by ChatGPT).  
-This report does **not** claim independent re-execution of the GPU run by the archiving agent.
+Evidence source: Original user-provided tarball `p1c_gate1_evidence.tar.gz` independently extracted and verified by the archiving agent.  
+SHA-256 confirmed: `1ac6dc5603bdb039b9f22e3a816e12e028b73eab7ae8fb27cdce4ab6006da047`
 
 ## Experiment Goal
 
@@ -14,16 +14,16 @@ This is a **mechanism smoke**, not a language-learning or full-training reproduc
 
 ## Environment and Git Commits
 
-- GPU: NVIDIA A100-SXM4-80GB
+- GPU: NVIDIA A100-SXM4-80GB (confirmed in nvidia_smi.txt)
 - Python: 3.12.3
-- PyTorch: 2.8.0+cu128
+- PyTorch: 2.8.0+cu128 (confirmed in smoke JSON and pip_freeze)
 - CUDA Runtime: 12.8
 - NVIDIA Driver: 595.91.07
-- OpenMythos commit used: `f46e3144d60ddfd6dddf698293e14090f879d729`
-- Parcae commit: `69284c13746e849104f738d6d1a347b1f457df76`
+- OpenMythos commit used: `f46e3144d60ddfd6dddf698293e14090f879d729` (confirmed in openmythos_commit.txt)
+- Parcae commit: `69284c13746e849104f738d6d1a347b1f457df76` (confirmed in parcae_commit.txt and smoke log)
 - Model: `parcae-small-140m` (random init)
 - Model parameters: 144,323,136
-- Config: mean_recurrence=8, mean_backprop_depth=4
+- Config: mean_recurrence=8, mean_backprop_depth=4, use_fused_head=pytorch
 
 ## Execution Parameters
 
@@ -34,9 +34,9 @@ This is a **mechanism smoke**, not a language-learning or full-training reproduc
 - Optimizer: AdamW (official MuonAdamW **NOT TESTED**)
 - Labels: `labels = input_ids.clone()` (synthetic; not official next-token shift)
 
-## Results
+## Results (directly from p1c_gate1_smoke.json)
 
-- Exit code: 0
+- Exit code: 0 (from log)
 - Status: PASS
 - gpu_tested: true
 - gpu_operators_executed: true
@@ -45,6 +45,8 @@ This is a **mechanism smoke**, not a language-learning or full-training reproduc
 - injection_grad_observed: true
 - params_updated: true
 - params_finite_after_update: true
+- official_muonadamw: NOT_TESTED
+- actual_sampled_recurrence: NOT_MEASURED
 
 ### Loss (per step)
 
@@ -75,10 +77,10 @@ This is a **mechanism smoke**, not a language-learning or full-training reproduc
 
 ## Evidence Source
 
-- User-provided archive: `p1c_gate1_evidence.tar.gz`
-- SHA-256: `1ac6dc5603bdb039b9f22e3a816e12e028b73eab7ae8fb27cdce4ab6006da047`
-- Contents (per ChatGPT verification of 11 consistency checks): smoke JSON/log, stdout, pip_freeze, nvidia_smi, commit files.
-- Archiving agent did **not** independently re-read the raw tarball; results above are from the user/ChatGPT summary.
+- Archive: `p1c_gate1_evidence.tar.gz`
+- SHA-256: `1ac6dc5603bdb039b9f22e3a816e12e028b73eab7ae8fb27cdce4ab6006da047` (independently verified)
+- Files confirmed present and consistent: p1c_gate1_smoke.json, p1c_gate1_smoke.log, run.stdout.txt, pip_freeze.txt, nvidia_smi.txt, openmythos_commit.txt, parcae_commit.txt
+- Archiving agent extracted and cross-checked the raw files against the reported summary. All key numbers, commits, and PASS status match.
 
 ## Limitations
 
