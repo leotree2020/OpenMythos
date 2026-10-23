@@ -4,12 +4,11 @@ P1-C Gate 1 GPU Smoke Script
 Uses official Parcae (pinned commit 69284c1) via parcae_lm.create_model.
 Does NOT modify or reimplement Parcae core.
 
-CPU mode: performs import / config checks only; heavy compute marked NOT TESTED.
+CPU mode / no torch: basic checks only; heavy compute marked NOT TESTED.
 GPU mode: limited synthetic fwd/bwd/update + gradient reachability checks.
 """
 import argparse
 import json
-import os
 import sys
 import time
 import traceback
@@ -33,7 +32,7 @@ def main():
     }
 
     log_path = Path(args.log)
-    log_path.write_text("")  # truncate
+    log_path.write_text("")
 
     def log(msg):
         print(msg)
@@ -41,19 +40,27 @@ def main():
             f.write(msg + "\n")
 
     try:
-        import torch
-        result["torch_version"] = torch.__version__
-        result["cuda_available"] = torch.cuda.is_available()
-        if result["cuda_available"]:
-            result["gpu_name"] = torch.cuda.get_device_name(0)
-            result["cuda_version"] = torch.version.cuda
-            result["gpu_tested"] = True
-            device = "cuda"
-        else:
-            result["gpu_name"] = None
-            result["status"] = "CPU_ONLY_NOT_TESTED"
-            device = "cpu"
-            log("CUDA not available. GPU path NOT TESTED.")
+        try:
+            import torch
+            result["torch_version"] = torch.__version__
+            result["cuda_available"] = torch.cuda.is_available()
+            if result["cuda_available"]:
+                result["gpu_name"] = torch.cuda.get_device_name(0)
+                result["cuda_version"] = torch.version.cuda
+                result["gpu_tested"] = True
+                device = "cuda"
+            else:
+                result["gpu_name"] = None
+                result["status"] = "CPU_ONLY_NOT_TESTED"
+                device = "cpu"
+                log("CUDA not available. GPU path NOT TESTED.")
+        except ImportError:
+            result["status"] = "NO_TORCH_CPU_CHECK_ONLY"
+            result["errors"].append("torch not installed")
+            log("torch not installed. CPU static check only. GPU path NOT TESTED.")
+            with open(args.out, "w") as f:
+                json.dump(result, f, indent=2)
+            return 0
 
         # Try official Parcae
         try:
@@ -78,28 +85,27 @@ def main():
             model.train()
             result["model_params"] = sum(p.numel() for p in model.parameters())
 
-            # Synthetic tokens
             vocab = getattr(config, "vocab_size", 32768)
             tokens = torch.randint(0, vocab, (args.micro_batch, args.seq_len), device=device)
 
-            optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4)  # simple for smoke; official uses MuonAdamW
+            optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4)
 
-            peak_mem = 0
+            peak_mem = 0.0
             step_times = []
             losses = []
+            core_grad = False
+            inj_grad = False
 
             for step in range(args.steps):
                 torch.cuda.reset_peak_memory_stats()
                 t0 = time.perf_counter()
                 logits = model(tokens)
-                # Assume cross-entropy style; adapt if model returns loss directly
                 if isinstance(logits, tuple):
                     logits = logits[0]
                 loss = torch.nn.functional.cross_entropy(
                     logits.view(-1, logits.size(-1)), tokens.view(-1)
                 )
                 loss.backward()
-                # Gradient reachability (best-effort names)
                 core_grad = any(
                     p.grad is not None and p.grad.abs().sum() > 0
                     for n, p in model.named_parameters()
@@ -147,7 +153,11 @@ def main():
     with open(args.out, "w") as f:
         json.dump(result, f, indent=2)
     log(f"Result written to {args.out}")
-    return 0 if result["status"] in ("CPU_CONFIG_OK_GPU_NOT_TESTED", "GPU_SMOKE_RAN") else 1
+    return 0 if result["status"] in (
+        "NO_TORCH_CPU_CHECK_ONLY",
+        "CPU_CONFIG_OK_GPU_NOT_TESTED",
+        "GPU_SMOKE_RAN",
+    ) else 1
 
 if __name__ == "__main__":
     sys.exit(main())
