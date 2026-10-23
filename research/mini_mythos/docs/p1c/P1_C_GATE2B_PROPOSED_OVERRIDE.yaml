@@ -1,0 +1,79 @@
+# PROPOSED / NOT EXECUTED
+# Single-GPU minimal official Parcae training override
+# Pinned Parcae commit: 69284c13746e849104f738d6d1a347b1f457df76
+# Do not treat as a ready-to-run command. Additional environment setup required.
+
+run_name: p1c-gate2b-single-gpu-proposed
+resume: false
+seed: 42
+out_dir: outputs/p1c-gate2b-proposed
+
+model_name: parcae-small-140m
+model_impl: dynamic
+
+# Sequence length consistency: override both
+block_size: 128
+model_overwrite:
+  vocab_size: 32768
+  prelude_norm: true
+  block_size: 128
+
+# Single GPU arithmetic (illustrative)
+world_batch_size: 8
+micro_batch_size: 2
+# => gradient_accumulation_steps = 4 when devices=1, num_nodes=1
+
+optimizer: MuonAdamW
+optim_config:
+  lr: 8e-3
+  weight_decay: 0.0
+  betas: [0.8, 0.95]
+  eps: 1e-10
+  muon_lr: 8e-3
+  muon_momentum: 0.95
+  muon_wd: 0.2
+  muon_ns_steps: 5
+
+warmup_steps: 0
+cooldown_steps: 0
+lr_schedule: trapezoid
+min_lr: 0
+grad_clip: 1.0
+
+fabric_strategy: ddp          # prefer single-GPU DDP so process group exists
+fabric_precision: bf16-mixed
+
+compile_model: false          # reduce first-step compile cost for minimal smoke
+gradient_checkpointing: false
+
+# Short run; remember first optimizer_step skips step()
+max_steps: 6
+save_step_interval: 2         # microbatch-oriented; verify actual cadence at runtime
+save_last_step: true
+eval_step_interval: 1000      # effectively disable mid-run eval for minimal smoke
+eval_iters: 1
+
+# Synthetic data — both train and val required
+data_config:
+  train_data:
+    - type: rngds
+      prefix: ""
+      weight: 1
+  val_data:
+    - type: rngds
+      prefix: ""
+      weight: 1
+
+# Tokenizer still required for vocab_size; path must be supplied at runtime
+# tokenizer_path: /path/to/parcae_tokenizer   # BLOCKED until license + files confirmed
+
+logger_name: wandb
+# Use WANDB_MODE=offline at launch
+logger_project: parcae
+log_step_interval: 1
+
+# Notes:
+# - Launch via: bash runs/run_training.sh <this-file-or-base> <run-name> <group> 1
+# - First optimizer step is a no-op for parameter update.
+# - Do not reuse Gate 1 throughput numbers.
+# - PROPOSED / NOT EXECUTED
