@@ -186,7 +186,7 @@ def main():
     if not repeat_ok:
         results.append({"item": "baseline repeat", "status": "BLOCKED"})
     else:
-        results.append({"item": "baseline repeat", "status": "PASS", "loss": float(l1)})
+        results.append({"item": "baseline repeat", "status": "PASS", "loss": float(l1.detach())})
 
     model.zero_grad(set_to_none=True)
     loss_full, _ = native_loss(model, ids, labels, (0, 2))
