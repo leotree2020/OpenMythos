@@ -59,10 +59,17 @@ class LifecycleLog:
             "update_count": self.update_count,
         })
 
+    def stamp_update_count(self, state):
+        state["mini_mythos_update_count"] = self.update_count
+        return self.update_count
+
     def restore_update_count(self, value):
         if value is None:
-            return
+            self.events.append({"type": "update_count_restore", "status": "MISSING"})
+            return "MISSING"
         self.update_count = int(value)
+        self.events.append({"type": "update_count_restore", "status": "RESTORED", "update_count": self.update_count})
+        return "RESTORED"
 
     def on_before_save(self, path, step):
         self.events.append({

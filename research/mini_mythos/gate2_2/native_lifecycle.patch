@@ -1,5 +1,5 @@
 --- scripts/train.py	2026-10-23 12:57:20.293517846 +0000
-+++ /tmp/parcae-n1fix/src/scripts/train.py	2026-10-24 07:35:09.850596747 +0000
++++ /tmp/parcae-n1fix/src/scripts/train.py	2026-10-24 08:04:51.933199907 +0000
 @@ -7,6 +7,14 @@
  
  from parcae_lm.models.parcae import ParcaeConfig
@@ -55,16 +55,17 @@
              if state["microbatch_step"] == pre_load_step and state["microbatch_step"] == 0:
                  fabric.print(f"WARNING: microbatch_step is still 0 after loading - checkpoint may not have loaded correctly!")
              
-@@ -1537,6 +1555,8 @@
+@@ -1537,6 +1555,9 @@
          state["rng_state_cuda"] = torch.cuda.get_rng_state(device=fabric.device)
          state["rng_state_numpy"] = np.random.get_state()
          state["rng_state_python"] = random.getstate()
 +        if _MM_LOG is not None:
++            _MM_LOG.stamp_update_count(state)
 +            _MM_LOG.on_before_save(fully_qualified_checkpoint_path, state.get("microbatch_step"))
  
          if fabric.global_rank == 0:
              opt = state["optimizer"]
-@@ -1554,6 +1574,11 @@
+@@ -1554,6 +1575,11 @@
                           f"buffer_len={len(ds._state.get('buffer', []))}")
  
          fabric.save(fully_qualified_checkpoint_path, state)
