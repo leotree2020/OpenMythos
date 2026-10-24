@@ -167,9 +167,9 @@ def main():
     out = Path(args.output).resolve()
     out.parent.mkdir(parents=True, exist_ok=True)
     head = git_out(root, "rev-parse", "HEAD").strip()
-    status = git_out(root, "status", "--porcelain")
-    if head != PINNED or status.strip():
-        payload = {"status": "BLOCKED", "head": head, "status": status}
+    parcae_status = git_out(root, "status", "--porcelain")
+    if head != PINNED or parcae_status.strip():
+        payload = {"status": "BLOCKED", "head": head, "parcae_status": parcae_status}
         out.write_text(json.dumps(payload, indent=2))
         print(json.dumps(payload, indent=2))
         return 2
@@ -181,7 +181,7 @@ def main():
     params = sum(p.numel() for p in model.parameters())
     l1, _ = native_loss(model, ids, labels, (0, 2))
     l2, _ = native_loss(model, ids, labels, (0, 2))
-    repeat_ok = float(l1) == float(l2)
+    repeat_ok = float(l1.detach()) == float(l2.detach())
     results = []
     if not repeat_ok:
         results.append({"item": "baseline repeat", "status": "BLOCKED"})
@@ -335,7 +335,7 @@ def main():
             "cpu": platform.machine(),
             "threads": torch.get_num_threads(),
             "parcae_head": head,
-            "parcae_status": status,
+            "parcae_status": parcae_status,
         },
         "results": results,
         "selected": discovery,
