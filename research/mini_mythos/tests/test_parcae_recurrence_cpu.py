@@ -1,4 +1,4 @@
-"""Standalone F2-B-R1 CPU probe. Not collected by unittest or pytest.
+"""Standalone F2-B-R2 CPU probe. Not collected by unittest or pytest.
 
 PENDING CHATGPT REVIEW. Not a final PASS.
 Does not modify Parcae. No GPU. No dataset download.
@@ -13,6 +13,7 @@ from pathlib import Path
 import torch
 
 PINNED = "69284c13746e849104f738d6d1a347b1f457df76"
+EXPECTED_PARAMS = 247936
 PAIRS = [(0, 1), (0, 2), (1, 1), (2, 2)]
 CAUSAL_TOL = 1e-5
 SEED = 42
@@ -27,6 +28,55 @@ def git_head(root):
         return out, None
     except Exception as exc:
         return None, str(exc)
+
+
+def git_status(root):
+    try:
+        out = subprocess.check_output(
+            ["git", "-C", str(root), "status", "--porcelain"],
+            text=True, stderr=subprocess.STDOUT,
+        )
+        return out, None
+    except Exception as exc:
+        return None, str(exc)
+
+
+def accept_pair(a, b, trainable, param_count):
+    reasons = []
+    if param_count != EXPECTED_PARAMS:
+        reasons.append(f"param count {param_count} != {EXPECTED_PARAMS}")
+    if a["missing"] or b["missing"]:
+        reasons.append("missing gradients")
+    if a["zero"] or b["zero"]:
+        reasons.append("zero gradients")
+    if a["bad"] or b["bad"]:
+        reasons.append("nonfinite gradients")
+    if set(a["grads"]) != set(b["grads"]):
+        reasons.append("gradient name sets differ")
+    if set(a["grads"]) != set(trainable):
+        reasons.append("coverage is not full")
+    if len(a["grads"]) != len(trainable) or len(b["grads"]) != len(trainable):
+        reasons.append("coverage count mismatch")
+    return (not reasons), reasons
+
+
+def negative_acceptance():
+    names = ["w", "b"]
+    good = {"grads": {"w": 1, "b": 1}, "missing": [], "zero": [], "bad": []}
+    missing = {"grads": {"w": 1}, "missing": ["b"], "zero": [], "bad": []}
+    zero = {"grads": {"w": 1, "b": 0}, "missing": [], "zero": ["b"], "bad": []}
+    checks = {
+        "missing": accept_pair(good, missing, names, EXPECTED_PARAMS),
+        "zero": accept_pair(good, zero, names, EXPECTED_PARAMS),
+    }
+    ok = all(not passed for passed, _ in checks.values())
+    return {
+        "item": "negative acceptance",
+        "status": "PASS" if ok else "FAIL",
+        "missing_rejected": not checks["missing"][0],
+        "zero_rejected": not checks["zero"][0],
+        "reasons": {k: v[1] for k, v in checks.items()},
+    }
 
 
 def env_record(parcae_root, head):
@@ -148,7 +198,7 @@ def expected_flags(pair):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Standalone F2-B-R1 probe")
+    parser = argparse.ArgumentParser(description="Standalone F2-B-R2 probe")
     parser.add_argument("--parcae-root", required=True)
     parser.add_argument("--output", required=True)
     parser.add_argument("--require-pinned", action="store_true")
@@ -158,12 +208,26 @@ def main():
     out = Path(args.output).resolve()
     out.parent.mkdir(parents=True, exist_ok=True)
     head, err = git_head(root)
-    if args.require_pinned and head != PINNED:
-        payload = {"status": "BLOCKED", "reason": "Parcae HEAD mismatch", "head": head, "error": err}
+    status_text, status_err = git_status(root)
+    if args.require_pinned and (head != PINNED or status_text is None or status_text.strip()):
+        payload = {
+            "status": "BLOCKED",
+            "reason": "Parcae HEAD mismatch or dirty workspace",
+            "head": head,
+            "status": status_text,
+            "error": err or status_err,
+        }
         out.write_text(json.dumps(payload, indent=2))
         print(json.dumps(payload, indent=2))
         return 2
     sys.path.insert(0, str(root))
+    import parcae_lm.models.parcae.parcae as parcae_mod
+    imported = Path(parcae_mod.__file__).resolve()
+    if args.require_pinned and root not in imported.parents:
+        payload = {"status": "BLOCKED", "reason": "imported Parcae is outside --parcae-root", "imported": str(imported)}
+        out.write_text(json.dumps(payload, indent=2))
+        print(json.dumps(payload, indent=2))
+        return 2
 
     model, cfg = make_model()
     env = env_record(root, head)
@@ -190,9 +254,10 @@ def main():
         grad_diff = max((max_abs(a["grads"][k], b["grads"][k]) for k in shared), default=None)
         flags_ok = a["flags"] == expected_flags(pair) and b["flags"] == expected_flags(pair)
         covered = len(a["grads"])
+        accepted, reasons = accept_pair(a, b, trainable, sum(p.numel() for p in model.parameters()))
         ok = (
             logit_diff == 0.0 and loss_diff == 0.0 and grad_diff == 0.0
-            and flags_ok and a["finite"] and b["finite"]
+            and flags_ok and a["finite"] and b["finite"] and accepted
         )
         results.append({
             "item": list(pair),
@@ -210,6 +275,7 @@ def main():
             "zero": a["zero"],
             "nonfinite": a["bad"],
             "loss": a["loss"],
+            "acceptance_reasons": reasons,
         })
 
     a02 = run_once(model, ids, labels, (0, 2), False, SEED)
@@ -269,12 +335,13 @@ def main():
         "status": "PASS" if all(m["status"] == "PASS" for m in modes) else "FAIL",
     })
 
+    results.append(negative_acceptance())
     hard = [r for r in results if r["status"] == "FAIL"]
     payload = {
         "review": "PENDING CHATGPT REVIEW",
         "kind": "standalone probe, not unittest/pytest",
         "params": sum(p.numel() for p in model.parameters()),
-        "env": env,
+        "env": {**env, "parcae_status": status_text, "imported": str(imported)},
         "config": cfg,
         "results": results,
         "overall": "FAIL" if hard else "PENDING CHATGPT REVIEW",
