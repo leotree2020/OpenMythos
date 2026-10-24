@@ -25,7 +25,7 @@ def check_yaml(path):
 
 def main():
     root = Path(__file__).resolve().parents[1] / "gate2_2"
-    yamls = sorted(root.glob("GPU_*.yaml"))
+    yamls = [root / n for n in ("GPU_A_CONTINUOUS.yaml", "GPU_B1_EXIT.yaml", "GPU_B2_RESUME.yaml", "GPU_C_NATIVE_SKIP.yaml")]
     rows = [check_yaml(str(p)) for p in yamls]
     # relationship
     relation = {
