@@ -1,111 +1,93 @@
-# F2-C Experiment Design
+# F2-C Experiment Design, revision A-R1
 
-Status: **DESIGN ONLY**. Pending ChatGPT review. No test code in this commit.
+Status: **PENDING CHATGPT REVIEW**. Design only. Stage B is not authorized.
 
-## 1. Research state
+Reviewed against `research/mini_mythos/docs/F2C_STAGE_A_CHATGPT_REVIEW.md` at `172a64c4a5b60d16d6f3e80d78959c8feaeb7766`.
 
-- Repo: leotree2020/OpenMythos
-- Branch: mini-mythos-p1c-gate22c-readiness
-- Accepted checkpoint: `b15ed92255876b75233a813f5486d58abda239e8`
-- Acceptance: `research/mini_mythos/docs/F2B_FINAL_ACCEPTANCE_20261024.md`
-- Parcae: `69284c13746e849104f738d6d1a347b1f457df76`, clean
-- AxoNN pin recorded as `c5ef65d3d4f329c20292a2d26681e8d9cbcccecf`
-- Local unrelated dirty file `research/mini_mythos/gate2_1/TEST_RESULTS.json` is preserved
-- Python 3.11.2, PyTorch 2.14.1+cpu, no CUDA
+## 0. State
 
-F2-B is closed. It showed mechanism and gradient presence, not derivative correctness.
+- Branch: `mini-mythos-p1c-gate22c-readiness`
+- Prior design: `db291ab7987a826d4b62c0d66a3bf6fe79ff9fc3`
+- F2-B close: `b15ed92255876b75233a813f5486d58abda239e8`
+- Parcae: `69284c13746e849104f738d6d1a347b1f457df76`
+- Native float64 remains BLOCKED. `lm_head(x).float()` and RoPE float32 casts in `parcae_lm/modules/utils.py` are deliberate.
 
-## 2. Math
+## 1. Three objectives
 
-Let one core update be \(f_\theta\). Shared core weights are \(\theta\).
+`NATIVE32_FULL`  
+Native `(0,2)` function. Same seed before every call. Compare native autograd to a finite difference of that same native function. This is the native full graph. It is mixed float32, not float64.
 
-Full graph, `num_steps_pair=(0,2)`:
+`NATIVE32_TBPTT`  
+Native `(1,1)` autograd, plus a suffix reference that freezes the first-step state. Compare suffix autograd to native `(1,1)` autograd first. Only if that matches, compare suffix autograd to a finite difference of the suffix. Do not finite-difference the whole `(1,1)` forward.
+
+`AUX64`  
+Optional harness check on a small test-side float64 function. It does not call Parcae. It is not a native float64 reproduction. It only checks that the finite-difference procedure can recover a known derivative.
+
+## 2. Truncated suffix
+
+First version selects only `transformer.core_block.*` parameters.
+
+Freeze `x1` at the baseline parameter:
+
+1. Set seed 42.
+2. Hook `update_recurrent_state`.
+3. Run native `(1,1)`.
+4. Clone and detach the tensor returned by the first call. That is `x1`.
+5. Record the call inputs: `input_embeds`, `freqs_cis`, mask, `step`, `total_steps`, and `_current_input_ids`.
+
+Suffix, using the same module objects:
+
+1. Set `_current_input_ids` to the recorded ids.
+2. Call `core_block_forward(x1, input_embeds, freqs_cis, mask, step=1, total_steps=2)`.
+3. Apply `transformer.C`, coda blocks, `ln_f`, `lm_head`, and cross entropy with the same labels and `ignore_index` as native forward.
+4. Value embeddings stay inside `core_block_forward`, looked up from the same ids.
+
+Gradient paths kept for a `core_block` parameter: the second core call, then C, coda, head, and loss. Injection parameters are not in this first selection. Prelude does not depend on core weights. The first core call stays frozen.
+
+Reconstruction check: native `(1,1)` autograd and suffix autograd on the frozen scalar must agree before any finite difference. Disagreement means the suffix is wrong. That is BLOCKED for the TBPTT finite-difference claim, not a model FAIL.
+
+## 3. Negative control
+
+F2-B `grad_max_abs ≈ 0.344` is over all trainable tensors. It does not name a core scalar.
+
+Two steps, in order:
+
+1. Discovery. Compute `(0,2)` and `(1,1)` grads for `transformer.core_block.*`. Record scalars with `|g| > 1e-3` and `|g_full - g_trunc| > 1e-2`. Write the exact `(name, index)` list to a discovery artifact.
+2. Confirmation. Use only that frozen list. Do not replace an entry after seeing the confirmatory result.
+
+If discovery finds no such scalar, the negative control is `INCONCLUSIVE / NOT TESTED`, not a model FAIL.
+
+## 4. Error budget, not frozen
+
+Native float32. Machine epsilon is about `1e-7`. Loss is about 5. Central-difference rounding is about `u * L / ε`. At `ε = 1e-3` that is about `5e-4`. Truncation is `O(ε²)` and is not known a priori.
+
+Candidate grid for native objectives: `ε ∈ {1e-3, 1e-2}`.  
+Candidate native rule, not a pass bar:
 
 \[
-x_0 = s,\quad x_1 = f_\theta(x_0),\quad x_2 = f_\theta(x_1),\quad L = \ell(x_2)
+|g_{ad}-g_{fd}| \le 10^{-3} + 10^{-2}\max(|g_{ad}|,|g_{fd}|)
 \]
 
-Autograd \(g_{\mathrm{full}}\) includes both uses of \(\theta\).
+This is wider than the float64 candidate on purpose. It is not frozen.
 
-Truncated graph, `num_steps_pair=(1,1)`:
-
-\[
-x_1 = f_\theta(x_0)\ \text{under no\_grad},\quad x_2 = f_\theta(x_1),\quad L = \ell(x_2)
-\]
-
-Autograd \(g_{\mathrm{trunc}}\) treats \(x_1\) as a constant. It does not include the first use of \(\theta\).
-
-A finite difference of the whole `(1,1)` function is not the right reference, because the first step still depends numerically on \(\theta\).
-
-## 3. Numerical references
-
-Central difference, declared before any run:
-
-\[
-g_{\mathrm{fd}} = \frac{L(\theta+\varepsilon)-L(\theta-\varepsilon)}{2\varepsilon}
-\]
-
-Full reference: \(L\) is the native `(0,2)` loss. Seed is reset before every forward.
-
-Truncated reference, built on the test side without editing Parcae:
-
-1. Seed and run the first core step under `no_grad`.
-2. Detach that state as \(x_1\).
-3. Rebuild only the differentiable suffix with the same module objects: second `core_block_forward`, `C`, coda, `ln_f`, head, cross entropy.
-4. Keep any other path that native `(1,1)` still differentiates. Do not freeze those.
-5. Compare suffix autograd to suffix finite difference.
-6. Also compare suffix autograd to native `(1,1)` autograd on the same scalar. That checks the reconstruction.
-
-## 4. dtype finding
-
-Native path is not end-to-end float64. `parcae.py` does `self.lm_head(x).float()` before cross entropy. A `.double()` model still returned a float32 loss in a one-forward probe.
-
-Native float64: **BLOCKED**. Do not edit Parcae to remove the cast.
-
-Isolated alternative for review: a test-side float64 suffix that calls the same modules, used only as a math reference, not as a native-path claim. Native evidence stays float32.
-
-## 5. Controls
-
-- Same 2→2→2 config as F2-B. Expected params 247936.
-- seed 42 before init and before every compared forward.
-- `state_init` remains `like-init`. Reseed is the control. Do not switch it.
-- eval mode. `randomize_positions_from` is None. No dropout on this path.
-- batch 1, seq 8, hand-made token ids, labels equal to ids.
-- Select 2–3 core tensors with nonzero F2-B grads, then one scalar each with \(|g|\) clearly above 1e-3.
-- Restore every perturbed value in `try/finally`.
-
-## 6. Candidate acceptance, not frozen
-
-Float64 candidate, only if the isolated suffix is approved:
+AUX64 candidate, only for the non-Parcae harness:
 
 \[
 |g_{ad}-g_{fd}| \le 10^{-5} + 10^{-3}\max(|g_{ad}|,|g_{fd}|)
 \]
 
-Two epsilons, \(10^{-4}\) and \(10^{-3}\). Both must pass. Non-finite is FAIL. Near-zero scalars are not selected.
+with `ε ∈ {1e-4, 1e-3}`. Do not apply this rule to native mixed float32.
 
-Native float32 tolerance is not frozen here. It needs a separate justification after ChatGPT chooses the path.
+Non-finite values are FAIL on the objective being tested. A near-zero scalar is not selected. Independent repeats use the same seed and must match before the tolerance is interpreted.
 
-Negative case: compare `(1,1)` and `(0,2)` on a scalar where the known max abs gap is about 0.344. Detection succeeds if the absolute gap is greater than 1e-2. Agreement would be FAIL for the negative test.
+## 5. Status
 
-## 7. Pass / fail
+| Item | State |
+|---|---|
+| Full vs truncated definition | PASS from prior review |
+| Native float64 | BLOCKED |
+| Suffix definition | revised, pending review |
+| Tolerances | NOT FROZEN |
+| Stage B | NOT AUTHORIZED |
 
-| Item | Pass | Fail | Blocked |
-|---|---|---|---|
-| Full graph | ad and fd within frozen tol at both eps | outside tol or non-finite | dtype or API prevents the defined graph |
-| Truncated graph | suffix ad matches native `(1,1)` ad, and matches suffix fd | either mismatch | suffix cannot be built without editing Parcae |
-| Negative | `(0,2)` vs `(1,1)` gap above 1e-2 | they match | selected scalar is near zero |
-| Native float64 | n/a | n/a | BLOCKED by `.float()` cast |
-
-## 8. Cost and traps
-
-CPU only. A few dozen forwards on a 248k model. Seconds.
-
-Traps: like-init RNG if seed is not reset; comparing truncated ad to full-function fd; float32 noise if the float64 suffix is not approved; shared storage if a perturbed tensor is not restored; reconstructing the suffix in a way that drops a still-live path.
-
-## 9. Planned files, not created now
-
-- `research/mini_mythos/tests/test_parcae_gradient_math_cpu.py`
-- `research/mini_mythos/gate2_2/evidence/f2c/`
-
-No GPU. No Parcae or AxoNN edit. No F2-B overwrite.
+No Parcae or AxoNN edit. No GPU. No numeric experiment in this commit.
