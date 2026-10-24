@@ -1,25 +1,31 @@
 --- scripts/train.py	2026-10-23 12:57:20.293517846 +0000
-+++ /tmp/parcae-n1/src/scripts/train.py	2026-10-24 07:25:32.919260887 +0000
-@@ -7,6 +7,10 @@
++++ /tmp/parcae-n1fix/src/scripts/train.py	2026-10-24 07:35:09.850596747 +0000
+@@ -7,6 +7,14 @@
  
  from parcae_lm.models.parcae import ParcaeConfig
  from parcae_lm.tokenizer import Tokenizer
-+try:
-+    from native_lifecycle_observer import LOG as _MM_LOG
-+except Exception:
++import os as _mm_os
++if _mm_os.environ.get("MINI_MYTHOS_EVIDENCE") == "1":
++    try:
++        from native_lifecycle_observer import LOG as _MM_LOG
++    except Exception as _mm_exc:
++        raise RuntimeError(f"MINI_MYTHOS_EVIDENCE enabled but observer import failed: {_mm_exc}") from _mm_exc
++else:
 +    _MM_LOG = None
  
  global_start_time = time.time()
  import math
-@@ -673,6 +677,7 @@
+@@ -673,6 +681,9 @@
              return outputs["loss"].detach(), outputs["log_ppl"].detach()
  
      loss, log_ppl = tightly_scoped_fwd_bwd(model, input_ids, positions, labels, mask)
++    if _MM_LOG is not None:
++        _MM_LOG.on_microbatch(input_ids, loss, state["microbatch_step"])
 +    _mm_stepped = False
      metrics["mbs_loss"] = loss
      running_loss.update(loss)
      running_ppl.update(log_ppl)
-@@ -712,8 +717,10 @@
+@@ -712,8 +723,10 @@
                              if param.grad is not None:
                                  torch._dynamo.decorators.mark_static_address(param.grad)
                      torch.compile(optimizer.step, mode="max-autotune-no-cudagraphs")()
@@ -30,40 +36,43 @@
          else:
              if cfg.skip_nonfinite_grads:
                  fabric.print(f"Grad norm non-finite! Optimizer step {state['optimizer_step'] + 1} skipped.")
-@@ -725,6 +732,8 @@
-             track_gradient_metrics(model, optimizer, metrics)
+@@ -726,6 +739,8 @@
              model.module.apply(partial(disable_monitoring_and_retrieve_metrics, metrics=metrics))
          optimizer.zero_grad(set_to_none=not (cfg.fabric.use_apex_adamw or cfg.compile_optimizer))
-+        if _MM_LOG is not None:
-+            _MM_LOG.on_step(input_ids, loss, state, _mm_stepped)
          state["optimizer_step"] += 1
++        if _MM_LOG is not None:
++            _MM_LOG.on_optimizer_boundary(state["optimizer_step"], _mm_stepped)
          if data_scheduler is not None:
              data_scheduler.step(state["microbatch_step"])
-@@ -1418,6 +1427,8 @@
+         cfg.gradient_accumulation_steps = get_batch_size(state["microbatch_step"], cfg)
+@@ -1418,6 +1433,9 @@
              state["rng_state_cuda"] = checkpoint_raw.get("rng_state_cuda")
              state["rng_state_numpy"] = checkpoint_raw.get("rng_state_numpy")
              state["rng_state_python"] = checkpoint_raw.get("rng_state_python")
 +            if _MM_LOG is not None:
-+                _MM_LOG.on_after_load()
++                _MM_LOG.restore_update_count(checkpoint_raw.get("mini_mythos_update_count"))
++                _MM_LOG.on_after_load(state.get("microbatch_step"))
              if state["microbatch_step"] == pre_load_step and state["microbatch_step"] == 0:
                  fabric.print(f"WARNING: microbatch_step is still 0 after loading - checkpoint may not have loaded correctly!")
              
-@@ -1538,6 +1549,9 @@
+@@ -1537,6 +1555,8 @@
+         state["rng_state_cuda"] = torch.cuda.get_rng_state(device=fabric.device)
          state["rng_state_numpy"] = np.random.get_state()
          state["rng_state_python"] = random.getstate()
- 
 +        if _MM_LOG is not None:
-+            _MM_LOG.on_before_save(fully_qualified_checkpoint_path)
-+
++            _MM_LOG.on_before_save(fully_qualified_checkpoint_path, state.get("microbatch_step"))
+ 
          if fabric.global_rank == 0:
              opt = state["optimizer"]
-             opt_state = opt.state if hasattr(opt, "state") else {}
-@@ -1554,6 +1568,8 @@
+@@ -1554,6 +1574,11 @@
                           f"buffer_len={len(ds._state.get('buffer', []))}")
  
          fabric.save(fully_qualified_checkpoint_path, state)
 +        if _MM_LOG is not None:
-+            _MM_LOG.on_after_save(fully_qualified_checkpoint_path)
++            _MM_LOG.on_after_save(fully_qualified_checkpoint_path, state.get("microbatch_step"))
++            _out = _mm_os.environ.get("MINI_MYTHOS_EVIDENCE_OUT")
++            if _out:
++                _MM_LOG.export(_out, {"command": "patched-train", "note": "observer export"})
          fabric.print(f"------------------- {time.ctime()[:-5]} Checkpoint saved ({time.time() - t0:.02f} seconds)")
  
  
