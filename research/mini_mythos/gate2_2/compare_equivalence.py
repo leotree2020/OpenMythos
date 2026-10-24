@@ -179,9 +179,22 @@ def main():
         "rng_B1_save_eq_B2_restore": rng_ok,
         "C_offset_detected": c_ok,
     }
-    status = "PASS" if all(checks.values()) else "FAIL"
+    gpu_sources = all(o.get("source") == "GPU_RUNTIME" for o in objs)
+    gpu_rng = all(
+        (o.get("rng_stages") or {}).get("before_save", {}).get("cuda_status") == "COLLECTED"
+        and (o.get("rng_stages") or {}).get("after_load", {}).get("cuda_status") == "COLLECTED"
+        for o in (B2, C)
+    ) if gpu_sources else False
+    if all(checks.values()) and gpu_sources and gpu_rng and all(o.get("optimizer_class") == "MuonAdamW" for o in objs):
+        status = "GPU NUMERICAL PASS"
+    elif all(checks.values()):
+        status = "STRUCTURAL PASS"
+    else:
+        status = "FAIL"
     print(json.dumps({
         "status": status,
+        "gpu_sources": gpu_sources,
+        "gpu_rng_collected": gpu_rng,
         "checks": checks,
         "loss_detail": loss_detail,
         "model_detail": model_detail,
