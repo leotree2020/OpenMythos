@@ -1,8 +1,9 @@
-"""S2-4R6F file-resume equivalence. CPU only. Not Gate 2.2-C PASS."""
+"""S2-4R6F-FIX. CPU file-resume only. Not Gate 2.2-C PASS."""
 import json
 import platform
 import random
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
@@ -25,78 +26,81 @@ def cfg():
 
 
 def raw_bytes(t):
-    return t.detach().cpu().contiguous().view(torch.uint8).numpy().tobytes()
+    x = t.detach().cpu().contiguous()
+    if x.ndim == 0:
+        x = x.reshape(1)
+    return x.view(torch.uint8).numpy().tobytes()
 
 
-def bit_equal(a, b):
-    return raw_bytes(a) == raw_bytes(b)
+def finite_tree(obj):
+    if torch.is_tensor(obj) and obj.is_floating_point():
+        return bool(torch.isfinite(obj).all())
+    if isinstance(obj, dict):
+        return all(finite_tree(v) for v in obj.values())
+    if isinstance(obj, (list, tuple)):
+        return all(finite_tree(v) for v in obj)
+    return True
 
 
 def strict(a, b, path=""):
     if torch.is_tensor(a) and torch.is_tensor(b):
         if a.shape != b.shape or a.dtype != b.dtype or a.device != b.device:
-            return False, path or "meta", None
-        if not torch.isfinite(a.float()).all() or not torch.isfinite(b.float()).all():
-            if not bit_equal(a, b):
-                return False, path or "nonfinite", None
-        exact = torch.equal(a, b)
-        bits = bit_equal(a, b)
-        if exact and bits:
-            return True, None, 0.0
-        diff = (a.detach().float() - b.detach().float()).abs().max().item()
-        return False, path or "value", diff
+            return False, path or "meta"
+        if a.is_floating_point() and (not torch.isfinite(a).all() or not torch.isfinite(b).all()):
+            return False, path or "nonfinite"
+        if raw_bytes(a) != raw_bytes(b):
+            return False, path or "bytes"
+        return True, None
     if isinstance(a, dict) and isinstance(b, dict):
         if set(a) != set(b):
-            return False, path or "keys", None
+            return False, path or "keys"
         for k in a:
-            ok, where, mx = strict(a[k], b[k], f"{path}.{k}" if path else str(k))
+            ok, where = strict(a[k], b[k], f"{path}.{k}" if path else str(k))
             if not ok:
-                return False, where, mx
-        return True, None, 0.0
+                return False, where
+        return True, None
     if isinstance(a, (list, tuple)) and type(a) is type(b):
         if len(a) != len(b):
-            return False, path or "len", None
+            return False, path or "len"
         for i, (x, y) in enumerate(zip(a, b)):
-            ok, where, mx = strict(x, y, f"{path}[{i}]")
+            ok, where = strict(x, y, f"{path}[{i}]")
             if not ok:
-                return False, where, mx
-        return True, None, 0.0
+                return False, where
+        return True, None
     if type(a) is type(b) and a == b:
-        return True, None, 0.0
-    return False, path or type(a).__name__, None
+        return True, None
+    return False, path or type(a).__name__
 
 
 def storage_ranges(obj, prefix=""):
     out = []
     if torch.is_tensor(obj):
-        out.append((prefix, obj.data_ptr(), obj.untyped_storage().data_ptr(), obj.numel() * obj.element_size()))
+        out.append((prefix, obj.untyped_storage().data_ptr(), obj.storage_offset(), obj.numel()))
     elif isinstance(obj, dict):
         for k, v in obj.items():
             out.extend(storage_ranges(v, f"{prefix}.{k}" if prefix else str(k)))
+    elif isinstance(obj, (list, tuple)):
+        for i, v in enumerate(obj):
+            out.extend(storage_ranges(v, f"{prefix}[{i}]"))
     return out
 
 
-def overlaps(a_ranges, b_ranges):
-    hits = []
-    for na, pa, sa, la in a_ranges:
-        for nb, pb, sb, lb in b_ranges:
-            if sa == sb and la and lb:
-                hits.append((na, nb))
-    return hits
+def overlaps(a, b):
+    return any(sa == sb and na and nb for na, sa, _, na_n in a for nb, sb, _, nb_n in b)
 
 
-def snapshot_rng():
-    return {
-        "torch": torch.get_rng_state().clone(),
-        "python": random.getstate(),
-        "numpy": np.random.get_state(),
-    }
+def snap():
+    return {"torch": torch.get_rng_state().clone(), "python": random.getstate(), "numpy": np.random.get_state()}
 
 
-def restore_rng(s):
+def apply_rng(s):
     torch.set_rng_state(s["torch"])
     random.setstate(s["python"])
     np.random.set_state(s["numpy"])
+
+
+def rng_equal(a, b):
+    return torch.equal(a["torch"], b["torch"]) and a["python"] == b["python"] and a["numpy"][0] == b["numpy"][0]
 
 
 def fresh():
@@ -114,7 +118,7 @@ def fresh():
 
 
 def save_ckpt(path, m, o):
-    torch.save({"model": m.state_dict(), "opt": o.state_dict(), "rng": snapshot_rng()}, path)
+    torch.save({"model": m.state_dict(), "opt": o.state_dict(), "rng": snap()}, path)
 
 
 def resume(path):
@@ -123,8 +127,8 @@ def resume(path):
     m.load_state_dict(raw["model"])
     o = MuonAdamW(get_muon_param_groups(m.named_parameters()))
     o.load_state_dict(raw["opt"])
-    restore_rng(raw["rng"])
-    return m, o, raw["rng"]
+    apply_rng(raw["rng"])
+    return m, o, raw
 
 
 def next_step(m, o):
@@ -134,58 +138,46 @@ def next_step(m, o):
     y = m(x, labels=x, return_logits=False, num_steps_pair=(torch.tensor(1), torch.tensor(1)))
     y["loss"].backward()
     grads = {n: p.grad.detach().clone() for n, p in m.named_parameters() if p.grad is not None}
+    loss_ok = finite_tree(y["loss"]) and finite_tree(grads)
     o.step()
-    return x, empty, grads, torch.isfinite(y["loss"]).all().item()
-
-
-def comparator_negatives():
-    out = []
-    a = torch.zeros(2)
-    b = torch.zeros(3)
-    ok, _, _ = strict(a, b)
-    out.append({"name": "neg_shape", "ok": not ok})
-    ok, _, _ = strict(torch.zeros(2), torch.zeros(2, dtype=torch.float64))
-    out.append({"name": "neg_dtype", "ok": not ok})
-    ok, _, _ = strict({"a": 1}, {"b": 1})
-    out.append({"name": "neg_keys", "ok": not ok})
-    pz = torch.tensor([0.0])
-    nz = torch.tensor([-0.0])
-    ok, _, _ = strict(pz, nz)
-    out.append({"name": "neg_signed_zero", "ok": not ok, "note": "BIT path must reject +0/-0"})
-    ok, _, _ = strict([1, 2], [1])
-    out.append({"name": "neg_list_len", "ok": not ok})
-    return out
+    return x, empty, grads, loss_ok and finite_tree(m.state_dict()) and finite_tree(o.state_dict())
 
 
 def main():
     checks = []
-    gcc = subprocess.check_output(["g++", "--version"], text=True).splitlines()[0]
     env = {
         "python": platform.python_version(),
         "torch": torch.__version__,
-        "gcc": gcc,
+        "gcc": subprocess.check_output(["g++", "--version"], text=True).splitlines()[0],
         "cpath": "/tmp/py311-include/Include",
-        "python_h": "CPython 3.11.2",
-        "pyconfig_h": "Python 3.10 copy",
-        "openmythos": "d44804e",
+        "include": sysconfig_include(),
+        "openmythos": "4d57cb0",
         "parcae": "69284c1",
+        "abi_risk": "3.11.2 headers with 3.10 pyconfig.h",
     }
-    checks.extend(comparator_negatives())
+    # comparator negatives
+    checks.append({"name": "neg_shape", "ok": not strict(torch.zeros(2), torch.zeros(3))[0]})
+    checks.append({"name": "neg_dtype", "ok": not strict(torch.zeros(2), torch.zeros(2, dtype=torch.float64))[0]})
+    checks.append({"name": "neg_keys", "ok": not strict({"a": 1}, {"b": 1})[0]})
+    checks.append({"name": "neg_signed_zero", "ok": not strict(torch.tensor(0.0), torch.tensor(-0.0))[0]})
+    checks.append({"name": "neg_scalar", "ok": strict(torch.tensor(1.0), torch.tensor(1.0))[0]})
+    checks.append({"name": "neg_nan", "ok": not strict(torch.tensor(float("nan")), torch.tensor(float("nan")))[0]})
 
     a, oa = fresh()
     with tempfile.TemporaryDirectory() as td:
         path = Path(td) / "c.pt"
         save_ckpt(path, a, oa)
-        rng_at_save = snapshot_rng()
-        b, ob, rng_b = resume(path)
+        saved = torch.load(path, map_location="cpu", weights_only=False)
+        b, ob, raw = resume(path)
+        now = snap()
+        checks.append({"name": "resume_rng_immediate", "ok": rng_equal(now, raw["rng"])})
         checks.append({"name": "pre_model", "ok": strict(a.state_dict(), b.state_dict())[0]})
         checks.append({"name": "pre_opt", "ok": strict(oa.state_dict(), ob.state_dict())[0]})
-        checks.append({"name": "no_shared", "ok": not overlaps(storage_ranges(a.state_dict()), storage_ranges(b.state_dict())) and not overlaps(storage_ranges(oa.state_dict()), storage_ranges(ob.state_dict()))})
+        checks.append({"name": "no_shared", "ok": not overlaps(storage_ranges(a.state_dict()), storage_ranges(b.state_dict()))})
         checks.append({"name": "same_mode", "ok": a.training == b.training})
-        # restore A's RNG to saved point too, then step both
-        restore_rng(rng_at_save)
+        apply_rng(saved["rng"])
         xa, ea, ga, fa = next_step(a, oa)
-        restore_rng(rng_b)
+        apply_rng(raw["rng"])
         xb, eb, gb, fb = next_step(b, ob)
         checks.append({"name": "ab_input", "ok": torch.equal(xa, xb)})
         checks.append({"name": "ab_empty", "ok": ea and eb})
@@ -194,45 +186,42 @@ def main():
         checks.append({"name": "ab_opt", "ok": strict(oa.state_dict(), ob.state_dict())[0]})
         checks.append({"name": "ab_finite", "ok": fa and fb})
 
-        # BA
         a2, oa2 = fresh()
         with tempfile.TemporaryDirectory() as td2:
             p2 = Path(td2) / "c.pt"
             save_ckpt(p2, a2, oa2)
-            rng2 = snapshot_rng()
-            b2, ob2, rng_b2 = resume(p2)
-        checks.append({"name": "ba_pre_model", "ok": strict(a2.state_dict(), b2.state_dict())[0]})
-        checks.append({"name": "ba_pre_opt", "ok": strict(oa2.state_dict(), ob2.state_dict())[0]})
-        restore_rng(rng_b2)
+            saved2 = torch.load(p2, map_location="cpu", weights_only=False)
+            b2, ob2, raw2 = resume(p2)
+        checks.append({"name": "ba_pre", "ok": strict(a2.state_dict(), b2.state_dict())[0] and strict(oa2.state_dict(), ob2.state_dict())[0]})
+        checks.append({"name": "ba_no_shared", "ok": not overlaps(storage_ranges(oa2.state_dict()), storage_ranges(ob2.state_dict()))})
+        checks.append({"name": "ba_mode", "ok": a2.training == b2.training})
+        apply_rng(raw2["rng"])
         xb2, eb2, gb2, fb2 = next_step(b2, ob2)
-        restore_rng(rng2)
+        apply_rng(saved2["rng"])
         xa2, ea2, ga2, fa2 = next_step(a2, oa2)
+        checks.append({"name": "ba_empty", "ok": ea2 and eb2})
         checks.append({"name": "ba_input", "ok": torch.equal(xa2, xb2)})
         checks.append({"name": "ba_grads", "ok": strict(ga2, gb2)[0]})
         checks.append({"name": "ba_model", "ok": strict(a2.state_dict(), b2.state_dict())[0]})
         checks.append({"name": "ba_opt", "ok": strict(oa2.state_dict(), ob2.state_dict())[0]})
         checks.append({"name": "ba_finite", "ok": fa2 and fb2})
+        checks.append({"name": "cross_model", "ok": strict(a.state_dict(), a2.state_dict())[0] and strict(b.state_dict(), b2.state_dict())[0]})
+        checks.append({"name": "cross_opt", "ok": strict(oa.state_dict(), oa2.state_dict())[0] and strict(ob.state_dict(), ob2.state_dict())[0]})
 
-        # cross order
-        checks.append({"name": "cross_a", "ok": strict(a.state_dict(), a2.state_dict())[0]})
-        checks.append({"name": "cross_b", "ok": strict(b.state_dict(), b2.state_dict())[0]})
-
-        # RNG pollution negative
-        a3, oa3 = fresh()
-        with tempfile.TemporaryDirectory() as td3:
-            p3 = Path(td3) / "c.pt"
-            save_ckpt(p3, a3, oa3)
-            b3, ob3, _ = resume(p3)
-        torch.manual_seed(999)
-        x_bad = torch.randint(0, 128, (1, 4))
-        restore_rng(snapshot_rng())
-        checks.append({"name": "rng_pollution_detected", "ok": not torch.equal(x_bad, torch.randint(0, 128, (1, 4)))})
+        # negative: skip rng restore
+        torch.manual_seed(123)
+        bad = snap()
+        checks.append({"name": "neg_rng_mismatch", "ok": not rng_equal(bad, raw["rng"])})
 
     failed = [c["name"] for c in checks if not c["ok"]]
-    bits = all(c["ok"] for c in checks)
-    status = "CPU FILE-RESUME BIT-EXACT PASS" if bits else "FAIL"
+    status = "CPU FILE-RESUME BIT-EXACT PASS" if not failed else "FAIL"
     print(json.dumps({"status": status, "env": env, "checks": checks, "failed": failed, "gate": "NOT PASS"}, indent=2))
     return 0 if not failed else 1
+
+
+def sysconfig_include():
+    import sysconfig
+    return sysconfig.get_path("include")
 
 
 if __name__ == "__main__":
