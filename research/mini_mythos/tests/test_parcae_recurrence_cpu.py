@@ -1,20 +1,54 @@
-"""F2-B CPU recurrence probe. Does not modify Parcae. PENDING REVIEW, not final PASS."""
+"""Standalone F2-B-R1 CPU probe. Not collected by unittest or pytest.
+
+PENDING CHATGPT REVIEW. Not a final PASS.
+Does not modify Parcae. No GPU. No dataset download.
+"""
+import argparse
 import json
+import platform
+import subprocess
 import sys
 from pathlib import Path
 
 import torch
 
-sys.path.insert(0, "/tmp/parcae-src")
-from parcae_lm.models.parcae.config import ParcaeConfig
-from parcae_lm.models.parcae.parcae import Parcae
-
+PINNED = "69284c13746e849104f738d6d1a347b1f457df76"
 PAIRS = [(0, 1), (0, 2), (1, 1), (2, 2)]
 CAUSAL_TOL = 1e-5
 SEED = 42
 
 
+def git_head(root):
+    try:
+        out = subprocess.check_output(
+            ["git", "-C", str(root), "rev-parse", "HEAD"],
+            text=True, stderr=subprocess.STDOUT,
+        ).strip()
+        return out, None
+    except Exception as exc:
+        return None, str(exc)
+
+
+def env_record(parcae_root, head):
+    return {
+        "python": sys.version.split()[0],
+        "pytorch": torch.__version__,
+        "cuda_available": torch.cuda.is_available(),
+        "cpu": platform.processor() or platform.machine(),
+        "threads": torch.get_num_threads(),
+        "parcae_root": str(parcae_root),
+        "parcae_head": head,
+        "pinned": PINNED,
+        "device": "cpu",
+        "dtype": "float32",
+        "seed": SEED,
+    }
+
+
 def make_model():
+    from parcae_lm.models.parcae.config import ParcaeConfig
+    from parcae_lm.models.parcae.parcae import Parcae
+
     torch.manual_seed(SEED)
     cfg = ParcaeConfig(
         n_embd=64,
@@ -35,20 +69,31 @@ def make_model():
     )
     model = Parcae(cfg).float().cpu()
     model.eval()
-    return model
+    return model, {
+        "n_embd": 64,
+        "intermediate_size": 128,
+        "heads": 4,
+        "vocab_size": 128,
+        "padded_vocab_size": 128,
+        "prelude_core_coda": [2, 2, 2],
+        "mean_recurrence": 2,
+        "mean_backprop_depth": 2,
+        "attn_impl": "sdpa",
+        "state_init": "like-init",
+    }
 
 
 def count_core(model, fn):
-    calls = {"n": 0}
+    flags = []
     orig = model.update_recurrent_state
 
     def wrapped(*args, **kwargs):
-        calls["n"] += 1
+        flags.append(bool(torch.is_grad_enabled()))
         return orig(*args, **kwargs)
 
     model.update_recurrent_state = wrapped
     try:
-        return fn(), calls["n"]
+        return fn(), flags
     finally:
         model.update_recurrent_state = orig
 
@@ -62,26 +107,35 @@ def run_once(model, ids, labels, pair, train_mode, seed=None):
     def go():
         return model(ids, labels=labels, return_logits=True, num_steps_pair=torch.tensor(pair))
 
-    out, calls = count_core(model, go)
+    out, flags = count_core(model, go)
     loss = out["loss"]
     logits = out["logits"]
     finite = bool(torch.isfinite(loss).item() and torch.isfinite(logits).all().item())
     loss.backward()
     grads = {}
+    missing = []
     bad = []
+    zero = []
     for name, p in model.named_parameters():
+        if not p.requires_grad:
+            continue
         if p.grad is None:
+            missing.append(name)
             continue
         if not torch.isfinite(p.grad).all():
             bad.append(name)
+        if float(p.grad.abs().max()) == 0.0:
+            zero.append(name)
         grads[name] = p.grad.detach().clone()
     return {
-        "calls": calls,
+        "flags": flags,
         "loss": float(loss.detach()),
         "logits": logits.detach().clone(),
         "finite": finite and not bad,
-        "grad_bad": bad,
         "grads": grads,
+        "missing": missing,
+        "bad": bad,
+        "zero": zero,
     }
 
 
@@ -89,85 +143,142 @@ def max_abs(a, b):
     return float((a - b).abs().max().item())
 
 
+def expected_flags(pair):
+    return [False] * pair[0] + [True] * pair[1]
+
+
 def main():
-    model = make_model()
+    parser = argparse.ArgumentParser(description="Standalone F2-B-R1 probe")
+    parser.add_argument("--parcae-root", required=True)
+    parser.add_argument("--output", required=True)
+    parser.add_argument("--require-pinned", action="store_true")
+    args = parser.parse_args()
+
+    root = Path(args.parcae_root).resolve()
+    out = Path(args.output).resolve()
+    out.parent.mkdir(parents=True, exist_ok=True)
+    head, err = git_head(root)
+    if args.require_pinned and head != PINNED:
+        payload = {"status": "BLOCKED", "reason": "Parcae HEAD mismatch", "head": head, "error": err}
+        out.write_text(json.dumps(payload, indent=2))
+        print(json.dumps(payload, indent=2))
+        return 2
+    sys.path.insert(0, str(root))
+
+    model, cfg = make_model()
+    env = env_record(root, head)
     torch.manual_seed(SEED)
     ids = torch.randint(0, 128, (1, 8))
     labels = ids.clone()
     results = []
 
-    # Unseeded: documents that like-init draws a new state each forward.
     u1 = run_once(model, ids, labels, (1, 1), False)
     u2 = run_once(model, ids, labels, (1, 1), False)
     results.append({
-        "pair": "unseeded (1,1)",
-        "purpose": "show default state_init RNG is not bit-stable across forwards",
-        "logit_max_abs": max_abs(u1["logits"], u2["logits"]),
+        "item": "unseeded (1,1)",
         "status": "RECORDED",
+        "logit_max_abs": max_abs(u1["logits"], u2["logits"]),
     })
 
+    trainable = [n for n, p in model.named_parameters() if p.requires_grad]
     for pair in PAIRS:
         a = run_once(model, ids, labels, pair, False, SEED)
         b = run_once(model, ids, labels, pair, False, SEED)
-        diff = max_abs(a["logits"], b["logits"])
-        expected = pair[0] + pair[1]
-        ok = diff == 0.0 and a["calls"] == expected and b["calls"] == expected and a["finite"] and b["finite"]
+        logit_diff = max_abs(a["logits"], b["logits"])
+        loss_diff = abs(a["loss"] - b["loss"])
+        shared = set(a["grads"]) & set(b["grads"])
+        grad_diff = max((max_abs(a["grads"][k], b["grads"][k]) for k in shared), default=None)
+        flags_ok = a["flags"] == expected_flags(pair) and b["flags"] == expected_flags(pair)
+        covered = len(a["grads"])
+        ok = (
+            logit_diff == 0.0 and loss_diff == 0.0 and grad_diff == 0.0
+            and flags_ok and a["finite"] and b["finite"]
+        )
         results.append({
-            "pair": list(pair),
-            "purpose": "fixed seed, fixed weights, fixed input",
-            "calls": [a["calls"], b["calls"]],
-            "calls_ok": a["calls"] == expected and b["calls"] == expected,
-            "repeat_max_abs": diff,
-            "finite": a["finite"] and b["finite"],
-            "loss": a["loss"],
+            "item": list(pair),
             "status": "PASS" if ok else "FAIL",
+            "flags": a["flags"],
+            "flags_ok": flags_ok,
+            "logit_max_abs": logit_diff,
+            "loss_abs": loss_diff,
+            "grad_max_abs": grad_diff,
+            "finite": a["finite"] and b["finite"],
+            "trainable": len(trainable),
+            "with_grad": covered,
+            "coverage": covered / len(trainable) if trainable else None,
+            "missing": a["missing"],
+            "zero": a["zero"],
+            "nonfinite": a["bad"],
+            "loss": a["loss"],
         })
 
     a02 = run_once(model, ids, labels, (0, 2), False, SEED)
     a11 = run_once(model, ids, labels, (1, 1), False, SEED)
+    only02 = sorted(set(a02["grads"]) - set(a11["grads"]))
+    only11 = sorted(set(a11["grads"]) - set(a02["grads"]))
     shared = set(a02["grads"]) & set(a11["grads"])
-    grad_diff = max(max_abs(a02["grads"][k], a11["grads"][k]) for k in shared) if shared else None
     results.append({
-        "pair": "compare (0,2) vs (1,1)",
-        "purpose": "same total steps, different truncation; record only",
+        "item": "compare (0,2) vs (1,1)",
+        "status": "RECORDED",
         "logit_max_abs": max_abs(a02["logits"], a11["logits"]),
-        "grad_max_abs": grad_diff,
-        "status": "RECORDED",
+        "grad_max_abs": max((max_abs(a02["grads"][k], a11["grads"][k]) for k in shared), default=None),
+        "missing_in_0_2": only11,
+        "missing_in_1_1": only02,
+        "zero_0_2": a02["zero"],
+        "zero_1_1": a11["zero"],
+        "nonfinite_0_2": a02["bad"],
+        "nonfinite_1_1": a11["bad"],
     })
 
-    base = run_once(model, ids, labels, (1, 1), False, SEED)
-    changed = ids.clone()
-    changed[0, -1] = (changed[0, -1] + 1) % 128
-    alt = run_once(model, changed, labels, (1, 1), False, SEED)
-    causal_diff = float((base["logits"][:, :-1] - alt["logits"][:, :-1]).abs().max().item())
+    causal = []
+    for pos in (5, 6, 7):
+        base = run_once(model, ids, labels, (1, 1), False, SEED)
+        changed = ids.clone()
+        changed[0, pos] = (changed[0, pos] + 1) % 128
+        alt = run_once(model, changed, labels, (1, 1), False, SEED)
+        diff = float((base["logits"][:, :pos] - alt["logits"][:, :pos]).abs().max().item())
+        causal.append({
+            "position": pos,
+            "max_abs_before": diff,
+            "status": "PASS" if diff < CAUSAL_TOL else "FAIL",
+        })
     results.append({
-        "pair": "causal (1,1)",
-        "purpose": "future token must not change earlier logits under same seed",
+        "item": "causal positions",
         "tolerance": CAUSAL_TOL,
-        "max_abs": causal_diff,
-        "status": "PASS" if causal_diff < CAUSAL_TOL else "FAIL",
+        "positions": causal,
+        "status": "PASS" if all(x["status"] == "PASS" for x in causal) else "FAIL",
     })
 
-    train_run = run_once(model, ids, labels, (1, 1), True, SEED)
-    eval_run = run_once(model, ids, labels, (1, 1), False, SEED)
+    modes = []
+    for mode in (True, False):
+        a = run_once(model, ids, labels, (1, 1), mode, SEED)
+        b = run_once(model, ids, labels, (1, 1), mode, SEED)
+        modes.append({
+            "mode": "train" if mode else "eval",
+            "repeat_logit_max_abs": max_abs(a["logits"], b["logits"]),
+            "flags": a["flags"],
+            "finite": a["finite"] and b["finite"],
+            "status": "PASS" if max_abs(a["logits"], b["logits"]) == 0.0 and a["finite"] else "FAIL",
+        })
+    cross = run_once(model, ids, labels, (1, 1), True, SEED)
+    cross_eval = run_once(model, ids, labels, (1, 1), False, SEED)
     results.append({
-        "pair": "train vs eval (1,1)",
-        "purpose": "mode difference with fixed pair and fixed seed",
-        "logit_max_abs": max_abs(train_run["logits"], eval_run["logits"]),
-        "status": "RECORDED",
+        "item": "train/eval coverage",
+        "modes": modes,
+        "train_vs_eval_logit_max_abs": max_abs(cross["logits"], cross_eval["logits"]),
+        "status": "PASS" if all(m["status"] == "PASS" for m in modes) else "FAIL",
     })
 
     hard = [r for r in results if r["status"] == "FAIL"]
     payload = {
-        "review": "PENDING REVIEW — not final PASS",
+        "review": "PENDING CHATGPT REVIEW",
+        "kind": "standalone probe, not unittest/pytest",
         "params": sum(p.numel() for p in model.parameters()),
-        "seed": SEED,
-        "state_init": "like-init",
-        "causal_tolerance": CAUSAL_TOL,
+        "env": env,
+        "config": cfg,
         "results": results,
-        "overall": "FAIL" if hard else "PENDING REVIEW",
+        "overall": "FAIL" if hard else "PENDING CHATGPT REVIEW",
     }
-    out = Path("/tmp/om/research/mini_mythos/gate2_2/evidence/f2b/F2B_RESULTS.json")
     out.write_text(json.dumps(payload, indent=2))
     print(json.dumps(payload, indent=2))
     return 1 if hard else 0
