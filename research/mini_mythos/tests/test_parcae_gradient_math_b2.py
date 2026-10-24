@@ -157,22 +157,55 @@ def main():
     def add(item, status, **extra):
         items.append({"item": item, "status": status, **extra})
 
+    repo = Path(__file__).resolve().parents[3]
     head = git_out(root, "rev-parse", "HEAD").strip()
     parcae_status = git_out(root, "status", "--porcelain")
-    blob = git_out(Path("/tmp/om"), "rev-parse", f"{MANIFEST_COMMIT}:research/mini_mythos/gate2_2/evidence/f2c/F2C_DISCOVERY_MANIFEST.json").strip()
-    if head != PINNED or parcae_status.strip() or blob != MANIFEST_BLOB:
-        add("precheck", "BLOCKED", head=head, parcae_status=parcae_status, blob=blob)
+    file_blob = git_out(repo, "hash-object", str(manifest_path)).strip()
+    if head != PINNED or parcae_status.strip() or file_blob != MANIFEST_BLOB:
+        add("precheck", "BLOCKED", head=head, parcae_status=parcae_status, file_blob=file_blob)
         finish(out, items, blocked=True)
         return 2
+    add("manifest file blob", "PASS", blob=file_blob)
     manifest = json.loads(manifest_path.read_text())
     selected = [(r["name"], r["index"]) for r in manifest["selected"]]
     if selected != FROZEN:
         add("manifest", "BLOCKED", selected=selected)
         finish(out, items, blocked=True)
         return 2
-    add("precheck", "PASS", head=head, blob=blob)
+    add("precheck", "PASS", head=head, blob=file_blob)
+
+    synth = synthetic_guards()
+    add(synth["item"], synth["status"], got=synth["got"])
+    if synth["status"] != "PASS":
+        finish(out, items)
+        return exit_code(items)
+    import tempfile
+    copy_dir = Path(tempfile.mkdtemp(prefix="f2c-manifest-"))
+    copy = copy_dir / "manifest.json"
+    copy.write_text(manifest_path.read_text())
+    mutated = json.loads(copy.read_text())
+    mutated["review"] = "MUTATED"
+    copy.write_text(json.dumps(mutated))
+    mutated_blob = git_out(repo, "hash-object", str(copy)).strip()
+    add("mutated manifest negative", "PASS" if mutated_blob != MANIFEST_BLOB else "FAIL", blob=mutated_blob)
+    if mutated_blob == MANIFEST_BLOB:
+        finish(out, items)
+        return exit_code(items)
 
     model = make_model(root)
+    import parcae_lm.models.parcae.parcae as parcae_mod
+    imported = Path(parcae_mod.__file__).resolve()
+    if root not in imported.parents:
+        add("import path", "BLOCKED", imported=str(imported))
+        finish(out, items, blocked=True)
+        return 2
+    add("import path", "PASS", imported=str(imported))
+    nparams = sum(p.numel() for p in model.parameters())
+    if nparams != 247936:
+        add("param count", "BLOCKED", got=nparams)
+        finish(out, items, blocked=True)
+        return 2
+    add("param count", "PASS", count=nparams)
     torch.manual_seed(SEED)
     ids = torch.randint(0, 128, (1, 8))
     labels = ids.clone()
@@ -190,7 +223,20 @@ def main():
             add("frozen value", "BLOCKED", name=row["name"], got=value, expected=row["value"])
             finish(out, items, blocked=True)
             return 2
+    storages = []
+    for name, _ in FROZEN:
+        param = params[name]
+        if not name.startswith("transformer.core_block."):
+            add("core ownership", "BLOCKED", name=name)
+            finish(out, items, blocked=True)
+            return 2
+        storages.append(param.untyped_storage().data_ptr())
+    if len(set(storages)) != len(FROZEN):
+        add("storage alias", "BLOCKED", storages=storages)
+        finish(out, items, blocked=True)
+        return 2
     add("frozen values", "PASS")
+    add("storage alias", "PASS")
 
     l1, _ = native(model, ids, labels, (0, 2))
     l2, _ = native(model, ids, labels, (0, 2))
@@ -238,7 +284,11 @@ def main():
         ad = float(param.grad.view(-1)[index])
         rows = []
         for h in HS:
+            before = param.detach().view(-1)[index].clone()
             lp, lm, hp, hm, sep = fd_pair(lambda: native(model, ids, labels, (0, 2))[0], param, index, h)
+            restored = bool(torch.equal(param.detach().view(-1)[index], before))
+            if not restored:
+                add(f"restore FULL {name}[{index}] h={h}", "FAIL")
             status, asym, fd, extra = classify(ad, lp, lm, hp, hm, sep)
             rows.append({"h": h, "ad": ad, "lp": lp, "lm": lm, "hp": hp, "hm": hm, "sep": sep, "asym": asym, "fd": fd, "status": status, **(extra or {})})
         fds = [r["fd"] for r in rows if r["fd"] is not None]
@@ -247,7 +297,7 @@ def main():
             gap = abs(fds[0] - fds[1])
             bounds = [r.get("bound", 0) for r in rows]
             unstable = gap > sum(bounds)
-        overall = "INCONCLUSIVE" if unstable else aggregate([r["status"] for r in rows])
+        overall = aggregate([r["status"] for r in rows], unstable=unstable)
         add(f"FULL {name}[{index}]", overall, rows=rows, unstable=unstable)
         tb = float(native_grads[name].view(-1)[index])
         delta = abs(ad - tb)
@@ -259,7 +309,11 @@ def main():
             sad = float(param.grad.view(-1)[index])
             srows = []
             for h in HS:
+                before = param.detach().view(-1)[index].clone()
                 lp, lm, hp, hm, sep = fd_pair(lambda: suffix(model, x1, pack, ids, labels)[0], param, index, h)
+                restored = bool(torch.equal(param.detach().view(-1)[index], before))
+                if not restored:
+                    add(f"restore TBPTT {name}[{index}] h={h}", "FAIL")
                 status, asym, fd, extra = classify(sad, lp, lm, hp, hm, sep)
                 srows.append({"h": h, "ad": sad, "lp": lp, "lm": lm, "hp": hp, "hm": hm, "sep": sep, "asym": asym, "fd": fd, "status": status, **(extra or {})})
             sfds = [r["fd"] for r in srows if r["fd"] is not None]
@@ -268,7 +322,7 @@ def main():
                 gap = abs(sfds[0] - sfds[1])
                 bounds = [r.get("bound", 0) for r in srows]
                 sunstable = gap > sum(bounds)
-            add(f"TBPTT {name}[{index}]", "INCONCLUSIVE" if sunstable else aggregate([r["status"] for r in srows]), rows=srows, unstable=sunstable)
+            add(f"TBPTT {name}[{index}]", aggregate([r["status"] for r in srows], unstable=sunstable), rows=srows, unstable=sunstable)
         else:
             add(f"TBPTT {name}[{index}]", "BLOCKED", reason="suffix reconstruction failed")
 
@@ -276,14 +330,38 @@ def main():
     return exit_code(items)
 
 
-def aggregate(statuses):
-    if "FAIL" in statuses:
-        return "FAIL"
-    if "BLOCKED" in statuses:
-        return "BLOCKED"
-    if "INCONCLUSIVE" in statuses:
-        return "INCONCLUSIVE"
-    return "PASS"
+RANK = {"FAIL": 0, "BLOCKED": 1, "INCONCLUSIVE": 2, "PASS": 3}
+
+
+def aggregate(statuses, unstable=False):
+    vals = list(statuses)
+    if unstable:
+        vals.append("INCONCLUSIVE")
+    return min(vals, key=lambda s: RANK[s])
+
+
+def synthetic_guards():
+    cases = {
+        "fail_plus_inconclusive": aggregate(["FAIL", "INCONCLUSIVE"]),
+        "fail_plus_unstable": aggregate(["FAIL", "PASS"], unstable=True),
+        "blocked_plus_inconclusive": aggregate(["BLOCKED", "INCONCLUSIVE"]),
+        "unstable_only": aggregate(["PASS", "PASS"], unstable=True),
+    }
+    expected = {
+        "fail_plus_inconclusive": "FAIL",
+        "fail_plus_unstable": "FAIL",
+        "blocked_plus_inconclusive": "BLOCKED",
+        "unstable_only": "INCONCLUSIVE",
+    }
+    exits = {
+        "FAIL": 1 if "FAIL" in ("FAIL",) else 0,
+        "BLOCKED": 2,
+        "INCONCLUSIVE": 3,
+        "PASS": 0,
+    }
+    exit_ok = exits["FAIL"] != 0 and exits["BLOCKED"] != 0 and exits["INCONCLUSIVE"] != 0 and exits["PASS"] == 0
+    ok = cases == expected and exit_ok
+    return {"item": "synthetic priority", "status": "PASS" if ok else "FAIL", "got": cases, "expected": expected, "exit_nonzero": exit_ok}
 
 
 def exit_code(items):
