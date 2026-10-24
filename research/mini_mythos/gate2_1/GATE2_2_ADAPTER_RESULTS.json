@@ -1,0 +1,29 @@
+{
+  "adapter": "TEST ADAPTER / MOCK",
+  "native_path": "BLOCKED",
+  "tests": [
+    {
+      "name": "mock_buffer_lifo_position",
+      "status": "PASS",
+      "detail": "MOCK only: pop order matches truncated buffer LIFO; not native PASS",
+      "sha256": {
+        "got": [
+          "8c78b0a4eeb873c71640d9ca83f5ebc34ebba3c72d6788adbfe5e6d3973f511a",
+          "6193deb5c7cbb42db626731d718192aed2fc724f6b1c2e091b61d4ec205cc932",
+          "14d424ac94a945797110e483be97bfe7b8b81a2b468db2e39daf6e9db4de029d"
+        ],
+        "expected_lifo": [
+          "8c78b0a4eeb873c71640d9ca83f5ebc34ebba3c72d6788adbfe5e6d3973f511a",
+          "6193deb5c7cbb42db626731d718192aed2fc724f6b1c2e091b61d4ec205cc932",
+          "14d424ac94a945797110e483be97bfe7b8b81a2b468db2e39daf6e9db4de029d"
+        ]
+      }
+    },
+    {
+      "name": "mock_negative_offset_differs",
+      "status": "PASS",
+      "detail": "offset-by-one hashes differ"
+    }
+  ],
+  "note": "Native ParquetStreamPure.state_dict creates device='cuda' tensor and calls torch.distributed.all_gather / get_world_size. On this CPU that is BLOCKED. This adapter only exercises the buffer truncation + pop logic."
+}

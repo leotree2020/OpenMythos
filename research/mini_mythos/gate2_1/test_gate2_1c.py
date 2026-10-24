@@ -167,7 +167,9 @@ def main():
         import pyarrow.parquet as pq
         d = Path("/tmp/g21c1_pq")
         d.mkdir(exist_ok=True)
-        pq.write_table(pa.table({"input_ids": [[1, 2, 3, 4]] * 8}), d / "a.parquet")
+        # 8 unique equal-length samples so SHA-256 can prove position
+        unique_rows = [[10 + i, 20 + i, 30 + i, 40 + i] for i in range(8)]
+        pq.write_table(pa.table({"input_ids": unique_rows}), d / "a.parquet")
         try:
             dsp = ParquetStreamPure(
                 dataset_folder_path=str(d),
@@ -260,6 +262,31 @@ def main():
             "name": "parquet_stream_pure",
             "status": "FAIL",
             "detail": f"import/setup failed: {type(e).__name__}: {e}",
+        })
+
+    # Negative: wrong offset by one must fail the equality check
+    # (uses the unique-row table already written)
+    try:
+        import pyarrow.parquet as pq
+        rows = pq.read_table("/tmp/g21c1_pq/a.parquet").column("input_ids").to_pylist()
+        def _hh(row):
+            import torch as _t
+            return hashlib.sha256(_t.tensor(row, dtype=_t.int64).contiguous().view(_t.uint8).numpy().tobytes()).hexdigest()
+        # correct: resumed[0:3] == continuous[3:6]
+        correct = [_hh(rows[3]), _hh(rows[4]), _hh(rows[5])]
+        # wrong offset +1: continuous[4:7]
+        wrong = [_hh(rows[4]), _hh(rows[5]), _hh(rows[6])]
+        negative_fails = (correct != wrong)
+        results["tests"].append({
+            "name": "parquet_negative_offset_must_fail",
+            "status": "PASS" if negative_fails else "FAIL",
+            "detail": "offset-by-one hashes differ" if negative_fails else "offset-by-one did not differ",
+        })
+    except Exception as e:
+        results["tests"].append({
+            "name": "parquet_negative_offset_must_fail",
+            "status": "FAIL",
+            "detail": f"{type(e).__name__}: {e}",
         })
 
     summary = {"PASS": 0, "FAIL": 0, "BLOCKED": 0, "NOT TESTED": 0}
