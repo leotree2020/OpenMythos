@@ -1,4 +1,4 @@
-"""Self-test compare_equivalence.py with synthetic evidence. No GPU."""
+"""Extended self-test. No GPU. Synthetic evidence only."""
 import json
 import subprocess
 import sys
@@ -11,31 +11,29 @@ def base():
     return {
         "batch_hashes": ["h0", "h1", "h2", "h3"],
         "losses": [1.0, 1.1, 1.2, 1.3],
-        "model_state": {"w": {"shape": [2], "dtype": "float32", "values": [0.1, 0.2]}},
-        "optimizer_state": {"param_groups": [{"lr": 0.001}], "state": {"0": {"exp_avg": [0.0]}}},
-        "scheduler": {"last_epoch": 3, "lr_trace": [0.001, 0.001]},
-        "microbatch_step": 4,
-        "optimizer_step": 1,
-        "update_count": 1,
+        "model_state": {"w": {"shape": [2], "dtype": "float32", "numel": 2, "values": [0.1, 0.2]}},
+        "optimizer_state": {
+            "param_groups": [{"lr": 0.001}],
+            "state": {"0": {"exp_avg": [0.0, 0.0], "step": 1}},
+        },
+        "scheduler": {"last_epoch": 3},
+        "microbatch_step": 4, "optimizer_step": 1, "update_count": 1,
         "rng": {"cpu": "c", "cuda": "g", "python": "p", "numpy": "n"},
+        "rng_at_save": {"cpu": "saved"},
+        "rng_at_restore": {"cpu": "saved"},
         "checkpoint_sha256": "CKPT",
         "resume_from_sha256": "CKPT",
     }
-
-def write(d, obj):
-    p = d / "x.json"
-    # unique names
-    return p
 
 def run(a, b1, b2, c):
     with tempfile.TemporaryDirectory() as td:
         td = Path(td)
         files = []
         for name, obj in (("A", a), ("B1", b1), ("B2", b2), ("C", c)):
-            p = td / f"{name}.json"
             if obj is None:
                 files.append(str(td / "missing.json"))
             else:
+                p = td / f"{name}.json"
                 p.write_text(json.dumps(obj))
                 files.append(str(p))
         r = subprocess.run([sys.executable, str(SCRIPT), *files], capture_output=True, text=True)
@@ -46,36 +44,51 @@ def main():
     A = base()
     B1 = base(); B1["batch_hashes"] = ["h0", "h1"]; B1["losses"] = [1.0, 1.1]
     B2 = base(); B2["batch_hashes"] = ["h2", "h3"]; B2["losses"] = [1.2, 1.3]
-    C = base(); C["batch_hashes"] = ["h3"]  # skip h2
-    C["losses"] = [1.3]
+    C = base(); C["batch_hashes"] = ["h3"]; C["losses"] = [1.3]
 
-    code, out = run(A, B1, B2, C)
-    results.append({"name": "identical_with_C_skip", "expect": "PASS", "code": code, "ok": code == 0 and '"PASS"' in out})
+    def check(name, expect, code, out):
+        ok = (expect == "PASS" and code == 0) or (expect != "PASS" and code != 0 and f'"{expect}"' in out)
+        results.append({"name": name, "expect": expect, "code": code, "ok": ok})
 
-    B2w = json.loads(json.dumps(B2)); B2w["model_state"]["w"]["values"] = [9.0, 9.0]
-    code, out = run(A, B1, B2w, C)
-    results.append({"name": "weight_modified", "expect": "FAIL", "code": code, "ok": code != 0 and '"FAIL"' in out})
+    check("identical", "PASS", *run(A, B1, B2, C))
 
-    B2o = json.loads(json.dumps(B2)); B2o["optimizer_state"]["state"]["0"]["exp_avg"] = [1.0]
-    code, out = run(A, B1, B2o, C)
-    results.append({"name": "optimizer_modified", "expect": "FAIL", "code": code, "ok": code != 0 and '"FAIL"' in out})
+    Bw = json.loads(json.dumps(B2)); Bw["model_state"]["w"]["values"] = [9.0, 9.0]
+    check("weight_modified", "FAIL", *run(A, B1, Bw, C))
 
-    code, out = run(A, B1, None, C)
-    results.append({"name": "checkpoint_missing", "expect": "MISSING", "code": code, "ok": code != 0 and '"MISSING"' in out})
+    Bo = json.loads(json.dumps(B2)); Bo["optimizer_state"]["state"]["0"]["exp_avg"] = [1.0, 1.0]
+    check("optimizer_modified", "FAIL", *run(A, B1, Bo, C))
 
-    B2bad = json.loads(json.dumps(B2)); B2bad["batch_hashes"] = ["h2", "WRONG"]
-    code, out = run(A, B1, B2bad, C)
-    results.append({"name": "concat_mismatch", "expect": "FAIL", "code": code, "ok": code != 0 and '"FAIL"' in out})
+    check("missing_file", "MISSING", *run(A, B1, None, C))
 
-    code, out = run(A, B1, B2, C)
-    results.append({"name": "C_skip_detected", "expect": "PASS", "code": code, "ok": code == 0})
+    Bbad = json.loads(json.dumps(B2)); Bbad["batch_hashes"] = ["h2", "WRONG"]
+    check("concat_mismatch", "FAIL", *run(A, B1, Bbad, C))
 
-    Csame = json.loads(json.dumps(B2))  # C matches B2, no skip
-    code, out = run(A, B1, B2, Csame)
-    results.append({"name": "C_no_skip", "expect": "FAIL", "code": code, "ok": code != 0 and '"FAIL"' in out})
+    check("C_skip", "PASS", *run(A, B1, B2, C))
+
+    Csame = json.loads(json.dumps(B2))
+    check("C_no_skip", "FAIL", *run(A, B1, B2, Csame))
+
+    Blen = json.loads(json.dumps(B2)); Blen["model_state"]["w"]["values"] = [0.1]
+    Blen["model_state"]["w"]["numel"] = 1
+    check("length_mismatch", "FAIL", *run(A, B1, Blen, C))
+
+    Bdt = json.loads(json.dumps(B2)); Bdt["model_state"]["w"]["dtype"] = "float16"
+    check("dtype_mismatch", "FAIL", *run(A, B1, Bdt, C))
+
+    Bnan = json.loads(json.dumps(B2)); Bnan["model_state"]["w"]["values"] = [0.1, float("nan")]
+    check("nan", "FAIL", *run(A, B1, Bnan, C))
+
+    Bmiss = json.loads(json.dumps(B2)); del Bmiss["optimizer_state"]["state"]["0"]["step"]
+    check("opt_missing_field", "FAIL", *run(A, B1, Bmiss, C))
+
+    Brng = json.loads(json.dumps(B2)); Brng["rng_at_restore"] = {"cpu": "OTHER"}
+    check("rng_mismatch", "FAIL", *run(A, B1, Brng, C))
+
+    Bnosha = json.loads(json.dumps(B2)); Bnosha["resume_from_sha256"] = None
+    check("resume_sha_missing", "MISSING", *run(A, B1, Bnosha, C))
 
     failed = [r for r in results if not r["ok"]]
-    print(json.dumps({"tests": results, "failed": len(failed)}, indent=2))
+    print(json.dumps({"tests": results, "failed": len(failed), "source": "SYNTHETIC"}, indent=2))
     return 0 if not failed else 1
 
 if __name__ == "__main__":
