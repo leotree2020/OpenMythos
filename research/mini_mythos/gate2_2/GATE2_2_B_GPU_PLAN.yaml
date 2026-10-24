@@ -1,0 +1,35 @@
+# DESIGN ONLY. NOT EXECUTED. No GPU rental authorized in this round.
+experiment: gate2_2_b_numerical_equivalence
+device: 1x A100 SXM 80GB
+pinned_parcae: 69284c13746e849104f738d6d1a347b1f457df76
+optimizer: MuonAdamW
+data: rngds
+seed: 42
+max_steps: 6
+gradient_accumulation_steps: 4
+micro_batch_size: 2
+world_batch_size: 8
+precision: bf16-mixed
+
+groups:
+  A: continuous to max_steps
+  B: exit at microbatch 12, new process, resume, continue to same endpoint
+  C: native extra skip (negative)
+
+controls:
+  same_init_seed: true
+  same_update_count: true
+  same_effective_batch: true
+  first_step_skip: record optimizer_step and actual step() count; do not treat skipped first step as a restore bug
+  scheduler: record get_lr at each optimizer_step; compare A vs B
+  mid_grad: save only on non-accumulating boundary
+
+cost:
+  window_minutes: 60
+  target_jpy: 700
+  hard_stop: terminate pod and delete unneeded storage
+  estimated_vram_gib: 20
+
+rollback:
+  save logs, config, checkpoint hashes, nvidia-smi
+  do not merge PR

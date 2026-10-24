@@ -1,0 +1,22 @@
+{
+  "verdict": "NOT READY",
+  "exact_match_expected": [
+    "input batch SHA-256 sequence",
+    "microbatch_step",
+    "optimizer_step",
+    "actual optimizer.step() count",
+    "data iterator position after patch (rngds)"
+  ],
+  "tolerance": {
+    "loss_max_abs": 1e-4,
+    "weight_max_abs": 1e-4,
+    "optimizer_state_max_abs": 1e-4,
+    "reason": "bf16-mixed and Muon Newton-Schulz; tighter than probe 1e-5 is not assumed on GPU"
+  },
+  "not_applicable_or_blocked": {
+    "parquet_stream_pure": "BLOCKED on CPU",
+    "muonadamw_runtime": "NOT TESTED",
+    "cuda_rng": "NOT TESTED until GPU run"
+  },
+  "negative_control": "C keeps native extra skip; must differ on data hashes"
+}
