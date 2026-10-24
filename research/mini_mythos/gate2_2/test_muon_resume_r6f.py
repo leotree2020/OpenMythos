@@ -86,7 +86,7 @@ def storage_ranges(obj, prefix=""):
 
 
 def overlaps(a, b):
-    return any(sa == sb and na and nb for na, sa, _, na_n in a for nb, sb, _, nb_n in b)
+    return any(sa == sb and na_n and nb_n for _, sa, _, na_n in a for _, sb, _, nb_n in b)
 
 
 def snap():
@@ -233,16 +233,30 @@ def main():
         np.random.rand()
         checks.append({"name": "neg_numpy_only", "ok": rng_equal(base, snap())[1] == "numpy[1]" or rng_equal(base, snap())[1] == "numpy[2]"})
 
-        # good vs bad resume
-        torch.manual_seed(99); random.seed(99); np.random.seed(99)
-        b_good, _, raw_good = resume(path)
-        ok_good, _ = rng_equal(snap(), raw_good["rng"])
-        checks.append({"name": "b_good_rng", "ok": ok_good})
-        torch.manual_seed(99); random.seed(99); np.random.seed(99)
-        raw_bad = torch.load(path, map_location="cpu", weights_only=False)
-        # skip apply_rng on purpose
-        ok_bad, field_bad = rng_equal(snap(), raw_bad["rng"])
-        checks.append({"name": "b_bad_rng", "ok": not ok_bad, "field": field_bad})
+        def pollute():
+            torch.manual_seed(99); random.seed(99); np.random.seed(99)
+        def resume_partial(skip):
+            pollute()
+            raw = torch.load(path, map_location="cpu", weights_only=False)
+            m = Parcae(cfg())
+            m.load_state_dict(raw["model"])
+            o = MuonAdamW(get_muon_param_groups(m.named_parameters()))
+            o.load_state_dict(raw["opt"])
+            s = raw["rng"]
+            if "torch" not in skip:
+                torch.set_rng_state(s["torch"])
+            if "python" not in skip:
+                random.setstate(s["python"])
+            if "numpy" not in skip:
+                np.random.set_state(s["numpy"])
+            return m, o, raw
+        pollute()
+        _, _, raw_good = resume(path)
+        checks.append({"name": "good_rng", "ok": rng_equal(snap(), raw_good["rng"])[0]})
+        for label, skip, field in (("bad_torch", {"torch"}, "torch"), ("bad_python", {"python"}, "python"), ("bad_numpy", {"numpy"}, "numpy")):
+            _, _, raw_bad = resume_partial(skip)
+            ok, got = rng_equal(snap(), raw_bad["rng"])
+            checks.append({"name": label, "ok": (not ok) and (got == field or (field == "numpy" and str(got).startswith("numpy"))), "field": got})
 
         # AB/BA storage isolation already recorded; add optimizer overlap on AB
         checks.append({"name": "ab_opt_isolated", "ok": not overlaps(storage_ranges(oa.state_dict()), storage_ranges(ob.state_dict()))})
