@@ -1,20 +1,27 @@
-# RNG Audit
+# RNG Audit (revised)
 
-## Finding
+## Native order
 
-`Parcae.randomized_iteration_sampler` does not consume a persistent RNG.
-It builds a fresh `torch.Generator(device="cpu")` seeded from `514229 + self.step`
-(and `317811 + self.step` for k).
+```python
+state["microbatch_step"] += 1
+model.step = state["microbatch_step"]
+```
 
-Therefore restoring `model.step` is necessary and sufficient for recurrence
-sampling to match a continuous run, given identical data.
+Recurrence sampler seeds from `514229 + self.step`. `model.step` is a plain attribute, not in `state_dict`.
 
-## Probe evidence
+## Corrected causal claim
 
-- B (step restored): weights within 1e-5 of A, n_diff=0.
-- C (step left at 0): n_diff=42.
-- D (extra data skip): data hashes differ.
+- C1: omit restoring `model.step`, keep correct `microbatch_step`. Native logic resets `model.step` before forward. Weights match A (n_diff=0).
+  → Missing the plain attribute alone is **not** a checkpoint defect, if the training counter is restored.
+- C2: wrong `microbatch_step`. n_diff=42.
+  → Wrong training counter changes the recurrence seed and the weights.
 
-## CUDA
+## D
 
-NOT APPLICABLE on this CPU run.
+Extra data skip with the same update count (6). Data hashes differ. Update count matches A.
+
+## Not claimed
+
+- AdamW probe is not MuonAdamW verification (NOT TESTED).
+- Official train.py remains BLOCKED on CPU.
+- CUDA RNG: NOT APPLICABLE.
