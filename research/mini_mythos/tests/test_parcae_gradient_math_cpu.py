@@ -208,7 +208,7 @@ def main():
         candidates.append({
             "name": name,
             "index": index,
-            "value": float(dict(model.named_parameters())[name].view(-1)[index]),
+            "value": float(dict(model.named_parameters())[name].detach().view(-1)[index]),
             "g_full": float(full[name].view(-1)[index]),
             "g_tbptt": float(trunc[name].view(-1)[index]),
             "abs_delta": float(delta[index]),
@@ -293,8 +293,8 @@ def main():
         sl.backward()
         suffix_grads = {n: p.grad.detach().clone() for n, p in model.named_parameters() if p.grad is not None}
         logit_diff = float((native_logits - slogits).abs().max())
-        loss_diff = abs(float(native_l) - float(sl))
-        loss_bound = 1e-6 + 1e-6 * max(abs(float(native_l)), abs(float(sl)))
+        loss_diff = abs(float(native_l.detach()) - float(sl.detach()))
+        loss_bound = 1e-6 + 1e-6 * max(abs(float(native_l.detach())), abs(float(sl.detach())))
         grad_rows = []
         grad_ok = True
         for row in selected:
