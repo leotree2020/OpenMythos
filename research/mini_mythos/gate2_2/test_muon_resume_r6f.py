@@ -187,7 +187,8 @@ def main():
         checks.append({"name": "resume_rng_immediate", "ok": ok, "field": field})
         checks.append({"name": "pre_model", "ok": strict(a.state_dict(), b.state_dict())[0]})
         checks.append({"name": "pre_opt", "ok": strict(oa.state_dict(), ob.state_dict())[0]})
-        checks.append({"name": "no_shared", "ok": not overlaps(storage_ranges(a.state_dict()), storage_ranges(b.state_dict()))})
+        checks.append({"name": "ab_pre_model_isolated", "ok": not overlaps(storage_ranges(a.state_dict()), storage_ranges(b.state_dict()))})
+        checks.append({"name": "ab_pre_opt_isolated", "ok": not overlaps(storage_ranges(oa.state_dict()), storage_ranges(ob.state_dict()))})
         checks.append({"name": "same_mode", "ok": a.training == b.training})
         apply_rng(saved["rng"])
         xa, ea, ga, fa = next_step(a, oa)
@@ -207,7 +208,8 @@ def main():
             saved2 = torch.load(p2, map_location="cpu", weights_only=False)
             b2, ob2, raw2 = resume(p2)
         checks.append({"name": "ba_pre", "ok": strict(a2.state_dict(), b2.state_dict())[0] and strict(oa2.state_dict(), ob2.state_dict())[0]})
-        checks.append({"name": "ba_no_shared", "ok": not overlaps(storage_ranges(oa2.state_dict()), storage_ranges(ob2.state_dict()))})
+        checks.append({"name": "ba_pre_model_isolated", "ok": not overlaps(storage_ranges(a2.state_dict()), storage_ranges(b2.state_dict()))})
+        checks.append({"name": "ba_pre_opt_isolated", "ok": not overlaps(storage_ranges(oa2.state_dict()), storage_ranges(ob2.state_dict()))})
         checks.append({"name": "ba_mode", "ok": a2.training == b2.training})
         apply_rng(raw2["rng"])
         xb2, eb2, gb2, fb2 = next_step(b2, ob2)
@@ -250,13 +252,18 @@ def main():
             if "numpy" not in skip:
                 np.random.set_state(s["numpy"])
             return m, o, raw
+        def draws():
+            return {"torch": torch.rand(2).tolist(), "python": random.random(), "numpy": float(np.random.rand())}
         pollute()
-        _, _, raw_good = resume(path)
+        m_good, o_good, raw_good = resume(path)
         checks.append({"name": "good_rng", "ok": rng_equal(snap(), raw_good["rng"])[0]})
+        xg, _, _, fg = next_step(m_good, o_good)
+        checks.append({"name": "good_step", "ok": fg, "input": xg.tolist()})
         for label, skip, field in (("bad_torch", {"torch"}, "torch"), ("bad_python", {"python"}, "python"), ("bad_numpy", {"numpy"}, "numpy")):
-            _, _, raw_bad = resume_partial(skip)
+            m_bad, o_bad, raw_bad = resume_partial(skip)
             ok, got = rng_equal(snap(), raw_bad["rng"])
-            checks.append({"name": label, "ok": (not ok) and (got == field or (field == "numpy" and str(got).startswith("numpy"))), "field": got})
+            xb, _, _, fb = next_step(m_bad, o_bad)
+            checks.append({"name": label, "ok": (not ok) and (got == field or (field == "numpy" and str(got).startswith("numpy"))), "field": got, "step_finite": fb})
 
         # AB/BA storage isolation already recorded; add optimizer overlap on AB
         checks.append({"name": "ab_opt_isolated", "ok": not overlaps(storage_ranges(oa.state_dict()), storage_ranges(ob.state_dict()))})
