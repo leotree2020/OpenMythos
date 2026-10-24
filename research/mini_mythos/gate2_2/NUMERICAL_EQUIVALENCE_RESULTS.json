@@ -1,0 +1,18 @@
+{
+  "official_train_py_cpu": "BLOCKED",
+  "block_reason": "scripts/train.py hardcodes torch.autocast(device_type='cuda') and torch.cuda.get_device_name()",
+  "isolated_patch_sha256": "05ca76f320530526648da658ff129e439fb7f3816f97e877f142202b1ebd408c",
+  "patch_file_sha256": "e46be93e508f34610fa0968cf6e83931861bee6f1d7c5c259aa6d2c89a09f578",
+  "tiny_model_cpu_forward_backward": "PASS",
+  "model_level_probe": {
+    "note": "NOT official train.py",
+    "input_hash_B_matches_A_tail": true,
+    "input_hash_C_matches_A_tail": false,
+    "weight_A_vs_B_max_abs": 0.002991020679473877,
+    "weight_A_vs_B_n_diff_tensors": 44,
+    "numerical_equivalence": "NOT PASS (RNG for recurrence not restored in probe)"
+  },
+  "cuda_rng": "NOT APPLICABLE",
+  "parcae_modified": false,
+  "gpu_used": false
+}

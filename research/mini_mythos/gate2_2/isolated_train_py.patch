@@ -1,0 +1,22 @@
+--- /tmp/parcae-src/scripts/train.py	2026-10-23 12:57:20.293517846 +0000
++++ /tmp/parcae-patched/scripts/train.py	2026-10-24 01:24:42.832105575 +0000
+@@ -768,10 +768,16 @@
+         fabric.print(f"=====================================")
+     
+     train_iterator = iter(state["train_dataloader"])
+-    # Skip one batch on resume to fix StatefulDataLoader off-by-one
++    # Gate 2.2-A research patch (isolated copy only; upstream unchanged):
++    # omit extra skip only for RandomTokensDataset.
+     if state["microbatch_step"] > 0:
+-        next(train_iterator, None)
+-        fabric.print(f"Skipped one batch to fix StatefulDataLoader off-by-one on resume")
++        ds = getattr(state["train_dataloader"], "dataset", None)
++        from recpre.huggingface_dataset import RandomTokensDataset
++        if not isinstance(ds, RandomTokensDataset):
++            next(train_iterator, None)
++            fabric.print("Skipped one batch (non-rngds path; risk remains)")
++        else:
++            fabric.print("rngds resume: no extra skip (Gate 2.2-A patch)")
+     fabric.print(f"{time.ctime()[:-5]}: Iterator created, setting up metrics...")
+ 
+     running_loss = RunningMean(window=cfg.log_step_interval, sync_on_compute=False).to(fabric.device)
