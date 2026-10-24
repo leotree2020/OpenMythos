@@ -196,7 +196,14 @@ def main():
     # expectations
     status = {
         "A": "PASS",
-        "B": "PASS" if (results["B"]["hash_eq_A"] and results["B"]["weight_n_diff"] == 0) else "FAIL",
+        "B": "PASS" if (
+            results["B"]["hash_eq_A"]
+            and results["B"]["weight_n_diff"] == 0
+            and results["B"]["opt_n_diff"] == 0
+            and results["B"]["sched_eq"]
+            and results["B"]["updates"] == A["updates"]
+            and (results["B"]["loss_max_abs"] is not None and results["B"]["loss_max_abs"] <= TOL_ABS)
+        ) else "FAIL",
         "C1": "PASS" if (results["C1"]["hash_eq_A"] and results["C1"]["weight_n_diff"] == 0) else "FAIL",
         "C2": "PASS" if results["C2"]["weight_n_diff"] > 0 else "FAIL",
         "D": "PASS" if (results["D"]["hash_D_differs_from_A"] and results["D"]["updates_eq_A"]) else "FAIL",
