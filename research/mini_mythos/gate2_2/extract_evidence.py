@@ -76,7 +76,8 @@ def from_objects(model, optimizer, scheduler, batch, checkpoint_path, source, co
     ckpt_sha = _sha_bytes(ckpt.read_bytes()) if ckpt.is_file() else None
     b = batch.detach().contiguous().cpu()
     batch_sha = _sha_bytes(b.view(torch.uint8).numpy().tobytes()) if b.numel() else None
-    return {
+    obj = {
+        "schema_version": "2.2-c",
         "source": source,
         "optimizer_class": type(optimizer).__name__,
         "model_index": model_index,
@@ -93,6 +94,16 @@ def from_objects(model, optimizer, scheduler, batch, checkpoint_path, source, co
         "rng_stages": rng_stages or {"at_extract": collect_rng("at_extract")},
         "evidence_note": "hashes/losses are real only if the caller measured them; this function does not invent them",
     }
+    obj["integrity"] = __import__("hashlib").sha256(__import__("json").dumps({
+        "model": [(e.get("name"), e.get("sha256")) for e in obj["model_index"]],
+        "opt": [(e.get("name"), e.get("sha256")) for e in obj["optimizer_index"]],
+        "groups": obj["optimizer_param_groups"],
+        "sched": obj["scheduler"],
+        "counts": [obj["microbatch_step"], obj["optimizer_step"], obj["update_count"]],
+        "ckpt": obj["checkpoint_sha256"],
+        "source": obj["source"],
+    }, sort_keys=True, default=str).encode()).hexdigest()
+    return obj
 
 
 def read_checkpoint(path, blob_dir):

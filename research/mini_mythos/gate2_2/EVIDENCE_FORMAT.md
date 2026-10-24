@@ -1,23 +1,18 @@
-# Evidence Schema
+# Evidence Schema 2.2-c
 
-JSON fields used by the comparator:
-- model_index: [{name, shape, dtype, numel, sha256, blob}]
-- optimizer_index: same, plus discrete entries
-- batch_hashes, losses, checkpoint_sha256, resume_from_sha256
-- source: SYNTHETIC | CPU_PARCAE | GPU_RUNTIME
-- optimizer_class
-- rng_stages.before_save / after_load with cuda_status
+Required: schema_version, model_index, optimizer_index, optimizer_param_groups,
+batch_hashes, losses, scheduler, microbatch_step, optimizer_step, update_count,
+checkpoint_sha256, source, optimizer_class, integrity, resume_from_sha256.
 
-Blobs are `.bin` files named by SHA-256. Comparator reads them and checks hash, shape, dtype, numel, key set, and raw bytes.
+integrity is SHA-256 of canonical metadata. Changing source without recomputing it fails.
 
-## Exit codes
+## GPU NUMERICAL PASS (exit 0)
 
-| Status | Exit |
-|--------|------|
-| GPU NUMERICAL PASS | 0 |
-| STRUCTURAL PASS | 1 |
-| FAIL | 1 |
-| MISSING | 2 |
+All of: hash match, loss within 1e-4, model numeric compare, optimizer index + param_groups,
+scheduler, counts, checkpoint identity, RNG save/restore, C offset,
+source=GPU_RUNTIME, optimizer_class=MuonAdamW, CUDA RNG COLLECTED, integrity match.
 
-GPU NUMERICAL PASS requires GPU_RUNTIME + MuonAdamW + collected CUDA RNG.
-Relabeling source does not qualify. CPU_PARCAE cannot obtain it.
+`--logic-test` exercises this path and labels the result LOGIC TEST.
+That is not a real GPU run.
+
+STRUCTURAL PASS and FAIL exit 1. MISSING exits 2.
