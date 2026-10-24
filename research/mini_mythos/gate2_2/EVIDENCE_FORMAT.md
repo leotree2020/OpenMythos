@@ -1,22 +1,23 @@
-# Evidence Format
+# Evidence Schema
 
-Tensors are stored as sidecar `.bin` files named by SHA-256.
-JSON holds index entries: name, shape, dtype, numel, sha256, blob.
+JSON fields used by the comparator:
+- model_index: [{name, shape, dtype, numel, sha256, blob}]
+- optimizer_index: same, plus discrete entries
+- batch_hashes, losses, checkpoint_sha256, resume_from_sha256
+- source: SYNTHETIC | CPU_PARCAE | GPU_RUNTIME
+- optimizer_class
+- rng_stages.before_save / after_load with cuda_status
 
-## source
+Blobs are `.bin` files named by SHA-256. Comparator reads them and checks hash, shape, dtype, numel, key set, and raw bytes.
 
-| Value | Meaning |
-|-------|---------|
-| SYNTHETIC | self-test only; rejected for acceptance |
-| CPU_PARCAE | real Parcae objects on CPU; model/optimizer consistency only |
-| GPU_RUNTIME | actual GPU training run |
+## Exit codes
 
-## GPU NUMERICAL PASS
+| Status | Exit |
+|--------|------|
+| GPU NUMERICAL PASS | 0 |
+| STRUCTURAL PASS | 1 |
+| FAIL | 1 |
+| MISSING | 2 |
 
-Returned only when all structural checks pass AND:
-- every run has `source=GPU_RUNTIME`
-- `optimizer_class=MuonAdamW`
-- CUDA RNG status is `COLLECTED` at before_save and after_load for B2/C
-
-Otherwise the best structural result is `STRUCTURAL PASS`.
-CPU consistency is not training-path numerical equivalence.
+GPU NUMERICAL PASS requires GPU_RUNTIME + MuonAdamW + collected CUDA RNG.
+Relabeling source does not qualify. CPU_PARCAE cannot obtain it.
