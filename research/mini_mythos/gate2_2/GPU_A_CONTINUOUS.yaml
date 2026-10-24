@@ -1,14 +1,10 @@
-# A: continuous. DESIGN ONLY. NOT EXECUTED.
-# Gate 2 Stage A — NOT LAUNCHED / NOT AUTHORIZED
-# Pinned Parcae: 69284c13746e849104f738d6d1a347b1f457df76
-# ALTERNATIVE TEST TOKENIZER only. Official tokenizer BLOCKED.
-# rngds random tokens. Not language learning.
-# Requires LOCAL_WORLD_SIZE=1 (or real GPU) before CLISettings init.
+# A: continuous to endpoint. DESIGN ONLY. NOT EXECUTED.
+# exit_at_step omitted so exit_step=max_steps.
 
-run_name: p1c-gate2-stage-a
+run_name: gate22b-A
 resume: false
 seed: 42
-out_dir: outputs/p1c-gate2-stage-a
+out_dir: outputs/gate22b-A
 
 model_name: parcae-small-140m
 model_impl: dynamic
@@ -46,7 +42,6 @@ compile_model: false
 gradient_checkpointing: false
 
 max_steps: 6
-exit_at_step: 4
 save_step_interval: 2
 save_last_step: true
 eval_step_interval: 1000
@@ -62,13 +57,8 @@ data_config:
       prefix: ""
       weight: 1
 
-# Fill absolute path before launch:
-# tokenizer_path: /absolute/path/to/alt_tokenizer
 
 logger_name: wandb
 logger_project: parcae
 log_step_interval: 1
 
-# PREDICTED / NOT RUNTIME VERIFIED:
-# exit_at_step=4 → intermediate checkpoint before full max_steps=6.
-# microbatch_step, optimizer_step, and actual step() counts must be recorded from the run.

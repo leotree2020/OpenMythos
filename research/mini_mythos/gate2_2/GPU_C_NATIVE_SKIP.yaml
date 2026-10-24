@@ -1,15 +1,10 @@
-# C: negative control using UNPATCHED train.py. DESIGN ONLY. NOT EXECUTED.
-# Gate 2 Stage B — RESUME TEMPLATE / NOT EXECUTED
-# Fill resume_checkpoint_path with the absolute path of the Stage A intermediate checkpoint.
-# Verification must check model weights, optimizer state, scheduler, RNG, and data iterator position.
-# Load-without-error is not success. Must confirm at least one real parameter update after resume.
-# Must record whether a batch is skipped or repeated.
+# C: resume from same B1 checkpoint with UNPATCHED train.py (native extra skip). DESIGN ONLY.
+# Negative data-misalignment control.
 
-run_name: p1c-gate2-stage-b
+run_name: gate22b-C
 resume: true
-resume_checkpoint_path: ""   # REQUIRED before launch
 seed: 42
-out_dir: outputs/p1c-gate2-stage-b
+out_dir: outputs/gate22b-C
 
 model_name: parcae-small-140m
 model_impl: dynamic
@@ -62,8 +57,8 @@ data_config:
       prefix: ""
       weight: 1
 
-# tokenizer_path: /absolute/path/to/alt_tokenizer
 
 logger_name: wandb
 logger_project: parcae
 log_step_interval: 1
+
