@@ -1,0 +1,74 @@
+# B: exit for resume. DESIGN ONLY. exit_at_step is a static prediction. NOT EXECUTED.
+# Gate 2 Stage A — NOT LAUNCHED / NOT AUTHORIZED
+# Pinned Parcae: 69284c13746e849104f738d6d1a347b1f457df76
+# ALTERNATIVE TEST TOKENIZER only. Official tokenizer BLOCKED.
+# rngds random tokens. Not language learning.
+# Requires LOCAL_WORLD_SIZE=1 (or real GPU) before CLISettings init.
+
+run_name: p1c-gate2-stage-a
+resume: false
+seed: 42
+out_dir: outputs/p1c-gate2-stage-a
+
+model_name: parcae-small-140m
+model_impl: dynamic
+
+block_size: 128
+model_overwrite:
+  vocab_size: 32768
+  prelude_norm: true
+  block_size: 128
+
+world_batch_size: 8
+micro_batch_size: 2
+
+optimizer: MuonAdamW
+optim_config:
+  lr: 8e-3
+  weight_decay: 0.0
+  betas: [0.8, 0.95]
+  eps: 1e-10
+  muon_lr: 8e-3
+  muon_momentum: 0.95
+  muon_wd: 0.2
+  muon_ns_steps: 5
+
+warmup_steps: 0
+cooldown_steps: 0
+lr_schedule: trapezoid
+min_lr: 0
+grad_clip: 1.0
+
+fabric_strategy: ddp
+fabric_precision: bf16-mixed
+
+compile_model: false
+gradient_checkpointing: false
+
+max_steps: 6
+exit_at_step: 4
+save_step_interval: 2
+save_last_step: true
+eval_step_interval: 1000
+eval_iters: 1
+
+data_config:
+  train_data:
+    - type: rngds
+      prefix: ""
+      weight: 1
+  val_data:
+    - type: rngds
+      prefix: ""
+      weight: 1
+
+# Fill absolute path before launch:
+# tokenizer_path: /absolute/path/to/alt_tokenizer
+
+logger_name: wandb
+logger_project: parcae
+log_step_interval: 1
+
+# PREDICTED / NOT RUNTIME VERIFIED:
+# exit_at_step=4 → intermediate checkpoint before full max_steps=6.
+# microbatch_step, optimizer_step, and actual step() counts must be recorded from the run.
