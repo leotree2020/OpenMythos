@@ -254,16 +254,33 @@ def main():
             return m, o, raw
         def draws():
             return {"torch": torch.rand(2).tolist(), "python": random.random(), "numpy": float(np.random.rand())}
+        def sample_without_consuming(state):
+            saved = snap()
+            apply_rng(state)
+            out = draws()
+            apply_rng(saved)
+            return out
         pollute()
         m_good, o_good, raw_good = resume(path)
-        checks.append({"name": "good_rng", "ok": rng_equal(snap(), raw_good["rng"])[0]})
+        good_ok, _ = rng_equal(snap(), raw_good["rng"])
+        ref = sample_without_consuming(raw_good["rng"])
+        good_seq = sample_without_consuming(snap())
+        checks.append({"name": "good_rng", "ok": good_ok})
+        checks.append({"name": "good_seq", "ok": good_seq == ref})
         xg, _, _, fg = next_step(m_good, o_good)
-        checks.append({"name": "good_step", "ok": fg, "input": xg.tolist()})
+        checks.append({"name": "good_step", "ok": fg})
         for label, skip, field in (("bad_torch", {"torch"}, "torch"), ("bad_python", {"python"}, "python"), ("bad_numpy", {"numpy"}, "numpy")):
             m_bad, o_bad, raw_bad = resume_partial(skip)
             ok, got = rng_equal(snap(), raw_bad["rng"])
+            seq = sample_without_consuming(snap())
             xb, _, _, fb = next_step(m_bad, o_bad)
-            checks.append({"name": label, "ok": (not ok) and (got == field or (field == "numpy" and str(got).startswith("numpy"))), "field": got, "step_finite": fb})
+            field_ok = (not ok) and (got == field or (field == "numpy" and str(got).startswith("numpy")))
+            only = {
+                "torch": seq["torch"] != ref["torch"] and seq["python"] == ref["python"] and seq["numpy"] == ref["numpy"],
+                "python": seq["python"] != ref["python"] and seq["torch"] == ref["torch"] and seq["numpy"] == ref["numpy"],
+                "numpy": seq["numpy"] != ref["numpy"] and seq["torch"] == ref["torch"] and seq["python"] == ref["python"],
+            }[field]
+            checks.append({"name": label, "ok": field_ok and fb and only, "field": got, "step_finite": fb, "seq_only": only})
 
         # AB/BA storage isolation already recorded; add optimizer overlap on AB
         checks.append({"name": "ab_opt_isolated", "ok": not overlaps(storage_ranges(oa.state_dict()), storage_ranges(ob.state_dict()))})
