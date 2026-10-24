@@ -210,13 +210,33 @@ def main():
                 dsp2.load_state_dict(st_p)
                 it_p2 = iter(dsp2)
                 got2 = next(it_p2)
-                # continuity: first after resume should match 4th of continuous
-                ok_p = torch.equal(got2, got[0].__class__(got[0]))  # placeholder; real check below
-                # simpler: just record that save/load ran
+                # Real continuity: uninterrupted read of 6 samples
+                dsp_base = ParquetStreamPure(
+                    dataset_folder_path=str(d),
+                    seed=42,
+                    data_signature={"keys": ["input_ids"]},
+                    shuffle=False,
+                    shuffle_filenames=False,
+                    broadcast_glob=False,
+                    plan_for_later_rank_expansion_to=1,
+                    num_processes=1,
+                    process_rank=0,
+                    stateful=True,
+                )
+                it_base = iter(dsp_base)
+                base = [next(it_base) for _ in range(6)]
+                def _h(t):
+                    return hashlib.sha256(t.contiguous().view(torch.uint8).numpy().tobytes()).hexdigest()
+                # resumed first should match uninterrupted 4th (index 3)
+                h_resumed = [_h(got2)]
+                for _ in range(2):
+                    h_resumed.append(_h(next(it_p2)))
+                h_base = [_h(base[3]), _h(base[4]), _h(base[5])]
+                ok_p = h_resumed == h_base
                 results["tests"].append({
                     "name": "parquet_stream_pure",
-                    "status": "PASS",
-                    "detail": "constructed, state_dict and load_state_dict succeeded on CPU",
+                    "status": "PASS" if ok_p else "FAIL",
+                    "detail": f"sha256 match {sum(a==b for a,b in zip(h_resumed, h_base))}/3 (resumed[0:3] vs continuous[3:6])",
                 })
             except Exception as e:
                 msg = str(e)

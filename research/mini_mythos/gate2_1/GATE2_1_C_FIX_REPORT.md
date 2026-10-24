@@ -1,37 +1,30 @@
-# Gate 2.1-C.1 Credibility Fixes
+# Gate 2.1 Final Report
 
 Pinned Parcae: `69284c13746e849104f738d6d1a347b1f457df76`
 Branch: `mini-mythos-p1c-gate2-dataloader-continuity`
 
-## What changed
+## Data continuity verified (CPU, rngds)
 
-1. **True chained resume.** S12 is taken from the loader that was resumed from S8 and continued, not from a fresh loader that read 12 batches.
-2. **Direct patch call.** All resume iterators are created by `create_train_iterator()` imported from `patch_resume_skip.py`. Positive and negative assertions cover that function.
-3. **ParquetStreamPure classification.** Constructed with the required keyword arguments. Construction failure → FAIL. CUDA or uninitialized distributed → BLOCKED with the specific exception. Success would be judged on continuity.
+| Suite | Result |
+|-------|--------|
+| Gate 2.1-A continuity | PASS (exit 0) |
+| Gate 2.1-B multi-resume / batch sizes / official methods | PASS (exit 0) |
+| Gate 2.1-C/C.1 true chained resume via `create_train_iterator` | PASS (exit 0) |
+| batch size 1/2/4/8 | PASS |
+| non-RandomTokensDataset keeps skip | PASS |
 
-## Results (CPU)
+rngds path: no duplicate, no skip. S12 comes from the loader resumed from S8.
 
-| Test | Status |
-|------|--------|
-| True chained resume S8→S12→20 | PASS (8/8 + 4/4 + 8/8) |
-| patch fn positive (rngds, no skip) | PASS |
-| patch fn negative (other, keeps skip) | PASS |
-| batch size 1/2/4/8 via patch fn | PASS |
-| ParquetStreamPure | BLOCKED (CUDA in state_dict) |
+## Full training path not yet integrated
 
-Summary: PASS=7, FAIL=0, BLOCKED=1, NOT TESTED=0.
-
-## Verified
-
-- rngds path: no duplicate, no skip, chained state transfer works.
-- Patch function is the one under test.
-- Non-RandomTokensDataset still receives the extra skip.
-
-## Still blocked
-
-- ParquetStreamPure `state_dict` requires CUDA (`Torch not compiled with CUDA enabled`). Continuity on that path is not claimed.
+- Conditional patch is a research candidate in OpenMythos. Native Parcae is not modified.
+- ParquetStreamPure remains BLOCKED (`Torch not compiled with CUDA enabled` in `state_dict`). Success branch now compares SHA-256 of resumed samples against uninterrupted samples 4–6; it was not reached.
+- GPU numerical equivalence not verified.
+- Patch is not wired into `scripts/train.py`.
 
 ## Not done
 
-- Native Parcae not modified.
-- No GPU. No PR. PR #6 not merged.
+- No GPU rental.
+- No model / optimizer / architecture changes.
+- PR #6 not merged.
+- This Draft PR must stay Draft.
