@@ -292,7 +292,7 @@ def main():
         sl, slogits = suffix_forward(model, x1, pack, ids, labels)
         sl.backward()
         suffix_grads = {n: p.grad.detach().clone() for n, p in model.named_parameters() if p.grad is not None}
-        logit_diff = float((native_logits - slogits).abs().max())
+        logit_diff = float((native_logits.detach() - slogits.detach()).abs().max())
         loss_diff = abs(float(native_l.detach()) - float(sl.detach()))
         loss_bound = 1e-6 + 1e-6 * max(abs(float(native_l.detach())), abs(float(sl.detach())))
         grad_rows = []
