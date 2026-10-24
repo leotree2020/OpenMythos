@@ -1,0 +1,347 @@
+{
+  "review": "PENDING CHATGPT REVIEW",
+  "stage": "B1 discovery only",
+  "params": 247936,
+  "seed": 42,
+  "input_sha256": "be681f780b08da931155937a8c88c0adcef587778ce838b1504a9ae7c2e6648a",
+  "env": {
+    "python": "3.11.2",
+    "pytorch": "2.14.1+cpu",
+    "cpu": "x86_64",
+    "threads": 2,
+    "parcae_head": "69284c13746e849104f738d6d1a347b1f457df76",
+    "parcae_status": "EXPLORATORY PASS"
+  },
+  "results": [
+    {
+      "item": "baseline repeat",
+      "status": "PASS",
+      "loss": 5.223721504211426
+    },
+    {
+      "item": "AUX64",
+      "status": "PASS",
+      "rows": [
+        {
+          "h": 0.0001,
+          "ad": 2.2348421872844884,
+          "fd": 2.2348421960094456,
+          "err": 8.724957201167172e-09,
+          "bound": 0.0022448421960094456,
+          "status": "PASS"
+        },
+        {
+          "h": 0.001,
+          "ad": 2.2348421872844884,
+          "fd": 2.2348430598108093,
+          "err": 8.725263209719003e-07,
+          "bound": 0.0022448430598108094,
+          "status": "PASS"
+        }
+      ]
+    },
+    {
+      "item": "suffix reconstruction",
+      "status": "PASS",
+      "logit_max_abs": 0.0,
+      "loss_abs": 0.0,
+      "loss_bound": 6.223721504211426e-06,
+      "grads": [
+        {
+          "name": "transformer.core_block.1.attn.c_proj.weight",
+          "index": 1424,
+          "native": 0.35449838638305664,
+          "suffix": 0.35449838638305664,
+          "ok": true
+        },
+        {
+          "name": "transformer.core_block.0.attn.c_proj.weight",
+          "index": 1440,
+          "native": 0.20615354180335999,
+          "suffix": 0.20615354180335999,
+          "ok": true
+        },
+        {
+          "name": "transformer.core_block.0.mlp.proj.weight",
+          "index": 2934,
+          "native": -0.2358657419681549,
+          "suffix": -0.2358657419681549,
+          "ok": true
+        }
+      ]
+    },
+    {
+      "name": "transformer.core_block.1.attn.c_proj.weight",
+      "index": 1424,
+      "value": -0.003036822658032179,
+      "g_full": 0.6529785394668579,
+      "g_tbptt": 0.35449838638305664,
+      "abs_delta": 0.29848015308380127,
+      "checks": [
+        {
+          "h": 0.001,
+          "lp": 5.224374294281006,
+          "lm": 5.223069190979004,
+          "hp": 0.0010000001639127731,
+          "hm": 0.0010000001639127731,
+          "sep": 0.0020000003278255463,
+          "asym": 0.0,
+          "signal": true,
+          "fd": 0.6525515440394434,
+          "ad": 0.6529785394668579,
+          "err": 0.0004269954274145338,
+          "bound": 0.007529785394668579,
+          "status": "EXPLORATORY PASS"
+        },
+        {
+          "h": 0.01,
+          "lp": 5.230245113372803,
+          "lm": 5.217187404632568,
+          "hp": 0.009999999776482582,
+          "hm": 0.009999999776482582,
+          "sep": 0.019999999552965164,
+          "asym": 0.0,
+          "signal": true,
+          "fd": 0.6528854516048458,
+          "ad": 0.6529785394668579,
+          "err": 9.308786201212005e-05,
+          "bound": 0.007529785394668579,
+          "status": "EXPLORATORY PASS"
+        }
+      ],
+      "signal_any": true,
+      "unstable": false,
+      "negative": true,
+      "status": "DISCOVERY RECORDED"
+    },
+    {
+      "name": "transformer.core_block.0.attn.c_proj.weight",
+      "index": 1440,
+      "value": -0.00918375514447689,
+      "g_full": 0.44759616255760193,
+      "g_tbptt": 0.20615354180335999,
+      "abs_delta": 0.24144262075424194,
+      "checks": [
+        {
+          "h": 0.001,
+          "lp": 5.22416877746582,
+          "lm": 5.223273754119873,
+          "hp": 0.0010000001639127731,
+          "hm": 0.0010000001639127731,
+          "sep": 0.0020000003278255463,
+          "asym": 0.0,
+          "signal": true,
+          "fd": 0.44751159962076553,
+          "ad": 0.44759616255760193,
+          "err": 8.456293683639649e-05,
+          "bound": 0.0054759616255760195,
+          "status": "EXPLORATORY PASS"
+        },
+        {
+          "h": 0.01,
+          "lp": 5.228185176849365,
+          "lm": 5.219233989715576,
+          "hp": 0.009999999776482582,
+          "hm": 0.009999999776482582,
+          "sep": 0.019999999552965164,
+          "asym": 0.0,
+          "signal": true,
+          "fd": 0.4475593666931845,
+          "ad": 0.44759616255760193,
+          "err": 3.67958644174049e-05,
+          "bound": 0.0054759616255760195,
+          "status": "EXPLORATORY PASS"
+        }
+      ],
+      "signal_any": true,
+      "unstable": false,
+      "negative": true,
+      "status": "DISCOVERY RECORDED"
+    },
+    {
+      "name": "transformer.core_block.0.mlp.proj.weight",
+      "index": 2934,
+      "value": 0.016566788777709007,
+      "g_full": -0.40059801936149597,
+      "g_tbptt": -0.2358657419681549,
+      "abs_delta": 0.16473227739334106,
+      "checks": [
+        {
+          "h": 0.001,
+          "lp": 5.223320484161377,
+          "lm": 5.224121570587158,
+          "hp": 0.0010000001639127731,
+          "hm": 0.0010000001639127731,
+          "sep": 0.0020000003278255463,
+          "asym": 0.0,
+          "signal": true,
+          "fd": -0.400543147236487,
+          "ad": -0.40059801936149597,
+          "err": 5.487212500898675e-05,
+          "bound": 0.00500598019361496,
+          "status": "EXPLORATORY PASS"
+        },
+        {
+          "h": 0.01,
+          "lp": 5.219721794128418,
+          "lm": 5.227733135223389,
+          "hp": 0.009999999776482582,
+          "hm": 0.009999999776482582,
+          "sep": 0.019999999552965164,
+          "asym": 0.0,
+          "signal": true,
+          "fd": -0.40056706370190676,
+          "ad": -0.40059801936149597,
+          "err": 3.0955659589215756e-05,
+          "bound": 0.00500598019361496,
+          "status": "EXPLORATORY PASS"
+        }
+      ],
+      "signal_any": true,
+      "unstable": false,
+      "negative": true,
+      "status": "DISCOVERY RECORDED"
+    },
+    {
+      "item": "negative discovery",
+      "status": "RECORDED",
+      "count": 3,
+      "threshold": 0.01
+    }
+  ],
+  "selected": [
+    {
+      "name": "transformer.core_block.1.attn.c_proj.weight",
+      "index": 1424,
+      "value": -0.003036822658032179,
+      "g_full": 0.6529785394668579,
+      "g_tbptt": 0.35449838638305664,
+      "abs_delta": 0.29848015308380127,
+      "checks": [
+        {
+          "h": 0.001,
+          "lp": 5.224374294281006,
+          "lm": 5.223069190979004,
+          "hp": 0.0010000001639127731,
+          "hm": 0.0010000001639127731,
+          "sep": 0.0020000003278255463,
+          "asym": 0.0,
+          "signal": true,
+          "fd": 0.6525515440394434,
+          "ad": 0.6529785394668579,
+          "err": 0.0004269954274145338,
+          "bound": 0.007529785394668579,
+          "status": "EXPLORATORY PASS"
+        },
+        {
+          "h": 0.01,
+          "lp": 5.230245113372803,
+          "lm": 5.217187404632568,
+          "hp": 0.009999999776482582,
+          "hm": 0.009999999776482582,
+          "sep": 0.019999999552965164,
+          "asym": 0.0,
+          "signal": true,
+          "fd": 0.6528854516048458,
+          "ad": 0.6529785394668579,
+          "err": 9.308786201212005e-05,
+          "bound": 0.007529785394668579,
+          "status": "EXPLORATORY PASS"
+        }
+      ],
+      "signal_any": true,
+      "unstable": false,
+      "negative": true,
+      "status": "DISCOVERY RECORDED"
+    },
+    {
+      "name": "transformer.core_block.0.attn.c_proj.weight",
+      "index": 1440,
+      "value": -0.00918375514447689,
+      "g_full": 0.44759616255760193,
+      "g_tbptt": 0.20615354180335999,
+      "abs_delta": 0.24144262075424194,
+      "checks": [
+        {
+          "h": 0.001,
+          "lp": 5.22416877746582,
+          "lm": 5.223273754119873,
+          "hp": 0.0010000001639127731,
+          "hm": 0.0010000001639127731,
+          "sep": 0.0020000003278255463,
+          "asym": 0.0,
+          "signal": true,
+          "fd": 0.44751159962076553,
+          "ad": 0.44759616255760193,
+          "err": 8.456293683639649e-05,
+          "bound": 0.0054759616255760195,
+          "status": "EXPLORATORY PASS"
+        },
+        {
+          "h": 0.01,
+          "lp": 5.228185176849365,
+          "lm": 5.219233989715576,
+          "hp": 0.009999999776482582,
+          "hm": 0.009999999776482582,
+          "sep": 0.019999999552965164,
+          "asym": 0.0,
+          "signal": true,
+          "fd": 0.4475593666931845,
+          "ad": 0.44759616255760193,
+          "err": 3.67958644174049e-05,
+          "bound": 0.0054759616255760195,
+          "status": "EXPLORATORY PASS"
+        }
+      ],
+      "signal_any": true,
+      "unstable": false,
+      "negative": true,
+      "status": "DISCOVERY RECORDED"
+    },
+    {
+      "name": "transformer.core_block.0.mlp.proj.weight",
+      "index": 2934,
+      "value": 0.016566788777709007,
+      "g_full": -0.40059801936149597,
+      "g_tbptt": -0.2358657419681549,
+      "abs_delta": 0.16473227739334106,
+      "checks": [
+        {
+          "h": 0.001,
+          "lp": 5.223320484161377,
+          "lm": 5.224121570587158,
+          "hp": 0.0010000001639127731,
+          "hm": 0.0010000001639127731,
+          "sep": 0.0020000003278255463,
+          "asym": 0.0,
+          "signal": true,
+          "fd": -0.400543147236487,
+          "ad": -0.40059801936149597,
+          "err": 5.487212500898675e-05,
+          "bound": 0.00500598019361496,
+          "status": "EXPLORATORY PASS"
+        },
+        {
+          "h": 0.01,
+          "lp": 5.219721794128418,
+          "lm": 5.227733135223389,
+          "hp": 0.009999999776482582,
+          "hm": 0.009999999776482582,
+          "sep": 0.019999999552965164,
+          "asym": 0.0,
+          "signal": true,
+          "fd": -0.40056706370190676,
+          "ad": -0.40059801936149597,
+          "err": 3.0955659589215756e-05,
+          "bound": 0.00500598019361496,
+          "status": "EXPLORATORY PASS"
+        }
+      ],
+      "signal_any": true,
+      "unstable": false,
+      "negative": true,
+      "status": "DISCOVERY RECORDED"
+    }
+  ],
+  "overall": "PENDING CHATGPT REVIEW"
+}
