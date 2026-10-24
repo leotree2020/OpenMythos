@@ -1,41 +1,37 @@
-# Gate 2.1-C Conditional Patch Report
+# Gate 2.1-C.1 Credibility Fixes
 
 Pinned Parcae: `69284c13746e849104f738d6d1a347b1f457df76`
 Branch: `mini-mythos-p1c-gate2-dataloader-continuity`
-Base includes Gate 2 baseline `e37cfa376b58d25e409ab761b61f8aba33f7a027`.
 
-## Patch
+## What changed
 
-`patch_resume_skip.py` — `create_train_iterator()`:
-
-- Creates the iterator (which applies StatefulDataLoader dataset state).
-- If `microbatch_step > 0` and the dataset is **not** `RandomTokensDataset`, performs the original extra `next()`.
-- If the dataset **is** `RandomTokensDataset`, omits the extra skip.
-- Judgment uses `isinstance(..., RandomTokensDataset)`, not an arbitrary `idx` field.
-
-Native Parcae is not modified. The patch lives in the OpenMythos research directory and was verified against an isolated Parcae checkout's `RandomTokensDataset` methods.
+1. **True chained resume.** S12 is taken from the loader that was resumed from S8 and continued, not from a fresh loader that read 12 batches.
+2. **Direct patch call.** All resume iterators are created by `create_train_iterator()` imported from `patch_resume_skip.py`. Positive and negative assertions cover that function.
+3. **ParquetStreamPure classification.** Constructed with the required keyword arguments. Construction failure → FAIL. CUDA or uninitialized distributed → BLOCKED with the specific exception. Success would be judged on continuity.
 
 ## Results (CPU)
 
 | Test | Status |
 |------|--------|
-| Chained resume at 8 then 12 (20/20) | PASS |
-| batch size 1 / 2 / 4 / 8 | PASS |
-| No double consume / no re-init | PASS |
-| Unsupported dataset keeps skip | PASS |
-| Prior A/B continuity | PASS |
-| ParquetStreamPure | BLOCKED |
+| True chained resume S8→S12→20 | PASS (8/8 + 4/4 + 8/8) |
+| patch fn positive (rngds, no skip) | PASS |
+| patch fn negative (other, keeps skip) | PASS |
+| batch size 1/2/4/8 via patch fn | PASS |
+| ParquetStreamPure | BLOCKED (CUDA in state_dict) |
 
-Summary: PASS=8, FAIL=0, BLOCKED=1, NOT TESTED=0.
+Summary: PASS=7, FAIL=0, BLOCKED=1, NOT TESTED=0.
 
-## Side effects checked
+## Verified
 
-- After load+iter, `idx` equals the saved value (no re-init to 0).
-- First consumed batch advances `idx` by exactly `batch_size` (no double consume).
+- rngds path: no duplicate, no skip, chained state transfer works.
+- Patch function is the one under test.
 - Non-RandomTokensDataset still receives the extra skip.
 
-## Not claimed
+## Still blocked
 
-- ParquetStreamPure safety is not claimed (BLOCKED: CUDA / distributed / seed constraints).
-- No GPU numerical equivalence.
-- No PR created. PR #6 not merged.
+- ParquetStreamPure `state_dict` requires CUDA (`Torch not compiled with CUDA enabled`). Continuity on that path is not claimed.
+
+## Not done
+
+- Native Parcae not modified.
+- No GPU. No PR. PR #6 not merged.

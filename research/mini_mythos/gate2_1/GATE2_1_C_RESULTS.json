@@ -1,17 +1,52 @@
 {
-  "summary": {"PASS": 8, "FAIL": 0, "BLOCKED": 1, "NOT TESTED": 0},
   "tests": [
-    {"name": "chained_resume_8_then_12", "status": "PASS", "detail": "8/8 + 4/4 + 8/8"},
-    {"name": "batch_size_1_patched", "status": "PASS"},
-    {"name": "batch_size_2_patched", "status": "PASS"},
-    {"name": "batch_size_4_patched", "status": "PASS"},
-    {"name": "batch_size_8_patched", "status": "PASS"},
-    {"name": "no_double_consume_or_reinit", "status": "PASS", "detail": "idx 12->12->14"},
-    {"name": "unsupported_dataset_keeps_skip", "status": "PASS", "detail": "skip preserved"},
-    {"name": "parquet_stream_pure", "status": "BLOCKED", "detail": "CUDA/distributed/seed constraints"},
-    {"name": "prior_ab_no_skip_continuity", "status": "PASS", "detail": "8/8"}
+    {
+      "name": "true_chained_resume_s8_s12",
+      "status": "PASS",
+      "detail": "0-8=8/8 9-12=4/4 13-20=8/8 s12_from_resumed=True"
+    },
+    {
+      "name": "patch_fn_positive_rngds_no_skip",
+      "status": "PASS",
+      "detail": "idx 12->12->14 hash_match=True"
+    },
+    {
+      "name": "patch_fn_negative_other_keeps_skip",
+      "status": "PASS",
+      "detail": "got 7 expected 7"
+    },
+    {
+      "name": "batch_size_1_via_patch_fn",
+      "status": "PASS",
+      "detail": "match 4/4"
+    },
+    {
+      "name": "batch_size_2_via_patch_fn",
+      "status": "PASS",
+      "detail": "match 4/4"
+    },
+    {
+      "name": "batch_size_4_via_patch_fn",
+      "status": "PASS",
+      "detail": "match 4/4"
+    },
+    {
+      "name": "batch_size_8_via_patch_fn",
+      "status": "PASS",
+      "detail": "match 4/4"
+    },
+    {
+      "name": "parquet_stream_pure",
+      "status": "BLOCKED",
+      "detail": "CPU unsupported CUDA op: AssertionError: Torch not compiled with CUDA enabled"
+    }
   ],
-  "patch": "research/mini_mythos/gate2_1/patch_resume_skip.py",
-  "criterion": "isinstance(dataset, RandomTokensDataset)",
-  "parcae_modified": false
+  "summary": {
+    "PASS": 7,
+    "FAIL": 0,
+    "BLOCKED": 1,
+    "NOT TESTED": 0
+  },
+  "patch_function_called": true,
+  "s12_from_resumed_loader": true
 }
