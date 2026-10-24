@@ -135,7 +135,7 @@ def fd_native(model, ids, labels, pair, name, index, h):
     hp = float(plus - base)
     hm = float(base - minus)
     sep = float(plus - minus)
-    return float(lp), float(lm), hp, hm, sep
+    return float(lp.detach()), float(lm.detach()), hp, hm, sep
 
 
 def aux64():
