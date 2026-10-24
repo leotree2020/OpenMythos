@@ -1,0 +1,103 @@
+{
+  "status": "PASS",
+  "checks": {
+    "hash_A_eq_B1B2": true,
+    "loss_A_eq_B1B2": true,
+    "model_A_eq_B2": true,
+    "optimizer_A_eq_B2": true,
+    "scheduler_A_eq_B2": true,
+    "counts_A_eq_B2": true,
+    "ckpt_B1_eq_B2_C": true,
+    "rng_B1_save_eq_B2_restore": true,
+    "C_offset_detected": true
+  },
+  "loss_detail": "max_abs=0.0",
+  "model_detail": {
+    "max_abs": 0.0,
+    "max_rel": 0.0,
+    "n_diff": 0,
+    "bad": []
+  },
+  "opt_detail": {
+    "max_abs": 0.0,
+    "max_rel": 0.0,
+    "bad": []
+  },
+  "C_first_mismatch_index": 2,
+  "tolerance": {
+    "loss": 0.0001,
+    "weight": 0.0001,
+    "opt": 0.0001
+  },
+  "source": "STATIC VALIDATION"
+}
+{
+  "status": "FAIL",
+  "checks": {
+    "hash_A_eq_B1B2": true,
+    "loss_A_eq_B1B2": true,
+    "model_A_eq_B2": false,
+    "optimizer_A_eq_B2": true,
+    "scheduler_A_eq_B2": true,
+    "counts_A_eq_B2": true,
+    "ckpt_B1_eq_B2_C": true,
+    "rng_B1_save_eq_B2_restore": true,
+    "C_offset_detected": true
+  },
+  "loss_detail": "max_abs=0.0",
+  "model_detail": {
+    "max_abs": 98.0,
+    "max_rel": 0.98989898989899,
+    "n_diff": 1,
+    "bad": [
+      {
+        "key": "freqs_cis",
+        "why": "ok",
+        "max_abs": 98.0
+      }
+    ]
+  },
+  "opt_detail": {
+    "max_abs": 0.0,
+    "max_rel": 0.0,
+    "bad": []
+  },
+  "C_first_mismatch_index": 2,
+  "tolerance": {
+    "loss": 0.0001,
+    "weight": 0.0001,
+    "opt": 0.0001
+  },
+  "source": "STATIC VALIDATION"
+}
+{"status": "MISSING", "keys": ["resume_from_sha256"]}
+{"status": "REJECTED", "who": "A", "reason": "SYNTHETIC not accepted as GPU evidence"}
+{
+  "muonadamw": "NOT TESTED",
+  "cuda": "NOT_APPLICABLE",
+  "tests": [
+    {
+      "name": "real_cpu_identical",
+      "code": 0,
+      "ok": true
+    },
+    {
+      "name": "weight_changed",
+      "code": 1,
+      "ok": true
+    },
+    {
+      "name": "resume_sha_missing",
+      "code": 2,
+      "ok": true
+    },
+    {
+      "name": "synthetic_rejected",
+      "code": 2,
+      "ok": true
+    }
+  ],
+  "muonadamw_import": "PASS",
+  "muonadamw_step_cpu": "NOT TESTED",
+  "failed": 0
+}

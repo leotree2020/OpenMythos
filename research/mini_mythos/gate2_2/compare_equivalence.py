@@ -131,6 +131,12 @@ def main():
             return 2
         objs.append(o)
     A, B1, B2, C = objs
+    allow_syn = "--allow-synthetic" in sys.argv
+    if not allow_syn:
+        for n, o in zip(names, objs):
+            if o.get("source") == "SYNTHETIC":
+                print(json.dumps({"status": "REJECTED", "who": n, "reason": "SYNTHETIC not accepted as GPU evidence"}))
+                return 2
     if not B2.get("resume_from_sha256") or not C.get("resume_from_sha256"):
         print(json.dumps({"status": "MISSING", "keys": ["resume_from_sha256"]}))
         return 2
