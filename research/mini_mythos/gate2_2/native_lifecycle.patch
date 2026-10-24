@@ -1,0 +1,69 @@
+--- scripts/train.py	2026-10-23 12:57:20.293517846 +0000
++++ /tmp/parcae-n1/src/scripts/train.py	2026-10-24 07:25:32.919260887 +0000
+@@ -7,6 +7,10 @@
+ 
+ from parcae_lm.models.parcae import ParcaeConfig
+ from parcae_lm.tokenizer import Tokenizer
++try:
++    from native_lifecycle_observer import LOG as _MM_LOG
++except Exception:
++    _MM_LOG = None
+ 
+ global_start_time = time.time()
+ import math
+@@ -673,6 +677,7 @@
+             return outputs["loss"].detach(), outputs["log_ppl"].detach()
+ 
+     loss, log_ppl = tightly_scoped_fwd_bwd(model, input_ids, positions, labels, mask)
++    _mm_stepped = False
+     metrics["mbs_loss"] = loss
+     running_loss.update(loss)
+     running_ppl.update(log_ppl)
+@@ -712,8 +717,10 @@
+                             if param.grad is not None:
+                                 torch._dynamo.decorators.mark_static_address(param.grad)
+                     torch.compile(optimizer.step, mode="max-autotune-no-cudagraphs")()
++                    _mm_stepped = True
+                 else:
+                     optimizer.step()
++                    _mm_stepped = True
+         else:
+             if cfg.skip_nonfinite_grads:
+                 fabric.print(f"Grad norm non-finite! Optimizer step {state['optimizer_step'] + 1} skipped.")
+@@ -725,6 +732,8 @@
+             track_gradient_metrics(model, optimizer, metrics)
+             model.module.apply(partial(disable_monitoring_and_retrieve_metrics, metrics=metrics))
+         optimizer.zero_grad(set_to_none=not (cfg.fabric.use_apex_adamw or cfg.compile_optimizer))
++        if _MM_LOG is not None:
++            _MM_LOG.on_step(input_ids, loss, state, _mm_stepped)
+         state["optimizer_step"] += 1
+         if data_scheduler is not None:
+             data_scheduler.step(state["microbatch_step"])
+@@ -1418,6 +1427,8 @@
+             state["rng_state_cuda"] = checkpoint_raw.get("rng_state_cuda")
+             state["rng_state_numpy"] = checkpoint_raw.get("rng_state_numpy")
+             state["rng_state_python"] = checkpoint_raw.get("rng_state_python")
++            if _MM_LOG is not None:
++                _MM_LOG.on_after_load()
+             if state["microbatch_step"] == pre_load_step and state["microbatch_step"] == 0:
+                 fabric.print(f"WARNING: microbatch_step is still 0 after loading - checkpoint may not have loaded correctly!")
+             
+@@ -1538,6 +1549,9 @@
+         state["rng_state_numpy"] = np.random.get_state()
+         state["rng_state_python"] = random.getstate()
+ 
++        if _MM_LOG is not None:
++            _MM_LOG.on_before_save(fully_qualified_checkpoint_path)
++
+         if fabric.global_rank == 0:
+             opt = state["optimizer"]
+             opt_state = opt.state if hasattr(opt, "state") else {}
+@@ -1554,6 +1568,8 @@
+                          f"buffer_len={len(ds._state.get('buffer', []))}")
+ 
+         fabric.save(fully_qualified_checkpoint_path, state)
++        if _MM_LOG is not None:
++            _MM_LOG.on_after_save(fully_qualified_checkpoint_path)
+         fabric.print(f"------------------- {time.ctime()[:-5]} Checkpoint saved ({time.time() - t0:.02f} seconds)")
+ 
+ 
