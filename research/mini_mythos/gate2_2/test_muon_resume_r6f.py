@@ -100,7 +100,20 @@ def apply_rng(s):
 
 
 def rng_equal(a, b):
-    return torch.equal(a["torch"], b["torch"]) and a["python"] == b["python"] and a["numpy"][0] == b["numpy"][0]
+    if not torch.equal(a["torch"], b["torch"]):
+        return False, "torch"
+    if a["python"] != b["python"]:
+        return False, "python"
+    na, nb = a["numpy"], b["numpy"]
+    if len(na) != len(nb):
+        return False, "numpy-len"
+    for i, (x, y) in enumerate(zip(na, nb)):
+        if hasattr(x, "shape"):
+            if not np.array_equal(x, y):
+                return False, f"numpy[{i}]"
+        elif x != y:
+            return False, f"numpy[{i}]"
+    return True, None
 
 
 def fresh():
@@ -170,7 +183,8 @@ def main():
         saved = torch.load(path, map_location="cpu", weights_only=False)
         b, ob, raw = resume(path)
         now = snap()
-        checks.append({"name": "resume_rng_immediate", "ok": rng_equal(now, raw["rng"])})
+        ok, field = rng_equal(now, raw["rng"])
+        checks.append({"name": "resume_rng_immediate", "ok": ok, "field": field})
         checks.append({"name": "pre_model", "ok": strict(a.state_dict(), b.state_dict())[0]})
         checks.append({"name": "pre_opt", "ok": strict(oa.state_dict(), ob.state_dict())[0]})
         checks.append({"name": "no_shared", "ok": not overlaps(storage_ranges(a.state_dict()), storage_ranges(b.state_dict()))})
@@ -208,10 +222,30 @@ def main():
         checks.append({"name": "cross_model", "ok": strict(a.state_dict(), a2.state_dict())[0] and strict(b.state_dict(), b2.state_dict())[0]})
         checks.append({"name": "cross_opt", "ok": strict(oa.state_dict(), oa2.state_dict())[0] and strict(ob.state_dict(), ob2.state_dict())[0]})
 
-        # negative: skip rng restore
-        torch.manual_seed(123)
-        bad = snap()
-        checks.append({"name": "neg_rng_mismatch", "ok": not rng_equal(bad, raw["rng"])})
+        # independent RNG field negatives
+        base = snap()
+        torch.rand(1)
+        checks.append({"name": "neg_torch_only", "ok": rng_equal(base, snap())[1] == "torch"})
+        apply_rng(base)
+        random.random()
+        checks.append({"name": "neg_python_only", "ok": rng_equal(base, snap())[1] == "python"})
+        apply_rng(base)
+        np.random.rand()
+        checks.append({"name": "neg_numpy_only", "ok": rng_equal(base, snap())[1] == "numpy[1]" or rng_equal(base, snap())[1] == "numpy[2]"})
+
+        # good vs bad resume
+        torch.manual_seed(99); random.seed(99); np.random.seed(99)
+        b_good, _, raw_good = resume(path)
+        ok_good, _ = rng_equal(snap(), raw_good["rng"])
+        checks.append({"name": "b_good_rng", "ok": ok_good})
+        torch.manual_seed(99); random.seed(99); np.random.seed(99)
+        raw_bad = torch.load(path, map_location="cpu", weights_only=False)
+        # skip apply_rng on purpose
+        ok_bad, field_bad = rng_equal(snap(), raw_bad["rng"])
+        checks.append({"name": "b_bad_rng", "ok": not ok_bad, "field": field_bad})
+
+        # AB/BA storage isolation already recorded; add optimizer overlap on AB
+        checks.append({"name": "ab_opt_isolated", "ok": not overlaps(storage_ranges(oa.state_dict()), storage_ranges(ob.state_dict()))})
 
     failed = [c["name"] for c in checks if not c["ok"]]
     status = "CPU FILE-RESUME BIT-EXACT PASS" if not failed else "FAIL"
