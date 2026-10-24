@@ -62,7 +62,6 @@ def main():
 
     ha, ia, _ = collect(20)
     results["control_a_idx_after_20"] = ia[-1]
-    results["control_a_hashes"] = ha
 
     h12, i12, l12 = collect(12)
     state = l12.state_dict()
@@ -98,6 +97,9 @@ def main():
     results["b_match_a13_20"] = f"{match_b_shifted}/7"
     results["b_first_is_a13"] = hb[0] == ha[13]
     results["c_first_is_a12"] = hc[0] == ha[12]
+    results["control_a_hash_0"] = ha[0]
+    results["control_a_hash_12"] = ha[12]
+    results["control_a_hash_13"] = ha[13]
 
     if match_c == 8 and match_b == 0 and hb[0] == ha[13]:
         results["verdict"] = "PASS: extra next() causes one-batch skip; omitting it restores continuity"
@@ -106,16 +108,10 @@ def main():
         results["verdict"] = "FAIL: unexpected continuity pattern"
         results["fail"] = 1
 
-    out = Path("research/mini_mythos/gate2_1/TEST_RESULTS.json")
-    out.parent.mkdir(parents=True, exist_ok=True)
-    # drop full hashes from saved json for size; keep first/last and verdicts
-    saved = {k: v for k, v in results.items() if k != "control_a_hashes"}
-    saved["control_a_hash_0"] = ha[0]
-    saved["control_a_hash_12"] = ha[12]
-    saved["control_a_hash_13"] = ha[13]
-    out.write_text(json.dumps(saved, indent=2))
-    print(json.dumps(saved, indent=2))
-n    return 0 if results["fail"] == 0 else 1
+    out = Path(__file__).resolve().parent / "TEST_RESULTS.json"
+    out.write_text(json.dumps(results, indent=2))
+    print(json.dumps(results, indent=2))
+    return 0 if results["fail"] == 0 else 1
 
 
 if __name__ == "__main__":
