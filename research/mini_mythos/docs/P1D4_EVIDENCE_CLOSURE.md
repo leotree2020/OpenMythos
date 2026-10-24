@@ -2,76 +2,72 @@
 
 ## Verdict
 
-Overall P1-D4: **BLOCKED**.
-Technical data-path checks were newly reproduced. Official identity and license remain unconfirmed.
+Technical Compatibility: **PASS**
+Official Provenance & License: **BLOCKED**
+Overall P1-D4: **BLOCKED**
 
-Not Gate 2.2-C PASS.
+Not Gate 2.2-C PASS. Not authorization for GPU training.
 
-## Evidence class
+## E2 correction
 
-- Candidate config files in `/tmp/tok-compat` were still present. No original stdout from the earlier run. Load/encode/hash checks here are **NEW REPRODUCTION**.
-- Parquet chain is **NEW REPRODUCTION**.
-- `ignore_index = tokenizer.pad_id` is **SOURCE-ONLY** (`scripts/train.py:287`).
-- Official identity and license are **UNVERIFIED** / **BLOCKED**.
+P1-D4-E2 closed two gaps. Candidate config remains NON-OFFICIAL.
 
-## Candidate config
+- Loss check now uses the same logits and labels. Only `ignore_index` changes.
+- The data path now runs `ParquetStreamPure` → `PackedIterableDataset` → `BestFitPackingCollator` → `DataLoader`.
 
-Non-official files:
-- `evidence/p1d4/candidate_tokenizer_config.json`
-- `evidence/p1d4/candidate_special_tokens_map.json`
+Authoritative files: `e2_raw.txt`, `e2_loss_check.txt`, updated `raw.txt` and `loss_check.txt`.
+Older contradictory records are kept as `history_raw.txt` and `history_loss_check.txt`.
 
-NEW REPRODUCTION:
-- bos/eos/pad = 0/1/2
-- vocab = 32768
-- tokenizer.json SHA-256 unchanged: `e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77`
-- encode of `Hello 你好 world.` matched the bare load
+## Loss (single variable)
 
-## Real Parquet path
+Same inputs:
+- dtype float32
+- shape `[1, 4, 8]`
+- reduction mean
+- labels `[[3, 2, 3, 2]]`
+- logits: positions 0/2 peak at class 3; positions 1/3 peak at class 4
 
-Ran pinned `ParquetStreamPure` → `BestFitPackingCollator` on 4 tiny texts. CPU only.
+Results from real `F.cross_entropy`:
+- ignore_index=2 → `0.0003178806509822607` (positions of label 2 ignored)
+- ignore_index=0 → `5.0003180503845215` (no label is 0, so all four count)
 
-Findings:
-- Raw encode produced **no BOS=0, no EOS=1, no PAD=2**.
-- This matches source: `tokenizer.encode(text, return_tensors=False)` without bos/eos (`huggingface_dataset.py` around the encode call).
-- Collator received tensors and returned them unchanged (`_tokenize_row` tensor branch). It did not add BOS/EOS.
-- PAD=2 appeared only as packing fill for unused slots (`pad_id or 0`, and pad_id was 2).
-- Shifted labels contain 2 at those fill positions. This sample had no label equal to 0.
+Command:
+```bash
+PYTHONPATH=/tmp/py311-pkgs:/tmp/parcae-src python research/mini_mythos/gate2_2/evidence/p1d4/test_p1d4_chain.py
+```
+Exit 0.
 
-This is recorded, not judged FAIL solely for missing BOS/EOS.
+## Real DataLoader path
 
-## Loss
+Pinned classes only. CPU, num_workers=0, batch_size=1, `unwrap_singleton_collate`.
 
-Public case, float32, shape `[1, 2, 8]`, reduction mean, labels `[3, 2]`:
-- ignore_index=2 → `0.0003178806509822607`
-- ignore_index=0 → `5.000317573547363`
+Source tokens from one iterator had no 0/1/2.
+DataLoader first batch:
+- input_ids: no BOS, no EOS, 4 PAD=2 fill tokens
+- labels: shift of the packed row, 5 PAD=2, no BOS, no EOS
+- valid labels with pad_id=2: 25
+- ignored if ignore_index=2: 5
 
-Same labels. ignore 2 drops the pad label; ignore 0 keeps it.
-
-## Identity and license
-
-No new public evidence that `SandyResearch/parcae-tokenizer` is the parcae-small training asset.
-No LICENSE. Parcae MIT does not cover this file.
-Research use and redistribution remain unconfirmed.
-Relation to `huginn_tokenizer_65k`: UNKNOWN.
+This matches source: encode without bos/eos, tensor branch skips re-encoding, pad is packing fill only.
 
 ## Matrix
 
 | Item | Result |
 |------|--------|
-| Candidate load | PASS (NEW REPRODUCTION) |
-| Hash unchanged | PASS |
-| Encode consistency | PASS |
-| Special token IDs | PASS (0/1/2) |
-| ignore_index=2 | PASS for candidate pad_id; assignment is SOURCE-ONLY |
-| Real Parquet chain | PASS (executed; no BOS/EOS inserted) |
-| Packing and label shift | PASS |
-| Loss ignore mask | PASS |
-| Official identity | BLOCKED |
-| License | BLOCKED |
-| Technical Compatibility | PASS for the checks above |
+| Tokenizer 0/1/2 | PASS (kept) |
+| SHA-256 | PASS (kept) |
+| Encode consistency | PASS (kept) |
+| Loss single-variable | PASS (E2) |
+| ParquetStreamPure | PASS (E2) |
+| PackedIterableDataset | PASS (E2) |
+| DataLoader | PASS (E2) |
+| Label shift | PASS (E2) |
+| Loss ignore mask | PASS (E2) |
+| Technical Compatibility | PASS |
 | Official Provenance & License | BLOCKED |
 | Overall P1-D4 | BLOCKED |
 
-## Next stage
+## Still blocked
 
-Not ready. License and official identity block the next stage.
+No new evidence that this tokenizer is the parcae-small training asset.
+No LICENSE. Relation to huginn_tokenizer_65k remains UNKNOWN.
