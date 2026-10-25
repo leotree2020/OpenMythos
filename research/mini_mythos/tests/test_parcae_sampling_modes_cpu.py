@@ -1,7 +1,8 @@
-"""F2-E B1 E1-E6 CPU probe.
+"""F2-E B1-R1 CPU probe.
 
 PENDING CHATGPT REVIEW. Does not modify Parcae.
-E6 is a test-side controlled intervention, not a native sample.
+Returned means come from the real iterate_forward return.
+E6 is CONTROLLED and exploratory.
 """
 import argparse
 import copy
@@ -73,11 +74,12 @@ def reference(method, step, shape):
         t = torch.clamp(torch.poisson(torch.tensor([2.0]), generator=g), min=1)
         n = t.to(torch.long)
         k = torch.clamp(n, max=2)
+        total = n
     else:
         total = torch.clamp(torch.poisson(torch.full(shape, 2.0), generator=g), min=1).to(torch.long)
         k = torch.clamp(total, max=2)
         n = total - k
-    return {"seed": seed, "n": n, "k": k, "T": n if method == "per-batch" else n + k}
+    return {"seed": seed, "n": n, "k": k, "T": total}
 
 
 def close(a, b, abs_tol, rel_tol):
@@ -104,76 +106,105 @@ def accept_sample(row, ref, method):
     if row["outer"] != outer:
         reasons.append("outer")
     if method != "per-batch":
-        mean_n = int(ref["n"].float().mean().to(torch.long))
-        mean_k = int(ref["k"].float().mean().to(torch.long))
-        if row["returned_n"] != mean_n or row["returned_k"] != mean_k:
-            reasons.append("returned mean")
-    return ("PASS" if not reasons else "FAIL"), {"reasons": reasons, "outer": row["outer"], "returned": [row["returned_n"], row["returned_k"]]}
+        exp_n = int(ref["n"].float().mean().to(torch.long))
+        exp_k = int(ref["k"].float().mean().to(torch.long))
+        if int(row["returned_n"]) != exp_n or int(row["returned_k"]) != exp_k:
+            reasons.append("native returned mean")
+        expected_shape = [row["n"].shape[0], 1, 1] if method == "per-sequence" else [row["n"].shape[0], row["n"].shape[1], 1]
+        if not row["recurrent_masks"] or any(m["shape"] != expected_shape for m in row["recurrent_masks"]):
+            reasons.append("mask shape")
+    return ("PASS" if not reasons else "FAIL"), {
+        "reasons": reasons,
+        "outer": row["outer"],
+        "returned": [int(row["returned_n"]), int(row["returned_k"])],
+        "masks": row["recurrent_masks"],
+    }
 
 
 def evaluate_pair(row, base, enabled):
+    reasons = []
     if row["n"].shape != base["n"].shape or not torch.equal(row["n"], base["n"]) or not torch.equal(row["k"], base["k"]):
-        return "FAIL", {"reasons": ["sample mismatch"]}
-    if len(row["grads"]) != 74 or set(row["grads"]) != set(base["grads"]):
-        return "FAIL", {"reasons": ["gradient names"], "count": len(row["grads"])}
+        reasons.append("sample")
+    if row["rng_before"] != base["rng_before"] or row["input_sha"] != base["input_sha"] or row["start_weights"] != base["start_weights"]:
+        reasons.append("identity")
+    if row["sampler_bwd"] != 0 or base["sampler_bwd"] != 0:
+        reasons.append("backward sampler")
+    if len(row["grads"]) != 74 or len(base["grads"]) != 74 or set(row["grads"]) != set(base["grads"]):
+        reasons.append("gradient names")
     logit_ok, logit_diff = close(row["logits"], base["logits"], 1e-6, 0.0)
     loss_delta = abs(row["loss"] - base["loss"])
     loss_ok = loss_delta <= 1e-6 + 1e-6 * max(abs(row["loss"]), abs(base["loss"]))
     max_grad = 0.0
     bad = []
     for name in base["grads"]:
-        g, gm = base["grads"][name], row["grads"][name]
-        if not torch.isfinite(g).all() or not torch.isfinite(gm).all() or torch.count_nonzero(g) == 0 or torch.count_nonzero(gm) == 0:
+        g, gm = base["grads"][name], row["grads"].get(name)
+        if gm is None or not torch.isfinite(g).all() or not torch.isfinite(gm).all() or torch.count_nonzero(g) == 0 or torch.count_nonzero(gm) == 0:
             bad.append(name)
             continue
         ok, diff = close(gm, g, 1e-6, 1e-5)
         max_grad = max(max_grad, diff)
         if not ok:
             bad.append(name)
-    if enabled and row["replay"] < 1:
-        return "BLOCKED", {"reasons": ["no replay"]}
-    status = "PASS" if logit_ok and loss_ok and not bad else "FAIL"
-    return status, {"reasons": bad[:5], "logit_max_abs": logit_diff, "loss_delta": loss_delta, "grad_max_abs": max_grad, "grad_count": len(row["grads"])}
+    scalars = []
+    for name, idx in FROZEN:
+        if name in row["grads"] and name in base["grads"]:
+            scalars.append({"name": name, "index": idx, "row": float(row["grads"][name].view(-1)[idx]), "base": float(base["grads"][name].view(-1)[idx])})
+    if enabled and (row["replay"] < 1 or base["replay"] != 0):
+        return "BLOCKED", {"reasons": ["replay"], "replay": row["replay"]}
+    if reasons or bad or not logit_ok or not loss_ok:
+        return "FAIL", {"reasons": reasons or bad[:5], "logit_max_abs": logit_diff, "loss_delta": loss_delta, "grad_max_abs": max_grad, "scalars": scalars}
+    return "PASS", {"logit_max_abs": logit_diff, "loss_delta": loss_delta, "grad_max_abs": max_grad, "grad_count": 74, "replay": row["replay"], "scalars": scalars, "rng_before": row["rng_before"]}
 
 
-def synthetic(sample, ref, method):
+def synthetic(sample, ref):
+    cases = {}
     bad = copy.deepcopy(sample)
     bad["n"] = sample["n"] + 1
-    cases = {"bad_nk": accept_sample(bad, ref, method)[0]}
+    cases["bad_nk"] = accept_sample(bad, ref, "per-sequence")[0]
     bad = copy.deepcopy(sample)
     bad["outer"] = sample["outer"] + 1
-    cases["bad_outer"] = accept_sample(bad, ref, method)[0]
+    cases["bad_outer"] = accept_sample(bad, ref, "per-sequence")[0]
     bad = copy.deepcopy(sample)
-    bad["returned_n"] = sample["returned_n"] + 1
+    bad["returned_n"] = int(sample["returned_n"]) + 1
     cases["bad_mean"] = accept_sample(bad, ref, "per-sequence")[0]
     bad = copy.deepcopy(sample)
     bad["sampler_bwd"] = 1
-    cases["bad_bwd"] = accept_sample(bad, ref, method)[0]
+    cases["bad_bwd"] = accept_sample(bad, ref, "per-sequence")[0]
+    bad = copy.deepcopy(sample)
+    bad["recurrent_masks"] = [{"shape": [9, 9, 9]}]
+    cases["bad_mask"] = accept_sample(bad, ref, "per-sequence")[0]
+    bad = copy.deepcopy(sample)
+    bad["start_weights"] = "changed"
+    cases["bad_weight"] = evaluate_pair(bad, sample, False)[0]
+    name = next(iter(sample["grads"]))
+    bad = copy.deepcopy(sample)
+    bad["grads"][name] = bad["grads"][name] + 1
+    cases["bad_grad"] = evaluate_pair(bad, sample, False)[0]
     return all(v == "FAIL" for v in cases.values()), cases
 
 
-def run_once(model, ids, labels, step):
+def run_once(model, ids, labels, step, controlled=None):
     method = model.config.recurrent_iteration_method
-    events = {"scalar": 0, "element": 0, "bwd": 0, "updates": [], "n": None, "k": None}
-    phase = {"v": "forward"}
+    phase = {"v": "no_grad"}
+    events = {"scalar": 0, "element": 0, "bwd": 0, "updates": [], "n": None, "k": None, "returned_n": None, "returned_k": None, "masks": []}
     orig_scalar = model.randomized_iteration_sampler
     orig_element = model._sample_batch_depths
     orig_update = model.update_recurrent_state
+    orig_iter = model.iterate_forward
+    orig_where = torch.where
 
     def scalar():
-        if phase["v"] == "backward":
-            events["bwd"] += 1
-        else:
-            events["scalar"] += 1
+        events["bwd" if phase["v"] == "backward" else "scalar"] += 1
         n, k = orig_scalar()
         events["n"], events["k"] = n.detach().clone(), k.detach().clone()
         return n, k
 
     def element(*args, **kwargs):
-        if phase["v"] == "backward":
-            events["bwd"] += 1
-        else:
-            events["element"] += 1
+        events["bwd" if phase["v"] == "backward" else "element"] += 1
+        if controlled is not None:
+            n, k = controlled
+            events["n"], events["k"] = n.clone(), k.clone()
+            return n, k
         n, k = orig_element(*args, **kwargs)
         events["n"], events["k"] = n.detach().clone(), k.detach().clone()
         return n, k
@@ -182,21 +213,28 @@ def run_once(model, ids, labels, step):
         events["updates"].append(phase["v"])
         return orig_update(*args, **kwargs)
 
+    def iterate(*args, **kwargs):
+        x, n, k, xk = orig_iter(*args, **kwargs)
+        events["returned_n"] = n.detach().clone() if torch.is_tensor(n) else torch.tensor(n)
+        events["returned_k"] = k.detach().clone() if torch.is_tensor(k) else torch.tensor(k)
+        return x, n, k, xk
+
+    def where(mask, a, b, *rest, **kwargs):
+        if isinstance(mask, torch.Tensor) and mask.dtype == torch.bool and mask.ndim == 3 and mask.shape[-1] == 1:
+            events["masks"].append({"phase": phase["v"], "shape": list(mask.shape), "true": int(mask.sum()), "hash": checksum(mask)})
+        return orig_where(mask, a, b, *rest, **kwargs)
+
     model.randomized_iteration_sampler = scalar
     model._sample_batch_depths = element
     model.update_recurrent_state = update
-    masks = []
-    orig_where = torch.where
-    def where(mask, a, b):
-        if isinstance(mask, torch.Tensor) and mask.dtype == torch.bool:
-            masks.append({"shape": list(mask.shape), "true": int(mask.sum())})
-        return orig_where(mask, a, b)
+    model.iterate_forward = iterate
     torch.where = where
     try:
         torch.manual_seed(SEED)
         before = sha_bytes(torch.get_rng_state().numpy().tobytes())
         model.step = step
         model.train()
+        # phase tracking is approximate: no_grad updates happen first
         out = model(ids, labels=labels, return_logits=True, num_steps_pair=None)
         after = sha_bytes(torch.get_rng_state().numpy().tobytes())
         phase["v"] = "backward"
@@ -208,11 +246,11 @@ def run_once(model, ids, labels, step):
         model.randomized_iteration_sampler = orig_scalar
         model._sample_batch_depths = orig_element
         model.update_recurrent_state = orig_update
+        model.iterate_forward = orig_iter
     n, k = events["n"], events["k"]
-    returned = out.get("num_steps_no_grad") if isinstance(out, dict) else None
-    # returned means are not in forward dict; recompute from captured tensors for per-element
-    returned_n = int(n) if method == "per-batch" else int(n.float().mean().to(torch.long))
-    returned_k = int(k) if method == "per-batch" else int(k.float().mean().to(torch.long))
+    n_int = int(n.max()) if n is not None else 0
+    # mark first n_int forward updates as no_grad by source schedule
+    forward_updates = [p for p in events["updates"] if p != "backward"]
     return {
         "method": method,
         "n": n,
@@ -220,61 +258,76 @@ def run_once(model, ids, labels, step):
         "scalar_calls": events["scalar"],
         "element_calls": events["element"],
         "sampler_bwd": events["bwd"],
-        "outer": sum(p == "forward" for p in events["updates"]),
+        "outer": len(forward_updates),
         "replay": sum(p == "backward" for p in events["updates"]),
-        "returned_n": returned_n,
-        "returned_k": returned_k,
-        "masks": masks,
+        "returned_n": events["returned_n"],
+        "returned_k": events["returned_k"],
+        "recurrent_masks": events["masks"],
         "loss": float(out["loss"].detach()),
         "logits": out["logits"].detach().clone(),
         "grads": grads,
         "rng_before": before,
         "rng_after": after,
+        "input_sha": checksum(ids),
+        "start_weights": weight_sha(model.state_dict()),
         "after_weights": weight_sha(model.state_dict()),
     }
 
 
-def e6(model):
-    # test-side controlled intervention
-    n = torch.tensor([[0, 1]], dtype=torch.long)
-    k = torch.tensor([[0, 1]], dtype=torch.long)
-    orig = model._sample_batch_depths
+def e6(root, weights):
+    model = make_model(root, "per-token")
+    model.load_state_dict(weights)
+    t = torch.ones(2, 8, dtype=torch.long)
+    t[0, 0] = 1
+    t[0, 1] = 4
+    n = t - torch.clamp(t, max=2)
+    k = torch.clamp(t, max=2)
+    # algebraic where only
+    x = torch.ones(2, 8, 4)
+    x_new = x + 1
+    mask = (torch.tensor(0) < n)
+    got = torch.where(mask[..., None], x_new, x)
+    where_ok = torch.equal(got[0, 0], x[0, 0]) and torch.equal(got[0, 1], x_new[0, 1])
+    # target-token measurement inside the real per-token loop
+    captured = {}
+    orig_update = model.update_recurrent_state
+    calls = {"i": 0}
+
+    def update(x, *rest):
+        if calls["i"] == 0:
+            captured["x"] = x.detach().clone()
+            captured["rest"] = rest
+        calls["i"] += 1
+        return orig_update(x, *rest)
+
+    model.update_recurrent_state = update
     model._sample_batch_depths = lambda *a, **kw: (n, k)
-    ids = torch.tensor([[1, 2]])
-    labels = ids.clone()
+    ids = torch.arange(16).view(2, 8)
     model.train()
     model.step = 0
     torch.manual_seed(SEED)
-    out = model(ids, labels=labels, return_logits=True, num_steps_pair=None)
-    model._sample_batch_depths = orig
-    # algebraic where
-    x = torch.ones(1, 2, 4)
-    x_new = x + 1
-    mask = torch.tensor([[False, True]])
-    got = torch.where(mask[..., None], x_new, x)
-    where_ok = torch.equal(got[:, 0], x[:, 0]) and torch.equal(got[:, 1], x_new[:, 1])
-    # coupling through one native core update
-    x0 = torch.zeros(1, 2, 64)
-    x1 = x0.clone()
-    x1[:, 0, 0] += 0.1
-    pos = torch.zeros(1, 2, 64)
-    mask_attn = torch.ones(1, 1, 2, 2)
-    step = torch.tensor(0)
-    total = torch.tensor(1)
-    y0 = model.update_recurrent_state(x0, pos, model.freqs_cis[:, :2], mask_attn, step, total)
-    y1 = model.update_recurrent_state(x1, pos, model.freqs_cis[:, :2], mask_attn, step, total)
-    delta = (y1 - y0).abs().max().item()
-    pos_ctrl = x0.clone()
-    pos_ctrl[:, 1, 0] += 0.1
-    yp = model.update_recurrent_state(pos_ctrl, pos, model.freqs_cis[:, :2], mask_attn, step, total)
-    pos_delta = (yp - y0).abs().max().item()
-    if pos_delta <= 1e-6:
-        status = "INCONCLUSIVE"
-    elif delta > 1e-6:
-        status = "DETECTED"
-    else:
-        status = "NOT DETECTED"
-    return status, {"where_ok": where_ok, "inactive_to_active_max_abs": delta, "positive_control_max_abs": pos_delta, "controlled": True}
+    model(ids, labels=ids.clone(), return_logits=True, num_steps_pair=None)
+    model.update_recurrent_state = orig_update
+    if "x" not in captured:
+        return "INCONCLUSIVE", {"reason": "no captured state", "controlled": True, "where_ok": where_ok}
+    base_x = captured["x"]
+    inactive = base_x.clone()
+    inactive[0, 0, 0] += 0.1
+    active = base_x.clone()
+    active[0, 1, 0] += 0.1
+    y0 = orig_update(base_x, *captured["rest"])
+    yi = orig_update(inactive, *captured["rest"])
+    ya = orig_update(active, *captured["rest"])
+    target = (yi - y0)[0, 1].abs().max().item()
+    control = (ya - y0)[0, 1].abs().max().item()
+    return "INCONCLUSIVE", {
+        "controlled": True,
+        "where_ok": where_ok,
+        "target_token_max_abs": target,
+        "positive_control_max_abs": control,
+        "reason": "numbers come from a direct update replay, not the live masked-loop output",
+        "planned_T": t.tolist(),
+    }
 
 
 def main():
@@ -307,33 +360,37 @@ def main():
     torch.manual_seed(1000)
     ids1 = torch.randint(0, 128, (1, 8))
     ids2 = torch.randint(0, 128, (2, 8))
-    add("precheck", "PASS", weight_sha256=wsha, input1=checksum(ids1), input2=checksum(ids2), distributed=torch.distributed.is_initialized())
+    add("precheck", "PASS", weight_sha256=wsha, input1=checksum(ids1), input2=checksum(ids2))
 
     def cell(method, ids, flag=False):
         m = make_model(root, method, flag)
         m.load_state_dict(weights)
-        return run_once(m, ids, ids.clone(), 0)
+        row = run_once(m, ids, ids.clone(), 0)
+        row["start_weights"] = wsha
+        return row
 
     e1 = cell("per-batch", ids1)
     e2 = cell("per-sequence", ids2)
     e3 = cell("per-token", ids2)
-    e4 = cell("per-sequence", ids2)
-    e5_off = cell("per-sequence", ids2, False)
-    e5_on = cell("per-sequence", ids2, True)
-    for name, row, method, shape in [
-        ("E1", e1, "per-batch", (1,)),
-        ("E2", e2, "per-sequence", (2,)),
-        ("E3", e3, "per-token", (2, 8)),
+    e4s = cell("per-sequence", ids2)
+    e4t = cell("per-token", ids2)
+    e5s_off, e5s_on = cell("per-sequence", ids2, False), cell("per-sequence", ids2, True)
+    e5t_off, e5t_on = cell("per-token", ids2, False), cell("per-token", ids2, True)
+    for name, row, method, shape in [("E1", e1, "per-batch", (1,)), ("E2", e2, "per-sequence", (2,)), ("E3", e3, "per-token", (2, 8))]:
+        status, detail = accept_sample(row, reference(method, 0, shape), method)
+        add(name, status, n=row["n"].tolist(), k=row["k"].tolist(), **detail)
+    for name, pair in [
+        ("E4 sequence", evaluate_pair(e4s, e2, False)),
+        ("E4 token", evaluate_pair(e4t, e3, False)),
+        ("E5 sequence", evaluate_pair(e5s_on, e5s_off, True)),
+        ("E5 token", evaluate_pair(e5t_on, e5t_off, True)),
     ]:
-        ref = reference(method, 0, shape)
-        status, detail = accept_sample(row, ref, method)
-        add(name, status, n=row["n"].tolist(), k=row["k"].tolist(), masks=row.get("masks"), **detail)
-    add("E4 repeat", evaluate_pair(e4, e2, False)[0])
-    add("E5 checkpoint", evaluate_pair(e5_on, e5_off, True)[0])
+        status, detail = pair
+        add(name, status, **detail)
     add("cross mode logits", "NOT APPLICABLE")
-    ok, cases = synthetic(e2, reference("per-sequence", 0, (2,)), "per-sequence")
+    ok, cases = synthetic(e2, reference("per-sequence", 0, (2,)))
     add("synthetic", "PASS" if ok else "FAIL", results=cases)
-    status, detail = e6(base)
+    status, detail = e6(root, weights)
     add("E6 controlled", status, **detail)
     finish(out, items)
     return exit_code(items)
@@ -353,7 +410,7 @@ def exit_code(items):
 def finish(out, items):
     payload = {
         "review": "PENDING CHATGPT REVIEW",
-        "stage": "F2-E B1 E1-E6",
+        "stage": "F2-E B1-R1",
         "local_status": worst([i["status"] for i in items if i["status"] not in {"NOT APPLICABLE", "DETECTED", "NOT DETECTED"}]) if items else "BLOCKED",
         "env": {"python": sys.version.split()[0], "pytorch": torch.__version__, "cpu": platform.machine()},
         "intent": "INTENT UNKNOWN",
