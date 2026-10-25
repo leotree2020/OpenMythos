@@ -107,6 +107,10 @@
 - 原始五条科研规则始终有效：CPU 优先、预设验收、上游不变、交叉审核、阶段检查点。
 
 
-## F3-B design
+## F3-B 设计阶段审核（2026-10-25）
 
-Design-only docs added. No training. Official tokenizer remains BLOCKED. First proposed gate is D1 on pinned WikiText-2.
+Grok `103344e47184735e03727d062ce81cbae6632e47` 提交五份研究设计文档，未提交新的训练实验。ChatGPT 独立审核见 `docs/F3B_CHATGPT_DESIGN_REVIEW_AND_D1_FREEZE_GATE_20261025.md`：**F3-B DESIGN DELIVERABLES PASS/CLOSED（仅五份设计交付）**；**D1 DRAFT / NOT FROZEN / NOT AUTHORIZED**，D2/D3 NOT TESTED/NOT AUTHORIZED；官方 Parcae Tokenizer BLOCKED，GPU 未授权。
+
+**当前唯一下一步（不跑代码、不下载/拟合 Tokenizer）**：Grok 仅编写一份 `F3B_D1_FROZEN_EXECUTION_PROPOSAL.md`，锁定 `Salesforce/wikitext` / `wikitext-2-raw-v1` / revision `b08601e04326c79dfdd32d625aee71d232d685c3`，冻结 BPE train-only 编码/许可/特殊 Token、单进程 source ID 与 Token cursor/断点续读、有限比较窗口及跳/重/错位负例。**D2 必须单独解决 vocab128→目标 BPE4096 时输入/输出形状与实际参数量变化**，不能仍称 247936 参数模型。Git 历史 R2 Gate M/N/O/P/Q 的文件级和本地合成专项 PASS 不代表远端逐行/DataLoader Resume PASS。
+
+下一步仅为 D1 门禁设计提交，之后需 ChatGPT 审核和项目负责人明确 CPU D1 数据读取/Tokenizer 拟合的执行授权；不自动授权新训练、GPU 或架构变更。
