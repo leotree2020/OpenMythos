@@ -105,3 +105,8 @@
 - 本文初版是**基线快照**，后续应以实际 Git 工作树扫描结果补充精确 LOC，不要悄悄覆盖旧基线。
 - 每次阶段验收后更新：模块统计（含基线 SHA）、PASS/FAIL/BLOCKED/NOT TESTED、证据路径、剩余风险、下一步；另保留阶段检查点。
 - 原始五条科研规则始终有效：CPU 优先、预设验收、上游不变、交叉审核、阶段检查点。
+
+
+## F3-B design
+
+Design-only docs added. No training. Official tokenizer remains BLOCKED. First proposed gate is D1 on pinned WikiText-2.
