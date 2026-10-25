@@ -1,5 +1,17 @@
 # Mini-Mythos / OpenMythos — 全项目研发进度（2026-10-25 更新版）
 
+## F3-B 最新设计审核（2026-10-25；本报告最新阶段进度）
+
+Grok 设计提交 `103344e47184735e03727d062ce81cbae6632e47` 新增五份方案、更新项目地图，没有提交任何新的模型训练代码或模型权重。ChatGPT 阅读五份设计，核对 R1 Gate F/WikiText HF 固定版本、R2 Gate M/N/O/P/Q 文件元数据与本地合成来源身份测试，以及原生 Parcae 嵌入与 LM Head 输入输出尺寸。独立审核文件 `research/mini_mythos/docs/F3B_CHATGPT_DESIGN_REVIEW_AND_D1_FREEZE_GATE_20261025.md`。
+
+**正式状态：`F3-B DESIGN DELIVERABLES PASS/CLOSED`，仅限所要求的五份设计成果；`D1 DRAFT / NOT FROZEN / NOT AUTHORIZED`，D2/D3 `NOT TESTED/NOT AUTHORIZED`，GPU 不授权。** 旧 F3-A 2/2/2 固定输入 CPU AdamW 六步恢复门禁仍保持研究性限定 PASS/CLOSED；不可当成数据流训练/模型能力证明。
+
+建议复用已经验证的 WikiText-2 raw 数据身份 `Salesforce/wikitext` / `wikitext-2-raw-v1` / `b08601e04326c79dfdd32d625aee71d232d685c3`。Grok 初稿仅写通用 config + “version can be pinned”，还缺 **真正冻结 repo+revision/许可说明**，必须在 D1 preflight 固定 train-only BPE 类型与实际词表/特殊 Token/Tokenizer hash、单进程 row/token cursor 与确定比较窗口、无意外重复/遗漏及错 cursor 负例、证据清单和 CPU 停止条件。
+
+**关键 D2 前置冲突**：F3-A 验收时 vocabulary=128、参数=247936；F3-B 研究 BPE 目标 vocabulary≈4096，不能直接给旧模型喂新 Token ID 而仍称参数量相同。D2 另须冻结嵌入、输出 Head、padded_vocab_size 和重算实际参数量，并区分 PAD token ID 与 labels ignore_index=-100。
+
+**下一条唯一指令**：Grok 只读起草 `F3B_D1_FROZEN_EXECUTION_PROPOSAL.md` 并提交审核；**没有授权 CPU D1 读取/Tokenizer 拟合，也没有授权真实文本模型训练或 GPU**。FineWeb-Edu 14 文件身份与双重分片历史 Gate M/N/O/P/Q 限定证据有效，但远端 Parquet 真正逐行读取/真实训练继续 NOT TESTED；官方 Parcae Tokenizer license/identity 保持 BLOCKED。历史脏文件 `gate2_1/TEST_RESULTS.json` 不可覆盖。
+
 ## 最终最新研究状态：F3-A 冻结 CPU Train Lifecycle 限定结案
 
 **2026-10-25 最新独立审核优先级最高**：Grok 的 F3-A B1 与 R1 已提供连续训练、文件恢复的固定 6 步等价证据。最后异常检查 commit `dd36b939457a6c6197b0026fe38854c4edd05365` 在不重跑完整训练的条件下，完成 Scheduler 内容错误拒绝、Torch RNG 信任身份比较失败、保持 key 的实际张量 shape mismatch 拒绝；五项文本/脚本 SHA-256 由 ChatGPT 独立重新计算全 MATCH。正式报告：`research/mini_mythos/docs/F3A_FINAL_CHATGPT_INDEPENDENT_ACCEPTANCE_20261025.md`。
