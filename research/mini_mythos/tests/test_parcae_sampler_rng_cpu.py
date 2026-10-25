@@ -94,6 +94,14 @@ def evaluate(row, base, enabled):
         return "FAIL", {"reasons": ["sampler count"], "fwd": row["sampler_fwd"], "bwd": row["sampler_bwd"]}
     if row["n"] != base["n"] or row["k"] != base["k"] or row["logical"] != row["n"] + row["k"]:
         return "FAIL", {"reasons": ["n/k"], "n": row["n"], "k": row["k"], "base_n": base["n"], "base_k": base["k"]}
+    expected_flags = [False] * row["n"] + [True] * row["k"]
+    if row["flags"] != expected_flags:
+        return "FAIL", {"reasons": ["grad flags"], "flags": row["flags"], "expected": expected_flags}
+    if row.get("dtype") != "torch.int64" or row.get("shape") != [1]:
+        return "FAIL", {"reasons": ["dtype/shape"], "dtype": row.get("dtype"), "shape": row.get("shape")}
+    rng_keys = ["before", "sampler_entry", "sampler_exit", "after_forward"]
+    if any(row["rng"].get(k) != base["rng"].get(k) for k in rng_keys):
+        return "FAIL", {"reasons": ["rng snapshot"], "row_rng": row["rng"], "base_rng": base["rng"]}
     if enabled and row["k"] > 0 and row["replay"] < 1:
         return "BLOCKED", {"reasons": ["no backward replay"]}
     missing = sorted(set(base["grads"]) - set(row["grads"]))
@@ -134,15 +142,27 @@ def synthetic(sample):
     bad_grad = copy.deepcopy(sample)
     name = next(iter(bad_grad["grads"]))
     bad_grad["grads"][name] = bad_grad["grads"][name] + 1
+    bad_flags = copy.deepcopy(sample)
+    bad_flags["flags"] = [True] * len(sample["flags"])
+    bad_entry = copy.deepcopy(sample)
+    bad_entry["rng"]["sampler_entry"] = "changed"
+    missing_name = copy.deepcopy(sample)
+    missing_name["grads"].pop(name)
+    bad_weight = copy.deepcopy(sample)
+    bad_weight["after_weights"] = "changed"
     out = {
         "bad_nk": evaluate(bad_nk, sample, False)[0],
+        "bad_flags": evaluate(bad_flags, sample, False)[0],
         "bad_rng": evaluate(rng, sample, False)[0],
+        "bad_entry": evaluate(bad_entry, sample, False)[0],
         "missing_sampler": evaluate(missing_sampler, sample, False)[0],
         "extra_backward_sampler": evaluate(extra_bwd, sample, False)[0],
         "missing_replay": evaluate(missing_replay, sample, True)[0],
         "bad_grad": evaluate(bad_grad, sample, False)[0],
+        "missing_name": evaluate(missing_name, sample, False)[0],
+        "bad_weight": "FAIL" if bad_weight["after_weights"] != sample["after_weights"] else "PASS",
     }
-    ok = out["bad_nk"] == "FAIL" and out["bad_rng"] == "FAIL" and out["missing_sampler"] == "FAIL" and out["extra_backward_sampler"] == "FAIL" and out["missing_replay"] == "BLOCKED" and out["bad_grad"] == "FAIL"
+    ok = all(out[k] == "FAIL" for k in ["bad_nk", "bad_flags", "bad_rng", "bad_entry", "missing_sampler", "extra_backward_sampler", "bad_grad", "missing_name", "bad_weight"]) and out["missing_replay"] == "BLOCKED"
     return ok, out
 
 
@@ -158,7 +178,7 @@ def run_once(model, ids, labels, step, train, backward):
         entry = torch.get_rng_state().clone()
         n, k = orig_sampler()
         exit_state = torch.get_rng_state().clone()
-        events.append({"fn": "sampler", "phase": phase["v"], "n": int(n), "k": int(k), "entry": rng_sha(entry), "exit": rng_sha(exit_state), "entry_state": entry, "exit_state": exit_state})
+        events.append({"fn": "sampler", "phase": phase["v"], "n": int(n), "k": int(k), "dtype": str(n.dtype), "shape": list(n.shape), "entry": rng_sha(entry), "exit": rng_sha(exit_state), "entry_state": entry, "exit_state": exit_state})
         return n, k
 
     def update(*args, **kwargs):
@@ -212,6 +232,8 @@ def run_once(model, ids, labels, step, train, backward):
         "k": None if not fwd else fwd["k"],
         "logical": len(updates),
         "flags": [e["grad"] for e in updates],
+        "dtype": None if not fwd else fwd["dtype"],
+        "shape": None if not fwd else fwd["shape"],
         "sampler_fwd": sum(e["phase"] == "forward" for e in samp),
         "sampler_bwd": sum(e["phase"] == "backward" for e in samp),
         "replay": sum(e["fn"] == "update" and e["phase"] == "backward" for e in events) if "per-iteration" in model.config.activation_checkpoint_impl and model.gradient_checkpointing else sum(e["fn"] == "block" and e["phase"] == "backward" for e in events),
@@ -255,12 +277,24 @@ def main():
     torch.manual_seed(1000)
     ids = torch.randint(0, 128, (1, 8))
     labels = ids.clone()
-    add("precheck", "PASS", import_path=imported, params=sum(p.numel() for p in model0.parameters()), weight_sha256=wsha, input_sha256=checksum(ids), threads=torch.get_num_threads(), open_question="_sample_batch_depths uses n=T-k; scalar sampler uses n=T")
+    nparams = sum(p.numel() for p in model0.parameters())
+    if nparams != 247936:
+        add("params", "BLOCKED", got=nparams)
+        finish(out, items)
+        return 2
+    add("precheck", "PASS", import_path=imported, params=nparams, weight_sha256=wsha, input_sha256=checksum(ids), sampling_scheme=model0.config.sampling_scheme, threads=torch.get_num_threads(), open_question="_sample_batch_depths uses n=T-k; scalar sampler uses n=T")
 
     def cell(flag, impl, step, train, backward):
         m = make_model(root, flag, impl)
         m.load_state_dict(weights)
-        return run_once(m, ids, labels, step, train, backward)
+        if weight_sha(m.state_dict()) != wsha:
+            raise RuntimeError("start weight mismatch")
+        row = run_once(m, ids, labels, step, train, backward)
+        row["start_weights"] = wsha
+        row["train"] = train
+        row["step"] = step
+        row["scheme"] = m.config.sampling_scheme
+        return row
 
     s1a, s1b = cell(False, "per-iteration", 0, True, True), cell(False, "per-iteration", 0, True, True)
     s2a, s2b = cell(True, "per-iteration", 0, True, True), cell(True, "per-iteration", 0, True, True)
@@ -269,6 +303,9 @@ def main():
     s5 = cell(False, "per-iteration", 1, True, True)
     s6 = cell(False, "per-iteration", 0, False, False)
 
+    for name, row in [("S1a", s1a), ("S1b", s1b), ("S2a", s2a), ("S2b", s2b), ("S3a", s3a), ("S3b", s3b), ("S4", s4), ("S5", s5)]:
+        add(f"{name} weights", "PASS" if row["start_weights"] == wsha and row["after_weights"] == wsha else "FAIL")
+    add("S6 weights", "PASS" if s6["start_weights"] == wsha else "FAIL")
     ref0 = reference_nk(0)
     ref1 = reference_nk(1)
     for name, row in [("S1", s1a), ("S2", s2a), ("S3", s3a), ("S4", s4)]:
@@ -280,12 +317,22 @@ def main():
 
     ok, neg = synthetic(s1a)
     add("synthetic", "PASS" if ok else "FAIL", results=neg)
-    add("S1 repeat", evaluate(s1a, s1b, False)[0])
-    add("S2 vs S1", evaluate(s2a, s1a, True)[0])
-    add("S3 vs S1", evaluate(s3a, s1a, True)[0])
-    add("S2 repeat", evaluate(s2a, s2b, True)[0])
-    add("S3 repeat", evaluate(s3a, s3b, True)[0])
-    add("S4 vs S1", evaluate(s4, s1a, False)[0])
+    def record(name, row, base, enabled):
+        status, detail = evaluate(row, base, enabled)
+        scalars = []
+        for n, idx in FROZEN:
+            if n in row["grads"] and n in base["grads"]:
+                scalars.append({"name": n, "index": idx, "row": float(row["grads"][n].view(-1)[idx]), "base": float(base["grads"][n].view(-1)[idx])})
+        add(name, status, n=row["n"], k=row["k"], logical=row["logical"], flags=row["flags"], sampler_fwd=row["sampler_fwd"], sampler_bwd=row["sampler_bwd"], replay=row["replay"], rng=row["rng"], shadow_ok=row["shadow_ok"], scalars=scalars, **{k:v for k,v in detail.items() if k != "rng"})
+    record("S1 repeat", s1a, s1b, False)
+    record("S1b vs S1a", s1b, s1a, False)
+    record("S2 vs S1", s2a, s1a, True)
+    record("S2b vs S1", s2b, s1a, True)
+    record("S3 vs S1", s3a, s1a, True)
+    record("S3b vs S1", s3b, s1a, True)
+    record("S2 repeat", s2a, s2b, True)
+    record("S3 repeat", s3a, s3b, True)
+    record("S4 vs S1", s4, s1a, False)
     finish(out, items)
     return exit_code(items)
 
