@@ -39,16 +39,16 @@
 
 - **代码**：`research/mini_mythos/scripts/`、`gate2_1/`、`gate2_2/` 中非测试脚本和配置。
 - **已验证**：F2-B 原生循环 PASS/CLOSED；F2-C 冻结三个梯度标量的数值检查 PASS/CLOSED（纯 fp64 原版路径仍受限）；F2-D 固定深度与 per-batch RNG/Checkpoint PASS/CLOSED。R0/R1/R2 历史阶段有已归档的限定结果。
-- **问题**：F2-E B1 **PENDING R1**；E4/E5 缺 per-token；原生返回值、recurrent mask、数值诊断归档不充分；E6 耦合 INCONCLUSIVE。不得宣称原版 Parcae 有 bug。
-- **未开始/未验证**：F2-E B1-R1 CPU 修正；完整训练链实验；可比较的规模/效率消融。
+- **问题**：F2-E B1-R1 已有真实返回值与 per-token E4/E5 对照，但 ChatGPT 独立审核发现 Mask 内容/阶段/写回未严格验收、RNG 与权重身份记录不足、负例不全；**PENDING R2（NOT CLOSED）**。E6 仍 INCONCLUSIVE；不得宣称 Parcae 有 bug。
+- **未开始/未验证**：F2-E B1-R2 最小 CPU 探针验收修正；完整训练链实验；可比较的规模/效率消融。
 - **证据**：`docs/F2D_FINAL_CPU_ACCEPTANCE_20261025.md`、`docs/F2E_B1_CHATGPT_REVIEW_AND_R1_GATE_20261025.md`。
 
 ### D. 测试
 
 - **代码**：`tests/`、`research/mini_mythos/tests/`、`interfaces/test_*.py`、`gate2_1/test_*.py`、`gate2_2/test_*.py`、`.github/workflows/`。
 - **已验证**：R1 Gate F 记录 106/106 单元测试 PASS；不同冻结阶段有单独的测试证据。不得将历史 106 或 205/241/248 等数字当作当前 HEAD 全套测试结果。
-- **问题**：F2-E 探针可能将无关 `torch.where` 混入 recurrent masks；E4/E5 缺 per-token；部分指标未直接采集；负例覆盖不足。
-- **未开始/未验证**：F2-E R1 真正的负例和数值/梯度对照；训练生命周期回归；经授权的 GPU 数值对照。
+- **问题**：R1 已补 per-token E4/E5，但仍以形状筛选 recurrent masks、全部前向阶段被标记 no_grad、未验证真实写回；负例未覆盖同形不同内容 Mask、RNG、NaN/零梯度等。
+- **未开始/未验证**：F2-E R2 真正的 Mask 内容/阶段/写回负例、RNG/身份一致性；训练生命周期回归；经授权的 GPU 数值对照。
 - **证据**：`docs/F2E_B1_CHATGPT_REVIEW_AND_R1_GATE_20261025.md`。
 
 ### E. 文档与证据
@@ -61,7 +61,7 @@
 
 ## 3. 当前研发门禁与下一阶段
 
-1. **当前唯一已冻结执行任务**：F2-E-B1-R1（CPU-only；修改隔离测试探针；原始 Parcae/AxoNN 不变；新证据归 `gate2_2/evidence/f2e/b1r1/`；结束 PENDING CHATGPT REVIEW）。
+1. **当前唯一已冻结执行任务**：F2-E-B1-R2（CPU-only；按 `docs/F2E_B1R1_CHATGPT_REVIEW_AND_R2_GATE_20261025.md` 修正隔离探针 Mask/身份/RNG/负例；原始 Parcae/AxoNN 不变；新证据归 `gate2_2/evidence/f2e/b1r2/`；结束 PENDING CHATGPT REVIEW）。
 2. **之后先设计/审核再执行**：原生 Parcae CPU Training Lifecycle（forward → loss → backward → optimizer → scheduler → checkpoint → resume），包括冻结预期/实际/梯度和恢复标准。
 3. **再之后**：真实数据、Tokenizer、heldout、模型能力和非循环基线。
 4. **最后且独立批准**：GPU 门禁、规模训练、效率优化、架构创新。不能用当前微型 PASS 自动解锁 Gate 2.2-C。
