@@ -167,8 +167,15 @@ def evaluate_pair(row, base, enabled):
     for name, idx in FROZEN:
         if name in row["grads"] and name in base["grads"]:
             scalars.append({"name": name, "index": idx, "row": float(row["grads"][name].view(-1)[idx]), "base": float(base["grads"][name].view(-1)[idx])})
-    if enabled and (row["replay"] < 1 or base["replay"] != 0):
-        return "BLOCKED", {"reasons": ["replay"], "replay": row["replay"]}
+    if enabled and (row["replay"] != 2 or base["replay"] != 0):
+        return "FAIL", {"reasons": ["replay"], "replay": row["replay"], "base_replay": base["replay"]}
+    if row["start_weights"] != row["after_weights"] or base["start_weights"] != base["after_weights"]:
+        reasons.append("weights")
+    if row.get("rng_after_bwd") != base.get("rng_after_bwd") or row.get("rng_sampler_exit") != base.get("rng_sampler_exit"):
+        reasons.append("rng boundary")
+    shapes = row.get("grad_shapes") or {}
+    if len(shapes) != 74 or set(shapes) != set(row["grads"]) or any(tuple(row["grads"][n].shape) != tuple(shapes[n]) for n in shapes):
+        reasons.append("grad shapes")
     if reasons or bad or not logit_ok or not loss_ok:
         return "FAIL", {"reasons": reasons or bad[:5], "logit_max_abs": logit_diff, "loss_delta": loss_delta, "grad_max_abs": max_grad, "scalars": scalars}
     return "PASS", {"logit_max_abs": logit_diff, "loss_delta": loss_delta, "grad_max_abs": max_grad, "grad_count": 74, "replay": row["replay"], "scalars": scalars, "rng_before": row["rng_before"]}
@@ -216,6 +223,12 @@ def synthetic(sample, ref):
     bad["replay"] = 0
     cases["missing_replay"] = evaluate_pair(bad, sample, True)[0]
     bad = copy.deepcopy(sample)
+    bad["replay"] = 1
+    cases["replay_one"] = evaluate_pair(bad, sample, True)[0]
+    bad = copy.deepcopy(sample)
+    bad["rng_after_bwd"] = "changed"
+    cases["bad_rng_bwd"] = evaluate_pair(bad, sample, False)[0]
+    bad = copy.deepcopy(sample)
     bad["start_weights"] = "changed"
     cases["bad_weight"] = evaluate_pair(bad, sample, False)[0]
     name = next(iter(sample["grads"]))
@@ -248,7 +261,9 @@ def run_once(model, ids, labels, step, controlled=None):
 
     def scalar():
         events["bwd" if phase["v"] == "backward" else "scalar"] += 1
+        events["rng_sampler_entry"] = sha_bytes(torch.get_rng_state().numpy().tobytes())
         n, k = orig_scalar()
+        events["rng_sampler_exit"] = sha_bytes(torch.get_rng_state().numpy().tobytes())
         events["n"], events["k"] = n.detach().clone(), k.detach().clone()
         return n, k
 
@@ -258,7 +273,9 @@ def run_once(model, ids, labels, step, controlled=None):
             n, k = controlled
             events["n"], events["k"] = n.clone(), k.clone()
             return n, k
+        events["rng_sampler_entry"] = sha_bytes(torch.get_rng_state().numpy().tobytes())
         n, k = orig_element(*args, **kwargs)
+        events["rng_sampler_exit"] = sha_bytes(torch.get_rng_state().numpy().tobytes())
         events["n"], events["k"] = n.detach().clone(), k.detach().clone()
         return n, k
 
@@ -298,6 +315,7 @@ def run_once(model, ids, labels, step, controlled=None):
                 "shape": list(mask.shape),
                 "true": int(mask.sum()),
                 "mask": mask.detach().clone(),
+                "mask_sha256": checksum(mask),
                 "content_ok": bool(torch.equal(mask, expanded)),
                 "select_ok": bool(torch.all(torch.where(m_exp, out == a, out == b))),
                 "operand_ok": bool(torch.equal(a, write["x_new"]) and torch.equal(b, write["xk"])),
@@ -324,6 +342,8 @@ def run_once(model, ids, labels, step, controlled=None):
         model.zero_grad(set_to_none=True)
         out["loss"].backward()
         grads = {n: p.grad.detach().clone() for n, p in model.named_parameters() if p.grad is not None}
+        grad_shapes = {n: list(p.shape) for n, p in model.named_parameters() if p.requires_grad}
+        rng_after_bwd = sha_bytes(torch.get_rng_state().numpy().tobytes())
     finally:
         torch.where = orig_where
         model.randomized_iteration_sampler = orig_scalar
@@ -351,6 +371,10 @@ def run_once(model, ids, labels, step, controlled=None):
         "grads": grads,
         "rng_before": before,
         "rng_after": after,
+        "rng_after_bwd": rng_after_bwd,
+        "rng_sampler_entry": events.get("rng_sampler_entry"),
+        "rng_sampler_exit": events.get("rng_sampler_exit"),
+        "grad_shapes": grad_shapes,
         "input_sha": checksum(ids),
         "start_weights": start_weights,
         "after_weights": weight_sha(model.state_dict()),
@@ -417,7 +441,11 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--parcae-root", required=True)
     parser.add_argument("--output", required=True)
+    parser.add_argument("--fail-demo", action="store_true")
     args = parser.parse_args()
+    if args.fail_demo:
+        Path(args.output).write_text("FAIL demo\n")
+        raise SystemExit(exit_code([{"status": "FAIL"}]))
     root = Path(args.parcae_root).resolve()
     out = Path(args.output).resolve()
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -490,7 +518,7 @@ def exit_code(items):
 def finish(out, items):
     payload = {
         "review": "PENDING CHATGPT REVIEW",
-        "stage": "F2-E B1-R3",
+        "stage": "F2-E B1-R3 FINAL ACCEPTANCE DELTA",
         "local_status": worst([i["status"] for i in items if i["status"] not in {"NOT APPLICABLE", "DETECTED", "NOT DETECTED"}]) if items else "BLOCKED",
         "env": {"python": sys.version.split()[0], "pytorch": torch.__version__, "cpu": platform.machine()},
         "intent": "INTENT UNKNOWN",
@@ -498,6 +526,8 @@ def finish(out, items):
     }
     for item in payload["items"]:
         for m in item.get("masks") or []:
+            if "mask" in m and "mask_sha256" not in m:
+                m["mask_sha256"] = checksum(m["mask"])
             m.pop("mask", None)
     out.write_text(json.dumps(payload, indent=2))
     print(json.dumps(payload, indent=2))
