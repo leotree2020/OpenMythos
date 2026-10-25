@@ -88,6 +88,28 @@ def worst(statuses):
     return min(statuses, key=lambda s: RANK[s])
 
 
+def accept_sampler(row, ref, expect):
+    reasons = []
+    if row["sampler_fwd"] != 1 or row["sampler_bwd"] != 0:
+        reasons.append("sampler count")
+    if row["n"] != ref["n"] or row["k"] != ref["k"] or row["logical"] != row["n"] + row["k"]:
+        reasons.append("formula")
+    if row["flags"] != [False] * row["n"] + [True] * row["k"]:
+        reasons.append("flags")
+    expected_shape = [1] if expect["train"] else []
+    if row.get("dtype") != "torch.int64" or row.get("shape") != expected_shape:
+        reasons.append("dtype/shape")
+    if not row.get("shadow_ok"):
+        reasons.append("shadow")
+    if row.get("train") != expect["train"] or row.get("step") != expect["step"] or row.get("scheme") != expect["scheme"]:
+        reasons.append("condition")
+    if row.get("input_sha") != expect["input_sha"] or row.get("start_weights") != expect["weight_sha"] or row.get("after_weights") != expect["weight_sha"]:
+        reasons.append("identity")
+    if expect.get("backward") and row["rng"].get("after_backward") != row["rng"].get("after_forward"):
+        reasons.append("after-backward rng")
+    return ("PASS" if not reasons else "FAIL"), {"reasons": reasons, "n": row["n"], "k": row["k"], "flags": row["flags"], "rng": row["rng"], "shadow_ok": row["shadow_ok"]}
+
+
 def evaluate(row, base, enabled):
     reasons = []
     if row["sampler_fwd"] != 1 or row["sampler_bwd"] != 0:
@@ -97,73 +119,82 @@ def evaluate(row, base, enabled):
     expected_flags = [False] * row["n"] + [True] * row["k"]
     if row["flags"] != expected_flags:
         return "FAIL", {"reasons": ["grad flags"], "flags": row["flags"], "expected": expected_flags}
-    if row.get("dtype") != "torch.int64" or row.get("shape") != [1]:
+    if row.get("dtype") != "torch.int64" or row.get("shape") not in ([1], []):
         return "FAIL", {"reasons": ["dtype/shape"], "dtype": row.get("dtype"), "shape": row.get("shape")}
     rng_keys = ["before", "sampler_entry", "sampler_exit", "after_forward"]
     if any(row["rng"].get(k) != base["rng"].get(k) for k in rng_keys):
         return "FAIL", {"reasons": ["rng snapshot"], "row_rng": row["rng"], "base_rng": base["rng"]}
+    for key in ["train", "step", "scheme", "input_sha", "start_weights", "after_weights"]:
+        if row.get(key) != base.get(key):
+            return "FAIL", {"reasons": ["condition"], "key": key, "row": row.get(key), "base": base.get(key)}
     if enabled and row["k"] > 0 and row["replay"] < 1:
         return "BLOCKED", {"reasons": ["no backward replay"]}
-    missing = sorted(set(base["grads"]) - set(row["grads"]))
-    if missing or len(row["grads"]) != 74:
-        return "FAIL", {"reasons": ["gradient names"], "missing": missing, "count": len(row["grads"])}
+    if len(row["grads"]) != 74 or len(base["grads"]) != 74 or set(row["grads"]) != set(base["grads"]):
+        return "FAIL", {"reasons": ["gradient names"], "row": len(row["grads"]), "base": len(base["grads"])}
     logit_ok, logit_diff = close(row["logits"], base["logits"], 1e-6, 0.0)
-    loss_ok = abs(row["loss"] - base["loss"]) <= 1e-6 + 1e-6 * max(abs(row["loss"]), abs(base["loss"]))
+    loss_delta = abs(row["loss"] - base["loss"])
+    loss_ok = loss_delta <= 1e-6 + 1e-6 * max(abs(row["loss"]), abs(base["loss"]))
     grad_ok = True
     max_grad = 0.0
     zero = []
-    for name, g in base["grads"].items():
-        gm = row["grads"].get(name)
-        if gm is None or not torch.isfinite(gm).all() or torch.count_nonzero(gm) == 0:
+    for name in base["grads"]:
+        g = base["grads"][name]
+        gm = row["grads"][name]
+        if not torch.isfinite(g).all() or not torch.isfinite(gm).all() or torch.count_nonzero(g) == 0 or torch.count_nonzero(gm) == 0:
             zero.append(name)
             grad_ok = False
             continue
         ok, diff = close(gm, g, 1e-6, 1e-5)
         grad_ok = grad_ok and ok
         max_grad = max(max_grad, diff)
-    rng_ok = row["rng"]["after_forward"] == base["rng"]["after_forward"] and row["rng"]["after_backward"] == row["rng"]["after_forward"]
+    rng_ok = row["rng"]["after_backward"] == row["rng"]["after_forward"] and base["rng"]["after_backward"] == base["rng"]["after_forward"]
     if not all([logit_ok, loss_ok, grad_ok, rng_ok]) or zero:
         reasons.extend(["values" if not all([logit_ok, loss_ok, grad_ok]) else "", "rng" if not rng_ok else "", "zero" if zero else ""])
         reasons = [r for r in reasons if r]
-    return ("PASS" if not reasons else "FAIL"), {"reasons": reasons, "logit_max_abs": logit_diff, "grad_max_abs": max_grad, "rng": row["rng"]}
+    return ("PASS" if not reasons else "FAIL"), {"reasons": reasons, "loss": row["loss"], "logit_max_abs": logit_diff, "loss_delta": loss_delta, "grad_max_abs": max_grad, "grad_count": len(row["grads"])}
 
 
-def synthetic(sample):
+def synthetic(sample, expect):
+    cases = {}
     bad_nk = copy.deepcopy(sample)
-    bad_nk["n"] = sample["n"] + 1
-    rng = copy.deepcopy(sample)
-    rng["rng"]["after_forward"] = "changed"
-    missing_sampler = copy.deepcopy(sample)
-    missing_sampler["sampler_fwd"] = 0
-    extra_bwd = copy.deepcopy(sample)
-    extra_bwd["sampler_bwd"] = 1
-    missing_replay = copy.deepcopy(sample)
-    missing_replay["replay"] = 0
-    bad_grad = copy.deepcopy(sample)
-    name = next(iter(bad_grad["grads"]))
-    bad_grad["grads"][name] = bad_grad["grads"][name] + 1
+    bad_nk["n"] += 1
+    cases["bad_nk"] = accept_sampler(bad_nk, {"n": sample["n"], "k": sample["k"]}, expect)[0]
     bad_flags = copy.deepcopy(sample)
     bad_flags["flags"] = [True] * len(sample["flags"])
+    cases["bad_flags"] = accept_sampler(bad_flags, {"n": sample["n"], "k": sample["k"]}, expect)[0]
     bad_entry = copy.deepcopy(sample)
     bad_entry["rng"]["sampler_entry"] = "changed"
-    missing_name = copy.deepcopy(sample)
-    missing_name["grads"].pop(name)
+    cases["bad_entry"] = evaluate(bad_entry, sample, False)[0]
+    bad_step = copy.deepcopy(sample)
+    bad_step["step"] = 99
+    cases["bad_step"] = accept_sampler(bad_step, {"n": sample["n"], "k": sample["k"]}, expect)[0]
+    bad_scheme = copy.deepcopy(sample)
+    bad_scheme["scheme"] = "fixed"
+    cases["bad_scheme"] = accept_sampler(bad_scheme, {"n": sample["n"], "k": sample["k"]}, expect)[0]
+    bad_input = copy.deepcopy(sample)
+    bad_input["input_sha"] = "changed"
+    cases["bad_input"] = accept_sampler(bad_input, {"n": sample["n"], "k": sample["k"]}, expect)[0]
     bad_weight = copy.deepcopy(sample)
     bad_weight["after_weights"] = "changed"
-    out = {
-        "bad_nk": evaluate(bad_nk, sample, False)[0],
-        "bad_flags": evaluate(bad_flags, sample, False)[0],
-        "bad_rng": evaluate(rng, sample, False)[0],
-        "bad_entry": evaluate(bad_entry, sample, False)[0],
-        "missing_sampler": evaluate(missing_sampler, sample, False)[0],
-        "extra_backward_sampler": evaluate(extra_bwd, sample, False)[0],
-        "missing_replay": evaluate(missing_replay, sample, True)[0],
-        "bad_grad": evaluate(bad_grad, sample, False)[0],
-        "missing_name": evaluate(missing_name, sample, False)[0],
-        "bad_weight": "FAIL" if bad_weight["after_weights"] != sample["after_weights"] else "PASS",
-    }
-    ok = all(out[k] == "FAIL" for k in ["bad_nk", "bad_flags", "bad_rng", "bad_entry", "missing_sampler", "extra_backward_sampler", "bad_grad", "missing_name", "bad_weight"]) and out["missing_replay"] == "BLOCKED"
-    return ok, out
+    cases["bad_weight"] = accept_sampler(bad_weight, {"n": sample["n"], "k": sample["k"]}, expect)[0]
+    missing_sampler = copy.deepcopy(sample)
+    missing_sampler["sampler_fwd"] = 0
+    cases["missing_sampler"] = accept_sampler(missing_sampler, {"n": sample["n"], "k": sample["k"]}, expect)[0]
+    extra_bwd = copy.deepcopy(sample)
+    extra_bwd["sampler_bwd"] = 1
+    cases["extra_backward_sampler"] = accept_sampler(extra_bwd, {"n": sample["n"], "k": sample["k"]}, expect)[0]
+    missing_replay = copy.deepcopy(sample)
+    missing_replay["replay"] = 0
+    cases["missing_replay"] = evaluate(missing_replay, sample, True)[0]
+    name = next(iter(sample["grads"]))
+    bad_grad = copy.deepcopy(sample)
+    bad_grad["grads"][name] = bad_grad["grads"][name] + 1
+    cases["bad_grad"] = evaluate(bad_grad, sample, False)[0]
+    missing_name = copy.deepcopy(sample)
+    missing_name["grads"].pop(name)
+    cases["missing_name"] = evaluate(missing_name, sample, False)[0]
+    ok = all(cases[k] == "FAIL" for k in cases if k != "missing_replay") and cases["missing_replay"] == "BLOCKED"
+    return ok, cases
 
 
 def run_once(model, ids, labels, step, train, backward):
@@ -294,6 +325,7 @@ def main():
         row["train"] = train
         row["step"] = step
         row["scheme"] = m.config.sampling_scheme
+        row["input_sha"] = checksum(ids)
         return row
 
     s1a, s1b = cell(False, "per-iteration", 0, True, True), cell(False, "per-iteration", 0, True, True)
@@ -308,14 +340,20 @@ def main():
     add("S6 weights", "PASS" if s6["start_weights"] == wsha else "FAIL")
     ref0 = reference_nk(0)
     ref1 = reference_nk(1)
-    for name, row in [("S1", s1a), ("S2", s2a), ("S3", s3a), ("S4", s4)]:
-        ok = row["n"] == ref0["n"] and row["k"] == ref0["k"] and row["logical"] == ref0["steps"] and row["shadow_ok"] and row["sampler_bwd"] == 0
-        add(f"{name} formula", "PASS" if ok else "FAIL", observed={"n": row["n"], "k": row["k"], "logical": row["logical"]}, reference=ref0, shadow_ok=row["shadow_ok"])
-    add("S5 formula", "PASS" if s5["n"] == ref1["n"] and s5["k"] == ref1["k"] else "FAIL", observed={"n": s5["n"], "k": s5["k"]}, reference=ref1)
-    add("S6 eval", "PASS" if s6["n"] == 2 and s6["k"] == 0 and s6["logical"] == 2 else "FAIL", observed={"n": s6["n"], "k": s6["k"], "logical": s6["logical"]})
+    expect0 = {"train": True, "step": 0, "scheme": model0.config.sampling_scheme, "input_sha": checksum(ids), "weight_sha": wsha, "backward": True}
+    expect5 = {**expect0, "step": 1}
+    expect6 = {**expect0, "train": False, "backward": False}
+    for name, row, ref, expect in [
+        ("S1a", s1a, ref0, expect0), ("S1b", s1b, ref0, expect0),
+        ("S2a", s2a, ref0, expect0), ("S2b", s2b, ref0, expect0),
+        ("S3a", s3a, ref0, expect0), ("S3b", s3b, ref0, expect0),
+        ("S4", s4, ref0, expect0), ("S5", s5, ref1, expect5), ("S6", s6, {"n": 2, "k": 0}, expect6),
+    ]:
+        status, detail = accept_sampler(row, ref, expect)
+        add(f"{name} sampler", status, **detail)
     add("S6 gradients", "NOT APPLICABLE")
 
-    ok, neg = synthetic(s1a)
+    ok, neg = synthetic(s1a, expect0)
     add("synthetic", "PASS" if ok else "FAIL", results=neg)
     def record(name, row, base, enabled):
         status, detail = evaluate(row, base, enabled)
