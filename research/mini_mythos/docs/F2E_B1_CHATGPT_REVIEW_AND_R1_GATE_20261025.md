@@ -11,7 +11,7 @@ Prior F2-D accepted checkpoint: `687a9ba730853ecfa8a23058016a7a5ab018d640`
 ## 1. Git, provenance and independent integrity
 
 - Repo `leotree2020/OpenMythos`, branch `mini-mythos-p1c-gate22c-readiness`, reviewed commit a direct child of the frozen F2-E A gate, verified HEAD at audit time.
-- Exactly seven **new** files: one isolated probe `research/mini_mythos/tests/test_parcae_sampling_modes_cpu.py`, one result document, five evidence files (+? documented by GitHub commit API; no existing research files modified). Historic F2-B/C/D acceptance files and Parcae/AxoNN sources unchanged.
+- Exactly seven **new** files: one isolated probe `research/mini_mythos/tests/test_parcae_sampling_modes_cpu.py`, one result document, five evidence files (+879/-0 according to the GitHub commit file list; no existing research files modified). Historic F2-B/C/D acceptance files and Parcae/AxoNN sources unchanged.
 - Grok reports separate pinned upstream `sandyresearch/parcae@69284c13746e849104f738d6d1a347b1f457df76` clean, Python 3.11.2, torch 2.14.1+cpu, x86_64 and exit 0; no GPU. Repo local dirty `research/mini_mythos/gate2_1/TEST_RESULTS.json` reported by Grok, not independently inspected. Preserve it untouched.
 - Model micro-config: 2/2/2, 247936 parameters, CPU SDPA float32, `state_init=like-init`, `mean_recurrence=2`, `mean_backprop_depth=2`, seed 42 for model/forward, 1000 for input; actual recorded weight SHA `366a8bf9202622cf77b3a15075ca183d789dcf5257636395f789972ab31b713c`, B1 input SHA `7a248d71c9e805e2e0fbfefc0d76ae4a0720ea1eb40b4c2ccc9bb85cc717fe4b`, B2 input SHA `ba67e905c68c9fcd61eb3ab5a028ef28ea5c575be78b84d18212ea68e6f900ae`.
 - Independent recomputation from exact committed UTF-8 ASCII artifacts matches all `RUN_META.json` SHA256:
