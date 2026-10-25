@@ -61,8 +61,8 @@
 
 - **代码**：`training/3b_fine_web_edu.py`、`training/requirements.txt`、研究 pilot 入口 `scripts/pilot_train.py`。
 - **已验证（有限范围）**：R1 Tiny 真实文本训练及 checkpoint 重放；R2 分片、数据流、恢复方面的独立 CPU 证据。并非原生 Parcae 完整训练入口已 PASS。
-- **最新 F3-A-R1 已审核**：Grok 冻结补充 `8ea2d67`，执行 `14974c8`。脚本取消每步 RNG 重置，记录 A/B 6 步 loss/LR/weight/optimizer/RNG 摘要一致，坏 checkpoint 由真实 loader 拒绝。ChatGPT `docs/F3A_R1_CHATGPT_INDEPENDENT_REVIEW_AND_FINAL_DELTA_GATE_20261025.md` 已认可 **正常训练/恢复轨迹限定 PASS/CLOSED**；但完整 F3-A **PARTIAL / NOT CLOSED**，因为已存 scheduler 内容未被校验、有效格式错误 RNG 未做负例、`bad_shape` 实际只删除了 state_dict 键。GPU Gate 2.2-C 仍 BLOCKED。
-- **未开始/未验证**：仅补 F3-A 异常恢复校验的三个冻结缺口（有效但错误 scheduler、合法但错误 torch RNG、真正 tensor shape mismatch）；原生 `scripts/train.py`、MuonAdamW、DataLoader 恢复、GPU Pilot 和规模训练仍未验证。
+- **F3-A 最新正式验收**：Grok B1 配置/执行 `34c4414`/`3b582c7`，R1 配置/执行 `8ea2d67`/`14974c8`，最终异常校验提交 `dd36b939`。ChatGPT `docs/F3A_FINAL_CHATGPT_INDEPENDENT_ACCEPTANCE_20261025.md` 独立复核并批准 **F3-A CPU 固定输入、原生 2/2/2 Parcae、AdamW、6 步与文件恢复研究性生命周期 PASS/CLOSED（限定范围）**。三项异常恢复经过单独 checked loader/验证器，未集成到历史 R1 恢复入口；真实 DataLoader、MuonAdamW、GPU 仍未测试。
+- **未开始/未验证**：独立的真实数据 DataLoader 恢复、生产 `scripts/train.py`、MuonAdamW、GPU Pilot、同计算预算质量与效率实验。F3-A 结果中的 Python 元数据 3.10.21 与 `/usr/bin/python3.11` 命令不一致，需只读注明，不能视为环境已验明。
 - **证据**：`docs/R1_GATE_F_RESULT.md`、`docs/R2_GATE_Q_RESULT.md`、`gate2_2/GATE2_2_C_LAUNCH_BLOCKED.md`。
 
 ### C. 实验与工具
@@ -70,7 +70,7 @@
 - **代码**：`research/mini_mythos/scripts/`、`gate2_1/`、`gate2_2/` 中非测试脚本和配置。
 - **已验证**：F2-B 原生循环 PASS/CLOSED；F2-C 冻结三个梯度标量的数值检查 PASS/CLOSED（纯 fp64 原版路径仍受限）；F2-D 固定深度与 per-batch RNG/Checkpoint PASS/CLOSED。R0/R1/R2 历史阶段有已归档的限定结果。
 - **已验证（2026-10-25 最新）**：Grok `fbeaf7c` 补齐每条 Mask 摘要、Checkpoint replay 精确 2、RNG 配对、权重/74 梯度验收与负例。ChatGPT `docs/F2E_CLOSEOUT_CHATGPT_FINAL_ACCEPTANCE_20261025.md` 对六项声明文件 SHA-256 和 9/9 Mask 内容哈希独立校验，并正式批准 **F2-E E1–E5 PASS/CLOSED（限于冻结 Parcae 2/2/2 CPU 微型采样/Mask/重复/Checkpoint 范围）**。**E6 仍 INCONCLUSIVE**；无模型 Bug 或作者意图证明，不能将整个 F2-E 无条件标 PASS。
-- **最新独立审核**：F3-A B1/R1 均已由 Grok 在 CPU 执行，并分别归档，R1 六步正常训练、同输入恢复 step4–6 的 Loss、LR、权重、完整 Optimizer 摘要、Scheduler 新建配置、Torch/Python/NumPy RNG 摘要符合冻结范围。ChatGPT 将正常路径限定 **PASS/CLOSED**，整体 F3-A 仍 **PARTIAL / NOT CLOSED**，只差三个异常 Checkpoint 的内容级负例与正式拒绝验收。详细报告 `docs/F3A_R1_CHATGPT_INDEPENDENT_REVIEW_AND_FINAL_DELTA_GATE_20261025.md`。
+- **最新独立审核**：F3-A 原生 Parcae CPU 固定 6 步 B1/R1、文件恢复后 Loss/LR/参数/优化器/RNG 指纹匹配、三项异常 Checkpoint 对照完成；正式 **PASS/CLOSED（研究性冻结条件）**。原始训练 loader 没有直接整合最终 checked loader，且没有重新运行 `scripts/train.py`。证据：`docs/F3A_FINAL_CHATGPT_INDEPENDENT_ACCEPTANCE_20261025.md`。
 - **证据**：`docs/F2D_FINAL_CPU_ACCEPTANCE_20261025.md`、`docs/F2E_B1_CHATGPT_REVIEW_AND_R1_GATE_20261025.md`。
 
 ### D. 测试
@@ -78,7 +78,7 @@
 - **代码**：`tests/`、`research/mini_mythos/tests/`、`interfaces/test_*.py`、`gate2_1/test_*.py`、`gate2_2/test_*.py`、`.github/workflows/`。
 - **已验证**：R1 Gate F 记录 106/106 单元测试 PASS；不同冻结阶段有单独的测试证据。不得将历史 106 或 205/241/248 等数字当作当前 HEAD 全套测试结果。
 - **已验证（最新限定范围）**：F2-E closeout 已归档 Mask SHA 并独立重建核对 9/9，严格拒绝 replay=1 且预期 ON=2/OFF=0，新增 sampler/post-backward RNG 比较、权重/梯度身份检查、FAIL exit 1 演示；限定 E1–E5 正式 PASS/CLOSED。更大模型、新种子或完整训练不在此验收内。
-- **未开始/未验证**：F3-A 的三个内容级异常恢复反例；最新 HEAD 全量回归；MuonAdamW、DataLoader、原生 train.py 及 GPU 数值对照尚需各自独立门禁。
+- **未开始/未验证**：最新 HEAD 全套单测；真实 Streaming Dataset/Tokenizer/heldout 的训练与恢复、MuonAdamW、生产 `scripts/train.py`、GPU 等均需另外验收，不可外推 F3-A 的固定小样本 PASS。
 - **证据**：`docs/F2E_B1_CHATGPT_REVIEW_AND_R1_GATE_20261025.md`。
 
 ### E. 文档与证据
@@ -91,9 +91,9 @@
 
 ## 3. 当前研发门禁与下一阶段
 
-1. **当前唯一下一项建议（F3-A 异常恢复校验收口）**：Grok B1（`3b582c7`）和 R1（`14974c8`）完成，ChatGPT 最新独立审核 `docs/F3A_R1_CHATGPT_INDEPENDENT_REVIEW_AND_FINAL_DELTA_GATE_20261025.md`。固定 CPU 2/2/2 的六步训练与连续/恢复正常状态轨迹已限定通过；**F3-A 总体尚未 CLOSED**，只允许三项精准增补：存档 scheduler 内容错误拒绝、合法错 RNG 引发验收 FAIL、真正损坏形状被真实 loader 拒绝。使用现有 R1 checkpoint、必要时最多执行 1 个受控恢复 step，旧文件全部保持原状。**不授权 GPU、数据集/规模训练、上游源码变更**；Claude Code 暂缓。
-2. **之后先设计/审核再执行**：原生 Parcae CPU Training Lifecycle（forward → loss → backward → optimizer → scheduler → checkpoint → resume），包括冻结预期/实际/梯度和恢复标准。
-3. **再之后**：真实数据、Tokenizer、heldout、模型能力和非循环基线。
+1. **当前唯一下一项（仅设计）**：Grok `dd36b939` 三项异常校验获 ChatGPT `docs/F3A_FINAL_CHATGPT_INDEPENDENT_ACCEPTANCE_20261025.md` 审核批准，**F3-A 限定研究性 CPU 生命周期 PASS/CLOSED**；结束所有 F3-A 微型实验。接下来只读审计真实数据/Tokenizer/数据分片与 worker 恢复、冻结 heldout 评估与同计算预算非循环基线方案。**未授权实际真实数据训练、GPU、上游修改**；Claude Code 暂缓。
+2. **之后分级执行**：先冻结真实数据、数据流恢复与公平模型评估的可复验收计划，项目负责人授权后再开展 CPU 正确性实验；真实规模吞吐/显存才考虑另行批准 GPU。
+3. **再之后**：在受控的真实数据训练条件下比较模型能力、参数量/FLOPs/延迟，保持独立随机权重与循环核心不变。
 4. **最后且独立批准**：GPU 门禁、规模训练、效率优化、架构创新。不能用当前微型 PASS 自动解锁 Gate 2.2-C。
 
 ## 4. 新会话强制入口
