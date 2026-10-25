@@ -2,6 +2,8 @@
 
 **适用范围：** 任何新 ChatGPT / Grok / 编程 Agent 对话，包含换模型、额度恢复、重新打开 Codespaces、交接研发。**优先级：** 新会话必须先读本文、项目地图及最新检查点；旧聊天记忆只是线索，不能作为实验事实。
 
+**最新 F3-A 审核检查点（2026-10-25）：** 用户已授权原生 Parcae CPU 完整训练生命周期实验，Grok 冻结配置 `34c4414667e939560cae69c0a2dc58fca14f9ef5` 并执行 `3b582c7ac8c4ac7e4473d48ee78e05b5326b8026`。独立 ChatGPT 审核 `research/mini_mythos/docs/F3A_CHATGPT_INDEPENDENT_REVIEW_AND_R1_GATE_20261025.md` 判定 **F3-A PARTIAL POSITIVE / NOT CLOSED**，需补真实 RNG/optimizer/scheduler/step 对照与坏 checkpoint 加载拒绝；原始数据不覆盖。旧文中“完整 CPU 训练未授权/未执行/只有设计草案”是过期历史；完整 **PASS/CLOSED 仍未获得**。本项目仍禁止 GPU、上游源码变更和自动规模训练。
+
 **最新负责人变更（2026-10-25）：** 用户已决定继续使用 **Grok** 做主要代码开发/CPU 研究，**ChatGPT** 独立审核，**Claude Code 暂缓接管**。R3 历史审核文件名中的 `CLAUDE_HANDOFF` 仍是必须读取的技术验收证据，但旧文中的“Claude 接管”已被最新用户授权覆盖。Grok 已完成 F2-E 最终限定证据收口，ChatGPT 独立审核批准 **F2-E E1–E5 PASS/CLOSED（仅限冻结的 CPU 微型采样/Mask/重复/Checkpoint 范围）**；E6 仍 **INCONCLUSIVE**，不得将整个 F2-E 标成全通过。Grok 继续负责下一阶段原生 CPU Training Lifecycle 的**只读审计/验收方案设计**；没有授权新完整训练执行、GPU 或架构改动。最新总览：`research/mini_mythos/docs/PROJECT_STATUS_20261025.md`，最新独立接受文件：`research/mini_mythos/docs/F2E_CLOSEOUT_CHATGPT_FINAL_ACCEPTANCE_20261025.md`。
 
 ## 0. STOP 条件
@@ -14,7 +16,7 @@
 2. 读取 **`research/mini_mythos/docs/SESSION_START_PROTOCOL.md`（本文件）**。
 3. 读取 **`research/mini_mythos/docs/PROJECT_MAP.md`**，掌握核心模型/训练/实验/测试/文档五模块的范围、代码量基线、PASS/问题/未开始事项；核对统计基线是否落后于 HEAD。
 4. 读取 **`research/mini_mythos/backup/RESEARCH_RECOVERY_CHECKPOINT_20261025.md`**（历史备份基线）；再查找/读取**最新**阶段检查点和对应验收门禁，不得把 2026-10-25 的备份误当作永远最新。
-5. 对已完成冻结工作的 F2-E，历史门禁 **`research/mini_mythos/docs/F2E_B1_CHATGPT_REVIEW_AND_R1_GATE_20261025.md`**、**`research/mini_mythos/docs/F2E_B1R1_CHATGPT_REVIEW_AND_R2_GATE_20261025.md`**、**`research/mini_mythos/docs/F2E_B1R2_CHATGPT_REVIEW_AND_R3_GATE_20261025.md`**、R3 历史审核 **`research/mini_mythos/docs/F2E_B1R3_CHATGPT_INDEPENDENT_REVIEW_AND_CLAUDE_HANDOFF_20261025.md`** 均是可追溯历史。**最新强制读取**：**`research/mini_mythos/docs/F2E_CLOSEOUT_CHATGPT_FINAL_ACCEPTANCE_20261025.md`**、**`research/mini_mythos/docs/PROJECT_STATUS_20261025.md`**、**`research/mini_mythos/docs/F2_CPU_TRAIN_LIFECYCLE_PLAN.md`**，并核对有无更新。当前最新独立审核：F2-B/C/D 和 F2-E E1–E5 **限定 PASS/CLOSED**；F2-E E6 **INCONCLUSIVE**。下一步是只读审计/冻结原生 CPU 完整训练生命周期计划，而非重启 F2-E 或自动训练。Grok 继续开发，Claude Code 暂缓。
+5. 对已完成冻结工作的 F2-E，历史门禁 **`research/mini_mythos/docs/F2E_B1_CHATGPT_REVIEW_AND_R1_GATE_20261025.md`**、**`research/mini_mythos/docs/F2E_B1R1_CHATGPT_REVIEW_AND_R2_GATE_20261025.md`**、**`research/mini_mythos/docs/F2E_B1R2_CHATGPT_REVIEW_AND_R3_GATE_20261025.md`**、R3 历史审核 **`research/mini_mythos/docs/F2E_B1R3_CHATGPT_INDEPENDENT_REVIEW_AND_CLAUDE_HANDOFF_20261025.md`** 均是可追溯历史。**最新强制读取**：**`research/mini_mythos/docs/F2E_CLOSEOUT_CHATGPT_FINAL_ACCEPTANCE_20261025.md`**、**`research/mini_mythos/docs/PROJECT_STATUS_20261025.md`**、**`research/mini_mythos/docs/F3A_FROZEN_CONFIG.md`**、**`research/mini_mythos/docs/F3A_RESULT.md`**、**`research/mini_mythos/docs/F3A_CHATGPT_INDEPENDENT_REVIEW_AND_R1_GATE_20261025.md`**，并核对有无更新。当前独立审核：F2-B/C/D 和 F2-E E1–E5 **限定 PASS/CLOSED**；F2-E E6 **INCONCLUSIVE**；F3-A 首次训练观察 **PARTIAL / NOT CLOSED**。下一步严格按最新 F3-A R1 门禁做限定恢复状态验收，不重启 F2-E、不启动新 GPU/架构/规模训练。Grok 继续开发，Claude Code 暂缓。
 6. 检查原生 Parcae pin `69284c13746e849104f738d6d1a347b1f457df76`、AxoNN pin `c5ef65d3d4f329c20292a2d26681e8d9cbcccecf`、Python/Torch/CPU 版本、实际工作树 dirty 状态。若无环境访问，明确写 **NOT VERIFIED**，不假装已执行。
 7. 对本轮计划填写：目的、适用范围、环境、输入/种子、预期与容差、实际观察、证据路径/哈希、PASS/FAIL/BLOCKED/INCONCLUSIVE/NOT TESTED、Git 变更、未解决问题、下一条唯一指令。执行前明确当前授权；不要自动扩展任务。
 
@@ -52,7 +54,7 @@
 - 禁止对未知 dirty 工作区运行 `git reset --hard`、`git clean -fd` 或任何覆盖/删除指令。
 - F2-E B1、B1-R1、B1-R2、B1-R3、`b1_closeout` 原始证据全部不可覆盖；**F2-E E1–E5 的固定 2/2/2 CPU 数学正确性范围已独立 PASS/CLOSED**。**E6 仍 INCONCLUSIVE**，不得再以本轮门禁为由无限增开采样实验。Grok 接下来只设计/审计原生 CPU Training Lifecycle；Claude Code 暂缓接管。
 - 旧 GitHub 备份分支 `backup-mini-mythos-20261025-f2e-r1-pending` 是历史锚点，不在上面开发。
-- 本 SOP 不代表整个 F2-E、原生完整训练、模型能力或 GPU 已 PASS；**仅批准 E1–E5 冻结微型 CPU 范围**。CPU 完整训练需要单独明确授权，GPU 更须经过 Gate 2.2-C。
+- 本 SOP 不代表整个 F2-E、完整 F3-A Training Lifecycle、模型能力或 GPU 已 PASS；**F2-E E1–E5 冻结微型 CPU 范围**已关闭，F3-A CPU 首次运行经项目负责人授权执行，但正式整体判定 **PARTIAL / NOT CLOSED**。下一步只允许冻结范围内的训练生命周期验收修正，GPU 更须经过 Gate 2.2-C。
 
 ## 5. 每次会话结束必须更新
 
