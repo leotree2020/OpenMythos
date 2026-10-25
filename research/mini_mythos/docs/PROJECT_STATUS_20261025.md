@@ -1,5 +1,13 @@
 # Mini-Mythos / OpenMythos — 全项目研发进度（2026-10-25 更新版）
 
+## 最新阶段补记：F3-A-R1 CPU 正常训练与断点恢复（2026-10-25）
+
+**本段是本文件最新阶段状态，优先于下方 F3-A 初次审计与旧时间点快照，不能把老文中的 R1 待执行当成当前事实。** Grok 先提交 F3-A-R1 冻结补充 `8ea2d674404c44f5887fd248ef25a33c1a622727`，随后提交完整 R1 CPU 运行 `14974c8e2a6ad11bea7b45df4242b5acbad3abfe`。维持原 Parcae 2/2/2/AdamW/linear scheduler/fixed input/6 steps。第 1 步 LR=0 不更新、step2–6 更新；Loss 4.96057→2.73600；连续与文件恢复在 step4–6 的模型 SHA、loss、LR、optimizer SHA、scheduler 新建 config、torch/python/numpy RNG SHA 均一致。
+
+ChatGPT 独立复核：R1 四项文本证据 SHA-256 全部 MATCH，提交脚本 SHA-256 独立计算，原生六步学习率与上游数学 6/6 一致；**F3-A 正常训练与断点恢复路径限定 PASS/CLOSED；F3-A 整体 PARTIAL / NOT CLOSED**。原因：实际保存的 scheduler 内容只验证字段存在，未验证错误配置；没有有效格式但错误的 RNG 内容的受控恢复失败例；所谓坏 shape 负例实际上只移除一个 state_dict 键。详见 `research/mini_mythos/docs/F3A_R1_CHATGPT_INDEPENDENT_REVIEW_AND_FINAL_DELTA_GATE_20261025.md`。二进制 checkpoint 的 SHA-256 本次无法通过现有 GitHub 只读二进制接口独立核实，仅验证文件存在、size 与 Git blob SHA。
+
+**当前唯一下一步**：用已有 R1 已提交 Checkpoint，在限定研究目录内完成三个内容级异常恢复/拒绝负例；若需要真实运行仅允许最多一个独立的恢复 step，不重跑整个 6 步训练，不修改上游或架构、不启 GPU、不做规模训练；新证据归档并停在 PENDING CHATGPT REVIEW。完成后推进真实数据训练/数据流恢复的方案审计，避免无限扩展微型探针。
+
 ## 最新阶段补记：F3-A 首次 CPU Train Lifecycle 运行（2026-10-25）
 
 **此补记优先于本报告下方早期“未授权/未执行”措辞**。项目负责人已授权 Grok 执行 F3-A。Grok **先冻结** `docs/F3A_FROZEN_CONFIG.md`（commit `34c4414667e939560cae69c0a2dc58fca14f9ef5`），再提交 `gate3_cpu_train/f3a_lifecycle.py` 和 CPU 六步 AdamW 固定输入生命周期实测（commit `3b582c7ac8c4ac7e4473d48ee78e05b5326b8026`）。损失 `4.933872→2.713740`，第 2–6 步权重更新，step4–6 的 A/B Loss/LR/权重哈希相同，四项声明文本 SHA256 经 ChatGPT 独立 MATCH。第 1 步 frozen warmup LR0，权重不变，必须保留该预期与原冻结 STOP 条款矛盾，不得事后掩盖。
