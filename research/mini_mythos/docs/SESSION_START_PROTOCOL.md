@@ -12,7 +12,7 @@
 2. 读取 **`research/mini_mythos/docs/SESSION_START_PROTOCOL.md`（本文件）**。
 3. 读取 **`research/mini_mythos/docs/PROJECT_MAP.md`**，掌握核心模型/训练/实验/测试/文档五模块的范围、代码量基线、PASS/问题/未开始事项；核对统计基线是否落后于 HEAD。
 4. 读取 **`research/mini_mythos/backup/RESEARCH_RECOVERY_CHECKPOINT_20261025.md`**（历史备份基线）；再查找/读取**最新**阶段检查点和对应验收门禁，不得把 2026-10-25 的备份误当作永远最新。
-5. 对当前冻结工作 F2-E，先读取历史 **`research/mini_mythos/docs/F2E_B1_CHATGPT_REVIEW_AND_R1_GATE_20261025.md`**、**`research/mini_mythos/docs/F2E_B1R1_CHATGPT_REVIEW_AND_R2_GATE_20261025.md`**，最后必须读取当前正式门禁 **`research/mini_mythos/docs/F2E_B1R2_CHATGPT_REVIEW_AND_R3_GATE_20261025.md`**。当前最新审核状态：F2-B/C/D 限定范围 PASS/CLOSED，F2-E-A 设计 PASS/CLOSED，F2-E B1-R2 **PARTIAL / E1–E5 PENDING R3（NOT CLOSED）**，E6 **INCONCLUSIVE**。
+5. 对当前冻结工作 F2-E，先读取历史 **`research/mini_mythos/docs/F2E_B1_CHATGPT_REVIEW_AND_R1_GATE_20261025.md`**、**`research/mini_mythos/docs/F2E_B1R1_CHATGPT_REVIEW_AND_R2_GATE_20261025.md`**、**`research/mini_mythos/docs/F2E_B1R2_CHATGPT_REVIEW_AND_R3_GATE_20261025.md`**，再读取**最新独立审核/Claude 交接检查点** **`research/mini_mythos/docs/F2E_B1R3_CHATGPT_INDEPENDENT_REVIEW_AND_CLAUDE_HANDOFF_20261025.md`**，并查找有无更新。当前最新审核状态：F2-B/C/D 限定范围 PASS/CLOSED，F2-E-A 设计 PASS/CLOSED，F2-E B1-R3 E1–E5 正向证据强但**冻结全项 NOT CLOSED**，E6 **INCONCLUSIVE**。Claude Code 只读接管先行。
 6. 检查原生 Parcae pin `69284c13746e849104f738d6d1a347b1f457df76`、AxoNN pin `c5ef65d3d4f329c20292a2d26681e8d9cbcccecf`、Python/Torch/CPU 版本、实际工作树 dirty 状态。若无环境访问，明确写 **NOT VERIFIED**，不假装已执行。
 7. 对本轮计划填写：目的、适用范围、环境、输入/种子、预期与容差、实际观察、证据路径/哈希、PASS/FAIL/BLOCKED/INCONCLUSIVE/NOT TESTED、Git 变更、未解决问题、下一条唯一指令。执行前明确当前授权；不要自动扩展任务。
 
@@ -48,7 +48,7 @@
 
 - **不得触碰**旧 Codespaces 中可能存在的未提交 `research/mini_mythos/gate2_1/TEST_RESULTS.json`；先人工备份实际字节和哈希。
 - 禁止对未知 dirty 工作区运行 `git reset --hard`、`git clean -fd` 或任何覆盖/删除指令。
-- F2-E B1、B1-R1、B1-R2 原始证据均不可覆盖；当前唯一获批 CPU 验收修正为最小 R3，新证据只能放 `research/mini_mythos/gate2_2/evidence/f2e/b1r3/`，先读取 R3 冻结门禁。
+- F2-E B1、B1-R1、B1-R2、B1-R3 原始证据均不可覆盖；R3 已执行且独立审核已归档。当前下一步是 Claude Code 只读接管；任何剩余的有限验收断言/证据补录均须用户另行明确授权，写入新目录并保留旧档案。
 - 旧 GitHub 备份分支 `backup-mini-mythos-20261025-f2e-r1-pending` 是历史锚点，不在上面开发。
 - 本 SOP 的建立不代表 F2-E 已 PASS，也不授权运行 GPU。
 
