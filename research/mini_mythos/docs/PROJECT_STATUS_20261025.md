@@ -1,5 +1,15 @@
 # Mini-Mythos / OpenMythos — 全项目研发进度（2026-10-25 更新版）
 
+## 最终最新研究状态：F3-A 冻结 CPU Train Lifecycle 限定结案
+
+**2026-10-25 最新独立审核优先级最高**：Grok 的 F3-A B1 与 R1 已提供连续训练、文件恢复的固定 6 步等价证据。最后异常检查 commit `dd36b939457a6c6197b0026fe38854c4edd05365` 在不重跑完整训练的条件下，完成 Scheduler 内容错误拒绝、Torch RNG 信任身份比较失败、保持 key 的实际张量 shape mismatch 拒绝；五项文本/脚本 SHA-256 由 ChatGPT 独立重新计算全 MATCH。正式报告：`research/mini_mythos/docs/F3A_FINAL_CHATGPT_INDEPENDENT_ACCEPTANCE_20261025.md`。
+
+**当前决定：F3-A 研究性原生 Parcae CPU 固定输入 AdamW 六步训练与 Checkpoint/Resume 生命周期 PASS/CLOSED（仅冻结微型范围）**。严禁推论原生 `scripts/train.py`、MuonAdamW、真实 Streaming DataLoader 恢复、真实语言能力/规模训练、GPU 已经通过。异常严格校验位于独立 checked loader，而不是先前运行六步训练的 R1 loader，因此在将来真实训练系统需要明确集成；损坏 RNG 的 `FAIL` 是**正确检测到异常的预期负例**，不是正常训练失败。
+
+**出处风险保持**：最后 `RUN_META.json` 声称 Python 3.10.21、执行命令指定 `/usr/bin/python3.11`，二者不一致，准确运行解释器版本 `NOT VERIFIED`；二进制 `.pt` SHA-256 为 Grok 本地报告，ChatGPT 没有独立重算二进制。旧 `gate2_1/TEST_RESULTS.json` dirty 必须保护，禁止清理。不能更改旧结果隐瞒上述差异。
+
+**下一研发主线（尚未授权运行）**：Grok 只读调查并设计/冻结真实数据加载、Tokenizer、分片/worker 恢复、heldout 质量指标及公平 Transformer 对照的后续阶段 Gate。**正式停止 F3-A 微型实验扩展**，不启动真实数据训练/GPU，不修改 Parcae/AxoNN 源码，保留 Prelude→Recurrent Core→Coda 和独立随机权重战略。
+
 ## 最新阶段补记：F3-A-R1 CPU 正常训练与断点恢复（2026-10-25）
 
 **本段是本文件最新阶段状态，优先于下方 F3-A 初次审计与旧时间点快照，不能把老文中的 R1 待执行当成当前事实。** Grok 先提交 F3-A-R1 冻结补充 `8ea2d674404c44f5887fd248ef25a33c1a622727`，随后提交完整 R1 CPU 运行 `14974c8e2a6ad11bea7b45df4242b5acbad3abfe`。维持原 Parcae 2/2/2/AdamW/linear scheduler/fixed input/6 steps。第 1 步 LR=0 不更新、step2–6 更新；Loss 4.96057→2.73600；连续与文件恢复在 step4–6 的模型 SHA、loss、LR、optimizer SHA、scheduler 新建 config、torch/python/numpy RNG SHA 均一致。
@@ -93,7 +103,7 @@ ChatGPT 独立复核：R1 四项文本证据 SHA-256 全部 MATCH，提交脚本
 | F2-E E1–E5 | **PASS/CLOSED（限定）** | 不再扩展为新采样研究 |
 | F2-E E6 | **INCONCLUSIVE** | 如未来有专门、已授权的因果问题才独立研究 |
 | Native Parcae CPU Train Lifecycle 冻结配置 | **F3-A 初始方案已冻结、执行已完成；存在 warmup STOP 标准内部冲突** | 需要在独立 R1 补充中预先清晰裁决，不改历史冻结文件 |
-| Native Parcae CPU Train Lifecycle 执行 | **已授权执行，局部积极 / 整体 NOT CLOSED** | 校验逐步 optimizer/RNG/scheduler/step 文件恢复、实际损坏文件拒绝、独立审核 |
+| Native Parcae CPU Train Lifecycle 执行 | **F3-A 固定 CPU 微型范围 PASS/CLOSED** | 原生 full train.py / DataLoader 恢复 / MuonAdamW / GPU / 更大模型仍 NOT TESTED；未来新 gate 单独验收 |
 | 更大模型与公平非循环基线 | **NOT TESTED** | 实际模型质量、FLOPs、训练时间/稳定性、推理开销受控对比 |
 | GPU Pilot / Gate 2.2-C | **BLOCKED** | 凭据、预算/实时定价、启动环境、真实证据提取器、用户授权 |
 
@@ -101,11 +111,11 @@ ChatGPT 独立复核：R1 四项文本证据 SHA-256 全部 MATCH，提交脚本
 
 ## E. 唯一下一条研发指令、授权与 STOP
 
-**当前下一步（Grok，F3-A 狭义验收收口，不扩大研发范围）**：
+**当前下一步（Grok，仅真实数据与评估方案设计，未经授权不可执行）**：
 1. 最新 Git 状态/dirty 只读核对并保护 `gate2_1/TEST_RESULTS.json`；
 2. 读取 `docs/F2E_CLOSEOUT_CHATGPT_FINAL_ACCEPTANCE_20261025.md`，确认 F2-E E1–E5 仅限定 PASS/CLOSED、E6 INCONCLUSIVE；
-3. 必须阅读 `docs/F3A_CHATGPT_INDEPENDENT_REVIEW_AND_R1_GATE_20261025.md`，在新冻结补充中处理 LR0 / 原 STOP 条款冲突，修正每步强制 RNG 重置及重载状态的真实比较，让修改后的加载器实际拒绝坏 Checkpoint；保留原始 B1 结果而非覆盖；
-4. 提交训练计划和检查点，待项目负责人授权 CPU 端到端执行与 ChatGPT 复核。
+3. 已完成的 F3-A 原生小模型循环训练与文件恢复结果严禁重复；首先读取 `docs/F3A_FINAL_CHATGPT_INDEPENDENT_ACCEPTANCE_20261025.md`，随后只读审计真实数据及 Tokenizer、可恢复数据流、heldout/污染控制、同预算标准 Transformer 基线，冻结下一阶段验收方案。历史 R1/最终证据全部保存；
+4. 提交新阶段的设计/验收门禁检查点，等待项目负责人明确授权实际真实数据训练；ChatGPT 继续独立审核，不启动 GPU。
 
 **禁止自动运行训练或 GPU，不改 Parcae/AxoNN 原版，不擅自改递归架构，不覆盖旧证据。** 如训练计划中存在尚不合理的 loss 单调下降断言，需在冻结前调整为可预先定义且能被真实训练支持的标准；不能运行之后倒改验收线。绝不可将当前 CPU 微型测试 PASS 外推到 GPU Gate 2.2-C。
 
