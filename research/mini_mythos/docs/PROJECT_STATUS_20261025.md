@@ -1,5 +1,13 @@
 # Mini-Mythos / OpenMythos — 全项目研发进度（2026-10-25 更新版）
 
+## 最新阶段补记：F3-A 首次 CPU Train Lifecycle 运行（2026-10-25）
+
+**此补记优先于本报告下方早期“未授权/未执行”措辞**。项目负责人已授权 Grok 执行 F3-A。Grok **先冻结** `docs/F3A_FROZEN_CONFIG.md`（commit `34c4414667e939560cae69c0a2dc58fca14f9ef5`），再提交 `gate3_cpu_train/f3a_lifecycle.py` 和 CPU 六步 AdamW 固定输入生命周期实测（commit `3b582c7ac8c4ac7e4473d48ee78e05b5326b8026`）。损失 `4.933872→2.713740`，第 2–6 步权重更新，step4–6 的 A/B Loss/LR/权重哈希相同，四项声明文本 SHA256 经 ChatGPT 独立 MATCH。第 1 步 frozen warmup LR0，权重不变，必须保留该预期与原冻结 STOP 条款矛盾，不得事后掩盖。
+
+**ChatGPT 正式审核结论：F3-A PARTIAL POSITIVE / NOT CLOSED。** `step()` 每步重设 RNG，导致恢复 RNG 未获真实因果验证；Checkpoint 的 step/scheduler 内容没有被加载器验收；未逐步对比 optimizer state、三类 RNG 和训练位置；错误 Checkpoint 负例仅改字典并未测试真实 loader 拒绝。详见 `docs/F3A_CHATGPT_INDEPENDENT_REVIEW_AND_R1_GATE_20261025.md`。二进制 checkpoint `f3a_step3.pt` 已在 GitHub 追踪（size=3,079,307 bytes；Git blob SHA `b351dacfa9aac7be759ade893b249ebb9485d5b8`）；报告的 SHA-256 未能从当前只读二进制连接器独立重算，需如实标记。
+
+**下一步**：仅允许冻结 F3-A-R1 的最小恢复验证补充、隔离 CPU 验收及原始证据归档，严禁启动新的采样/架构实验、GPU、规模训练、修改上游 Parcae。完成后 `PENDING CHATGPT REVIEW` 停止。已关闭的 F2-B/C/D 与 F2-E E1–E5 维持原结果，E6 仍 INCONCLUSIVE。Claude Code 暂不接管；Grok 主开发，ChatGPT 审核。
+
 **状态性质**：研究项目总体进度与治理检查点，不是新模型实验。  
 **最新实测 Git 统计基线**：研究分支 `mini-mythos-p1c-gate22c-readiness` 的 `ee1b3c8564f4cc868e73efd58e4ddc42c35e4f78`，完整 Git recursive tree（`truncated=false`），**481 个 tracked 文件、154 个 Python 文件、3,050,894 bytes**。本文及后续 Git 文档更新会推进 HEAD，新的会话必须重新验证。  
 **上一次历史基线**：`0853051ec1791adbc54e4e8c90f2be146a0ff092`，444 文件、153 Python、2,803,100 bytes；中间 `2ceb08b1db34871104a45e27e5ec2f7bc81e0ce1` 为 470 文件、154 Python、3,003,079 bytes。  
@@ -41,8 +49,8 @@
 
 - 文件：`training/3b_fine_web_edu.py`, `training/requirements.txt`, `research/mini_mythos/scripts/pilot_train.py`。
 - 已有 R1 Tiny 真实数据训练、冻结官方 test、部分 checkpoint 恢复；R2 数据分片、worker、恢复等有限 CPU 证据。
-- **还没有**正式验收原生 Parcae 的统一 `Forward → Loss → Backward → Optimizer → Scheduler → Checkpoint → Resume` CPU 连续训练。
-- Grok 已在 `research/mini_mythos/docs/F2_CPU_TRAIN_LIFECYCLE_PLAN.md` 提交**仅设计的草案**，没有实际训练、没有完全冻结配置/容差或准许执行。下一步先审核/冻结生命周期门禁，再单独授权 CPU 实验。
+- **首次 CPU 统一训练链已运行但未正式验收**：固定输入 6 步 AdamW、linear scheduler、step3 文件保存并重建模型继续 step4–6；权重/Loss/LR 等局部观察积极，但关键恢复状态没有独立验收，整体 `PARTIAL / NOT CLOSED`。见本文最上方 F3-A 补记。
+- Grok 先提交 `docs/F3A_FROZEN_CONFIG.md` 冻结后运行并归档 `docs/F3A_RESULT.md`；ChatGPT 审核 `docs/F3A_CHATGPT_INDEPENDENT_REVIEW_AND_R1_GATE_20261025.md` 明确指出恢复状态与负例的关键验收缺口。不得把记录中的 `LOCAL PASS` 当作整体 `CLOSED`。
 - 规模 GPU：`gate2_2/GATE2_2_C_LAUNCH_BLOCKED.md` 的环境/成本/真实证据要求仍未通过。
 
 ### 3. 实验与工具 — F2 必要 CPU 数学验证已有明确出口
@@ -76,8 +84,8 @@
 | F2-B/C/D | **PASS/CLOSED（限定）** | 不再重复 |
 | F2-E E1–E5 | **PASS/CLOSED（限定）** | 不再扩展为新采样研究 |
 | F2-E E6 | **INCONCLUSIVE** | 如未来有专门、已授权的因果问题才独立研究 |
-| Native Parcae CPU Train Lifecycle 设计 | **DRAFT / NOT FROZEN** | 固定配置、Optimizer/Scheduler、seed、输入、loss/恢复容差、完整日志和 FAIL 标准 |
-| Native Parcae CPU Train Lifecycle 执行 | **NOT TESTED / NOT AUTHORIZED** | 新授权后获得参数更新、Loss、保存/恢复等价性及审核结果 |
+| Native Parcae CPU Train Lifecycle 冻结配置 | **F3-A 初始方案已冻结、执行已完成；存在 warmup STOP 标准内部冲突** | 需要在独立 R1 补充中预先清晰裁决，不改历史冻结文件 |
+| Native Parcae CPU Train Lifecycle 执行 | **已授权执行，局部积极 / 整体 NOT CLOSED** | 校验逐步 optimizer/RNG/scheduler/step 文件恢复、实际损坏文件拒绝、独立审核 |
 | 更大模型与公平非循环基线 | **NOT TESTED** | 实际模型质量、FLOPs、训练时间/稳定性、推理开销受控对比 |
 | GPU Pilot / Gate 2.2-C | **BLOCKED** | 凭据、预算/实时定价、启动环境、真实证据提取器、用户授权 |
 
@@ -85,10 +93,10 @@
 
 ## E. 唯一下一条研发指令、授权与 STOP
 
-**当前下一步（Grok，仅设计/审计）**：
+**当前下一步（Grok，F3-A 狭义验收收口，不扩大研发范围）**：
 1. 最新 Git 状态/dirty 只读核对并保护 `gate2_1/TEST_RESULTS.json`；
 2. 读取 `docs/F2E_CLOSEOUT_CHATGPT_FINAL_ACCEPTANCE_20261025.md`，确认 F2-E E1–E5 仅限定 PASS/CLOSED、E6 INCONCLUSIVE；
-3. 审查并补充 `docs/F2_CPU_TRAIN_LIFECYCLE_PLAN.md` 的**独立、可复现、冻结前验收方案**：随机权重、固定样本及双分支 uninterrupted/resume、Optimizer/Scheduler、权重和 LR 预期、每步 loss/grads、完整 RNG、checkpoint 内容、数值容差、负例及 STOP 条件；
+3. 必须阅读 `docs/F3A_CHATGPT_INDEPENDENT_REVIEW_AND_R1_GATE_20261025.md`，在新冻结补充中处理 LR0 / 原 STOP 条款冲突，修正每步强制 RNG 重置及重载状态的真实比较，让修改后的加载器实际拒绝坏 Checkpoint；保留原始 B1 结果而非覆盖；
 4. 提交训练计划和检查点，待项目负责人授权 CPU 端到端执行与 ChatGPT 复核。
 
 **禁止自动运行训练或 GPU，不改 Parcae/AxoNN 原版，不擅自改递归架构，不覆盖旧证据。** 如训练计划中存在尚不合理的 loss 单调下降断言，需在冻结前调整为可预先定义且能被真实训练支持的标准；不能运行之后倒改验收线。绝不可将当前 CPU 微型测试 PASS 外推到 GPU Gate 2.2-C。
