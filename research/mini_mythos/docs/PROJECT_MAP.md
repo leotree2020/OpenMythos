@@ -61,8 +61,8 @@
 
 - **代码**：`training/3b_fine_web_edu.py`、`training/requirements.txt`、研究 pilot 入口 `scripts/pilot_train.py`。
 - **已验证（有限范围）**：R1 Tiny 真实文本训练及 checkpoint 重放；R2 分片、数据流、恢复方面的独立 CPU 证据。并非原生 Parcae 完整训练入口已 PASS。
-- **问题**：原生 Parcae Optimizer/Scheduler/RNG/权重恢复的端到端生命周期未统一验收；Gate 2.2-C 的真实证据提取器、执行环境、GPU 预算/授权门禁仍未解锁。
-- **未开始/未验证**：原生完整 CPU 生命周期冻结验收、经批准的 GPU Pilot、规模训练。
+- **问题**：F3-A 已获得 CPU 执行授权并完成首次冻结实验（Grok `34c4414` 冻结，`3b582c7` 结果）：6 步 AdamW 固定输入训练的第 2–6 步更新参数、Loss 下降、文件恢复后 Loss/LR/权重与连续训练匹配。但是 `step()` 每步重置 RNG、Checkpoint step/scheduler 元数据未强制验收、optimizer/RNG 完整状态未逐步比较、坏 Checkpoint 负例未执行 loader；ChatGPT 审核 **F3-A PARTIAL POSITIVE / NOT CLOSED**。Gate 2.2-C GPU 仍 BLOCKED。
+- **未开始/未验证**：F3-A 完整 RNG/optimizer/scheduler/step 恢复等价性的最小 R1 修正及正式复核；原生 `scripts/train.py`、MuonAdamW、DataLoader 恢复、GPU Pilot 和规模训练仍未验证。
 - **证据**：`docs/R1_GATE_F_RESULT.md`、`docs/R2_GATE_Q_RESULT.md`、`gate2_2/GATE2_2_C_LAUNCH_BLOCKED.md`。
 
 ### C. 实验与工具
@@ -70,7 +70,7 @@
 - **代码**：`research/mini_mythos/scripts/`、`gate2_1/`、`gate2_2/` 中非测试脚本和配置。
 - **已验证**：F2-B 原生循环 PASS/CLOSED；F2-C 冻结三个梯度标量的数值检查 PASS/CLOSED（纯 fp64 原版路径仍受限）；F2-D 固定深度与 per-batch RNG/Checkpoint PASS/CLOSED。R0/R1/R2 历史阶段有已归档的限定结果。
 - **已验证（2026-10-25 最新）**：Grok `fbeaf7c` 补齐每条 Mask 摘要、Checkpoint replay 精确 2、RNG 配对、权重/74 梯度验收与负例。ChatGPT `docs/F2E_CLOSEOUT_CHATGPT_FINAL_ACCEPTANCE_20261025.md` 对六项声明文件 SHA-256 和 9/9 Mask 内容哈希独立校验，并正式批准 **F2-E E1–E5 PASS/CLOSED（限于冻结 Parcae 2/2/2 CPU 微型采样/Mask/重复/Checkpoint 范围）**。**E6 仍 INCONCLUSIVE**；无模型 Bug 或作者意图证明，不能将整个 F2-E 无条件标 PASS。
-- **未开始/未验证**：原生完整 CPU Training Lifecycle 尚未执行。Grok 已提交 `docs/F2_CPU_TRAIN_LIFECYCLE_PLAN.md`（DESIGN ONLY、未冻结），下一步由 Grok 仅做源码审计/补全方案及冻结验收门禁，由 ChatGPT 审核；任何 CPU 完整训练执行仍需用户另行授权。Claude Code 暂缓。
+- **已执行但待验收**：Grok 已在先冻结 `docs/F3A_FROZEN_CONFIG.md` 后，执行原生 Parcae 2/2/2、固定输入、AdamW、linear scheduler、6 步 CPU 训练与 3 步断点文件恢复；局部学习信号与模型权重一致性证据积极。但依 `docs/F3A_CHATGPT_INDEPENDENT_REVIEW_AND_R1_GATE_20261025.md` 正式总体 **NOT CLOSED**。下一步仅补验收器真实状态恢复/负例，不做新架构；Claude Code 暂缓接管。
 - **证据**：`docs/F2D_FINAL_CPU_ACCEPTANCE_20261025.md`、`docs/F2E_B1_CHATGPT_REVIEW_AND_R1_GATE_20261025.md`。
 
 ### D. 测试
@@ -91,7 +91,7 @@
 
 ## 3. 当前研发门禁与下一阶段
 
-1. **最新已授权的下一项任务（仅设计/源码审计）**：Grok 继续研发，已完成 F2-E 必需 E1–E5 限定验收收口；先读取 `docs/F2E_CLOSEOUT_CHATGPT_FINAL_ACCEPTANCE_20261025.md`，随后修订、冻结 `docs/F2_CPU_TRAIN_LIFECYCLE_PLAN.md` 为可受控执行的完整 CPU Train Lifecycle 验收方案。**未授权正式执行新端到端 CPU 训练，更未授权 GPU**；Claude Code 暂缓。
+1. **当前研发进度与唯一下一项建议**：用户已授权 F3-A CPU 完整训练链，Grok 已完成冻结配置（`34c4414`）、首次执行（`3b582c7`）。ChatGPT 最新审核 `docs/F3A_CHATGPT_INDEPENDENT_REVIEW_AND_R1_GATE_20261025.md` 判定总体 **PARTIAL / NOT CLOSED**：CPU 训练 Loss/权重与模型恢复后权重的正向证据通过，但需要一次限定的 F3-A-R1 RNG/optimizer/scheduler/checkpoint-step/真实负例补验证，先写冻结补充后执行、保留原版数据，交 ChatGPT 再审。**不授权 GPU、数据集/规模训练、上游源码变更**；Claude Code 暂缓。
 2. **之后先设计/审核再执行**：原生 Parcae CPU Training Lifecycle（forward → loss → backward → optimizer → scheduler → checkpoint → resume），包括冻结预期/实际/梯度和恢复标准。
 3. **再之后**：真实数据、Tokenizer、heldout、模型能力和非循环基线。
 4. **最后且独立批准**：GPU 门禁、规模训练、效率优化、架构创新。不能用当前微型 PASS 自动解锁 Gate 2.2-C。
