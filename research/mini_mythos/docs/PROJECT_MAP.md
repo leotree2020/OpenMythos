@@ -39,16 +39,16 @@
 
 - **代码**：`research/mini_mythos/scripts/`、`gate2_1/`、`gate2_2/` 中非测试脚本和配置。
 - **已验证**：F2-B 原生循环 PASS/CLOSED；F2-C 冻结三个梯度标量的数值检查 PASS/CLOSED（纯 fp64 原版路径仍受限）；F2-D 固定深度与 per-batch RNG/Checkpoint PASS/CLOSED。R0/R1/R2 历史阶段有已归档的限定结果。
-- **问题**：F2-E B1-R2 已补真实返回值、per-token E4/E5、Mask 内容与阶段测量，五项证据 SHA 均独立核实。但冻结验收器仍漏检「缺一次 Mask」「错误 step」、未绑定确切 native 写回调用点，部分负例只是改结果标签；**E1–E5 PENDING R3（NOT CLOSED）**。E6 INCONCLUSIVE，Parcae bug 未证明。
-- **未开始/未验证**：F2-E B1-R3 最小 CPU 验收器完整性修正（只补遗漏事件/真实 mask/step/身份与负例）；之后规划完整训练链实验和架构对照。
+- **问题**：F2-E B1-R3 已修复遗漏 Mask/错误 step 检出，验证 n/k、Mask 内容/写回、per-token E4/E5，原始证据及实际探针五项 SHA 独立 MATCH；但 R3 冻结要求中的每 Mask 原始位或摘要归档缺失、精确 checkpoint replay==2 未被验收器强制、post-backward RNG 边界未记录等问题仍在。**E1–E5 正向证据积极，正式全项 NOT CLOSED，转 Claude Code 限定收口**。E6 INCONCLUSIVE，原生 Parcae bug 未证明。
+- **未开始/未验证**：Claude Code 先只读接管审核；经单独授权后仅完成 R3 冻结证据/断言的狭义收口，不引入新实验维度；之后规划原生完整 CPU 训练链和架构对照。
 - **证据**：`docs/F2D_FINAL_CPU_ACCEPTANCE_20261025.md`、`docs/F2E_B1_CHATGPT_REVIEW_AND_R1_GATE_20261025.md`。
 
 ### D. 测试
 
 - **代码**：`tests/`、`research/mini_mythos/tests/`、`interfaces/test_*.py`、`gate2_1/test_*.py`、`gate2_2/test_*.py`、`.github/workflows/`。
 - **已验证**：R1 Gate F 记录 106/106 单元测试 PASS；不同冻结阶段有单独的测试证据。不得将历史 106 或 205/241/248 等数字当作当前 HEAD 全套测试结果。
-- **问题**：R2 已正确记录 E2/E3 预期 Mask 阶段与 true counts，也补了写回布尔检查、部分身份与负例；但验收器仍可让缺失末次 Mask、错误 step PASS；content_ok 负例仅修改标志，未翻转真实 Mask 数据，亦未完成精准调用点与梯度/RNG 负例。
-- **未开始/未验证**：F2-E R3 单次冻结最小 CPU 验收修正；之后训练生命周期回归及另行授权的 GPU 数值对照。
+- **问题**：R3 已拒绝遗漏/额外 Mask、step=999、翻转真实 Mask 位、NaN/零/缺失/额外梯度，并核验写回 x_new/xk；但归档删去原始 Mask 且未存 SHA，回放精确次数仅按 >=1 判断，RNG 未记录 backward 后和 sampler 边界，尚不足冻结全项最终验收。
+- **未开始/未验证**：Claude Code 接管只读审计；待授权的限界性 F2-E 验收证据收口；之后训练生命周期回归及另行授权 GPU 数值对照。
 - **证据**：`docs/F2E_B1_CHATGPT_REVIEW_AND_R1_GATE_20261025.md`。
 
 ### E. 文档与证据
@@ -61,7 +61,7 @@
 
 ## 3. 当前研发门禁与下一阶段
 
-1. **当前唯一已冻结执行任务**：F2-E-B1-R3（CPU-only；按 `docs/F2E_B1R2_CHATGPT_REVIEW_AND_R3_GATE_20261025.md` 的末次狭义验收修正；原始 Parcae/AxoNN 不变；新证据归 `gate2_2/evidence/f2e/b1r3/`；结束 PENDING CHATGPT REVIEW）。
+1. **当前唯一无需新增实验授权的下一步**：Claude Code 按 `docs/SESSION_START_PROTOCOL.md` 完成只读研发接管；必须阅读最新 `docs/F2E_B1R3_CHATGPT_INDEPENDENT_REVIEW_AND_CLAUDE_HANDOFF_20261025.md`。如用户另行授权，仅按报告列出的 R3 剩余档案与验收断言做限定收口；不自动实验、GPU 或架构变更。
 2. **之后先设计/审核再执行**：原生 Parcae CPU Training Lifecycle（forward → loss → backward → optimizer → scheduler → checkpoint → resume），包括冻结预期/实际/梯度和恢复标准。
 3. **再之后**：真实数据、Tokenizer、heldout、模型能力和非循环基线。
 4. **最后且独立批准**：GPU 门禁、规模训练、效率优化、架构创新。不能用当前微型 PASS 自动解锁 Gate 2.2-C。
