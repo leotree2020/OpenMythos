@@ -15,6 +15,21 @@
 | 文档与证据 | 263 | 1 | 1,574,014 | `docs/`, Markdown, `evidence/`, 运行归档 |
 | **合计** | **444** | **153** | **2,803,100** | |
 
+## 最新 Git 文件树快照（2026-10-25）
+
+2026-10-25 研究分支 `2ceb08b1db34871104a45e27e5ec2f7bc81e0ce1` 的完整递归 Git tree 经实际读取（非截断）：**470 个 Git 跟踪文件、154 个 .py 文件、3,003,079 bytes**。这是可审计的**统计基准 Commit**，其后的文档更新会使 HEAD/文件数/字节数继续变化，应以后续重新扫描为准。
+
+| 模块（沿用原基线归类） | 当前文件数 | 当前 bytes |
+|---|---:|---:|
+| 核心模型 | 5 | 94,110 |
+| 训练 | 3 | 24,480 |
+| 实验与工具 | 98 | 639,567 |
+| 测试 | 76 | 482,919 |
+| 文档与证据 | 288 | 1,762,003 |
+| **合计** | **470** | **3,003,079** |
+
+统计方法：2026-10-25 原 444 文件冻结分组 + 该基线到以上 HEAD 的 Git 变更（26 个新增文件、1 个既有测试文件修改），并通过两个 Git tree 的实际文件 size 总和复核。**当前精确 LOC 仍是 NOT MEASURED**。最新详细研究状态见 `docs/PROJECT_STATUS_20261025.md`。
+
 **注意：上述为文件数量和 bytes，绝非已测得的代码行数。** 精确物理行数/非空行数/注释行数须在可访问完整 Git 工作树的执行环境运行 `python research/mini_mythos/scripts/project_map_inventory.py --repo . --output ...`。工具不能执行时标记 **NOT MEASURED**，禁止将字节数换算为 LOC。
 
 ## 2. 模块状态：已验证 / 问题 / 尚未开始
@@ -40,7 +55,7 @@
 - **代码**：`research/mini_mythos/scripts/`、`gate2_1/`、`gate2_2/` 中非测试脚本和配置。
 - **已验证**：F2-B 原生循环 PASS/CLOSED；F2-C 冻结三个梯度标量的数值检查 PASS/CLOSED（纯 fp64 原版路径仍受限）；F2-D 固定深度与 per-batch RNG/Checkpoint PASS/CLOSED。R0/R1/R2 历史阶段有已归档的限定结果。
 - **问题**：F2-E B1-R3 已修复遗漏 Mask/错误 step 检出，验证 n/k、Mask 内容/写回、per-token E4/E5，原始证据及实际探针五项 SHA 独立 MATCH；但 R3 冻结要求中的每 Mask 原始位或摘要归档缺失、精确 checkpoint replay==2 未被验收器强制、post-backward RNG 边界未记录等问题仍在。**E1–E5 正向证据积极，正式全项 NOT CLOSED，转 Claude Code 限定收口**。E6 INCONCLUSIVE，原生 Parcae bug 未证明。
-- **未开始/未验证**：Claude Code 先只读接管审核；经单独授权后仅完成 R3 冻结证据/断言的狭义收口，不引入新实验维度；之后规划原生完整 CPU 训练链和架构对照。
+- **未开始/未验证**：Grok 已获项目负责人授权继续负责 F2-E 最终限定证据收口（尚无新远端验收提交），ChatGPT 继续独立审核；完成后由 Grok 只读设计原生 CPU 训练生命周期的冻结门禁，不自动执行训练。Claude Code 暂缓接管。
 - **证据**：`docs/F2D_FINAL_CPU_ACCEPTANCE_20261025.md`、`docs/F2E_B1_CHATGPT_REVIEW_AND_R1_GATE_20261025.md`。
 
 ### D. 测试
@@ -48,7 +63,7 @@
 - **代码**：`tests/`、`research/mini_mythos/tests/`、`interfaces/test_*.py`、`gate2_1/test_*.py`、`gate2_2/test_*.py`、`.github/workflows/`。
 - **已验证**：R1 Gate F 记录 106/106 单元测试 PASS；不同冻结阶段有单独的测试证据。不得将历史 106 或 205/241/248 等数字当作当前 HEAD 全套测试结果。
 - **问题**：R3 已拒绝遗漏/额外 Mask、step=999、翻转真实 Mask 位、NaN/零/缺失/额外梯度，并核验写回 x_new/xk；但归档删去原始 Mask 且未存 SHA，回放精确次数仅按 >=1 判断，RNG 未记录 backward 后和 sampler 边界，尚不足冻结全项最终验收。
-- **未开始/未验证**：Claude Code 接管只读审计；待授权的限界性 F2-E 验收证据收口；之后训练生命周期回归及另行授权 GPU 数值对照。
+- **未开始/未验证**：由 Grok 按已授权范围完成 F2-E 限界证据收口，独立审核后设计原生训练生命周期；完整训练执行及 GPU 数值对照均需另行授权。
 - **证据**：`docs/F2E_B1_CHATGPT_REVIEW_AND_R1_GATE_20261025.md`。
 
 ### E. 文档与证据
@@ -61,7 +76,7 @@
 
 ## 3. 当前研发门禁与下一阶段
 
-1. **当前唯一无需新增实验授权的下一步**：Claude Code 按 `docs/SESSION_START_PROTOCOL.md` 完成只读研发接管；必须阅读最新 `docs/F2E_B1R3_CHATGPT_INDEPENDENT_REVIEW_AND_CLAUDE_HANDOFF_20261025.md`。如用户另行授权，仅按报告列出的 R3 剩余档案与验收断言做限定收口；不自动实验、GPU 或架构变更。
+1. **当前项目负责人已授权的执行工作**：Grok 继续以 CPU 处理 `docs/F2E_B1R3_CHATGPT_INDEPENDENT_REVIEW_AND_CLAUDE_HANDOFF_20261025.md` 列明的最终有限 F2-E 收口、保存新证据并停在 PENDING CHATGPT REVIEW；随后仅进行原生 CPU Training Lifecycle 的只读审计和验收设计。**Claude Code 暂不接管**，但该交接审核文件中的技术验收要求仍有效。
 2. **之后先设计/审核再执行**：原生 Parcae CPU Training Lifecycle（forward → loss → backward → optimizer → scheduler → checkpoint → resume），包括冻结预期/实际/梯度和恢复标准。
 3. **再之后**：真实数据、Tokenizer、heldout、模型能力和非循环基线。
 4. **最后且独立批准**：GPU 门禁、规模训练、效率优化、架构创新。不能用当前微型 PASS 自动解锁 Gate 2.2-C。
