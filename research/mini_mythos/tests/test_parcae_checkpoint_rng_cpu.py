@@ -1,4 +1,4 @@
-"""F2-D B1 D1-D6 CPU probe. D7 is not run.
+"""F2-D B1-R1 D1-D6 CPU probe. D7 is not run.
 
 PENDING CHATGPT REVIEW. Does not modify Parcae.
 """
@@ -47,6 +47,17 @@ def checksum(t):
     return sha_bytes(t.detach().cpu().contiguous().numpy().tobytes())
 
 
+def weight_sha(state):
+    h = hashlib.sha256()
+    for name in sorted(state):
+        t = state[name].detach().cpu().contiguous()
+        h.update(name.encode())
+        h.update(str(tuple(t.shape)).encode())
+        h.update(str(t.dtype).encode())
+        h.update(t.numpy().tobytes())
+    return h.hexdigest()
+
+
 def make_model(root, flag, impl):
     sys.path.insert(0, str(root))
     from parcae_lm.models.parcae.config import ParcaeConfig
@@ -61,8 +72,7 @@ def make_model(root, flag, impl):
         recurrent_embedding_dimension=64, recurrent_intermediation_embedding_dimension=128,
         attn_impl="sdpa", activation_checkpoint_impl=impl,
     )
-    model = Parcae(cfg, gradient_checkpointing=flag).float().cpu().eval()
-    return model
+    return Parcae(cfg, gradient_checkpointing=flag).float().cpu().eval()
 
 
 def close(a, b, abs_tol, rel_tol):
@@ -71,15 +81,103 @@ def close(a, b, abs_tol, rel_tol):
     return bool(torch.all(diff <= bound)), float(diff.max())
 
 
-def synthetic():
-    bad_grad = close(torch.tensor([1.0]), torch.tensor([2.0]), 1e-6, 1e-5)[0] is False
-    no_replay = ("PASS" if False else "BLOCKED") == "BLOCKED"
-    rng_bad = ("PASS" if "a" == "b" else "FAIL") == "FAIL"
-    rank = min(["FAIL", "INCONCLUSIVE"], key=lambda s: RANK[s]) == "FAIL"
-    return bad_grad and no_replay and rng_bad and rank
+def worst(statuses):
+    return min(statuses, key=lambda s: RANK[s])
 
 
-def run_once(model, ids, labels, pair, mode):
+def evaluate(row, base, enabled, pair):
+    reasons = []
+    expected = [True, True] if pair == (0, 2) else [False, True]
+    if row["logical_steps"] != 2 or row["flags"] != expected:
+        reasons.append("logical")
+    replay = row["replay_updates"] if enabled and "per-iteration" in row["impl"] else row["replay_blocks"]
+    if enabled and replay < 1:
+        return "BLOCKED", {"reasons": ["no backward replay"], "replay": replay}
+    missing = sorted(set(base["grads"]) - set(row["grads"]))
+    extra = sorted(set(row["grads"]) - set(base["grads"]))
+    if missing or extra or len(row["grads"]) != 74:
+        return "FAIL", {"reasons": ["gradient names"], "missing": missing, "extra": extra, "count": len(row["grads"])}
+    logit_ok, logit_diff = close(row["logits"], base["logits"], 1e-6, 0.0)
+    loss_ok = abs(row["loss"] - base["loss"]) <= 1e-6 + 1e-6 * max(abs(row["loss"]), abs(base["loss"]))
+    grad_ok = True
+    max_grad = 0.0
+    zero = []
+    nonfinite = []
+    for name, g in base["grads"].items():
+        gm = row["grads"].get(name)
+        if gm is None:
+            missing.append(name)
+            continue
+        if not torch.isfinite(gm).all() or not torch.isfinite(g).all():
+            nonfinite.append(name)
+        if torch.count_nonzero(gm) == 0 or torch.count_nonzero(g) == 0:
+            zero.append(name)
+        ok, diff = close(gm, g, 1e-6, 1e-5)
+        grad_ok = grad_ok and ok
+        max_grad = max(max_grad, diff)
+    rng_ok = (
+        row["rng"]["before_reset"] == base["rng"]["before_reset"]
+        and row["rng"]["after_forward"] == base["rng"]["after_forward"]
+        and row["rng"]["after_backward"] == row["rng"]["after_forward"]
+        and row["rng"]["after_backward"] == base["rng"]["after_backward"]
+    )
+    if not logit_ok:
+        reasons.append("logits")
+    if not loss_ok:
+        reasons.append("loss")
+    if not grad_ok:
+        reasons.append("gradient values")
+    if zero:
+        reasons.append("zero")
+    if nonfinite:
+        reasons.append("nonfinite")
+    if not rng_ok:
+        reasons.append("rng")
+    if missing:
+        reasons.append("missing")
+    status = "PASS" if not reasons else "FAIL"
+    return status, {
+        "reasons": reasons,
+        "logit_max_abs": logit_diff,
+        "loss_abs": abs(row["loss"] - base["loss"]),
+        "grad_max_abs": max_grad,
+        "grad_count": len(row["grads"]),
+        "zero": zero,
+        "nonfinite": nonfinite,
+        "missing": missing,
+        "rng": row["rng"],
+        "replay_updates": row["replay_updates"],
+        "replay_blocks": row["replay_blocks"],
+    }
+
+
+def synthetic(sample):
+    results = {}
+    bad = copy.deepcopy(sample)
+    name = next(iter(bad["grads"]))
+    bad["grads"][name] = bad["grads"][name] + 1
+    results["bad_grad"] = evaluate(bad, sample, False, (0, 2))[0]
+    missing_replay = copy.deepcopy(sample)
+    missing_replay["impl"] = "per-iteration"
+    missing_replay["replay_updates"] = 0
+    results["missing_replay"] = evaluate(missing_replay, sample, True, (0, 2))[0]
+    bad_rng = copy.deepcopy(sample)
+    bad_rng["rng"]["after_forward"] = "changed"
+    results["bad_rng"] = evaluate(bad_rng, sample, False, (0, 2))[0]
+    missing_name = copy.deepcopy(sample)
+    missing_name["grads"].pop(name)
+    results["missing_name"] = evaluate(missing_name, sample, False, (0, 2))[0]
+    ok = (
+        results["bad_grad"] == "FAIL"
+        and results["missing_replay"] == "BLOCKED"
+        and results["bad_rng"] == "FAIL"
+        and results["missing_name"] == "FAIL"
+        and worst(["FAIL", "INCONCLUSIVE"]) == "FAIL"
+    )
+    return ok, results
+
+
+def run_once(model, ids, labels, pair):
     phase = {"v": "forward"}
     events = []
     orig_update = model.update_recurrent_state
@@ -114,24 +212,24 @@ def run_once(model, ids, labels, pair, mode):
         loss.backward()
         after_bwd = rng_sha()
         grads = {n: p.grad.detach().clone() for n, p in model.named_parameters() if p.grad is not None}
+        after_weights = weight_sha(model.state_dict())
     finally:
         model.update_recurrent_state = orig_update
         for block, orig in zip(model.transformer.core_block, block_orig):
             block.forward = orig
     fwd_updates = [e for e in events if e["fn"] == "update" and e["phase"] == "forward"]
-    bwd_updates = [e for e in events if e["fn"] == "update" and e["phase"] == "backward"]
-    bwd_blocks = [e for e in events if e["fn"] == "block" and e["phase"] == "backward"]
     return {
         "loss": float(loss.detach()),
         "logits": logits,
         "grads": grads,
         "flags": [e["grad"] for e in fwd_updates],
         "logical_steps": len(fwd_updates),
-        "replay_updates": len(bwd_updates),
-        "replay_blocks": len(bwd_blocks),
+        "replay_updates": sum(e["fn"] == "update" and e["phase"] == "backward" for e in events),
+        "replay_blocks": sum(e["fn"] == "block" and e["phase"] == "backward" for e in events),
         "rng": {"before": before, "before_reset": before_reset, "after_forward": after_fwd, "after_backward": after_bwd},
         "flag": model.gradient_checkpointing,
         "impl": model.config.activation_checkpoint_impl,
+        "after_weights": after_weights,
     }
 
 
@@ -154,16 +252,12 @@ def main():
         add("precheck", "BLOCKED", head=head, status=status)
         finish(out, items)
         return 2
-    if not synthetic():
-        add("synthetic", "FAIL")
-        finish(out, items)
-        return 1
-    add("synthetic", "PASS")
 
     base = make_model(root, False, "per-iteration")
     import parcae_lm.models.parcae.parcae as mod
-    if root not in Path(mod.__file__).resolve().parents:
-        add("import", "BLOCKED")
+    imported = str(Path(mod.__file__).resolve())
+    if root not in Path(imported).parents:
+        add("import", "BLOCKED", imported=imported)
         finish(out, items)
         return 2
     nparams = sum(p.numel() for p in base.parameters())
@@ -172,62 +266,39 @@ def main():
         finish(out, items)
         return 2
     weights = copy.deepcopy(base.state_dict())
-    weight_sha = sha_bytes(torch.save(weights, f"{out}.weights") or b"")
-    Path(f"{out}.weights").unlink()
+    wsha = weight_sha(weights)
     torch.manual_seed(1000)
     ids = torch.randint(0, 128, (1, 8))
     labels = ids.clone()
-    add("precheck", "PASS", params=nparams, input_sha256=checksum(ids), threads=torch.get_num_threads())
+    add("precheck", "PASS", params=nparams, import_path=imported, weight_sha256=wsha, input_sha256=checksum(ids), frozen=FROZEN, threads=torch.get_num_threads())
 
     runs = {}
     for name, flag, impl, pair, _ref in CELLS:
         model = make_model(root, flag, impl)
         model.load_state_dict(weights)
-        a = run_once(model, ids, labels, pair, name)
-        b = run_once(model, ids, labels, pair, name)
-        same = a["loss"] == b["loss"] and checksum(a["logits"]) == checksum(b["logits"])
-        runs[name] = a
-        expected_flags = [True, True] if pair == (0, 2) else [False, True]
-        logical_ok = a["logical_steps"] == 2 and a["flags"] == expected_flags
-        add(f"{name} repeat", "PASS" if same and logical_ok else "FAIL", logical=a["logical_steps"], flags=a["flags"])
+        if weight_sha(model.state_dict()) != wsha:
+            add(f"{name} weight", "FAIL")
+            finish(out, items)
+            return 1
+        a = run_once(model, ids, labels, pair)
+        b = run_once(model, ids, labels, pair)
+        if a["after_weights"] != wsha or b["after_weights"] != wsha:
+            add(f"{name} weight unchanged", "FAIL")
+        runs[name] = (a, b)
+        status_ab, detail = evaluate(a, b, flag, pair)
+        add(f"{name} repeat", status_ab, **detail)
+
+    sample = runs["D1"][0]
+    ok, neg = synthetic(sample)
+    add("synthetic", "PASS" if ok else "FAIL", results=neg)
+    if not ok:
+        finish(out, items)
+        return exit_code(items)
 
     for name, flag, impl, pair, ref in CELLS:
-        row = runs[name]
-        replay = row["replay_updates"] if impl == "per-iteration" and flag else row["replay_blocks"]
-        activated = (not flag) or (flag and impl in row["impl"])
-        if flag and replay < 1:
-            add(name, "BLOCKED", reason="no backward replay", replay_updates=row["replay_updates"], replay_blocks=row["replay_blocks"])
-            continue
-        if not flag:
-            add(name, "PASS", role="baseline", replay_updates=row["replay_updates"], replay_blocks=row["replay_blocks"], rng=row["rng"])
-            continue
-        base_row = runs[ref]
-        logit_ok, logit_diff = close(row["logits"], base_row["logits"], 1e-6, 0.0)
-        loss_ok = abs(row["loss"] - base_row["loss"]) <= 1e-6 + 1e-6 * max(abs(row["loss"]), abs(base_row["loss"]))
-        names_ok = set(row["grads"]) == set(base_row["grads"]) and len(row["grads"]) == 74
-        grad_ok = True
-        max_grad = 0.0
-        zero = []
-        for n, g in base_row["grads"].items():
-            if torch.count_nonzero(g) == 0:
-                zero.append(n)
-            ok, diff = close(row["grads"][n], g, 1e-6, 1e-5)
-            grad_ok = grad_ok and ok
-            max_grad = max(max_grad, diff)
-        scalars = []
-        for n, idx in FROZEN:
-            gb = float(base_row["grads"][n].view(-1)[idx])
-            gm = float(row["grads"][n].view(-1)[idx])
-            scalars.append({"name": n, "index": idx, "base": gb, "mode": gm, "abs": abs(gb - gm)})
-        rng_ok = (
-            row["rng"]["before_reset"] == base_row["rng"]["before_reset"]
-            and row["rng"]["after_forward"] == base_row["rng"]["after_forward"]
-            and row["rng"]["after_backward"] == row["rng"]["after_forward"]
-            and row["rng"]["after_backward"] == base_row["rng"]["after_backward"]
-        )
-        finite = all(torch.isfinite(g).all() for g in row["grads"].values())
-        status = "PASS" if all([logit_ok, loss_ok, names_ok, grad_ok, rng_ok, finite, not zero, activated]) else "FAIL"
-        add(name, status, logit_max_abs=logit_diff, loss_abs=abs(row["loss"] - base_row["loss"]), grad_max_abs=max_grad, zero=zero, scalars=scalars, rng=row["rng"], replay_updates=row["replay_updates"], replay_blocks=row["replay_blocks"])
+        for i, row in enumerate(runs[name], start=1):
+            status, detail = evaluate(row, runs[ref][0], flag, pair)
+            add(f"{name} run{i}", status, **detail)
 
     finish(out, items)
     return exit_code(items)
@@ -247,9 +318,9 @@ def exit_code(items):
 def finish(out, items):
     payload = {
         "review": "PENDING CHATGPT REVIEW",
-        "stage": "F2-D B1 D1-D6",
+        "stage": "F2-D B1-R1 D1-D6",
         "d7": "NOT RUN",
-        "local_status": min((i["status"] for i in items), key=lambda s: RANK[s]) if items else "BLOCKED",
+        "local_status": worst([i["status"] for i in items]) if items else "BLOCKED",
         "env": {"python": sys.version.split()[0], "pytorch": torch.__version__, "cpu": platform.machine(), "threads": torch.get_num_threads()},
         "items": items,
     }
