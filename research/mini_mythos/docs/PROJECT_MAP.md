@@ -30,6 +30,21 @@
 
 统计方法：2026-10-25 原 444 文件冻结分组 + 该基线到以上 HEAD 的 Git 变更（26 个新增文件、1 个既有测试文件修改），并通过两个 Git tree 的实际文件 size 总和复核。**当前精确 LOC 仍是 NOT MEASURED**。最新详细研究状态见 `docs/PROJECT_STATUS_20261025.md`。
 
+### F2-E 限定收口后的新统计基线
+
+`ee1b3c8564f4cc868e73efd58e4ddc42c35e4f78` 的完整 Git tree 实测：**481 文件 / 154 Python 文件 / 3,050,894 bytes**。比上面 `2ceb08b1` 统计增加 Grok 的 F2-E closeout 实验文件、Native CPU Train Lifecycle 仅设计文档、本项目进度报告和 ChatGPT 正式审核。此表取代上表的“当前”含义；两表的 SHA/数值均作为历史快照保留。
+
+| 模块 | 文件数 | bytes |
+|---|---:|---:|
+| 核心模型 | 5 | 94,110 |
+| 训练 | 3 | 24,480 |
+| 实验与工具 | 98 | 639,567 |
+| 测试 | 76 | 484,810 |
+| 文档与证据 | 299 | 1,807,927 |
+| **合计** | **481** | **3,050,894** |
+
+最新实验结论和下一阶段见 `docs/PROJECT_STATUS_20261025.md`、`docs/F2E_CLOSEOUT_CHATGPT_FINAL_ACCEPTANCE_20261025.md`；精确代码行数仍为 **NOT MEASURED**。
+
 **注意：上述为文件数量和 bytes，绝非已测得的代码行数。** 精确物理行数/非空行数/注释行数须在可访问完整 Git 工作树的执行环境运行 `python research/mini_mythos/scripts/project_map_inventory.py --repo . --output ...`。工具不能执行时标记 **NOT MEASURED**，禁止将字节数换算为 LOC。
 
 ## 2. 模块状态：已验证 / 问题 / 尚未开始
@@ -54,16 +69,16 @@
 
 - **代码**：`research/mini_mythos/scripts/`、`gate2_1/`、`gate2_2/` 中非测试脚本和配置。
 - **已验证**：F2-B 原生循环 PASS/CLOSED；F2-C 冻结三个梯度标量的数值检查 PASS/CLOSED（纯 fp64 原版路径仍受限）；F2-D 固定深度与 per-batch RNG/Checkpoint PASS/CLOSED。R0/R1/R2 历史阶段有已归档的限定结果。
-- **问题**：F2-E B1-R3 已修复遗漏 Mask/错误 step 检出，验证 n/k、Mask 内容/写回、per-token E4/E5，原始证据及实际探针五项 SHA 独立 MATCH；但 R3 冻结要求中的每 Mask 原始位或摘要归档缺失、精确 checkpoint replay==2 未被验收器强制、post-backward RNG 边界未记录等问题仍在。**E1–E5 正向证据积极，正式全项 NOT CLOSED，转 Claude Code 限定收口**。E6 INCONCLUSIVE，原生 Parcae bug 未证明。
-- **未开始/未验证**：Grok 已获项目负责人授权继续负责 F2-E 最终限定证据收口（尚无新远端验收提交），ChatGPT 继续独立审核；完成后由 Grok 只读设计原生 CPU 训练生命周期的冻结门禁，不自动执行训练。Claude Code 暂缓接管。
+- **已验证（2026-10-25 最新）**：Grok `fbeaf7c` 补齐每条 Mask 摘要、Checkpoint replay 精确 2、RNG 配对、权重/74 梯度验收与负例。ChatGPT `docs/F2E_CLOSEOUT_CHATGPT_FINAL_ACCEPTANCE_20261025.md` 对六项声明文件 SHA-256 和 9/9 Mask 内容哈希独立校验，并正式批准 **F2-E E1–E5 PASS/CLOSED（限于冻结 Parcae 2/2/2 CPU 微型采样/Mask/重复/Checkpoint 范围）**。**E6 仍 INCONCLUSIVE**；无模型 Bug 或作者意图证明，不能将整个 F2-E 无条件标 PASS。
+- **未开始/未验证**：原生完整 CPU Training Lifecycle 尚未执行。Grok 已提交 `docs/F2_CPU_TRAIN_LIFECYCLE_PLAN.md`（DESIGN ONLY、未冻结），下一步由 Grok 仅做源码审计/补全方案及冻结验收门禁，由 ChatGPT 审核；任何 CPU 完整训练执行仍需用户另行授权。Claude Code 暂缓。
 - **证据**：`docs/F2D_FINAL_CPU_ACCEPTANCE_20261025.md`、`docs/F2E_B1_CHATGPT_REVIEW_AND_R1_GATE_20261025.md`。
 
 ### D. 测试
 
 - **代码**：`tests/`、`research/mini_mythos/tests/`、`interfaces/test_*.py`、`gate2_1/test_*.py`、`gate2_2/test_*.py`、`.github/workflows/`。
 - **已验证**：R1 Gate F 记录 106/106 单元测试 PASS；不同冻结阶段有单独的测试证据。不得将历史 106 或 205/241/248 等数字当作当前 HEAD 全套测试结果。
-- **问题**：R3 已拒绝遗漏/额外 Mask、step=999、翻转真实 Mask 位、NaN/零/缺失/额外梯度，并核验写回 x_new/xk；但归档删去原始 Mask 且未存 SHA，回放精确次数仅按 >=1 判断，RNG 未记录 backward 后和 sampler 边界，尚不足冻结全项最终验收。
-- **未开始/未验证**：由 Grok 按已授权范围完成 F2-E 限界证据收口，独立审核后设计原生训练生命周期；完整训练执行及 GPU 数值对照均需另行授权。
+- **已验证（最新限定范围）**：F2-E closeout 已归档 Mask SHA 并独立重建核对 9/9，严格拒绝 replay=1 且预期 ON=2/OFF=0，新增 sampler/post-backward RNG 比较、权重/梯度身份检查、FAIL exit 1 演示；限定 E1–E5 正式 PASS/CLOSED。更大模型、新种子或完整训练不在此验收内。
+- **未开始/未验证**：最新 HEAD 全量回归执行；原生 Parcae CPU 训练生命周期设计评审、冻结和正式执行；GPU 数值对照需要另外满足 Gate 2.2-C 条件并授权。
 - **证据**：`docs/F2E_B1_CHATGPT_REVIEW_AND_R1_GATE_20261025.md`。
 
 ### E. 文档与证据
@@ -76,7 +91,7 @@
 
 ## 3. 当前研发门禁与下一阶段
 
-1. **当前项目负责人已授权的执行工作**：Grok 继续以 CPU 处理 `docs/F2E_B1R3_CHATGPT_INDEPENDENT_REVIEW_AND_CLAUDE_HANDOFF_20261025.md` 列明的最终有限 F2-E 收口、保存新证据并停在 PENDING CHATGPT REVIEW；随后仅进行原生 CPU Training Lifecycle 的只读审计和验收设计。**Claude Code 暂不接管**，但该交接审核文件中的技术验收要求仍有效。
+1. **最新已授权的下一项任务（仅设计/源码审计）**：Grok 继续研发，已完成 F2-E 必需 E1–E5 限定验收收口；先读取 `docs/F2E_CLOSEOUT_CHATGPT_FINAL_ACCEPTANCE_20261025.md`，随后修订、冻结 `docs/F2_CPU_TRAIN_LIFECYCLE_PLAN.md` 为可受控执行的完整 CPU Train Lifecycle 验收方案。**未授权正式执行新端到端 CPU 训练，更未授权 GPU**；Claude Code 暂缓。
 2. **之后先设计/审核再执行**：原生 Parcae CPU Training Lifecycle（forward → loss → backward → optimizer → scheduler → checkpoint → resume），包括冻结预期/实际/梯度和恢复标准。
 3. **再之后**：真实数据、Tokenizer、heldout、模型能力和非循环基线。
 4. **最后且独立批准**：GPU 门禁、规模训练、效率优化、架构创新。不能用当前微型 PASS 自动解锁 Gate 2.2-C。
