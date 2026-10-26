@@ -2,6 +2,8 @@
 
 **适用范围：** 任何新 ChatGPT / Grok / 编程 Agent 对话，包含换模型、额度恢复、重新打开 Codespaces、交接研发。**优先级：** 新会话必须先读本文、项目地图及最新检查点；旧聊天记忆只是线索，不能作为实验事实。
 
+**最新 D1 代码冻结候选微型勘误 C2a 检查点（2026-10-26；优先于下方 C2 检查点）：** 基准 `f28f32b6d1514f15ccf680f752f5c414322cab51`。仅两项：`verifier_verdict()` 区分结果文件不存在与不可解析（仅退出码 4 且无文件为 BLOCKED）；聚合 FAIL 优先于 BLOCKED 并保留明细。见 `docs/F3B_D1_CODE_FREEZE_C2A_ERRATA_20261026.md`。**状态：`D1 CODE FREEZE CANDIDATE C2a / PENDING CHATGPT FINAL CODE REVIEW`；D1 NOT TESTED / NOT AUTHORIZED；D2/D3 NOT TESTED；无下载、无拟合、无训练、无 GPU。** 下一条唯一指令：等待 ChatGPT 最终代码复审与项目负责人确认执行主机环境。
+
 **最新 D1 代码冻结候选勘误 C2 检查点（2026-10-26；优先于下方 C1 检查点）：** 基准 `3775dc333577094d30297d3e28f9aa8d5d40039c`。最小门禁修订三项（读取器退出码 4 → BLOCKED；real 模式禁止覆盖 30 分钟硬上限；验证器异常/结果缺失/畸形的安全记录）及只读环境盘点，见 `docs/F3B_D1_CODE_FREEZE_C2_ERRATA_20261026.md`。**状态：`D1 CODE FREEZE CANDIDATE C2 / PENDING CHATGPT FINAL CODE REVIEW`；D1 NOT TESTED / NOT AUTHORIZED；D2/D3 NOT TESTED；无下载、无拟合、无训练、无 GPU；冻结配置候选版本未改，执行主机环境 NOT VERIFIED。** 下一条唯一指令：等待 ChatGPT 最终代码复审与项目负责人确认执行主机环境；未获新的真实数据执行授权前不得启动 D1。
 
 **最新 D1 代码冻结候选勘误 C1 检查点（2026-10-26；优先于下方代码冻结准备检查点）：** 审核基准 `090b6191f7558a43462691bb4fa9afa4b56fed9b` 被 ChatGPT 判 `CODE FREEZE CANDIDATE FAIL`（代码完整性，不否定合成自测，不代表 D1 真实实验失败）。勘误与修订见 `docs/F3B_D1_CODE_FREEZE_C1_ERRATA_20261026.md`：CR 故障/控制 trace 完整性与整流比对、验证器独立重算调度、回归测试、身份标签、Python 完整补丁版本候选固定、30 分钟硬超时、未完成项标 NOT TESTED。**状态：`D1 CODE FREEZE CANDIDATE C1 / PENDING CHATGPT RE-REVIEW`；D1 NOT TESTED / NOT AUTHORIZED；D2/D3 NOT TESTED；无下载、无拟合、无训练、无 GPU。** 下一条唯一指令：等待 ChatGPT 复审与项目负责人确认执行主机 Python 完整版本；未获新的真实数据执行授权前不得启动 D1。

@@ -1,0 +1,18 @@
+# C2a tests run against the C2 driver (commit f28f32b6); 2026-10-26T06:18:25Z
+# Expected: the 4 C2a-relevant tests fail on C2 (exit 4 + unparseable file was BLOCKED; mixed results gave BLOCKED/exit 4).
+--- test_verifier_verdict_mapping
+FAIL: test_verifier_verdict_mapping (research.mini_mythos.tests.test_d1_selftest.C2Gates.test_verifier_verdict_mapping)
+AssertionError: 'BLOCKED' != 'FAIL'
+FAILED (failures=1)
+--- test_exit4_with_unparseable_result_is_fail_through_the_driver
+FAIL: test_exit4_with_unparseable_result_is_fail_through_the_driver (research.mini_mythos.tests.test_d1_selftest.C2Gates.test_exit4_with_unparseable_result_is_fail_through_the_driver)
+AssertionError: Tuples differ: ('BLOCKED', 4) != ('FAIL', 1)
+FAILED (failures=1)
+--- test_aggregate_precedence
+ERROR: test_aggregate_precedence (research.mini_mythos.tests.test_d1_selftest.C2Gates.test_aggregate_precedence)
+AttributeError: module 'd1_driver' has no attribute 'aggregate'
+FAILED (errors=1)
+--- test_mixed_negative_results_report_fail_and_keep_item_detail
+FAIL: test_mixed_negative_results_report_fail_and_keep_item_detail (research.mini_mythos.tests.test_d1_selftest.C2Gates.test_mixed_negative_results_report_fail_and_keep_item_detail)
+AssertionError: Tuples differ: (4, 'BLOCKED', 'BLOCKED') != (1, 'FAIL', 'FAIL')
+FAILED (failures=1)

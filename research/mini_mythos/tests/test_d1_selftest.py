@@ -545,9 +545,57 @@ class C2Gates(unittest.TestCase):
                 f.write(bad)
             self.assertEqual(vv(0, res + "3")[0], "FAIL", bad)
             self.assertEqual(vv(1, res + "3")[0], "FAIL", bad)
+        # C2a: exit 4 is BLOCKED only when the result file does not exist; an existing but unusable file is FAIL
+        for bad in ("{not json", "", "[]", json.dumps({"verdict": "MAYBE"}), json.dumps({}), json.dumps({"verdict": "PASS"})):
+            with open(res + "4", "w") as f:
+                f.write(bad)
+            self.assertEqual(vv(4, res + "4")[0], "FAIL", repr(bad))
+        os.makedirs(d + "/isdir.json")
+        self.assertEqual(vv(4, d + "/isdir.json")[0], "FAIL")                      # exists but is not a readable file
         self.assertEqual(vv(0, d + "/missing.json")[0], "FAIL")                    # exit 0 without a result is never PASS
         self.assertEqual(vv(1, d + "/missing.json")[0], "FAIL")
         self.assertEqual(vv(4, d + "/missing.json")[0], "BLOCKED")
+
+    def test_exit4_with_unparseable_result_is_fail_through_the_driver(self):
+        for content in ("{oops", "", json.dumps({"verdict": "MAYBE"})):
+            d1_driver.VERIFIER = self.stub(4, content)
+            rc, w, dec = self.drive("clean")
+            self.assertEqual((dec["read_resume"]["verdict"], rc), ("FAIL", 1), content)
+        d1_driver.VERIFIER = self.stub(4, json.dumps({"verdict": "BLOCKED"}))      # a proper BLOCKED record is still BLOCKED
+        rc, w, dec = self.drive("clean")
+        self.assertEqual((dec["read_resume"]["verdict"], rc), ("BLOCKED", 4))
+
+    # ---- C2a: FAIL takes precedence over BLOCKED when results are mixed
+    def test_aggregate_precedence(self):
+        ag = d1_driver.aggregate
+        self.assertEqual(ag(["PASS"] * 3), "PASS")
+        self.assertEqual(ag(["PASS", "BLOCKED"]), "BLOCKED")
+        self.assertEqual(ag(["BLOCKED", "BLOCKED"]), "BLOCKED")
+        self.assertEqual(ag(["PASS", "FAIL"]), "FAIL")
+        self.assertEqual(ag(["BLOCKED", "FAIL", "PASS"]), "FAIL")
+        self.assertEqual(ag(["FAIL", "BLOCKED"]), "FAIL")
+        self.assertEqual(ag([]), "FAIL")
+        self.assertEqual(ag(["PASS", "NOT TESTED"]), "FAIL")
+        self.assertEqual(ag(["PASS", None]), "FAIL")
+
+    def test_mixed_negative_results_report_fail_and_keep_item_detail(self):
+        rc, w, dec = self.drive("clean")
+        self.assertEqual(rc, 0)
+        w2 = os.path.join(self.tmp, "wmix")
+        shutil.copytree(os.path.join(w, "evidence", "clean"), os.path.join(w2, "evidence", "clean"))
+        writable(w2)
+        # LR1's reader is BLOCKED (exit 4); every other reader exits 3 without writing evidence -> the real verifier FAILs
+        type(self).n += 1
+        p = os.path.join(self.tmp, "mixstub%d.py" % self.n)
+        write_text(p, "import sys\nsys.exit(4 if any('/LR1/' in x for x in sys.argv) else 3)\n")
+        d1_driver.READER = p
+        rc, _, dec = self.drive("negatives", workdir=w2)
+        nm = dec["negatives_meta"]
+        self.assertEqual((rc, dec["verdict"], nm["verdict"]), (1, "FAIL", "FAIL"))        # FAIL wins, exit code 1
+        self.assertEqual(nm["items"]["LR1"]["verdict"], "BLOCKED")                       # the BLOCKED item is still visible
+        self.assertEqual(nm["items"]["LR2"]["verdict"], "FAIL")
+        self.assertEqual(nm["counts"], {"PASS": 0, "FAIL": 11, "BLOCKED": 1})
+        # all-BLOCKED stays BLOCKED (exit 4); this already holds in test_negatives_reader_blocked...
 
     def test_driver_records_abnormal_verifier_runs(self):
         cases = (("exit0_no_result", 0, None, "", "FAIL", 1), ("exit0_malformed", 0, "{oops", "", "FAIL", 1),

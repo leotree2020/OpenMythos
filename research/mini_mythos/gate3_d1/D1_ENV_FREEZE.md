@@ -40,4 +40,4 @@ python -m unittest research/mini_mythos/tests/test_d1_selftest.py
 
 ## 退出码约定（C2）
 
-读取器：0 正常；3 游标被拒；4 BLOCKED（输入/前置条件）；5 自检失败。驱动器把 4 映射为 BLOCKED，其余非预期码映射为 FAIL。验证器：0 PASS / 1 FAIL / 4 BLOCKED，且结果文件必须存在并与退出码一致才算 PASS；缺失、畸形、不一致、异常退出一律 FAIL（退出码 4 且无结果文件为 BLOCKED）。驱动器自身异常也会写入决定文件（`driver_exception`，FAIL）。驱动器退出码：PASS 0，FAIL 1，BLOCKED 4。
+读取器：0 正常；3 游标被拒；4 BLOCKED（输入/前置条件）；5 自检失败。驱动器把 4 映射为 BLOCKED，其余非预期码映射为 FAIL。验证器：0 PASS / 1 FAIL / 4 BLOCKED，且结果文件必须存在并与退出码一致才算 PASS；缺失、畸形、不一致、异常退出一律 FAIL；**唯一**的 BLOCKED 例外是退出码 4 且结果文件**不存在**（文件存在但畸形/未知 verdict/与退出码不符 → FAIL）。多项结果聚合时 **FAIL 优先于 BLOCKED**，每项状态明细保留（C2a）。驱动器自身异常也会写入决定文件（`driver_exception`，FAIL）。驱动器退出码：PASS 0，FAIL 1，BLOCKED 4。

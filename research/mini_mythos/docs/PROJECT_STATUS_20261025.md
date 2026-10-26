@@ -1,5 +1,11 @@
 # Mini-Mythos / OpenMythos — 全项目研发进度（2026-10-25 更新版）
 
+## D1 代码冻结候选微型勘误 C2a 检查点（2026-10-26；本文件最新阶段进度，优先于下方 C2 段）
+
+基准 `f28f32b6d1514f15ccf680f752f5c414322cab51`。C2a 两项：验证器结果判读区分「文件不存在」与「存在但不可解析」（只有退出码 4 且无文件才 BLOCKED；畸形/未知 verdict/退出码不符为 FAIL）；负例聚合 FAIL 优先于 BLOCKED，每项状态明细与 `counts` 保留。4 项相关测试在 C2 代码上失败，52 项合成自测 OK。读取器、验证器、冻结配置未改。
+
+**状态：`D1 CODE FREEZE CANDIDATE C2a / PENDING CHATGPT FINAL CODE REVIEW`**。仅 CPU 合成数据；D1 NOT TESTED / NOT AUTHORIZED；D2/D3 NOT TESTED。**下一条唯一指令**：等待 ChatGPT 最终代码复审。
+
 ## D1 代码冻结候选勘误 C2 检查点（2026-10-26；本文件最新阶段进度，优先于下方 C1 段）
 
 基准 `3775dc333577094d30297d3e28f9aa8d5d40039c`。C2 只做三项最小门禁修订：读取器退出码 4 → BLOCKED（驱动器退出码 PASS 0 / FAIL 1 / BLOCKED 4）；30 分钟硬上限设为代码常量，real 模式禁止覆盖、selftest 只能缩短；验证器异常退出、结果缺失/畸形/与退出码不符以及驱动器自身异常都写入决定文件为 FAIL 或 BLOCKED。12 项新回归测试（C1 代码上 11 项失败），全量 49 项合成自测 OK。只读环境盘点：沙箱满足候选固定值，**执行主机 NOT VERIFIED**，冻结配置未改。详见 `F3B_D1_CODE_FREEZE_C2_ERRATA_20261026.md`。

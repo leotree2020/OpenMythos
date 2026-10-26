@@ -102,26 +102,35 @@ def reader_status(rc, expect=0):
 
 def verifier_verdict(rc, out_path):
     """Map a verifier exit code plus its result file to (PASS | FAIL | BLOCKED, why). A PASS needs BOTH exit 0 and
-    a readable result file whose verdict is PASS. Missing/malformed results, unknown codes and exit/verdict
-    disagreements are FAIL (exit 4 with no result file is BLOCKED: the verifier stopped before evaluating)."""
-    verdict, problem = None, None
+    a readable result file whose verdict is PASS. The only BLOCKED-without-a-verdict case is exit 4 with NO result
+    file at all (the verifier stopped before evaluating). A result file that exists but cannot be parsed, an unknown
+    verdict value, an exit-code/verdict disagreement and abnormal exit codes are all FAIL."""
+    if rc not in VERDICT_EXIT.values():
+        return "FAIL", "verifier abnormal exit rc=%r" % (rc,)
+    if not os.path.lexists(out_path):
+        if rc == 4:
+            return "BLOCKED", "verifier exit 4 and no result file (blocked before evaluation)"
+        return "FAIL", "verifier rc=%d: result file does not exist" % rc
     try:
         with open(out_path, "r", encoding="utf-8") as f:
             verdict = json.load(f)["verdict"]
-        if verdict not in VERDICT_EXIT:
-            verdict, problem = None, "unknown verdict value"
     except Exception as e:  # noqa: BLE001
-        problem = "result file missing or malformed (%s)" % type(e).__name__
-    if rc not in VERDICT_EXIT.values():
-        return "FAIL", "verifier abnormal exit rc=%r" % (rc,)
-    if problem is not None:
-        if rc == 4:
-            return "BLOCKED", "verifier exit 4 before a result was written"
-        return "FAIL", "verifier rc=%d: %s" % (rc, problem)
+        return "FAIL", "verifier rc=%d: result file exists but is unreadable/malformed (%s)" % (rc, type(e).__name__)
+    if verdict not in VERDICT_EXIT:
+        return "FAIL", "verifier rc=%d: unknown verdict value %r" % (rc, verdict)
     expected = {v: k for k, v in VERDICT_EXIT.items()}[rc]
     if verdict != expected:
         return "FAIL", "verifier exit code %d disagrees with result verdict %s" % (rc, verdict)
     return verdict, "verifier rc=%d" % rc
+
+
+def aggregate(verdicts):
+    """FAIL takes precedence over BLOCKED, BLOCKED over PASS. Anything that is not exactly PASS/BLOCKED/FAIL, and an
+    empty list (nothing was evaluated), count as FAIL. Per-item detail is kept by the caller."""
+    vs = list(verdicts)
+    if not vs or any(v not in VERDICT_EXIT for v in vs) or "FAIL" in vs:
+        return "FAIL"
+    return "BLOCKED" if "BLOCKED" in vs else "PASS"
 
 
 def readonly(path):
@@ -257,8 +266,7 @@ def do_negatives(a):
         v, why = verifier_verdict(rc, res)
         results[cid] = {"verdict": v, "why": why}
     write_once(os.path.join(ev, "negatives_result.json"), canon(results))
-    vs = {v["verdict"] for v in results.values()}
-    return ("PASS" if vs == {"PASS"} else ("BLOCKED" if "BLOCKED" in vs else "FAIL")), results
+    return aggregate(v["verdict"] for v in results.values()), results
 
 
 def main(argv=None):
@@ -276,7 +284,7 @@ def main(argv=None):
     LOG.clear()
     ev = os.path.join(a.workdir, "evidence")
     os.makedirs(ev, exist_ok=True)
-    decision = {"driver": "d1_driver/3", "mode": a.mode,
+    decision = {"driver": "d1_driver/4", "mode": a.mode,
                 "note": "identity SELFTEST_SYNTHETIC / REAL_CODE_PATH_NON_FORMAL results are code self-tests and are NOT D1 evidence",
                 "component_scope": {"read_resume": "R1-R5 and the post-run part of R6", "negatives_meta": "R8 (LR1-LR9, CR1-CR3)"},
                 "not_tested": ["R6: hash before the read and validation/test isolation",
@@ -327,7 +335,9 @@ def main(argv=None):
         if a.cmd in ("negatives", "all"):
             if verdict == "PASS":
                 v, res = do_negatives(a)
-                decision["negatives_meta"] = {"verdict": v, "items": res}
+                decision["negatives_meta"] = {"verdict": v, "items": res,
+                                              "counts": {k: sum(1 for x in res.values() if x["verdict"] == k) for k in VERDICT_EXIT},
+                                              "aggregation": "FAIL > BLOCKED > PASS; every item keeps its own verdict and reason"}
                 verdict = v
             else:
                 decision["negatives_meta"] = {"verdict": "NOT TESTED", "why": "clean stage verdict was %s" % verdict}

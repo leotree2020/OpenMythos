@@ -151,3 +151,9 @@ Claude Code 接替 Grok 担任主要研发工程师（项目负责人 2026-10-26
 基准 `3775dc333577094d30297d3e28f9aa8d5d40039c`（ChatGPT 已静态认可 C1 的四项核心修复）。新增 `docs/F3B_D1_CODE_FREEZE_C2_ERRATA_20261026.md`，最小门禁修订三项：（1）驱动器把读取器退出码 4 映射为 BLOCKED（不再报 FAIL），驱动器退出码 PASS 0 / FAIL 1 / BLOCKED 4，clean 非 PASS 时 negatives 记 NOT TESTED；（2）30 分钟上限为代码常量，real 模式禁止 `--timeout-seconds` 覆盖且拒绝放宽后的配置，selftest 只能缩短；（3）验证器异常退出、结果文件缺失/畸形/与退出码不符、驱动器自身异常均被记录为 FAIL 或 BLOCKED。每项有合成回归测试，并在 C1 代码上证明差异（11/12 失败）。全量自测 49 项 OK。只读环境盘点见 `gate3_d1/c2_logs/env_inventory.txt`（仅沙箱；执行主机 NOT VERIFIED；候选版本未改）。
 
 **状态：`D1 CODE FREEZE CANDIDATE C2 / PENDING CHATGPT FINAL CODE REVIEW`**。D1 `NOT TESTED / NOT AUTHORIZED`；D2/D3 `NOT TESTED`。
+
+## D1 代码冻结候选微型勘误 C2a（2026-10-26）
+
+基准 `f28f32b6d1514f15ccf680f752f5c414322cab51`。新增 `docs/F3B_D1_CODE_FREEZE_C2A_ERRATA_20261026.md`：（1）`verifier_verdict()` 只在「退出码 4 且结果文件不存在」时记 BLOCKED，文件存在但畸形/未知 verdict/退出码不符均 FAIL；（2）聚合采用 FAIL 优先于 BLOCKED，保留每项明细与 `counts`。4 项相关测试在 C2 代码上失败；全量 52 项合成自测 OK。读取器、验证器、冻结配置未改。
+
+**状态：`D1 CODE FREEZE CANDIDATE C2a / PENDING CHATGPT FINAL CODE REVIEW`**。D1 `NOT TESTED / NOT AUTHORIZED`；D2/D3 `NOT TESTED`。

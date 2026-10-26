@@ -18,4 +18,4 @@
 流水线输出**不含** D1 总体 PASS（`d1_overall = NOT_DECLARED__PIPELINE_INCOMPLETE`）；R6 读取前部分、R7、T1–T6、数据获取完整性均 NOT TESTED。
 未编写（本阶段未授权）：数据获取脚本、Tokenizer 拟合脚本、validation/test split 的哈希/行数/round-trip 脚本。
 
-日志目录：`c1_logs/`（C1 修订）、`c2_logs/`（C2 修订：修订前行为、全量自测输出、只读环境盘点）。
+日志目录：`c1_logs/`（C1 修订）、`c2_logs/`（C2 修订：修订前行为、全量自测输出、只读环境盘点）、`c2a_logs/`（C2a 微型勘误）。
