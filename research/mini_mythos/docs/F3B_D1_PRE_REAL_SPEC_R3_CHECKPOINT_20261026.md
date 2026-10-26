@@ -248,3 +248,65 @@ R3-D01…R3-D11 全部。修订 3 影响的建议内容：D03（K3 终点与 R6.
 ## 下一条唯一研发指令
 
 等待 ChatGPT 对第四轮（收口）R3 修订稿进行独立审核，再由项目负责人决定是否批准 R3。批准前不下载、不拟合、不运行 D1、不使用 GPU、不修改冻结文件、不开始 D2/D3。
+
+---
+
+# F3B-D1-SPEC-R3-FINAL-005 — R3 最终一致性修复检查点（追加）
+
+**状态：`R3 DRAFT / PENDING OWNER DECISION`**；本轮自检结论：**`R3 FINAL-005 DOCUMENT SELF-CHECK PASS / PENDING CHATGPT REVIEW / PENDING OWNER DECISION`**。不是 FROZEN，不是 REAL D1 PASS，不是 R3 OWNER APPROVED，不是执行授权。仅文档；追加式（以上各节保持原样）。
+
+## 上一轮的审核结论（如实记载）
+
+ChatGPT 对修订 4（提交 `2ad41913ed08598f1aecfad2575a4f3a6bf51c90`）的独立验收：C04-01、C04-03、C04-04 文档修订 PASS；C04-02 主体设计 PASS，但存在局部异常路径缺口；依赖图 17 节点、`ref` 31 / `rec` 9 / `sub` 3、共 43 条边、无环；Git 修改范围符合限定。已通过的设计原样保留，不重写 R3 框架。
+
+| 项 | 内容 |
+|---|---|
+| 修订基准 | `2ad41913ed08598f1aecfad2575a4f3a6bf51c90`（分支 `d1-pre-real-spec-r3-20261026`；开始时本地与远端一致，工作区干净，冻结清单 10/10 OK） |
+| 修改的文件 | `F3B_D1_PRE_REAL_SPEC_R3_DRAFT.md`（2.4 账本/事件注册表行与「后验模式例外」、第 6 节第 5 条、11.1(b)(d)(f)(g) 与测试 (n)(o)、11.9 的 F1 重写 / F4 重写 / 新增 (f)、新增第 18 节、第 19 节）；本检查点；`PROJECT_MAP.md`、`SESSION_START_PROTOCOL.md`、`PROJECT_STATUS_20261025.md`（只追加 / 插入块，零删除） |
+| 没有做 | 没有改动 v1/R1/R2、Driver、Reader、Verifier、测试、冻结配置、`D1_CODE_SHA256SUMS`、历史证据；没有下载数据、拟合 Tokenizer、运行 D1、训练、使用 GPU、启动 D2/D3；没有运行任何程序测试（只运行文档静态一致性脚本，脚本在会话临时目录，未入库）；没有批准 R3-D01–D11；没有宣布 FROZEN |
+
+## 三项修复结果
+
+状态为文档自检结论；相关机制的实现与运行效果均为 `NOT TESTED`（脚本尚未编写）。详细记录见草案第 18 节。
+
+| ID | 位置 | 问题 | 最小修订 | 正常路径预期 | 异常路径预期 | 状态 | 残余风险 |
+|---|---|---|---|---|---|---|---|
+| FINAL-01 | §2.4、§11.1、§11.9 F1 | F1 无条件写 `terminate_signal` / `reap_done`，而仅阶段进程被外部信号杀死时账本并未进入 `TERMINATING`；11.1(d) 末句「残留 → `stage_end{blocked}`」与 F3a 矛盾 | F1 拆为 F1a（监督器收到信号，完整终止序列）、F1b（仅阶段进程被杀、无存活后代：先收集退出状态与残留检查，直接 `stage_end{failed}`，不写 `terminate_signal` / `reap_done`）、F1c（发现需主动终止的后代：此时才 `terminate_begin{supervisor_abort}`）；注册表与状态机写明 `terminate_signal`、`reap_done` 只在 `TERMINATING` 合法；11.1(d) 矛盾句改为与 F3a 一致 | 不适用（无中断） | F1b 出现 `terminate_signal` / `reap_done` → BLOCKED `LEDGER_BAD_TRANSITION`；发现存活后代却不进入 `TERMINATING` → BLOCKED `residual_process`；`interrupted` 与 `stage_end` ok 并存 → FAIL | **PASS（文档自检）** | `waitpid` 状态区分与残留扫描在目标环境 NOT TESTED |
+| FINAL-02 | §2.4、§6、§11.9 F4 | 修订 4 未说明后验 A8 是否可在原日志写 `manifest_written`(A8)，与「每个工件恰一行」冲突 | `--postmortem` 不续写、不修复、不向原账本和原事件日志追加任何行；`postmortem.json` 为独立叶子证据；后验 A8 为独立文件，只引用现存工件与 `postmortem.json`，缺失节点标 `absent`，不伪造 `manifest_written`(A8)；例外同时写入注册表与 §6；缺 `close` / `run_aborted` / K3 / K4 时始终 `NOT_ACCEPTED`、不低于 `BLOCKED(budget_unprovable)`，late pin 不升级状态 | `close` 存在时不是 F4，走常规 S6 | 后验模式改动原日志 / 账本、在原日志写 A8、引用不存在节点、状态高于 `BLOCKED(budget_unprovable)` → FAIL | **PASS（文档自检）** | 后验结论仍由同一信任域脚本产生；`postmortem.json` 可被改写，靠证据提交与带外副本约束 |
+| FINAL-03 | §11.1、§11.9、§2.4 | F1–F3 采用「先 `close` 后 pin」（选项 X）；选项 Y 要求 pin 在 `close` 之前，但状态机里非 ok 的 `stage_end` 之后只允许 `close` | 明确 F1–F3 采用选项 X；为选项 Y 给出完整失败路径变换（`stage_end` → `pin_phase` → K3 → K4' → `close`）、示例与成功路径尾部；状态机允许 Y 在非 ok 的 `stage_end` 之后写 `pin_phase`，`ANOMALY` 之后不写；`close` 在 Y 下承载 `pins_verified` / `pins_missing`；`pin_phase`→`close` 受 `W` 约束；仍未覆盖的情形记 `OPTION_Y_FAILURE_PATH_NOT_SPECIFIED`（BLOCKED），选 Y 之前须补充规范 | X：成功 / 失败路径都先 `close` 后 pin；Y：都先 `pin_phase`、pin，后 `close` | Y 下先 `close` 再 pin → FAIL `OPTION_Y_ORDER_VIOLATION`；X 下出现 `pin_phase` → FAIL；`ANOMALY` 后出现 `pin_phase` → BLOCKED | **PASS（文档自检）** | Y 下 `close` 不在被固定前缀内；`W` 为待裁决参数 |
+
+## 静态一致性检查（本次实际执行）
+
+| 检查 | 预期 | 实际 | 状态 |
+|---|---|---|---|
+| 依赖图重新计算（从第 5 节正式边列表构图） | 17 节点；`ref` 31 / `rec` 9 / `sub` 3；无重复、无环、层级严格递减 | 节点 17；`ref` 31；`rec` 9；`sub` 3；合计 43；重复 0；`ref` 子图与合并图的拓扑排序都访问 17/17；层级违例 0；人读表格与正式边列表一致 | PASS |
+| 工件依赖是否实际变化 | 变化才改边列表 | **没有变化**：后验 A8 的引用是现有 `A8 → …` 边的子集加一个叶子文件；选项 Y 的 K4' 仍是节点 BP 的前缀；F1b / F1c 不产生新摘要引用。因此**没有修改**正式边列表（仍重新计算，结果如上） | PASS |
+| 事件注册表与状态机 | 全部事件已登记；序列可满足；非法转换被拒绝 | 事件日志 29 个、账本 10 个事件（无新增）。成功路径、F1a、F1b、F1c、F2、F3a、F3b 在选项 X 下逐条通过；经 `stage_end` 之后的机械变换（`pin_phase` → 两对 pin → `close`）后，成功路径与六条失败流程在选项 Y 下也都通过；文档里的 Y-F2 示例与变换结果逐行一致。负例自测（检查器必须拒绝）：无 `terminate_begin` 的 `terminate_signal`、无 `terminate_begin` 的 `reap_done`、选项 Y 下 `close` 先于 `pin_phase`、选项 X 下出现 `pin_phase`，全部被拒绝 | PASS |
+| 摘要引用层级（含失败路径与选项 Y） | 每个被记录的工件 / pin 层级低于所在前缀 | 全部满足，且都在 43 条边的传递闭包内 | PASS |
+| 旧表述清理 | 无旧 F1 片段、无 11.1(d) 旧残留句、无旧字段名 | 检索无残留 | PASS |
+| 第 1 节原文引文 | 逐字存在 | 20/20 片段找到 | PASS |
+| R3-D01…D11 | 无擅自批准 | 11 行全部 `PENDING OWNER DECISION`，决定栏为空 | PASS |
+| 冻结清单 | `D1_CODE_SHA256SUMS` 10/10 OK；配置 `FROZEN`，哈希前缀 `0d35dc21a4beca7c` | 10/10 OK；`FROZEN`；`0d35dc21a4beca7c` | PASS |
+| v1/R1/R2 | SHA-256 不变 | `a55b2cb7…`、`f92c4e79…`、`1d4c3629…` 不变 | PASS |
+| Git 变更 | 仅 5 个 `.md`；`git diff --check` 无输出 | 见提交；无输出 | PASS |
+
+## 依赖图证据（修订 5 重新计算；与修订 4 一致）
+
+**节点（17）：** A1(层级 0)、BP0(层级 0)、PIN0(层级 1)、A2(层级 1)、LP1(层级 2)、PIN1(层级 3)、A4(层级 4)、LP2(层级 5)、PIN2(层级 6)、A5(层级 7)、A6(层级 8)、A7(层级 9)、LP3(层级 10)、PIN3(层级 11)、BP(层级 12)、PIN4(层级 13)、A8(层级 14)
+
+**`ref` 边（31）：** 1. PIN0 → BP0；2. A2 → A1；3. PIN1 → LP1；4. A4 → A1；5. A4 → A2；6. A4 → LP1；7. A4 → PIN1；8. PIN2 → LP2；9. A5 → A1；10. A5 → A4；11. A5 → LP2；12. A5 → PIN2；13. A6 → A2；14. A6 → A4；15. A6 → A5；16. A7 → A6；17. PIN3 → LP3；18. PIN4 → BP；19. A8 → A1；20. A8 → A2；21. A8 → A4；22. A8 → A5；23. A8 → A6；24. A8 → A7；25. A8 → LP3；26. A8 → BP；27. A8 → PIN0；28. A8 → PIN1；29. A8 → PIN2；30. A8 → PIN3；31. A8 → PIN4
+
+**`rec` 边（9）：** LP1 → A1；LP1 → A2；LP1 → PIN0；LP2 → A4；LP2 → PIN1；LP3 → A5；LP3 → A6；LP3 → A7；LP3 → PIN2
+
+**`sub` 边（3）：** LP2 → LP1；LP3 → LP2；BP → BP0
+
+## 未解决的问题与残余风险
+
+- 沿用：信任域局限、远端引用不是不可伪造证明、带外核对依赖人工、GitHub 分支保护 NOT VERIFIED；`CLOCK_BOOTTIME`、`PR_SET_CHILD_SUBREAPER`、`PR_SET_PDEATHSIG`、`/proc` 扫描、`chattr +i`、inotify 在目标环境 NOT TESTED；Hub 元数据语义与 Xet 行为 NOT VERIFIED；Driver 前后哈希仍只证明两个检查时刻。
+- 新增或明确：选项 Y 下 `close`（预算终点）不在被固定的前缀内，`W` 成为选项 Y 的新参数；后验结论由同一信任域的脚本产生；`waitpid` 状态区分在目标环境 NOT TESTED。
+- 全部新脚本（记录器、预算账本与监督器、获取、拟合、审计、清单生成、摘要模块、验收（含 `--postmortem`）、固定与 RV 工具）尚未编写；真实 D1 NOT TESTED / NOT AUTHORIZED；D2/D3 NOT TESTED；Grok 交叉复审仍 PENDING。
+- R3-D01…D11 全部 PENDING OWNER DECISION；本轮又细化了 D05、D07、D09 的建议内容，**没有批准任何一项**。
+
+## 下一条唯一研发指令
+
+等待 ChatGPT 对最终一致性修复（FINAL-005）后的 R3 修订稿进行独立审核，再由项目负责人决定是否批准 R3。批准前不下载、不拟合、不运行 D1、不使用 GPU、不修改冻结文件、不开始 D2/D3。
