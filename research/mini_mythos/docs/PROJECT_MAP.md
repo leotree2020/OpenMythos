@@ -229,3 +229,7 @@ Claude Code 接替 Grok 担任主要研发工程师（项目负责人 2026-10-26
 ## D1 R3 最终勘误（2026-10-26）
 
 分支 `d1-r3-approved-candidate-20261026`。`docs/F3B_D1_PRE_REAL_SPEC_R3_APPROVED_CANDIDATE.md` 按 F3B-D1-R3-FINAL-ERRATA-001 做了两处文档勘误（终止原因与预算结果对照；`reap_done` 终止时间字段 Schema）；勘误后 SHA-256 登记在 `docs/F3B_D1_R3_FINAL_ERRATA_CHECKPOINT_20261026.md`。负责人决策记录与原草案字节不变。**状态：R3 APPROVED CANDIDATE / ERRATA SELF-CHECK PASS / PENDING CHATGPT FINAL VERIFICATION；不是 R3 FROZEN、不是运行授权。**下一条唯一指令：等待 ChatGPT 复核这两处勘误。
+
+## D1 R3 边界勘误（2026-10-26）
+
+分支 `d1-r3-approved-candidate-20261026`。`docs/F3B_D1_PRE_REAL_SPEC_R3_APPROVED_CANDIDATE.md` 按 F3B-D1-R3-ERRATA-EDGE-002 做了三个边界规则的文档勘误（终止宽限与升级、回收耗时与升级分离、预算不可证明与已存在 FAIL 的优先级）；勘误后 SHA-256 登记在 `docs/F3B_D1_R3_ERRATA_EDGE_CHECKPOINT_20261026.md`。负责人决策记录与原草案字节不变。**状态：R3 APPROVED CANDIDATE / EDGE ERRATA SELF-CHECK / PENDING CHATGPT FINAL VERIFICATION；不是 R3 FROZEN、不是运行授权。**下一条唯一指令：等待 ChatGPT 对边界勘误作最终确认。

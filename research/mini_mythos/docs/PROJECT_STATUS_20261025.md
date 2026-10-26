@@ -1,5 +1,11 @@
 # Mini-Mythos / OpenMythos — 全项目研发进度（2026-10-25 更新版）
 
+## D1 R3 边界勘误检查点（2026-10-26；本文件最新阶段进度，优先于下方 R3 最终勘误检查点）
+
+F3B-D1-R3-ERRATA-EDGE-002：仅文档，三个边界规则，不改变任何已批准决策或参数，不新增事件。EDGE-01：T3 先检查存活目标判定 A，A 为假则提前确认且不发 SIGKILL，A 为真且宽限用尽才升级；KILL 尝试时刻（成功或失败）即 `t_kill_bt_ns`，失败记真实 errno。EDGE-02：升级条件只看对 A 的观察，回收耗时不参与；记录无效 → BLOCKED，记录内部矛盾 → FAIL `REAP_RECORD_FORGED`，记录真实自洽但协议未遵守或无法确认 → BLOCKED（`TERMINATION_NOT_ESCALATED` 等），并给出 8 个例子。EDGE-03：`close.result` 只表示预算结果；预算 `UNPROVABLE` 不覆盖已证实的 `FAIL`（FAIL 高于 BLOCKED），所有原因保留，预算不可证明则整体验收不能通过；负例为数据完整性 FAIL + 账本 UNPROVABLE。决策记录与原草案字节不变；17 节点、43 边、无环；冻结清单 10/10。勘误前基准 `cd0285fb22ab7e66dc3979face9f5f095ed077b9`。
+
+**状态：`R3 APPROVED CANDIDATE / EDGE ERRATA SELF-CHECK / PENDING CHATGPT FINAL VERIFICATION`**；不是 R3 FROZEN、不是 REAL D1 PASS、不是运行授权。新机制全部 NOT TESTED；真实 D1 / 数据下载 / 正式 Tokenizer 拟合 / 新脚本开发 / 第一个合成 CPU 实验各需单独授权；Grok 交叉复审 DEFERRED / PENDING。下一条唯一指令：等待 ChatGPT 对边界勘误作最终确认，再执行 R3 正式冻结。
+
 ## D1 R3 最终勘误检查点（2026-10-26；本文件最新阶段进度，优先于下方 R3 负责人决策与已批准候选规范检查点）
 
 F3B-D1-R3-FINAL-ERRATA-001：仅文档，两处勘误，不改变任何已批准决策或参数。ERRATA-01：候选规范 §11.1(d) 删除「`terminate_begin` 必然 `BLOCKED(budget_exceeded)`」的旧断言，新增终止原因与预算结果对照（`deadline` / `interrupt` / `supervisor_abort` / 回收未确认）；ERRATA-02：`reap_done` 增加必需字段 `kill_overhead_ns`，`t_kill_bt_ns` 未发 SIGKILL 时为 JSON `null`，并给出验收核对与 FAIL / BLOCKED 规则及伪造 SIGKILL 时间的判定。决策记录与原草案字节不变；17 节点、`ref` 31 / `rec` 9 / `sub` 3 共 43 边，无环；冻结清单 10/10。勘误前基准 `21fb57331866b6b0b1db7b24b5e416a68f20f84c`。

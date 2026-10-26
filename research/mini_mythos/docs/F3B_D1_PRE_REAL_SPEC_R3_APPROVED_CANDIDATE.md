@@ -4,7 +4,7 @@
 
 - **来源：** 由 R3 草案 FINAL-005 版（`F3B_D1_PRE_REAL_SPEC_R3_DRAFT.md`，基准提交 `4c1d29d9e01c6df2d3b5e796181f728cc3cb88ed`，SHA-256 `d52856713e1dd0d53855597bedc8f3f7eec9dfeec8aece24cdafef839054bbef`；ChatGPT 独立审核 `R3 DOCUMENT REVIEW PASS / READY FOR OWNER DECISION`）生成。**原草案、此前各轮的失败与修订记录（草案第 12、14、16、18 节与各轮检查点）原样保留在仓库里，不被本文件取代或删除。**
 - **生效决策：** 绑定 `research/mini_mythos/docs/F3B_D1_R3_OWNER_DECISION_20261026.md`（按路径引用；该记录与本文件各自的 SHA-256 登记在独立检查点里（见下面的「登记与完整性」），本文件不含任何自引用或对方的摘要，避免循环）。
-- **最终勘误（F3B-D1-R3-FINAL-ERRATA-001，2026-10-26）：** 修正 §11.1(d) 中把 `terminate_begin` 一律等同于 `BLOCKED(budget_exceeded)` 的旧断言（终止原因与预算结果现在严格分开，见 11.1(d) 对照表），并补全 `reap_done` 的终止时间字段 Schema（`t_kill_bt_ns`、`kill_overhead_ns`）。勘误不改变任何已批准的决策或参数；本文件当前有效的 SHA-256 登记在 `F3B_D1_R3_FINAL_ERRATA_CHECKPOINT_20261026.md`（勘误前一版的摘要登记在 `F3B_D1_R3_OWNER_DECISION_CHECKPOINT_20261026.md`，被本版取代）。
+- **最终勘误（F3B-D1-R3-FINAL-ERRATA-001，2026-10-26）：** 修正 §11.1(d) 中把 `terminate_begin` 一律等同于 `BLOCKED(budget_exceeded)` 的旧断言（终止原因与预算结果现在严格分开，见 11.1(d) 对照表），并补全 `reap_done` 的终止时间字段 Schema（`t_kill_bt_ns`、`kill_overhead_ns`）。勘误不改变任何已批准的决策或参数。**边界勘误（F3B-D1-R3-ERRATA-EDGE-002）：** 统一终止宽限期与 SIGKILL 升级规则（EDGE-01）、把回收耗时与升级条件分开（EDGE-02）、规定预算 `UNPROVABLE` 不覆盖已证实的 `FAIL`（EDGE-03）；仍不新增事件。本文件当前有效的 SHA-256 登记在 `F3B_D1_R3_ERRATA_EDGE_CHECKPOINT_20261026.md`；此前各版的摘要分别登记在 `F3B_D1_R3_FINAL_ERRATA_CHECKPOINT_20261026.md`（ERRATA-001 版）与 `F3B_D1_R3_OWNER_DECISION_CHECKPOINT_20261026.md`（批准时的版本），均被后一版取代。
 - **执行条款只使用已批准的选项。** 尤其是 D07：**唯一执行方案是 X**。草案里的选项 B、选项 Y、选项 Z 以及相关的 `pin_phase`、`close.pins_*` 等内容**不属于本规范的执行条款**，只保留在原草案里作为历史。
 - 输入文档：v1（`F3B_D1_FROZEN_EXECUTION_PROPOSAL.md`，SHA-256 `a55b2cb7…ba9e`）、R1（`…_R1.md`，`f92c4e79…1d7a`）、R2（`…_R2.md`，`1d4c3629…05d9`）与 `F3B_D1_FINAL_REGRESSION_CLOSEOUT_20261026.md`；冻结配置与 `D1_ENV_FREEZE.md`。基准提交 `97d0faf2982f4122941d2299a23cab6ab2ba04a3`（D1 冻结、哨兵修正与回归 Closeout 所在提交）。
 
@@ -167,8 +167,8 @@ E run_aborted                    cause=INTERRUPTED  final_status=BLOCKED  missin
 | `stage_start` | `stage`（S0–S5）、`stage_id`、`pgid` | `OPEN`→`STAGE` | 每个 `stage_id` 一次；任何时刻只有一个阶段 | BP | 阶段重叠、`remaining ≤ 0` 时仍启动 → BLOCKED |
 | `stage_end` | `stage_id`、`status`（ok / failed / blocked / killed）、`exit` | `STAGE`→`OPEN`（`killed` 必须经 `terminate_begin` → `terminate_signal` → `reap_done`；`failed` 含**被外部信号杀死且无需主动终止任何后代**的阶段，此时直接 `STAGE`→`stage_end`，**不得**出现 `terminate_signal` / `reap_done`） | 每个 `stage_id` 一次 | BP | 与 `stage_start` 不匹配 → BLOCKED。`status` 不是 `ok` 之后，**唯一合法的下一行是 `close`**。事件日志已有 `interrupted` / `run_aborted` 而 `status`=ok → FAIL `STAGE_STATUS_MISMATCH` |
 | `terminate_begin` | `stage_id`、`reason`（deadline / supervisor_abort / interrupt） | `STAGE`→`TERMINATING` | 每个阶段至多一次 | BP | `reason`=deadline → `close.result` 必为 EXCEEDED；`interrupt` / `supervisor_abort` → `close.run_state` 必为 ABORTED。任何一种之后，该阶段都不得被计为成功 |
-| `terminate_signal` | `sig`（TERM / KILL）、`pgid` | `TERMINATING`→`TERMINATING` | 每个阶段至多两次 | BP | **只在已写 `terminate_begin` 之后合法**；在 `STAGE` 状态（没有 `terminate_begin`）出现 → BLOCKED `LEDGER_BAD_TRANSITION` |
-| `reap_done` | `confirmed`、`exit`、`residual`、`t_term_bt_ns`、`t_kill_bt_ns`（整数，或 JSON `null` 表示没有实际发送 SIGKILL）、`t_reaped_bt_ns`、`kill_overhead_ns`（整数 ≥ 0），Schema 与核对见 11.1(d) | `TERMINATING`→`REAPED` | 每个被终止的阶段一次 | BP | `confirmed`=false → BLOCKED `TERMINATION_UNCONFIRMED`；**只在 `TERMINATING` 状态合法**（即已写 `terminate_begin`），否则 BLOCKED `LEDGER_BAD_TRANSITION`；时间字段缺失、类型错误、负值、时间逆序 → BLOCKED `budget_unprovable`（`REAP_RECORD_INVALID`）；与 `terminate_signal` 行不符 → FAIL `REAP_RECORD_FORGED`（11.1(d)） |
+| `terminate_signal` | `sig`（TERM / KILL）、`pgid`、`result`（`sent` / `gone` / `error`）、`errno`（整数或 `null`；非 `null` 当且仅当 `result`=`error`，记真实错误号） | `TERMINATING`→`TERMINATING` | 每个阶段至多两次（TERM 一次、KILL 至多一次） | BP | **只在已写 `terminate_begin` 之后合法**；在 `STAGE` 状态（没有 `terminate_begin`）出现 → BLOCKED `LEDGER_BAD_TRANSITION`；该行的 `bt_ns` 是发送**尝试**的时刻，成功与否都记 |
+| `reap_done` | `confirmed`、`exit`、`residual`、`t_term_bt_ns`、`t_kill_bt_ns`（整数，或 JSON `null` 表示没有升级到 SIGKILL）、`t_gone_bt_ns`（整数，或 `null` 表示没有观察到所有目标已退出）、`t_reaped_bt_ns`、`kill_overhead_ns`（整数 ≥ 0），Schema 与核对见 11.1(d) | `TERMINATING`→`REAPED` | 每个被终止的阶段一次 | BP | **只在 `TERMINATING` 状态合法**（即已写 `terminate_begin`），否则 BLOCKED `LEDGER_BAD_TRANSITION`；记录无效（缺字段、类型 / 取值非法、时间逆序）→ BLOCKED `budget_unprovable`（`REAP_RECORD_INVALID`）；记录内部矛盾 → FAIL `REAP_RECORD_FORGED`；记录真实自洽但协议未遵守或无法确认 → BLOCKED（`TERMINATION_NOT_ESCALATED` / `TERMINATION_PROTOCOL_VIOLATION` / `TERMINATION_UNCONFIRMED` / `KILL_ATTEMPT_FAILED`），不是 FORGED，绝不 PASS（11.1(d)） |
 | `anomaly` | `code`、`detail` | 任意状态→`ANOMALY` | 是 | BP | 之后只允许 `close`（`result`=UNPROVABLE） |
 | `close` | `result`（WITHIN_BUDGET / EXCEEDED / UNPROVABLE，**只描述时间与账本有效性**）、`total_ns`、`run_state`（COMPLETED / ABORTED）、`abort_cause`（与 `run_aborted.cause` 同枚举，或 `null`）、`el_end_event`（`read_phase_closed` / `run_aborted` / `unwritable` / `none`）、`el_lines_at_end`（整数或 `null`，不是哈希） | `OPEN` 或 `ANOMALY`→`CLOSED` | 否；必须是 K4 前缀的最后一行 | BP | 缺失、不是终行 → BLOCKED `budget_unprovable`；前提与取值规则见 11.1(e)、11.9 |
 | `wrapup_end` | `pins_verified`（列表）、`pins_missing`（列表，含缺失原因）、`wrapup_ns` | `CLOSED`→`DONE` | 否；**`close` 之后唯一允许的行** | `—` | 缺失或超过上限 W → BLOCKED `wrapup_unprovable` |
@@ -502,24 +502,47 @@ sub BP -> BP0
 
 **(d) 终止协议（超限时，按顺序执行；每一步都写账本行）。**
 - **T1** 写 `terminate_begin{stage_id, reason}`（`reason`=deadline / supervisor_abort / interrupt）。从此刻起该阶段不得被计为成功——**即使它此后以退出码 0 自行结束**；`reason`=deadline 使 `close.result` 必为 `EXCEEDED`，其余两种使 `close.run_state` 必为 `ABORTED`（取值规则见 (e)、11.9(a)）。
-- **T2** 对阶段进程组 `killpg(pgid, SIGTERM)`，写 `terminate_signal{TERM}`。
-- **T3** 等待至多 `G_term`（初始值 10 s，R3-D07 已批准；调整须有审批与变更记录）；以 `CLOCK_BOOTTIME` 计，等待期间直接子进程自行退出则跳到 T5。
-- **T4** 若直接子进程仍在，或 `killpg(pgid, 0)` 仍成功（进程组仍有成员）：`killpg(pgid, SIGKILL)`，并对监督器名下被重新挂靠的非监督器自己的后代发 SIGKILL；写 `terminate_signal{KILL}`；再等待至多 `G_kill`（初始值 5 s，R3-D07 已批准；调整须有审批与变更记录）。
-- **T5** 用 `waitpid` 回收直接子进程并记录退出码或信号；循环 `waitpid(-1, WNOHANG)` 回收全部被重新挂靠的后代，直到 `ECHILD` 或 `G_kill` 用尽。
-- **T6** **残留检查**：扫描 `/proc`，凡属于该阶段会话/进程组、或父进程为监督器且不是监督器自己的辅助进程者，均为残留。有残留（包括处于不可中断状态而无法回收的进程）→ `confirmed=false`。
-- **T7** 写 `reap_done{confirmed, exit, residual, t_term_bt_ns, t_kill_bt_ns, t_reaped_bt_ns, kill_overhead_ns}`（字段定义与核对见下），随后 `stage_end{status:"killed"}`。
+- **T2** 对阶段进程组 `killpg(pgid, SIGTERM)`，写 `terminate_signal{TERM, result, errno}`：发送成功 → `result`=`sent`；`ProcessLookupError`（ESRCH，进程组已不存在）→ `result`=`gone`；其他错误（如 EPERM）→ `result`=`error`，`errno` 记真实错误号（其余情形 `errno`=`null`）。无论结果如何，这一行的 `bt_ns` 就是 `t_term_bt_ns`。
+- **存活目标判定 A**（T3、T4 共用）：直接子进程尚未被 `waitpid` 回收，**或** `killpg(pgid, 0)` 仍成功，**或** 存在被重新挂靠到监督器下的后代。**A 为假**即「所有目标进程都已退出」。
+- **T3（宽限期，ERRATA-EDGE-01）** SIGTERM 之后，监督器每个轮询周期（≤ 1 s）**先检查 A**：**A 为假**（所有目标已退出）→ 记录此刻为 `t_gone_bt_ns`，**提前确认，不发 SIGKILL**，也不必等满 `G_term`，直接进入 T5；**A 为真，且 `now − t_term_bt_ns ≥ G_term`**（`G_term` 初始值 10 s，R3-D07 已批准；调整须有审批与变更记录）→ 进入 T4。同一轮询里 A 已为假就不升级（检查 A 优先于截止时间判断）。若 TERM 的 `result`=`error`（信号没有送达），宽限期没有意义，监督器可立即进入 T4。
+- **T4（升级）** 对阶段进程组和监督器名下被重新挂靠的非监督器自己的后代发 SIGKILL，写 `terminate_signal{KILL, result, errno}`（`result` 取值与 T2 相同）。**发送尝试的时刻**就是该行的 `bt_ns`，即 `t_kill_bt_ns`，**无论尝试成功还是失败**（失败也要记真实时刻和真实错误号）。之后按同样的轮询等待至多 `G_kill`（初始值 5 s，R3-D07 已批准；调整须有审批与变更记录）：A 变为假 → 记 `t_gone_bt_ns`；`G_kill` 用尽 A 仍为真（含 KILL 的 `result`=`error`、进程处于不可中断状态）→ `t_gone_bt_ns`=`null`，`confirmed`=false。
+- **T5（回收）** 用 `waitpid` 回收直接子进程并记录退出码或信号；循环 `waitpid(-1, WNOHANG)` 回收全部被重新挂靠的后代，直到 `ECHILD`。**回收的快慢与是否需要升级无关**：是否升级只由 T3 / T4 对 A 的观察决定；回收较慢既不构成升级理由，也不是伪造证据；回收耗时计入 `kill_overhead_ns` 并受总预算约束，不另设上限。
+- **T6** **残留检查**：扫描 `/proc`，凡属于该阶段会话/进程组、或父进程为监督器且不是监督器自己的辅助进程者，均为残留（`residual` 列表）。**`confirmed` 当且仅当 `t_gone_bt_ns` 非 `null` 且 `residual` 为空。**
+- **T7** 写 `reap_done{confirmed, exit, residual, t_term_bt_ns, t_kill_bt_ns, t_gone_bt_ns, t_reaped_bt_ns, kill_overhead_ns}`（字段定义与核对见下），随后 `stage_end{status:"killed"}`。
 - **时间消耗不得被忽略：** T2–T7 的时间全部落在 `open`…`close` 之内（`close` 在 T7 之后写）。终止耗时记入 `reap_done.kill_overhead_ns`（定义见下）。**是否构成 `EXCEEDED` 只看总耗时与终止原因，不是「发生了 `terminate_begin` 就必然超限」**——见下面的对照表。
-- **`reap_done` 的终止时间字段 Schema（ERRATA-02；不新增事件、不改冻结代码、不改任何已批准参数）。** 所有时间都是 `CLOCK_BOOTTIME` 的纳秒整数：
+- **`reap_done` 的终止时间字段 Schema（ERRATA-02；EDGE-01/02 修订。不新增事件、不改冻结代码、不改任何已批准参数；只在既有行上增加字段）。** 所有时间都是 `CLOCK_BOOTTIME` 的纳秒整数：
 
-| 字段 | 类型与含义 | 取值规则 |
-|---|---|---|
-| `t_term_bt_ns` | 整数。SIGTERM 的发送时刻 | 必须**等于**该阶段唯一一条 `terminate_signal{TERM}` 行的 `bt_ns`，且 ≥ `terminate_begin.bt_ns`。SIGTERM 总是先发（即使进程组已不存在，`killpg` 抛 `ProcessLookupError` 时仍照常记一行） |
-| `t_kill_bt_ns` | 整数，或 JSON `null` | **实际发送了 SIGKILL**：必须是真实记录的 `CLOCK_BOOTTIME`，且**等于**该阶段 `terminate_signal{KILL}` 行的 `bt_ns`，且 ≥ `t_term_bt_ns` + `G_term`（SIGKILL 只能在 SIGTERM 宽限用尽之后发）。**SIGTERM 已使进程退出、没有发送 SIGKILL**：必须是 `null`——不得省略该键，不得写 0，不得复制其他时间点 |
-| `t_reaped_bt_ns` | 整数。T5–T6（回收与残留检查）完成、写 `reap_done` 之前读取的时刻 | ≥ 所有前面的时间点（`terminate_begin.bt_ns`、`t_term_bt_ns`、非 `null` 的 `t_kill_bt_ns`），且 ≤ 本行自己的 `bt_ns` |
-| `kill_overhead_ns` | 整数 ≥ 0。**必需字段**，存放在 `reap_done` 行里 | **公式：** `kill_overhead_ns = t_reaped_bt_ns − terminate_begin.bt_ns`，必须与公式**逐位相等**。它度量「从决定终止到确认回收」的总耗时，是评估 `G_term`、`G_kill` 取值是否合理的依据，所以每次终止都必须有 |
+| 位置 | 字段 | 类型与含义 | 取值规则 |
+|---|---|---|---|
+| `terminate_signal` 行 | `result`、`errno` | `result` ∈ {`sent`, `gone`, `error`}；`errno` 为整数或 `null` | `errno` 非 `null` 当且仅当 `result`=`error`，记**真实**错误号 |
+| `reap_done` | `t_term_bt_ns` | 整数。SIGTERM **发送尝试**的时刻 | 等于该阶段唯一一条 `terminate_signal{TERM}` 行的 `bt_ns`，且 ≥ `terminate_begin.bt_ns` |
+| `reap_done` | `t_kill_bt_ns` | 整数，或 JSON `null` | 有 `terminate_signal{KILL}` 行 ⇔ 非 `null`，且等于该行的 `bt_ns`（**尝试时刻，成功与否都记**）。没有升级：必须是 `null`——不得省略、不得写 0、不得复制其他时间点 |
+| `reap_done` | `t_gone_bt_ns` | 整数，或 JSON `null`。监督器**首次观察到 A 为假**（所有目标已退出）的时刻 | 观察到就是整数；到 `G_term`（无升级）或 `G_kill`（升级后）用尽仍未观察到则 `null` |
+| `reap_done` | `t_reaped_bt_ns` | 整数。T5–T6（回收与残留检查）完成、写 `reap_done` 之前读取的时刻 | ≥ 所有前面的非 `null` 时间点，且 ≤ 本行自己的 `bt_ns`。**可以比 `t_gone_bt_ns` 晚很多**（回收慢是允许的） |
+| `reap_done` | `kill_overhead_ns` | 整数 ≥ 0，**必需**，存放在 `reap_done` 行里 | **公式：** `t_reaped_bt_ns − terminate_begin.bt_ns`，必须逐位相等。度量「从决定终止到确认回收」的总耗时，是评估 `G_term`、`G_kill` 取值是否合理的依据 |
 
-- **验收脚本的核对（S6，重读账本）：** (1) 四个字段齐全且类型正确；(2) 各时间点满足上表的顺序与等式，并与 `terminate_begin` / `terminate_signal` 行的 `bt_ns` 一一对应；(3) 有 `terminate_signal{KILL}` 行 ⇔ `t_kill_bt_ns` 非 `null`；(4) 无 KILL 时 `t_reaped_bt_ns − t_term_bt_ns ≤ G_term + 1 s`（1 s 是监督器的轮询粒度，11.1(c)5），超出说明本该升级为 SIGKILL；(5) `confirmed`=false ⇒ 必有 KILL 行（回收未确认意味着升级过）；(6) `kill_overhead_ns` 等于公式值。
-- **预期状态：** 字段缺失、类型错误（非整数、非 `null`）、负值、时间逆序 → **BLOCKED `budget_unprovable`**（`REAP_RECORD_INVALID`；账本无法证明预算）；与 `terminate_signal` 行不符——包括 `t_kill_bt_ns` 与 KILL 行的 `bt_ns` 不等、**没有 KILL 行却写了非 `null` 的 `t_kill_bt_ns`（伪造 SIGKILL 时间）**、有 KILL 行却写 `null`、`kill_overhead_ns` 与公式不符、KILL 早于宽限期（`KILL_BEFORE_GRACE`）、无 KILL 却超出宽限（`KILL_MISSING_AFTER_GRACE`）、`confirmed`=false 而无 KILL 行 → **FAIL `REAP_RECORD_FORGED`**（证据彼此矛盾）。
+- **三类判定，互不混用（ERRATA-EDGE-01/02）：** ① **记录无效**（缺字段、类型或取值非法、时间逆序）→ BLOCKED `budget_unprovable`（`REAP_RECORD_INVALID`）；② **记录内部矛盾**（时间点、公式或行内容彼此对不上）→ FAIL `REAP_RECORD_FORGED`；③ **记录真实且自洽，但终止协议没有被遵守或结果无法确认** → BLOCKED，**不是** FORGED，并且**绝不 PASS**。
+- **验收脚本的核对（S6，重读账本）。判定顺序：按下面 1→5 的顺序，第一个不符的项决定状态与代码，其余不符的项一并列出；** 因此时间点逆序先于「与行不符」被判为记录无效。
+  1. **字段与类型**：上表各字段齐全且类型正确；`terminate_signal` 行有合法的 `result` / `errno`；`confirmed` 为布尔。不符 → ① 。
+  2. **顺序**：`terminate_begin.bt_ns` ≤ `t_term_bt_ns` ≤（`t_kill_bt_ns`）≤（`t_gone_bt_ns`）≤ `t_reaped_bt_ns` ≤ 本行 `bt_ns`；无 KILL 时 `t_gone_bt_ns` ≥ `t_term_bt_ns`。逆序 → ① 。
+  3. **与行对应、公式、内部一致**（任一不符 → ② ）：恰有一条 TERM 行且 `t_term_bt_ns` 等于它的 `bt_ns`；至多一条 KILL 行，有 ⇔ `t_kill_bt_ns` 非 `null` 且等于该行 `bt_ns`；`kill_overhead_ns` 等于公式；`confirmed` ⇔（`t_gone_bt_ns` 非 `null` 且 `residual` 为空）。
+  4. **升级规则（③ ）：**
+     - **没有 KILL 行**：要求 `t_gone_bt_ns` 非 `null` 且 `t_gone_bt_ns − t_term_bt_ns ≤ G_term + 1 s`（1 s 是监督器的轮询粒度，11.1(c)5）——即 SIGTERM 在宽限内已使所有目标退出。**`t_reaped_bt_ns` 多晚都不影响这一条**。否则（宽限用尽时仍有目标存活却没有升级）→ BLOCKED `TERMINATION_NOT_ESCALATED`。
+     - **有 KILL 行且 TERM 的 `result`=`sent`**：要求 `t_kill_bt_ns − t_term_bt_ns ≥ G_term`，否则 → BLOCKED `TERMINATION_PROTOCOL_VIOLATION`（`KILL_BEFORE_GRACE`；记录自洽，但违反了宽限规则）。TERM 的 `result` 是 `error` 或 `gone` 时，对宽限没有下限要求。
+  5. **无法确认（③ ）**：`confirmed`=false → BLOCKED `TERMINATION_UNCONFIRMED`（`close.result`=`UNPROVABLE`）；KILL 行的 `result`=`error` → BLOCKED `KILL_ATTEMPT_FAILED`，真实 `errno` 保留在记录里。这两种情形**都不是**伪造，也都**不得判整体 PASS**。
+- **文档验收例子（时间以 `terminate_begin` 之后的秒数表示，换算成纳秒后适用；`G_term` = 10 s，仅作示意，不是实测）：**
+
+| # | 记录 | 判定 | 状态 |
+|---|---|---|---|
+| E1 | TERM 于 0 s（`sent`）；2 s 观察到 A 为假（`t_gone`=2 s）；无 KILL 行，`t_kill`=`null`；T5–T6 因回收慢到 25 s 才完成（`t_reaped`=25 s，`kill_overhead_ns`=25 s 的纳秒数）；`confirmed`=true | 提前确认，无需升级；回收慢不影响判定 | **PASS**（该记录通过核对） |
+| E2 | TERM 于 0 s；10.0 s 时 A 仍为真；KILL 尝试于 10.4 s（`sent`，`t_kill`=10.4 s）；11 s 观察到 A 为假；12 s 回收完毕；`confirmed`=true | 升级时机与记录自洽 | **PASS**（该记录通过核对；该阶段仍按终止原因判定为 BLOCKED） |
+| E3 | TERM 于 0 s；10 s 时 A 仍为真；**没有 KILL 行**；进程在 18 s 自行退出（`t_gone`=18 s），`confirmed`=true | 宽限用尽仍有目标却未升级；记录本身真实自洽 | **BLOCKED** `TERMINATION_NOT_ESCALATED`（不是 FORGED） |
+| E4 | TERM 于 0 s；KILL 尝试于 10.2 s，`result`=`error`，`errno`=EPERM（真实记录）；`t_gone`=`null`；`confirmed`=false | 无法确认终止，真实错误已保留 | **BLOCKED** `TERMINATION_UNCONFIRMED` / `KILL_ATTEMPT_FAILED`，`close.result`=`UNPROVABLE`（不是 FORGED；绝不 PASS） |
+| E5 | KILL 行 `bt_ns`=10.2 s，但 `t_kill_bt_ns`=`null`（或与该行不等）；或没有 KILL 行却写了非 `null` 的 `t_kill_bt_ns`（时间点顺序本身合法，例如落在 `t_term` 与 `t_gone` 之间） | 记录与行内容互相矛盾 | **FAIL** `REAP_RECORD_FORGED` |
+| E6 | TERM 于 0 s（`sent`）；KILL 尝试于 3 s；记录其余自洽 | 违反宽限规则，但没有矛盾 | **BLOCKED** `TERMINATION_PROTOCOL_VIOLATION`（`KILL_BEFORE_GRACE`） |
+| E7 | `confirmed`=true 而 `t_gone_bt_ns`=`null`；或 `kill_overhead_ns` 与公式不符 | 内部矛盾 | **FAIL** `REAP_RECORD_FORGED` |
+| E8 | 缺 `t_gone_bt_ns` 键，或 `kill_overhead_ns` 为负值 / 字符串，或 `t_reaped_bt_ns` < `t_term_bt_ns` | 记录无效 | **BLOCKED** `budget_unprovable`（`REAP_RECORD_INVALID`） |
+
 - **终止原因与预算结果对照（ERRATA-01）：** 预算结果（`close.result`）只描述时间与账本有效性；最终状态由终止原因（和其他失败原因）决定，两者独立。
 
 | 情形 | `close.result`（预算结果） | `run_state` | 最终状态 |
@@ -528,14 +551,28 @@ sub BP -> BP0
 | `reason`=deadline | **`EXCEEDED`**（除非最后一行的 `UNPROVABLE` 条件成立） | `ABORTED` | **`BLOCKED(budget_exceeded)`** |
 | `reason`=interrupt | 按总耗时与有效性：总耗时未超过预算且账本有效 → **可以是 `WITHIN_BUDGET`**；超出则 `EXCEEDED` | `ABORTED` | **`BLOCKED(interrupted)`**（不是 `budget_exceeded`）。若总耗时同时超出预算，则预算结果为 `EXCEEDED`，最终仍是 `BLOCKED`，两个原因都列出，主代码取最早发生者（11.9(a)(6)） |
 | `reason`=supervisor_abort | 按总耗时与有效性独立判定 | `ABORTED` | 按 `run_aborted.cause` 判定的 `BLOCKED` 或 `FAIL`（例如 `RESIDUAL_PROCESS` → `BLOCKED(residual_process)`；`INTEGRITY_FAILED` → `FAIL`） |
-| 任一情形下回收未确认，或预算证据不可证明（`anomaly`、`boot_id` 变化、账本非法等） | **`UNPROVABLE`**（优先级最高） | `ABORTED` | `BLOCKED(budget_unprovable)`；若同时有 `deadline` 等其他原因，一并列出，主代码以 `close.result` 的优先级（UNPROVABLE > EXCEEDED > WITHIN_BUDGET）为准。**任何情形都不得 PASS** |
+| 预算不可证明（`anomaly`、`boot_id` 变化、账本非法）或回收未确认 | **`UNPROVABLE`**（**只是预算结果内部优先级最高**：UNPROVABLE > EXCEEDED > WITHIN_BUDGET） | `ABORTED`（或按终点事件） | 至少 `BLOCKED(budget_unprovable)`，作为原因之一列出；**不覆盖**另一个已证实的实验 `FAIL`——最终状态按严重程度（`FAIL` 高于 `BLOCKED`）取主代码，所有原因保留。整体验收 `NOT_ACCEPTED`，**任何情形都不得 PASS** |
+
+- **优先级规则（ERRATA-EDGE-03）：**
+  1. `close.result` **只表示预算结果**（时间与账本有效性）；它的优先级（UNPROVABLE > EXCEEDED > WITHIN_BUDGET）只在预算结果内部起作用，不参与实验最终状态的排序。
+  2. 预算 `UNPROVABLE` **不得覆盖**另一个已经证实的实验 `FAIL`。「已证实」指该 `FAIL` 所依据的证据本身通过有效性核对（例如数据完整性不符来自哈希链完整、关键前缀经 RV 的事件日志）。
+  3. 最终状态维持既有严重程度规则：`FAIL` 高于 `BLOCKED`；同级时取最早发生者；预算类 `BLOCKED` 原因内部 `budget_unprovable` 优先于 `budget_exceeded`（预算不可证明时，是否超出也无法证明）。
+  4. **所有失败原因都保留**，写入 `run_aborted`（原因列表）与验收输出，不因排序而丢弃。
+  5. **无论优先级如何，只要预算无法证明（`close.result`=`UNPROVABLE`），整体验收都不能通过**（`NOT_ACCEPTED`）。
+- **负例：数据完整性 `FAIL` + 预算账本 `UNPROVABLE`。** 场景：S2 对 train 的 `hash_done` 与 LFS `sha256` 不符（事件日志哈希链完整，K0 经 RV），监督器随后发现账本里 `boot_id` 变化（`anomaly`）。三个维度的期望输出：
+
+| 维度 | 期望输出 | 错误输出（验收必须拒绝） |
+|---|---|---|
+| 预算结果（`close.result`） | `UNPROVABLE`（原因 `boot_id` 变化） | 写成 `WITHIN_BUDGET` 或 `EXCEEDED` |
+| 运行状态（`close.run_state`） | `ABORTED`（`abort_cause`=`INTEGRITY_FAILED`，`el_end_event`=`run_aborted`） | 写成 `COMPLETED` |
+| 实验最终状态 | **`FAIL(INTEGRITY_MISMATCH)`** 为主代码；原因列表 = [`FAIL INTEGRITY_MISMATCH`，`BLOCKED budget_unprovable`]；S6 输出 `NOT_ACCEPTED` | 只输出 `BLOCKED(budget_unprovable)`（用预算不可证明覆盖了已证实的 FAIL）→ 验收 FAIL `STATUS_DOWNGRADED`；或输出任何通过类结论 |
 
 - **没有发出终止的阶段同样执行 T5–T6**（回收退出状态并做残留检查），此时账本仍在 `STAGE` 状态，**不写** `terminate_signal` / `reap_done`：(i) 无需主动终止的后代 → 直接 `stage_end`（阶段自行退出为 ok / blocked，被外部信号杀死为 `failed`，`exit` 记信号）；(ii) T6 发现仍存活的后代 → **此时才**写 `terminate_begin{reason: supervisor_abort}` 进入 `TERMINATING`，再按 T2–T5、T6、T7 执行，以 `reap_done`、`stage_end{killed}` 收尾，`BLOCKED(residual_process)`。因此「阶段进程被外部信号杀死」本身不构成进入 `TERMINATING` 的理由；先收集退出状态、做残留检查，再决定走 (i) 还是 (ii)（F1b / F1c，11.9）。
 - 冻结 Driver 的超时由其自身先触发时（Driver 自己以 BLOCKED 退出），监督器按正常结束记录，不发信号。
 
 **(e) `close` 何时写、写失败怎么办。**
 - **写 `close` 的前提（修订 4）：** 监督器所知的运行中阶段已全部有 `stage_end`；**不再要求**「回收已确认」或「存在成功事件」——回收未确认也必须写 `close`（`result=UNPROVABLE`），否则账本永远无法关闭。事件日志的终点要求按路径区分：**成功路径**（S0–S5 都走到）要求已有 `read_phase_closed`；**失败路径**要求已有 `run_aborted`；事件日志已不可写时，`close.el_end_event=unwritable`，`abort_cause` 与诊断写在 `close` 内。失败路径不能强求一个不会出现的成功事件（详见 11.9）。
-- **`close` 的取值规则：** `result`（优先级 UNPROVABLE > EXCEEDED > WITHIN_BUDGET）——有 `anomaly`、回收未确认、`boot_id` 变化、状态机非法 → `UNPROVABLE`；否则 `total_ns > budget_ns` 或存在 `reason`=deadline 的 `terminate_begin` → `EXCEEDED`；否则 `WITHIN_BUDGET`。`run_state`：`el_end_event` 为 `read_phase_closed` → `COMPLETED`，其余 → `ABORTED`。`result` **只描述时间与账本有效性**，与实验是否成功无关（三维度的关系见 11.9(a)）。`el_lines_at_end` 是一个**整数**（终点事件的行号 + 1，不可写时为 `null`），不是哈希，因此不给依赖图增加边。
+- **`close` 的取值规则：** `result`（优先级 UNPROVABLE > EXCEEDED > WITHIN_BUDGET）——有 `anomaly`、回收未确认、`boot_id` 变化、状态机非法 → `UNPROVABLE`；否则 `total_ns > budget_ns` 或存在 `reason`=deadline 的 `terminate_begin` → `EXCEEDED`；否则 `WITHIN_BUDGET`。`run_state`：`el_end_event` 为 `read_phase_closed` → `COMPLETED`，其余 → `ABORTED`。`result` **只描述时间与账本有效性**，与实验是否成功无关，也**不覆盖**已证实的实验 `FAIL`（三维度的关系与优先级见 11.1(d) 对照表后的规则与 11.9(a)）。`el_lines_at_end` 是一个**整数**（终点事件的行号 + 1，不可写时为 `null`），不是哈希，因此不给依赖图增加边。
 - **写入失败：** 监督器重试一次（含 `fsync`）；仍失败 → 向标准错误输出诊断，向仍在运行的进程组发 SIGKILL（尽力而为），以专用退出码（初始约定 70）退出。**没有 `close` 行 = `BLOCKED(budget_unprovable)`，绝不能 PASS。** S0 预检要求运行目录所在磁盘有足够空间，并在**独立的临时文件**上做一次「追加 + `fsync` + 删除」自检（不碰账本）。
 - 监督器本身被杀或崩溃：无 `close` → `BLOCKED(budget_unprovable)`；**不允许另起监督器续写同一账本**，只能新建运行目录重做（与 R7.7 一致）。
 
@@ -568,7 +605,8 @@ sub BP -> BP0
 | (h) 有 `reason`=deadline 的 `terminate_begin`，阶段随后以退出码 0 结束 | `close.result=EXCEEDED`，最终 BLOCKED `budget_exceeded`，不是成功 |
 | (h2) 有 `reason`=interrupt 的 `terminate_begin`，总耗时 < 预算，账本有效 | `close.result=WITHIN_BUDGET`，`run_state=ABORTED`，最终 BLOCKED `interrupted`（预算结果不等于实验成功） |
 | (h5) 有 `reason`=supervisor_abort 的 `terminate_begin`（残留被终止并确认），总耗时 < 预算，账本有效 | `close.result=WITHIN_BUDGET`，`ABORTED`，最终 BLOCKED `residual_process`（或 `run_aborted.cause` 对应的 BLOCKED / FAIL） |
-| (h6) 有 `reason`=deadline 的 `terminate_begin` 且 `reap_done.confirmed=false` | `close.result=UNPROVABLE`（优先于 `EXCEEDED`），最终 BLOCKED `budget_unprovable`，`deadline` 原因一并列出 |
+| (h6) 有 `reason`=deadline 的 `terminate_begin` 且 `reap_done.confirmed=false` | `close.result=UNPROVABLE`（预算结果内部优先于 `EXCEEDED`），最终至少 BLOCKED，主代码 `budget_unprovable`，`deadline` 原因一并列出 |
+| (h8) S2 数据完整性 `FAIL`（`INTEGRITY_MISMATCH`）+ 账本 `boot_id` 变化（`UNPROVABLE`） | `close.result=UNPROVABLE`；`run_state=ABORTED`；最终 **`FAIL(INTEGRITY_MISMATCH)`** 为主代码，原因列表含 `BLOCKED budget_unprovable`；整体 `NOT_ACCEPTED`；若只输出 `BLOCKED(budget_unprovable)` → 验收 FAIL `STATUS_DOWNGRADED` |
 | (h7) 任一终止情形 | 不得出现 PASS；不得出现 `ALL_GATES_PASS_CANDIDATE` |
 | (h3) 回收未确认仍必须写 `close` | `close.result=UNPROVABLE`，不因前提不满足而拒绝关闭账本 |
 | (h4) 失败路径的 `close` 的 `el_end_event` 是 `run_aborted`，事件日志里却有 `read_phase_closed` | FAIL `EVENT_LOG_BROKEN` |
@@ -576,15 +614,16 @@ sub BP -> BP0
 | (j) 阶段脚本留下残留后台进程 | BLOCKED `residual_process` |
 | (k) `close` 之后出现 `wrapup_end` 以外的行 | BLOCKED |
 | (l) `wrapup_ns` > W | BLOCKED `wrapup_unprovable` |
-| (m) `reap_done` 缺 `kill_overhead_ns`（或缺 `t_term_bt_ns` / `t_kill_bt_ns` / `t_reaped_bt_ns`），或为非整数 / 负值 / 时间逆序 | BLOCKED `budget_unprovable`（`REAP_RECORD_INVALID`） |
-| (m1) 只发 SIGTERM、进程随即退出：`t_kill_bt_ns` 为 `null`，`kill_overhead_ns` 等于公式，无 KILL 行 | 通过核对 |
-| (m2) 发了 SIGKILL：`t_kill_bt_ns` 等于 KILL 行的 `bt_ns` 且 ≥ `t_term_bt_ns` + `G_term` | 通过核对 |
-| (m3) 没有 KILL 行，`t_kill_bt_ns` 却是非 `null`（伪造 SIGKILL 时间） | FAIL `REAP_RECORD_FORGED` |
-| (m4) 有 KILL 行，`t_kill_bt_ns` 为 `null` 或与 KILL 行的 `bt_ns` 不等 | FAIL `REAP_RECORD_FORGED` |
-| (m5) `kill_overhead_ns` ≠ `t_reaped_bt_ns − terminate_begin.bt_ns` | FAIL `REAP_RECORD_FORGED` |
-| (m6) KILL 行与 TERM 行间隔 < `G_term` | FAIL `REAP_RECORD_FORGED`（`KILL_BEFORE_GRACE`） |
-| (m7) 无 KILL 行但 `t_reaped_bt_ns − t_term_bt_ns` > `G_term` + 1 s | FAIL `REAP_RECORD_FORGED`（`KILL_MISSING_AFTER_GRACE`） |
-| (m8) `confirmed`=false 而没有 KILL 行 | FAIL `REAP_RECORD_FORGED` |
+| (m) `reap_done` 缺任一必需字段（`t_term_bt_ns` / `t_kill_bt_ns` / `t_gone_bt_ns` / `t_reaped_bt_ns` / `kill_overhead_ns`），或为非整数（`t_kill_bt_ns`、`t_gone_bt_ns` 允许 `null`）/ 负值 / 时间逆序；`terminate_signal` 行缺 `result` / `errno` 或取值非法 | BLOCKED `budget_unprovable`（`REAP_RECORD_INVALID`） |
+| (m1) 只发 SIGTERM，2 s 内观察到所有目标退出，之后回收很慢（`t_reaped`−`t_gone` 很大）；无 KILL 行，`t_kill_bt_ns`=`null`，`kill_overhead_ns` 等于公式（E1） | PASS（该记录通过核对；回收慢不是升级理由） |
+| (m2) 宽限用尽仍有存活目标，KILL 尝试时刻 ≥ `t_term_bt_ns` + `G_term`，`t_kill_bt_ns` 等于 KILL 行的 `bt_ns`（E2） | PASS（该记录通过核对） |
+| (m3) 没有 KILL 行，`t_kill_bt_ns` 却是非 `null`（伪造 SIGKILL 时间）；或有 KILL 行而 `t_kill_bt_ns` 为 `null` / 与该行 `bt_ns` 不等（E5） | FAIL `REAP_RECORD_FORGED` |
+| (m4) `kill_overhead_ns` ≠ `t_reaped_bt_ns − terminate_begin.bt_ns`；或 `confirmed` 与（`t_gone_bt_ns` 非 `null` 且 `residual` 为空）不一致（E7） | FAIL `REAP_RECORD_FORGED` |
+| (m5) 宽限用尽时仍有目标存活，没有 KILL 行，目标稍后自行退出（`t_gone` > `t_term` + `G_term` + 1 s）（E3） | BLOCKED `TERMINATION_NOT_ESCALATED`（不是 FORGED） |
+| (m6) TERM 的 `result`=`sent`，KILL 尝试距 TERM < `G_term`，其余自洽（E6） | BLOCKED `TERMINATION_PROTOCOL_VIOLATION`（`KILL_BEFORE_GRACE`） |
+| (m7) KILL 行 `result`=`error`（真实 errno），`t_gone`=`null`，`confirmed`=false（E4） | BLOCKED `TERMINATION_UNCONFIRMED` / `KILL_ATTEMPT_FAILED`，`close.result`=`UNPROVABLE`；不是 FORGED；绝不 PASS |
+| (m8) TERM 的 `result`=`error`（未送达），监督器立即升级 KILL（无宽限），其余自洽 | PASS（该记录通过核对；该阶段仍按终止原因判定为 BLOCKED） |
+| (m9) TERM 的 `result`=`gone`（进程组已不存在），无 KILL 行，`t_gone` 约等于 `t_term` | PASS（该记录通过核对） |
 | (n) 没有 `terminate_begin` 却出现 `terminate_signal` 或 `reap_done`（例如阶段进程只是被外部信号杀死，监督器却照搬终止序列） | BLOCKED `budget_unprovable`（`LEDGER_BAD_TRANSITION`） |
 
 **残余风险：** 账本由与被计量代码同一信任域的监督器写入，同用户可改写文件（靠 K0、K4 外部固定与 A8 间接约束）；绕过监督器的操作（手工下载、另开终端）不被计量；`stage_start` 之间的人为等待算入预算，可能让预算过紧；一次重启使整个运行作废；监督器的 1 s 轮询粒度与 `G_term`、`G_kill` 都会让终止略晚于截止时刻；进程若处于不可中断状态则无法确认回收；`PR_SET_CHILD_SUBREAPER` 与 `/proc` 扫描在目标环境的可用性 **NOT TESTED**；τ、`G_term`、`G_kill`、`W` 为 R3-D07 批准的初始验收值，适用性需 CPU 测试；K3 / K4 固定前存在不超过 `W` 的未固定窗口。
@@ -835,7 +874,7 @@ sub BP -> BP0
 | 运行状态 | `COMPLETED` / `ABORTED` | 监督器 `close.run_state` | 证据是否完整地走完 S0–S5：`el_end_event` 为 `read_phase_closed` 即 `COMPLETED`（即使 S5 的 `s5_status` 是 `DRIVER_NONPASS` 或 `GATE_FAILED`，证据仍完整）；为 `run_aborted` / `unwritable` / `none` 即 `ABORTED` |
 | 实验最终状态 | 失败路径：`BLOCKED(code)` 或 `FAIL(code)`（`run_aborted.final_status`）；成功路径：S6 输出 `NOT_ACCEPTED` 或 `ALL_GATES_PASS_CANDIDATE` | 失败路径由监督器；成功路径由 S6 验收脚本 | 实验结论。**脚本从不宣布 D1 PASS**（第 6 节） |
 
-- **映射规则：** (1) `EXCEEDED` ⇒ 最终状态至少是 `BLOCKED(budget_exceeded)`，永远不是候选通过；(2) `UNPROVABLE` ⇒ `BLOCKED(budget_unprovable)`；(3) `ABORTED` ⇒ 最终状态取 `run_aborted.final_status`，S6 输出 `NOT_ACCEPTED`；(4) `COMPLETED` 且 `WITHIN_BUDGET` 且所有必需闸门都有证据并通过，才可能是 `ALL_GATES_PASS_CANDIDATE`；(5) 终止原因与预算结果分开判定（`deadline` → `EXCEEDED` / `BLOCKED(budget_exceeded)`；`interrupt` → 预算结果可为 `WITHIN_BUDGET`，最终 `BLOCKED(interrupted)`；`supervisor_abort` → 按 `run_aborted.cause`；回收未确认或预算不可证明 → `UNPROVABLE`；详见 11.1(d) 对照表）；(6) 多个原因并存时，最终状态取最严重者（`FAIL` 高于 `BLOCKED`，同级取最早发生者），所有原因都列出。
+- **映射规则：** (1) `EXCEEDED` ⇒ 最终状态至少是 `BLOCKED(budget_exceeded)`，永远不是候选通过；(2) `UNPROVABLE` ⇒ 最终状态至少是 `BLOCKED(budget_unprovable)`，作为原因之一列出，但**不覆盖**已证实的 `FAIL`；(3) `ABORTED` ⇒ 最终状态取 `run_aborted.final_status`（并与其他原因按 (6) 合并），S6 输出 `NOT_ACCEPTED`；(4) `COMPLETED` 且 `WITHIN_BUDGET` 且所有必需闸门都有证据并通过，才可能是 `ALL_GATES_PASS_CANDIDATE`；(5) 终止原因与预算结果分开判定（`deadline` → `EXCEEDED` / `BLOCKED(budget_exceeded)`；`interrupt` → 预算结果可为 `WITHIN_BUDGET`，最终 `BLOCKED(interrupted)`；`supervisor_abort` → 按 `run_aborted.cause`；回收未确认或预算不可证明 → `UNPROVABLE`；详见 11.1(d) 对照表）；(6) 多个原因并存时，最终状态取最严重者（`FAIL` 高于 `BLOCKED`，同级取最早发生者；预算类原因内部 `budget_unprovable` 优先于 `budget_exceeded`），**所有原因都保留并列出**；(7) 无论优先级如何，预算无法证明（`UNPROVABLE`）时整体验收都不能通过。
 
 **(b) 通用收尾顺序（监督器；每一步失败都只追加「缺失证据」说明，不回头改写已写的行）：**
 1. 不再启动新阶段（账本状态机：`stage_end` 的 `status` 不是 `ok` 之后只允许 `close`）。
@@ -999,6 +1038,9 @@ E manifest_written A8
 | F2：`read_phase_closed` 与 `run_aborted` 同时存在 | FAIL `EVENT_ORDER_VIOLATION` |
 | F2：`reap_done` 缺 `kill_overhead_ns` | BLOCKED `budget_unprovable`（`REAP_RECORD_INVALID`） |
 | F2：没有 KILL 行却写了非 `null` 的 `t_kill_bt_ns` | FAIL `REAP_RECORD_FORGED` |
+| F2：宽限用尽仍有存活目标、没有 KILL 行 | BLOCKED `TERMINATION_NOT_ESCALATED` |
+| F2：KILL 尝试失败（`result`=`error`，真实 errno） | BLOCKED `KILL_ATTEMPT_FAILED` / `TERMINATION_UNCONFIRMED`，不是 FORGED |
+| 数据完整性 `FAIL` + 预算 `UNPROVABLE`，最终状态只写 `BLOCKED(budget_unprovable)` | FAIL `STATUS_DOWNGRADED` |
 | F3b：已写 `post_read_snapshot`（`confirmed`=false 时） | FAIL `EVENT_ORDER_VIOLATION` |
 | 任一失败路径：验收输出 `ALL_GATES_PASS_CANDIDATE` | FAIL（必须 `NOT_ACCEPTED`） |
 | F1b：没有 `terminate_begin` 却出现 `terminate_signal` / `reap_done` | BLOCKED `LEDGER_BAD_TRANSITION` |
@@ -1018,7 +1060,7 @@ E manifest_written A8
 
 - **历史记录（保留在仓库里，不在本文件内复制）：** 原草案 `F3B_D1_PRE_REAL_SPEC_R3_DRAFT.md`（FINAL-005 版及其第 12、14、16、18 节的逐轮修订记录）、`F3B_D1_PRE_REAL_SPEC_R3_CHECKPOINT_20261026.md`（含修订 2「29 条边」的错误记录及修订 3 的更正、各轮 FAIL / 修订背景）、v1 / R1 / R2。
 - **负责人决策：** `F3B_D1_R3_OWNER_DECISION_20261026.md`（R3-D01…D11，`OWNER APPROVED — 2026-10-26`）。
-- **登记与完整性：** 决策记录与本文件的 SHA-256、Git 提交、源基准与批准日期登记在 `F3B_D1_R3_OWNER_DECISION_CHECKPOINT_20261026.md`（勘误前的候选版）与 `F3B_D1_R3_FINAL_ERRATA_CHECKPOINT_20261026.md`（勘误后的候选版，当前有效）。
+- **登记与完整性：** 决策记录与本文件的 SHA-256、Git 提交、源基准与批准日期登记在 `F3B_D1_R3_OWNER_DECISION_CHECKPOINT_20261026.md`（批准时的候选版）、`F3B_D1_R3_FINAL_ERRATA_CHECKPOINT_20261026.md`（ERRATA-001 版）与 `F3B_D1_R3_ERRATA_EDGE_CHECKPOINT_20261026.md`（边界勘误后的候选版，当前有效）。
 
 **下一条唯一研发指令：** 等待 ChatGPT 独立核对本候选规范与批准记录。审核通过后，才能正式冻结 R3。真实 D1、正式 Tokenizer 拟合及新脚本开发仍需独立授权；第一个合成 CPU 实验也必须单独取得执行授权。
 
