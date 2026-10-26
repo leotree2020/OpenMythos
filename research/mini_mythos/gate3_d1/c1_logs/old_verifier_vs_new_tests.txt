@@ -1,0 +1,14 @@
+# Purpose: show that the C1 regression tests detect the defects in the audited verifier.
+# Input: d1_verifier.py from commit 090b6191f7558a43462691bb4fa9afa4b56fed9b put temporarily in place;
+#        the six new tests that only need the pre-existing verifier API (the global-order tests need
+#        fault_plan/merge_pieces from the new verifier and were not run against the old one).
+# Expected: all six FAIL on the old verifier (i.e. the old verifier accepted the tampered evidence).
+# Actual (2026-10-26, Python 3.13.16): Ran 6 tests, FAILED (failures=6)
+FAIL test_cr_single_block_hash_tamper_fails            AssertionError: 0 != 1   (old verifier exit code 0 = accepted)
+FAIL test_cr_final_chain_hash_tamper_fails             AssertionError: 0 != 1
+FAIL test_cr_tail_sha256_tamper_fails                  AssertionError: 0 != 1
+FAIL test_cr_totals_position_and_numbering_tamper_fail AssertionError: 0 != 1 : blocks_total
+FAIL test_cr_control_trace_tamper_fails                AssertionError: False is not true : ids
+FAIL test_verify_clean_recomputes_schedule             AssertionError: no 'schedule recomputed' check existed
+# The new verifier was restored afterwards; the full suite passes on it (see selftest_output.txt).
+# Status: C1 P0 defects reproduced on the audited code; fixed on the new code.

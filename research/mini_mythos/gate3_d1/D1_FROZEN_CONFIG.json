@@ -306,7 +306,15 @@
       "PYTHONHASHSEED": "0",
       "CUDA_VISIBLE_DEVICES": ""
     },
-    "wallclock_limit_minutes": 30
+    "wallclock_limit_minutes": 30,
+    "python_full_version": "3.13.16",
+    "python_full_version_status": "CANDIDATE PIN: the interpreter on which tokenizers 0.23.3 + pyarrow 26.0.0 were self-tested. NOT VERIFIED on the execution host; the owner must confirm the host's full patch version (and the dependency combination) and re-freeze this file before any formal run. Real mode is BLOCKED on any other full version.",
+    "python_minor_allowed_scope": "mode=selftest only (stdlib path, e.g. CI). mode=real requires python_full_version exactly.",
+    "wallclock_timeout": {
+      "limit_minutes": 30,
+      "scope": "the d1_driver pipeline; the not-yet-written acquisition / tokenizer-fit scripts must draw on the same 30 minutes",
+      "on_timeout": "BLOCKED(timeout); running step killed; evidence already on disk kept untouched; no automatic retry"
+    }
   },
   "runtime_values_not_frozen_here": [
     "parquet_sha256 (train)",
@@ -326,5 +334,17 @@
       "D2",
       "D3"
     ]
-  }
+  },
+  "identity_rules": {
+    "SELFTEST_SYNTHETIC": "mode=selftest",
+    "REAL_CODE_PATH_NON_FORMAL": "mode=real without a complete formal block, or config status not FROZEN, or synthetic manifest (e.g. synthetic Parquet + hand-built tokenizer)",
+    "FORMAL_D1_CANDIDATE": "mode=real AND config.status == 'FROZEN' AND manifest.formal{authorization_ref, hub_revision == frozen revision, lfs_oid_parquet == parquet_sha256, tokenizer_fit_manifest_sha256} AND manifest.synthetic is not true",
+    "note": "bookkeeping label only; a formal run still needs owner authorization and independent review. The pipeline never emits a full D1 PASS (d1_overall = NOT_DECLARED__PIPELINE_INCOMPLETE)."
+  },
+  "not_tested_in_pipeline": [
+    "R6 pre-read hash / validation-test isolation",
+    "R7",
+    "T1-T6",
+    "data acquisition integrity"
+  ]
 }

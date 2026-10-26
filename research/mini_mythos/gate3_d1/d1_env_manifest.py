@@ -39,7 +39,11 @@ def main(argv=None):
     env = cfg["environment"]
     problems = []
     py = "%d.%d" % sys.version_info[:2]
-    if py not in env["python_minor_allowed"]:
+    full = "%d.%d.%d" % sys.version_info[:3]
+    if a.mode == "real":
+        if full != env["python_full_version"]:
+            problems.append("python %s != pinned %s" % (full, env["python_full_version"]))
+    elif py not in env["python_minor_allowed"]:
         problems.append("python %s not in %s" % (py, env["python_minor_allowed"]))
     versions = {m: ver(m) for m in ("tokenizers", "pyarrow", "huggingface_hub")}
     if a.mode == "real":

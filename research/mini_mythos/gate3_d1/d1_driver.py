@@ -16,15 +16,38 @@ Sub-commands: clean | negatives | all. Exit 0 only if every step behaved as froz
 import argparse
 import json
 import os
+import re
 import stat
 import subprocess
 import sys
+import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 READER = os.path.join(HERE, "d1_reader.py")
 VERIFIER = os.path.join(HERE, "d1_verifier.py")
 ENVMAN = os.path.join(HERE, "d1_env_manifest.py")
 LOG = []
+DEADLINE = [None]
+H64 = re.compile(r"^[0-9a-f]{64}$")
+
+
+class StepTimeout(Exception):
+    pass
+
+
+def identity(mode, cfg, manifest):
+    """Bookkeeping label, not a security boundary: only a run in mode=real with a FROZEN config and a
+    manifest that carries an authorization reference, a hub revision equal to the frozen one and an LFS
+    oid equal to the parquet hash can be labelled a formal D1 candidate. Synthetic data never can."""
+    if mode == "selftest":
+        return "SELFTEST_SYNTHETIC"
+    f = manifest.get("formal")
+    ok = (cfg.get("status") == "FROZEN" and manifest.get("synthetic") is not True and isinstance(f, dict)
+          and isinstance(f.get("authorization_ref"), str) and f["authorization_ref"].strip() != ""
+          and f.get("hub_revision") == cfg["dataset"]["revision"]
+          and f.get("lfs_oid_parquet") == manifest.get("parquet_sha256")
+          and isinstance(f.get("tokenizer_fit_manifest_sha256"), str) and H64.match(f["tokenizer_fit_manifest_sha256"]) is not None)
+    return "FORMAL_D1_CANDIDATE" if ok else "REAL_CODE_PATH_NON_FORMAL"
 
 
 def canon(o):
@@ -38,9 +61,18 @@ def write_once(p, text):
 
 
 def sh(cmd, want=(0,)):
-    r = subprocess.run([sys.executable, "-I"] + cmd, capture_output=True, text=True,
-                       env=dict(os.environ, TOKENIZERS_PARALLELISM="false", PYTHONHASHSEED="0", CUDA_VISIBLE_DEVICES=""))
-    LOG.append({"cmd": [os.path.basename(cmd[0])] + cmd[1:], "rc": r.returncode, "stdout": r.stdout.strip()[-400:], "stderr": r.stderr.strip()[-400:]})
+    name = [os.path.basename(cmd[0])] + cmd[1:]
+    remaining = DEADLINE[0] - time.monotonic()
+    if remaining <= 0:
+        LOG.append({"cmd": name, "rc": "NOT_STARTED_DEADLINE_PASSED"})
+        raise StepTimeout(name[0])
+    try:
+        r = subprocess.run([sys.executable, "-I"] + cmd, capture_output=True, text=True, timeout=remaining,
+                           env=dict(os.environ, TOKENIZERS_PARALLELISM="false", PYTHONHASHSEED="0", CUDA_VISIBLE_DEVICES=""))
+    except subprocess.TimeoutExpired:
+        LOG.append({"cmd": name, "rc": "TIMEOUT_KILLED"})       # never retried
+        raise StepTimeout(name[0])
+    LOG.append({"cmd": name, "rc": r.returncode, "stdout": r.stdout.strip()[-400:], "stderr": r.stderr.strip()[-400:]})
     return r.returncode, r.stdout, r.stderr
 
 
@@ -185,24 +217,43 @@ def main(argv=None):
     ap.add_argument("--manifest", required=True)
     ap.add_argument("--source", required=True)
     ap.add_argument("--tokenizer", required=True)
+    ap.add_argument("--timeout-seconds", type=float, help="override of the frozen wall-clock limit (tests only)")
     a = ap.parse_args(argv)
+    cfg, manifest = jread(a.config), jread(a.manifest)
+    limit = a.timeout_seconds if a.timeout_seconds is not None else cfg["environment"]["wallclock_limit_minutes"] * 60.0
+    DEADLINE[0] = time.monotonic() + limit
     ev = os.path.join(a.workdir, "evidence")
-    decision = {"driver": "d1_driver/1", "mode": a.mode,
-                "d1_experiment": a.mode == "real",
-                "note": "mode=selftest is a code self-test on synthetic data and is NOT D1 evidence",
-                "declared": "script output only; D1 is never PASS/CLOSED without independent ChatGPT review and owner authorization"}
+    ident = identity(a.mode, cfg, manifest)
+    decision = {"driver": "d1_driver/2", "mode": a.mode, "identity": ident,
+                "d1_formal_experiment": ident == "FORMAL_D1_CANDIDATE",
+                "wallclock_limit_seconds": limit,
+                "note": "identity SELFTEST_SYNTHETIC / REAL_CODE_PATH_NON_FORMAL results are code self-tests and are NOT D1 evidence",
+                "component_scope": {"read_resume": "R1-R5 and the post-run part of R6", "negatives_meta": "R8 (LR1-LR9, CR1-CR3)"},
+                "not_tested": ["R6: hash before the read and validation/test isolation",
+                               "R7: validation/test hash, row count, token count, round-trip",
+                               "T1-T6: tokenizer acceptance, repeat-fit determinism",
+                               "data acquisition integrity (Hub listing, LFS oid, README/licence)"],
+                "d1_overall": "NOT_DECLARED__PIPELINE_INCOMPLETE",
+                "declared": "script output only; this pipeline cannot emit an overall D1 verdict, and D1 is never PASS/CLOSED without independent ChatGPT review and owner authorization"}
     code = 0
-    if a.cmd in ("clean", "all"):
-        v, why = do_clean(a)
-        decision["read_resume"] = {"verdict": v, "why": why}
-        code = 0 if v == "PASS" else 1
-    if a.cmd in ("negatives", "all") and code == 0:
-        v, res = do_negatives(a)
-        decision["negatives_meta"] = {"verdict": v, "items": res}
-        code = 0 if v == "PASS" else 1
+    try:
+        if a.cmd in ("clean", "all"):
+            v, why = do_clean(a)
+            decision["read_resume"] = {"verdict": v, "why": why}
+            code = 0 if v == "PASS" else 1
+        if a.cmd in ("negatives", "all") and code == 0:
+            v, res = do_negatives(a)
+            decision["negatives_meta"] = {"verdict": v, "items": res}
+            code = 0 if v == "PASS" else 1
+    except StepTimeout as e:
+        decision["timeout"] = {"verdict": "BLOCKED(timeout)", "step": str(e),
+                               "policy": "BLOCKED; existing evidence kept as is; no automatic retry"}
+        decision["evidence_files_at_timeout"] = sorted(
+            os.path.relpath(os.path.join(b, f), ev) for b, _, fs in os.walk(ev) for f in fs) if os.path.isdir(ev) else []
+        code = 4
     decision["steps"] = LOG
     write_once(os.path.join(ev, "D1_DECISION_%s.json" % a.cmd), canon(decision))
-    print(json.dumps({k: decision[k] for k in decision if k in ("read_resume", "negatives_meta")}, sort_keys=True)[:3000])
+    print(json.dumps({k: decision[k] for k in decision if k in ("identity", "read_resume", "negatives_meta", "timeout", "d1_overall")}, sort_keys=True)[:3000])
     return code
 
 

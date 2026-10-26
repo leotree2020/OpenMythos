@@ -139,3 +139,9 @@ Claude Code 接替 Grok 担任主要研发工程师（项目负责人 2026-10-26
 基准 `8a1700835c619fc1ad579da12713ece612403b8e`（ChatGPT 已对 R2 设计做静态复审 PASS，这不是 D1 实验 PASS）。新增 `gate3_d1/`：`d1_reader.py`（读取器）、`d1_verifier.py`（独立验证器，与读取器不互相 import、不共享游标校验/来源映射/参照流函数）、`d1_driver.py`（clean A/B + LR1–LR9 + CR1–CR3 编排）、`d1_env_manifest.py`、`D1_FROZEN_CONFIG.json`、`requirements-d1.txt`、`D1_ENV_FREEZE.md`、`D1_CODE_SHA256SUMS`，以及 `tests/test_d1_selftest.py` 和记录 `docs/F3B_D1_CODE_FREEZE_PREP_20261026.md`。实现区分中间 carry 与 EOF tail，并断言来源片段无空洞、无重叠、完全覆盖。自测仅用合成数据（24 项 OK），不是 D1 证据。**未**下载 Parquet、未拟合 Tokenizer、未做 D1 数据实验、未训练、未用 GPU；数据获取与 Tokenizer 拟合脚本尚未编写。
 
 **状态：`D1 CODE FREEZE CANDIDATE / PENDING CHATGPT CODE REVIEW`**。D1 `NOT TESTED / NOT AUTHORIZED`；D2/D3 `NOT TESTED`。
+
+## D1 代码冻结候选勘误 C1（2026-10-26）
+
+审核基准 `090b6191f7558a43462691bb4fa9afa4b56fed9b`（ChatGPT：`CODE FREEZE CANDIDATE FAIL`，仅针对代码完整性，不否定合成自测，不代表 D1 真实实验失败）。新增 `docs/F3B_D1_CODE_FREEZE_C1_ERRATA_20261026.md`，并修订 `gate3_d1/`：`verify_cr` 对故障与 control trace 重算块哈希/链/总数/位置/EOF tail 元数据，并与独立构造的预期单变异流及整窗口来源顺序全量比对；`verify_clean` 独立重算 P1–P5；新增回归测试（37 项合成自测 OK，旧验证器上 6 项失败）；身份标签区分合成/real/正式候选；Python 完整补丁版本固定（候选值，执行主机 NOT VERIFIED）；30 分钟硬超时判 BLOCKED 且不重试；R6/R7/T1–T6 与数据获取完整性标 NOT TESTED，流水线不输出总体 D1 PASS。仅 CPU 合成数据；未下载、未拟合、未训练、无 GPU。
+
+**状态：`D1 CODE FREEZE CANDIDATE C1 / PENDING CHATGPT RE-REVIEW`**。D1 `NOT TESTED / NOT AUTHORIZED`；D2/D3 `NOT TESTED`。

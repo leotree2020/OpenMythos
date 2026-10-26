@@ -463,7 +463,19 @@ def verify_clean(a):
     ck = Check()
     cd = a.clean_dir
     sched, _ = jload(os.path.join(cd, "schedule.json"))
-    pts = sched["points"]
+    # The schedule is recomputed here from the frozen rules; the stored file is only compared to it.
+    fresh = build_schedule(ref, cfg)
+    if fresh["verdict"] != "PASS":
+        ck.block("schedule", "BLOCKED(schedule): recomputed schedule is not valid")
+        return emit(a.out, ck.result({"verifier": VERIFIER_VERSION, "mode": a.mode}))
+    keys = ("points", "T", "N", "tail_len", "level1_headings", "vocab")
+    ck("schedule recomputed from the frozen rules equals the stored schedule (all points, all fields)",
+       all(fresh[k] == sched.get(k) for k in keys),
+       "; ".join(k for k in keys if fresh[k] != sched.get(k)))
+    pts = fresh["points"]
+    for nm, rule in (("P1", lambda p: p["stream_pos"] == ref.cum[cfg["schedule"]["p1"]["row"]]),
+                     ("P5", lambda p: p["stream_pos"] == ref.T)):
+        ck("schedule %s equals the frozen rule" % nm, rule(pts[nm]))
     A = load_trace(os.path.join(cd, "A_trace.jsonl"))
     rec_a = run_checks(ref, ck, "A", A)
     ck("A: segments tile the whole window (no gap, no overlap, full coverage)", not tile_errors(rec_a, ref, 0, ref.T),
@@ -511,9 +523,13 @@ def verify_clean(a):
     ck("R5 K4: P4 carry empty and accepted", pts["P4"]["carry_len"] == 0 and json.loads(rb(os.path.join(cd, "cursors", "P4.json")))["carry"] == [])
     ck("R5 K5: P5 is EOF with carry == tail", json.loads(rb(os.path.join(cd, "cursors", "P5.json")))["eof"] is True
        and json.loads(rb(os.path.join(cd, "cursors", "P5.json")))["carry"] == ref.stream[65 * ref.N:])
-    ck("R6 source file hash equals manifest (read after the run)", fsha(src_path) == manifest["parquet_sha256"])
+    ck("R6 (post-run part only) source file hash equals manifest", fsha(src_path) == manifest["parquet_sha256"])
     res = ck.result({"verifier": VERIFIER_VERSION, "mode": a.mode, "T": ref.T, "N": ref.N, "tail_len": ref.T % 65,
-                     "R7": "NOT_APPLICABLE_THIS_STAGE (validation/test split handling belongs to the acquisition script)",
+                     "scope": "R1-R5 and the post-run part of R6 only; this verdict is NOT a D1 verdict",
+                     "not_tested": {"R6_pre_read_hash_and_split_isolation": "NOT TESTED",
+                                    "R7_validation_test_handling": "NOT TESTED",
+                                    "T1_to_T6_tokenizer_acceptance": "NOT TESTED",
+                                    "data_acquisition_integrity_lfs_oid": "NOT TESTED"},
                      "R8": "see negatives result files"})
     return emit(a.out, res)
 
@@ -592,6 +608,121 @@ def classify(ref, per):
     return out
 
 
+def merge_pieces(pieces):
+    """Merge row pieces that continue each other (same row, next offset)."""
+    out = []
+    for (r, o, n) in pieces:
+        if n < 1:
+            continue
+        if out and out[-1][0] == r and out[-1][1] + out[-1][2] == o:
+            out[-1] = (r, out[-1][1], out[-1][2] + n)
+        else:
+            out.append((r, o, n))
+    return out
+
+
+def fault_plan(ref, inject, n, o):
+    """Row pieces (ordinal, offset, count) that a correct reader emits after restoring a cursor at
+    (row n, offset o) with exactly ONE mutation. Derived from the frozen CR definitions only."""
+    W = ref.W
+    if inject is None:
+        seq = [(n, o)] + [(r, 0) for r in range(n + 1, W)]
+    elif inject == "skip_next_row":
+        seq = [(n, o)] + [(r, 0) for r in range(n + 2, W)]
+    elif inject == "repeat_next_row":
+        seq = [(n, o), (n + 1, 0), (n + 1, 0)] + [(r, 0) for r in range(n + 2, W)]
+    elif inject == "shift_consume_offset":
+        seq = [(n, o + 1)] + [(r, 0) for r in range(n + 1, W)]
+    else:
+        raise ValueError("unknown inject %r" % (inject,))
+    return [(r, off, len(ref.rows[r].ids) - off) for (r, off) in seq if len(ref.rows[r].ids) - off > 0]
+
+
+def expected_run(ref, cur, inject):
+    """Complete expected output of the run: the stream, its blocks, the chain, the tail."""
+    e, carry = cur["emitted_blocks"], cur["carry"]
+    pieces = fault_plan(ref, inject, cur["next_eligible_row"], cur["row_token_offset"])
+    stream = list(carry)
+    for (r, off, cnt) in pieces:
+        stream += ref.rows[r].ids[off:off + cnt]
+    nb = len(stream) // 65
+    chain, digs = bytes.fromhex(cur["chain_hash"]), []
+    for j in range(nb):
+        d = hashlib.sha256(pack(stream[65 * j:65 * j + 65])).digest()
+        digs.append(d)
+        chain = hashlib.sha256(chain + d).digest()
+    return {"stream": stream, "pieces": pieces, "digests": digs, "chain": chain.hex(), "nb": nb,
+            "tail": stream[65 * nb:], "pos_end": 65 * e + len(stream)}
+
+
+def integrity_errors(ref, tr, cur):
+    """Self-consistency of a trace, independent of what it is supposed to contain:
+    block numbering, per-block hash recomputed from ids, chain recomputed from the cursor's
+    chain over the blocks actually present, totals, stream position, EOF-tail metadata."""
+    run, blocks, fin = tr
+    e, carry = cur["emitted_blocks"], cur["carry"]
+    errs = []
+    try:
+        if [b["block_index"] for b in blocks] != list(range(e, e + len(blocks))):
+            errs.append("BLOCK_NUMBERING")
+        chain = bytes.fromhex(cur["chain_hash"])
+        out_ids = []
+        for b in blocks:
+            ids = b["ids"]
+            if len(ids) != 65 or any(type(x) is not int or not 1 <= x < ref.vocab for x in ids):
+                errs.append("BLOCK_IDS block %s" % b["block_index"])
+                break
+            if not (isinstance(b["block_hash"], str) and H64.match(b["block_hash"])) or sha(pack(ids)) != b["block_hash"]:
+                errs.append("BLOCK_HASH block %s" % b["block_index"])
+                break
+            chain = hashlib.sha256(chain + bytes.fromhex(b["block_hash"])).digest()
+            out_ids += ids
+        tail = fin["tail_ids"]
+        if fin["kind"] != "eof_tail":
+            errs.append("FINAL_KIND")
+        if not (len(tail) < 65 and all(type(x) is int and 1 <= x < ref.vocab for x in tail)):
+            errs.append("TAIL_IDS")
+        if fin["tail_len"] != len(tail) or fin["tail_sha256"] != sha(pack(tail)):
+            errs.append("TAIL_META")
+        if fin["blocks_total"] != e + len(blocks) or fin["blocks_this_run"] != len(blocks):
+            errs.append("BLOCKS_TOTAL")
+        if fin["chain_hash"] != chain.hex():
+            errs.append("CHAIN_HASH")
+        if fin["stream_token_pos"] != 65 * (e + len(blocks)) + len(tail):
+            errs.append("STREAM_TOKEN_POS")
+        if (out_ids + tail)[:len(carry)] != carry:
+            errs.append("RESTORED_CARRY_NOT_AT_STREAM_START")
+    except (KeyError, TypeError, ValueError, IndexError) as exc:
+        errs.append("MALFORMED %s" % exc)
+    return errs
+
+
+def cont_segments(tr):
+    run, blocks, fin = tr
+    out = []
+    for b in blocks:
+        out += segs_of(b["segments"])
+    return out + segs_of(fin.get("tail_segments", []))
+
+
+def stream_errors(ref, tr, exp):
+    """The trace must equal the expected run exactly: every block's ids and hash, the tail,
+    the final chain and position, and the global order of source pieces."""
+    run, blocks, fin = tr
+    errs = []
+    if [b["ids"] for b in blocks] != [exp["stream"][65 * j:65 * j + 65] for j in range(exp["nb"])]:
+        errs.append("BLOCK_IDS_DIFFER_FROM_EXPECTED")
+    if [b["block_hash"] for b in blocks] != [d.hex() for d in exp["digests"]]:
+        errs.append("BLOCK_HASHES_DIFFER_FROM_EXPECTED")
+    if fin.get("tail_ids") != exp["tail"]:
+        errs.append("TAIL_DIFFERS_FROM_EXPECTED")
+    if fin.get("chain_hash") != exp["chain"] or fin.get("stream_token_pos") != exp["pos_end"]:
+        errs.append("CHAIN_OR_POSITION_DIFFERS_FROM_EXPECTED")
+    if merge_pieces(cont_segments(tr)) != merge_pieces(exp["pieces"]):
+        errs.append("SOURCE_ORDER_DIFFERS_FROM_EXPECTED")
+    return errs
+
+
 def verify_cr(a):
     cfg, manifest, ref, _ = build_ref(a)
     spec = cfg["negatives"]["CR"][a.id]
@@ -628,6 +759,13 @@ def verify_cr(a):
     if not (pref_ok and h.hex() == cur["chain_hash"]):
         ck.block("prefix evidence invalid", "clean prefix failed re-verification")
         return emit(a.out, ck.result({"id": a.id, "expected": spec, "verifier": VERIFIER_VERSION}))
+
+    # trace integrity: fault trace and control trace get the SAME checks. The fault chain is NOT
+    # required to equal the clean reference chain, but it must equal what its own blocks compute to.
+    for label, t in (("fault trace", tr), ("control trace", ctl)):
+        ie = integrity_errors(ref, t, cur)
+        ck("%s integrity (block numbering, per-block hash, own chain, totals, stream pos, EOF tail metadata)" % label,
+           not ie, "; ".join(ie))
     per, cerr = account(ref, pref, e, s, carry, tr)
     ck("trace claims verified against content", not cerr, "; ".join(cerr))
     cls = classify(ref, per)
@@ -639,6 +777,16 @@ def verify_cr(a):
        len(bad) == 1 and bad[0][0] == exp_row, str(bad[:5]))
     ck("(d) its class is %s and consumed == %d" % (spec["code"], exp_used),
        len(bad) == 1 and bad[0][1] == spec["code"] and bad[0][2] == exp_used, str(bad[:5]))
+    # global check: the whole fault stream equals the expected one-mutation stream
+    exp_t, exp_c = expected_run(ref, cur, spec["inject"]), expected_run(ref, cur, None)
+    se = stream_errors(ref, tr, exp_t)
+    ck("(d') fault trace equals the independently built expected one-mutation run (ids, hashes, tail, chain, source order)",
+       not se, "; ".join(se))
+    full_act = merge_pieces([(sg["ordinal"], sg["row_offset"], sg["count"]) for b in pref for sg in b["segments"]]
+                            + ref.decompose(65 * e, s) + cont_segments(tr))
+    full_exp = merge_pieces(ref.decompose(0, s) + exp_t["pieces"])
+    ck("(d') whole-window source order (prefix + carry + continuation) equals the expected sequence", full_act == full_exp)
+    ck("expected fault run differs from the clean continuation (the mutation is real)", exp_t["stream"] != exp_c["stream"])
     chain_differs = fin["chain_hash"] != ref.chain[ref.N].hex()
     ck("no UNCLASSIFIED_DIVERGENCE (a divergent chain has a classified row)", not (chain_differs and not bad))
     # (e) valid injection, (f) positive control
@@ -648,11 +796,13 @@ def verify_cr(a):
         ck.block("(e) invalid injection", "injected trace identical to control")
     per_c, cerr_c = account(ref, pref, e, s, carry, ctl)
     cls_c = classify(ref, per_c)
-    ck("(f) control: all rows OK, blocks and chain equal the reference",
-       not cerr_c and all(c == "OK" for c, _ in cls_c)
+    ce = stream_errors(ref, ctl, exp_c)
+    ck("(f) control: all rows OK, stream equals the clean continuation, blocks and chain equal the reference",
+       not cerr_c and not ce and all(c == "OK" for c, _ in cls_c)
        and all(idx_c[j] == ref.bdig[j].hex() for j in idx_c) and ctl[2]["chain_hash"] == ref.chain[ref.N].hex()
-       and len(ctl[1]) == ref.N - e)
+       and len(ctl[1]) == ref.N - e, "; ".join(ce))
     res = ck.result({"id": a.id, "expected": spec, "start_cursor_row": n, "verifier": VERIFIER_VERSION,
+                     "expected_total_tokens": exp_t["pos_end"], "expected_tail_len": len(exp_t["tail"]),
                      "anomalies": [{"ordinal": r, "source_row_index": ref.rows[r].phys, "split": "train",
                                     "class": c, "consumed": u, "row_len": len(ref.rows[r].ids)} for r, c, u in bad[:10]]})
     return emit(a.out, res)
@@ -733,6 +883,9 @@ def main(argv=None):
     except Blocked as e:
         print("BLOCKED %s" % e)
         return 4
+    except (KeyError, TypeError, ValueError, IndexError, AttributeError) as e:
+        print("FAIL malformed evidence: %r" % (e,))
+        return 1
 
 
 if __name__ == "__main__":

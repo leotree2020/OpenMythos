@@ -1,5 +1,11 @@
 # Mini-Mythos / OpenMythos — 全项目研发进度（2026-10-25 更新版）
 
+## D1 代码冻结候选勘误 C1 检查点（2026-10-26；本文件最新阶段进度，优先于下方代码冻结准备段）
+
+审核基准 `090b6191f7558a43462691bb4fa9afa4b56fed9b`：`CODE FREEZE CANDIDATE FAIL`（代码完整性）。已修订：（1）`verify_cr` 重算故障/control trace 的块哈希、链、块号、总数、`stream_token_pos`、EOF tail 元数据；（2）独立构造 CR1/CR2/CR3 预期的单变异流与整窗口来源顺序并全量比对；（3）对抗性回归测试（单块哈希、tail_sha256、来源顺序、control 篡改；37 项合成自测 OK，旧验证器上 6 项失败）；（4）`verify_clean` 独立重算 P1–P5；（5）real 模式与正式 D1 身份分离；（6）Python 完整补丁版本候选固定（**执行主机未核实**）；（7）30 分钟硬超时 → BLOCKED、保留证据、不重试；（8）R6/R7/T1–T6/数据获取完整性标 NOT TESTED，流水线不输出总体 D1 PASS。详见 `F3B_D1_CODE_FREEZE_C1_ERRATA_20261026.md`。
+
+**状态：`D1 CODE FREEZE CANDIDATE C1 / PENDING CHATGPT RE-REVIEW`**。仅 CPU 合成数据；未下载、未拟合、未训练、无 GPU；D1 NOT TESTED / NOT AUTHORIZED；D2/D3 NOT TESTED。**下一条唯一指令**：等待 ChatGPT 复审；授权前不得运行 D1。
+
 ## D1 执行脚本冻结准备检查点（2026-10-26；本文件最新阶段进度，优先于下方 R2 段）
 
 基准 `8a1700835c619fc1ad579da12713ece612403b8e`。准备了 D1 读取器、独立验证器、LR1–LR9 / CR1–CR3 受控负例脚本、`D1_FROZEN_CONFIG.json`、CPU 环境与依赖冻结说明（`research/mini_mythos/gate3_d1/`）和合成数据自测（`tests/test_d1_selftest.py`，24 项 OK；固定版本 venv 中同样通过，含 `--mode real` 代码路径）。读取器与验证器互不 import、不共享游标校验/来源映射/参照流函数；区分中间 carry 与 EOF tail；来源片段无空洞/无重叠/完全覆盖断言在两套实现中各有一份并被反向测试。详细记录与 12 条需复审的实现决定见 `F3B_D1_CODE_FREEZE_PREP_20261026.md`。

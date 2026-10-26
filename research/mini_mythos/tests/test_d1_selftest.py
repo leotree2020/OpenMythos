@@ -5,6 +5,7 @@ built, no GPU is used. A pass here says the code behaves as designed on toy inpu
 it is NOT a D1 result. Real-mode tests run only when pyarrow and tokenizers are
 installed (they are not needed for the stdlib self-test path).
 """
+import argparse
 import ast
 import hashlib
 import importlib.util
@@ -20,6 +21,7 @@ from pathlib import Path
 
 D1 = Path(__file__).resolve().parents[1] / "gate3_d1"
 sys.path.insert(0, str(D1))
+import d1_driver  # noqa: E402
 import d1_reader  # noqa: E402
 import d1_selftest_data  # noqa: E402
 import d1_verifier  # noqa: E402
@@ -73,6 +75,8 @@ class Pipeline(unittest.TestCase):
         cls.rc, cls.out = r.returncode, r.stdout + r.stderr
         cls.ev = os.path.join(cls.w, "evidence")
         cls.clean = os.path.join(cls.ev, "clean")
+        cls.ref = d1_verifier.build_ref(argparse.Namespace(config=CFG, manifest=cls.man, source="jsonl:" + cls.src,
+                                                           tokenizer=cls.tok, mode="selftest"))[2]
 
     @classmethod
     def tearDownClass(cls):
@@ -95,7 +99,8 @@ class Pipeline(unittest.TestCase):
         self.assertEqual(dec["read_resume"]["verdict"], "PASS")
         self.assertEqual(dec["negatives_meta"]["verdict"], "PASS")
         self.assertEqual(sorted(dec["negatives_meta"]["items"]), ["CR1", "CR2", "CR3"] + ["LR%d" % i for i in range(1, 10)])
-        self.assertFalse(dec["d1_experiment"])            # selftest is never a D1 experiment
+        self.assertEqual(dec["identity"], "SELFTEST_SYNTHETIC")
+        self.assertFalse(dec["d1_formal_experiment"])     # selftest is never a D1 experiment
 
     def test_cr_results_name_expected_row_and_class(self):
         for cid, cls in (("CR1", "ROW_SKIPPED"), ("CR2", "ROW_DUPLICATED"), ("CR3", "TOKEN_OFFSET_MISMATCH")):
@@ -250,6 +255,167 @@ class Pipeline(unittest.TestCase):
         r = run_py(*self.cr_args("CR1", d + "/o.json", trace=d + "/t.jsonl"))
         self.assertEqual(r.returncode, 1)
 
+    # ---------------- C1 P0: fault-trace integrity, global order, control integrity ----------------
+    def edit_lines(self, src, fn, name):
+        d = self.scratch()
+        lines = lines_of(src)
+        fn(lines)
+        out = os.path.join(d, name)
+        write_text(out, "\n".join(lines) + "\n")
+        return d, out
+
+    def edit_rec(self, lines, idx, fn):
+        rec = json.loads(lines[idx])
+        fn(rec)
+        lines[idx] = d1_reader.canon(rec)
+
+    def cr_trace(self, cid, name="trace.jsonl"):
+        return os.path.join(self.ev, "negatives", cid, name)
+
+    def verify_cr_with(self, cid, trace, d):
+        r = run_py(*self.cr_args(cid, d + "/o.json", trace=trace))
+        res = jread(d + "/o.json") if os.path.exists(d + "/o.json") else None
+        return r.returncode, res
+
+    def failed_checks(self, res):
+        return [c["check"] for c in res["checks"] if c["status"] != "PASS"]
+
+    def test_cr_single_block_hash_tamper_fails(self):
+        d, t = self.edit_lines(self.cr_trace("CR2"), lambda L: self.edit_rec(L, 40, lambda r: r.update(block_hash="0" * 64)), "t.jsonl")
+        rc, res = self.verify_cr_with("CR2", t, d)
+        self.assertEqual(rc, 1)
+        self.assertTrue(any("fault trace integrity" in c for c in self.failed_checks(res)))
+
+    def test_cr_final_chain_hash_tamper_fails(self):
+        d, t = self.edit_lines(self.cr_trace("CR1"), lambda L: self.edit_rec(L, len(L) - 1, lambda r: r.update(chain_hash="1" * 64)), "t.jsonl")
+        self.assertEqual(self.verify_cr_with("CR1", t, d)[0], 1)
+
+    def test_cr_tail_sha256_tamper_fails(self):
+        d, t = self.edit_lines(self.cr_trace("CR3"), lambda L: self.edit_rec(L, len(L) - 1, lambda r: r.update(tail_sha256="2" * 64)), "t.jsonl")
+        rc, res = self.verify_cr_with("CR3", t, d)
+        self.assertEqual(rc, 1)
+        self.assertTrue(any("fault trace integrity" in c for c in self.failed_checks(res)))
+
+    def test_cr_totals_position_and_numbering_tamper_fail(self):
+        for name, fn, last in (("blocks_total", lambda r: r.update(blocks_total=r["blocks_total"] + 1), True),
+                               ("stream_token_pos", lambda r: r.update(stream_token_pos=r["stream_token_pos"] + 1), True),
+                               ("tail_len", lambda r: r.update(tail_len=r["tail_len"] + 1), True),
+                               ("block_index_gap", lambda r: r.update(block_index=r["block_index"] + 1), False)):
+            d, t = self.edit_lines(self.cr_trace("CR1"), lambda L: self.edit_rec(L, len(L) - 1 if last else 30, fn), "t.jsonl")
+            self.assertEqual(self.verify_cr_with("CR1", t, d)[0], 1, name)
+
+    def test_cr_control_trace_tamper_fails(self):
+        for what, fn in (("ids", lambda r: r["ids"].__setitem__(0, r["ids"][0] + 1)),
+                         ("block_hash", lambda r: r.update(block_hash="3" * 64))):
+            d, t = self.edit_lines(self.cr_trace("CR1", "control_trace.jsonl"), lambda L: self.edit_rec(L, 25, fn), "c.jsonl")
+            r = run_py(*self.cr_args("CR1", d + "/o.json"))      # untouched baseline stays PASS
+            self.assertEqual(r.returncode, 0)
+            args = self.cr_args("CR1", d + "/o2.json")
+            args[args.index("--control") + 1] = t
+            r = run_py(*args)
+            self.assertEqual(r.returncode, 1, what)
+            self.assertTrue(any("control trace integrity" in c for c in self.failed_checks(jread(d + "/o2.json"))), what)
+
+    def forge(self, cid, pieces):
+        """Build a self-consistent CR trace (valid hashes, chain, tail, segments) from arbitrary row pieces."""
+        ref = self.ref
+        spec = jread(CFG)["negatives"]["CR"][cid]
+        cur = jread(os.path.join(self.clean, "cursors", spec["cursor"] + ".json"))
+        hdr = json.loads(lines_of(self.cr_trace(cid))[0])
+        e, carry = cur["emitted_blocks"], cur["carry"]
+        c = len(carry)
+        prov, new = [], []
+        for (r, o, n) in pieces:
+            for k in range(n):
+                new.append(ref.rows[r].ids[o + k])
+                prov.append((r, o + k))
+        stream = carry + new
+        nb = len(stream) // 65
+
+        def group(lo, hi):
+            segs = []
+            for (r, off) in prov[lo:hi]:
+                if segs and segs[-1]["ordinal"] == r and segs[-1]["row_offset"] + segs[-1]["count"] == off:
+                    segs[-1]["count"] += 1
+                else:
+                    segs.append({"ordinal": r, "source_row_index": ref.rows[r].phys, "row_offset": off, "count": 1})
+            return segs
+
+        chain = bytes.fromhex(cur["chain_hash"])
+        recs = [hdr]
+        for j in range(nb):
+            ids = stream[65 * j:65 * j + 65]
+            bh = hashlib.sha256(d1_verifier.pack(ids)).digest()
+            chain = hashlib.sha256(chain + bh).digest()
+            recs.append({"type": "block", "block_index": e + j, "block_hash": bh.hex(), "ids": ids,
+                         "segments": group(max(65 * j, c) - c, 65 * j + 65 - c)})
+        tail = stream[65 * nb:]
+        recs.append({"type": "final", "kind": "eof_tail", "tail_ids": tail, "tail_segments": group(max(65 * nb, c) - c, len(stream) - c),
+                     "tail_len": len(tail), "tail_sha256": hashlib.sha256(d1_verifier.pack(tail)).hexdigest(),
+                     "blocks_total": e + nb, "blocks_this_run": nb, "chain_hash": chain.hex(), "stream_token_pos": 65 * e + len(stream)})
+        d = self.scratch()
+        out = os.path.join(d, "forged.jsonl")
+        write_text(out, "".join(d1_reader.canon(x) + "\n" for x in recs))
+        return d, out, cur, spec
+
+    def test_forged_exact_expected_trace_passes(self):
+        for cid in ("CR1", "CR2", "CR3"):
+            spec = jread(CFG)["negatives"]["CR"][cid]
+            cur = jread(os.path.join(self.clean, "cursors", spec["cursor"] + ".json"))
+            pieces = d1_verifier.fault_plan(self.ref, spec["inject"], cur["next_eligible_row"], cur["row_token_offset"])
+            d, t, _, _ = self.forge(cid, pieces)
+            rc, res = self.verify_cr_with(cid, t, d)
+            self.assertEqual(rc, 0, (cid, self.failed_checks(res) if res else None))    # forge helper itself is faithful
+
+    def test_cr_global_source_order_change_fails_even_when_row_classification_passes(self):
+        # CR1 with the skipped row as required, but two later whole rows swapped. Every row is still consumed
+        # exactly once, contiguously, so the per-row classification sees only the skip; the global order check must fail.
+        spec = jread(CFG)["negatives"]["CR"]["CR1"]
+        cur = jread(os.path.join(self.clean, "cursors", "P2.json"))
+        pieces = d1_verifier.fault_plan(self.ref, spec["inject"], cur["next_eligible_row"], cur["row_token_offset"])
+        pieces[5], pieces[6] = pieces[6], pieces[5]
+        d, t, _, _ = self.forge("CR1", pieces)
+        rc, res = self.verify_cr_with("CR1", t, d)
+        self.assertEqual(rc, 1)
+        failed = self.failed_checks(res)
+        self.assertFalse(any(c.startswith("(d) ") for c in failed), failed)     # per-row classification alone would have passed
+        self.assertTrue(any(c.startswith("(d')") for c in failed), failed)
+
+    def test_cr_second_mutation_hidden_from_row_classification_fails(self):
+        # CR3-style shift plus a second, compensating shift elsewhere is also not "the one unique mutation".
+        spec = jread(CFG)["negatives"]["CR"]["CR2"]
+        cur = jread(os.path.join(self.clean, "cursors", "P4.json"))
+        pieces = d1_verifier.fault_plan(self.ref, spec["inject"], cur["next_eligible_row"], cur["row_token_offset"])
+        pieces[7], pieces[8] = pieces[8], pieces[7]
+        d, t, _, _ = self.forge("CR2", pieces)
+        self.assertEqual(self.verify_cr_with("CR2", t, d)[0], 1)
+
+    # ---------------- C1 P0-4: schedule recomputed in verify-clean ----------------
+    def test_verify_clean_recomputes_schedule(self):
+        d = self.scratch()
+        shutil.copytree(self.clean, d + "/c")
+        writable(d)
+        sch = jread(d + "/c/schedule.json")
+        sch["points"]["P3"]["stream_pos"] += 65             # still ascending, still carry 32 -> old checks would not notice
+        write_text(d + "/c/schedule.json", d1_reader.canon(sch))
+        r = run_py(*self.common("verify-clean", d + "/o.json"), "--clean-dir", d + "/c")
+        self.assertEqual(r.returncode, 1)
+        failed = self.failed_checks(jread(d + "/o.json"))
+        self.assertTrue(any(c.startswith("schedule recomputed") for c in failed), failed)
+
+    # ---------------- C1 P1: scope of the output ----------------
+    def test_pipeline_never_outputs_a_full_d1_pass(self):
+        dec = jread(os.path.join(self.ev, "D1_DECISION_all.json"))
+        self.assertTrue(dec["d1_overall"].startswith("NOT_DECLARED"))
+        text = json.dumps(dec)
+        self.assertNotIn("D1 PASS", text)
+        joined = " ".join(dec["not_tested"])
+        for k in ("R6", "R7", "T1-T6", "acquisition"):
+            self.assertIn(k, joined)
+        vc = jread(os.path.join(self.ev, "verify_clean_result.json"))
+        self.assertEqual(sorted(vc["not_tested"].values()), ["NOT TESTED"] * 4)
+        self.assertIn("NOT a D1 verdict", vc["scope"])
+
 
 class Blocked(unittest.TestCase):
     def test_p2_rule_without_candidate_row_is_blocked_schedule(self):
@@ -265,6 +431,64 @@ class Blocked(unittest.TestCase):
             self.assertFalse(os.path.exists(tmp + "/w/evidence/clean/A_trace.jsonl"))   # nothing was read
         finally:
             writable(tmp)
+            shutil.rmtree(tmp, ignore_errors=True)
+
+
+class IdentityTimeoutEnv(unittest.TestCase):
+    def cfg(self, status="FROZEN"):
+        c = jread(CFG)
+        c["status"] = status
+        return c
+
+    def formal(self, **kw):
+        f = {"authorization_ref": "owner-2026-xx", "hub_revision": "b08601e04326c79dfdd32d625aee71d232d685c3",
+             "lfs_oid_parquet": "a" * 64, "tokenizer_fit_manifest_sha256": "b" * 64}
+        f.update(kw)
+        return {"parquet_sha256": "a" * 64, "formal": f}
+
+    def test_identity_labels(self):
+        ident = d1_driver.identity
+        self.assertEqual(ident("selftest", self.cfg(), self.formal()), "SELFTEST_SYNTHETIC")
+        self.assertEqual(ident("real", self.cfg("FROZEN_CANDIDATE__PENDING_CHATGPT_CODE_REVIEW"), self.formal()), "REAL_CODE_PATH_NON_FORMAL")
+        self.assertEqual(ident("real", self.cfg(), {"parquet_sha256": "a" * 64}), "REAL_CODE_PATH_NON_FORMAL")
+        self.assertEqual(ident("real", self.cfg(), dict(self.formal(), synthetic=True)), "REAL_CODE_PATH_NON_FORMAL")
+        self.assertEqual(ident("real", self.cfg(), self.formal(lfs_oid_parquet="c" * 64)), "REAL_CODE_PATH_NON_FORMAL")
+        self.assertEqual(ident("real", self.cfg(), self.formal(authorization_ref=" ")), "REAL_CODE_PATH_NON_FORMAL")
+        self.assertEqual(ident("real", self.cfg(), self.formal()), "FORMAL_D1_CANDIDATE")
+        self.assertNotEqual(jread(CFG)["status"], "FROZEN")      # the shipped config cannot yield a formal run yet
+
+    def test_wallclock_timeout_is_blocked_keeps_evidence_and_never_retries(self):
+        tmp = tempfile.mkdtemp(prefix="d1to_")
+        try:
+            src, tok, man = d1_selftest_data.build(tmp)
+            r = run_py(D1 / "d1_driver.py", "clean", "--workdir", tmp + "/w", "--mode", "selftest", "--config", CFG, "--manifest", man,
+                       "--source", "jsonl:" + src, "--tokenizer", tok, "--timeout-seconds", "0.8")
+            self.assertEqual(r.returncode, 4, r.stdout[-500:] + r.stderr[-500:])
+            dec = jread(tmp + "/w/evidence/D1_DECISION_clean.json")
+            self.assertEqual(dec["timeout"]["verdict"], "BLOCKED(timeout)")
+            self.assertIn("no automatic retry", dec["timeout"]["policy"])
+            self.assertIn("RUN_META.json", dec["evidence_files_at_timeout"])      # evidence already on disk is kept
+            self.assertTrue(os.path.exists(tmp + "/w/evidence/RUN_META.json"))
+            cmds = [json.dumps(x["cmd"]) for x in dec["steps"]]
+            self.assertEqual(len(cmds), len(set(cmds)))                          # no command was run twice
+            self.assertIn(dec["steps"][-1]["rc"], ("TIMEOUT_KILLED", "NOT_STARTED_DEADLINE_PASSED"))
+            self.assertNotIn("read_resume", dec)
+        finally:
+            writable(tmp)
+            shutil.rmtree(tmp, ignore_errors=True)
+
+    def test_real_mode_requires_exact_python_patch_version(self):
+        tmp = tempfile.mkdtemp(prefix="d1env_")
+        try:
+            c = jread(CFG)
+            c["environment"]["python_full_version"] = "0.0.0"
+            write_text(tmp + "/c.json", json.dumps(c))
+            r = run_py(D1 / "d1_env_manifest.py", "--mode", "real", "--config", tmp + "/c.json", "--out", tmp + "/m1.json")
+            self.assertEqual(r.returncode, 4)
+            self.assertIn("python", jread(tmp + "/m1.json")["problems"][0])
+            r = run_py(D1 / "d1_env_manifest.py", "--mode", "selftest", "--config", tmp + "/c.json", "--out", tmp + "/m2.json")
+            self.assertEqual(r.returncode, 0)             # selftest only needs an allowed minor version
+        finally:
             shutil.rmtree(tmp, ignore_errors=True)
 
 
@@ -366,8 +590,18 @@ class Static(unittest.TestCase):
         self.assertEqual(c["schedule"]["p2"]["min_row_len"], 3)
 
 
-@unittest.skipUnless(importlib.util.find_spec("pyarrow") and importlib.util.find_spec("tokenizers"),
-                     "pyarrow/tokenizers not installed")
+def real_mode_pins_match():
+    try:
+        import importlib.metadata as md
+        env = jread(CFG)["environment"]
+        return ("%d.%d.%d" % sys.version_info[:3] == env["python_full_version"]
+                and md.version("tokenizers") == env["pins"]["tokenizers"] and md.version("pyarrow") == env["pins"]["pyarrow"])
+    except Exception:  # noqa: BLE001
+        return False
+
+
+@unittest.skipUnless(importlib.util.find_spec("pyarrow") and importlib.util.find_spec("tokenizers") and real_mode_pins_match(),
+                     "pyarrow/tokenizers/python do not match the frozen pins (real mode is BLOCKED by design)")
 class RealModeCodePath(unittest.TestCase):
     """Exercises the parquet + native `tokenizers` code path with a HAND-BUILT, UNTRAINED
     byte-level tokenizer (no fitting) on the synthetic rows. Code self-test only."""
@@ -402,6 +636,8 @@ class RealModeCodePath(unittest.TestCase):
             dec = jread(tmp + "/w/evidence/D1_DECISION_all.json")
             self.assertEqual(dec["read_resume"]["verdict"], "PASS")
             self.assertEqual(dec["negatives_meta"]["verdict"], "PASS")
+            self.assertEqual(dec["identity"], "REAL_CODE_PATH_NON_FORMAL")   # synthetic Parquet + hand-built BPE
+            self.assertFalse(dec["d1_formal_experiment"])
         finally:
             writable(tmp)
             shutil.rmtree(tmp, ignore_errors=True)
