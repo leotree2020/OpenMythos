@@ -241,3 +241,7 @@ Claude Code 接替 Grok 担任主要研发工程师（项目负责人 2026-10-26
 ## D1 G1/G2 CPU 实验（2026-10-27）
 
 分支 `d1-r3-g1g2-cpu-probe-20261027`，基准 `39c55ca2cfa6d0587807be2af524d67479e76251`。新增 `research/mini_mythos/r3_cpu_probes/g1g2/`（探针 `g1g2_probe.py`、测试 `test_g1g2_probe.py`、`results/`）、`docs/F3B_D1_G1G2_CPU_001_REPORT_20261027.md`、`docs/F3B_D1_G1G2_CPU_001_CHECKPOINT_20261027.md`。结论：工具 PASS，R3 存活判定 G1 / G2 规则 FAIL；冻结 R3 未改。下一条唯一指令：等待 ChatGPT 对 G1/G2 CPU 实验结果进行独立审核。
+
+## D1 G1/G2 审核后处理（2026-10-27）
+
+分支 `d1-r3-a-revision-proposal-20261027`，基准 `af7b39abd17c64df1e08165cd2904a4a68cb1bed`。新增 `docs/F3B_D1_R3_A_PREDICATE_REVISION_PROPOSAL_DRAFT_20261027.md`、`docs/F3B_D1_R3_A_PREDICATE_CPU_TEST_PLAN_DRAFT_20261027.md`、`docs/F3B_D1_G1G2_REVIEW_001_CHECKPOINT_20261027.md`。仅文档草稿；冻结 R3 未改；G1/G2 FAIL 证据保留。下一条唯一指令：等待项目负责人批准修订方向及后续最小 CPU 实验。

@@ -1,5 +1,11 @@
 # Mini-Mythos / OpenMythos — 全项目研发进度（2026-10-25 更新版）
 
+## D1 G1/G2 审核后处理检查点（2026-10-27；本文件最新阶段进度，优先于下方 G1/G2 CPU 实验检查点）
+
+F3B-D1-G1G2-REVIEW-001：保留 G1 = FAIL、G2 = FAIL 的原始证据；起草 R3 存活目标判定 A 的修订提案（方案 A：先 `waitpid(pid, WNOHANG)` 回收并保存退出状态再求值；方案 B：`waitid(P_PID, WNOWAIT)` 非消耗式观察、回收推迟到 T5；共同部分：会话号 + 指纹、`/proc` 状态、子收割者前提、T5 去掉 `waitpid(-1)`、SIGKILL 前复核）与最小受控 CPU 测试计划（基线 / A / B 三臂，T-01…T-11）。提案与计划均为草稿，未应用、未授权执行；冻结 R3 与决策记录未改；G3～G6 NOT TESTED。
+
+**状态：**R3 SPEC FROZEN 不变（实现 NOT TESTED，真实 D1 NOT AUTHORIZED）；ChatGPT 对提案 PENDING；Grok DEFERRED。下一条唯一指令：等待项目负责人批准修订方向及后续最小 CPU 实验，再进入实施。
+
 ## D1 G1/G2 CPU 实验检查点（2026-10-27；本文件最新阶段进度，优先于下方 R3 规范冻结检查点）
 
 F3B-D1-G1G2-CPU-001：在 Linux microVM（内核 6.18.44，Python 3.13.16）上用真实子进程（6 个用例 × 5 次重复）验证 R3 §11.1(d) 的存活目标判定 A，对照 `waitid(WNOWAIT)` 与 `/proc` 两个独立观察手段。结果：工具 PASS；**G1 规则 FAIL**（G1-02：已退出未回收时 A 在 2/3 读法下为真）；**G2 规则 FAIL**（G2-01：`killpg(pgid,0)` 对僵尸组仍成功；G2-02：宽限点错误建议 SIGKILL）；G1-01、G1-03、G2-03 PASS。冻结 R3、决策记录、v1/R1/R2、冻结代码未改；残留进程为空。修订建议（先 `waitpid(WNOHANG)` 再求值，或用非消耗式 `waitid`、忽略僵尸）仅作建议，未应用。
