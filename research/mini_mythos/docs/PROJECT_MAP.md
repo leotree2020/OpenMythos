@@ -221,3 +221,7 @@ Claude Code 接替 Grok 担任主要研发工程师（项目负责人 2026-10-26
 ## D1 真实执行前规范 R3 最终一致性修复（2026-10-26）
 
 修订基准 `2ad41913ed08598f1aecfad2575a4f3a6bf51c90`，分支 `d1-pre-real-spec-r3-20261026`。`docs/F3B_D1_PRE_REAL_SPEC_R3_DRAFT.md` 已按 F3B-D1-SPEC-R3-FINAL-005 原地修复（F1a / F1b / F1c、后验模式例外、选项 Y 失败路径、新增第 18 节），检查点追加到 `docs/F3B_D1_PRE_REAL_SPEC_R3_CHECKPOINT_20261026.md`。仅文档。**状态：R3 DRAFT / PENDING OWNER DECISION**；R3-D01…D11 为待项目负责人批准的决策记录。冻结文件与 v1/R1/R2 未改；真实 D1 NOT TESTED / NOT AUTHORIZED。下一条唯一指令：等待 ChatGPT 对最终一致性修复（FINAL-005）后的 R3 修订稿进行独立审核，再由项目负责人决定是否批准 R3。
+
+## D1 R3 负责人决策与已批准候选规范（2026-10-26）
+
+分支 `d1-r3-approved-candidate-20261026`，源基准 `4c1d29d9e01c6df2d3b5e796181f728cc3cb88ed`。新增 `docs/F3B_D1_R3_OWNER_DECISION_20261026.md`（R3-D01…D11，`OWNER APPROVED — 2026-10-26`，D07 方案 X）、`docs/F3B_D1_PRE_REAL_SPEC_R3_APPROVED_CANDIDATE.md`（已批准候选规范）、`docs/F3B_D1_R3_OWNER_DECISION_CHECKPOINT_20261026.md`（SHA-256 登记）。原草案 `F3B_D1_PRE_REAL_SPEC_R3_DRAFT.md` 与历史检查点原样保留。**状态：OWNER APPROVED CANDIDATE / PENDING FINAL DOCUMENT VERIFICATION；不是 R3 FROZEN、不是运行授权。**下一条唯一指令：等待 ChatGPT 独立核对正式 R3 候选规范和批准记录。

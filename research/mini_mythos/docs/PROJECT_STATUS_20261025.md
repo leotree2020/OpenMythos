@@ -1,5 +1,11 @@
 # Mini-Mythos / OpenMythos — 全项目研发进度（2026-10-25 更新版）
 
+## D1 R3 负责人决策与已批准候选规范检查点（2026-10-26；本文件最新阶段进度，优先于下方 R3 最终一致性修复检查点）
+
+F3B-D1-R3-OWNER-DECISION-001：项目负责人于 2026-10-26（Asia/Tokyo）批准 R3-D01…D11 按推荐方案执行，D07 选方案 X（30 分钟 `open`→`close`；K3 / K4 在 `close` 后远端固定；初始验收值 τ=5 s、`G_term`=10 s、`G_kill`=5 s、`W`=600 s，调整须有审批与变更记录）。新增负责人决策记录、已批准候选规范（执行条款只含方案 X，选项 B / Y / Z 仅作历史说明）和独立检查点（登记两份主文件 SHA-256、源基准 `4c1d29d9e01c6df2d3b5e796181f728cc3cb88ed`）。分支 `d1-r3-approved-candidate-20261026`；原 R3 草案及历史失败 / 修订记录原样保留。依赖图重新核算：17 节点、`ref` 31 / `rec` 9 / `sub` 3，共 43 边，无环。
+
+**状态：`OWNER APPROVED CANDIDATE / PENDING FINAL DOCUMENT VERIFICATION`**；不是 R3 FROZEN、不是 REAL D1 PASS、不是运行授权。冻结文件与 v1/R1/R2 未改。真实 D1 / 数据下载 / 正式 Tokenizer 拟合 / 新脚本开发 / 第一个合成 CPU 实验各需单独授权；新机制全部 NOT TESTED；D2/D3 NOT TESTED；Grok 交叉复审 DEFERRED / PENDING。下一条唯一指令：等待 ChatGPT 独立核对正式 R3 候选规范和批准记录；通过后才能正式冻结 R3。
+
 ## D1 真实执行前规范 R3 最终一致性修复检查点（2026-10-26；本文件最新阶段进度，优先于下方 R3 第四轮收口检查点）
 
 修订基准 `2ad41913ed08598f1aecfad2575a4f3a6bf51c90`；分支 `d1-pre-real-spec-r3-20261026`。F3B-D1-SPEC-R3-FINAL-005：仅文档，保留第四轮已通过的设计，修三处局部缺口。FINAL-01：账本里 `terminate_signal`、`reap_done` 只在 `TERMINATING` 合法；F1 拆为 F1a（监督器收到信号）、F1b（仅阶段进程被外部信号杀死、无存活后代，直接 `stage_end{failed}`）、F1c（发现需主动终止的后代才进入 `TERMINATING`）。FINAL-02：`--postmortem` 不向原账本与事件日志追加任何行；`postmortem.json` 是独立叶子证据；后验 A8 独立成文件，只引用现存工件、缺失节点标 `absent`，不伪造 `manifest_written`(A8)，该例外同时写入注册表与验收规范；缺 `close` / `run_aborted` / K3 / K4 时始终 `NOT_ACCEPTED`，不低于 `BLOCKED(budget_unprovable)`。FINAL-03：F1–F3 序列采用选项 X；选项 Y 的失败路径为 `stage_end` → `pin_phase` → K3 → K4' → `close`，不得复用「先 `close` 后 pin」。依赖图重新计算：17 节点、`ref` 31 / `rec` 9 / `sub` 3，共 43 边，无环；边列表未改。
