@@ -187,3 +187,9 @@ Claude Code 接替 Grok 担任主要研发工程师（项目负责人 2026-10-26
 项目负责人授权 `APPROVED — Final Configuration Freeze Only`。冻结前 Git SHA `ebb45680f7391c3fac975b7cdbf29d1a7a94ed67`，冻结分支 `d1-final-config-freeze-20261026`。`gate3_d1/D1_FROZEN_CONFIG.json` 的 `status` 由 `FROZEN_CANDIDATE__PENDING_ENV_ADAPTATION_REVIEW` 改为 **`FROZEN`**（另同步 `python_full_version_status` 说明文字）；结构化比较确认实验参数、数据规则、负例规则、30 分钟限制、Python 3.13.8 与三项依赖固定版本、`authorization` 段均未变。`D1_CODE_SHA256SUMS` 重新生成，10/10 OK；读取器/验证器/驱动器/测试源码/历史证据无 diff。**已知限制：** `tests/test_d1_selftest.py::test_identity_labels` 中有一条冻结前哨兵断言（`status != "FROZEN"`），冻结后必然失败；因授权禁止改测试而未改，等待决定（见 `docs/F3B_D1_FINAL_CONFIG_FREEZE_20261026.md` 第 6 节）。真实 D1 `NOT TESTED / NOT AUTHORIZED`；R6 剩余部分、R7、T1–T6、数据获取 `NOT TESTED`；D2/D3 `NOT TESTED`。
 
 **状态：`D1 FINAL CONFIG FROZEN / PENDING CHATGPT INDEPENDENT ACCEPTANCE`**。下一条唯一指令：等待 ChatGPT 独立验收最终冻结提交。
+
+## D1 冻结后哨兵测试修正（2026-10-26）
+
+冻结提交 `9e257788c0510d5e263d5256d4bd3cebebdb8057` 保持不变；修复分支 `d1-final-freeze-sentinel-fix-20261026`。ChatGPT 裁决：批准限定范围的测试与状态文档修正，不批准算法变更。`tests/test_d1_selftest.py::test_identity_labels` 的冻结前哨兵断言 `status != "FROZEN"` 改为 `== "FROZEN"`（一行）；`D1_ENV_FREEZE.md` 的过期状态描述与当前事实同步；`D1_CODE_SHA256SUMS` 只有这两个文件的行变化，配置哈希 `0d35dc21…` 不变，10/10 OK。沙箱（Python 3.13.16）：精确测试 PASS；56 项 `OK (skipped=1)`（real-mode 版本门禁，设计如此）。**Codespaces（3.13.8）最终回归尚未执行：PENDING CODESPACES VALIDATION，不宣布 56/56 PASS。** 真实 D1 NOT TESTED / NOT AUTHORIZED；D2/D3 NOT TESTED。详见 `docs/F3B_D1_FREEZE_SENTINEL_FIX_20261026.md`。
+
+**下一条唯一指令**：等待项目负责人回传 Codespaces CPU 合成回归结果，交 ChatGPT 与 Grok 交叉审核最终最小差异。

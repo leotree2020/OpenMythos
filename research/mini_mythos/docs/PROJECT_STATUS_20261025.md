@@ -1,5 +1,11 @@
 # Mini-Mythos / OpenMythos — 全项目研发进度（2026-10-25 更新版）
 
+## D1 冻结后哨兵测试修正检查点（2026-10-26；本文件最新阶段进度，优先于下方最终配置冻结段）
+
+冻结提交 `9e257788c0510d5e263d5256d4bd3cebebdb8057` 与其原始失败日志保留。根因：`test_identity_labels` 的冻结前哨兵断言 `status != "FROZEN"` 在配置冻结后必然失败，不是 Reader/Verifier/Driver 缺陷。修复（分支 `d1-final-freeze-sentinel-fix-20261026`）：测试一行改为 `== "FROZEN"`；`D1_ENV_FREEZE.md` 状态描述与事实同步（配置 FROZEN、原生证据 PASS、冻结已授权、真实 D1 仍 NOT TESTED / NOT AUTHORIZED）；清单只有这两项变化，10/10 OK，配置哈希不变。沙箱 Python 3.13.16：精确测试 PASS；完整 56 项 `OK (skipped=1)`（real-mode 版本门禁）。**Codespaces Python 3.13.8 回归：NOT TESTED（PENDING CODESPACES VALIDATION）**，期望 56 PASS / 0 SKIP / 0 FAIL / 0 ERROR，需项目负责人回传。
+
+**状态：`SENTINEL FIX CANDIDATE / FINAL FREEZE REGRESSION ACCEPTANCE = PENDING CODESPACES VALIDATION`**。真实 D1 NOT TESTED / NOT AUTHORIZED；D2/D3 NOT TESTED。**下一条唯一指令**：等待 Codespaces 回归结果并交叉审核最终最小差异。
+
 ## D1 最终配置冻结检查点（2026-10-26；本文件最新阶段进度，优先于下方原生环境证据验收段）
 
 授权 `APPROVED — Final Configuration Freeze Only`。冻结前 SHA `ebb45680f7391c3fac975b7cdbf29d1a7a94ed67`；冻结分支 `d1-final-config-freeze-20261026`。配置 `status` = `FROZEN`（只改该字段与一段环境状态说明文字，结构化比较其余全部相同）；`D1_CODE_SHA256SUMS` 10/10 OK（仅配置一行变化）；读取器/验证器/驱动器/测试源码/Codespaces 证据与日志/原始提案无 diff。本轮在 Claude 沙箱（Python 3.13.16，**不是** Codespaces）做了一次影响检查：56 项中 54 PASS、1 按设计跳过（real-mode，补丁版本不符）、**1 FAIL**：`test_identity_labels` 的冻结前哨兵断言 `status != "FROZEN"`。未改测试（授权禁止），待项目负责人决定（改测试会改变其 SHA-256，需要重新生成清单并重新验收）。

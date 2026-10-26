@@ -746,7 +746,7 @@ class IdentityTimeoutEnv(unittest.TestCase):
         self.assertEqual(ident("real", self.cfg(), self.formal(lfs_oid_parquet="c" * 64)), "REAL_CODE_PATH_NON_FORMAL")
         self.assertEqual(ident("real", self.cfg(), self.formal(authorization_ref=" ")), "REAL_CODE_PATH_NON_FORMAL")
         self.assertEqual(ident("real", self.cfg(), self.formal()), "FORMAL_D1_CANDIDATE")
-        self.assertNotEqual(jread(CFG)["status"], "FROZEN")      # the shipped config cannot yield a formal run yet
+        self.assertEqual(jread(CFG)["status"], "FROZEN")  # final config freeze is approved; formal D1 execution is not
 
     def test_wallclock_timeout_is_blocked_keeps_evidence_and_never_retries(self):
         tmp = tempfile.mkdtemp(prefix="d1to_")
