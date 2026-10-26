@@ -1,5 +1,11 @@
 # Mini-Mythos / OpenMythos — 全项目研发进度（2026-10-25 更新版）
 
+## D1 R3 最终勘误检查点（2026-10-26；本文件最新阶段进度，优先于下方 R3 负责人决策与已批准候选规范检查点）
+
+F3B-D1-R3-FINAL-ERRATA-001：仅文档，两处勘误，不改变任何已批准决策或参数。ERRATA-01：候选规范 §11.1(d) 删除「`terminate_begin` 必然 `BLOCKED(budget_exceeded)`」的旧断言，新增终止原因与预算结果对照（`deadline` / `interrupt` / `supervisor_abort` / 回收未确认）；ERRATA-02：`reap_done` 增加必需字段 `kill_overhead_ns`，`t_kill_bt_ns` 未发 SIGKILL 时为 JSON `null`，并给出验收核对与 FAIL / BLOCKED 规则及伪造 SIGKILL 时间的判定。决策记录与原草案字节不变；17 节点、`ref` 31 / `rec` 9 / `sub` 3 共 43 边，无环；冻结清单 10/10。勘误前基准 `21fb57331866b6b0b1db7b24b5e416a68f20f84c`。
+
+**状态：`R3 APPROVED CANDIDATE / ERRATA SELF-CHECK PASS / PENDING CHATGPT FINAL VERIFICATION`**；不是 R3 FROZEN、不是 REAL D1 PASS、不是运行授权。新机制全部 NOT TESTED；真实 D1 / 数据下载 / 正式 Tokenizer 拟合 / 新脚本开发 / 第一个合成 CPU 实验各需单独授权；Grok 交叉复审 DEFERRED / PENDING。下一条唯一指令：等待 ChatGPT 复核这两处勘误，通过后进入 R3 规范正式冻结。
+
 ## D1 R3 负责人决策与已批准候选规范检查点（2026-10-26；本文件最新阶段进度，优先于下方 R3 最终一致性修复检查点）
 
 F3B-D1-R3-OWNER-DECISION-001：项目负责人于 2026-10-26（Asia/Tokyo）批准 R3-D01…D11 按推荐方案执行，D07 选方案 X（30 分钟 `open`→`close`；K3 / K4 在 `close` 后远端固定；初始验收值 τ=5 s、`G_term`=10 s、`G_kill`=5 s、`W`=600 s，调整须有审批与变更记录）。新增负责人决策记录、已批准候选规范（执行条款只含方案 X，选项 B / Y / Z 仅作历史说明）和独立检查点（登记两份主文件 SHA-256、源基准 `4c1d29d9e01c6df2d3b5e796181f728cc3cb88ed`）。分支 `d1-r3-approved-candidate-20261026`；原 R3 草案及历史失败 / 修订记录原样保留。依赖图重新核算：17 节点、`ref` 31 / `rec` 9 / `sub` 3，共 43 边，无环。

@@ -225,3 +225,7 @@ Claude Code 接替 Grok 担任主要研发工程师（项目负责人 2026-10-26
 ## D1 R3 负责人决策与已批准候选规范（2026-10-26）
 
 分支 `d1-r3-approved-candidate-20261026`，源基准 `4c1d29d9e01c6df2d3b5e796181f728cc3cb88ed`。新增 `docs/F3B_D1_R3_OWNER_DECISION_20261026.md`（R3-D01…D11，`OWNER APPROVED — 2026-10-26`，D07 方案 X）、`docs/F3B_D1_PRE_REAL_SPEC_R3_APPROVED_CANDIDATE.md`（已批准候选规范）、`docs/F3B_D1_R3_OWNER_DECISION_CHECKPOINT_20261026.md`（SHA-256 登记）。原草案 `F3B_D1_PRE_REAL_SPEC_R3_DRAFT.md` 与历史检查点原样保留。**状态：OWNER APPROVED CANDIDATE / PENDING FINAL DOCUMENT VERIFICATION；不是 R3 FROZEN、不是运行授权。**下一条唯一指令：等待 ChatGPT 独立核对正式 R3 候选规范和批准记录。
+
+## D1 R3 最终勘误（2026-10-26）
+
+分支 `d1-r3-approved-candidate-20261026`。`docs/F3B_D1_PRE_REAL_SPEC_R3_APPROVED_CANDIDATE.md` 按 F3B-D1-R3-FINAL-ERRATA-001 做了两处文档勘误（终止原因与预算结果对照；`reap_done` 终止时间字段 Schema）；勘误后 SHA-256 登记在 `docs/F3B_D1_R3_FINAL_ERRATA_CHECKPOINT_20261026.md`。负责人决策记录与原草案字节不变。**状态：R3 APPROVED CANDIDATE / ERRATA SELF-CHECK PASS / PENDING CHATGPT FINAL VERIFICATION；不是 R3 FROZEN、不是运行授权。**下一条唯一指令：等待 ChatGPT 复核这两处勘误。
