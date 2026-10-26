@@ -1,5 +1,11 @@
 # Mini-Mythos / OpenMythos — 全项目研发进度（2026-10-25 更新版）
 
+## D1 G1/G2 CPU 实验检查点（2026-10-27；本文件最新阶段进度，优先于下方 R3 规范冻结检查点）
+
+F3B-D1-G1G2-CPU-001：在 Linux microVM（内核 6.18.44，Python 3.13.16）上用真实子进程（6 个用例 × 5 次重复）验证 R3 §11.1(d) 的存活目标判定 A，对照 `waitid(WNOWAIT)` 与 `/proc` 两个独立观察手段。结果：工具 PASS；**G1 规则 FAIL**（G1-02：已退出未回收时 A 在 2/3 读法下为真）；**G2 规则 FAIL**（G2-01：`killpg(pgid,0)` 对僵尸组仍成功；G2-02：宽限点错误建议 SIGKILL）；G1-01、G1-03、G2-03 PASS。冻结 R3、决策记录、v1/R1/R2、冻结代码未改；残留进程为空。修订建议（先 `waitpid(WNOHANG)` 再求值，或用非消耗式 `waitid`、忽略僵尸）仅作建议，未应用。
+
+**状态：**G3～G6 NOT TESTED、未启动；R3 SPEC FROZEN 状态不变，实现 NOT TESTED，真实 D1 NOT AUTHORIZED；Grok DEFERRED。下一条唯一指令：等待 ChatGPT 对 G1/G2 CPU 实验结果进行独立审核。
+
 ## D1 R3 规范冻结检查点（2026-10-26；本文件最新阶段进度，优先于下方 R3 边界勘误检查点）
 
 F3B-D1-R3-SPEC-FREEZE-001：ChatGPT 独立审核 `R3 DOCUMENT ACCEPTANCE PASS / READY FOR SPEC FREEZE` 后，冻结 R3 规范（SHA-256 `66a65614…42c5`）与负责人决策记录（SHA-256 `6209602e…6319`）的字节版本，新增冻结记录与检查点；冻结分支 `d1-r3-spec-freeze-20261026`，Git 基准 `79273d127548e2462026c2ae000dc2499798f5bd`。R3-D01…D11 已批准；D07 唯一方案 X（τ=5 s、`G_term`=10 s、`G_kill`=5 s、`W`=600 s）；17 节点、43 边、无环；冻结清单 10/10；v1/R1/R2 不变。登记 6 项后续 CPU 测试门禁（`waitpid` 与存活目标 A、已退出未回收不得误升级、SIGTERM 提前退出与回收慢、ESRCH/EPERM 记录、进程生命周期、UNPROVABLE 与 FAIL 并存优先级），均 NOT TESTED。

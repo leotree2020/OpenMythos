@@ -237,3 +237,7 @@ Claude Code 接替 Grok 担任主要研发工程师（项目负责人 2026-10-26
 ## D1 R3 规范冻结（2026-10-26）
 
 分支 `d1-r3-spec-freeze-20261026`，Git 基准 `79273d127548e2462026c2ae000dc2499798f5bd`。新增 `docs/F3B_D1_R3_SPEC_FREEZE_RECORD_20261026.md` 与 `docs/F3B_D1_R3_SPEC_FREEZE_CHECKPOINT_20261026.md`；冻结对象为 `docs/F3B_D1_PRE_REAL_SPEC_R3_APPROVED_CANDIDATE.md`（SHA-256 `66a656145fc203c71b233ac872eb2eb4c24476717f95f57c1e67a5c112e242c5`）与 `docs/F3B_D1_R3_OWNER_DECISION_20261026.md`（SHA-256 `6209602e7d51b1ae2774bf13282d962c28132c18757c25b70a589b97eb926319`），不得再编辑。**正式状态：R3 SPEC FROZEN / IMPLEMENTATION NOT TESTED / REAL D1 NOT AUTHORIZED。**下一条唯一指令：等待单独授权后，启动第一个合成数据 CPU 正确性实验。
+
+## D1 G1/G2 CPU 实验（2026-10-27）
+
+分支 `d1-r3-g1g2-cpu-probe-20261027`，基准 `39c55ca2cfa6d0587807be2af524d67479e76251`。新增 `research/mini_mythos/r3_cpu_probes/g1g2/`（探针 `g1g2_probe.py`、测试 `test_g1g2_probe.py`、`results/`）、`docs/F3B_D1_G1G2_CPU_001_REPORT_20261027.md`、`docs/F3B_D1_G1G2_CPU_001_CHECKPOINT_20261027.md`。结论：工具 PASS，R3 存活判定 G1 / G2 规则 FAIL；冻结 R3 未改。下一条唯一指令：等待 ChatGPT 对 G1/G2 CPU 实验结果进行独立审核。
