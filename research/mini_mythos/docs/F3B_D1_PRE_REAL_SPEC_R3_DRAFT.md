@@ -1,10 +1,11 @@
 # F3-B / D1 — 真实 D1 执行前规范 R3（草案）
 
-**状态：`R3 DRAFT / PENDING OWNER DECISION`（修订 3，响应 F3B-D1-SPEC-R3-REVIEW-003；此前为修订 2）。不是 FROZEN，不是 PASS，不是任何授权。**
+**状态：`R3 DRAFT / PENDING OWNER DECISION`（修订 4 收口，响应 F3B-D1-SPEC-R3-CLOSURE-004；此前为修订 3、修订 2）。不是 FROZEN，不是 PASS，不是任何授权。**
 
 任务：F3B-D1-SPEC-R3-001（规范冲突消解）→ 修订 2：F3B-D1-SPEC-R3-REVIEW-002（证据可信性与执行预算）。日期：2026-10-26。起草者：Claude Code。
 修订 2 基准：`94601916bc1fd0faa33b9f819b3a0d8cc7d61dc5`（首版草案所在提交，保留在 Git 历史中，未被覆盖）。
 修订 3 基准：`eeea55269df485d3e6305a82a3c478ef141a2788`（修订 2，已被 ChatGPT Work 独立审核判为 FAIL；本轮是对其不一致与执行语义缺口的最小文档纠正，见第 14 节）。
+修订 4 基准：`ca40fb74d8fea2c17a1a5116ba8939b17ce2e847`（修订 3；ChatGPT 第三轮独立审核确认图结构与 Git 范围无误，但指出四处收口缺口：R7.7 正常路径语义、异常终止收尾、预算测试 (g) 的状态语义、R6.6 进入独立验收；见第 16 节）。
 基准：`97d0faf2982f4122941d2299a23cab6ab2ba04a3`，分支 `d1-pre-real-spec-r3-20261026`（从 `d1-final-freeze-sentinel-fix-20261026` 新建）。
 输入文档：v1（`F3B_D1_FROZEN_EXECUTION_PROPOSAL.md`，SHA-256 `a55b2cb7…ba9e`）、R1（`…_R1.md`，`f92c4e79…1d7a`）、R2（`…_R2.md`，`1d4c3629…05d9`）与 `F3B_D1_FINAL_REGRESSION_CLOSEOUT_20261026.md` 本次已完整读取；冻结配置与 `D1_ENV_FREEZE.md` 读取并核对了与本草案相关的段落。**PRE-REAL-AUDIT-001 报告不在仓库里**，只存在于上一次会话的回复中；本文第 1 节的冲突表以该回复为线索，但**每一条都重新对照了原文**，引用以原文为准。
 
@@ -76,14 +77,14 @@ S4 与 S5 的先后顺序不影响任何闸门（Driver 只需要 train 与 Toke
 
 ### 2.4 事件注册表（唯一权威；修订 3）`【PROPOSED / NOT APPROVED】`
 
-本节是事件名、阶段、必填字段、顺序约束与异常状态的**唯一**定义。其他章节（S0–S6、K0–K4、R6/R7/T1–T7、11.1–11.2）只能引用这里登记的事件，不得另造事件名，也不得给同一事件名另一含义。「进入前缀」指该行落在哪一个被外部固定的前缀内（LP1 = 第 0…k1 行，LP2 = 第 0…k2 行，LP3 = 第 0…k3 行；`—` 表示不在任何被固定的前缀内，只由 A8 与最终证据提交覆盖）。
+本节是事件名、阶段、必填字段、顺序约束与异常状态的**唯一**定义。其他章节（S0–S6、K0–K4、R6/R7/T1–T7、11.1–11.2）只能引用这里登记的事件，不得另造事件名，也不得给同一事件名另一含义。「进入前缀」指该行落在哪一个被外部固定的前缀内（LP1 = 第 0…k1 行，LP2 = 第 0…k2 行，LP3 = 第 0…k3 行，成功路径的 `k3` 是 `read_phase_closed`，失败路径的 `k3` 是 `run_aborted`（11.9）；`—` 表示不在任何被固定的前缀内，只由 A8 与最终证据提交覆盖）。
 
 **(a) 事件日志 `event_log.jsonl`**
 
 | 事件 | 阶段 | 专有必填字段 | 重复 | 前置（必须已出现） | 紧随 / 后置约束 | 进入前缀 | 异常状态 |
 |---|---|---|---|---|---|---|---|
 | `run_start` | S0 | `run_id`、`spec_ref`、`config_digest` | 否（只能是第 0 行） | — | 之后是 `pin_pushed`(K0) | LP1 | 缺失或不在第 0 行 → FAIL `EVENT_LOG_BROKEN` |
-| `pin_pushed` | S0（K0）、S3（K1）、S4（K2）、W（K3、K4） | `pin`、`pin_digest`、`commit`、`branch`、`remote` | 每个 `pin` 一次 | K0：`run_start`，且账本 `open` 已写；K1：上一行是 `tokenizer_hash_logged`；K2：上一行是 `heldout_audit_done`；K3：上一行是 `read_phase_closed`；K4：账本 `close` 已写（选项 Y 见 11.1） | 之后是 `pin_remote_verified` | K0→LP1；K1→LP2；K2→LP3；K3、K4→`—` | 推送失败 → BLOCKED `PIN_PUSH_FAILED` |
+| `pin_pushed` | S0（K0）、S3（K1）、S4（K2）、W（K3、K4） | `pin`、`pin_digest`、`commit`、`branch`、`remote` | 每个 `pin` 一次 | K0：`run_start`，且账本 `open` 已写；K1：上一行是 `tokenizer_hash_logged`；K2：上一行是 `heldout_audit_done`；K3：上一行是 `read_phase_closed`（成功路径）**或** `run_aborted`（失败路径，11.9）；K4：账本 `close` 已写（选项 Y 见 11.1）。**某个 `pin` 的终点事件不存在，就不产生该 `pin`**（例如 S4 中断时没有 K2），缺失记入 `wrapup_end.pins_missing` | 之后是 `pin_remote_verified` | K0→LP1；K1→LP2；K2→LP3；K3、K4→`—` | 推送失败 → BLOCKED `PIN_PUSH_FAILED`（在失败路径上只记入缺失证据，不改变已有的 BLOCKED / FAIL 结论） |
 | `pin_remote_verified` | 同 `pin_pushed`；另在 S4、S5 的门禁前复验 | `pin`、`result`（PASS/FAIL/BLOCKED）、`remote_tip`、`commit`、`reason` | 是（同一 `pin` 的**最后一次**决定结果） | 对应的 `pin_pushed` | K0 的 PASS 是 `preflight_done` 的前置；K1 的 PASS 是 `gate_check`(G_S4) 的前置；K2 的 PASS 是 `manifest_written`(A5) 的前置 | 同该 `pin` 的 `pin_pushed` | FAIL / BLOCKED 见 11.2 的 RV 规则 |
 | `preflight_done` | S0 | `checks`（配置、冻结清单 10/10、仓库 clean、`mode=real`、新运行目录、空缓存目录、账本 `open` 已写）、`result` | 否 | `pin_remote_verified`(K0)=PASS | 之后才能有任何 S1 事件 | LP1 | 任一检查不过 → BLOCKED `PREFLIGHT_FAILED` |
 | `meta_query` | S1（S4 可对 validation/test 再做 L0） | `op`、`status` | 是 | `preflight_done` | S1 结束前须有 `manifest_written`(A1) | 按位置 | Hub 不可达 → BLOCKED；修订不符按 v1 §3.2 原规则（本草案不改） |
@@ -94,22 +95,57 @@ S4 与 S5 的先后顺序不影响任何闸门（Driver 只需要 train 与 Toke
 | `online_switch` | S4 | `scope`（`hf_client`） | 否 | `gate_check`(G_S4)=PASS | 之后才能有 validation/test 的 `download_start` | LP2 | 失败 → BLOCKED |
 | `parse_open` | S3（train）；S4（validation、test） | `split`、`path`、`row_groups`、`num_rows` | 每个文件一次 | train：`offline_switch`。validation/test：对应 `hash_done`(match) | 之后是 `text_read` | 按位置 | validation/test 出现在 `tokenizer_hash_logged` 之前 → FAIL `R6_HELDOUT_TOUCHED_EARLY` |
 | `text_read` | 同上 | `split`、`path`、`rows` | 每个文件一次 | 对应 `parse_open` | — | 按位置 | 同上 |
-| `check_result` | S3、S4 | `check_id`（T2–T7、R7.1–R7.7 之一）、`scope`、`status`、`code` | 是 | 对应数据已读取 | `fit_start` 的前置是 `check_result`(T7, train)=PASS；`absence_witness` 的前置是 T2–T6 全部 PASS；`heldout_audit_done` 的前置是 validation/test 的 T4、T5、T7 与 R7.1–R7.7 | 按位置 | 按各检查的 FAIL / BLOCKED 规则 |
+| `check_result` | S3、S4（R7.7 在中断时由监督器代写，11.9） | `check_id`（T2–T7、R7.1–R7.7 之一）、`scope`、`status`（见下方「状态词枚举」）、`code` | 是 | 对应数据已读取 | `fit_start` 的前置是 `check_result`(T7, train)=PASS；`absence_witness` 的前置是 T2–T6 全部 PASS；`heldout_audit_done` 的前置见该行 | 按位置 | 按各检查的 FAIL / BLOCKED 规则 |
 | `fit_start` | S3 | `fit_index`（从 1）、`corpus_rows`、`corpus_digest` | 是（T3 的重复拟合 `fit_index`≥2） | `check_result`(T7, train)=PASS | 之后是同一 `fit_index` 的 `fit_done` | LP1 | 喂入行数≠train 合格行数 → FAIL |
 | `fit_done` | S3 | `fit_index`、`tokenizer_digest`、`vocab_size` | 与 `fit_start` 一一对应 | 同一 `fit_index` 的 `fit_start` | 全部 `fit_done` 之后才能有 `absence_witness` | LP1 | 中断 → BLOCKED `INTERRUPTED`；重复拟合摘要不同 → FAIL（T3） |
 | `absence_witness` | S3 | `dirs`、`listing_digests`、`result`（CLEAN / HIT / UNSCOPED）| 否 | T2–T6 的 `check_result` 全部 PASS，且所有 `fit_done` 已写 | **紧邻下一行**是 `tokenizer_hash_logged` | LP1 | HIT → FAIL `R6_HELDOUT_TOUCHED_EARLY`；UNSCOPED（缓存目录非空、目录列表缺必选项）→ BLOCKED / FAIL（11.4） |
 | `tokenizer_hash_logged` | S3 | `digest`（`tokenizer.json`，`sha256:`）、`absence_result`（必须是 `CLEAN`） | 否 | 紧邻上一行是 `absence_witness`（`result`=CLEAN） | **紧邻下一行**是 `pin_pushed`(K1)。本行是第 `k1` 行（K1 前缀的终点） | LP1 | 上一行不是 `absence_witness` → FAIL `EVENT_ORDER_VIOLATION` |
 | `gate_check` | S4（`G_S4`）、S5（`G_S5`） | `gate`、`requires`（列表）、`status`、`reason` | 每个 `gate` 可多次，**最后一次**决定 | G_S4：同一阶段内新做的 `pin_remote_verified`(K0)=PASS 与 (K1)=PASS，且 `tokenizer_hash_logged` 已写。G_S5：`pin_remote_verified`(K0)=PASS 与 (K2)=PASS，且 `manifest_written`(A4)、(A5) 已写 | G_S4=PASS → `online_switch`；G_S5=PASS → `manifest_written`(A6) | G_S4→LP2；G_S5→LP3 | 不满足 → BLOCKED `GATE_NOT_MET` |
-| `heldout_audit_done` | S4 | `audit_output_digest`、`usage_declaration_digest`、`status` | 否 | validation/test 的 `hash_done` 与 `check_result` 已写 | **紧邻下一行**是 `pin_pushed`(K2)。本行是第 `k2` 行 | LP2 | 审计输出不符合 11.6 的 Schema → FAIL |
-| `manifest_written` | S1、S2、S3、S4、S5、S6 | `artifact`（A1、A2、A4、A5、A6、A7、A8）、`path`、`digest` | 每个 `artifact` 恰一次 | 见下方「工件写入点」 | — | 见下方「工件写入点」 | 缺失、重复、顺序不符 → FAIL `MANIFEST_EVENT_ORDER` |
+| `heldout_audit_done` | S4 | `audit_output_digest`、`usage_declaration_digest`、`status` | 否 | validation/test 的 `hash_done`；validation/test 的 T4、T5、T7，以及 **R7.1–R7.6 各一条 `check_result`=PASS**；**R7.7 一条 `check_result`=NOT_APPLICABLE（`code`=NO_INTERRUPTION）**；且此前日志中**不存在** `interrupted` 或 `run_aborted` | **紧邻下一行**是 `pin_pushed`(K2)。本行是第 `k2` 行 | LP2 | 审计输出不符合 11.6 的 Schema → FAIL；R7.1–R7.6 缺任何一条 PASS、R7.7 不是 NOT_APPLICABLE、或日志里已有 `interrupted` / `run_aborted` 却写了本行 → FAIL `EVENT_ORDER_VIOLATION` |
+| `manifest_written` | S1、S2、S3、S4、S5、S6 | `artifact`（A1、A2、A4、A5、A6、A7、A8）、`path`、`digest`；失败路径的 A7 可带 `partial`=true（只表示 Driver 证据目录不完整，**不等于任何 PASS**） | 每个 `artifact` 恰一次 | 见下方「工件写入点」 | — | 见下方「工件写入点」 | 缺失、重复、顺序不符 → FAIL `MANIFEST_EVENT_ORDER`（失败路径上缺失的工件记入 `run_aborted.missing_evidence`，不算顺序违规） |
 | `pre_read_snapshot` | S5 | `path`、`digest`、`size`、`stat`（`size`、`mtime_ns`、`ctime_ns`、`ino`） | 否 | `manifest_written`(A6) | 之后是 `driver_start` | LP3 | 摘要不等于 A6 的 `parquet_sha256`（经 11.8 转换）→ FAIL `R6_PRE_HASH_MISMATCH` |
 | `driver_start` | S5 | `pid`、`pgid`、`argv_digest` | 否 | `pre_read_snapshot` | 之后是 `driver_exit` | LP3 | — |
-| `driver_exit` | S5 | `exit_code` 或 `signal`、`terminated_by`（`none` / `budget`） | 否 | `driver_start` | 之后是 `children_reaped` | LP3 | 被预算终止 → BLOCKED `budget_exceeded` |
-| `children_reaped` | S5 | `confirmed`、`residual_pids` | 否 | `driver_exit` | 之后是 `manifest_written`(A7) | LP3 | `confirmed`=false → BLOCKED `TERMINATION_UNCONFIRMED` |
-| `post_read_snapshot` | S5 | `path`、`digest`、`size`、`stat`、`compare`（`hash`、`size`、`stat`） | 否 | `manifest_written`(A7)（已晚于 `children_reaped`） | 之后是三个 `gate_result` | LP3 | 见 R6.2、R6.6 |
-| `gate_result` | S5 | `gate`（R6.1、R6.2、R6.3）、`status`、`code` | 每个 `gate` 一次 | `post_read_snapshot` | 三个都写完后才能有 `read_phase_closed` | LP3 | 按各闸门的 FAIL / BLOCKED 规则 |
-| `read_phase_closed` | S5 | `s5_status`、`gates`（逐项状态） | 否 | 三个 `gate_result` | 本行是第 `k3` 行（K3 前缀的终点）；**紧邻下一行**是 `pin_pushed`(K3)（预算关闭后） | LP3 | 缺失 → 不得固定 K3，BLOCKED |
-| `interrupted` | 任一阶段 | `stage`、`reason`、`signal` | 至多一次（终止性） | 任一事件 | 之后只允许 W 阶段的 `pin_pushed`、`pin_remote_verified` 与 S6 的 `manifest_written`(A8) | 按位置 | BLOCKED `INTERRUPTED`（R7.7） |
+| `driver_exit` | S5 | `exit_code` 或 `signal`、`terminated_by`（`none` / `budget` / `interrupt`）；由监督器写入 | 否 | `driver_start` | 之后是 `children_reaped` | LP3 | 被预算终止 → BLOCKED `budget_exceeded`（失败路径，11.9 F2）；Driver 自己以非零码退出（含其内部超时）属**正常路径**，如实记录 |
+| `children_reaped` | S5 | `confirmed`、`residual_found`、`residual_pids`；由监督器写入 | 否 | `driver_exit` | 成功路径：之后是 `manifest_written`(A7)。`confirmed`=false 或 `residual_found`=true → 失败路径（11.9 F3） | LP3 | `confirmed`=false → BLOCKED `TERMINATION_UNCONFIRMED`；`residual_found`=true → BLOCKED `residual_process` |
+| `post_read_snapshot` | S5 | `path`、`digest`、`size`、`stat`、`compare`（`hash`、`size`、`stat`） | 否 | 成功路径：`manifest_written`(A7)（已晚于 `children_reaped`）。失败路径：仅当 `children_reaped.confirmed`=true 才补做，可省略并记入 `missing_evidence` | 之后是三个 `gate_result` | LP3 | 见 R6.2、R6.6 |
+| `gate_result` | S5 | `gate`（R6.1、R6.2、R6.3）、`status`（PASS / FAIL / BLOCKED）、`code` | 每个 `gate` 一次 | `post_read_snapshot` | 三个都写完后才能有 `read_phase_closed`。失败路径上写入的 `gate_result` 只是对机械检查的如实记录，**不构成整体通过** | LP3 | 按各闸门的 FAIL / BLOCKED 规则 |
+| `read_phase_closed` | S5 | `s5_status`（`COMPLETED` / `DRIVER_NONPASS` / `GATE_FAILED`，均表示**证据完整地结束**）、`gates`（逐项状态） | 否 | 三个 `gate_result`；`children_reaped.confirmed`=true 且 `residual_found`=false；此前日志无 `interrupted`、`run_aborted` | **仅成功路径（证据完整）**，与 `run_aborted` 互斥。本行是第 `k3` 行（K3 前缀的终点）；**紧邻下一行**是 `pin_pushed`(K3)（预算关闭后） | LP3 | 缺失（且无 `run_aborted`）→ 不得固定 K3，BLOCKED；与 `run_aborted` 并存 → FAIL `EVENT_ORDER_VIOLATION` |
+| `interrupted` | 任一阶段 | `stage`、`stage_id`、`reason`、`signal`；由监督器写入 | 至多一次（终止性） | 任一事件 | 之后只允许：监督器代写的 `driver_exit`、`children_reaped`（S5）、`check_result`(R7.7, BLOCKED, INTERRUPTED)（S4），然后必须是 `run_aborted`；**不得**再有该阶段的任何成功事件（`heldout_audit_done`、`read_phase_closed`） | 按位置 | BLOCKED `INTERRUPTED`（R7.7、11.9 F1） |
+| `run_aborted` | S0–S5 | `stage`、`stage_id`、`cause`（`PREFLIGHT_FAILED` / `CHECK_FAILED` / `INTEGRITY_FAILED` / `TIMEOUT` / `INTERRUPTED` / `RESIDUAL_PROCESS` / `TERMINATION_UNCONFIRMED` / `LEDGER_WRITE_FAILED`）、`final_status`（BLOCKED / FAIL）、`code`、`missing_evidence`（应有而没有的事件与工件名）、`partial_artifacts`（`*.partial` 等的路径与带标签摘要） | 否（终止性） | 该阶段内的任一事件 | **失败路径的终点**，与 `read_phase_closed` 互斥；之后只允许 W 阶段的 `pin_pushed`、`pin_remote_verified`（K3 紧邻本行）与 S6 的 `manifest_written`(A8)；**不允许**任何 S0–S5 事件。本行是失败路径的第 `k3` 行 | LP3 | 与 `read_phase_closed` 并存、或之后出现 S0–S5 事件 → FAIL `EVENT_ORDER_VIOLATION` |
+
+**状态词枚举（修订 4；注册表里所有 `status` / `result` 字段只能取这些值，其他取值 → FAIL `EVENT_FIELD_MISSING`）：**
+
+| 字段 | 允许的取值 | 说明 |
+|---|---|---|
+| `check_result.status` | `PASS` / `FAIL` / `BLOCKED` / `NOT_APPLICABLE` | `NOT_APPLICABLE` **只允许**用于检查定义本身写明「条件不出现时不适用」的 `check_id`；本规范里只有 **R7.7**（中断行为门禁）。`NOT_APPLICABLE` **不是 PASS**：验收报告把它作为单独的状态列出，永不折算成 PASS；它只表示「触发该门禁的条件没有出现，并且这一点可由日志与账本独立复核」 |
+| `gate_result.status` | `PASS` / `FAIL` / `BLOCKED` | R6.1–R6.3 |
+| `gate_check.status` | `PASS` / `BLOCKED` | 门禁不满足就是 BLOCKED |
+| `pin_remote_verified.result` | `PASS` / `FAIL` / `BLOCKED` | 见 11.2 |
+| `run_aborted.final_status` | `BLOCKED` / `FAIL` | 失败路径的最终状态；**不存在**失败路径上的 PASS |
+| 验收报告里未执行到的检查 | `NOT TESTED` | 只出现在验收输出，不进入事件日志 |
+
+**写入者：** 阶段脚本（经记录器）只写**它自己观测到的事实**，包括它自己的 PASS / FAIL / BLOCKED 检查结果。监督器在阶段脚本已无法写入时（被杀、超时、中断）代写 `interrupted`、`driver_exit`、`children_reaped`、`check_result`(R7.7, BLOCKED)、`run_aborted`，并且**只能写 BLOCKED / FAIL 与事实性字段，不得代写任何 PASS 或 NOT_APPLICABLE**。已经写入的行永不改写，`*.partial` 文件永不改名为最终文件。
+
+**R7.7 的两条最小事件序列（C04-01；其余事件省略，顺序约束以上表为准）：**
+
+```
+正常（无中断）：
+E check_result R7.1 … R7.6       status=PASS（每项一条，scope 分别覆盖 validation 与 test）
+E check_result R7.7              status=NOT_APPLICABLE  code=NO_INTERRUPTION   （由审计脚本在全部审计结束后写）
+E heldout_audit_done             （前置：上面七条齐备，且日志里没有 interrupted / run_aborted）
+E pin_pushed K2
+
+中断（例：S4 审计进行中被外部信号终止）：
+E check_result R7.3              status=PASS            （已完成的检查保持原样，不改写）
+E interrupted                    （监督器写）
+E check_result R7.7              status=BLOCKED  code=INTERRUPTED   （监督器代写）
+E run_aborted                    cause=INTERRUPTED  final_status=BLOCKED  missing_evidence=[check_result R7.4…R7.6, heldout_audit_done, pin K2, manifest A5, …]
+   （没有 heldout_audit_done，没有 pin_pushed K2；K3 的终点是 run_aborted）
+```
+
+- **`NOT_APPLICABLE` 的有效条件（验收脚本独立复核，任一不满足 → FAIL `R77_NA_INVALID`）：** (1) 日志里在该行及之前没有 `interrupted` 或 `run_aborted`；(2) 预算账本里 S4 阶段没有 `terminate_begin`、没有 `anomaly`，`stage_end` 之前没有被信号终止的记录；(3) 运行目录里没有遗留的 `*.partial` 审计文件。
+- **R7.1–R7.6 在正常运行中必须各有一条 `check_result`=PASS**；缺任何一条就不能有 `heldout_audit_done`（注册表前置）。R7.7 在正常运行中不产生 PASS，而是有一条明确的 `NOT_APPLICABLE`——不写这一条同样会使 `heldout_audit_done` 的前置不满足。
+- **出现中断必须停止：** `interrupted` 之后，S4 的任何成功事件（`heldout_audit_done`、`pin_pushed`(K2)、`manifest_written`(A5)）都是 FAIL `EVENT_ORDER_VIOLATION`。
 
 **工件写入点（`manifest_written` 的位置，决定其落在哪个前缀）：**
 
@@ -129,14 +165,14 @@ S4 与 S5 的先后顺序不影响任何闸门（Driver 只需要 train 与 Toke
 |---|---|---|---|---|---|
 | `open` | `run_id`、`budget_ns`、`deadline_bt_ns`、`supervisor_pid` | `NEW`→`OPEN` | 否（只能是 `seq` 0） | BP0、BP | 缺失 → BLOCKED `budget_unprovable` |
 | `stage_start` | `stage`（S0–S5）、`stage_id`、`pgid` | `OPEN`→`STAGE` | 每个 `stage_id` 一次；任何时刻只有一个阶段 | BP | 阶段重叠、`remaining ≤ 0` 时仍启动 → BLOCKED |
-| `stage_end` | `stage_id`、`status`（ok / failed / blocked / killed）、`exit` | `STAGE`→`OPEN`（`killed` 必须经 `reap_done`） | 每个 `stage_id` 一次 | BP | 与 `stage_start` 不匹配 → BLOCKED |
-| `terminate_begin` | `stage_id`、`reason`（deadline / supervisor_abort / interrupt） | `STAGE`→`TERMINATING` | 每个阶段至多一次 | BP | 之后结果不得为 PASS |
+| `stage_end` | `stage_id`、`status`（ok / failed / blocked / killed）、`exit` | `STAGE`→`OPEN`（`killed` 必须经 `reap_done`；`failed` 含被外部信号杀死） | 每个 `stage_id` 一次 | BP | 与 `stage_start` 不匹配 → BLOCKED。`status` 不是 `ok` 之后，**唯一合法的下一行是 `close`**（`stage_start` 非法） |
+| `terminate_begin` | `stage_id`、`reason`（deadline / supervisor_abort / interrupt） | `STAGE`→`TERMINATING` | 每个阶段至多一次 | BP | `reason`=deadline → `close.result` 必为 EXCEEDED；`interrupt` / `supervisor_abort` → `close.run_state` 必为 ABORTED。任何一种之后，该阶段都不得被计为成功 |
 | `terminate_signal` | `sig`（TERM / KILL）、`pgid` | `TERMINATING`→`TERMINATING` | 每个阶段至多两次 | BP | — |
 | `reap_done` | `confirmed`、`exit`、`residual`、`t_term_bt_ns`、`t_kill_bt_ns`、`t_reaped_bt_ns` | `TERMINATING`→`REAPED` | 每个被终止的阶段一次 | BP | `confirmed`=false → BLOCKED `TERMINATION_UNCONFIRMED` |
 | `anomaly` | `code`、`detail` | 任意状态→`ANOMALY` | 是 | BP | 之后只允许 `close`（`result`=UNPROVABLE） |
 | `pin_phase`（**仅选项 Y**） | — | `OPEN`→`PIN_PHASE` | 否 | BP | 选项 X 下出现 → FAIL |
-| `close` | `result`（WITHIN_BUDGET / EXCEEDED / UNPROVABLE）、`total_ns`、`el_lines_at_k3`（整数，不是哈希） | `OPEN`、`PIN_PHASE`（Y）或 `ANOMALY`→`CLOSED` | 否；必须是 K4 前缀的最后一行（选项 Y 为 `pin_phase` 之后） | BP | 缺失、不是终行 → BLOCKED `budget_unprovable` |
-| `wrapup_end` | `pins_verified`（列表）、`wrapup_ns` | `CLOSED`→`DONE` | 否；**`close` 之后唯一允许的行**（选项 X） | `—` | 缺失或超过上限 W → BLOCKED `wrapup_unprovable` |
+| `close` | `result`（WITHIN_BUDGET / EXCEEDED / UNPROVABLE，**只描述时间与账本有效性**）、`total_ns`、`run_state`（COMPLETED / ABORTED）、`abort_cause`（与 `run_aborted.cause` 同枚举，或 `null`）、`el_end_event`（`read_phase_closed` / `run_aborted` / `unwritable` / `none`）、`el_lines_at_end`（整数或 `null`，不是哈希） | `OPEN`、`PIN_PHASE`（Y）或 `ANOMALY`→`CLOSED` | 否；必须是 K4 前缀的最后一行（选项 Y 为 `pin_phase` 之后） | BP | 缺失、不是终行 → BLOCKED `budget_unprovable`；前提与取值规则见 11.1(e)、11.9 |
+| `wrapup_end` | `pins_verified`（列表）、`pins_missing`（列表，含缺失原因）、`wrapup_ns` | `CLOSED`→`DONE` | 否；**`close` 之后唯一允许的行**（选项 X） | `—` | 缺失或超过上限 W → BLOCKED `wrapup_unprovable` |
 
 **(c) 规范顺序（供自检与验收脚本核对「顺序可满足」；`E` = 事件日志，`B` = 预算账本；选项 X）**
 
@@ -197,7 +233,8 @@ E text_read test
 E check_result T7.heldout
 E check_result T4.heldout
 E check_result T5.heldout
-E check_result R7.1 … R7.7
+E check_result R7.1 … R7.6        (PASS)
+E check_result R7.7              (NOT_APPLICABLE)
 E heldout_audit_done           (第 k2 行)
 E pin_pushed K2
 E pin_remote_verified K2
@@ -229,7 +266,7 @@ E manifest_written A8
 ```
 
 - 该顺序里没有「A 的前置是 B、B 的前置又是 A」的情形；每个前置事件都在其后继之前出现。验收脚本用同一份注册表逐行校验真实日志。
-- 选项 Y 的顺序差异见 11.1(g)。
+- 选项 Y 的顺序差异见 11.1(g)。失败路径的最小序列见 11.9。
 - 本表只登记**哪些事件存在、以什么顺序出现**，不改变 v1/R1/R2 的任何规则。
 
 ## 3. validation/test 完整性与 Tokenizer 拟合隔离 `【PROPOSED / NOT APPROVED】`
@@ -258,7 +295,7 @@ E manifest_written A8
 | R6.3 | **粒度与限定语（PROPOSED CLARIFICATION，对应 S3；修订 2，见 11.3）：** 读前/读后各针对「整个冻结 Driver 运行」一次，加 `stat`（大小、`mtime_ns`、`ctime_ns`、inode）快照（`ctime_ns` 由内核维护，普通用户不能回写，所以「改后又改回」通常也会让它变化）。**该检查只能证明两个检查时刻的文件状态相同，不能证明运行期间每一次读取（A、B 的 6 段、12 个负例、验证器的多次读取）读到的内容一致**；验收记录必须写出这句限定语。可选更强控制见 11.3 | 两个时刻的哈希与 `stat` 均相同 → PASS（仅限该限定语所述含义） | 任一不同 → FAIL `R6_POST_HASH_MISMATCH` 或 `R6_STAT_CHANGED`（良性的 `chmod`/硬链接也会改 `ctime`，保守判 FAIL，重新运行）。**已记录的预期漏检用例：** 保持 `ctime` 不变的 ABA（需要 root、回拨系统时钟或直接写块设备），以及目标文件系统不维护 `ctime` 的情形（**目标文件系统 NOT TESTED**）；它们不作为通过依据，只作为残余风险。选用 11.3 的监视控制可缩小但不消除该风险 | 同上 | 新 |
 | R6.4 | **隔离**：I1、I4（受控范围内的缺席见证，11.4）、K1 的远端内容验证（11.2） | 无 validation/test 的 L1+ 事件在 `t_fix` 之前；**受控范围内、指定检查时刻未发现访问迹象**；K1 的 RV=PASS → PASS（仅指受控检查通过，不是零访问证明） | 之前出现任何 validation/test 的 L1+ 事件，或见证命中 → FAIL `R6_HELDOUT_TOUCHED_EARLY`；日志哈希链断、或前缀哈希与固定记录不符 → FAIL `EVENT_LOG_BROKEN`；固定记录不存在、无法核对远端 → BLOCKED | 事件日志、固定记录、`pin_remote_verified` | 新 |
 | R6.5 | **身份绑定**：S1 的路径/oid ↔ S2 下载的文件 ↔ 清单 | 全部一致 → PASS | 路径不属于 `wikitext-2-raw-v1/`、split 与文件名不符、非「每个 split 恰好一个 Parquet」→ BLOCKED（v1 §3.1 原规则）；哈希与 oid 不符 → FAIL | `hub_metadata.json`、`train_data_manifest.json` | 新 |
-| R6.6 | **最终读后证据进入 K3（修订 3）**：`post_read_snapshot` 与全部 `gate_result` 的行号都小于 `read_phase_closed` 的行号，且 `read_phase_closed` 的行号 = `pin_K3.json` 的 `line_count − 1` | 成立 → PASS | 读后证据在 K3 之外 → FAIL `R6_POST_NOT_PINNED`；K3 缺失或 RV 无法进行 → BLOCKED | 事件日志、`pin_K3.json`、RV | 新 |
+| R6.6 | **最终读后证据进入 K3，并由独立验收逐项核对（修订 3 引入，修订 4 明确为独立验收范围 R6.1–R6.6）**。验收脚本**自己**从事件日志文件与固定记录重新核对，不信任 `gate_result`、`pin_remote_verified` 里已有的结论：(a) `post_read_snapshot` 恰有一行，且行号小于 K3 终点（`read_phase_closed`）的行号；(b) R6.1、R6.2、R6.3 三个 `gate_result` 各恰有一行，行号都小于 K3 终点，且各自的状态与从 `pre_read_snapshot` / `post_read_snapshot` 的数据重新推出的结论一致；(c) `read_phase_closed` 的行号 = `k3`，`pin_K3.json` 的 `end_event` = `read_phase_closed`、`line_count` = `k3 + 1`；(d) K3 的远端内容验证 RV（11.2 步骤 1–10）由验收脚本**重新执行**并为 PASS | (a)–(d) 全部成立 → PASS | 读后快照或任一 `gate_result` 的行号在 K3 终点之后 → FAIL `R6_POST_NOT_PINNED`；`line_count` 或 `end_event` 不符 → FAIL `R6_K3_LINECOUNT_MISMATCH`；`gate_result` 与重新推出的结论不一致 → FAIL；缺 `post_read_snapshot`、缺任一 `gate_result`、缺 `read_phase_closed`、`pin_K3.json` 缺失 → BLOCKED `R6_EVIDENCE_MISSING`；RV 无法进行 → BLOCKED `PIN_UNVERIFIABLE`；失败路径（K3 终点是 `run_aborted`，11.9）→ R6.6 记 **NOT TESTED**，整体 `NOT_ACCEPTED`。**任一项缺失，验收输出都不得出现 `ALL_GATES_PASS_CANDIDATE`** | 事件日志、`pin_K3.json`、RV | 新 |
 
 ### 4.2 R7
 
@@ -270,7 +307,9 @@ E manifest_written A8
 | R7.4 | **Token 计数口径（PROPOSED CLARIFICATION，对应 S4）：** 同时记录 `tokens_total = Σ len(tokens(r))`（含 EOS 前缀，且「第一个合格行」按每个 split 单独判定）与 `tokens_encode_only = Σ len(encode(NFC(text)))`，二者差必须等于该 split 的 EOS 前缀个数 | 恒等式成立 → PASS | 不成立 → FAIL | 新 |
 | R7.5 | round-trip（即 T4 在 val/test 上）：`decode(encode(NFC(x))) == NFC(x)`，不一致行数为 0 | 0 → PASS | >0 → FAIL（记录个数，不记录内容）；decode 抛异常 → FAIL | 新 |
 | R7.6 | 输出符合 11.6 的统一 Schema（`envelope` + `statistics`，键集合精确）、静态检查（I3、I7）与 test 用途限制 | Schema 检查全部通过；`envelope.usage_declaration` 存在且与已批准文本一致；静态检查通过 → PASS | Schema 违反 → FAIL（代码见 11.6）；已批准文本摘要尚未提供 → BLOCKED `USAGE_DECLARATION_UNAPPROVED`；审计模块引用模型/训练代码 → FAIL | 新 |
-| R7.7 | **中断行为（PROPOSED，对应 S5）：** 审计中途被中断 → `BLOCKED(interrupted)`，写 `interrupted` 事件；已写出的部分结果文件命名为 `*.partial` 且**永不被使用**；**不自动续跑、不重试**；重新运行必须使用新的运行目录并产生新的事件日志 | 无中断 → 不适用 | 中断后遗留 `.final` 文件而无 `heldout_audit_done` 事件 → FAIL | 新 |
+| R7.7 | **中断行为门禁（PROPOSED，对应 S5；修订 4 明确正常路径语义）：** 它不是「必须产生 PASS」的检查，而是**只在中断时触发**的门禁。无中断时记一条 `check_result`(R7.7, `NOT_APPLICABLE`, `NO_INTERRUPTION`)——这是明确的「不适用」，**不是 PASS**，且必须满足 2.4 列出的有效条件；中断时 → `BLOCKED(interrupted)`：监督器写 `interrupted`、`check_result`(R7.7, BLOCKED)、`run_aborted`，**不得**再生成 `heldout_audit_done`；已写出的部分结果文件命名为 `*.partial` 且**永不被使用**；**不自动续跑、不重试**；重新运行必须使用新的运行目录并产生新的事件日志 | 无中断 → `NOT_APPLICABLE`（有效条件成立才算数；验收报告单列「R7.7 NOT_APPLICABLE」，不并入 PASS 计数） | 中断 → BLOCKED `INTERRUPTED`；中断后遗留 `.final` 文件而无 `heldout_audit_done` 事件 → FAIL；`NOT_APPLICABLE` 的有效条件不成立（有 `interrupted`、账本有终止记录、遗留 `*.partial`）→ FAIL `R77_NA_INVALID`；缺少 R7.7 的 `check_result` 且存在 `heldout_audit_done` → FAIL `EVENT_ORDER_VIOLATION` | 新 |
+
+**R7 的整体判定（修订 4）：** R7.1–R7.6 在正常运行中必须各有 `check_result`=PASS；R7.7 必须有 `NOT_APPLICABLE`（无中断）或 `BLOCKED`（有中断）。验收脚本对 R7 的汇总写成「R7.1–R7.6 PASS；R7.7 NOT_APPLICABLE」，**不写成 R7.1–R7.7 全部 PASS**。
 
 ### 4.3 T1–T7
 
@@ -303,7 +342,7 @@ E manifest_written A8
  8    A6  runtime_manifest.json        (S5 前)  → A2, A4, A5
             （冻结键 parquet_sha256 / tokenizer_sha256 / actual_vocab_size 与可选 formal 块的键保持**裸格式**，转换边界见 11.8）
  9    A7  driver evidence + D1_DECISION (S5)    → A6   （冻结 Driver 已把 manifest_sha256 记入每个 trace 的 run 记录）
-10    LP3 事件日志前缀 [0..k3]  (k3 = read_phase_closed 所在行；R6 最终读后快照与闸门结论在其内，2.4)
+10    LP3 事件日志前缀 [0..k3]  (成功路径 k3 = read_phase_closed 所在行，R6 最终读后快照与闸门结论在其内；失败路径 k3 = run_aborted 所在行；2.4、11.9)
 11    PIN3 pin_K3.json                          → LP3
 12    BP  预算账本前缀 [0..close]（选项 Y 为 [0..pin_phase]，11.1）
 13    PIN4 pin_K4.json                          → BP
@@ -375,6 +414,7 @@ sub LP3 -> LP2
 sub BP -> BP0
 ```
 
+- **失败路径不改变图（修订 4）：** 失败路径只是**使用这 17 个节点中的一个子集**（缺失的工件与固定记录不产生，记入 `run_aborted.missing_evidence` 与 A8 的缺失清单）；`run_aborted` 行里的 `partial_artifacts` 摘要指向叶子文件（`*.partial` 等），不是节点。失败路径上 LP3 里直接出现的摘要记录（例如 S4 中断时 LP3 直接包含 A4 与 PIN1 的记录行）都在上面 43 条边的传递闭包之内，层级方向不变。验收脚本对失败路径按实际日志构图并做同样的无环与层级检查。
 - **图的范围：** 17 个节点。事件日志整体（A3）和预算账本整体不是节点——引用的永远是它们的前缀（LP1–LP3、BP0、BP）。原始数据文件和 `tokenizer.json` 是叶子（只被记录摘要，不引用任何别的东西），不在图中。
 - **三类边的含义与期望数量：** `ref`（清单与固定记录里写明的引用，也就是 Work 复核所指的「31 条边」）、`rec`（日志行记录工件摘要造成的隐含依赖）、`sub`（前缀包含）。**三类边合在一起也必须无环、且每条边都指向严格更低的层级**——否则隐含依赖可能藏住循环。实际条数以检查点里脚本从上面的列表重新计算的结果为准（本节不预先断言总数）。
 - **事件日志与预算账本是增长的文件**，所以任何工件引用的都是**前缀节点**，而不是整文件。若 A4 引用整个日志，就会形成「A4 ← 日志 ← 记录 A4 的 `manifest_written` 行 ← A4」的环；引用前缀并记录 `k` 可避免。
@@ -389,17 +429,17 @@ sub BP -> BP0
    - 引用图无环，所有哈希与磁盘一致；
    - A1 的元数据与冻结配置（repo、revision、`wikitext-2-raw-v1/`）相符，三个 split 各一个 Parquet；
    - 事件日志与预算账本的每一行符合 2.4 的注册表；事件日志哈希链完整；关键前缀 K0–K4（K3 终点是 `read_phase_closed`，R6 最终读后证据在其内）经远端内容验证 RV 且与带外副本核对（11.2）；I1/I4 在其限定范围内成立（11.4）；预算账本证明总耗时 ≤ 预算，或标记 BLOCKED（11.1）；摘要格式符合 11.8；审计输出符合 11.6 的 Schema；
-   - R6.1–R6.5、R7.1–R7.7、T1–T7 全部有证据并通过；
+   - **R6.1–R6.6**（其中 R6.6 由验收脚本自己重新核对，见 4.1）、R7.1–R7.6 通过、**R7.7 为 NOT_APPLICABLE（无中断）并单独标注**、T1–T7 全部有证据并通过；
    - 冻结清单 10/10、配置 `status`、环境快照与 Python 完整版本；
    - Driver 的决定文件中 `read_resume`、`negatives_meta` 的分项结论，以及运行数据的 `identity`；
    - `authorization_ref` 必须能解析为仓库里已提交的授权文件，并记录该文件的 SHA-256（`【PROPOSED】`；授权文件的形式由负责人决定）。
-3. **输出：** 逐闸门的 PASS / FAIL / BLOCKED / NOT TESTED 列表和 `ALL_GATES_PASS_CANDIDATE` 或 `NOT_ACCEPTED`。**脚本本身不宣布 D1 PASS**：D1 的结论只能由项目负责人在 ChatGPT 独立复审后作出（与冻结 Driver 的 `declared` 字段一致）。
+3. **输出：** 逐闸门的 PASS / FAIL / BLOCKED / NOT TESTED（以及 R7.7 的 NOT_APPLICABLE）列表和 `ALL_GATES_PASS_CANDIDATE` 或 `NOT_ACCEPTED`。**任何必需闸门缺证据（记 BLOCKED 或 NOT TESTED），输出一律 `NOT_ACCEPTED`，不得出现 `ALL_GATES_PASS_CANDIDATE`。**失败路径的运行（K3 终点是 `run_aborted`）同样输出 `NOT_ACCEPTED`，并逐项列出已有证据、缺失证据和最终状态（11.9）。**脚本本身不宣布 D1 PASS**：D1 的结论只能由项目负责人在 ChatGPT 独立复审后作出（与冻结 Driver 的 `declared` 字段一致）。
 4. **不修改冻结 Driver 的原因与代价：** 冻结代码已通过验收，任何改动都触发新的冻结与重新验收。代价是：R6 的读前读后核对只能在 Driver 之外进行（R6.3 的局限），且 Driver 的 `not_tested` 清单仍是写死的文字——验收脚本必须自己判断哪些闸门已有证据，而不能依赖该清单。
 5. **验收脚本的局限（修订 2）：** 它与被验收的脚本在同一信任域内运行；它能发现不一致、缺失和被固定记录证伪的改写，不能发现「如实记录了错误事实」或「绕过记录器」的行为。这些局限在每份验收记录中明示，并由 11.2 的外部固定与审核者的独立复核补充。
 
 ## 7. 待项目负责人裁决事项——决策记录（均为 `PROPOSED / NOT APPROVED`；状态：`PENDING OWNER DECISION`）
 
-本表是**决策记录**。「草案建议」不是规范。每项的「状态」初始为 `PENDING OWNER DECISION`，「决定人 / 日期 / 决定」三栏留空，由项目负责人填写；ChatGPT 的审核意见与草案建议同样不构成批准。修订 2 更新了 D01、D03、D06、D07、D08、D09 的建议内容；修订 3 又更新了 D03、D07、D08、D09 的建议内容（RV、K3 终点、终止协议与选项 X/Y、统一 Schema、摘要边界、事件注册表）。**没有**批准任何一项。
+本表是**决策记录**。「草案建议」不是规范。每项的「状态」初始为 `PENDING OWNER DECISION`，「决定人 / 日期 / 决定」三栏留空，由项目负责人填写；ChatGPT 的审核意见与草案建议同样不构成批准。修订 2 更新了 D01、D03、D06、D07、D08、D09 的建议内容；修订 3 又更新了 D03、D07、D08、D09 的建议内容（RV、K3 终点、终止协议与选项 X/Y、统一 Schema、摘要边界、事件注册表）；修订 4 又更新了 D05、D07 的建议内容（R7.7 的 NOT_APPLICABLE 语义、失败路径与三维度状态、`close` 的取值规则）。**没有**批准任何一项。
 
 | ID | 事项 | 草案建议（PROPOSED，非规范） | 备选 | 状态 | 决定人 / 日期 / 决定 |
 |---|---|---|---|---|---|
@@ -407,9 +447,9 @@ sub BP -> BP0
 | R3-D02 | T7 的 val/test 部分后移到 `t_fix` 之后（取代 R1 §8「先检查三个 split」） | 采纳 | 保留原文：先扫描三个 split，同时放弃「未被打开」 | PENDING OWNER DECISION | ____ / ____ / ____ |
 | R3-D03 | R6 的粒度与局限；最终读后证据先于 K3 写入（2.4、R6.6）；是否采用 11.3 的更强控制 | 整个 Driver 运行前后各一次哈希 + `stat`（含 `ctime_ns`），**明示只证明两个检查时刻**；最终读后快照与闸门结论先于 K3 写入；可选 C-1（私有只读副本）、C-3（inotify 监视，标准库 `ctypes`）；接受 ABA 漏检的残余风险 | 要求每个子进程前后各一次（需改冻结 Driver，触发重新冻结）；或选 C-2 `chattr +i` | PENDING OWNER DECISION | ____ / ____ / ____ |
 | R3-D04 | R7 的 Token 计数口径 | 两种口径都记录并要求恒等式（4.2 R7.4） | 只选其一 | PENDING OWNER DECISION | ____ / ____ / ____ |
-| R3-D05 | 中断行为（S5） | `BLOCKED(interrupted)`、`.partial`、不续跑不重试、新运行目录（4.2 R7.7） | 允许在阶段边界续跑 | PENDING OWNER DECISION | ____ / ____ / ____ |
+| R3-D05 | 中断行为（S5）与异常终止的收尾（4.2 R7.7、11.9） | `BLOCKED(interrupted)`、`.partial`、不续跑不重试、新运行目录；R7.7 正常运行写 `NOT_APPLICABLE`（不是 PASS）；中断与其他失败统一走 `run_aborted` 终点与 11.9 的收尾顺序，监督器不写 PASS | 允许在阶段边界续跑 | PENDING OWNER DECISION | ____ / ____ / ____ |
 | R3-D06 | 完整性基础：LFS SHA-256、Git blob SHA-1、Xet 元数据的区分；元数据不足时的处理（11.5） | 仅接受 B-LFS；B-GIT / B-XET 在元数据语义未被受控验证前 **BLOCKED**；摘要带算法标签，禁止跨算法比较；先做仅 L0 的元数据验证任务（需单独授权） | 立即接受 B-GIT（需先证明该文件非 LFS/Xet，目前无法证明） | PENDING OWNER DECISION | ____ / ____ / ____ |
-| R3-D07 | 30 分钟预算：范围、**计时方式**与终止/关闭协议（11.1） | 范围按字面：从预算账本 `open` 到 `close` 共用 30 分钟；`CLOCK_BOOTTIME` + `boot_id` + 墙钟交叉检查，**不用 `seq`**；外层监督器按 11.1(d) 终止超限的冻结 Driver（不改冻结 Driver 的超时机制）；主机重启、时钟异常、账本缺失、回收未确认 → `BLOCKED`。**收尾方案二选一：选项 X（草案建议）** K3/K4 的推送在 `close` 之后，受上限 `W` 约束；**选项 Y** 固定动作在预算内，K4' 不含 `close`。参数 τ、`G_term`、`G_kill`、`W` 待定 | 选项 Z：网络阶段与计算阶段各自 30 分钟；或改用 `CLOCK_MONOTONIC`（不含挂起时间） | PENDING OWNER DECISION | ____ / ____ / ____ |
+| R3-D07 | 30 分钟预算：范围、**计时方式**与终止/关闭协议（11.1） | 范围按字面：从预算账本 `open` 到 `close` 共用 30 分钟；`CLOCK_BOOTTIME` + `boot_id` + 墙钟交叉检查，**不用 `seq`**；外层监督器按 11.1(d) 终止超限的冻结 Driver（不改冻结 Driver 的超时机制）；主机重启、时钟异常、账本缺失、回收未确认 → `BLOCKED`；预算结果（WITHIN_BUDGET / EXCEEDED / UNPROVABLE）、运行状态（COMPLETED / ABORTED）与实验最终状态相互独立（11.9）。**收尾方案二选一：选项 X（草案建议）** K3/K4 的推送在 `close` 之后，受上限 `W` 约束；**选项 Y** 固定动作在预算内，K4' 不含 `close`。参数 τ、`G_term`、`G_kill`、`W` 待定 | 选项 Z：网络阶段与计算阶段各自 30 分钟；或改用 `CLOCK_MONOTONIC`（不含挂起时间） | PENDING OWNER DECISION | ____ / ____ / ____ |
 | R3-D08 | 是否在 D1 阶段对 test 做审计，及其用途限制与输出 Schema（11.6） | 做，且**仅限**完整性、Token 统计、round-trip、特殊字符串计数；输出遵循统一 Schema（`usage_declaration` 在 Envelope，`statistics` 严格限定）；**禁止**训练、模型选择、调参、质量评估等一切其他用途；用途限制始终生效 | 推迟 test 的审计到 D3 的一次性评估时（Schema 去掉 `test`） | PENDING OWNER DECISION | ____ / ____ / ____ |
 | R3-D09 | 新脚本集（记录器、预算账本与监督器、获取、拟合、审计、清单生成、摘要模块、验收、外部固定与 RV 工具）的授权与重新冻结流程；外部固定方式（11.2：默认 Git 推送 + 远端内容验证 RV + 审核者带外副本）；事件注册表（2.4）与摘要格式边界（11.8）作为这些脚本的共同规格 | 各自独立分支、独立测试、整体再冻结一次 | 分批冻结；或要求签名提交/外部时间戳 | PENDING OWNER DECISION | ____ / ____ / ____ |
 | R3-D10 | 授权文件形式（第 6 节的 `authorization_ref`） | 仓库里已提交的授权记录文件 + 其 SHA-256 | 由负责人另定 | PENDING OWNER DECISION | ____ / ____ / ____ |
@@ -424,11 +464,11 @@ sub BP -> BP0
 
 ## 9. 文档一致性核对（本次执行）
 
-对第 1 节每条引文，用脚本在源文件中逐字查找；同时核对 v1/R1/R2 的 SHA-256 未变；并检查本稿内部：判定词、决策 ID、依赖图（正式边列表构图、拓扑排序、层级严格递减）、事件注册表与全文事件名的一致性、规范顺序的可满足性、摘要格式与冻结接口的对照、残留的过期表述。结果见检查点文档 `F3B_D1_PRE_REAL_SPEC_R3_CHECKPOINT_20261026.md`。
+对第 1 节每条引文，用脚本在源文件中逐字查找；同时核对 v1/R1/R2 的 SHA-256 未变；并检查本稿内部：判定词、决策 ID、依赖图（正式边列表构图、拓扑排序、层级严格递减）、事件注册表与全文事件名的一致性、规范顺序的可满足性、摘要格式与冻结接口的对照、残留的过期表述。结果见检查点文档 `F3B_D1_PRE_REAL_SPEC_R3_CHECKPOINT_20261026.md`。修订 4 另核对：状态词枚举、R7.7 两条序列、四条失败流程（F1–F4）在注册表下的可满足性，以及失败路径上的摘要引用没有越出 17 节点 / 43 边的传递闭包。
 
-（节号说明：第 10、13 节的编号不再使用——原「下一条唯一研发指令」已移到第 15 节；为避免打乱已有交叉引用，其余节号保持不变。）
+（节号说明：第 10、13、15 节的编号不再使用——原「下一条唯一研发指令」现位于第 17 节；为避免打乱已有交叉引用，其余节号保持不变。）
 
-## 11. 细则（修订 2 引入，修订 3 更正与补全；响应 F3B-D1-SPEC-R3-REVIEW-002 / REVIEW-003）`【PROPOSED / NOT APPROVED】`
+## 11. 细则（修订 2 引入，修订 3 更正与补全，修订 4 收口；响应 F3B-D1-SPEC-R3-REVIEW-002 / REVIEW-003 / CLOSURE-004）`【PROPOSED / NOT APPROVED】`
 
 本节给出第 2–7 节所引用的细则。每一条都标出**它能证明什么**与**不能证明什么**。凡涉及本环境之外的行为（目标文件系统、Hub 元数据字段语义、网络出口），一律标 `NOT VERIFIED` / `NOT TESTED`。
 
@@ -436,7 +476,7 @@ sub BP -> BP0
 
 **目标：** 把 v1 §8 的「30 分钟墙钟硬上限」在获取、拟合、审计、读取、验证**多个独立进程**之间计量，且不依赖事件日志的 `seq` 或墙钟时间戳；并规定监督器、子进程、账本关闭、外部固定的**先后顺序**。**不修改冻结 Driver 的超时机制**（真实模式拒绝 `--timeout-seconds`，Driver 自己的 30 分钟计时器保持不变，作为第二道上限）。
 
-**(a) 计时源与预算区间。** `time.clock_gettime_ns(CLOCK_BOOTTIME)`：同一次开机内所有进程读到同一条单调时间线，不受 `settimeofday`/NTP 跳变影响，包含挂起时间。本沙箱确认该时钟与 `/proc/sys/kernel/random/boot_id` 可读（**目标环境 NOT TESTED**）。**预算区间 = 账本 `open` 行到 `close` 行**，长度 `close.bt_ns − open.bt_ns ≤ budget_ns`（30 分钟，数值来自冻结配置，**本草案不改动**）。`open` 行含 `deadline_bt_ns = bt_ns + budget_ns`。`seq` 与事件日志的 `utc` **不是**计时来源。
+**(a) 计时源与预算区间。** `time.clock_gettime_ns(CLOCK_BOOTTIME)`：同一次开机内所有进程读到同一条单调时间线，不受 `settimeofday`/NTP 跳变影响，包含挂起时间。本沙箱确认该时钟与 `/proc/sys/kernel/random/boot_id` 可读（**目标环境 NOT TESTED**）。**预算区间 = 账本 `open` 行到 `close` 行**，长度 `close.bt_ns − open.bt_ns ≤ budget_ns`（30 分钟，数值来自冻结配置，**本草案不改动**）。`open` 行含 `deadline_bt_ns = bt_ns + budget_ns`。`seq` 与事件日志的 `utc` **不是**计时来源：**`seq` 不参与任何耗时数值的计算**，但**参与账本有效性判定**（`seq` 必须从 0 连续递增；不连续、重排、`prev` 哈希链不符都使账本无效），两者不得混为一谈（见测试 (g1) / (g2)）。
 
 **(b) 账本事件与严格状态转换。** 行格式与全部事件见 2.4(b)。合法转换如下，其余一律非法（非法转换 → BLOCKED `budget_unprovable`）：
 
@@ -444,7 +484,7 @@ sub BP -> BP0
 |---|---|---|---|
 | `NEW` | `open` | `OPEN` | 必须是 `seq` 0 |
 | `OPEN` | `stage_start` | `STAGE` | `remaining = deadline_bt_ns − 当前 bt_ns > 0`；上一阶段已 `stage_end`；`stage_id` 未用过 |
-| `STAGE` | `stage_end`（`status`=ok / failed / blocked） | `OPEN` | `stage_id` 与 `stage_start` 一致；已完成 (d) 的 T5–T6（残留检查） |
+| `STAGE` | `stage_end`（`status`=ok / failed / blocked） | `OPEN` | `stage_id` 与 `stage_start` 一致；已完成 (d) 的 T5–T6（残留检查）。**`status` 不是 `ok` 之后，唯一合法的下一行是 `close`**（修订 4） |
 | `STAGE` | `terminate_begin` | `TERMINATING` | 每个阶段至多一次；此后整个运行的结果不得为 PASS |
 | `TERMINATING` | `terminate_signal`（TERM，之后可 KILL） | `TERMINATING` | 至多两行 |
 | `TERMINATING` | `reap_done` | `REAPED` | 必含 `confirmed` 与三个时间点 |
@@ -462,7 +502,7 @@ sub BP -> BP0
 5. 监督器用 `waitpid(WNOHANG)` 加不超过 1 s 的轮询睡眠检查 `CLOCK_BOOTTIME`（不使用依赖单调钟的 `signal.setitimer` 作为唯一手段）；因此超限检测的粒度不超过 1 s，加上写入延迟，**实际终止时刻会略晚于 `deadline_bt_ns`**，该延迟计入预算而不被忽略。
 
 **(d) 终止协议（超限时，按顺序执行；每一步都写账本行）。**
-- **T1** 写 `terminate_begin{stage_id, reason}`（`reason`=deadline / supervisor_abort / interrupt）。从此刻起结果不得为 PASS——**即使该阶段此后以退出码 0 自行结束**。
+- **T1** 写 `terminate_begin{stage_id, reason}`（`reason`=deadline / supervisor_abort / interrupt）。从此刻起该阶段不得被计为成功——**即使它此后以退出码 0 自行结束**；`reason`=deadline 使 `close.result` 必为 `EXCEEDED`，其余两种使 `close.run_state` 必为 `ABORTED`（取值规则见 (e)、11.9(a)）。
 - **T2** 对阶段进程组 `killpg(pgid, SIGTERM)`，写 `terminate_signal{TERM}`。
 - **T3** 等待至多 `G_term`（暂定 10 s，**待裁决参数**）；以 `CLOCK_BOOTTIME` 计，等待期间直接子进程自行退出则跳到 T5。
 - **T4** 若直接子进程仍在，或 `killpg(pgid, 0)` 仍成功（进程组仍有成员）：`killpg(pgid, SIGKILL)`，并对监督器名下被重新挂靠的非监督器自己的后代发 SIGKILL；写 `terminate_signal{KILL}`；再等待至多 `G_kill`（暂定 5 s，待裁决）。
@@ -474,8 +514,8 @@ sub BP -> BP0
 - 冻结 Driver 的超时由其自身先触发时（Driver 自己以 BLOCKED 退出），监督器按正常结束记录，不发信号。
 
 **(e) `close` 何时写、写失败怎么办。**
-- 写 `close` 的前提：当前没有运行中的阶段；所有 `stage_end` 已写；所有被终止阶段的 `reap_done.confirmed=true`；残留检查无残留；（若 S5 已运行）事件日志中已有 `read_phase_closed`。
-- `close{result, total_ns, el_lines_at_k3}`：`result=WITHIN_BUDGET` 当且仅当：状态机合法、全程同一 `boot_id`、无 `anomaly`、无 `terminate_begin`、全部回收已确认、`total_ns ≤ budget_ns`；`total_ns > budget_ns` 或发生过 `terminate_begin` → `EXCEEDED`；有 `anomaly`、回收未确认、`boot_id` 变化 → `UNPROVABLE`。`el_lines_at_k3` 是一个**整数**（`k3 + 1`），不是哈希，因此不给依赖图增加边。
+- **写 `close` 的前提（修订 4）：** 监督器所知的运行中阶段已全部有 `stage_end`；**不再要求**「回收已确认」或「存在成功事件」——回收未确认也必须写 `close`（`result=UNPROVABLE`），否则账本永远无法关闭。事件日志的终点要求按路径区分：**成功路径**（S0–S5 都走到）要求已有 `read_phase_closed`；**失败路径**要求已有 `run_aborted`；事件日志已不可写时，`close.el_end_event=unwritable`，`abort_cause` 与诊断写在 `close` 内。失败路径不能强求一个不会出现的成功事件（详见 11.9）。
+- **`close` 的取值规则：** `result`（优先级 UNPROVABLE > EXCEEDED > WITHIN_BUDGET）——有 `anomaly`、回收未确认、`boot_id` 变化、状态机非法 → `UNPROVABLE`；否则 `total_ns > budget_ns` 或存在 `reason`=deadline 的 `terminate_begin` → `EXCEEDED`；否则 `WITHIN_BUDGET`。`run_state`：`el_end_event` 为 `read_phase_closed` → `COMPLETED`，其余 → `ABORTED`。`result` **只描述时间与账本有效性**，与实验是否成功无关（三维度的关系见 11.9(a)）。`el_lines_at_end` 是一个**整数**（终点事件的行号 + 1，不可写时为 `null`），不是哈希，因此不给依赖图增加边。
 - **写入失败：** 监督器重试一次（含 `fsync`）；仍失败 → 向标准错误输出诊断，向仍在运行的进程组发 SIGKILL（尽力而为），以专用退出码（暂定 70）退出。**没有 `close` 行 = `BLOCKED(budget_unprovable)`，绝不能 PASS。** S0 预检要求运行目录所在磁盘有足够空间，并在**独立的临时文件**上做一次「追加 + `fsync` + 删除」自检（不碰账本）。
 - 监督器本身被杀或崩溃：无 `close` → `BLOCKED(budget_unprovable)`；**不允许另起监督器续写同一账本**，只能新建运行目录重做（与 R7.7 一致）。
 
@@ -502,14 +542,18 @@ sub BP -> BP0
 
 | 用例 | 预期 |
 |---|---|
-| (a) 正常、同一 `boot_id`、总计 < 预算、`close` 在 `read_phase_closed` 之后 | WITHIN_BUDGET |
+| (a) 正常、同一 `boot_id`、总计 < 预算、`close` 在 `read_phase_closed` 之后 | `result=WITHIN_BUDGET`，`run_state=COMPLETED` |
 | (b) 两个不同 `boot_id` | BLOCKED |
 | (c) `wall_ns` 人为拨快 1 小时 | BLOCKED |
 | (d) 总计 30:01，无 `terminate_begin` | BLOCKED `budget_exceeded` |
 | (e) 缺 `close` | BLOCKED |
 | (f) 删掉中间一行（链断） | BLOCKED |
-| (g) `seq` 被重排而 `bt_ns` 不变 | 判定结果不变（证明未用 `seq` 计时） |
-| (h) 有 `terminate_begin`，阶段随后以退出码 0 结束 | 结果非 PASS（BLOCKED `budget_exceeded`） |
+| (g1) **耗时数值**：把同一份账本在内存中的 `seq` 字段任意置换（不改 `bt_ns`），调用耗时计算 | 得到的 `close.bt_ns − open.bt_ns` 与未置换时**完全相同**（证明耗时计算不读 `seq`）。这只是对耗时数字的断言，**不是**对验收结果的断言 |
+| (g2) **账本有效性**：`seq` 不连续（0,1,3…）、两行重排、重排后重算了 `prev`、`prev` 哈希链不符、状态转换非法 | 验收**一律拒绝**：BLOCKED `budget_unprovable`（代码依次为 `LEDGER_SEQ_INVALID` / `LEDGER_SEQ_INVALID` / `LEDGER_CHAIN_BROKEN` / `LEDGER_BAD_TRANSITION`）；即便耗时数字未变，整体验收结果也不是 PASS |
+| (h) 有 `reason`=deadline 的 `terminate_begin`，阶段随后以退出码 0 结束 | `close.result=EXCEEDED`，最终 BLOCKED `budget_exceeded`，不是成功 |
+| (h2) 有 `reason`=interrupt 的 `terminate_begin`，总耗时 < 预算 | `close.result=WITHIN_BUDGET`，`run_state=ABORTED`，最终 BLOCKED `interrupted`（预算结果不等于实验成功） |
+| (h3) 回收未确认仍必须写 `close` | `close.result=UNPROVABLE`，不因前提不满足而拒绝关闭账本 |
+| (h4) 失败路径的 `close` 的 `el_end_event` 是 `run_aborted`，事件日志里却有 `read_phase_closed` | FAIL `EVENT_LOG_BROKEN` |
 | (i) `reap_done.confirmed=false` | BLOCKED `TERMINATION_UNCONFIRMED` |
 | (j) 阶段脚本留下残留后台进程 | BLOCKED `residual_process` |
 | (k) `close` 之后出现 `wrapup_end` 以外的行（选项 X） | BLOCKED |
@@ -525,9 +569,9 @@ sub BP -> BP0
   - **K0** = 预算账本第 0 行（`open`）的前缀；
   - **K1** = 事件日志 `P_{k1}`，`k1` 为 `tokenizer_hash_logged` 所在行；
   - **K2** = `P_{k2}`，`k2` 为 `heldout_audit_done` 所在行；
-  - **K3** = `P_{k3}`，`k3` 为 **`read_phase_closed`** 所在行（修订 3：不再是 `driver_exit`。最终读后快照、`post_read_snapshot`、三个 `gate_result` 都在 K3 之内，见 2.4、R6.6）；
+  - **K3** = `P_{k3}`，成功路径的 `k3` 为 **`read_phase_closed`** 所在行（修订 3：不再是 `driver_exit`。最终读后快照、`post_read_snapshot`、三个 `gate_result` 都在 K3 之内，见 2.4、R6.6）；**失败路径**的 `k3` 为 `run_aborted` 所在行（修订 4，11.9），此时 K3 只固定「最终日志前缀」，不含成功闸门结论；
   - **K4** = 预算账本到 `close` 为止的前缀（选项 X），或到 `pin_phase` 为止的前缀（选项 Y，11.1(f)）。
-- **固定记录 `pin_Kn.json`**（规范 JSON：键排序、紧凑分隔符、ASCII 转义，末尾一个换行；与冻结 Driver 的 `canon()` 同一序列化，外加换行）：`{"end_event": …, "line_count": N, "log": "event_log" | "budget_ledger", "name": "Kn", "prefix_digest": "sha256:<64 位十六进制>", "run_id": …, "schema": "d1_pin_v1"}`。`line_count` = `k + 1`。`pin_digest` = 该文件**原始字节**的 `sha256:` 摘要。不含数据，不含文本。
+- **固定记录 `pin_Kn.json`**（规范 JSON：键排序、紧凑分隔符、ASCII 转义，末尾一个换行；与冻结 Driver 的 `canon()` 同一序列化，外加换行）：`{"end_event": …（成功路径的 K3 为 `read_phase_closed`，失败路径为 `run_aborted`）, "line_count": N, "log": "event_log" | "budget_ledger", "name": "Kn", "prefix_digest": "sha256:<64 位十六进制>", "run_id": …, "schema": "d1_pin_v1"}`。`line_count` = `k + 1`。`pin_digest` = 该文件**原始字节**的 `sha256:` 摘要。不含数据，不含文本。
 - **固定方式（默认，供 R3-D09 裁决）：**
   1. **Git 推送：** 把 `pin_Kn.json` 提交并**普通推送**到远端的专用证据分支（避免改动代码分支）。推送需要对 Git 远端的出口，**与 `HF_HUB_OFFLINE` 无关**；出口被封 → `BLOCKED`，**不得跳过固定**。
   2. **带外副本：** 在继续下一阶段之前，把 `name`、`line_count`、`prefix_digest`、`pin_digest` 与提交 SHA 通过独立于执行主机的渠道发给审核者或负责人，由对方留存。
@@ -546,7 +590,7 @@ sub BP -> BP0
 - **门禁（把「先固定 Tokenizer，再接触 val/test」变成可执行条件）：**
   - `G_S4`（2.4）：S4 开始时，监督器**重新**执行 K0、K1 的 RV 并写 `pin_remote_verified`，两者都为 PASS，且 `absence_witness.result=CLEAN`、`tokenizer_hash_logged` 已写，才写 `gate_check(G_S4)=PASS`，之后才允许 `online_switch` 与 validation/test 的 `download_start`。S4 脚本启动时读取日志尾部校验这一点，不满足就 `BLOCKED`。
   - `G_S5`：K0、K2 的 RV 都为 PASS，且 A4、A5 已写，才允许 A6 与 `pre_read_snapshot`。
-  - 验收脚本另验证：首个 validation/test 的 L1+ 事件（`download_start`）的 `seq` 大于 `tokenizer_hash_logged`、`pin_pushed`(K1)、`pin_remote_verified`(K1)=PASS 与 `gate_check`(G_S4)=PASS 的 `seq`；这是**事件日志里的顺序**关系，不是时间关系。
+  - 验收脚本对 K3 的要求（修订 4）：R6.6 由验收脚本**自己**重新执行 K3 的 RV 并逐项核对（4.1 R6.6），不引用运行期写下的 `pin_remote_verified` 结论。验收脚本另验证：首个 validation/test 的 L1+ 事件（`download_start`）的 `seq` 大于 `tokenizer_hash_logged`、`pin_pushed`(K1)、`pin_remote_verified`(K1)=PASS 与 `gate_check`(G_S4)=PASS 的 `seq`；这是**事件日志里的顺序**关系，不是时间关系。
 - **信任边界（必须写入每份验收记录）：**
   - 能证明：被固定前缀内的任何行的**修改、插入、删除、重排**，以及固定时刻之后的尾部截断（`line_count` 与总行数对不上），都会使前缀哈希或行数与固定记录不符 → `FAIL`。
   - **不能证明：** 日志内容本身是真实的（脚本可以如实记录了错误的事实，或者在记录器之外操作）；最后一个固定点**之后**追加或改写的行（所以 K3、K4 在流程末端固定，并受收尾上限 `W` 约束）；执行主机与推送凭据同时被控制时，伪造发生在固定**之前**；GitHub 远端本身可信；提交时间戳可信（作者可设定，所以**不用提交时间判断先后**，只用远端祖先关系和审核者的带外副本）。
@@ -582,7 +626,7 @@ sub BP -> BP0
 | C-4 | 每个读取子进程前后各哈希一次 | 子进程粒度的变化 | 必须改冻结 Driver（触发 R3-D09 的重新冻结），本草案不采用 |
 
 - **可验证验收条件：** 验收记录必须逐字写出「该检查只证明两个检查时刻一致」这句限定语（脚本模板内含此文本，缺失 → 验收失败）；若选用 C-1/C-2/C-3，则对应控制的证据（副本哈希、`lsattr` 输出、监视日志与心跳）为必选工件。合成测试：把文件改一字节再改回（保持 `ctime` 被测试夹具回写）→ 不选 C-3 时**预期漏检**并被如实记录；选 C-3 时 FAIL。
-- **时序（修订 3）：** 最终读后快照必须在 Driver 退出、`children_reaped` 之后、K3 固定**之前**写入，并连同相应的 `gate_result` 一起落在 K3 的前缀之内（2.4、R6.2、R6.6）；不得先固定 K3 再补写关键读后证据。
+- **时序（修订 3）：** 最终读后快照必须在 Driver 退出、`children_reaped` 之后、K3 固定**之前**写入，并连同相应的 `gate_result` 一起落在 K3 的前缀之内（2.4、R6.2、R6.6）；不得先固定 K3 再补写关键读后证据。该时序由独立验收的 R6.6 重新核对（4.1）；失败路径没有 `read_phase_closed`，R6.6 记 NOT TESTED（11.9）。
 - **残余风险：** 在本草案默认配置下，该检查不覆盖运行期内的 TOCTOU/ABA；负责人需要明确接受或加选控制（R3-D03）。
 
 
@@ -706,6 +750,7 @@ sub BP -> BP0
 - **隐含依赖：** 日志行里记录了工件摘要，也构成依赖（`rec`）；前缀包含是依赖（`sub`）。三类边合并后仍必须无环。这样可以发现类似「LP3 记录了 A7 的摘要，而 A7 又引用 LP3」的隐藏循环。
 - **S3 的写入顺序（与 2.4 的规范顺序一致）：** ① 保存 `tokenizer.json` → ② 完成 T2–T6 的 `check_result` → ③ `absence_witness` → ④ `tokenizer_hash_logged`（第 `k1` 行，内容是 `tokenizer.json` 的摘要，**不是** A4 的摘要）→ ⑤ 计算 `P_{k1}`，写 `pin_K1.json`，推送，追加 `pin_pushed`(K1)（第 `k1+1` 行）→ ⑥ `pin_remote_verified`(K1) → ⑦ 写 A4（引用 `P_{k1}` 与 PIN1）→ ⑧ 追加 `manifest_written`(A4)。验收脚本核对：`tokenizer_hash_logged` 的行号 = `pin_K1.json` 的 `line_count − 1`。
 - **预算账本：** BP0（`open` 行）与 BP（到 `close`，选项 Y 为到 `pin_phase`）都是前缀；A8 同时引用 PIN0 与 PIN4；验收脚本另验证 BP0 是 BP 的前缀（`sub`）。
+- **修订 4 的重新计算：** 修订 4 新增的事件（`run_aborted`）、字段与流程**没有引入新的工件、也没有引入新的摘要引用**（失败路径只使用既有节点的子集，11.9），所以第 5 节的 17 个节点与 43 条边不变；但仍按本节的方法**重新构图并重新计数**（结果记录在检查点），不沿用上一轮的结果。
 - **残余风险：** 边列表由人工从设计转成，自检只能证明「表里写的依赖」无环，不能证明实现时没有加入表外依赖；所以验收脚本也要对**实际生成的清单与日志**做同样的构图、无环与层级检查。
 
 ### 11.8 摘要格式与冻结接口的边界（对应 11.5 规则 1；修订 3 新增）
@@ -750,6 +795,144 @@ sub BP -> BP0
 | 同算法、值相同 | 任一 | 通过 |
 
 **残余风险：** 转换边界由人工设计，生成器尚未编写；冻结代码对未登记键的容忍（"额外键被忽略"）只经源码检查，没有在本窗口运行验证；`xet:` 标签的值不可本地重算，只能记录。
+
+### 11.9 异常终止的收尾与证据归档（C04-02；修订 4 新增）
+
+**适用范围：** S0–S5 任一阶段发生超时、中断、校验失败（FAIL / BLOCKED 的检查或完整性不符）、或子进程无法确认退出。**不修改冻结 Driver**；以下全部由外层监督器与新脚本在 Driver 之外完成，Driver 自己的退出（包括它自己的内部超时和非零退出码）照实记录，属于**正常路径**，不触发本节。
+
+**(a) 三个相互独立的维度（不得混用）：**
+
+| 维度 | 取值 | 由谁写入 | 含义 |
+|---|---|---|---|
+| 预算结果 | `WITHIN_BUDGET` / `EXCEEDED` / `UNPROVABLE` | 监督器 `close.result`，S6 复核 | **只**描述时间与账本有效性。`WITHIN_BUDGET` 不表示实验成功 |
+| 运行状态 | `COMPLETED` / `ABORTED` | 监督器 `close.run_state` | 证据是否完整地走完 S0–S5：`el_end_event` 为 `read_phase_closed` 即 `COMPLETED`（即使 S5 的 `s5_status` 是 `DRIVER_NONPASS` 或 `GATE_FAILED`，证据仍完整）；为 `run_aborted` / `unwritable` / `none` 即 `ABORTED` |
+| 实验最终状态 | 失败路径：`BLOCKED(code)` 或 `FAIL(code)`（`run_aborted.final_status`）；成功路径：S6 输出 `NOT_ACCEPTED` 或 `ALL_GATES_PASS_CANDIDATE` | 失败路径由监督器；成功路径由 S6 验收脚本 | 实验结论。**脚本从不宣布 D1 PASS**（第 6 节） |
+
+- **映射规则：** (1) `EXCEEDED` ⇒ 最终状态至少是 `BLOCKED(budget_exceeded)`，永远不是候选通过；(2) `UNPROVABLE` ⇒ `BLOCKED(budget_unprovable)`；(3) `ABORTED` ⇒ 最终状态取 `run_aborted.final_status`，S6 输出 `NOT_ACCEPTED`；(4) `COMPLETED` 且 `WITHIN_BUDGET` 且所有必需闸门都有证据并通过，才可能是 `ALL_GATES_PASS_CANDIDATE`；(5) 多个原因并存时，最终状态取最严重者（`FAIL` 高于 `BLOCKED`，同级取最早发生者），所有原因都列出。
+
+**(b) 通用收尾顺序（监督器；每一步失败都只追加「缺失证据」说明，不回头改写已写的行）：**
+1. 不再启动新阶段（账本状态机：`stage_end` 的 `status` 不是 `ok` 之后只允许 `close`）。
+2. 对仍在运行的进程做终止协议（11.1(d) T1–T7）或残留检查（T5–T6）；记录 `reap_done` / `children_reaped`。
+3. 事件日志（若仍可写）依次追加：事实性事件（`interrupted` / `driver_exit` / `children_reaped`，S5 回收已确认时可补 `post_read_snapshot`、`gate_result`、`manifest_written`(A7, `partial`=true)）→ **`run_aborted`**（`cause`、`final_status`、`code`、`missing_evidence`、`partial_artifacts`）。**监督器不写任何 PASS / NOT_APPLICABLE**；已有的 PASS 事件保持原样且不被升级为整体通过。
+4. 账本 `stage_end` → `close`（取值规则见 11.1(e)）。`close.run_state=ABORTED`，`el_end_event=run_aborted`；若事件日志已不可写，则 `el_end_event=unwritable`，`abort_cause` 与诊断直接写在 `close` 里。
+5. 收尾阶段 `W`：对已存在的终点事件产生并推送 pin，K3 的 `end_event` 是 `run_aborted`，K4 是账本到 `close`（选项 Y 为 `pin_phase`）；执行 RV。**终点事件不存在的 pin 不产生**（例如 S4 中断时没有 K2），连同推送失败的 pin 一起记入 `wrapup_end.pins_missing`（附原因）。
+6. 运行目录**原样保留**：不删除、不清理、不改名；`*.partial` 永不转正。
+7. S6 以「失败路径模式」运行：输出 `NOT_ACCEPTED`，逐项列出已有证据、缺失证据（NOT TESTED）和最终状态。
+
+**(c) 四条具体流程（预期序列；`E` = 事件日志，`B` = 账本；与 2.4 的注册表一致）：**
+
+**F1 — S4 中断（外部信号终止审计脚本，或监督器收到 SIGINT / SIGTERM）：**
+```
+# FLOW F1
+E check_result R7.3 PASS
+B terminate_begin interrupt      (仅当信号发给监督器；若只有阶段进程被外部信号杀死，则无此行)
+B terminate_signal TERM
+B reap_done
+E interrupted
+E check_result R7.7 BLOCKED
+E run_aborted INTERRUPTED
+B stage_end S4
+B close
+E pin_pushed K3
+E pin_remote_verified K3
+E pin_pushed K4
+E pin_remote_verified K4
+B wrapup_end
+E manifest_written A8
+```
+- 保留：已写的日志与账本、K0 / K1 及其 RV 记录、已下载的 validation/test 文件（它们在 K1 之后合法获得）、`*.partial` 审计输出；缺失：R7.4–R7.6（若未完成）、`heldout_audit_done`、K2、A5、A6、A7。
+- 预算结果通常 `WITHIN_BUDGET`；运行状态 `ABORTED`；最终 `BLOCKED(interrupted)`；R7.7 为 BLOCKED。重新运行必须用新的运行目录和新的空缓存（S0 的要求）。
+
+**F2 — S5 超时（监督器截止时间到达时冻结 Driver 仍在运行）：**
+```
+# FLOW F2
+B terminate_begin deadline
+B terminate_signal TERM
+B terminate_signal KILL
+B reap_done
+E driver_exit budget
+E children_reaped
+E manifest_written A7
+E post_read_snapshot
+E gate_result R6.1
+E gate_result R6.2
+E gate_result R6.3
+E run_aborted TIMEOUT
+B stage_end S5
+B close
+E pin_pushed K3
+E pin_remote_verified K3
+E pin_pushed K4
+E pin_remote_verified K4
+B wrapup_end
+E manifest_written A8
+```
+- 其中 `manifest_written`(A7) 带 `partial`=true；`post_read_snapshot` 与 `gate_result` 仅当 `children_reaped.confirmed`=true 才补做，且只是对机械检查的**如实记录**——它们可以是 PASS，但**整体仍是失败路径**，没有 `read_phase_closed`，R6.6 记 NOT TESTED。
+- 预算结果 `EXCEEDED`；运行状态 `ABORTED`；最终 `BLOCKED(budget_exceeded)`；终止耗时 `kill_overhead_ns` 必须记录（11.1(d)）。
+
+**F3 — S5 残留进程（Driver 自己退出，但回收检查发现残留，或终止后无法确认退出）：**
+```
+# FLOW F3a (残留被终止并确认)
+E driver_exit none
+B terminate_begin supervisor_abort
+B terminate_signal TERM
+B reap_done
+E children_reaped
+E manifest_written A7
+E post_read_snapshot
+E gate_result R6.1
+E gate_result R6.2
+E gate_result R6.3
+E run_aborted RESIDUAL_PROCESS
+B stage_end S5
+B close
+E pin_pushed K3
+E pin_remote_verified K3
+E pin_pushed K4
+E pin_remote_verified K4
+B wrapup_end
+E manifest_written A8
+# FLOW F3b (无法确认退出)
+E driver_exit none
+B terminate_begin supervisor_abort
+B terminate_signal TERM
+B terminate_signal KILL
+B reap_done
+E children_reaped
+E run_aborted TERMINATION_UNCONFIRMED
+B stage_end S5
+B close
+E pin_pushed K3
+E pin_remote_verified K3
+E pin_pushed K4
+E pin_remote_verified K4
+B wrapup_end
+E manifest_written A8
+```
+- F3a：`children_reaped.residual_found`=true、`confirmed`=true；预算结果按时间判定（可以是 `WITHIN_BUDGET`）；最终 `BLOCKED(residual_process)`。F3b：`confirmed`=false，仍有进程可能触碰 train 文件，所以**不补** `post_read_snapshot`、不写 A7；`close.result=UNPROVABLE`；最终 `BLOCKED(termination_unconfirmed)`。
+
+**F4 — 监督器异常退出（被杀、崩溃、账本写失败后以退出码 70 退出）：**
+- 监督器已不存在，没有任何收尾可做：**没有 `close`、没有 `run_aborted`、没有 K3 / K4**。阶段进程以 `PR_SET_PDEATHSIG`（由监督器启动它们的 `exec` 包装器在 `exec` 之前设置；该设置跨 `execve` 保留，**目标环境 NOT TESTED**）在监督器死亡时被内核杀死，尽力避免孤儿进程继续写文件。
+- 之后的处理只能由**另一个**只读工具完成：S6 验收脚本的 `--postmortem` 模式。它**不续写**原账本与事件日志、**不修复**撕裂的末行，只做：(1) 验证两份文件到最后一行完整记录为止的哈希链；(2) 写 `evidence/postmortem.json`（独立叶子文件，被 A8 记录摘要，不是图节点），内容为最后有效的 `seq`、末行是否撕裂、缺失的 `close` / `run_aborted` / K3 / K4、观测到的 `boot_id`、残留进程的尽力扫描结果、`cause=SUPERVISOR_EXIT`；(3) 可对现存前缀额外计算并推送标注为 `late=true` 的 pin，**它们不等同于 K3 / K4，也不能提升任何状态**。
+- 预算结果无法给出（没有 `close`）→ 视为 `UNPROVABLE`；运行状态 `ABORTED`；最终 `BLOCKED(budget_unprovable)`，原因 `SUPERVISOR_EXIT`。
+
+**(d) 验收预期（失败路径；S6 的验收脚本核对，本轮不运行）：**
+
+| 用例 | 预期 |
+|---|---|
+| F1：存在 `interrupted` 之后又出现 `heldout_audit_done` | FAIL `EVENT_ORDER_VIOLATION` |
+| F1：`run_aborted` 缺失但账本 `close.run_state=ABORTED` 且 `el_end_event=run_aborted` | FAIL `EVENT_LOG_BROKEN` |
+| F2：监督器代写的事件里出现 `check_result`=PASS 或 `NOT_APPLICABLE` | FAIL（监督器不得代写 PASS） |
+| F2：`read_phase_closed` 与 `run_aborted` 同时存在 | FAIL `EVENT_ORDER_VIOLATION` |
+| F2：缺 `kill_overhead_ns` | 验收 FAIL |
+| F3b：已写 `post_read_snapshot`（`confirmed`=false 时） | FAIL `EVENT_ORDER_VIOLATION` |
+| 任一失败路径：验收输出 `ALL_GATES_PASS_CANDIDATE` | FAIL（必须 `NOT_ACCEPTED`） |
+| 任一失败路径：缺失的 pin 没有出现在 `wrapup_end.pins_missing` 且没有说明原因 | FAIL |
+| F4：存在 `postmortem.json` 但原账本被改动（续写、截断、修复末行） | FAIL |
+| F4：没有 `close`，验收输出预算结果 `WITHIN_BUDGET` | FAIL |
+| 失败路径：被 `rec` 边引用的摘要指向层级更高的节点（构图检查） | FAIL |
+
+**(e) 残余风险：** 监督器自身故障时只能靠事后只读工具与此前已固定的 pin（K0、K1、K2…）取证；`PR_SET_PDEATHSIG`、`/proc` 扫描在目标环境 NOT TESTED；失败路径的 `missing_evidence` 与 `partial_artifacts` 由监督器列出，监督器本身出错时列表可能不全，所以验收脚本另做独立的目录列表对照；收尾阶段的 pin 推送在无网络时无法完成——这只会让缺失证据增多，不会让任何状态变好。
 
 ## 12. 修订 2 逐项记录（F3B-D1-SPEC-R3-REVIEW-002）
 
@@ -937,9 +1120,57 @@ sub BP -> BP0
 | 残余风险 | 边列表是人工转换；实现可能引入表外依赖。 |
 | 状态 | 已自检；ChatGPT 复核 PENDING。 |
 
-## 15. 下一条唯一研发指令
+## 16. 修订 4 收口记录（F3B-D1-SPEC-R3-CLOSURE-004）
 
-等待 ChatGPT 对第三轮 R3 修订稿进行独立审核，再由项目负责人决定是否批准 R3；项目负责人对第 7 节的决策记录（R3-D01…R3-D11）作出正式批准。批准前：不下载、不拟合、不运行 D1、不使用 GPU、不修改冻结文件、不开始 D2/D3。
+背景：ChatGPT 独立读取远端修订 3（提交 `ca40fb74d8fea2c17a1a5116ba8939b17ce2e847`），重新构建了第 5 节的依赖图，确认 Git 变更只有 5 个 Markdown 文件、17 个节点、`ref` 31 / `rec` 9 / `sub` 3 共 43 条边、无重复边、无环、层级正确、R3-D01–D11 仍未批准；同时指出四处仍需收口的规范缺口。本轮只做文档收口，保留 17 节点 / 43 边设计，并重新计算了图。第 12、14 节是历史记录，保留原文；其中与本节冲突的规则以本节和 2.4、4、11 的现行文字为准。每项记录：原规范问题及章节、最小修订内容、正常路径预期、异常路径预期、状态、残余风险。
+
+### 16.1 C04-01：R7.7 正常路径的 N/A 语义
+
+| 栏 | 内容 |
+|---|---|
+| 原规范问题及章节 | §4.2 R7.7 写「无中断 → 不适用」，但 §2.4 的 `check_result` 没有可登记的「不适用」状态，`heldout_audit_done` 的前置写成「R7.1–R7.7 的 `check_result` 已写」，正常路径下 R7.7 没有任何可核对的证据；§11.6 未说明中断时的停止语义。 |
+| 最小修订内容 | 2.4 新增状态词枚举：`check_result.status` ∈ {PASS, FAIL, BLOCKED, NOT_APPLICABLE}，`NOT_APPLICABLE` 只允许 R7.7 使用且**不是 PASS**；R7.7 正常运行**写入** `check_result`(R7.7, NOT_APPLICABLE, NO_INTERRUPTION)，并规定三项独立复核的有效条件；`heldout_audit_done` 的前置改为「R7.1–R7.6 各一条 PASS + R7.7 一条 NOT_APPLICABLE + 日志里没有 `interrupted` / `run_aborted`」；§4.2 R7.7 行与汇总句同步，验收报告写「R7.1–R7.6 PASS；R7.7 NOT_APPLICABLE」；给出正常与中断两条最小事件序列。 |
+| 正常路径预期 | R7.1–R7.6 各有 PASS；R7.7 为 NOT_APPLICABLE（有效条件成立）；之后才能写 `heldout_audit_done` 与 `pin_pushed`(K2)。 |
+| 异常路径预期 | 出现中断：监督器写 `interrupted`、`check_result`(R7.7, BLOCKED, INTERRUPTED)、`run_aborted`；不得再有 `heldout_audit_done`、K2、A5；`NOT_APPLICABLE` 的有效条件不成立 → FAIL `R77_NA_INVALID`；缺 R7.7 的 `check_result` 却有 `heldout_audit_done` → FAIL `EVENT_ORDER_VIOLATION`。 |
+| 状态 | 文档自检 PASS；实现 NOT TESTED；PROPOSED / PENDING OWNER DECISION（R3-D05、R3-D08）。 |
+| 残余风险 | `NOT_APPLICABLE` 的复核依赖账本与日志的完整性（同一信任域，靠 K0 / K1 / K2 缓解）；R7.7 由审计脚本自己写，被外部信号杀死时由监督器代写 BLOCKED。 |
+
+### 16.2 C04-02：异常终止时的预算关闭与证据归档
+
+| 栏 | 内容 |
+|---|---|
+| 原规范问题及章节 | §11.1(e)：`close` 的前提要求「回收已确认」「已有 `read_phase_closed`」，失败路径下这些条件永远满足不了，账本无法关闭；§11.2：K3 的终点只有成功事件；`close.result` 与实验最终状态混用，且「`terminate_begin` 之后结果必非 PASS」把预算结果和运行状态搅在一起。 |
+| 最小修订内容 | 新增 §11.9：三个相互独立的维度（预算结果 / 运行状态 / 实验最终状态）及映射规则；通用收尾顺序；注册表新增 `run_aborted`（失败路径的终点事件，K3 的 `end_event` 为 `run_aborted`）与 `close` 的新字段（`run_state`、`abort_cause`、`el_end_event`、`el_lines_at_end`）、`wrapup_end.pins_missing`；`close` 前提改为不依赖成功事件，回收未确认也必须关闭（UNPROVABLE）；监督器只写 BLOCKED / FAIL 与事实，不写 PASS / NOT_APPLICABLE；部分证据不改写成 PASS；pin 终点不存在则不产生并记入缺失。给出四条具体流程 F1（S4 中断）、F2（S5 超时）、F3a / F3b（S5 残留进程 / 无法确认退出）、F4（监督器异常退出，事后只读 `--postmortem`）。**不新增对冻结 Driver 的任何修改要求。** |
+| 正常路径预期 | `read_phase_closed` 存在；`run_state=COMPLETED`；K3 终点是 `read_phase_closed`；未出现 `run_aborted`。 |
+| 异常路径预期 | F1：BLOCKED `interrupted`，WITHIN_BUDGET 可能成立，ABORTED；F2：EXCEEDED，BLOCKED `budget_exceeded`；F3a：BLOCKED `residual_process`；F3b：UNPROVABLE，BLOCKED `termination_unconfirmed`，不补读后快照；F4：无 `close`，BLOCKED `budget_unprovable`，事后 `postmortem.json`。任何失败路径的验收输出都是 `NOT_ACCEPTED`，缺失证据逐项列出。 |
+| 状态 | 文档自检 PASS；实现 NOT TESTED；PROPOSED / PENDING OWNER DECISION（R3-D07、R3-D09）。 |
+| 残余风险 | 监督器自身故障时只能靠事后只读工具与此前已固定的 pin 取证；`PR_SET_PDEATHSIG`、`/proc` 扫描目标环境 NOT TESTED；失败路径无网络时 pin 推送无法完成（缺失证据增多，不改善任何状态）。 |
+
+### 16.3 C04-03：预算测试 (g) 的状态语义
+
+| 栏 | 内容 |
+|---|---|
+| 原规范问题及章节 | §11.1 测试 (g)「`seq` 被重排而 `bt_ns` 不变 → 判定结果不变」把「耗时数字不变」写成「整体验收结果不变」，与账本有效性要求（`seq` 连续、哈希链、状态转换）矛盾。 |
+| 最小修订内容 | (g) 拆为 (g1)（耗时数值：内存中置换 `seq` 不改变 `close.bt_ns − open.bt_ns`，只断言耗时计算不读 `seq`）与 (g2)（账本有效性：`seq` 不连续、重排、重排后重算 `prev`、哈希链不符、状态转换非法，一律 BLOCKED `budget_unprovable`，代码 `LEDGER_SEQ_INVALID` / `LEDGER_CHAIN_BROKEN` / `LEDGER_BAD_TRANSITION`）；11.1(a) 明写「`seq` 不参与耗时数值，但参与账本有效性判定」。同时新增 (h2)–(h4) 说明预算结果不等于实验成功。 |
+| 正常路径预期 | (g1) 置换前后耗时相同；账本 `seq` 连续、链完整、转换合法时有效。 |
+| 异常路径预期 | (g2) 任一违例，即使耗时数字不变，整体验收也不是 PASS。 |
+| 状态 | 文档自检 PASS；测试 NOT TESTED（本轮不运行）。 |
+| 残余风险 | 测试只规定预期；账本校验器尚未编写。 |
+
+### 16.4 C04-04：R6.6 进入独立验收
+
+| 栏 | 内容 |
+|---|---|
+| 原规范问题及章节 | §4.1 R6.6 只有一行概述，§6 的验收清单写「R6.1–R6.5」，未把 R6.6 列为独立验收的必检项；§11.2 没有要求验收脚本自己重新做 K3 的远端内容验证。 |
+| 最小修订内容 | §4.1 R6.6 展开为 (a)–(d) 四项由验收脚本**自己**核对：`post_read_snapshot` 在 K3 终点之前；R6.1–R6.3 的 `gate_result` 都在 K3 终点之前且与重新推出的结论一致；`read_phase_closed` 的行号与 `pin_K3.json` 的 `line_count` / `end_event` 一致；K3 经实际远端内容验证 RV（验收脚本重新执行）。§6 改为 R6.1–R6.6；任何必需闸门缺证据，输出一律 `NOT_ACCEPTED`，不得出现 `ALL_GATES_PASS_CANDIDATE`；11.2、11.3 同步。 |
+| 正常路径预期 | (a)–(d) 全部成立 → R6.6 PASS。 |
+| 异常路径预期 | 读后证据在 K3 之后 → FAIL `R6_POST_NOT_PINNED`；`line_count` / `end_event` 不符 → FAIL `R6_K3_LINECOUNT_MISMATCH`；缺证据 → BLOCKED `R6_EVIDENCE_MISSING`；RV 无法进行 → BLOCKED `PIN_UNVERIFIABLE`；失败路径 → NOT TESTED 且整体 `NOT_ACCEPTED`。 |
+| 状态 | 文档自检 PASS；验收脚本 NOT TESTED（未编写）。 |
+| 残余风险 | 读后快照仍只证明检查时刻（11.3）；RV 仍受远端信任局限（11.2）。 |
+
+## 17. 下一条唯一研发指令
+
+等待 ChatGPT 对第四轮（收口）R3 修订稿进行独立审核，再由项目负责人决定是否批准 R3；项目负责人对第 7 节的决策记录（R3-D01…R3-D11）作出正式批准。批准前：不下载、不拟合、不运行 D1、不使用 GPU、不修改冻结文件、不开始 D2/D3。
 
 ---
 

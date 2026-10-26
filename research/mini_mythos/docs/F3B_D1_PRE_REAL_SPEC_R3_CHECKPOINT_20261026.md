@@ -183,3 +183,68 @@ R3-D01…R3-D11 全部。修订 3 影响的建议内容：D03（K3 终点与 R6.
 ## 下一条唯一研发指令
 
 等待 ChatGPT 对第三轮 R3 修订稿进行独立审核，再由项目负责人决定是否批准 R3。批准前不下载、不拟合、不运行 D1、不使用 GPU、不修改冻结文件、不开始 D2/D3。
+
+---
+
+# F3B-D1-SPEC-R3-CLOSURE-004 — R3 第四轮收口检查点（追加）
+
+**状态：`R3 DRAFT / PENDING OWNER DECISION`**；本轮自检结论：**`R3 CLOSURE-004 DOCUMENT SELF-CHECK PASS / PENDING CHATGPT REVIEW / PENDING OWNER DECISION`**。不是 FROZEN，不是 REAL D1 PASS，不是 R3 OWNER APPROVED，不是执行授权。仅文档；追加式（以上各节——包括修订 2 的「29 条边」记录、修订 3 的 FAIL 背景与更正——保持原样）。
+
+## 上一轮审核结论（如实记载）
+
+修订 3（提交 `ca40fb74d8fea2c17a1a5116ba8939b17ce2e847`）经 ChatGPT 独立读取远端并重新构建第 5 节正式依赖图：Git 变更只有 5 个 Markdown 文件；17 个节点；`ref` 31 / `rec` 9 / `sub` 3，共 43 条边；无重复边、无环、层级正确；R3-D01–D11 仍未批准。FIX-01…08 的主要设计保留，但发现四处规范缺口（C04-01…04）。
+
+| 项 | 内容 |
+|---|---|
+| 修订基准 | `ca40fb74d8fea2c17a1a5116ba8939b17ce2e847`（分支 `d1-pre-real-spec-r3-20261026`；开始时本地与远端一致，工作区干净，冻结清单 10/10 OK） |
+| 修改的文件 | `F3B_D1_PRE_REAL_SPEC_R3_DRAFT.md`（2.4 注册表与状态词枚举、R7.7 序列、4.1 R6.6、4.2 R7.7、第 5/6/7 节、11.1/11.2/11.3/11.7 补充、新增 11.9、新增第 16 节、第 17 节）；本检查点；`PROJECT_MAP.md`、`SESSION_START_PROTOCOL.md`、`PROJECT_STATUS_20261025.md`（只追加/插入块，零删除） |
+| 没有做 | 没有改动 v1/R1/R2、Driver、Reader、Verifier、测试、冻结配置、`D1_CODE_SHA256SUMS`、历史证据；没有下载真实数据、拟合 Tokenizer、运行 D1、训练、使用 GPU、启动 D2/D3；没有运行任何程序测试（只运行文档静态一致性脚本，脚本在会话临时目录，未入库）；没有批准 R3-D01–D11；没有宣布 FROZEN |
+
+## 四项审核结果
+
+「状态」是文档自检结论；相关机制的实现与运行效果均为 `NOT TESTED`（脚本尚未编写）。详细记录见草案第 16 节。
+
+| ID | 原规范问题及章节 | 最小修订内容 | 正常路径预期 | 异常路径预期 | 状态 | 残余风险 |
+|---|---|---|---|---|---|---|
+| C04-01 | §4.2 R7.7「无中断 → 不适用」没有可登记的状态；§2.4 `heldout_audit_done` 前置含 R7.7；§11.6 | 2.4 新增状态词枚举（`NOT_APPLICABLE` 只用于 R7.7，且不是 PASS）；正常运行写 `check_result`(R7.7, NOT_APPLICABLE, NO_INTERRUPTION)，三项有效条件由验收独立复核；`heldout_audit_done` 前置改为 R7.1–R7.6 各 PASS + R7.7 NOT_APPLICABLE + 无 `interrupted` / `run_aborted`；R7.7 行与汇总句同步；给出正常/中断两条最小序列 | R7.1–R7.6 PASS；R7.7 NOT_APPLICABLE；随后 `heldout_audit_done` | 中断：`interrupted` → `check_result`(R7.7, BLOCKED) → `run_aborted`，不得有 `heldout_audit_done`；NA 有效条件不成立 → FAIL `R77_NA_INVALID` | **PASS（文档自检）**；实现 NOT TESTED | NA 的复核依赖账本与日志完整性（同一信任域） |
+| C04-02 | §11.1(e) `close` 前提要求回收已确认、已有 `read_phase_closed`，失败路径不可满足；§11.2 K3 只有成功终点；`close.result` 与实验状态混用 | 新增 11.9：预算结果 / 运行状态 / 实验最终状态三个独立维度及映射；通用收尾顺序；注册表新增 `run_aborted`、`close` 新字段、`wrapup_end.pins_missing`；`close` 不依赖成功事件，回收未确认也须关闭（UNPROVABLE）；监督器不写 PASS；四条流程 F1（S4 中断）、F2（S5 超时）、F3a/F3b（S5 残留 / 无法确认退出）、F4（监督器异常退出，事后只读 `--postmortem`）；不修改冻结 Driver | `read_phase_closed` 存在，`COMPLETED`，K3 终点为 `read_phase_closed` | F1 BLOCKED `interrupted`；F2 EXCEEDED、BLOCKED `budget_exceeded`；F3a BLOCKED `residual_process`；F3b UNPROVABLE、BLOCKED `termination_unconfirmed`；F4 无 `close`、BLOCKED `budget_unprovable`；失败路径验收一律 `NOT_ACCEPTED` | **PASS（文档自检）**；实现 NOT TESTED | 监督器故障时只能事后取证；`PR_SET_PDEATHSIG`、`/proc` 目标环境 NOT TESTED；失败路径无网络时 pin 无法推送 |
+| C04-03 | §11.1 测试 (g)「`seq` 重排 → 判定结果不变」把耗时数字不变写成整体验收结果不变 | (g) 拆为 (g1) 耗时数值（置换内存中的 `seq`，耗时不变，只断言耗时计算不读 `seq`）与 (g2) 账本有效性（`seq` 不连续、重排、重算 `prev`、链不符、非法转换一律 BLOCKED `budget_unprovable`）；11.1(a) 明写两者区别；新增 (h2)–(h4) | (g1) 耗时相同；有效账本通过 | (g2) 任一违例整体验收都不是 PASS | **PASS（文档自检）**；测试 NOT TESTED（本轮不运行） | 账本校验器未编写 |
+| C04-04 | §4.1 R6.6 仅一行概述；§6 清单写 R6.1–R6.5；§11.2 未要求验收脚本自己重新做 K3 的 RV | R6.6 展开为 (a)–(d) 由验收脚本自己核对；§6 改为 R6.1–R6.6，缺任何必需证据一律 `NOT_ACCEPTED`，不得出现 `ALL_GATES_PASS_CANDIDATE`；11.2、11.3 同步 | (a)–(d) 成立 → PASS | 读后证据在 K3 之后 → FAIL `R6_POST_NOT_PINNED`；`line_count` / `end_event` 不符 → FAIL `R6_K3_LINECOUNT_MISMATCH`；缺证据 → BLOCKED `R6_EVIDENCE_MISSING`；RV 无法进行 → BLOCKED；失败路径 → NOT TESTED | **PASS（文档自检）**；验收脚本 NOT TESTED | 读后快照仍只证明检查时刻；RV 受远端信任局限 |
+
+## 静态一致性检查（本次实际执行）
+
+| 检查 | 预期 | 实际 | 状态 |
+|---|---|---|---|
+| 依赖图重新计算（从第 5 节正式边列表构图，不沿用上一轮结果） | 17 节点；`ref` 31 / `rec` 9 / `sub` 3；无重复、无环、层级严格递减 | 节点 17；`ref` 31；`rec` 9；`sub` 3；合计 43；重复 0；`ref` 子图与合并图的拓扑排序都访问 17/17；层级违例 0；人读表格的层级与 `ref` 边集合与正式边列表一致。传递闭包用于检查失败路径的摘要引用 | PASS |
+| 修订 4 是否引入新依赖 | 无新节点、无新边 | `run_aborted` 的 `partial_artifacts` 指向叶子文件；`close` 新增字段是整数 / 字符串，不是哈希；失败路径只用既有节点的子集，LP3 里直接出现的摘要记录全部落在 43 条边的传递闭包内 | PASS |
+| 事件注册表 | 全文事件名均已登记；规范顺序可满足 | 事件日志 29 个事件（新增 `run_aborted`），账本 10 个事件；成功路径规范顺序、F1、F2、F3a、F3b 都用注册表逐条校验：事件均已登记；`read_phase_closed` 与 `run_aborted` 互斥；`run_aborted` 之后只有 W 阶段 pin 与 A8，K3 紧邻 `run_aborted`；R7.7 紧邻 `heldout_audit_done`；账本状态机合法，非 ok 的 `stage_end` 后只有 `close`；F1 无 `heldout_audit_done`；F3b 无 `post_read_snapshot` | PASS |
+| 失败路径摘要引用的层级 | 每个被记录的工件 / pin 的层级低于所在前缀 | 全部满足（含 F1：LP3 直接包含 A4、PIN1 的记录；F2、F3：A5、A6、A7、PIN2 的记录） | PASS |
+| 旧表述清理 | 无「R6.1–R6.5」清单、无旧的 (g)、无旧字段名 `el_lines_at_k3` | 检索无残留（仅在历史记录里作为被取代的说明出现） | PASS |
+| 第 1 节原文引文 | 逐字存在 | 20/20 片段找到 | PASS |
+| R3-D01…D11 | 无擅自批准 | 11 行全部 `PENDING OWNER DECISION`，决定栏为空；`APPROVED` 只出现在否定 / 说明性文字里 | PASS |
+| 冻结清单 | `D1_CODE_SHA256SUMS` 10/10 OK；配置 `FROZEN`，哈希前缀 `0d35dc21a4beca7c` | 10/10 OK；`FROZEN`；`0d35dc21a4beca7c` | PASS |
+| v1/R1/R2 | SHA-256 不变 | `a55b2cb7…`、`f92c4e79…`、`1d4c3629…` 不变 | PASS |
+| Git 变更 | 仅 5 个 `.md`；`git diff --check` 无输出 | 见提交；无输出 | PASS |
+
+自检脚本在编写时有两处**脚本自身**的账本状态跟踪错误（把终止后的 `stage_end` 与 `close` 之后的 `wrapup_end` 误判为非法），已修正脚本后重跑；规范文字没有因此改动。
+
+## 依赖图证据（修订 4 重新计算；与修订 3 的结果一致，未沿用旧结果）
+
+**节点（17）：** A1(层级 0)、BP0(层级 0)、PIN0(层级 1)、A2(层级 1)、LP1(层级 2)、PIN1(层级 3)、A4(层级 4)、LP2(层级 5)、PIN2(层级 6)、A5(层级 7)、A6(层级 8)、A7(层级 9)、LP3(层级 10)、PIN3(层级 11)、BP(层级 12)、PIN4(层级 13)、A8(层级 14)
+
+**`ref` 边（31）：** 1. PIN0 → BP0；2. A2 → A1；3. PIN1 → LP1；4. A4 → A1；5. A4 → A2；6. A4 → LP1；7. A4 → PIN1；8. PIN2 → LP2；9. A5 → A1；10. A5 → A4；11. A5 → LP2；12. A5 → PIN2；13. A6 → A2；14. A6 → A4；15. A6 → A5；16. A7 → A6；17. PIN3 → LP3；18. PIN4 → BP；19. A8 → A1；20. A8 → A2；21. A8 → A4；22. A8 → A5；23. A8 → A6；24. A8 → A7；25. A8 → LP3；26. A8 → BP；27. A8 → PIN0；28. A8 → PIN1；29. A8 → PIN2；30. A8 → PIN3；31. A8 → PIN4
+
+**`rec` 边（9）：** LP1 → A1；LP1 → A2；LP1 → PIN0；LP2 → A4；LP2 → PIN1；LP3 → A5；LP3 → A6；LP3 → A7；LP3 → PIN2
+
+**`sub` 边（3）：** LP2 → LP1；LP3 → LP2；BP → BP0
+
+## 未解决的问题与残余风险
+
+- 同修订 3 的清单：信任域局限、远端引用不是不可伪造证明、带外核对依赖人工、GitHub 分支保护 NOT VERIFIED；`CLOCK_BOOTTIME`、`PR_SET_CHILD_SUBREAPER`、`PR_SET_PDEATHSIG`、`/proc` 扫描、`chattr +i`、inotify 在目标环境 NOT TESTED；Hub 元数据语义与 Xet 行为 NOT VERIFIED；Driver 前后哈希仍只证明两个检查时刻。
+- 新增：失败路径的 `missing_evidence` 由监督器列出，监督器出错时可能不全（验收脚本另做目录对照）；F4 只能事后取证。
+- 全部新脚本（记录器、预算账本与监督器、获取、拟合、审计、清单生成、摘要模块、验收（含 `--postmortem`）、固定与 RV 工具）尚未编写；真实 D1 NOT TESTED / NOT AUTHORIZED；D2/D3 NOT TESTED；Grok 交叉复审仍 PENDING。
+- R3-D01…D11 全部 PENDING OWNER DECISION；本轮又更新了 D05、D07 的建议内容，**没有批准任何一项**。
+
+## 下一条唯一研发指令
+
+等待 ChatGPT 对第四轮（收口）R3 修订稿进行独立审核，再由项目负责人决定是否批准 R3。批准前不下载、不拟合、不运行 D1、不使用 GPU、不修改冻结文件、不开始 D2/D3。
