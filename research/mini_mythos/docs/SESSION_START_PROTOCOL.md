@@ -2,6 +2,8 @@
 
 **适用范围：** 任何新 ChatGPT / Grok / 编程 Agent 对话，包含换模型、额度恢复、重新打开 Codespaces、交接研发。**优先级：** 新会话必须先读本文、项目地图及最新检查点；旧聊天记忆只是线索，不能作为实验事实。
 
+**最新 D1 预飞行 R1 修订检查点（2026-10-26；优先于下方 D1 v1 检查点）：** 基准 `ab6d8271f30cb49e097f3979e29f42bf0e96d545`。新增 `research/mini_mythos/docs/F3B_D1_FROZEN_EXECUTION_PROPOSAL_R1.md` 修订 v1 的验收逻辑矛盾（v1 原文保留，凡冲突以 R1 为准）：LR/CR 两类负例、`d1_cursor_v2` 与 9 步游标校验、预先确定且升序的中断点 P1–P5（空 carry 合法）、序列化/哈希链/尾部核算、Tokenizer 行为冻结，并勘误 F3-A 参数量公式 `P(V)=206,976+320V`。**状态：`D1 PRE-FLIGHT R1 PROPOSED / PENDING CHATGPT RE-REVIEW`；D1 NOT TESTED / NOT AUTHORIZED；D2/D3 NOT TESTED；无下载、无 Tokenizer 拟合、无模型实例化、无训练、无 GPU。** 下一条唯一指令：等待 ChatGPT 复审与项目负责人明确授权，再先提交 D1 执行脚本冻结提交。
+
 **最新 D1 预飞行方案检查点（2026-10-26；优先于下方所有旧“下一步”与“Claude Code 暂缓”）：** 项目负责人 2026-10-26 决定由 **Claude Code 接替 Grok** 担任主要研发工程师，ChatGPT 继续独立审核。Claude Code 在 `326121990cef4064d2c2d6cdc48a0d53da3cab3e` 之上提交 `research/mini_mythos/docs/F3B_D1_FROZEN_EXECUTION_PROPOSAL.md`，冻结 `Salesforce/wikitext` / `wikitext-2-raw-v1` / `b08601e04326c79dfdd32d625aee71d232d685c3`、train-only ByteLevel BPE（目标词表 4096，实际值待测）、单进程行/Token 游标恢复、N1–N5 负例与停止标准，并记录 D2 词表 128→4096 的参数量冲突。**状态：`D1 PRE-FLIGHT PROPOSED / PENDING CHATGPT REVIEW`；D1 未 PASS、未 CLOSED、未获执行授权；D2/D3 NOT TESTED；无下载、无 Tokenizer 拟合、无训练、无 GPU。** 下一条唯一指令：等待 ChatGPT 审核与项目负责人明确授权，再先提交 D1 执行脚本冻结提交。本沙箱无法访问 `huggingface.co`，D1 需在有 HF 访问的 CPU 环境执行。受保护文件 `gate2_1/TEST_RESULTS.json` 不在此环境，未触碰。
 
 **最新 F3-B 设计审核检查点（2026-10-25；优先于下方所有旧“下一步”）：** Grok `103344e47184735e03727d062ce81cbae6632e47` 完成五份真实数据、数据流恢复、模型评估、D1/D2/D3 门禁与交接设计文件。ChatGPT 正式报告 `research/mini_mythos/docs/F3B_CHATGPT_DESIGN_REVIEW_AND_D1_FREEZE_GATE_20261025.md`：**F3-B DESIGN DELIVERABLES PASS/CLOSED（仅设计文档交付）；D1 DRAFT / NOT FROZEN / NOT AUTHORIZED；D2/D3 NOT TESTED；无新训练。** 下一条唯一指令：Grok 只读完成 `F3B_D1_FROZEN_EXECUTION_PROPOSAL.md`，锁定 `Salesforce/wikitext` + `wikitext-2-raw-v1` + `b08601e04326c79dfdd32d625aee71d232d685c3`，规范 train-only BPE/真实词表、split/row/token cursor、有限恢复对照与跳/重/错位负例。D2 vocab128→4096 会改变模型参数量，不可直接沿用旧 247936 参数声明。**当前禁止实际下载/Tokenizer 拟合、CPU 真实数据实验、语言模型训练和 GPU；执行 D1 要另获项目负责人明确授权。** 旧 F3-A PASS/CLOSED 仍限于固定微型训练，R2 metadata/local synthetic PASS 不等于真实行恢复。
@@ -73,3 +75,4 @@
 - 在完成交接检查点之前不得将本阶段称为 CLOSED。
 
 **短启动指令：**「先执行 `SESSION_START_PROTOCOL.md`，读取 `PROJECT_MAP.md` 和最新阶段检查点，汇报五模块状态与 Git/dirty/阻塞点；未经确认不要执行实验。」 
+

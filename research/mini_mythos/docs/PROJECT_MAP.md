@@ -122,3 +122,8 @@ Claude Code 接替 Grok 担任主要研发工程师（项目负责人 2026-10-26
 
 **状态：`D1 PRE-FLIGHT PROPOSED / PENDING CHATGPT REVIEW`**。D1 `NOT FROZEN→PROPOSED`，未获执行授权；D2/D3 `NOT TESTED`；GPU 未授权；官方 Parcae Tokenizer `BLOCKED`。本次没有新增实验 PASS，也没有刷新五模块文件数/字节数统计（该基线仍是上方 `ee1b3c8` 快照，当前 HEAD 的精确统计 **NOT MEASURED**）。
 
+## D1 预飞行方案 R1 修订（2026-10-26）
+
+基准 `ab6d8271f30cb49e097f3979e29f42bf0e96d545`。依据项目负责人转达的 ChatGPT / Work 独立复审意见，新增 `docs/F3B_D1_FROZEN_EXECUTION_PROPOSAL_R1.md`（仅文档）；v1 方案 `F3B_D1_FROZEN_EXECUTION_PROPOSAL.md`（SHA-256 `a55b2cb7…ba9e`）**原样保留**为历史证据。R1 要点：负例分为 LR（加载拒绝）与 CR（继续读取）两类并各有 PASS 判据；N1/N2 改为合法游标恢复后读取过程内整行跳过/重复；游标升级为 `d1_cursor_v2` 并采用 9 步固定顺序校验；5 个预先确定、升序的中断点 P1–P5，空 carry 合法；固定 Token/哈希序列化与尾部核算；冻结 Tokenizer 的 encode/decode/特殊 Token/padding/truncation/后处理；勘误：F3-A 参数量静态公式 `P(V)=206,976+320V`（V=128 与归档断言 247,936 精确吻合，适用前提见 R1 第 10 节）。
+
+**状态：`D1 PRE-FLIGHT R1 PROPOSED / PENDING CHATGPT RE-REVIEW`**。D1 `NOT TESTED / NOT AUTHORIZED`；D2/D3 `NOT TESTED`。修订成功不是实验 PASS。五模块统计基线本次未刷新（NOT MEASURED）。

@@ -1,5 +1,11 @@
 # Mini-Mythos / OpenMythos — 全项目研发进度（2026-10-25 更新版）
 
+## D1 预飞行 R1 修订检查点（2026-10-26；本文件最新阶段进度，优先于下方 v1 段）
+
+基准 `ab6d8271f30cb49e097f3979e29f42bf0e96d545`。新增 `F3B_D1_FROZEN_EXECUTION_PROPOSAL_R1.md`，仅文档；v1 方案原样保留（SHA-256 `a55b2cb7…ba9e`）。修订项：（1）N1/N2 改为合法游标恢复后读取过程内整行跳过/重复，写明首个受影响来源行、错误码与独立检测条件；（2）负例分 LR（加载拒绝）与 CR（继续读取）两类，分别给出 PASS 判据；（3）游标 `d1_cursor_v2` 增加 Token 内容、来源行身份、合法偏移、EOF、输出前缀与哈希链校验，9 步固定顺序；（4）5 个预先确定、升序的中断点，空 carry 合法；（5）Token 以 uint32 小端序列化，固定块哈希、哈希链初值与尾部核算；（6）冻结 Tokenizer 的编码/解码/特殊 Token/自动添加/padding/truncation/后处理；（7）勘误：v1 的 832 参数差额是把 13 个 `torch.nn.LayerNorm`（带偏置）误按 RMSNorm 计算，静态公式 `P(V)=206,976+320V`，V=128 处等于归档断言 247,936，适用前提见 R1 第 10 节；V=4096 处仍是 DERIVED，D2 须实测。
+
+**状态：`D1 PRE-FLIGHT R1 PROPOSED / PENDING CHATGPT RE-REVIEW`**。没有下载、拟合、模型实例化、训练或 GPU；D1 NOT TESTED / NOT AUTHORIZED；D2/D3 NOT TESTED。Work 复审原文不在仓库中，R1 依据项目负责人转达的 7 条修订项。**下一条唯一指令**：等待 ChatGPT 复审；授权前不得执行 D1。
+
 ## D1 预飞行方案检查点（2026-10-26；本文件最新阶段进度）
 
 **交接**：项目负责人决定由 Claude Code 接替 Grok 做主要研发，ChatGPT 继续独立审核；下文各处「Claude Code 暂缓接管」已被取代，历史段落保留不改。
