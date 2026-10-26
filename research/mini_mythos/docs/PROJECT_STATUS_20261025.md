@@ -1,5 +1,11 @@
 # Mini-Mythos / OpenMythos — 全项目研发进度（2026-10-25 更新版）
 
+## D1 R3 规范冻结检查点（2026-10-26；本文件最新阶段进度，优先于下方 R3 边界勘误检查点）
+
+F3B-D1-R3-SPEC-FREEZE-001：ChatGPT 独立审核 `R3 DOCUMENT ACCEPTANCE PASS / READY FOR SPEC FREEZE` 后，冻结 R3 规范（SHA-256 `66a65614…42c5`）与负责人决策记录（SHA-256 `6209602e…6319`）的字节版本，新增冻结记录与检查点；冻结分支 `d1-r3-spec-freeze-20261026`，Git 基准 `79273d127548e2462026c2ae000dc2499798f5bd`。R3-D01…D11 已批准；D07 唯一方案 X（τ=5 s、`G_term`=10 s、`G_kill`=5 s、`W`=600 s）；17 节点、43 边、无环；冻结清单 10/10；v1/R1/R2 不变。登记 6 项后续 CPU 测试门禁（`waitpid` 与存活目标 A、已退出未回收不得误升级、SIGTERM 提前退出与回收慢、ESRCH/EPERM 记录、进程生命周期、UNPROVABLE 与 FAIL 并存优先级），均 NOT TESTED。
+
+**正式状态：`R3 SPEC FROZEN / IMPLEMENTATION NOT TESTED / REAL D1 NOT AUTHORIZED`。**新脚本未编写；真实 D1 / 数据下载 / 正式 Tokenizer 拟合未授权；第一个合成 CPU 实验需单独授权；Grok DEFERRED。下一条唯一指令：等待单独授权后，启动第一个合成数据 CPU 正确性实验。
+
 ## D1 R3 边界勘误检查点（2026-10-26；本文件最新阶段进度，优先于下方 R3 最终勘误检查点）
 
 F3B-D1-R3-ERRATA-EDGE-002：仅文档，三个边界规则，不改变任何已批准决策或参数，不新增事件。EDGE-01：T3 先检查存活目标判定 A，A 为假则提前确认且不发 SIGKILL，A 为真且宽限用尽才升级；KILL 尝试时刻（成功或失败）即 `t_kill_bt_ns`，失败记真实 errno。EDGE-02：升级条件只看对 A 的观察，回收耗时不参与；记录无效 → BLOCKED，记录内部矛盾 → FAIL `REAP_RECORD_FORGED`，记录真实自洽但协议未遵守或无法确认 → BLOCKED（`TERMINATION_NOT_ESCALATED` 等），并给出 8 个例子。EDGE-03：`close.result` 只表示预算结果；预算 `UNPROVABLE` 不覆盖已证实的 `FAIL`（FAIL 高于 BLOCKED），所有原因保留，预算不可证明则整体验收不能通过；负例为数据完整性 FAIL + 账本 UNPROVABLE。决策记录与原草案字节不变；17 节点、43 边、无环；冻结清单 10/10。勘误前基准 `cd0285fb22ab7e66dc3979face9f5f095ed077b9`。
