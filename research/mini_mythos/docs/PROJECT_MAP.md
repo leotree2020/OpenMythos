@@ -175,3 +175,9 @@ Claude Code 接替 Grok 担任主要研发工程师（项目负责人 2026-10-26
 代码冻结验收提交 `0197c21c`（ChatGPT Work 独立 C2b 验收 PASS）；环境适配候选提交 `2c5986a89b023ff50acb6da6e1b4d068b515ca53`（分支 `d1-codespaces-py3138-validation-20261026`，把 Python 候选版本由 3.13.16 适配为 Codespaces 的 3.13.8；tokenizers 0.23.3、pyarrow 26.0.0、huggingface_hub 2.2.0 不变）。ChatGPT 审核与交叉审核均 PASS（限定于配置差异、SHA-256 与合成回归层面，无实质性阻断问题）。Codespaces Python 3.13.8 上 56 项 CPU 合成回归 **56 PASS、0 SKIP、0 FAIL**，含合成 real-mode 代码路径（原始日志 `gate3_d1/codespaces_env_logs/selftest_py3138.txt` 原样保留）。本次整理：更新 `D1_ENV_FREEZE.md` 的版本与状态表述（未改算法、参数、30 分钟限制、数据规则）、重新生成 `D1_CODE_SHA256SUMS`、新增原生环境证据采集命令。**原生环境快照（解释器路径、pip freeze、pip check、CPU/OS、Git 状态）未归档：BLOCKED，待项目负责人在 Codespaces 回传**。R6 读取前部分、R7、T1–T6、数据获取完整性 `NOT TESTED`；真实 D1 `NOT TESTED / NOT AUTHORIZED`；配置 `status` 仍为 `FROZEN_CANDIDATE__…`，**未**设为 `FROZEN`。
 
 **下一条唯一指令**：最终配置冻结审核（ChatGPT 审核本检查点后，由项目负责人决定是否授权正式冻结）。
+
+## D1 Codespaces 原生环境证据验收归档（2026-10-26）
+
+证据提交 `852f30e13ab108311b160c9d1b55c3823dfa9b51`（前一检查点 `ef6b51a5`）。`gate3_d1/codespaces_env_logs/native_env_evidence_py3138.txt`（SHA-256 `e4e05c650e23a4a14b3327ca668d439871ad073747c66c752726d802166ccf1c`，本会话独立重算一致）经完整读取与逐项核对 **PASS**：Codespaces Python 3.13.8（venv `/workspaces/.venvs/openmythos-d1-py3138`）、tokenizers 0.23.3、pyarrow 26.0.0、huggingface_hub 2.2.0、`pip check` 退出码 0、Linux x86_64 / 2 CPU、采集时 Git HEAD `ef6b51a` 且工作区干净、冻结清单 10/10 OK（本会话在 `852f30e` 上独立复核同样 10/10）。详见 `docs/F3B_D1_NATIVE_ENV_ACCEPTANCE_20261026.md`。正式状态：D1 CODE FREEZE PASS；Codespaces 合成回归 56/56 PASS；原生环境证据 PASS；**最终配置冻结 NOT AUTHORIZED（`status` 仍为 `FROZEN_CANDIDATE__…`）**；真实 D1 NOT TESTED / NOT AUTHORIZED；R6 剩余部分、R7、T1–T6、数据获取完整性 NOT TESTED；D2/D3 NOT TESTED。
+
+**下一条唯一指令**：等待项目负责人批准最终配置冻结提交。

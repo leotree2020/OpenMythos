@@ -1,5 +1,13 @@
 # Mini-Mythos / OpenMythos — 全项目研发进度（2026-10-25 更新版）
 
+## D1 Codespaces 原生环境证据验收检查点（2026-10-26；本文件最新阶段进度，优先于下方环境适配归档段）
+
+证据提交 `852f30e13ab108311b160c9d1b55c3823dfa9b51`。原生环境证据文件（SHA-256 `e4e05c650e23a4a14b3327ca668d439871ad073747c66c752726d802166ccf1c`）经本会话完整读取、重算哈希并逐项核对，**PASS**：Python 3.13.8、venv `/workspaces/.venvs/openmythos-d1-py3138`、tokenizers 0.23.3、pyarrow 26.0.0、huggingface_hub 2.2.0、`pip freeze` 17 个包（无 torch/CUDA）、`pip check` 退出码 0、IMPORT_CHECK PASS、Linux x86_64 / 2 CPU / 7.8 GiB、采集时 HEAD `ef6b51a` 且工作区干净、冻结清单 10/10 OK。此前「执行主机环境 BLOCKED」一项关闭。
+
+**正式状态：** D1 CODE FREEZE PASS；CODESPACES CPU SYNTHETIC REGRESSION 56/56 PASS；NATIVE ENVIRONMENT EVIDENCE PASS；FINAL CONFIG FROZEN **NOT AUTHORIZED**（`status` 未改）；REAL D1 NOT TESTED / NOT AUTHORIZED；R6 剩余部分、R7、T1–T6、数据获取完整性 NOT TESTED；D2/D3 NOT TESTED。
+
+**下一条唯一指令**：等待项目负责人批准最终配置冻结提交。
+
 ## D1 环境适配归档与冻结前整理检查点（2026-10-26；本文件最新阶段进度，优先于下方代码冻结验收归档段）
 
 代码冻结验收提交 `0197c21c`；环境适配候选 `2c5986a89b023ff50acb6da6e1b4d068b515ca53`（分支 `d1-codespaces-py3138-validation-20261026`）。ChatGPT 审核与交叉审核均 PASS。Codespaces Python 3.13.8：56 项 CPU 合成回归 56 PASS / 0 SKIP / 0 FAIL（含合成 real-mode 代码路径；日志 `selftest_py3138.txt` 原样保留）；固定依赖 tokenizers 0.23.3、pyarrow 26.0.0、huggingface_hub 2.2.0。`D1_ENV_FREEZE.md` 已更新（版本、依赖、证据状态，区分「环境适配 PASS」与「真实 D1 NOT TESTED」），`D1_CODE_SHA256SUMS` 重新生成（10 项核验）。原生环境快照尚未归档：**BLOCKED**，待项目负责人在 Codespaces 回传（命令在 `NATIVE_ENV_EVIDENCE_COLLECTION.md`）。R6 读取前、R7、T1–T6、数据获取 NOT TESTED；真实 D1 NOT TESTED / NOT AUTHORIZED；`status` 仍为 `FROZEN_CANDIDATE__…`。
