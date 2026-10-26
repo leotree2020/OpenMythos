@@ -181,3 +181,9 @@ Claude Code 接替 Grok 担任主要研发工程师（项目负责人 2026-10-26
 证据提交 `852f30e13ab108311b160c9d1b55c3823dfa9b51`（前一检查点 `ef6b51a5`）。`gate3_d1/codespaces_env_logs/native_env_evidence_py3138.txt`（SHA-256 `e4e05c650e23a4a14b3327ca668d439871ad073747c66c752726d802166ccf1c`，本会话独立重算一致）经完整读取与逐项核对 **PASS**：Codespaces Python 3.13.8（venv `/workspaces/.venvs/openmythos-d1-py3138`）、tokenizers 0.23.3、pyarrow 26.0.0、huggingface_hub 2.2.0、`pip check` 退出码 0、Linux x86_64 / 2 CPU、采集时 Git HEAD `ef6b51a` 且工作区干净、冻结清单 10/10 OK（本会话在 `852f30e` 上独立复核同样 10/10）。详见 `docs/F3B_D1_NATIVE_ENV_ACCEPTANCE_20261026.md`。正式状态：D1 CODE FREEZE PASS；Codespaces 合成回归 56/56 PASS；原生环境证据 PASS；**最终配置冻结 NOT AUTHORIZED（`status` 仍为 `FROZEN_CANDIDATE__…`）**；真实 D1 NOT TESTED / NOT AUTHORIZED；R6 剩余部分、R7、T1–T6、数据获取完整性 NOT TESTED；D2/D3 NOT TESTED。
 
 **下一条唯一指令**：等待项目负责人批准最终配置冻结提交。
+
+## D1 最终配置冻结（2026-10-26）
+
+项目负责人授权 `APPROVED — Final Configuration Freeze Only`。冻结前 Git SHA `ebb45680f7391c3fac975b7cdbf29d1a7a94ed67`，冻结分支 `d1-final-config-freeze-20261026`。`gate3_d1/D1_FROZEN_CONFIG.json` 的 `status` 由 `FROZEN_CANDIDATE__PENDING_ENV_ADAPTATION_REVIEW` 改为 **`FROZEN`**（另同步 `python_full_version_status` 说明文字）；结构化比较确认实验参数、数据规则、负例规则、30 分钟限制、Python 3.13.8 与三项依赖固定版本、`authorization` 段均未变。`D1_CODE_SHA256SUMS` 重新生成，10/10 OK；读取器/验证器/驱动器/测试源码/历史证据无 diff。**已知限制：** `tests/test_d1_selftest.py::test_identity_labels` 中有一条冻结前哨兵断言（`status != "FROZEN"`），冻结后必然失败；因授权禁止改测试而未改，等待决定（见 `docs/F3B_D1_FINAL_CONFIG_FREEZE_20261026.md` 第 6 节）。真实 D1 `NOT TESTED / NOT AUTHORIZED`；R6 剩余部分、R7、T1–T6、数据获取 `NOT TESTED`；D2/D3 `NOT TESTED`。
+
+**状态：`D1 FINAL CONFIG FROZEN / PENDING CHATGPT INDEPENDENT ACCEPTANCE`**。下一条唯一指令：等待 ChatGPT 独立验收最终冻结提交。

@@ -2,6 +2,8 @@
 
 **适用范围：** 任何新 ChatGPT / Grok / 编程 Agent 对话，包含换模型、额度恢复、重新打开 Codespaces、交接研发。**优先级：** 新会话必须先读本文、项目地图及最新检查点；旧聊天记忆只是线索，不能作为实验事实。
 
+**最新 D1 最终配置冻结检查点（2026-10-26；优先于下方原生环境证据验收检查点）：** 项目负责人授权最终配置冻结；冻结前 SHA `ebb45680f7391c3fac975b7cdbf29d1a7a94ed67`，分支 `d1-final-config-freeze-20261026`。`D1_FROZEN_CONFIG.json` 的 `status` = **`FROZEN`**，实验参数/规则/30 分钟限制/Python 3.13.8 与三项依赖版本/授权段未变，10 项 SHA-256 10/10 OK，核心代码与测试源码无 diff。已知限制：测试文件里的冻结前哨兵断言（`status != "FROZEN"`）冻结后必然失败，未改，等待决定。真实 D1 NOT TESTED / NOT AUTHORIZED；R6 剩余、R7、T1–T6、数据获取 NOT TESTED；D2/D3 NOT TESTED。见 `docs/F3B_D1_FINAL_CONFIG_FREEZE_20261026.md`。下一条唯一指令：等待 ChatGPT 独立验收最终冻结提交；不得自动开始真实数据获取或 D1。
+
 **最新 D1 Codespaces 原生环境证据验收检查点（2026-10-26；优先于下方环境适配归档检查点）：** 证据提交 `852f30e13ab108311b160c9d1b55c3823dfa9b51`；`native_env_evidence_py3138.txt`（SHA-256 `e4e05c65…ccf1c`，独立重算一致）经完整读取核对 PASS（Python 3.13.8、三项固定依赖、`pip check` 0、2 CPU、冻结清单 10/10）。D1 CODE FREEZE PASS；Codespaces 合成回归 56/56 PASS；原生环境证据 PASS；最终配置冻结 NOT AUTHORIZED；真实 D1 NOT TESTED / NOT AUTHORIZED；R6 剩余部分、R7、T1–T6、数据获取 NOT TESTED；D2/D3 NOT TESTED。见 `docs/F3B_D1_NATIVE_ENV_ACCEPTANCE_20261026.md`。下一条唯一指令：等待项目负责人批准最终配置冻结提交；批准前不得下载、拟合、运行 D1、训练、用 GPU 或开始 D2/D3。
 
 **最新 D1 环境适配归档与冻结前整理检查点（2026-10-26；优先于下方代码冻结验收归档检查点）：** 代码冻结验收提交 `0197c21c`；环境适配候选提交 `2c5986a89b023ff50acb6da6e1b4d068b515ca53`（Python 候选 3.13.16 → Codespaces 3.13.8，三项依赖固定版本不变）。ChatGPT 与交叉审核均 PASS。Codespaces 3.13.8 合成回归 56 PASS / 0 SKIP / 0 FAIL（含合成 real-mode 路径，原始日志原样保留）。原生环境快照 **BLOCKED（未归档，待项目负责人回传；采集命令见 `gate3_d1/codespaces_env_logs/NATIVE_ENV_EVIDENCE_COLLECTION.md`）**。R6 读取前、R7、T1–T6、数据获取 NOT TESTED；真实 D1 NOT TESTED / NOT AUTHORIZED；配置 `status` 未设为 `FROZEN`。下一条唯一指令：最终配置冻结审核；未获授权前不得下载、拟合、运行 D1、训练、用 GPU 或开始 D2/D3。

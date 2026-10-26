@@ -1,5 +1,11 @@
 # Mini-Mythos / OpenMythos — 全项目研发进度（2026-10-25 更新版）
 
+## D1 最终配置冻结检查点（2026-10-26；本文件最新阶段进度，优先于下方原生环境证据验收段）
+
+授权 `APPROVED — Final Configuration Freeze Only`。冻结前 SHA `ebb45680f7391c3fac975b7cdbf29d1a7a94ed67`；冻结分支 `d1-final-config-freeze-20261026`。配置 `status` = `FROZEN`（只改该字段与一段环境状态说明文字，结构化比较其余全部相同）；`D1_CODE_SHA256SUMS` 10/10 OK（仅配置一行变化）；读取器/验证器/驱动器/测试源码/Codespaces 证据与日志/原始提案无 diff。本轮在 Claude 沙箱（Python 3.13.16，**不是** Codespaces）做了一次影响检查：56 项中 54 PASS、1 按设计跳过（real-mode，补丁版本不符）、**1 FAIL**：`test_identity_labels` 的冻结前哨兵断言 `status != "FROZEN"`。未改测试（授权禁止），待项目负责人决定（改测试会改变其 SHA-256，需要重新生成清单并重新验收）。
+
+**状态：`D1 FINAL CONFIG FROZEN / PENDING CHATGPT INDEPENDENT ACCEPTANCE`**。真实 D1 NOT TESTED / NOT AUTHORIZED；R6 剩余、R7、T1–T6、数据获取 NOT TESTED；D2/D3 NOT TESTED。**下一条唯一指令**：等待 ChatGPT 独立验收最终冻结提交。
+
 ## D1 Codespaces 原生环境证据验收检查点（2026-10-26；本文件最新阶段进度，优先于下方环境适配归档段）
 
 证据提交 `852f30e13ab108311b160c9d1b55c3823dfa9b51`。原生环境证据文件（SHA-256 `e4e05c650e23a4a14b3327ca668d439871ad073747c66c752726d802166ccf1c`）经本会话完整读取、重算哈希并逐项核对，**PASS**：Python 3.13.8、venv `/workspaces/.venvs/openmythos-d1-py3138`、tokenizers 0.23.3、pyarrow 26.0.0、huggingface_hub 2.2.0、`pip freeze` 17 个包（无 torch/CUDA）、`pip check` 退出码 0、IMPORT_CHECK PASS、Linux x86_64 / 2 CPU / 7.8 GiB、采集时 HEAD `ef6b51a` 且工作区干净、冻结清单 10/10 OK。此前「执行主机环境 BLOCKED」一项关闭。
