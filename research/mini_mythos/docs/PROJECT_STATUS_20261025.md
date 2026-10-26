@@ -1,5 +1,11 @@
 # Mini-Mythos / OpenMythos — 全项目研发进度（2026-10-25 更新版）
 
+## D1 预飞行 R2 最小修订检查点（2026-10-26；本文件最新阶段进度，优先于下方 R1 段）
+
+基准 `579ffd11ec2dba0b9cbf0eae67d7ce4e26874c19`。R1 复审结论 `PRE-FLIGHT FAIL`。新增 `F3B_D1_FROZEN_EXECUTION_PROPOSAL_R2.md`，仅文档；v1（SHA-256 `a55b2cb7…ba9e`）与 R1（SHA-256 `f92c4e79…1d7a`）原样保留。修订项：（1）CR 负例由可信干净前缀 + 续读 trace 重新核算整个窗口，逐行对照 Token 数量、原始位置与完整内容，续读 trace 不重复历史块，故障注入证据与干净前缀分别保存、不得覆盖；（2）CR3 原始游标先通过全部九步校验，不得关闭加载检查，仅在读取循环内注入 Token 消费偏移，磁盘游标不改；（3）CR3 固定 `δ=+1`，P2 只选 Token 数 ≥ 3 的行，删除 `δ=−1`，预期码恒为 `TOKEN_OFFSET_MISMATCH`（LR1 随之固定为 `+1`，属于消除冲突的最小改动）；（4）P2 搜索合格行序号 [600,900)，找不到记 `BLOCKED(schedule)`，删除「相邻中断点至少相隔 300 行」的错误断言，改以实际 Token 流位置严格递增为判据，P3/P4 搜索起点包含行起点；（5）哈希链零起始块号，`H_{j+1}=SHA256(H_j ‖ block_hash_j)`，32 字节原始摘要拼接，`chain_hash=H_N`。
+
+**状态：`D1 PRE-FLIGHT R2 PROPOSED / PENDING CHATGPT RE-REVIEW`**。没有下载、拟合、模型实例化、训练或 GPU；D1 NOT TESTED / NOT AUTHORIZED；D2/D3 NOT TESTED。**下一条唯一指令**：等待 ChatGPT 复审；授权前不得执行 D1。
+
 ## D1 预飞行 R1 修订检查点（2026-10-26；本文件最新阶段进度，优先于下方 v1 段）
 
 基准 `ab6d8271f30cb49e097f3979e29f42bf0e96d545`。新增 `F3B_D1_FROZEN_EXECUTION_PROPOSAL_R1.md`，仅文档；v1 方案原样保留（SHA-256 `a55b2cb7…ba9e`）。修订项：（1）N1/N2 改为合法游标恢复后读取过程内整行跳过/重复，写明首个受影响来源行、错误码与独立检测条件；（2）负例分 LR（加载拒绝）与 CR（继续读取）两类，分别给出 PASS 判据；（3）游标 `d1_cursor_v2` 增加 Token 内容、来源行身份、合法偏移、EOF、输出前缀与哈希链校验，9 步固定顺序；（4）5 个预先确定、升序的中断点，空 carry 合法；（5）Token 以 uint32 小端序列化，固定块哈希、哈希链初值与尾部核算；（6）冻结 Tokenizer 的编码/解码/特殊 Token/自动添加/padding/truncation/后处理；（7）勘误：v1 的 832 参数差额是把 13 个 `torch.nn.LayerNorm`（带偏置）误按 RMSNorm 计算，静态公式 `P(V)=206,976+320V`，V=128 处等于归档断言 247,936，适用前提见 R1 第 10 节；V=4096 处仍是 DERIVED，D2 须实测。

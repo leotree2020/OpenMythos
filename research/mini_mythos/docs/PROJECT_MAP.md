@@ -127,3 +127,9 @@ Claude Code 接替 Grok 担任主要研发工程师（项目负责人 2026-10-26
 基准 `ab6d8271f30cb49e097f3979e29f42bf0e96d545`。依据项目负责人转达的 ChatGPT / Work 独立复审意见，新增 `docs/F3B_D1_FROZEN_EXECUTION_PROPOSAL_R1.md`（仅文档）；v1 方案 `F3B_D1_FROZEN_EXECUTION_PROPOSAL.md`（SHA-256 `a55b2cb7…ba9e`）**原样保留**为历史证据。R1 要点：负例分为 LR（加载拒绝）与 CR（继续读取）两类并各有 PASS 判据；N1/N2 改为合法游标恢复后读取过程内整行跳过/重复；游标升级为 `d1_cursor_v2` 并采用 9 步固定顺序校验；5 个预先确定、升序的中断点 P1–P5，空 carry 合法；固定 Token/哈希序列化与尾部核算；冻结 Tokenizer 的 encode/decode/特殊 Token/padding/truncation/后处理；勘误：F3-A 参数量静态公式 `P(V)=206,976+320V`（V=128 与归档断言 247,936 精确吻合，适用前提见 R1 第 10 节）。
 
 **状态：`D1 PRE-FLIGHT R1 PROPOSED / PENDING CHATGPT RE-REVIEW`**。D1 `NOT TESTED / NOT AUTHORIZED`；D2/D3 `NOT TESTED`。修订成功不是实验 PASS。五模块统计基线本次未刷新（NOT MEASURED）。
+
+## D1 预飞行方案 R2 最小修订（2026-10-26）
+
+基准 `579ffd11ec2dba0b9cbf0eae67d7ce4e26874c19`。R1 复审结论 `PRE-FLIGHT FAIL`；新增 `docs/F3B_D1_FROZEN_EXECUTION_PROPOSAL_R2.md`（仅文档）。v1（SHA-256 `a55b2cb7…ba9e`）与 R1（SHA-256 `f92c4e79…1d7a`）**原样保留**。R2 只改 5 处：（1）CR 负例用可信干净前缀 + 续读 trace 重新核算整个窗口，逐行核对 Token 数量、原始位置与完整内容，注入证据与干净证据分开保存；（2）CR3 的原始游标先通过全部九步校验，不得关闭加载检查，仅在读取循环内注入消费偏移，磁盘游标不改；（3）CR3 固定 `δ=+1`、P2 只选 Token 数 ≥ 3 的行，删除 `δ=−1` 回退；（4）P2 搜索区间为合格行序号 [600,900)，找不到记 `BLOCKED(schedule)`，删除「相邻中断点相隔 300 行」的错误断言，改以实际 Token 流位置严格递增为判据，P3/P4 搜索起点包含行起点；（5）哈希链用零起始块号：`H_{j+1}=SHA256(H_j ‖ block_hash_j)`，32 字节原始摘要拼接，`chain_hash=H_N`，并给出合成校验向量。R1 其余条款（LR1–LR9 主体、九步校验、空 carry、EOF、序列化、`P(V)=206,976+320V`）保留。
+
+**状态：`D1 PRE-FLIGHT R2 PROPOSED / PENDING CHATGPT RE-REVIEW`**。D1 `NOT TESTED / NOT AUTHORIZED`；D2/D3 `NOT TESTED`。修订成功不是实验 PASS，不是 D1 CLOSED。
