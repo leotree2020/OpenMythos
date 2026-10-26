@@ -199,3 +199,9 @@ Claude Code 接替 Grok 担任主要研发工程师（项目负责人 2026-10-26
 日志提交 `1298619e163af6257d206134e5ed031e0082947f`（修复基准 `6b57087c595ce795333c6636dceb32ff5b61fef3`，分支 `d1-final-freeze-sentinel-fix-20261026`）。Codespaces Python 3.13.8 冻结后 CPU 合成回归日志 `gate3_d1/sentinel_fix_logs/codespaces_regression_py3138.txt`（SHA-256 `be1bff0493a4da59c71b962188ac1bc3a5766b6caa26a419ea23a0ceae6fac1e`，本会话重算一致）经完整读取核对：**56 PASS、0 SKIP、0 FAIL、0 ERROR，50.656 s，退出码 0**，56 个测试名与源码一一对应，`test_identity_labels`、`test_real_mode_pipeline` 均 ok（合成，非真实 D1）。冻结清单 10/10 OK、配置哈希 `0d35dc21…` 与 `status = FROZEN` 不变，Reader/Verifier/Driver/配置相对冻结提交 `9e257788` 无 diff，测试文件仅哨兵断言一行。验收：D1 代码冻结 PASS；最终配置 FROZEN PASS；Codespaces 原生环境 PASS；56 项冻结后回归 PASS；代码变更范围 PASS；**Grok 对最终哨兵修复差异的交叉审核 PENDING**；真实 D1 NOT TESTED / NOT AUTHORIZED；R6 剩余、R7、T1–T6、数据获取 NOT TESTED；D2/D3 NOT TESTED。详见 `docs/F3B_D1_FINAL_REGRESSION_CLOSEOUT_20261026.md`。
 
 **状态：`READY FOR CLOSEOUT / CROSS-REVIEW PENDING`**。下一条唯一指令：取得 Grok 交叉审核后标记配置与环境准备范围 CLOSED。
+
+## D1 真实执行前规范 R3 草案（2026-10-26）
+
+基准 `97d0faf2982f4122941d2299a23cab6ab2ba04a3`，分支 `d1-pre-real-spec-r3-20261026`。新增 `docs/F3B_D1_PRE_REAL_SPEC_R3_DRAFT.md` 与检查点 `docs/F3B_D1_PRE_REAL_SPEC_R3_CHECKPOINT_20261026.md`：逐条引用 v1/R1/R2 原文（24/24 片段逐字核对），列出冲突与缺口 S1–S10（S1：下载后对三个文件算哈希 vs validation/test 未被打开；S2：T7 扫描 val/test vs R6/T1；另有 R6 粒度、R7 Token 计数、中断行为、T1 事件日志、30 分钟预算等），给出分阶段处理规范（元数据/下载/哈希/解析/读文本五级）、R6/R7/T1–T7 验收矩阵、单向哈希引用的清单、`FORMAL_D1_CANDIDATE` 不是 D1 PASS 及不改冻结 Driver 的独立验收方案，以及 11 项待裁决事项（R3-D01…D11，全部 PROPOSED / NOT APPROVED）。冻结文件、v1/R1/R2 未改动；未下载、未拟合、未运行 D1、无 GPU。
+
+**状态：`DRAFT / PENDING CHATGPT REVIEW`**（不是 FROZEN，不是 PASS）。下一条唯一指令：等待 ChatGPT 复审并由项目负责人裁决。

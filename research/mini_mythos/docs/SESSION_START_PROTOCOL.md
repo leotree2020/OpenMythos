@@ -2,6 +2,8 @@
 
 **适用范围：** 任何新 ChatGPT / Grok / 编程 Agent 对话，包含换模型、额度恢复、重新打开 Codespaces、交接研发。**优先级：** 新会话必须先读本文、项目地图及最新检查点；旧聊天记忆只是线索，不能作为实验事实。
 
+**最新 D1 真实执行前规范 R3 草案检查点（2026-10-26；优先于下方 Closeout 检查点）：** 基准 `97d0faf2982f4122941d2299a23cab6ab2ba04a3`，分支 `d1-pre-real-spec-r3-20261026`。`docs/F3B_D1_PRE_REAL_SPEC_R3_DRAFT.md`：规范冲突表 S1–S10（原文逐字引用）、分阶段数据处理草案、R6/R7/T1–T7 验收矩阵、单向哈希清单、`FORMAL_D1_CANDIDATE` ≠ D1 PASS 的独立验收方案、11 项待裁决事项（全部 PROPOSED / NOT APPROVED）。**状态：DRAFT / PENDING CHATGPT REVIEW；不是 FROZEN、不是 PASS；冻结文件与 v1/R1/R2 未改。** 真实 D1 NOT TESTED / NOT AUTHORIZED；D2/D3 NOT TESTED。下一条唯一指令：等待 ChatGPT 复审并由项目负责人裁决 R3-D01…D11；批准前不下载、不拟合、不运行 D1。
+
 **最新 D1 冻结后 CPU 回归 Closeout 检查点（2026-10-26；优先于下方哨兵测试修正检查点）：** Codespaces Python 3.13.8 冻结后回归日志（提交 `1298619e163af6257d206134e5ed031e0082947f`，SHA-256 `be1bff04…ac1e` 重算一致）：56 PASS / 0 SKIP / 0 FAIL / 0 ERROR，50.656 s，退出码 0，`test_identity_labels` 与 `test_real_mode_pipeline` 均 ok。冻结清单 10/10、配置 `FROZEN`（哈希 `0d35dc21…`）、核心代码相对冻结提交无 diff。D1 代码冻结 PASS；最终配置 FROZEN PASS；原生环境 PASS；冻结后回归 PASS；代码变更范围 PASS；**Grok 交叉审核 PENDING**；配置与环境准备范围 READY FOR CLOSEOUT / CROSS-REVIEW PENDING。真实 D1 NOT TESTED / NOT AUTHORIZED；R6 剩余、R7、T1–T6、数据获取 NOT TESTED；D2/D3 NOT TESTED。见 `docs/F3B_D1_FINAL_REGRESSION_CLOSEOUT_20261026.md`。下一条唯一指令：取得 Grok 交叉审核后标记 CLOSED；真实 D1 需另行明确授权。
 
 **最新 D1 冻结后哨兵测试修正检查点（2026-10-26；优先于下方最终配置冻结检查点）：** 冻结提交 `9e257788c0510d5e263d5256d4bd3cebebdb8057` 不变；修复分支 `d1-final-freeze-sentinel-fix-20261026`。仅改测试一行（哨兵断言改为 `status == "FROZEN"`）与 `D1_ENV_FREEZE.md` 的过期状态描述；配置哈希 `0d35dc21…` 不变，清单 10/10。沙箱 3.13.16：精确测试 PASS，56 项 `OK (skipped=1)`；**Codespaces 3.13.8 最终回归 PENDING CODESPACES VALIDATION**，不宣布 56/56 PASS。真实 D1 NOT TESTED / NOT AUTHORIZED。见 `docs/F3B_D1_FREEZE_SENTINEL_FIX_20261026.md`。下一条唯一指令：等待项目负责人回传 Codespaces 回归结果，交 ChatGPT 与 Grok 交叉审核。

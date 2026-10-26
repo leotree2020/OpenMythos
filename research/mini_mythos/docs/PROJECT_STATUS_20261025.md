@@ -1,5 +1,11 @@
 # Mini-Mythos / OpenMythos — 全项目研发进度（2026-10-25 更新版）
 
+## D1 真实执行前规范 R3 草案检查点（2026-10-26；本文件最新阶段进度，优先于下方 Closeout 段）
+
+基准 `97d0faf2982f4122941d2299a23cab6ab2ba04a3`；分支 `d1-pre-real-spec-r3-20261026`。R3 草案（`F3B_D1_PRE_REAL_SPEC_R3_DRAFT.md`）消解/记录规范冲突：S1（下载后哈希 vs 未被打开）、S2（T7 扫描 val/test vs R6/T1）、R6 粒度、R7 Token 计数、中断行为、T1 事件日志、30 分钟预算，另发现离线切换时机、无 LFS `sha256`、身份标签可核对性三项；给出分阶段规范、验收矩阵、单向哈希清单、独立验收方案和 11 项待裁决事项（均 PROPOSED / NOT APPROVED）。24/24 原文引用逐字核对；冻结文件与 v1/R1/R2 未改。
+
+**状态：`DRAFT / PENDING CHATGPT REVIEW`**。真实 D1 NOT TESTED / NOT AUTHORIZED；R6 剩余、R7、T1–T6、数据获取 NOT TESTED；D2/D3 NOT TESTED。**下一条唯一指令**：等待 ChatGPT 复审并由项目负责人裁决 R3-D01…D11。
+
 ## D1 冻结后 CPU 回归 Closeout 检查点（2026-10-26；本文件最新阶段进度，优先于下方哨兵测试修正段）
 
 Codespaces Python 3.13.8 冻结后合成回归：日志提交 `1298619e163af6257d206134e5ed031e0082947f`，日志 SHA-256 `be1bff0493a4da59c71b962188ac1bc3a5766b6caa26a419ea23a0ceae6fac1e`（重算一致）；56 个测试名与源码一一对应，**56 PASS、0 SKIP、0 FAIL、0 ERROR，50.656 s，`unittest_exit: 0`**；`test_identity_labels`、`test_real_mode_pipeline` 通过（合成，非真实 D1）。本会话在该提交上独立确认：冻结清单 10/10 OK；配置 `status = FROZEN`、哈希 `0d35dc21…`；Reader/Verifier/Driver/配置/`d1_env_manifest.py`/`d1_selftest_data.py`/依赖与 README/Codespaces 环境证据相对冻结提交 `9e257788` 无 diff；测试文件仅哨兵断言一行。观察：Codespaces 日志头部不含 `git status` 与清单校验输出（非阻断）。
