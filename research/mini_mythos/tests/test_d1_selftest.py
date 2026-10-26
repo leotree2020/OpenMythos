@@ -417,6 +417,190 @@ class Pipeline(unittest.TestCase):
         self.assertIn("NOT a D1 verdict", vc["scope"])
 
 
+STUB_TEMPLATE = """import sys
+a = sys.argv
+out = a[a.index("--out") + 1] if "--out" in a else None
+content = %r
+if content is not None and out:
+    with open(out, "w") as f:
+        f.write(content)
+%s
+sys.exit(%d)
+"""
+
+
+class C2Gates(unittest.TestCase):
+    """C2: reader exit-code mapping, frozen 30-minute cap, safe handling of abnormal verifier results."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.tmp = tempfile.mkdtemp(prefix="d1c2_")
+        cls.src, cls.tok, cls.man = d1_selftest_data.build(cls.tmp)
+        cls.n = 0
+
+    @classmethod
+    def tearDownClass(cls):
+        writable(cls.tmp)
+        shutil.rmtree(cls.tmp, ignore_errors=True)
+
+    def setUp(self):
+        self._reader, self._verifier = d1_driver.READER, d1_driver.VERIFIER
+
+    def tearDown(self):
+        d1_driver.READER, d1_driver.VERIFIER = self._reader, self._verifier
+
+    def stub(self, rc, content=None, extra=""):
+        type(self).n += 1
+        p = os.path.join(self.tmp, "stub%d.py" % self.n)
+        write_text(p, STUB_TEMPLATE % (content, extra, rc))
+        return p
+
+    def drive(self, cmd="clean", mode="selftest", extra=(), workdir=None, src=None, tok=None, man=None):
+        type(self).n += 1
+        w = workdir or os.path.join(self.tmp, "w%d" % self.n)
+        rc = d1_driver.main([cmd, "--workdir", w, "--mode", mode, "--config", CFG, "--manifest", man or self.man,
+                             "--source", src or ("jsonl:" + self.src), "--tokenizer", tok or self.tok] + list(extra))
+        return rc, w, jread(os.path.join(w, "evidence", "D1_DECISION_%s.json" % cmd))
+
+    # ---- 1. reader exit code -> status
+    def test_reader_status_mapping(self):
+        rs = d1_driver.reader_status
+        self.assertEqual([rs(0), rs(4), rs(5), rs(3), rs(1), rs(2), rs(-11)], ["OK", "BLOCKED", "FAIL", "FAIL", "FAIL", "FAIL", "FAIL"])
+        self.assertEqual([rs(3, expect=3), rs(4, expect=3), rs(0, expect=3)], ["OK", "BLOCKED", "FAIL"])
+
+    def test_reader_blocked_precondition_is_blocked_not_fail(self):
+        d1_driver.READER = self.stub(4)
+        rc, w, dec = self.drive("clean")
+        self.assertEqual((rc, dec["verdict"], dec["read_resume"]["verdict"]), (4, "BLOCKED", "BLOCKED"))
+
+    def test_reader_selfcheck_and_crash_are_fail(self):
+        for code in (5, 1, 3):
+            d1_driver.READER = self.stub(code)
+            rc, w, dec = self.drive("clean")
+            self.assertEqual((rc, dec["read_resume"]["verdict"]), (1, "FAIL"), code)
+
+    def test_negatives_reader_blocked_is_blocked_and_clean_failure_marks_negatives_not_tested(self):
+        d1_driver.READER = self.stub(5)
+        rc, w, dec = self.drive("all")
+        self.assertEqual(dec["read_resume"]["verdict"], "FAIL")
+        self.assertEqual(dec["negatives_meta"]["verdict"], "NOT TESTED")        # explicit, not silently absent
+        d1_driver.READER = self._reader
+        rc, w, dec = self.drive("clean")                                          # a real clean run to reuse
+        self.assertEqual(rc, 0)
+        d1_driver.READER = self.stub(4)
+        w2 = os.path.join(self.tmp, "wneg")
+        shutil.copytree(os.path.join(w, "evidence", "clean"), os.path.join(w2, "evidence", "clean"))
+        writable(w2)
+        rc, _, dec = self.drive("negatives", workdir=w2)
+        self.assertEqual((rc, dec["negatives_meta"]["verdict"]), (4, "BLOCKED"))
+        self.assertTrue(all(v["verdict"] == "BLOCKED" for v in dec["negatives_meta"]["items"].values()))
+
+    # ---- 2. frozen 30-minute cap
+    def test_real_mode_refuses_timeout_override(self):
+        w = os.path.join(self.tmp, "wreal")
+        r = run_py(D1 / "d1_driver.py", "all", "--workdir", w, "--mode", "real", "--config", CFG, "--manifest", self.man,
+                   "--source", "parquet:/nonexistent.parquet", "--tokenizer", "/nonexistent.json", "--timeout-seconds", "5")
+        self.assertEqual(r.returncode, 4, r.stdout + r.stderr)
+        dec = jread(w + "/evidence/D1_DECISION_all.json")
+        self.assertEqual(dec["timeout_override_refused"]["verdict"], "BLOCKED")
+        self.assertEqual(dec["steps"], [])                                         # nothing was executed
+        self.assertFalse(os.path.exists(w + "/evidence/clean"))
+
+    def test_selftest_override_may_only_shorten(self):
+        for bad in ("5000", "0", "-3"):
+            rc, w, dec = self.drive("clean", extra=["--timeout-seconds", bad])
+            self.assertEqual((rc, dec["verdict"]), (4, "BLOCKED"), bad)
+            self.assertEqual(dec["steps"], [])
+        d1_driver.READER = self.stub(0)
+        rc, w, dec = self.drive("clean", extra=["--timeout-seconds", "1500"])      # shorter than 1800: accepted
+        self.assertEqual(dec["wallclock_limit_seconds"], 1500.0)
+
+    def test_real_mode_cannot_relax_the_cap_through_the_config(self):
+        c = jread(CFG)
+        c["environment"]["wallclock_limit_minutes"] = 120
+        cfg = os.path.join(self.tmp, "relaxed.json")
+        write_text(cfg, json.dumps(c))
+        w = os.path.join(self.tmp, "wrelax")
+        r = run_py(D1 / "d1_driver.py", "clean", "--workdir", w, "--mode", "real", "--config", cfg, "--manifest", self.man,
+                   "--source", "parquet:/nonexistent.parquet", "--tokenizer", "/nonexistent.json")
+        self.assertEqual(r.returncode, 4)
+        self.assertEqual(jread(w + "/evidence/D1_DECISION_clean.json")["steps"], [])
+
+    # ---- 3. abnormal verifier outcomes
+    def test_verifier_verdict_mapping(self):
+        d = tempfile.mkdtemp(dir=self.tmp)
+        res = os.path.join(d, "r.json")
+        vv = d1_driver.verifier_verdict
+        write_text(res, json.dumps({"verdict": "PASS"}))
+        self.assertEqual(vv(0, res)[0], "PASS")
+        self.assertEqual(vv(1, res)[0], "FAIL")                                     # exit 1 but result says PASS
+        self.assertEqual(vv(4, res)[0], "FAIL")
+        self.assertEqual(vv(2, res)[0], "FAIL")
+        self.assertEqual(vv(-11, res)[0], "FAIL")
+        write_text(res + "2", json.dumps({"verdict": "BLOCKED"}))
+        self.assertEqual(vv(4, res + "2")[0], "BLOCKED")
+        self.assertEqual(vv(0, res + "2")[0], "FAIL")
+        for bad in ("{not json", "[]", json.dumps({"verdict": "MAYBE"}), json.dumps({})):
+            with open(res + "3", "w") as f:
+                f.write(bad)
+            self.assertEqual(vv(0, res + "3")[0], "FAIL", bad)
+            self.assertEqual(vv(1, res + "3")[0], "FAIL", bad)
+        self.assertEqual(vv(0, d + "/missing.json")[0], "FAIL")                    # exit 0 without a result is never PASS
+        self.assertEqual(vv(1, d + "/missing.json")[0], "FAIL")
+        self.assertEqual(vv(4, d + "/missing.json")[0], "BLOCKED")
+
+    def test_driver_records_abnormal_verifier_runs(self):
+        cases = (("exit0_no_result", 0, None, "", "FAIL", 1), ("exit0_malformed", 0, "{oops", "", "FAIL", 1),
+                 ("exit0_but_FAIL", 0, json.dumps({"verdict": "FAIL"}), "", "FAIL", 1),
+                 ("exit1_no_result", 1, None, "", "FAIL", 1), ("exit4_no_result", 4, None, "", "BLOCKED", 4),
+                 ("exit4_says_PASS", 4, json.dumps({"verdict": "PASS"}), "", "FAIL", 1),
+                 ("killed_by_signal", 0, None, "import os, signal\nos.kill(os.getpid(), signal.SIGSEGV)", "FAIL", 1))
+        for name, rc_stub, content, extra, want, want_rc in cases:
+            d1_driver.VERIFIER = self.stub(rc_stub, content, extra)
+            rc, w, dec = self.drive("clean")
+            self.assertEqual((dec["read_resume"]["verdict"], rc, dec["verdict"]), (want, want_rc, want), name)
+            self.assertEqual(dec["negatives_meta"]["verdict"] if "negatives_meta" in dec else None, None, name)
+
+    def test_real_verifier_leaves_a_fail_result_on_abnormal_exit(self):
+        d = tempfile.mkdtemp(dir=self.tmp)
+        common = [D1 / "d1_verifier.py", "schedule", "--mode", "selftest", "--config", CFG, "--manifest", self.man,
+                  "--tokenizer", self.tok, "--out", d + "/r.json"]
+        r = run_py(*common, "--source", "jsonl:" + d + "/does_not_exist.jsonl")       # OSError inside the verifier
+        self.assertEqual(r.returncode, 1)
+        res = jread(d + "/r.json")                                                   # a record exists
+        self.assertEqual(res["verdict"], "FAIL")
+        self.assertIn("abnormal exit", res["reason"])
+        r = run_py(D1 / "d1_verifier.py", "verify-lr", "--mode", "selftest", "--config", CFG, "--manifest", self.man,
+                   "--source", "jsonl:" + self.src, "--tokenizer", self.tok, "--out", d + "/r2.json", "--id", "LR1",
+                   "--orig", d + "/a", "--mutated", d + "/b", "--load-report", d + "/c", "--trace", d + "/d")
+        self.assertEqual((r.returncode, jread(d + "/r2.json")["verdict"]), (1, "FAIL"))
+        man2 = d + "/m.json"
+        write_text(man2, json.dumps({"parquet_sha256": "0" * 64, "tokenizer_sha256": "0" * 64, "actual_vocab_size": 259}))
+        r = run_py(D1 / "d1_verifier.py", "schedule", "--mode", "selftest", "--config", CFG, "--manifest", man2,
+                   "--source", "jsonl:" + self.src, "--tokenizer", self.tok, "--out", d + "/r3.json")
+        self.assertEqual((r.returncode, jread(d + "/r3.json")["verdict"]), (4, "BLOCKED"))
+
+    def test_driver_exception_still_writes_a_decision(self):
+        w = os.path.join(self.tmp, "wexc")
+        os.makedirs(w + "/evidence/clean")                     # do_clean's makedirs(exist_ok=False) will raise
+        rc, _, dec = self.drive("clean", workdir=w)
+        self.assertEqual((rc, dec["verdict"]), (1, "FAIL"))
+        self.assertIn("FileExistsError", dec["driver_exception"]["error"])
+
+    def test_verifier_crash_inside_negatives_is_recorded_not_fatal(self):
+        rc, w, dec = self.drive("clean")
+        self.assertEqual(rc, 0)
+        w2 = os.path.join(self.tmp, "wneg2")
+        shutil.copytree(os.path.join(w, "evidence", "clean"), os.path.join(w2, "evidence", "clean"))
+        writable(w2)
+        d1_driver.READER = self.stub(3)                        # claims "cursor rejected" but writes no report/trace
+        rc, _, dec = self.drive("negatives", workdir=w2)
+        self.assertEqual(rc, 1)
+        items = dec["negatives_meta"]["items"]
+        self.assertEqual({v["verdict"] for k, v in items.items() if k.startswith("LR")}, {"FAIL"})   # real verifier fails safely
+        self.assertTrue(os.path.exists(w2 + "/evidence/negatives/LR1/result.json"))
+
+
 class Blocked(unittest.TestCase):
     def test_p2_rule_without_candidate_row_is_blocked_schedule(self):
         tmp = tempfile.mkdtemp(prefix="d1blk_")
@@ -424,8 +608,9 @@ class Blocked(unittest.TestCase):
             src, tok, man = d1_selftest_data.build(tmp, "no_p2_row")
             r = run_py(D1 / "d1_driver.py", "clean", "--workdir", tmp + "/w", "--mode", "selftest", "--config", CFG,
                        "--manifest", man, "--source", "jsonl:" + src, "--tokenizer", tok)
-            self.assertEqual(r.returncode, 1)
+            self.assertEqual(r.returncode, 4)                  # BLOCKED is exit 4, never reported as FAIL (exit 1)
             dec = jread(tmp + "/w/evidence/D1_DECISION_clean.json")
+            self.assertEqual(dec["verdict"], "BLOCKED")
             self.assertEqual(dec["read_resume"]["verdict"], "BLOCKED")
             self.assertIn("schedule", dec["read_resume"]["why"])
             self.assertFalse(os.path.exists(tmp + "/w/evidence/clean/A_trace.jsonl"))   # nothing was read

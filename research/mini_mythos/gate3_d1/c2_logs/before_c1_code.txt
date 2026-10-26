@@ -1,0 +1,18 @@
+# C2 regression tests run against the C1 driver+verifier (commit 3775dc33); 2026-10-26T05:46:40Z
+test_driver_exception_still_writes_a_decision (research.mini_mythos.tests.test_d1_selftest.C2Gates.test_driver_exception_still_writes_a_decision) ... ERROR
+test_driver_records_abnormal_verifier_runs (research.mini_mythos.tests.test_d1_selftest.C2Gates.test_driver_records_abnormal_verifier_runs) ... ERROR
+test_reader_status_mapping (research.mini_mythos.tests.test_d1_selftest.C2Gates.test_reader_status_mapping) ... ERROR
+test_real_mode_cannot_relax_the_cap_through_the_config (research.mini_mythos.tests.test_d1_selftest.C2Gates.test_real_mode_cannot_relax_the_cap_through_the_config) ... FAIL
+test_real_mode_refuses_timeout_override (research.mini_mythos.tests.test_d1_selftest.C2Gates.test_real_mode_refuses_timeout_override) ... FAIL
+test_real_verifier_leaves_a_fail_result_on_abnormal_exit (research.mini_mythos.tests.test_d1_selftest.C2Gates.test_real_verifier_leaves_a_fail_result_on_abnormal_exit) ... ERROR
+test_verifier_verdict_mapping (research.mini_mythos.tests.test_d1_selftest.C2Gates.test_verifier_verdict_mapping) ... ERROR
+KeyError: 'negatives_meta'
+KeyError: 'verdict'
+AttributeError: module 'd1_driver' has no attribute 'reader_status'
+KeyError: 'verdict'
+AttributeError: module 'd1_driver' has no attribute 'verifier_verdict'
+AssertionError: 1 != 4
+AssertionError: 1 != 4 : {"d1_overall": "NOT_DECLARED__PIPELINE_INCOMPLETE", "identity": "REAL_CODE_PATH_NON_FORMAL", "read_resume": {"verdict": "BLOCKED", "why": "BLOCKED(schedule) rc=1"}}
+Ran 12 tests in 9.632s
+FAILED (failures=2, errors=9)
+# Reading: 11 of 12 C2 tests fail/error on the C1 code (lines for passing tests are interleaved with driver output and not captured by the grep). The tests that error do so because C1 lacks reader_status/verifier_verdict, writes no decision file after a driver exception, or leaves no result file after a verifier crash; test_real_mode_refuses_timeout_override fails with 'AssertionError: 1 != 4' because C1 accepted --timeout-seconds in real mode. The one passing test is the reader FAIL mapping (rc 5/1/3 -> FAIL), which is unchanged behaviour.

@@ -357,6 +357,16 @@ class Check:
         return dict(extra, verdict=self.verdict(), checks=self.items + self.blocked)
 
 
+def fallback_result(a, verdict, why):
+    """Best effort: leave a result file behind when the verifier cannot finish normally."""
+    out = getattr(a, "out", None)
+    if out and not os.path.exists(out):
+        try:
+            put(out, cj({"verdict": verdict, "reason": why[:500], "checks": [], "verifier": VERIFIER_VERSION}))
+        except Exception:  # noqa: BLE001
+            pass
+
+
 def emit(out, res):
     if out:
         put(out, cj(res))
@@ -882,9 +892,11 @@ def main(argv=None):
         return {"verify-clean": verify_clean, "verify-lr": verify_lr, "verify-cr": verify_cr}[a.cmd](a)
     except Blocked as e:
         print("BLOCKED %s" % e)
+        fallback_result(a, "BLOCKED", "blocked before evaluation: %s" % e)
         return 4
-    except (KeyError, TypeError, ValueError, IndexError, AttributeError) as e:
-        print("FAIL malformed evidence: %r" % (e,))
+    except Exception as e:  # noqa: BLE001  - malformed/missing evidence or any other abnormal exit is a recorded FAIL
+        print("FAIL abnormal exit: %r" % (e,))
+        fallback_result(a, "FAIL", "abnormal exit: %r" % (e,))
         return 1
 
 

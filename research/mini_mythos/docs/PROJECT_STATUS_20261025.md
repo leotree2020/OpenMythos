@@ -1,5 +1,11 @@
 # Mini-Mythos / OpenMythos — 全项目研发进度（2026-10-25 更新版）
 
+## D1 代码冻结候选勘误 C2 检查点（2026-10-26；本文件最新阶段进度，优先于下方 C1 段）
+
+基准 `3775dc333577094d30297d3e28f9aa8d5d40039c`。C2 只做三项最小门禁修订：读取器退出码 4 → BLOCKED（驱动器退出码 PASS 0 / FAIL 1 / BLOCKED 4）；30 分钟硬上限设为代码常量，real 模式禁止覆盖、selftest 只能缩短；验证器异常退出、结果缺失/畸形/与退出码不符以及驱动器自身异常都写入决定文件为 FAIL 或 BLOCKED。12 项新回归测试（C1 代码上 11 项失败），全量 49 项合成自测 OK。只读环境盘点：沙箱满足候选固定值，**执行主机 NOT VERIFIED**，冻结配置未改。详见 `F3B_D1_CODE_FREEZE_C2_ERRATA_20261026.md`。
+
+**状态：`D1 CODE FREEZE CANDIDATE C2 / PENDING CHATGPT FINAL CODE REVIEW`**。仅 CPU 合成数据；未下载、未拟合、未训练、无 GPU；D1 NOT TESTED / NOT AUTHORIZED；D2/D3 NOT TESTED。**下一条唯一指令**：等待 ChatGPT 最终代码复审；授权前不得运行 D1。
+
 ## D1 代码冻结候选勘误 C1 检查点（2026-10-26；本文件最新阶段进度，优先于下方代码冻结准备段）
 
 审核基准 `090b6191f7558a43462691bb4fa9afa4b56fed9b`：`CODE FREEZE CANDIDATE FAIL`（代码完整性）。已修订：（1）`verify_cr` 重算故障/control trace 的块哈希、链、块号、总数、`stream_token_pos`、EOF tail 元数据；（2）独立构造 CR1/CR2/CR3 预期的单变异流与整窗口来源顺序并全量比对；（3）对抗性回归测试（单块哈希、tail_sha256、来源顺序、control 篡改；37 项合成自测 OK，旧验证器上 6 项失败）；（4）`verify_clean` 独立重算 P1–P5；（5）real 模式与正式 D1 身份分离；（6）Python 完整补丁版本候选固定（**执行主机未核实**）；（7）30 分钟硬超时 → BLOCKED、保留证据、不重试；（8）R6/R7/T1–T6/数据获取完整性标 NOT TESTED，流水线不输出总体 D1 PASS。详见 `F3B_D1_CODE_FREEZE_C1_ERRATA_20261026.md`。

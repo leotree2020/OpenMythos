@@ -35,6 +35,10 @@ class StepTimeout(Exception):
     pass
 
 
+FROZEN_LIMIT_SECONDS = 1800.0                 # the 30-minute hard cap; a code constant so a config edit cannot relax it
+VERDICT_EXIT = {"PASS": 0, "FAIL": 1, "BLOCKED": 4}
+
+
 def identity(mode, cfg, manifest):
     """Bookkeeping label, not a security boundary: only a run in mode=real with a FROZEN config and a
     manifest that carries an authorization reference, a hub revision equal to the frozen one and an LFS
@@ -88,6 +92,38 @@ def verifier(a, sub, extra, out=None):
     return [VERIFIER, sub, "--mode", a.mode] + common(a) + (["--out", out] if out else []) + extra
 
 
+def reader_status(rc, expect=0):
+    """Map a reader exit code to OK | BLOCKED | FAIL. Exit 4 is a BLOCKED input/precondition and must never
+    be reported as FAIL; exit 5 (self-check) and every other code are FAIL."""
+    if rc == expect:
+        return "OK"
+    return "BLOCKED" if rc == 4 else "FAIL"
+
+
+def verifier_verdict(rc, out_path):
+    """Map a verifier exit code plus its result file to (PASS | FAIL | BLOCKED, why). A PASS needs BOTH exit 0 and
+    a readable result file whose verdict is PASS. Missing/malformed results, unknown codes and exit/verdict
+    disagreements are FAIL (exit 4 with no result file is BLOCKED: the verifier stopped before evaluating)."""
+    verdict, problem = None, None
+    try:
+        with open(out_path, "r", encoding="utf-8") as f:
+            verdict = json.load(f)["verdict"]
+        if verdict not in VERDICT_EXIT:
+            verdict, problem = None, "unknown verdict value"
+    except Exception as e:  # noqa: BLE001
+        problem = "result file missing or malformed (%s)" % type(e).__name__
+    if rc not in VERDICT_EXIT.values():
+        return "FAIL", "verifier abnormal exit rc=%r" % (rc,)
+    if problem is not None:
+        if rc == 4:
+            return "BLOCKED", "verifier exit 4 before a result was written"
+        return "FAIL", "verifier rc=%d: %s" % (rc, problem)
+    expected = {v: k for k, v in VERDICT_EXIT.items()}[rc]
+    if verdict != expected:
+        return "FAIL", "verifier exit code %d disagrees with result verdict %s" % (rc, verdict)
+    return verdict, "verifier rc=%d" % rc
+
+
 def readonly(path):
     for base, _, files in os.walk(path):
         for f in files:
@@ -111,14 +147,17 @@ def do_clean(a):
     os.makedirs(cd, exist_ok=False)
     rc, _, _ = sh([ENVMAN, "--mode", a.mode, "--config", a.config, "--out", os.path.join(ev, "RUN_META.json")])
     if rc != 0:
-        return "BLOCKED", "environment check rc=%d" % rc
-    rc, _, _ = sh(verifier(a, "schedule", [], os.path.join(cd, "schedule.json")))
-    if rc != 0:
-        return "BLOCKED", "BLOCKED(schedule) rc=%d" % rc
-    sched = jread(os.path.join(cd, "schedule.json"))["points"]
+        return ("BLOCKED" if rc == 4 else "FAIL"), "environment check rc=%d" % rc
+    sched_path = os.path.join(cd, "schedule.json")
+    rc, _, _ = sh(verifier(a, "schedule", [], sched_path))
+    v, why = verifier_verdict(rc, sched_path)
+    if v != "PASS":
+        return v, ("BLOCKED(schedule): " if v == "BLOCKED" else "schedule step: ") + why
+    sched = jread(sched_path)["points"]
     rc, _, _ = sh(reader(a, ["--trace-out", os.path.join(cd, "A_trace.jsonl")]))
-    if rc != 0:
-        return "FAIL", "reader A rc=%d" % rc
+    st = reader_status(rc)
+    if st != "OK":
+        return st, "reader A rc=%d" % rc
     names = ["P1", "P2", "P3", "P4", "P5"]
     for i in range(1, 7):
         x = ["--trace-out", os.path.join(cd, "B_seg%d_trace.jsonl" % i)]
@@ -130,12 +169,13 @@ def do_clean(a):
         if i <= 4:
             x += ["--stop-pos", str(sched[names[i - 1]]["stream_pos"])]
         rc, _, _ = sh(reader(a, x))
-        if rc != 0:
-            return "FAIL", "reader B segment %d rc=%d" % (i, rc)
+        st = reader_status(rc)
+        if st != "OK":
+            return st, "reader B segment %d rc=%d" % (i, rc)
     readonly(cd)
     out = os.path.join(ev, "verify_clean_result.json")
     rc, _, _ = sh(verifier(a, "verify-clean", ["--clean-dir", cd], out))
-    return {0: "PASS", 1: "FAIL", 4: "BLOCKED"}.get(rc, "FAIL"), "verify-clean rc=%d" % rc
+    return verifier_verdict(rc, out)
 
 
 # ------------------------------------------------------------------ negatives
@@ -171,6 +211,11 @@ def do_negatives(a):
     sch = jread(os.path.join(cd, "schedule.json"))
     sched, vocab = sch["points"], sch["vocab"]
     results = {}
+
+    def hashes(path, cur):
+        rc, _, _ = sh([VERIFIER, "evidence-hashes", "--dir", cd, "--extra", cur, "--out", path])
+        return rc == 0 and os.path.exists(path)
+
     for lid, spec in cfg["LR"].items():
         d = os.path.join(nd, lid)
         orig = os.path.join(cd, "cursors", spec["cursor"] + ".json")
@@ -178,31 +223,39 @@ def do_negatives(a):
         write_once(mut, canon(mutate(lid, jread(orig), sched, vocab)))
         rc, _, _ = sh(reader(a, ["--cursor-in", mut, "--trace-out", os.path.join(d, "trace.jsonl"),
                                  "--load-report-out", os.path.join(d, "load_report.json")]))
-        if rc != 3:
-            results[lid] = {"verdict": "FAIL", "why": "reader rc=%d (expected 3)" % rc}
+        st = reader_status(rc, expect=3)                # a rejected cursor (exit 3) is the expected behaviour
+        if st != "OK":
+            results[lid] = {"verdict": st, "why": "reader rc=%d (expected 3)" % rc}
             continue
+        res = os.path.join(d, "result.json")
         rc, _, _ = sh(verifier(a, "verify-lr", ["--id", lid, "--orig", orig, "--mutated", mut,
                                                 "--load-report", os.path.join(d, "load_report.json"),
-                                                "--trace", os.path.join(d, "trace.jsonl")], os.path.join(d, "result.json")))
-        results[lid] = {"verdict": jread(os.path.join(d, "result.json"))["verdict"], "verifier_rc": rc}
+                                                "--trace", os.path.join(d, "trace.jsonl")], res))
+        v, why = verifier_verdict(rc, res)
+        results[lid] = {"verdict": v, "why": why}
     for cid, spec in cfg["CR"].items():
         d = os.path.join(nd, cid)
         cur = os.path.join(cd, "cursors", spec["cursor"] + ".json")
         before, after = os.path.join(d, "evidence_before.json"), os.path.join(d, "evidence_after.json")
-        sh([VERIFIER, "evidence-hashes", "--dir", cd, "--extra", cur, "--out", before])
+        ok_before = hashes(before, cur)
         rc1, _, _ = sh(reader(a, ["--cursor-in", cur, "--inject", spec["inject"], "--trace-out", os.path.join(d, "trace.jsonl"),
                                   "--load-report-out", os.path.join(d, "load_report.json")]))
         rc2, _, _ = sh(reader(a, ["--cursor-in", cur, "--trace-out", os.path.join(d, "control_trace.jsonl"),
                                   "--load-report-out", os.path.join(d, "control_load_report.json")]))
-        sh([VERIFIER, "evidence-hashes", "--dir", cd, "--extra", cur, "--out", after])
-        if rc1 != 0 or rc2 != 0:
-            results[cid] = {"verdict": "FAIL", "why": "reader rc=%d/%d" % (rc1, rc2)}
+        ok_after = hashes(after, cur)
+        sts = [reader_status(rc1), reader_status(rc2)]
+        if "BLOCKED" in sts or "FAIL" in sts:
+            results[cid] = {"verdict": "BLOCKED" if "BLOCKED" in sts else "FAIL", "why": "reader rc=%d/%d" % (rc1, rc2)}
             continue
+        if not (ok_before and ok_after):
+            results[cid] = {"verdict": "FAIL", "why": "evidence hash files could not be written"}
+            continue
+        res = os.path.join(d, "result.json")
         rc, _, _ = sh(verifier(a, "verify-cr", ["--id", cid, "--cursor", cur, "--load-report", os.path.join(d, "load_report.json"),
                                                 "--trace", os.path.join(d, "trace.jsonl"), "--control", os.path.join(d, "control_trace.jsonl"),
-                                                "--clean-dir", cd, "--evidence-before", before, "--evidence-after", after],
-                               os.path.join(d, "result.json")))
-        results[cid] = {"verdict": jread(os.path.join(d, "result.json"))["verdict"], "verifier_rc": rc}
+                                                "--clean-dir", cd, "--evidence-before", before, "--evidence-after", after], res))
+        v, why = verifier_verdict(rc, res)
+        results[cid] = {"verdict": v, "why": why}
     write_once(os.path.join(ev, "negatives_result.json"), canon(results))
     vs = {v["verdict"] for v in results.values()}
     return ("PASS" if vs == {"PASS"} else ("BLOCKED" if "BLOCKED" in vs else "FAIL")), results
@@ -217,16 +270,13 @@ def main(argv=None):
     ap.add_argument("--manifest", required=True)
     ap.add_argument("--source", required=True)
     ap.add_argument("--tokenizer", required=True)
-    ap.add_argument("--timeout-seconds", type=float, help="override of the frozen wall-clock limit (tests only)")
+    ap.add_argument("--timeout-seconds", type=float,
+                    help="selftest only: a SHORTER wall-clock limit than the frozen 30 minutes; refused in mode=real")
     a = ap.parse_args(argv)
-    cfg, manifest = jread(a.config), jread(a.manifest)
-    limit = a.timeout_seconds if a.timeout_seconds is not None else cfg["environment"]["wallclock_limit_minutes"] * 60.0
-    DEADLINE[0] = time.monotonic() + limit
+    LOG.clear()
     ev = os.path.join(a.workdir, "evidence")
-    ident = identity(a.mode, cfg, manifest)
-    decision = {"driver": "d1_driver/2", "mode": a.mode, "identity": ident,
-                "d1_formal_experiment": ident == "FORMAL_D1_CANDIDATE",
-                "wallclock_limit_seconds": limit,
+    os.makedirs(ev, exist_ok=True)
+    decision = {"driver": "d1_driver/3", "mode": a.mode,
                 "note": "identity SELFTEST_SYNTHETIC / REAL_CODE_PATH_NON_FORMAL results are code self-tests and are NOT D1 evidence",
                 "component_scope": {"read_resume": "R1-R5 and the post-run part of R6", "negatives_meta": "R8 (LR1-LR9, CR1-CR3)"},
                 "not_tested": ["R6: hash before the read and validation/test isolation",
@@ -235,26 +285,62 @@ def main(argv=None):
                                "data acquisition integrity (Hub listing, LFS oid, README/licence)"],
                 "d1_overall": "NOT_DECLARED__PIPELINE_INCOMPLETE",
                 "declared": "script output only; this pipeline cannot emit an overall D1 verdict, and D1 is never PASS/CLOSED without independent ChatGPT review and owner authorization"}
-    code = 0
+    verdict, code = "PASS", 0
+
+    def finish(verdict):
+        decision["verdict"] = verdict
+        decision["steps"] = LOG
+        try:
+            write_once(os.path.join(ev, "D1_DECISION_%s.json" % a.cmd), canon(decision))
+        except Exception as e:  # noqa: BLE001
+            sys.stderr.write("DECISION_NOT_WRITTEN %r\n%s\n" % (e, canon(decision)))
+            return 1
+        print(json.dumps({k: decision[k] for k in decision if k in (
+            "identity", "read_resume", "negatives_meta", "timeout", "timeout_override_refused", "driver_exception", "d1_overall")},
+            sort_keys=True)[:3000])
+        return VERDICT_EXIT[verdict]
+
+    # The 30-minute cap is frozen: no override in real mode, and a selftest override may only shorten it.
+    refusal = None
+    if a.timeout_seconds is not None:
+        if a.mode != "selftest":
+            refusal = "--timeout-seconds is not allowed in mode=real; the frozen 30-minute limit applies"
+        elif not 0 < a.timeout_seconds <= FROZEN_LIMIT_SECONDS:
+            refusal = "--timeout-seconds must be in (0, %d] (it may only shorten the frozen limit)" % FROZEN_LIMIT_SECONDS
+    if refusal:
+        decision["timeout_override_refused"] = {"verdict": "BLOCKED", "reason": refusal}
+        return finish("BLOCKED")
     try:
+        cfg, manifest = jread(a.config), jread(a.manifest)
+        cfg_limit = cfg["environment"]["wallclock_limit_minutes"] * 60.0
+        if a.mode == "real" and cfg_limit != FROZEN_LIMIT_SECONDS:
+            decision["timeout_override_refused"] = {"verdict": "BLOCKED", "reason": "config wallclock limit %s differs from the frozen %d s" % (cfg_limit, FROZEN_LIMIT_SECONDS)}
+            return finish("BLOCKED")
+        limit = min(a.timeout_seconds if a.timeout_seconds is not None else cfg_limit, FROZEN_LIMIT_SECONDS)
+        DEADLINE[0] = time.monotonic() + limit
+        ident = identity(a.mode, cfg, manifest)
+        decision.update(identity=ident, d1_formal_experiment=ident == "FORMAL_D1_CANDIDATE", wallclock_limit_seconds=limit)
         if a.cmd in ("clean", "all"):
             v, why = do_clean(a)
             decision["read_resume"] = {"verdict": v, "why": why}
-            code = 0 if v == "PASS" else 1
-        if a.cmd in ("negatives", "all") and code == 0:
-            v, res = do_negatives(a)
-            decision["negatives_meta"] = {"verdict": v, "items": res}
-            code = 0 if v == "PASS" else 1
+            verdict = v
+        if a.cmd in ("negatives", "all"):
+            if verdict == "PASS":
+                v, res = do_negatives(a)
+                decision["negatives_meta"] = {"verdict": v, "items": res}
+                verdict = v
+            else:
+                decision["negatives_meta"] = {"verdict": "NOT TESTED", "why": "clean stage verdict was %s" % verdict}
     except StepTimeout as e:
         decision["timeout"] = {"verdict": "BLOCKED(timeout)", "step": str(e),
                                "policy": "BLOCKED; existing evidence kept as is; no automatic retry"}
         decision["evidence_files_at_timeout"] = sorted(
             os.path.relpath(os.path.join(b, f), ev) for b, _, fs in os.walk(ev) for f in fs) if os.path.isdir(ev) else []
-        code = 4
-    decision["steps"] = LOG
-    write_once(os.path.join(ev, "D1_DECISION_%s.json" % a.cmd), canon(decision))
-    print(json.dumps({k: decision[k] for k in decision if k in ("identity", "read_resume", "negatives_meta", "timeout", "d1_overall")}, sort_keys=True)[:3000])
-    return code
+        verdict = "BLOCKED"
+    except Exception as e:  # noqa: BLE001  - never terminate without a decision record
+        decision["driver_exception"] = {"verdict": "FAIL", "error": repr(e)[:500]}
+        verdict = "FAIL"
+    return finish(verdict)
 
 
 if __name__ == "__main__":
