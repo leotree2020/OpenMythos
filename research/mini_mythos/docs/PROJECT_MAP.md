@@ -205,3 +205,7 @@ Claude Code 接替 Grok 担任主要研发工程师（项目负责人 2026-10-26
 基准 `97d0faf2982f4122941d2299a23cab6ab2ba04a3`，分支 `d1-pre-real-spec-r3-20261026`。新增 `docs/F3B_D1_PRE_REAL_SPEC_R3_DRAFT.md` 与检查点 `docs/F3B_D1_PRE_REAL_SPEC_R3_CHECKPOINT_20261026.md`：逐条引用 v1/R1/R2 原文（24/24 片段逐字核对），列出冲突与缺口 S1–S10（S1：下载后对三个文件算哈希 vs validation/test 未被打开；S2：T7 扫描 val/test vs R6/T1；另有 R6 粒度、R7 Token 计数、中断行为、T1 事件日志、30 分钟预算等），给出分阶段处理规范（元数据/下载/哈希/解析/读文本五级）、R6/R7/T1–T7 验收矩阵、单向哈希引用的清单、`FORMAL_D1_CANDIDATE` 不是 D1 PASS 及不改冻结 Driver 的独立验收方案，以及 11 项待裁决事项（R3-D01…D11，全部 PROPOSED / NOT APPROVED）。冻结文件、v1/R1/R2 未改动；未下载、未拟合、未运行 D1、无 GPU。
 
 **状态：`DRAFT / PENDING CHATGPT REVIEW`**（不是 FROZEN，不是 PASS）。下一条唯一指令：等待 ChatGPT 复审并由项目负责人裁决。
+
+## D1 真实执行前规范 R3 修订稿（2026-10-26）
+
+修订基准 `94601916bc1fd0faa33b9f819b3a0d8cc7d61dc5`，分支 `d1-pre-real-spec-r3-20261026`。`docs/F3B_D1_PRE_REAL_SPEC_R3_DRAFT.md` 已按 F3B-D1-SPEC-R3-REVIEW-002 原地修订（新增第 11、12 节），检查点追加到 `docs/F3B_D1_PRE_REAL_SPEC_R3_CHECKPOINT_20261026.md`。仅文档。**状态：R3 DRAFT / PENDING OWNER DECISION（不是 FROZEN、不是 PASS）**；11 项裁决（R3-D01…D11）为待项目负责人批准的决策记录。冻结文件与 v1/R1/R2 未改；真实 D1 NOT TESTED / NOT AUTHORIZED。下一条唯一指令：等待 ChatGPT 审核 R3 修订稿及项目负责人正式批准。

@@ -1,5 +1,11 @@
 # Mini-Mythos / OpenMythos — 全项目研发进度（2026-10-25 更新版）
 
+## D1 真实执行前规范 R3 修订稿检查点（2026-10-26；本文件最新阶段进度，优先于下方 R3 草案检查点）
+
+修订基准 `94601916bc1fd0faa33b9f819b3a0d8cc7d61dc5`；分支 `d1-pre-real-spec-r3-20261026`。F3B-D1-SPEC-R3-REVIEW-002：仅文档，原地修订 R3 草案并新增第 11（细则）、12（逐项修订记录）节。八项修订：D07 预算账本（`CLOCK_BOOTTIME` + `boot_id` + 外层监督器，不用 `seq` 计时，重启/时钟异常 → BLOCKED）；S6 哈希链仅作完整性并外部固定关键前缀 K0–K4 与信任边界；D03 前后哈希只证明两个检查时刻（加 `ctime_ns`，列可选控制）；I4 缺席见证的受控范围与局限（含 Xet 缓存）；D06 区分 LFS SHA-256 / Git blob SHA-1 / Xet（更正首版对 LFS `blob_id` 的错误用法，元数据不足默认 BLOCKED）；D08 test 审计只限完整性与统计；A1–A8 引用层级与前缀哈希已自检无环；11 项裁决保留为待批准决策记录。
+
+**状态：`R3 DRAFT / PENDING OWNER DECISION`**（不是 FROZEN，不是 PASS）。冻结文件与 v1/R1/R2 未改；未下载、未拟合、未运行 D1、无 GPU。真实 D1 NOT TESTED / NOT AUTHORIZED；新脚本（记录器、预算账本与监督器、获取、拟合、审计、清单、验收、固定工具）未编写；D2/D3 NOT TESTED；Grok 交叉复审 PENDING。下一条唯一指令：等待 ChatGPT 审核 R3 修订稿及项目负责人正式批准。
+
 ## D1 真实执行前规范 R3 草案检查点（2026-10-26；本文件最新阶段进度，优先于下方 Closeout 段）
 
 基准 `97d0faf2982f4122941d2299a23cab6ab2ba04a3`；分支 `d1-pre-real-spec-r3-20261026`。R3 草案（`F3B_D1_PRE_REAL_SPEC_R3_DRAFT.md`）消解/记录规范冲突：S1（下载后哈希 vs 未被打开）、S2（T7 扫描 val/test vs R6/T1）、R6 粒度、R7 Token 计数、中断行为、T1 事件日志、30 分钟预算，另发现离线切换时机、无 LFS `sha256`、身份标签可核对性三项；给出分阶段规范、验收矩阵、单向哈希清单、独立验收方案和 11 项待裁决事项（均 PROPOSED / NOT APPROVED）。24/24 原文引用逐字核对；冻结文件与 v1/R1/R2 未改。
