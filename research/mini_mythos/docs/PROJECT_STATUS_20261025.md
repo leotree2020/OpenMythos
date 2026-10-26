@@ -1,5 +1,11 @@
 # Mini-Mythos / OpenMythos — 全项目研发进度（2026-10-25 更新版）
 
+## D1 真实执行前规范 R3 第三轮修订检查点（2026-10-26；本文件最新阶段进度，优先于下方 R3 修订稿检查点）
+
+修订基准 `eeea55269df485d3e6305a82a3c478ef141a2788`；分支 `d1-pre-real-spec-r3-20261026`。F3B-D1-SPEC-R3-REVIEW-003：仅文档，对 ChatGPT Work 判 FAIL 的修订 2 做最小纠正。FIX-01 预算账本的状态转换、监督器与进程组终止/回收协议、`close` 的写入与失败处理，以及 K3/K4 与 30 分钟预算的两个无循环收尾方案（选项 X / Y，待裁决）；FIX-02 远端 pin 的内容验证程序 RV（取回对象、读文件、核对摘要/规范序列化/前缀/祖先关系，带外副本）；FIX-03 K3 改以 `read_phase_closed` 为终点，R6 最终读后哈希与闸门结论先于 K3；FIX-04 摘要标签与冻结接口的对照表（冻结键保持裸格式，不改冻结代码）；FIX-05 唯一事件注册表；FIX-06 I4 统一措辞；FIX-07 统一审计输出 Schema（`usage_declaration` 在 Envelope）；FIX-08 依赖图由正式边列表重新构造：17 节点、`ref` 31 边、`rec` 9 边、`sub` 3 边，无环，并更正修订 2 记录的 29 边。
+
+**状态：`R3 DRAFT / PENDING OWNER DECISION`**（文档自检 PASS 不是 R3 FROZEN、不是 REAL D1 PASS、不是 OWNER APPROVED）。R3-D01…D11 全部 PENDING OWNER DECISION。冻结文件与 v1/R1/R2 未改；未下载、未拟合、未运行 D1、无 GPU。真实 D1 NOT TESTED / NOT AUTHORIZED；新脚本未编写；D2/D3 NOT TESTED；Grok 交叉复审 PENDING。下一条唯一指令：等待 ChatGPT 对第三轮 R3 修订稿进行独立审核，再由项目负责人决定是否批准 R3。
+
 ## D1 真实执行前规范 R3 修订稿检查点（2026-10-26；本文件最新阶段进度，优先于下方 R3 草案检查点）
 
 修订基准 `94601916bc1fd0faa33b9f819b3a0d8cc7d61dc5`；分支 `d1-pre-real-spec-r3-20261026`。F3B-D1-SPEC-R3-REVIEW-002：仅文档，原地修订 R3 草案并新增第 11（细则）、12（逐项修订记录）节。八项修订：D07 预算账本（`CLOCK_BOOTTIME` + `boot_id` + 外层监督器，不用 `seq` 计时，重启/时钟异常 → BLOCKED）；S6 哈希链仅作完整性并外部固定关键前缀 K0–K4 与信任边界；D03 前后哈希只证明两个检查时刻（加 `ctime_ns`，列可选控制）；I4 缺席见证的受控范围与局限（含 Xet 缓存）；D06 区分 LFS SHA-256 / Git blob SHA-1 / Xet（更正首版对 LFS `blob_id` 的错误用法，元数据不足默认 BLOCKED）；D08 test 审计只限完整性与统计；A1–A8 引用层级与前缀哈希已自检无环；11 项裁决保留为待批准决策记录。

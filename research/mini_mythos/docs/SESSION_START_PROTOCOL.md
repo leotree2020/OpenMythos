@@ -2,6 +2,8 @@
 
 **适用范围：** 任何新 ChatGPT / Grok / 编程 Agent 对话，包含换模型、额度恢复、重新打开 Codespaces、交接研发。**优先级：** 新会话必须先读本文、项目地图及最新检查点；旧聊天记忆只是线索，不能作为实验事实。
 
+**最新 D1 真实执行前规范 R3 第三轮修订检查点（2026-10-26；优先于下方 R3 修订稿检查点）：** 修订基准 `eeea55269df485d3e6305a82a3c478ef141a2788`（已被 ChatGPT Work 独立审核判 FAIL），分支 `d1-pre-real-spec-r3-20261026`。F3B-D1-SPEC-R3-REVIEW-003 对 R3 草案做最小文档纠正（FIX-01…08：预算与终止协议闭合、远端 pin 内容验证 RV、K3 终点改为 `read_phase_closed`、摘要标签与冻结接口边界、唯一事件注册表、I4 统一措辞、统一审计输出 Schema、依赖图 17 节点 / `ref` 31 边重新计数并更正此前的 29 边记录）。**状态：R3 DRAFT / PENDING OWNER DECISION；文档自检 PASS 不是 R3 FROZEN、不是 REAL D1 PASS、不是 OWNER APPROVED；R3-D01…D11 全部待批准；冻结文件与 v1/R1/R2 未改。** 真实 D1 NOT TESTED / NOT AUTHORIZED；D2/D3 NOT TESTED；Grok 交叉复审仍 PENDING。下一条唯一指令：等待 ChatGPT 对第三轮 R3 修订稿进行独立审核，再由项目负责人决定是否批准 R3。
+
 **最新 D1 真实执行前规范 R3 修订稿检查点（2026-10-26；优先于下方 R3 草案检查点）：** 修订基准 `94601916bc1fd0faa33b9f819b3a0d8cc7d61dc5`，分支 `d1-pre-real-spec-r3-20261026`。F3B-D1-SPEC-R3-REVIEW-002 对 `docs/F3B_D1_PRE_REAL_SPEC_R3_DRAFT.md` 做了八项定向修订（预算账本与 `CLOCK_BOOTTIME`、哈希链仅作完整性并外部固定关键前缀、Driver 前后哈希的限定语、缺席见证范围、LFS/Git/Xet 完整性基础、test 审计用途限制、引用顺序无环、11 项裁决保留为待批准决策记录）。**状态：R3 DRAFT / PENDING OWNER DECISION；不是 FROZEN、不是 PASS；冻结文件与 v1/R1/R2 未改。** 真实 D1 NOT TESTED / NOT AUTHORIZED；D2/D3 NOT TESTED；Grok 交叉复审仍 PENDING。下一条唯一指令：等待 ChatGPT 审核 R3 修订稿及项目负责人正式批准。
 
 **最新 D1 真实执行前规范 R3 草案检查点（2026-10-26；优先于下方 Closeout 检查点）：** 基准 `97d0faf2982f4122941d2299a23cab6ab2ba04a3`，分支 `d1-pre-real-spec-r3-20261026`。`docs/F3B_D1_PRE_REAL_SPEC_R3_DRAFT.md`：规范冲突表 S1–S10（原文逐字引用）、分阶段数据处理草案、R6/R7/T1–T7 验收矩阵、单向哈希清单、`FORMAL_D1_CANDIDATE` ≠ D1 PASS 的独立验收方案、11 项待裁决事项（全部 PROPOSED / NOT APPROVED）。**状态：DRAFT / PENDING CHATGPT REVIEW；不是 FROZEN、不是 PASS；冻结文件与 v1/R1/R2 未改。** 真实 D1 NOT TESTED / NOT AUTHORIZED；D2/D3 NOT TESTED。下一条唯一指令：等待 ChatGPT 复审并由项目负责人裁决 R3-D01…D11；批准前不下载、不拟合、不运行 D1。

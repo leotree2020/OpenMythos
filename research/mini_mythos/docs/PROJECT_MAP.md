@@ -209,3 +209,7 @@ Claude Code 接替 Grok 担任主要研发工程师（项目负责人 2026-10-26
 ## D1 真实执行前规范 R3 修订稿（2026-10-26）
 
 修订基准 `94601916bc1fd0faa33b9f819b3a0d8cc7d61dc5`，分支 `d1-pre-real-spec-r3-20261026`。`docs/F3B_D1_PRE_REAL_SPEC_R3_DRAFT.md` 已按 F3B-D1-SPEC-R3-REVIEW-002 原地修订（新增第 11、12 节），检查点追加到 `docs/F3B_D1_PRE_REAL_SPEC_R3_CHECKPOINT_20261026.md`。仅文档。**状态：R3 DRAFT / PENDING OWNER DECISION（不是 FROZEN、不是 PASS）**；11 项裁决（R3-D01…D11）为待项目负责人批准的决策记录。冻结文件与 v1/R1/R2 未改；真实 D1 NOT TESTED / NOT AUTHORIZED。下一条唯一指令：等待 ChatGPT 审核 R3 修订稿及项目负责人正式批准。
+
+## D1 真实执行前规范 R3 第三轮修订（2026-10-26）
+
+修订基准 `eeea55269df485d3e6305a82a3c478ef141a2788`，分支 `d1-pre-real-spec-r3-20261026`。`docs/F3B_D1_PRE_REAL_SPEC_R3_DRAFT.md` 已按 F3B-D1-SPEC-R3-REVIEW-003 原地修订（新增 2.4 事件注册表、第 5 节正式边列表、11.8 摘要格式边界、第 14 节修订 3 记录），检查点追加到 `docs/F3B_D1_PRE_REAL_SPEC_R3_CHECKPOINT_20261026.md`。仅文档。**状态：R3 DRAFT / PENDING OWNER DECISION**；R3-D01…D11 为待项目负责人批准的决策记录。冻结文件与 v1/R1/R2 未改；真实 D1 NOT TESTED / NOT AUTHORIZED。下一条唯一指令：等待 ChatGPT 对第三轮 R3 修订稿进行独立审核，再由项目负责人决定是否批准 R3。
