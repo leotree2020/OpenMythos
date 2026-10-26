@@ -1,0 +1,330 @@
+{
+  "schema": "d1_frozen_config_v1",
+  "status": "FROZEN_CANDIDATE__PENDING_CHATGPT_CODE_REVIEW",
+  "design_basis": {
+    "v1": "research/mini_mythos/docs/F3B_D1_FROZEN_EXECUTION_PROPOSAL.md",
+    "r1": "research/mini_mythos/docs/F3B_D1_FROZEN_EXECUTION_PROPOSAL_R1.md",
+    "r2": "research/mini_mythos/docs/F3B_D1_FROZEN_EXECUTION_PROPOSAL_R2.md",
+    "precedence": "R2 over R1 over v1"
+  },
+  "dataset": {
+    "repo_id": "Salesforce/wikitext",
+    "config": "wikitext-2-raw-v1",
+    "revision": "b08601e04326c79dfdd32d625aee71d232d685c3",
+    "split": "train",
+    "text_column": "text"
+  },
+  "rows": {
+    "source_unit": "one parquet row; identity = (split, physical row_index)",
+    "eligible_rule": "text.strip() != ''",
+    "text_used": "as stored (not stripped), then unicodedata.normalize('NFC')",
+    "non_string_text": "BLOCKED",
+    "level1_heading_regex": "^ = (?!=).*(?<!=) = \\n$",
+    "heading_regex_applied_to": "nfc_text",
+    "eos_prefix_rule": "tokens(r) = ([EOS] if r is a level-1 heading row and ordinal > 0 else []) + encode(NFC(text)); no BOS; no EOS elsewhere",
+    "empty_tokens_row": "BLOCKED",
+    "token_id_zero_in_stream": "BLOCKED"
+  },
+  "window": {
+    "window_rows": 2048,
+    "seq_len": 64,
+    "block_len": 65,
+    "shuffle": false,
+    "rng": null,
+    "num_workers": 0,
+    "min_level1_headings": 10,
+    "min_blocks": 2000
+  },
+  "tokenizer": {
+    "label": "ALTERNATIVE RESEARCH TOKENIZER (not the official Parcae tokenizer)",
+    "library": "tokenizers.Tokenizer (native class only; no transformers wrapper)",
+    "encode_call": "encode(nfc_text, is_pretokenized=False, add_special_tokens=False).ids",
+    "decode_call": "decode(ids, skip_special_tokens=False)",
+    "post_processor": null,
+    "padding": null,
+    "truncation": null,
+    "special_tokens": {
+      "pad": [
+        "<|pad|>",
+        0
+      ],
+      "bos": [
+        "<|bos|>",
+        1
+      ],
+      "eos": [
+        "<|eos|>",
+        2
+      ]
+    },
+    "special_token_flags": {
+      "special": true,
+      "normalized": false,
+      "lstrip": false,
+      "rstrip": false,
+      "single_word": false
+    },
+    "special_token_literal_in_window_text": "BLOCKED",
+    "unk": null,
+    "target_vocab_size": 4096,
+    "actual_vocab_size": "MEASURED_AT_TOKENIZER_FIT; recorded in runtime manifest, never predicted here",
+    "normalizer": "NFC",
+    "pre_tokenizer": "ByteLevel(add_prefix_space=False, use_regex=True)",
+    "decoder": "ByteLevel",
+    "model": "BPE + BpeTrainer(vocab_size=4096, min_frequency=2), fitted on train eligible rows only",
+    "fit_script_in_this_stage": false
+  },
+  "serialization": {
+    "token_id": "uint32 little-endian, 4 bytes, no header / length prefix / separator",
+    "block_hash": "SHA-256 of 65 serialized ids (260 bytes), raw 32-byte digest",
+    "block_index_base": 0,
+    "chain_init": "H_0 = SHA-256(ascii 'MINI-MYTHOS-D1-CHAIN-V1')",
+    "chain_step": "H_(j+1) = SHA-256(H_j || block_hash_j), raw 32-byte digests, j = 0..N-1",
+    "chain_hash_field": "H_(emitted_blocks)",
+    "last_block_hash_field": "block_hash_(emitted_blocks-1), null when emitted_blocks = 0",
+    "tail": "tail_len = T - 65*floor(T/65); tail_sha256 = SHA-256(serialized tail ids)",
+    "json_canonical": "sort_keys, separators (',', ':'), ensure_ascii, UTF-8, no trailing newline for cursors; JSON Lines with trailing newline for traces",
+    "chain_init_ascii": "MINI-MYTHOS-D1-CHAIN-V1"
+  },
+  "cursor": {
+    "schema": "d1_cursor_v2",
+    "position_normalization": "a position at the end of a row is represented as next row, offset 0 (EOF if last row)",
+    "empty_carry_is_legal": true,
+    "eof_carry_is_tail": true,
+    "check_order": [
+      [
+        1,
+        "SCHEMA_INVALID"
+      ],
+      [
+        2,
+        "DATASET_IDENTITY_MISMATCH|REVISION_MISMATCH|PARQUET_HASH_MISMATCH"
+      ],
+      [
+        3,
+        "TOKENIZER_HASH_MISMATCH"
+      ],
+      [
+        4,
+        "WINDOW_PARAMS_MISMATCH"
+      ],
+      [
+        5,
+        "ROW_OUT_OF_RANGE|EOF_INCONSISTENT|OFFSET_OUT_OF_RANGE"
+      ],
+      [
+        6,
+        "ROW_IDENTITY_MISMATCH"
+      ],
+      [
+        7,
+        "CURSOR_POSITION_MISMATCH"
+      ],
+      [
+        8,
+        "CARRY_LENGTH_INVALID|TOKEN_ID_INVALID|CARRY_TOKEN_MISMATCH"
+      ],
+      [
+        9,
+        "CHAIN_HASH_MISMATCH|LAST_BLOCK_HASH_MISMATCH"
+      ]
+    ],
+    "note": "DATASET_IDENTITY_MISMATCH (repo/config/split) is an implementation-stage addition: R1 table named only REVISION_MISMATCH and PARQUET_HASH_MISMATCH for step 2. Flagged for ChatGPT review."
+  },
+  "schedule": {
+    "p1": {
+      "row": 150,
+      "offset": 0
+    },
+    "p2": {
+      "search_ordinals": [
+        600,
+        900
+      ],
+      "interval": "closed-open",
+      "min_row_len": 3,
+      "offset": "floor(len/2)",
+      "none_found": "BLOCKED(schedule)"
+    },
+    "p3": {
+      "search_from_row_start": 900,
+      "inclusive_of_row_start": true,
+      "stream_pos_mod": [
+        65,
+        32
+      ]
+    },
+    "p4": {
+      "search_from_row_start": 1200,
+      "inclusive_of_row_start": true,
+      "stream_pos_mod": [
+        65,
+        0
+      ]
+    },
+    "p5": {
+      "position": "EOF"
+    },
+    "ascending_criterion": "actual stream positions strictly increasing; violation = BLOCKED(schedule)",
+    "b_path": "6 separate python process invocations (start->P1, P1->P2, P2->P3, P3->P4, P4->P5(EOF), P5->end)"
+  },
+  "negatives": {
+    "LR": {
+      "LR1": {
+        "cursor": "P2",
+        "field": "row_token_offset",
+        "mutation": "offset + 1 (stream_token_pos unchanged)",
+        "code": "CURSOR_POSITION_MISMATCH",
+        "step": 7
+      },
+      "LR2": {
+        "cursor": "P1",
+        "field": "tokenizer_sha256",
+        "mutation": "last hex char replaced",
+        "code": "TOKENIZER_HASH_MISMATCH",
+        "step": 3
+      },
+      "LR3": {
+        "cursor": "P1",
+        "field": "dataset.revision",
+        "mutation": "set to 'main'",
+        "code": "REVISION_MISMATCH",
+        "step": 2
+      },
+      "LR4": {
+        "cursor": "P3",
+        "field": "carry[0]",
+        "mutation": "+1 (or -1 if out of range), result valid and nonzero",
+        "code": "CARRY_TOKEN_MISMATCH",
+        "step": 8
+      },
+      "LR5": {
+        "cursor": "P1",
+        "field": "row_tokens_sha256",
+        "mutation": "last hex char replaced",
+        "code": "ROW_IDENTITY_MISMATCH",
+        "step": 6
+      },
+      "LR6": {
+        "cursor": "P2",
+        "field": "row_token_offset",
+        "mutation": "set to len(tokens(r))",
+        "code": "OFFSET_OUT_OF_RANGE",
+        "step": 5
+      },
+      "LR7": {
+        "cursor": "P5",
+        "field": "row_token_offset",
+        "mutation": "set to 1",
+        "code": "EOF_INCONSISTENT",
+        "step": 5
+      },
+      "LR8": {
+        "cursor": "P3",
+        "field": "chain_hash",
+        "mutation": "last hex char replaced",
+        "code": "CHAIN_HASH_MISMATCH",
+        "step": 9
+      },
+      "LR9": {
+        "cursor": "P4",
+        "field": "last_block_hash",
+        "mutation": "last hex char replaced",
+        "code": "LAST_BLOCK_HASH_MISMATCH",
+        "step": 9
+      }
+    },
+    "CR": {
+      "CR1": {
+        "cursor": "P2",
+        "inject": "skip_next_row",
+        "anomalous_row": "n+1",
+        "code": "ROW_SKIPPED",
+        "expected_consumed": "0"
+      },
+      "CR2": {
+        "cursor": "P4",
+        "inject": "repeat_next_row",
+        "anomalous_row": "n+1",
+        "code": "ROW_DUPLICATED",
+        "expected_consumed": "2*len"
+      },
+      "CR3": {
+        "cursor": "P2",
+        "inject": "shift_consume_offset",
+        "delta": 1,
+        "anomalous_row": "n",
+        "code": "TOKEN_OFFSET_MISMATCH",
+        "expected_consumed": "len-1"
+      }
+    },
+    "cr_row_classification_order": [
+      "ROW_SKIPPED (consumed==0)",
+      "ROW_DUPLICATED (consumed>len)",
+      "TOKEN_OFFSET_MISMATCH (count/offset/content mismatch)",
+      "OK"
+    ],
+    "cr_rules": "cursor file must pass all nine checks unchanged; no load-check bypass exists; injection only inside the read loop; cursor file bytes must be identical before/after; clean evidence is read-only and write-once; negative evidence is stored apart"
+  },
+  "trace": {
+    "record_types": [
+      "run",
+      "block",
+      "final"
+    ],
+    "final_kinds": [
+      "eof_tail",
+      "carry",
+      "rejected"
+    ],
+    "segments": "list of {ordinal, source_row_index, row_offset, count}; first carry_len tokens of a run's output stream are the restored carry and carry no segments",
+    "clean_segment_assertions": [
+      "no gap",
+      "no overlap",
+      "full coverage of the window"
+    ]
+  },
+  "evidence_layout": {
+    "clean": "evidence/clean/ (A_trace.jsonl, B_seg1..6_trace.jsonl, cursors/P1..P5.json, load_reports/, schedule.json); read-only, write-once",
+    "negatives": "evidence/negatives/{LR1..LR9,CR1..CR3}/; write-once; output path must not pre-exist"
+  },
+  "environment": {
+    "device": "cpu only; no torch import; no GPU",
+    "python_minor_allowed": [
+      "3.11",
+      "3.12",
+      "3.13"
+    ],
+    "pins": {
+      "tokenizers": "0.23.3",
+      "pyarrow": "26.0.0",
+      "huggingface_hub": "2.2.0"
+    },
+    "pins_note": "tokenizers 0.23.3, pyarrow 26.0.0 and huggingface_hub 2.2.0 were observed installed in the preparation sandbox (Python 3.13) and tokenizers/pyarrow were exercised by the code self-test; enforced pins in real mode: tokenizers and pyarrow. huggingface_hub is needed only by the (not yet written) acquisition script and is not imported by D1 reader/verifier. numpy is not used by D1 and is not pinned. These pins are NOT yet verified on the execution host.",
+    "env_vars": {
+      "TOKENIZERS_PARALLELISM": "false",
+      "PYTHONHASHSEED": "0",
+      "CUDA_VISIBLE_DEVICES": ""
+    },
+    "wallclock_limit_minutes": 30
+  },
+  "runtime_values_not_frozen_here": [
+    "parquet_sha256 (train)",
+    "tokenizer_sha256",
+    "actual_vocab_size",
+    "Hub file paths and LFS oids",
+    "window level-1 heading count, total blocks, tail_len"
+  ],
+  "authorization": {
+    "this_stage": "code and frozen-config preparation only",
+    "not_authorized": [
+      "download parquet",
+      "fit tokenizer",
+      "D1 data experiment",
+      "train",
+      "GPU",
+      "D2",
+      "D3"
+    ]
+  }
+}

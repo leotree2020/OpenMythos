@@ -133,3 +133,9 @@ Claude Code 接替 Grok 担任主要研发工程师（项目负责人 2026-10-26
 基准 `579ffd11ec2dba0b9cbf0eae67d7ce4e26874c19`。R1 复审结论 `PRE-FLIGHT FAIL`；新增 `docs/F3B_D1_FROZEN_EXECUTION_PROPOSAL_R2.md`（仅文档）。v1（SHA-256 `a55b2cb7…ba9e`）与 R1（SHA-256 `f92c4e79…1d7a`）**原样保留**。R2 只改 5 处：（1）CR 负例用可信干净前缀 + 续读 trace 重新核算整个窗口，逐行核对 Token 数量、原始位置与完整内容，注入证据与干净证据分开保存；（2）CR3 的原始游标先通过全部九步校验，不得关闭加载检查，仅在读取循环内注入消费偏移，磁盘游标不改；（3）CR3 固定 `δ=+1`、P2 只选 Token 数 ≥ 3 的行，删除 `δ=−1` 回退；（4）P2 搜索区间为合格行序号 [600,900)，找不到记 `BLOCKED(schedule)`，删除「相邻中断点相隔 300 行」的错误断言，改以实际 Token 流位置严格递增为判据，P3/P4 搜索起点包含行起点；（5）哈希链用零起始块号：`H_{j+1}=SHA256(H_j ‖ block_hash_j)`，32 字节原始摘要拼接，`chain_hash=H_N`，并给出合成校验向量。R1 其余条款（LR1–LR9 主体、九步校验、空 carry、EOF、序列化、`P(V)=206,976+320V`）保留。
 
 **状态：`D1 PRE-FLIGHT R2 PROPOSED / PENDING CHATGPT RE-REVIEW`**。D1 `NOT TESTED / NOT AUTHORIZED`；D2/D3 `NOT TESTED`。修订成功不是实验 PASS，不是 D1 CLOSED。
+
+## D1 执行脚本冻结准备（2026-10-26）
+
+基准 `8a1700835c619fc1ad579da12713ece612403b8e`（ChatGPT 已对 R2 设计做静态复审 PASS，这不是 D1 实验 PASS）。新增 `gate3_d1/`：`d1_reader.py`（读取器）、`d1_verifier.py`（独立验证器，与读取器不互相 import、不共享游标校验/来源映射/参照流函数）、`d1_driver.py`（clean A/B + LR1–LR9 + CR1–CR3 编排）、`d1_env_manifest.py`、`D1_FROZEN_CONFIG.json`、`requirements-d1.txt`、`D1_ENV_FREEZE.md`、`D1_CODE_SHA256SUMS`，以及 `tests/test_d1_selftest.py` 和记录 `docs/F3B_D1_CODE_FREEZE_PREP_20261026.md`。实现区分中间 carry 与 EOF tail，并断言来源片段无空洞、无重叠、完全覆盖。自测仅用合成数据（24 项 OK），不是 D1 证据。**未**下载 Parquet、未拟合 Tokenizer、未做 D1 数据实验、未训练、未用 GPU；数据获取与 Tokenizer 拟合脚本尚未编写。
+
+**状态：`D1 CODE FREEZE CANDIDATE / PENDING CHATGPT CODE REVIEW`**。D1 `NOT TESTED / NOT AUTHORIZED`；D2/D3 `NOT TESTED`。
