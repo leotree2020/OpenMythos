@@ -1,0 +1,12 @@
+# Read-only probe for the project owner's planned Codespaces CPU environment, 2026-10-26
+# Purpose: find out whether the designated execution environment can be inspected from this session.
+# Environment: Claude Code cloud sandbox (NOT the execution environment).
+## 1. Codespaces environment variables in this sandbox (CODESPACE*/GITHUB_CODESPACE*): none set
+## 2. gh auth status:        "Failed to log in to github.com using token (GH_TOKEN) ... The token in GH_TOKEN is invalid."
+## 3. gh codespace list:     "error getting codespaces: HTTP 403: This GitHub API path is not available: sessions are bound to
+##                            their configured repositories. Use repository-scoped endpoints (repos/{owner}/{repo}/...)."
+## 4. claude-code-remote list_environments: two environments of kind "anthropic_cloud" (Default; Default - trusted network access);
+##                            no Codespaces / self-hosted pool. These are Claude's own cloud sandboxes.
+## 5. Repository: no devcontainer definition (checked in the C2 inventory).
+# Verdict: BLOCKED - the designated Codespaces CPU environment is not reachable from this session.
+# The sandbox values recorded earlier (c2_logs/env_inventory.txt) are NOT to be used as the execution environment.

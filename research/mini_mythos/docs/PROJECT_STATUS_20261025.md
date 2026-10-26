@@ -1,5 +1,11 @@
 # Mini-Mythos / OpenMythos — 全项目研发进度（2026-10-25 更新版）
 
+## D1 代码冻结验收归档检查点（2026-10-26；本文件最新阶段进度，优先于下方 C2b 段）
+
+`0197c21ca38130e66d804961b85a15ee39634b26`：ChatGPT Work 独立 C2b 代码冻结验收 **PASS**（据项目负责人转述）；56 项 CPU 合成测试仅为日志核验，**未在独立环境重新执行**。D1 真实实验 NOT TESTED / NOT AUTHORIZED；R6 读取前部分、R7、T1–T6、数据获取完整性 NOT TESTED；获取与 Tokenizer 拟合脚本未编写；配置 `status` 仍为 `FROZEN_CANDIDATE…`。执行环境只读核查：指定 Codespaces 无法访问（`gh` 令牌无效、`gh codespace list` HTTP 403、仅有 Claude 云沙箱环境）→ **BLOCKED**；Claude 沙箱不作为执行环境；候选版本（Python 3.13.16、tokenizers 0.23.3、pyarrow 26.0.0、huggingface_hub 2.2.0）未改。已验收文件的 blob/SHA-256 见 `F3B_D1_CODE_FREEZE_ACCEPTANCE_ARCHIVE_20261026.md`。
+
+**状态：`D1 CODE FREEZE ACCEPTED (C2b) / D1 REAL EXPERIMENT NOT TESTED, NOT AUTHORIZED / EXECUTION ENVIRONMENT BLOCKED`**。D2/D3 NOT TESTED。**下一条唯一指令**：项目负责人在 Codespaces 内执行只读环境命令并回传。
+
 ## D1 代码冻结候选 C2b 检查点（2026-10-26；本文件最新阶段进度，优先于下方 C2a 段）
 
 基准 `796cc6138caaedf8a45d9abd12554ef62235e77d`。C2b 两项：CR 的故障/对照读取器各自退出码与状态保留，整体按 FAIL > BLOCKED > PASS 聚合（`cr_reader_verdict` + `aggregate`）；`verifier_verdict()` 对非字符串 verdict 安全返回 FAIL。新增测试在 C2a 上失败（CR1/CR2 误记 BLOCKED；`TypeError: unhashable type`），56 项合成回归 OK。读取器、验证器、冻结配置、历史文档未改。

@@ -2,6 +2,8 @@
 
 **适用范围：** 任何新 ChatGPT / Grok / 编程 Agent 对话，包含换模型、额度恢复、重新打开 Codespaces、交接研发。**优先级：** 新会话必须先读本文、项目地图及最新检查点；旧聊天记忆只是线索，不能作为实验事实。
 
+**最新 D1 代码冻结验收归档检查点（2026-10-26；优先于下方 C2b 检查点）：** 提交 `0197c21ca38130e66d804961b85a15ee39634b26` 经 ChatGPT Work 独立 C2b 代码冻结验收 PASS（56 项合成测试为日志核验，未在独立环境重跑；Work 原文不在仓库）。D1 真实实验 NOT TESTED / NOT AUTHORIZED；R6 读取前部分、R7、T1–T6、数据获取 NOT TESTED；指定 Codespaces CPU 环境不可访问 → 执行环境核查 BLOCKED（沙箱不是执行环境，候选版本未改）。见 `docs/F3B_D1_CODE_FREEZE_ACCEPTANCE_ARCHIVE_20261026.md`。下一条唯一指令：项目负责人在 Codespaces 内执行该文档 3.1 的只读命令并回传输出；未获新授权前不得下载、拟合、运行 D1、训练、用 GPU 或开始 D2/D3。
+
 **最新 D1 代码冻结候选 C2b 检查点（2026-10-26；优先于下方 C2a 检查点）：** 基准 `796cc6138caaedf8a45d9abd12554ef62235e77d`。仅修两个边界问题：CR 两个读取器结果 FAIL > BLOCKED > PASS 且保留明细；`verifier_verdict()` 的非字符串 verdict → FAIL。见 `docs/F3B_D1_CODE_FREEZE_C2B_ERRATA_20261026.md`。**状态：`D1 CODE FREEZE CANDIDATE C2b / PENDING CHATGPT FINAL ACCEPTANCE`；D1 NOT TESTED / NOT AUTHORIZED；D2/D3 NOT TESTED；执行主机环境 BLOCKED；无下载、无拟合、无训练、无 GPU。** 下一条唯一指令：等待 ChatGPT 最终验收与项目负责人确认执行主机环境。
 
 **最新 D1 代码冻结候选微型勘误 C2a 检查点（2026-10-26；优先于下方 C2 检查点）：** 基准 `f28f32b6d1514f15ccf680f752f5c414322cab51`。仅两项：`verifier_verdict()` 区分结果文件不存在与不可解析（仅退出码 4 且无文件为 BLOCKED）；聚合 FAIL 优先于 BLOCKED 并保留明细。见 `docs/F3B_D1_CODE_FREEZE_C2A_ERRATA_20261026.md`。**状态：`D1 CODE FREEZE CANDIDATE C2a / PENDING CHATGPT FINAL CODE REVIEW`；D1 NOT TESTED / NOT AUTHORIZED；D2/D3 NOT TESTED；无下载、无拟合、无训练、无 GPU。** 下一条唯一指令：等待 ChatGPT 最终代码复审与项目负责人确认执行主机环境。

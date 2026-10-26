@@ -163,3 +163,9 @@ Claude Code 接替 Grok 担任主要研发工程师（项目负责人 2026-10-26
 基准 `796cc6138caaedf8a45d9abd12554ef62235e77d`。新增 `docs/F3B_D1_CODE_FREEZE_C2B_ERRATA_20261026.md`，仅修两个边界问题（只改 `d1_driver.py` 与测试）：（1）CR 的故障/对照两个读取器结果用 `aggregate()` 合并，FAIL > BLOCKED > PASS，保留各读取器退出码与状态；（2）`verifier_verdict()` 对非字符串 `verdict`（列表/字典/null/数字/布尔）返回 FAIL，不抛 `TypeError`。新增测试在 C2a 基准上失败；全量 56 项合成回归 OK。读取器、验证器、冻结配置未改。
 
 **状态：`D1 CODE FREEZE CANDIDATE C2b / PENDING CHATGPT FINAL ACCEPTANCE`**。D1 `NOT TESTED / NOT AUTHORIZED`；D2/D3 `NOT TESTED`；执行主机环境 `BLOCKED`。
+
+## D1 代码冻结验收归档（2026-10-26）
+
+已验收提交 `0197c21ca38130e66d804961b85a15ee39634b26`：ChatGPT Work 独立 C2b 代码冻结验收 **PASS**（据项目负责人转述；证据为 56 项 CPU 合成测试的日志核验，**未在独立环境重新执行**；Work 原文不在仓库）。新增 `docs/F3B_D1_CODE_FREEZE_ACCEPTANCE_ARCHIVE_20261026.md`（已验收文件的 blob/SHA-256、未完成状态、环境确认任务）。D1 真实实验 `NOT TESTED / NOT AUTHORIZED`；R6 读取前部分、R7、T1–T6、数据获取完整性 `NOT TESTED`；获取与 Tokenizer 拟合脚本未编写；配置 `status` 仍为 `FROZEN_CANDIDATE…`（执行前冻结提交待授权）。指定 Codespaces CPU 环境无法从本会话访问：**执行环境核查 BLOCKED**，Claude 沙箱不得当作执行环境，候选版本未改。
+
+**状态：`D1 CODE FREEZE ACCEPTED (C2b) / D1 REAL EXPERIMENT NOT TESTED, NOT AUTHORIZED / EXECUTION ENVIRONMENT BLOCKED`**。
