@@ -114,3 +114,11 @@ Grok `103344e47184735e03727d062ce81cbae6632e47` 提交五份研究设计文档�
 **当前唯一下一步（不跑代码、不下载/拟合 Tokenizer）**：Grok 仅编写一份 `F3B_D1_FROZEN_EXECUTION_PROPOSAL.md`，锁定 `Salesforce/wikitext` / `wikitext-2-raw-v1` / revision `b08601e04326c79dfdd32d625aee71d232d685c3`，冻结 BPE train-only 编码/许可/特殊 Token、单进程 source ID 与 Token cursor/断点续读、有限比较窗口及跳/重/错位负例。**D2 必须单独解决 vocab128→目标 BPE4096 时输入/输出形状与实际参数量变化**，不能仍称 247936 参数模型。Git 历史 R2 Gate M/N/O/P/Q 的文件级和本地合成专项 PASS 不代表远端逐行/DataLoader Resume PASS。
 
 下一步仅为 D1 门禁设计提交，之后需 ChatGPT 审核和项目负责人明确 CPU D1 数据读取/Tokenizer 拟合的执行授权；不自动授权新训练、GPU 或架构变更。
+
+
+## D1 预飞行方案（2026-10-26）
+
+Claude Code 接替 Grok 担任主要研发工程师（项目负责人 2026-10-26 指令），ChatGPT 继续独立审核。新增 `docs/F3B_D1_FROZEN_EXECUTION_PROPOSAL.md`（仅文档，0 行执行代码）：逐条冻结 D1-01…D1-04，并把 D2 的 vocab 128→4096 参数量冲突登记为前置事项（词表相关参数 DERIVED 为 `320×V`，整体对账有 832 残差，故只作 ESTIMATE，D2 必须实测）。
+
+**状态：`D1 PRE-FLIGHT PROPOSED / PENDING CHATGPT REVIEW`**。D1 `NOT FROZEN→PROPOSED`，未获执行授权；D2/D3 `NOT TESTED`；GPU 未授权；官方 Parcae Tokenizer `BLOCKED`。本次没有新增实验 PASS，也没有刷新五模块文件数/字节数统计（该基线仍是上方 `ee1b3c8` 快照，当前 HEAD 的精确统计 **NOT MEASURED**）。
+

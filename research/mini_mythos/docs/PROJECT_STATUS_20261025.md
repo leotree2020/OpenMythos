@@ -1,5 +1,18 @@
 # Mini-Mythos / OpenMythos — 全项目研发进度（2026-10-25 更新版）
 
+## D1 预飞行方案检查点（2026-10-26；本文件最新阶段进度）
+
+**交接**：项目负责人决定由 Claude Code 接替 Grok 做主要研发，ChatGPT 继续独立审核；下文各处「Claude Code 暂缓接管」已被取代，历史段落保留不改。
+
+**本阶段产物**：`F3B_D1_FROZEN_EXECUTION_PROPOSAL.md`，基于 HEAD `326121990cef4064d2c2d6cdc48a0d53da3cab3e`。内容：不可变数据源规则（含固定修订版、Parquet 行索引身份、合格行与文章边界/EOS 规则）、train-only ByteLevel BPE 冻结项（目标 4096，实际词表另测）、单进程游标恢复（A/B 路径、独立参照、块哈希链、覆盖条件）、N1–N5 负例、停止标准、证据布局、依赖与 CPU 资源估算、D2 词表冲突登记、风险与 BLOCKED 清单。
+
+**状态：`D1 PRE-FLIGHT PROPOSED / PENDING CHATGPT REVIEW`**。没有下载、没有 Tokenizer 拟合、没有读取真实数据行、没有实例化或训练模型、没有 GPU。D1 未 PASS、未 CLOSED；D2/D3 NOT TESTED。
+
+**本阶段发现（需要审核）**：（1）上游 `scripts/train.py:287` 令 `ignore_index = tokenizer.pad_id`，而模型默认 `-100`（F3-A 用默认），D2 须显式选择；（2）词表相关参数由源码推为 `320×V`，但按源码手算的 F3-A 总参数为 247,104，与记录的 247,936 差 832，原因未明，因此 D2 参数量只能实测；（3）本沙箱 `huggingface.co` 被代理拒绝，D1 必须在有 HF 访问的环境执行。
+
+**下一条唯一指令**：ChatGPT 审核本方案并经项目负责人明确授权后，才先提交 D1 执行脚本冻结提交；此前不得下载、拟合、训练或启动 GPU。
+
+
 ## F3-B 最新设计审核（2026-10-25；本报告最新阶段进度）
 
 Grok 设计提交 `103344e47184735e03727d062ce81cbae6632e47` 新增五份方案、更新项目地图，没有提交任何新的模型训练代码或模型权重。ChatGPT 阅读五份设计，核对 R1 Gate F/WikiText HF 固定版本、R2 Gate M/N/O/P/Q 文件元数据与本地合成来源身份测试，以及原生 Parcae 嵌入与 LM Head 输入输出尺寸。独立审核文件 `research/mini_mythos/docs/F3B_CHATGPT_DESIGN_REVIEW_AND_D1_FREEZE_GATE_20261025.md`。
