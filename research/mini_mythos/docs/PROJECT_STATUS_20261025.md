@@ -1,5 +1,11 @@
 # Mini-Mythos / OpenMythos — 全项目研发进度（2026-10-25 更新版）
 
+## D1 冻结后 CPU 回归 Closeout 检查点（2026-10-26；本文件最新阶段进度，优先于下方哨兵测试修正段）
+
+Codespaces Python 3.13.8 冻结后合成回归：日志提交 `1298619e163af6257d206134e5ed031e0082947f`，日志 SHA-256 `be1bff0493a4da59c71b962188ac1bc3a5766b6caa26a419ea23a0ceae6fac1e`（重算一致）；56 个测试名与源码一一对应，**56 PASS、0 SKIP、0 FAIL、0 ERROR，50.656 s，`unittest_exit: 0`**；`test_identity_labels`、`test_real_mode_pipeline` 通过（合成，非真实 D1）。本会话在该提交上独立确认：冻结清单 10/10 OK；配置 `status = FROZEN`、哈希 `0d35dc21…`；Reader/Verifier/Driver/配置/`d1_env_manifest.py`/`d1_selftest_data.py`/依赖与 README/Codespaces 环境证据相对冻结提交 `9e257788` 无 diff；测试文件仅哨兵断言一行。观察：Codespaces 日志头部不含 `git status` 与清单校验输出（非阻断）。
+
+**状态：`READY FOR CLOSEOUT / CROSS-REVIEW PENDING`**（Grok 对最终哨兵修复差异的交叉审核尚未取得）。真实 D1 NOT TESTED / NOT AUTHORIZED；R6 剩余、R7、T1–T6、数据获取 NOT TESTED；D2/D3 NOT TESTED。**下一条唯一指令**：取得 Grok 交叉审核后将配置与环境准备范围标记 CLOSED。
+
 ## D1 冻结后哨兵测试修正检查点（2026-10-26；本文件最新阶段进度，优先于下方最终配置冻结段）
 
 冻结提交 `9e257788c0510d5e263d5256d4bd3cebebdb8057` 与其原始失败日志保留。根因：`test_identity_labels` 的冻结前哨兵断言 `status != "FROZEN"` 在配置冻结后必然失败，不是 Reader/Verifier/Driver 缺陷。修复（分支 `d1-final-freeze-sentinel-fix-20261026`）：测试一行改为 `== "FROZEN"`；`D1_ENV_FREEZE.md` 状态描述与事实同步（配置 FROZEN、原生证据 PASS、冻结已授权、真实 D1 仍 NOT TESTED / NOT AUTHORIZED）；清单只有这两项变化，10/10 OK，配置哈希不变。沙箱 Python 3.13.16：精确测试 PASS；完整 56 项 `OK (skipped=1)`（real-mode 版本门禁）。**Codespaces Python 3.13.8 回归：NOT TESTED（PENDING CODESPACES VALIDATION）**，期望 56 PASS / 0 SKIP / 0 FAIL / 0 ERROR，需项目负责人回传。

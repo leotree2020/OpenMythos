@@ -193,3 +193,9 @@ Claude Code 接替 Grok 担任主要研发工程师（项目负责人 2026-10-26
 冻结提交 `9e257788c0510d5e263d5256d4bd3cebebdb8057` 保持不变；修复分支 `d1-final-freeze-sentinel-fix-20261026`。ChatGPT 裁决：批准限定范围的测试与状态文档修正，不批准算法变更。`tests/test_d1_selftest.py::test_identity_labels` 的冻结前哨兵断言 `status != "FROZEN"` 改为 `== "FROZEN"`（一行）；`D1_ENV_FREEZE.md` 的过期状态描述与当前事实同步；`D1_CODE_SHA256SUMS` 只有这两个文件的行变化，配置哈希 `0d35dc21…` 不变，10/10 OK。沙箱（Python 3.13.16）：精确测试 PASS；56 项 `OK (skipped=1)`（real-mode 版本门禁，设计如此）。**Codespaces（3.13.8）最终回归尚未执行：PENDING CODESPACES VALIDATION，不宣布 56/56 PASS。** 真实 D1 NOT TESTED / NOT AUTHORIZED；D2/D3 NOT TESTED。详见 `docs/F3B_D1_FREEZE_SENTINEL_FIX_20261026.md`。
 
 **下一条唯一指令**：等待项目负责人回传 Codespaces CPU 合成回归结果，交 ChatGPT 与 Grok 交叉审核最终最小差异。
+
+## D1 冻结后 CPU 回归证据归档与 Closeout（2026-10-26）
+
+日志提交 `1298619e163af6257d206134e5ed031e0082947f`（修复基准 `6b57087c595ce795333c6636dceb32ff5b61fef3`，分支 `d1-final-freeze-sentinel-fix-20261026`）。Codespaces Python 3.13.8 冻结后 CPU 合成回归日志 `gate3_d1/sentinel_fix_logs/codespaces_regression_py3138.txt`（SHA-256 `be1bff0493a4da59c71b962188ac1bc3a5766b6caa26a419ea23a0ceae6fac1e`，本会话重算一致）经完整读取核对：**56 PASS、0 SKIP、0 FAIL、0 ERROR，50.656 s，退出码 0**，56 个测试名与源码一一对应，`test_identity_labels`、`test_real_mode_pipeline` 均 ok（合成，非真实 D1）。冻结清单 10/10 OK、配置哈希 `0d35dc21…` 与 `status = FROZEN` 不变，Reader/Verifier/Driver/配置相对冻结提交 `9e257788` 无 diff，测试文件仅哨兵断言一行。验收：D1 代码冻结 PASS；最终配置 FROZEN PASS；Codespaces 原生环境 PASS；56 项冻结后回归 PASS；代码变更范围 PASS；**Grok 对最终哨兵修复差异的交叉审核 PENDING**；真实 D1 NOT TESTED / NOT AUTHORIZED；R6 剩余、R7、T1–T6、数据获取 NOT TESTED；D2/D3 NOT TESTED。详见 `docs/F3B_D1_FINAL_REGRESSION_CLOSEOUT_20261026.md`。
+
+**状态：`READY FOR CLOSEOUT / CROSS-REVIEW PENDING`**。下一条唯一指令：取得 Grok 交叉审核后标记配置与环境准备范围 CLOSED。
