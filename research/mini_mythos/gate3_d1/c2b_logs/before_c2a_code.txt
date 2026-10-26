@@ -1,0 +1,17 @@
+# C2b new tests run against the C2a driver (HEAD 796cc613); 2026-10-26T07:13:26Z
+# Expected: all 5 fail/error on C2a.
+--- test_cr_reader_pair_verdict
+ERROR: test_cr_reader_pair_verdict (research.mini_mythos.tests.test_d1_selftest.C2Gates.test_cr_reader_pair_verdict)
+AttributeError: module 'd1_driver' has no attribute 'cr_reader_verdict'. Did you mean: 'verifier_verdict'?
+FAILED (errors=1)
+--- test_cr_mixed_reader_outcomes_through_the_driver
+FAIL: test_cr_mixed_reader_outcomes_through_the_driver (research.mini_mythos.tests.test_d1_selftest.C2Gates.test_cr_mixed_reader_outcomes_through_the_driver)
+AssertionError: Tuples differ: ('BLOCKED', 'BLOCKED', 'BLOCKED') != ('FAIL', 'FAIL', 'BLOCKED')
+FAILED (failures=1)
+--- test_non_string_verdict_is_fail_not_typeerror
+ERROR: test_non_string_verdict_is_fail_not_typeerror (research.mini_mythos.tests.test_d1_selftest.C2Gates.test_non_string_verdict_is_fail_not_typeerror)
+TypeError: unhashable type: 'list'
+FAILED (errors=1)
+--- test_non_string_verdict_through_the_driver_is_a_clean_fail
+ERROR: test_non_string_verdict_through_the_driver_is_a_clean_fail (research.mini_mythos.tests.test_d1_selftest.C2Gates.test_non_string_verdict_through_the_driver_is_a_clean_fail)
+FAILED (errors=1)

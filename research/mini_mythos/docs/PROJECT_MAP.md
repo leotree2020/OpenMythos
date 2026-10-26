@@ -157,3 +157,9 @@ Claude Code 接替 Grok 担任主要研发工程师（项目负责人 2026-10-26
 基准 `f28f32b6d1514f15ccf680f752f5c414322cab51`。新增 `docs/F3B_D1_CODE_FREEZE_C2A_ERRATA_20261026.md`：（1）`verifier_verdict()` 只在「退出码 4 且结果文件不存在」时记 BLOCKED，文件存在但畸形/未知 verdict/退出码不符均 FAIL；（2）聚合采用 FAIL 优先于 BLOCKED，保留每项明细与 `counts`。4 项相关测试在 C2 代码上失败；全量 52 项合成自测 OK。读取器、验证器、冻结配置未改。
 
 **状态：`D1 CODE FREEZE CANDIDATE C2a / PENDING CHATGPT FINAL CODE REVIEW`**。D1 `NOT TESTED / NOT AUTHORIZED`；D2/D3 `NOT TESTED`。
+
+## D1 代码冻结候选 C2b（2026-10-26）
+
+基准 `796cc6138caaedf8a45d9abd12554ef62235e77d`。新增 `docs/F3B_D1_CODE_FREEZE_C2B_ERRATA_20261026.md`，仅修两个边界问题（只改 `d1_driver.py` 与测试）：（1）CR 的故障/对照两个读取器结果用 `aggregate()` 合并，FAIL > BLOCKED > PASS，保留各读取器退出码与状态；（2）`verifier_verdict()` 对非字符串 `verdict`（列表/字典/null/数字/布尔）返回 FAIL，不抛 `TypeError`。新增测试在 C2a 基准上失败；全量 56 项合成回归 OK。读取器、验证器、冻结配置未改。
+
+**状态：`D1 CODE FREEZE CANDIDATE C2b / PENDING CHATGPT FINAL ACCEPTANCE`**。D1 `NOT TESTED / NOT AUTHORIZED`；D2/D3 `NOT TESTED`；执行主机环境 `BLOCKED`。

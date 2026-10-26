@@ -597,6 +597,64 @@ class C2Gates(unittest.TestCase):
         self.assertEqual(nm["counts"], {"PASS": 0, "FAIL": 11, "BLOCKED": 1})
         # all-BLOCKED stays BLOCKED (exit 4); this already holds in test_negatives_reader_blocked...
 
+    # ---- C2b fix 1: CR reader pair uses FAIL > BLOCKED > PASS and keeps both readers' details
+    def test_cr_reader_pair_verdict(self):
+        f = d1_driver.cr_reader_verdict
+        for rcs, want in (((4, 1), "FAIL"), ((1, 4), "FAIL"), ((4, 4), "BLOCKED"), ((0, 4), "BLOCKED"), ((4, 0), "BLOCKED"),
+                          ((5, 0), "FAIL"), ((0, 5), "FAIL"), ((0, 0), "PASS"), ((3, 0), "FAIL"), ((0, 3), "FAIL")):
+            self.assertEqual(f(*rcs)[0], want, rcs)
+        v, detail = f(4, 1)
+        self.assertEqual(detail, {"fault": {"rc": 4, "status": "BLOCKED"}, "control": {"rc": 1, "status": "FAIL"}})
+
+    def test_cr_mixed_reader_outcomes_through_the_driver(self):
+        rc, w, dec = self.drive("clean")
+        self.assertEqual(rc, 0)
+        w2 = os.path.join(self.tmp, "wcrmix")
+        shutil.copytree(os.path.join(w, "evidence", "clean"), os.path.join(w2, "evidence", "clean"))
+        writable(w2)
+        type(self).n += 1
+        p = os.path.join(self.tmp, "crstub%d.py" % self.n)
+        # exit codes (fault run, control run) per CR; LR readers exit 3 without evidence (not under test here)
+        write_text(p, "import sys\na = sys.argv\nif any('/LR' in x for x in a):\n    sys.exit(3)\nfault = '--inject' in a\n"
+                      "codes = {'/CR1/': (4, 1), '/CR2/': (1, 4), '/CR3/': (4, 4)}\n"
+                      "for k, (f, c) in codes.items():\n    if any(k in x for x in a):\n        sys.exit(f if fault else c)\nsys.exit(0)\n")
+        d1_driver.READER = p
+        rc, _, dec = self.drive("negatives", workdir=w2)
+        it = dec["negatives_meta"]["items"]
+        self.assertEqual((it["CR1"]["verdict"], it["CR2"]["verdict"], it["CR3"]["verdict"]), ("FAIL", "FAIL", "BLOCKED"))
+        self.assertEqual(it["CR1"]["readers"], {"fault": {"rc": 4, "status": "BLOCKED"}, "control": {"rc": 1, "status": "FAIL"}})
+        self.assertEqual(it["CR2"]["readers"], {"fault": {"rc": 1, "status": "FAIL"}, "control": {"rc": 4, "status": "BLOCKED"}})
+        self.assertEqual(it["CR3"]["readers"], {"fault": {"rc": 4, "status": "BLOCKED"}, "control": {"rc": 4, "status": "BLOCKED"}})
+        self.assertEqual((rc, dec["verdict"]), (1, "FAIL"))
+
+    # ---- C2b fix 2: a non-string verdict is FAIL, never an unhandled TypeError
+    NON_STRING_VERDICTS = ('{"verdict":[]}', '{"verdict":{}}', '{"verdict":null}', '{"verdict":123}', '{"verdict":true}')
+
+    def test_non_string_verdict_is_fail_not_typeerror(self):
+        d = tempfile.mkdtemp(dir=self.tmp)
+        vv = d1_driver.verifier_verdict
+        for text in self.NON_STRING_VERDICTS:
+            with open(d + "/r.json", "w") as f:
+                f.write(text)
+            for rc in (0, 1, 4):
+                self.assertEqual(vv(rc, d + "/r.json")[0], "FAIL", (text, rc))
+        # behaviours that must not change
+        self.assertEqual(vv(4, d + "/absent.json")[0], "BLOCKED")
+        for text, rc, want in (('{"verdict":"BLOCKED"}', 4, "BLOCKED"), ('{"verdict":"PASS"}', 0, "PASS"), ('{"verdict":"FAIL"}', 1, "FAIL"),
+                               ('{oops', 4, "FAIL"), ('{"verdict":"MAYBE"}', 4, "FAIL"), ('{"verdict":"PASS"}', 4, "FAIL")):
+            with open(d + "/k.json", "w") as f:
+                f.write(text)
+            self.assertEqual(vv(rc, d + "/k.json")[0], want, (text, rc))
+        self.assertEqual(d1_driver.aggregate(["PASS", []]), "FAIL")                 # unhashable members must not raise either
+        self.assertEqual(d1_driver.aggregate([{}]), "FAIL")
+
+    def test_non_string_verdict_through_the_driver_is_a_clean_fail(self):
+        for text in self.NON_STRING_VERDICTS:
+            d1_driver.VERIFIER = self.stub(0, text)
+            rc, w, dec = self.drive("clean")
+            self.assertEqual((dec["read_resume"]["verdict"], rc), ("FAIL", 1), text)
+            self.assertNotIn("driver_exception", dec, text)                         # handled, not an escaped exception
+
     def test_driver_records_abnormal_verifier_runs(self):
         cases = (("exit0_no_result", 0, None, "", "FAIL", 1), ("exit0_malformed", 0, "{oops", "", "FAIL", 1),
                  ("exit0_but_FAIL", 0, json.dumps({"verdict": "FAIL"}), "", "FAIL", 1),

@@ -116,8 +116,8 @@ def verifier_verdict(rc, out_path):
             verdict = json.load(f)["verdict"]
     except Exception as e:  # noqa: BLE001
         return "FAIL", "verifier rc=%d: result file exists but is unreadable/malformed (%s)" % (rc, type(e).__name__)
-    if verdict not in VERDICT_EXIT:
-        return "FAIL", "verifier rc=%d: unknown verdict value %r" % (rc, verdict)
+    if not isinstance(verdict, str) or verdict not in VERDICT_EXIT:       # non-strings (list/dict/null/number/bool) are FAIL
+        return "FAIL", "verifier rc=%d: unknown or non-string verdict value %r" % (rc, verdict)
     expected = {v: k for k, v in VERDICT_EXIT.items()}[rc]
     if verdict != expected:
         return "FAIL", "verifier exit code %d disagrees with result verdict %s" % (rc, verdict)
@@ -128,9 +128,17 @@ def aggregate(verdicts):
     """FAIL takes precedence over BLOCKED, BLOCKED over PASS. Anything that is not exactly PASS/BLOCKED/FAIL, and an
     empty list (nothing was evaluated), count as FAIL. Per-item detail is kept by the caller."""
     vs = list(verdicts)
-    if not vs or any(v not in VERDICT_EXIT for v in vs) or "FAIL" in vs:
+    if not vs or any(not isinstance(v, str) or v not in VERDICT_EXIT for v in vs) or "FAIL" in vs:
         return "FAIL"
     return "BLOCKED" if "BLOCKED" in vs else "PASS"
+
+
+def cr_reader_verdict(rc_fault, rc_control):
+    """One CR negative runs two readers (fault and control). Combine their statuses with aggregate()
+    (FAIL > BLOCKED > PASS) and keep each reader's exit code and status."""
+    st = {"fault": reader_status(rc_fault), "control": reader_status(rc_control)}
+    detail = {"fault": {"rc": rc_fault, "status": st["fault"]}, "control": {"rc": rc_control, "status": st["control"]}}
+    return aggregate("PASS" if x == "OK" else x for x in st.values()), detail
 
 
 def readonly(path):
@@ -252,9 +260,9 @@ def do_negatives(a):
         rc2, _, _ = sh(reader(a, ["--cursor-in", cur, "--trace-out", os.path.join(d, "control_trace.jsonl"),
                                   "--load-report-out", os.path.join(d, "control_load_report.json")]))
         ok_after = hashes(after, cur)
-        sts = [reader_status(rc1), reader_status(rc2)]
-        if "BLOCKED" in sts or "FAIL" in sts:
-            results[cid] = {"verdict": "BLOCKED" if "BLOCKED" in sts else "FAIL", "why": "reader rc=%d/%d" % (rc1, rc2)}
+        v, detail = cr_reader_verdict(rc1, rc2)
+        if v != "PASS":
+            results[cid] = {"verdict": v, "why": "reader rc=%d/%d (fault/control)" % (rc1, rc2), "readers": detail}
             continue
         if not (ok_before and ok_after):
             results[cid] = {"verdict": "FAIL", "why": "evidence hash files could not be written"}
@@ -284,7 +292,7 @@ def main(argv=None):
     LOG.clear()
     ev = os.path.join(a.workdir, "evidence")
     os.makedirs(ev, exist_ok=True)
-    decision = {"driver": "d1_driver/4", "mode": a.mode,
+    decision = {"driver": "d1_driver/5", "mode": a.mode,
                 "note": "identity SELFTEST_SYNTHETIC / REAL_CODE_PATH_NON_FORMAL results are code self-tests and are NOT D1 evidence",
                 "component_scope": {"read_resume": "R1-R5 and the post-run part of R6", "negatives_meta": "R8 (LR1-LR9, CR1-CR3)"},
                 "not_tested": ["R6: hash before the read and validation/test isolation",

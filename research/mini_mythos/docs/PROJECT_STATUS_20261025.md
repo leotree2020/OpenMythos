@@ -1,5 +1,11 @@
 # Mini-Mythos / OpenMythos — 全项目研发进度（2026-10-25 更新版）
 
+## D1 代码冻结候选 C2b 检查点（2026-10-26；本文件最新阶段进度，优先于下方 C2a 段）
+
+基准 `796cc6138caaedf8a45d9abd12554ef62235e77d`。C2b 两项：CR 的故障/对照读取器各自退出码与状态保留，整体按 FAIL > BLOCKED > PASS 聚合（`cr_reader_verdict` + `aggregate`）；`verifier_verdict()` 对非字符串 verdict 安全返回 FAIL。新增测试在 C2a 上失败（CR1/CR2 误记 BLOCKED；`TypeError: unhashable type`），56 项合成回归 OK。读取器、验证器、冻结配置、历史文档未改。
+
+**状态：`D1 CODE FREEZE CANDIDATE C2b / PENDING CHATGPT FINAL ACCEPTANCE`**。仅 CPU 合成数据；D1 NOT TESTED / NOT AUTHORIZED；D2/D3 NOT TESTED；执行主机环境 BLOCKED。**下一条唯一指令**：等待 ChatGPT 最终验收。
+
 ## D1 代码冻结候选微型勘误 C2a 检查点（2026-10-26；本文件最新阶段进度，优先于下方 C2 段）
 
 基准 `f28f32b6d1514f15ccf680f752f5c414322cab51`。C2a 两项：验证器结果判读区分「文件不存在」与「存在但不可解析」（只有退出码 4 且无文件才 BLOCKED；畸形/未知 verdict/退出码不符为 FAIL）；负例聚合 FAIL 优先于 BLOCKED，每项状态明细与 `counts` 保留。4 项相关测试在 C2 代码上失败，52 项合成自测 OK。读取器、验证器、冻结配置未改。
