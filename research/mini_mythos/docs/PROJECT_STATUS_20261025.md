@@ -1,5 +1,11 @@
 # Mini-Mythos / OpenMythos — 全项目研发进度（2026-10-25 更新版）
 
+## D1 环境适配归档与冻结前整理检查点（2026-10-26；本文件最新阶段进度，优先于下方代码冻结验收归档段）
+
+代码冻结验收提交 `0197c21c`；环境适配候选 `2c5986a89b023ff50acb6da6e1b4d068b515ca53`（分支 `d1-codespaces-py3138-validation-20261026`）。ChatGPT 审核与交叉审核均 PASS。Codespaces Python 3.13.8：56 项 CPU 合成回归 56 PASS / 0 SKIP / 0 FAIL（含合成 real-mode 代码路径；日志 `selftest_py3138.txt` 原样保留）；固定依赖 tokenizers 0.23.3、pyarrow 26.0.0、huggingface_hub 2.2.0。`D1_ENV_FREEZE.md` 已更新（版本、依赖、证据状态，区分「环境适配 PASS」与「真实 D1 NOT TESTED」），`D1_CODE_SHA256SUMS` 重新生成（10 项核验）。原生环境快照尚未归档：**BLOCKED**，待项目负责人在 Codespaces 回传（命令在 `NATIVE_ENV_EVIDENCE_COLLECTION.md`）。R6 读取前、R7、T1–T6、数据获取 NOT TESTED；真实 D1 NOT TESTED / NOT AUTHORIZED；`status` 仍为 `FROZEN_CANDIDATE__…`。
+
+**下一条唯一指令**：最终配置冻结审核。
+
 ## D1 代码冻结验收归档检查点（2026-10-26；本文件最新阶段进度，优先于下方 C2b 段）
 
 `0197c21ca38130e66d804961b85a15ee39634b26`：ChatGPT Work 独立 C2b 代码冻结验收 **PASS**（据项目负责人转述）；56 项 CPU 合成测试仅为日志核验，**未在独立环境重新执行**。D1 真实实验 NOT TESTED / NOT AUTHORIZED；R6 读取前部分、R7、T1–T6、数据获取完整性 NOT TESTED；获取与 Tokenizer 拟合脚本未编写；配置 `status` 仍为 `FROZEN_CANDIDATE…`。执行环境只读核查：指定 Codespaces 无法访问（`gh` 令牌无效、`gh codespace list` HTTP 403、仅有 Claude 云沙箱环境）→ **BLOCKED**；Claude 沙箱不作为执行环境；候选版本（Python 3.13.16、tokenizers 0.23.3、pyarrow 26.0.0、huggingface_hub 2.2.0）未改。已验收文件的 blob/SHA-256 见 `F3B_D1_CODE_FREEZE_ACCEPTANCE_ARCHIVE_20261026.md`。

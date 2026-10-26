@@ -169,3 +169,9 @@ Claude Code 接替 Grok 担任主要研发工程师（项目负责人 2026-10-26
 已验收提交 `0197c21ca38130e66d804961b85a15ee39634b26`：ChatGPT Work 独立 C2b 代码冻结验收 **PASS**（据项目负责人转述；证据为 56 项 CPU 合成测试的日志核验，**未在独立环境重新执行**；Work 原文不在仓库）。新增 `docs/F3B_D1_CODE_FREEZE_ACCEPTANCE_ARCHIVE_20261026.md`（已验收文件的 blob/SHA-256、未完成状态、环境确认任务）。D1 真实实验 `NOT TESTED / NOT AUTHORIZED`；R6 读取前部分、R7、T1–T6、数据获取完整性 `NOT TESTED`；获取与 Tokenizer 拟合脚本未编写；配置 `status` 仍为 `FROZEN_CANDIDATE…`（执行前冻结提交待授权）。指定 Codespaces CPU 环境无法从本会话访问：**执行环境核查 BLOCKED**，Claude 沙箱不得当作执行环境，候选版本未改。
 
 **状态：`D1 CODE FREEZE ACCEPTED (C2b) / D1 REAL EXPERIMENT NOT TESTED, NOT AUTHORIZED / EXECUTION ENVIRONMENT BLOCKED`**。
+
+## D1 环境适配归档与冻结前整理（2026-10-26）
+
+代码冻结验收提交 `0197c21c`（ChatGPT Work 独立 C2b 验收 PASS）；环境适配候选提交 `2c5986a89b023ff50acb6da6e1b4d068b515ca53`（分支 `d1-codespaces-py3138-validation-20261026`，把 Python 候选版本由 3.13.16 适配为 Codespaces 的 3.13.8；tokenizers 0.23.3、pyarrow 26.0.0、huggingface_hub 2.2.0 不变）。ChatGPT 审核与交叉审核均 PASS（限定于配置差异、SHA-256 与合成回归层面，无实质性阻断问题）。Codespaces Python 3.13.8 上 56 项 CPU 合成回归 **56 PASS、0 SKIP、0 FAIL**，含合成 real-mode 代码路径（原始日志 `gate3_d1/codespaces_env_logs/selftest_py3138.txt` 原样保留）。本次整理：更新 `D1_ENV_FREEZE.md` 的版本与状态表述（未改算法、参数、30 分钟限制、数据规则）、重新生成 `D1_CODE_SHA256SUMS`、新增原生环境证据采集命令。**原生环境快照（解释器路径、pip freeze、pip check、CPU/OS、Git 状态）未归档：BLOCKED，待项目负责人在 Codespaces 回传**。R6 读取前部分、R7、T1–T6、数据获取完整性 `NOT TESTED`；真实 D1 `NOT TESTED / NOT AUTHORIZED`；配置 `status` 仍为 `FROZEN_CANDIDATE__…`，**未**设为 `FROZEN`。
+
+**下一条唯一指令**：最终配置冻结审核（ChatGPT 审核本检查点后，由项目负责人决定是否授权正式冻结）。
