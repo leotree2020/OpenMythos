@@ -1,5 +1,11 @@
 # Mini-Mythos / OpenMythos — 全项目研发进度（2026-10-25 更新版）
 
+## D1 CPU-003 E1-A 静态审核修复检查点（2026-10-27；本文件最新阶段进度，优先于下方 E1-A 预注册与台架检查点）
+
+F3B-D1-A-CPU-003-E1A-STATIC-FIX-001：ChatGPT 对 `3b9414a` 的结论 PREREGISTRATION ACCEPTED / BENCH STATIC REVIEW FAIL；本轮只修四项台架缺陷（unsafe 优先与候选异常分类、清理责任跨 ABORTED/登记失败、`RUN_END` 与 janitor 退出条件、BV 与单格测试分阶段授权）并核查 `/proc` 枚举不完整 ⇒ BLOCKED。预注册未改；测试仅编写、未运行；**E1-A EXPERIMENT NOT TESTED**。
+
+**状态：**PENDING CHATGPT RE-REVIEW。下一条唯一指令：提交最小代码修复供复核；未经负责人另行授权，不运行任何 CPU-003 进程级测试。R3 SPEC FROZEN；真实 D1 NOT AUTHORIZED；NO A-B WINNER。
+
 ## D1 CPU-003 E1-A 预注册与台架检查点（2026-10-27；本文件最新阶段进度，优先于下方 CPU-003 设计勘误-002 检查点）
 
 F3B-D1-A-CPU-003-E1A-PREP-001（仅预注册与台架实现，不执行）：E1-A 机器可读预注册 `a_predicate_003/prereg/e1_provability_table_v1.json` 已冻结并先于台架单独提交（`b2aec0f`；任何台架提交前做了两次仅限预注册的更正 `c02f201`、`f9d3cd8`；最终 SHA-256 `e6b7ca5c88de81dff01340c769bf409105cd2b91bf581987d710ca6c0280ec39`）；E1-A CPU 台架（GATED-SPAWN、独立谱系账本、fail-closed janitor、插桩、证据与清理检查）、测试与独立真值代码已编写；静态审计 0 违规；**测试与台架均未运行，E1-A 为 EXPERIMENT NOT TESTED**；E1-B/C/D 未冻结。

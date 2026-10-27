@@ -273,3 +273,7 @@ Claude Code 接替 Grok 担任主要研发工程师（项目负责人 2026-10-26
 ## D1 CPU-003 E1-A 预注册与台架（2026-10-27）
 
 分支 `d1-r3-a-cpu-003-e1a-prep-20261027`（基线 `6a089f5`）。新增 `research/mini_mythos/a_predicate_003/`：预注册 `prereg/e1_provability_table_v1.json`（先于台架单独提交：`b2aec0f`，更正 `c02f201`、`f9d3cd8`；最终 SHA-256 `e6b7ca5c88de81df…`）、台架 `bench/`（GATED-SPAWN 观察者 / 门 / janitor / 监督器桩 / 候选 P0-P1-P2 / 独立真值）、测试 `tests/`（已编写、未运行）、工具 `tools/`、`STATIC_REVIEW.md`、`run_e1a.sh`（未运行）；新增检查点 `docs/F3B_D1_A_CPU_003_E1A_PREP_CHECKPOINT_20261027.md`。E1-A 仍 EXPERIMENT NOT TESTED；E1-B/C/D 未冻结；运行器需负责人单独授权文件才可 `--execute`。
+
+## D1 CPU-003 E1-A 静态审核修复（2026-10-27）
+
+分支 `d1-r3-a-cpu-003-e1a-prep-20261027`。F3B-D1-A-CPU-003-E1A-STATIC-FIX-001：只修台架（`a_predicate_003/bench`、`tests`），预注册未改（SHA-256 `e6b7ca5c…`）。四项：unsafe 事件优先于台架 BLOCKED 且候选异常不记台架 BLOCKED；清理责任自 fork 起、仅由确认死亡解除；`RUN_END.cleanup_confirmed` 与 janitor 退出条件；BV 与单元测试分阶段授权。新增检查点 `docs/F3B_D1_A_CPU_003_E1A_STATIC_FIX_CHECKPOINT_20261027.md`。测试只写未跑，E1-A 仍 EXPERIMENT NOT TESTED。
