@@ -281,3 +281,7 @@ Claude Code 接替 Grok 担任主要研发工程师（项目负责人 2026-10-26
 ## D1 CPU-003 E1-A 最终执行边界修复（2026-10-27）
 
 分支 `d1-r3-a-cpu-003-e1a-prep-20261027`。F3B-D1-A-CPU-003-E1A-STATIC-FIX-002：只修台架（`a_predicate_003/bench`、`tests`），预注册未改（SHA-256 `e6b7ca5c…`）。三项：最终清理集合一致性（入口关闭、不动点清理、RUN_END 前核对运行集合、janitor 责任未解除不得强杀）；登记文件完整性（缺失 / 损坏 / 撕裂 / 序号缺口 ⇒ janitor 不得退出 0，且无法识别的进程不发信号）；BV 证据来源（负责人签发的 `bv_binding` + 原始记录重新推导，否则 SMOKE）。新增检查点 `docs/F3B_D1_A_CPU_003_E1A_STATIC_FIX2_CHECKPOINT_20261027.md`。测试只写未跑，E1-A 仍 EXPERIMENT NOT TESTED。
+
+## D1 CPU-003 E1-A 静态审核最终收口（2026-10-27）
+
+分支 `d1-r3-a-cpu-003-e1a-prep-20261027`。F3B-D1-A-CPU-003-E1A-STATIC-CLOSEOUT-001：只修两处台架问题——撤销票据的未确认创建责任（门管道 EPIPE 证明，不猜 pid）与登记文件的运行生命周期约束；预注册未改（SHA-256 `e6b7ca5c…`）。新增检查点 `docs/F3B_D1_A_CPU_003_E1A_STATIC_CLOSEOUT_CHECKPOINT_20261027.md`。测试只写未跑，E1-A 仍 EXPERIMENT NOT TESTED。
