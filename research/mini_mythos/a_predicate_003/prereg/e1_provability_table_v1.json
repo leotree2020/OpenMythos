@@ -111,7 +111,7 @@
     "C5": {
       "name": "supervisor_children_equal_declared_set",
       "rule": "PR-S0-5",
-      "defect_when": "children(supervisor) != {root} union declared_aux",
+      "defect_when": "children(supervisor) minus ({root} union declared_aux) is non-empty",
       "code_p2": "SUPERVISOR_HAS_UNREGISTERED_CHILDREN"
     },
     "C6": {
@@ -138,7 +138,7 @@
     "PR-S0-2": "Proves 'root session differs from the supervisor session': root.sid != os.getsid(0) of the supervisor process.",
     "PR-S0-3": "Proves 'root leads its process group': root.pgrp == root.pid.",
     "PR-S0-4": "Proves 'root has no children at S0 time': a complete /proc enumeration (no unreadable entry, no ScanFailed) finds no process with ppid == root.pid.",
-    "PR-S0-5": "Proves 'the supervisor has no children other than the root and its declared auxiliaries': complete /proc enumeration of ppid == supervisor pid.",
+    "PR-S0-5": "Proves 'the supervisor has no children other than the root and its declared auxiliaries': complete /proc enumeration of ppid == supervisor pid, minus the root and the declared auxiliaries, is empty. A root that is not a child of the supervisor is not a C5 defect.",
     "PR-S0-6": "Proves 'the registered fingerprint still describes the live root': re-read (pid,starttime,sid,pgrp) equals the registered tuple.",
     "PR-S0-7": "Proves 'SIGCHLD is not ignored': signal.getsignal(SIGCHLD) is SIG_DFL and the SigIgn bit for signal 17 in /proc/self/status is clear.",
     "PR-S0-8": "Proves 'the subreaper flag is set': prctl set returned success AND prctl get returned 1."
@@ -304,7 +304,7 @@
     },
     "E1A-d": {
       "description": "Root is a non-leader member of a different session (sid != supervisor sid, sid != root pid, pgrp != root pid).",
-      "construction": "SUP forks leader node L (L calls setsid()); L forks root via GATED-SPAWN; root performs no setsid/setpgid.",
+      "construction": "SETUP phase (before the candidate's S0, subreaper flag not set): SUP forks leader node L via GATED-SPAWN; L calls setsid(); L forks root via GATED-SPAWN; root performs no setsid/setpgid; L exits after root is registered and released, and the SUP stub reaps L by specific pid; root is re-parented away from SUP and keeps L's session.",
       "defects": [
         "C1",
         "C3"
@@ -967,5 +967,16 @@
   ],
   "amendment_policy": "No change after the first run of any cell. A later fix is a new file e1_provability_table_v2.json; v1 and every result obtained under v1 are retained, and affected cells are re-run under v2.",
   "execution_interlock": "The runner refuses --execute unless an owner authorization file referencing this file's SHA-256 exists. None exists at freeze time.",
+  "setup_phase": "All scenario topology is built in a SETUP phase that ends before the candidate's S0 starts. The bench never sets the subreaper flag during SETUP (the flag starts 0 in the supervisor stub; this is read back and a deviation is bench-BLOCKED). Waits by the supervisor stub on setup helper nodes (L, M) are labelled bench-infrastructure waits by specific pid and are excluded from unsafe-event accounting; the instrumentation phase tag S0 starts immediately before the candidate is invoked.",
+  "correction_log": [
+    {
+      "id": "PREP-CORR-1",
+      "made_before_any_bench_commit": true,
+      "made_before_any_execution": true,
+      "first_frozen_commit": "b2aec0fd428f62761ca28d0236c31993ae83a72e",
+      "first_frozen_sha256": "9df3eafde8972645660abbc229b185a8328f24377d0db1e7941e7621fcac0828",
+      "reason": "Static topology review found (1) C5 was worded as equality although a root that is not a child of the supervisor (scenario d) must not itself be a C5 defect; (2) scenario d as first written would leave leader node L as an undeclared child of the supervisor and so add a C5 defect that the classification table did not list. Classification table rows are unchanged; only the C5 wording, the PR-S0-5 text, the E1A-d construction and the setup_phase definition were corrected."
+    }
+  ],
   "status": "FROZEN_AT_COMMIT (see the commit that adds this file)  /  EXPERIMENT NOT TESTED"
 }
