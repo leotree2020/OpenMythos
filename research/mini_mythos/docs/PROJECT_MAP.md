@@ -329,3 +329,7 @@ LOGIC-TEST-001-RERUN-001：修复执行守卫的 argv 缺陷（+1 行）后，�
 ## D1 CPU-003 E1-A G0 V5 工具实现 G0-V5-IMPLEMENTATION-001（2026-10-27）
 
 基线 `13043b9`；独立实现分支 `d1-r3-a-cpu-003-e1a-g0-v5-impl-20261027`。授权范围仅为编码与静态审核：`g0_auth.py`（V5 绑定与冻结哈希表）、`g0_judge.py`（C01–C17、C03/C07/C16 规则、M-2、结案标记与 CL-01…CL-23 求值）、`g0_run.py`（F-8 有界回收、F-9 总预算、F-12/F-13 目录、F-18 放行写入记录、P0–P7 流水线、K0–K7 原子排他结案发布）已按冻结 V5 写完；184 个纯逻辑测试方法（67 + 38 + 19 + 15 案例与结构 / 守卫 / 预算 / 目录测试）已写但**未运行（NOT TESTED）**。静态审计：64 行需求对应表 0 未找到，AST 审计 0 违规，`bench/`、V1–V5、E1-A 预注册未变。未解决：B-1（消耗目录两句冻结文字）、B-2（CE-E1 案例标签）、B-3（真实环境行为）、B-4（测试未运行）。状态：G0 V5 IMPLEMENTATION COMPLETE (CODE WRITTEN) / STATIC AUDIT RECORDED / PURE TESTS NOT TESTED / REAL G0 NOT AUTHORIZED。检查点：`research/mini_mythos/docs/F3B_D1_A_CPU_003_E1A_G0_V5_IMPLEMENTATION_CHECKPOINT_20261027.md`。
+
+## D1 CPU-003 E1-A G0 V5 CPU 正确性测试 G0-V5-PURE-TEST-001（2026-10-27）
+
+基线 `33fb344`；最终测试对象见检查点。在进程安全哨兵（fork / 信号 / 等待 / subprocess 全部替换为计数哨兵）之下运行 198 个 CPU 测试：198 / 198 PASS，两次运行一致，哨兵 0 次触发，变异检查 10 / 10 被发现。发现并最小修复 2 个实现缺陷：D-1（启动异常泄漏为退出码 1，现一律 3）、D-2（格式损坏的放行 / fork 记录曾产生错误 FAIL，现为见证不可用）；测试自身缺陷 T-0…T-3 已修正。V1–V5、bench、Parcae 未改。真实进程行为（pidfd、fork、/proc、run()）未被验证。状态：CPU TESTS PASS / REAL G0 NOT AUTHORIZED。报告：`research/mini_mythos/a_predicate_003/g0_v5_pure_test_results/G0_V5_PURE_TEST_REPORT.md`；检查点：`research/mini_mythos/docs/F3B_D1_A_CPU_003_E1A_G0_V5_PURE_TEST_CHECKPOINT_20261027.md`。
