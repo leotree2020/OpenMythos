@@ -2,6 +2,8 @@
 
 **状态：`CPU-003 DESIGN ERRATA COMPLETE / PENDING CHATGPT FINAL REVIEW / EXPERIMENTS NOT TESTED / DOCUMENTATION ONLY / R3 SPEC FROZEN / REAL D1 NOT AUTHORIZED / NO A-B WINNER`**
 
+> **【ERRATA-002 修订说明】**ChatGPT 对本文件的最终结论是 DOCUMENT ACCEPTANCE PASS / STAGE 1 PRE-EXECUTION CONDITIONS OPEN。本文件已按 `F3B_D1_A_CPU_003_DESIGN_ERRATA_002_20261027.md` 做**带标记的就地最小修订**（标记「【ERRATA-002 修订】」），涉及：歧义负例的验收逻辑（1.1、1.2、1.3、2 第 5 条、4 映射行）与 Janitor 登记持久化竞态（3 第 1、6 条）。未标记处保持原样；历史版本见提交 `196dbba`。
+
 ChatGPT 对 CPU-003 设计文档的独立审核结论：**DOCUMENT ACCEPTANCE PASS / PRE-EXECUTION CORRECTIONS REQUIRED**。本文件记录执行任何 CPU-003 实验**之前**必须完成的四项勘误（ERRATA-01…04）和 Grok 状态同步。13 张实验卡与候选架构不推翻、不重做。
 
 ## 0. 范围与可追溯性
@@ -22,23 +24,23 @@ ChatGPT 对 CPU-003 设计文档的独立审核结论：**DOCUMENT ACCEPTANCE PA
 |---|---|---|
 | **N** 名义 | 已登记、身份明确、正常运行；真值可由机制证明 | W1（单脚本无后代）、W2（N=1…16 个后代，无 `setsid`）、E1-A 的正确配置 |
 | **L** 合法但较难 | 合法目标，但机制在证据不足时可能给不出确定答案 | W3–W5（随机 `setsid`、扇出、双重 fork）、E1-C 中有连续性证据的后代 |
-| **A** 歧义负例 | 台架知道真相，但**故意**让机制无法区分 | E1-C 的 look-alike（C5）、E1-B 的 B3 绕过入口 / B5 来源不明孤儿 |
-| **M** 错误配置负例 | 前置条件被故意违反 | E1-A 的 (b)–(h) |
+| ~~**A** 歧义负例~~ **【ERRATA-002 修订】** | 不再是与机制无关的类别。"歧义"是（场景 × 候选机制证据能力）的属性：由 ERRATA-002 §1 的 **PROVABLE / UNPROVABLE / BENCH_UNVERIFIABLE** 预先分类给出期望 | 原例子（E1-C 的 look-alike C5、E1-B 的 B3 / B5）对证据弱的机制是 UNPROVABLE，对有事件流 / cgroup 证据的机制是 PROVABLE |
+| ~~**M** 错误配置负例~~ **【ERRATA-002 修订】** | 同上：错误配置对具备 S0 检查的机制是 PROVABLE（期望 `BLOCKED`），对没有 S0 的原臂是 UNPROVABLE | E1-A 的 (b)–(i) |
 
 ### 1.2 每个已执行试验的结果类
 
 | 结果类 | 含义 |
 |---|---|
 | **R** | 确定且正确（正确的 ALIVE / EXITED，且动作安全） |
-| **U-exp** | 机制返回 `UNKNOWN` / `BLOCKED`，且该场景的预注册期望就是它（类别 A、M） |
-| **U-unexp** | 机制返回 `UNKNOWN`，但场景的期望是确定答案（类别 N、L）——**可用性缺失** |
-| **X** | 不安全：非目标收到误信号、非目标被误回收、真目标仍存活却报告 `EXITED`、伪造状态、基于未验证身份行动、在 A / M 类给出确定答案 |
+| **U-exp** | 机制返回 `UNKNOWN` / `BLOCKED`，且该（场景 × 机制）被预先分类为 **UNPROVABLE**（**【ERRATA-002 修订】**原写"类别 A、M"） |
+| **U-unexp** | 机制返回 `UNKNOWN`，但（场景 × 机制）被预先分类为 **PROVABLE**（含类别 N、L）——**可用性缺失** |
+| **X** | 不安全：非目标收到误信号、非目标被误回收、真目标仍存活却报告 `EXITED`、伪造状态、基于未验证身份行动、**【ERRATA-002 修订】**在 UNPROVABLE 试验上给出确定答案（即使碰巧正确），或在 PROVABLE 试验上给出错误的、或没有合法证据引用的确定答案 |
 | **B** | 台架 BLOCKED（见 1.4），不计入分子分母 |
 
 ### 1.3 度量（分别报告，不得合并）
 
 1. **安全性（Safety）：**`X` 的个数，按类别分别报告。PASS 当且仅当所有类别的 `X = 0`。**任何一次非目标误信号或误回收都判为 FAIL，不得被低 `UNKNOWN` 率抵消。**
-2. **负例正确率：**A、M 类中 `U-exp` 的比例，目标 100%；A、M 类里的确定答案记为 `X`（FAIL）。**在歧义 / 证据不足的负例上正确返回 `UNKNOWN` 计为实验 PASS，不是可用性 FAIL。**
+2. **UNPROVABLE 试验的正确率：****【ERRATA-002 修订】**UNPROVABLE 试验中 `U-exp` 的比例，目标 100%；UNPROVABLE 试验里的任何确定答案记为 `X`（FAIL）。**在证据不足的试验上正确返回 `UNKNOWN` 计为实验 PASS，不是可用性 FAIL；而在 PROVABLE 试验上给出带合法引用的正确确定答案同样是 PASS——不得因为场景"看起来歧义"就惩罚真正具备充分证据的机制。**
 3. **可用性（Availability）：**
    - **`UNKNOWN_rate(N) = U-unexp(N) / executed(N)`**，其中 `executed(N) = 计划的 N 类试验数 − 台架 BLOCKED 的 N 类试验数`；分子只含 `U-unexp`（N 类里返回 `UNKNOWN` 的试验）。
    - W1、W2：目标 0%（提议值，待批准），判定标准是**观察到的个数为 0**。
@@ -66,7 +68,7 @@ E1-D 卡的 Expected / PASS / FAIL / BLOCKED / Known Limitations 行按上述定
    | 台架真值 | 机制能否证明 | 期望 |
    |---|---|---|
    | 已知 | 能证明 | 机制给出确定且正确的答案（R） |
-   | 已知 | **不能**证明 | 机制返回 `UNKNOWN`（U-exp，PASS）；若机制给出确定答案则 `X`（FAIL） |
+   | 已知 | **不能**证明（**【ERRATA-002 修订】**"能否证明"取决于**该机制的证据能力声明 ECD**，不是场景的固有属性；见 ERRATA-002 §1） | 机制返回 `UNKNOWN`（U-exp，PASS）；若机制给出确定答案则 `X`（FAIL） |
    | **不可得**（创建记录丢失等） | — | **台架无法建立真值** → 试验为台架 BLOCKED（`B`），与上面两行不同 |
 6. **`/proc` 字段相同 ≠ 身份相同：**两个进程的 `ppid`、`comm`、`starttime` 排序、会话等 `/proc` 字段相同，**不能**被视为已证明是同一类归属；look-alike 与真孤儿的区分只看账本。
 7. **E1-B / E1-C 卡：**Independent Oracle 行与 Falsification 行相应改写（见设计计划第 10 节）。
@@ -77,12 +79,12 @@ E1-D 卡的 Expected / PASS / FAIL / BLOCKED / Known Limitations 行按上述定
 
 **新的清理规则（替换原 2.6 节）：**
 
-1. **创建时即登记：**台架观察者在创建每个牺牲进程时保存身份登记 `{run_id, node_id, creator, pid, starttime, pidfd}`；孙代进程由其创建节点在行动之前自报 `(pid, starttime)`，观察者立即 `pidfd_open` 并核对 `starttime`，**先打开 pidfd 再核对**。无法登记的进程（已消失 / 核对失败）记为 `UNREGISTRABLE`，**不得对其发信号**。
+1. **创建时即登记：****【ERRATA-002 修订】**原写"孙代进程由其创建节点在行动之前自报"留有"创建 → 自报"之间的自由运行窗口，作废。现按 ERRATA-002 §2 的 **GATED-SPAWN 协议**：意向记录先于 `fork()`；新进程先停在门上；观察者取得身份、`pidfd_open`、核对并**持久化登记（`write` 返回）之后**才 RELEASE；失败 / 观察者死亡 / 超时则新进程自行退出；后代走同一协议。登记表只有在 GATED-SPAWN 的前提下才可信。登记内容仍为 `{run_id, node_id, creator, pid, starttime}`，`pidfd` 先打开再核对 `starttime`。无法登记的进程（已消失 / 核对失败）记为 `UNREGISTRABLE`，**不得对其发信号**。
 2. **清理只经登记：**对仍存活的牺牲进程，先重新核对登记的 `(pid, starttime)` 与 `/proc` 一致，再 `pidfd_send_signal(SIGKILL)`；回收只对具体 pid 的 `waitpid`（仅自己的子进程）。
 3. **命令行令牌只做诊断：**扫描 `/proc/*/cmdline` 找带令牌的进程，**只用来产生残留报告**，**绝不授权发信号**。
 4. **禁止：**`pkill`、仅按名称匹配、无法验证身份的进程组清理、`kill -- -pgid`、对 `killpg` 的清理性使用。（CPU-002 的 `run_in_fresh_session` 对台架自己创建的会话领头的进程组使用了 `killpg`——该做法在 CPU-003 中**不再允许**；CPU-001 的 `B0` 臂里的 `killpg` 是被测基线本身的行为，不是清理手段，不受此条约束。）
 5. **身份无法确认 → 停止自动发信号：**记录残留信息（pid、`starttime`、`ppid`、状态、`cmdline` 片段），该试验判**台架 BLOCKED**，**不开始下一个试验**。
-6. **最终清理责任（含 E3 中监督器和 Watchdog 都失效）：**
+6. **最终清理责任（含 E3 中监督器和 Watchdog 都失效）：****【ERRATA-002 修订】**Janitor 只对 `INTENT` + 完整 `REGISTERED` 的记录行动，重新 `pidfd_open` 并核对 `starttime`（观察者死后旧 pidfd 整数不可恢复）；只有 `INTENT` 的进程按 GATED-SPAWN 已自行退出，Janitor 不对其发信号；剩余风险与 BLOCKED 条件见 ERRATA-002 §2.5。
    - **台架观察者**是最终清理者，它独立于所有被测组件（监督器、Watchdog、Reaper、账本恢复程序）。
    - 观察者的登记**同时持久化**到只有观察者写的追加文件（每条记录 `fsync` 级别不要求，只要求进程崩溃后可读）。
    - 若**观察者自己**也失效，由启动整轮实验的**外层运行脚本（janitor）**读取该登记文件，采用同一规则清理：对每条记录先 `pidfd_open(pid)`，再核对 `starttime`，一致才发 SIGKILL；不一致 → 不发信号、记录并 BLOCKED。janitor 只能做"登记内、验证后"的动作。
@@ -108,7 +110,9 @@ E1-D 卡的 Expected / PASS / FAIL / BLOCKED / Known Limitations 行按上述定
 | 正确配置被 S0 拒绝 | `BLOCKED` | **FAIL**（可用性：误拒） |
 | 测试台架无法构造预注册场景 | — | **BLOCKED** |
 | 场景尚未运行 | — | **NOT TESTED** |
-| 身份歧义负例正确返回 `UNKNOWN` | `UNKNOWN` | **PASS** |
+| 【ERRATA-002 修订】UNPROVABLE 试验（按机制预先分类）正确返回 `UNKNOWN` | `UNKNOWN` | **PASS** |
+| 【ERRATA-002 修订】PROVABLE 试验返回带合法引用的正确确定答案 | `ALIVE` / `EXITED` 等 + proof | **PASS** |
+| 【ERRATA-002 修订】UNPROVABLE 试验给出确定答案（含碰巧正确）；或 PROVABLE 试验给出错误 / 无引用的确定答案 | 确定答案 | **FAIL** |
 | 明确目标被错误判为 `EXITED` | `EXITED` | **FAIL** |
 | 名义负载上返回 `UNKNOWN` | `UNKNOWN` | 可用性缺失：`U-unexp`（按 ERRATA-01 计入 N 类 `UNKNOWN_rate`，非安全 FAIL；在批准的 0% 门槛下该单元未达标） |
 | 两个独立真值来源不一致 | — | **BLOCKED**（台架） |

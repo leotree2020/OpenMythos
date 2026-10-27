@@ -1,6 +1,6 @@
 # F3B-D1-A-CPU-003 — 检查点：安全监督器最小受控实验设计（仅文档）
 
-**状态（勘误后）：`CPU-003 DESIGN ERRATA COMPLETE / PENDING CHATGPT FINAL REVIEW / EXPERIMENTS NOT TESTED / DESIGN ONLY / R3 SPEC FROZEN / REAL D1 NOT AUTHORIZED / NO A-B WINNER`**。**Grok：`GROK CROSS-REVIEW COMPLETED — USER-PROVIDED SUMMARY / ORIGINAL REPORT NOT ARCHIVED`**（旧版本此处写的是"DEFERRED 至 2026-10-30"，已由勘误 ERRATA-001 更正；历史见提交 `6c8bab5`）。三项实验 E1 / E2 / E3 均为 **DESIGN ONLY / NOT TESTED**。本轮没有执行任何实验、没有启动任何进程故障注入、没有选择最终方案。
+**状态（ERRATA-002 后）：`CPU-003 DESIGN ERRATA-002 COMPLETE / PENDING CHATGPT REVIEW / EXPERIMENTS NOT TESTED / DESIGN ONLY / R3 SPEC FROZEN / REAL D1 NOT AUTHORIZED / NO A-B WINNER`**（ERRATA-001 状态：DOCUMENT ACCEPTANCE PASS / STAGE 1 PRE-EXECUTION CONDITIONS OPEN；第 12 节追加 ERRATA-002）。**Grok：`GROK CROSS-REVIEW COMPLETED — USER-PROVIDED SUMMARY / ORIGINAL REPORT NOT ARCHIVED`**（旧版本此处写的是"DEFERRED 至 2026-10-30"，已由勘误 ERRATA-001 更正；历史见提交 `6c8bab5`）。三项实验 E1 / E2 / E3 均为 **DESIGN ONLY / NOT TESTED**。本轮没有执行任何实验、没有启动任何进程故障注入、没有选择最终方案。
 
 ## 1. Git
 
@@ -32,9 +32,10 @@
 
 | 文件 | 用途 | SHA-256 |
 |---|---|---|
-| `docs/F3B_D1_A_CPU_003_DESIGN_PLAN_20261027.md`（勘误后版本；勘误前 `bca9a7aa…`） | 三项实验的目标、矩阵、独立真值、验收判据、13 张实验卡（每张 15 个必填字段 + 否定条件 + 状态）、执行顺序、安全边界 | `a12493fa7c214dbebfe022203c2309a51f8923bd793d0a713c24288c3f56a486` |
-| `docs/F3B_D1_A_CPU_003_ARCHITECTURE_OPTIONS_20261027.md`（勘误后版本；勘误前 `b1527454…`） | 归属 O-0…O-7、消费 A / B / C、恢复 R-0…R-E 的候选、依赖、优缺点、未解决问题、待决分歧 | `0258f0784cee565091a0843099a5ffd24608482310178111a3565bb77475cf5d` |
-| `docs/F3B_D1_A_CPU_003_DESIGN_ERRATA_001_20261027.md` | **勘误文件（规范性）**：ERRATA-01…04、Grok 状态同步 | `2d5162a4a86e95280abd53624024f1edf3175fa899477ed82dd5f8c1936faa86` |
+| `docs/F3B_D1_A_CPU_003_DESIGN_PLAN_20261027.md`（勘误后版本；勘误前 `bca9a7aa…`） | 三项实验的目标、矩阵、独立真值、验收判据、13 张实验卡（每张 15 个必填字段 + 否定条件 + 状态）、执行顺序、安全边界 | `a3e6f54d8c780b256dc8a9f3e09f6e93104d9cc394c6b1301f14b58464b90f59` |
+| `docs/F3B_D1_A_CPU_003_ARCHITECTURE_OPTIONS_20261027.md`（勘误后版本；勘误前 `b1527454…`） | 归属 O-0…O-7、消费 A / B / C、恢复 R-0…R-E 的候选、依赖、优缺点、未解决问题、待决分歧 | `16a0609cc169e8149c6642a027c576eed3247223d19b4a7cb437458dbd0c5a53` |
+| `docs/F3B_D1_A_CPU_003_DESIGN_ERRATA_001_20261027.md` | **勘误文件（规范性）**：ERRATA-01…04、Grok 状态同步 | `8677b539e82ebc7e9cc5fdc545d8ad0e412215946fa46b2226771617da24830c` |
+| `docs/F3B_D1_A_CPU_003_DESIGN_ERRATA_002_20261027.md` | **勘误-002（规范性）**：ERRATA-002-01 歧义负例按机制预先分类（ECD / PROVABLE / UNPROVABLE / BENCH_UNVERIFIABLE / 冻结）；ERRATA-002-02 GATED-SPAWN 创建—登记—释放协议、不变量 I1–I4、剩余风险 R1–R7 | `eeac9f446d0bdac814c78931529119cf100aa2d6314b53b17eac81fffea17314` |
 | `docs/F3B_D1_A_CPU_003_CHECKPOINT_20261027.md` | 本检查点（已追加第 10、11 节勘误后状态） | （自身不登记） |
 | `docs/PROJECT_MAP.md`、`docs/PROJECT_STATUS_20261025.md`、`docs/SESSION_START_PROTOCOL.md` | 只追加索引块（零删除行） | 见 Git |
 
@@ -89,3 +90,19 @@
 ## 11. 下一条唯一研发指令（勘误后）
 
 提交设计勘误供 ChatGPT 最终审核；审核通过后，等待项目负责人**单独**批准 CPU-003 Stage 1（E1）实验。不要自动开始 Stage 1、Stage 2 或 Stage 3。
+
+## 12. ERRATA-002 后状态（F3B-D1-A-CPU-003-DESIGN-ERRATA-002）
+
+- **基准：**ERRATA-001 已审核提交 `196dbba9705ad12d3b6c8a56c247ec844e96769b`；开始前核对远端 HEAD = 本地 HEAD、工作树干净。**最终提交：**与本检查点同一提交（SHA 见汇报）。
+- **ChatGPT 对 ERRATA-001 的结论：**DOCUMENT ACCEPTANCE PASS / STAGE 1 PRE-EXECUTION CONDITIONS OPEN；四项原勘误通过，本轮只处理两个剩余问题。
+- **ERRATA-002-01（歧义负例验收逻辑）：**不再把"A 类歧义负例中所有确定答案一律 FAIL"。改为**按候选机制预先分类**：每个机制登记证据能力声明 ECD 与证明规则；每个（场景 × 机制）在执行前冻结为 PROVABLE（期望带合法证明引用的正确确定答案）/ UNPROVABLE（期望 `UNKNOWN`；任何确定答案，即使碰巧正确，都是 FAIL）/ BENCH_UNVERIFIABLE（台架 BLOCKED）；分类表为机器可读文件（`e1_provability_table_v1.json`，Stage 1 授权时先于运行代码提交，哈希写入每个分片），观察结果后不得改类；运行期证据失效须由台架独立确认才可降级。已提供初始分类表（P0–P4 × 场景）供审核。零误杀、零误回收、不得伪造 `EXITED` 的硬门槛不变。已同步 ERRATA-001（带【ERRATA-002 修订】标记）、E1-B / E1-C / E1-D。
+- **ERRATA-002-02（Janitor 登记持久化竞态）：**GATED-SPAWN 协议——意向记录先于 `fork()`；新进程先停在门（管道）上；观察者取得身份、`pidfd_open`、核对、**持久化登记（`write` 返回）之后**才 RELEASE；登记失败 / 观察者死亡 / 超时 → 新进程读到 EOF / ABORT / 自身 `T_gate_max` 超时后自行退出（失败关闭）；后代走同一门票协议；Janitor 只处理 `INTENT`+完整 `REGISTERED` 记录并**重新**`pidfd_open` 与核对 `starttime`（旧 pidfd 整数不可恢复）；`fork()` 调度顺序不影响协议；普通进程崩溃恢复，不含掉电。不变量 I1–I4；**如实标注剩余风险 R1–R7 与 BLOCKED 条件，不声称已完全解决。**
+- **仍为建议值、待负责人正式批准：**`UNKNOWN` 率 0%、台架 BLOCKED 5%、每单元 ≥ 50 个试验。**本轮没有批准它们，也没有批准任何实验。**
+- **仍未解决：**初始分类表需 ChatGPT / 负责人审核后冻结；E3 的"设计上可恢复"表未编制；GATED-SPAWN 的实现正确性只能在台架编写与 Stage 1 执行时检验；盲性要求的实现；janitor 之外无自动清理层；其余设计层待决分歧（见第 7 节）不变。
+- **NOT TESTED：**E1-A…D、E2-A/B/C/V/R、E3-0/A/B/C 全部 **DESIGN ONLY / NOT TESTED**；GATED-SPAWN 协议、所有候选机制、分类表的正确性、`e1_provability_table_v1.json`（尚未生成）、G3～G6、真实 D1、非 root 环境、其它内核 / Python 版本、cgroup v2、proc connector。
+- **Grok：**GROK CROSS-REVIEW COMPLETED — USER-PROVIDED SUMMARY / ORIGINAL REPORT NOT ARCHIVED（不变）。
+- **完整性核对：**见提交前后核对输出（汇报）：仅授权范围内的文档；冻结 R3 / 决策记录 / 冻结记录哈希不变；`D1_CODE_SHA256SUMS` 10/10；CPU-001 / CPU-002 代码、证据、报告不变；ERRATA-001 的四项成果未被破坏（仅带标记的最小修订）；新增文件未被 `.gitignore` 忽略；推送后用远端文件树复核；远端 HEAD = 报告的提交。
+
+## 13. 下一条唯一研发指令（ERRATA-002 后）
+
+提交 ERRATA-002 给 ChatGPT 审核，等待项目负责人**单独**决定是否授权 Stage 1。不要自动开始 Stage 1、Stage 2 或 Stage 3。
