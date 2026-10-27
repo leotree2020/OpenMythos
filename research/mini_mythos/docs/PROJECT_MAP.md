@@ -313,3 +313,7 @@ LOGIC-TEST-001-RERUN-001：修复执行守卫的 argv 缺陷（+1 行）后，�
 ## D1 CPU-003 E1-A G0 V3 最小语义修订 G0-V3-SPEC-001（2026-10-27）
 
 基线 `ab66d18`。新增并冻结 `gate_g0/g0_criteria_v3.json` + `E1A_GATE_G0_PREREG_V3.md`（V3 冻结提交 `7c4b99c`，只含这三个文件；V1/V2 字节不变）。C01–C17 编号稳定：14 项与 V2 相同，3 项 MODIFIED（C03 见证模型：账本 + 独立证据判违规、持久副本只做保真，seq 空洞从不单独成为 FAIL；C07 放行证据 F-18：尝试 / 成功写入 / 通过门控三事实；C16 证据模式 91 个字段含类型与校验时机）。51 个静态反例（设计审核，非测试 PASS）。Grok 审核待定，不声称双 AI 共识；DD-1…DD-5 待裁决。实现、测试、授权均未动。检查点 `docs/F3B_D1_A_CPU_003_E1A_G0_V3_SPEC_CHECKPOINT_20261027.md`，报告 `a_predicate_003/g0_preflight_review/G0_V3_SPEC_REVIEW.md`。下一步：提交 ChatGPT / Grok 审核。
+
+## D1 CPU-003 E1-A G0 V3 独立审核收口 G0-V3-REVIEW-CLOSEOUT-001（2026-10-27）
+
+基线 `b4ca97d`（ChatGPT：V3 冻结提交与范围合规 PASS）。静态审计三个问题：F-20（`disk_faithful` 只比较三元组，C04 / C11 / C13 读持久副本的其余字段 ⇒ 案例 A 错误 PASS、案例 B 错误 FAIL）、F-21（`json.loads(json.dumps())` 不是读回文件；V3 文字三处互相排斥）、F-22（C03-F3 与 `precedence` 对追加失败互相矛盾）。结论：三项都需要 V4；给出一次性最小差异清单（完整记录保真、读 `reg` 的检查在不保真时 UNEVALUABLE、F3 需求表、P0–P7 写入—读回—校验—裁决—摘要流水线）。不创建 V4，等 Grok 与 DD-1…DD-5 裁决。V1/V2/V3、实现、台架、测试未改；没有运行任何测试或进程。检查点 `docs/F3B_D1_A_CPU_003_E1A_G0_V3_CLOSEOUT_CHECKPOINT_20261027.md`，报告 `a_predicate_003/g0_preflight_review/G0_V3_CLOSEOUT_REVIEW.md`。下一步：ChatGPT / Grok 审核。

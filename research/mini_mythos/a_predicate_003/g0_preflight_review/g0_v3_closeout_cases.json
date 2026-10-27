@@ -1,0 +1,443 @@
+{
+ "purpose": "G0 V3 closeout static cases (F-20 field fidelity, F-21 pipeline, F-22 rule conflict). DESIGN REVIEW; derived by reading the source; nothing executed; not test results.",
+ "f20": [
+  {
+   "id": "FID-A",
+   "q": "F-20 A",
+   "title": "durable RUN_END.run_id differs from RUN_START.run_id; ledger correct; (seq, kind, node_id) triples identical",
+   "inputs": "completed clean run: ledger = RUN_START, INTENT n1, FORKED(pid 200), REGISTERED(pid 200, st 5000), RELEASED, DEAD(basis), RUN_END(run_id g0_x, cleanup_confirmed true); release write ok; FIRST_ACTION 1.8; all other checks PASS; durable copy: RUN_END.run_id='g0_y' (everything else identical)",
+   "correct": "BLOCKED",
+   "v3_literal": {
+    "states": {
+     "C03": "PASS",
+     "C04": "PASS",
+     "C13": "PASS",
+     "C16": "PASS"
+    },
+    "final": "PASS",
+    "trace": "C03: F1(d) reads the LEDGER (run_id g0_x == g0_x) -> no FAIL; U2 needs disk_faithful false, but disk_faithful compares triples only (g0_criteria_v3.json:821) and the triples are identical -> faithful; pass_when holds -> PASS. C04 reads REGISTERED (untouched) -> PASS. C13 reads 'reg' RUN_END and tests only cleanup_confirmed is True (g0_judge.py:207) -> PASS. C16 types the container only -> PASS"
+   },
+   "current_impl": {
+    "states": {
+     "C03": "FAIL",
+     "C04": "PASS",
+     "C13": "PASS",
+     "C16": "PASS"
+    },
+    "final": "FAIL",
+    "trace": "g0_judge.py:72 R.integrity_issues(reg) on the durable copy -> lifecycle_issues RUN_END_FOR_DIFFERENT_RUN (registry.py:115-116) -> C03 FAIL: damage to the file is blamed on the protocol"
+   },
+   "v4_proposed": {
+    "states": {
+     "C03": "UNEVALUABLE",
+     "C04": "UNEVALUABLE",
+     "C13": "UNEVALUABLE",
+     "C16": "PASS"
+    },
+    "final": "BLOCKED",
+    "trace": "whole-record fidelity: the durable RUN_END differs from the ledger record -> disk_faithful false -> C03-U2; C04/C13 read the durable copy -> UNEVALUABLE"
+   },
+   "credibility": {
+    "level": "INSUFFICIENT",
+    "basis": "the ledger is first-hand and shows a compliant run, but the durable copy was altered; a PASS cannot rest on an altered file and a FAIL cannot be blamed on the protocol"
+   }
+  },
+  {
+   "id": "FID-B",
+   "q": "F-20 B",
+   "title": "durable REGISTERED.pid corrupted (201); ledger pid 200 and the real child pid 200 are correct",
+   "inputs": "completed clean run: ledger = RUN_START, INTENT n1, FORKED(pid 200), REGISTERED(pid 200, st 5000), RELEASED, DEAD(basis), RUN_END(run_id g0_x, cleanup_confirmed true); release write ok; FIRST_ACTION 1.8; all other checks PASS; durable copy: REGISTERED.pid=201",
+   "correct": "BLOCKED",
+   "v3_literal": {
+    "states": {
+     "C03": "PASS",
+     "C04": "FAIL",
+     "C13": "PASS",
+     "C16": "PASS"
+    },
+    "final": "FAIL",
+    "trace": "C03: ledger fine, triples identical -> PASS. C04: _node() takes REGISTERED from ev['reg'] (g0_judge.py:31,80) -> reg_rec['pid']=201 != held pid 200 (g0_judge.py:83) -> FAIL (FAIL class). C13/C16 PASS. FAIL wins over everything"
+   },
+   "current_impl": {
+    "states": {
+     "C03": "PASS",
+     "C04": "FAIL",
+     "C13": "PASS",
+     "C16": "PASS"
+    },
+    "final": "FAIL",
+    "trace": "same: integrity_issues sees a valid int pid; C04 FAIL"
+   },
+   "v4_proposed": {
+    "states": {
+     "C03": "UNEVALUABLE",
+     "C04": "UNEVALUABLE",
+     "C13": "UNEVALUABLE",
+     "C16": "PASS"
+    },
+    "final": "BLOCKED",
+    "trace": "whole-record fidelity -> disk_faithful false -> C03-U2; C04 reads the unfaithful durable copy -> UNEVALUABLE"
+   },
+   "credibility": {
+    "level": "INSUFFICIENT",
+    "basis": "ledger and real pid agree (pid 200); the only contradicting witness is the altered file -> a false identity FAIL under V3 literal"
+   }
+  },
+  {
+   "id": "FID-C",
+   "q": "F-20 extra",
+   "title": "durable INTENT.creator altered to 'n7'; ledger creator 'O'",
+   "inputs": "completed clean run: ledger = RUN_START, INTENT n1, FORKED(pid 200), REGISTERED(pid 200, st 5000), RELEASED, DEAD(basis), RUN_END(run_id g0_x, cleanup_confirmed true); release write ok; FIRST_ACTION 1.8; all other checks PASS; durable copy: INTENT.creator='n7'",
+   "correct": "BLOCKED",
+   "v3_literal": {
+    "states": {
+     "C03": "PASS",
+     "C11": "FAIL",
+     "C13": "PASS",
+     "C16": "PASS"
+    },
+    "final": "FAIL",
+    "trace": "C03 PASS (ledger, triples). C11 counts tickets from ev['reg'] (g0_judge.py:176-178): creator != 'O' -> FAIL"
+   },
+   "current_impl": {
+    "states": {
+     "C03": "FAIL",
+     "C11": "FAIL",
+     "C13": "PASS",
+     "C16": "PASS"
+    },
+    "final": "FAIL",
+    "trace": "check_order creator test (registry.py:242-246) -> C03 FAIL, and C11 FAIL"
+   },
+   "v4_proposed": {
+    "states": {
+     "C03": "UNEVALUABLE",
+     "C11": "UNEVALUABLE",
+     "C13": "UNEVALUABLE",
+     "C16": "PASS"
+    },
+    "final": "BLOCKED",
+    "trace": "disk_faithful false -> U2; C11 UNEVALUABLE"
+   },
+   "credibility": {
+    "level": "INSUFFICIENT",
+    "basis": "a ticket node appears only in the altered file"
+   }
+  },
+  {
+   "id": "FID-D",
+   "q": "F-20 extra",
+   "title": "durable RUN_END.cleanup_confirmed flipped false -> true; ledger false (transient token residue at RUN_END, S5 clean)",
+   "inputs": "completed clean run: ledger = RUN_START, INTENT n1, FORKED(pid 200), REGISTERED(pid 200, st 5000), RELEASED, DEAD(basis), RUN_END(run_id g0_x, cleanup_confirmed FALSE); release write ok; FIRST_ACTION 1.8; all other checks PASS; durable copy: RUN_END.cleanup_confirmed=true; every other C13 condition holds in the snapshots",
+   "correct": "BLOCKED",
+   "v3_literal": {
+    "states": {
+     "C03": "PASS",
+     "C13": "PASS",
+     "C16": "PASS"
+    },
+    "final": "PASS",
+    "trace": "C03: the VALUE of cleanup_confirmed is judged by C13 (V3 pass_when) -> PASS. C13 reads the durable RUN_END (g0_judge.py:206-207): True -> PASS (all other conditions hold) -> wrong PASS: cleanup was unconfirmed"
+   },
+   "current_impl": {
+    "states": {
+     "C03": "PASS",
+     "C13": "PASS",
+     "C16": "PASS"
+    },
+    "final": "PASS",
+    "trace": "same"
+   },
+   "v4_proposed": {
+    "states": {
+     "C03": "UNEVALUABLE",
+     "C13": "UNEVALUABLE",
+     "C16": "PASS"
+    },
+    "final": "BLOCKED",
+    "trace": "disk_faithful false -> U2; C13 reads the unfaithful durable copy -> UNEVALUABLE"
+   },
+   "credibility": {
+    "level": "INSUFFICIENT",
+    "basis": "ledger says unconfirmed, file says confirmed; no way to know which is right from the file"
+   }
+  },
+  {
+   "id": "FID-E",
+   "q": "F-20 symmetric",
+   "title": "LEDGER record altered in memory (REGISTERED.pid 201); durable copy correct (200); real pid 200",
+   "inputs": "completed clean run: ledger = RUN_START, INTENT n1, FORKED(pid 200), REGISTERED(pid 200, st 5000), RELEASED, DEAD(basis), RUN_END(run_id g0_x, cleanup_confirmed true); release write ok; FIRST_ACTION 1.8; all other checks PASS; ledger REGISTERED.pid=201 (a defect mutated the in-memory dict after the append); triples identical",
+   "correct": "BLOCKED",
+   "v3_literal": {
+    "states": {
+     "C03": "PASS",
+     "C04": "PASS",
+     "C13": "PASS",
+     "C16": "PASS"
+    },
+    "final": "PASS",
+    "trace": "C03: F1(d) only checks the type (int) of the ledger pid; triples identical -> faithful -> PASS; C04 reads the (correct) durable copy -> PASS. PASS by luck: the contradiction between ledger and file is never seen"
+   },
+   "current_impl": {
+    "states": {
+     "C03": "PASS",
+     "C04": "PASS",
+     "C13": "PASS",
+     "C16": "PASS"
+    },
+    "final": "PASS",
+    "trace": "the current judge does not read the ledger at all"
+   },
+   "v4_proposed": {
+    "states": {
+     "C03": "UNEVALUABLE",
+     "C04": "UNEVALUABLE",
+     "C13": "UNEVALUABLE",
+     "C16": "PASS"
+    },
+    "final": "BLOCKED",
+    "trace": "whole-record fidelity detects ledger != file -> U2 (the file is an independent witness of the ledger)"
+   },
+   "credibility": {
+    "level": "INSUFFICIENT",
+    "basis": "two first-hand witnesses disagree"
+   }
+  }
+ ],
+ "f22": [
+  {
+   "id": "REL-DD5",
+   "q": "F-22 / DD-5",
+   "title": "child passed the gate although the REGISTERED append failed (CE-R4c): ledger seq 1,2,3,5; reg_writer_seq 5; release write ok; FIRST_ACTION present",
+   "inputs": "ledger = RUN_START, INTENT, FORKED, RUN_END(false)(seq 5); REGISTERED/RELEASED never appended; durable copy identical to the ledger; early stop",
+   "correct": "PENDING (DD-5): alpha FAIL / beta BLOCKED",
+   "v3_literal": {
+    "states": {
+     "C03": "AMBIGUOUS"
+    },
+    "final": null,
+    "trace": "F3.when (g0_criteria_v3.json:847) says it 'applies even when an append failed' -> FAIL; precedence (:879) says F2, F3 and F4 'need writer_clean' -> F3 suppressed -> U3 -> BLOCKED. The frozen text gives both answers"
+   },
+   "alpha": {
+    "states": {
+     "C03": "FAIL",
+     "C07": "UNEVALUABLE",
+     "C16": "UNEVALUABLE",
+     "C15": "UNEVALUABLE",
+     "C17": "UNEVALUABLE"
+    },
+    "final": "FAIL",
+    "trace": "single rule alpha: F3 needs NO writer_clean -> gate_passed with REGISTERED absent -> C03-F3 FAIL"
+   },
+   "beta": {
+    "states": {
+     "C03": "UNEVALUABLE",
+     "C07": "UNEVALUABLE",
+     "C16": "UNEVALUABLE",
+     "C15": "UNEVALUABLE",
+     "C17": "UNEVALUABLE"
+    },
+    "final": "BLOCKED",
+    "trace": "single rule beta: F3 needs writer_clean -> suppressed -> C03-U3"
+   },
+   "credibility": {
+    "level": "MEDIUM",
+    "basis": "alpha: the gate pass and the absence of REGISTERED in the ledger are both first-hand; the append failure explains the absence but cannot excuse the action"
+   }
+  },
+  {
+   "id": "REL-FOREIGN",
+   "q": "F-22",
+   "title": "F3 situation but the durable copy contains a REGISTERED line the writer never appended",
+   "inputs": "as REL-DD5; durable copy additionally has '4 REGISTERED n1 pid=200' (foreign)",
+   "correct": "BLOCKED",
+   "v3_literal": {
+    "states": {
+     "C03": "UNEVALUABLE"
+    },
+    "final": "BLOCKED",
+    "trace": "F3 'only when no foreign_lines' -> suppressed; U2"
+   },
+   "alpha": {
+    "states": {
+     "C03": "UNEVALUABLE",
+     "C07": "UNEVALUABLE",
+     "C16": "UNEVALUABLE",
+     "C15": "UNEVALUABLE",
+     "C17": "UNEVALUABLE"
+    },
+    "final": "BLOCKED",
+    "trace": "F3 needs no foreign lines -> suppressed; U2"
+   },
+   "beta": {
+    "states": {
+     "C03": "UNEVALUABLE",
+     "C07": "UNEVALUABLE",
+     "C16": "UNEVALUABLE",
+     "C15": "UNEVALUABLE",
+     "C17": "UNEVALUABLE"
+    },
+    "final": "BLOCKED",
+    "trace": "same"
+   },
+   "credibility": {
+    "level": "INSUFFICIENT",
+    "basis": "witness conflict: the file contradicts the ledger's absence"
+   }
+  },
+  {
+   "id": "REL-RUNEND",
+   "q": "F-22",
+   "title": "the append of RUN_END(false) failed; every precursor is in the ledger; child passed the gate",
+   "inputs": "ledger = RUN_START, INTENT, FORKED, REGISTERED, RELEASED (seq 1-5); reg_writer_seq 6; release ok; FIRST_ACTION present; durable copy identical to ledger; early stop",
+   "correct": "BLOCKED",
+   "v3_literal": {
+    "states": {
+     "C03": "UNEVALUABLE"
+    },
+    "final": "BLOCKED",
+    "trace": "F3 finds no absent precursor -> does not fire; U3 -> BLOCKED"
+   },
+   "alpha": {
+    "states": {
+     "C03": "UNEVALUABLE",
+     "C07": "PASS",
+     "C16": "UNEVALUABLE",
+     "C15": "UNEVALUABLE",
+     "C17": "UNEVALUABLE"
+    },
+    "final": "BLOCKED",
+    "trace": "no fail rule fires; U3"
+   },
+   "beta": {
+    "states": {
+     "C03": "UNEVALUABLE",
+     "C07": "PASS",
+     "C16": "UNEVALUABLE",
+     "C15": "UNEVALUABLE",
+     "C17": "UNEVALUABLE"
+    },
+    "final": "BLOCKED",
+    "trace": "same"
+   },
+   "credibility": {
+    "level": "INSUFFICIENT",
+    "basis": "writer failure; the end marker was never recorded"
+   }
+  },
+  {
+   "id": "REL-F2GATE",
+   "q": "F-22",
+   "title": "REGISTERED without FORKED AND an append failed (CE-F5): F2 stays gated by writer_clean under both alpha and beta",
+   "inputs": "ledger seq 1,2,4,5 = RUN_START, INTENT, REGISTERED, RUN_END(false); reg_writer_seq 5; no release; early stop",
+   "correct": "BLOCKED",
+   "v3_literal": {
+    "states": {
+     "C03": "UNEVALUABLE"
+    },
+    "final": "BLOCKED",
+    "trace": "F2 'only when writer_clean' -> suppressed; U3"
+   },
+   "alpha": {
+    "states": {
+     "C03": "UNEVALUABLE",
+     "C07": "UNEVALUABLE",
+     "C16": "UNEVALUABLE",
+     "C15": "UNEVALUABLE",
+     "C17": "UNEVALUABLE"
+    },
+    "final": "BLOCKED",
+    "trace": "F2 requires writer_clean -> U3"
+   },
+   "beta": {
+    "states": {
+     "C03": "UNEVALUABLE",
+     "C07": "UNEVALUABLE",
+     "C16": "UNEVALUABLE",
+     "C15": "UNEVALUABLE",
+     "C17": "UNEVALUABLE"
+    },
+    "final": "BLOCKED",
+    "trace": "same"
+   },
+   "credibility": {
+    "level": "INSUFFICIENT",
+    "basis": "the missing FORKED may be explained by the failed append (owner policy: BLOCKED)"
+   }
+  }
+ ],
+ "pipeline": [
+  {
+   "id": "PIPE-1",
+   "title": "everything succeeds",
+   "stage_outcome": {
+    "P1 serialise": "ok",
+    "P2 write evidence": "ok",
+    "P3 read back": "bytes equal",
+    "P4 validate": "ok",
+    "P5 judge": "PASS",
+    "P6 summary saved+verified": "ok"
+   },
+   "result": "PASS, exit 0",
+   "current_impl": "judge on in-memory ev, then write (g0_run.py:414-416): no read-back"
+  },
+  {
+   "id": "PIPE-2",
+   "title": "writing g0_evidence.json fails (ENOSPC, EEXIST, EROFS)",
+   "stage_outcome": {
+    "P2 write evidence": "OSError"
+   },
+   "result": "BLOCKED, exit 3; no verdict claimed; stderr carries the error and the in-memory verdict labelled UNSAVED; evidence_blocked note written if the run directory still accepts it",
+   "current_impl": "write_json raises after judge; the run dies with a traceback and exit code 1 (the FAIL code)"
+  },
+  {
+   "id": "PIPE-3",
+   "title": "the file read back differs from the bytes written (truncation, bit flip, concurrent writer)",
+   "stage_outcome": {
+    "P2 write evidence": "ok",
+    "P3 read back": "bytes differ"
+   },
+   "result": "BLOCKED, exit 3",
+   "current_impl": "not detected"
+  },
+  {
+   "id": "PIPE-4",
+   "title": "the evidence contains a non-JSON value (e.g. a set)",
+   "stage_outcome": {
+    "P1 serialise": "TypeError (strict, no default=str)"
+   },
+   "result": "BLOCKED, exit 3",
+   "current_impl": "write_json(default=str) (g0_run.py:244) silently stores a string; the in-memory judge saw a set, an offline re-judge sees a string"
+  },
+  {
+   "id": "PIPE-5",
+   "title": "read back fine, but reg_writer_seq is the string '7'",
+   "stage_outcome": {
+    "P3 read back": "ok",
+    "P4 validate": "C16 type error",
+    "P5 judge": "verdict computed on the READ-BACK evidence: C16 BLOCKED, C03-U0"
+   },
+   "result": "BLOCKED, exit 3",
+   "current_impl": "no schema validation"
+  },
+  {
+   "id": "PIPE-6",
+   "title": "verdict FAIL computed, but g0_summary.json cannot be saved",
+   "stage_outcome": {
+    "P5 judge": "FAIL",
+    "P6 summary": "OSError"
+   },
+   "result": "BLOCKED, exit 3; stderr states 'UNSAVED VERDICT: FAIL' and the evidence sha256; the evidence file remains; the next preflight sees a run directory without g0_summary.json",
+   "current_impl": "exception after the evidence was written; exit code 1 would read as FAIL while no summary exists"
+  },
+  {
+   "id": "PIPE-7",
+   "title": "summary written but its read-back sha256 does not match",
+   "stage_outcome": {
+    "P6 summary": "read-back mismatch"
+   },
+   "result": "BLOCKED, exit 3",
+   "current_impl": "not checked"
+  }
+ ]
+}
