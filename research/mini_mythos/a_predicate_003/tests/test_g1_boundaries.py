@@ -14,7 +14,6 @@ from unittest import mock
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import g1_fixtures as F  # noqa: E402
-import common as C  # noqa: E402
 import g1_auth as G1A  # noqa: E402
 import g1_run as R  # noqa: E402
 

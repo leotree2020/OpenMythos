@@ -4,7 +4,6 @@ PASS, an unconditional exit code, ...).  The mutated source is executed as a sep
 evidence case must give a DIFFERENT result than the real judge -- i.e. the case discriminates and the check is not vacuous.  No process is started."""
 import contextlib
 import io
-import json
 import os
 import sys
 import tempfile
