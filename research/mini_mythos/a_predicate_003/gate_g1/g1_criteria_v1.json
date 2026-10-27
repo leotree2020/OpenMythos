@@ -1,0 +1,2087 @@
+{
+ "criteria_id": "E1A-GATE-G1-CRITERIA-V1",
+ "schema_version": "1",
+ "stage": "G1",
+ "date": "2026-10-27",
+ "base_commit": "48d241fa61b1e1824fca004e4db0719d5c8011b4",
+ "task": "F3B-D1-A-CPU-003-E1A-G1-IMPLEMENTATION-001",
+ "design_reference": {
+  "file": "research/mini_mythos/a_predicate_003/gate_g1/E1A_GATE_G1_DESIGN.md",
+  "sha256": "da914829fdf78d8a83f6f565d64ca030e7383875a804a856c5b90d7f946b095c",
+  "design_task": "F3B-D1-A-CPU-003-E1A-G1-NEGATIVE-GATE-DESIGN-001"
+ },
+ "scope": "E1-A negative gate validation (G1): a gated child that has NOT received the release byte b'R' does not perform any experiment action, in four scenarios (ABORT, EOF, INVALID_BYTE, TIMEOUT). G0 PASS is not G1 evidence.",
+ "not_in_scope": [
+  "G2 identity / descendants",
+  "G3 recovery, fault injection, SIGKILL, janitor",
+  "BV",
+  "E1-A cells",
+  "any release of a gate",
+  "any signal",
+  "GPU",
+  "the Mythos model architecture, R3, Parcae"
+ ],
+ "status": "FROZEN by the commit that adds this file (its SHA-256 is recorded in g1_criteria_v1.json.sha256); changes need a new version and a new file; implementation, tests and the authorization bind to this hash",
+ "relation_to_g0": {
+  "reused_unchanged": [
+   "evidence pipeline P0..P7 and closure publication K0..K7 (with g1 names and the g1 marker schema)",
+   "verdict policy FAIL > BLOCKED > PASS and exit codes 0 / 1 / 3",
+   "strict serialisation, P4 type validation, disk fidelity (durable copy vs writer ledger) and the M-2 principle",
+   "process-safety guard idea, budget, directory rules, closure preflight rules CL-01..23 (as CL1-01..23)"
+  ],
+  "different_by_design": [
+   "no RELEASED record and no release byte exist in any G1 test (G0 requires both)",
+   "the exit status is not 0: it is the gate-path code of the scenario (111, 111, 111, 112)",
+   "four sequential children (one fork each) instead of one",
+   "the stimulus replaces the release; its exactness is a FAIL-class check (G1-C07)",
+   "the T4 timeout reference is the fork time"
+  ]
+ },
+ "limits": {
+  "max_runs_per_authorization": 1,
+  "max_forks": 4,
+  "max_forks_per_test": 1,
+  "max_concurrent_children": 1,
+  "max_descendants_of_child": 0,
+  "max_signals": 0,
+  "max_seconds": 30.0,
+  "per_test_seconds": 7.0,
+  "hold_before_stimulus_s": 0.3,
+  "exit_deadline_s": 5.0,
+  "t4_exit_margin_s": 3.0,
+  "reap_deadline_s": 2.0,
+  "identity_margin_s": 0.5,
+  "t4_lower_margin_s": 0.2,
+  "python": "3.13.16",
+  "cpu_only": true
+ },
+ "scenarios": {
+  "order": [
+   "T1_ABORT",
+   "T2_EOF",
+   "T3_INVALID_BYTE",
+   "T4_TIMEOUT"
+  ],
+  "common": {
+   "spec": {
+    "role": "sleeper",
+    "mode": "setsid",
+    "children": []
+   },
+   "hold": "spawn_direct(..., hold_release=True): INTENT, fork, FORKED, identity verification, REGISTERED; the node is NOT released; Observer.release() is never called",
+   "r_byte": 82,
+   "note": "the gate byte b'R' (82) is never written in G1, in any test; the bench function that writes it (Observer.release) is trapped by the guard"
+  },
+  "tests": {
+   "T1_ABORT": {
+    "title": "ABORT",
+    "old_test": "BV-1 / E1A_GATE_TEST_INVENTORY #2",
+    "t_gate_max_s": 5.0,
+    "stimulus": {
+     "kind": "abort_held",
+     "queued_spec": true,
+     "planned_gate_bytes": [
+      65
+     ],
+     "gate_write_end_closed_by_stimulus": true,
+     "gate_open_at_exit": false,
+     "operation": "queue one SPEC message in the node's control socket (a leaking gate would act on it), then Observer.abort_held(rec): ABORTED record, b'A' (65) on the gate, close of the gate write end"
+    },
+    "expected_exit": 111,
+    "expected_registry_kinds": [
+     "INTENT",
+     "FORKED",
+     "REGISTERED",
+     "ABORTED",
+     "DEAD"
+    ]
+   },
+   "T2_EOF": {
+    "title": "EOF",
+    "old_test": "E1A_GATE_TEST_INVENTORY #5",
+    "t_gate_max_s": 5.0,
+    "stimulus": {
+     "kind": "close_only",
+     "queued_spec": false,
+     "planned_gate_bytes": [],
+     "gate_write_end_closed_by_stimulus": true,
+     "gate_open_at_exit": false,
+     "operation": "close the gate write end (os.close) without writing any byte; no ABORTED and no RELEASED record"
+    },
+    "expected_exit": 111,
+    "expected_registry_kinds": [
+     "INTENT",
+     "FORKED",
+     "REGISTERED",
+     "DEAD"
+    ]
+   },
+   "T3_INVALID_BYTE": {
+    "title": "INVALID_BYTE",
+    "old_test": "E1A_GATE_TEST_INVENTORY section 3 (coverage gap)",
+    "t_gate_max_s": 5.0,
+    "stimulus": {
+     "kind": "write_byte",
+     "queued_spec": false,
+     "planned_gate_bytes": [
+      114
+     ],
+     "gate_write_end_closed_by_stimulus": true,
+     "gate_open_at_exit": false,
+     "operation": "write exactly one byte b'r' (114, lower-case r; never b'R') on the gate with os.write, then close the gate write end"
+    },
+    "expected_exit": 111,
+    "expected_registry_kinds": [
+     "INTENT",
+     "FORKED",
+     "REGISTERED",
+     "DEAD"
+    ]
+   },
+   "T4_TIMEOUT": {
+    "title": "TIMEOUT",
+    "old_test": "BV-3 / E1A_GATE_TEST_INVENTORY #3",
+    "t_gate_max_s": 2.0,
+    "stimulus": {
+     "kind": "none",
+     "queued_spec": false,
+     "planned_gate_bytes": [],
+     "gate_write_end_closed_by_stimulus": false,
+     "gate_open_at_exit": true,
+     "operation": "no stimulus: the gate write end stays open and silent until the exit of the child has been observed through its pidfd; only after that the harness closes it"
+    },
+    "expected_exit": 112,
+    "expected_registry_kinds": [
+     "INTENT",
+     "FORKED",
+     "REGISTERED",
+     "DEAD"
+    ],
+    "timing": {
+     "reference": "fork_events.mono_before of this test (the monotonic time taken immediately before os.fork)",
+     "exit_not_before_s_after_reference": 1.8,
+     "exit_not_after_s_after_reference": 5.0,
+     "why": "the gate timer of the child starts after the fork, so a 112 observed earlier than t_gate_max after the fork cannot come from the timer"
+    }
+   }
+  }
+ },
+ "protocol_sequence": {
+  "per_test": [
+   "INTENT",
+   "FORKED",
+   "REGISTERED",
+   "HOLD",
+   "STIMULUS",
+   "EXIT_OBSERVED_UNREAPED",
+   "REAPED",
+   "PROC_GONE",
+   "CLEANUP",
+   "DEAD"
+  ],
+  "run": [
+   "RUN_START",
+   "<tests in order>",
+   "RUN_END"
+  ]
+ },
+ "snapshots": {
+  "per_test": [
+   "S0_before_fork",
+   "S1_held_registered_unreleased",
+   "S1b_pre_stimulus",
+   "S3_exited_unreaped",
+   "S4_reaped",
+   "S5_after_cleanup"
+  ],
+  "run": [
+   "S0_run",
+   "S9_final"
+  ]
+ },
+ "enforcement": {
+  "guard": "Python-level guard installed after the observer exists and before the first fork: traps os.kill / killpg / system / popen / exec* / spawn* / forkpty / wait / wait3 / wait4 / waitid, signal.pidfd_send_signal / raise_signal / pthread_kill, subprocess.*; os.fork is allowed once per test, at most four times, never while a previous child is unreaped; os.waitpid only on the pid of the current test's child; every write to the watched gate descriptor and every close of it is recorded with the test id; an attempt to write b'R' anywhere, and Observer.release(), are trapped and recorded as violations. A Python-level trap is not proof that no kernel path exists",
+  "stop_rule": "the in-run safety rule stops the run after the first test that is not clearly as expected (exception, exit status differing from the scenario, child alive at a deadline, cleanup not ok, a guard violation, any message from the child); the remaining tests are NOT_RUN. The authoritative verdict is computed afterwards by the judge from the read-back evidence only",
+  "no_signals": "no signal is ever sent in G1; a child that is alive after its deadlines gets MANUAL_DISPOSITION_REQUIRED.json (pid, starttime, node id, verification by REGISTERED record and pidfd) and ends by itself (gate timer, EOF when the observer exits, EXIT message through the control channel for a child that passed the gate); no cleanup by process name, command line or group",
+  "no_cleanup_by_zombie_state": "reap evidence (G1-C08 / G1-C09: Z state observed, waitpid by pid, /proc gone) is required per test and is never replaced by the zombie-as-dead logic of Observer._confirmed_dead (finding F-1); cleanup runs only after the reap",
+  "directories": "as G0: evidence root created only if absent and validated, run directory and consumption directory created exclusively, nothing overwritten",
+  "evidence_pipeline": "P0..P7 in order; the verdict is computed only on the evidence read back at P3; the closure marker is published at P7 only after evidence and summary were saved and verified"
+ },
+ "verdict_policy": [
+  {
+   "n": 1,
+   "policy": "per test: any FAIL-class check with an evidenced violation -> FAIL; otherwise any non-PASS check -> BLOCKED; otherwise PASS"
+  },
+  {
+   "n": 2,
+   "policy": "run: any executed test FAIL, or a FAIL-class evidenced run-level check -> FAIL; otherwise any executed test BLOCKED, any non-PASS run-level check, or any test NOT_RUN while every executed test passed (RUN-INCOMPLETE) -> BLOCKED; PASS only when all four tests ran and every check of every test is PASS"
+  },
+  {
+   "n": 3,
+   "policy": "NOT_RUN is never PASS and never counts as evidence; it is legitimate only after a non-PASS test"
+  },
+  {
+   "n": 4,
+   "policy": "evidence that is missing, of the wrong type, format-damaged or not corroborated makes a check UNEVALUABLE (BLOCKED); FAIL needs well-formed evidence of a violation"
+  },
+  {
+   "n": 5,
+   "policy": "a FAIL is a G1 bench/protocol failure; it is not evidence about the Mythos model architecture, R3 or Parcae"
+  },
+  {
+   "n": 6,
+   "policy": "PASS in G1 says nothing about G2, G3, BV or E1-A"
+  }
+ ],
+ "witness_dependencies": {
+  "disk_dependent_checks": [
+   "G1-C04",
+   "G1-C05",
+   "G1-C11",
+   "G1-C13"
+  ],
+  "note": "these read the durable registry copy and are UNEVALUABLE when it is not faithful to the writer's ledger (M-2); G1-C03 judges its own evidence"
+ },
+ "checks": {
+  "G1-C01": {
+   "name": "preflight_clean",
+   "on_fail": "BLOCKED",
+   "scope": "run",
+   "text": "the read-only preflight found no child of the observer, no residue carrying the 'g1_run.py' / 'g0_run.py' marker, no unresolved earlier 'g0_' or 'g1_' run (closure.preflight rules), no MANUAL_DISPOSITION_REQUIRED.json, a complete /proc enumeration, a unique run id, the required Python / kernel facilities, AND the G0 REAL-001 reference run is verified (g0_reference.ok): its g0_closed.json, g0_evidence.json and g0_summary.json have the bound SHA-256 values and its recorded verdict is PASS"
+  },
+  "G1-C02": {
+   "name": "authorization_and_bindings",
+   "on_fail": "BLOCKED",
+   "scope": "run",
+   "text": "the authorization (schema e1a-gate-auth-g1-1, stage G1) is bound to the ten values of authorization.bindings; the values recorded at the start and at the end of the run equal the authorized ones; g1_criteria_sha256 and g1_prereg_sha256 are the frozen G1 hashes, g0_criteria_sha256 and g0_prereg_sha256 the frozen G0 V5 hashes; the consumption marker was written before the first fork (auth_consumed). An authorization bound to any other criteria version, or a G0 / E1-A authorization, is void"
+  },
+  "G1-C03": {
+   "name": "registration_sequence_and_integrity",
+   "on_fail": "FAIL",
+   "scope": "test",
+   "text": "the registration ledger of the run (RUN_START first, one node per executed test in scenario order, RUN_END last) is complete, well formed and exactly the expected sequence of the scenario (scenarios.tests.<T>.expected_registry_kinds), and the durable copy is faithful to the writer's ledger",
+   "rules": {
+    "fail_when": [
+     {
+      "id": "C03-F1",
+      "text": "a violation visible in the ledger itself: (a) a duplicated RUN_START / RUN_END or a duplicated record kind of one node; (b) wrong order (RUN_START not first, RUN_END not last, a node's kinds not in the order INTENT < FORKED < REGISTERED < ABORTED < DEAD, a record after DEAD, both RELEASED and ABORTED); (c) seq not strictly increasing; (d) a record whose fields have the wrong type or value; (e) RUN_END with cleanup_confirmed true while an INTENT node has no DEAD or has ABORTED outside T1_ABORT"
+     },
+     {
+      "id": "C03-F2",
+      "text": "with a clean writer, a faithful durable copy and no foreign lines: the kinds of the node of the judged test differ from its expected_registry_kinds (any RELEASED record is C03-F2 as well), or a node exists beyond the executed tests"
+     },
+     {
+      "id": "C03-F3",
+      "text": "an INTENT whose creator is not 'O' (a ticket), or more than one INTENT for the judged test"
+     }
+    ],
+    "unevaluable_when": [
+     {
+      "id": "C03-U0",
+      "text": "ledger, writer seq or durable copy missing or of the wrong type"
+     },
+     {
+      "id": "C03-U1",
+      "text": "the run did not complete (exception / abort / deadline) and the registry is a proper prefix of the expected one"
+     },
+     {
+      "id": "C03-U2",
+      "text": "the durable copy is not faithful to the ledger (lost / foreign / altered / parse / count) or has foreign lines"
+     },
+     {
+      "id": "C03-U3",
+      "text": "the writer is not clean (an append failed or seq has a gap)"
+     },
+     {
+      "id": "C03-U4",
+      "text": "no other rule applies and the sequence is not the expected one"
+     }
+    ],
+    "pass_when": "writer clean, durable copy faithful, run completed, and the ledger is exactly RUN_START + the expected kinds of every executed test in order + RUN_END"
+   }
+  },
+  "G1-C04": {
+   "name": "identity_registered_before_stimulus",
+   "on_fail": "FAIL",
+   "scope": "test",
+   "text": "exactly one REGISTERED record of the node (int pid and starttime) in the durable copy equals the child seen at S1 and S1b, the pid of the fork event and of guard.fork_pids, and node.pid / node.starttime; the child's ppid is the observer's pid; the REGISTERED record time precedes the stimulus time; S1 and S1b were taken at least limits.identity_margin_s before the child's own gate timer (t_gate_max after fork_events.mono_before) could expire",
+   "rules": {
+    "fail_when": [
+     {
+      "id": "C04-F1",
+      "text": "pid / starttime / ppid of the REGISTERED record, S1, S1b, the fork event, guard.fork_pids and node differ, or REGISTERED does not precede the stimulus"
+     }
+    ],
+    "unevaluable_when": [
+     {
+      "id": "C04-U1",
+      "text": "S1 or S1b was taken less than identity_margin_s before the gate timer could expire (the hold / identity evidence does not support a conclusion)"
+     },
+     {
+      "id": "C04-U2",
+      "text": "the child is absent from S1 or S1b, or a required field is missing"
+     }
+    ]
+   }
+  },
+  "G1-C05": {
+   "name": "no_action_without_release",
+   "on_fail": "FAIL",
+   "scope": "test",
+   "text": "at S1, S1b and when the exit was observed the child state is 'S' (blocked in the gate), no message (FIRST_ACTION, READY, TICKET or any other) was received from the child, first_action_mono is null, the child's sid and pgrp equal the observer's, no RELEASED record exists for the node, and the queued SPEC probe was queued exactly in the scenarios that plan it",
+   "rules": {
+    "fail_when": [
+     {
+      "id": "C05-F1",
+      "text": "the child acted: a message or FIRST_ACTION / READY was received, sid / pgrp changed, or a RELEASED record exists"
+     }
+    ],
+    "unevaluable_when": [
+     {
+      "id": "C05-U1",
+      "text": "the child state at S1 / S1b is not 'S', or the evidence fields are missing; queued_spec differs from the scenario"
+     }
+    ]
+   }
+  },
+  "G1-C06": {
+   "name": "gate_descriptor_hygiene",
+   "on_fail": "FAIL",
+   "scope": "test",
+   "text": "at S1 and S1b the child holds exactly one descriptor of the gate pipe (access 'r', never the write end), at most one other descriptor above 2 and it is a socket, and at most five descriptors in total",
+   "rules": {
+    "fail_when": [
+     {
+      "id": "C06-F1",
+      "text": "the gate write end, or a second gate descriptor, or an unexpected descriptor is present in the child"
+     }
+    ],
+    "unevaluable_when": [
+     {
+      "id": "C06-U1",
+      "text": "the descriptor lists are missing"
+     }
+    ]
+   }
+  },
+  "G1-C07": {
+   "name": "stimulus_exactness",
+   "on_fail": "FAIL",
+   "scope": "test",
+   "text": "the gate received exactly the bytes planned for the scenario (guard.gate_writes of the test equal stimulus.planned_gate_bytes, each write ok with returned 1), the byte b'R' was never written anywhere and Observer.release() was never called, the gate write end was closed exactly as planned (T1, T2, T3: one close after S1b and before the exit was observed; T4: no close before the exit was observed, gate_open_at_exit true), and no write or close happened earlier than the pre-stimulus snapshot S1b",
+   "rules": {
+    "fail_when": [
+     {
+      "id": "C07-F1",
+      "text": "an 'R' write attempt, an Observer.release() call, or a RELEASED record"
+     },
+     {
+      "id": "C07-F2",
+      "text": "the recorded gate bytes differ from the planned bytes (extra, missing, wrong byte)"
+     },
+     {
+      "id": "C07-F3",
+      "text": "a gate write or close earlier than S1b, a missing or additional close, or T4: the gate write end was closed before the exit was observed"
+     }
+    ],
+    "unevaluable_when": [
+     {
+      "id": "C07-U1",
+      "text": "guard evidence missing or of the wrong type"
+     },
+     {
+      "id": "C07-U2",
+      "text": "a gate write entry ended with result 'error' (the stimulus was not delivered as planned)"
+     },
+     {
+      "id": "C07-U3",
+      "text": "a planned close was not recorded"
+     }
+    ],
+    "pass_when": "writes and closes equal the plan, in order, after S1b, with no R and no release"
+   }
+  },
+  "G1-C08": {
+   "name": "exit_observed_unreaped",
+   "on_fail": "BLOCKED",
+   "scope": "test",
+   "text": "the exit of the child was observed through its pidfd (readable) and S3 shows the child in state Z (exited, not reaped) with ppid = the observer, before any wait call of the test; times stimulus <= pidfd_readable <= S3"
+  },
+  "G1-C09": {
+   "name": "reap_by_specific_pid",
+   "on_fail": "BLOCKED",
+   "scope": "test",
+   "text": "waitpid on that specific pid (non-blocking polls bounded by reap_deadline_s) returned that pid exactly once, every other call of the test returned 0 and named the same pid; afterwards /proc/<pid> is absent (or carries another starttime); times S3 < REAPED <= PROC_GONE. The zombie state of _confirmed_dead() is never accepted in place of this evidence"
+  },
+  "G1-C10": {
+   "name": "gate_path_exit_status",
+   "on_fail": "FAIL",
+   "scope": "test",
+   "text": "the reaped exit status equals scenarios.tests.<T>.expected_exit (111, 111, 111, 112); for T4 the exit was observed no earlier than t_gate_max - t4_lower_margin_s after fork_events.mono_before",
+   "rules": {
+    "fail_when": [
+     {
+      "id": "C10-F1",
+      "text": "exit status 0: the child passed the gate and finished its role"
+     },
+     {
+      "id": "C10-F2",
+      "text": "exit status 111 or 112 but not the expected one"
+     },
+     {
+      "id": "C10-F3",
+      "text": "T4: a 112 earlier than the timer could produce it"
+     }
+    ],
+    "unevaluable_when": [
+     {
+      "id": "C10-U1",
+      "text": "exit status 113 (exception outside the gate), a negative status (killed by a signal), or any other non-gate status"
+     },
+     {
+      "id": "C10-U2",
+      "text": "reap evidence or the fork event is missing"
+     }
+    ]
+   }
+  },
+  "G1-C11": {
+   "name": "process_budget",
+   "on_fail": "FAIL",
+   "scope": "test",
+   "text": "one fork per executed test and no more forks in the run than executed tests (guard.fork_calls == number of executed tests <= 4), each fork event carries the node's pid, the previous child had been reaped before the next fork, no snapshot shows more than one child of the observer or any grandchild, the registry has exactly one INTENT per executed test, created by 'O', and no ticket / descendant exists"
+  },
+  "G1-C12": {
+   "name": "zero_signals",
+   "on_fail": "FAIL",
+   "scope": "test",
+   "text": "the guard recorded no violation (no signal sender, exec / spawn / system / popen / subprocess, wait other than on the child pid, second fork), and every cleanup kill entry says already_exited"
+  },
+  "G1-C13": {
+   "name": "cleanup_and_no_residue",
+   "on_fail": "BLOCKED",
+   "scope": "test",
+   "text": "the per-test cleanup (after the reap) is ok, a DEAD record with a basis exists for the node, S4 / S5 show no child, no snapshot had an incomplete /proc enumeration; for the last executed test also: the final run cleanup is ok and its run set consistent, RUN_END confirms cleanup, the final snapshot shows no child and no token residue"
+  },
+  "G1-C14": {
+   "name": "observer_descriptor_baseline",
+   "on_fail": "BLOCKED",
+   "scope": "test",
+   "text": "the observer's descriptor count at S0 of the test equals the count at S5 (after cleanup); for the last executed test also: S0 of the run equals the final snapshot"
+  },
+  "G1-C15": {
+   "name": "time_bounds",
+   "on_fail": "BLOCKED",
+   "scope": "test",
+   "text": "the test took at most per_test_seconds, the run at most max_seconds, no deadline was hit; T1-T3: exit observed within exit_deadline_s after the stimulus; T4: exit observed no later than 5.0 s after fork_events.mono_before"
+  },
+  "G1-C16": {
+   "name": "evidence_complete",
+   "on_fail": "BLOCKED",
+   "scope": "run",
+   "text": "every field of evidence_schema is present with the declared type (a present field of the wrong type counts as missing; bool is never an int) and evidence_schema equals e1a-gate-g1-evidence-1"
+  },
+  "G1-C17": {
+   "name": "no_unexplained_error",
+   "on_fail": "BLOCKED",
+   "scope": "run",
+   "text": "exception, aborted, every per-test exception and manual_disposition are null, the tests that ran form a prefix of the scenario order, and the run is complete: a test that did not run is legitimate only after an executed test whose verdict is not PASS (otherwise RUN-INCOMPLETE)"
+  }
+ },
+ "evidence_schema": {
+  "id": "e1a-gate-g1-evidence-1",
+  "validation": "performed once, at pipeline stage P4, on the evidence AS READ BACK at stage P3 (not on the in-memory evidence): a present field of the wrong type counts as missing; bool is never accepted as int or number; nullable fields may be null; extra keys are ignored; the judge (P5) receives only the read-back evidence",
+  "serialisation": "strict: json.dumps(evidence, sort_keys=True, ensure_ascii=True, separators=(',', ':'), allow_nan=False) with no default= argument (pipeline stage P1); there is no json.loads(json.dumps()) round trip in memory",
+  "note": "tests.<T> is present for every test of scenarios.order; a test that did not run has ran=false and null for every nullable field",
+  "fields": [
+   {
+    "path": "evidence_schema",
+    "type": "string",
+    "nullable": false,
+    "consumers": "C16",
+    "note": "must equal 'e1a-gate-g1-evidence-1'"
+   },
+   {
+    "path": "run_id",
+    "type": "string",
+    "nullable": false,
+    "consumers": "C03 C16",
+    "note": ""
+   },
+   {
+    "path": "auth_expected",
+    "type": "object[10 hex strings: git_head prereg_sha256 g0_criteria_sha256 g0_prereg_sha256 bench_code_sha256 g0_code_sha256 g1_criteria_sha256 g1_prereg_sha256 g1_code_sha256 g0_reference_sha256]",
+    "nullable": false,
+    "consumers": "C02",
+    "note": ""
+   },
+   {
+    "path": "bindings_start",
+    "type": "object[10 hex strings: git_head prereg_sha256 g0_criteria_sha256 g0_prereg_sha256 bench_code_sha256 g0_code_sha256 g1_criteria_sha256 g1_prereg_sha256 g1_code_sha256 g0_reference_sha256]",
+    "nullable": false,
+    "consumers": "C02",
+    "note": ""
+   },
+   {
+    "path": "bindings_end",
+    "type": "object[10 hex strings: git_head prereg_sha256 g0_criteria_sha256 g0_prereg_sha256 bench_code_sha256 g0_code_sha256 g1_criteria_sha256 g1_prereg_sha256 g1_code_sha256 g0_reference_sha256]",
+    "nullable": false,
+    "consumers": "C02",
+    "note": ""
+   },
+   {
+    "path": "auth_consumed",
+    "type": "bool",
+    "nullable": false,
+    "consumers": "C02",
+    "note": ""
+   },
+   {
+    "path": "preflight",
+    "type": "object{ok:bool, problems:list, children:int, token_residue:list, unresolved_prior:list, enumeration_problems:object, run_id_unique:bool, fd_count:int, total_procs:int, g0_reference:object{ok:bool}}",
+    "nullable": false,
+    "consumers": "C01",
+    "note": ""
+   },
+   {
+    "path": "evidence_root",
+    "type": "object{path:string, created_by_this_run:bool, uid:int, mode:int, ino:int}",
+    "nullable": false,
+    "consumers": "C16",
+    "note": ""
+   },
+   {
+    "path": "consumed_dir",
+    "type": "object{path:string, created_by_this_run:bool, uid:int, mode:int, ino:int}",
+    "nullable": false,
+    "consumers": "C16",
+    "note": ""
+   },
+   {
+    "path": "run_dir",
+    "type": "object{path:string, created_by_this_process:bool}",
+    "nullable": false,
+    "consumers": "C16",
+    "note": ""
+   },
+   {
+    "path": "observer",
+    "type": "object{pid:int, sid:int, pgrp:int}",
+    "nullable": false,
+    "consumers": "C04 C05 C08 C11",
+    "note": ""
+   },
+   {
+    "path": "guard",
+    "type": "object",
+    "nullable": false,
+    "consumers": "C04 C07 C08 C09 C11 C12",
+    "note": ""
+   },
+   {
+    "path": "guard.violations",
+    "type": "list",
+    "nullable": false,
+    "consumers": "C07 C12",
+    "note": ""
+   },
+   {
+    "path": "guard.fork_calls",
+    "type": "int",
+    "nullable": false,
+    "consumers": "C11",
+    "note": ""
+   },
+   {
+    "path": "guard.fork_pids",
+    "type": "list[int]",
+    "nullable": false,
+    "consumers": "C04 C11",
+    "note": ""
+   },
+   {
+    "path": "guard.fork_events",
+    "type": "list[object{test:string, mono_before:number, mono_after:number|null, pid:int|null}]",
+    "nullable": false,
+    "consumers": "C04 C10 C11 C15",
+    "note": ""
+   },
+   {
+    "path": "guard.waitpid_calls",
+    "type": "list[object{test:string, pid:int, options:int, returned:int, status:int, mono:number}]",
+    "nullable": false,
+    "consumers": "C08 C09",
+    "note": ""
+   },
+   {
+    "path": "guard.gate_writes",
+    "type": "list[object{test:string, byte:int|null, mono_before:number, mono_after:number|null, result:string('ok'|'error'), returned:int|null, errno:int|null, error:string|null}]",
+    "nullable": false,
+    "consumers": "C07",
+    "note": ""
+   },
+   {
+    "path": "guard.gate_closes",
+    "type": "list[object{test:string, mono:number, fd:int}]",
+    "nullable": false,
+    "consumers": "C07",
+    "note": ""
+   },
+   {
+    "path": "reg_memory_records",
+    "type": "list[object{seq:int, kind:string, ...}]",
+    "nullable": false,
+    "consumers": "C03",
+    "note": ""
+   },
+   {
+    "path": "reg_writer_seq",
+    "type": "int",
+    "nullable": false,
+    "consumers": "C03",
+    "note": ""
+   },
+   {
+    "path": "reg",
+    "type": "list[object{seq:int, kind:string, ...}]",
+    "nullable": false,
+    "consumers": "C03 C04 C05 C11 C13",
+    "note": ""
+   },
+   {
+    "path": "reg_parse_info",
+    "type": "object{torn_tail:bool, corrupt_lines:int, missing:bool, unreadable:bool}",
+    "nullable": false,
+    "consumers": "C03",
+    "note": ""
+   },
+   {
+    "path": "cleanup",
+    "type": "object",
+    "nullable": true,
+    "consumers": "C12 C13",
+    "note": "final run cleanup; null when the run ended before it"
+   },
+   {
+    "path": "run_snapshots",
+    "type": "object",
+    "nullable": false,
+    "consumers": "C13 C14",
+    "note": "S0_run and S9_final (run-level snapshots)"
+   },
+   {
+    "path": "exception",
+    "type": "string",
+    "nullable": true,
+    "consumers": "C17",
+    "note": ""
+   },
+   {
+    "path": "aborted",
+    "type": "string",
+    "nullable": true,
+    "consumers": "C17",
+    "note": ""
+   },
+   {
+    "path": "stopped_after",
+    "type": "string",
+    "nullable": true,
+    "consumers": "C17",
+    "note": "id of the test after which the in-run safety rule stopped the run, if any"
+   },
+   {
+    "path": "deadline_hits",
+    "type": "list",
+    "nullable": false,
+    "consumers": "C15",
+    "note": ""
+   },
+   {
+    "path": "timing",
+    "type": "object",
+    "nullable": false,
+    "consumers": "C15",
+    "note": ""
+   },
+   {
+    "path": "manual_disposition",
+    "type": "object",
+    "nullable": true,
+    "consumers": "C17",
+    "note": ""
+   },
+   {
+    "path": "tests",
+    "type": "object",
+    "nullable": false,
+    "consumers": "C16 C17",
+    "note": ""
+   },
+   {
+    "path": "tests.T1_ABORT.ran",
+    "type": "bool",
+    "nullable": false,
+    "consumers": "C16 C17",
+    "note": ""
+   },
+   {
+    "path": "tests.T1_ABORT.scenario",
+    "type": "string",
+    "nullable": false,
+    "consumers": "C16",
+    "note": ""
+   },
+   {
+    "path": "tests.T1_ABORT.t_gate_max",
+    "type": "number",
+    "nullable": true,
+    "consumers": "C04 C10 C15",
+    "note": ""
+   },
+   {
+    "path": "tests.T1_ABORT.node",
+    "type": "object{node_id:string, pid:int, starttime:int, gate_ino:int}",
+    "nullable": true,
+    "consumers": "C04 C06 C08 C09 C13",
+    "note": ""
+   },
+   {
+    "path": "tests.T1_ABORT.stimulus",
+    "type": "object",
+    "nullable": true,
+    "consumers": "C05 C07",
+    "note": "kind, planned_bytes, queued_spec, gate_open_at_exit"
+   },
+   {
+    "path": "tests.T1_ABORT.events",
+    "type": "object",
+    "nullable": true,
+    "consumers": "C04 C07 C08 C09 C10 C15",
+    "note": "start_mono, hold_start_mono, stimulus_mono, pidfd_readable_mono, reap_mono, proc_gone_mono, end_mono, exit_message_mono"
+   },
+   {
+    "path": "tests.T1_ABORT.first_action_mono",
+    "type": "number",
+    "nullable": true,
+    "consumers": "C05",
+    "note": ""
+   },
+   {
+    "path": "tests.T1_ABORT.ready_received",
+    "type": "bool",
+    "nullable": true,
+    "consumers": "C05",
+    "note": ""
+   },
+   {
+    "path": "tests.T1_ABORT.messages_received",
+    "type": "int",
+    "nullable": true,
+    "consumers": "C05 C11",
+    "note": ""
+   },
+   {
+    "path": "tests.T1_ABORT.snapshots",
+    "type": "object",
+    "nullable": true,
+    "consumers": "C04 C05 C06 C08 C09 C11 C13 C14",
+    "note": "S0_before_fork .. S5_after_cleanup"
+   },
+   {
+    "path": "tests.T1_ABORT.reap",
+    "type": "object",
+    "nullable": true,
+    "consumers": "C09 C10",
+    "note": "waitpid_pid, exit_status, raw_status"
+   },
+   {
+    "path": "tests.T1_ABORT.cleanup",
+    "type": "object",
+    "nullable": true,
+    "consumers": "C12 C13",
+    "note": ""
+   },
+   {
+    "path": "tests.T1_ABORT.timing",
+    "type": "object",
+    "nullable": true,
+    "consumers": "C15",
+    "note": "duration"
+   },
+   {
+    "path": "tests.T1_ABORT.exception",
+    "type": "string",
+    "nullable": true,
+    "consumers": "C17",
+    "note": ""
+   },
+   {
+    "path": "tests.T2_EOF.ran",
+    "type": "bool",
+    "nullable": false,
+    "consumers": "C16 C17",
+    "note": ""
+   },
+   {
+    "path": "tests.T2_EOF.scenario",
+    "type": "string",
+    "nullable": false,
+    "consumers": "C16",
+    "note": ""
+   },
+   {
+    "path": "tests.T2_EOF.t_gate_max",
+    "type": "number",
+    "nullable": true,
+    "consumers": "C04 C10 C15",
+    "note": ""
+   },
+   {
+    "path": "tests.T2_EOF.node",
+    "type": "object{node_id:string, pid:int, starttime:int, gate_ino:int}",
+    "nullable": true,
+    "consumers": "C04 C06 C08 C09 C13",
+    "note": ""
+   },
+   {
+    "path": "tests.T2_EOF.stimulus",
+    "type": "object",
+    "nullable": true,
+    "consumers": "C05 C07",
+    "note": "kind, planned_bytes, queued_spec, gate_open_at_exit"
+   },
+   {
+    "path": "tests.T2_EOF.events",
+    "type": "object",
+    "nullable": true,
+    "consumers": "C04 C07 C08 C09 C10 C15",
+    "note": "start_mono, hold_start_mono, stimulus_mono, pidfd_readable_mono, reap_mono, proc_gone_mono, end_mono, exit_message_mono"
+   },
+   {
+    "path": "tests.T2_EOF.first_action_mono",
+    "type": "number",
+    "nullable": true,
+    "consumers": "C05",
+    "note": ""
+   },
+   {
+    "path": "tests.T2_EOF.ready_received",
+    "type": "bool",
+    "nullable": true,
+    "consumers": "C05",
+    "note": ""
+   },
+   {
+    "path": "tests.T2_EOF.messages_received",
+    "type": "int",
+    "nullable": true,
+    "consumers": "C05 C11",
+    "note": ""
+   },
+   {
+    "path": "tests.T2_EOF.snapshots",
+    "type": "object",
+    "nullable": true,
+    "consumers": "C04 C05 C06 C08 C09 C11 C13 C14",
+    "note": "S0_before_fork .. S5_after_cleanup"
+   },
+   {
+    "path": "tests.T2_EOF.reap",
+    "type": "object",
+    "nullable": true,
+    "consumers": "C09 C10",
+    "note": "waitpid_pid, exit_status, raw_status"
+   },
+   {
+    "path": "tests.T2_EOF.cleanup",
+    "type": "object",
+    "nullable": true,
+    "consumers": "C12 C13",
+    "note": ""
+   },
+   {
+    "path": "tests.T2_EOF.timing",
+    "type": "object",
+    "nullable": true,
+    "consumers": "C15",
+    "note": "duration"
+   },
+   {
+    "path": "tests.T2_EOF.exception",
+    "type": "string",
+    "nullable": true,
+    "consumers": "C17",
+    "note": ""
+   },
+   {
+    "path": "tests.T3_INVALID_BYTE.ran",
+    "type": "bool",
+    "nullable": false,
+    "consumers": "C16 C17",
+    "note": ""
+   },
+   {
+    "path": "tests.T3_INVALID_BYTE.scenario",
+    "type": "string",
+    "nullable": false,
+    "consumers": "C16",
+    "note": ""
+   },
+   {
+    "path": "tests.T3_INVALID_BYTE.t_gate_max",
+    "type": "number",
+    "nullable": true,
+    "consumers": "C04 C10 C15",
+    "note": ""
+   },
+   {
+    "path": "tests.T3_INVALID_BYTE.node",
+    "type": "object{node_id:string, pid:int, starttime:int, gate_ino:int}",
+    "nullable": true,
+    "consumers": "C04 C06 C08 C09 C13",
+    "note": ""
+   },
+   {
+    "path": "tests.T3_INVALID_BYTE.stimulus",
+    "type": "object",
+    "nullable": true,
+    "consumers": "C05 C07",
+    "note": "kind, planned_bytes, queued_spec, gate_open_at_exit"
+   },
+   {
+    "path": "tests.T3_INVALID_BYTE.events",
+    "type": "object",
+    "nullable": true,
+    "consumers": "C04 C07 C08 C09 C10 C15",
+    "note": "start_mono, hold_start_mono, stimulus_mono, pidfd_readable_mono, reap_mono, proc_gone_mono, end_mono, exit_message_mono"
+   },
+   {
+    "path": "tests.T3_INVALID_BYTE.first_action_mono",
+    "type": "number",
+    "nullable": true,
+    "consumers": "C05",
+    "note": ""
+   },
+   {
+    "path": "tests.T3_INVALID_BYTE.ready_received",
+    "type": "bool",
+    "nullable": true,
+    "consumers": "C05",
+    "note": ""
+   },
+   {
+    "path": "tests.T3_INVALID_BYTE.messages_received",
+    "type": "int",
+    "nullable": true,
+    "consumers": "C05 C11",
+    "note": ""
+   },
+   {
+    "path": "tests.T3_INVALID_BYTE.snapshots",
+    "type": "object",
+    "nullable": true,
+    "consumers": "C04 C05 C06 C08 C09 C11 C13 C14",
+    "note": "S0_before_fork .. S5_after_cleanup"
+   },
+   {
+    "path": "tests.T3_INVALID_BYTE.reap",
+    "type": "object",
+    "nullable": true,
+    "consumers": "C09 C10",
+    "note": "waitpid_pid, exit_status, raw_status"
+   },
+   {
+    "path": "tests.T3_INVALID_BYTE.cleanup",
+    "type": "object",
+    "nullable": true,
+    "consumers": "C12 C13",
+    "note": ""
+   },
+   {
+    "path": "tests.T3_INVALID_BYTE.timing",
+    "type": "object",
+    "nullable": true,
+    "consumers": "C15",
+    "note": "duration"
+   },
+   {
+    "path": "tests.T3_INVALID_BYTE.exception",
+    "type": "string",
+    "nullable": true,
+    "consumers": "C17",
+    "note": ""
+   },
+   {
+    "path": "tests.T4_TIMEOUT.ran",
+    "type": "bool",
+    "nullable": false,
+    "consumers": "C16 C17",
+    "note": ""
+   },
+   {
+    "path": "tests.T4_TIMEOUT.scenario",
+    "type": "string",
+    "nullable": false,
+    "consumers": "C16",
+    "note": ""
+   },
+   {
+    "path": "tests.T4_TIMEOUT.t_gate_max",
+    "type": "number",
+    "nullable": true,
+    "consumers": "C04 C10 C15",
+    "note": ""
+   },
+   {
+    "path": "tests.T4_TIMEOUT.node",
+    "type": "object{node_id:string, pid:int, starttime:int, gate_ino:int}",
+    "nullable": true,
+    "consumers": "C04 C06 C08 C09 C13",
+    "note": ""
+   },
+   {
+    "path": "tests.T4_TIMEOUT.stimulus",
+    "type": "object",
+    "nullable": true,
+    "consumers": "C05 C07",
+    "note": "kind, planned_bytes, queued_spec, gate_open_at_exit"
+   },
+   {
+    "path": "tests.T4_TIMEOUT.events",
+    "type": "object",
+    "nullable": true,
+    "consumers": "C04 C07 C08 C09 C10 C15",
+    "note": "start_mono, hold_start_mono, stimulus_mono, pidfd_readable_mono, reap_mono, proc_gone_mono, end_mono, exit_message_mono"
+   },
+   {
+    "path": "tests.T4_TIMEOUT.first_action_mono",
+    "type": "number",
+    "nullable": true,
+    "consumers": "C05",
+    "note": ""
+   },
+   {
+    "path": "tests.T4_TIMEOUT.ready_received",
+    "type": "bool",
+    "nullable": true,
+    "consumers": "C05",
+    "note": ""
+   },
+   {
+    "path": "tests.T4_TIMEOUT.messages_received",
+    "type": "int",
+    "nullable": true,
+    "consumers": "C05 C11",
+    "note": ""
+   },
+   {
+    "path": "tests.T4_TIMEOUT.snapshots",
+    "type": "object",
+    "nullable": true,
+    "consumers": "C04 C05 C06 C08 C09 C11 C13 C14",
+    "note": "S0_before_fork .. S5_after_cleanup"
+   },
+   {
+    "path": "tests.T4_TIMEOUT.reap",
+    "type": "object",
+    "nullable": true,
+    "consumers": "C09 C10",
+    "note": "waitpid_pid, exit_status, raw_status"
+   },
+   {
+    "path": "tests.T4_TIMEOUT.cleanup",
+    "type": "object",
+    "nullable": true,
+    "consumers": "C12 C13",
+    "note": ""
+   },
+   {
+    "path": "tests.T4_TIMEOUT.timing",
+    "type": "object",
+    "nullable": true,
+    "consumers": "C15",
+    "note": "duration"
+   },
+   {
+    "path": "tests.T4_TIMEOUT.exception",
+    "type": "string",
+    "nullable": true,
+    "consumers": "C17",
+    "note": ""
+   }
+  ]
+ },
+ "evidence_pipeline": {
+  "principle": "the verdict is computed only from evidence that was written, fsynced, read back and byte-verified; nothing is silently converted; nothing is overwritten; every failure is BLOCKED with exit code 3; a run is closed only by a published and verified g1_closed.json bound to the verified evidence and summary; exit code 0 or 1 is returned only after the closure marker was published and verified (P7)",
+  "stages": [
+   {
+    "id": "P0",
+    "name": "construct",
+    "operation": "assemble the evidence dictionary E in memory, including evidence_schema; capture the ledger (a copy of RegWriter.records) and reg_writer_seq after the last registry write and before the registry file is parsed; parse the registry file into reg and reg_parse_info",
+    "on_failure": "an exception is handled by the abnormal path of the procedure (no signal, RUN_END false, MANUAL_DISPOSITION where a process may live); the pipeline continues with what exists",
+    "exit_code_on_failure": 3
+   },
+   {
+    "id": "P1",
+    "name": "strict serialisation",
+    "operation": "B = json.dumps(E, sort_keys=True, ensure_ascii=True, separators=(',', ':'), allow_nan=False).encode('utf-8'); NO default= argument, so nothing is silently converted (no default=str); sha256(B) is computed",
+    "on_failure": "TypeError, ValueError or RecursionError (a non-JSON value, NaN) -> BLOCKED; nothing is written; stderr: G1-EVIDENCE-UNSAVED run_id=<id> stage=P1 reason=<text>",
+    "exit_code_on_failure": 3
+   },
+   {
+    "id": "P2",
+    "name": "exclusive write, fsync",
+    "operation": "fd = os.open(<run_dir>/g1_evidence.json, O_WRONLY|O_CREAT|O_EXCL, 0o644) in the run directory created by this process; write ALL bytes (loop until complete); os.fsync(fd); os.close(fd); fsync the run directory",
+    "on_failure": "the file exists (another run or a previous attempt: never overwritten, never reused), any OSError, a short write that cannot be completed, an fsync failure -> BLOCKED; a partially written file created by this process is preserved, not deleted; stderr: G1-EVIDENCE-UNSAVED run_id=<id> stage=P2 sha256=<sha256(B)> partial=<true|false> reason=<text>; best effort: an exclusive g1_blocked_<run_id>.json note in the run directory or the validated evidence root (its own failure only adds a stderr line)",
+    "exit_code_on_failure": 3
+   },
+   {
+    "id": "P3",
+    "name": "read back and verify",
+    "operation": "open the file again, best effort os.posix_fadvise(fd, 0, 0, POSIX_FADV_DONTNEED), read all bytes B2; require a regular file, len(B2) == len(B), sha256(B2) == sha256(B); E2 = json.loads(B2.decode('utf-8'), parse_constant=<reject>)",
+    "on_failure": "differing bytes or hash, a parse error, a non-regular file -> BLOCKED; stderr: G1-EVIDENCE-UNVERIFIED run_id=<id> stage=P3 written_sha256=<h> read_sha256=<h>",
+    "exit_code_on_failure": 3
+   },
+   {
+    "id": "P4",
+    "name": "validate types",
+    "operation": "validate E2 against evidence_schema.fields (presence, type, nullable, bool never int); the result feeds G1-C16 and the UNEVALUABLE state of the checks that need the failing fields",
+    "on_failure": "does not stop the pipeline: G1-C16 fails (BLOCKED class); verdict BLOCKED unless an evidenced FAIL exists on intact witnesses",
+    "exit_code_on_failure": null
+   },
+   {
+    "id": "P5",
+    "name": "judge the read-back evidence",
+    "operation": "the judge receives E2 only; it never sees E; verdict, exit code and per-check results are computed; the C03 fidelity report is part of the result",
+    "on_failure": "an exception in the judge -> BLOCKED; stderr: G1-JUDGE-ERROR run_id=<id>; no summary is written and no closure marker is created, so the next preflight finds the run directory without a valid g1_closed.json and refuses to start (closure.preflight CL-02)",
+    "exit_code_on_failure": 3
+   },
+   {
+    "id": "P6",
+    "name": "save and verify the summary",
+    "operation": "S = {run_id, criteria_id, criteria_sha256, evidence_sha256 (= sha256(B2)), verdict, exit_code, checks, c03_fidelity_report, fail_scope (when FAIL), pipeline: {P0..P5 results}}; strict serialisation as in P1; exclusive write + fsync + directory fsync as in P2; read back and verify bytes, hash and parse as in P3; the bytes read back (Bs2) and their SHA-256 are kept for the closure marker (P7). Writing g1_summary.json is NOT closing the run",
+    "on_failure": "write failure, read-back mismatch or parse failure -> the verdict is NOT recorded: BLOCKED, exit code 3; stderr: G1-SUMMARY-UNSAVED run_id=<id> verdict=<computed verdict> evidence_sha256=<h> reason=<text>. The evidence file remains and a partial or unverified g1_summary.json may remain; neither is evidence of closure: no closure marker is created, so the next preflight sees a run directory without a valid g1_closed.json and refuses to start (closure.preflight CL-02), whatever g1_summary.json contains",
+    "exit_code_on_failure": 3
+   },
+   {
+    "id": "P7",
+    "name": "publish the closure marker and exit",
+    "operation": "closure.publication steps K1..K7: build g1_closed.json from the read-back evidence and summary hashes, write it to g1_closed.json.tmp (O_EXCL), fsync, verify, publish it with os.link under g1_closed.json (exclusive, atomic), fsync the run directory, verify the published file, then exit with recorded_exit_code (PASS 0, FAIL 1, BLOCKED 3). Only here may exit code 0 or 1 be returned; any uncaught exception anywhere in the pipeline is caught and mapped to 3",
+    "on_failure": "K1..K4 fail: nothing is published; stderr G1-CLOSE-UNPUBLISHED ...; exit 3. K5, K6 or an exception after K4: the marker stays; stderr G1-CLOSE-UNCONFIRMED ...; exit 3. The saved evidence, summary and marker are never altered (closure.publication.failures)",
+    "exit_code_on_failure": 3
+   }
+  ],
+  "preserved_on_failure": {
+   "P1": "nothing is on disk; stderr names the stage; the run directory, registry file and MANUAL_DISPOSITION_REQUIRED.json (if any) remain",
+   "P2": "a partial g1_evidence.json if one was created; registry; stderr with sha256(B) so that B can be recomputed only if E is reproduced; optional g1_blocked note",
+   "P3": "the saved evidence file as read (not repaired); stderr with both hashes",
+   "P5": "the verified evidence file",
+   "P6": "the verified evidence file; any partial or unverified g1_summary.json as it is (not repaired, not evidence of closure); stderr with the computed verdict and evidence_sha256",
+   "P7": "evidence, summary and registry as saved; a partial or complete g1_closed.json.tmp; the published g1_closed.json if K4 returned; stderr with the G1-CLOSE-* marker and the three hashes"
+  },
+  "durability_limits": "fsync of the file and of the directory is requested and its failure is BLOCKED, and the read-back is verified byte for byte, but a read-back served from the page cache does not prove that the medium holds the bytes (best effort posix_fadvise DONTNEED reduces this); when durability cannot be guaranteed the unsaved state is marked on stderr and the verdict is BLOCKED; the same holds for the closure marker: fsync of the temporary file and of the directory is requested and its failure is reported (G1-CLOSE-UNPUBLISHED / G1-CLOSE-UNCONFIRMED), but a successful verification does not prove that the medium holds the bytes",
+  "overwrite_policy": "no file of another run is ever opened for writing; g1_evidence.json, g1_summary.json and g1_closed.json.tmp are created with O_EXCL only; g1_closed.json is created only by os.link of the verified temporary file and only when the final name does not exist; there is no rename, replace, truncate or unlink of an existing file anywhere in G0"
+ },
+ "authorization": {
+  "schema": "e1a-gate-auth-g1-1",
+  "stage": "G1",
+  "authorized_by": "owner",
+  "file": "AUTHORIZATION_E1A_GATE_G1.json (never committed)",
+  "allowed_keys": [
+   "schema",
+   "stage",
+   "authorized_by",
+   "authorization_id",
+   "date",
+   "expires_utc",
+   "bindings",
+   "grants",
+   "not_granted"
+  ],
+  "bindings": [
+   "git_head",
+   "prereg_sha256",
+   "g0_criteria_sha256",
+   "g0_prereg_sha256",
+   "bench_code_sha256",
+   "g0_code_sha256",
+   "g1_criteria_sha256",
+   "g1_prereg_sha256",
+   "g1_code_sha256",
+   "g0_reference_sha256"
+  ],
+  "g0_reference": {
+   "run_id": "g0_20261027_144311_479c54",
+   "closed_sha256": "de96e1be2faf831bbe5c9e14a09deae9efdad0bb2234350d3942bc796e309736",
+   "evidence_sha256": "11a8d36dfdf60678a2b5d9a8b53be1b9f8587710d643158b86f3f58371ed33bb",
+   "summary_sha256": "e54cc1225dd87a36cc951b4d2a831d3792a55ae7d96bcbeb95fad92bd3367032",
+   "verdict": "PASS"
+  },
+  "grants": {
+   "runs": 1,
+   "tests": [
+    "T1_ABORT",
+    "T2_EOF",
+    "T3_INVALID_BYTE",
+    "T4_TIMEOUT"
+   ],
+   "forks": 4,
+   "signals": 0,
+   "fault_injection": false,
+   "max_concurrent_children": 1,
+   "max_seconds": 30
+  },
+  "not_granted": [
+   "G0",
+   "G2",
+   "G3",
+   "BV",
+   "E1A-CELLS",
+   "E1-B",
+   "E1-C",
+   "E1-D",
+   "E2",
+   "E3"
+  ],
+  "rules": [
+   "closed schema; a G0 authorization (e1a-gate-auth-1) or an E1-A authorization (e1a-auth-2) is rejected, and this schema is rejected by them",
+   "single use: the consumption marker evidence/_g1_consumed/<authorization_id>.json is created exclusively BEFORE the first fork; an existing marker refuses the run",
+   "authorization_id matches ^[A-Za-z0-9][A-Za-z0-9_.-]{2,63}$; expires_utc is required; an expired authorization is refused",
+   "the file and the run's copy authorization_used.json are never committed to Git"
+  ],
+  "g1_code_files": [
+   "g1_auth.py",
+   "g1_judge.py",
+   "g1_run.py",
+   "g1_criteria_v1.json"
+  ]
+ },
+ "exit_codes": {
+  "PASS": 0,
+  "FAIL": 1,
+  "BLOCKED": 3
+ },
+ "exit_code_policy": "0 PASS, 1 FAIL, 3 BLOCKED; 2 only for a refusal to execute (authorization, frozen files, run id) and for argparse usage errors; every unexpected exception or SystemExit after argument parsing is exit code 3 with the marker G1-STARTUP-ERROR (never 1, never 0)",
+ "residue_policy": "no signal; a live child after the deadlines -> MANUAL_DISPOSITION_REQUIRED.json in the run directory; any MANUAL_DISPOSITION_REQUIRED.json makes every later preflight BLOCKED until a person resolves it",
+ "meaning_of_pass": "PASS means: in four sequential tests (ABORT, EOF, INVALID_BYTE, TIMEOUT) a registered, unreleased gated child performed no action, ended by itself with the gate-path exit code of its scenario, was reaped by its specific pid, and no signal, extra process or residue occurred, on this kernel and this Python, and the run was closed by a published g1_closed.json. It is NOT evidence for G2, G3, BV, janitor recovery, observer death, ticket descendants, EPIPE revocation proofs or any E1-A cell, and not evidence for the Mythos model architecture.",
+ "closure": {
+  "principle": "identical to G0 V5: a run is closed only by a valid, published g1_closed.json bound to the verified summary and evidence; exit code 0 or 1 is returned only after the marker was published and verified; the marker is not proof that any process has exited",
+  "marker_file": "g1_closed.json",
+  "temp_file": "g1_closed.json.tmp",
+  "marker_schema": {
+   "id": "e1a-gate-g1-closed-1",
+   "serialisation": "strict, exactly as evidence_pipeline P1: json.dumps(C, sort_keys=True, ensure_ascii=True, separators=(',', ':'), allow_nan=False).encode('utf-8'), no default= argument, no trailing newline, no indentation; the file contains exactly these bytes",
+   "validation": "a file is a VALID marker only if: it is a regular file (lstat; not a symlink) of 1..4096 bytes; its bytes decode as UTF-8 and parse as JSON with duplicate object keys, NaN and Infinity rejected; the parsed value is an object with exactly the keys of fields (no missing key, no extra key); every value has its type (bool is never an int); every const field has its value; hex fields match ^[0-9a-f]{64}$; recorded_verdict and recorded_exit_code are one of the pairs (PASS, 0), (FAIL, 1), (BLOCKED, 3); and the file's bytes are identical to the strict serialisation of the parsed object (canonical form)",
+   "max_bytes": 4096,
+   "fields": [
+    {
+     "path": "closed_schema",
+     "type": "string",
+     "nullable": false,
+     "const": "e1a-gate-g1-closed-1",
+     "note": "format version of the closure marker"
+    },
+    {
+     "path": "run_id",
+     "type": "string",
+     "nullable": false,
+     "const": null,
+     "note": "matches ^[A-Za-z0-9][A-Za-z0-9_.-]{2,63}$, starts with 'g1_', and equals the run directory's name, summary.run_id and evidence.run_id"
+    },
+    {
+     "path": "criteria_id",
+     "type": "string",
+     "nullable": false,
+     "const": "E1A-GATE-G1-CRITERIA-V1",
+     "note": "equals summary.criteria_id and the criteria id of the running tool"
+    },
+    {
+     "path": "criteria_sha256",
+     "type": "string[64 lowercase hex digits]",
+     "nullable": false,
+     "const": null,
+     "note": "SHA-256 of g1_criteria_v1.json as bound by the authorization; equals summary.criteria_sha256 and the criteria hash of the running tool"
+    },
+    {
+     "path": "evidence_sha256",
+     "type": "string[64 lowercase hex digits]",
+     "nullable": false,
+     "const": null,
+     "note": "SHA-256 of the bytes of g1_evidence.json AS READ BACK at P3; equals summary.evidence_sha256"
+    },
+    {
+     "path": "evidence_bytes",
+     "type": "int[>= 1]",
+     "nullable": false,
+     "const": null,
+     "note": "length of those bytes"
+    },
+    {
+     "path": "summary_sha256",
+     "type": "string[64 lowercase hex digits]",
+     "nullable": false,
+     "const": null,
+     "note": "SHA-256 of the bytes of g1_summary.json AS READ BACK at P6"
+    },
+    {
+     "path": "summary_bytes",
+     "type": "int[>= 1]",
+     "nullable": false,
+     "const": null,
+     "note": "length of those bytes"
+    },
+    {
+     "path": "recorded_verdict",
+     "type": "string in {PASS, FAIL, BLOCKED}",
+     "nullable": false,
+     "const": null,
+     "note": "the verdict of the verified summary (summary.verdict)"
+    },
+    {
+     "path": "recorded_exit_code",
+     "type": "int in {0, 1, 3}",
+     "nullable": false,
+     "const": null,
+     "note": "the exit code of the verified summary (summary.exit_code); PASS 0, FAIL 1, BLOCKED 3, bool is never accepted as int"
+    },
+    {
+     "path": "process_exit_proof",
+     "type": "bool",
+     "nullable": false,
+     "const": false,
+     "note": "always false: the marker says nothing about whether any process of the run has exited"
+    }
+   ]
+  },
+  "publication": {
+   "summary": "The marker is built from the read-back bytes of the saved evidence and summary, written to a temporary name created with O_EXCL, fsynced, read back and verified there, published by link(2) under the final name (link fails with EEXIST when the final name exists, so nothing is ever replaced and the final name appears complete or not at all), then the directory is fsynced and the final name is read back and verified. The temporary name is never deleted by G0.",
+   "why_not_direct_write": "a file created under its final name and then written step by step is visible with partial content; any failure in between would look like a closure attempt to a later reader",
+   "why_not_rename": "os.rename and os.replace silently replace an existing destination on POSIX; an exclusive 'rename if absent' needs renameat2(RENAME_NOREPLACE), which the standard library does not expose (V5 stays standard-library only)",
+   "why_link": "os.link is standard-library, atomic and exclusive (EEXIST), publishes an already fsynced inode and needs no extra privileges; its cost is that the temporary name remains as a second name of the same inode, and the filesystem must support hard links",
+   "steps": [
+    {
+     "id": "K0",
+     "name": "preconditions",
+     "operation": "P3 verified the evidence file (bytes B2, sha256(B2)) and P6 verified the summary file (bytes Bs2, sha256(Bs2), parsed S2); if any of P1..P3, P5, P6 failed, no marker is created and K1..K7 do not run",
+     "published": false
+    },
+    {
+     "id": "K1",
+     "name": "build",
+     "operation": "C = {closed_schema, run_id, criteria_id, criteria_sha256, evidence_sha256 = sha256(B2), evidence_bytes = len(B2), summary_sha256 = sha256(Bs2), summary_bytes = len(Bs2), recorded_verdict = S2.verdict, recorded_exit_code = S2.exit_code, process_exit_proof = false}; Bc = strict serialisation of C; the pair (recorded_verdict, recorded_exit_code) is checked against the allowed pairs; C is validated with marker_schema.validation",
+     "published": false
+    },
+    {
+     "id": "K2",
+     "name": "write the temporary file",
+     "operation": "fd = os.open(<run_dir>/g1_closed.json.tmp, O_WRONLY|O_CREAT|O_EXCL|O_NOFOLLOW, 0o644); write ALL bytes of Bc (loop until complete); os.fsync(fd); os.close(fd)",
+     "published": false
+    },
+    {
+     "id": "K3",
+     "name": "verify the temporary file",
+     "operation": "open it again with O_RDONLY|O_NOFOLLOW; require a regular file; read all bytes; require bytes == Bc (length and SHA-256) and marker_schema.validation to pass",
+     "published": false
+    },
+    {
+     "id": "K4",
+     "name": "publish exclusively",
+     "operation": "os.link(<run_dir>/g1_closed.json.tmp, <run_dir>/g1_closed.json, follow_symlinks=False); no os.rename, os.replace, direct creation or any other fallback under the final name; the moment link returns, the process sets published = true",
+     "published": true
+    },
+    {
+     "id": "K5",
+     "name": "sync the directory",
+     "operation": "open <run_dir> with O_RDONLY|O_DIRECTORY, os.fsync, close",
+     "published": true
+    },
+    {
+     "id": "K6",
+     "name": "verify the published name",
+     "operation": "open <run_dir>/g1_closed.json with O_RDONLY|O_NOFOLLOW; require a regular file; read all bytes; require bytes == Bc and marker_schema.validation to pass",
+     "published": true
+    },
+    {
+     "id": "K7",
+     "name": "exit",
+     "operation": "the process exit code is recorded_exit_code (0, 1 or 3); only here may 0 or 1 be returned",
+     "published": true
+    }
+   ],
+   "failures": [
+    {
+     "steps": "K1, K2, K3, K4",
+     "published": false,
+     "exit_code": 3,
+     "stderr": "G1-CLOSE-UNPUBLISHED run_id=<id> step=<K1|K2|K3|K4> verdict=<recorded_verdict> evidence_sha256=<h> summary_sha256=<h> closed_sha256=<sha256(Bc) or -> reason=<text>",
+     "on_disk": "evidence, summary and the registry stay; a temporary file stays as it is (partial or complete); the final name is not created by this process (at K4 EEXIST an existing foreign file stays untouched)",
+     "next_preflight": "the run directory has no valid marker: BLOCKED (NO_CLOSED, or the reason of whatever occupies the final name)"
+    },
+    {
+     "steps": "K5, K6, K7, or an uncaught exception once link has returned",
+     "published": true,
+     "exit_code": 3,
+     "stderr": "G1-CLOSE-UNCONFIRMED run_id=<id> step=<K5|K6|K7> verdict=<recorded_verdict> evidence_sha256=<h> summary_sha256=<h> closed_sha256=<sha256(Bc)> reason=<text>",
+     "on_disk": "everything above plus the published g1_closed.json (kept, never removed or repaired)",
+     "next_preflight": "judged only on what the files are: a valid marker with all bindings and no residue is CLOSED_OK; a marker that is not valid is BLOCKED"
+    }
+   ],
+   "exit_code_rule": "the process exit code is recorded_exit_code only if K1..K7 all succeeded; any failure of K1..K6 or an exception anywhere in P7 yields 3 with the stderr marker above; the recorded verdict and exit code inside the saved summary and marker are NOT changed by such a failure (nothing is overwritten)",
+   "reporting_rule": "the G1 outcome of a run is its recorded_verdict only if (a) the process exit status equals recorded_exit_code AND (b) no G1-CLOSE-* marker was printed AND (c) the marker passes closure.preflight when read back. Otherwise the outcome is BLOCKED (closure not confirmed) whatever the recorded verdict says; in particular a recorded PASS without exit code 0 is not a PASS",
+   "no_delete": "g1_closed.json.tmp is never deleted, renamed or truncated by G1 or by preflight; a temporary file that is byte-identical to a valid marker is tolerated, any other content is a stray file"
+  },
+  "preflight": {
+   "facts": {
+    "entry": {
+     "values": [
+      "real_dir",
+      "not_a_directory",
+      "unreadable"
+     ],
+     "meaning": "lstat of the entry: a real directory owned by the effective uid / a symlink, file or other / not readable"
+    },
+    "closed": {
+     "values": [
+      "absent",
+      "not_regular",
+      "unreadable",
+      "oversize_or_empty",
+      "unparsable",
+      "noncanonical",
+      "schema_invalid",
+      "ok"
+     ],
+     "meaning": "result of marker_schema.validation applied in this order to <entry>/g1_closed.json: absent; not a regular file or a symlink; unreadable; size 0 or > 4096; not UTF-8 / not JSON / duplicate keys / NaN (truncated files land here); valid but bytes differ from the strict serialisation; key set, type, const, hex or verdict/exit pair wrong; ok"
+    },
+    "closed_runid": {
+     "values": [
+      "match",
+      "mismatch",
+      "na"
+     ],
+     "meaning": "closed.run_id == the entry's name (na unless closed == ok)"
+    },
+    "criteria_vs_tool": {
+     "values": [
+      "match",
+      "mismatch",
+      "na"
+     ],
+     "meaning": "closed.criteria_id and closed.criteria_sha256 equal those of the running tool (the criteria bound by the current authorization); na unless closed == ok"
+    },
+    "criteria_vs_summary": {
+     "values": [
+      "match",
+      "mismatch",
+      "na"
+     ],
+     "meaning": "closed.criteria_id and closed.criteria_sha256 equal summary.criteria_id and summary.criteria_sha256; na unless closed == ok and summary == ok"
+    },
+    "summary": {
+     "values": [
+      "absent",
+      "not_regular",
+      "unreadable",
+      "size_mismatch",
+      "hash_mismatch",
+      "unparsable",
+      "ok",
+      "na"
+     ],
+     "meaning": "<entry>/g1_summary.json: absent; not a regular file; unreadable; length != closed.summary_bytes; sha256 != closed.summary_sha256; not strict JSON; ok (na unless closed == ok)"
+    },
+    "summary_binding": {
+     "values": [
+      "match",
+      "mismatch",
+      "na"
+     ],
+     "meaning": "summary.run_id == closed.run_id AND summary.evidence_sha256 == closed.evidence_sha256 AND summary.verdict == closed.recorded_verdict AND summary.exit_code == closed.recorded_exit_code AND the pair is one of (PASS,0), (FAIL,1), (BLOCKED,3) (na unless summary == ok)"
+    },
+    "evidence": {
+     "values": [
+      "absent",
+      "not_regular",
+      "unreadable",
+      "size_mismatch",
+      "hash_mismatch",
+      "unparsable",
+      "ok",
+      "na"
+     ],
+     "meaning": "<entry>/g1_evidence.json judged like the summary against closed.evidence_sha256 and closed.evidence_bytes (na unless closed == ok)"
+    },
+    "evidence_binding": {
+     "values": [
+      "match",
+      "mismatch",
+      "na"
+     ],
+     "meaning": "evidence.run_id == closed.run_id (na unless evidence == ok)"
+    },
+    "tmp": {
+     "values": [
+      "absent",
+      "identical",
+      "other"
+     ],
+     "meaning": "<entry>/g1_closed.json.tmp (identical requires closed == ok): absent / a regular file whose bytes equal the bytes of a valid g1_closed.json / anything else"
+    },
+    "stray_closure_names": {
+     "values": [
+      false,
+      true
+     ],
+     "meaning": "another entry in the run directory whose name starts with 'g1_closed' and is neither g1_closed.json nor g1_closed.json.tmp"
+    },
+    "manual_disposition": {
+     "values": [
+      false,
+      true
+     ],
+     "meaning": "<entry>/MANUAL_DISPOSITION_REQUIRED.json exists"
+    },
+    "root_manual_disposition": {
+     "values": [
+      false,
+      true
+     ],
+     "meaning": "<evidence root>/MANUAL_DISPOSITION_REQUIRED.json exists (global)"
+    },
+    "root_listing": {
+     "values": [
+      "complete",
+      "incomplete"
+     ],
+     "meaning": "the evidence root could be listed completely (global)"
+    },
+    "live_marker_process": {
+     "values": [
+      false,
+      true
+     ],
+     "meaning": "G0-C01 process scan: a live non-zombie process other than this observer and its ancestors whose command line contains 'g0_run.py' (global)"
+    }
+   },
+   "rules": [
+    {
+     "id": "CL1-01",
+     "reason": "NOT_A_DIRECTORY",
+     "applies": [],
+     "when": [
+      {
+       "fact": "entry",
+       "in": [
+        "not_a_directory",
+        "unreadable"
+       ]
+      }
+     ],
+     "human_action": "H1",
+     "text": "a 'g1_' entry that is not a real directory, or cannot be read"
+    },
+    {
+     "id": "CL1-02",
+     "reason": "NO_CLOSED",
+     "applies": [
+      {
+       "fact": "entry",
+       "in": [
+        "real_dir"
+       ]
+      }
+     ],
+     "when": [
+      {
+       "fact": "closed",
+       "in": [
+        "absent"
+       ]
+      }
+     ],
+     "human_action": "H1",
+     "text": "no g1_closed.json: whatever else exists (a complete summary, a partial summary, a temporary file) the run is not closed"
+    },
+    {
+     "id": "CL1-03",
+     "reason": "CLOSED_UNREADABLE",
+     "applies": [
+      {
+       "fact": "entry",
+       "in": [
+        "real_dir"
+       ]
+      }
+     ],
+     "when": [
+      {
+       "fact": "closed",
+       "in": [
+        "not_regular",
+        "unreadable",
+        "oversize_or_empty"
+       ]
+      }
+     ],
+     "human_action": "H1",
+     "text": "g1_closed.json is a symlink or not a regular file, unreadable, empty or larger than 4096 bytes"
+    },
+    {
+     "id": "CL1-04",
+     "reason": "CLOSED_PARSE",
+     "applies": [
+      {
+       "fact": "entry",
+       "in": [
+        "real_dir"
+       ]
+      }
+     ],
+     "when": [
+      {
+       "fact": "closed",
+       "in": [
+        "unparsable"
+       ]
+      }
+     ],
+     "human_action": "H1",
+     "text": "g1_closed.json is not strict JSON (truncated, not UTF-8, duplicate keys, NaN)"
+    },
+    {
+     "id": "CL1-05",
+     "reason": "CLOSED_NONCANONICAL",
+     "applies": [
+      {
+       "fact": "entry",
+       "in": [
+        "real_dir"
+       ]
+      }
+     ],
+     "when": [
+      {
+       "fact": "closed",
+       "in": [
+        "noncanonical"
+       ]
+      }
+     ],
+     "human_action": "H1",
+     "text": "g1_closed.json parses but its bytes differ from the strict serialisation of what it says (edited, re-formatted, extra whitespace or newline)"
+    },
+    {
+     "id": "CL1-06",
+     "reason": "CLOSED_SCHEMA",
+     "applies": [
+      {
+       "fact": "entry",
+       "in": [
+        "real_dir"
+       ]
+      }
+     ],
+     "when": [
+      {
+       "fact": "closed",
+       "in": [
+        "schema_invalid"
+       ]
+      }
+     ],
+     "human_action": "H1",
+     "text": "g1_closed.json has a missing or extra key, a wrong type, a wrong const, a malformed hash or an impossible verdict / exit code pair"
+    },
+    {
+     "id": "CL1-07",
+     "reason": "CLOSED_RUNID",
+     "applies": [
+      {
+       "fact": "closed",
+       "in": [
+        "ok"
+       ]
+      }
+     ],
+     "when": [
+      {
+       "fact": "closed_runid",
+       "in": [
+        "mismatch"
+       ]
+      }
+     ],
+     "human_action": "H1",
+     "text": "closed.run_id differs from the directory name"
+    },
+    {
+     "id": "CL1-08",
+     "reason": "CRITERIA_MISMATCH",
+     "applies": [
+      {
+       "fact": "closed",
+       "in": [
+        "ok"
+       ]
+      }
+     ],
+     "when_any": [
+      {
+       "fact": "criteria_vs_tool",
+       "in": [
+        "mismatch"
+       ]
+      },
+      {
+       "fact": "criteria_vs_summary",
+       "in": [
+        "mismatch"
+       ]
+      }
+     ],
+     "human_action": "H1",
+     "text": "closed.criteria_id / criteria_sha256 differs from the running tool's or from the summary's"
+    },
+    {
+     "id": "CL1-09",
+     "reason": "SUMMARY_MISSING",
+     "applies": [
+      {
+       "fact": "closed",
+       "in": [
+        "ok"
+       ]
+      }
+     ],
+     "when": [
+      {
+       "fact": "summary",
+       "in": [
+        "absent"
+       ]
+      }
+     ],
+     "human_action": "H1",
+     "text": "a valid marker but no g1_summary.json"
+    },
+    {
+     "id": "CL1-10",
+     "reason": "SUMMARY_UNREADABLE",
+     "applies": [
+      {
+       "fact": "closed",
+       "in": [
+        "ok"
+       ]
+      }
+     ],
+     "when": [
+      {
+       "fact": "summary",
+       "in": [
+        "not_regular",
+        "unreadable"
+       ]
+      }
+     ],
+     "human_action": "H1",
+     "text": "g1_summary.json is not a regular file or cannot be read"
+    },
+    {
+     "id": "CL1-11",
+     "reason": "SUMMARY_HASH",
+     "applies": [
+      {
+       "fact": "closed",
+       "in": [
+        "ok"
+       ]
+      }
+     ],
+     "when": [
+      {
+       "fact": "summary",
+       "in": [
+        "size_mismatch",
+        "hash_mismatch"
+       ]
+      }
+     ],
+     "human_action": "H1",
+     "text": "the bytes of g1_summary.json differ from closed.summary_bytes / summary_sha256"
+    },
+    {
+     "id": "CL1-12",
+     "reason": "SUMMARY_PARSE",
+     "applies": [
+      {
+       "fact": "closed",
+       "in": [
+        "ok"
+       ]
+      }
+     ],
+     "when": [
+      {
+       "fact": "summary",
+       "in": [
+        "unparsable"
+       ]
+      }
+     ],
+     "human_action": "H1",
+     "text": "g1_summary.json has the bound hash but is not strict JSON"
+    },
+    {
+     "id": "CL1-13",
+     "reason": "SUMMARY_BINDING",
+     "applies": [
+      {
+       "fact": "summary",
+       "in": [
+        "ok"
+       ]
+      }
+     ],
+     "when": [
+      {
+       "fact": "summary_binding",
+       "in": [
+        "mismatch"
+       ]
+      }
+     ],
+     "human_action": "H1",
+     "text": "summary.run_id, evidence_sha256, verdict or exit_code disagrees with the marker"
+    },
+    {
+     "id": "CL1-14",
+     "reason": "EVIDENCE_MISSING",
+     "applies": [
+      {
+       "fact": "closed",
+       "in": [
+        "ok"
+       ]
+      }
+     ],
+     "when": [
+      {
+       "fact": "evidence",
+       "in": [
+        "absent"
+       ]
+      }
+     ],
+     "human_action": "H1",
+     "text": "a valid marker but no g1_evidence.json"
+    },
+    {
+     "id": "CL1-15",
+     "reason": "EVIDENCE_UNREADABLE",
+     "applies": [
+      {
+       "fact": "closed",
+       "in": [
+        "ok"
+       ]
+      }
+     ],
+     "when": [
+      {
+       "fact": "evidence",
+       "in": [
+        "not_regular",
+        "unreadable"
+       ]
+      }
+     ],
+     "human_action": "H1",
+     "text": "g1_evidence.json is not a regular file or cannot be read"
+    },
+    {
+     "id": "CL1-16",
+     "reason": "EVIDENCE_HASH",
+     "applies": [
+      {
+       "fact": "closed",
+       "in": [
+        "ok"
+       ]
+      }
+     ],
+     "when": [
+      {
+       "fact": "evidence",
+       "in": [
+        "size_mismatch",
+        "hash_mismatch"
+       ]
+      }
+     ],
+     "human_action": "H1",
+     "text": "the bytes of g1_evidence.json differ from closed.evidence_bytes / evidence_sha256"
+    },
+    {
+     "id": "CL1-17",
+     "reason": "EVIDENCE_PARSE",
+     "applies": [
+      {
+       "fact": "closed",
+       "in": [
+        "ok"
+       ]
+      }
+     ],
+     "when": [
+      {
+       "fact": "evidence",
+       "in": [
+        "unparsable"
+       ]
+      }
+     ],
+     "human_action": "H1",
+     "text": "g1_evidence.json has the bound hash but is not strict JSON"
+    },
+    {
+     "id": "CL1-18",
+     "reason": "EVIDENCE_BINDING",
+     "applies": [
+      {
+       "fact": "evidence",
+       "in": [
+        "ok"
+       ]
+      }
+     ],
+     "when": [
+      {
+       "fact": "evidence_binding",
+       "in": [
+        "mismatch"
+       ]
+      }
+     ],
+     "human_action": "H1",
+     "text": "evidence.run_id disagrees with the marker"
+    },
+    {
+     "id": "CL1-19",
+     "reason": "STRAY_CLOSURE_FILE",
+     "applies": [
+      {
+       "fact": "closed",
+       "in": [
+        "ok"
+       ]
+      }
+     ],
+     "when_any": [
+      {
+       "fact": "tmp",
+       "in": [
+        "other"
+       ]
+      },
+      {
+       "fact": "stray_closure_names",
+       "in": [
+        true
+       ]
+      }
+     ],
+     "human_action": "H1",
+     "text": "a temporary file with other content than the marker, or another 'g1_closed*' file, next to a valid marker"
+    },
+    {
+     "id": "CL1-20",
+     "reason": "MANUAL_DISPOSITION",
+     "applies": [
+      {
+       "fact": "entry",
+       "in": [
+        "real_dir"
+       ]
+      }
+     ],
+     "when": [
+      {
+       "fact": "manual_disposition",
+       "in": [
+        true
+       ]
+      }
+     ],
+     "human_action": "H2",
+     "text": "MANUAL_DISPOSITION_REQUIRED.json in the run directory: an unresolved manual disposition, whatever the marker says"
+    },
+    {
+     "id": "CL1-21",
+     "reason": "ROOT_MANUAL_DISPOSITION",
+     "scope": "global",
+     "applies": [],
+     "when": [
+      {
+       "fact": "root_manual_disposition",
+       "in": [
+        true
+       ]
+      }
+     ],
+     "human_action": "H2",
+     "text": "MANUAL_DISPOSITION_REQUIRED.json in the evidence root"
+    },
+    {
+     "id": "CL1-22",
+     "reason": "LIVE_RESIDUE",
+     "scope": "global",
+     "applies": [],
+     "when": [
+      {
+       "fact": "live_marker_process",
+       "in": [
+        true
+       ]
+      }
+     ],
+     "human_action": "H2",
+     "text": "a live non-zombie process carrying the 'g1_run.py' marker (the closure marker is not proof that the earlier run's processes exited)"
+    },
+    {
+     "id": "CL1-23",
+     "reason": "ROOT_LISTING_INCOMPLETE",
+     "scope": "global",
+     "applies": [],
+     "when": [
+      {
+       "fact": "root_listing",
+       "in": [
+        "incomplete"
+       ]
+      }
+     ],
+     "human_action": "H1",
+     "text": "the evidence root cannot be listed completely, so no run directory can be shown to be closed"
+    }
+   ],
+   "prefix": "g1_",
+   "also": "the G0 history is judged with the frozen G0 V5 rules (g0_criteria_v5.json closure.preflight.rules) over every 'g0_' entry, read-only, by the existing G0 function; a closed G1 run with verdict FAIL or BLOCKED does not by itself block a later preflight, but every later G1 execution needs a NEW authorization and the owner's decision after the report"
+  }
+ },
+ "limitations": [
+  "Python-level guards do not prove that no kernel path to a signal or exec exists (as in the G0 safety review)",
+  "T1, T2 and T3 share the exit code 111; the three stimuli are told apart by the observer-side evidence (guard.gate_writes, gate_closes, registry kinds), not by the exit code",
+  "a single run on one VM is not a statistical statement",
+  "Observer._confirmed_dead() counts a zombie as dead (finding F-1); G1 does not depend on it (reap before cleanup, G1-C08 / C09) and the bench is not modified",
+  "one INVALID_BYTE value (b'r') is tested"
+ ],
+ "amendment_policy": "this file is frozen; a defect found later is recorded as a finding and fixed only by a new criteria version and a new authorization",
+ "implementation_obligations": [
+  "g1_judge.py implements every check, rule id and constant of this file and reads the scenario table, limits, exit codes, schema and closure rules from it",
+  "g1_run.py executes exactly scenarios.order with the stimuli of scenarios.tests, the guard of enforcement.guard and the pipeline of evidence_pipeline / closure",
+  "g1_auth.py implements authorization; no function writes an authorization file",
+  "no g0_* file, bench file, V1-V5 file, R3 or Parcae file is modified"
+ ]
+}
