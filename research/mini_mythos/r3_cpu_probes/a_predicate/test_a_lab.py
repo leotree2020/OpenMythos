@@ -160,6 +160,33 @@ class TestTriState(unittest.TestCase):
         self.assertEqual(a.targets[5001].how, "lineage")
 
 
+class TestSignalGuards(unittest.TestCase):
+    def test_pidfd_esrch_is_gone_not_unknown(self):
+        a = L.ArmCA(None)
+        a.fs = FakeFS({})
+        tg = L.Target(5000, st(5000, 4999, "S", 100), "root")
+        a.targets[5000] = tg
+
+        def esrch(pid):
+            raise ProcessLookupError(3, "x")
+        a.pidfd_open = esrch
+        rec = a.signal_target(tg, signal.SIGKILL)
+        self.assertEqual(rec["result"], "gone_before_signal")
+        self.assertEqual(tg.state, ALIVE)
+
+    def test_pidfd_enosys_is_unknown_and_no_signal(self):
+        a = L.ArmCA(None)
+        a.fs = FakeFS({})
+        tg = L.Target(5000, st(5000, 4999, "S", 100), "root")
+
+        def enosys(pid):
+            raise OSError(38, "x")
+        a.pidfd_open = enosys
+        rec = a.signal_target(tg, signal.SIGKILL)
+        self.assertEqual(rec["result"], "refused_pidfd_unavailable")
+        self.assertEqual(tg.state, UNKNOWN)
+
+
 class TestSourceRules(unittest.TestCase):
     def test_candidates_never_wait_on_minus_one_or_p_all(self):
         for cls in (L.ArmCommon, L.ArmCA, L.ArmCB):

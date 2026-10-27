@@ -787,7 +787,7 @@ def environment(lab):
 
 def run_one(lab, cid, fn, armname, rep):
     lab.begin()
-    rec = {"case": cid, "arm": armname, "repeat": rep}
+    rec = {"case": cid, "arm": armname, "repeat": rep, "supervisor_pid": os.getpid()}
     ck = Checker()
     t0 = L.now()
     try:

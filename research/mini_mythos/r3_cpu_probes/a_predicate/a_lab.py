@@ -402,6 +402,9 @@ class ArmCommon(ArmBase):
         try:
             fd = self.pidfd_open(tg.pid)
         except OSError as e:
+            if e.errno == errno.ESRCH:          # the process no longer exists: gone, not a capability problem
+                rec.update(result="gone_before_signal", errno=e.errno)
+                return rec
             tg.state, tg.reason = UNKNOWN, "UNKNOWN_PIDFD_UNAVAILABLE"
             rec.update(result="refused_pidfd_unavailable", errno=e.errno)
             return rec
@@ -926,6 +929,17 @@ class Lab:
                     break
                 time.sleep(0.01)
             tr["after_escalation_tri"] = tr["post"][-1]["tri"] if tr["post"] else None
+        pre = {}
+        for n in names:                    # what an outside observer sees BEFORE T5 (after the arm's own polling)
+            node = self.node(n)
+            st0 = _oracle_stat(node["pid"])
+            try:
+                os.kill(node["pid"], 0)
+                k0 = "success"
+            except ProcessLookupError:
+                k0 = "ESRCH"
+            pre[n] = {"proc_state": st0["state"] if st0 and st0["starttime"] == node["starttime"] else None, "kill_pid_0": k0}
+        tr["pre_t5_observation"] = pre
         tr["t5"] = arm.t5_reap()
         tr["final_poll"] = arm.poll()["tri"]
         tr["residual_after_t5"] = arm.residual()
