@@ -305,3 +305,7 @@ LOGIC-TEST-001-RERUN-001：修复执行守卫的 argv 缺陷（+1 行）后，�
 ## D1 CPU-003 E1-A G0 V2 判据冻结 G0-V2-SPEC-001（2026-10-27）
 
 基线 `e0ffef9`。新增并冻结 `gate_g0/g0_criteria_v2.json` + `E1A_GATE_G0_PREREG_V2.md`（V2 冻结提交 `77750c3`，只含这三个文件；V1 文件、哈希、提交不变且不被重新解释）。C03 明确两种情形：有证据证明登记顺序 / 完整性违规 ⇒ FAIL，因超时或提前中止证据不足 ⇒ UNEVALUABLE → BLOCKED；检查编号 C01–C17 不变（8 IDENTICAL / 8 CLARIFIED / 1 MODIFIED），六项文字偏差正式处理。登记 F-13（`evidence/` 父目录无人创建）并给出 F-8/F-9/F-12/F-13/C03 的文件级修复设计，均未实现。G0 实现、台架、E1-A 预注册、R3、CPU-001/002、Parcae 未改；没有运行任何测试或进程。检查点 `docs/F3B_D1_A_CPU_003_E1A_G0_V2_SPEC_CHECKPOINT_20261027.md`。下一步：交 ChatGPT / Grok 交叉审核，待负责人授权实施。
+
+## D1 CPU-003 E1-A G0 V2 语义收口审核 G0-V2-SEMANTIC-REVIEW-001（2026-10-27）
+
+基线 `f679995`。仅源码与规则审计：C03 的 F1–F4 不覆盖 `integrity_issues()` 的全部违规（重复 FORKED / REGISTERED / RELEASED 与字段格式错误无规则；缺失类规则把台架写失败 / 证据损坏误判为 FAIL）；F-15 内存记录数无规则；C16 新增证据可使旧 PASS 变 BLOCKED（被 V2 §10 挡住）。分类：多项 SEMANTIC CHANGE REQUIRES V3，其余 DOCUMENTATION ONLY / NO ISSUE；建议先决定是否出 V3 再授权实施。23 个反例矩阵（源码推导，未执行）。V1/V2 冻结文件、台架、G0 实现未改；没有运行任何测试或进程。检查点 `docs/F3B_D1_A_CPU_003_E1A_G0_V2_SEMANTIC_REVIEW_CHECKPOINT_20261027.md`，报告 `a_predicate_003/g0_preflight_review/G0_V2_SEMANTIC_REVIEW.md`。下一步：ChatGPT / Grok 交叉审核，待负责人决定是否出 V3。

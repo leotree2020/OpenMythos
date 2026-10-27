@@ -1,0 +1,750 @@
+{
+ "purpose": "F-16/F-17 minimal counterexample matrix for the V2 C03 rules (G0-V2-SEMANTIC-REVIEW-001)",
+ "method": "EVERY verdict in this file was derived by READING the source (registry.py, g0_criteria_v2.json, g0_judge.py at d8a0728/f679995). NOTHING WAS EXECUTED. A reviewer may mechanically confirm the 'current_judge' and the integrity_issues claims once a pure-logic execution is authorized.",
+ "doctrine_used_for_correct_verdict": [
+  "FAIL needs proof that the mechanism under test violated the protocol",
+  "a violation visible among the PARSED records (positive) is proof",
+  "an ABSENCE is proof only if the registry is corroborated: parse report clean AND parsed record count == reg_memory_count AND writer_seq == reg_memory_count",
+  "otherwise (early stop, damaged or uncorroborated registry, bench I/O failure) the check is UNEVALUABLE -> BLOCKED",
+  "independent evidence (fork count, release byte written, child messages) can prove an action whose preceding record is absent, again only on a corroborated registry"
+ ],
+ "summary": {
+  "counterexamples": 23,
+  "v2_literal_differs_from_correct": [
+   "CE-D1",
+   "CE-D2",
+   "CE-D3",
+   "CE-D4",
+   "CE-D5",
+   "CE-M1",
+   "CE-M2",
+   "CE-M3",
+   "CE-F1",
+   "CE-F2",
+   "CE-G1",
+   "CE-G2",
+   "CE-G3",
+   "CE-H3",
+   "CE-T1"
+  ],
+  "v2_undefined_cases_resolved_by_exhaustiveness_sentence": [
+   "CE-D5",
+   "CE-M2",
+   "CE-M3",
+   "CE-H1",
+   "CE-H2",
+   "CE-H3",
+   "CE-T1"
+  ],
+  "current_judge_differs_from_correct": [
+   "CE-D5",
+   "CE-M2",
+   "CE-M3",
+   "CE-F2",
+   "CE-G2",
+   "CE-H3",
+   "CE-P2",
+   "CE-P3",
+   "CE-P4"
+  ]
+ },
+ "counterexamples": [
+  {
+   "id": "CE-D1",
+   "question": "Q1",
+   "title": "duplicate FORKED, consecutive seq (completed run)",
+   "cause": "second FORKED record written/duplicated for the same node",
+   "records": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 FORKED n1 pid=200",
+    "5 REGISTERED n1 pid=200 st=5000",
+    "6 RELEASED n1",
+    "7 DEAD n1 basis",
+    "8 RUN_END confirmed=true"
+   ],
+   "evidence_flags": {
+    "completed_run": true,
+    "parse_clean": true,
+    "fork_calls": 1,
+    "mem_count": 8,
+    "parsed_count": 8,
+    "writer_seq": 8
+   },
+   "correct_verdict": "FAIL",
+   "correct_basis": "positive violation: two FORKED records for one node contradict the single-fork lifecycle (same class as duplicate INTENT/DEAD, which V2 F1 already fails)",
+   "v2_literal_verdict": "PASS",
+   "v2_literal_rule": "no rule: F1 lists duplicates only for RUN_START/RUN_END/INTENT/DEAD; pass_when holds (integrity_issues empty; chain INTENT<FORKED<REGISTERED<RELEASED<DEAD holds for the first of each)",
+   "current_judge_verdict": "FAIL",
+   "current_judge_basis": "g0_judge.py:63-65 'FORKED count 2'",
+   "source_basis": "registry.py:61-80 integrity_issues has no duplicate rule for FORKED; :146-168 fold() keeps the LAST FORKED; :218-246 check_order keeps the last seq per kind; :83-143 lifecycle_issues only DUPLICATE_INTENT/RUN_END/RECORD_AFTER_DEAD",
+   "classification": "SEMANTIC CHANGE REQUIRES V3"
+  },
+  {
+   "id": "CE-D2",
+   "question": "Q1",
+   "title": "duplicate REGISTERED with different pid, both before RELEASED (completed run)",
+   "cause": "second REGISTERED written (e.g. a re-registration)",
+   "records": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 REGISTERED n1 pid=201 st=5001",
+    "6 RELEASED n1",
+    "7 DEAD n1 basis",
+    "8 RUN_END confirmed=true"
+   ],
+   "evidence_flags": {
+    "completed_run": true,
+    "parse_clean": true,
+    "fork_calls": 1,
+    "mem_count": 8,
+    "parsed_count": 8,
+    "writer_seq": 8
+   },
+   "correct_verdict": "FAIL",
+   "correct_basis": "positive violation: one node cannot be registered twice with two identities",
+   "v2_literal_verdict": "PASS",
+   "v2_literal_rule": "no rule for duplicate REGISTERED; C04/C07 read the first REGISTERED only (g0_judge.py c04/c07 use k['REGISTERED'][0])",
+   "current_judge_verdict": "FAIL",
+   "current_judge_basis": "g0_judge.py:63-65 'REGISTERED count 2'",
+   "source_basis": "registry.py:146-168 fold keeps the last REGISTERED (pid 201); :72-77 checks only that last record's field types; :233-236 check_order compares last seqs only",
+   "classification": "SEMANTIC CHANGE REQUIRES V3"
+  },
+  {
+   "id": "CE-D3",
+   "question": "Q1",
+   "title": "duplicate RELEASED, consecutive seq (completed run)",
+   "cause": "second RELEASED record",
+   "records": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1",
+    "6 RELEASED n1",
+    "7 DEAD n1 basis",
+    "8 RUN_END confirmed=true"
+   ],
+   "evidence_flags": {
+    "completed_run": true,
+    "parse_clean": true,
+    "fork_calls": 1,
+    "mem_count": 8,
+    "parsed_count": 8,
+    "writer_seq": 8
+   },
+   "correct_verdict": "FAIL",
+   "correct_basis": "positive violation: a node is released once (observer.release requires state REGISTERED, observer.py:128-131)",
+   "v2_literal_verdict": "PASS",
+   "v2_literal_rule": "no rule for duplicate RELEASED",
+   "current_judge_verdict": "FAIL",
+   "current_judge_basis": "g0_judge.py:63-65 'RELEASED count 2'",
+   "source_basis": "registry.py:233-234: s['RELEASED'] is the last seq (6) and REGISTERED(4) > 6 is false, so check_order stays silent",
+   "classification": "SEMANTIC CHANGE REQUIRES V3"
+  },
+  {
+   "id": "CE-D4",
+   "question": "Q1",
+   "title": "REGISTERED, RELEASED, then a second REGISTERED (completed run)",
+   "cause": "late duplicate REGISTERED",
+   "records": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1",
+    "6 REGISTERED n1 pid=200 st=5000",
+    "7 DEAD n1 basis",
+    "8 RUN_END confirmed=true"
+   ],
+   "evidence_flags": {
+    "completed_run": true,
+    "parse_clean": true,
+    "fork_calls": 1,
+    "mem_count": 8,
+    "parsed_count": 8,
+    "writer_seq": 8
+   },
+   "correct_verdict": "FAIL",
+   "correct_basis": "positive violation (duplicate REGISTERED after RELEASED)",
+   "v2_literal_verdict": "AMBIGUOUS",
+   "v2_literal_rule": "integrity_issues is non-empty (check_order reports 'RELEASED without earlier REGISTERED' because the LAST REGISTERED seq 6 > RELEASED seq 5), so pass_when fails; F1 'RELEASED before REGISTERED' fits only if read against the last REGISTERED. No rule names the duplicate",
+   "current_judge_verdict": "FAIL",
+   "current_judge_basis": "g0_judge.py:64-65 count + :72 integrity",
+   "source_basis": "registry.py:233-234 (last-wins seq map)",
+   "classification": "SEMANTIC CHANGE REQUIRES V3"
+  },
+  {
+   "id": "CE-D5",
+   "question": "Q1",
+   "title": "duplicate FORKED, early stop",
+   "cause": "as CE-D1 but the run stopped at the READY wait",
+   "records": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 FORKED n1 pid=200",
+    "5 REGISTERED n1 pid=200 st=5000",
+    "6 RELEASED n1",
+    "7 RUN_END confirmed=false"
+   ],
+   "evidence_flags": {
+    "completed_run": false,
+    "parse_clean": true,
+    "fork_calls": 1,
+    "exception": "READY not received within 5.0 s",
+    "mem_count": 7,
+    "parsed_count": 7,
+    "writer_seq": 7,
+    "release_byte_written": true
+   },
+   "correct_verdict": "FAIL",
+   "correct_basis": "positive violation, independent of how the run ended",
+   "v2_literal_verdict": "UNDEFINED -> BLOCKED",
+   "v2_literal_rule": "no F rule; U1 needs 'only missing later-lifecycle records' which is false; the sentence 'an early stop that fires no fail rule is U1 or U2' then implies BLOCKED",
+   "current_judge_verdict": "BLOCKED",
+   "current_judge_basis": "g0_judge.py:55-56 incomplete branch runs check_order only; no issue, so Uneval (:74)",
+   "source_basis": "same as CE-D1",
+   "classification": "SEMANTIC CHANGE REQUIRES V3"
+  },
+  {
+   "id": "CE-M1",
+   "question": "Q2",
+   "title": "REGISTERED with starttime null (completed run)",
+   "cause": "malformed critical field",
+   "records": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=null",
+    "5 RELEASED n1",
+    "6 DEAD n1 basis",
+    "7 RUN_END confirmed=true"
+   ],
+   "evidence_flags": {
+    "completed_run": true,
+    "parse_clean": true,
+    "fork_calls": 1,
+    "mem_count": 7,
+    "parsed_count": 7,
+    "writer_seq": 7
+   },
+   "correct_verdict": "FAIL",
+   "correct_basis": "positive violation: the identity record is unusable (registry.py:76-77 MALFORMED_REGISTERED exists precisely because cleanup would otherwise lose the node)",
+   "v2_literal_verdict": "NOT PASS, rule unnamed",
+   "v2_literal_rule": "pass_when requires integrity_issues empty, so no PASS; but none of F1-F4 names malformed FORKED/REGISTERED fields (F1's malformed clause covers only RUN_START/RUN_END). The 'exhaustive' sentence claims F1/F2/F4 fires; none does literally",
+   "current_judge_verdict": "FAIL",
+   "current_judge_basis": "g0_judge.py:72 integrity_issues -> MALFORMED_REGISTERED",
+   "source_basis": "registry.py:74-77",
+   "classification": "SEMANTIC CHANGE REQUIRES V3"
+  },
+  {
+   "id": "CE-M2",
+   "question": "Q2",
+   "title": "REGISTERED with starttime null, early stop",
+   "cause": "as CE-M1, run stopped at the READY wait",
+   "records": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=null",
+    "5 RELEASED n1",
+    "6 RUN_END confirmed=false"
+   ],
+   "evidence_flags": {
+    "completed_run": false,
+    "parse_clean": true,
+    "fork_calls": 1,
+    "exception": "READY not received within 5.0 s",
+    "mem_count": 6,
+    "parsed_count": 6,
+    "writer_seq": 6,
+    "release_byte_written": true
+   },
+   "correct_verdict": "FAIL",
+   "correct_basis": "positive violation",
+   "v2_literal_verdict": "UNDEFINED -> BLOCKED",
+   "v2_literal_rule": "no F rule; U1 does not match (nothing missing); sentence implies BLOCKED",
+   "current_judge_verdict": "BLOCKED",
+   "current_judge_basis": "incomplete branch never calls integrity_issues (:55-56)",
+   "source_basis": "registry.py:74-77",
+   "classification": "SEMANTIC CHANGE REQUIRES V3"
+  },
+  {
+   "id": "CE-M3",
+   "question": "Q2",
+   "title": "FORKED with pid as string, early stop",
+   "cause": "malformed FORKED field",
+   "records": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid='200'",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RUN_END confirmed=false"
+   ],
+   "evidence_flags": {
+    "completed_run": false,
+    "parse_clean": true,
+    "fork_calls": 1,
+    "exception": "READY not received within 5.0 s",
+    "mem_count": 5,
+    "parsed_count": 5,
+    "writer_seq": 5
+   },
+   "correct_verdict": "FAIL",
+   "correct_basis": "positive violation (MALFORMED_FORKED)",
+   "v2_literal_verdict": "UNDEFINED -> BLOCKED",
+   "v2_literal_rule": "as CE-M2",
+   "current_judge_verdict": "BLOCKED",
+   "current_judge_basis": "as CE-M2",
+   "source_basis": "registry.py:74-75; note isinstance(True, int) is true, so a boolean pid would pass the type test",
+   "classification": "SEMANTIC CHANGE REQUIRES V3"
+  },
+  {
+   "id": "CE-F1",
+   "question": "Q3",
+   "title": "early stop, REGISTERED present, FORKED line lost, seq gap, counts disagree",
+   "cause": "a clean-boundary line loss after writing (disk/tamper)",
+   "records": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1",
+    "6 RUN_END confirmed=false"
+   ],
+   "evidence_flags": {
+    "completed_run": false,
+    "parse_clean": true,
+    "fork_calls": 1,
+    "exception": "READY not received within 5.0 s",
+    "mem_count": 6,
+    "parsed_count": 5,
+    "writer_seq": 6,
+    "release_byte_written": true
+   },
+   "correct_verdict": "BLOCKED",
+   "correct_basis": "the registry is not corroborated (parsed 5 != written 6): the absence may be evidence loss, which proves nothing about the protocol",
+   "v2_literal_verdict": "FAIL",
+   "v2_literal_rule": "F2 'a gap in seq' with parse_clean (torn_tail=false, corrupt_lines=0 because the whole line vanished) -> FAIL",
+   "current_judge_verdict": "BLOCKED",
+   "current_judge_basis": "incomplete branch: check_order has no FORKED requirement (registry.py:239-240 only 'FORKED without INTENT'); integrity_issues not called",
+   "source_basis": "registry.py:64-70 reports the gap; parse_reg (:30-58) cannot see a vanished line; observer.py:505-506 compares counts only inside verify_run_set (not run on the early-stop path)",
+   "classification": "SEMANTIC CHANGE REQUIRES V3"
+  },
+  {
+   "id": "CE-F2",
+   "question": "Q3",
+   "title": "early stop, REGISTERED present, FORKED never written, contiguous seq, counts agree",
+   "cause": "writer skipped FORKED (a writer defect; the real writer always writes FORKED between INTENT and REGISTERED, observer.py:71,84,99,118)",
+   "records": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 REGISTERED n1 pid=200 st=5000",
+    "4 RELEASED n1",
+    "5 RUN_END confirmed=false"
+   ],
+   "evidence_flags": {
+    "completed_run": false,
+    "parse_clean": true,
+    "fork_calls": 1,
+    "exception": "READY not received within 5.0 s",
+    "mem_count": 5,
+    "parsed_count": 5,
+    "writer_seq": 5,
+    "release_byte_written": true
+   },
+   "correct_verdict": "FAIL (recommended; owner decision)",
+   "correct_basis": "corroborated hole: a later lifecycle record (REGISTERED) exists while an earlier one (FORKED) is absent and no loss is possible. Alternative defensible reading: BLOCKED, because the bench's own recovery logic (registry.py:170-183) works from REGISTERED alone and check_order has no FORKED requirement",
+   "v2_literal_verdict": "BLOCKED",
+   "v2_literal_rule": "no F rule (F2's predecessor list lacks REGISTERED-without-FORKED; F3 covers only records that must PRECEDE an action, FORKED is written after the fork); U1 lists FORKED as a 'later-lifecycle' record although it precedes REGISTERED",
+   "current_judge_verdict": "BLOCKED",
+   "current_judge_basis": "as CE-F1",
+   "source_basis": "observer.py:84-99 (_note_forked writes FORKED right after fork), registry.py:239-240",
+   "classification": "SEMANTIC CHANGE REQUIRES V3"
+  },
+  {
+   "id": "CE-F3",
+   "question": "Q3",
+   "title": "completed run without FORKED, contiguous seq, counts agree",
+   "cause": "as CE-F2 but the run completed",
+   "records": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 REGISTERED n1 pid=200 st=5000",
+    "4 RELEASED n1",
+    "5 DEAD n1 basis",
+    "6 RUN_END confirmed=true"
+   ],
+   "evidence_flags": {
+    "completed_run": true,
+    "parse_clean": true,
+    "fork_calls": 1,
+    "mem_count": 6,
+    "parsed_count": 6,
+    "writer_seq": 6
+   },
+   "correct_verdict": "FAIL",
+   "correct_basis": "corroborated, completed",
+   "v2_literal_verdict": "FAIL",
+   "v2_literal_rule": "F4 (required record absent, completed, parse_clean)",
+   "current_judge_verdict": "FAIL",
+   "current_judge_basis": "g0_judge.py:64-65 'FORKED count 0'",
+   "source_basis": "V2 F4",
+   "classification": "NO ISSUE"
+  },
+  {
+   "id": "CE-G1",
+   "question": "Q4",
+   "title": "registry append failed (ENOSPC) for RELEASED, then RUN_END(false) written",
+   "cause": "bench I/O failure: RegWriter.write increments seq BEFORE the append, so a failed append consumes a seq number",
+   "records": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "6 RUN_END confirmed=false"
+   ],
+   "evidence_flags": {
+    "completed_run": false,
+    "parse_clean": true,
+    "fork_calls": 1,
+    "exception": "OSError(ENOSPC) in RegWriter.write(RELEASED)",
+    "mem_count": 5,
+    "parsed_count": 5,
+    "writer_seq": 6,
+    "release_byte_written": false
+   },
+   "correct_verdict": "BLOCKED",
+   "correct_basis": "the gap is explained by a failed write (writer_seq 6 != 5 records), not by a protocol violation; no release byte was written",
+   "v2_literal_verdict": "FAIL",
+   "v2_literal_rule": "F2 'a gap in seq' with parse_clean (the failed append wrote nothing) -> FAIL",
+   "current_judge_verdict": "BLOCKED",
+   "current_judge_basis": "incomplete branch, check_order silent -> Uneval",
+   "source_basis": "registry.py:19-27 (seq += 1 at :23 before C.append_jsonl at :26); common.py append_jsonl raises OSError on a failed or short write",
+   "classification": "SEMANTIC CHANGE REQUIRES V3"
+  },
+  {
+   "id": "CE-G2",
+   "question": "Q4",
+   "title": "completed run, DEAD and RUN_END lines lost at the end of the file",
+   "cause": "clean-boundary tail loss after the run",
+   "records": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1"
+   ],
+   "evidence_flags": {
+    "completed_run": true,
+    "parse_clean": true,
+    "fork_calls": 1,
+    "mem_count": 7,
+    "parsed_count": 5,
+    "writer_seq": 7
+   },
+   "correct_verdict": "BLOCKED",
+   "correct_basis": "evidence loss (parsed 5 != written 7), not a protocol violation",
+   "v2_literal_verdict": "FAIL",
+   "v2_literal_rule": "F4 (completed, parse_clean, DEAD/RUN_END absent) -> FAIL",
+   "current_judge_verdict": "FAIL",
+   "current_judge_basis": "g0_judge.py:59-60 / :64-65",
+   "source_basis": "registry.py:30-58 (parse cannot see a vanished tail); observer.py:505-506 would have caught it only if the loss happened before verify_run_set",
+   "classification": "SEMANTIC CHANGE REQUIRES V3"
+  },
+  {
+   "id": "CE-G3",
+   "question": "Q4",
+   "title": "RUN_START line lost at the head",
+   "cause": "clean-boundary head loss",
+   "records": [
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1",
+    "6 RUN_END confirmed=false"
+   ],
+   "evidence_flags": {
+    "completed_run": false,
+    "parse_clean": true,
+    "fork_calls": 1,
+    "exception": "READY not received within 5.0 s",
+    "mem_count": 6,
+    "parsed_count": 5,
+    "writer_seq": 6,
+    "release_byte_written": true
+   },
+   "correct_verdict": "BLOCKED",
+   "correct_basis": "not corroborated",
+   "v2_literal_verdict": "FAIL",
+   "v2_literal_rule": "F2 gap (first seq is 2)",
+   "current_judge_verdict": "BLOCKED",
+   "current_judge_basis": "incomplete branch",
+   "source_basis": "registry.py:66-70",
+   "classification": "SEMANTIC CHANGE REQUIRES V3"
+  },
+  {
+   "id": "CE-H1",
+   "question": "Q4",
+   "title": "early stop before the fork: only RUN_START and RUN_END(false)",
+   "cause": "e.g. an exception while installing the guard",
+   "records": [
+    "1 RUN_START",
+    "2 RUN_END confirmed=false"
+   ],
+   "evidence_flags": {
+    "completed_run": false,
+    "parse_clean": true,
+    "fork_calls": 0,
+    "mem_count": 2,
+    "parsed_count": 2,
+    "writer_seq": 2,
+    "exception": "guard.install failed"
+   },
+   "correct_verdict": "BLOCKED",
+   "correct_basis": "nothing happened",
+   "v2_literal_verdict": "UNDEFINED -> BLOCKED",
+   "v2_literal_rule": "U1's list of tolerated missing records omits INTENT (and RUN_START); F3 needs fork_calls >= 1; the exhaustiveness sentence resolves it to BLOCKED",
+   "current_judge_verdict": "BLOCKED",
+   "current_judge_basis": "g0_judge.py _node(): need INTENT -> Uneval",
+   "source_basis": "V2 U1/U2 text",
+   "classification": "DOCUMENTATION ONLY"
+  },
+  {
+   "id": "CE-H2",
+   "question": "Q4",
+   "title": "empty registry file, early stop",
+   "cause": "exception before the first write",
+   "records": [],
+   "evidence_flags": {
+    "completed_run": false,
+    "parse_clean": true,
+    "fork_calls": 0,
+    "mem_count": 0,
+    "parsed_count": 0,
+    "writer_seq": 0,
+    "exception": "..."
+   },
+   "correct_verdict": "BLOCKED",
+   "correct_basis": "no evidence",
+   "v2_literal_verdict": "UNDEFINED -> BLOCKED",
+   "v2_literal_rule": "readable empty file is neither 'missing' nor 'torn' (parse_reg: lines=[b''] -> torn False), so U2 does not name it; sentence resolves",
+   "current_judge_verdict": "BLOCKED",
+   "current_judge_basis": "g0_judge.py:54 need(len(kinds) > 0)",
+   "source_basis": "registry.py:36-58, :92-93 EMPTY_REGISTRY",
+   "classification": "DOCUMENTATION ONLY"
+  },
+  {
+   "id": "CE-H3",
+   "question": "Q4",
+   "title": "RUN_END(false) without RUN_START, contiguous seq, counts agree",
+   "cause": "writer defect (RUN_START is always the first write, g0_run.py)",
+   "records": [
+    "1 INTENT n1",
+    "2 FORKED n1 pid=200",
+    "3 REGISTERED n1 pid=200 st=5000",
+    "4 RUN_END confirmed=false"
+   ],
+   "evidence_flags": {
+    "completed_run": false,
+    "parse_clean": true,
+    "fork_calls": 1,
+    "exception": "READY not received within 5.0 s",
+    "mem_count": 4,
+    "parsed_count": 4,
+    "writer_seq": 4
+   },
+   "correct_verdict": "FAIL (recommended)",
+   "correct_basis": "corroborated hole at the head (RUN_START absent while later records exist)",
+   "v2_literal_verdict": "UNDEFINED -> BLOCKED",
+   "v2_literal_rule": "I12/I16 (RUN_START_COUNT, RUN_END_WITHOUT_RUN_START) are not mapped by any F rule; F4 needs a completed run",
+   "current_judge_verdict": "BLOCKED",
+   "current_judge_basis": "incomplete branch",
+   "source_basis": "registry.py:97-98, :110-112",
+   "classification": "SEMANTIC CHANGE REQUIRES V3"
+  },
+  {
+   "id": "CE-T1",
+   "question": "Q4",
+   "title": "child INTENT whose creator is not yet registered (early stop)",
+   "cause": "ticket granted to an unregistered creator; unreachable in G0 (spec children=[]), listed for rule completeness (integrity issue I10)",
+   "records": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 INTENT n2 creator=n1",
+    "5 REGISTERED n1 pid=200 st=5000",
+    "6 RUN_END confirmed=false"
+   ],
+   "evidence_flags": {
+    "completed_run": false,
+    "parse_clean": true,
+    "fork_calls": 1,
+    "exception": "READY not received within 5.0 s",
+    "mem_count": 6,
+    "parsed_count": 6,
+    "writer_seq": 6
+   },
+   "correct_verdict": "FAIL",
+   "correct_basis": "positive violation: the second node's INTENT precedes its creator's REGISTERED record, and G0 allows exactly one node",
+   "v2_literal_verdict": "UNDEFINED -> BLOCKED",
+   "v2_literal_rule": "I10 (registry.py:242-246) is not mapped by any C03 rule; C11 owns the one-node budget but is UNEVALUABLE after an early stop (limitation L-1)",
+   "current_judge_verdict": "FAIL",
+   "current_judge_basis": "g0_judge.py:55 check_order reports 'creator n1 not registered before child INTENT'",
+   "source_basis": "registry.py:242-246",
+   "classification": "SEMANTIC CHANGE REQUIRES V3"
+  },
+  {
+   "id": "CE-P1",
+   "question": "control",
+   "title": "RELEASED has a smaller seq than REGISTERED (both present)",
+   "cause": "order violation",
+   "records": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 RELEASED n1",
+    "5 REGISTERED n1 pid=200 st=5000"
+   ],
+   "evidence_flags": {
+    "completed_run": false,
+    "parse_clean": true,
+    "fork_calls": 1,
+    "exception": "READY not received within 5.0 s",
+    "mem_count": 5,
+    "parsed_count": 5,
+    "writer_seq": 5
+   },
+   "correct_verdict": "FAIL",
+   "correct_basis": "positive order violation",
+   "v2_literal_verdict": "FAIL",
+   "v2_literal_rule": "F1",
+   "current_judge_verdict": "FAIL",
+   "current_judge_basis": "check_order via :55",
+   "source_basis": "registry.py:233-234",
+   "classification": "NO ISSUE"
+  },
+  {
+   "id": "CE-P2",
+   "question": "control",
+   "title": "duplicate INTENT",
+   "cause": "positive violation",
+   "records": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 INTENT n1"
+   ],
+   "evidence_flags": {
+    "completed_run": false,
+    "parse_clean": true,
+    "fork_calls": 1,
+    "exception": "READY not received within 5.0 s",
+    "mem_count": 3,
+    "parsed_count": 3,
+    "writer_seq": 3
+   },
+   "correct_verdict": "FAIL",
+   "correct_basis": "positive",
+   "v2_literal_verdict": "FAIL",
+   "v2_literal_rule": "F1 (more than one INTENT)",
+   "current_judge_verdict": "BLOCKED",
+   "current_judge_basis": "incomplete branch: check_order is silent; DUPLICATE_INTENT lives in lifecycle_issues (registry.py:136-138), which the incomplete branch never calls (g0_judge.py:55-56)",
+   "source_basis": "registry.py:136-138",
+   "classification": "NO ISSUE"
+  },
+  {
+   "id": "CE-P3",
+   "question": "control",
+   "title": "record after RUN_END",
+   "cause": "positive violation",
+   "records": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 RUN_END confirmed=false",
+    "4 FORKED n1 pid=200"
+   ],
+   "evidence_flags": {
+    "completed_run": false,
+    "parse_clean": true,
+    "fork_calls": 1,
+    "exception": "READY not received within 5.0 s",
+    "mem_count": 4,
+    "parsed_count": 4,
+    "writer_seq": 4
+   },
+   "correct_verdict": "FAIL",
+   "correct_basis": "positive",
+   "v2_literal_verdict": "FAIL",
+   "v2_literal_rule": "F1",
+   "current_judge_verdict": "BLOCKED",
+   "current_judge_basis": "incomplete branch: check_order silent",
+   "source_basis": "registry.py:119-120",
+   "classification": "NO ISSUE"
+  },
+  {
+   "id": "CE-P4",
+   "question": "control",
+   "title": "early stop; release byte written and child acted, RELEASED record absent; registry corroborated",
+   "cause": "release before the durable RELEASED record",
+   "records": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RUN_END confirmed=false"
+   ],
+   "evidence_flags": {
+    "completed_run": false,
+    "parse_clean": true,
+    "fork_calls": 1,
+    "exception": "READY not received within 5.0 s",
+    "mem_count": 5,
+    "parsed_count": 5,
+    "writer_seq": 5,
+    "release_byte_written": true,
+    "child_acted": true
+   },
+   "correct_verdict": "FAIL",
+   "correct_basis": "independent evidence proves the action; the registry is corroborated",
+   "v2_literal_verdict": "FAIL",
+   "v2_literal_rule": "F3",
+   "current_judge_verdict": "BLOCKED",
+   "current_judge_basis": "incomplete branch cannot see the independent evidence",
+   "source_basis": "observer.py:131-133",
+   "classification": "NO ISSUE"
+  },
+  {
+   "id": "CE-P5",
+   "question": "control",
+   "title": "early stop, only DEAD and RUN_END missing at the tail, no release",
+   "cause": "stopped before release",
+   "records": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000"
+   ],
+   "evidence_flags": {
+    "completed_run": false,
+    "parse_clean": true,
+    "fork_calls": 1,
+    "exception": "READY not received within 5.0 s",
+    "mem_count": 4,
+    "parsed_count": 4,
+    "writer_seq": 4,
+    "release_byte_written": false
+   },
+   "correct_verdict": "BLOCKED",
+   "correct_basis": "tail-only absence after an early stop",
+   "v2_literal_verdict": "BLOCKED",
+   "v2_literal_rule": "U1",
+   "current_judge_verdict": "BLOCKED",
+   "current_judge_basis": "Uneval",
+   "source_basis": "V2 U1",
+   "classification": "NO ISSUE"
+  }
+ ]
+}
