@@ -10,6 +10,7 @@ import os
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 A003 = os.path.dirname(HERE)
@@ -120,8 +121,12 @@ class TestInterlock(unittest.TestCase):
         import g0_run
         before = sorted(os.listdir(GA.EVIDENCE_ROOT)) if os.path.isdir(GA.EVIDENCE_ROOT) else None
         err, out = io.StringIO(), io.StringIO()
-        with contextlib.redirect_stderr(err), contextlib.redirect_stdout(out):
-            rc = g0_run.main(["--execute", "--auth", os.path.join(tempfile.gettempdir(), "no_such_g0_authorization.json")])
+        # PREFLIGHT-001: a path inside a fresh temporary directory cannot hold an authorization, and run() (the only function that forks) is
+        # replaced by a spy that fails the test if it is ever reached
+        with tempfile.TemporaryDirectory() as d, mock.patch.object(g0_run, "run", side_effect=AssertionError("run() must never be reached")) as spy:
+            with contextlib.redirect_stderr(err), contextlib.redirect_stdout(out):
+                rc = g0_run.main(["--execute", "--auth", os.path.join(d, "no_such_g0_authorization.json")])
+            spy.assert_not_called()
         self.assertEqual(rc, 2)
         self.assertIn("REFUSED", err.getvalue())
         after = sorted(os.listdir(GA.EVIDENCE_ROOT)) if os.path.isdir(GA.EVIDENCE_ROOT) else None
@@ -130,8 +135,10 @@ class TestInterlock(unittest.TestCase):
     def test_check_mode_reports_and_executes_nothing(self):
         import g0_run
         out = io.StringIO()
-        with contextlib.redirect_stdout(out):
-            rc = g0_run.main(["--check"])
+        with mock.patch.object(g0_run, "run", side_effect=AssertionError("run() must never be reached")) as spy:
+            with contextlib.redirect_stdout(out):
+                rc = g0_run.main(["--check"])
+            spy.assert_not_called()
         self.assertEqual(rc, 0)
         info = json.loads(out.getvalue())
         self.assertIs(info["executed"], False)
@@ -388,4 +395,4 @@ class TestSourceConstraints(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main()
+    unittest.main(verbosity=2)

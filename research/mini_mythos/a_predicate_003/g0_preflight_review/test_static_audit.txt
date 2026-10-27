@@ -1,0 +1,13 @@
+tests: 46  {'TestInterlock': 14, 'TestJudge': 26, 'TestSourceConstraints': 6}
+A. process-capable calls in the test file: 0 []
+B. g0_run functions called by tests: ['main']
+   closure incl. run edge   : ['ancestors', 'bench_code_hash', 'current', 'fd_report', 'git_head', 'main', 'preflight', 'prereg_sha', 'run', 'snapshot', 'token_scan', 'utc_now', 'write_json']
+   closure excl. run edge   : ['bench_code_hash', 'current', 'git_head', 'main', 'prereg_sha', 'utc_now', 'write_json']
+   run() reachable from main (syntactic): True
+   main -> run edge line(s) : [406]  guard lines: [(385, 'GA.load(args.auth, cur, utc_now())'), (393, 'auth, raw = GA.load(args.auth, cur, utc_now())'), (396, 'return 2'), (400, 'return 2'), (404, 'return 2'), (406, 'ev = run(auth, raw, run_id, run_dir)')]
+   run edge only after authorization load + refusal return: True
+   tests that call main() and replace run() by a failing spy: 2 (lines [126, 138])
+C. process-capable calls in the closure excluding run(): 0 []
+   process-capable calls inside run() only (for reference): [{'line': 278, 'call': 'O.Observer'}, {'line': 281, 'call': 'guard.install'}, {'line': 282, 'call': 'obs.spawn_direct'}, {'line': 296, 'call': 'obs.release'}, {'line': 310, 'call': 'os.waitpid'}, {'line': 322, 'call': 'obs.final_cleanup'}]
+D. import-time process-capable calls: 0 []
+RESULT: OK
