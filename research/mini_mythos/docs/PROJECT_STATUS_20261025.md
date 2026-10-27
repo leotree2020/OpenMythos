@@ -1,5 +1,11 @@
 # Mini-Mythos / OpenMythos — 全项目研发进度（2026-10-25 更新版）
 
+## D1 CPU-002 最小争议实验检查点（2026-10-27；本文件最新阶段进度，优先于下方 CPU-001 检查点）
+
+F3B-D1-A-CPU-002：E1/E2/E3 完成（430 次运行，判据预注册）。归属安全：原臂在前提被违反时不安全，严格变体以 `UNKNOWN` 换安全；CA 与 Popen 混用会静默得到 returncode 0；CB 遗漏 T5 会滞留僵尸 / pid 但可完全恢复。无明确 A/B 优劣；冻结 R3 未改、未选方案、G3～G6 NOT TESTED、真实 D1 NOT AUTHORIZED。
+
+**状态：**ChatGPT 审核 PENDING；GROK DEFERRED（至 2026-10-30）。下一条唯一指令：等待 ChatGPT 审核；之后由负责人决定是否进入 R3 修订评审或仲裁实验。
+
 ## D1 R3-A CPU 受控对照实验检查点（2026-10-27；本文件最新阶段进度，优先于下方 A 判定提案修订检查点）
 
 F3B-D1-A-CPU-001：B0 / CA / CB 三臂最小 CPU 受控实验完成（1860 次运行，独立真值）。B0 复现 G1/G2 缺陷；CA、CB 在授权矩阵上均 365/365 PASS，判定相同，**无明确优劣**；未运行 T-12/T-13/T-15/T-16 及仲裁实验。冻结 R3 未改、未选定方案、G3～G6 NOT TESTED、真实 D1 NOT AUTHORIZED。
