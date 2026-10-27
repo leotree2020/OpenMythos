@@ -96,10 +96,12 @@ class TestReleaseWriteGuard(unittest.TestCase):
         self.assertIsNone(GJ.TYPE_VALIDATORS[typ](self.g.release_writes))
 
     def test_the_guard_refuses_signals_exec_and_foreign_waits(self):
+        # No call here can send a signal or touch a child even if the guard were missing: os.kill() without arguments is a TypeError for the
+        # real function, and the wait names a pid that is certainly not a child of this process (ChildProcessError for the real function).
         with self.assertRaises(GR.GuardViolation):
-            os.kill(os.getpid(), 0)
+            os.kill()
         with self.assertRaises(GR.GuardViolation):
-            os.waitpid(-1, os.WNOHANG)
+            os.waitpid(999999999, os.WNOHANG)
         self.assertEqual([v["call"] for v in self.g.violations], ["os.kill", "os.waitpid"])
         self.assertEqual(self.g.fork_calls, 0)
 
@@ -310,7 +312,7 @@ class TestRunStructure(unittest.TestCase):
         self.assertTrue(any("watch_fd" in ast.dump(t.finalbody[0]) for t in tries if t.finalbody))
 
     def test_main_creates_directories_only_after_a_clean_read_only_preflight_attempt(self):
-        main = func(run_ast(), "main")
+        main = func(run_ast(), "_main")
         seq = [name for _, name in sorted((n.lineno, n.func.id) for n in ast.walk(main) if isinstance(n, ast.Call) and isinstance(n.func, ast.Name))]
         self.assertLess(seq.index("safe_preflight"), seq.index("prepare_dirs"))
         self.assertLess(seq.index("prepare_dirs"), seq.index("run"))

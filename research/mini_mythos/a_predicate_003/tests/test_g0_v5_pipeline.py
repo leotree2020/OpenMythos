@@ -54,8 +54,9 @@ class Harness(unittest.TestCase):
             ev["exception"] = "RuntimeError: stopped"
         return ev
 
-    def fin(self, ev=None, **patches):
-        """run GR.finalize on `ev` -> (exit code, stderr text)"""
+    def fin(self, ev=None, patches=None):
+        """run GR.finalize on `ev` with {(module, name): replacement} patches -> (exit code, stderr text)"""
+        patches = patches or {}
         ev = ev if ev is not None else self.evidence()
         err = io.StringIO()
         with contextlib.ExitStack() as st:
@@ -159,37 +160,37 @@ class TestClosurePipelineCases(Harness):
         """-> (exit code, stderr) for one case id"""
         d = self.run_dir
         if cid == "PC-P2":
-            return self.fin(**{(GR, "write_exclusive"): write_fails("g0_evidence.json", half=True)})
+            return self.fin(patches={(GR, "write_exclusive"): write_fails("g0_evidence.json", half=True)})
         if cid == "PC-P3":
-            return self.fin(**{(GR, "read_back"): read_differs("g0_evidence.json")})
+            return self.fin(patches={(GR, "read_back"): read_differs("g0_evidence.json")})
         if cid == "PC-P5":
-            return self.fin(**{(GJ, "judge"): mock.Mock(side_effect=RuntimeError("judge exploded"))})
+            return self.fin(patches={(GJ, "judge"): mock.Mock(side_effect=RuntimeError("judge exploded"))})
         if cid == "PC-P6a":
-            return self.fin(**{(GR, "write_exclusive"): write_fails("g0_summary.json", half=True)})
+            return self.fin(patches={(GR, "write_exclusive"): write_fails("g0_summary.json", half=True)})
         if cid == "PC-P6b":
-            return self.fin(**{(GR, "read_back"): read_differs("g0_summary.json")})
+            return self.fin(patches={(GR, "read_back"): read_differs("g0_summary.json")})
         if cid == "PC-P6c":
-            return self.fin(**{(os, "fsync"): FsyncFault(3)})
+            return self.fin(patches={(os, "fsync"): FsyncFault(3)})
         if cid == "PC-K1":
-            return self.fin(**{(GJ, "build_marker"): mock.Mock(side_effect=ValueError("impossible pair"))})
+            return self.fin(patches={(GJ, "build_marker"): mock.Mock(side_effect=ValueError("impossible pair"))})
         if cid == "PC-K2a":
             open(os.path.join(d, "g0_closed.json.tmp"), "wb").write(b"pre-existing")
             return self.fin()
         if cid == "PC-K2b":
-            return self.fin(**{(GR, "write_exclusive"): write_fails("g0_closed.json.tmp", half=True)})
+            return self.fin(patches={(GR, "write_exclusive"): write_fails("g0_closed.json.tmp", half=True)})
         if cid == "PC-K2c":
-            return self.fin(**{(os, "fsync"): FsyncFault(5)})
+            return self.fin(patches={(os, "fsync"): FsyncFault(5)})
         if cid == "PC-K3":
-            return self.fin(**{(GR, "read_back"): read_differs("g0_closed.json.tmp")})
+            return self.fin(patches={(GR, "read_back"): read_differs("g0_closed.json.tmp")})
         if cid == "PC-K4a":
             open(os.path.join(d, "g0_closed.json"), "wb").write(b'{"foreign":true}')
             return self.fin()
         if cid == "PC-K4b":
-            return self.fin(**{(os, "link"): mock.Mock(side_effect=OSError(errno.EPERM, "links are not permitted"))})
+            return self.fin(patches={(os, "link"): mock.Mock(side_effect=OSError(errno.EPERM, "links are not permitted"))})
         if cid == "PC-K5":
-            return self.fin(**{(os, "fsync"): FsyncFault(6)})
+            return self.fin(patches={(os, "fsync"): FsyncFault(6)})
         if cid == "PC-K6":
-            return self.fin(**{(os, "link"): link_then_alter()})
+            return self.fin(patches={(os, "link"): link_then_alter()})
         if cid in ("PC-K7", "PC-K7b", "PC-OK", "PC-OK2"):
             raise AssertionError("handled separately")
         raise AssertionError(cid)
@@ -209,8 +210,8 @@ class TestClosurePipelineCases(Harness):
                     problems.append("exit %s != %s" % (rc, e["process_exit_code"]))
                 if c["stderr_marker"] not in err:
                     problems.append("stderr lacks %s: %r" % (c["stderr_marker"], err))
-                if names != self.want_files(c["files_present"]):
-                    problems.append("files %s != %s" % (names, self.want_files(c["files_present"])))
+                if names != sorted(c["files_present"]):                 # the case record already lists real file names
+                    problems.append("files %s != %s" % (names, sorted(c["files_present"])))
                 want = {"absent": ["NO_CLOSED"], "schema_invalid": ["CLOSED_SCHEMA"], "noncanonical": ["CLOSED_NONCANONICAL"], "ok": []}[c["closed_after"]]
                 if reasons != e["next_preflight_reasons"] or reasons != want:
                     problems.append("next preflight %s != %s" % (reasons, e["next_preflight_reasons"]))
@@ -247,7 +248,7 @@ class TestClosurePipelineCases(Harness):
             if calls["n"] == 3:                                    # P2, P6, then K5
                 raise KeyboardInterrupt()
             return real(path)
-        rc, err = self.fin(self.evidence("FAIL"), **{(GR, "fsync_dir"): fsync_dir})
+        rc, err = self.fin(self.evidence("FAIL"), patches={(GR, "fsync_dir"): fsync_dir})
         c = next(x for x in V5["pipeline_cases"] if x["id"] == "PC-K7b")
         self.assertEqual(rc, c["expected"]["process_exit_code"])
         self.assertIn("G0-CLOSE-UNCONFIRMED", err)
@@ -293,7 +294,7 @@ class TestPublicationProperties(Harness):
         self.assertEqual(self.read("g0_closed.json"), b'{"foreign":true}')
 
     def test_no_fallback_creates_the_final_name_when_link_is_unsupported(self):
-        rc, err = self.fin(**{(os, "link"): mock.Mock(side_effect=OSError(errno.ENOTSUP, "no hard links"))})
+        rc, err = self.fin(patches={(os, "link"): mock.Mock(side_effect=OSError(errno.ENOTSUP, "no hard links"))})
         self.assertEqual(rc, 3)
         self.assertFalse(os.path.exists(os.path.join(self.run_dir, "g0_closed.json")))
         self.assertIn("G0-CLOSE-UNPUBLISHED", err)
@@ -327,7 +328,7 @@ class TestPublicationProperties(Harness):
         def build(*a, **k):
             order.append(("build_marker", "-"))
             return real_build(*a, **k)
-        self.fin(**{(GR, "write_exclusive"): spy("write_exclusive"), (GR, "read_back"): spy("read_back"), (GR, "fsync_dir"): spy("fsync_dir"),
+        self.fin(patches={(GR, "write_exclusive"): spy("write_exclusive"), (GR, "read_back"): spy("read_back"), (GR, "fsync_dir"): spy("fsync_dir"),
                     (GJ, "judge"): judge, (os, "link"): link, (GJ, "build_marker"): build})
         self.assertEqual(order, [("write_exclusive", "g0_evidence.json"), ("fsync_dir", "dir"), ("read_back", "g0_evidence.json"), ("judge", "-"),
                                  ("write_exclusive", "g0_summary.json"), ("fsync_dir", "dir"), ("read_back", "g0_summary.json"), ("build_marker", "-"),
@@ -343,7 +344,7 @@ class TestPublicationProperties(Harness):
         def judge(e2, *a, **k):
             seen["e2"] = e2
             return real(e2, *a, **k)
-        rc, _ = self.fin(ev, **{(GJ, "judge"): judge})
+        rc, _ = self.fin(ev, patches={(GJ, "judge"): judge})
         self.assertIsNot(seen["e2"], ev)
         self.assertEqual(seen["e2"]["guard"]["fork_pids"], [200])
         self.assertEqual(seen["e2"], json.loads(self.read("g0_evidence.json").decode()))
@@ -358,7 +359,7 @@ class TestPublicationProperties(Harness):
             self.assertIn(k, s)
 
     def test_a_blocked_note_is_written_exclusively_when_the_evidence_cannot_be_saved(self):
-        rc, err = self.fin(**{(GR, "write_exclusive"): write_fails("g0_evidence.json", half=False, partial=False)})
+        rc, err = self.fin(patches={(GR, "write_exclusive"): write_fails("g0_evidence.json", half=False, partial=False)})
         self.assertEqual(rc, 3)
         self.assertIn("g0_blocked_%s.json" % self.RUN_ID, self.files())
 
@@ -403,27 +404,27 @@ class TestV4PipelineCases(Harness):
         self.assertEqual(self.read("g0_evidence.json"), b"another run")
 
     def test_pipe_5_a_write_error_keeps_the_partial_file(self):
-        rc, err = self.fin(**{(GR, "write_exclusive"): write_fails("g0_evidence.json", half=True)})
+        rc, err = self.fin(patches={(GR, "write_exclusive"): write_fails("g0_evidence.json", half=True)})
         self.check("PIPE-5", rc, err)
         self.assertIn("g0_evidence.json", self.files())
 
     def test_pipe_6_an_fsync_failure_of_the_file_or_the_directory(self):
         for n in (1, 2):
             with self.fresh():
-                rc, err = self.fin(**{(os, "fsync"): FsyncFault(n)})
+                rc, err = self.fin(patches={(os, "fsync"): FsyncFault(n)})
                 self.check("PIPE-6", rc, err)
 
     def test_pipe_7_bytes_read_back_differ(self):
-        rc, err = self.fin(**{(GR, "read_back"): read_differs("g0_evidence.json")})
+        rc, err = self.fin(patches={(GR, "read_back"): read_differs("g0_evidence.json")})
         self.check("PIPE-7", rc, err)
         self.assertIn("g0_evidence.json", self.files())
         self.assertNotIn("g0_summary.json", self.files())
 
     def test_pipe_8_not_a_regular_file_or_not_parseable(self):
-        rc, err = self.fin(**{(GR, "read_back"): read_raises("g0_evidence.json")})
+        rc, err = self.fin(patches={(GR, "read_back"): read_raises("g0_evidence.json")})
         self.check("PIPE-8", rc, err)
         with self.fresh():
-            rc, err = self.fin(**{(GJ, "parse_strict"): mock.Mock(side_effect=ValueError("not JSON"))})
+            rc, err = self.fin(patches={(GJ, "parse_strict"): mock.Mock(side_effect=ValueError("not JSON"))})
             self.check("PIPE-8", rc, err)
 
     def test_pipe_9_a_type_error_in_the_read_back_evidence_is_a_finding_not_a_pipeline_failure(self):
@@ -438,24 +439,24 @@ class TestV4PipelineCases(Harness):
         self.assertIn("g0_closed.json", self.files())
 
     def test_pipe_10_the_judge_raises(self):
-        rc, err = self.fin(**{(GJ, "judge"): mock.Mock(side_effect=RuntimeError("boom"))})
+        rc, err = self.fin(patches={(GJ, "judge"): mock.Mock(side_effect=RuntimeError("boom"))})
         self.check("PIPE-10", rc, err)
         self.assertNotIn("g0_summary.json", self.files())
         self.assertNotIn("g0_closed.json", self.files())
 
     def test_pipe_11_a_fail_that_cannot_be_recorded_is_not_exit_code_1(self):
-        rc, err = self.fin(self.evidence("FAIL"), **{(GR, "write_exclusive"): write_fails("g0_summary.json", half=True)})
+        rc, err = self.fin(self.evidence("FAIL"), patches={(GR, "write_exclusive"): write_fails("g0_summary.json", half=True)})
         self.check("PIPE-11", rc, err)
         self.assertIn("verdict=FAIL", err)
         self.assertNotEqual(rc, 1)
 
     def test_pipe_12_a_pass_that_cannot_be_recorded_is_not_exit_code_0(self):
-        rc, err = self.fin(**{(GR, "write_exclusive"): write_fails("g0_summary.json")})
+        rc, err = self.fin(patches={(GR, "write_exclusive"): write_fails("g0_summary.json")})
         self.check("PIPE-12", rc, err)
         self.assertNotEqual(rc, 0)
 
     def test_pipe_13_the_summary_reads_back_differently(self):
-        rc, err = self.fin(**{(GR, "read_back"): read_differs("g0_summary.json")})
+        rc, err = self.fin(patches={(GR, "read_back"): read_differs("g0_summary.json")})
         self.check("PIPE-13", rc, err)
         self.assertIn("g0_summary.json", self.files())
         self.assertNotIn("g0_closed.json", self.files())

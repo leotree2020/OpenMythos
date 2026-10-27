@@ -797,6 +797,18 @@ def finalize(ev, run_id, run_dir, crit, crit_sha):
 
 
 def main(argv=None):
+    """Entry point.  ANY exception that escapes the start-up or the run is mapped to exit code 3 (BLOCKED) with a marker on stderr -- never to Python's
+    default exit code 1, which is the FAIL code.  Usage errors (argparse) keep their SystemExit(2); a refusal is 2."""
+    try:
+        return _main(argv)
+    except SystemExit:
+        raise
+    except BaseException as e:
+        stderr_marker("G0-STARTUP-ERROR", reason="%s: %s" % (type(e).__name__, e))
+        return 3
+
+
+def _main(argv=None):
     ap = argparse.ArgumentParser(description="G0 minimal process-gate test.  --execute needs a valid single-use G0 authorization.")
     ap.add_argument("--check", action="store_true", help="print bindings and authorization status; starts no process")
     ap.add_argument("--template", action="store_true", help="print a NON-VALID authorization template")

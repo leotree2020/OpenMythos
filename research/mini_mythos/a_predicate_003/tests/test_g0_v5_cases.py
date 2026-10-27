@@ -279,8 +279,8 @@ class TestC03Requirements(unittest.TestCase):
         e = F.good_evidence()
         e["guard"]["release_writes"][0]["returned"] = 2
         self.assertFalse(GJ.independent(e)["release_write_ok"])
-        e["guard"]["release_writes"][0]["returned"] = True
-        self.assertFalse(GJ.independent(e)["release_write_ok"])
+        e["guard"]["release_writes"][0]["returned"] = True                  # a bool is not an int: the record is format-damaged, the witness is unavailable
+        self.assertFalse(GJ.independent(e)["available"])
 
     def test_writer_clean_is_defined_on_the_ledger_and_the_writer_seq(self):
         led = F.good_ledger()

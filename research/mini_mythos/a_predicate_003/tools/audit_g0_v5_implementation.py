@@ -5,7 +5,7 @@ usage: audit_g0_v5_implementation.py [--markdown OUT.md] [--json OUT.json]      
 It (1) checks syntax / undefined names / unused imports of the implementation and test files, (2) checks that the schema types, rule ids, marker
 fields and stderr markers of the FROZEN criteria are all present in the source, (3) audits forbidden calls, (4) verifies the frozen files V1..V5, and
 (5) builds the requirement -> implementation -> test traceability table (every locator must be found, otherwise the row is NOT FOUND and the exit
-code is 1).  NOT TESTED means exactly that: no test has been run."""
+code is 1).  This audit never runs a test; the results of the CPU tests are recorded by tools/run_g0_v5_cpu_tests.py."""
 import ast
 import builtins
 import hashlib
@@ -19,7 +19,7 @@ A003 = os.path.dirname(HERE)
 G0 = os.path.join(A003, "gate_g0")
 TESTS = os.path.join(A003, "tests")
 IMPL = ("g0_auth.py", "g0_judge.py", "g0_run.py")
-NEW_TESTS = ("test_g0_interlock_and_judge.py", "test_g0_v5_cases.py", "test_g0_v5_closure_cases.py", "test_g0_v5_pipeline.py", "test_g0_v5_run_parts.py")
+NEW_TESTS = ("test_g0_interlock_and_judge.py", "test_g0_v5_cases.py", "test_g0_v5_closure_cases.py", "test_g0_v5_pipeline.py", "test_g0_v5_run_parts.py", "test_g0_v5_supplement.py")
 FILES = {"auth": os.path.join(G0, "g0_auth.py"), "judge": os.path.join(G0, "g0_judge.py"), "run": os.path.join(G0, "g0_run.py")}
 for t in NEW_TESTS:
     FILES["t:" + t] = os.path.join(TESTS, t)
@@ -166,6 +166,7 @@ def loc(key, pattern):
 
 # (requirement id, V5 source, implementation locators [(file, regex)], test locators [(file, regex)])
 T_J, T_R, T_A = "judge", "run", "auth"
+TS = "t:test_g0_v5_supplement.py"
 TI, TC, TL, TP, TR = "t:test_g0_interlock_and_judge.py", "t:test_g0_v5_cases.py", "t:test_g0_v5_closure_cases.py", "t:test_g0_v5_pipeline.py", "t:test_g0_v5_run_parts.py"
 ROWS = [
     ("G0-C01 preflight_clean (V5: earlier runs closed by a valid marker; residue independent)", "checks.G0-C01", [(T_J, r"^def c01\("), (T_R, r"^def closure_preflight\("), (T_R, r"^def preflight\(")], [(TI, r"def test_preflight_problems_are_blocked"), (TL, r"def test_c01_text_and_the_unresolved_format")]),
@@ -232,6 +233,8 @@ ROWS = [
     ("single-use, V5-bound authorization; no authorization is ever written", "g0_auth", [(T_A, r"^def frozen_problems\("), (T_A, r"^def template\(")], [(TI, r"def test_no_function_of_g0_auth_writes_an_authorization_file"), (TI, r"def test_template_is_never_valid")]),
     ("version isolation (V1..V4 frozen bytes unchanged; V1..V4 bindings void)", "CL-08", [(T_A, r"^FROZEN_FILES")], [(TI, r"def test_frozen_files_V1_to_V5_have_their_frozen_bytes"), (TI, r"def test_authorization_bound_to_a_historical_version_is_void")]),
     ("preflight never raises (BLOCKED, never FAIL)", "checks.G0-C01", [(T_R, r"^def safe_preflight\(")], [(TR, r"def test_safe_preflight_never_raises")]),
+    ("any start-up / run exception -> exit code 3, never Python's default 1 (PURE-TEST-001 S-1)", "evidence_pipeline P7 / exit_codes", [(T_R, r"^def main\("), (T_R, r"G0-STARTUP-ERROR")], [(TS, r"def test_every_unexpected_exception_in_the_start_up_path_gives_3_never_1"), (TS, r"def test_no_code_path_of_main_returns_1")]),
+    ("format-damaged release / fork evidence is unavailable, never an evidenced FAIL (PURE-TEST-001 S-2)", "checks.G0-C07 / G0-C03 F3", [(T_J, r"^def independent\("), (T_J, r"Format-damaged guard evidence")], [(TS, r"def test_a_malformed_list_never_gives_a_c07_fail_or_a_run_fail"), (TS, r"def test_negative_controls_well_formed_violations_still_fail")]),
 ]
 trace = []
 for rid, src, impls, tests in ROWS:
@@ -239,7 +242,7 @@ for rid, src, impls, tests in ROWS:
     tl = [loc(k, p) for k, p in tests]
     ok = all(il) and all(tl)
     need(ok, "traceability row NOT FOUND: %s impl=%s tests=%s" % (rid, il, tl))
-    trace.append({"requirement": rid, "v5_source": src, "implementation": il, "tests": tl, "status": "IMPLEMENTED (code written); tests NOT TESTED" if ok else "NOT FOUND"})
+    trace.append({"requirement": rid, "v5_source": src, "implementation": il, "tests": tl, "status": "IMPLEMENTED; tests present (results: g0_v5_pure_test_results)" if ok else "NOT FOUND"})
 
 # every frozen check id and rule id appears in at least one row text or in the source (completeness of the matrix)
 rows_text = json.dumps(trace)
@@ -252,7 +255,7 @@ for sid in ["P%d" % i for i in range(8)] + ["K%d" % i for i in range(8)]:
 print("files audited:", len(audit_rows), "| syntax + undefined-name + unused-import audit:", "clean" if not any(u or v for _, u, v in audit_rows) else "FINDINGS")
 print("schema fields:", len(crit["evidence_schema"]["fields"]), "| schema types:", len(declared_types), "| rules checked in source:", len(c3["fail_when"]) + len(c3["unevaluable_when"]) + len(c7["fail_when"]) + len(c7["unevaluable_when"]), "| closure rules:", len(crit["closure"]["preflight"]["rules"]), "| closure facts:", len(facts))
 print("frozen files verified:", len(FROZEN) + 1, "| bench_code_sha256 (unchanged check against the base is done with git):", bench)
-print("tests written (NOT RUN):", n_tests, {k: sum(v.values()) for k, v in inventory.items()})
+print("tests present (executed only by tools/run_g0_v5_cpu_tests.py, never by this audit):", n_tests, {k: sum(v.values()) for k, v in inventory.items()})
 print("traceability rows:", len(trace), "| NOT FOUND:", sum(1 for r in trace if r["status"] == "NOT FOUND"))
 print("FINDINGS: %d" % len(findings))
 for f in findings:
@@ -261,7 +264,7 @@ args = sys.argv[1:]
 if "--markdown" in args:
     out = args[args.index("--markdown") + 1]
     with open(out, "w", encoding="utf-8") as fh:
-        fh.write("| V5 requirement | V5 source | implementation | tests (written, NOT RUN) | status |\n|---|---|---|---|---|\n")
+        fh.write("| V5 requirement | V5 source | implementation | tests | status |\n|---|---|---|---|---|\n")
         for r in trace:
             fh.write("| %s | `%s` | %s | %s | %s |\n" % (r["requirement"], r["v5_source"], "<br>".join("`%s`" % x for x in r["implementation"]), "<br>".join("`%s`" % x for x in r["tests"]), r["status"]))
 if "--json" in args:

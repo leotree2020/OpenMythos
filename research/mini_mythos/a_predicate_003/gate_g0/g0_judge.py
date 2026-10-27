@@ -439,7 +439,9 @@ def independent(ev):
     g, e = ev.get("guard"), ev.get("events")
     pids = g.get("fork_pids") if isinstance(g, dict) else None
     rw = g.get("release_writes") if isinstance(g, dict) else None
-    if not (isinstance(pids, list) and isinstance(rw, list) and all(isinstance(x, dict) for x in rw)):
+    # Format-damaged guard evidence is NOT evidence: a record that does not have the schema type (wrong container, missing key, string / bool / NaN time,
+    # unknown result, ...) makes the whole witness unavailable, so no FAIL rule can be derived from it (the checks then end UNEVALUABLE).
+    if not (isinstance(pids, list) and isinstance(rw, list)) or TYPE_VALIDATORS["list[int]"](pids) or TYPE_VALIDATORS[T_RELW](rw):
         return {"available": False}
     fa = e.get("first_action_mono") if isinstance(e, dict) else None
     gate_passed = is_num(fa)
