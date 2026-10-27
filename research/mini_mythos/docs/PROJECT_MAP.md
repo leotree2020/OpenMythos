@@ -277,3 +277,7 @@ Claude Code 接替 Grok 担任主要研发工程师（项目负责人 2026-10-26
 ## D1 CPU-003 E1-A 静态审核修复（2026-10-27）
 
 分支 `d1-r3-a-cpu-003-e1a-prep-20261027`。F3B-D1-A-CPU-003-E1A-STATIC-FIX-001：只修台架（`a_predicate_003/bench`、`tests`），预注册未改（SHA-256 `e6b7ca5c…`）。四项：unsafe 事件优先于台架 BLOCKED 且候选异常不记台架 BLOCKED；清理责任自 fork 起、仅由确认死亡解除；`RUN_END.cleanup_confirmed` 与 janitor 退出条件；BV 与单元测试分阶段授权。新增检查点 `docs/F3B_D1_A_CPU_003_E1A_STATIC_FIX_CHECKPOINT_20261027.md`。测试只写未跑，E1-A 仍 EXPERIMENT NOT TESTED。
+
+## D1 CPU-003 E1-A 最终执行边界修复（2026-10-27）
+
+分支 `d1-r3-a-cpu-003-e1a-prep-20261027`。F3B-D1-A-CPU-003-E1A-STATIC-FIX-002：只修台架（`a_predicate_003/bench`、`tests`），预注册未改（SHA-256 `e6b7ca5c…`）。三项：最终清理集合一致性（入口关闭、不动点清理、RUN_END 前核对运行集合、janitor 责任未解除不得强杀）；登记文件完整性（缺失 / 损坏 / 撕裂 / 序号缺口 ⇒ janitor 不得退出 0，且无法识别的进程不发信号）；BV 证据来源（负责人签发的 `bv_binding` + 原始记录重新推导，否则 SMOKE）。新增检查点 `docs/F3B_D1_A_CPU_003_E1A_STATIC_FIX2_CHECKPOINT_20261027.md`。测试只写未跑，E1-A 仍 EXPERIMENT NOT TESTED。

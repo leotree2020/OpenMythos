@@ -2,6 +2,8 @@
 
 **适用范围：** 任何新 ChatGPT / Grok / 编程 Agent 对话，包含换模型、额度恢复、重新打开 Codespaces、交接研发。**优先级：** 新会话必须先读本文、项目地图及最新检查点；旧聊天记忆只是线索，不能作为实验事实。
 
+**最新 D1 CPU-003 E1-A 最终执行边界修复检查点（2026-10-27；优先于下方 E1-A 静态审核修复检查点）：** 分支 `d1-r3-a-cpu-003-e1a-prep-20261027`。F3B-D1-A-CPU-003-E1A-STATIC-FIX-002：只修台架三项（最终清理集合一致性与 recovery_open；登记文件完整性与 janitor 退出码；BV 证据来源须由负责人签发的 `bv_binding` 并从原始记录重新推导）；预注册未改（SHA-256 `e6b7ca5c…`）；测试只写未跑；E1-A EXPERIMENT NOT TESTED；R3 SPEC FROZEN、真实 D1 NOT AUTHORIZED、NO A-B WINNER。详见 `docs/F3B_D1_A_CPU_003_E1A_STATIC_FIX2_CHECKPOINT_20261027.md`。下一条唯一指令：提交 ChatGPT 复核并等待负责人单独授权；**未经授权不运行任何 CPU-003 进程级测试 / BV / E1-A**。
+
 **最新 D1 CPU-003 E1-A 静态审核修复检查点（2026-10-27；优先于下方 E1-A 预注册与台架检查点）：** 分支 `d1-r3-a-cpu-003-e1a-prep-20261027`。F3B-D1-A-CPU-003-E1A-STATIC-FIX-001：只修台架四项缺陷（unsafe 优先 / 候选异常分类；清理责任自 fork 起、仅确认死亡才解除；`RUN_END.cleanup_confirmed` 与 janitor 退出条件；BV 与单元测试分阶段授权，授权绑定预注册与台架代码哈希）；预注册未改（SHA-256 `e6b7ca5c…`）；测试只写未跑；E1-A EXPERIMENT NOT TESTED；R3 SPEC FROZEN、真实 D1 NOT AUTHORIZED、NO A-B WINNER。详见 `docs/F3B_D1_A_CPU_003_E1A_STATIC_FIX_CHECKPOINT_20261027.md`。下一条唯一指令：提交 ChatGPT 复核；**未经负责人另行授权不运行任何 CPU-003 进程级测试**。
 
 **最新 D1 CPU-003 E1-A 预注册与台架检查点（2026-10-27；优先于下方 CPU-003 设计勘误-002 检查点）：** 分支 `d1-r3-a-cpu-003-e1a-prep-20261027`（基线 `6a089f5`）。F3B-D1-A-CPU-003-E1A-PREP-001：仅预注册与台架实现。预注册 `research/mini_mythos/a_predicate_003/prereg/e1_provability_table_v1.json` 先于台架单独提交（`b2aec0f`；更正 `c02f201`、`f9d3cd8`；最终 SHA-256 `e6b7ca5c88de81dff01340c769bf409105cd2b91bf581987d710ca6c0280ec39`）；台架 / 测试 / 工具 / `STATIC_REVIEW.md` 已编写，**未运行**；运行器未获授权文件不得 `--execute`。E1-A EXPERIMENT NOT TESTED；E1-B/C/D 未冻结；R3 SPEC FROZEN、真实 D1 NOT AUTHORIZED、G3～G6 NOT TESTED、NO A-B WINNER。详见 `docs/F3B_D1_A_CPU_003_E1A_PREP_CHECKPOINT_20261027.md`。下一条唯一指令：提交 ChatGPT 静态审查；首次受控运行由负责人单独授权，**未经确认不要执行实验**。

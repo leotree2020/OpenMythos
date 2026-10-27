@@ -1,5 +1,11 @@
 # Mini-Mythos / OpenMythos — 全项目研发进度（2026-10-25 更新版）
 
+## D1 CPU-003 E1-A 最终执行边界修复检查点（2026-10-27；本文件最新阶段进度，优先于下方 E1-A 静态审核修复检查点）
+
+F3B-D1-A-CPU-003-E1A-STATIC-FIX-002：ChatGPT 第二轮静态审核 `452897c` 结论 STATIC REVIEW FAIL — CROSS-MODULE SAFETY ISSUES；本轮只修三项（最终清理集合一致性、登记文件完整性、BV 证据来源）。预注册未改；测试仅编写、未运行；**E1-A EXPERIMENT NOT TESTED**。
+
+**状态：**PENDING CHATGPT REVIEW。下一条唯一指令：提交本轮修复供复核；等待审核和负责人单独授权，未经授权不运行任何 CPU-003 进程级测试 / BV / E1-A。R3 SPEC FROZEN；真实 D1 NOT AUTHORIZED；NO A-B WINNER。
+
 ## D1 CPU-003 E1-A 静态审核修复检查点（2026-10-27；本文件最新阶段进度，优先于下方 E1-A 预注册与台架检查点）
 
 F3B-D1-A-CPU-003-E1A-STATIC-FIX-001：ChatGPT 对 `3b9414a` 的结论 PREREGISTRATION ACCEPTED / BENCH STATIC REVIEW FAIL；本轮只修四项台架缺陷（unsafe 优先与候选异常分类、清理责任跨 ABORTED/登记失败、`RUN_END` 与 janitor 退出条件、BV 与单格测试分阶段授权）并核查 `/proc` 枚举不完整 ⇒ BLOCKED。预注册未改；测试仅编写、未运行；**E1-A EXPERIMENT NOT TESTED**。
