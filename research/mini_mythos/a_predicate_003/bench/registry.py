@@ -29,12 +29,16 @@ class RegWriter:
 
 def parse_reg(path):
     """-> (records, info).  A final line without a newline is a torn write and is dropped (info['torn_tail']=True).
-    Any other undecodable line is dropped and counted in info['corrupt_lines'] (the janitor then refuses to guess)."""
+    Any other undecodable line, any line that is not a JSON object with a known `kind` and an integer `seq`, is dropped and counted
+    in info['corrupt_lines'].  A file that cannot be read at all is reported as missing + unreadable.  NOTHING is guessed here: the
+    caller (janitor, observer) must treat every irregularity as an integrity problem, see integrity_issues()."""
     try:
         with open(path, "rb") as f:
             data = f.read()
     except FileNotFoundError:
-        return [], {"torn_tail": False, "corrupt_lines": 0, "missing": True}
+        return [], {"torn_tail": False, "corrupt_lines": 0, "missing": True, "unreadable": False}
+    except OSError:
+        return [], {"torn_tail": False, "corrupt_lines": 0, "missing": True, "unreadable": True}
     lines = data.split(b"\n")
     torn = lines[-1] != b""
     complete = lines[:-1]                    # lines[-1] is either b"" (clean end) or a torn tail
@@ -43,10 +47,36 @@ def parse_reg(path):
         if not ln:
             continue
         try:
-            recs.append(json.loads(ln.decode("utf-8")))
+            obj = json.loads(ln.decode("utf-8"))
         except (ValueError, UnicodeDecodeError):
             corrupt += 1
-    return recs, {"torn_tail": torn, "corrupt_lines": corrupt, "missing": False}
+            continue
+        if not isinstance(obj, dict) or obj.get("kind") not in KINDS or not isinstance(obj.get("seq"), int) or isinstance(obj.get("seq"), bool):
+            corrupt += 1
+            continue
+        recs.append(obj)
+    return recs, {"torn_tail": torn, "corrupt_lines": corrupt, "missing": False, "unreadable": False}
+
+
+def integrity_issues(records):
+    """Record-level integrity of what WAS parsed (strings; empty = nothing found).  Detects what parse_reg cannot see:
+    lost records (sequence gaps), records of a node whose INTENT is missing, and critical records with unusable fields -- all of
+    which would otherwise make a node silently invisible to the cleanup rules."""
+    issues = []
+    for i, r in enumerate(records):
+        if r["seq"] != i + 1:
+            issues.append("SEQ_GAP_OR_REORDER at index %d: seq %r (a record was lost, duplicated or reordered)" % (i, r["seq"]))
+            break
+    for nid, n in fold(records).items():
+        if n["intent"] is None:
+            issues.append("ORPHAN_RECORD: node %s has records but no INTENT" % nid)
+        fk, reg = n["forked"], n["registered"]
+        if fk is not None and not isinstance(fk.get("pid"), int):
+            issues.append("MALFORMED_FORKED: node %s has a non-integer pid" % nid)
+        if reg is not None and (not isinstance(reg.get("pid"), int) or not isinstance(reg.get("starttime"), int)):
+            issues.append("MALFORMED_REGISTERED: node %s lacks integer pid/starttime" % nid)
+    issues += ["ORDER: " + x for x in check_order(records)]
+    return issues
 
 
 def fold(records):

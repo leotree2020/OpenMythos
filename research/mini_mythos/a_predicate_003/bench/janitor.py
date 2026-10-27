@@ -7,7 +7,11 @@ Responsibility rules (STATIC-FIX-001):
   * ABORTED does not end responsibility: only a DEAD record (written after the observer CONFIRMED death) does;
   * a node that was forked but never identity-registered is reported as UNRESOLVED while its process may still exist (never signalled);
   * RUN_END carries `cleanup_confirmed`.  True is trusted only after a read-only re-verification; False / missing means the run
-    ended with recovery still owed, so the janitor works until cleanup is confirmed and exits non-zero if it cannot confirm it.
+    ended with recovery still owed, so the janitor works until cleanup is confirmed and exits non-zero if it cannot confirm it;
+  * (STATIC-FIX-002-B) the REG file's own integrity is assessed SEPARATELY from the cleanup state: a missing / unreadable file, a torn
+    tail, corrupt lines, a sequence gap, orphan or malformed critical records mean the janitor cannot know that it sees every node.
+    It then NEVER exits 0 (EXIT_REG_INTEGRITY / EXIT_BOTH).  It still signals only processes covered by a COMPLETE identity-verified
+    record -- anything it cannot identify is never signalled.
 WRITTEN, NOT RUN."""
 import os
 import signal
@@ -21,6 +25,8 @@ import registry as R          # noqa: E402
 EXIT_CLEAN = 0
 EXIT_IDENTITY = 2
 EXIT_INCOMPLETE = 4           # cleanup could not be confirmed: recovery responsibility is STILL OPEN
+EXIT_REG_INTEGRITY = 5        # the registration file could not be shown to be complete: recovery responsibility is STILL OPEN
+EXIT_BOTH = 6                 # both of the above
 CLEANUP_ATTEMPTS = 15
 CLEANUP_INTERVAL = 1.0
 
@@ -110,6 +116,45 @@ def registered_still_alive(records, skip=()):
     return left
 
 
+def reg_integrity(reg_path, retries=3, delay=0.2):
+    """-> (report, records).  The integrity of the registration FILE, independent of any cleanup state.
+    A torn tail is re-read a few times first (the observer may be mid-append); persistent torn tails, corrupt lines, a missing /
+    unreadable file or record-level issues all make the report not ok.  status is one of OK, MISSING, CORRUPT, TORN_TAIL."""
+    for attempt in range(retries + 1):
+        records, info = R.parse_reg(reg_path)
+        if not info["torn_tail"] or attempt == retries:
+            break
+        time.sleep(delay)
+    issues = R.integrity_issues(records) if not info["missing"] else []
+    if info["missing"]:
+        status = "MISSING"
+    elif info["corrupt_lines"] or issues:
+        status = "CORRUPT"
+    elif info["torn_tail"]:
+        status = "TORN_TAIL"
+    else:
+        status = "OK"
+    return {"status": status, "ok": status == "OK", "info": info, "issues": issues}, records
+
+
+def decide_with_integrity(records, observer_exited, integrity_ok, skip=()):
+    """decide(), but a file whose integrity is not established can never lead to EXIT_CONFIRMED, and while the observer is still
+    running it must not trigger a cleanup of live nodes (the observer's own run-set check reports the damage)."""
+    action = decide(records, observer_exited, skip)
+    if integrity_ok:
+        return action
+    return "CLEANUP" if action == "EXIT_CONFIRMED" else action
+
+
+def final_exit_code(cleanup_clear, integrity_ok):
+    """Cleanup state and registration-file integrity are separate facts; 0 requires both."""
+    if cleanup_clear and integrity_ok:
+        return EXIT_CLEAN
+    if cleanup_clear:
+        return EXIT_REG_INTEGRITY
+    return EXIT_INCOMPLETE if integrity_ok else EXIT_BOTH
+
+
 def decide(records, observer_exited, skip=()):
     """Pure decision (no I/O except the read-only liveness checks inside `registered_still_alive` when RUN_END claims success).
     -> 'WAIT' | 'EXIT_CONFIRMED' | 'CLEANUP'.
@@ -149,19 +194,28 @@ def main(argv):
     except (C.IdentityError, ProcessLookupError, OSError, C.ProcUnreadable) as e:
         C.append_jsonl(log, {"who": "janitor", "event": "OBSERVER_IDENTITY_UNCONFIRMED_NO_ACTION", "detail": repr(e)})
         return EXIT_IDENTITY
+    alerted = None
     while True:                                   # no lifetime cap while the observer is alive: a silent exit would drop the responsibility
-        records, _ = R.parse_reg(reg_path)
-        action = decide(records, obs.exited(), {os.getpid()})
+        integ, records = reg_integrity(reg_path)
+        if not integ["ok"] and alerted != integ["status"]:
+            alerted = integ["status"]             # logged as its own event, never mixed into the cleanup events
+            C.append_jsonl(log, {"who": "janitor", "event": "REG_INTEGRITY_ALERT", "reg_integrity": integ["status"], "info": integ["info"],
+                                 "issues": integ["issues"][:20], "mono": C.mono()})
+        action = decide_with_integrity(records, obs.exited(), integ["ok"], {os.getpid()})
         if action == "EXIT_CONFIRMED":
-            C.append_jsonl(log, {"who": "janitor", "event": "RUN_END_CLEANUP_CONFIRMED_AND_VERIFIED_NO_ACTION"})
+            C.append_jsonl(log, {"who": "janitor", "event": "JANITOR_EXIT", "cleanup_state": "CONFIRMED_AND_VERIFIED", "reg_integrity": "OK",
+                                 "code": EXIT_CLEAN})
             return EXIT_CLEAN
         if action == "CLEANUP":
             C.append_jsonl(log, {"who": "janitor", "event": "CLEANUP_REQUIRED", "observer_exited": obs.exited(),
                                  "run_end": R.last_run_end(records)})
             clear, last = cleanup_until_clear(reg_path, log)
-            C.append_jsonl(log, {"who": "janitor", "event": "CLEANUP_CONFIRMED" if clear else "CLEANUP_INCOMPLETE_RESPONSIBILITY_OPEN",
-                                 "last": last})
-            return EXIT_CLEAN if clear else EXIT_INCOMPLETE
+            integ_after, _ = reg_integrity(reg_path)                      # judged again AFTER the cleanup passes
+            code = final_exit_code(clear, integ_after["ok"])
+            C.append_jsonl(log, {"who": "janitor", "event": "JANITOR_EXIT",
+                                 "cleanup_state": "CONFIRMED" if clear else "INCOMPLETE_RESPONSIBILITY_OPEN",
+                                 "reg_integrity": integ_after["status"], "reg_issues": integ_after["issues"][:20], "code": code, "last": last})
+            return code
         C.poll_ready([obs.fd], 0.5)
 
 

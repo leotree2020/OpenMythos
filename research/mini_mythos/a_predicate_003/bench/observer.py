@@ -43,6 +43,7 @@ class Observer:
         self.counter = 0
         self.problems = []                    # bench-level problems (each makes the trial BLOCKED)
         self.trial_tag = None
+        self.intake_closed = False            # while True no new TICKET is granted and no in-flight creation is registered
 
     # ------------------------------------------------------------ node creation by the observer itself
     def _new_id(self):
@@ -188,7 +189,28 @@ class Observer:
         else:
             rec.messages.append(msg)
 
+    # ------------------------------------------------------------ intake gate (STATIC-FIX-002-A)
+    def close_intake(self):
+        """Stop the node population from growing: new TICKETs are denied, and every ticket that was granted but whose child was not
+        yet reported (state INTENT) is REVOKED -- its gate gets the abort byte, so a child forked from it exits by itself.  When the
+        creator's CREATED message arrives later, the pid is still recorded (FORKED) and kept in the residual set until it is
+        confirmed dead; it is never registered or released."""
+        self.intake_closed = True
+        for r in list(self.nodes.values()):
+            if r.state == "INTENT":
+                self._abort(r, "intake closed: in-flight ticket revoked", expected=True)
+                r.revoked = True
+
+    def open_intake(self):
+        self.intake_closed = False
+
     def _on_ticket(self, creator, msg):
+        if self.intake_closed:
+            try:
+                proto.send_msg(creator.sock, {"t": "TICKET_DENIED", "why": "intake closed"})
+            except (OSError, proto.ProtoError):
+                pass
+            return
         if creator.state != "RELEASED":
             proto.send_msg(creator.sock, {"t": "TICKET_DENIED", "why": "creator not released"})
             return
@@ -212,14 +234,27 @@ class Observer:
 
     def _on_created(self, creator, msg):
         child = self.nodes.get(msg.get("node_id"))
-        if child is None or child.creator != creator.node_id or child.state != "INTENT":
+        if child is None or child.creator != creator.node_id:
             self.problems.append("CREATED for unknown/foreign ticket %r from %s" % (msg, creator.node_id))
             return
-        child.state = "FORKED"
-        self._note_forked(child, int(msg["pid"]), creator.pid)
-        ok = self._register(child, int(msg["pid"]), creator.pid)
+        pid = int(msg["pid"])
+        if child.state == "ABORTED" or self.intake_closed:
+            # revoked / aborted before the report arrived: the process EXISTS, so it is recorded (FORKED) and stays a residual
+            # until confirmed dead.  It is not registered (its gate already carries the abort byte) and never signalled.
+            if child.forked_pid is None:
+                self._note_forked(child, pid, creator.pid)
+            if child.state == "INTENT":
+                self._abort(child, "intake closed before the creation was reported", expected=True)
+            reply = "REGISTER_FAILED"
+        elif child.state != "INTENT":
+            self.problems.append("CREATED for a ticket in state %s: %r" % (child.state, msg))
+            return
+        else:
+            child.state = "FORKED"
+            self._note_forked(child, pid, creator.pid)
+            reply = "REGISTERED_OK" if self._register(child, pid, creator.pid) else "REGISTER_FAILED"
         try:
-            proto.send_msg(creator.sock, {"t": "REGISTERED_OK" if ok else "REGISTER_FAILED", "node_id": child.node_id})
+            proto.send_msg(creator.sock, {"t": reply, "node_id": child.node_id})
         except (OSError, proto.ProtoError) as e:
             self.problems.append("could not answer creator %s: %r" % (creator.node_id, e))
 
@@ -359,21 +394,80 @@ class Observer:
                     pass
                 r.sock = None
 
-    def finish_cleanup(self, nodes=None, grace=3.0):
-        """Kill -> reap -> verify for the given nodes (default: the current trial).  -> report dict."""
-        nodes = self._nodes(nodes)
-        report = {"kill": self.kill_registered(nodes=nodes), "kill_unregistered_direct": self.kill_unregistered_direct(nodes=nodes)}
-        self.wait_for(lambda: not self.residual(nodes), grace)
-        self.reap_direct(nodes=nodes)
-        res = self.residual_detail(nodes)
-        report["residual_after_kill"] = [x["node_id"] for x in res]
-        report["residual_detail"] = res
-        report["cleanup_ok"] = not res
-        self.mark_dead(nodes)
+    def finish_cleanup(self, nodes=None, grace=3.0, reopen_intake=True, max_rounds=5):
+        """Kill -> reap -> verify, to a fixpoint.  `nodes` is a list (legacy) or a CALLABLE returning the current node list; it is
+        re-evaluated every round, so a node that appears while cleaning (late CREATED, in-flight ticket) is never missed.  Intake is
+        closed for the duration.  cleanup_ok requires an empty residual over the FINAL set AND a stable set (no node appeared in the
+        last round); an unstable set is never reported as clean.  -> report dict."""
+        self.close_intake()
+        report = {"rounds": []}
+        stable = False
+        for rnd in range(1, max_rounds + 1):
+            cur = self._nodes(nodes() if callable(nodes) else nodes)
+            ids_before = {r.node_id for r in cur}
+            rr = {"round": rnd, "nodes": len(cur), "kill": self.kill_registered(nodes=cur),
+                  "kill_unregistered_direct": self.kill_unregistered_direct(nodes=cur)}
+            self.wait_for(lambda: not self.residual(cur), grace)
+            self.reap_direct(nodes=cur)
+            self.serve(0.1)                                  # drain late CREATED / EOF messages while intake is closed
+            after = self._nodes(nodes() if callable(nodes) else nodes)
+            rr["new_nodes"] = sorted({r.node_id for r in after} - ids_before)
+            report["rounds"].append(rr)
+            if not rr["new_nodes"]:
+                stable = True
+                break
+        final = self._nodes(nodes() if callable(nodes) else nodes)
+        res = self.residual_detail(final)
+        report.update(kill=report["rounds"][-1]["kill"], kill_unregistered_direct=report["rounds"][-1]["kill_unregistered_direct"],
+                      residual_after_kill=[x["node_id"] for x in res], residual_detail=res, stable_set=stable, final_nodes=len(final),
+                      cleanup_ok=bool(stable and not res))
+        self.mark_dead(final)
+        if reopen_intake:
+            self.open_intake()
         return report
 
     def finish_trial_cleanup(self, grace=3.0):
         return self.finish_cleanup(None, grace)
+
+    def verify_run_set(self, exclude_ids=()):
+        """Re-check the WHOLE run's node set against independent records immediately before RUN_END.  consistent=False if any of:
+        a node id in 1..counter has no in-memory record; the REG file on disk differs from what was written (count, parse problems,
+        integrity issues); the file mentions node ids that memory does not know; a ticket is still pending (INTENT); a non-excluded
+        node is not confirmed dead.  An inconsistent set can never support a cleanup PASS."""
+        exclude = set(exclude_ids)
+        problems = []
+        known = set(self.nodes)
+        missing = ["n%05d" % i for i in range(1, self.counter + 1) if "n%05d" % i not in known]
+        if missing:
+            problems.append("node ids without a record: %s" % missing[:5])
+        recs, info = R.parse_reg(self.reg_path)
+        if info["missing"] or info["torn_tail"] or info["corrupt_lines"]:
+            problems.append("registration file irregular: %s" % info)
+        if len(recs) != len(self.reg.records):
+            problems.append("registration file has %d records, %d were written" % (len(recs), len(self.reg.records)))
+        issues = R.integrity_issues(recs) if not info["missing"] else []
+        if issues:
+            problems.append("registration file integrity issues: %s" % issues[:3])
+        unknown = sorted(set(R.fold(recs)) - known)
+        if unknown:
+            problems.append("registration file has unknown node ids: %s" % unknown[:5])
+        pending = [r.node_id for r in self.nodes.values() if r.node_id not in exclude and r.state == "INTENT"]
+        if pending:
+            problems.append("tickets still pending: %s" % pending)
+        residual = self.residual_detail([r for r in self.nodes.values() if r.node_id not in exclude])
+        if residual:
+            problems.append("nodes not confirmed dead: %s" % [x["node_id"] for x in residual])
+        return {"consistent": not problems, "problems": problems, "nodes": len(known), "excluded": sorted(exclude), "reg_records": len(recs),
+                "residual": residual}
+
+    def final_cleanup(self, exclude_ids=(), grace=3.0):
+        """Run-wide cleanup of every node except `exclude_ids` (the janitor): fresh node set each round, intake closed and left closed,
+        then the run set is re-verified.  cleanup_ok is False unless both the cleanup fixpoint and the verification hold."""
+        exclude = set(exclude_ids)
+        rep = self.finish_cleanup(lambda: self.run_level_nodes(exclude), grace, reopen_intake=False)
+        rep["run_set"] = self.verify_run_set(exclude)
+        rep["cleanup_ok"] = bool(rep["cleanup_ok"] and rep["run_set"]["consistent"])
+        return rep
 
     def run_level_nodes(self, exclude_ids=()):
         """Every node of the whole run (all trial tags) except the given ones (the janitor)."""

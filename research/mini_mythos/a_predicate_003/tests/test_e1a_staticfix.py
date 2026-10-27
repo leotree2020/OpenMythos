@@ -15,6 +15,7 @@ sys.path.insert(0, os.path.join(HERE, "..", "tools"))
 import candidates as K      # noqa: E402
 import common as C          # noqa: E402
 import e1a_runner as RUN    # noqa: E402
+import evidence as EV      # noqa: E402
 import janitor as J         # noqa: E402
 import observer as O        # noqa: E402
 import registry as R        # noqa: E402
@@ -322,12 +323,12 @@ class TestFix3RunEndAndJanitor(unittest.TestCase):
         src = inspect.getsource(J.main)
         self.assertNotIn("LIFETIME_CAP_NO_ACTION", src)
         self.assertNotIn("RUN_END_SEEN_NO_ACTION", src)
-        self.assertIn("EXIT_INCOMPLETE", src)
+        self.assertIn("final_exit_code", src)                                     # STATIC-FIX-002-B: exit code from cleanup AND integrity
 
     def test_runner_writes_run_end_with_the_confirmation_after_the_final_cleanup(self):
         src = inspect.getsource(RUN.execute)
         self.assertIn("cleanup_confirmed=confirmed", src)
-        self.assertLess(src.index("finish_cleanup(obs.run_level_nodes"), src.index('obs.reg.write("RUN_END"'))
+        self.assertLess(src.index("obs.final_cleanup(jid)"), src.index('obs.reg.write("RUN_END"'))
         self.assertLess(src.index("token_scan("), src.index('obs.reg.write("RUN_END"'))
         self.assertIn("recovery_open", src)
         self.assertIn("scan_problems", src)                                       # an unreadable /proc during the scan is "not confirmed"
@@ -433,20 +434,14 @@ class TestFix4Phases(unittest.TestCase):
         self.assertEqual(RUN.main(["--execute", "--phase", "cells", "--only", "E1A-a:P2", "--reps", "1"]), 2)    # no authorization file exists
         self.assertFalse(os.path.exists(RUN.AUTH_DEFAULT))
 
-    def test_cell_results_count_only_with_valid_bv_evidence(self):
-        code = "c" * 64
-        good = {"meta": {"prereg_sha256": SHA, "bench_code_sha256": code, "checks_run": list(V.RUN_LEVEL_IDS)},
-                "results": {k: {"ok": True} for k in V.RUN_LEVEL_IDS}}
-        with tempfile.TemporaryDirectory() as d:
-            p = os.path.join(d, "validity.json")
-            for ev, expect in ((good, True),
-                               (dict(good, results=dict(good["results"], **{"BV-2": {"ok": False}})), False),
-                               (dict(good, meta=dict(good["meta"], checks_run=["BV-7"])), False),
-                               (dict(good, meta=dict(good["meta"], bench_code_sha256="d" * 64)), False),
-                               (dict(good, meta=dict(good["meta"], prereg_sha256="0" * 64)), False)):
-                json.dump(ev, open(p, "w"))
-                self.assertEqual(RUN.verify_bv_evidence(p, SHA, code), expect)
-            self.assertFalse(RUN.verify_bv_evidence(os.path.join(d, "none.json"), SHA, code))
+    def test_cell_results_need_a_verified_owner_binding_not_a_path(self):
+        a = auth(**CELLS_ONE)                                                    # no bv_binding at all
+        counted, detail = EV.evaluate_counting(a, True, SHA, "c" * 64)
+        self.assertFalse(counted)
+        self.assertFalse(detail["verified"])
+        self.assertFalse(EV.evaluate_counting(a, False, SHA, "c" * 64)[0])      # nothing to count
+        with self.assertRaises(SystemExit):                                      # the old user-supplied evidence path no longer exists
+            RUN.main(["--execute", "--phase", "cells", "--bv-evidence", "x.json"])
 
     def test_summary_marks_uncounted_and_bv_only_runs(self):
         s = RUN.summarize(PREREG, [], [], True, None, False, (), True)
