@@ -1,5 +1,11 @@
 # Mini-Mythos / OpenMythos — 全项目研发进度（2026-10-25 更新版）
 
+## D1 A 判定提案修订检查点（2026-10-27；本文件最新阶段进度，优先于下方 G1/G2 审核后处理检查点）
+
+F3B-D1-A-PREDICATE-PROPOSAL-REVIEW-002：修订 A 判定提案与 CPU 测试计划草稿（基准 `cc474f5`）——三态 ALIVE/EXITED/UNKNOWN（RV-01）、跨会话后代归属（RV-02）、指纹 TOCTOU 与 pidfd 评估（RV-03）、子收割者拆成行为维度与策略维度（RV-04）。仅文档；新增 / 改写用例 NOT TESTED；未实施、未运行测试、G3～G6 NOT TESTED。
+
+**状态：**R3 SPEC FROZEN 不变（实现 NOT TESTED，真实 D1 NOT AUTHORIZED）；方案选择 PENDING；ChatGPT 对修订 PENDING；Grok DEFERRED。下一条唯一指令：等待 ChatGPT 与 Grok 交叉审核，并由负责人单独批准候选 CPU 对照实验。
+
 ## D1 G1/G2 审核后处理检查点（2026-10-27；本文件最新阶段进度，优先于下方 G1/G2 CPU 实验检查点）
 
 F3B-D1-G1G2-REVIEW-001：保留 G1 = FAIL、G2 = FAIL 的原始证据；起草 R3 存活目标判定 A 的修订提案（方案 A：先 `waitpid(pid, WNOHANG)` 回收并保存退出状态再求值；方案 B：`waitid(P_PID, WNOWAIT)` 非消耗式观察、回收推迟到 T5；共同部分：会话号 + 指纹、`/proc` 状态、子收割者前提、T5 去掉 `waitpid(-1)`、SIGKILL 前复核）与最小受控 CPU 测试计划（基线 / A / B 三臂，T-01…T-11）。提案与计划均为草稿，未应用、未授权执行；冻结 R3 与决策记录未改；G3～G6 NOT TESTED。

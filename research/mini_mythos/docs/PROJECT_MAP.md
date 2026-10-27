@@ -245,3 +245,7 @@ Claude Code 接替 Grok 担任主要研发工程师（项目负责人 2026-10-26
 ## D1 G1/G2 审核后处理（2026-10-27）
 
 分支 `d1-r3-a-revision-proposal-20261027`，基准 `af7b39abd17c64df1e08165cd2904a4a68cb1bed`。新增 `docs/F3B_D1_R3_A_PREDICATE_REVISION_PROPOSAL_DRAFT_20261027.md`、`docs/F3B_D1_R3_A_PREDICATE_CPU_TEST_PLAN_DRAFT_20261027.md`、`docs/F3B_D1_G1G2_REVIEW_001_CHECKPOINT_20261027.md`。仅文档草稿；冻结 R3 未改；G1/G2 FAIL 证据保留。下一条唯一指令：等待项目负责人批准修订方向及后续最小 CPU 实验。
+
+## D1 A 判定提案修订（2026-10-27）
+
+分支 `d1-r3-a-revision-proposal-20261027`，基准 `cc474f56ae77882fa77cfe4e7deb0e6b5d4305e8`。修订 `docs/F3B_D1_R3_A_PREDICATE_REVISION_PROPOSAL_DRAFT_20261027.md` 与 `docs/F3B_D1_R3_A_PREDICATE_CPU_TEST_PLAN_DRAFT_20261027.md`（RV-01…RV-04：三态 UNKNOWN、跨会话后代归属、TOCTOU/pidfd、子收割者维度拆分），新增检查点 `docs/F3B_D1_A_PREDICATE_PROPOSAL_REVIEW_002_CHECKPOINT_20261027.md`。仅文档，用例均 NOT TESTED；方案选择 PENDING；Grok DEFERRED。
