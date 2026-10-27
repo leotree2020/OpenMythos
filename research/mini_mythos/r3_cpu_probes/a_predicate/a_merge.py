@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Merge the per-case parts of the formal run into one results file and derive the summary tables used by the report."""
 import glob
+import gzip
 import hashlib
 import json
 import os
@@ -15,10 +16,10 @@ ARMS = C.ARM_ORDER
 
 
 def main():
-    parts = sorted(glob.glob(os.path.join(HERE, "results", "parts", "T-*.json")))
+    parts = sorted(glob.glob(os.path.join(HERE, "results", "parts", "T-*.json")) + glob.glob(os.path.join(HERE, "results", "parts", "T-*.json.gz")))
     results, envs, errors, unclean, notok = [], [], [], [], []
     for p in parts:
-        d = json.load(open(p))
+        d = json.load(gzip.open(p, "rt")) if p.endswith(".gz") else json.load(open(p))
         results += d["results"]
         envs.append({"part": os.path.basename(p), "git_commit": d["environment"]["git_commit"], "git_status_short": d["environment"]["git_status_short"],
                      "kernel": d["environment"]["kernel"], "supervisor_pid": d["environment"]["supervisor_pid"], "sentinel": d["environment"].get("sentinel")})
@@ -27,12 +28,13 @@ def main():
         unclean += d["cleanup_unclean_runs"]
         notok += d["tool_not_ok_runs"]
     matrix = C.summarize(results, ARMS)
-    first_env = json.load(open(parts[0]))["environment"]
+    first_env = (json.load(gzip.open(parts[0], "rt")) if parts[0].endswith(".gz") else json.load(open(parts[0])))["environment"]
     out = {"experiment": "F3B-D1-A-CPU-001", "environment_first_part": first_env, "parts": envs, "results": results, "matrix": matrix,
            "run_errors": errors, "cleanup_unclean_runs": unclean, "tool_not_ok_runs": notok}
-    path = os.path.join(HERE, "results", "a_predicate_cpu_001_results.json")
+    path = os.path.join(HERE, "results", "a_predicate_cpu_001_results.json.gz")
     text = json.dumps(out, indent=1, sort_keys=True, ensure_ascii=True, default=str) + "\n"
-    open(path, "w").write(text)
+    with gzip.GzipFile(path, "wb", mtime=0) as f:        # mtime=0: byte-reproducible archive
+        f.write(text.encode("ascii"))
 
     # ---------- derived tables
     der = {}

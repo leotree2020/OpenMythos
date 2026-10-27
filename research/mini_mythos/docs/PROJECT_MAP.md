@@ -249,3 +249,7 @@ Claude Code 接替 Grok 担任主要研发工程师（项目负责人 2026-10-26
 ## D1 A 判定提案修订（2026-10-27）
 
 分支 `d1-r3-a-revision-proposal-20261027`，基准 `cc474f56ae77882fa77cfe4e7deb0e6b5d4305e8`。修订 `docs/F3B_D1_R3_A_PREDICATE_REVISION_PROPOSAL_DRAFT_20261027.md` 与 `docs/F3B_D1_R3_A_PREDICATE_CPU_TEST_PLAN_DRAFT_20261027.md`（RV-01…RV-04：三态 UNKNOWN、跨会话后代归属、TOCTOU/pidfd、子收割者维度拆分），新增检查点 `docs/F3B_D1_A_PREDICATE_PROPOSAL_REVIEW_002_CHECKPOINT_20261027.md`。仅文档，用例均 NOT TESTED；方案选择 PENDING；Grok DEFERRED。
+
+## D1 R3-A CPU 受控对照实验（2026-10-27）
+
+分支 `d1-r3-a-cpu-validation-20261027`。新增 `research/mini_mythos/r3_cpu_probes/a_predicate/`（`a_lab.py`、`a_cases.py`、`a_node.py`、`a_merge.py`、`run_all.sh`、`test_a_lab.py`、`results/`：1860 条原始记录 gz、派生统计、单元测试输出、第 1 轮与开发记录）与 `docs/F3B_D1_A_CPU_001_REPORT_20261027.md`、`docs/F3B_D1_A_CPU_001_CHECKPOINT_20261027.md`。CA、CB 在授权矩阵上均 PASS、无明确优劣；冻结 R3 未改；ChatGPT PENDING；Grok DEFERRED。
