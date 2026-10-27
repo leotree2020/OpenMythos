@@ -297,3 +297,7 @@ LOGIC-TEST-001-RERUN-001：修复执行守卫的 argv 缺陷（+1 行）后，�
 ## D1 CPU-003 E1-A 真实进程门控验证准备 GATE-PREP-001（2026-10-27）
 
 基线 `a7ce70f`。仅准备，未执行：先冻结 G0 判据与预注册文本（`e287b95`），再写独立 G0 入口 / 单次授权互锁 / 纯判定函数 / 纯逻辑测试（未运行）/ 安全评审（`a_predicate_003/gate_g0/`），并给静态审计加 `--dir gate_g0` 严格配置（台架审计 0 违规，G0 目录 0 违规）。没有进程、信号、进程级测试、BV、E1-A 单元；没有有效的 G0 授权文件；台架 / 预注册 / R3 / CPU-001/002 / Parcae 未改。检查点 `docs/F3B_D1_A_CPU_003_E1A_GATE_PREP_CHECKPOINT_20261027.md`。下一步：提交 ChatGPT 独立审核，等待负责人另行批准第一次受控 G0 运行。
+
+## D1 CPU-003 E1-A G0 执行前审核 G0-PREFLIGHT-001（2026-10-27）
+
+基线 `d8a0728`（ChatGPT：G0 PREPARATION CONDITIONAL PASS）。仅分析，未执行：纯逻辑测试执行路径静态审计（46 个测试，0 个进程相关调用，`run()` 受三层保护）、`g0_run.py` 阻塞路径分析（发现 `waitpid` 无超时 F-8、无运行期总预算 F-9）、六项预注册偏差处置（5 项 ACCEPTABLE，第 6 项 REQUIRES V2，无 BLOCKED）。冻结 V1、台架、G0 实现未改；没有运行任何测试或进程。检查点 `docs/F3B_D1_A_CPU_003_E1A_G0_PREFLIGHT_CHECKPOINT_20261027.md`，分析 `a_predicate_003/g0_preflight_review/G0_PREFLIGHT_REVIEW.md`。下一步：ChatGPT 复核，等待负责人批准下一阶段。
