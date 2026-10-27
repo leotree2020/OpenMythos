@@ -12,13 +12,20 @@ Policy checked (ERRATA-002 section 2 / PREP-001 safety rules):
   * no string literal mentioning pkill / killall / pgrep;
   * command-line / environ readers (read_cmdline, read_environ) are used for diagnostics in truth.py only;
   * os._exit allowed only in the files that implement child-side exits.
-Exit status 0 = no violations.  Usage: static_audit.py [--json]"""
+Exit status 0 = no violations.  Usage: static_audit.py [--json] [--dir gate_g0]
+
+`--dir gate_g0` audits the G0 entry directory under the stricter G0 profile (GATE-PREP-001): NO process-creating, signalling, exec or exit
+call at all (os.fork / os.kill / os.killpg / signal.* senders / exec* / spawn* / os._exit / os.pidfd_open / os.setsid / os.setpgid), no
+signal.SIG* constant, os.waitpid only in g0_run.py, and `subprocess` / `signal` imports only in g0_run.py (the guard traps them there;
+it never calls them).  The bench itself is audited with the default profile exactly as before."""
 import ast
 import json
 import os
 import sys
 
-BENCH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "bench")
+A003 = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
+BENCH = os.path.join(A003, "bench")
+G0_DIR = os.path.join(A003, "gate_g0")
 
 # dotted call name -> files where it is allowed (empty set = forbidden everywhere)
 CALL_RULES = {
@@ -41,6 +48,14 @@ FORBIDDEN_STRINGS = ("pkill", "killall", "pgrep", "xargs kill", "kill -9", "kill
 DIAG_ONLY = {"read_cmdline": {"truth.py", "common.py"}, "read_environ": {"truth.py", "common.py"}}
 
 
+# G0 profile: the same table, but nothing that creates, signals, execs or exits a process may be CALLED; waitpid only in g0_run.py
+G0_CALL_RULES = {k: set() for k in CALL_RULES}
+G0_CALL_RULES["os.waitpid"] = {"g0_run.py"}
+G0_IMPORT_ALLOWED = {"subprocess": {"g0_run.py"}}
+G0_DIAG_ONLY = {"read_cmdline": {"g0_run.py"}, "read_environ": set()}      # g0_run.py: diagnostic token scan only
+G0_FORBIDDEN_IMPORTS = FORBIDDEN_IMPORTS | {"ctypes", "socketserver", "asyncio", "concurrent"}
+
+
 def dotted(node):
     parts = []
     while isinstance(node, ast.Attribute):
@@ -52,18 +67,23 @@ def dotted(node):
     return None
 
 
-def audit_file(path):
+def audit_file(path, g0=False):
     name = os.path.basename(path)
+    rules = G0_CALL_RULES if g0 else CALL_RULES
+    bad_imports = G0_FORBIDDEN_IMPORTS if g0 else FORBIDDEN_IMPORTS
+    diag = G0_DIAG_ONLY if g0 else DIAG_ONLY
     src = open(path).read()
     tree = ast.parse(src, path)
     v, inv = [], {}
     for n in ast.walk(tree):
         if isinstance(n, ast.Import):
             for a in n.names:
-                if a.name.split(".")[0] in FORBIDDEN_IMPORTS:
+                top = a.name.split(".")[0]
+                if top in bad_imports and not (g0 and name in G0_IMPORT_ALLOWED.get(top, ())):
                     v.append((name, n.lineno, "forbidden import %s" % a.name))
         elif isinstance(n, ast.ImportFrom):
-            if (n.module or "").split(".")[0] in FORBIDDEN_IMPORTS:
+            top = (n.module or "").split(".")[0]
+            if top in bad_imports and not (g0 and name in G0_IMPORT_ALLOWED.get(top, ())):
                 v.append((name, n.lineno, "forbidden import from %s" % n.module))
             for a in n.names:
                 if (n.module, a.name) in FORBIDDEN_FROM:
@@ -72,22 +92,24 @@ def audit_file(path):
             d = dotted(n.func)
             if d is None:
                 continue
-            if d in CALL_RULES:
+            if d in rules:
                 inv.setdefault(d, []).append(n.lineno)
-                if name not in CALL_RULES[d]:
+                if name not in rules[d]:
                     v.append((name, n.lineno, "call %s not allowed in this file" % d))
             if d == "os.waitpid" and n.args:
                 a0 = n.args[0]
                 if isinstance(a0, ast.UnaryOp) and isinstance(a0.op, ast.USub):
                     v.append((name, n.lineno, "os.waitpid with a negative pid"))
             last = d.split(".")[-1]
-            if last in DIAG_ONLY:
+            if last in diag:
                 inv.setdefault(last, []).append(n.lineno)
-                if name not in DIAG_ONLY[last]:
+                if name not in diag[last]:
                     v.append((name, n.lineno, "%s is diagnostic-only (truth.py / definition in common.py)" % last))
         elif isinstance(n, ast.Attribute):
             if dotted(n) in ("os.P_ALL",):
                 v.append((name, n.lineno, "os.P_ALL"))
+            if g0 and (dotted(n) or "").startswith("signal.SIG"):
+                v.append((name, n.lineno, "signal constant %s (G0 never names a signal)" % dotted(n)))
         elif isinstance(n, ast.Constant) and isinstance(n.value, str):
             low = n.value.lower()
             for bad in FORBIDDEN_STRINGS:
@@ -97,10 +119,14 @@ def audit_file(path):
 
 
 def main():
-    files = sorted(f for f in os.listdir(BENCH) if f.endswith(".py"))
+    g0 = "--dir" in sys.argv
+    if g0 and sys.argv[sys.argv.index("--dir") + 1:sys.argv.index("--dir") + 2] != ["gate_g0"]:
+        sys.exit("--dir accepts only gate_g0")
+    root = G0_DIR if g0 else BENCH
+    files = sorted(f for f in os.listdir(root) if f.endswith(".py"))
     violations, inventory = [], {}
     for f in files:
-        v, inv = audit_file(os.path.join(BENCH, f))
+        v, inv = audit_file(os.path.join(root, f), g0)
         violations += v
         inventory[f] = inv
     # the wrappers installed by sup_stub.py must be attribute ASSIGNMENTS, never calls
