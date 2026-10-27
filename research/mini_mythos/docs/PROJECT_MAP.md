@@ -301,3 +301,7 @@ LOGIC-TEST-001-RERUN-001：修复执行守卫的 argv 缺陷（+1 行）后，�
 ## D1 CPU-003 E1-A G0 执行前审核 G0-PREFLIGHT-001（2026-10-27）
 
 基线 `d8a0728`（ChatGPT：G0 PREPARATION CONDITIONAL PASS）。仅分析，未执行：纯逻辑测试执行路径静态审计（46 个测试，0 个进程相关调用，`run()` 受三层保护）、`g0_run.py` 阻塞路径分析（发现 `waitpid` 无超时 F-8、无运行期总预算 F-9）、六项预注册偏差处置（5 项 ACCEPTABLE，第 6 项 REQUIRES V2，无 BLOCKED）。冻结 V1、台架、G0 实现未改；没有运行任何测试或进程。检查点 `docs/F3B_D1_A_CPU_003_E1A_G0_PREFLIGHT_CHECKPOINT_20261027.md`，分析 `a_predicate_003/g0_preflight_review/G0_PREFLIGHT_REVIEW.md`。下一步：ChatGPT 复核，等待负责人批准下一阶段。
+
+## D1 CPU-003 E1-A G0 V2 判据冻结 G0-V2-SPEC-001（2026-10-27）
+
+基线 `e0ffef9`。新增并冻结 `gate_g0/g0_criteria_v2.json` + `E1A_GATE_G0_PREREG_V2.md`（V2 冻结提交 `77750c3`，只含这三个文件；V1 文件、哈希、提交不变且不被重新解释）。C03 明确两种情形：有证据证明登记顺序 / 完整性违规 ⇒ FAIL，因超时或提前中止证据不足 ⇒ UNEVALUABLE → BLOCKED；检查编号 C01–C17 不变（8 IDENTICAL / 8 CLARIFIED / 1 MODIFIED），六项文字偏差正式处理。登记 F-13（`evidence/` 父目录无人创建）并给出 F-8/F-9/F-12/F-13/C03 的文件级修复设计，均未实现。G0 实现、台架、E1-A 预注册、R3、CPU-001/002、Parcae 未改；没有运行任何测试或进程。检查点 `docs/F3B_D1_A_CPU_003_E1A_G0_V2_SPEC_CHECKPOINT_20261027.md`。下一步：交 ChatGPT / Grok 交叉审核，待负责人授权实施。

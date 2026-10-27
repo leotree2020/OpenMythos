@@ -1,0 +1,44 @@
+F-13 call-path trace (read-only; generated 2026-10-27T08:42:36Z at HEAD 77750c38998489c3093f80439b52c3c5269db059)
+
+$ ls -d evidence
+ls: cannot access 'evidence': No such file or directory
+
+$ grep -n "makedirs|os.mkdir|EVIDENCE_ROOT|CONSUMED_DIR" gate_g0/*.py bench/registry.py bench/observer.py bench/common.py
+gate_g0/g0_run.py:220:    ev_root = GA.EVIDENCE_ROOT
+gate_g0/g0_run.py:265:    os.mkdir(run_dir)                                                  # exclusive: raises if the directory appeared meanwhile
+gate_g0/g0_run.py:272:        os.makedirs(GA.CONSUMED_DIR, exist_ok=True)
+gate_g0/g0_run.py:401:    run_dir = os.path.join(GA.EVIDENCE_ROOT, run_id)
+gate_g0/g0_auth.py:25:EVIDENCE_ROOT = os.path.join(A003, "evidence")
+gate_g0/g0_auth.py:26:CONSUMED_DIR = os.path.join(EVIDENCE_ROOT, "_g0_consumed")
+gate_g0/g0_auth.py:94:    return os.path.join(consumed_dir or CONSUMED_DIR, "%s.json" % authorization_id)
+bench/registry.py:17:        os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+
+--- g0_run.py run(): order of the first filesystem operations
+12:263:     pf = preflight(run_dir, exclude)                                   # BEFORE the run directory exists (uniqueness is part of the preflight)
+14:265:     os.mkdir(run_dir)                                                  # exclusive: raises if the directory appeared meanwhile
+15:266:     with open(os.path.join(run_dir, "authorization_used.json"), "wb") as f:
+18:269:     try:
+21:272:         os.makedirs(GA.CONSUMED_DIR, exist_ok=True)
+22:273:         with open(GA.consumed_marker(auth["authorization_id"]), "x") as f:      # single use: consumed BEFORE the fork, even if the run later fails
+26:277:         reg_path = os.path.join(run_dir, "registry.jsonl")
+27:278:         obs = O.Observer(reg_path)
+
+--- g0_run.py main(): what happens when run() raises before the guarded section
+404:         return 2
+405:     try:
+406:         ev = run(auth, raw, run_id, run_dir)
+407:     except BaseException:                       # before the guarded section (e.g. /proc unreadable in the preflight): BLOCKED, never FAIL
+408:         tb = traceback.format_exc()
+409:         print("BLOCKED: the run could not start/finish its preamble:\n" + tb, file=sys.stderr)
+410:         if os.path.isdir(run_dir):
+411:             write_json(os.path.join(run_dir, "g0_summary.json"), {"run_id": run_id, "verdict": "BLOCKED", "exit_code": 3, "exception": tb,
+412:                                                                   "scope": "G0 only; nothing was forked unless the registry says so"})
+413:         return 3
+414:     res = GJ.judge(ev)
+415:     write_json(os.path.join(run_dir, "g0_evidence.json"), ev)
+416:     write_json(os.path.join(run_dir, "g0_summary.json"), {"run_id": run_id, "verdict": res["verdict"], "exit_code": res["exit_code"], "checks": res["checks"],
+
+--- bench/registry.py RegWriter creates only dirname(reg_path) = the run directory (which must already exist by then):
+        os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+
+CONCLUSION: no code on the call path creates the parent 'evidence/' before os.mkdir(run_dir) (line 265); the first makedirs is for _g0_consumed (line 272) and comes AFTER it. os.mkdir raises FileNotFoundError when evidence/ is absent; it is raised outside the try block of run(); main() catches it, sees no run directory, writes no summary, returns 3. Nothing is consumed (the marker is created later).
