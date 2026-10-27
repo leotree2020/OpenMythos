@@ -1,0 +1,1240 @@
+{
+ "criteria_id": "E1A-GATE-G0-CRITERIA-V3",
+ "schema_version": "e1a-gate-g0-criteria-3",
+ "stage": "G0",
+ "date": "2026-10-27",
+ "base_commit": "ab66d183752eb8b74f38225a5ebc1187dd2da565",
+ "supersedes": {
+  "criteria_id": "E1A-GATE-G0-CRITERIA-V2",
+  "criteria_file": "gate_g0/g0_criteria_v2.json",
+  "criteria_sha256": "43f7eb79d43b624bdea5db53705fe923bfe7d94a70ff43da7a43fecd51e5c438",
+  "prereg_text_file": "gate_g0/E1A_GATE_G0_PREREG_V2.md",
+  "prereg_text_sha256": "ce170a4c85e4ac1d05a47b5a7801a8b392f51909525f0c7e883c33162fef3ff2",
+  "v2_freeze_commit": "77750c38998489c3093f80439b52c3c5269db059",
+  "earlier": {
+   "criteria_file": "gate_g0/g0_criteria_v1.json",
+   "criteria_sha256": "4d3acd67d9d98e26d8c608cbfd037b5b7f75e78afe4a2c33e7de63fb7dee3ce2",
+   "prereg_text_sha256": "9eca01eda5a4c24eb5784c53e65e215e2892c6d0e3bbf7206346184e949051eb"
+  },
+  "relation": "V3 is a NEW, separate version. The V1 and V2 files, their hashes and their commits stay byte-identical and in the history. V2 is not reinterpreted. No G0 run was ever executed under V1 or V2, so no result exists that V3 could change."
+ },
+ "scope": "first minimal controlled Linux process-gate test: ONE sacrificial child, protocol INTENT -> fork -> GATE -> REGISTERED -> RELEASE -> EXIT -> REAP, zero signals",
+ "not_in_scope": [
+  "G1 negative gate tests",
+  "G2 identity/descendant tests",
+  "G3 recovery and fault injection",
+  "BV-1..BV-10",
+  "E1-A cells",
+  "E1-B/C/D",
+  "E2",
+  "E3"
+ ],
+ "status": "FROZEN_AT_COMMIT (the commit that adds this file) / G0 NOT TESTED / EXECUTION NOT AUTHORIZED / IMPLEMENTATION NOT AUTHORIZED AND NOT CONFORMING",
+ "limits": {
+  "max_runs_per_authorization": 1,
+  "max_forks": 1,
+  "max_concurrent_children": 1,
+  "max_descendants_of_child": 0,
+  "max_signals": 0,
+  "max_seconds": 20.0,
+  "t_gate_max_s": 5.0,
+  "hold_before_release_s": 0.3,
+  "ready_deadline_s": 5.0,
+  "exit_deadline_s": 5.0,
+  "reap_deadline_s": 5.0,
+  "python": "3.13.16",
+  "cpu_only": true
+ },
+ "enforcement": {
+  "reap_wait": "the wait for the child to be reaped is bounded by limits.reap_deadline_s; no unbounded wait (finding F-8)",
+  "total_budget": "limits.max_seconds is checked at every phase boundary and loop iteration while the run is in progress, not only at the end (finding F-9); the deadline-hit names are ready, exit, reap, proc_gone, total",
+  "summary_write": "g0_summary.json and the evidence files are written only into a run directory created by this very process (finding F-12)",
+  "directories": "the evidence root is created by the run only if absent (non-recursive, mode 0755) and validated otherwise (real directory, not a symlink, owned by the effective uid, not group/other-writable); the run directory and the consumption directory are created exclusively; nothing existing is overwritten; any failure is BLOCKED with the error saved where possible (finding F-13)",
+  "release_evidence": "the guard records, for every write of the release byte, mono_before, mono_after and the result ('ok' with returned == 1, or 'error' with errno and error text); a failed write is recorded, never dropped; a pre-write time is never recorded as a write (finding F-18)",
+  "registry_ledger": "the observer's in-memory record list and the writer's seq are captured after the last registry write, before the registry file is parsed, and stored as reg_memory_records and reg_writer_seq"
+ },
+ "protocol_sequence": [
+  "RUN_START",
+  "INTENT",
+  "FORKED",
+  "REGISTERED",
+  "RELEASED",
+  "READY",
+  "EXIT_MESSAGE",
+  "EXITED_UNREAPED",
+  "REAPED",
+  "PROC_GONE",
+  "DEAD",
+  "RUN_END"
+ ],
+ "snapshots": [
+  "S0_before_fork",
+  "S1_held_registered_unreleased",
+  "S2_ready_after_release",
+  "S3_exited_unreaped",
+  "S4_reaped",
+  "S5_final"
+ ],
+ "verdict_policy": [
+  {
+   "n": 1,
+   "policy": "Reliable evidence that the registration protocol or a process-safety constraint was violated -> FAIL, labelled as a G0 bench/protocol failure; never automatically attributed to the Mythos model architecture",
+   "implemented_by": [
+    "C03-F1",
+    "C03-F2",
+    "C03-F3",
+    "C03-F4",
+    "C07-F1",
+    "C07-F2",
+    "C07-F3",
+    "C07-F4"
+   ]
+  },
+  {
+   "n": 2,
+   "policy": "Incomplete registry, write failure, damaged parse, evidence that cannot be corroborated -> BLOCKED",
+   "implemented_by": [
+    "C03-U0",
+    "C03-U1",
+    "C03-U2",
+    "C03-U3",
+    "C03-U4",
+    "C07-U1",
+    "C07-U2",
+    "C07-U3",
+    "C07-U4",
+    "C07-U5"
+   ]
+  },
+  {
+   "n": 3,
+   "policy": "A corroborated REGISTERED without FORKED -> FAIL in principle (violates the fixed G0 record sequence); BLOCKED if integrity cannot be proven",
+   "implemented_by": [
+    "C03-F2",
+    "C03-U2",
+    "C03-U3"
+   ]
+  },
+  {
+   "n": 4,
+   "policy": "A seq gap alone is never a proof of FAIL",
+   "implemented_by": [
+    "C03-U2",
+    "C03-U3"
+   ]
+  },
+  {
+   "n": 5,
+   "policy": "Positive evidence together with evidence damage: judge whether the positive evidence is still credible; FAIL does not win unconditionally",
+   "implemented_by": [
+    "C03-F1",
+    "C03-F2",
+    "C03-F3",
+    "C03-F4",
+    "C03-U2"
+   ]
+  },
+  {
+   "n": 6,
+   "policy": "PASS needs every necessary process-evidence and integrity condition at once",
+   "implemented_by": [
+    "C03-pass_when",
+    "C07-pass_when",
+    "C16"
+   ]
+  }
+ ],
+ "evidence_schema": {
+  "id": "e1a-gate-g0-evidence-3",
+  "validation": "performed by the judge, once, before any check, on the evidence AS READ BACK from g0_evidence.json (JSON types): a present field of the wrong type counts as missing; bool is never accepted as int or number; nullable fields may be null; extra keys are ignored. g0_run may self-check before writing (diagnostic only); the judge's validation is authoritative",
+  "serialisation": "the verdict is computed from json.loads(json.dumps(evidence)) so that the judged types are the stored types",
+  "fields": [
+   {
+    "path": "evidence_schema",
+    "type": "string",
+    "nullable": false,
+    "consumers": "C16",
+    "note": "must equal 'e1a-gate-g0-evidence-3'"
+   },
+   {
+    "path": "run_id",
+    "type": "string",
+    "nullable": false,
+    "consumers": "C03 C16",
+    "note": ""
+   },
+   {
+    "path": "auth_expected",
+    "type": "object[6 hex strings: git_head prereg_sha256 g0_criteria_sha256 g0_prereg_sha256 bench_code_sha256 g0_code_sha256]",
+    "nullable": false,
+    "consumers": "C02",
+    "note": ""
+   },
+   {
+    "path": "bindings_start",
+    "type": "object[same 6 keys]",
+    "nullable": false,
+    "consumers": "C02",
+    "note": ""
+   },
+   {
+    "path": "bindings_end",
+    "type": "object[same 6 keys]",
+    "nullable": false,
+    "consumers": "C02",
+    "note": ""
+   },
+   {
+    "path": "auth_consumed",
+    "type": "bool",
+    "nullable": false,
+    "consumers": "C02",
+    "note": ""
+   },
+   {
+    "path": "observer",
+    "type": "object{pid:int, sid:int, pgrp:int}",
+    "nullable": false,
+    "consumers": "C04 C05 C08",
+    "note": ""
+   },
+   {
+    "path": "preflight",
+    "type": "object{ok:bool, problems:list, children:int, token_residue:list, unresolved_prior:list, enumeration_problems:object, run_id_unique:bool, fd_count:int, total_procs:int}",
+    "nullable": false,
+    "consumers": "C01",
+    "note": ""
+   },
+   {
+    "path": "evidence_root",
+    "type": "object{path:string, created_by_this_run:bool, uid:int, mode:int, ino:int}",
+    "nullable": false,
+    "consumers": "C16",
+    "note": "finding F-13"
+   },
+   {
+    "path": "consumed_dir",
+    "type": "object{path:string, created_by_this_run:bool, uid:int, mode:int, ino:int}",
+    "nullable": false,
+    "consumers": "C16",
+    "note": "finding F-13"
+   },
+   {
+    "path": "run_dir",
+    "type": "object{path:string, created_by_this_process:bool}",
+    "nullable": false,
+    "consumers": "C16",
+    "note": "finding F-12"
+   },
+   {
+    "path": "node",
+    "type": "object{node_id:string, pid:int, starttime:int, gate_ino:int}",
+    "nullable": false,
+    "consumers": "C03 C04 C06 C09",
+    "note": ""
+   },
+   {
+    "path": "snapshots.S0_before_fork.name",
+    "type": "string",
+    "nullable": false,
+    "consumers": "C16",
+    "note": ""
+   },
+   {
+    "path": "snapshots.S0_before_fork.mono",
+    "type": "number",
+    "nullable": false,
+    "consumers": "C08 C09 C15",
+    "note": ""
+   },
+   {
+    "path": "snapshots.S0_before_fork.children",
+    "type": "list[int]",
+    "nullable": false,
+    "consumers": "C11 C13",
+    "note": ""
+   },
+   {
+    "path": "snapshots.S0_before_fork.grandchildren",
+    "type": "list[int]",
+    "nullable": false,
+    "consumers": "C11",
+    "note": ""
+   },
+   {
+    "path": "snapshots.S0_before_fork.total_procs",
+    "type": "int",
+    "nullable": false,
+    "consumers": "C16",
+    "note": ""
+   },
+   {
+    "path": "snapshots.S0_before_fork.enum_problems",
+    "type": "object",
+    "nullable": false,
+    "consumers": "C13",
+    "note": ""
+   },
+   {
+    "path": "snapshots.S0_before_fork.fd_count",
+    "type": "int",
+    "nullable": false,
+    "consumers": "C14",
+    "note": ""
+   },
+   {
+    "path": "snapshots.S0_before_fork.child",
+    "type": "object",
+    "nullable": true,
+    "consumers": "C04 C05 C08 C09",
+    "note": ""
+   },
+   {
+    "path": "snapshots.S1_held_registered_unreleased.name",
+    "type": "string",
+    "nullable": false,
+    "consumers": "C16",
+    "note": ""
+   },
+   {
+    "path": "snapshots.S1_held_registered_unreleased.mono",
+    "type": "number",
+    "nullable": false,
+    "consumers": "C08 C09 C15",
+    "note": ""
+   },
+   {
+    "path": "snapshots.S1_held_registered_unreleased.children",
+    "type": "list[int]",
+    "nullable": false,
+    "consumers": "C11 C13",
+    "note": ""
+   },
+   {
+    "path": "snapshots.S1_held_registered_unreleased.grandchildren",
+    "type": "list[int]",
+    "nullable": false,
+    "consumers": "C11",
+    "note": ""
+   },
+   {
+    "path": "snapshots.S1_held_registered_unreleased.total_procs",
+    "type": "int",
+    "nullable": false,
+    "consumers": "C16",
+    "note": ""
+   },
+   {
+    "path": "snapshots.S1_held_registered_unreleased.enum_problems",
+    "type": "object",
+    "nullable": false,
+    "consumers": "C13",
+    "note": ""
+   },
+   {
+    "path": "snapshots.S1_held_registered_unreleased.fd_count",
+    "type": "int",
+    "nullable": false,
+    "consumers": "C14",
+    "note": ""
+   },
+   {
+    "path": "snapshots.S1_held_registered_unreleased.child",
+    "type": "object",
+    "nullable": true,
+    "consumers": "C04 C05 C08 C09",
+    "note": ""
+   },
+   {
+    "path": "snapshots.S2_ready_after_release.name",
+    "type": "string",
+    "nullable": false,
+    "consumers": "C16",
+    "note": ""
+   },
+   {
+    "path": "snapshots.S2_ready_after_release.mono",
+    "type": "number",
+    "nullable": false,
+    "consumers": "C08 C09 C15",
+    "note": ""
+   },
+   {
+    "path": "snapshots.S2_ready_after_release.children",
+    "type": "list[int]",
+    "nullable": false,
+    "consumers": "C11 C13",
+    "note": ""
+   },
+   {
+    "path": "snapshots.S2_ready_after_release.grandchildren",
+    "type": "list[int]",
+    "nullable": false,
+    "consumers": "C11",
+    "note": ""
+   },
+   {
+    "path": "snapshots.S2_ready_after_release.total_procs",
+    "type": "int",
+    "nullable": false,
+    "consumers": "C16",
+    "note": ""
+   },
+   {
+    "path": "snapshots.S2_ready_after_release.enum_problems",
+    "type": "object",
+    "nullable": false,
+    "consumers": "C13",
+    "note": ""
+   },
+   {
+    "path": "snapshots.S2_ready_after_release.fd_count",
+    "type": "int",
+    "nullable": false,
+    "consumers": "C14",
+    "note": ""
+   },
+   {
+    "path": "snapshots.S2_ready_after_release.child",
+    "type": "object",
+    "nullable": true,
+    "consumers": "C04 C05 C08 C09",
+    "note": ""
+   },
+   {
+    "path": "snapshots.S3_exited_unreaped.name",
+    "type": "string",
+    "nullable": false,
+    "consumers": "C16",
+    "note": ""
+   },
+   {
+    "path": "snapshots.S3_exited_unreaped.mono",
+    "type": "number",
+    "nullable": false,
+    "consumers": "C08 C09 C15",
+    "note": ""
+   },
+   {
+    "path": "snapshots.S3_exited_unreaped.children",
+    "type": "list[int]",
+    "nullable": false,
+    "consumers": "C11 C13",
+    "note": ""
+   },
+   {
+    "path": "snapshots.S3_exited_unreaped.grandchildren",
+    "type": "list[int]",
+    "nullable": false,
+    "consumers": "C11",
+    "note": ""
+   },
+   {
+    "path": "snapshots.S3_exited_unreaped.total_procs",
+    "type": "int",
+    "nullable": false,
+    "consumers": "C16",
+    "note": ""
+   },
+   {
+    "path": "snapshots.S3_exited_unreaped.enum_problems",
+    "type": "object",
+    "nullable": false,
+    "consumers": "C13",
+    "note": ""
+   },
+   {
+    "path": "snapshots.S3_exited_unreaped.fd_count",
+    "type": "int",
+    "nullable": false,
+    "consumers": "C14",
+    "note": ""
+   },
+   {
+    "path": "snapshots.S3_exited_unreaped.child",
+    "type": "object",
+    "nullable": true,
+    "consumers": "C04 C05 C08 C09",
+    "note": ""
+   },
+   {
+    "path": "snapshots.S4_reaped.name",
+    "type": "string",
+    "nullable": false,
+    "consumers": "C16",
+    "note": ""
+   },
+   {
+    "path": "snapshots.S4_reaped.mono",
+    "type": "number",
+    "nullable": false,
+    "consumers": "C08 C09 C15",
+    "note": ""
+   },
+   {
+    "path": "snapshots.S4_reaped.children",
+    "type": "list[int]",
+    "nullable": false,
+    "consumers": "C11 C13",
+    "note": ""
+   },
+   {
+    "path": "snapshots.S4_reaped.grandchildren",
+    "type": "list[int]",
+    "nullable": false,
+    "consumers": "C11",
+    "note": ""
+   },
+   {
+    "path": "snapshots.S4_reaped.total_procs",
+    "type": "int",
+    "nullable": false,
+    "consumers": "C16",
+    "note": ""
+   },
+   {
+    "path": "snapshots.S4_reaped.enum_problems",
+    "type": "object",
+    "nullable": false,
+    "consumers": "C13",
+    "note": ""
+   },
+   {
+    "path": "snapshots.S4_reaped.fd_count",
+    "type": "int",
+    "nullable": false,
+    "consumers": "C14",
+    "note": ""
+   },
+   {
+    "path": "snapshots.S4_reaped.child",
+    "type": "object",
+    "nullable": true,
+    "consumers": "C04 C05 C08 C09",
+    "note": ""
+   },
+   {
+    "path": "snapshots.S5_final.name",
+    "type": "string",
+    "nullable": false,
+    "consumers": "C16",
+    "note": ""
+   },
+   {
+    "path": "snapshots.S5_final.mono",
+    "type": "number",
+    "nullable": false,
+    "consumers": "C08 C09 C15",
+    "note": ""
+   },
+   {
+    "path": "snapshots.S5_final.children",
+    "type": "list[int]",
+    "nullable": false,
+    "consumers": "C11 C13",
+    "note": ""
+   },
+   {
+    "path": "snapshots.S5_final.grandchildren",
+    "type": "list[int]",
+    "nullable": false,
+    "consumers": "C11",
+    "note": ""
+   },
+   {
+    "path": "snapshots.S5_final.total_procs",
+    "type": "int",
+    "nullable": false,
+    "consumers": "C16",
+    "note": ""
+   },
+   {
+    "path": "snapshots.S5_final.enum_problems",
+    "type": "object",
+    "nullable": false,
+    "consumers": "C13",
+    "note": ""
+   },
+   {
+    "path": "snapshots.S5_final.fd_count",
+    "type": "int",
+    "nullable": false,
+    "consumers": "C14",
+    "note": ""
+   },
+   {
+    "path": "snapshots.S5_final.child",
+    "type": "object",
+    "nullable": true,
+    "consumers": "C04 C05 C08 C09",
+    "note": ""
+   },
+   {
+    "path": "snapshots.S0_before_fork.token_residue",
+    "type": "list",
+    "nullable": false,
+    "consumers": "C13",
+    "note": ""
+   },
+   {
+    "path": "snapshots.S5_final.token_residue",
+    "type": "list",
+    "nullable": false,
+    "consumers": "C13",
+    "note": ""
+   },
+   {
+    "path": "snapshots.S1_held_registered_unreleased.fds",
+    "type": "object{fd:{target:string, access:string|null}}",
+    "nullable": false,
+    "consumers": "C06",
+    "note": ""
+   },
+   {
+    "path": "snapshots.S2_ready_after_release.fds",
+    "type": "object{fd:{target:string, access:string|null}}",
+    "nullable": false,
+    "consumers": "C06",
+    "note": ""
+   },
+   {
+    "path": "snapshots.S1_held_registered_unreleased.messages_received",
+    "type": "int",
+    "nullable": false,
+    "consumers": "C05 C03",
+    "note": ""
+   },
+   {
+    "path": "snapshots.S1_held_registered_unreleased.first_action_mono",
+    "type": "number",
+    "nullable": true,
+    "consumers": "C05",
+    "note": ""
+   },
+   {
+    "path": "events.first_action_mono",
+    "type": "number",
+    "nullable": false,
+    "consumers": "C05 C07 C03",
+    "note": ""
+   },
+   {
+    "path": "events.exit_sent_mono",
+    "type": "number",
+    "nullable": false,
+    "consumers": "C08",
+    "note": ""
+   },
+   {
+    "path": "events.pidfd_readable_mono",
+    "type": "number",
+    "nullable": false,
+    "consumers": "C08",
+    "note": ""
+   },
+   {
+    "path": "events.reap_mono",
+    "type": "number",
+    "nullable": false,
+    "consumers": "C09",
+    "note": ""
+   },
+   {
+    "path": "events.proc_gone_mono",
+    "type": "number",
+    "nullable": false,
+    "consumers": "C09",
+    "note": ""
+   },
+   {
+    "path": "guard.violations",
+    "type": "list",
+    "nullable": false,
+    "consumers": "C12",
+    "note": ""
+   },
+   {
+    "path": "guard.fork_calls",
+    "type": "int",
+    "nullable": false,
+    "consumers": "C11 C03",
+    "note": ""
+   },
+   {
+    "path": "guard.fork_pids",
+    "type": "list[int]",
+    "nullable": false,
+    "consumers": "C04 C11",
+    "note": ""
+   },
+   {
+    "path": "guard.waitpid_calls",
+    "type": "list[object{pid:int, options:int, returned:int, status:int, mono:number}]",
+    "nullable": false,
+    "consumers": "C08 C09",
+    "note": ""
+   },
+   {
+    "path": "guard.release_writes",
+    "type": "list[object{mono_before:number, mono_after:number|null, result:string('ok'|'error'), returned:int|null, errno:int|null, error:string|null}]",
+    "nullable": false,
+    "consumers": "C07 C03",
+    "note": "finding F-18: replaces V2's guard.release_byte_pre_write_monos; one entry per write of the release byte, recorded before AND after the real write"
+   },
+   {
+    "path": "reap.waitpid_pid",
+    "type": "int",
+    "nullable": false,
+    "consumers": "C09",
+    "note": ""
+   },
+   {
+    "path": "reap.exit_status",
+    "type": "int",
+    "nullable": false,
+    "consumers": "C10",
+    "note": ""
+   },
+   {
+    "path": "reap.raw_status",
+    "type": "int",
+    "nullable": false,
+    "consumers": "C10",
+    "note": ""
+   },
+   {
+    "path": "cleanup.cleanup_ok",
+    "type": "bool",
+    "nullable": false,
+    "consumers": "C13",
+    "note": ""
+   },
+   {
+    "path": "cleanup.run_set",
+    "type": "object{consistent:bool}",
+    "nullable": false,
+    "consumers": "C13",
+    "note": ""
+   },
+   {
+    "path": "cleanup.rounds",
+    "type": "list",
+    "nullable": false,
+    "consumers": "C12",
+    "note": ""
+   },
+   {
+    "path": "cleanup.residual_detail",
+    "type": "list",
+    "nullable": false,
+    "consumers": "C13",
+    "note": ""
+   },
+   {
+    "path": "timing.duration",
+    "type": "number",
+    "nullable": false,
+    "consumers": "C15",
+    "note": ""
+   },
+   {
+    "path": "deadline_hits",
+    "type": "list[string]",
+    "nullable": false,
+    "consumers": "C15",
+    "note": ""
+   },
+   {
+    "path": "exception",
+    "type": "string",
+    "nullable": true,
+    "consumers": "C17 C03",
+    "note": ""
+   },
+   {
+    "path": "aborted",
+    "type": "string",
+    "nullable": true,
+    "consumers": "C17 C03",
+    "note": ""
+   },
+   {
+    "path": "reg",
+    "type": "list[object{seq:int, kind:string, ...}]",
+    "nullable": false,
+    "consumers": "C03 C04 C05 C11 C13",
+    "note": "the DURABLE copy parsed from registry.jsonl; read for fidelity by C03 and as in V2 by C04 C05 C11 C13 (finding F-19)"
+   },
+   {
+    "path": "reg_parse_info",
+    "type": "object{torn_tail:bool, corrupt_lines:int, missing:bool, unreadable:bool}",
+    "nullable": false,
+    "consumers": "C03",
+    "note": ""
+   },
+   {
+    "path": "reg_memory_records",
+    "type": "list[object{seq:int, kind:string, ...}]",
+    "nullable": false,
+    "consumers": "C03 C07",
+    "note": "the LEDGER: the records the writer appended successfully, in order (RegWriter.records), captured after the last registry write; replaces V2's 'in-memory record count', which is derived from it"
+   },
+   {
+    "path": "reg_writer_seq",
+    "type": "int",
+    "nullable": false,
+    "consumers": "C03",
+    "note": "RegWriter.seq at the same moment; seq is incremented BEFORE the append, so a failed append leaves reg_writer_seq > len(reg_memory_records)"
+   }
+  ]
+ },
+ "checks": {
+  "G0-C01": {
+   "name": "preflight_clean",
+   "on_fail": "BLOCKED",
+   "v2_relation": "IDENTICAL",
+   "text": "no unresolved earlier run (no MANUAL_DISPOSITION_REQUIRED.json, no earlier g0_ run directory without a closed g0_summary.json); no live non-zombie process, other than this observer and its ancestors, whose command line contains the marker 'g0_run.py' (this marker is the definition of the V1 term 'bench token'); observer has 0 children; /proc enumeration complete; run id unique (its run directory does not exist before this run creates it); Python is 3.13.16 started with -B; SIGCHLD is not ignored; pidfd_open and socket.send_fds are available",
+   "note_v2": "defines 'bench token' (deviation 5); lists the interpreter/signal/syscall preconditions the implementation already checks; run-id uniqueness is 'directory does not exist yet' (deviation 3)"
+  },
+  "G0-C02": {
+   "name": "authorization_and_bindings",
+   "on_fail": "BLOCKED",
+   "v2_relation": "IDENTICAL",
+   "text": "a valid single-use G0 authorization bound to THIS criteria file (V2) was consumed: its consumption marker is created exclusively after a clean preflight and BEFORE the fork (a run whose preflight failed consumes nothing); git head, E1-A prereg, G0 criteria, G0 prereg text, bench code and G0 code hashes equal the authorized values at the start AND again at the end",
+   "note_v2": "consumption timing stated (deviation 2); binding to V2 files follows from the hash bindings"
+  },
+  "G0-C03": {
+   "name": "registration_sequence_and_integrity",
+   "on_fail": "FAIL",
+   "v2_relation": "MODIFIED",
+   "text": "registration-file order, protocol and integrity, decided by checks.G0-C03.rules. FAIL when reliable first-hand evidence (the writer's own ledger and/or independent guard and child evidence) proves a violation of the fixed G0 record sequence or of the registration protocol. UNEVALUABLE -> BLOCKED when the registry is incomplete, an append failed, the durable copy is damaged or contains foreign lines, the run stopped early without proof of a violation, or the evidence cannot be corroborated. PASS only on a completed run whose ledger shows exactly the fixed sequence AND whose durable copy is faithful to the ledger. A gap in seq numbers is never by itself a proof of violation. A FAIL is a G0 bench/protocol failure; it is not evidence about the Mythos model architecture",
+   "rules": {
+    "witnesses": {
+     "ledger": "evidence.reg_memory_records: what the writer appended successfully, in order. First-hand for what the observer did; unaffected by damage to the file.",
+     "durable_copy": "evidence.reg + evidence.reg_parse_info: the registry file as parsed. Used ONLY to check fidelity to the ledger (rule C03-U2); never used to prove a violation or an absence.",
+     "independent": "evidence.guard (fork_calls, release_writes), evidence.events, snapshot S1.messages_received, existence of snapshot S2: first-hand facts not derived from the registry."
+    },
+    "definitions": {
+     "completed_run": "evidence.exception is null AND evidence.aborted is null AND evidence.deadline_hits is empty",
+     "early_stop": "not completed_run",
+     "writer_clean": "the seq values of the ledger are exactly 1..n AND evidence.reg_writer_seq == n (no append failed)",
+     "disk_faithful": "reg_parse_info has missing=false, unreadable=false, torn_tail=false, corrupt_lines=0 AND the (seq, kind, node_id) triples of the durable copy equal those of the ledger, in order",
+     "foreign_lines": "triples present in the durable copy and absent from the ledger",
+     "lifecycle_positions": "RUN_START=0, INTENT=1, FORKED=2, REGISTERED=3, RELEASED=4, DEAD=5; RUN_END is separate (always last); ABORTED is the alternative to REGISTERED and RELEASED",
+     "hole": "a position p in 0..5 absent from the ledger while a position q > p of the same lifecycle is present in the ledger; RUN_END does not count as a later record; an ABORTED record excuses the absence of REGISTERED and RELEASED",
+     "tail_absence": "every absent required record has a higher position than every present lifecycle record (nothing present follows an absence); an empty ledger is a tail absence",
+     "release_attempt": "evidence.guard.release_writes is non-empty (an entry exists, with mono_before)",
+     "release_write_ok": "an entry of guard.release_writes has result 'ok' and returned == 1 (mono_after recorded)",
+     "gate_passed": "the child's own FIRST_ACTION exists: events.first_action_mono is set, or S1.messages_received > 0, or snapshot S2 exists"
+    },
+    "fail_when": [
+     {
+      "id": "C03-F1",
+      "relies_on": "ledger",
+      "applies": "always",
+      "when": "a violation visible in the ledger itself: (a) more than one RUN_START, RUN_END, or, for the node, more than one INTENT, FORKED, REGISTERED, RELEASED, ABORTED or DEAD; (b) the first occurrences violate the order RUN_START < INTENT < FORKED < REGISTERED < RELEASED < DEAD < RUN_END, a record precedes RUN_START, any record follows RUN_END, any record of the node follows its DEAD, or RELEASED and ABORTED both exist; (c) seq not strictly increasing; (d) a field of a present record has the wrong type or value: RUN_START needs run_id (non-empty string) and observer_pid (int, not bool); RUN_END needs the same run_id and cleanup_confirmed (bool); INTENT needs node_id (string) and creator (string); FORKED needs pid (int, not bool); REGISTERED needs pid and starttime (int, not bool); DEAD needs a non-empty basis; (e) RUN_END with cleanup_confirmed true while the node has no DEAD or has an ABORTED; (f) more than one node, or an INTENT whose creator is not 'O' (G0 allows exactly one node and no ticket)"
+     },
+     {
+      "id": "C03-F2",
+      "relies_on": "ledger",
+      "applies": "only when writer_clean and no foreign_lines",
+      "when": "a hole in the ledger, for example REGISTERED present while FORKED is absent, RELEASED present while REGISTERED is absent, FORKED present while INTENT is absent, any record present while RUN_START is absent: the fixed record sequence was not followed. Because no append failed and no foreign line exists, the missing record was never attempted"
+     },
+     {
+      "id": "C03-F3",
+      "relies_on": "ledger + independent",
+      "applies": "only when no foreign_lines and the independent evidence needed is present",
+      "when": "independent evidence proves that an action happened whose precursor record is absent from the ledger: guard.fork_calls >= 1 with no INTENT; a release_attempt with no REGISTERED or no RELEASED; gate_passed with no REGISTERED or no RELEASED. This applies even when an append failed: an action that happened although its precursor append failed is itself the violation"
+     },
+     {
+      "id": "C03-F4",
+      "relies_on": "ledger",
+      "applies": "only when completed_run and no foreign_lines",
+      "when": "a completed run whose ledger lacks any of RUN_START, INTENT, FORKED, REGISTERED, RELEASED, DEAD (with basis), RUN_END, or contains an ABORTED record"
+     }
+    ],
+    "unevaluable_when": [
+     {
+      "id": "C03-U0",
+      "when": "the evidence needed is missing or of the wrong type: reg_memory_records, reg_writer_seq, reg or reg_parse_info (a rule whose own evidence is missing simply cannot fire)"
+     },
+     {
+      "id": "C03-U2",
+      "when": "the durable copy is not faithful or carries foreign lines: file missing or unreadable, torn tail, corrupt line, lost line, extra line, or any difference between the durable triples and the ledger. The durable registry cannot be trusted, so nothing can be concluded from it and the run cannot PASS"
+     },
+     {
+      "id": "C03-U3",
+      "when": "the writer failed: the ledger seq values are not exactly 1..n or reg_writer_seq != n (an append failed; a missing record may be explained by the failure)"
+     },
+     {
+      "id": "C03-U1",
+      "when": "early_stop with tail_absence, writer_clean and a faithful durable copy: the lifecycle could not be completed, which proves nothing about the protocol (includes stopping before the fork: an empty ledger, or RUN_START and RUN_END(false) only)"
+     },
+     {
+      "id": "C03-U4",
+      "when": "any other combination that is not PASS (default: when no rule matches the check is UNEVALUABLE, never PASS and never FAIL)"
+     }
+    ],
+    "pass_when": "completed_run AND writer_clean AND disk_faithful AND the ledger contains exactly once each of RUN_START, INTENT, FORKED, REGISTERED, RELEASED, DEAD (with basis) and RUN_END, in that order, with valid fields, no ABORTED and no second node AND no fail rule fired. The VALUE of RUN_END.cleanup_confirmed is judged by G0-C13, not here (a registry that is correct but records an unconfirmed cleanup passes C03 and fails C13)",
+    "precedence": "fail_when is evaluated first, on the witnesses each rule relies on. Damage to the durable copy never suppresses a rule that does not rely on it: a violation proven by the ledger or by independent evidence stays FAIL (its credibility is reported as first-hand, with the damage listed). Damage that undermines a rule's own witness suppresses that rule: absence-based rules (F2, F3, F4) need writer_clean and no foreign lines, because a failed append or a foreign line makes an absence uninterpretable. If no fail rule fires, the first matching unevaluable rule is reported and all matching ones are listed",
+    "policy_notes": {
+     "seq_gap": "a gap in the numbering of the durable copy or of the ledger is never by itself a proof of violation: it means a failed append (U3) or a lost line (U2)",
+     "registered_without_forked": "REGISTERED present while FORKED is absent: FAIL (F2) when the ledger is gapless and the durable copy faithful or at least free of foreign lines; BLOCKED when integrity cannot be proven (U3, U0, U2 with foreign lines)",
+     "positive_evidence_with_damage": "decided by relies_on: a ledger-based violation survives damage to the file; an inference from the file never survives damage to the file",
+     "fidelity_scope": "the durable copy is compared with the ledger on the (seq, kind, node_id) triples only; an alteration inside another field of a record is not detected by this check (known limitation; C16 types only the container)"
+    }
+   },
+   "note": "witness model (ledger first-hand, durable copy for fidelity only); seq gap never a proof; duplicates / malformed fields / multi-node -> FAIL; hole rule needs writer_clean; damaged / foreign / write-failed -> BLOCKED; corroborated REGISTERED-without-FORKED -> FAIL; default UNEVALUABLE"
+  },
+  "G0-C04": {
+   "name": "identity_registered_before_release",
+   "on_fail": "FAIL",
+   "v2_relation": "IDENTICAL",
+   "text": "REGISTERED pid/starttime equal the /proc fingerprint read while the child was held; the child's ppid is the observer; pid equals the pid returned by fork"
+  },
+  "G0-C05": {
+   "name": "no_action_before_release",
+   "on_fail": "FAIL",
+   "v2_relation": "IDENTICAL",
+   "text": "while REGISTERED but unreleased, observed at the END of the hold (snapshot S1, taken after the observer drained the control channel for hold_before_release_s; messages are counted cumulatively over the whole hold): the child is blocked (state S), sent no message, kept the observer's sid/pgrp; its FIRST_ACTION is not earlier than the RELEASED record",
+   "note_v2": "S1 timing and cumulative message count stated (deviation 1)"
+  },
+  "G0-C06": {
+   "name": "gate_descriptor_hygiene",
+   "on_fail": "FAIL",
+   "v2_relation": "IDENTICAL",
+   "text": "held (snapshot S1, end of the hold): child descriptors are a subset of {0,1,2,gate read end,control socket}, the gate pipe appears exactly once and read-only (no write-capable descriptor); after release (snapshot S2): no descriptor refers to the gate pipe",
+   "note_v2": "S1 timing stated (deviation 1)"
+  },
+  "G0-C07": {
+   "name": "release_only_after_registration",
+   "on_fail": "FAIL",
+   "v2_relation": "MODIFIED",
+   "text": "release evidence. The release of the gated child is judged by three separate facts: the ATTEMPT (guard.release_writes entry with mono_before), the SUCCESS (the same entry has result 'ok', returned 1 and mono_after) and the GATE PASS (the child's own FIRST_ACTION). PASS: exactly one attempt, it succeeded, and REGISTERED <= RELEASED <= mono_before <= mono_after <= child FIRST_ACTION (REGISTERED and RELEASED times taken from the ledger). FAIL (evidenced): REGISTERED or RELEASED later than the attempt's mono_before; more than one release write; the child passed the gate although every recorded release write failed; the child's FIRST_ACTION is earlier than the successful write's mono_after. UNEVALUABLE -> BLOCKED: no release attempt recorded; the attempt failed and the child did not pass the gate; the write succeeded but the child did not pass the gate; the child passed the gate but no attempt is recorded while RELEASED is in the ledger (instrumentation inconsistency); required times missing. A time taken before the write is never evidence that the byte was written",
+   "rules": {
+    "fail_when": [
+     {
+      "id": "C07-F1",
+      "when": "ledger REGISTERED.mono > ledger RELEASED.mono, or ledger RELEASED.mono > release_writes[0].mono_before (the release was attempted before the RELEASED record existed)"
+     },
+     {
+      "id": "C07-F2",
+      "when": "more than one entry in guard.release_writes"
+     },
+     {
+      "id": "C07-F3",
+      "when": "gate_passed AND release_writes is non-empty AND no entry has result 'ok' with returned == 1 (the child passed the gate although no release write succeeded)"
+     },
+     {
+      "id": "C07-F4",
+      "when": "gate_passed AND events.first_action_mono < mono_after of the successful entry (the child acted before the release write had completed)"
+     }
+    ],
+    "unevaluable_when": [
+     {
+      "id": "C07-U1",
+      "when": "no release attempt is recorded and the child has not passed the gate (the run stopped before the release)"
+     },
+     {
+      "id": "C07-U2",
+      "when": "the attempt failed (result 'error', for example EPIPE) and the child did not pass the gate"
+     },
+     {
+      "id": "C07-U3",
+      "when": "the write succeeded but the child did not pass the gate (no FIRST_ACTION)"
+     },
+     {
+      "id": "C07-U4",
+      "when": "the child passed the gate but no attempt is recorded while RELEASED is in the ledger (the release instrumentation and the child disagree; reported as an instrumentation inconsistency, not as a verdict on the protocol). When RELEASED is also absent from the ledger the violation is C03-F3"
+     },
+     {
+      "id": "C07-U5",
+      "when": "a time needed by the rules is missing (ledger REGISTERED or RELEASED, mono_before, mono_after, first_action_mono)"
+     }
+    ],
+    "pass_when": "exactly one release_writes entry, result 'ok', returned 1, and REGISTERED.mono <= RELEASED.mono <= mono_before <= mono_after <= events.first_action_mono",
+    "definitions_reference": "attempt, success and gate_passed are defined in checks.G0-C03.rules.definitions"
+   },
+   "note": "F-18: attempt / success / gate pass are separate facts; a pre-write time is not proof of a write; failed write + FIRST_ACTION -> FAIL; failed or successful write without FIRST_ACTION -> BLOCKED; more than one release write -> FAIL"
+  },
+  "G0-C08": {
+   "name": "exit_observed_unreaped",
+   "on_fail": "BLOCKED",
+   "v2_relation": "IDENTICAL",
+   "text": "after the EXIT message and before any wait call the child was observed exited-but-unreaped: pidfd readable and /proc state Z with ppid = observer"
+  },
+  "G0-C09": {
+   "name": "reap_by_specific_pid",
+   "on_fail": "BLOCKED",
+   "v2_relation": "IDENTICAL",
+   "text": "waitpid on that specific pid (non-blocking polls bounded by reap_deadline_s are allowed; exactly one call returns that pid, every other call on it returns 0) returned that pid; afterwards /proc/<pid> is absent (or carries a different starttime), waited for at most reap_deadline_s; times EXITED_UNREAPED < REAPED <= PROC_GONE",
+   "note_v2": "states that the reap wait is bounded and may be a non-blocking poll of the one specific pid (finding F-8); the decision semantics are unchanged"
+  },
+  "G0-C10": {
+   "name": "exit_status_zero",
+   "on_fail": "FAIL",
+   "v2_relation": "IDENTICAL",
+   "text": "the reaped exit code is 0 (normal exit after the EXIT message)"
+  },
+  "G0-C11": {
+   "name": "process_budget",
+   "on_fail": "FAIL",
+   "v2_relation": "IDENTICAL",
+   "text": "exactly one fork in the whole run; at every snapshot the observer has at most one child and the child has no child; the registry contains exactly one node and no ticket"
+  },
+  "G0-C12": {
+   "name": "zero_signals",
+   "on_fail": "FAIL",
+   "v2_relation": "IDENTICAL",
+   "text": "no kill/killpg/pidfd_send_signal/raise_signal/pthread_kill/exec/spawn/subprocess call was attempted (guard violations empty) and every cleanup kill entry is 'already_exited'"
+  },
+  "G0-C13": {
+   "name": "cleanup_and_no_residue",
+   "on_fail": "BLOCKED",
+   "v2_relation": "IDENTICAL",
+   "text": "final cleanup ok, run set consistent, DEAD record with basis present, observer has no child, diagnostic token scan finds no unregistered live process, no snapshot reported incomplete /proc enumeration, RUN_END present with cleanup_confirmed true (on any abnormal stop the run writes RUN_END with cleanup_confirmed false, which fails this check)",
+   "note_v2": "RUN_END on the abnormal path stated (deviation 4)"
+  },
+  "G0-C14": {
+   "name": "observer_descriptor_baseline",
+   "on_fail": "BLOCKED",
+   "v2_relation": "IDENTICAL",
+   "text": "the observer's open descriptor count at S5 equals S0"
+  },
+  "G0-C15": {
+   "name": "time_bounds",
+   "on_fail": "BLOCKED",
+   "v2_relation": "IDENTICAL",
+   "text": "total duration <= max_seconds, measured at the end AND enforced while the run is in progress (checked at every phase boundary and loop iteration; a breach records the deadline hit 'total' and stops the run); no phase deadline was hit (ready, exit, reap, proc_gone, total)",
+   "note_v2": "runtime enforcement of the total budget stated (finding F-9); the check itself is unchanged"
+  },
+  "G0-C16": {
+   "name": "evidence_complete",
+   "on_fail": "BLOCKED",
+   "v2_relation": "MODIFIED",
+   "text": "evidence completeness and type: every field listed in evidence_schema.fields is present with its declared type in the evidence as READ BACK from g0_evidence.json (JSON types; bool is never accepted as int or number; a nullable field may be null; a present field of the wrong type counts as missing) and evidence_schema equals 'e1a-gate-g0-evidence-3'. Relative to V2 the required set changes: the V2 item 'in-memory record count' is replaced by reg_memory_records and reg_writer_seq (the count is derived), and evidence_schema, consumed_dir and guard.release_writes (replacing guard.release_byte_pre_write_monos) are added. Consistency between the registry witnesses is judged by G0-C03, not by this check",
+   "note": "exact field names, types and validation time (evidence_schema); V2-conformant evidence lacking reg_memory_records, reg_writer_seq, evidence_schema, consumed_dir or guard.release_writes is now BLOCKED"
+  },
+  "G0-C17": {
+   "name": "no_unexplained_error",
+   "on_fail": "BLOCKED",
+   "v2_relation": "IDENTICAL",
+   "text": "no exception, no abort reason, exit-code policy consistent with the verdict"
+  }
+ },
+ "v2_to_v3_mapping": [
+  {
+   "id": "G0-C01",
+   "name": "preflight_clean",
+   "v2_on_fail": "BLOCKED",
+   "v3_on_fail": "BLOCKED",
+   "relation": "IDENTICAL",
+   "v2_relation_to_v1": "CLARIFIED",
+   "note": "text byte-identical to V2"
+  },
+  {
+   "id": "G0-C02",
+   "name": "authorization_and_bindings",
+   "v2_on_fail": "BLOCKED",
+   "v3_on_fail": "BLOCKED",
+   "relation": "IDENTICAL",
+   "v2_relation_to_v1": "CLARIFIED",
+   "note": "text byte-identical to V2"
+  },
+  {
+   "id": "G0-C03",
+   "name": "registration_sequence_and_integrity",
+   "v2_on_fail": "FAIL",
+   "v3_on_fail": "FAIL",
+   "relation": "MODIFIED",
+   "v2_relation_to_v1": "MODIFIED",
+   "note": "witness model (ledger first-hand, durable copy for fidelity only); seq gap never a proof; duplicates / malformed fields / multi-node -> FAIL; hole rule needs writer_clean; damaged / foreign / write-failed -> BLOCKED; corroborated REGISTERED-without-FORKED -> FAIL; default UNEVALUABLE"
+  },
+  {
+   "id": "G0-C04",
+   "name": "identity_registered_before_release",
+   "v2_on_fail": "FAIL",
+   "v3_on_fail": "FAIL",
+   "relation": "IDENTICAL",
+   "v2_relation_to_v1": "IDENTICAL",
+   "note": "text byte-identical to V2"
+  },
+  {
+   "id": "G0-C05",
+   "name": "no_action_before_release",
+   "v2_on_fail": "FAIL",
+   "v3_on_fail": "FAIL",
+   "relation": "IDENTICAL",
+   "v2_relation_to_v1": "CLARIFIED",
+   "note": "text byte-identical to V2"
+  },
+  {
+   "id": "G0-C06",
+   "name": "gate_descriptor_hygiene",
+   "v2_on_fail": "FAIL",
+   "v3_on_fail": "FAIL",
+   "relation": "IDENTICAL",
+   "v2_relation_to_v1": "CLARIFIED",
+   "note": "text byte-identical to V2"
+  },
+  {
+   "id": "G0-C07",
+   "name": "release_only_after_registration",
+   "v2_on_fail": "FAIL",
+   "v3_on_fail": "FAIL",
+   "relation": "MODIFIED",
+   "v2_relation_to_v1": "IDENTICAL",
+   "note": "F-18: attempt / success / gate pass are separate facts; a pre-write time is not proof of a write; failed write + FIRST_ACTION -> FAIL; failed or successful write without FIRST_ACTION -> BLOCKED; more than one release write -> FAIL"
+  },
+  {
+   "id": "G0-C08",
+   "name": "exit_observed_unreaped",
+   "v2_on_fail": "BLOCKED",
+   "v3_on_fail": "BLOCKED",
+   "relation": "IDENTICAL",
+   "v2_relation_to_v1": "IDENTICAL",
+   "note": "text byte-identical to V2"
+  },
+  {
+   "id": "G0-C09",
+   "name": "reap_by_specific_pid",
+   "v2_on_fail": "BLOCKED",
+   "v3_on_fail": "BLOCKED",
+   "relation": "IDENTICAL",
+   "v2_relation_to_v1": "CLARIFIED",
+   "note": "text byte-identical to V2"
+  },
+  {
+   "id": "G0-C10",
+   "name": "exit_status_zero",
+   "v2_on_fail": "FAIL",
+   "v3_on_fail": "FAIL",
+   "relation": "IDENTICAL",
+   "v2_relation_to_v1": "IDENTICAL",
+   "note": "text byte-identical to V2"
+  },
+  {
+   "id": "G0-C11",
+   "name": "process_budget",
+   "v2_on_fail": "FAIL",
+   "v3_on_fail": "FAIL",
+   "relation": "IDENTICAL",
+   "v2_relation_to_v1": "IDENTICAL",
+   "note": "text byte-identical to V2"
+  },
+  {
+   "id": "G0-C12",
+   "name": "zero_signals",
+   "v2_on_fail": "FAIL",
+   "v3_on_fail": "FAIL",
+   "relation": "IDENTICAL",
+   "v2_relation_to_v1": "IDENTICAL",
+   "note": "text byte-identical to V2"
+  },
+  {
+   "id": "G0-C13",
+   "name": "cleanup_and_no_residue",
+   "v2_on_fail": "BLOCKED",
+   "v3_on_fail": "BLOCKED",
+   "relation": "IDENTICAL",
+   "v2_relation_to_v1": "CLARIFIED",
+   "note": "text byte-identical to V2"
+  },
+  {
+   "id": "G0-C14",
+   "name": "observer_descriptor_baseline",
+   "v2_on_fail": "BLOCKED",
+   "v3_on_fail": "BLOCKED",
+   "relation": "IDENTICAL",
+   "v2_relation_to_v1": "IDENTICAL",
+   "note": "text byte-identical to V2"
+  },
+  {
+   "id": "G0-C15",
+   "name": "time_bounds",
+   "v2_on_fail": "BLOCKED",
+   "v3_on_fail": "BLOCKED",
+   "relation": "IDENTICAL",
+   "v2_relation_to_v1": "CLARIFIED",
+   "note": "text byte-identical to V2"
+  },
+  {
+   "id": "G0-C16",
+   "name": "evidence_complete",
+   "v2_on_fail": "BLOCKED",
+   "v3_on_fail": "BLOCKED",
+   "relation": "MODIFIED",
+   "v2_relation_to_v1": "CLARIFIED",
+   "note": "exact field names, types and validation time (evidence_schema); V2-conformant evidence lacking reg_memory_records, reg_writer_seq, evidence_schema, consumed_dir or guard.release_writes is now BLOCKED"
+  },
+  {
+   "id": "G0-C17",
+   "name": "no_unexplained_error",
+   "v2_on_fail": "BLOCKED",
+   "v3_on_fail": "BLOCKED",
+   "relation": "IDENTICAL",
+   "v2_relation_to_v1": "IDENTICAL",
+   "note": "text byte-identical to V2"
+  }
+ ],
+ "verdict_rule": [
+  "A check whose evidence is missing or unreadable is UNEVALUABLE and counts as BLOCKED, whatever its on_fail class (FAIL requires evidence).",
+  "1. any evaluable check that failed with on_fail FAIL -> experiment verdict FAIL (a confirmed protocol or safety violation takes precedence over bench-level problems)",
+  "2. else any failed or unevaluable check -> BLOCKED",
+  "3. else PASS",
+  "NOT TESTED = the run did not start. An exit code of 0 never replaces the verdict.",
+  "V3 FAIL scope: every FAIL produced under these criteria is a G0 bench/protocol failure; the summary must say so; it is not evidence about the Mythos model architecture, R3 or Parcae.",
+  "V3 clarification (replaces the V2 clarification for G0-C03): the rules in checks.G0-C03.rules and checks.G0-C07.rules decide what is a proven violation (FAIL) and what is insufficient or uncorroborated evidence (UNEVALUABLE -> BLOCKED); an early stop alone never makes them a FAIL and never hides a proven violation; damage to a witness suppresses only the rules that rely on that witness.",
+  "V3 meaning of 'evaluable' in rule 1 above: a FAIL-class check counts as an evaluable failure only if the witnesses of the rule that fired are intact (the 'relies_on' of that rule); a FAIL cannot be derived from damaged evidence, so rule 1 never gives FAIL unconditional precedence over evidence damage.",
+  "V3 PASS requires every check to PASS, which includes a faithful durable registry (C03), a proven successful release followed by the child's gate pass (C07) and complete typed evidence (C16).",
+  "V3 known limitation L-1 (unchanged from V2, finding F-14): checks composed of several sub-conditions other than G0-C03 and G0-C07 (for example C05, C06, C11) are UNEVALUABLE as a whole when part of their evidence is missing after an early stop; this can only turn a FAIL into BLOCKED, never into PASS.",
+  "V3 known limitation L-2 (finding F-19): G0-C04, C05, C11 and C13 read the durable copy 'reg' as in V2, not the ledger; under damage of the durable copy they can be UNEVALUABLE where the ledger would suffice. Conservative (BLOCKED), not changed in V3.",
+  "V3 procedural obligations that the judge does not verify (unchanged from V2): the consumption marker is created before the fork (C02), S1 is taken at the end of the hold (C05, C06), the total budget is enforced at run time (C15)."
+ ],
+ "exit_codes": {
+  "PASS": 0,
+  "FAIL": 1,
+  "BLOCKED": 3
+ },
+ "residue_policy": "no signal is ever sent in G0; if the child is still alive after the deadlines the run is BLOCKED, MANUAL_DISPOSITION_REQUIRED.json lists its verified identity, the child ends by itself (EXIT message / control EOF when the observer exits / T_NODE_MAX), a person decides",
+ "amendment_policy": "no change after the first execution of G0 under V3; a correction is a new file g0_criteria_v4.json (+ E1A_GATE_G0_PREREG_V4.md) and the earlier files and every result obtained under them are kept",
+ "meaning_of_pass": "PASS means: one gated sacrificial child was created, registered, released, exited and was reaped in the order specified, without signals, extra processes or residue, on this kernel and this Python. It is NOT evidence for G1/G2/G3, BV, EPIPE revocation proofs, ticket descendants, janitor recovery, observer death, or any E1-A cell.",
+ "implementation_obligations": [
+  {
+   "id": "F-8",
+   "requirement": "bounded reap: non-blocking waitpid polls of the one specific pid, bounded by reap_deadline_s"
+  },
+  {
+   "id": "F-9",
+   "requirement": "runtime total budget checked at phase boundaries and loop iterations; phase deadlines capped by the remaining total"
+  },
+  {
+   "id": "F-12",
+   "requirement": "evidence and summary files are written only into a run directory created by this process"
+  },
+  {
+   "id": "F-13",
+   "requirement": "evidence root and consumption directory are created or validated with explicit ownership; run directory exclusive; failures BLOCKED with the error saved"
+  },
+  {
+   "id": "C03-V3",
+   "requirement": "the judge implements checks.G0-C03.rules on the ledger (reg_memory_records, reg_writer_seq), the durable copy (reg, reg_parse_info) and the independent evidence"
+  },
+  {
+   "id": "C07-V3",
+   "requirement": "the guard records guard.release_writes (mono_before, mono_after, result, returned, errno, error) for every write of the release byte; the judge implements checks.G0-C07.rules"
+  },
+  {
+   "id": "C16-V3",
+   "requirement": "g0_run writes every field of evidence_schema.fields, including on the abnormal path where available; the judge validates presence and type before any check on the evidence as read back from JSON"
+  },
+  {
+   "id": "LEDGER",
+   "requirement": "reg_memory_records and reg_writer_seq are captured after the last registry write and before the registry file is parsed"
+  },
+  {
+   "id": "SUMMARY",
+   "requirement": "g0_summary.json carries fail_scope = 'G0 bench/protocol failure; not evidence about the Mythos model architecture' whenever the verdict is FAIL"
+  }
+ ]
+}
