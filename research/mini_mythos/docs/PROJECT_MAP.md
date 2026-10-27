@@ -257,3 +257,7 @@ Claude Code 接替 Grok 担任主要研发工程师（项目负责人 2026-10-26
 ## D1 CPU-002 最小争议实验（2026-10-27）
 
 分支 `d1-r3-a-cpu-002-minimal-dispute-20261027`。新增 `research/mini_mythos/r3_cpu_probes/a_predicate_002/`（`e2_lab.py`、`e2_cases.py`、`e2_merge.py`、`run_all.sh`、`test_e2_lab.py`、`results/`：430 条原始记录 gz、派生统计、单元测试输出、开发记录）与 `docs/F3B_D1_A_CPU_002_PLAN_20261027.md`、`..._REPORT_...`、`..._CHECKPOINT_...`。CPU-001 原始记录位于 `r3_cpu_probes/a_predicate/results/`（只读）。无明确 A/B 优劣；ChatGPT PENDING；GROK DEFERRED。
+
+## D1 CPU-003 安全监督器设计（2026-10-27）
+
+分支 `d1-r3-a-cpu-003-design-20261027`（基线 `6bd8c53`）。新增 `docs/F3B_D1_A_CPU_003_DESIGN_PLAN_20261027.md`、`..._ARCHITECTURE_OPTIONS_...`、`..._CHECKPOINT_...`（仅文档；实验均 NOT TESTED）。CPU-001 / CPU-002 原始记录位置不变（见各自检查点）。
