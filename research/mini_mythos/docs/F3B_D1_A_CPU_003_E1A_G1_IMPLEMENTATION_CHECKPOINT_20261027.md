@@ -1,0 +1,11 @@
+# F3B-D1 CPU-003 E1-A G1 implementation checkpoint (2026-10-27)
+
+* 任务 `F3B-D1-A-CPU-003-E1A-G1-IMPLEMENTATION-001`；分支 `d1-r3-a-cpu-003-e1a-g1-impl-20261027`；基准 `48d241fa61b1e1824fca004e4db0719d5c8011b4`；被审计代码状态 `a0c31957a2b7ddbe21559e1a9ef7e25b6392cb56`（其后只增加审核报告、追溯表、本 checkpoint 与 PROJECT_MAP，不改代码）。
+* 状态：**G1 IMPLEMENTATION COMPLETE / STATIC AUDIT RECORDED / CPU TESTS NOT TESTED / G1 REAL NOT AUTHORIZED。** 无阻断性规范矛盾（无 BLOCKED）。未运行任何 CPU 单元测试、真实 G1、进程级测试、G0；未创建任何授权文件；未用 GPU；G0 V1–V5、Bench、Parcae、R3、模型架构未改（`git diff --name-status` 基准→HEAD：仅新增 15 个 G1 文件）。
+* 冻结（独立提交 `8385cd1`，先于任何代码）：`gate_g1/g1_criteria_v1.json` SHA-256 `1992d75ded16aeedc6eb2d3bb99fe799fb64d514eb08b5e86b2decb68b811257`；`E1A_GATE_G1_PREREG.md` SHA-256 `3748723794b6742baa3a59e1cc8ebcb65471e3418d8c13328c8131e274e2cd69`；17 项判据、四场景、证据 schema（88 字段）、裁决优先级、时间预算、退出码、授权绑定、结案规则；未创建 V2。
+* 实现：`gate_g1/g1_auth.py`（单次授权、十项绑定、G0 REAL-001 参照核验）、`g1_judge.py`（T1–T4 × 17 项、NOT_RUN / RUN-INCOMPLETE、结案标记）、`g1_run.py`（G1Guard、预检含 G0/G1 历史结案、顺序执行、PID/starttime、门写入与关闭记录、Z 态 → 特定 pid waitpid → /proc 消失 → 之后才清理、首个非 PASS 即停、MANUAL_DISPOSITION、P0–P7、K0–K7 `os.link`、SystemExit/异常 → 3）。只读复用 G0 通用设施，未改 `g0_*`，未使用 `_confirmed_dead()` 代替 waitpid 回收证据。
+* CPU 测试（**只写未跑**，222 个，NOT TESTED）：`tests/g1_fixtures.py`、`test_g1_judge_cases.py`、`test_g1_auth_preflight.py`、`test_g1_run_parts.py`、`test_g1_boundaries.py`、`test_g1_mutations.py`；哨兵运行器 `tools/run_g1_cpu_tests.py`。
+* 静态审计（`tools/audit_g1_implementation.py`；AST / JSON / 哈希 / 正则 / git diff；不导入、不执行被审代码）：FINDINGS 0；追溯 36 行，NOT FOUND 0；11 个文件语法、未定义名、未用导入干净；冻结文件与 Bench 哈希不变；无 G1 授权文件与 G1 证据目录。结果目录 `research/mini_mythos/a_predicate_003/g1_impl_static_audit/`（`G1_STATIC_AUDIT_REPORT.md`、`G1_TRACEABILITY.md`、`audit_output.txt`、`g1_static_audit.json`、`git_diff_name_status_vs_base.txt`）。
+* 依赖：Python 3.13.16、Linux ≥ 5.3（pidfd）、`socket.send_fds`、`os.link`、`/proc`、同 uid、4 CPU；Bench `b6f52a8c…d3b0`；G0 V5 `d36da0c0…cb821` / `8338f4a0…ef6e25c`；E1-A 预注册 `e6b7ca5c…ec39`；G0 REAL-001 结案标记 `de96e1be…9736`。
+* 未解决问题（详见报告）：固定样本与判定器仅人工对账；`run_test` / `run` 无法脱离进程做单元测试；复用 G0 私有辅助函数的耦合；T4 身份证据须在 2.0 s 门计时器前 ≥ 0.5 s 取得，否则 BLOCKED；CPU 测试须在创建 G1 授权之前运行；Q1–Q6 按设计建议处理。
+* 唯一下一条指令：ChatGPT 与 Grok 审核本实现、冻结判据与静态审计；通过后由项目负责人**单独**授权 G1 CPU 测试（只写未跑）；真实 G1 另需单独授权。

@@ -345,3 +345,7 @@ HEAD `0cf75c1`（代码与 CPU 验收提交 `a4a8509` 相同）。执行前检�
 ## D1 CPU-003 E1-A G1 负向门控设计 G1-NEGATIVE-GATE-DESIGN-001（2026-10-27）
 
 基线 `c3cf742`（G0 REAL-001 PASS）；分支 `d1-r3-a-cpu-003-e1a-g1-negative-gate-design-20261027`。仅设计：四个最小负向门控测试 ABORT / EOF / INVALID_BYTE / TIMEOUT（期望退出码 111/111/111/112，一子进程、一次 fork、零信号），逐测试的刺激、独立“未提前动作”证据、PID/starttime 身份、退出与 waitpid 回收证据、PASS/FAIL/BLOCKED 判据；独立入口 `gate_g1/g1_run.py`（不复用 SIGKILL 拆除的原 unittest，只读复用 G0 机制）；单次授权、首败即停、无信号、无按名称清理、结案沿用 P0–P7/K0–K7。设计 `a_predicate_003/gate_g1/E1A_GATE_G1_DESIGN.md`，检查点 `docs/F3B_D1_A_CPU_003_E1A_G1_NEGATIVE_GATE_DESIGN_CHECKPOINT_20261027.md`。状态：G1 DESIGN PREPARED / G1 REAL NOT TESTED / G1 EXECUTION NOT AUTHORIZED；等待 ChatGPT/Grok 审核。
+
+## D1 CPU-003 E1-A G1 负向门控实现 G1-IMPLEMENTATION-001（2026-10-27）
+
+基线 `48d241f`；分支 `d1-r3-a-cpu-003-e1a-g1-impl-20261027`。先以独立提交 `8385cd1` 冻结 G1 判据 V1（`gate_g1/g1_criteria_v1.json` `1992d75d…1257` + 预注册文本 `37487237…cd69`），再实现 `g1_auth.py` / `g1_judge.py` / `g1_run.py`（T1 ABORT / T2 EOF / T3 INVALID_BYTE / T4 TIMEOUT，17 项判据，只读复用 G0 设施，未改 G0 / Bench / Parcae / R3）；CPU 测试 222 个只写未跑（NOT TESTED）；静态审计 FINDINGS 0、追溯 36 行。状态：G1 IMPLEMENTATION COMPLETE / STATIC AUDIT RECORDED / CPU TESTS NOT TESTED / G1 REAL NOT AUTHORIZED。检查点 `docs/F3B_D1_A_CPU_003_E1A_G1_IMPLEMENTATION_CHECKPOINT_20261027.md`，审核报告 `a_predicate_003/g1_impl_static_audit/`。下一步：ChatGPT / Grok 审核，随后另行授权 CPU 测试。
