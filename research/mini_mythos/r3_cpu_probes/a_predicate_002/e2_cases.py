@@ -293,8 +293,9 @@ def popen_stage(lab, mode, code=0):
     end = L.now() + 5
     while L.now() < end:
         try:
-            if L.TOKEN.encode() in open("/proc/%d/cmdline" % p.pid, "rb").read():
-                break
+            with open("/proc/%d/cmdline" % p.pid, "rb") as f:
+                if L.TOKEN.encode() in f.read():
+                    break
         except OSError:
             pass
         time.sleep(0.002)
@@ -657,6 +658,7 @@ def e3_02(subreaper_on):
             signal.pidfd_send_signal(supfd, signal.SIGKILL)           # abnormal exit: no T5, no cleanup
             os.waitpid(sup, 0)
             os.close(supfd)
+            t_death = L.now()
             time.sleep(0.3)
             truth = {"R": ("exit", 3), "E": ("exit", 5), "Y": ("exit", 9)}
             obs = {}
@@ -677,7 +679,8 @@ def e3_02(subreaper_on):
                     signal.pidfd_send_signal(d["pidfd"], signal.SIGKILL)
                     row["killed_by_outer_pidfd"] = True
                     truth[n] = ("signal", 9)
-                    lab.wait_state(d, ZOMBIE if row.get("adopted_by_outer") else GONE, timeout=5)
+                    if row.get("adopted_by_outer"):
+                        lab.wait_state(d, ZOMBIE, timeout=5)
                 if row.get("adopted_by_outer") and L._oracle_stat(d["pid"]) is not None:
                     try:
                         r2 = os.waitid(os.P_PID, d["pid"], os.WEXITED | os.WNOHANG | os.WNOWAIT)
@@ -686,12 +689,17 @@ def e3_02(subreaper_on):
                         row["status_readable_before_reap"] = None
                     rr = os.waitpid(d["pid"], os.WNOHANG)
                     row["reaped_status"] = L.decode_status(rr[1]) if rr[0] == d["pid"] else None
-            if not subreaper_on:
-                end = L.now() + 8
-                while L.now() < end and any(d["pidfd"] is not None and L._oracle_stat(d["pid"]) is not None and
-                                            (L._oracle_stat(d["pid"]) or {}).get("starttime") == d["starttime"] for n, d in nodes.items()):
-                    time.sleep(0.05)
-                rec["seconds_until_init_cleaned_everything"] = round(8 - max(0, end - L.now()), 2)
+            gone_at = {}
+            end = t_death + 12
+            while L.now() < end and len(gone_at) < len(nodes):
+                for n, d in nodes.items():
+                    if n in gone_at:
+                        continue
+                    st0 = L._oracle_stat(d["pid"]) if d["pidfd"] is not None else None
+                    if st0 is None or st0["starttime"] != d["starttime"]:
+                        gone_at[n] = round(L.now() - t_death, 2)
+                time.sleep(0.02)
+            rec["seconds_after_supervisor_death_until_node_gone"] = gone_at
             rec["truth"] = {k: list(v) for k, v in truth.items()}
             final = {n: (oracle_state(d, timeout=1.0)[0] if d["pidfd"] is not None else GONE) for n, d in nodes.items()}
             rec["final_states"] = final

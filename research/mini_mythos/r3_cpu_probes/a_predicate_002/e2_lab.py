@@ -211,6 +211,19 @@ class ArmCAP(L.ArmCA):
         super().__init__(lab)
         self.popens = {}
 
+    def _eval(self, tg, table, problems):
+        p = self.popens.get(tg.pid)
+        if p is not None and not tg.reaped:             # Popen is the only reaper: ask it first, /proc may already be empty
+            self._log_wait("Popen.poll", tg.pid)
+            rc = p.poll()
+            if rc is not None:
+                tg.reaped = True
+                tg.exit = {"kind": "exit", "code": rc} if rc >= 0 else {"kind": "signal", "sig": -rc}
+                self.reap_log.append({"pid": tg.pid, "status": tg.exit, "phase": "poll(Popen)"})
+                tg.state, tg.reason = EXITED, "reaped_by_Popen"
+                return
+        return super()._eval(tg, table, problems)
+
     def _observe_child(self, tg, st):
         p = self.popens.get(tg.pid)
         if p is None:

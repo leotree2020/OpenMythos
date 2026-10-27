@@ -1,0 +1,1079 @@
+{
+ "args": {
+  "only": "E2-01,E2-04,E3-02a,E3-02b",
+  "out": "/tmp/claude-0/-home-user/2c7c9a9c-fc7c-5adb-90a5-e297bc6c2a17/scratchpad/e23b.json",
+  "race_repeat": 50,
+  "repeat": 1,
+  "seed": 20261027
+ },
+ "cleanup_unclean_runs": [],
+ "environment": {
+  "ancestors": [
+   {
+    "comm": "python3",
+    "pid": 1022
+   },
+   {
+    "comm": "timeout",
+    "pid": 1020
+   }
+  ],
+  "clk_tck": 100,
+  "cpu_count": 4,
+  "euid": 0,
+  "git_branch": "d1-r3-a-cpu-002-minimal-dispute-20261027",
+  "git_commit": "8a51c2d305afddeade1cd3c696cab972f84902d0",
+  "git_status_short": "M ../a_predicate_002/e2_cases.py\n M ../a_predicate_002/e2_lab.py\n?? ../a_predicate_002/results/dev_runs/dev_run_002_E2_E3_smoke_before_bench_fixes.json",
+  "kernel": "6.18.44-fc-v165",
+  "machine": "x86_64",
+  "os.WNOWAIT": true,
+  "os.pidfd_open": true,
+  "os.waitid": true,
+  "platform": "Linux-6.18.44-fc-v165-x86_64-with-glibc2.39",
+  "prctl_get_subreaper_initial": 1,
+  "python": "3.13.16 (main, Oct  1 2026, 15:40:24) [GCC 13.3.0]",
+  "sentinel": {
+   "name": "SENTINEL",
+   "pgrp": 1024,
+   "pid": 1024,
+   "ppid": 1023,
+   "sid": 1024,
+   "starttime": 73869
+  },
+  "signal.pidfd_send_signal": true,
+  "subreaper_log": [
+   {
+    "get": 0,
+    "ok": true,
+    "set": false
+   },
+   {
+    "get": 0,
+    "ok": true,
+    "set": false
+   },
+   {
+    "get": 0,
+    "ok": true,
+    "set": false
+   },
+   {
+    "get": 1,
+    "ok": true,
+    "set": true
+   },
+   {
+    "get": 1,
+    "ok": true,
+    "set": true
+   },
+   {
+    "get": 1,
+    "ok": true,
+    "set": true
+   },
+   {
+    "get": 1,
+    "ok": true,
+    "set": true
+   },
+   {
+    "get": 1,
+    "ok": true,
+    "set": true
+   },
+   {
+    "get": 1,
+    "ok": true,
+    "set": true
+   },
+   {
+    "get": 1,
+    "ok": true,
+    "set": true
+   },
+   {
+    "get": 1,
+    "ok": true,
+    "set": true
+   },
+   {
+    "get": 1,
+    "ok": true,
+    "set": true
+   },
+   {
+    "get": 1,
+    "ok": true,
+    "set": true
+   },
+   {
+    "get": 0,
+    "ok": true,
+    "set": false
+   },
+   {
+    "get": 1,
+    "ok": true,
+    "set": true
+   },
+   {
+    "get": 1,
+    "ok": true,
+    "set": true
+   },
+   {
+    "get": 0,
+    "ok": true,
+    "set": false
+   },
+   {
+    "get": 1,
+    "ok": true,
+    "set": true
+   },
+   {
+    "get": 1,
+    "ok": true,
+    "set": true
+   }
+  ],
+  "supervisor_pgid": 1020,
+  "supervisor_pid": 1022,
+  "token": "ALAB-c4869b11e8bb",
+  "uid": 0
+ },
+ "experiment": "F3B-D1-A-CPU-002",
+ "final_cleanup": {
+  "sentinel_after_kill": "Z"
+ },
+ "results": [
+  {
+   "arm": "CA",
+   "arm_poll_tri": "EXITED",
+   "ca_record": {
+    "code": 7,
+    "kind": "exit",
+    "raw": 1792
+   },
+   "case": "E2-01",
+   "checks": [
+    {
+     "actual": {
+      "code": 7,
+      "kind": "exit"
+     },
+     "expected": {
+      "code": 7,
+      "kind": "exit"
+     },
+     "name": "C1_arm_record_equals_truth",
+     "ok": true
+    },
+    {
+     "actual": 0,
+     "expected": 7,
+     "name": "C2_popen_returncode_equals_truth_after_poll",
+     "ok": false
+    },
+    {
+     "actual": 0,
+     "expected": 7,
+     "name": "C2_popen_returncode_equals_truth_after_wait",
+     "ok": false
+    },
+    {
+     "actual": "ECHILD",
+     "expected": "ECHILD",
+     "name": "C3_no_second_status_copy_in_kernel",
+     "ok": true
+    },
+    {
+     "actual": "GONE",
+     "expected": "GONE",
+     "name": "C4_no_zombie_left",
+     "ok": true
+    },
+    {
+     "actual": [],
+     "expected": [],
+     "name": "C4_no_ResourceWarning",
+     "ok": true
+    }
+   ],
+   "cleanup": {
+    "children_of_supervisor": [],
+    "notes": [],
+    "residual_nodes": [],
+    "token_scan_pids": []
+   },
+   "cleanup_clean": true,
+   "elapsed_s": 0.02,
+   "evidence_kind": "REAL_KERNEL",
+   "fail_mode": "popen_reports_0_instead_of_7",
+   "failed_checks": [
+    "C2_popen_returncode_equals_truth_after_poll",
+    "C2_popen_returncode_equals_truth_after_wait"
+   ],
+   "kernel_second_status_copy": "ECHILD",
+   "popen_poll": 0,
+   "popen_returncode_after_arm_poll_attribute": null,
+   "popen_returncode_before": null,
+   "popen_wait": 0,
+   "purpose": "E2 exit7: arm reaps first, Popen reads later; CA record and Popen state checked separately",
+   "repeat": 1,
+   "status": "FAIL",
+   "supervisor_pid": 1022,
+   "tool_ok": true
+  },
+  {
+   "arm": "CA-P",
+   "arm_poll_tri": "EXITED",
+   "ca_record": {
+    "code": 7,
+    "kind": "exit"
+   },
+   "case": "E2-01",
+   "checks": [
+    {
+     "actual": {
+      "code": 7,
+      "kind": "exit"
+     },
+     "expected": {
+      "code": 7,
+      "kind": "exit"
+     },
+     "name": "C1_arm_record_equals_truth",
+     "ok": true
+    },
+    {
+     "actual": 7,
+     "expected": 7,
+     "name": "C2_popen_returncode_equals_truth_after_poll",
+     "ok": true
+    },
+    {
+     "actual": 7,
+     "expected": 7,
+     "name": "C2_popen_returncode_equals_truth_after_wait",
+     "ok": true
+    },
+    {
+     "actual": "ECHILD",
+     "expected": "ECHILD",
+     "name": "C3_no_second_status_copy_in_kernel",
+     "ok": true
+    },
+    {
+     "actual": "GONE",
+     "expected": "GONE",
+     "name": "C4_no_zombie_left",
+     "ok": true
+    },
+    {
+     "actual": [],
+     "expected": [],
+     "name": "C4_no_ResourceWarning",
+     "ok": true
+    }
+   ],
+   "cleanup": {
+    "children_of_supervisor": [],
+    "notes": [],
+    "residual_nodes": [],
+    "token_scan_pids": []
+   },
+   "cleanup_clean": true,
+   "elapsed_s": 0.019,
+   "evidence_kind": "REAL_KERNEL",
+   "fail_mode": null,
+   "failed_checks": [],
+   "kernel_second_status_copy": "ECHILD",
+   "popen_poll": 7,
+   "popen_returncode_after_arm_poll_attribute": 7,
+   "popen_returncode_before": null,
+   "popen_wait": 7,
+   "purpose": "E2 exit7: arm reaps first, Popen reads later; CA record and Popen state checked separately",
+   "repeat": 1,
+   "status": "PASS",
+   "supervisor_pid": 1022,
+   "tool_ok": true
+  },
+  {
+   "arm": "CA",
+   "arm_reasons": [
+    "UNKNOWN_OBSERVATION_CONFLICT:unreaped_child_absent_from_proc"
+   ],
+   "arm_record": null,
+   "arm_tri": "UNKNOWN",
+   "case": "E2-04",
+   "checks": [
+    {
+     "actual": 7,
+     "expected": 7,
+     "name": "popen_has_the_true_status",
+     "ok": true
+    },
+    {
+     "actual": [
+      "UNKNOWN",
+      null
+     ],
+     "expected": [
+      "UNKNOWN",
+      null
+     ],
+     "name": "C1_arm_does_not_claim_EXITED_without_a_status",
+     "ok": true
+    }
+   ],
+   "cleanup": {
+    "children_of_supervisor": [],
+    "notes": [],
+    "residual_nodes": [],
+    "token_scan_pids": []
+   },
+   "cleanup_clean": true,
+   "elapsed_s": 0.017,
+   "evidence_kind": "REAL_KERNEL",
+   "failed_checks": [],
+   "popen_wait": 7,
+   "purpose": "E2-04 Popen reaps first (p.wait()), then the arm polls: the arm must not claim a status it does not hold",
+   "repeat": 1,
+   "status": "PASS",
+   "supervisor_pid": 1022,
+   "tool_ok": true
+  },
+  {
+   "arm": "CA-P",
+   "arm_reasons": [],
+   "arm_record": {
+    "code": 7,
+    "kind": "exit"
+   },
+   "arm_tri": "EXITED",
+   "case": "E2-04",
+   "checks": [
+    {
+     "actual": 7,
+     "expected": 7,
+     "name": "popen_has_the_true_status",
+     "ok": true
+    },
+    {
+     "actual": {
+      "code": 7,
+      "kind": "exit"
+     },
+     "expected": {
+      "code": 7,
+      "kind": "exit"
+     },
+     "name": "CA-P_reads_the_same_true_status_from_Popen",
+     "ok": true
+    }
+   ],
+   "cleanup": {
+    "children_of_supervisor": [],
+    "notes": [],
+    "residual_nodes": [],
+    "token_scan_pids": []
+   },
+   "cleanup_clean": true,
+   "elapsed_s": 0.017,
+   "evidence_kind": "REAL_KERNEL",
+   "failed_checks": [],
+   "popen_wait": 7,
+   "purpose": "E2-04 Popen reaps first (p.wait()), then the arm polls: the arm must not claim a status it does not hold",
+   "repeat": 1,
+   "status": "PASS",
+   "supervisor_pid": 1022,
+   "tool_ok": true
+  },
+  {
+   "arm": "CB",
+   "arm_reasons": [
+    "UNKNOWN_OBSERVATION_CONFLICT:unreaped_child_absent_from_proc"
+   ],
+   "arm_record": null,
+   "arm_tri": "UNKNOWN",
+   "case": "E2-04",
+   "checks": [
+    {
+     "actual": 7,
+     "expected": 7,
+     "name": "popen_has_the_true_status",
+     "ok": true
+    },
+    {
+     "actual": [
+      "UNKNOWN",
+      null
+     ],
+     "expected": [
+      "UNKNOWN",
+      null
+     ],
+     "name": "C1_arm_does_not_claim_EXITED_without_a_status",
+     "ok": true
+    }
+   ],
+   "cleanup": {
+    "children_of_supervisor": [],
+    "notes": [],
+    "residual_nodes": [],
+    "token_scan_pids": []
+   },
+   "cleanup_clean": true,
+   "elapsed_s": 0.016,
+   "evidence_kind": "REAL_KERNEL",
+   "failed_checks": [],
+   "popen_wait": 7,
+   "purpose": "E2-04 Popen reaps first (p.wait()), then the arm polls: the arm must not claim a status it does not hold",
+   "repeat": 1,
+   "status": "PASS",
+   "supervisor_pid": 1022,
+   "tool_ok": true
+  },
+  {
+   "after_supervisor_death": {
+    "D": {
+     "adopted_by_outer": true,
+     "killed_by_outer_pidfd": true,
+     "ppid_after_supervisor_death": 1022,
+     "reaped_status": {
+      "kind": "signal",
+      "sig": 9
+     },
+     "state": "RUNNING",
+     "status_readable_before_reap": {
+      "kind": "signal",
+      "sig": 9
+     }
+    },
+    "E": {
+     "adopted_by_outer": true,
+     "ppid_after_supervisor_death": 1022,
+     "reaped_status": {
+      "code": 5,
+      "kind": "exit"
+     },
+     "state": "ZOMBIE",
+     "status_readable_before_reap": {
+      "code": 5,
+      "kind": "exit"
+     }
+    },
+    "R": {
+     "adopted_by_outer": true,
+     "ppid_after_supervisor_death": 1022,
+     "reaped_status": {
+      "code": 3,
+      "kind": "exit"
+     },
+     "state": "ZOMBIE",
+     "status_readable_before_reap": {
+      "code": 3,
+      "kind": "exit"
+     }
+    },
+    "Y": {
+     "adopted_by_outer": true,
+     "ppid_after_supervisor_death": 1022,
+     "reaped_status": {
+      "code": 9,
+      "kind": "exit"
+     },
+     "state": "ZOMBIE",
+     "status_readable_before_reap": {
+      "code": 9,
+      "kind": "exit"
+     }
+    }
+   },
+   "arm": "CB",
+   "case": "E3-02a",
+   "checks": [
+    {
+     "actual": {
+      "D": "GONE",
+      "E": "GONE",
+      "R": "GONE",
+      "Y": "GONE"
+     },
+     "expected": {
+      "D": "GONE",
+      "E": "GONE",
+      "R": "GONE",
+      "Y": "GONE"
+     },
+     "name": "RECOVERY_no_stage_process_left",
+     "ok": true
+    },
+    {
+     "actual": {
+      "E": {
+       "code": 5,
+       "kind": "exit"
+      },
+      "R": {
+       "code": 3,
+       "kind": "exit"
+      }
+     },
+     "expected": {
+      "E": 5,
+      "R": 3
+     },
+     "name": "PREDICTION_cb_unreaped_zombie_statuses_are_recoverable_by_the_outer_reaper",
+     "ok": true
+    },
+    {
+     "actual": {
+      "code": 9,
+      "kind": "exit"
+     },
+     "expected": {
+      "code": 9,
+      "kind": "exit"
+     },
+     "name": "decoy_Y_status_intact_for_outer",
+     "ok": true
+    },
+    {
+     "actual": [
+      true,
+      true,
+      {
+       "kind": "signal",
+       "sig": 9
+      }
+     ],
+     "expected": [
+      true,
+      true,
+      {
+       "kind": "signal",
+       "sig": 9
+      }
+     ],
+     "name": "live_orphan_D_adopted_by_outer_and_cleaned_by_pidfd",
+     "ok": true
+    },
+    {
+     "actual": null,
+     "expected": null,
+     "name": "sentinel_alive_and_untouched",
+     "ok": true
+    }
+   ],
+   "cleanup": {
+    "children_of_supervisor": [],
+    "notes": [],
+    "residual_nodes": [],
+    "token_scan_pids": []
+   },
+   "cleanup_clean": true,
+   "elapsed_s": 0.423,
+   "evidence_kind": "REAL_KERNEL (SIGKILL of the supervisor is the injected abnormal exit)",
+   "failed_checks": [],
+   "final_states": {
+    "D": "GONE",
+    "E": "GONE",
+    "R": "GONE",
+    "Y": "GONE"
+   },
+   "purpose": "E3-02a supervisor SIGKILLed with no T5/cleanup; outer reaper is a subreaper",
+   "repeat": 1,
+   "seconds_after_supervisor_death_until_node_gone": {
+    "D": 0.3,
+    "E": 0.3,
+    "R": 0.3,
+    "Y": 0.3
+   },
+   "status": "PASS",
+   "supervisor_pid": 1022,
+   "supervisor_report": {
+    "arm_tri": "ALIVE",
+    "exit_records_in_supervisor_memory": {
+     "D": null,
+     "E": {
+      "code": 5,
+      "kind": "exit"
+     },
+     "R": {
+      "code": 3,
+      "kind": "exit"
+     }
+    },
+    "pidfd_open_after_supervisor_polls": {
+     "D": "ok",
+     "E": "ok",
+     "R": "ok",
+     "Y": "ok"
+    }
+   },
+   "tool_ok": true,
+   "truth": {
+    "D": [
+     "signal",
+     9
+    ],
+    "E": [
+     "exit",
+     5
+    ],
+    "R": [
+     "exit",
+     3
+    ],
+    "Y": [
+     "exit",
+     9
+    ]
+   }
+  },
+  {
+   "after_supervisor_death": {
+    "D": {
+     "adopted_by_outer": true,
+     "killed_by_outer_pidfd": true,
+     "ppid_after_supervisor_death": 1022,
+     "reaped_status": {
+      "kind": "signal",
+      "sig": 9
+     },
+     "state": "RUNNING",
+     "status_readable_before_reap": {
+      "kind": "signal",
+      "sig": 9
+     }
+    },
+    "E": {
+     "pidfd": "ESRCH",
+     "state": "GONE",
+     "status_recoverable": false
+    },
+    "R": {
+     "pidfd": "ESRCH",
+     "state": "GONE",
+     "status_recoverable": false
+    },
+    "Y": {
+     "adopted_by_outer": true,
+     "ppid_after_supervisor_death": 1022,
+     "reaped_status": {
+      "code": 9,
+      "kind": "exit"
+     },
+     "state": "ZOMBIE",
+     "status_readable_before_reap": {
+      "code": 9,
+      "kind": "exit"
+     }
+    }
+   },
+   "arm": "CA",
+   "case": "E3-02a",
+   "checks": [
+    {
+     "actual": {
+      "D": "GONE",
+      "E": "GONE",
+      "R": "GONE",
+      "Y": "GONE"
+     },
+     "expected": {
+      "D": "GONE",
+      "E": "GONE",
+      "R": "GONE",
+      "Y": "GONE"
+     },
+     "name": "RECOVERY_no_stage_process_left",
+     "ok": true
+    },
+    {
+     "actual": {
+      "E": {
+       "pidfd": "ESRCH",
+       "state": "GONE",
+       "status_recoverable": false
+      },
+      "R": {
+       "pidfd": "ESRCH",
+       "state": "GONE",
+       "status_recoverable": false
+      }
+     },
+     "expected": "R,E gone, no status",
+     "name": "PREDICTION_ca_already_reaped_statuses_are_not_recoverable",
+     "ok": true
+    },
+    {
+     "actual": {
+      "code": 9,
+      "kind": "exit"
+     },
+     "expected": {
+      "code": 9,
+      "kind": "exit"
+     },
+     "name": "decoy_Y_status_intact_for_outer",
+     "ok": true
+    },
+    {
+     "actual": [
+      true,
+      true,
+      {
+       "kind": "signal",
+       "sig": 9
+      }
+     ],
+     "expected": [
+      true,
+      true,
+      {
+       "kind": "signal",
+       "sig": 9
+      }
+     ],
+     "name": "live_orphan_D_adopted_by_outer_and_cleaned_by_pidfd",
+     "ok": true
+    },
+    {
+     "actual": null,
+     "expected": null,
+     "name": "sentinel_alive_and_untouched",
+     "ok": true
+    }
+   ],
+   "cleanup": {
+    "children_of_supervisor": [],
+    "notes": [],
+    "residual_nodes": [],
+    "token_scan_pids": []
+   },
+   "cleanup_clean": true,
+   "elapsed_s": 0.418,
+   "evidence_kind": "REAL_KERNEL (SIGKILL of the supervisor is the injected abnormal exit)",
+   "failed_checks": [],
+   "final_states": {
+    "D": "GONE",
+    "E": "GONE",
+    "R": "GONE",
+    "Y": "GONE"
+   },
+   "purpose": "E3-02a supervisor SIGKILLed with no T5/cleanup; outer reaper is a subreaper",
+   "repeat": 1,
+   "seconds_after_supervisor_death_until_node_gone": {
+    "D": 0.3,
+    "E": 0.3,
+    "R": 0.3,
+    "Y": 0.3
+   },
+   "status": "PASS",
+   "supervisor_pid": 1022,
+   "supervisor_report": {
+    "arm_tri": "ALIVE",
+    "exit_records_in_supervisor_memory": {
+     "D": null,
+     "E": {
+      "code": 5,
+      "kind": "exit",
+      "raw": 1280
+     },
+     "R": {
+      "code": 3,
+      "kind": "exit",
+      "raw": 768
+     }
+    },
+    "pidfd_open_after_supervisor_polls": {
+     "D": "ok",
+     "E": "ESRCH",
+     "R": "ESRCH",
+     "Y": "ok"
+    }
+   },
+   "tool_ok": true,
+   "truth": {
+    "D": [
+     "signal",
+     9
+    ],
+    "E": [
+     "exit",
+     5
+    ],
+    "R": [
+     "exit",
+     3
+    ],
+    "Y": [
+     "exit",
+     9
+    ]
+   }
+  },
+  {
+   "after_supervisor_death": {
+    "D": {
+     "adopted_by_outer": false,
+     "killed_by_outer_pidfd": true,
+     "ppid_after_supervisor_death": 1,
+     "state": "RUNNING"
+    },
+    "E": {
+     "adopted_by_outer": false,
+     "ppid_after_supervisor_death": 1,
+     "state": "ZOMBIE"
+    },
+    "R": {
+     "adopted_by_outer": false,
+     "ppid_after_supervisor_death": 1,
+     "state": "ZOMBIE"
+    },
+    "Y": {
+     "adopted_by_outer": false,
+     "ppid_after_supervisor_death": 1,
+     "state": "ZOMBIE"
+    }
+   },
+   "arm": "CB",
+   "case": "E3-02b",
+   "checks": [
+    {
+     "actual": {
+      "D": "GONE",
+      "E": "GONE",
+      "R": "GONE",
+      "Y": "GONE"
+     },
+     "expected": {
+      "D": "GONE",
+      "E": "GONE",
+      "R": "GONE",
+      "Y": "GONE"
+     },
+     "name": "RECOVERY_no_stage_process_left",
+     "ok": true
+    },
+    {
+     "actual": {
+      "D": 1,
+      "E": 1,
+      "R": 1,
+      "Y": 1
+     },
+     "expected": true,
+     "name": "orphans_adopted_by_pid1_not_outer",
+     "ok": true
+    },
+    {
+     "actual": null,
+     "expected": null,
+     "name": "sentinel_alive_and_untouched",
+     "ok": true
+    }
+   ],
+   "cleanup": {
+    "children_of_supervisor": [],
+    "notes": [],
+    "residual_nodes": [],
+    "token_scan_pids": []
+   },
+   "cleanup_clean": true,
+   "elapsed_s": 1.581,
+   "evidence_kind": "REAL_KERNEL (SIGKILL of the supervisor is the injected abnormal exit)",
+   "failed_checks": [],
+   "final_states": {
+    "D": "GONE",
+    "E": "GONE",
+    "R": "GONE",
+    "Y": "GONE"
+   },
+   "purpose": "E3-02b supervisor SIGKILLed with no T5/cleanup; outer reaper has the subreaper flag OFF (orphans go to pid 1)",
+   "repeat": 1,
+   "seconds_after_supervisor_death_until_node_gone": {
+    "D": 1.46,
+    "E": 1.46,
+    "R": 1.46,
+    "Y": 1.46
+   },
+   "status": "PASS",
+   "supervisor_pid": 1022,
+   "supervisor_report": {
+    "arm_tri": "ALIVE",
+    "exit_records_in_supervisor_memory": {
+     "D": null,
+     "E": {
+      "code": 5,
+      "kind": "exit"
+     },
+     "R": {
+      "code": 3,
+      "kind": "exit"
+     }
+    },
+    "pidfd_open_after_supervisor_polls": {
+     "D": "ok",
+     "E": "ok",
+     "R": "ok",
+     "Y": "ok"
+    }
+   },
+   "tool_ok": true,
+   "truth": {
+    "D": [
+     "signal",
+     9
+    ],
+    "E": [
+     "exit",
+     5
+    ],
+    "R": [
+     "exit",
+     3
+    ],
+    "Y": [
+     "exit",
+     9
+    ]
+   }
+  },
+  {
+   "after_supervisor_death": {
+    "D": {
+     "adopted_by_outer": false,
+     "killed_by_outer_pidfd": true,
+     "ppid_after_supervisor_death": 1,
+     "state": "RUNNING"
+    },
+    "E": {
+     "pidfd": "ESRCH",
+     "state": "GONE",
+     "status_recoverable": false
+    },
+    "R": {
+     "pidfd": "ESRCH",
+     "state": "GONE",
+     "status_recoverable": false
+    },
+    "Y": {
+     "adopted_by_outer": false,
+     "ppid_after_supervisor_death": 1,
+     "state": "ZOMBIE"
+    }
+   },
+   "arm": "CA",
+   "case": "E3-02b",
+   "checks": [
+    {
+     "actual": {
+      "D": "GONE",
+      "E": "GONE",
+      "R": "GONE",
+      "Y": "GONE"
+     },
+     "expected": {
+      "D": "GONE",
+      "E": "GONE",
+      "R": "GONE",
+      "Y": "GONE"
+     },
+     "name": "RECOVERY_no_stage_process_left",
+     "ok": true
+    },
+    {
+     "actual": {
+      "D": 1,
+      "E": null,
+      "R": null,
+      "Y": 1
+     },
+     "expected": true,
+     "name": "orphans_adopted_by_pid1_not_outer",
+     "ok": true
+    },
+    {
+     "actual": null,
+     "expected": null,
+     "name": "sentinel_alive_and_untouched",
+     "ok": true
+    }
+   ],
+   "cleanup": {
+    "children_of_supervisor": [],
+    "notes": [],
+    "residual_nodes": [],
+    "token_scan_pids": []
+   },
+   "cleanup_clean": true,
+   "elapsed_s": 2.005,
+   "evidence_kind": "REAL_KERNEL (SIGKILL of the supervisor is the injected abnormal exit)",
+   "failed_checks": [],
+   "final_states": {
+    "D": "GONE",
+    "E": "GONE",
+    "R": "GONE",
+    "Y": "GONE"
+   },
+   "purpose": "E3-02b supervisor SIGKILLed with no T5/cleanup; outer reaper has the subreaper flag OFF (orphans go to pid 1)",
+   "repeat": 1,
+   "seconds_after_supervisor_death_until_node_gone": {
+    "D": 1.9,
+    "E": 0.3,
+    "R": 0.3,
+    "Y": 1.9
+   },
+   "status": "PASS",
+   "supervisor_pid": 1022,
+   "supervisor_report": {
+    "arm_tri": "ALIVE",
+    "exit_records_in_supervisor_memory": {
+     "D": null,
+     "E": {
+      "code": 5,
+      "kind": "exit",
+      "raw": 1280
+     },
+     "R": {
+      "code": 3,
+      "kind": "exit",
+      "raw": 768
+     }
+    },
+    "pidfd_open_after_supervisor_polls": {
+     "D": "ok",
+     "E": "ESRCH",
+     "R": "ESRCH",
+     "Y": "ok"
+    }
+   },
+   "tool_ok": true,
+   "truth": {
+    "D": [
+     "signal",
+     9
+    ],
+    "E": [
+     "exit",
+     5
+    ],
+    "R": [
+     "exit",
+     3
+    ],
+    "Y": [
+     "exit",
+     9
+    ]
+   }
+  }
+ ],
+ "run_error": null,
+ "tool_not_ok_runs": []
+}
