@@ -424,7 +424,9 @@ def c07(ev, crit, tid, ctx):
     node, evs = _node(t), _events(t)
     s1b = _snap(t, "S1b_pre_stimulus")
     need(is_num(s1b.get("mono")) and is_num(evs.get("pidfd_readable_mono")) and isinstance(t.get("stimulus"), dict), "times or stimulus record missing", "C07-U1")
-    if any(r.get("node_id") == node["node_id"] and r.get("kind") == "RELEASED" for r in _reg(ev)):
+    ledger = ev.get("reg_memory_records")                                  # the writer's own ledger: a RELEASED record is only ever written by Observer.release()
+    need(isinstance(ledger, list), "writer ledger missing", "C07-U1")
+    if any(isinstance(r, dict) and r.get("node_id") == node["node_id"] and r.get("kind") == "RELEASED" for r in ledger):
         return _fail("C07-F1", "a RELEASED record exists for the node")
     writes = [w for w in gw if w["test"] == tid]
     closes = [c for c in gc if c["test"] == tid]
