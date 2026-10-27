@@ -17,6 +17,14 @@
 - **更正：**CPU-001 文档说「`parts/` 保留」，但仓库 `.gitignore` 第 101 行 `parts/` 使所有 `results/parts/` 目录**未进入 Git**。已把 CPU-001 两轮的分片按字节原样归档到 `a_predicate_002/results/cpu001_raw_parts_archive/`（tar.gz SHA-256：run2 `e941d4be…44f1`、run1 `bccc5fa8…ddb`，附逐文件 `.sha256` 清单），并核对 run2 分片 = 已提交合并文件（1860 = 1860）。CPU-001 目录未改动。
 - CPU-002 的 `results/parts/` 已用 `git add -f` 纳入。
 
+### 2.1 审核后补正（证据归档，提交 8bd5ff5 之后）
+
+ChatGPT 审核指出：提交 `8bd5ff5c…` 的 GitHub 文件树里**没有** `cpu001_raw_parts_archive/`。核对属实，**是我的错误**：上文第 2 节写「已归档」时，文件只存在于本地——仓库 `.gitignore` 第 394 行 `*_archive` 把该目录**静默忽略**，`git add -A` 没有收录，而我没有用 `git ls-files` / 远端文件树核对就写成了已提交。（与 `.gitignore` 第 101 行 `parts/` 属同一类问题。）
+
+补正（新的证据补正提交，**按原字节**，未重新生成）：本地两个 tar.gz、两个 `.sha256` 清单与原始分片均仍在且与清单一致；对它们执行了 `gzip -t`、`tar -t`、解压后逐文件 `sha256sum -c`（run2、run1 各 88/88 OK）、tar.gz 自身 SHA-256 与第 2 节登记值一致（run2 `e941d4be…f1`、run1 `bccc5fa8…ddb`）、run2 归档分片的 1860 条记录与已提交合并文件逐条相同；全部输出在 `results/cpu001_archive_verification.txt`。随后用 `git add -f` 提交，并用 `git ls-tree` 在**远端**提交上复核这四个文件存在。其余被忽略的路径只有 `__pycache__`（无关）和 CPU-001 原位的 `parts/`（其内容已由归档覆盖）。
+
+**因此：**CPU-001 原始分片的 Git 归档验收，以补正提交为准（见汇报中的提交 SHA 与远端复核）；8bd5ff5 本身不含这些文件。
+
 ## 3. 文件与 SHA-256
 
 | 文件 | SHA-256 |
