@@ -76,6 +76,70 @@ def integrity_issues(records):
         if reg is not None and (not isinstance(reg.get("pid"), int) or not isinstance(reg.get("starttime"), int)):
             issues.append("MALFORMED_REGISTERED: node %s lacks integer pid/starttime" % nid)
     issues += ["ORDER: " + x for x in check_order(records)]
+    issues += lifecycle_issues(records)
+    return issues
+
+
+def lifecycle_issues(records):
+    """CLOSEOUT-02.  The minimal run lifecycle a registration file must show before anything may be concluded from it:
+      * exactly one RUN_START, first in the file, carrying a run_id (str) and the observer_pid (int);
+      * at most one RUN_END; if present it follows RUN_START, names the same run_id, has a boolean cleanup_confirmed and is the LAST
+        record (nothing -- in particular no creation record -- may follow it);
+      * a RUN_END that claims confirmed cleanup is only legal if every node except the janitor has a DEAD record;
+      * no node record before RUN_START, no duplicate INTENT / DEAD, no record for a node after its DEAD.
+    A file that is only a RUN_END, only fragments, or an order that could fake a successful end is therefore never accepted."""
+    issues = []
+    if not records:
+        return ["EMPTY_REGISTRY: no RUN_START"]
+    starts = [i for i, r in enumerate(records) if r["kind"] == "RUN_START"]
+    ends = [i for i, r in enumerate(records) if r["kind"] == "RUN_END"]
+    sid = None
+    if len(starts) != 1:
+        issues.append("RUN_START_COUNT=%d (exactly one is required)" % len(starts))
+    else:
+        s = records[starts[0]]
+        if starts[0] != 0:
+            issues.append("RUN_START_NOT_FIRST: %d record(s) precede it" % starts[0])
+        if not (isinstance(s.get("run_id"), str) and s["run_id"]) or not isinstance(s.get("observer_pid"), int) or isinstance(s.get("observer_pid"), bool):
+            issues.append("RUN_START_ILLEGAL: needs run_id (non-empty str) and observer_pid (int)")
+        else:
+            sid = s["run_id"]
+    if len(ends) > 1:
+        issues.append("DUPLICATE_RUN_END (%d)" % len(ends))
+    if ends:
+        e = records[ends[0]]
+        if not starts:
+            issues.append("RUN_END_WITHOUT_RUN_START")
+        elif ends[0] < starts[0]:
+            issues.append("RUN_END_BEFORE_RUN_START")
+        elif sid is not None and e.get("run_id") != sid:
+            issues.append("RUN_END_FOR_DIFFERENT_RUN: %r != %r" % (e.get("run_id"), sid))
+        if not isinstance(e.get("cleanup_confirmed"), bool):
+            issues.append("RUN_END_ILLEGAL: cleanup_confirmed must be a bool")
+        if ends[0] != len(records) - 1:
+            issues.append("RECORD_AFTER_RUN_END: %s" % [r["kind"] for r in records[ends[0] + 1:]][:6])
+        if e.get("cleanup_confirmed") is True:
+            nodes = fold(records)
+            open_ = sorted(nid for nid, n in nodes.items()
+                           if n["intent"] is not None and n["intent"].get("role") != "janitor" and n["dead"] is None)
+            if open_:
+                issues.append("CONFIRMED_RUN_END_WITH_UNFINISHED_NODES: %s" % open_[:6])
+    first = starts[0] if starts else None
+    seen_intent, dead = set(), set()
+    for i, r in enumerate(records):
+        nid = r.get("node_id")
+        if nid is None:
+            continue
+        if first is not None and i < first:
+            issues.append("NODE_RECORD_BEFORE_RUN_START: %s" % nid)
+        if r["kind"] == "INTENT":
+            if nid in seen_intent:
+                issues.append("DUPLICATE_INTENT: %s" % nid)
+            seen_intent.add(nid)
+        if nid in dead:
+            issues.append("RECORD_AFTER_DEAD: %s %s" % (nid, r["kind"]))
+        if r["kind"] == "DEAD":
+            dead.add(nid)
     return issues
 
 
@@ -129,6 +193,19 @@ def unresolved_forked(records):
         if not isinstance(fk.get("pid"), int):
             continue
         out.append({"node_id": nid, "pid": fk["pid"], "starttime": fk.get("starttime"), "role": fk.get("role")})
+    return sorted(out, key=lambda t: t["node_id"])
+
+
+def unresolved_tickets(records):
+    """CLOSEOUT-01.  Nodes created through a ticket (creator is not the observer) for which the REG file shows neither a known process
+    (FORKED / REGISTERED) nor a DEAD record: the creator may have forked and CREATED may still arrive.  Only the observer can resolve
+    them (it holds the gate and writes DEAD with its basis); the janitor can only report them -- no pid is guessed, nothing is signalled."""
+    out = []
+    for nid, n in fold(records).items():
+        it = n["intent"]
+        if it is None or it.get("creator") in (None, "O") or n["forked"] is not None or n["registered"] is not None or n["dead"] is not None:
+            continue
+        out.append({"node_id": nid, "creator": it.get("creator"), "label": it.get("label")})
     return sorted(out, key=lambda t: t["node_id"])
 
 

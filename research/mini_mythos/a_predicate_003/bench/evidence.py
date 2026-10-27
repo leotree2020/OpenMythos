@@ -160,7 +160,8 @@ def _verify_registry(run_dir, rid, prereg_sha):
     ends = [r for r in recs if r["kind"] == "RUN_END"]
     if len(starts) != 1 or starts[0].get("run_id") != rid or starts[0].get("prereg_sha256") != prereg_sha or starts[0].get("phase") != "bv":
         why.append("registry RUN_START does not match the bound run")
-    if len(ends) != 1 or ends[0].get("cleanup_confirmed") is not True or ends[0].get("aborted") is not None or recs[-1] is not ends[0]:
+    if (len(ends) != 1 or ends[0].get("cleanup_confirmed") is not True or ends[0].get("aborted") is not None or recs[-1] is not ends[0]
+            or ends[0].get("run_id") != rid):
         why.append("registry RUN_END missing, not last, aborted or without confirmed cleanup")
     nodes = R.fold(recs)
     by_label = {}

@@ -31,6 +31,14 @@ class NodeRec:
         self.trial = None                     # trial tag at creation time
         self.forked_pid = None                # pid of the forked process, kept even if registration fails or the node is ABORTED
         self.forked_starttime = None          # best-effort starttime read right after the fork (None if unreadable)
+        # CLOSEOUT-01: did the process this node stands for ever come into existence?  DIRECT (observer forked it itself),
+        # TICKET_ISSUED (ticket granted, creator has not reported), REPORTED (CREATED received: pid known),
+        # UNRESOLVED_REVOKED (revoked/failed ticket; the creator MAY have forked and CREATED may still arrive),
+        # NONE_PROVEN_FORK_FAILED (fork raised in the observer).  creation_proof is set when it is PROVEN that no live process can
+        # belong to this node (see _probe_gate); only then is an unreported ticket considered resolved.
+        self.creation = "DIRECT"
+        self.creation_proof = None
+        self.late_created_pid = None          # a pid reported after the proof: recorded in memory only, never used
         self.gate_ino = None                  # inode of the gate pipe (BV-8: must not appear in any node)
         self.spec_send_error = None
 
@@ -67,6 +75,7 @@ class Observer:
         except OSError as e:
             os.close(gate_r)
             node_end.close()
+            rec.creation, rec.creation_proof = "NONE_PROVEN_FORK_FAILED", "os.fork raised: %r" % (e,)
             self._abort(rec, "fork failed: %r" % (e,))
             return rec
         os.close(gate_r)
@@ -80,6 +89,8 @@ class Observer:
         """From this point the observer is responsible for the process until it is CONFIRMED dead (DEAD record), whatever happens
         to the registration."""
         rec.forked_pid = pid
+        if rec.creation in ("TICKET_ISSUED", "UNRESOLVED_REVOKED"):
+            rec.creation = "REPORTED"
         try:
             st = C.read_stat(pid)
         except C.ProcUnreadable:
@@ -130,17 +141,45 @@ class Observer:
             rec.spec_send_error = repr(e)
 
     def _abort(self, rec, reason, expected=False):
-        self.reg.write("ABORTED", node_id=rec.node_id, reason=reason)
+        unresolved = rec.creation == "TICKET_ISSUED" and rec.pid is None and rec.forked_pid is None
+        self.reg.write("ABORTED", node_id=rec.node_id, reason=reason, creation_unresolved=bool(unresolved))
+        keep_probe = rec.pid is None and not rec.direct and rec.creation_proof is None     # never identity-registered ticketed node
         if rec.gate_w is not None:
             try:
                 os.write(rec.gate_w, b"A")
+            except BrokenPipeError:
+                rec.creation_proof = rec.creation_proof or "gate pipe has no reader (EPIPE)"
+                keep_probe = False
             except OSError:
-                pass
-            os.close(rec.gate_w)
-            rec.gate_w = None
+                pass                                                   # full pipe / interrupted: a reader exists or is unknown
+            if not keep_probe:
+                os.close(rec.gate_w)
+                rec.gate_w = None
+        if unresolved:
+            rec.creation = "UNRESOLVED_REVOKED"
         rec.state = "ABORTED"
         if not expected:
             self.problems.append("%s aborted: %s" % (rec.node_id, reason))
+
+    def _probe_gate(self, rec):
+        """CLOSEOUT-01.  True iff it is PROVEN that no live process can belong to this never-released ticket.
+        Every holder of the gate READ end is accounted for: the observer closed its copy at grant time; the creator holds one until it has
+        forked (and, if it did, the child holds one until it exits); an unread TICKET_OK in flight holds one until the creator reads it
+        or dies.  The observer holds the WRITE end, and a write to a pipe without readers fails with EPIPE.  So EPIPE means: nobody can
+        create a process from this ticket any more and any process that was created has exited.  No pid is guessed, nothing is signalled.
+        A write that succeeds (or would block) means a reader may exist -> NOT proven."""
+        if rec.creation_proof:
+            return True
+        if rec.gate_w is None:
+            return False
+        try:
+            os.write(rec.gate_w, b"A")                                 # also (re)delivers the abort byte to a gated child
+        except BrokenPipeError:
+            rec.creation_proof = "gate pipe has no reader (EPIPE)"
+            return True
+        except OSError:
+            return False
+        return False
 
     def abort_held(self, rec, reason="held node aborted by bench (validity check)"):
         self._abort(rec, reason, expected=True)
@@ -221,6 +260,8 @@ class Observer:
         gate_r, gate_w = os.pipe()
         obs_end, node_end = proto.socketpair()
         child.sock, child.gate_w = obs_end, gate_w
+        os.set_blocking(gate_w, False)                                 # probe writes must never block
+        child.creation = "TICKET_ISSUED"
         child.creator_pid = creator.pid
         child.trial = self.trial_tag
         child.gate_ino = os.fstat(gate_w).st_ino
@@ -238,7 +279,12 @@ class Observer:
             self.problems.append("CREATED for unknown/foreign ticket %r from %s" % (msg, creator.node_id))
             return
         pid = int(msg["pid"])
-        if child.state == "ABORTED" or self.intake_closed:
+        if child.state == "DEAD" or child.creation_proof:
+            # the gate already PROVED that no live process belongs to this ticket: the reported pid (possibly reused by now) is not
+            # used and not written; the report is only remembered in memory.
+            child.late_created_pid = pid
+            reply = "REGISTER_FAILED"
+        elif child.state == "ABORTED" or self.intake_closed:
             # revoked / aborted before the report arrived: the process EXISTS, so it is recorded (FORKED) and stays a residual
             # until confirmed dead.  It is not registered (its gate already carries the abort byte) and never signalled.
             if child.forked_pid is None:
@@ -348,13 +394,16 @@ class Observer:
                 time.sleep(0.01)
 
     def _confirmed_dead(self, r):
-        """True only with positive evidence.  Unreadable /proc -> not confirmed."""
+        """True only with positive evidence.  Unreadable /proc, an unreported ticket whose gate may still have a reader, or an identity
+        that cannot be confirmed -> NOT confirmed (and never guessed, never signalled)."""
         if r.state == "DEAD":
             return True
         try:
             if r.pid is not None:                                     # identity-registered
                 return C.process_is_dead(r.pid, r.starttime)
-            if r.forked_pid is not None:                              # forked but not (or no longer) registered
+            if not r.direct and r.creation in ("TICKET_ISSUED", "UNRESOLVED_REVOKED", "REPORTED"):
+                return self._probe_gate(r)                            # ticketed, never registered: only the gate proof counts
+            if r.forked_pid is not None:                              # direct, forked but not (or no longer) registered
                 if r.direct and r.exit_status is not None:
                     return True
                 st = C.read_stat(r.forked_pid)
@@ -363,7 +412,7 @@ class Observer:
                 return r.forked_starttime is not None and st["starttime"] != r.forked_starttime
         except C.ProcUnreadable:
             return False
-        return True                                                   # never forked: nothing to clean up
+        return r.creation == "NONE_PROVEN_FORK_FAILED" or r.direct    # fork raised / nothing was ever forked
 
     def residual(self, nodes=None):
         """Node ids whose process is not confirmed dead -- INCLUDING ABORTED and registration-failed nodes."""
@@ -373,17 +422,27 @@ class Observer:
         out = []
         for r in self._nodes(nodes):
             if not self._confirmed_dead(r):
+                if r.pid is not None:
+                    ident = "registered"
+                elif r.forked_pid is None and r.creation in ("TICKET_ISSUED", "UNRESOLVED_REVOKED"):
+                    ident = "TICKET creation not proven absent (no pid known; never guessed, never signalled)"
+                else:
+                    ident = "UNVERIFIED (never signalled)"
                 out.append({"node_id": r.node_id, "label": r.label, "state": r.state, "pid": r.pid if r.pid is not None else r.forked_pid,
-                            "identity": "registered" if r.pid is not None else "UNVERIFIED (never signalled)"})
+                            "creation": r.creation, "identity": ident})
         return out
 
     def mark_dead(self, nodes=None):
         still = set(self.residual(nodes))
         for r in self._nodes(nodes):
-            if r.state == "DEAD" or r.node_id in still or (r.pid is None and r.forked_pid is None):
+            if r.state == "DEAD" or r.node_id in still:
                 continue
-            self.reg.write("DEAD", node_id=r.node_id, basis="confirmed dead from /proc" + ("" if r.pid is not None else " (identity never registered)"))
+            basis = r.creation_proof or ("confirmed dead from /proc" + ("" if r.pid is not None else " (identity never registered)"))
+            self.reg.write("DEAD", node_id=r.node_id, basis=basis)
             r.state = "DEAD"
+            if r.gate_w is not None:
+                os.close(r.gate_w)
+                r.gate_w = None
             if r.handle is not None:
                 r.handle.close()
                 r.handle = None
@@ -454,6 +513,10 @@ class Observer:
         pending = [r.node_id for r in self.nodes.values() if r.node_id not in exclude and r.state == "INTENT"]
         if pending:
             problems.append("tickets still pending: %s" % pending)
+        unproven = [r.node_id for r in self.nodes.values() if r.node_id not in exclude and r.state != "DEAD" and r.forked_pid is None
+                    and r.pid is None and r.creation in ("TICKET_ISSUED", "UNRESOLVED_REVOKED") and not self._probe_gate(r)]
+        if unproven:
+            problems.append("tickets whose creation is not proven absent (creator may have forked; CREATED not received): %s" % unproven)
         residual = self.residual_detail([r for r in self.nodes.values() if r.node_id not in exclude])
         if residual:
             problems.append("nodes not confirmed dead: %s" % [x["node_id"] for x in residual])

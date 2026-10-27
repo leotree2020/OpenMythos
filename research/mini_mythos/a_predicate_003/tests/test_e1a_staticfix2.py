@@ -30,7 +30,7 @@ class ObsCase(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.obs = O.Observer(os.path.join(self.tmp.name, "registry.jsonl"))
-        self.obs.reg.write("RUN_START", run_id="t")
+        self.obs.reg.write("RUN_START", run_id="t", observer_pid=1)
         self.obs.trial_tag = "T"
         self.socks = []
 
@@ -92,8 +92,10 @@ class TestFix002AIntake(ObsCase):
         c, peer = self.creator()
         self.obs._on_ticket(c, {"t": "TICKET", "role": "sleeper", "label": "kid", "spec": {}})
         msg, fds = proto.recv_msg(peer, 1.0)
-        for fd in fds:
+        gate_r = fds[0]                                                              # kept open: the creator / its child still holds the gate
+        for fd in fds[1:]:
             os.close(fd)
+        self.addCleanup(os.close, gate_r)
         kid = self.obs.nodes[msg["node_id"]]
         self.obs.close_intake()
         with mock.patch.object(C, "read_stat", return_value=ALIVE), mock.patch.object(C, "PidfdHandle") as H:
@@ -246,6 +248,25 @@ class TestFix002ARecoveryState(unittest.TestCase):
         self.assertTrue(s["experiment_verdict"].startswith("BLOCKED - recovery"))
 
 
+def write_run(path, end=None, dead=True):
+    """A lifecycle-complete registration file: RUN_START, a bench node, the janitor's own registration (this test process plays the
+    janitor, starttime 5 as patched), optionally DEAD for the bench node and a RUN_END."""
+    w = R.RegWriter(path)
+    w.write("RUN_START", run_id="t", observer_pid=1)
+    w.write("INTENT", node_id="n00001", creator="O", label="L0", role="bv", mode="none")
+    w.write("FORKED", node_id="n00001", pid=1000, starttime=5)
+    w.write("REGISTERED", node_id="n00001", pid=1000, starttime=5, role="bv")
+    w.write("INTENT", node_id="n00002", creator="O", label="JANITOR", role="janitor", mode="none")
+    w.write("FORKED", node_id="n00002", pid=os.getpid(), starttime=5)
+    w.write("REGISTERED", node_id="n00002", pid=os.getpid(), starttime=5, role="janitor")
+    w.write("RELEASED", node_id="n00002")
+    if dead:
+        w.write("DEAD", node_id="n00001")
+    if end:
+        w.write("RUN_END", run_id="t", aborted=None if end == "confirmed" else "runner exception", cleanup_confirmed=(end == "confirmed"))
+    return w
+
+
 # ===================================================================== FIX-002-B: registration file integrity
 class TestFix002BIntegrity(unittest.TestCase):
     def setUp(self):
@@ -257,7 +278,7 @@ class TestFix002BIntegrity(unittest.TestCase):
 
     def good(self, n=2):
         w = R.RegWriter(self.path)
-        w.write("RUN_START", run_id="t")
+        w.write("RUN_START", run_id="t", observer_pid=1)
         for i in range(n):
             nid = "n%05d" % (i + 1)
             w.write("INTENT", node_id=nid, creator="O", label="L%d" % i)
@@ -378,22 +399,20 @@ class TestFix002BIntegrity(unittest.TestCase):
 
     def run_main(self, prepare, cleanup_clear=True, dead=True):
         log = os.path.join(self.tmp.name, "j.jsonl")
+        if os.path.exists(log):
+            os.remove(log)
         prepare()
         obs = mock.Mock()
         obs.exited.return_value = True
         with mock.patch.object(C, "PidfdHandle", return_value=obs), mock.patch.object(C, "process_is_dead", return_value=dead), \
                 mock.patch.object(J, "cleanup_until_clear", return_value=(cleanup_clear, {})), mock.patch.object(J.time, "sleep"), \
-                mock.patch.object(C, "read_stat", return_value=None):
+                mock.patch.object(C, "read_stat", return_value=dict(ALIVE)):
             code = J.main(["janitor", self.path, "1", "2", log])
         events = [json.loads(x) for x in open(log).read().splitlines()]
         return code, events
 
     def finished(self):
-        self.good(1)
-        w = R.RegWriter(self.path)
-        w.seq = len(R.parse_reg(self.path)[0])
-        w.write("DEAD", node_id="n00001")
-        w.write("RUN_END", cleanup_confirmed=True, aborted=None)
+        write_run(self.path, end="confirmed")
 
     def test_main_returns_clean_only_for_a_whole_file_and_a_confirmed_cleanup(self):
         code, ev = self.run_main(self.finished)
@@ -425,10 +444,7 @@ class TestFix002BIntegrity(unittest.TestCase):
 
     def test_main_reports_incomplete_cleanup_and_both_failures_distinctly(self):
         def unconfirmed():
-            self.good(1)
-            w = R.RegWriter(self.path)
-            w.seq = len(R.parse_reg(self.path)[0])
-            w.write("RUN_END", cleanup_confirmed=False, aborted="runner exception")
+            write_run(self.path, end="unconfirmed", dead=False)
         code, ev = self.run_main(unconfirmed, cleanup_clear=False, dead=False)
         self.assertEqual(code, J.EXIT_INCOMPLETE)                                   # cleanup open, file intact
         self.assertEqual([e for e in ev if e["event"] == "JANITOR_EXIT"][0]["cleanup_state"], "INCOMPLETE_RESPONSIBILITY_OPEN")
@@ -461,7 +477,7 @@ def make_bv_run(root, run_id="bvrun1", auth_id="AUTH-BV-1", prereg=SHA, code=COD
     write_json(os.path.join(d, "validity.json"), {"meta": {"run_id": run_id, "authorization_id": auth_id, "prereg_sha256": prereg, "bench_code_sha256": code,
                                                            "checks_run": list(checks)}, "results": {k: {"ok": True, "cleanup": {"cleanup_ok": True}} for k in checks}})
     w = R.RegWriter(os.path.join(d, "registry.jsonl"))
-    w.write("RUN_START", run_id=run_id, prereg_sha256=prereg, phase="bv")
+    w.write("RUN_START", run_id=run_id, observer_pid=1, prereg_sha256=prereg, phase="bv")
     n = 0
     for chk, (label, kinds) in LABELS.items():
         if label == drop_label:
@@ -474,7 +490,7 @@ def make_bv_run(root, run_id="bvrun1", auth_id="AUTH-BV-1", prereg=SHA, code=COD
     n += 1
     for k in ("INTENT", "FORKED", "REGISTERED", "RELEASED"):
         w.write(k, node_id="n%05d" % n, creator="O", label="JANITOR", role="janitor", mode="none", **({"pid": 7, "starttime": 5} if k in ("FORKED", "REGISTERED") else {}))
-    w.write("RUN_END", aborted=None, cleanup_confirmed=confirmed)
+    w.write("RUN_END", run_id=run_id, aborted=None, cleanup_confirmed=confirmed)
     write_json(os.path.join(d, "summary.json"), {"phase": "bv", "aborted": None, "cleanup_confirmed": confirmed, "recovery_open": False, "janitor_exit": 0,
                                                  "planned_trials": 0})
     att = EV.build_attestation(d)

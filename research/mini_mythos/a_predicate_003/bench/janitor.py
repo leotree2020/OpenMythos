@@ -99,6 +99,8 @@ def unresolved_report(records, skip=()):
         except C.ProcUnreadable:
             alive = None
         out.append(dict(u, alive=alive))
+    for t in R.unresolved_tickets(records):                      # CLOSEOUT-01: creation unproven; the janitor cannot probe the gate
+        out.append(dict(t, pid=None, starttime=None, alive=None, kind="TICKET_CREATION_UNPROVEN"))
     return out
 
 
@@ -116,7 +118,24 @@ def registered_still_alive(records, skip=()):
     return left
 
 
-def reg_integrity(reg_path, retries=3, delay=0.2):
+def expectation_issues(records, expect):
+    """CLOSEOUT-02.  Evidence that THIS janitor belongs to THIS run: the RUN_START must name the observer this janitor watches, and the
+    janitor's own (pid, starttime) must appear in a REGISTERED record with role janitor.  Missing evidence is an integrity problem,
+    so a janitor that cannot show it can never exit 0."""
+    out = []
+    starts = [r for r in records if r["kind"] == "RUN_START"]
+    if not starts:
+        out.append("NO_RUN_START_EVIDENCE")
+    elif starts[0].get("observer_pid") != expect.get("observer_pid"):
+        out.append("RUN_START_OBSERVER_MISMATCH: %r != %r" % (starts[0].get("observer_pid"), expect.get("observer_pid")))
+    own = [r for r in records if r["kind"] == "REGISTERED" and r.get("role") == "janitor" and r.get("pid") == expect.get("pid")
+           and r.get("starttime") == expect.get("starttime") and expect.get("starttime") is not None]
+    if not own:
+        out.append("NO_OWN_REGISTRATION: no REGISTERED/janitor record for this janitor (pid %r, starttime %r)" % (expect.get("pid"), expect.get("starttime")))
+    return out
+
+
+def reg_integrity(reg_path, retries=3, delay=0.2, expect=None):
     """-> (report, records).  The integrity of the registration FILE, independent of any cleanup state.
     A torn tail is re-read a few times first (the observer may be mid-append); persistent torn tails, corrupt lines, a missing /
     unreadable file or record-level issues all make the report not ok.  status is one of OK, MISSING, CORRUPT, TORN_TAIL."""
@@ -126,6 +145,8 @@ def reg_integrity(reg_path, retries=3, delay=0.2):
             break
         time.sleep(delay)
     issues = R.integrity_issues(records) if not info["missing"] else []
+    if expect is not None and not info["missing"]:
+        issues = issues + expectation_issues(records, expect)
     if info["missing"]:
         status = "MISSING"
     elif info["corrupt_lines"] or issues:
@@ -194,9 +215,14 @@ def main(argv):
     except (C.IdentityError, ProcessLookupError, OSError, C.ProcUnreadable) as e:
         C.append_jsonl(log, {"who": "janitor", "event": "OBSERVER_IDENTITY_UNCONFIRMED_NO_ACTION", "detail": repr(e)})
         return EXIT_IDENTITY
+    try:
+        me = C.read_stat(os.getpid())
+    except C.ProcUnreadable:
+        me = None
+    expect = {"observer_pid": obs_pid, "pid": os.getpid(), "starttime": None if me is None else me["starttime"]}
     alerted = None
     while True:                                   # no lifetime cap while the observer is alive: a silent exit would drop the responsibility
-        integ, records = reg_integrity(reg_path)
+        integ, records = reg_integrity(reg_path, expect=expect)
         if not integ["ok"] and alerted != integ["status"]:
             alerted = integ["status"]             # logged as its own event, never mixed into the cleanup events
             C.append_jsonl(log, {"who": "janitor", "event": "REG_INTEGRITY_ALERT", "reg_integrity": integ["status"], "info": integ["info"],
@@ -210,7 +236,7 @@ def main(argv):
             C.append_jsonl(log, {"who": "janitor", "event": "CLEANUP_REQUIRED", "observer_exited": obs.exited(),
                                  "run_end": R.last_run_end(records)})
             clear, last = cleanup_until_clear(reg_path, log)
-            integ_after, _ = reg_integrity(reg_path)                      # judged again AFTER the cleanup passes
+            integ_after, _ = reg_integrity(reg_path, expect=expect)       # judged again AFTER the cleanup passes
             code = final_exit_code(clear, integ_after["ok"])
             C.append_jsonl(log, {"who": "janitor", "event": "JANITOR_EXIT",
                                  "cleanup_state": "CONFIRMED" if clear else "INCOMPLETE_RESPONSIBILITY_OPEN",

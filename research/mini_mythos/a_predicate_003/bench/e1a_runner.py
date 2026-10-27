@@ -322,7 +322,7 @@ def execute(args, prereg, sha, plan, code_hash, counted, provenance, auth, auth_
         # RUN_END says whether cleanup is CONFIRMED.  An inconsistent run set, a residual node, an unregistered token-bearing process or an
         # unreadable /proc during the diagnostic scan all mean "not confirmed": the janitor then keeps working and recovery stays open.
         confirmed = bool(cleanup["cleanup_ok"]) and not residue and not scan_problems
-        obs.reg.write("RUN_END", aborted=aborted, cleanup_confirmed=confirmed, residual=cleanup["residual_after_kill"],
+        obs.reg.write("RUN_END", run_id=run_id, aborted=aborted, cleanup_confirmed=confirmed, residual=cleanup["residual_after_kill"],
                       run_set_consistent=cleanup["run_set"]["consistent"], run_set_problems=cleanup["run_set"]["problems"],
                       token_residue=[x["pid"] for x in residue], token_scan_problems=scan_problems)
         janitor_exit, janitor_running, stopped_after_discharge = None, False, False
