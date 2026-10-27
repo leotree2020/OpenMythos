@@ -333,3 +333,7 @@ LOGIC-TEST-001-RERUN-001：修复执行守卫的 argv 缺陷（+1 行）后，�
 ## D1 CPU-003 E1-A G0 V5 CPU 正确性测试 G0-V5-PURE-TEST-001（2026-10-27）
 
 基线 `33fb344`；最终测试对象见检查点。在进程安全哨兵（fork / 信号 / 等待 / subprocess 全部替换为计数哨兵）之下运行 198 个 CPU 测试：198 / 198 PASS，两次运行一致，哨兵 0 次触发，变异检查 10 / 10 被发现。发现并最小修复 2 个实现缺陷：D-1（启动异常泄漏为退出码 1，现一律 3）、D-2（格式损坏的放行 / fork 记录曾产生错误 FAIL，现为见证不可用）；测试自身缺陷 T-0…T-3 已修正。V1–V5、bench、Parcae 未改。真实进程行为（pidfd、fork、/proc、run()）未被验证。状态：CPU TESTS PASS / REAL G0 NOT AUTHORIZED。报告：`research/mini_mythos/a_predicate_003/g0_v5_pure_test_results/G0_V5_PURE_TEST_REPORT.md`；检查点：`research/mini_mythos/docs/F3B_D1_A_CPU_003_E1A_G0_V5_PURE_TEST_CHECKPOINT_20261027.md`。
+
+## D1 CPU-003 E1-A G0 V5 CPU 测试最终收口（2026-10-27）
+
+基线 `40f3f5b`，修复与被测 HEAD `a4a8509`。三处边界：① `g0_run.main` 解析参数后的任何 SystemExit 一律退出码 3（argparse 的 0/2 保留）；② 环境信息改为 `os.uname()` 只读方式，哨兵先于一切安装；③ 运行器从 `.git` 独立验证 HEAD 与预期 SHA、冻结文件与 bench 哈希，并记录 15 个关键文件哈希，不符即 REFUSED/退出码 3。全量 216/216 ×2 PASS，哨兵 0 命中，负控制（SystemExit(1)、错误 SHA、缺失 SHA）有效。结果见 `a_predicate_003/g0_v5_closeout_test_results/`，检查点 `docs/F3B_D1_A_CPU_003_E1A_G0_V5_CLOSEOUT_CHECKPOINT_20261027.md`。状态：CPU TESTS PASS；REAL G0 NOT AUTHORIZED；等待 ChatGPT/Grok 验收。
