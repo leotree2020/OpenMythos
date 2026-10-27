@@ -1,0 +1,3627 @@
+{
+ "purpose": "G0 V4 static cases (DESIGN REVIEW; derived by hand from the V4 rules; not test results)",
+ "cases": [
+  {
+   "id": "CE-D1",
+   "group": "old",
+   "title": "duplicate FORKED, consecutive seq, completed",
+   "ledger": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 FORKED n1 pid=200",
+    "5 REGISTERED n1 pid=200 st=5000",
+    "6 RELEASED n1",
+    "7 DEAD n1 basis",
+    "8 RUN_END confirmed=true"
+   ],
+   "disk": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 FORKED n1 pid=200",
+    "5 REGISTERED n1 pid=200 st=5000",
+    "6 RELEASED n1",
+    "7 DEAD n1 basis",
+    "8 RUN_END confirmed=true"
+   ],
+   "parse": "clean",
+   "writer_seq": 8,
+   "run": "completed",
+   "fork_calls": 1,
+   "release_writes": [
+    "ok b=1.75 a=1.76 returned=1"
+   ],
+   "child": "FIRST_ACTION@1.8",
+   "s2": true,
+   "c03": {
+    "state": "FAIL",
+    "rule": "C03-F1(a)"
+   },
+   "c07": {
+    "state": "PASS",
+    "rule": ""
+   },
+   "c16": "PASS",
+   "others": "PASS",
+   "final": "FAIL",
+   "credibility": {
+    "level": "HIGH",
+    "basis": "ledger and durable copy agree; a duplicate cannot be produced by loss"
+   },
+   "v2_literal": "PASS (natural reading)",
+   "source": "",
+   "note": "",
+   "v3_final": "FAIL",
+   "migration_reason": "",
+   "changed": false,
+   "origin": "V3 case migrated"
+  },
+  {
+   "id": "CE-D2",
+   "group": "old",
+   "title": "duplicate REGISTERED with a different pid, completed",
+   "ledger": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 REGISTERED n1 pid=201 st=5001",
+    "6 RELEASED n1",
+    "7 DEAD n1 basis",
+    "8 RUN_END confirmed=true"
+   ],
+   "disk": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 REGISTERED n1 pid=201 st=5001",
+    "6 RELEASED n1",
+    "7 DEAD n1 basis",
+    "8 RUN_END confirmed=true"
+   ],
+   "parse": "clean",
+   "writer_seq": 8,
+   "run": "completed",
+   "fork_calls": 1,
+   "release_writes": [
+    "ok b=1.75 a=1.76 returned=1"
+   ],
+   "child": "FIRST_ACTION@1.8",
+   "s2": true,
+   "c03": {
+    "state": "FAIL",
+    "rule": "C03-F1(a)"
+   },
+   "c07": {
+    "state": "PASS",
+    "rule": ""
+   },
+   "c16": "PASS",
+   "others": "PASS",
+   "final": "FAIL",
+   "credibility": {
+    "level": "HIGH",
+    "basis": "ledger and durable copy agree"
+   },
+   "v2_literal": "PASS (natural reading)",
+   "source": "",
+   "note": "",
+   "v3_final": "FAIL",
+   "migration_reason": "",
+   "changed": false,
+   "origin": "V3 case migrated"
+  },
+  {
+   "id": "CE-D3",
+   "group": "old",
+   "title": "duplicate RELEASED, consecutive seq, completed",
+   "ledger": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1",
+    "6 RELEASED n1",
+    "7 DEAD n1 basis",
+    "8 RUN_END confirmed=true"
+   ],
+   "disk": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1",
+    "6 RELEASED n1",
+    "7 DEAD n1 basis",
+    "8 RUN_END confirmed=true"
+   ],
+   "parse": "clean",
+   "writer_seq": 8,
+   "run": "completed",
+   "fork_calls": 1,
+   "release_writes": [
+    "ok b=1.75 a=1.76 returned=1"
+   ],
+   "child": "FIRST_ACTION@1.8",
+   "s2": true,
+   "c03": {
+    "state": "FAIL",
+    "rule": "C03-F1(a)"
+   },
+   "c07": {
+    "state": "PASS",
+    "rule": ""
+   },
+   "c16": "PASS",
+   "others": "PASS",
+   "final": "FAIL",
+   "credibility": {
+    "level": "HIGH",
+    "basis": "ledger and durable copy agree"
+   },
+   "v2_literal": "PASS (natural reading)",
+   "source": "",
+   "note": "",
+   "v3_final": "FAIL",
+   "migration_reason": "",
+   "changed": false,
+   "origin": "V3 case migrated"
+  },
+  {
+   "id": "CE-D4",
+   "group": "old",
+   "title": "REGISTERED, RELEASED, then a second REGISTERED, completed",
+   "ledger": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1",
+    "6 REGISTERED n1 pid=200 st=5000",
+    "7 DEAD n1 basis",
+    "8 RUN_END confirmed=true"
+   ],
+   "disk": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1",
+    "6 REGISTERED n1 pid=200 st=5000",
+    "7 DEAD n1 basis",
+    "8 RUN_END confirmed=true"
+   ],
+   "parse": "clean",
+   "writer_seq": 8,
+   "run": "completed",
+   "fork_calls": 1,
+   "release_writes": [
+    "ok b=1.75 a=1.76 returned=1"
+   ],
+   "child": "FIRST_ACTION@1.8",
+   "s2": true,
+   "c03": {
+    "state": "FAIL",
+    "rule": "C03-F1(a)"
+   },
+   "c07": {
+    "state": "PASS",
+    "rule": ""
+   },
+   "c16": "PASS",
+   "others": "PASS",
+   "final": "FAIL",
+   "credibility": {
+    "level": "HIGH",
+    "basis": "ledger and durable copy agree; ordering is judged on FIRST occurrences, the duplicate is the violation"
+   },
+   "v2_literal": "AMBIGUOUS",
+   "source": "",
+   "note": "",
+   "v3_final": "FAIL",
+   "migration_reason": "",
+   "changed": false,
+   "origin": "V3 case migrated"
+  },
+  {
+   "id": "CE-D5",
+   "group": "old",
+   "title": "duplicate FORKED, early stop",
+   "ledger": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 FORKED n1 pid=200",
+    "5 REGISTERED n1 pid=200 st=5000",
+    "6 RELEASED n1",
+    "7 RUN_END confirmed=false"
+   ],
+   "disk": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 FORKED n1 pid=200",
+    "5 REGISTERED n1 pid=200 st=5000",
+    "6 RELEASED n1",
+    "7 RUN_END confirmed=false"
+   ],
+   "parse": "clean",
+   "writer_seq": 7,
+   "run": "early stop (exception)",
+   "fork_calls": 1,
+   "release_writes": [
+    "ok b=1.75 a=1.76 returned=1"
+   ],
+   "child": "none",
+   "s2": false,
+   "c03": {
+    "state": "FAIL",
+    "rule": "C03-F1(a)"
+   },
+   "c07": {
+    "state": "UNEVALUABLE",
+    "rule": "C07-U3"
+   },
+   "c16": "BLOCKED",
+   "others": "BLOCKED",
+   "final": "FAIL",
+   "credibility": {
+    "level": "HIGH",
+    "basis": "ledger and durable copy agree"
+   },
+   "v2_literal": "UNDEFINED -> BLOCKED",
+   "source": "",
+   "note": "",
+   "v3_final": "FAIL",
+   "migration_reason": "",
+   "changed": false,
+   "origin": "V3 case migrated"
+  },
+  {
+   "id": "CE-M1",
+   "group": "old",
+   "title": "REGISTERED with starttime null, completed",
+   "ledger": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=null",
+    "5 RELEASED n1",
+    "6 DEAD n1 basis",
+    "7 RUN_END confirmed=true"
+   ],
+   "disk": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=null",
+    "5 RELEASED n1",
+    "6 DEAD n1 basis",
+    "7 RUN_END confirmed=true"
+   ],
+   "parse": "clean",
+   "writer_seq": 7,
+   "run": "completed",
+   "fork_calls": 1,
+   "release_writes": [
+    "ok b=1.75 a=1.76 returned=1"
+   ],
+   "child": "FIRST_ACTION@1.8",
+   "s2": true,
+   "c03": {
+    "state": "FAIL",
+    "rule": "C03-F1(d)"
+   },
+   "c07": {
+    "state": "PASS",
+    "rule": ""
+   },
+   "c16": "PASS",
+   "others": "PASS",
+   "final": "FAIL",
+   "credibility": {
+    "level": "HIGH",
+    "basis": "field type is visible in the ledger itself"
+   },
+   "v2_literal": "NOT PASS, rule unnamed",
+   "source": "",
+   "note": "",
+   "v3_final": "FAIL",
+   "migration_reason": "",
+   "changed": false,
+   "origin": "V3 case migrated"
+  },
+  {
+   "id": "CE-M2",
+   "group": "old",
+   "title": "REGISTERED with starttime null, early stop",
+   "ledger": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=null",
+    "5 RELEASED n1",
+    "6 RUN_END confirmed=false"
+   ],
+   "disk": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=null",
+    "5 RELEASED n1",
+    "6 RUN_END confirmed=false"
+   ],
+   "parse": "clean",
+   "writer_seq": 6,
+   "run": "early stop (exception)",
+   "fork_calls": 1,
+   "release_writes": [
+    "ok b=1.75 a=1.76 returned=1"
+   ],
+   "child": "none",
+   "s2": false,
+   "c03": {
+    "state": "FAIL",
+    "rule": "C03-F1(d)"
+   },
+   "c07": {
+    "state": "UNEVALUABLE",
+    "rule": "C07-U3"
+   },
+   "c16": "BLOCKED",
+   "others": "BLOCKED",
+   "final": "FAIL",
+   "credibility": {
+    "level": "HIGH",
+    "basis": "field type is visible in the ledger itself"
+   },
+   "v2_literal": "UNDEFINED -> BLOCKED",
+   "source": "",
+   "note": "",
+   "v3_final": "FAIL",
+   "migration_reason": "",
+   "changed": false,
+   "origin": "V3 case migrated"
+  },
+  {
+   "id": "CE-M3",
+   "group": "old",
+   "title": "FORKED with pid as string, early stop",
+   "ledger": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid='200'",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RUN_END confirmed=false"
+   ],
+   "disk": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid='200'",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RUN_END confirmed=false"
+   ],
+   "parse": "clean",
+   "writer_seq": 5,
+   "run": "early stop (exception)",
+   "fork_calls": 1,
+   "release_writes": [],
+   "child": "none",
+   "s2": false,
+   "c03": {
+    "state": "FAIL",
+    "rule": "C03-F1(d)"
+   },
+   "c07": {
+    "state": "UNEVALUABLE",
+    "rule": "C07-U1"
+   },
+   "c16": "BLOCKED",
+   "others": "BLOCKED",
+   "final": "FAIL",
+   "credibility": {
+    "level": "HIGH",
+    "basis": "field type is visible in the ledger itself"
+   },
+   "v2_literal": "UNDEFINED -> BLOCKED",
+   "source": "",
+   "note": "",
+   "v3_final": "FAIL",
+   "migration_reason": "",
+   "changed": false,
+   "origin": "V3 case migrated"
+  },
+  {
+   "id": "CE-F1",
+   "group": "old",
+   "title": "early stop; FORKED line lost from the durable copy (ledger has it)",
+   "ledger": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1",
+    "6 RUN_END confirmed=false"
+   ],
+   "disk": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1",
+    "6 RUN_END confirmed=false"
+   ],
+   "parse": "clean",
+   "writer_seq": 6,
+   "run": "early stop (exception)",
+   "fork_calls": 1,
+   "release_writes": [
+    "ok b=1.75 a=1.76 returned=1"
+   ],
+   "child": "none",
+   "s2": false,
+   "c03": {
+    "state": "UNEVALUABLE",
+    "rule": "C03-U2"
+   },
+   "c07": {
+    "state": "UNEVALUABLE",
+    "rule": "C07-U3"
+   },
+   "c16": "BLOCKED",
+   "others": "BLOCKED",
+   "final": "BLOCKED",
+   "credibility": {
+    "level": "MEDIUM",
+    "basis": "the ledger shows a complete sequence (first-hand) but the durable copy lost a line, so nothing may be concluded from the file"
+   },
+   "v2_literal": "FAIL (seq gap)",
+   "source": "",
+   "note": "",
+   "v3_final": "BLOCKED",
+   "migration_reason": "",
+   "changed": false,
+   "origin": "V3 case migrated"
+  },
+  {
+   "id": "CE-F2",
+   "group": "old",
+   "title": "early stop; FORKED never written, contiguous seq, writer clean",
+   "ledger": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 REGISTERED n1 pid=200 st=5000",
+    "4 RELEASED n1",
+    "5 RUN_END confirmed=false"
+   ],
+   "disk": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 REGISTERED n1 pid=200 st=5000",
+    "4 RELEASED n1",
+    "5 RUN_END confirmed=false"
+   ],
+   "parse": "clean",
+   "writer_seq": 5,
+   "run": "early stop (exception)",
+   "fork_calls": 1,
+   "release_writes": [
+    "ok b=1.75 a=1.76 returned=1"
+   ],
+   "child": "none",
+   "s2": false,
+   "c03": {
+    "state": "FAIL",
+    "rule": "C03-F2"
+   },
+   "c07": {
+    "state": "UNEVALUABLE",
+    "rule": "C07-U3"
+   },
+   "c16": "BLOCKED",
+   "others": "BLOCKED",
+   "final": "FAIL",
+   "credibility": {
+    "level": "HIGH",
+    "basis": "ledger gapless, writer_clean, durable copy identical: the record was never attempted (owner policy: REGISTERED without FORKED is FAIL when integrity is proven)"
+   },
+   "v2_literal": "BLOCKED (U1)",
+   "source": "",
+   "note": "",
+   "v3_final": "FAIL",
+   "migration_reason": "",
+   "changed": false,
+   "origin": "V3 case migrated"
+  },
+  {
+   "id": "CE-F3",
+   "group": "old",
+   "title": "completed run without FORKED, contiguous",
+   "ledger": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 REGISTERED n1 pid=200 st=5000",
+    "4 RELEASED n1",
+    "5 DEAD n1 basis",
+    "6 RUN_END confirmed=true"
+   ],
+   "disk": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 REGISTERED n1 pid=200 st=5000",
+    "4 RELEASED n1",
+    "5 DEAD n1 basis",
+    "6 RUN_END confirmed=true"
+   ],
+   "parse": "clean",
+   "writer_seq": 6,
+   "run": "completed",
+   "fork_calls": 1,
+   "release_writes": [
+    "ok b=1.75 a=1.76 returned=1"
+   ],
+   "child": "FIRST_ACTION@1.8",
+   "s2": true,
+   "c03": {
+    "state": "FAIL",
+    "rule": "C03-F2"
+   },
+   "c07": {
+    "state": "PASS",
+    "rule": ""
+   },
+   "c16": "PASS",
+   "others": "PASS",
+   "final": "FAIL",
+   "credibility": {
+    "level": "HIGH",
+    "basis": "as CE-F2, run completed"
+   },
+   "v2_literal": "FAIL (F4)",
+   "source": "",
+   "note": "",
+   "v3_final": "FAIL",
+   "migration_reason": "",
+   "changed": false,
+   "origin": "V3 case migrated"
+  },
+  {
+   "id": "CE-G1",
+   "group": "old",
+   "title": "append of RELEASED failed (ENOSPC), RUN_END(false) got seq 6",
+   "ledger": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "6 RUN_END confirmed=false"
+   ],
+   "disk": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "6 RUN_END confirmed=false"
+   ],
+   "parse": "clean",
+   "writer_seq": 6,
+   "run": "early stop (exception)",
+   "fork_calls": 1,
+   "release_writes": [],
+   "child": "none",
+   "s2": false,
+   "c03": {
+    "state": "UNEVALUABLE",
+    "rule": "C03-U3"
+   },
+   "c07": {
+    "state": "UNEVALUABLE",
+    "rule": "C07-U1"
+   },
+   "c16": "BLOCKED",
+   "others": "BLOCKED",
+   "final": "BLOCKED",
+   "credibility": {
+    "level": "INSUFFICIENT",
+    "basis": "the missing record is explained by a failed append (reg_writer_seq 6 != 5 ledger records); no protocol claim can be made"
+   },
+   "v2_literal": "FAIL (seq gap)",
+   "source": "",
+   "note": "",
+   "v3_final": "BLOCKED",
+   "migration_reason": "",
+   "changed": false,
+   "origin": "V3 case migrated"
+  },
+  {
+   "id": "CE-G2",
+   "group": "old",
+   "title": "completed run; DEAD and RUN_END lost from the durable copy (ledger complete)",
+   "ledger": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1",
+    "6 DEAD n1 basis",
+    "7 RUN_END confirmed=true"
+   ],
+   "disk": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1"
+   ],
+   "parse": "clean",
+   "writer_seq": 7,
+   "run": "completed",
+   "fork_calls": 1,
+   "release_writes": [
+    "ok b=1.75 a=1.76 returned=1"
+   ],
+   "child": "FIRST_ACTION@1.8",
+   "s2": true,
+   "c03": {
+    "state": "UNEVALUABLE",
+    "rule": "C03-U2"
+   },
+   "c07": {
+    "state": "PASS",
+    "rule": ""
+   },
+   "c16": "PASS",
+   "others": "BLOCKED",
+   "final": "BLOCKED",
+   "credibility": {
+    "level": "MEDIUM",
+    "basis": "ledger shows a compliant, completed run (first-hand); the durable copy lost its tail, so the run cannot PASS"
+   },
+   "v2_literal": "FAIL (F4)",
+   "source": "",
+   "note": "",
+   "v3_final": "BLOCKED",
+   "migration_reason": "M-2: C13 reads the durable copy (DEAD / RUN_END) and is UNEVALUABLE when it is unfaithful; the final verdict is unchanged (BLOCKED)",
+   "changed": false,
+   "origin": "V3 case migrated"
+  },
+  {
+   "id": "CE-G3",
+   "group": "old",
+   "title": "RUN_START lost from the durable copy (ledger complete)",
+   "ledger": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1",
+    "6 RUN_END confirmed=false"
+   ],
+   "disk": [
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1",
+    "6 RUN_END confirmed=false"
+   ],
+   "parse": "clean",
+   "writer_seq": 6,
+   "run": "early stop (exception)",
+   "fork_calls": 1,
+   "release_writes": [
+    "ok b=1.75 a=1.76 returned=1"
+   ],
+   "child": "none",
+   "s2": false,
+   "c03": {
+    "state": "UNEVALUABLE",
+    "rule": "C03-U2"
+   },
+   "c07": {
+    "state": "UNEVALUABLE",
+    "rule": "C07-U3"
+   },
+   "c16": "BLOCKED",
+   "others": "BLOCKED",
+   "final": "BLOCKED",
+   "credibility": {
+    "level": "MEDIUM",
+    "basis": "ledger intact; durable copy lost its head"
+   },
+   "v2_literal": "FAIL (seq gap)",
+   "source": "",
+   "note": "",
+   "v3_final": "BLOCKED",
+   "migration_reason": "",
+   "changed": false,
+   "origin": "V3 case migrated"
+  },
+  {
+   "id": "CE-H1",
+   "group": "old",
+   "title": "early stop before the fork: RUN_START and RUN_END(false) only",
+   "ledger": [
+    "1 RUN_START",
+    "2 RUN_END confirmed=false"
+   ],
+   "disk": [
+    "1 RUN_START",
+    "2 RUN_END confirmed=false"
+   ],
+   "parse": "clean",
+   "writer_seq": 2,
+   "run": "early stop (exception)",
+   "fork_calls": 0,
+   "release_writes": [],
+   "child": "none",
+   "s2": false,
+   "c03": {
+    "state": "UNEVALUABLE",
+    "rule": "C03-U1"
+   },
+   "c07": {
+    "state": "UNEVALUABLE",
+    "rule": "C07-U1"
+   },
+   "c16": "BLOCKED",
+   "others": "BLOCKED",
+   "final": "BLOCKED",
+   "credibility": {
+    "level": "INSUFFICIENT",
+    "basis": "nothing happened"
+   },
+   "v2_literal": "UNDEFINED -> BLOCKED",
+   "source": "",
+   "note": "",
+   "v3_final": "BLOCKED",
+   "migration_reason": "",
+   "changed": false,
+   "origin": "V3 case migrated"
+  },
+  {
+   "id": "CE-H2",
+   "group": "old",
+   "title": "empty registry, early stop",
+   "ledger": [],
+   "disk": [],
+   "parse": "clean",
+   "writer_seq": 0,
+   "run": "early stop (exception)",
+   "fork_calls": 0,
+   "release_writes": [],
+   "child": "none",
+   "s2": false,
+   "c03": {
+    "state": "UNEVALUABLE",
+    "rule": "C03-U1"
+   },
+   "c07": {
+    "state": "UNEVALUABLE",
+    "rule": "C07-U1"
+   },
+   "c16": "BLOCKED",
+   "others": "BLOCKED",
+   "final": "BLOCKED",
+   "credibility": {
+    "level": "INSUFFICIENT",
+    "basis": "no evidence"
+   },
+   "v2_literal": "UNDEFINED -> BLOCKED",
+   "source": "",
+   "note": "",
+   "v3_final": "BLOCKED",
+   "migration_reason": "",
+   "changed": false,
+   "origin": "V3 case migrated"
+  },
+  {
+   "id": "CE-H3",
+   "group": "old",
+   "title": "RUN_START absent, contiguous seq, writer clean",
+   "ledger": [
+    "1 INTENT n1",
+    "2 FORKED n1 pid=200",
+    "3 REGISTERED n1 pid=200 st=5000",
+    "4 RUN_END confirmed=false"
+   ],
+   "disk": [
+    "1 INTENT n1",
+    "2 FORKED n1 pid=200",
+    "3 REGISTERED n1 pid=200 st=5000",
+    "4 RUN_END confirmed=false"
+   ],
+   "parse": "clean",
+   "writer_seq": 4,
+   "run": "early stop (exception)",
+   "fork_calls": 1,
+   "release_writes": [],
+   "child": "none",
+   "s2": false,
+   "c03": {
+    "state": "FAIL",
+    "rule": "C03-F2"
+   },
+   "c07": {
+    "state": "UNEVALUABLE",
+    "rule": "C07-U1"
+   },
+   "c16": "BLOCKED",
+   "others": "BLOCKED",
+   "final": "FAIL",
+   "credibility": {
+    "level": "HIGH",
+    "basis": "RUN_START is always the first write; ledger gapless and identical to the durable copy"
+   },
+   "v2_literal": "UNDEFINED -> BLOCKED",
+   "source": "",
+   "note": "",
+   "v3_final": "FAIL",
+   "migration_reason": "",
+   "changed": false,
+   "origin": "V3 case migrated"
+  },
+  {
+   "id": "CE-T1",
+   "group": "old",
+   "title": "child INTENT n2 whose creator n1 is not yet registered",
+   "ledger": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 INTENT n2 creator=n1",
+    "5 REGISTERED n1 pid=200 st=5000",
+    "6 RUN_END confirmed=false"
+   ],
+   "disk": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 INTENT n2 creator=n1",
+    "5 REGISTERED n1 pid=200 st=5000",
+    "6 RUN_END confirmed=false"
+   ],
+   "parse": "clean",
+   "writer_seq": 6,
+   "run": "early stop (exception)",
+   "fork_calls": 1,
+   "release_writes": [],
+   "child": "none",
+   "s2": false,
+   "c03": {
+    "state": "FAIL",
+    "rule": "C03-F1(f)"
+   },
+   "c07": {
+    "state": "UNEVALUABLE",
+    "rule": "C07-U1"
+   },
+   "c16": "BLOCKED",
+   "others": "BLOCKED",
+   "final": "FAIL",
+   "credibility": {
+    "level": "HIGH",
+    "basis": "more than one node is visible in the ledger"
+   },
+   "v2_literal": "UNDEFINED -> BLOCKED",
+   "source": "",
+   "note": "",
+   "v3_final": "FAIL",
+   "migration_reason": "",
+   "changed": false,
+   "origin": "V3 case migrated"
+  },
+  {
+   "id": "CE-P1",
+   "group": "old",
+   "title": "RELEASED has a smaller seq than REGISTERED",
+   "ledger": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 RELEASED n1",
+    "5 REGISTERED n1 pid=200 st=5000"
+   ],
+   "disk": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 RELEASED n1",
+    "5 REGISTERED n1 pid=200 st=5000"
+   ],
+   "parse": "clean",
+   "writer_seq": 5,
+   "run": "early stop (exception)",
+   "fork_calls": 1,
+   "release_writes": [],
+   "child": "none",
+   "s2": false,
+   "c03": {
+    "state": "FAIL",
+    "rule": "C03-F1(b)"
+   },
+   "c07": {
+    "state": "FAIL",
+    "rule": "C07-F1"
+   },
+   "c16": "BLOCKED",
+   "others": "BLOCKED",
+   "final": "FAIL",
+   "credibility": {
+    "level": "HIGH",
+    "basis": "order visible in the ledger"
+   },
+   "v2_literal": "FAIL (F1)",
+   "source": "",
+   "note": "",
+   "v3_final": "FAIL",
+   "migration_reason": "",
+   "changed": false,
+   "origin": "V3 case migrated"
+  },
+  {
+   "id": "CE-P2",
+   "group": "old",
+   "title": "duplicate INTENT",
+   "ledger": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 INTENT n1"
+   ],
+   "disk": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 INTENT n1"
+   ],
+   "parse": "clean",
+   "writer_seq": 3,
+   "run": "early stop (exception)",
+   "fork_calls": 0,
+   "release_writes": [],
+   "child": "none",
+   "s2": false,
+   "c03": {
+    "state": "FAIL",
+    "rule": "C03-F1(a)"
+   },
+   "c07": {
+    "state": "UNEVALUABLE",
+    "rule": "C07-U1"
+   },
+   "c16": "BLOCKED",
+   "others": "BLOCKED",
+   "final": "FAIL",
+   "credibility": {
+    "level": "HIGH",
+    "basis": "duplicate visible in the ledger"
+   },
+   "v2_literal": "FAIL (F1)",
+   "source": "",
+   "note": "",
+   "v3_final": "FAIL",
+   "migration_reason": "",
+   "changed": false,
+   "origin": "V3 case migrated"
+  },
+  {
+   "id": "CE-P3",
+   "group": "old",
+   "title": "record after RUN_END",
+   "ledger": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 RUN_END confirmed=false",
+    "4 FORKED n1 pid=200"
+   ],
+   "disk": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 RUN_END confirmed=false",
+    "4 FORKED n1 pid=200"
+   ],
+   "parse": "clean",
+   "writer_seq": 4,
+   "run": "early stop (exception)",
+   "fork_calls": 1,
+   "release_writes": [],
+   "child": "none",
+   "s2": false,
+   "c03": {
+    "state": "FAIL",
+    "rule": "C03-F1(b)"
+   },
+   "c07": {
+    "state": "UNEVALUABLE",
+    "rule": "C07-U1"
+   },
+   "c16": "BLOCKED",
+   "others": "BLOCKED",
+   "final": "FAIL",
+   "credibility": {
+    "level": "HIGH",
+    "basis": "order visible in the ledger"
+   },
+   "v2_literal": "FAIL (F1)",
+   "source": "",
+   "note": "",
+   "v3_final": "FAIL",
+   "migration_reason": "",
+   "changed": false,
+   "origin": "V3 case migrated"
+  },
+  {
+   "id": "CE-P4",
+   "group": "old",
+   "title": "release written and child acted, RELEASED record never written",
+   "ledger": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RUN_END confirmed=false"
+   ],
+   "disk": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RUN_END confirmed=false"
+   ],
+   "parse": "clean",
+   "writer_seq": 5,
+   "run": "early stop (exception)",
+   "fork_calls": 1,
+   "release_writes": [
+    "ok b=1.75 a=1.76 returned=1"
+   ],
+   "child": "FIRST_ACTION@1.8",
+   "s2": true,
+   "c03": {
+    "state": "FAIL",
+    "rule": "C03-F3b"
+   },
+   "c07": {
+    "state": "UNEVALUABLE",
+    "rule": "C07-U5"
+   },
+   "c16": "BLOCKED",
+   "others": "BLOCKED",
+   "final": "FAIL",
+   "credibility": {
+    "level": "HIGH",
+    "basis": "release write and FIRST_ACTION are first-hand; ledger gapless and identical to the durable copy"
+   },
+   "v2_literal": "FAIL (F3)",
+   "source": "",
+   "note": "",
+   "v3_final": "FAIL",
+   "migration_reason": "V3 C03-F3 is split; the clean-writer release-without-record branch is C03-F3b (C03-F3c also applies); verdict unchanged",
+   "changed": false,
+   "origin": "V3 case migrated"
+  },
+  {
+   "id": "CE-P5",
+   "group": "old",
+   "title": "early stop, only DEAD and RUN_END missing at the tail, no release",
+   "ledger": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000"
+   ],
+   "disk": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000"
+   ],
+   "parse": "clean",
+   "writer_seq": 4,
+   "run": "early stop (exception)",
+   "fork_calls": 1,
+   "release_writes": [],
+   "child": "none",
+   "s2": false,
+   "c03": {
+    "state": "UNEVALUABLE",
+    "rule": "C03-U1"
+   },
+   "c07": {
+    "state": "UNEVALUABLE",
+    "rule": "C07-U1"
+   },
+   "c16": "BLOCKED",
+   "others": "BLOCKED",
+   "final": "BLOCKED",
+   "credibility": {
+    "level": "INSUFFICIENT",
+    "basis": "tail-only absence after an early stop"
+   },
+   "v2_literal": "BLOCKED (U1)",
+   "source": "",
+   "note": "",
+   "v3_final": "BLOCKED",
+   "migration_reason": "",
+   "changed": false,
+   "origin": "V3 case migrated"
+  },
+  {
+   "id": "CE-R1",
+   "group": "F-18",
+   "title": "release write succeeds, child passes the gate (the normal case)",
+   "ledger": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1",
+    "6 DEAD n1 basis",
+    "7 RUN_END confirmed=true"
+   ],
+   "disk": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1",
+    "6 DEAD n1 basis",
+    "7 RUN_END confirmed=true"
+   ],
+   "parse": "clean",
+   "writer_seq": 7,
+   "run": "completed",
+   "fork_calls": 1,
+   "release_writes": [
+    "ok b=1.75 a=1.76 returned=1"
+   ],
+   "child": "FIRST_ACTION@1.8",
+   "s2": true,
+   "c03": {
+    "state": "PASS",
+    "rule": ""
+   },
+   "c07": {
+    "state": "PASS",
+    "rule": ""
+   },
+   "c16": "PASS",
+   "others": "PASS",
+   "final": "PASS",
+   "credibility": {
+    "level": "HIGH",
+    "basis": "attempt, success and gate pass are three separate first-hand facts and the chain REGISTERED <= RELEASED <= before <= after <= FIRST_ACTION holds"
+   },
+   "v2_literal": "n/a",
+   "source": "",
+   "note": "",
+   "v3_final": "PASS",
+   "migration_reason": "",
+   "changed": false,
+   "origin": "V3 case migrated"
+  },
+  {
+   "id": "CE-R2",
+   "group": "F-18",
+   "title": "attempt followed by EPIPE (no reader on the gate)",
+   "ledger": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1",
+    "6 RUN_END confirmed=false"
+   ],
+   "disk": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1",
+    "6 RUN_END confirmed=false"
+   ],
+   "parse": "clean",
+   "writer_seq": 6,
+   "run": "early stop (exception)",
+   "fork_calls": 1,
+   "release_writes": [
+    "error EPIPE b=1.75 a=1.7501 errno=32"
+   ],
+   "child": "none",
+   "s2": false,
+   "c03": {
+    "state": "UNEVALUABLE",
+    "rule": "C03-U1"
+   },
+   "c07": {
+    "state": "UNEVALUABLE",
+    "rule": "C07-U2"
+   },
+   "c16": "BLOCKED",
+   "others": "BLOCKED",
+   "final": "BLOCKED",
+   "credibility": {
+    "level": "INSUFFICIENT",
+    "basis": "the failed write is first-hand (errno 32); no protocol claim; the child had already gone"
+   },
+   "v2_literal": "BLOCKED, but the pre-write time would count as 'release byte written'",
+   "source": "",
+   "note": "",
+   "v3_final": "BLOCKED",
+   "migration_reason": "",
+   "changed": false,
+   "origin": "V3 case migrated"
+  },
+  {
+   "id": "CE-R2b",
+   "group": "F-18",
+   "title": "EPIPE after the attempt AND the durable copy lost REGISTERED",
+   "ledger": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1",
+    "6 RUN_END confirmed=false"
+   ],
+   "disk": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "5 RELEASED n1",
+    "6 RUN_END confirmed=false"
+   ],
+   "parse": "clean",
+   "writer_seq": 6,
+   "run": "early stop (exception)",
+   "fork_calls": 1,
+   "release_writes": [
+    "error EPIPE b=1.75 a=1.7501 errno=32"
+   ],
+   "child": "none",
+   "s2": false,
+   "c03": {
+    "state": "UNEVALUABLE",
+    "rule": "C03-U2"
+   },
+   "c07": {
+    "state": "UNEVALUABLE",
+    "rule": "C07-U2"
+   },
+   "c16": "BLOCKED",
+   "others": "BLOCKED",
+   "final": "BLOCKED",
+   "credibility": {
+    "level": "MEDIUM",
+    "basis": "ledger has REGISTERED and RELEASED; the byte was NOT written; only the file is damaged"
+   },
+   "v2_literal": "FAIL: F3 'no REGISTERED although release_byte_written' read the pre-write attempt and the damaged file",
+   "source": "",
+   "note": "",
+   "v3_final": "BLOCKED",
+   "migration_reason": "",
+   "changed": false,
+   "origin": "V3 case migrated"
+  },
+  {
+   "id": "CE-R3",
+   "group": "F-18",
+   "title": "release write succeeds but the child produces no FIRST_ACTION",
+   "ledger": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1",
+    "6 RUN_END confirmed=false"
+   ],
+   "disk": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1",
+    "6 RUN_END confirmed=false"
+   ],
+   "parse": "clean",
+   "writer_seq": 6,
+   "run": "early stop (exception)",
+   "fork_calls": 1,
+   "release_writes": [
+    "ok b=1.75 a=1.76 returned=1"
+   ],
+   "child": "none",
+   "s2": false,
+   "c03": {
+    "state": "UNEVALUABLE",
+    "rule": "C03-U1"
+   },
+   "c07": {
+    "state": "UNEVALUABLE",
+    "rule": "C07-U3"
+   },
+   "c16": "BLOCKED",
+   "others": "BLOCKED",
+   "final": "BLOCKED",
+   "credibility": {
+    "level": "INSUFFICIENT",
+    "basis": "the write is first-hand; why the child did not pass the gate is unknown"
+   },
+   "v2_literal": "n/a",
+   "source": "",
+   "note": "",
+   "v3_final": "BLOCKED",
+   "migration_reason": "",
+   "changed": false,
+   "origin": "V3 case migrated"
+  },
+  {
+   "id": "CE-R4a",
+   "group": "F-18",
+   "title": "child produced FIRST_ACTION; RELEASED lost from the durable copy (ledger complete)",
+   "ledger": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1",
+    "6 RUN_END confirmed=false"
+   ],
+   "disk": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "6 RUN_END confirmed=false"
+   ],
+   "parse": "clean",
+   "writer_seq": 6,
+   "run": "early stop (exception)",
+   "fork_calls": 1,
+   "release_writes": [
+    "ok b=1.75 a=1.76 returned=1"
+   ],
+   "child": "FIRST_ACTION@1.8",
+   "s2": true,
+   "c03": {
+    "state": "UNEVALUABLE",
+    "rule": "C03-U2"
+   },
+   "c07": {
+    "state": "PASS",
+    "rule": ""
+   },
+   "c16": "BLOCKED",
+   "others": "BLOCKED",
+   "final": "BLOCKED",
+   "credibility": {
+    "level": "MEDIUM",
+    "basis": "protocol order is proven by ledger + child (first-hand); the durable copy is damaged"
+   },
+   "v2_literal": "n/a",
+   "source": "",
+   "note": "",
+   "v3_final": "BLOCKED",
+   "migration_reason": "",
+   "changed": false,
+   "origin": "V3 case migrated"
+  },
+  {
+   "id": "CE-R4b",
+   "group": "F-18",
+   "title": "child produced FIRST_ACTION; RELEASED never written; registry complete and gapless otherwise",
+   "ledger": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RUN_END confirmed=false"
+   ],
+   "disk": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RUN_END confirmed=false"
+   ],
+   "parse": "clean",
+   "writer_seq": 5,
+   "run": "early stop (exception)",
+   "fork_calls": 1,
+   "release_writes": [
+    "ok b=1.75 a=1.76 returned=1"
+   ],
+   "child": "FIRST_ACTION@1.8",
+   "s2": true,
+   "c03": {
+    "state": "FAIL",
+    "rule": "C03-F3b"
+   },
+   "c07": {
+    "state": "UNEVALUABLE",
+    "rule": "C07-U5"
+   },
+   "c16": "BLOCKED",
+   "others": "BLOCKED",
+   "final": "FAIL",
+   "credibility": {
+    "level": "HIGH",
+    "basis": "the child's FIRST_ACTION and the successful release write are first-hand; ledger gapless and identical to the file"
+   },
+   "v2_literal": "n/a",
+   "source": "",
+   "note": "",
+   "v3_final": "FAIL",
+   "migration_reason": "as CE-P4",
+   "changed": false,
+   "origin": "V3 case migrated"
+  },
+  {
+   "id": "CE-R4c",
+   "group": "F-18",
+   "title": "child produced FIRST_ACTION although the REGISTERED append failed (seq 4 consumed)",
+   "ledger": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "5 RUN_END confirmed=false"
+   ],
+   "disk": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "5 RUN_END confirmed=false"
+   ],
+   "parse": "clean",
+   "writer_seq": 5,
+   "run": "early stop (exception)",
+   "fork_calls": 1,
+   "release_writes": [
+    "ok b=1.75 a=1.76 returned=1"
+   ],
+   "child": "FIRST_ACTION@1.8",
+   "s2": true,
+   "c03": {
+    "state": "FAIL",
+    "rule": "C03-F3c"
+   },
+   "c07": {
+    "state": "UNEVALUABLE",
+    "rule": "C07-U5"
+   },
+   "c16": "BLOCKED",
+   "others": "BLOCKED",
+   "final": "FAIL",
+   "credibility": {
+    "level": "MEDIUM",
+    "basis": "contradiction between first-hand facts (append failed, yet the gate was released and passed); a G0 bench/protocol failure, with a possible instrumentation defect noted"
+   },
+   "v2_literal": "n/a",
+   "source": "",
+   "note": "",
+   "v3_final": "FAIL",
+   "migration_reason": "DD-5: the proven gate pass is a FAIL even though the REGISTERED append failed (F3c ignores writer_clean); verdict unchanged, the rule text is now unambiguous",
+   "changed": false,
+   "origin": "V3 case migrated"
+  },
+  {
+   "id": "CE-R5a",
+   "group": "F-18",
+   "title": "three-way: durable copy lost RUN_END(false) (5), ledger 6, writer_seq 6",
+   "ledger": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1",
+    "6 RUN_END confirmed=false"
+   ],
+   "disk": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1"
+   ],
+   "parse": "clean",
+   "writer_seq": 6,
+   "run": "early stop (exception)",
+   "fork_calls": 1,
+   "release_writes": [
+    "ok b=1.75 a=1.76 returned=1"
+   ],
+   "child": "none",
+   "s2": false,
+   "c03": {
+    "state": "UNEVALUABLE",
+    "rule": "C03-U2"
+   },
+   "c07": {
+    "state": "UNEVALUABLE",
+    "rule": "C07-U3"
+   },
+   "c16": "BLOCKED",
+   "others": "BLOCKED",
+   "final": "BLOCKED",
+   "credibility": {
+    "level": "MEDIUM",
+    "basis": "ledger complete; durable copy shorter than the ledger"
+   },
+   "v2_literal": "n/a",
+   "source": "",
+   "note": "",
+   "v3_final": "BLOCKED",
+   "migration_reason": "",
+   "changed": false,
+   "origin": "V3 case migrated"
+  },
+  {
+   "id": "CE-R5b",
+   "group": "F-18",
+   "title": "three-way: durable copy has a FOREIGN extra line (6), ledger 5, writer_seq 5",
+   "ledger": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RUN_END confirmed=false"
+   ],
+   "disk": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RUN_END confirmed=false",
+    "6 FORKED n1 pid=999"
+   ],
+   "parse": "clean",
+   "writer_seq": 5,
+   "run": "early stop (exception)",
+   "fork_calls": 1,
+   "release_writes": [],
+   "child": "none",
+   "s2": false,
+   "c03": {
+    "state": "UNEVALUABLE",
+    "rule": "C03-U2"
+   },
+   "c07": {
+    "state": "UNEVALUABLE",
+    "rule": "C07-U1"
+   },
+   "c16": "BLOCKED",
+   "others": "BLOCKED",
+   "final": "BLOCKED",
+   "credibility": {
+    "level": "INSUFFICIENT",
+    "basis": "a line the writer never appended: provenance broken; a verdict from the file would be unsafe"
+   },
+   "v2_literal": "FAIL (record after RUN_END) read from the file",
+   "source": "",
+   "note": "",
+   "v3_final": "BLOCKED",
+   "migration_reason": "",
+   "changed": false,
+   "origin": "V3 case migrated"
+  },
+  {
+   "id": "CE-R5c",
+   "group": "F-18",
+   "title": "three-way: the append of RUN_END(false) itself failed (ledger 5, file 5, writer_seq 6)",
+   "ledger": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1"
+   ],
+   "disk": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1"
+   ],
+   "parse": "clean",
+   "writer_seq": 6,
+   "run": "early stop (exception)",
+   "fork_calls": 1,
+   "release_writes": [
+    "ok b=1.75 a=1.76 returned=1"
+   ],
+   "child": "none",
+   "s2": false,
+   "c03": {
+    "state": "UNEVALUABLE",
+    "rule": "C03-U3"
+   },
+   "c07": {
+    "state": "UNEVALUABLE",
+    "rule": "C07-U3"
+   },
+   "c16": "BLOCKED",
+   "others": "BLOCKED",
+   "final": "BLOCKED",
+   "credibility": {
+    "level": "INSUFFICIENT",
+    "basis": "writer failure; the end marker was never recorded"
+   },
+   "v2_literal": "n/a",
+   "source": "",
+   "note": "",
+   "v3_final": "BLOCKED",
+   "migration_reason": "",
+   "changed": false,
+   "origin": "V3 case migrated"
+  },
+  {
+   "id": "CE-R5d",
+   "group": "F-18",
+   "title": "three-way: all differ (file 4, ledger 5, writer_seq 6)",
+   "ledger": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "5 REGISTERED n1 pid=200 st=5000",
+    "6 RUN_END confirmed=false"
+   ],
+   "disk": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "5 REGISTERED n1 pid=200 st=5000"
+   ],
+   "parse": "clean",
+   "writer_seq": 6,
+   "run": "early stop (exception)",
+   "fork_calls": 1,
+   "release_writes": [],
+   "child": "none",
+   "s2": false,
+   "c03": {
+    "state": "UNEVALUABLE",
+    "rule": "C03-U2"
+   },
+   "c07": {
+    "state": "UNEVALUABLE",
+    "rule": "C07-U1"
+   },
+   "c16": "BLOCKED",
+   "others": "BLOCKED",
+   "final": "BLOCKED",
+   "credibility": {
+    "level": "INSUFFICIENT",
+    "basis": "a failed append AND a lost line: nothing can be concluded from the registry"
+   },
+   "v2_literal": "n/a",
+   "source": "",
+   "note": "",
+   "v3_final": "BLOCKED",
+   "migration_reason": "",
+   "changed": false,
+   "origin": "V3 case migrated"
+  },
+  {
+   "id": "CE-R5e",
+   "group": "F-18",
+   "title": "ledger shows a duplicate RELEASED; the durable copy lost the second (positive evidence with damage)",
+   "ledger": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1",
+    "6 RELEASED n1",
+    "7 RUN_END confirmed=false"
+   ],
+   "disk": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1",
+    "7 RUN_END confirmed=false"
+   ],
+   "parse": "clean",
+   "writer_seq": 7,
+   "run": "early stop (exception)",
+   "fork_calls": 1,
+   "release_writes": [
+    "ok b=1.75 a=1.76 returned=1"
+   ],
+   "child": "none",
+   "s2": false,
+   "c03": {
+    "state": "FAIL",
+    "rule": "C03-F1(a)"
+   },
+   "c07": {
+    "state": "UNEVALUABLE",
+    "rule": "C07-U3"
+   },
+   "c16": "BLOCKED",
+   "others": "BLOCKED",
+   "final": "FAIL",
+   "credibility": {
+    "level": "MEDIUM",
+    "basis": "the ledger is first-hand and independent of the file damage, so the positive evidence stays credible; the damage is reported"
+   },
+   "v2_literal": "n/a",
+   "source": "",
+   "note": "",
+   "v3_final": "FAIL",
+   "migration_reason": "",
+   "changed": false,
+   "origin": "V3 case migrated"
+  },
+  {
+   "id": "CE-R6",
+   "group": "F-18",
+   "title": "child produced FIRST_ACTION although the only release write failed (EPIPE)",
+   "ledger": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1",
+    "6 RUN_END confirmed=false"
+   ],
+   "disk": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1",
+    "6 RUN_END confirmed=false"
+   ],
+   "parse": "clean",
+   "writer_seq": 6,
+   "run": "early stop (exception)",
+   "fork_calls": 1,
+   "release_writes": [
+    "error EPIPE b=1.75 a=1.7501 errno=32"
+   ],
+   "child": "FIRST_ACTION@1.8",
+   "s2": true,
+   "c03": {
+    "state": "UNEVALUABLE",
+    "rule": "C03-U1"
+   },
+   "c07": {
+    "state": "UNEVALUABLE",
+    "rule": "C07-U6"
+   },
+   "c16": "BLOCKED",
+   "others": "BLOCKED",
+   "final": "BLOCKED",
+   "credibility": {
+    "level": "MEDIUM",
+    "basis": "failed-write record and FIRST_ACTION are both first-hand and contradict each other: the gate was passed without a successful release (or a second writer exists)"
+   },
+   "v2_literal": "n/a",
+   "source": "",
+   "note": "",
+   "v3_final": "FAIL",
+   "migration_reason": "DD-3: a failed write recorded by the guard and a FIRST_ACTION from the child contradict each other; V3 FAIL becomes BLOCKED",
+   "changed": true,
+   "origin": "V3 case migrated"
+  },
+  {
+   "id": "CE-R7",
+   "group": "F-18",
+   "title": "FIRST_ACTION earlier than the completion of the release write",
+   "ledger": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1",
+    "6 DEAD n1 basis",
+    "7 RUN_END confirmed=true"
+   ],
+   "disk": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1",
+    "6 DEAD n1 basis",
+    "7 RUN_END confirmed=true"
+   ],
+   "parse": "clean",
+   "writer_seq": 7,
+   "run": "completed",
+   "fork_calls": 1,
+   "release_writes": [
+    "ok b=1.75 a=1.80 returned=1"
+   ],
+   "child": "FIRST_ACTION@1.78",
+   "s2": true,
+   "c03": {
+    "state": "PASS",
+    "rule": ""
+   },
+   "c07": {
+    "state": "UNEVALUABLE",
+    "rule": "C07-U7"
+   },
+   "c16": "PASS",
+   "others": "PASS",
+   "final": "BLOCKED",
+   "credibility": {
+    "level": "HIGH",
+    "basis": "one monotonic clock; the child acted before the write had returned"
+   },
+   "v2_literal": "n/a",
+   "source": "",
+   "note": "",
+   "v3_final": "FAIL",
+   "migration_reason": "FIRST_ACTION lies between mono_before and mono_after: the times contradict (the child cannot have received SPEC before the write returned); V3 FAIL becomes BLOCKED. A FIRST_ACTION BEFORE mono_before is the new FAIL (CE-R7b)",
+   "changed": true,
+   "origin": "V3 case migrated"
+  },
+  {
+   "id": "CE-R8a",
+   "group": "F-18",
+   "title": "child passed the gate; no release attempt recorded; RELEASED is in the ledger",
+   "ledger": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1",
+    "6 RUN_END confirmed=false"
+   ],
+   "disk": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1",
+    "6 RUN_END confirmed=false"
+   ],
+   "parse": "clean",
+   "writer_seq": 6,
+   "run": "early stop (exception)",
+   "fork_calls": 1,
+   "release_writes": [],
+   "child": "FIRST_ACTION@1.8",
+   "s2": true,
+   "c03": {
+    "state": "UNEVALUABLE",
+    "rule": "C03-U1"
+   },
+   "c07": {
+    "state": "UNEVALUABLE",
+    "rule": "C07-U4"
+   },
+   "c16": "BLOCKED",
+   "others": "BLOCKED",
+   "final": "BLOCKED",
+   "credibility": {
+    "level": "INSUFFICIENT",
+    "basis": "instrumentation and child disagree; reported as an inconsistency, not as a protocol verdict"
+   },
+   "v2_literal": "n/a",
+   "source": "",
+   "note": "",
+   "v3_final": "BLOCKED",
+   "migration_reason": "C07-U4 now covers every gate pass without a recorded attempt; unchanged for this case",
+   "changed": false,
+   "origin": "V3 case migrated"
+  },
+  {
+   "id": "CE-R8b",
+   "group": "F-18",
+   "title": "child passed the gate; no release attempt recorded; RELEASED absent",
+   "ledger": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RUN_END confirmed=false"
+   ],
+   "disk": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RUN_END confirmed=false"
+   ],
+   "parse": "clean",
+   "writer_seq": 5,
+   "run": "early stop (exception)",
+   "fork_calls": 1,
+   "release_writes": [],
+   "child": "FIRST_ACTION@1.8",
+   "s2": true,
+   "c03": {
+    "state": "UNEVALUABLE",
+    "rule": "C03-U5"
+   },
+   "c07": {
+    "state": "UNEVALUABLE",
+    "rule": "C07-U4"
+   },
+   "c16": "BLOCKED",
+   "others": "BLOCKED",
+   "final": "BLOCKED",
+   "credibility": {
+    "level": "HIGH",
+    "basis": "a child cannot pass the gate without a release path; ledger gapless and identical to the file"
+   },
+   "v2_literal": "n/a",
+   "source": "",
+   "note": "",
+   "v3_final": "FAIL",
+   "migration_reason": "DD-4: a gate pass without any recorded attempt cannot be confirmed (the instrumentation may have missed the write); V3 FAIL becomes BLOCKED",
+   "changed": true,
+   "origin": "V3 case migrated"
+  },
+  {
+   "id": "CE-R9",
+   "group": "F-18",
+   "title": "release attempted before the RELEASED record existed",
+   "ledger": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1",
+    "6 DEAD n1 basis",
+    "7 RUN_END confirmed=true"
+   ],
+   "disk": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1",
+    "6 DEAD n1 basis",
+    "7 RUN_END confirmed=true"
+   ],
+   "parse": "clean",
+   "writer_seq": 7,
+   "run": "completed",
+   "fork_calls": 1,
+   "release_writes": [
+    "ok b=1.70 a=1.71 returned=1"
+   ],
+   "child": "FIRST_ACTION@1.8",
+   "s2": true,
+   "c03": {
+    "state": "PASS",
+    "rule": ""
+   },
+   "c07": {
+    "state": "FAIL",
+    "rule": "C07-F1"
+   },
+   "c16": "PASS",
+   "others": "PASS",
+   "final": "FAIL",
+   "credibility": {
+    "level": "HIGH",
+    "basis": "ledger RELEASED.mono 1.7x is later than the attempt's mono_before 1.70"
+   },
+   "v2_literal": "n/a",
+   "source": "",
+   "note": "RELEASED.mono taken as 1.72 in the ledger",
+   "v3_final": "FAIL",
+   "migration_reason": "",
+   "changed": false,
+   "origin": "V3 case migrated"
+  },
+  {
+   "id": "CE-R10",
+   "group": "F-18",
+   "title": "two release writes",
+   "ledger": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1",
+    "6 DEAD n1 basis",
+    "7 RUN_END confirmed=true"
+   ],
+   "disk": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1",
+    "6 DEAD n1 basis",
+    "7 RUN_END confirmed=true"
+   ],
+   "parse": "clean",
+   "writer_seq": 7,
+   "run": "completed",
+   "fork_calls": 1,
+   "release_writes": [
+    "ok b=1.75 a=1.76 returned=1",
+    "ok b=1.77 a=1.78 returned=1"
+   ],
+   "child": "FIRST_ACTION@1.8",
+   "s2": true,
+   "c03": {
+    "state": "PASS",
+    "rule": ""
+   },
+   "c07": {
+    "state": "FAIL",
+    "rule": "C07-F2"
+   },
+   "c16": "PASS",
+   "others": "PASS",
+   "final": "FAIL",
+   "credibility": {
+    "level": "HIGH",
+    "basis": "two entries in guard.release_writes"
+   },
+   "v2_literal": "n/a",
+   "source": "",
+   "note": "",
+   "v3_final": "FAIL",
+   "migration_reason": "",
+   "changed": false,
+   "origin": "V3 case migrated"
+  },
+  {
+   "id": "CE-C1",
+   "group": "C03",
+   "title": "completed run whose ledger never received DEAD and RUN_END (no append failed)",
+   "ledger": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1"
+   ],
+   "disk": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1"
+   ],
+   "parse": "clean",
+   "writer_seq": 5,
+   "run": "completed",
+   "fork_calls": 1,
+   "release_writes": [
+    "ok b=1.75 a=1.76 returned=1"
+   ],
+   "child": "FIRST_ACTION@1.8",
+   "s2": true,
+   "c03": {
+    "state": "FAIL",
+    "rule": "C03-F4"
+   },
+   "c07": {
+    "state": "PASS",
+    "rule": ""
+   },
+   "c16": "PASS",
+   "others": "BLOCKED",
+   "final": "FAIL",
+   "credibility": {
+    "level": "HIGH",
+    "basis": "completed run, writer clean, ledger identical to the file: the records were never attempted"
+   },
+   "v2_literal": "n/a",
+   "source": "",
+   "note": "",
+   "v3_final": "FAIL",
+   "migration_reason": "",
+   "changed": false,
+   "origin": "V3 case migrated"
+  },
+  {
+   "id": "CE-C2",
+   "group": "C03",
+   "title": "completed, perfect registry, but RUN_END records cleanup_confirmed=false",
+   "ledger": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1",
+    "6 DEAD n1 basis",
+    "7 RUN_END confirmed=false"
+   ],
+   "disk": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1",
+    "6 DEAD n1 basis",
+    "7 RUN_END confirmed=false"
+   ],
+   "parse": "clean",
+   "writer_seq": 7,
+   "run": "completed",
+   "fork_calls": 1,
+   "release_writes": [
+    "ok b=1.75 a=1.76 returned=1"
+   ],
+   "child": "FIRST_ACTION@1.8",
+   "s2": true,
+   "c03": {
+    "state": "PASS",
+    "rule": ""
+   },
+   "c07": {
+    "state": "PASS",
+    "rule": ""
+   },
+   "c16": "PASS",
+   "others": "BLOCKED",
+   "final": "BLOCKED",
+   "credibility": {
+    "level": "HIGH",
+    "basis": "the registry is correct; the unconfirmed cleanup is G0-C13's finding, not C03's"
+   },
+   "v2_literal": "n/a",
+   "source": "",
+   "note": "",
+   "v3_final": "BLOCKED",
+   "migration_reason": "",
+   "changed": false,
+   "origin": "V3 case migrated"
+  },
+  {
+   "id": "CE-F4",
+   "group": "C03",
+   "title": "REGISTERED without FORKED, writer clean; the durable copy additionally lost RUN_END(false)",
+   "ledger": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 REGISTERED n1 pid=200 st=5000",
+    "4 RELEASED n1",
+    "5 RUN_END confirmed=false"
+   ],
+   "disk": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 REGISTERED n1 pid=200 st=5000",
+    "4 RELEASED n1"
+   ],
+   "parse": "clean",
+   "writer_seq": 5,
+   "run": "early stop (exception)",
+   "fork_calls": 1,
+   "release_writes": [
+    "ok b=1.75 a=1.76 returned=1"
+   ],
+   "child": "none",
+   "s2": false,
+   "c03": {
+    "state": "FAIL",
+    "rule": "C03-F2"
+   },
+   "c07": {
+    "state": "UNEVALUABLE",
+    "rule": "C07-U3"
+   },
+   "c16": "BLOCKED",
+   "others": "BLOCKED",
+   "final": "FAIL",
+   "credibility": {
+    "level": "MEDIUM",
+    "basis": "the hole is proven by the ledger (writer clean, no foreign line); the unrelated damage to the file does not touch the rule's witness and is reported"
+   },
+   "v2_literal": "n/a",
+   "source": "",
+   "note": "",
+   "v3_final": "FAIL",
+   "migration_reason": "",
+   "changed": false,
+   "origin": "V3 case migrated"
+  },
+  {
+   "id": "CE-F5",
+   "group": "C03",
+   "title": "REGISTERED without FORKED AND an append failed (ledger seq 1,2,4,5; reg_writer_seq 5)",
+   "ledger": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RUN_END confirmed=false"
+   ],
+   "disk": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RUN_END confirmed=false"
+   ],
+   "parse": "clean",
+   "writer_seq": 5,
+   "run": "early stop (exception)",
+   "fork_calls": 1,
+   "release_writes": [],
+   "child": "none",
+   "s2": false,
+   "c03": {
+    "state": "UNEVALUABLE",
+    "rule": "C03-U3"
+   },
+   "c07": {
+    "state": "UNEVALUABLE",
+    "rule": "C07-U1"
+   },
+   "c16": "BLOCKED",
+   "others": "BLOCKED",
+   "final": "BLOCKED",
+   "credibility": {
+    "level": "INSUFFICIENT",
+    "basis": "the absence may be explained by the failed append; integrity cannot be proven (owner policy: BLOCKED)"
+   },
+   "v2_literal": "n/a",
+   "source": "",
+   "note": "",
+   "v3_final": "BLOCKED",
+   "migration_reason": "",
+   "changed": false,
+   "origin": "V3 case migrated"
+  },
+  {
+   "id": "CE-F6",
+   "group": "C03",
+   "title": "REGISTERED without FORKED AND a foreign line in the durable copy",
+   "ledger": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 REGISTERED n1 pid=200 st=5000",
+    "4 RUN_END confirmed=false"
+   ],
+   "disk": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 REGISTERED n1 pid=200 st=5000",
+    "4 RUN_END confirmed=false",
+    "5 FORKED n1 pid=999"
+   ],
+   "parse": "clean",
+   "writer_seq": 4,
+   "run": "early stop (exception)",
+   "fork_calls": 1,
+   "release_writes": [],
+   "child": "none",
+   "s2": false,
+   "c03": {
+    "state": "UNEVALUABLE",
+    "rule": "C03-U2"
+   },
+   "c07": {
+    "state": "UNEVALUABLE",
+    "rule": "C07-U1"
+   },
+   "c16": "BLOCKED",
+   "others": "BLOCKED",
+   "final": "BLOCKED",
+   "credibility": {
+    "level": "INSUFFICIENT",
+    "basis": "witness conflict: the file contains a FORKED the writer never appended; absence-based rules are suspended"
+   },
+   "v2_literal": "n/a",
+   "source": "",
+   "note": "",
+   "v3_final": "BLOCKED",
+   "migration_reason": "",
+   "changed": false,
+   "origin": "V3 case migrated"
+  },
+  {
+   "id": "CE-E1",
+   "group": "C16",
+   "title": "completed clean run whose evidence conforms to V2 only (no reg_memory_records, reg_writer_seq, evidence_schema, consumed_dir, release_writes)",
+   "ledger": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1",
+    "6 DEAD n1 basis",
+    "7 RUN_END confirmed=true"
+   ],
+   "disk": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1",
+    "6 DEAD n1 basis",
+    "7 RUN_END confirmed=true"
+   ],
+   "parse": "clean",
+   "writer_seq": 7,
+   "run": "completed",
+   "fork_calls": 1,
+   "release_writes": [
+    "ok b=1.75 a=1.76 returned=1"
+   ],
+   "child": "FIRST_ACTION@1.8",
+   "s2": true,
+   "c03": {
+    "state": "UNEVALUABLE",
+    "rule": "C03-U0"
+   },
+   "c07": {
+    "state": "UNEVALUABLE",
+    "rule": "C07-U1"
+   },
+   "c16": "BLOCKED",
+   "others": "PASS",
+   "final": "BLOCKED",
+   "credibility": {
+    "level": "INSUFFICIENT",
+    "basis": "evidence insufficient for V3"
+   },
+   "v2_literal": "PASS (V2-conformant evidence) -> V3 BLOCKED: the semantic change of C16",
+   "source": "",
+   "note": "",
+   "v3_final": "BLOCKED",
+   "migration_reason": "",
+   "changed": false,
+   "origin": "V3 case migrated"
+  },
+  {
+   "id": "CE-E2",
+   "group": "C16",
+   "title": "otherwise complete clean run; evidence_schema says 'e1a-gate-g0-evidence-2'",
+   "ledger": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1",
+    "6 DEAD n1 basis",
+    "7 RUN_END confirmed=true"
+   ],
+   "disk": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1",
+    "6 DEAD n1 basis",
+    "7 RUN_END confirmed=true"
+   ],
+   "parse": "clean",
+   "writer_seq": 7,
+   "run": "completed",
+   "fork_calls": 1,
+   "release_writes": [
+    "ok b=1.75 a=1.76 returned=1"
+   ],
+   "child": "FIRST_ACTION@1.8",
+   "s2": true,
+   "c03": {
+    "state": "PASS",
+    "rule": ""
+   },
+   "c07": {
+    "state": "PASS",
+    "rule": ""
+   },
+   "c16": "BLOCKED",
+   "others": "PASS",
+   "final": "BLOCKED",
+   "credibility": {
+    "level": "INSUFFICIENT",
+    "basis": "schema version mismatch: the judge refuses to guess"
+   },
+   "v2_literal": "n/a",
+   "source": "",
+   "note": "",
+   "v3_final": "BLOCKED",
+   "migration_reason": "",
+   "changed": false,
+   "origin": "V3 case migrated"
+  },
+  {
+   "id": "CE-E3",
+   "group": "C16",
+   "title": "otherwise complete clean run; reg_writer_seq is the string '7'",
+   "ledger": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1",
+    "6 DEAD n1 basis",
+    "7 RUN_END confirmed=true"
+   ],
+   "disk": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1",
+    "6 DEAD n1 basis",
+    "7 RUN_END confirmed=true"
+   ],
+   "parse": "clean",
+   "writer_seq": 7,
+   "run": "completed",
+   "fork_calls": 1,
+   "release_writes": [
+    "ok b=1.75 a=1.76 returned=1"
+   ],
+   "child": "FIRST_ACTION@1.8",
+   "s2": true,
+   "c03": {
+    "state": "UNEVALUABLE",
+    "rule": "C03-U0"
+   },
+   "c07": {
+    "state": "PASS",
+    "rule": ""
+   },
+   "c16": "BLOCKED",
+   "others": "PASS",
+   "final": "BLOCKED",
+   "credibility": {
+    "level": "INSUFFICIENT",
+    "basis": "wrong type counts as missing"
+   },
+   "v2_literal": "n/a",
+   "source": "",
+   "note": "",
+   "v3_final": "BLOCKED",
+   "migration_reason": "",
+   "changed": false,
+   "origin": "V3 case migrated"
+  },
+  {
+   "id": "CE-E4",
+   "group": "C16",
+   "title": "otherwise complete clean run; node.pid is the boolean true",
+   "ledger": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1",
+    "6 DEAD n1 basis",
+    "7 RUN_END confirmed=true"
+   ],
+   "disk": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1",
+    "6 DEAD n1 basis",
+    "7 RUN_END confirmed=true"
+   ],
+   "parse": "clean",
+   "writer_seq": 7,
+   "run": "completed",
+   "fork_calls": 1,
+   "release_writes": [
+    "ok b=1.75 a=1.76 returned=1"
+   ],
+   "child": "FIRST_ACTION@1.8",
+   "s2": true,
+   "c03": {
+    "state": "PASS",
+    "rule": ""
+   },
+   "c07": {
+    "state": "PASS",
+    "rule": ""
+   },
+   "c16": "BLOCKED",
+   "others": "PASS",
+   "final": "BLOCKED",
+   "credibility": {
+    "level": "INSUFFICIENT",
+    "basis": "bool is not accepted as int"
+   },
+   "v2_literal": "n/a",
+   "source": "",
+   "note": "",
+   "v3_final": "BLOCKED",
+   "migration_reason": "",
+   "changed": false,
+   "origin": "V3 case migrated"
+  },
+  {
+   "id": "CE-E5",
+   "group": "C16",
+   "title": "completed run; the ledger's FORKED record carries pid=true",
+   "ledger": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=true",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1",
+    "6 DEAD n1 basis",
+    "7 RUN_END confirmed=true"
+   ],
+   "disk": [
+    "1 RUN_START",
+    "2 INTENT n1",
+    "3 FORKED n1 pid=true",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1",
+    "6 DEAD n1 basis",
+    "7 RUN_END confirmed=true"
+   ],
+   "parse": "clean",
+   "writer_seq": 7,
+   "run": "completed",
+   "fork_calls": 1,
+   "release_writes": [
+    "ok b=1.75 a=1.76 returned=1"
+   ],
+   "child": "FIRST_ACTION@1.8",
+   "s2": true,
+   "c03": {
+    "state": "FAIL",
+    "rule": "C03-F1(d)"
+   },
+   "c07": {
+    "state": "PASS",
+    "rule": ""
+   },
+   "c16": "PASS",
+   "others": "PASS",
+   "final": "FAIL",
+   "credibility": {
+    "level": "HIGH",
+    "basis": "type error inside a present record is visible in the ledger; C16 types only the container"
+   },
+   "v2_literal": "n/a",
+   "source": "",
+   "note": "",
+   "v3_final": "FAIL",
+   "migration_reason": "",
+   "changed": false,
+   "origin": "V3 case migrated"
+  },
+  {
+   "id": "FID-A",
+   "group": "F-20",
+   "title": "durable RUN_END.run_id differs from RUN_START.run_id; ledger correct; triples identical",
+   "ledger": [
+    "1 RUN_START run=g0_x",
+    "2 INTENT n1 creator=O",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1",
+    "6 DEAD n1 basis=proc",
+    "7 RUN_END run=g0_x confirmed=true"
+   ],
+   "disk": [
+    "1 RUN_START run=g0_x",
+    "2 INTENT n1 creator=O",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1",
+    "6 DEAD n1 basis=proc",
+    "7 RUN_END run=g0_y confirmed=true"
+   ],
+   "parse": "clean",
+   "writer_seq": 7,
+   "run": "completed",
+   "fork_calls": 1,
+   "fork_pids": [
+    200
+   ],
+   "release_writes": [
+    "ok b=1.75 a=1.76 returned=1"
+   ],
+   "child": "FIRST_ACTION@1.8",
+   "c03": {
+    "state": "UNEVALUABLE",
+    "rule": "C03-U2"
+   },
+   "c07": {
+    "state": "PASS",
+    "rule": ""
+   },
+   "c16": "PASS",
+   "others": "BLOCKED",
+   "final": "BLOCKED",
+   "credibility": {
+    "level": "INSUFFICIENT",
+    "basis": "ledger first-hand and compliant, durable copy altered: no PASS can rest on the file and no FAIL can be blamed on the protocol"
+   },
+   "fidelity_report_expected": [
+    {
+     "type": "ALTERED",
+     "seq": 7,
+     "kind": "RUN_END",
+     "fields": [
+      "run_id"
+     ]
+    }
+   ],
+   "disk_dependent_unevaluable": [
+    "G0-C13",
+    "G0-C04",
+    "G0-C05",
+    "G0-C11"
+   ],
+   "note": "",
+   "origin": "V4 new"
+  },
+  {
+   "id": "FID-B",
+   "group": "F-20",
+   "title": "durable REGISTERED.pid corrupted (201); ledger pid 200 and the real child pid 200 correct",
+   "ledger": [
+    "1 RUN_START run=g0_x",
+    "2 INTENT n1 creator=O",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1",
+    "6 DEAD n1 basis=proc",
+    "7 RUN_END run=g0_x confirmed=true"
+   ],
+   "disk": [
+    "1 RUN_START run=g0_x",
+    "2 INTENT n1 creator=O",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=201 st=5000",
+    "5 RELEASED n1",
+    "6 DEAD n1 basis=proc",
+    "7 RUN_END run=g0_x confirmed=true"
+   ],
+   "parse": "clean",
+   "writer_seq": 7,
+   "run": "completed",
+   "fork_calls": 1,
+   "fork_pids": [
+    200
+   ],
+   "release_writes": [
+    "ok b=1.75 a=1.76 returned=1"
+   ],
+   "child": "FIRST_ACTION@1.8",
+   "c03": {
+    "state": "UNEVALUABLE",
+    "rule": "C03-U2"
+   },
+   "c07": {
+    "state": "PASS",
+    "rule": ""
+   },
+   "c16": "PASS",
+   "others": "BLOCKED",
+   "final": "BLOCKED",
+   "credibility": {
+    "level": "INSUFFICIENT",
+    "basis": "V3 literal gave a false identity FAIL from the altered file; V4 refuses to let the file decide"
+   },
+   "fidelity_report_expected": [
+    {
+     "type": "ALTERED",
+     "seq": 4,
+     "kind": "REGISTERED",
+     "fields": [
+      "pid"
+     ]
+    }
+   ],
+   "disk_dependent_unevaluable": [
+    "G0-C04",
+    "G0-C05",
+    "G0-C11",
+    "G0-C13"
+   ],
+   "note": "",
+   "origin": "V4 new"
+  },
+  {
+   "id": "FID-C",
+   "group": "F-20",
+   "title": "durable INTENT.creator altered to n7; ledger creator O",
+   "ledger": [
+    "1 RUN_START run=g0_x",
+    "2 INTENT n1 creator=O",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1",
+    "6 DEAD n1 basis=proc",
+    "7 RUN_END run=g0_x confirmed=true"
+   ],
+   "disk": [
+    "1 RUN_START run=g0_x",
+    "2 INTENT n1 creator=n7",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1",
+    "6 DEAD n1 basis=proc",
+    "7 RUN_END run=g0_x confirmed=true"
+   ],
+   "parse": "clean",
+   "writer_seq": 7,
+   "run": "completed",
+   "fork_calls": 1,
+   "fork_pids": [
+    200
+   ],
+   "release_writes": [
+    "ok b=1.75 a=1.76 returned=1"
+   ],
+   "child": "FIRST_ACTION@1.8",
+   "c03": {
+    "state": "UNEVALUABLE",
+    "rule": "C03-U2"
+   },
+   "c07": {
+    "state": "PASS",
+    "rule": ""
+   },
+   "c16": "PASS",
+   "others": "BLOCKED",
+   "final": "BLOCKED",
+   "credibility": {
+    "level": "INSUFFICIENT",
+    "basis": "a ticket node appears only in the altered file"
+   },
+   "fidelity_report_expected": [
+    {
+     "type": "ALTERED",
+     "seq": 2,
+     "kind": "INTENT",
+     "fields": [
+      "creator"
+     ]
+    }
+   ],
+   "disk_dependent_unevaluable": [
+    "G0-C11",
+    "G0-C04",
+    "G0-C05",
+    "G0-C13"
+   ],
+   "note": "",
+   "origin": "V4 new"
+  },
+  {
+   "id": "FID-D",
+   "group": "F-20",
+   "title": "durable RUN_END.cleanup_confirmed flipped false->true; ledger false",
+   "ledger": [
+    "1 RUN_START run=g0_x",
+    "2 INTENT n1 creator=O",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1",
+    "6 DEAD n1 basis=proc",
+    "7 RUN_END run=g0_x confirmed=false"
+   ],
+   "disk": [
+    "1 RUN_START run=g0_x",
+    "2 INTENT n1 creator=O",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1",
+    "6 DEAD n1 basis=proc",
+    "7 RUN_END run=g0_x confirmed=true"
+   ],
+   "parse": "clean",
+   "writer_seq": 7,
+   "run": "completed",
+   "fork_calls": 1,
+   "fork_pids": [
+    200
+   ],
+   "release_writes": [
+    "ok b=1.75 a=1.76 returned=1"
+   ],
+   "child": "FIRST_ACTION@1.8",
+   "c03": {
+    "state": "UNEVALUABLE",
+    "rule": "C03-U2"
+   },
+   "c07": {
+    "state": "PASS",
+    "rule": ""
+   },
+   "c16": "PASS",
+   "others": "BLOCKED",
+   "final": "BLOCKED",
+   "credibility": {
+    "level": "INSUFFICIENT",
+    "basis": "ledger says unconfirmed, file says confirmed; V3 literal gave a wrong PASS"
+   },
+   "fidelity_report_expected": [
+    {
+     "type": "ALTERED",
+     "seq": 7,
+     "kind": "RUN_END",
+     "fields": [
+      "cleanup_confirmed"
+     ]
+    }
+   ],
+   "disk_dependent_unevaluable": [
+    "G0-C13",
+    "G0-C04",
+    "G0-C05",
+    "G0-C11"
+   ],
+   "note": "",
+   "origin": "V4 new"
+  },
+  {
+   "id": "FID-E",
+   "group": "F-20",
+   "title": "LEDGER record altered in memory (REGISTERED.pid 201); durable copy correct (200)",
+   "ledger": [
+    "1 RUN_START run=g0_x",
+    "2 INTENT n1 creator=O",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=201 st=5000",
+    "5 RELEASED n1",
+    "6 DEAD n1 basis=proc",
+    "7 RUN_END run=g0_x confirmed=true"
+   ],
+   "disk": [
+    "1 RUN_START run=g0_x",
+    "2 INTENT n1 creator=O",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1",
+    "6 DEAD n1 basis=proc",
+    "7 RUN_END run=g0_x confirmed=true"
+   ],
+   "parse": "clean",
+   "writer_seq": 7,
+   "run": "completed",
+   "fork_calls": 1,
+   "fork_pids": [
+    200
+   ],
+   "release_writes": [
+    "ok b=1.75 a=1.76 returned=1"
+   ],
+   "child": "FIRST_ACTION@1.8",
+   "c03": {
+    "state": "UNEVALUABLE",
+    "rule": "C03-U2"
+   },
+   "c07": {
+    "state": "PASS",
+    "rule": ""
+   },
+   "c16": "PASS",
+   "others": "BLOCKED",
+   "final": "BLOCKED",
+   "credibility": {
+    "level": "INSUFFICIENT",
+    "basis": "two first-hand witnesses disagree; the file is an independent witness of the ledger"
+   },
+   "fidelity_report_expected": [
+    {
+     "type": "ALTERED",
+     "seq": 4,
+     "kind": "REGISTERED",
+     "fields": [
+      "pid"
+     ]
+    }
+   ],
+   "disk_dependent_unevaluable": [
+    "G0-C04",
+    "G0-C05",
+    "G0-C11",
+    "G0-C13"
+   ],
+   "note": "",
+   "origin": "V4 new"
+  },
+  {
+   "id": "FID-F",
+   "group": "F-20",
+   "title": "ledger proves a duplicate RELEASED; durable RUN_END additionally altered (run_id)",
+   "ledger": [
+    "1 RUN_START run=g0_x",
+    "2 INTENT n1 creator=O",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1",
+    "6 RELEASED n1",
+    "7 DEAD n1 basis=proc",
+    "8 RUN_END run=g0_x confirmed=true"
+   ],
+   "disk": [
+    "1 RUN_START run=g0_x",
+    "2 INTENT n1 creator=O",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1",
+    "6 RELEASED n1",
+    "7 DEAD n1 basis=proc",
+    "8 RUN_END run=g0_y confirmed=true"
+   ],
+   "parse": "clean",
+   "writer_seq": 8,
+   "run": "completed",
+   "fork_calls": 1,
+   "fork_pids": [
+    200
+   ],
+   "release_writes": [
+    "ok b=1.75 a=1.76 returned=1"
+   ],
+   "child": "FIRST_ACTION@1.8",
+   "c03": {
+    "state": "FAIL",
+    "rule": "C03-F1"
+   },
+   "c07": {
+    "state": "PASS",
+    "rule": ""
+   },
+   "c16": "PASS",
+   "others": "BLOCKED",
+   "final": "FAIL",
+   "credibility": {
+    "level": "MEDIUM",
+    "basis": "the violation is proven by the ledger (first-hand, independent of the file); the damage to the file is reported and does not cancel the FAIL"
+   },
+   "fidelity_report_expected": [
+    {
+     "type": "ALTERED",
+     "seq": 8,
+     "kind": "RUN_END",
+     "fields": [
+      "run_id"
+     ]
+    }
+   ],
+   "disk_dependent_unevaluable": [
+    "G0-C13",
+    "G0-C04",
+    "G0-C05",
+    "G0-C11"
+   ],
+   "note": "",
+   "origin": "V4 new"
+  },
+  {
+   "id": "F3A-1",
+   "group": "F-22",
+   "title": "fork proven, INTENT never written, writer clean",
+   "ledger": [
+    "1 RUN_START run=g0_x",
+    "2 RUN_END run=g0_x confirmed=false"
+   ],
+   "disk": [
+    "1 RUN_START run=g0_x",
+    "2 RUN_END run=g0_x confirmed=false"
+   ],
+   "parse": "clean",
+   "writer_seq": 2,
+   "run": "early stop (exception)",
+   "fork_calls": 1,
+   "fork_pids": [
+    200
+   ],
+   "release_writes": [],
+   "child": "none",
+   "c03": {
+    "state": "FAIL",
+    "rule": "C03-F3a"
+   },
+   "c07": {
+    "state": "UNEVALUABLE",
+    "rule": "C07-U1"
+   },
+   "c16": "BLOCKED",
+   "others": "BLOCKED",
+   "final": "FAIL",
+   "credibility": {
+    "level": "MEDIUM",
+    "basis": "the guard recorded the fork's pid; the ledger is gapless and identical to the file: the intent was never attempted"
+   },
+   "fidelity_report_expected": [],
+   "disk_dependent_unevaluable": [],
+   "note": "",
+   "origin": "V4 new"
+  },
+  {
+   "id": "F3A-2",
+   "group": "F-22",
+   "title": "fork proven, INTENT append failed (seq 2 consumed), writer NOT clean",
+   "ledger": [
+    "1 RUN_START run=g0_x",
+    "3 RUN_END run=g0_x confirmed=false"
+   ],
+   "disk": [
+    "1 RUN_START run=g0_x",
+    "3 RUN_END run=g0_x confirmed=false"
+   ],
+   "parse": "clean",
+   "writer_seq": 3,
+   "run": "early stop (exception)",
+   "fork_calls": 1,
+   "fork_pids": [
+    200
+   ],
+   "release_writes": [],
+   "child": "none",
+   "c03": {
+    "state": "UNEVALUABLE",
+    "rule": "C03-U3"
+   },
+   "c07": {
+    "state": "UNEVALUABLE",
+    "rule": "C07-U1"
+   },
+   "c16": "BLOCKED",
+   "others": "BLOCKED",
+   "final": "BLOCKED",
+   "credibility": {
+    "level": "INSUFFICIENT",
+    "basis": "single witness and an append failure: the missing INTENT may be explained by the failure"
+   },
+   "fidelity_report_expected": [],
+   "disk_dependent_unevaluable": [],
+   "note": "",
+   "origin": "V4 new"
+  },
+  {
+   "id": "F3B-1",
+   "group": "F-22",
+   "title": "release write ok, RELEASED never written, child did not pass, writer clean",
+   "ledger": [
+    "1 RUN_START run=g0_x",
+    "2 INTENT n1 creator=O",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RUN_END run=g0_x confirmed=false"
+   ],
+   "disk": [
+    "1 RUN_START run=g0_x",
+    "2 INTENT n1 creator=O",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RUN_END run=g0_x confirmed=false"
+   ],
+   "parse": "clean",
+   "writer_seq": 5,
+   "run": "early stop (exception)",
+   "fork_calls": 1,
+   "fork_pids": [
+    200
+   ],
+   "release_writes": [
+    "ok b=1.75 a=1.76 returned=1"
+   ],
+   "child": "none",
+   "c03": {
+    "state": "FAIL",
+    "rule": "C03-F3b"
+   },
+   "c07": {
+    "state": "UNEVALUABLE",
+    "rule": "C07-U3"
+   },
+   "c16": "BLOCKED",
+   "others": "BLOCKED",
+   "final": "FAIL",
+   "credibility": {
+    "level": "MEDIUM",
+    "basis": "the guard proves the byte was written; the clean ledger proves RELEASED was never attempted; only one witness for the write"
+   },
+   "fidelity_report_expected": [],
+   "disk_dependent_unevaluable": [],
+   "note": "",
+   "origin": "V4 new"
+  },
+  {
+   "id": "F3B-2",
+   "group": "F-22",
+   "title": "release write ok, RELEASED append failed (seq 5 consumed), child did not pass, writer NOT clean",
+   "ledger": [
+    "1 RUN_START run=g0_x",
+    "2 INTENT n1 creator=O",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "6 RUN_END run=g0_x confirmed=false"
+   ],
+   "disk": [
+    "1 RUN_START run=g0_x",
+    "2 INTENT n1 creator=O",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "6 RUN_END run=g0_x confirmed=false"
+   ],
+   "parse": "clean",
+   "writer_seq": 6,
+   "run": "early stop (exception)",
+   "fork_calls": 1,
+   "fork_pids": [
+    200
+   ],
+   "release_writes": [
+    "ok b=1.75 a=1.76 returned=1"
+   ],
+   "child": "none",
+   "c03": {
+    "state": "UNEVALUABLE",
+    "rule": "C03-U3"
+   },
+   "c07": {
+    "state": "UNEVALUABLE",
+    "rule": "C07-U3"
+   },
+   "c16": "BLOCKED",
+   "others": "BLOCKED",
+   "final": "BLOCKED",
+   "credibility": {
+    "level": "INSUFFICIENT",
+    "basis": "append failure plus a single witness (the code cannot write the byte after a failed RELEASED append): not confirmable"
+   },
+   "fidelity_report_expected": [],
+   "disk_dependent_unevaluable": [],
+   "note": "",
+   "origin": "V4 new"
+  },
+  {
+   "id": "F3C-2",
+   "group": "F-22",
+   "title": "gate passed and a write ok, but FIRST_ACTION lies inside the write (1.78 in [1.75, 1.80)); REGISTERED absent; writer NOT clean",
+   "ledger": [
+    "1 RUN_START run=g0_x",
+    "2 INTENT n1 creator=O",
+    "3 FORKED n1 pid=200",
+    "5 RUN_END run=g0_x confirmed=false"
+   ],
+   "disk": [
+    "1 RUN_START run=g0_x",
+    "2 INTENT n1 creator=O",
+    "3 FORKED n1 pid=200",
+    "5 RUN_END run=g0_x confirmed=false"
+   ],
+   "parse": "clean",
+   "writer_seq": 5,
+   "run": "early stop (exception)",
+   "fork_calls": 1,
+   "fork_pids": [
+    200
+   ],
+   "release_writes": [
+    "ok b=1.75 a=1.80 returned=1"
+   ],
+   "child": "FIRST_ACTION@1.78",
+   "c03": {
+    "state": "UNEVALUABLE",
+    "rule": "C03-U3"
+   },
+   "c07": {
+    "state": "UNEVALUABLE",
+    "rule": "C07-U7"
+   },
+   "c16": "BLOCKED",
+   "others": "BLOCKED",
+   "final": "BLOCKED",
+   "credibility": {
+    "level": "INSUFFICIENT",
+    "basis": "the times contradict, so the pass is not proven (gate_pass_proven false); F3c does not apply"
+   },
+   "fidelity_report_expected": [],
+   "disk_dependent_unevaluable": [],
+   "note": "",
+   "origin": "V4 new"
+  },
+  {
+   "id": "F3C-3",
+   "group": "F-22",
+   "title": "gate pass proven, REGISTERED present but invalid (starttime null)",
+   "ledger": [
+    "1 RUN_START run=g0_x",
+    "2 INTENT n1 creator=O",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=null",
+    "5 RELEASED n1",
+    "6 RUN_END run=g0_x confirmed=false"
+   ],
+   "disk": [
+    "1 RUN_START run=g0_x",
+    "2 INTENT n1 creator=O",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=null",
+    "5 RELEASED n1",
+    "6 RUN_END run=g0_x confirmed=false"
+   ],
+   "parse": "clean",
+   "writer_seq": 6,
+   "run": "early stop (exception)",
+   "fork_calls": 1,
+   "fork_pids": [
+    200
+   ],
+   "release_writes": [
+    "ok b=1.75 a=1.76 returned=1"
+   ],
+   "child": "FIRST_ACTION@1.8",
+   "c03": {
+    "state": "FAIL",
+    "rule": "C03-F1"
+   },
+   "c07": {
+    "state": "PASS",
+    "rule": ""
+   },
+   "c16": "BLOCKED",
+   "others": "BLOCKED",
+   "final": "FAIL",
+   "credibility": {
+    "level": "HIGH",
+    "basis": "the invalid field is visible in the ledger (F1(d)); the proven gate pass also fires F3c: no VALID registration existed"
+   },
+   "fidelity_report_expected": [],
+   "disk_dependent_unevaluable": [],
+   "note": "",
+   "origin": "V4 new"
+  },
+  {
+   "id": "F3C-4",
+   "group": "F-22",
+   "title": "gate pass proven, REGISTERED absent from the ledger, but the durable copy has a REGISTERED line the writer never appended",
+   "ledger": [
+    "1 RUN_START run=g0_x",
+    "2 INTENT n1 creator=O",
+    "3 FORKED n1 pid=200",
+    "4 RELEASED n1",
+    "5 RUN_END run=g0_x confirmed=false"
+   ],
+   "disk": [
+    "1 RUN_START run=g0_x",
+    "2 INTENT n1 creator=O",
+    "3 FORKED n1 pid=200",
+    "4 RELEASED n1",
+    "5 RUN_END run=g0_x confirmed=false",
+    "6 REGISTERED n1 pid=200 st=5000"
+   ],
+   "parse": "clean",
+   "writer_seq": 5,
+   "run": "early stop (exception)",
+   "fork_calls": 1,
+   "fork_pids": [
+    200
+   ],
+   "release_writes": [
+    "ok b=1.75 a=1.76 returned=1"
+   ],
+   "child": "FIRST_ACTION@1.8",
+   "c03": {
+    "state": "UNEVALUABLE",
+    "rule": "C03-U2"
+   },
+   "c07": {
+    "state": "UNEVALUABLE",
+    "rule": "C07-U5"
+   },
+   "c16": "BLOCKED",
+   "others": "BLOCKED",
+   "final": "BLOCKED",
+   "credibility": {
+    "level": "INSUFFICIENT",
+    "basis": "witness conflict: the file contradicts the ledger's absence; F3c requires no foreign lines"
+   },
+   "fidelity_report_expected": [
+    {
+     "type": "FOREIGN",
+     "seq": 6,
+     "kind": "REGISTERED",
+     "fields": null
+    }
+   ],
+   "disk_dependent_unevaluable": [],
+   "note": "",
+   "origin": "V4 new"
+  },
+  {
+   "id": "F3-GAP",
+   "group": "F-22",
+   "title": "append failure / seq gap ONLY: no independent evidence of any action beyond the fork",
+   "ledger": [
+    "1 RUN_START run=g0_x",
+    "2 INTENT n1 creator=O",
+    "3 FORKED n1 pid=200",
+    "5 RUN_END run=g0_x confirmed=false"
+   ],
+   "disk": [
+    "1 RUN_START run=g0_x",
+    "2 INTENT n1 creator=O",
+    "3 FORKED n1 pid=200",
+    "5 RUN_END run=g0_x confirmed=false"
+   ],
+   "parse": "clean",
+   "writer_seq": 5,
+   "run": "early stop (exception)",
+   "fork_calls": 1,
+   "fork_pids": [
+    200
+   ],
+   "release_writes": [],
+   "child": "none",
+   "c03": {
+    "state": "UNEVALUABLE",
+    "rule": "C03-U3"
+   },
+   "c07": {
+    "state": "UNEVALUABLE",
+    "rule": "C07-U1"
+   },
+   "c16": "BLOCKED",
+   "others": "BLOCKED",
+   "final": "BLOCKED",
+   "credibility": {
+    "level": "INSUFFICIENT",
+    "basis": "owner policy: an append failure or a gap alone is BLOCKED"
+   },
+   "fidelity_report_expected": [],
+   "disk_dependent_unevaluable": [],
+   "note": "",
+   "origin": "V4 new"
+  },
+  {
+   "id": "F3C-6",
+   "group": "F-22",
+   "title": "witnesses contradict: the only release write failed (EPIPE), the child nevertheless passed, REGISTERED absent, writer NOT clean",
+   "ledger": [
+    "1 RUN_START run=g0_x",
+    "2 INTENT n1 creator=O",
+    "3 FORKED n1 pid=200",
+    "5 RUN_END run=g0_x confirmed=false"
+   ],
+   "disk": [
+    "1 RUN_START run=g0_x",
+    "2 INTENT n1 creator=O",
+    "3 FORKED n1 pid=200",
+    "5 RUN_END run=g0_x confirmed=false"
+   ],
+   "parse": "clean",
+   "writer_seq": 5,
+   "run": "early stop (exception)",
+   "fork_calls": 1,
+   "fork_pids": [
+    200
+   ],
+   "release_writes": [
+    "error EPIPE b=1.75 a=1.7501 errno=32"
+   ],
+   "child": "FIRST_ACTION@1.8",
+   "c03": {
+    "state": "UNEVALUABLE",
+    "rule": "C03-U3"
+   },
+   "c07": {
+    "state": "UNEVALUABLE",
+    "rule": "C07-U6"
+   },
+   "c16": "BLOCKED",
+   "others": "BLOCKED",
+   "final": "BLOCKED",
+   "credibility": {
+    "level": "INSUFFICIENT",
+    "basis": "the pass is unconfirmed (no successful write): owner policy BLOCKED"
+   },
+   "fidelity_report_expected": [],
+   "disk_dependent_unevaluable": [],
+   "note": "",
+   "origin": "V4 new"
+  },
+  {
+   "id": "CE-R7b",
+   "group": "F-22",
+   "title": "FIRST_ACTION BEFORE the release was attempted (1.70 < mono_before 1.75), attempt recorded",
+   "ledger": [
+    "1 RUN_START run=g0_x",
+    "2 INTENT n1 creator=O",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1",
+    "6 DEAD n1 basis=proc",
+    "7 RUN_END run=g0_x confirmed=true"
+   ],
+   "disk": [
+    "1 RUN_START run=g0_x",
+    "2 INTENT n1 creator=O",
+    "3 FORKED n1 pid=200",
+    "4 REGISTERED n1 pid=200 st=5000",
+    "5 RELEASED n1",
+    "6 DEAD n1 basis=proc",
+    "7 RUN_END run=g0_x confirmed=true"
+   ],
+   "parse": "clean",
+   "writer_seq": 7,
+   "run": "completed",
+   "fork_calls": 1,
+   "fork_pids": [
+    200
+   ],
+   "release_writes": [
+    "ok b=1.75 a=1.76 returned=1"
+   ],
+   "child": "FIRST_ACTION@1.70",
+   "c03": {
+    "state": "PASS",
+    "rule": ""
+   },
+   "c07": {
+    "state": "FAIL",
+    "rule": "C07-F3"
+   },
+   "c16": "PASS",
+   "others": "PASS",
+   "final": "FAIL",
+   "credibility": {
+    "level": "HIGH",
+    "basis": "the child acted before any release attempt began; no recorded write can explain it (new C07-F3)"
+   },
+   "fidelity_report_expected": [],
+   "disk_dependent_unevaluable": [],
+   "note": "",
+   "origin": "V4 new"
+  }
+ ],
+ "pipeline": [
+  {
+   "id": "PIPE-1",
+   "stage": "P0..P7",
+   "failure": "none",
+   "verdict": "PASS",
+   "exit_code": 0,
+   "stderr_marker": null,
+   "preserved": "evidence + summary, both verified",
+   "overwrote": false
+  },
+  {
+   "id": "PIPE-2",
+   "stage": "P1",
+   "failure": "a non-JSON value (a set) in the evidence",
+   "verdict": "BLOCKED",
+   "exit_code": 3,
+   "stderr_marker": "G0-EVIDENCE-UNSAVED",
+   "preserved": "nothing on disk; registry and run directory remain",
+   "overwrote": false,
+   "note": "V3-era code would have used default=str and stored a string"
+  },
+  {
+   "id": "PIPE-3",
+   "stage": "P1",
+   "failure": "NaN in the evidence",
+   "verdict": "BLOCKED",
+   "exit_code": 3,
+   "stderr_marker": "G0-EVIDENCE-UNSAVED",
+   "preserved": "nothing on disk",
+   "overwrote": false
+  },
+  {
+   "id": "PIPE-4",
+   "stage": "P2",
+   "failure": "g0_evidence.json already exists (another run or an earlier attempt)",
+   "verdict": "BLOCKED",
+   "exit_code": 3,
+   "stderr_marker": "G0-EVIDENCE-UNSAVED",
+   "preserved": "the existing file untouched",
+   "overwrote": false
+  },
+  {
+   "id": "PIPE-5",
+   "stage": "P2",
+   "failure": "ENOSPC / EIO / EROFS while writing; short write that cannot be completed",
+   "verdict": "BLOCKED",
+   "exit_code": 3,
+   "stderr_marker": "G0-EVIDENCE-UNSAVED",
+   "preserved": "a partial g0_evidence.json created by this process (not deleted); optional g0_blocked note",
+   "overwrote": false
+  },
+  {
+   "id": "PIPE-6",
+   "stage": "P2",
+   "failure": "fsync of the file or of the directory fails",
+   "verdict": "BLOCKED",
+   "exit_code": 3,
+   "stderr_marker": "G0-EVIDENCE-UNSAVED",
+   "preserved": "the written file (durability not guaranteed)",
+   "overwrote": false
+  },
+  {
+   "id": "PIPE-7",
+   "stage": "P3",
+   "failure": "the bytes read back differ from the bytes written (truncation, bit flip, concurrent writer)",
+   "verdict": "BLOCKED",
+   "exit_code": 3,
+   "stderr_marker": "G0-EVIDENCE-UNVERIFIED",
+   "preserved": "the saved file as read, not repaired; both hashes on stderr",
+   "overwrote": false
+  },
+  {
+   "id": "PIPE-8",
+   "stage": "P3",
+   "failure": "the file is not a regular file or does not parse as strict JSON",
+   "verdict": "BLOCKED",
+   "exit_code": 3,
+   "stderr_marker": "G0-EVIDENCE-UNVERIFIED",
+   "preserved": "the saved file",
+   "overwrote": false
+  },
+  {
+   "id": "PIPE-9",
+   "stage": "P4",
+   "failure": "reg_writer_seq is the string '7' in the read-back evidence",
+   "verdict": "BLOCKED",
+   "exit_code": 3,
+   "stderr_marker": null,
+   "preserved": "evidence + summary (C16 BLOCKED, C03-U0)",
+   "overwrote": false,
+   "note": "the pipeline continues: the type error is a C16 finding, not a pipeline failure"
+  },
+  {
+   "id": "PIPE-10",
+   "stage": "P5",
+   "failure": "the judge raises an exception",
+   "verdict": "BLOCKED",
+   "exit_code": 3,
+   "stderr_marker": "G0-JUDGE-ERROR",
+   "preserved": "the verified evidence file; no summary",
+   "overwrote": false
+  },
+  {
+   "id": "PIPE-11",
+   "stage": "P6",
+   "failure": "verdict FAIL computed, the summary cannot be written",
+   "verdict": "BLOCKED",
+   "exit_code": 3,
+   "stderr_marker": "G0-SUMMARY-UNSAVED",
+   "preserved": "the verified evidence file; stderr carries verdict=FAIL and evidence_sha256",
+   "overwrote": false,
+   "note": "exit code 1 is NOT returned: a FAIL is recorded only when its summary was saved and verified"
+  },
+  {
+   "id": "PIPE-12",
+   "stage": "P6",
+   "failure": "verdict PASS computed, the summary cannot be written",
+   "verdict": "BLOCKED",
+   "exit_code": 3,
+   "stderr_marker": "G0-SUMMARY-UNSAVED",
+   "preserved": "the verified evidence file",
+   "overwrote": false,
+   "note": "no PASS is claimed or returned as exit code 0"
+  },
+  {
+   "id": "PIPE-13",
+   "stage": "P6",
+   "failure": "the summary reads back with a different hash",
+   "verdict": "BLOCKED",
+   "exit_code": 3,
+   "stderr_marker": "G0-SUMMARY-UNSAVED",
+   "preserved": "the evidence file and the unverified summary",
+   "overwrote": false
+  },
+  {
+   "id": "PIPE-14",
+   "stage": "P7",
+   "failure": "FAIL verdict saved and verified",
+   "verdict": "FAIL",
+   "exit_code": 1,
+   "stderr_marker": null,
+   "preserved": "evidence + summary with fail_scope",
+   "overwrote": false
+  },
+  {
+   "id": "PIPE-15",
+   "stage": "P7",
+   "failure": "an uncaught exception escapes main",
+   "verdict": "BLOCKED",
+   "exit_code": 3,
+   "stderr_marker": "G0-JUDGE-ERROR",
+   "preserved": "whatever was saved",
+   "overwrote": false,
+   "note": "main maps any uncaught exception to 3, never to Python's default exit code 1 (the FAIL code)"
+  }
+ ]
+}
