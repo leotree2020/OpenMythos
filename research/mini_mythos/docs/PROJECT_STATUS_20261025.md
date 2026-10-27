@@ -1,5 +1,11 @@
 # Mini-Mythos / OpenMythos — 全项目研发进度（2026-10-25 更新版）
 
+## D1 CPU-003 E1-A 预注册与台架检查点（2026-10-27；本文件最新阶段进度，优先于下方 CPU-003 设计勘误-002 检查点）
+
+F3B-D1-A-CPU-003-E1A-PREP-001（仅预注册与台架实现，不执行）：E1-A 机器可读预注册 `a_predicate_003/prereg/e1_provability_table_v1.json` 已冻结并先于台架单独提交（`b2aec0f`；任何台架提交前做了两次仅限预注册的更正 `c02f201`、`f9d3cd8`；最终 SHA-256 `e6b7ca5c88de81dff01340c769bf409105cd2b91bf581987d710ca6c0280ec39`）；E1-A CPU 台架（GATED-SPAWN、独立谱系账本、fail-closed janitor、插桩、证据与清理检查）、测试与独立真值代码已编写；静态审计 0 违规；**测试与台架均未运行，E1-A 为 EXPERIMENT NOT TESTED**；E1-B/C/D 未冻结。
+
+**状态：**ChatGPT 静态审查 PENDING；Grok 状态不变（已完成，原始报告未入库）。下一条唯一指令：把预注册、台架、`git diff` 与 `STATIC_REVIEW.md` 提交 ChatGPT 静态审查；首次受控 CPU 运行须由负责人**另行**授权（运行器还需 `AUTHORIZATION_E1A_RUN.json`）。R3 SPEC FROZEN；真实 D1 NOT AUTHORIZED；NO A-B WINNER。
+
 ## D1 CPU-003 设计勘误-002 检查点（2026-10-27；本文件最新阶段进度，优先于下方 CPU-003 设计勘误检查点）
 
 F3B-D1-A-CPU-003-DESIGN-ERRATA-002：仅文档。(1) 歧义负例按候选机制预先分类（PROVABLE / UNPROVABLE / BENCH_UNVERIFIABLE，执行前冻结）；(2) Janitor 登记持久化竞态——GATED-SPAWN 创建—登记—释放协议，剩余风险 R1–R7 如实列出。三项实验仍 DESIGN ONLY / NOT TESTED；不选方案；建议阈值（0% / 5% / ≥ 50）未被批准。
