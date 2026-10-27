@@ -341,3 +341,7 @@ LOGIC-TEST-001-RERUN-001：修复执行守卫的 argv 缺陷（+1 行）后，�
 ## D1 CPU-003 E1-A G0 V5 首次真实执行 G0-V5-REAL-001（2026-10-27）
 
 HEAD `0cf75c1`（代码与 CPU 验收提交 `a4a8509` 相同）。执行前检查全部通过后创建单次授权 `OWNER-G0-REAL-001-20261027`（仅本地，未提交，已消耗）并 `python3 -B g0_run.py --execute` 执行一次：退出码 0，C01–C17 全部 PASS，一次 fork（子进程 298）、零信号、按 pid 回收、状态 0，用时 0.431 s，结案标记已发布，独立复判 PASS，无残留。结论 **G0 REAL-001: PASS**；G1/G2/G3 / BV / E1-A 仍未授权。证据 `a_predicate_003/evidence/g0_20261027_144311_479c54/`，结果 `a_predicate_003/g0_v5_real_001_results/`，检查点 `docs/F3B_D1_A_CPU_003_E1A_G0_V5_REAL_001_CHECKPOINT_20261027.md`。下一步：ChatGPT 与 Grok 审核真实证据。
+
+## D1 CPU-003 E1-A G1 负向门控设计 G1-NEGATIVE-GATE-DESIGN-001（2026-10-27）
+
+基线 `c3cf742`（G0 REAL-001 PASS）；分支 `d1-r3-a-cpu-003-e1a-g1-negative-gate-design-20261027`。仅设计：四个最小负向门控测试 ABORT / EOF / INVALID_BYTE / TIMEOUT（期望退出码 111/111/111/112，一子进程、一次 fork、零信号），逐测试的刺激、独立“未提前动作”证据、PID/starttime 身份、退出与 waitpid 回收证据、PASS/FAIL/BLOCKED 判据；独立入口 `gate_g1/g1_run.py`（不复用 SIGKILL 拆除的原 unittest，只读复用 G0 机制）；单次授权、首败即停、无信号、无按名称清理、结案沿用 P0–P7/K0–K7。设计 `a_predicate_003/gate_g1/E1A_GATE_G1_DESIGN.md`，检查点 `docs/F3B_D1_A_CPU_003_E1A_G1_NEGATIVE_GATE_DESIGN_CHECKPOINT_20261027.md`。状态：G1 DESIGN PREPARED / G1 REAL NOT TESTED / G1 EXECUTION NOT AUTHORIZED；等待 ChatGPT/Grok 审核。
