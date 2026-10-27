@@ -337,3 +337,7 @@ LOGIC-TEST-001-RERUN-001：修复执行守卫的 argv 缺陷（+1 行）后，�
 ## D1 CPU-003 E1-A G0 V5 CPU 测试最终收口（2026-10-27）
 
 基线 `40f3f5b`，修复与被测 HEAD `a4a8509`。三处边界：① `g0_run.main` 解析参数后的任何 SystemExit 一律退出码 3（argparse 的 0/2 保留）；② 环境信息改为 `os.uname()` 只读方式，哨兵先于一切安装；③ 运行器从 `.git` 独立验证 HEAD 与预期 SHA、冻结文件与 bench 哈希，并记录 15 个关键文件哈希，不符即 REFUSED/退出码 3。全量 216/216 ×2 PASS，哨兵 0 命中，负控制（SystemExit(1)、错误 SHA、缺失 SHA）有效。结果见 `a_predicate_003/g0_v5_closeout_test_results/`，检查点 `docs/F3B_D1_A_CPU_003_E1A_G0_V5_CLOSEOUT_CHECKPOINT_20261027.md`。状态：CPU TESTS PASS；REAL G0 NOT AUTHORIZED；等待 ChatGPT/Grok 验收。
+
+## D1 CPU-003 E1-A G0 V5 首次真实执行 G0-V5-REAL-001（2026-10-27）
+
+HEAD `0cf75c1`（代码与 CPU 验收提交 `a4a8509` 相同）。执行前检查全部通过后创建单次授权 `OWNER-G0-REAL-001-20261027`（仅本地，未提交，已消耗）并 `python3 -B g0_run.py --execute` 执行一次：退出码 0，C01–C17 全部 PASS，一次 fork（子进程 298）、零信号、按 pid 回收、状态 0，用时 0.431 s，结案标记已发布，独立复判 PASS，无残留。结论 **G0 REAL-001: PASS**；G1/G2/G3 / BV / E1-A 仍未授权。证据 `a_predicate_003/evidence/g0_20261027_144311_479c54/`，结果 `a_predicate_003/g0_v5_real_001_results/`，检查点 `docs/F3B_D1_A_CPU_003_E1A_G0_V5_REAL_001_CHECKPOINT_20261027.md`。下一步：ChatGPT 与 Grok 审核真实证据。
