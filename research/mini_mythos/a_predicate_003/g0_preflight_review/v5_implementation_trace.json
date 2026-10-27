@@ -1,0 +1,806 @@
+{
+ "trace": [
+  {
+   "requirement": "G0-C01 preflight_clean (V5: earlier runs closed by a valid marker; residue independent)",
+   "v5_source": "checks.G0-C01",
+   "implementation": [
+    "gate_g0/g0_judge.py:602",
+    "gate_g0/g0_run.py:318",
+    "gate_g0/g0_run.py:343"
+   ],
+   "tests": [
+    "tests/test_g0_interlock_and_judge.py:418",
+    "tests/test_g0_v5_closure_cases.py:361"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "G0-C02 authorization_and_bindings (V5 hash; '(V2)' = historical wording error)",
+   "v5_source": "checks.G0-C02",
+   "implementation": [
+    "gate_g0/g0_judge.py:609",
+    "gate_g0/g0_auth.py:39",
+    "gate_g0/g0_auth.py:119"
+   ],
+   "tests": [
+    "tests/test_g0_interlock_and_judge.py:63",
+    "tests/test_g0_interlock_and_judge.py:63"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "G0-C03 registration_sequence_and_integrity",
+   "v5_source": "checks.G0-C03",
+   "implementation": [
+    "gate_g0/g0_judge.py:473"
+   ],
+   "tests": [
+    "tests/test_g0_v5_cases.py:48"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "G0-C04 identity_registered_before_release (M-2)",
+   "v5_source": "checks.G0-C04",
+   "implementation": [
+    "gate_g0/g0_judge.py:620"
+   ],
+   "tests": [
+    "tests/test_g0_interlock_and_judge.py:365"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "G0-C05 no_action_before_release (M-2)",
+   "v5_source": "checks.G0-C05",
+   "implementation": [
+    "gate_g0/g0_judge.py:631"
+   ],
+   "tests": [
+    "tests/test_g0_interlock_and_judge.py:330"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "G0-C06 gate_descriptor_hygiene",
+   "v5_source": "checks.G0-C06",
+   "implementation": [
+    "gate_g0/g0_judge.py:650"
+   ],
+   "tests": [
+    "tests/test_g0_interlock_and_judge.py:342"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "G0-C07 release evidence",
+   "v5_source": "checks.G0-C07",
+   "implementation": [
+    "gate_g0/g0_judge.py:546"
+   ],
+   "tests": [
+    "tests/test_g0_v5_cases.py:294"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "G0-C08 exit_observed_unreaped",
+   "v5_source": "checks.G0-C08",
+   "implementation": [
+    "gate_g0/g0_judge.py:668"
+   ],
+   "tests": [
+    "tests/test_g0_interlock_and_judge.py:308"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "G0-C09 reap_by_specific_pid (polls return 0)",
+   "v5_source": "checks.G0-C09",
+   "implementation": [
+    "gate_g0/g0_judge.py:682"
+   ],
+   "tests": [
+    "tests/test_g0_interlock_and_judge.py:318"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "G0-C10 exit_status_zero",
+   "v5_source": "checks.G0-C10",
+   "implementation": [
+    "gate_g0/g0_judge.py:703"
+   ],
+   "tests": [
+    "tests/test_g0_interlock_and_judge.py:323"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "G0-C11 process_budget (M-2)",
+   "v5_source": "checks.G0-C11",
+   "implementation": [
+    "gate_g0/g0_judge.py:707"
+   ],
+   "tests": [
+    "tests/test_g0_interlock_and_judge.py:352"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "G0-C12 zero_signals",
+   "v5_source": "checks.G0-C12",
+   "implementation": [
+    "gate_g0/g0_judge.py:722"
+   ],
+   "tests": [
+    "tests/test_g0_interlock_and_judge.py:277"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "G0-C13 cleanup_and_no_residue (M-2)",
+   "v5_source": "checks.G0-C13",
+   "implementation": [
+    "gate_g0/g0_judge.py:729"
+   ],
+   "tests": [
+    "tests/test_g0_interlock_and_judge.py:370"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "G0-C14 observer_descriptor_baseline",
+   "v5_source": "checks.G0-C14",
+   "implementation": [
+    "gate_g0/g0_judge.py:754"
+   ],
+   "tests": [
+    "tests/test_g0_interlock_and_judge.py:382"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "G0-C15 time_bounds (runtime budget)",
+   "v5_source": "checks.G0-C15",
+   "implementation": [
+    "gate_g0/g0_judge.py:759",
+    "gate_g0/g0_run.py:449"
+   ],
+   "tests": [
+    "tests/test_g0_interlock_and_judge.py:410",
+    "tests/test_g0_v5_run_parts.py:114"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "G0-C16 evidence_complete (schema e1a-gate-g0-evidence-4)",
+   "v5_source": "checks.G0-C16",
+   "implementation": [
+    "gate_g0/g0_judge.py:765",
+    "gate_g0/g0_judge.py:233",
+    "gate_g0/g0_judge.py:197"
+   ],
+   "tests": [
+    "tests/test_g0_interlock_and_judge.py:223",
+    "tests/test_g0_interlock_and_judge.py:215"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "G0-C17 no_unexplained_error",
+   "v5_source": "checks.G0-C17",
+   "implementation": [
+    "gate_g0/g0_judge.py:773"
+   ],
+   "tests": [
+    "tests/test_g0_interlock_and_judge.py:292"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "C03-F1 (a)-(f) ledger violations",
+   "v5_source": "C03-F1",
+   "implementation": [
+    "gate_g0/g0_judge.py:357"
+   ],
+   "tests": [
+    "tests/test_g0_v5_cases.py:197"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "C03-F2 hole in the ledger (needs clean writer, no foreign lines)",
+   "v5_source": "C03-F2",
+   "implementation": [
+    "gate_g0/g0_judge.py:415",
+    "gate_g0/g0_judge.py:493"
+   ],
+   "tests": [
+    "tests/test_g0_v5_cases.py:202"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "C03-F3a fork proven, no valid INTENT",
+   "v5_source": "C03-F3a",
+   "implementation": [
+    "gate_g0/g0_judge.py:496"
+   ],
+   "tests": [
+    "tests/test_g0_v5_cases.py:209"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "C03-F3b release write ok, no valid REGISTERED/RELEASED",
+   "v5_source": "C03-F3b",
+   "implementation": [
+    "gate_g0/g0_judge.py:498"
+   ],
+   "tests": [
+    "tests/test_g0_v5_cases.py:216"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "C03-F3c gate pass proven despite append failure",
+   "v5_source": "C03-F3c",
+   "implementation": [
+    "gate_g0/g0_judge.py:500"
+   ],
+   "tests": [
+    "tests/test_g0_v5_cases.py:223",
+    "tests/test_g0_v5_cases.py:231"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "C03-F4 completed run with incomplete ledger",
+   "v5_source": "C03-F4",
+   "implementation": [
+    "gate_g0/g0_judge.py:505"
+   ],
+   "tests": [
+    "tests/test_g0_v5_cases.py:243"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "C03-U0/U2/U3/U5/U1/U4 and their order",
+   "v5_source": "C03-U*",
+   "implementation": [
+    "gate_g0/g0_judge.py:524",
+    "gate_g0/g0_judge.py:538"
+   ],
+   "tests": [
+    "tests/test_g0_v5_cases.py:253"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "C03 requirements table (writer_clean only where required)",
+   "v5_source": "rules.requirements",
+   "implementation": [
+    "gate_g0/g0_judge.py:492",
+    "gate_g0/g0_judge.py:317"
+   ],
+   "tests": [
+    "tests/test_g0_v5_cases.py:178"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "C03 definitions: release_attempt / release_write_ok / gate_passed / gate_pass_proven",
+   "v5_source": "rules.definitions",
+   "implementation": [
+    "gate_g0/g0_judge.py:437"
+   ],
+   "tests": [
+    "tests/test_g0_v5_cases.py:263"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "C03 disk_faithful on whole canonical records; fidelity report LOST/FOREIGN/ALTERED/PARSE/COUNT",
+   "v5_source": "F-20 / M-1",
+   "implementation": [
+    "gate_g0/g0_judge.py:273",
+    "gate_g0/g0_judge.py:69"
+   ],
+   "tests": [
+    "tests/test_g0_v5_cases.py:128",
+    "tests/test_g0_v5_cases.py:100"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "M-2: C04/C05/C11/C13 UNEVALUABLE when the durable copy is unfaithful",
+   "v5_source": "M-2",
+   "implementation": [
+    "gate_g0/g0_judge.py:29",
+    "gate_g0/g0_judge.py:792"
+   ],
+   "tests": [
+    "tests/test_g0_interlock_and_judge.py:441",
+    "tests/test_g0_v5_cases.py:111"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "FID-A..E (and FID-F) cases",
+   "v5_source": "F-20",
+   "implementation": [
+    "gate_g0/g0_judge.py:273"
+   ],
+   "tests": [
+    "tests/test_g0_v5_cases.py:111",
+    "tests/test_g0_v5_cases.py:122"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "C07-F1/F2/F3 and U1..U7",
+   "v5_source": "checks.G0-C07",
+   "implementation": [
+    "gate_g0/g0_judge.py:559",
+    "gate_g0/g0_judge.py:588"
+   ],
+   "tests": [
+    "tests/test_g0_v5_cases.py:318",
+    "tests/test_g0_v5_cases.py:314"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "67 V4 rule cases -> V5 judge",
+   "v5_source": "g0_v4_cases.json",
+   "implementation": [
+    "gate_g0/g0_judge.py:804"
+   ],
+   "tests": [
+    "tests/test_g0_v5_cases.py:48"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "verdict rule: FAIL > BLOCKED > PASS; exit codes 0/1/3",
+   "v5_source": "verdict_rule",
+   "implementation": [
+    "gate_g0/g0_judge.py:833",
+    "gate_g0/g0_judge.py:28"
+   ],
+   "tests": [
+    "tests/test_g0_interlock_and_judge.py:299",
+    "tests/test_g0_interlock_and_judge.py:284"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "FAIL scope text",
+   "v5_source": "verdict_policy",
+   "implementation": [
+    "gate_g0/g0_judge.py:31",
+    "gate_g0/g0_run.py:789"
+   ],
+   "tests": [
+    "tests/test_g0_interlock_and_judge.py:475"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "P0 construct: ledger + writer seq captured before the registry parse",
+   "v5_source": "evidence_pipeline P0 / LEDGER",
+   "implementation": [
+    "gate_g0/g0_run.py:610",
+    "gate_g0/g0_run.py:611"
+   ],
+   "tests": [
+    "tests/test_g0_v5_run_parts.py:288"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "P1 strict serialisation (no default=str)",
+   "v5_source": "evidence_pipeline P1",
+   "implementation": [
+    "gate_g0/g0_judge.py:64",
+    "gate_g0/g0_run.py:762"
+   ],
+   "tests": [
+    "tests/test_g0_v5_pipeline.py:385",
+    "tests/test_g0_interlock_and_judge.py:528"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "P2 exclusive write + fsync (+ directory fsync); never overwrite",
+   "v5_source": "evidence_pipeline P2",
+   "implementation": [
+    "gate_g0/g0_run.py:650",
+    "gate_g0/g0_run.py:642"
+   ],
+   "tests": [
+    "tests/test_g0_v5_pipeline.py:399",
+    "tests/test_g0_v5_pipeline.py:410"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "P3 read back, verify bytes + SHA-256, strict parse",
+   "v5_source": "evidence_pipeline P3",
+   "implementation": [
+    "gate_g0/g0_run.py:671",
+    "gate_g0/g0_run.py:697"
+   ],
+   "tests": [
+    "tests/test_g0_v5_pipeline.py:416",
+    "tests/test_g0_v5_pipeline.py:422"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "P4 validate types (once, on the read-back evidence)",
+   "v5_source": "evidence_pipeline P4",
+   "implementation": [
+    "gate_g0/g0_run.py:777"
+   ],
+   "tests": [
+    "tests/test_g0_v5_pipeline.py:429"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "P5 judge ONLY the read-back evidence",
+   "v5_source": "evidence_pipeline P5",
+   "implementation": [
+    "gate_g0/g0_run.py:780"
+   ],
+   "tests": [
+    "tests/test_g0_v5_pipeline.py:337",
+    "tests/test_g0_v5_pipeline.py:440"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "P6 save + verify the summary",
+   "v5_source": "evidence_pipeline P6",
+   "implementation": [
+    "gate_g0/g0_run.py:792"
+   ],
+   "tests": [
+    "tests/test_g0_v5_pipeline.py:446",
+    "tests/test_g0_v5_pipeline.py:452",
+    "tests/test_g0_v5_pipeline.py:457"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "P7 publish the marker, return the recorded exit code; uncaught exceptions -> 3",
+   "v5_source": "evidence_pipeline P7",
+   "implementation": [
+    "gate_g0/g0_run.py:725",
+    "gate_g0/g0_run.py:856"
+   ],
+   "tests": [
+    "tests/test_g0_v5_pipeline.py:463",
+    "tests/test_g0_v5_pipeline.py:468"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "stderr markers of the pipeline",
+   "v5_source": "evidence_pipeline",
+   "implementation": [
+    "gate_g0/g0_run.py:764",
+    "gate_g0/g0_run.py:794",
+    "gate_g0/g0_run.py:782"
+   ],
+   "tests": [
+    "tests/test_g0_v5_run_parts.py:332"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "closure marker g0_closed.json: schema, strict bytes, validation",
+   "v5_source": "closure.marker_schema",
+   "implementation": [
+    "gate_g0/g0_judge.py:840",
+    "gate_g0/g0_judge.py:874",
+    "gate_g0/g0_judge.py:888"
+   ],
+   "tests": [
+    "tests/test_g0_v5_closure_cases.py:154"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "K1 build / K2 temp file O_EXCL+fsync / K3 verify",
+   "v5_source": "closure.publication K1-K3",
+   "implementation": [
+    "gate_g0/g0_run.py:732",
+    "gate_g0/g0_run.py:735"
+   ],
+   "tests": [
+    "tests/test_g0_v5_pipeline.py:282"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "K4 os.link exclusive publication (EEXIST, no fallback)",
+   "v5_source": "closure.publication K4",
+   "implementation": [
+    "gate_g0/g0_run.py:741"
+   ],
+   "tests": [
+    "tests/test_g0_v5_pipeline.py:289",
+    "tests/test_g0_v5_pipeline.py:295"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "K5 directory fsync / K6 verify published name / K7 exit",
+   "v5_source": "closure.publication K5-K7",
+   "implementation": [
+    "gate_g0/g0_run.py:744",
+    "gate_g0/g0_run.py:746"
+   ],
+   "tests": [
+    "tests/test_g0_v5_pipeline.py:308",
+    "tests/test_g0_v5_pipeline.py:227"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "G0-CLOSE-UNPUBLISHED / G0-CLOSE-UNCONFIRMED and exit 3",
+   "v5_source": "closure.publication.failures",
+   "implementation": [
+    "gate_g0/g0_run.py:727",
+    "gate_g0/g0_run.py:727"
+   ],
+   "tests": [
+    "tests/test_g0_v5_pipeline.py:155"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "19 closure pipeline cases",
+   "v5_source": "g0_v5_cases.json pipeline_cases",
+   "implementation": [
+    "gate_g0/g0_run.py:758"
+   ],
+   "tests": [
+    "tests/test_g0_v5_pipeline.py:197",
+    "tests/test_g0_v5_pipeline.py:274"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "reporting rule (outcome = recorded verdict only when confirmed)",
+   "v5_source": "closure.publication.reporting_rule",
+   "implementation": [
+    "gate_g0/g0_run.py:755"
+   ],
+   "tests": [
+    "tests/test_g0_v5_pipeline.py:241"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "temporary name never deleted",
+   "v5_source": "closure.publication.no_delete",
+   "implementation": [
+    "gate_g0/g0_run.py:36"
+   ],
+   "tests": [
+    "tests/test_g0_interlock_and_judge.py:528",
+    "tests/test_g0_v5_pipeline.py:282"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "CL-01..CL-23 evaluated from the frozen rules (pure)",
+   "v5_source": "closure.preflight.rules",
+   "implementation": [
+    "gate_g0/g0_judge.py:947"
+   ],
+   "tests": [
+    "tests/test_g0_v5_closure_cases.py:227",
+    "tests/test_g0_v5_closure_cases.py:249"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "closure facts collected read-only from run directories",
+   "v5_source": "closure.preflight.facts",
+   "implementation": [
+    "gate_g0/g0_run.py:282",
+    "gate_g0/g0_run.py:270",
+    "gate_g0/g0_judge.py:920"
+   ],
+   "tests": [
+    "tests/test_g0_v5_closure_cases.py:313",
+    "tests/test_g0_v5_closure_cases.py:324"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "38 closure cases A..K",
+   "v5_source": "g0_v5_cases.json cases",
+   "implementation": [
+    "gate_g0/g0_run.py:318"
+   ],
+   "tests": [
+    "tests/test_g0_v5_closure_cases.py:302"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "summary existence never closes a run",
+   "v5_source": "closure.principle",
+   "implementation": [
+    "gate_g0/g0_run.py:300"
+   ],
+   "tests": [
+    "tests/test_g0_v5_closure_cases.py:243"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "closure marker is not process-exit proof (live scan + MANUAL independent)",
+   "v5_source": "CL-C / CL-20..22",
+   "implementation": [
+    "gate_g0/g0_run.py:321",
+    "gate_g0/g0_run.py:35"
+   ],
+   "tests": [
+    "tests/test_g0_v5_closure_cases.py:255"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "any recorded verdict may be closed, a manual disposition still blocks (CL-D)",
+   "v5_source": "CL-D",
+   "implementation": [
+    "gate_g0/g0_judge.py:947"
+   ],
+   "tests": [
+    "tests/test_g0_v5_closure_cases.py:263"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "F-8 bounded reap (non-blocking polls)",
+   "v5_source": "enforcement.reap_wait",
+   "implementation": [
+    "gate_g0/g0_run.py:549"
+   ],
+   "tests": [
+    "tests/test_g0_v5_run_parts.py:268",
+    "tests/test_g0_interlock_and_judge.py:501"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "F-9 total runtime budget",
+   "v5_source": "enforcement.total_budget",
+   "implementation": [
+    "gate_g0/g0_run.py:449",
+    "gate_g0/g0_run.py:520"
+   ],
+   "tests": [
+    "tests/test_g0_v5_run_parts.py:278",
+    "tests/test_g0_v5_run_parts.py:123"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "F-12 files only into a run directory created by this process",
+   "v5_source": "enforcement.summary_write",
+   "implementation": [
+    "gate_g0/g0_run.py:425",
+    "gate_g0/g0_run.py:422"
+   ],
+   "tests": [
+    "tests/test_g0_v5_run_parts.py:210"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "F-13 evidence root / consumption dir created-or-validated, run dir exclusive",
+   "v5_source": "enforcement.directories",
+   "implementation": [
+    "gate_g0/g0_run.py:391",
+    "gate_g0/g0_run.py:417"
+   ],
+   "tests": [
+    "tests/test_g0_v5_run_parts.py:187",
+    "tests/test_g0_v5_run_parts.py:224"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "F-18 release writes recorded as entries (before / after / result)",
+   "v5_source": "enforcement.release_evidence",
+   "implementation": [
+    "gate_g0/g0_run.py:141",
+    "gate_g0/g0_run.py:147"
+   ],
+   "tests": [
+    "tests/test_g0_v5_run_parts.py:33"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "single-use, V5-bound authorization; no authorization is ever written",
+   "v5_source": "g0_auth",
+   "implementation": [
+    "gate_g0/g0_auth.py:71",
+    "gate_g0/g0_auth.py:156"
+   ],
+   "tests": [
+    "tests/test_g0_interlock_and_judge.py:153",
+    "tests/test_g0_interlock_and_judge.py:126"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "version isolation (V1..V4 frozen bytes unchanged; V1..V4 bindings void)",
+   "v5_source": "CL-08",
+   "implementation": [
+    "gate_g0/g0_auth.py:41"
+   ],
+   "tests": [
+    "tests/test_g0_interlock_and_judge.py:140",
+    "tests/test_g0_interlock_and_judge.py:63"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  },
+  {
+   "requirement": "preflight never raises (BLOCKED, never FAIL)",
+   "v5_source": "checks.G0-C01",
+   "implementation": [
+    "gate_g0/g0_run.py:368"
+   ],
+   "tests": [
+    "tests/test_g0_v5_run_parts.py:245"
+   ],
+   "status": "IMPLEMENTED (code written); tests NOT TESTED"
+  }
+ ],
+ "test_inventory": {
+  "test_g0_interlock_and_judge.py": {
+   "TestInterlock": 19,
+   "TestJudge": 41,
+   "TestSourceConstraints": 8
+  },
+  "test_g0_v5_cases.py": {
+   "TestCaseTable": 6,
+   "TestFidelityAndM2": 8,
+   "TestC03Requirements": 13,
+   "TestC07Rules": 8
+  },
+  "test_g0_v5_closure_cases.py": {
+   "TestMarkerSchema": 8,
+   "TestClosureRulesAsFacts": 7,
+   "TestClosureCasesMaterialised": 9
+  },
+  "test_g0_v5_pipeline.py": {
+   "Harness": 0,
+   "FsyncFault": 0,
+   "Bomb": 0,
+   "TestClosurePipelineCases": 5,
+   "TestPublicationProperties": 8,
+   "TestV4PipelineCases": 16
+  },
+  "test_g0_v5_run_parts.py": {
+   "TestReleaseWriteGuard": 8,
+   "TestBudget": 3,
+   "TestDirectories": 6,
+   "TestPreflightShape": 2,
+   "TestRunStructure": 9
+  }
+ },
+ "bench_code_sha256": "b6f52a8c1f62cf94be2591c681dc42f10f5741a901fff968d66ed8b35425d3b0",
+ "findings": []
+}

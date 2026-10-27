@@ -325,3 +325,7 @@ LOGIC-TEST-001-RERUN-001：修复执行守卫的 argv 缺陷（+1 行）后，�
 ## D1 CPU-003 E1-A G0 V5 最小结案修订 G0-V5-CLOSEOUT-SPEC-001（2026-10-27）
 
 基线 `d127ec5`。新增并冻结 `gate_g0/g0_criteria_v5.json` + `E1A_GATE_G0_PREREG_V5.md`（V5 冻结提交 `8530ba5`，只含这三个文件；V1–V4 字节不变）。F-23：摘要文件存在不再等于结案；新增 `g0_closed.json`（临时文件 O_EXCL + fsync + 读回 + `os.link` 原子排他发布，目录 fsync，读回）；C01 对历史运行要求有效标记并绑定经哈希核对的摘要与证据，进程残留独立判定。C02–C17 与 DD-1…DD-5 不变（仅 C01 MODIFIED）。38 个闭环案例（A–H）、19 个 P6/P7 失败案例、7 个崩溃点；只读静态检查 0 不一致。未修改任何代码 / 测试 / 既有冻结文件；未运行任何测试或 G0。状态：G0 V5 SPEC FROZEN / IMPLEMENTATION NOT AUTHORIZED / PURE TESTS NOT TESTED / REAL G0 NOT AUTHORIZED。检查点：`research/mini_mythos/docs/F3B_D1_A_CPU_003_E1A_G0_V5_CLOSEOUT_SPEC_CHECKPOINT_20261027.md`。
+
+## D1 CPU-003 E1-A G0 V5 工具实现 G0-V5-IMPLEMENTATION-001（2026-10-27）
+
+基线 `13043b9`；独立实现分支 `d1-r3-a-cpu-003-e1a-g0-v5-impl-20261027`。授权范围仅为编码与静态审核：`g0_auth.py`（V5 绑定与冻结哈希表）、`g0_judge.py`（C01–C17、C03/C07/C16 规则、M-2、结案标记与 CL-01…CL-23 求值）、`g0_run.py`（F-8 有界回收、F-9 总预算、F-12/F-13 目录、F-18 放行写入记录、P0–P7 流水线、K0–K7 原子排他结案发布）已按冻结 V5 写完；184 个纯逻辑测试方法（67 + 38 + 19 + 15 案例与结构 / 守卫 / 预算 / 目录测试）已写但**未运行（NOT TESTED）**。静态审计：64 行需求对应表 0 未找到，AST 审计 0 违规，`bench/`、V1–V5、E1-A 预注册未变。未解决：B-1（消耗目录两句冻结文字）、B-2（CE-E1 案例标签）、B-3（真实环境行为）、B-4（测试未运行）。状态：G0 V5 IMPLEMENTATION COMPLETE (CODE WRITTEN) / STATIC AUDIT RECORDED / PURE TESTS NOT TESTED / REAL G0 NOT AUTHORIZED。检查点：`research/mini_mythos/docs/F3B_D1_A_CPU_003_E1A_G0_V5_IMPLEMENTATION_CHECKPOINT_20261027.md`。
