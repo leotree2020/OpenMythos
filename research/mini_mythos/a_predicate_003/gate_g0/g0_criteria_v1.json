@@ -1,0 +1,158 @@
+{
+ "criteria_id": "E1A-GATE-G0-CRITERIA-V1",
+ "schema_version": "e1a-gate-g0-criteria-1",
+ "stage": "G0",
+ "date": "2026-10-27",
+ "base_commit": "a7ce70fb71134d1098de7a50ed475b1b1518e64b",
+ "scope": "first minimal controlled Linux process-gate test: ONE sacrificial child, protocol INTENT -> fork -> GATE -> REGISTERED -> RELEASE -> EXIT -> REAP, zero signals",
+ "not_in_scope": [
+  "G1 negative gate tests",
+  "G2 identity/descendant tests",
+  "G3 recovery and fault injection",
+  "BV-1..BV-10",
+  "E1-A cells",
+  "E1-B/C/D",
+  "E2",
+  "E3"
+ ],
+ "status": "FROZEN_AT_COMMIT (the commit that adds this file) / G0 NOT TESTED",
+ "limits": {
+  "max_runs_per_authorization": 1,
+  "max_forks": 1,
+  "max_concurrent_children": 1,
+  "max_descendants_of_child": 0,
+  "max_signals": 0,
+  "max_seconds": 20.0,
+  "t_gate_max_s": 5.0,
+  "hold_before_release_s": 0.3,
+  "ready_deadline_s": 5.0,
+  "exit_deadline_s": 5.0,
+  "reap_deadline_s": 5.0,
+  "python": "3.13.16",
+  "cpu_only": true
+ },
+ "protocol_sequence": [
+  "RUN_START",
+  "INTENT",
+  "FORKED",
+  "REGISTERED",
+  "RELEASED",
+  "READY",
+  "EXIT_MESSAGE",
+  "EXITED_UNREAPED",
+  "REAPED",
+  "PROC_GONE",
+  "DEAD",
+  "RUN_END"
+ ],
+ "snapshots": [
+  "S0_before_fork",
+  "S1_held_registered_unreleased",
+  "S2_ready_after_release",
+  "S3_exited_unreaped",
+  "S4_reaped",
+  "S5_final"
+ ],
+ "checks": {
+  "G0-C01": {
+   "name": "preflight_clean",
+   "on_fail": "BLOCKED",
+   "text": "no unresolved earlier run (no MANUAL_DISPOSITION_REQUIRED.json, no earlier g0 run directory without a closed summary), no live process carrying a bench token other than the ancestors of this run, observer has 0 children, /proc enumeration complete, run id unique"
+  },
+  "G0-C02": {
+   "name": "authorization_and_bindings",
+   "on_fail": "BLOCKED",
+   "text": "a valid single-use G0 authorization was consumed; git head, E1-A prereg, G0 criteria, G0 prereg text, bench code and G0 code hashes equal the authorized values at the start AND again at the end"
+  },
+  "G0-C03": {
+   "name": "registration_sequence_and_integrity",
+   "on_fail": "FAIL",
+   "text": "REG shows RUN_START first, then for the single node INTENT < FORKED < REGISTERED < RELEASED < DEAD, RUN_END last and unique; registry.integrity_issues() is empty"
+  },
+  "G0-C04": {
+   "name": "identity_registered_before_release",
+   "on_fail": "FAIL",
+   "text": "REGISTERED pid/starttime equal the /proc fingerprint read while the child was held; the child's ppid is the observer; pid equals the pid returned by fork"
+  },
+  "G0-C05": {
+   "name": "no_action_before_release",
+   "on_fail": "FAIL",
+   "text": "while REGISTERED but unreleased the child is blocked (state S), sent no message, kept the observer's sid/pgrp; its FIRST_ACTION is not earlier than the RELEASED record"
+  },
+  "G0-C06": {
+   "name": "gate_descriptor_hygiene",
+   "on_fail": "FAIL",
+   "text": "held: child descriptors are a subset of {0,1,2,gate read end,control socket}, the gate pipe appears exactly once and read-only (no write-capable descriptor); after release: no descriptor refers to the gate pipe"
+  },
+  "G0-C07": {
+   "name": "release_only_after_registration",
+   "on_fail": "FAIL",
+   "text": "monotonic times satisfy REGISTERED <= RELEASED <= release byte written <= child FIRST_ACTION"
+  },
+  "G0-C08": {
+   "name": "exit_observed_unreaped",
+   "on_fail": "BLOCKED",
+   "text": "after the EXIT message and before any wait call the child was observed exited-but-unreaped: pidfd readable and /proc state Z with ppid = observer"
+  },
+  "G0-C09": {
+   "name": "reap_by_specific_pid",
+   "on_fail": "BLOCKED",
+   "text": "waitpid on that specific pid returned that pid; afterwards /proc/<pid> is absent (or carries a different starttime); times EXITED_UNREAPED < REAPED <= PROC_GONE"
+  },
+  "G0-C10": {
+   "name": "exit_status_zero",
+   "on_fail": "FAIL",
+   "text": "the reaped exit code is 0 (normal exit after the EXIT message)"
+  },
+  "G0-C11": {
+   "name": "process_budget",
+   "on_fail": "FAIL",
+   "text": "exactly one fork in the whole run; at every snapshot the observer has at most one child and the child has no child; the registry contains exactly one node and no ticket"
+  },
+  "G0-C12": {
+   "name": "zero_signals",
+   "on_fail": "FAIL",
+   "text": "no kill/killpg/pidfd_send_signal/raise_signal/pthread_kill/exec/spawn/subprocess call was attempted (guard violations empty) and every cleanup kill entry is 'already_exited'"
+  },
+  "G0-C13": {
+   "name": "cleanup_and_no_residue",
+   "on_fail": "BLOCKED",
+   "text": "final cleanup ok, run set consistent, DEAD record with basis present, observer has no child, diagnostic token scan finds no unregistered live process, no snapshot reported incomplete /proc enumeration, RUN_END confirmed"
+  },
+  "G0-C14": {
+   "name": "observer_descriptor_baseline",
+   "on_fail": "BLOCKED",
+   "text": "the observer's open descriptor count at S5 equals S0"
+  },
+  "G0-C15": {
+   "name": "time_bounds",
+   "on_fail": "BLOCKED",
+   "text": "total duration <= max_seconds and no phase deadline was hit"
+  },
+  "G0-C16": {
+   "name": "evidence_complete",
+   "on_fail": "BLOCKED",
+   "text": "all snapshots, events, REG records and bindings required by this file are present in the evidence"
+  },
+  "G0-C17": {
+   "name": "no_unexplained_error",
+   "on_fail": "BLOCKED",
+   "text": "no exception, no abort reason, exit-code policy consistent with the verdict"
+  }
+ },
+ "verdict_rule": [
+  "A check whose evidence is missing or unreadable is UNEVALUABLE and counts as BLOCKED, whatever its on_fail class (FAIL requires evidence).",
+  "1. any evaluable check that failed with on_fail FAIL -> experiment verdict FAIL (a confirmed protocol or safety violation takes precedence over bench-level problems)",
+  "2. else any failed or unevaluable check -> BLOCKED",
+  "3. else PASS",
+  "NOT TESTED = the run did not start. An exit code of 0 never replaces the verdict."
+ ],
+ "exit_codes": {
+  "PASS": 0,
+  "FAIL": 1,
+  "BLOCKED": 3
+ },
+ "residue_policy": "no signal is ever sent in G0; if the child is still alive after the deadlines the run is BLOCKED, MANUAL_DISPOSITION_REQUIRED.json lists its verified identity, the child ends by itself (EXIT message / control EOF when the observer exits / T_NODE_MAX), a person decides",
+ "amendment_policy": "no change after the first execution of G0; a correction is a new file g0_criteria_v2.json and the earlier file and every result obtained under it are kept",
+ "meaning_of_pass": "PASS means: one gated sacrificial child was created, registered, released, exited and was reaped in the order specified, without signals, extra processes or residue, on this kernel and this Python. It is NOT evidence for G1/G2/G3, BV, EPIPE revocation proofs, ticket descendants, janitor recovery, observer death, or any E1-A cell."
+}
