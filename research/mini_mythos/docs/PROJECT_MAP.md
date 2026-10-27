@@ -261,3 +261,7 @@ Claude Code 接替 Grok 担任主要研发工程师（项目负责人 2026-10-26
 ## D1 CPU-003 安全监督器设计（2026-10-27）
 
 分支 `d1-r3-a-cpu-003-design-20261027`（基线 `6bd8c53`）。新增 `docs/F3B_D1_A_CPU_003_DESIGN_PLAN_20261027.md`、`..._ARCHITECTURE_OPTIONS_...`、`..._CHECKPOINT_...`（仅文档；实验均 NOT TESTED）。CPU-001 / CPU-002 原始记录位置不变（见各自检查点）。
+
+## D1 CPU-003 设计勘误（2026-10-27）
+
+分支 `d1-r3-a-cpu-003-design-20261027`。新增 `docs/F3B_D1_A_CPU_003_DESIGN_ERRATA_001_20261027.md`；就地修订 CPU-003 设计计划与架构候选文档；追加 CPU-003 检查点的勘误后状态。仅文档；实验均 NOT TESTED；Grok 状态：已完成（负责人提供概括，原始报告未入库）。

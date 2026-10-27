@@ -2,6 +2,8 @@
 
 **状态：`DESIGN ONLY / ALL EXPERIMENTS NOT TESTED / NO FINAL SELECTION / R3 SPEC FROZEN / REAL D1 NOT AUTHORIZED / NO A-B WINNER`**
 
+**勘误（ERRATA-001，2026-10-27）：**本文件按 `F3B_D1_A_CPU_003_DESIGN_ERRATA_001_20261027.md` 做了语义勘误：(1) Grok 状态更新（见第 0 节）；(2) 已核对第 4.1 节的两个验收条件与第 2 节的 `UNKNOWN` 含义，与勘误 ERRATA-01/04 一致（无需改文）——**机制返回的 `UNKNOWN` / `BLOCKED` 是协议状态，不等于实验判定**；(3) 归属真值来自台架创建时的谱系账本，`pidfd` 只证明单个进程的身份稳定性与生命周期（ERRATA-02；已就地修正 O-6 一行）；(4) 清理责任与禁止项见勘误 ERRATA-03。候选清单本身不变。
+
 本文件只整理**候选**，不选择最终方案，不修改冻结 R3，不把 CA-S / CB-S / CA-P 或任何下列设计写入规范。所有「优点 / 缺点」要么来自已提交的 CPU-001 / CPU-002 实验（标明出处），要么来自对 Linux / CPython 文档与源码的阅读（标明「源码阅读，NOT TESTED」），要么是设计推断（标明「推断」）。凡需要运行实验才能回答的，一律 `NOT TESTED`。
 
 ## 0. 证据来源与诚实声明
@@ -11,9 +13,9 @@
 | CPU-001 | 1860 次运行；CA 365/365、CB 365/365 PASS，无胜者；冻结 R3 的 A 条件 (3) 对僵尸语义有歧义 | Git：`docs/F3B_D1_A_CPU_001_REPORT_20261027.md`、检查点、`r3_cpu_probes/a_predicate/results/…` |
 | CPU-002 | 430 次运行；E1 原臂在前提被违反时误杀 / 误回收（40/40 FAIL），严格变体零违反但有 UNKNOWN 代价；E2 CA 先回收则 Popen 静默得 0；CB 在 T5 后同样；E3 CB 遗漏 T5 滞留僵尸、CA 监督器崩溃后丢失内存状态 | Git：`docs/F3B_D1_A_CPU_002_*.md`、`r3_cpu_probes/a_predicate_002/…`（提交 `8bd5ff5`、证据补正 `6bd8c53`） |
 | ChatGPT 对 CPU-002 的独立审核 | CONDITIONAL ACCEPT；三项原则（见下） | **只存在于对话中，没有保存为仓库文件** |
-| Grok 的交叉审核 | 由项目负责人提供文字；本会话只收到负责人对**三项共同原则**的概括（指令第二节），**没有收到原文** | **仓库中没有 Grok 审核文件**（已核对：仓库里与 Grok 相关的只有各检查点里的 `DEFERRED` 标注） |
+| Grok 对 CPU-002 的交叉审核 | **状态：已完成（GROK CROSS-REVIEW COMPLETED — USER-PROVIDED SUMMARY / ORIGINAL REPORT NOT ARCHIVED）。**审核信息由项目负责人提供；本会话只收到负责人对**三项共同原则**的概括，**没有收到原文**。未声称 Grok 独立重跑了 CPU-001 / CPU-002 | **仓库中没有 Grok 审核文件**（旧版本此处写的是 DEFERRED，已由勘误 ERRATA-001 更正；历史见提交 `6c8bab5`） |
 
-ChatGPT 与 Grok 在以下三项原则上基本一致（依据负责人指令第二节的转述）：(P1) 目标进程归属必须有**强制验证**的安全前提；(P2) 一个子进程的退出状态只能由**明确指定的责任方**消费；(P3) 监督器崩溃后的遗留进程与退出状态必须有**明确的恢复责任**。**除此之外，我没有两位审核者的逐项立场，本文件第 5 节列出的「技术分歧」是设计者识别出的待决问题，不是对某位审核者观点的转述。**
+ChatGPT 与 Grok 在以下三项原则上基本一致（依据负责人指令的转述；Grok 审核已完成，但原始报告未入库）：(P1) 目标进程归属必须有**强制验证**的安全前提；(P2) 一个子进程的退出状态只能由**明确指定的责任方**消费；(P3) 监督器崩溃后的遗留进程与退出状态必须有**明确的恢复责任**。**除此之外，我没有两位审核者的逐项立场，本文件第 5 节列出的「技术分歧」是设计者识别出的待决问题，不是对某位审核者观点的转述。**
 
 ## 1. 问题分解：三个责任问题
 
@@ -41,7 +43,7 @@ ChatGPT 与 Grok 在以下三项原则上基本一致（依据负责人指令第
 | O-3 | **专用监督器进程**（推断） | 监督器是一个极简、只做监督的新进程（`exec` 出的小程序），不加载可能偷偷 `fork` 的库；使「没有其它子进程」从人工声明变为**可由结构保证 + S0 检查验证**的性质 | 新；NOT TESTED；与 O-2 互补 |
 | O-4 | cgroup 成员关系 | 每阶段放进专属 cgroup，成员关系即归属（含 `setsid()` 后代、孤儿）；cgroup v2 还有 `cgroup.kill` | 文档阅读。**本环境只有 cgroup v1 控制器（`/sys/fs/cgroup/cpu` 等），没有 v2 的 `cgroup.controllers`**；需要委派 / 权限；NOT TESTED，环境相关 |
 | O-5 | 进程事件流（netlink proc connector） | 订阅内核的 fork / exit / setsid 事件，得到近乎完整的谱系，可发现「轮询间隔内诞生并孤立」的后代 | 文档阅读。本机内核配置有 `CONFIG_CONNECTOR`、`CONFIG_PROC_EVENTS`；通常需要特权（`CAP_NET_ADMIN`）；事件缓冲溢出（`ENOBUFS`）会丢事件 → 必须降级为 `UNKNOWN`；NOT TESTED |
-| O-6 | 仅持有 pidfd 的跟踪 | 监督器在创建每个直接子进程时同时 `pidfd_open`，所有信号与等待经 pidfd；后代用「发现时立即 `pidfd_open` + 校验指纹」 | CPU-002 已验证 pidfd 信号语义；谱系发现仍需 O-2/O-4/O-5 之一 |
+| O-6 | 仅持有 pidfd 的跟踪 | 监督器在创建每个直接子进程时同时 `pidfd_open`，所有信号与等待经 pidfd；后代用「发现时立即 `pidfd_open` + 校验指纹」 | CPU-002 已验证 pidfd 信号语义。**`pidfd` 只稳定单个进程的身份并观察其生命周期，不能证明血缘 / 归属**（ERRATA-02）；谱系发现仍需 O-2/O-4/O-5 之一 |
 | O-7 | PID 命名空间隔离（`unshare`） | 阶段在独立 PID ns，内部全是阶段成员 | 文档阅读；需要特权、改变 `/proc` 视图与指纹语义；一般过重；NOT TESTED |
 
 ### 2.2 比较（设计层面，非结论）

@@ -2,6 +2,8 @@
 
 **状态：`CPU-003 DESIGN COMPLETE / EXPERIMENTS NOT TESTED / DESIGN ONLY / NOT AUTHORIZED TO EXECUTE / R3 SPEC FROZEN / REAL D1 NOT AUTHORIZED / NO A-B WINNER`**
 
+**勘误（F3B-D1-A-CPU-003-DESIGN-ERRATA-001，2026-10-27）：**本文件已按 `F3B_D1_A_CPU_003_DESIGN_ERRATA_001_20261027.md` 就地修订（ERRATA-01 `UNKNOWN` 率验收、ERRATA-02 独立真值、ERRATA-03 安全清理、ERRATA-04 机制状态与实验判定分层；第 10 节列出每处改动）。与本文件旧文冲突之处，以勘误文件为准。历史版本见提交 `6c8bab5`。
+
 本文件只**设计**实验、预先登记独立真值与验收判据。**不执行任何实验**，不启动任何进程故障注入；三项实验（E1 归属、E2 唯一回收者、E3 崩溃恢复）的状态均为 **DESIGN ONLY / NOT TESTED**。判据一经提交，运行后不得为得到 PASS 而修改；若判据本身有错，只能追加带日期的修订记录并保留原判据与原结果（沿用 CPU-002 的做法）。
 
 候选设计、依赖与优缺点见 `F3B_D1_A_CPU_003_ARCHITECTURE_OPTIONS_20261027.md`；Git 状态、证据来源与权限边界见 `F3B_D1_A_CPU_003_CHECKPOINT_20261027.md`。
@@ -30,21 +32,44 @@ Linux microVM；设计时测得：内核 `6.18.44-fc-v165`、Python 3.13.16（�
 
 执行前登记：计划提交 SHA、代码提交 SHA、工作树干净；每个结果分片记录 `git_commit` 与 `git_status_short`（CPU-002 运行时存在未跟踪文件的教训：先把所有代码提交再运行）。设计阶段不产生运行 SHA。
 
-### 2.3 COMMON-ORACLE（独立真值原则）
+### 2.3 COMMON-ORACLE（独立真值原则；ERRATA-02 修订）
 
-真值只来自**台架自建拓扑**与**独立观察手段**，绝不来自被测机制的输出：节点自报 `pid/ppid/sid/pgrp/starttime`（已知拓扑）；`pidfd` 可读性 + `/proc` 状态 + 对子进程的 `waitid(WNOWAIT)`（两个独立来源必须一致，否则 BLOCKED）；退出码由节点自身声明、信号由台架施加。E3 另设**台架观察者**进程，故障前对所有节点持有 `pidfd`。
+真值只来自**台架**，绝不来自被测机制的输出，且分成两类来源，**不得混用**：
 
-### 2.4 COMMON-STATES（结果状态与证据类型）
+1. **生命周期 / 身份稳定性真值：**`pidfd` 可读性 + `/proc` 状态 + 对子进程的 `waitid(WNOWAIT)`（两个独立来源必须一致，否则台架 BLOCKED）。`pidfd` 只说明"这个句柄仍指向同一个进程、它是否已退出"，**不能证明血缘 / 归属**。
+2. **归属真值：**台架在**创建时**建立的**独立谱系账本**——节点 ID、创建者、角色（`stage` / `aux` / `aux_family` / `stranger`）、创建序号、出生时的 `(pid, starttime)`、声明的后续操作（`setsid`、双重 fork、退出）。账本由台架观察者持有；**被测监督器必须"盲"**：它作为独立进程启动，`argv`、环境、打开的文件描述符里都没有账本或角色；节点规格走控制通道，**不再放进 `argv`**（CPU-001 / CPU-002 的节点把含节点名的规格 JSON 放在命令行里；被测臂只读 `/proc/<pid>/stat`，不读 `cmdline`，已有结论不受影响，但未来要求更严）；盲性条件启动前由台架断言，不成立则该试验台架 BLOCKED。同 uid 下这是**构造性**的盲，不是安全边界。
 
-状态：`PASS` / `FAIL` / `BLOCKED`（台架无法建立前置，或机制按设计拒绝继续且该拒绝正是预期）/ `NOT TESTED`。每条记录带 `evidence_kind ∈ {REAL_KERNEL, SIMULATED, INSTRUMENTED}`：真实进程与真实系统调用 / 注入的故障（`/proc` 错误、替换 pid、`ECHILD`）/ 对标准库调用的计数。**不可构造的内核拓扑不得靠伪造声称漏洞复现。**工具正确性（单元测试）与规则判定分开记录。
+后代执行 `setsid()`、双重 fork、父进程退出之后，仍**按创建谱系**判定其真实归属。对被测机制确实无法区分的进程，必须允许其返回 `UNKNOWN`。区分三种情形：**台架已知真相且机制能证明**（期望确定答案）/ **台架已知真相但机制无法证明**（期望 `UNKNOWN`，给出确定答案即 FAIL）/ **台架自己无法建立真值**（该试验台架 BLOCKED）。`/proc` 字段相同（`ppid`、`comm`、会话、`starttime` 顺序等）**不等于**已证明身份 / 归属相同。
+
+E3 另设**台架观察者**进程（不属于任何被测机制），故障前对所有节点持有 `pidfd` 并保存登记；退出码由节点声明、信号由台架施加。
+
+### 2.4 COMMON-STATES（机制状态 vs 实验判定；ERRATA-04 修订）
+
+**两个层次，不得混用：**
+
+- **机制协议状态**（被测机制产生）：`ALIVE` / `EXITED` / `UNKNOWN` / `BLOCKED`（含 S0 原因码）等。
+- **实验验收判定**（台架按预注册期望给出）：`PASS` / `FAIL` / `BLOCKED` / `NOT TESTED`。**实验 `BLOCKED` 只表示台架层无法建立或完成预注册场景**（拓扑无法构造、两个独立真值来源不一致、真值不可得、工具异常、清理失败、设施不可用）；**机制返回 `BLOCKED` 不会自动成为实验 `BLOCKED`**——符合预期则实验判 `PASS`。`NOT TESTED` = 尚未运行。
+
+典型映射：错误配置被 S0 正确拒绝 → 机制 `BLOCKED`、实验 **PASS**；错误配置被接受并执行危险操作 → 实验 **FAIL**；身份歧义负例正确返回 `UNKNOWN` → 实验 **PASS**；明确目标被错误判为 `EXITED` → 实验 **FAIL**；台架无法构造场景 → 实验 **BLOCKED**；场景未运行 → **NOT TESTED**。完整表见勘误文件第 4 节。
+
+每条记录带 `evidence_kind ∈ {REAL_KERNEL, SIMULATED, INSTRUMENTED}`：真实进程与真实系统调用 / 注入的故障（`/proc` 错误、替换 pid、`ECHILD`）/ 对标准库调用的计数。**不可构造的内核拓扑不得靠伪造声称漏洞复现。**工具正确性（单元测试）与规则判定分开记录。
 
 ### 2.5 COMMON-SAFETY（安全边界）
 
-仅创建带运行令牌的牺牲进程；每个用例在**专用新会话**（台架 fork 的会话领头）中运行；只对已登记且指纹匹配的 pid 发信号，经 `pidfd`；回收只针对登记 pid；禁止 `pkill`、按名称匹配、`waitpid(-1)`、`P_ALL`；总子进程数 ≤ 400，线程数 ≤ 16，僵尸批量 ≤ 300；不触碰 pid 1、终端、编辑器、其它用户或系统服务；每个用例有短超时与 `finally` 清理；身份无法确认就不发信号并报告 BLOCKED；特权设施（proc connector、cgroup）仅做只读 / 可行性探针，不修改系统配置。
+仅创建带运行令牌的牺牲进程；每个用例在**专用新会话**（台架 fork 的会话领头）中运行；只对已登记且指纹匹配的 pid 发信号，经 `pidfd`；回收只针对登记 pid；禁止 `pkill`、按名称匹配、`waitpid(-1)`、`P_ALL`；总子进程数 ≤ 400，线程数 ≤ 16，僵尸批量 ≤ 300；不触碰 pid 1、终端、编辑器、其它用户或系统服务；每个用例有短超时与 `finally` 清理；身份无法确认就不发信号并（台架层）报告 BLOCKED；**清理动作同样受本节约束并计入误信号统计**；特权设施（proc connector、cgroup）仅做只读 / 可行性探针，不修改系统配置。
 
-### 2.6 COMMON-CLEANUP（清理梯度）
+### 2.6 COMMON-CLEANUP（清理规则；ERRATA-03 替换原文）
 
-按顺序：(1) 台架观察者按 `pidfd` + 指纹逐个杀死仍存活的牺牲进程并 `waitpid` 具体 pid；(2) 兜底扫描——进程命令行含运行令牌、且 `starttime ≥ 运行起点`，核对后杀死；(3) 残留检查：节点登记表、令牌扫描、监督器的子进程列表均为空；(4) 删除临时目录。此梯度在被测的监护 / 恢复组件失效（E3 F07）时仍须成立。**无法清理干净 → 该运行 BLOCKED 并报告，不继续下一运行。**
+原文第 (2) 步"按命令行令牌 + `starttime ≥ 运行起点` 扫描后杀死"**作废**：命令行令牌可伪造 / 碰撞，不能授权发信号。新规则：
+
+1. **创建时登记：**台架观察者在创建每个牺牲进程时保存 `{run_id, node_id, creator, pid, starttime, pidfd}`；孙代进程由其创建节点在行动之前自报 `(pid, starttime)`，观察者**先 `pidfd_open` 再核对 `starttime`**；无法登记的进程记为 `UNREGISTRABLE`，**不得对其发信号**。
+2. **清理只经登记：**对存活的牺牲进程，先重新核对登记的 `(pid, starttime)` 与 `/proc` 一致，再 `pidfd_send_signal(SIGKILL)`；回收只用具体 pid 的 `waitpid`（仅自己的子进程）。
+3. **命令行令牌只做诊断：**扫描 `/proc/*/cmdline` 仅产生残留报告，**绝不授权发信号**。
+4. **禁止：**`pkill`、仅按名称匹配、无法验证身份的进程组清理、`kill -- -pgid`、清理性的 `killpg`（CPU-002 的 `run_in_fresh_session` 曾对台架自己创建的会话领头的进程组用 `killpg`，CPU-003 不再允许）。
+5. **身份无法确认 → 停止自动发信号：**记录残留（pid、`starttime`、`ppid`、状态、`cmdline` 片段），该试验**台架 BLOCKED**，**不开始下一个试验**。
+6. **最终清理责任（含 E3 中监督器与 Watchdog 同时失效）：**台架观察者独立于所有被测组件，是最终清理者，其登记同时持久化到只有它写的追加文件；若观察者也失效，由外层运行脚本 **janitor** 读取该文件，对每条记录先 `pidfd_open(pid)` 再核对 `starttime`，一致才发 SIGKILL，不一致则不发信号、记录并 BLOCKED。janitor 之外没有自动层，其失效为**残余风险**，须在报告中写明。
+7. **失败留痕：**任何自动清理失败都写入诊断文件（登记、验证结果、残留）并保留，**不得悄悄继续**。
+8. 清理后做残留检查（登记表、令牌扫描结果仅供对照、监督器的子进程列表），删除临时目录。
 
 ### 2.7 COMMON-REPS（重复档位）
 
@@ -79,7 +104,7 @@ Linux microVM；设计时测得：内核 `6.18.44-fc-v165`、Python 3.13.16（�
 **需要负责人决定 / 批准（本计划不替负责人决定）：**
 
 1. 每个 Stage 的执行授权（建议逐 Stage 单独授权）。
-2. `UNKNOWN` 率阈值（E1-D 给出度量，建议名义负载 W1、W2 要求 0%）。
+2. `UNKNOWN` 率阈值：**W1、W2 目标 0% 是 ChatGPT 建议的预注册门槛，需负责人在执行前正式批准**（度量定义见勘误 ERRATA-01：N 类 `UNKNOWN_rate = U-unexp / (计划试验数 − 台架 BLOCKED)`；负例正确 `UNKNOWN` 计 PASS；安全性与可用性分开报告）；5% 台架 BLOCKED 上限与每单元 ≥ 50 个试验同为提议值。
 3. 支持的 Python 版本范围（本环境 3.11 / 3.12 / 3.13；3.9 / 3.10 / 3.14 无法验证）。
 4. 是否允许特权设施（proc connector、cgroup）作为证据源，及"仅 root 环境"的风险是否可接受。
 5. 恢复范围：自动恢复（Watchdog / 账本）还是 `BLOCKED` + 清理工具；Watchdog 是否在 D1 范围内。
@@ -112,14 +137,15 @@ Linux microVM；设计时测得：内核 `6.18.44-fc-v165`、Python 3.13.16（�
 | **Environment** | COMMON-ENV（第 2.1 节）；本卡补充：需要 `os.setsid`、`os.getsid`、`prctl`、`pidfd`；Python 3.13.16 为主。 |
 | **Git SHA** | COMMON-GIT（第 2.2 节）：执行前登记「代码提交 SHA + 干净工作树」，每个分片记录 `git_commit` / `git_status_short`。**当前：未执行，无运行 SHA。**设计基线 = 本设计分支提交（见检查点）。 |
 | **Inputs / Topology** | 监督器在专用新会话里运行（台架 `run_in_fresh_session`）。阶段根变体：(a) 正确：新会话领头，`sid==pgid==pid` 且 `sid != 监督器 sid`；(b) 根与监督器同会话；(c) 根自成进程组但同会话（`setpgid(0,0)`，无 `setsid`）；(d) 根不是进程组领头；(e) S0 时根已带未登记子进程；(f) 登记后指纹变化（`starttime` 被注入改动）；(g) 监督器的 `SIGCHLD` 处置为 `SIG_IGN`（经 `exec` 继承，真实内核行为）；(h) 子收割者设置失败 / 读回 0（SIMULATED）；(i) 同会话旁观者 X（牺牲进程）存在。被测候选：S0 谓词 `s0_check()`（O-2 的定义），对照：O-0（无检查）与 O-1（CA-S / CB-S 的 `preflight`）。 |
-| **Independent Oracle** | 台架自建拓扑（节点自报 `pid/ppid/sid/pgrp/starttime`）+ 独立 `/proc` + `pidfd`；破坏性动作 = 对牺牲旁观者 X 发信号，真值 = X 的 `pidfd` 状态与信号日志；`SIGCHLD` 处置从 `/proc/<pid>/status` 的 `SigIgn` 位读取。 |
-| **Expected Result** | (a) 被接受；(b)(c)(d)(e)(f)(g)(h) 在发出任何信号或回收之前以 `BLOCKED` 和**具体原因码**拒绝；O-0 对 (b)(i) 预期失败即不安全（CPU-002 已证）。 |
+| **Independent Oracle** | 生命周期 / 身份稳定性：`pidfd` + `/proc` + `waitid`（`pidfd` 不证明血缘）；拓扑与角色真值：台架**创建时**建立的谱系账本（被测监督器盲，见 2.3）；破坏性动作 = 对牺牲旁观者 X 发信号，真值 = X 的 `pidfd` 状态与信号日志；`SIGCHLD` 处置读自 `/proc/<pid>/status` 的 `SigIgn`。 |
+| **Expected Result** | (a) 被接受（机制进入 ALIVE / EXITED 等正常状态）；(b)(c)(d)(e)(f)(g)(h) 在发出任何信号或回收之前，机制返回 `BLOCKED(具体原因码)`——**这是机制状态；实验判 PASS**；O-0 对 (b)(i) 预期失败即不安全（CPU-002 已证）。 |
 | **PASS Criteria** | 每个错误配置：S0 在第一次信号 / `wait*` 之前返回 `BLOCKED` 及预期原因码；信号总数 = 0；`wait*` 对非目标 = 0；牺牲旁观者全程存活。正确配置：被接受，**误拒 = 0**（T0 与 T1 档）。 |
 | **FAIL Criteria** | 任一错误配置被接受；拒绝发生在已有信号或回收之后；原因码缺失或错误；正确配置被误拒；旁观者被触碰。 |
-| **BLOCKED Criteria** | 台架无法构造某个拓扑（内核拒绝 / 权限不足）→ 该变体 BLOCKED 并如实记录，不得用伪造替代；`pidfd` 不可用。 |
+| **BLOCKED Criteria** | **实验层**（台架）：台架无法构造某个拓扑（内核拒绝 / 权限不足）→ 该变体实验 BLOCKED 并如实记录，不得用伪造替代；`pidfd` 不可用；盲性断言不成立。**机制返回 BLOCKED（S0 拒绝）若符合预期，实验判 PASS，不是实验 BLOCKED。** |
+| **机制状态 → 实验判定映射（ERRATA-04）** | S0 对错误配置 `BLOCKED(原因码)` → PASS；错误配置被接受 / 先发信号后拒绝 → FAIL；正确配置被 `BLOCKED` → FAIL（误拒，可用性）；台架无法构造 / 盲性不成立 → 实验 BLOCKED；未运行 → NOT TESTED。 |
 | **Repetition Count** | 确定性：每个变体 ×20；(a) 的误拒检查另加 T1 ×50（不同启动上下文：直接 `setsid`、`nohup`、有 / 无控制终端）。 |
 | **Safety Boundaries** | COMMON-SAFETY（第 2.5 节）；本卡补充：所有错误配置只在专用新会话里构造；牺牲进程只在该会话内；不对监督器自己的会话外任何进程发信号。 |
-| **Cleanup Procedure** | COMMON-CLEANUP（第 2.6 节）；本卡补充：新会话叶子进程被 `killpg` 之前先按 pidfd 逐个清理。 |
+| **Cleanup Procedure** | COMMON-CLEANUP（第 2.6 节）；本卡补充：**不使用 `killpg`**；专用新会话里的牺牲进程全部经登记 + pidfd 清理，令牌扫描只做诊断。 |
 | **Evidence Files** | `a_predicate_003/results/e1a_*.json.gz`、分片 stdout / stderr、`final_integrity_verification.txt`（**路径设计：必须避开 `.gitignore` 的 `parts/`、`*_archive` 等规则，提交前以 `git ls-files` 与远端树核对**）。 |
 | **Known Limitations** | 仅 root；仅单内核；S0 谓词是设计草案，不等于真实 R3 启动器；不测真实 Driver。 |
 | **Falsification（什么证据会否定当前设计）** | 任何错误配置通过 S0；或正确配置在合理启动上下文（`nohup`、有 / 无 tty、作为会话领头）下被误拒——说明谓词过弱或过严。 |
@@ -134,11 +160,12 @@ Linux microVM；设计时测得：内核 `6.18.44-fc-v165`、Python 3.13.16（�
 | **Environment** | COMMON-ENV（第 2.1 节）；本卡补充：M4：本环境只有 cgroup v1 → 预期 BLOCKED（环境不满足）；M5：需要特权与内核支持，仅做可行性探针，失败即 BLOCKED。 |
 | **Git SHA** | COMMON-GIT（第 2.2 节）：执行前登记「代码提交 SHA + 干净工作树」，每个分片记录 `git_commit` / `git_status_short`。**当前：未执行，无运行 SHA。**设计基线 = 本设计分支提交（见检查点）。 |
 | **Inputs / Topology** | B1 阶段开始**之前**已有的辅助子进程（已登记 / 未登记各一）；B2 运行中经受控入口新增的辅助子进程；B3 运行中**绕过入口**新增（裸 `os.fork`、另一线程里的 `subprocess`）——对抗性用例；B4 已登记辅助进程及其后代，辅助进程死亡后后代被重新挂靠；B5 来源不明的未登记孤儿在阶段内同时存在真孤儿时出现（歧义用例）；B6 阶段后代在两次轮询之间诞生并成为孤儿（轮询间隔 10 ms / 100 ms / 1 s）。每个进程带台架标签 `role ∈ {stage, aux, aux_family, stranger}`。 |
-| **Independent Oracle** | 台架谱系真值（节点自报 + 创建者标签），不使用被测机制的输出；信号与 `wait*` 调用日志来自被测机制，但 `stranger` 的存活 / 僵尸状态由独立 `pidfd` + `/proc` 判定。 |
+| **Independent Oracle** | 归属真值 = 台架创建时的**谱系账本**（创建者、角色 `stage/aux/aux_family/stranger`、出生指纹、声明操作），被测机制盲；`pidfd` + `/proc` 只提供单个进程的身份稳定性与生命周期，**不证明血缘**；`stranger` 的存活 / 僵尸状态由 `pidfd` + `/proc` 判定；`/proc` 字段相同不等于身份相同。区分「真相已知但机制无法证明」（期望 `UNKNOWN`）与「台架无法建立真值」（台架 BLOCKED）。 |
 | **Expected Result** | `stranger` 永不被信号 / 回收；`aux`、`aux_family` 不被动；可证明属于阶段的后代被终止并回收；B3、B5 这类**无法证明归属**的情形得到 `UNKNOWN`（或明确的 `INTRUDER` 诊断），**不猜测**。 |
 | **PASS Criteria** | K1（误信号）= 0 且 K2（误回收）= 0，在**所有**拓扑与机制组合中（每个机制单独统计）；不得出现「真阶段后代仍存活却报告 EXITED」；B2、B4 的合法情形结果正确；B3、B5 结果为 `UNKNOWN` / `INTRUDER`。 |
 | **FAIL Criteria** | 任一误信号或误回收；任一假 `EXITED`；对 `stranger` 的任何猜测性归属；机制在 B3 绕过入口时静默接受。**机制的 FAIL 如实保留，不据此改判据。** |
-| **BLOCKED Criteria** | M4 / M5 的设施不可用（记录原因，标 NOT APPLICABLE 于本环境）；拓扑不可构造。 |
+| **BLOCKED Criteria** | **实验层**（台架）：M4 / M5 的设施不可用 → 对该候选机制实验 BLOCKED（环境无法评估，不计该候选 PASS / FAIL）；拓扑不可构造；盲性断言不成立；谱系账本记录丢失（真值不可得）。机制对 B3、B5 返回 `UNKNOWN` / `INTRUDER` 属预期，实验判 PASS。 |
+| **机制状态 → 实验判定映射（ERRATA-04）** | 机制对 B3 / B5 返回 `UNKNOWN` / `INTRUDER` → PASS；把 `stranger` 当目标并信号 / 回收 → FAIL；合法 B2 / B4 被全部 `UNKNOWN` → 可用性未达标（单独记录）；M4 / M5 设施缺失 → 对该候选实验 BLOCKED；未运行 → NOT TESTED。 |
 | **Repetition Count** | 确定性拓扑 ×5；B6 竞态每个轮询间隔 ×50（T1），另加强制交错钩子各 ×1（确定性，优先于重复次数作为证据）。 |
 | **Safety Boundaries** | COMMON-SAFETY（第 2.5 节）；本卡补充：B3 的「绕过入口」只由台架自己的牺牲代码执行；`stranger` 一律是牺牲进程。 |
 | **Cleanup Procedure** | COMMON-CLEANUP（第 2.6 节）；本卡补充：`stranger` 不属于被测机制，由台架清理。 |
@@ -156,11 +183,12 @@ Linux microVM；设计时测得：内核 `6.18.44-fc-v165`、Python 3.13.16（�
 | **Environment** | COMMON-ENV（第 2.1 节）；本卡补充：证据源：E-lineage（轮询 `/proc` 的 ppid 闭包 + 连续登记）、E-registry（O-2）、E-procconn（O-5，若可用）、E-cgroup（O-4，若可用）。 |
 | **Git SHA** | COMMON-GIT（第 2.2 节）：执行前登记「代码提交 SHA + 干净工作树」，每个分片记录 `git_commit` / `git_status_short`。**当前：未执行，无运行 SHA。**设计基线 = 本设计分支提交（见检查点）。 |
 | **Inputs / Topology** | C1 已登记的后代随后 `setsid()` 且父进程死亡（连续性）；C2 后代在首次轮询前就 `setsid()` 并被孤立；C3 双重 fork 守护进程（有 / 无子收割者）；C4 三层链，中间层 `setsid()` 后死亡；C5 **look-alike 陌生进程**：与真孤儿在所有 `/proc` 可见字段上一致（`ppid==监督器`、同一 comm / cmdline 令牌、`starttime` 晚于根、自成会话），仅创建者不同——预期在仅轮询证据下**不可区分**；C6 后代 `exec` 了别的程序；C7 阶段内部多个后代同时 `setsid()`。 |
-| **Independent Oracle** | 台架创建者标签与谱系；决策真值表：{目标 / 非目标 / **设计上不可归属**}。C5 在 E-lineage 下的真值是「不可归属」，不是「非目标」。 |
+| **Independent Oracle** | **谱系账本**（创建者标签 + 声明的 `setsid` / 双重 fork / 退出）给出真值；后代执行 `setsid()` 或父进程退出后**仍按创建谱系**判定归属；决策真值表：{目标 / 非目标 / 机制**设计上无法证明**}。C5 的 look-alike 在 E-lineage 下是「真相已知、机制无法证明」，期望 `UNKNOWN`，**不是**「台架无法建立真值」，也不是「非目标」；`pidfd` 不证明血缘。 |
 | **Expected Result** | 有连续性证据（C1、C4、C7 经登记）的后代被识别为目标；无证据且不可区分（C2 在无登记时、C5）→ `UNKNOWN`；`stranger` 不被动；E-procconn / E-cgroup 若可用，则能把 C2、C5 从 `UNKNOWN` 提升为确定答案。 |
 | **PASS Criteria** | 对每个证据源：误信号 = 0、误回收 = 0；真后代仍存活时从不报告 `EXITED`；**不可归属**用例输出 `UNKNOWN`（不得猜成目标，也不得猜成非目标并据此回收）；各证据源的「可确定比例」如实报告。 |
 | **FAIL Criteria** | 把 C5 的陌生进程当作目标并信号 / 回收；把真后代遗漏并报告 `EXITED`；在不可区分时给出确定答案。 |
-| **BLOCKED Criteria** | proc connector / cgroup 设施不可用（NOT APPLICABLE，记录权限 / 内核信息）；拓扑不可构造。 |
+| **BLOCKED Criteria** | **实验层**（台架）：proc connector / cgroup 设施不可用（NOT APPLICABLE，记录权限 / 内核信息）；拓扑不可构造；谱系账本缺失。机制对不可区分用例返回 `UNKNOWN` 属预期，实验判 PASS。 |
+| **机制状态 → 实验判定映射（ERRATA-04）** | 不可区分用例返回 `UNKNOWN` → PASS；真后代仍存活却 `EXITED` → FAIL；对 look-alike 给出确定答案 → FAIL；谱系账本缺失 / 设施缺失 → 实验 BLOCKED；未运行 → NOT TESTED。 |
 | **Repetition Count** | 确定性 ×5；C2 / C5 的调度敏感变体 ×50（T1）。 |
 | **Safety Boundaries** | COMMON-SAFETY（第 2.5 节）；本卡补充：C5 的 look-alike 是牺牲进程；proc connector 只读订阅，不向内核发送控制消息以外的任何内容。 |
 | **Cleanup Procedure** | COMMON-CLEANUP（第 2.6 节）；本卡补充：所有 `setsid` 后代由台架节点协议自报，因此 pidfd 清理不依赖被测证据源。 |
@@ -178,16 +206,17 @@ Linux microVM；设计时测得：内核 `6.18.44-fc-v165`、Python 3.13.16（�
 | **Environment** | COMMON-ENV（第 2.1 节）；本卡补充：轮询间隔档：10 ms / 100 ms / 1 s。 |
 | **Git SHA** | COMMON-GIT（第 2.2 节）：执行前登记「代码提交 SHA + 干净工作树」，每个分片记录 `git_commit` / `git_status_short`。**当前：未执行，无运行 SHA。**设计基线 = 本设计分支提交（见检查点）。 |
 | **Inputs / Topology** | 合法负载族：W1 名义 D1 阶段（单个脚本，无后代）；W2 N=1…16 个后代，无 `setsid`；W3 后代在随机时刻 `setsid()`；W4 扇出 64 个短命后代，随机退出顺序；W5 双重 fork 守护进程，在首次轮询之前 / 之后退出。回归：CPU-001 的 T-01…T-11（含 T-04b-A）与 T-14，对严格变体 / 入围机制逐项复跑，并预先声明哪些格子**预期**由 PASS 变为 `UNKNOWN`（例如首次轮询晚于孤立的 T-06、T-07）。 |
-| **Independent Oracle** | 台架谱系真值；结果分类 {correct-ALIVE, correct-EXITED, safe-UNKNOWN, unsafe-EXITED（假 EXITED）, unsafe-signal, unsafe-reap}。 |
-| **Expected Result** | 所有 unsafe 类 = 0；`UNKNOWN` 仅出现在预先声明的场景；W1、W2 的 `UNKNOWN` 率 = 0。 |
-| **PASS Criteria** | **硬门槛：**unsafe-* 三类均为 0；回归矩阵中除预先声明的 `UNKNOWN` 外与 CPU-001 判定一致。**可用性门槛由负责人设定**（建议的初始提案，供决策：W1、W2 要求 0% UNKNOWN；W3–W5 只报告），本卡不替负责人裁决，只报告是否达成。 |
-| **FAIL Criteria** | 任一 unsafe 事件；回归中出现未预先声明的判定变化；名义负载出现 `UNKNOWN`。 |
-| **BLOCKED Criteria** | 回归所需的 CPU-001 台架代码不可导入 / 哈希不符；负载不可构造。 |
+| **Independent Oracle** | 台架谱系账本（见 2.3）；结果类 {R, U-exp, U-unexp, X, B}（ERRATA-01）：R 确定且正确；U-exp 负例上期望的 `UNKNOWN` / `BLOCKED`；**U-unexp** 名义 / 合法场景上的 `UNKNOWN`（可用性缺失）；**X** 不安全（误信号、误回收、假 `EXITED`、伪造状态、在负例上给确定答案）；B 台架 BLOCKED。 |
+| **Expected Result** | 所有 `X` = 0；负例（类别 A、M）全部为 U-exp；W1、W2 的 `UNKNOWN_rate(N) = U-unexp(N) / executed(N)` 的观察个数为 0（**目标 0%，ChatGPT 建议，待负责人正式批准**）；`UNKNOWN` 仅出现在预先声明的场景。 |
+| **PASS Criteria** | **分别报告，不合并：**(1) **安全性**——所有类别 `X = 0`，任何非目标误信号 / 误回收都是 FAIL，**不得被低 `UNKNOWN` 率抵消**；(2) **负例正确率**——A、M 类 U-exp 100%（正确返回 `UNKNOWN` 计 PASS，不是可用性 FAIL）；(3) **可用性**——N 类 `UNKNOWN_rate` 分子 = N 类 U-unexp，分母 = 计划试验数 − 台架 BLOCKED（B 从分子分母同时排除并按单元报告）；W1、W2 观察到 0 个 U-unexp，且每单元 ≥ 50 个已执行试验并报告 95% 上界；L 类只报告比率与 Clopper–Pearson 区间，不判 PASS / FAIL；(4) 回归矩阵除预先声明的 `UNKNOWN` 外与 CPU-001 判定一致。0%、5% B 上限、n ≥ 50 均为**待负责人批准的提议值**。 |
+| **FAIL Criteria** | 任一 `X`；回归中出现未预先声明的判定变化；W1 / W2 出现 U-unexp（在批准的 0% 门槛下为可用性未达标——**与安全 FAIL 分开记录**）；负例上给出确定答案。 |
+| **BLOCKED Criteria** | **实验层**（台架）：回归所需 CPU-001 台架代码不可导入 / 哈希不符；负载不可构造；单元的台架 BLOCKED 超过计划试验数的 5%（提议值）或 A / M / 安全关键单元存在无法解决的 B → 该单元 INSUFFICIENT，实验 BLOCKED（不能靠排除试验取得 PASS）。排除只依据台架层原因，**不依据机制输出**。 |
+| **机制状态 → 实验判定映射（ERRATA-04）** | 负例 `UNKNOWN` → PASS；名义负载 `UNKNOWN` → 可用性未达标（与安全分开）；任一 `X` → FAIL；单元 INSUFFICIENT → 实验 BLOCKED；未运行 → NOT TESTED。 |
 | **Repetition Count** | 每个负载 × 每个轮询间隔 ×50（T1）；回归格子 ×5。 |
 | **Safety Boundaries** | COMMON-SAFETY（第 2.5 节）；本卡补充：W4 扇出上限 64，总进程数 ≤ 400。 |
 | **Cleanup Procedure** | COMMON-CLEANUP（第 2.6 节）；本卡补充：W4 的短命进程由节点协议自报并按 pidfd 清理。 |
 | **Evidence Files** | `a_predicate_003/results/e1d_*.json.gz`、`e1d_unknown_rate_table.json`、回归矩阵对比表。 |
-| **Known Limitations** | 负载是合成的，不代表真实 D1 的行为；`UNKNOWN` 率阈值是决策问题；不重复 CPU-001 的 1860 次。 |
+| **Known Limitations** | 负载是合成的，不代表真实 D1；0% 是观察个数目标而非比率为 0 的证明；阈值是决策问题；不重复 CPU-001 的 1860 次。 |
 | **Falsification（什么证据会否定当前设计）** | 严格机制在名义负载上 `UNKNOWN` 或在回归中系统性改变判定 → 不能作为替代方案；或安全门槛下仍出现 unsafe → 机制被否定。 |
 | **Status** | **DESIGN ONLY / NOT TESTED** |
 
@@ -230,7 +259,8 @@ Linux microVM；设计时测得：内核 `6.18.44-fc-v165`、Python 3.13.16（�
 | **Expected Result** | S01–S05、S07、S10 直接成立；S08 需要第二回收者且不相交；S06、S12 无重复消费；S11 → `UNKNOWN`；`Popen.poll()` 因锁争用返回 `None` 时**不得**被读成 ALIVE 之外的任何已知状态。 |
 | **PASS Criteria** | 所有适用场景：返回的退出状态等于独立真值（码 / 信号 / 必要时 core 标志）；**每个 pid 恰有一个成功消费者**；`ECHILD` / 未知状态一律 `UNKNOWN` 或 `BLOCKED`，**绝不当作成功（0）**；不回收无关子进程；无不可解释的状态丢失。 另需：不相交断言被违反时给出 `UNKNOWN`（而非 0）。 |
 | **FAIL Criteria** | 任何场景返回与真值不符的状态（尤其把失败报告为成功）；两个消费者都声称持有状态或都丢失；回收了无关子进程；状态丢失却没有声明。 另：把 `poll()` 的 `None`（锁忙）当作「已确认存活」。 |
-| **BLOCKED Criteria** | 所需 Python 版本 / `pidfd` / `waitid(P_PIDFD)` 不可用；台架无法构造场景；两个独立观察手段不一致。 |
+| **BLOCKED Criteria** | 所需 Python 版本 / `pidfd` / `waitid(P_PIDFD)` 不可用；台架无法构造场景；两个独立观察手段不一致。（**仅指实验判定层**；机制返回的协议状态 `BLOCKED` 若符合预期则实验判 PASS，见 2.4。） |
+| **机制状态 → 实验判定映射（ERRATA-04）** | S09 / S11 返回 `UNKNOWN` 或机制 `BLOCKED(SIGCHLD_IGNORED)` → PASS；任何场景把未知状态报告为 0 → FAIL；Python 版本 / `pidfd` 不可用 → 实验 BLOCKED；未运行 → NOT TESTED。 |
 | **Repetition Count** | 确定性场景 ×5；竞态场景 S06 / S12 分档：T0 ×50、T1 ×500；**强制交错钩子**逐一覆盖操作顺序（A 先、B 先、同时）——钩子覆盖优先于重复次数作为证据；T2（×5000）仅在负责人批准后。**任何档位的零失败都不能证明竞态不存在。** |
 | **Safety Boundaries** | COMMON-SAFETY（第 2.5 节）；本卡补充：子进程只执行台架给定的最小代码；线程并发度 ≤ 16。 |
 | **Cleanup Procedure** | COMMON-CLEANUP（第 2.6 节）；本卡补充：`Popen` 对象在用例结束前显式 `wait` / 确认已回收，避免 `ResourceWarning` 与 `_active` 残留污染后续用例。 |
@@ -252,7 +282,8 @@ Linux microVM；设计时测得：内核 `6.18.44-fc-v165`、Python 3.13.16（�
 | **Expected Result** | S12 的 GC / `_active` 路径是该设计的主要风险点：若未处理，状态会被 `Popen` 在监督器之前消费；通过创建方式（不用 `Popen`）或保持引用可避免。 |
 | **PASS Criteria** | 所有适用场景：返回的退出状态等于独立真值（码 / 信号 / 必要时 core 标志）；**每个 pid 恰有一个成功消费者**；`ECHILD` / 未知状态一律 `UNKNOWN` 或 `BLOCKED`，**绝不当作成功（0）**；不回收无关子进程；无不可解释的状态丢失。 另需：S12 下监督器的状态与真值一致且 `Popen` 无隐蔽消费。 |
 | **FAIL Criteria** | 任何场景返回与真值不符的状态（尤其把失败报告为成功）；两个消费者都声称持有状态或都丢失；回收了无关子进程；状态丢失却没有声明。 另：任何一次 `Popen.__del__` / `_cleanup()` 先于监督器消费状态。 |
-| **BLOCKED Criteria** | 所需 Python 版本 / `pidfd` / `waitid(P_PIDFD)` 不可用；台架无法构造场景；两个独立观察手段不一致。 |
+| **BLOCKED Criteria** | 所需 Python 版本 / `pidfd` / `waitid(P_PIDFD)` 不可用；台架无法构造场景；两个独立观察手段不一致。（**仅指实验判定层**；机制返回的协议状态 `BLOCKED` 若符合预期则实验判 PASS，见 2.4。） |
+| **机制状态 → 实验判定映射（ERRATA-04）** | S12 下监督器取得真值且无隐蔽消费 → PASS；`Popen.__del__` / `_cleanup()` 先于监督器消费 → FAIL；`UNKNOWN` / `BLOCKED` 用于无法保证正确性处 → PASS；台架无法构造 → 实验 BLOCKED；未运行 → NOT TESTED。 |
 | **Repetition Count** | 确定性场景 ×5；竞态场景 S06 / S12 分档：T0 ×50、T1 ×500；**强制交错钩子**逐一覆盖操作顺序（A 先、B 先、同时）——钩子覆盖优先于重复次数作为证据；T2（×5000）仅在负责人批准后。**任何档位的零失败都不能证明竞态不存在。** |
 | **Safety Boundaries** | COMMON-SAFETY（第 2.5 节）；本卡补充：子进程只执行台架给定的最小代码；线程并发度 ≤ 16。 |
 | **Cleanup Procedure** | COMMON-CLEANUP（第 2.6 节）；本卡补充：`Popen` 对象在用例结束前显式 `wait` / 确认已回收，避免 `ResourceWarning` 与 `_active` 残留污染后续用例。 |
@@ -274,7 +305,8 @@ Linux microVM；设计时测得：内核 `6.18.44-fc-v165`、Python 3.13.16（�
 | **Expected Result** | C1 在 S09 下不丢状态（内核仍保留，新 Reaper 可读）；C2 存在窗口；C3 在 S06 / S12 下单消费；所有变体在 S11 → `UNKNOWN`。 |
 | **PASS Criteria** | 所有适用场景：返回的退出状态等于独立真值（码 / 信号 / 必要时 core 标志）；**每个 pid 恰有一个成功消费者**；`ECHILD` / 未知状态一律 `UNKNOWN` 或 `BLOCKED`，**绝不当作成功（0）**；不回收无关子进程；无不可解释的状态丢失。 另需：C1 在任意注入点崩溃后状态仍可恢复或被声明丢失（不伪造）。 |
 | **FAIL Criteria** | 任何场景返回与真值不符的状态（尤其把失败报告为成功）；两个消费者都声称持有状态或都丢失；回收了无关子进程；状态丢失却没有声明。 另：账本记录与内核真值不一致且无标记。 |
-| **BLOCKED Criteria** | 所需 Python 版本 / `pidfd` / `waitid(P_PIDFD)` 不可用；台架无法构造场景；两个独立观察手段不一致。 |
+| **BLOCKED Criteria** | 所需 Python 版本 / `pidfd` / `waitid(P_PIDFD)` 不可用；台架无法构造场景；两个独立观察手段不一致。（**仅指实验判定层**；机制返回的协议状态 `BLOCKED` 若符合预期则实验判 PASS，见 2.4。） |
+| **机制状态 → 实验判定映射（ERRATA-04）** | C1 在注入点崩溃后状态可恢复或被诚实声明丢失 → PASS；账本与内核不一致且无标记 / 伪造 → FAIL；`UNKNOWN` 用于 `ECHILD` → PASS；台架无法构造 → 实验 BLOCKED；未运行 → NOT TESTED。 |
 | **Repetition Count** | 确定性场景 ×5；竞态场景 S06 / S12 分档：T0 ×50、T1 ×500；**强制交错钩子**逐一覆盖操作顺序（A 先、B 先、同时）——钩子覆盖优先于重复次数作为证据；T2（×5000）仅在负责人批准后。**任何档位的零失败都不能证明竞态不存在。** |
 | **Safety Boundaries** | COMMON-SAFETY（第 2.5 节）；本卡补充：子进程只执行台架给定的最小代码；线程并发度 ≤ 16。 |
 | **Cleanup Procedure** | COMMON-CLEANUP（第 2.6 节）；本卡补充：`Popen` 对象在用例结束前显式 `wait` / 确认已回收，避免 `ResourceWarning` 与 `_active` 残留污染后续用例。 |
@@ -296,7 +328,8 @@ Linux microVM；设计时测得：内核 `6.18.44-fc-v165`、Python 3.13.16（�
 | **Expected Result** | 三个版本均在 `ECHILD` 时给出 0（源码阅读已显示一致）；`__del__` 路径在三个版本均存在；若有版本差异，如实列出。 |
 | **PASS Criteria** | 每个版本每个场景的观察与预注册表一致，**或**差异被完整记录并解释；报告明确列出「未验证版本」。 |
 | **FAIL Criteria** | 观察与源码阅读的结论矛盾而未被记录；把单一版本的结果外推到所有版本。 |
-| **BLOCKED Criteria** | 解释器不可用或损坏（注意：本环境 3.11 / 3.12 的 site 报 `_distutils_hack` 缺失警告，用 `-S -I` 运行以排除）。 |
+| **BLOCKED Criteria** | 解释器不可用或损坏（注意：本环境 3.11 / 3.12 的 site 报 `_distutils_hack` 缺失警告，用 `-S -I` 运行以排除）。（**仅指实验判定层**；机制返回的协议状态 `BLOCKED` 若符合预期则实验判 PASS，见 2.4。） |
+| **机制状态 → 实验判定映射（ERRATA-04）** | 观察与预注册表一致或差异被完整记录 → PASS；差异未记录 / 外推到未验证版本 → FAIL；解释器不可用 → 实验 BLOCKED；未运行 → NOT TESTED。 |
 | **Repetition Count** | 确定性 ×5 / 版本；S12 的 GC 路径 ×50。 |
 | **Safety Boundaries** | COMMON-SAFETY（第 2.5 节）；本卡补充：与 E2-A…C 同。 |
 | **Cleanup Procedure** | COMMON-CLEANUP（第 2.6 节）；本卡补充：每个解释器独立进程，结束即清。 |
@@ -318,7 +351,8 @@ Linux microVM；设计时测得：内核 `6.18.44-fc-v165`、Python 3.13.16（�
 | **Expected Result** | 任一顺序下恰有一个消费者持有真实状态，其余得到 `UNKNOWN`/只读副本；设计 A/C 对其预期的顺序给出一致结果。 |
 | **PASS Criteria** | 枚举的每个顺序均符合预注册表；随机档位零例外；零伪造 0。 |
 | **FAIL Criteria** | 任一顺序出现双消费者或双丢失，或伪造成功状态。 |
-| **BLOCKED Criteria** | 钩子无法稳定地强制某顺序（记录并改用概率档位，同时标注覆盖不足）。 |
+| **BLOCKED Criteria** | 钩子无法稳定地强制某顺序（记录并改用概率档位，同时标注覆盖不足）。（**仅指实验判定层**；机制返回的协议状态 `BLOCKED` 若符合预期则实验判 PASS，见 2.4。） |
+| **机制状态 → 实验判定映射（ERRATA-04）** | 每个枚举顺序符合预注册表 → PASS；任一顺序双消费者 / 双丢失 / 伪造成功 → FAIL；钩子无法强制某顺序 → 该顺序实验 BLOCKED（标注覆盖不足）；未运行 → NOT TESTED。 |
 | **Repetition Count** | T0 ×50、T1 ×500；T2 ×5000 仅经负责人批准；**不得以「N 次无失败」声称无竞态**。 |
 | **Safety Boundaries** | COMMON-SAFETY（第 2.5 节）；本卡补充：线程数上限 16；总子进程数 ≤ 400。 |
 | **Cleanup Procedure** | COMMON-CLEANUP（第 2.6 节）；本卡补充：线程全部 `join`，超时则标 BLOCKED 并杀牺牲子进程。 |
@@ -365,10 +399,11 @@ Linux microVM；设计时测得：内核 `6.18.44-fc-v165`、Python 3.13.16（�
 | **Expected Result** | 预期：F03 / F04 后存活目标继续运行、无人负责（条件 1 不满足）；CB 的未回收状态在外层子收割者存在时可读，CA 已消费状态 DECLARED_LOST 或 MISSING；无子收割者时由 pid 1 清理。这些大部分已由 CPU-002 E3-02 观察，本卡补全 F01、F02、F05、F08、F09。 |
 | **PASS Criteria** | **两个条件分别判定：**(1) 进程全部退出——无存活目标，无无限期无人负责的僵尸（接管后 ≤ 预注册界限 `T_zombie_max`，建议 5 s；无外层子收割者时清理时间取决于 pid 1，仅报告）；(2) 状态全部保存——每个目标 RECOVERED_EXACT 或 **DECLARED_LOST**，不得 FORGED / MISSING_UNDECLARED。另：非目标误杀 = 0、误回收 = 0；身份无法验证时**不发信号**并留下诊断；恢复失败必须留下明确状态与诊断文件。 |
 | **FAIL Criteria** | 任何误杀 / 误回收；任何 FORGED 或 MISSING_UNDECLARED 状态；存活的已确认目标无人处理且未声明；僵尸无限期无人负责；恢复动作基于未验证的身份；无诊断的恢复失败。 |
-| **BLOCKED Criteria** | 安全条件不满足时（身份不可验证、监护组件无法确认监督器已死、环境缺少所需设施）机制**必须**停止有风险的操作并报告 BLOCKED——这是期望行为，计为 PASS；台架自身无法建立前置（pidfd 不可用）则本卡 BLOCKED。 |
+| **BLOCKED Criteria** | **实验层**（台架）：台架自身无法建立前置（`pidfd` 不可用、观察者无法持有句柄、真值不可得）则本卡实验 BLOCKED。**机制**在安全条件不满足时（身份不可验证、无法确认监督器已死、缺少所需设施）停止有风险的操作并返回协议状态 `BLOCKED` 是**期望行为**，实验判 PASS（不是实验 BLOCKED）；机制基于未验证身份继续行动 → FAIL。（**仅指实验判定层**；见 2.4。） |
+| **机制状态 → 实验判定映射（ERRATA-04）** | 基线观察按预注册分类记录（无 PASS / FAIL 之分的对照观察，伪造状态仍 FAIL）；台架无法建立 → 实验 BLOCKED；未运行 → NOT TESTED。 |
 | **Repetition Count** | 确定性场景 ×5；每个崩溃注入点（带标签的同步屏障）×5；随机时刻 SIGKILL 档位 T1 ×50。 |
 | **Safety Boundaries** | COMMON-SAFETY（第 2.5 节）；本卡补充：监督器 / 监护者 / 目标均为台架 fork 的牺牲进程；恢复程序只对账本 / 登记表中**指纹匹配**的 pid 行动；禁止 `pkill`、按名称匹配、`waitpid(-1)`。 |
-| **Cleanup Procedure** | COMMON-CLEANUP（第 2.6 节）；本卡补充：清理梯度在监护组件失效（F07）时仍须成立：台架观察者按 pidfd 逐个杀并回收；再按令牌 + `starttime ≥ 运行起点` 做兜底扫描；永不按名称杀。 |
+| **Cleanup Procedure** | COMMON-CLEANUP（第 2.6 节）；本卡补充：监督器与 Watchdog 同时失效（F07）时，**台架观察者**按登记 + pidfd 清理；观察者也失效则由外层运行脚本 **janitor** 按持久化登记（先 `pidfd_open` 再核对 `starttime`）清理；令牌扫描只做诊断，**绝不授权发信号**；禁止 `pkill` / 名称匹配 / `killpg`；身份无法确认则不发信号并台架 BLOCKED。 |
 | **Evidence Files** | `a_predicate_003/results/e3-0_*.json.gz`；每次运行的分类表与诊断文件。 |
 | **Known Limitations** | 复用 CPU-002 台架；pid 1 实现特定。 |
 | **Falsification（什么证据会否定当前设计）** | 基线在某场景下已满足条件 (1)(2) 且无需新机制 → 对应的新机制没有必要。 |
@@ -387,10 +422,11 @@ Linux microVM；设计时测得：内核 `6.18.44-fc-v165`、Python 3.13.16（�
 | **Expected Result** | (a)(b) 下 F03–F05、F09 可接管并按指纹行动；(c) 无登记时遇到 `setsid` 后代 / look-alike → `UNKNOWN`，不行动；F07 → 退化为 R-0，必须留下诊断；F10 → 不发信号、BLOCKED。 |
 | **PASS Criteria** | **两个条件分别判定：**(1) 进程全部退出——无存活目标，无无限期无人负责的僵尸（接管后 ≤ 预注册界限 `T_zombie_max`，建议 5 s；无外层子收割者时清理时间取决于 pid 1，仅报告）；(2) 状态全部保存——每个目标 RECOVERED_EXACT 或 **DECLARED_LOST**，不得 FORGED / MISSING_UNDECLARED。另：非目标误杀 = 0、误回收 = 0；身份无法验证时**不发信号**并留下诊断；恢复失败必须留下明确状态与诊断文件。 |
 | **FAIL Criteria** | 任何误杀 / 误回收；任何 FORGED 或 MISSING_UNDECLARED 状态；存活的已确认目标无人处理且未声明；僵尸无限期无人负责；恢复动作基于未验证的身份；无诊断的恢复失败。 |
-| **BLOCKED Criteria** | 安全条件不满足时（身份不可验证、监护组件无法确认监督器已死、环境缺少所需设施）机制**必须**停止有风险的操作并报告 BLOCKED——这是期望行为，计为 PASS；台架自身无法建立前置（pidfd 不可用）则本卡 BLOCKED。 |
+| **BLOCKED Criteria** | **实验层**（台架）：台架自身无法建立前置（`pidfd` 不可用、观察者无法持有句柄、真值不可得）则本卡实验 BLOCKED。**机制**在安全条件不满足时（身份不可验证、无法确认监督器已死、缺少所需设施）停止有风险的操作并返回协议状态 `BLOCKED` 是**期望行为**，实验判 PASS（不是实验 BLOCKED）；机制基于未验证身份继续行动 → FAIL。（**仅指实验判定层**；见 2.4。） |
+| **机制状态 → 实验判定映射（ERRATA-04）** | 身份不可验证时机制 `BLOCKED` 且不发信号 → PASS；基于未验证身份行动 → FAIL；`DECLARED_LOST` 按"设计上可恢复"预注册表判定（不可恢复场景 PASS，可恢复场景 FAIL）；台架 / 观察者无法建立 → 实验 BLOCKED；未运行 → NOT TESTED。 |
 | **Repetition Count** | 确定性场景 ×5；每个崩溃注入点（带标签的同步屏障）×5；随机时刻 SIGKILL 档位 T1 ×50。 |
 | **Safety Boundaries** | COMMON-SAFETY（第 2.5 节）；本卡补充：监督器 / 监护者 / 目标均为台架 fork 的牺牲进程；恢复程序只对账本 / 登记表中**指纹匹配**的 pid 行动；禁止 `pkill`、按名称匹配、`waitpid(-1)`。 |
-| **Cleanup Procedure** | COMMON-CLEANUP（第 2.6 节）；本卡补充：清理梯度在监护组件失效（F07）时仍须成立：台架观察者按 pidfd 逐个杀并回收；再按令牌 + `starttime ≥ 运行起点` 做兜底扫描；永不按名称杀。 |
+| **Cleanup Procedure** | COMMON-CLEANUP（第 2.6 节）；本卡补充：监督器与 Watchdog 同时失效（F07）时，**台架观察者**按登记 + pidfd 清理；观察者也失效则由外层运行脚本 **janitor** 按持久化登记（先 `pidfd_open` 再核对 `starttime`）清理；令牌扫描只做诊断，**绝不授权发信号**；禁止 `pkill` / 名称匹配 / `killpg`；身份无法确认则不发信号并台架 BLOCKED。 |
 | **Evidence Files** | `a_predicate_003/results/e3-a_*.json.gz`；每次运行的分类表与诊断文件。 |
 | **Known Limitations** | Watchdog 自身是单点；登记推送丢失 / 延迟的窗口；需要子收割者与 pidfd；非 Linux 不适用。 |
 | **Falsification（什么证据会否定当前设计）** | Watchdog 在 F07（双故障）时无诊断地静默失败；或在登记缺失时凭猜测杀进程。 |
@@ -409,10 +445,11 @@ Linux microVM；设计时测得：内核 `6.18.44-fc-v165`、Python 3.13.16（�
 | **Expected Result** | 先写后消费的时序下，F04、F05、F08 不丢状态；先消费后写的时序存在 DECLARED_LOST 窗口且**必须被声明**；账本缺失 / 撕裂 → 恢复程序 `BLOCKED` 并诊断。 |
 | **PASS Criteria** | **两个条件分别判定：**(1) 进程全部退出——无存活目标，无无限期无人负责的僵尸（接管后 ≤ 预注册界限 `T_zombie_max`，建议 5 s；无外层子收割者时清理时间取决于 pid 1，仅报告）；(2) 状态全部保存——每个目标 RECOVERED_EXACT 或 **DECLARED_LOST**，不得 FORGED / MISSING_UNDECLARED。另：非目标误杀 = 0、误回收 = 0；身份无法验证时**不发信号**并留下诊断；恢复失败必须留下明确状态与诊断文件。 |
 | **FAIL Criteria** | 任何误杀 / 误回收；任何 FORGED 或 MISSING_UNDECLARED 状态；存活的已确认目标无人处理且未声明；僵尸无限期无人负责；恢复动作基于未验证的身份；无诊断的恢复失败。 |
-| **BLOCKED Criteria** | 安全条件不满足时（身份不可验证、监护组件无法确认监督器已死、环境缺少所需设施）机制**必须**停止有风险的操作并报告 BLOCKED——这是期望行为，计为 PASS；台架自身无法建立前置（pidfd 不可用）则本卡 BLOCKED。 |
+| **BLOCKED Criteria** | **实验层**（台架）：台架自身无法建立前置（`pidfd` 不可用、观察者无法持有句柄、真值不可得）则本卡实验 BLOCKED。**机制**在安全条件不满足时（身份不可验证、无法确认监督器已死、缺少所需设施）停止有风险的操作并返回协议状态 `BLOCKED` 是**期望行为**，实验判 PASS（不是实验 BLOCKED）；机制基于未验证身份继续行动 → FAIL。（**仅指实验判定层**；见 2.4。） |
+| **机制状态 → 实验判定映射（ERRATA-04）** | 账本缺失 / 撕裂时恢复程序 `BLOCKED` + 诊断 → PASS；信任陈旧账本而误杀 → FAIL；伪造或未声明的缺失 → FAIL；台架无法建立 → 实验 BLOCKED；未运行 → NOT TESTED。 |
 | **Repetition Count** | 确定性场景 ×5；每个崩溃注入点（带标签的同步屏障）×5；随机时刻 SIGKILL 档位 T1 ×50。 |
 | **Safety Boundaries** | COMMON-SAFETY（第 2.5 节）；本卡补充：监督器 / 监护者 / 目标均为台架 fork 的牺牲进程；恢复程序只对账本 / 登记表中**指纹匹配**的 pid 行动；禁止 `pkill`、按名称匹配、`waitpid(-1)`。 |
-| **Cleanup Procedure** | COMMON-CLEANUP（第 2.6 节）；本卡补充：清理梯度在监护组件失效（F07）时仍须成立：台架观察者按 pidfd 逐个杀并回收；再按令牌 + `starttime ≥ 运行起点` 做兜底扫描；永不按名称杀。 |
+| **Cleanup Procedure** | COMMON-CLEANUP（第 2.6 节）；本卡补充：监督器与 Watchdog 同时失效（F07）时，**台架观察者**按登记 + pidfd 清理；观察者也失效则由外层运行脚本 **janitor** 按持久化登记（先 `pidfd_open` 再核对 `starttime`）清理；令牌扫描只做诊断，**绝不授权发信号**；禁止 `pkill` / 名称匹配 / `killpg`；身份无法确认则不发信号并台架 BLOCKED。 |
 | **Evidence Files** | `a_predicate_003/results/e3-b_*.json.gz`；每次运行的分类表与诊断文件。 |
 | **Known Limitations** | 仅覆盖进程崩溃，不含掉电；账本与冻结 R3 事件注册表 / `postmortem.json` 的关系需 R3 变更评审；账本不能让存活目标自动被终止（需要执行者）。 |
 | **Falsification（什么证据会否定当前设计）** | 账本在某崩溃点下与内核真值矛盾而未被标记；或恢复程序信任了陈旧账本而误杀。 |
@@ -431,10 +468,11 @@ Linux microVM；设计时测得：内核 `6.18.44-fc-v165`、Python 3.13.16（�
 | **Expected Result** | 条件 (1)(2) 在 F01–F06、F08、F09 成立；F07、F10 → 明确 BLOCKED 与诊断。 |
 | **PASS Criteria** | **两个条件分别判定：**(1) 进程全部退出——无存活目标，无无限期无人负责的僵尸（接管后 ≤ 预注册界限 `T_zombie_max`，建议 5 s；无外层子收割者时清理时间取决于 pid 1，仅报告）；(2) 状态全部保存——每个目标 RECOVERED_EXACT 或 **DECLARED_LOST**，不得 FORGED / MISSING_UNDECLARED。另：非目标误杀 = 0、误回收 = 0；身份无法验证时**不发信号**并留下诊断；恢复失败必须留下明确状态与诊断文件。 |
 | **FAIL Criteria** | 任何误杀 / 误回收；任何 FORGED 或 MISSING_UNDECLARED 状态；存活的已确认目标无人处理且未声明；僵尸无限期无人负责；恢复动作基于未验证的身份；无诊断的恢复失败。 |
-| **BLOCKED Criteria** | 安全条件不满足时（身份不可验证、监护组件无法确认监督器已死、环境缺少所需设施）机制**必须**停止有风险的操作并报告 BLOCKED——这是期望行为，计为 PASS；台架自身无法建立前置（pidfd 不可用）则本卡 BLOCKED。 |
+| **BLOCKED Criteria** | **实验层**（台架）：台架自身无法建立前置（`pidfd` 不可用、观察者无法持有句柄、真值不可得）则本卡实验 BLOCKED。**机制**在安全条件不满足时（身份不可验证、无法确认监督器已死、缺少所需设施）停止有风险的操作并返回协议状态 `BLOCKED` 是**期望行为**，实验判 PASS（不是实验 BLOCKED）；机制基于未验证身份继续行动 → FAIL。（**仅指实验判定层**；见 2.4。） |
+| **机制状态 → 实验判定映射（ERRATA-04）** | F07 双故障时留下诊断并 `BLOCKED` → PASS；静默失败 → FAIL；组合比单独机制更差 / 新误杀路径 → FAIL；台架无法建立 → 实验 BLOCKED；未运行 → NOT TESTED。 |
 | **Repetition Count** | 确定性场景 ×5；每个崩溃注入点（带标签的同步屏障）×5；随机时刻 SIGKILL 档位 T1 ×50。 |
 | **Safety Boundaries** | COMMON-SAFETY（第 2.5 节）；本卡补充：监督器 / 监护者 / 目标均为台架 fork 的牺牲进程；恢复程序只对账本 / 登记表中**指纹匹配**的 pid 行动；禁止 `pkill`、按名称匹配、`waitpid(-1)`。 |
-| **Cleanup Procedure** | COMMON-CLEANUP（第 2.6 节）；本卡补充：清理梯度在监护组件失效（F07）时仍须成立：台架观察者按 pidfd 逐个杀并回收；再按令牌 + `starttime ≥ 运行起点` 做兜底扫描；永不按名称杀。 |
+| **Cleanup Procedure** | COMMON-CLEANUP（第 2.6 节）；本卡补充：监督器与 Watchdog 同时失效（F07）时，**台架观察者**按登记 + pidfd 清理；观察者也失效则由外层运行脚本 **janitor** 按持久化登记（先 `pidfd_open` 再核对 `starttime`）清理；令牌扫描只做诊断，**绝不授权发信号**；禁止 `pkill` / 名称匹配 / `killpg`；身份无法确认则不发信号并台架 BLOCKED。 |
 | **Evidence Files** | `a_predicate_003/results/e3-c_*.json.gz`；每次运行的分类表与诊断文件。 |
 | **Known Limitations** | 复杂度与新增组件的自身故障面；是否值得（相对 R-0 + 清理工具）需负责人判断。 |
 | **Falsification（什么证据会否定当前设计）** | 组合在任一场景下比 R-A 或 R-B 单独更差，或引入新的误杀路径。 |
@@ -458,6 +496,25 @@ Linux microVM；设计时测得：内核 `6.18.44-fc-v165`、Python 3.13.16（�
 
 不执行任何 CPU-003 实验；不启动进程故障注入；不修改 CPU-001 / CPU-002 的原始记录；不修改冻结 R3、真实 D1、Parcae；不选择最终 CA / CB / CA-S / CB-S / CA-P 方案；不启动 GPU；不将 G3～G6 标为 PASS；不虚构 Grok 或 ChatGPT 的审核文件。
 
-**状态：CPU-003 DESIGN COMPLETE / EXPERIMENTS NOT TESTED / R3 SPEC FROZEN / REAL D1 NOT AUTHORIZED / NO A-B WINNER。**
+**状态：CPU-003 DESIGN ERRATA COMPLETE / PENDING CHATGPT FINAL REVIEW / EXPERIMENTS NOT TESTED / R3 SPEC FROZEN / REAL D1 NOT AUTHORIZED / NO A-B WINNER。**
 
-下一条唯一研发指令：提交 CPU-003 设计计划供 ChatGPT 独立审核，再由项目负责人决定是否授权执行三个最小 CPU 实验。
+下一条唯一研发指令：提交设计勘误供 ChatGPT 最终审核；审核通过后，等待项目负责人**单独**批准 CPU-003 Stage 1（E1）实验。不要自动开始 Stage 1、Stage 2 或 Stage 3。
+
+## 10. 勘误记录（就地修改清单）
+
+本节记录 `F3B_D1_A_CPU_003_DESIGN_ERRATA_001_20261027.md` 对本文件的每处改动（旧文可由提交 `6c8bab5` 取回）：
+
+| 位置 | 改动 | 勘误项 |
+|---|---|---|
+| 文件头 | 增加勘误说明与历史提交指引 | 全部 |
+| 2.3 COMMON-ORACLE | 重写：`pidfd` 只证明身份稳定性 / 生命周期，不证明血缘；归属真值 = 台架创建时的谱系账本；被测监督器盲；节点规格不再放 `argv`；区分「真相已知而机制无法证明」与「台架无法建立真值」；`/proc` 字段相同 ≠ 身份相同 | ERRATA-02 |
+| 2.4 COMMON-STATES | 重写：机制协议状态与实验判定两层；删除"机制按设计拒绝继续即 BLOCKED"的混用表述 | ERRATA-04 |
+| 2.5 COMMON-SAFETY | 清理动作同样受约束并计入误信号统计；"BLOCKED"改为"（台架层）BLOCKED" | ERRATA-03 / 04 |
+| 2.6 COMMON-CLEANUP | 整节替换：创建时登记、先开 pidfd 再核对、令牌只做诊断、禁止 `pkill` / 名称匹配 / 清理性 `killpg`、身份不明则停止并台架 BLOCKED、观察者 + janitor 的最终清理责任、失败留痕 | ERRATA-03 |
+| 第 3 节第 2 项 | `UNKNOWN` 率 0% 标明为 ChatGPT 建议、需负责人正式批准；加入度量定义、5% 与 n ≥ 50 提议值 | ERRATA-01 |
+| E1-A | Independent Oracle、Expected Result、BLOCKED Criteria、Cleanup 重写（不再 `killpg`；S0 拒绝=机制 BLOCKED=实验 PASS） | 02 / 03 / 04 |
+| E1-B、E1-C | Independent Oracle 与 BLOCKED Criteria 重写（谱系账本；look-alike=真相已知而机制无法证明） | 02 / 04 |
+| E1-D | Independent Oracle、Expected、PASS、FAIL、BLOCKED、Known Limitations 重写：类别 N/L/A/M、结果类 R/U-exp/U-unexp/X/B、分子分母、排除规则、安全与可用性分开 | ERRATA-01 |
+| 全部 13 张卡 | BLOCKED Criteria 行标明"仅指实验判定层"；新增"机制状态 → 实验判定映射"行 | ERRATA-04 |
+| E3-0 / A / B / C | Cleanup 行改为观察者 + janitor、令牌只做诊断；BLOCKED Criteria 行改写（机制 BLOCKED 符合预期=实验 PASS） | 03 / 04 |
+| 末尾 | 状态与下一条指令改为勘误版 | — |

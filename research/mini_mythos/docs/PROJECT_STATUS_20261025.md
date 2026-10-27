@@ -1,5 +1,11 @@
 # Mini-Mythos / OpenMythos — 全项目研发进度（2026-10-25 更新版）
 
+## D1 CPU-003 设计勘误检查点（2026-10-27；本文件最新阶段进度，优先于下方 CPU-003 设计检查点）
+
+F3B-D1-A-CPU-003-DESIGN-ERRATA-001：仅文档。关闭 ChatGPT 审核要求的四项执行前勘误（`UNKNOWN` 率验收、独立真值、清理机制、机制状态与实验判定分层）。**Grok 状态更新为 GROK CROSS-REVIEW COMPLETED — USER-PROVIDED SUMMARY / ORIGINAL REPORT NOT ARCHIVED**（历史块中的 DEFERRED 不改）。三项实验仍 DESIGN ONLY / NOT TESTED；不选方案；冻结 R3 与真实 D1 状态不变。
+
+**状态：**ChatGPT 最终审核 PENDING。下一条唯一指令：提交勘误供 ChatGPT 最终审核；通过后等待负责人单独批准 Stage 1（E1）。
+
 ## D1 CPU-003 安全监督器设计检查点（2026-10-27；本文件最新阶段进度，优先于下方 CPU-002 检查点）
 
 F3B-D1-A-CPU-003：仅文档。为未来 R3 修订评审制定三个最小 CPU 实验的设计与预注册判据（E1 归属 / E2 唯一回收者 / E3 崩溃恢复），并整理候选架构、依赖与待决分歧。未执行任何实验；三项均 DESIGN ONLY / NOT TESTED；不选方案；冻结 R3 与真实 D1 状态不变。
