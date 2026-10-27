@@ -1,0 +1,971 @@
+{
+  "prereg_id": "E1A-PREREG-V1",
+  "schema_version": "e1a-prereg-1",
+  "experiment": "F3B-D1-A-CPU-003 E1-A (S0 session preconditions)",
+  "date": "2026-10-27",
+  "base_commit": "6a089f5980657fe7e5f92f8a2e64579dcfac727b",
+  "frozen_scope": [
+    "E1-A"
+  ],
+  "not_frozen": {
+    "E1-B": "PENDING_OWNER_APPROVAL - criteria not frozen here",
+    "E1-C": "PENDING_OWNER_APPROVAL - criteria not frozen here",
+    "E1-D": "PENDING_OWNER_APPROVAL - criteria not frozen here (global parameters below are preparation parameters only)"
+  },
+  "authorization": {
+    "instruction": "F3B-D1-A-CPU-003-E1A-PREP-001",
+    "scope": "PREREGISTRATION AND BENCH IMPLEMENTATION ONLY",
+    "execution_authorized": false,
+    "note": "This file freezes acceptance criteria for FUTURE runs. It does not mean any experiment has passed, and the first controlled run needs a separate owner authorization."
+  },
+  "global_parameters": {
+    "approved_for_preparation_by_owner": true,
+    "applies_to_future_runs_only_not_a_pass": true,
+    "w1_w2_nominal_unexpected_unknown_target": 0,
+    "bench_blocked_fraction_max_per_cell": 0.05,
+    "min_valid_trials_per_cell_E1D": 50,
+    "e1a_deterministic_repetitions_retained": 20,
+    "primary_python": "3.13.16",
+    "stress_5000_allowed": false,
+    "cgroup_and_proc_connector": "read-only investigation only; no system configuration change",
+    "cpu_only": true,
+    "gpu_allowed": false
+  },
+  "environment_expectation": {
+    "platform": "Linux microVM",
+    "kernel_recorded_at_design_time": "6.18.44-fc-v165",
+    "python": "3.13.16",
+    "uid": 0,
+    "required_capabilities": [
+      "os.pidfd_open",
+      "signal.pidfd_send_signal",
+      "socket.send_fds/recv_fds",
+      "os.waitid",
+      "prctl(PR_SET/GET_CHILD_SUBREAPER) via ctypes"
+    ],
+    "mismatch_policy": "Any difference is recorded in every trial record; a missing required capability makes the affected cells bench-BLOCKED."
+  },
+  "candidate_code_pins": {
+    "a_lab.py (CPU-001, candidate P0 and base of P1)": {
+      "path": "research/mini_mythos/r3_cpu_probes/a_predicate/a_lab.py",
+      "sha256": "3b843ccd1da56c3237e767753b0f09b4088cc10f9589565003a6bcf11c9b07e4"
+    },
+    "e2_lab.py (CPU-002, candidate P1)": {
+      "path": "research/mini_mythos/r3_cpu_probes/a_predicate_002/e2_lab.py",
+      "sha256": "395ddb219d58f36915cff6ac0a5b49a8ae1bd65224916541acdbadf6bf5ac407"
+    },
+    "pin_policy": "The runner refuses to start if either hash differs."
+  },
+  "frozen_reference_hashes": {
+    "R3 approved candidate": "66a656145fc203c71b233ac872eb2eb4c24476717f95f57c1e67a5c112e242c5",
+    "R3 owner decision": "6209602e7d51b1ae2774bf13282d962c28132c18757c25b70a589b97eb926319",
+    "R3 spec freeze record": "e3bba6b0968101bf68ce4679d8eb6b6c9b1e4a748227479c11c74b2782bf596f",
+    "design errata 001": "8677b539e82ebc7e9cc5fdc545d8ad0e412215946fa46b2226771617da24830c",
+    "design errata 002": "eeac9f446d0bdac814c78931529119cf100aa2d6314b53b17eac81fffea17314",
+    "design plan": "a3e6f54d8c780b256dc8a9f3e09f6e93104d9cc394c6b1301f14b58464b90f59"
+  },
+  "state_vocabulary": {
+    "mechanism_protocol_states": [
+      "ACCEPT",
+      "BLOCKED",
+      "UNKNOWN"
+    ],
+    "experiment_verdicts": [
+      "PASS",
+      "FAIL",
+      "BLOCKED",
+      "NOT TESTED"
+    ],
+    "provability_classes": [
+      "PROVABLE",
+      "UNPROVABLE",
+      "BENCH_UNVERIFIABLE"
+    ],
+    "layering_rule": "A mechanism BLOCKED never becomes an experiment BLOCKED automatically. Experiment BLOCKED means only that the bench could not establish or complete the preregistered scenario."
+  },
+  "s0_checks": {
+    "C1": {
+      "name": "root_is_session_leader",
+      "rule": "PR-S0-1",
+      "defect_when": "root.sid != root.pid",
+      "code_p2": "ROOT_NOT_SESSION_LEADER"
+    },
+    "C2": {
+      "name": "root_session_not_supervisor_session",
+      "rule": "PR-S0-2",
+      "defect_when": "root.sid == getsid(supervisor)",
+      "code_p2": "ROOT_SESSION_IS_SUPERVISOR_SESSION"
+    },
+    "C3": {
+      "name": "root_is_process_group_leader",
+      "rule": "PR-S0-3",
+      "defect_when": "root.pgrp != root.pid",
+      "code_p2": "ROOT_NOT_PGROUP_LEADER"
+    },
+    "C4": {
+      "name": "root_has_no_preexisting_children",
+      "rule": "PR-S0-4",
+      "defect_when": "exists process with ppid == root.pid at S0 time",
+      "code_p2": "ROOT_HAS_PREEXISTING_CHILDREN"
+    },
+    "C5": {
+      "name": "supervisor_children_equal_declared_set",
+      "rule": "PR-S0-5",
+      "defect_when": "children(supervisor) != {root} union declared_aux",
+      "code_p2": "SUPERVISOR_HAS_UNREGISTERED_CHILDREN"
+    },
+    "C6": {
+      "name": "root_fingerprint_stable",
+      "rule": "PR-S0-6",
+      "defect_when": "re-read (pid,starttime,sid,pgrp) != registered fingerprint",
+      "code_p2": "ROOT_FINGERPRINT_MISMATCH"
+    },
+    "C7": {
+      "name": "sigchld_disposition_default",
+      "rule": "PR-S0-7",
+      "defect_when": "SIGCHLD ignored (getsignal != SIG_DFL or /proc/self/status SigIgn bit 16 set)",
+      "code_p2": "SIGCHLD_NOT_DEFAULT"
+    },
+    "C8": {
+      "name": "subreaper_set_and_verified",
+      "rule": "PR-S0-8",
+      "defect_when": "prctl(PR_SET_CHILD_SUBREAPER) failed or PR_GET_CHILD_SUBREAPER != 1",
+      "code_p2": "SUBREAPER_NOT_VERIFIED"
+    }
+  },
+  "proof_rules": {
+    "PR-S0-1": "Proves 'root leads its own session': the kernel-reported sid of the registered root equals its pid. Premise: root fingerprint verified (pid,starttime) before the read.",
+    "PR-S0-2": "Proves 'root session differs from the supervisor session': root.sid != os.getsid(0) of the supervisor process.",
+    "PR-S0-3": "Proves 'root leads its process group': root.pgrp == root.pid.",
+    "PR-S0-4": "Proves 'root has no children at S0 time': a complete /proc enumeration (no unreadable entry, no ScanFailed) finds no process with ppid == root.pid.",
+    "PR-S0-5": "Proves 'the supervisor has no children other than the root and its declared auxiliaries': complete /proc enumeration of ppid == supervisor pid.",
+    "PR-S0-6": "Proves 'the registered fingerprint still describes the live root': re-read (pid,starttime,sid,pgrp) equals the registered tuple.",
+    "PR-S0-7": "Proves 'SIGCHLD is not ignored': signal.getsignal(SIGCHLD) is SIG_DFL and the SigIgn bit for signal 17 in /proc/self/status is clear.",
+    "PR-S0-8": "Proves 'the subreaper flag is set': prctl set returned success AND prctl get returned 1."
+  },
+  "candidates": {
+    "P0": {
+      "label": "original CA/CB preflight (CPU-001 a_lab.ArmCA)",
+      "ecd_rules": [
+        "PR-S0-6",
+        "PR-S0-8"
+      ],
+      "ecd_note": "register_root() compares the live /proc fingerprint with the supplied node record (-> PR-S0-6); preflight() sets and reads back the subreaper flag (-> PR-S0-8). There is no session, process-group, children or SIGCHLD check. ES-CW (closed-world declaration) and ES-SID (sid_hint without S0 session verification) are NOT proofs.",
+      "adapter": "a_lab.Blocked raised by register_root -> BLOCKED(ROOT_FINGERPRINT_MISMATCH); preflight() status BLOCKED -> BLOCKED(PREFLIGHT_FAILED); otherwise ACCEPT.",
+      "code_vocabulary": [
+        "ROOT_FINGERPRINT_MISMATCH",
+        "PREFLIGHT_FAILED"
+      ],
+      "capability_status": "VERIFIED_BY_SOURCE_READING (CPU-001 code pinned by SHA-256)"
+    },
+    "P1": {
+      "label": "strict variant preflight (CPU-002 e2_lab.ArmCAS)",
+      "ecd_rules": [
+        "PR-S0-1",
+        "PR-S0-2",
+        "PR-S0-6",
+        "PR-S0-8"
+      ],
+      "ecd_note": "As P0 plus StrictMixin.preflight(): dedicated_session = (root.sid == root.pid) and (root.sid != os.getsid(0)), reported as the single code STAGE_SESSION_NOT_DEDICATED (it cannot tell C1 from C2). PR-S0-3 is implied by C1 only when C1 holds. No children or SIGCHLD checks.",
+      "adapter": "As P0; status BLOCKED with code STAGE_SESSION_NOT_DEDICATED is reported as is.",
+      "code_vocabulary": [
+        "ROOT_FINGERPRINT_MISMATCH",
+        "PREFLIGHT_FAILED",
+        "STAGE_SESSION_NOT_DEDICATED"
+      ],
+      "capability_status": "VERIFIED_BY_SOURCE_READING (CPU-002 code pinned by SHA-256)"
+    },
+    "P2": {
+      "label": "S0 candidate s0_check() (O-2 definition; new bench code)",
+      "ecd_rules": [
+        "PR-S0-1",
+        "PR-S0-2",
+        "PR-S0-3",
+        "PR-S0-4",
+        "PR-S0-5",
+        "PR-S0-6",
+        "PR-S0-7",
+        "PR-S0-8"
+      ],
+      "ecd_note": "All eight direct kernel-read checks; every failing check yields its own code and the full set is reported (sorted).",
+      "adapter": "s0_check(view) returns ACCEPT with the list of evaluated rules, or BLOCKED with the sorted code set and cited rules.",
+      "code_vocabulary": [
+        "ROOT_NOT_SESSION_LEADER",
+        "ROOT_SESSION_IS_SUPERVISOR_SESSION",
+        "ROOT_NOT_PGROUP_LEADER",
+        "ROOT_HAS_PREEXISTING_CHILDREN",
+        "SUPERVISOR_HAS_UNREGISTERED_CHILDREN",
+        "ROOT_FINGERPRINT_MISMATCH",
+        "SIGCHLD_NOT_DEFAULT",
+        "SUBREAPER_NOT_VERIFIED"
+      ],
+      "capability_status": "IMPLEMENTED_NOT_TESTED"
+    },
+    "P3": {
+      "label": "event stream (proc connector)",
+      "ecd_rules": [],
+      "capability_status": "UNVERIFIED",
+      "e1a_run": false,
+      "note": "Read-only feasibility investigation only (no system configuration change). Not declared PROVABLE for any E1-A scenario; no E1-A classification exists."
+    },
+    "P4": {
+      "label": "cgroup membership",
+      "ecd_rules": [],
+      "capability_status": "UNVERIFIED",
+      "e1a_run": false,
+      "note": "Read-only feasibility investigation only; this environment has cgroup v1 controllers only. Not declared PROVABLE for any E1-A scenario; no E1-A classification exists."
+    }
+  },
+  "plan_mapping": {
+    "plan_card_letters": {
+      "(a)": "E1A-a",
+      "(b)": "E1A-b",
+      "(c)": "E1A-c",
+      "(d)": "E1A-d",
+      "(e)": [
+        "E1A-e1",
+        "E1A-e2"
+      ],
+      "(f)": "E1A-f",
+      "(g)": "E1A-g",
+      "(h)": [
+        "E1A-h1",
+        "E1A-h2"
+      ],
+      "(i)": "E1A-i"
+    },
+    "refinements": [
+      "Plan item (e) 'root already has unregistered children at S0' was ambiguous: split into E1A-e1 (root has a child) and E1A-e2 (supervisor has an undeclared child).",
+      "Plan item (h) covers two different failures (set fails / read-back mismatch): split into E1A-h1 and E1A-h2.",
+      "ERRATA-002 section 1.4 lumps (b)-(i) as 'misconfiguration, expect BLOCKED'. A bystander in the supervisor's session is harmless when the root is a correct dedicated session leader, so that situation is registered as the benign control E1A-a2 (expect ACCEPT); the dangerous combination remains E1A-i.",
+      "Plan item (d) 'root is not a process-group leader' cannot occur for a session leader; it is registered as a non-leader member of a different session."
+    ]
+  },
+  "scenarios": {
+    "E1A-a": {
+      "description": "Correct configuration: root is a fresh session leader (sid==pgid==pid), sid != supervisor sid; supervisor has exactly the root as child; SIGCHLD default; subreaper settable.",
+      "construction": "SUP forks root via GATED-SPAWN; root calls setsid() after RELEASE.",
+      "defects": [],
+      "evidence_kind": "REAL_KERNEL",
+      "bystander_victim": "detached sentinel only",
+      "launch_contexts": [
+        "L1"
+      ],
+      "false_reject_sweep": {
+        "contexts": [
+          "L1",
+          "L2",
+          "L3",
+          "L4"
+        ],
+        "trials_per_context": 50,
+        "candidates": [
+          "P1",
+          "P2"
+        ]
+      }
+    },
+    "E1A-a2": {
+      "description": "Benign control: correct root as in E1A-a, PLUS a non-child bystander X that shares the SUPERVISOR's session (S0 must not depend on the cleanliness of the supervisor's own session).",
+      "construction": "As E1A-a; during the SETUP phase, which precedes the candidate's S0 and runs BEFORE the subreaper flag is set (so X is re-parented away from SUP, not to it), the SUP stub forks node M via GATED-SPAWN; M forks X via GATED-SPAWN (X stays in the supervisor's session) and exits; the SUP stub reaps M by specific pid; X is verified by the observer to be a live non-child of SUP in the supervisor's session before S0 starts, otherwise the trial is bench-BLOCKED (TOPOLOGY_NOT_AS_DESIGNED).",
+      "defects": [],
+      "evidence_kind": "REAL_KERNEL",
+      "bystander_victim": "X in supervisor session",
+      "launch_contexts": [
+        "L1"
+      ]
+    },
+    "E1A-b": {
+      "description": "Root shares the supervisor's session and process group (plain child).",
+      "construction": "SUP forks root via GATED-SPAWN; root performs no setsid/setpgid.",
+      "defects": [
+        "C1",
+        "C2",
+        "C3"
+      ],
+      "evidence_kind": "REAL_KERNEL",
+      "bystander_victim": "detached sentinel only",
+      "launch_contexts": [
+        "L1"
+      ]
+    },
+    "E1A-c": {
+      "description": "Root has its own process group but the same session as the supervisor.",
+      "construction": "SUP forks root; root calls setpgid(0,0) only.",
+      "defects": [
+        "C1",
+        "C2"
+      ],
+      "evidence_kind": "REAL_KERNEL",
+      "bystander_victim": "detached sentinel only",
+      "launch_contexts": [
+        "L1"
+      ]
+    },
+    "E1A-d": {
+      "description": "Root is a non-leader member of a different session (sid != supervisor sid, sid != root pid, pgrp != root pid).",
+      "construction": "SUP forks leader node L (L calls setsid()); L forks root via GATED-SPAWN; root performs no setsid/setpgid.",
+      "defects": [
+        "C1",
+        "C3"
+      ],
+      "evidence_kind": "REAL_KERNEL",
+      "bystander_victim": "detached sentinel only",
+      "launch_contexts": [
+        "L1"
+      ]
+    },
+    "E1A-e1": {
+      "description": "Correct dedicated root, but root already has an unregistered child at S0 time.",
+      "construction": "As E1A-a; the root node spawns child via GATED-SPAWN before S0.",
+      "defects": [
+        "C4"
+      ],
+      "evidence_kind": "REAL_KERNEL",
+      "bystander_victim": "detached sentinel only",
+      "launch_contexts": [
+        "L1"
+      ]
+    },
+    "E1A-e2": {
+      "description": "Correct dedicated root, but the supervisor has an additional undeclared child Y at S0 time.",
+      "construction": "As E1A-a; SUP forks Y via GATED-SPAWN and does not declare it.",
+      "defects": [
+        "C5"
+      ],
+      "evidence_kind": "REAL_KERNEL",
+      "bystander_victim": "detached sentinel only",
+      "launch_contexts": [
+        "L1"
+      ]
+    },
+    "E1A-f": {
+      "description": "Registered root fingerprint no longer matches the live root (pid-reuse style staleness).",
+      "construction": "As E1A-a; the registered starttime handed to the candidate is incremented by 1 (injection).",
+      "defects": [
+        "C6"
+      ],
+      "evidence_kind": "SIMULATED",
+      "bystander_victim": "detached sentinel only",
+      "launch_contexts": [
+        "L1"
+      ]
+    },
+    "E1A-g": {
+      "description": "SIGCHLD is ignored in the supervisor (inherited SIG_IGN across exec).",
+      "construction": "As E1A-a; the gated child sets SIGCHLD to SIG_IGN before exec'ing the supervisor stub, so the disposition is inherited.",
+      "defects": [
+        "C7"
+      ],
+      "evidence_kind": "REAL_KERNEL",
+      "bystander_victim": "detached sentinel only",
+      "launch_contexts": [
+        "L1"
+      ]
+    },
+    "E1A-h1": {
+      "description": "Subreaper flag cannot be set (prctl set returns failure).",
+      "construction": "As E1A-a; the candidate's prctl-set function is replaced by one that fails (injection).",
+      "defects": [
+        "C8"
+      ],
+      "evidence_kind": "SIMULATED",
+      "bystander_victim": "detached sentinel only",
+      "launch_contexts": [
+        "L1"
+      ]
+    },
+    "E1A-h2": {
+      "description": "Subreaper flag read-back mismatch (prctl get returns 0 after a successful set).",
+      "construction": "As E1A-a; the candidate's prctl-get function is replaced by one that returns 0 (injection).",
+      "defects": [
+        "C8"
+      ],
+      "evidence_kind": "SIMULATED",
+      "bystander_victim": "detached sentinel only",
+      "launch_contexts": [
+        "L1"
+      ]
+    },
+    "E1A-i": {
+      "description": "Dangerous topology of CPU-002 E1-S2: root shares the supervisor's session AND an unrelated non-child bystander X lives in that session.",
+      "construction": "As E1A-b; additionally the same SETUP-phase M/X construction as in E1A-a2 (X orphaned into the supervisor's session before the subreaper flag is set).",
+      "defects": [
+        "C1",
+        "C2",
+        "C3"
+      ],
+      "evidence_kind": "REAL_KERNEL",
+      "bystander_victim": "X in supervisor session",
+      "launch_contexts": [
+        "L1"
+      ]
+    }
+  },
+  "classification": {
+    "E1A-a": {
+      "P0": {
+        "class": "PROVABLE",
+        "expected_s0_verdict": "ACCEPT",
+        "expected_codes": null,
+        "cited_rules_required": [],
+        "rationale": "No defect exists; ACCEPT is the correct answer for this candidate."
+      },
+      "P1": {
+        "class": "PROVABLE",
+        "expected_s0_verdict": "ACCEPT",
+        "expected_codes": null,
+        "cited_rules_required": [],
+        "rationale": "No defect exists; ACCEPT is the correct answer for this candidate."
+      },
+      "P2": {
+        "class": "PROVABLE",
+        "expected_s0_verdict": "ACCEPT",
+        "expected_codes": null,
+        "cited_rules_required": [],
+        "rationale": "No defect exists; ACCEPT is the correct answer for this candidate."
+      },
+      "P3": {
+        "class": "NOT_CLASSIFIED",
+        "reason": "capability UNVERIFIED; candidate not run in E1-A; not declared PROVABLE"
+      },
+      "P4": {
+        "class": "NOT_CLASSIFIED",
+        "reason": "capability UNVERIFIED; candidate not run in E1-A; not declared PROVABLE"
+      }
+    },
+    "E1A-a2": {
+      "P0": {
+        "class": "PROVABLE",
+        "expected_s0_verdict": "ACCEPT",
+        "expected_codes": null,
+        "cited_rules_required": [],
+        "rationale": "No defect exists; ACCEPT is the correct answer for this candidate."
+      },
+      "P1": {
+        "class": "PROVABLE",
+        "expected_s0_verdict": "ACCEPT",
+        "expected_codes": null,
+        "cited_rules_required": [],
+        "rationale": "No defect exists; ACCEPT is the correct answer for this candidate."
+      },
+      "P2": {
+        "class": "PROVABLE",
+        "expected_s0_verdict": "ACCEPT",
+        "expected_codes": null,
+        "cited_rules_required": [],
+        "rationale": "No defect exists; ACCEPT is the correct answer for this candidate."
+      },
+      "P3": {
+        "class": "NOT_CLASSIFIED",
+        "reason": "capability UNVERIFIED; candidate not run in E1-A; not declared PROVABLE"
+      },
+      "P4": {
+        "class": "NOT_CLASSIFIED",
+        "reason": "capability UNVERIFIED; candidate not run in E1-A; not declared PROVABLE"
+      }
+    },
+    "E1A-b": {
+      "P0": {
+        "class": "UNPROVABLE",
+        "expected_s0_verdict": "REFUSE_ANY",
+        "expected_codes": null,
+        "cited_rules_required": [],
+        "rationale": "The scenario defect(s) ['C1', 'C2', 'C3'] need rule(s) ['PR-S0-1', 'PR-S0-2', 'PR-S0-3'] which are outside this candidate's ECD; any ACCEPT is a determinate answer without proof."
+      },
+      "P1": {
+        "class": "PROVABLE",
+        "expected_s0_verdict": "BLOCKED",
+        "expected_codes": [
+          "STAGE_SESSION_NOT_DEDICATED"
+        ],
+        "cited_rules_required": [
+          "PR-S0-1",
+          "PR-S0-2"
+        ],
+        "rationale": "Defect(s) ['C1', 'C2', 'C3'] are provable with rule(s) ['PR-S0-1', 'PR-S0-2'] inside the candidate's ECD; the candidate must reject with exactly this code set before any signal or wait."
+      },
+      "P2": {
+        "class": "PROVABLE",
+        "expected_s0_verdict": "BLOCKED",
+        "expected_codes": [
+          "ROOT_NOT_PGROUP_LEADER",
+          "ROOT_NOT_SESSION_LEADER",
+          "ROOT_SESSION_IS_SUPERVISOR_SESSION"
+        ],
+        "cited_rules_required": [
+          "PR-S0-1",
+          "PR-S0-2",
+          "PR-S0-3"
+        ],
+        "rationale": "Defect(s) ['C1', 'C2', 'C3'] are provable with rule(s) ['PR-S0-1', 'PR-S0-2', 'PR-S0-3'] inside the candidate's ECD; the candidate must reject with exactly this code set before any signal or wait."
+      },
+      "P3": {
+        "class": "NOT_CLASSIFIED",
+        "reason": "capability UNVERIFIED; candidate not run in E1-A; not declared PROVABLE"
+      },
+      "P4": {
+        "class": "NOT_CLASSIFIED",
+        "reason": "capability UNVERIFIED; candidate not run in E1-A; not declared PROVABLE"
+      }
+    },
+    "E1A-c": {
+      "P0": {
+        "class": "UNPROVABLE",
+        "expected_s0_verdict": "REFUSE_ANY",
+        "expected_codes": null,
+        "cited_rules_required": [],
+        "rationale": "The scenario defect(s) ['C1', 'C2'] need rule(s) ['PR-S0-1', 'PR-S0-2'] which are outside this candidate's ECD; any ACCEPT is a determinate answer without proof."
+      },
+      "P1": {
+        "class": "PROVABLE",
+        "expected_s0_verdict": "BLOCKED",
+        "expected_codes": [
+          "STAGE_SESSION_NOT_DEDICATED"
+        ],
+        "cited_rules_required": [
+          "PR-S0-1",
+          "PR-S0-2"
+        ],
+        "rationale": "Defect(s) ['C1', 'C2'] are provable with rule(s) ['PR-S0-1', 'PR-S0-2'] inside the candidate's ECD; the candidate must reject with exactly this code set before any signal or wait."
+      },
+      "P2": {
+        "class": "PROVABLE",
+        "expected_s0_verdict": "BLOCKED",
+        "expected_codes": [
+          "ROOT_NOT_SESSION_LEADER",
+          "ROOT_SESSION_IS_SUPERVISOR_SESSION"
+        ],
+        "cited_rules_required": [
+          "PR-S0-1",
+          "PR-S0-2"
+        ],
+        "rationale": "Defect(s) ['C1', 'C2'] are provable with rule(s) ['PR-S0-1', 'PR-S0-2'] inside the candidate's ECD; the candidate must reject with exactly this code set before any signal or wait."
+      },
+      "P3": {
+        "class": "NOT_CLASSIFIED",
+        "reason": "capability UNVERIFIED; candidate not run in E1-A; not declared PROVABLE"
+      },
+      "P4": {
+        "class": "NOT_CLASSIFIED",
+        "reason": "capability UNVERIFIED; candidate not run in E1-A; not declared PROVABLE"
+      }
+    },
+    "E1A-d": {
+      "P0": {
+        "class": "UNPROVABLE",
+        "expected_s0_verdict": "REFUSE_ANY",
+        "expected_codes": null,
+        "cited_rules_required": [],
+        "rationale": "The scenario defect(s) ['C1', 'C3'] need rule(s) ['PR-S0-1', 'PR-S0-3'] which are outside this candidate's ECD; any ACCEPT is a determinate answer without proof."
+      },
+      "P1": {
+        "class": "PROVABLE",
+        "expected_s0_verdict": "BLOCKED",
+        "expected_codes": [
+          "STAGE_SESSION_NOT_DEDICATED"
+        ],
+        "cited_rules_required": [
+          "PR-S0-1"
+        ],
+        "rationale": "Defect(s) ['C1', 'C3'] are provable with rule(s) ['PR-S0-1'] inside the candidate's ECD; the candidate must reject with exactly this code set before any signal or wait."
+      },
+      "P2": {
+        "class": "PROVABLE",
+        "expected_s0_verdict": "BLOCKED",
+        "expected_codes": [
+          "ROOT_NOT_PGROUP_LEADER",
+          "ROOT_NOT_SESSION_LEADER"
+        ],
+        "cited_rules_required": [
+          "PR-S0-1",
+          "PR-S0-3"
+        ],
+        "rationale": "Defect(s) ['C1', 'C3'] are provable with rule(s) ['PR-S0-1', 'PR-S0-3'] inside the candidate's ECD; the candidate must reject with exactly this code set before any signal or wait."
+      },
+      "P3": {
+        "class": "NOT_CLASSIFIED",
+        "reason": "capability UNVERIFIED; candidate not run in E1-A; not declared PROVABLE"
+      },
+      "P4": {
+        "class": "NOT_CLASSIFIED",
+        "reason": "capability UNVERIFIED; candidate not run in E1-A; not declared PROVABLE"
+      }
+    },
+    "E1A-e1": {
+      "P0": {
+        "class": "UNPROVABLE",
+        "expected_s0_verdict": "REFUSE_ANY",
+        "expected_codes": null,
+        "cited_rules_required": [],
+        "rationale": "The scenario defect(s) ['C4'] need rule(s) ['PR-S0-4'] which are outside this candidate's ECD; any ACCEPT is a determinate answer without proof."
+      },
+      "P1": {
+        "class": "UNPROVABLE",
+        "expected_s0_verdict": "REFUSE_ANY",
+        "expected_codes": null,
+        "cited_rules_required": [],
+        "rationale": "The scenario defect(s) ['C4'] need rule(s) ['PR-S0-4'] which are outside this candidate's ECD; any ACCEPT is a determinate answer without proof."
+      },
+      "P2": {
+        "class": "PROVABLE",
+        "expected_s0_verdict": "BLOCKED",
+        "expected_codes": [
+          "ROOT_HAS_PREEXISTING_CHILDREN"
+        ],
+        "cited_rules_required": [
+          "PR-S0-4"
+        ],
+        "rationale": "Defect(s) ['C4'] are provable with rule(s) ['PR-S0-4'] inside the candidate's ECD; the candidate must reject with exactly this code set before any signal or wait."
+      },
+      "P3": {
+        "class": "NOT_CLASSIFIED",
+        "reason": "capability UNVERIFIED; candidate not run in E1-A; not declared PROVABLE"
+      },
+      "P4": {
+        "class": "NOT_CLASSIFIED",
+        "reason": "capability UNVERIFIED; candidate not run in E1-A; not declared PROVABLE"
+      }
+    },
+    "E1A-e2": {
+      "P0": {
+        "class": "UNPROVABLE",
+        "expected_s0_verdict": "REFUSE_ANY",
+        "expected_codes": null,
+        "cited_rules_required": [],
+        "rationale": "The scenario defect(s) ['C5'] need rule(s) ['PR-S0-5'] which are outside this candidate's ECD; any ACCEPT is a determinate answer without proof."
+      },
+      "P1": {
+        "class": "UNPROVABLE",
+        "expected_s0_verdict": "REFUSE_ANY",
+        "expected_codes": null,
+        "cited_rules_required": [],
+        "rationale": "The scenario defect(s) ['C5'] need rule(s) ['PR-S0-5'] which are outside this candidate's ECD; any ACCEPT is a determinate answer without proof."
+      },
+      "P2": {
+        "class": "PROVABLE",
+        "expected_s0_verdict": "BLOCKED",
+        "expected_codes": [
+          "SUPERVISOR_HAS_UNREGISTERED_CHILDREN"
+        ],
+        "cited_rules_required": [
+          "PR-S0-5"
+        ],
+        "rationale": "Defect(s) ['C5'] are provable with rule(s) ['PR-S0-5'] inside the candidate's ECD; the candidate must reject with exactly this code set before any signal or wait."
+      },
+      "P3": {
+        "class": "NOT_CLASSIFIED",
+        "reason": "capability UNVERIFIED; candidate not run in E1-A; not declared PROVABLE"
+      },
+      "P4": {
+        "class": "NOT_CLASSIFIED",
+        "reason": "capability UNVERIFIED; candidate not run in E1-A; not declared PROVABLE"
+      }
+    },
+    "E1A-f": {
+      "P0": {
+        "class": "PROVABLE",
+        "expected_s0_verdict": "BLOCKED",
+        "expected_codes": [
+          "ROOT_FINGERPRINT_MISMATCH"
+        ],
+        "cited_rules_required": [
+          "PR-S0-6"
+        ],
+        "rationale": "Defect(s) ['C6'] are provable with rule(s) ['PR-S0-6'] inside the candidate's ECD; the candidate must reject with exactly this code set before any signal or wait."
+      },
+      "P1": {
+        "class": "PROVABLE",
+        "expected_s0_verdict": "BLOCKED",
+        "expected_codes": [
+          "ROOT_FINGERPRINT_MISMATCH"
+        ],
+        "cited_rules_required": [
+          "PR-S0-6"
+        ],
+        "rationale": "Defect(s) ['C6'] are provable with rule(s) ['PR-S0-6'] inside the candidate's ECD; the candidate must reject with exactly this code set before any signal or wait."
+      },
+      "P2": {
+        "class": "PROVABLE",
+        "expected_s0_verdict": "BLOCKED",
+        "expected_codes": [
+          "ROOT_FINGERPRINT_MISMATCH"
+        ],
+        "cited_rules_required": [
+          "PR-S0-6"
+        ],
+        "rationale": "Defect(s) ['C6'] are provable with rule(s) ['PR-S0-6'] inside the candidate's ECD; the candidate must reject with exactly this code set before any signal or wait."
+      },
+      "P3": {
+        "class": "NOT_CLASSIFIED",
+        "reason": "capability UNVERIFIED; candidate not run in E1-A; not declared PROVABLE"
+      },
+      "P4": {
+        "class": "NOT_CLASSIFIED",
+        "reason": "capability UNVERIFIED; candidate not run in E1-A; not declared PROVABLE"
+      }
+    },
+    "E1A-g": {
+      "P0": {
+        "class": "UNPROVABLE",
+        "expected_s0_verdict": "REFUSE_ANY",
+        "expected_codes": null,
+        "cited_rules_required": [],
+        "rationale": "The scenario defect(s) ['C7'] need rule(s) ['PR-S0-7'] which are outside this candidate's ECD; any ACCEPT is a determinate answer without proof."
+      },
+      "P1": {
+        "class": "UNPROVABLE",
+        "expected_s0_verdict": "REFUSE_ANY",
+        "expected_codes": null,
+        "cited_rules_required": [],
+        "rationale": "The scenario defect(s) ['C7'] need rule(s) ['PR-S0-7'] which are outside this candidate's ECD; any ACCEPT is a determinate answer without proof."
+      },
+      "P2": {
+        "class": "PROVABLE",
+        "expected_s0_verdict": "BLOCKED",
+        "expected_codes": [
+          "SIGCHLD_NOT_DEFAULT"
+        ],
+        "cited_rules_required": [
+          "PR-S0-7"
+        ],
+        "rationale": "Defect(s) ['C7'] are provable with rule(s) ['PR-S0-7'] inside the candidate's ECD; the candidate must reject with exactly this code set before any signal or wait."
+      },
+      "P3": {
+        "class": "NOT_CLASSIFIED",
+        "reason": "capability UNVERIFIED; candidate not run in E1-A; not declared PROVABLE"
+      },
+      "P4": {
+        "class": "NOT_CLASSIFIED",
+        "reason": "capability UNVERIFIED; candidate not run in E1-A; not declared PROVABLE"
+      }
+    },
+    "E1A-h1": {
+      "P0": {
+        "class": "PROVABLE",
+        "expected_s0_verdict": "BLOCKED",
+        "expected_codes": [
+          "PREFLIGHT_FAILED"
+        ],
+        "cited_rules_required": [
+          "PR-S0-8"
+        ],
+        "rationale": "Defect(s) ['C8'] are provable with rule(s) ['PR-S0-8'] inside the candidate's ECD; the candidate must reject with exactly this code set before any signal or wait."
+      },
+      "P1": {
+        "class": "PROVABLE",
+        "expected_s0_verdict": "BLOCKED",
+        "expected_codes": [
+          "PREFLIGHT_FAILED"
+        ],
+        "cited_rules_required": [
+          "PR-S0-8"
+        ],
+        "rationale": "Defect(s) ['C8'] are provable with rule(s) ['PR-S0-8'] inside the candidate's ECD; the candidate must reject with exactly this code set before any signal or wait."
+      },
+      "P2": {
+        "class": "PROVABLE",
+        "expected_s0_verdict": "BLOCKED",
+        "expected_codes": [
+          "SUBREAPER_NOT_VERIFIED"
+        ],
+        "cited_rules_required": [
+          "PR-S0-8"
+        ],
+        "rationale": "Defect(s) ['C8'] are provable with rule(s) ['PR-S0-8'] inside the candidate's ECD; the candidate must reject with exactly this code set before any signal or wait."
+      },
+      "P3": {
+        "class": "NOT_CLASSIFIED",
+        "reason": "capability UNVERIFIED; candidate not run in E1-A; not declared PROVABLE"
+      },
+      "P4": {
+        "class": "NOT_CLASSIFIED",
+        "reason": "capability UNVERIFIED; candidate not run in E1-A; not declared PROVABLE"
+      }
+    },
+    "E1A-h2": {
+      "P0": {
+        "class": "PROVABLE",
+        "expected_s0_verdict": "BLOCKED",
+        "expected_codes": [
+          "PREFLIGHT_FAILED"
+        ],
+        "cited_rules_required": [
+          "PR-S0-8"
+        ],
+        "rationale": "Defect(s) ['C8'] are provable with rule(s) ['PR-S0-8'] inside the candidate's ECD; the candidate must reject with exactly this code set before any signal or wait."
+      },
+      "P1": {
+        "class": "PROVABLE",
+        "expected_s0_verdict": "BLOCKED",
+        "expected_codes": [
+          "PREFLIGHT_FAILED"
+        ],
+        "cited_rules_required": [
+          "PR-S0-8"
+        ],
+        "rationale": "Defect(s) ['C8'] are provable with rule(s) ['PR-S0-8'] inside the candidate's ECD; the candidate must reject with exactly this code set before any signal or wait."
+      },
+      "P2": {
+        "class": "PROVABLE",
+        "expected_s0_verdict": "BLOCKED",
+        "expected_codes": [
+          "SUBREAPER_NOT_VERIFIED"
+        ],
+        "cited_rules_required": [
+          "PR-S0-8"
+        ],
+        "rationale": "Defect(s) ['C8'] are provable with rule(s) ['PR-S0-8'] inside the candidate's ECD; the candidate must reject with exactly this code set before any signal or wait."
+      },
+      "P3": {
+        "class": "NOT_CLASSIFIED",
+        "reason": "capability UNVERIFIED; candidate not run in E1-A; not declared PROVABLE"
+      },
+      "P4": {
+        "class": "NOT_CLASSIFIED",
+        "reason": "capability UNVERIFIED; candidate not run in E1-A; not declared PROVABLE"
+      }
+    },
+    "E1A-i": {
+      "P0": {
+        "class": "UNPROVABLE",
+        "expected_s0_verdict": "REFUSE_ANY",
+        "expected_codes": null,
+        "cited_rules_required": [],
+        "rationale": "The scenario defect(s) ['C1', 'C2', 'C3'] need rule(s) ['PR-S0-1', 'PR-S0-2', 'PR-S0-3'] which are outside this candidate's ECD; any ACCEPT is a determinate answer without proof."
+      },
+      "P1": {
+        "class": "PROVABLE",
+        "expected_s0_verdict": "BLOCKED",
+        "expected_codes": [
+          "STAGE_SESSION_NOT_DEDICATED"
+        ],
+        "cited_rules_required": [
+          "PR-S0-1",
+          "PR-S0-2"
+        ],
+        "rationale": "Defect(s) ['C1', 'C2', 'C3'] are provable with rule(s) ['PR-S0-1', 'PR-S0-2'] inside the candidate's ECD; the candidate must reject with exactly this code set before any signal or wait."
+      },
+      "P2": {
+        "class": "PROVABLE",
+        "expected_s0_verdict": "BLOCKED",
+        "expected_codes": [
+          "ROOT_NOT_PGROUP_LEADER",
+          "ROOT_NOT_SESSION_LEADER",
+          "ROOT_SESSION_IS_SUPERVISOR_SESSION"
+        ],
+        "cited_rules_required": [
+          "PR-S0-1",
+          "PR-S0-2",
+          "PR-S0-3"
+        ],
+        "rationale": "Defect(s) ['C1', 'C2', 'C3'] are provable with rule(s) ['PR-S0-1', 'PR-S0-2', 'PR-S0-3'] inside the candidate's ECD; the candidate must reject with exactly this code set before any signal or wait."
+      },
+      "P3": {
+        "class": "NOT_CLASSIFIED",
+        "reason": "capability UNVERIFIED; candidate not run in E1-A; not declared PROVABLE"
+      },
+      "P4": {
+        "class": "NOT_CLASSIFIED",
+        "reason": "capability UNVERIFIED; candidate not run in E1-A; not declared PROVABLE"
+      }
+    }
+  },
+  "classification_note": "Classification is derived mechanically: a scenario with no defect is PROVABLE/ACCEPT; a scenario whose defects share no rule with the candidate's ECD is UNPROVABLE; otherwise PROVABLE with the code set the candidate can emit. P0 is a baseline: the frozen rule predicts FAIL for P0 wherever a scenario is UNPROVABLE for it and P0 answers ACCEPT; that is a consequence of its capability, not a number used to tune criteria. P3/P4 are not classified because their capability is unverified.",
+  "bench_unverifiable_conditions": [
+    "scenario topology differs from the intended construction when read back from the kernel (TOPOLOGY_NOT_AS_DESIGNED)",
+    "lineage ledger record missing or incomplete for any node in the trial",
+    "two independent truth sources disagree",
+    "blindness assertion fails (ledger path or role visible in the supervisor's argv/environment/open descriptors)",
+    "GATED-SPAWN bench validity check failed earlier in the same run"
+  ],
+  "independent_truth": {
+    "lifecycle_and_identity_stability": "pidfd (readability) + /proc stat + waitid(WNOWAIT) for direct children; at least two sources must agree. pidfd is NEVER used to infer lineage.",
+    "ownership_lineage": "Lineage ledger created by the observer at GATED-SPAWN registration: node id, creator, role, creation sequence, birth (pid, starttime), session_mode. The supervisor under test is blind to it.",
+    "kernel_configuration_readback": "Observer reads /proc/<root>/stat (sid, pgrp), /proc/<supervisor>/stat (sid), enumerates ppid relations, reads /proc/<supervisor>/status SigIgn; the subreaper flag is read by a bench stub inside the supervisor process, independent of the candidate's own call.",
+    "danger_oracle": "Signals and waits attempted by the supervisor are recorded by instrumentation wrappers; non-target liveness is read from pidfd + /proc. /proc fields being equal is never treated as identity proof."
+  },
+  "verdict_function": {
+    "order": [
+      "1. If any bench_unverifiable condition holds or the bench raised -> BLOCKED (bench).",
+      "2. If any unsafe event occurred (any signal, kill or wait call issued by the candidate between the start of preflight and the S0 verdict; any signal delivered to a process not in the trial's own target set; a wait call on a pid that is not a direct child of the supervisor; a non-target process killed or no longer alive at the end of the trial) -> FAIL (safety), regardless of anything else. E1-A judges only the S0 verdict and its side-effect freedom; downstream attribution harm is E1-B/C/D scope.",
+      "3. class PROVABLE and expected ACCEPT: PASS iff s0_verdict == ACCEPT; BLOCKED -> FAIL (false reject, availability); UNKNOWN -> FAIL.",
+      "4. class PROVABLE and expected BLOCKED: PASS iff s0_verdict == BLOCKED and the reported code set equals expected_codes exactly and the cited rules include cited_rules_required and are within the ECD and no signal/wait occurred before the verdict; otherwise FAIL.",
+      "5. class UNPROVABLE (expected REFUSE_ANY): PASS iff s0_verdict is BLOCKED (any codes) or UNKNOWN; ACCEPT -> FAIL even if the scenario happened to be harmless.",
+      "6. Cell verdict: PASS iff every repetition PASS; any FAIL -> FAIL (unstable results are FAIL); bench-BLOCKED repetitions are excluded from the cell numerator and denominator but reported; if bench-BLOCKED exceeds 5% of the planned repetitions the cell is INSUFFICIENT and the experiment verdict for that cell is BLOCKED.",
+      "7. Exclusion of repetitions is decided only from bench-level causes, never from the mechanism output; a BLOCKED repetition may be re-run under unchanged code; both records are kept."
+    ],
+    "first_action_order_check": "The sequence numbers in the supervisor event log must show S0_VERDICT before any SIGNAL or WAIT event (bench-infrastructure waits on M by pid are labelled and excluded)."
+  },
+  "repetitions": {
+    "deterministic_per_cell": 20,
+    "cells": "12 scenarios x candidates {P0,P1,P2} = 36 cells",
+    "false_reject_sweep": "E1A-a x {P1,P2} x launch contexts {L1,L2,L3,L4} x 50 trials",
+    "launch_contexts": {
+      "L1": "supervisor is a fresh session leader",
+      "L2": "L1 with SIGHUP ignored (nohup-like)",
+      "L3": "L1 with stdin/stdout/stderr redirected to /dev/null",
+      "L4": "L1 with a controlling terminal (pty); bench-BLOCKED if no pty is available"
+    },
+    "planned_trials": {
+      "deterministic": 720,
+      "false_reject_sweep": 400,
+      "total": 1120
+    },
+    "note": "No count proves the absence of races; E1-A scenarios are deterministic constructions."
+  },
+  "bench_validity_checks": {
+    "status_all": "NOT_TESTED (written, not run)",
+    "must_pass_before_any_cell_is_counted": true,
+    "checks": {
+      "BV-1": "An unreleased gated process executes no experiment action while the observer is alive and withholds RELEASE.",
+      "BV-2": "If the observer is killed before REGISTERED is written, the gated process exits by itself (EOF) within T_gate_max and no unregistered process remains.",
+      "BV-3": "A gated process exits by itself when the gate stays silent for T_gate_max.",
+      "BV-4": "For every released node, the REGISTERED line precedes the RELEASE byte (checked from REG order and recorded sequence numbers).",
+      "BV-5": "Descendants created by released nodes follow the same ticket/gate protocol; a node cannot release its own child.",
+      "BV-6": "The janitor refuses to signal when the re-opened pidfd's process has a different starttime than the record.",
+      "BV-7": "The janitor ignores INTENT-only records and a torn (newline-less) last REG line.",
+      "BV-8": "No gate write end is open in any child after the child's first fd-hygiene step (checked from /proc/<pid>/fd).",
+      "BV-9": "Blindness: the supervisor stub's argv, environment and open file descriptors contain neither the ledger/REG path nor any role label.",
+      "BV-10": "Instrumentation wrappers for os.kill, os.killpg, signal.pidfd_send_signal, os.waitpid and os.waitid are installed in the supervisor stub before any candidate code is imported."
+    }
+  },
+  "pass_fail_blocked": {
+    "PASS": "per verdict_function steps 3-5 and 6 for every cell, all bench validity checks passed, zero unsafe events, evidence complete.",
+    "FAIL": "any unsafe event; any cell FAIL; any unstable cell.",
+    "BLOCKED": "bench validity check failed; bench-unverifiable condition; INSUFFICIENT cell; cleanup failure (identity not confirmable); capability missing.",
+    "NOT TESTED": "not run."
+  },
+  "safety_boundaries": [
+    "only bench-created sacrificial processes; every one created through GATED-SPAWN",
+    "the supervisor stub runs in a fresh session created by the bench",
+    "signals only to registered processes after re-verifying (pid, starttime), via pidfd opened first",
+    "no pkill, no name matching, no process-group cleanup, no kill -- -pgid, no cleanup killpg",
+    "command-line tokens are diagnostic only and never authorize a signal",
+    "no GPU, no network, no real data, no system configuration change"
+  ],
+  "cleanup_procedure": [
+    "observer: re-verify registered (pid, starttime) against /proc, then pidfd_send_signal(SIGKILL) to still-running registered nodes, waitpid by specific pid for own children",
+    "if the observer dies: janitor reads REG, acts only on INTENT + complete REGISTERED records, re-opens pidfd first and then compares starttime",
+    "residual check by registry; token scan is a diagnostic report only; any identity that cannot be confirmed -> no signal, record, trial BLOCKED, next trial not started"
+  ],
+  "evidence_outputs": [
+    "per-trial JSON: scenario, candidate, repetition, launch context, environment, git commit/status, prereg sha256, class, mechanism output (verdict, codes, cited rules, event log), instrumentation log, truth readback, lineage ledger excerpt, danger-oracle result, verdict and reasons, evidence_kind",
+    "REG file (INTENT/REGISTERED/RELEASED/ABORTED) per run",
+    "bench validity check results",
+    "cleanup/residual diagnostics",
+    "final integrity verification (git ls-files and remote tree check performed after commit)"
+  ],
+  "evidence_path_rules": "Evidence directories must avoid names matched by the repository .gitignore (parts/, *_archive, *.log, dist/, lib/, var/, downloads/). git check-ignore must be run before the first run and the remote tree must be verified after pushing.",
+  "known_limitations": [
+    "E1-A tests the S0 verdict, not the later attribution quality (E1-B/C/D).",
+    "same-uid blindness is by construction, not a security boundary",
+    "root-only, single-kernel, Python 3.13.16 only",
+    "scenarios f, h1, h2 are SIMULATED injections",
+    "P3/P4 are unverified capabilities and are not evaluated here",
+    "design correctness is not run correctness: nothing in this file has been executed"
+  ],
+  "amendment_policy": "No change after the first run of any cell. A later fix is a new file e1_provability_table_v2.json; v1 and every result obtained under v1 are retained, and affected cells are re-run under v2.",
+  "execution_interlock": "The runner refuses --execute unless an owner authorization file referencing this file's SHA-256 exists. None exists at freeze time.",
+  "status": "FROZEN_AT_COMMIT (see the commit that adds this file)  /  EXPERIMENT NOT TESTED"
+}
