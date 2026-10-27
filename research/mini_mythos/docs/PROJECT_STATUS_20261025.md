@@ -1,5 +1,9 @@
 # Mini-Mythos / OpenMythos — 全项目研发进度（2026-10-25 更新版）
 
+## D1 CPU-003 E1-A 纯逻辑测试检查点（2026-10-27；本文件最新阶段进度，优先于下方 E1-A 静态审核最终收口检查点）
+
+F3B-D1-A-CPU-003-E1A-LOGIC-TEST-001：执行前核对全部通过；第 1 个测试文件被执行守卫（`guard_runner.py`）的 argv 缺陷阻断，没有任何测试断言被执行，按失败规则暂停，其余四个文件 NOT TESTED。台架 / 测试 / 预注册未改。下一条唯一指令：审核者与负责人确认是否允许只修正守卫的 argv 传递并重新开始；进程级测试仍未授权。R3 SPEC FROZEN；真实 D1 NOT AUTHORIZED；NO A-B WINNER。
+
 ## D1 CPU-003 E1-A 静态审核最终收口检查点（2026-10-27；本文件最新阶段进度，优先于下方 E1-A 最终执行边界修复检查点）
 
 F3B-D1-A-CPU-003-E1A-STATIC-CLOSEOUT-001：ChatGPT 第三轮 `f4f10a1` 结论 CONDITIONAL FAIL；本轮只修撤销票据的未确认创建责任与登记文件运行生命周期两处。预注册未改；测试仅编写、未运行；**E1-A EXPERIMENT NOT TESTED**。下一条唯一指令：提交最终代码供 ChatGPT 最后复核；未经负责人单独授权不执行实验。R3 SPEC FROZEN；真实 D1 NOT AUTHORIZED；NO A-B WINNER。

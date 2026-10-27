@@ -285,3 +285,7 @@ Claude Code 接替 Grok 担任主要研发工程师（项目负责人 2026-10-26
 ## D1 CPU-003 E1-A 静态审核最终收口（2026-10-27）
 
 分支 `d1-r3-a-cpu-003-e1a-prep-20261027`。F3B-D1-A-CPU-003-E1A-STATIC-CLOSEOUT-001：只修两处台架问题——撤销票据的未确认创建责任（门管道 EPIPE 证明，不猜 pid）与登记文件的运行生命周期约束；预注册未改（SHA-256 `e6b7ca5c…`）。新增检查点 `docs/F3B_D1_A_CPU_003_E1A_STATIC_CLOSEOUT_CHECKPOINT_20261027.md`。测试只写未跑，E1-A 仍 EXPERIMENT NOT TESTED。
+
+## D1 CPU-003 E1-A 纯逻辑测试 LOGIC-TEST-001（2026-10-27）
+
+分支 `d1-r3-a-cpu-003-e1a-prep-20261027`（基线 `fcb6de8`）。按授权只运行五个纯逻辑 / Mock 测试文件；第 1 个文件被本轮新增的执行守卫的 argv 缺陷阻断（未执行任何测试断言），按规则暂停、未修复。证据在 `a_predicate_003/logic_test_results/`，检查点 `docs/F3B_D1_A_CPU_003_E1A_LOGIC_TEST_CHECKPOINT_20261027.md`。台架 / 测试 / 预注册未改；进程级测试未授权。
