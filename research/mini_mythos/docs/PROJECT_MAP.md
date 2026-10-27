@@ -321,3 +321,7 @@ LOGIC-TEST-001-RERUN-001：修复执行守卫的 argv 缺陷（+1 行）后，�
 ## D1 CPU-003 E1-A G0 V4 最终规范 G0-V4-SPEC-001（2026-10-27）
 
 基线 `279eaae`。新增并冻结 `gate_g0/g0_criteria_v4.json` + `E1A_GATE_G0_PREREG_V4.md`（V4 冻结提交 `753b460`，只含这三个文件；V1/V2/V3 字节不变）。C01–C17 编号稳定：10 项相同、7 项修改。F-20 整条记录保真 + M-2；F-21 证据流水线 P0–P7；F-22 条件规则表；DD-1…DD-5 登记为拟批准决策（DD-1/3/4 为 derived，待审核者确认）。67 个静态案例（含 51 个 V3 迁移，3 个裁决改变）与 15 个流水线案例；只读静态检查 0 不一致。未修改任何代码 / 测试 / 既有冻结文件；未运行任何测试或 G0。状态：G0 V4 SPEC FROZEN / IMPLEMENTATION NOT AUTHORIZED / PURE TESTS NOT TESTED / REAL G0 NOT AUTHORIZED。检查点：`research/mini_mythos/docs/F3B_D1_A_CPU_003_E1A_G0_V4_SPEC_CHECKPOINT_20261027.md`。
+
+## D1 CPU-003 E1-A G0 V5 最小结案修订 G0-V5-CLOSEOUT-SPEC-001（2026-10-27）
+
+基线 `d127ec5`。新增并冻结 `gate_g0/g0_criteria_v5.json` + `E1A_GATE_G0_PREREG_V5.md`（V5 冻结提交 `8530ba5`，只含这三个文件；V1–V4 字节不变）。F-23：摘要文件存在不再等于结案；新增 `g0_closed.json`（临时文件 O_EXCL + fsync + 读回 + `os.link` 原子排他发布，目录 fsync，读回）；C01 对历史运行要求有效标记并绑定经哈希核对的摘要与证据，进程残留独立判定。C02–C17 与 DD-1…DD-5 不变（仅 C01 MODIFIED）。38 个闭环案例（A–H）、19 个 P6/P7 失败案例、7 个崩溃点；只读静态检查 0 不一致。未修改任何代码 / 测试 / 既有冻结文件；未运行任何测试或 G0。状态：G0 V5 SPEC FROZEN / IMPLEMENTATION NOT AUTHORIZED / PURE TESTS NOT TESTED / REAL G0 NOT AUTHORIZED。检查点：`research/mini_mythos/docs/F3B_D1_A_CPU_003_E1A_G0_V5_CLOSEOUT_SPEC_CHECKPOINT_20261027.md`。

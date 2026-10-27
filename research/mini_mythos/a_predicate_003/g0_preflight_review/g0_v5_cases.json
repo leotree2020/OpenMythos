@@ -1,0 +1,2047 @@
+{
+ "id": "g0-v5-closure-cases",
+ "note": "static design-review cases derived by hand from closure.preflight.rules; not tests of G0 code; not an experiment result",
+ "defaults": {
+  "run_dir": {
+   "entry": "real_dir",
+   "closed": "ok",
+   "closed_runid": "match",
+   "criteria_vs_tool": "match",
+   "criteria_vs_summary": "match",
+   "summary": "ok",
+   "summary_binding": "match",
+   "evidence": "ok",
+   "evidence_binding": "match",
+   "tmp": "identical",
+   "stray_closure_names": false,
+   "manual_disposition": false
+  },
+  "global": {
+   "root_manual_disposition": false,
+   "root_listing": "complete",
+   "live_marker_process": false
+  }
+ },
+ "cases": [
+  {
+   "id": "A",
+   "title": "summary complete and verified, no g0_closed.json",
+   "narrative": "the process stopped after P6 verified the summary and before K2 (crash point X1); the files are complete",
+   "run_dir": {
+    "entry": "real_dir",
+    "closed": "absent",
+    "closed_runid": "na",
+    "criteria_vs_tool": "na",
+    "criteria_vs_summary": "na",
+    "summary": "na",
+    "summary_binding": "na",
+    "evidence": "na",
+    "evidence_binding": "na",
+    "tmp": "absent",
+    "stray_closure_names": false,
+    "manual_disposition": false
+   },
+   "global": {
+    "root_manual_disposition": false,
+    "root_listing": "complete",
+    "live_marker_process": false
+   },
+   "files_present": [
+    "registry.jsonl",
+    "g0_evidence.json",
+    "g0_summary.json"
+   ],
+   "expected": {
+    "result": "BLOCKED",
+    "reasons": [
+     "NO_CLOSED"
+    ],
+    "human_actions": [
+     "H1"
+    ]
+   },
+   "note": "V4: closed because g0_summary.json exists -> the next real run would not have been refused (the F-23 defect)"
+  },
+  {
+   "id": "A2",
+   "title": "partial summary left by a failed P6 write",
+   "narrative": "P6 created g0_summary.json with O_EXCL, then the write failed halfway (ENOSPC); the process printed G0-SUMMARY-UNSAVED and exited 3",
+   "run_dir": {
+    "entry": "real_dir",
+    "closed": "absent",
+    "closed_runid": "na",
+    "criteria_vs_tool": "na",
+    "criteria_vs_summary": "na",
+    "summary": "na",
+    "summary_binding": "na",
+    "evidence": "na",
+    "evidence_binding": "na",
+    "tmp": "absent",
+    "stray_closure_names": false,
+    "manual_disposition": false
+   },
+   "global": {
+    "root_manual_disposition": false,
+    "root_listing": "complete",
+    "live_marker_process": false
+   },
+   "files_present": [
+    "registry.jsonl",
+    "g0_evidence.json",
+    "g0_summary.json"
+   ],
+   "expected": {
+    "result": "BLOCKED",
+    "reasons": [
+     "NO_CLOSED"
+    ],
+    "human_actions": [
+     "H1"
+    ]
+   },
+   "note": "the exact F-23 scenario: a partial summary exists"
+  },
+  {
+   "id": "A3",
+   "title": "everything saved, temporary marker complete but never published",
+   "narrative": "crash point X3: K2 fsynced the temporary file, the process died before K4",
+   "run_dir": {
+    "entry": "real_dir",
+    "closed": "absent",
+    "closed_runid": "na",
+    "criteria_vs_tool": "na",
+    "criteria_vs_summary": "na",
+    "summary": "na",
+    "summary_binding": "na",
+    "evidence": "na",
+    "evidence_binding": "na",
+    "tmp": "other",
+    "stray_closure_names": false,
+    "manual_disposition": false
+   },
+   "global": {
+    "root_manual_disposition": false,
+    "root_listing": "complete",
+    "live_marker_process": false
+   },
+   "files_present": [
+    "registry.jsonl",
+    "g0_evidence.json",
+    "g0_summary.json",
+    "g0_closed.json.tmp"
+   ],
+   "expected": {
+    "result": "BLOCKED",
+    "reasons": [
+     "NO_CLOSED"
+    ],
+    "human_actions": [
+     "H1"
+    ]
+   },
+   "note": "preflight never promotes a temporary file; nothing completes the closure on behalf of a dead process"
+  },
+  {
+   "id": "B",
+   "title": "g0_closed.json truncated",
+   "narrative": "the marker file ends in the middle of the JSON text",
+   "run_dir": {
+    "entry": "real_dir",
+    "closed": "unparsable",
+    "closed_runid": "na",
+    "criteria_vs_tool": "na",
+    "criteria_vs_summary": "na",
+    "summary": "na",
+    "summary_binding": "na",
+    "evidence": "na",
+    "evidence_binding": "na",
+    "tmp": "absent",
+    "stray_closure_names": false,
+    "manual_disposition": false
+   },
+   "global": {
+    "root_manual_disposition": false,
+    "root_listing": "complete",
+    "live_marker_process": false
+   },
+   "files_present": [
+    "registry.jsonl",
+    "g0_evidence.json",
+    "g0_summary.json",
+    "g0_closed.json"
+   ],
+   "expected": {
+    "result": "BLOCKED",
+    "reasons": [
+     "CLOSED_PARSE"
+    ],
+    "human_actions": [
+     "H1"
+    ]
+   },
+   "note": "cannot normally occur through link(2) (the inode was complete before it got the final name); possible after a storage fault or manual damage"
+  },
+  {
+   "id": "B2",
+   "title": "g0_closed.json is empty",
+   "narrative": "size 0",
+   "run_dir": {
+    "entry": "real_dir",
+    "closed": "oversize_or_empty",
+    "closed_runid": "na",
+    "criteria_vs_tool": "na",
+    "criteria_vs_summary": "na",
+    "summary": "na",
+    "summary_binding": "na",
+    "evidence": "na",
+    "evidence_binding": "na",
+    "tmp": "absent",
+    "stray_closure_names": false,
+    "manual_disposition": false
+   },
+   "global": {
+    "root_manual_disposition": false,
+    "root_listing": "complete",
+    "live_marker_process": false
+   },
+   "files_present": [
+    "registry.jsonl",
+    "g0_evidence.json",
+    "g0_summary.json",
+    "g0_closed.json"
+   ],
+   "expected": {
+    "result": "BLOCKED",
+    "reasons": [
+     "CLOSED_UNREADABLE"
+    ],
+    "human_actions": [
+     "H1"
+    ]
+   },
+   "note": ""
+  },
+  {
+   "id": "B3",
+   "title": "g0_closed.json has a trailing newline",
+   "narrative": "content equals the marker plus one newline (edited by hand or by a tool)",
+   "run_dir": {
+    "entry": "real_dir",
+    "closed": "noncanonical",
+    "closed_runid": "na",
+    "criteria_vs_tool": "na",
+    "criteria_vs_summary": "na",
+    "summary": "na",
+    "summary_binding": "na",
+    "evidence": "na",
+    "evidence_binding": "na",
+    "tmp": "other",
+    "stray_closure_names": false,
+    "manual_disposition": false
+   },
+   "global": {
+    "root_manual_disposition": false,
+    "root_listing": "complete",
+    "live_marker_process": false
+   },
+   "files_present": [
+    "registry.jsonl",
+    "g0_evidence.json",
+    "g0_summary.json",
+    "g0_closed.json",
+    "g0_closed.json.tmp"
+   ],
+   "expected": {
+    "result": "BLOCKED",
+    "reasons": [
+     "CLOSED_NONCANONICAL"
+    ],
+    "human_actions": [
+     "H1"
+    ]
+   },
+   "note": "valid JSON, but not the exact bytes that were verified at K3/K6"
+  },
+  {
+   "id": "B4",
+   "title": "g0_closed.json has a duplicate key",
+   "narrative": "{\"run_id\": a, ..., \"run_id\": b}",
+   "run_dir": {
+    "entry": "real_dir",
+    "closed": "unparsable",
+    "closed_runid": "na",
+    "criteria_vs_tool": "na",
+    "criteria_vs_summary": "na",
+    "summary": "na",
+    "summary_binding": "na",
+    "evidence": "na",
+    "evidence_binding": "na",
+    "tmp": "absent",
+    "stray_closure_names": false,
+    "manual_disposition": false
+   },
+   "global": {
+    "root_manual_disposition": false,
+    "root_listing": "complete",
+    "live_marker_process": false
+   },
+   "files_present": [
+    "registry.jsonl",
+    "g0_evidence.json",
+    "g0_summary.json",
+    "g0_closed.json"
+   ],
+   "expected": {
+    "result": "BLOCKED",
+    "reasons": [
+     "CLOSED_PARSE"
+    ],
+    "human_actions": [
+     "H1"
+    ]
+   },
+   "note": ""
+  },
+  {
+   "id": "B5",
+   "title": "g0_closed.json is a symlink",
+   "narrative": "the final name is a symbolic link",
+   "run_dir": {
+    "entry": "real_dir",
+    "closed": "not_regular",
+    "closed_runid": "na",
+    "criteria_vs_tool": "na",
+    "criteria_vs_summary": "na",
+    "summary": "na",
+    "summary_binding": "na",
+    "evidence": "na",
+    "evidence_binding": "na",
+    "tmp": "absent",
+    "stray_closure_names": false,
+    "manual_disposition": false
+   },
+   "global": {
+    "root_manual_disposition": false,
+    "root_listing": "complete",
+    "live_marker_process": false
+   },
+   "files_present": [
+    "registry.jsonl",
+    "g0_evidence.json",
+    "g0_summary.json",
+    "g0_closed.json"
+   ],
+   "expected": {
+    "result": "BLOCKED",
+    "reasons": [
+     "CLOSED_UNREADABLE"
+    ],
+    "human_actions": [
+     "H1"
+    ]
+   },
+   "note": ""
+  },
+  {
+   "id": "B6",
+   "title": "g0_closed.json has a wrong type",
+   "narrative": "recorded_exit_code is true instead of the integer 1",
+   "run_dir": {
+    "entry": "real_dir",
+    "closed": "schema_invalid",
+    "closed_runid": "na",
+    "criteria_vs_tool": "na",
+    "criteria_vs_summary": "na",
+    "summary": "na",
+    "summary_binding": "na",
+    "evidence": "na",
+    "evidence_binding": "na",
+    "tmp": "absent",
+    "stray_closure_names": false,
+    "manual_disposition": false
+   },
+   "global": {
+    "root_manual_disposition": false,
+    "root_listing": "complete",
+    "live_marker_process": false
+   },
+   "files_present": [
+    "registry.jsonl",
+    "g0_evidence.json",
+    "g0_summary.json",
+    "g0_closed.json"
+   ],
+   "expected": {
+    "result": "BLOCKED",
+    "reasons": [
+     "CLOSED_SCHEMA"
+    ],
+    "human_actions": [
+     "H1"
+    ]
+   },
+   "note": "bool is never accepted as int"
+  },
+  {
+   "id": "C",
+   "title": "valid marker, summary hash mismatch",
+   "narrative": "g0_summary.json was modified after the closure (same length, different bytes)",
+   "run_dir": {
+    "entry": "real_dir",
+    "closed": "ok",
+    "closed_runid": "match",
+    "criteria_vs_tool": "match",
+    "criteria_vs_summary": "na",
+    "summary": "hash_mismatch",
+    "summary_binding": "na",
+    "evidence": "ok",
+    "evidence_binding": "match",
+    "tmp": "identical",
+    "stray_closure_names": false,
+    "manual_disposition": false
+   },
+   "global": {
+    "root_manual_disposition": false,
+    "root_listing": "complete",
+    "live_marker_process": false
+   },
+   "files_present": [
+    "registry.jsonl",
+    "g0_evidence.json",
+    "g0_summary.json",
+    "g0_closed.json",
+    "g0_closed.json.tmp"
+   ],
+   "expected": {
+    "result": "BLOCKED",
+    "reasons": [
+     "SUMMARY_HASH"
+    ],
+    "human_actions": [
+     "H1"
+    ]
+   },
+   "note": ""
+  },
+  {
+   "id": "C2",
+   "title": "valid marker, summary shorter than bound",
+   "narrative": "g0_summary.json truncated",
+   "run_dir": {
+    "entry": "real_dir",
+    "closed": "ok",
+    "closed_runid": "match",
+    "criteria_vs_tool": "match",
+    "criteria_vs_summary": "na",
+    "summary": "size_mismatch",
+    "summary_binding": "na",
+    "evidence": "ok",
+    "evidence_binding": "match",
+    "tmp": "identical",
+    "stray_closure_names": false,
+    "manual_disposition": false
+   },
+   "global": {
+    "root_manual_disposition": false,
+    "root_listing": "complete",
+    "live_marker_process": false
+   },
+   "files_present": [
+    "registry.jsonl",
+    "g0_evidence.json",
+    "g0_summary.json",
+    "g0_closed.json",
+    "g0_closed.json.tmp"
+   ],
+   "expected": {
+    "result": "BLOCKED",
+    "reasons": [
+     "SUMMARY_HASH"
+    ],
+    "human_actions": [
+     "H1"
+    ]
+   },
+   "note": ""
+  },
+  {
+   "id": "C3",
+   "title": "valid marker, summary deleted",
+   "narrative": "g0_summary.json is gone",
+   "run_dir": {
+    "entry": "real_dir",
+    "closed": "ok",
+    "closed_runid": "match",
+    "criteria_vs_tool": "match",
+    "criteria_vs_summary": "na",
+    "summary": "absent",
+    "summary_binding": "na",
+    "evidence": "ok",
+    "evidence_binding": "match",
+    "tmp": "identical",
+    "stray_closure_names": false,
+    "manual_disposition": false
+   },
+   "global": {
+    "root_manual_disposition": false,
+    "root_listing": "complete",
+    "live_marker_process": false
+   },
+   "files_present": [
+    "registry.jsonl",
+    "g0_evidence.json",
+    "g0_closed.json",
+    "g0_closed.json.tmp"
+   ],
+   "expected": {
+    "result": "BLOCKED",
+    "reasons": [
+     "SUMMARY_MISSING"
+    ],
+    "human_actions": [
+     "H1"
+    ]
+   },
+   "note": ""
+  },
+  {
+   "id": "C4",
+   "title": "valid marker, evidence hash mismatch",
+   "narrative": "g0_evidence.json was modified after the closure",
+   "run_dir": {
+    "entry": "real_dir",
+    "closed": "ok",
+    "closed_runid": "match",
+    "criteria_vs_tool": "match",
+    "criteria_vs_summary": "match",
+    "summary": "ok",
+    "summary_binding": "match",
+    "evidence": "hash_mismatch",
+    "evidence_binding": "na",
+    "tmp": "identical",
+    "stray_closure_names": false,
+    "manual_disposition": false
+   },
+   "global": {
+    "root_manual_disposition": false,
+    "root_listing": "complete",
+    "live_marker_process": false
+   },
+   "files_present": [
+    "registry.jsonl",
+    "g0_evidence.json",
+    "g0_summary.json",
+    "g0_closed.json",
+    "g0_closed.json.tmp"
+   ],
+   "expected": {
+    "result": "BLOCKED",
+    "reasons": [
+     "EVIDENCE_HASH"
+    ],
+    "human_actions": [
+     "H1"
+    ]
+   },
+   "note": ""
+  },
+  {
+   "id": "C5",
+   "title": "valid marker, evidence missing",
+   "narrative": "g0_evidence.json is gone",
+   "run_dir": {
+    "entry": "real_dir",
+    "closed": "ok",
+    "closed_runid": "match",
+    "criteria_vs_tool": "match",
+    "criteria_vs_summary": "match",
+    "summary": "ok",
+    "summary_binding": "match",
+    "evidence": "absent",
+    "evidence_binding": "na",
+    "tmp": "identical",
+    "stray_closure_names": false,
+    "manual_disposition": false
+   },
+   "global": {
+    "root_manual_disposition": false,
+    "root_listing": "complete",
+    "live_marker_process": false
+   },
+   "files_present": [
+    "registry.jsonl",
+    "g0_summary.json",
+    "g0_closed.json",
+    "g0_closed.json.tmp"
+   ],
+   "expected": {
+    "result": "BLOCKED",
+    "reasons": [
+     "EVIDENCE_MISSING"
+    ],
+    "human_actions": [
+     "H1"
+    ]
+   },
+   "note": ""
+  },
+  {
+   "id": "C6",
+   "title": "valid marker, summary bound but its verdict differs from the marker",
+   "narrative": "the summary has the bound hash, its verdict is PASS, the marker says recorded_verdict FAIL (an inconsistent or forged marker)",
+   "run_dir": {
+    "entry": "real_dir",
+    "closed": "ok",
+    "closed_runid": "match",
+    "criteria_vs_tool": "match",
+    "criteria_vs_summary": "match",
+    "summary": "ok",
+    "summary_binding": "mismatch",
+    "evidence": "ok",
+    "evidence_binding": "match",
+    "tmp": "identical",
+    "stray_closure_names": false,
+    "manual_disposition": false
+   },
+   "global": {
+    "root_manual_disposition": false,
+    "root_listing": "complete",
+    "live_marker_process": false
+   },
+   "files_present": [
+    "registry.jsonl",
+    "g0_evidence.json",
+    "g0_summary.json",
+    "g0_closed.json",
+    "g0_closed.json.tmp"
+   ],
+   "expected": {
+    "result": "BLOCKED",
+    "reasons": [
+     "SUMMARY_BINDING"
+    ],
+    "human_actions": [
+     "H1"
+    ]
+   },
+   "note": "a marker built by K1 cannot disagree with the summary it was built from; the rule detects marker forgery or corruption of the pair"
+  },
+  {
+   "id": "C7",
+   "title": "valid marker, evidence run_id differs",
+   "narrative": "the evidence has the bound hash but evidence.run_id is another run's",
+   "run_dir": {
+    "entry": "real_dir",
+    "closed": "ok",
+    "closed_runid": "match",
+    "criteria_vs_tool": "match",
+    "criteria_vs_summary": "match",
+    "summary": "ok",
+    "summary_binding": "match",
+    "evidence": "ok",
+    "evidence_binding": "mismatch",
+    "tmp": "identical",
+    "stray_closure_names": false,
+    "manual_disposition": false
+   },
+   "global": {
+    "root_manual_disposition": false,
+    "root_listing": "complete",
+    "live_marker_process": false
+   },
+   "files_present": [
+    "registry.jsonl",
+    "g0_evidence.json",
+    "g0_summary.json",
+    "g0_closed.json",
+    "g0_closed.json.tmp"
+   ],
+   "expected": {
+    "result": "BLOCKED",
+    "reasons": [
+     "EVIDENCE_BINDING"
+    ],
+    "human_actions": [
+     "H1"
+    ]
+   },
+   "note": ""
+  },
+  {
+   "id": "C8",
+   "title": "marker copied from another run",
+   "narrative": "closed.run_id is another run's id; the bound hashes do not match this directory's files",
+   "run_dir": {
+    "entry": "real_dir",
+    "closed": "ok",
+    "closed_runid": "mismatch",
+    "criteria_vs_tool": "match",
+    "criteria_vs_summary": "na",
+    "summary": "hash_mismatch",
+    "summary_binding": "na",
+    "evidence": "hash_mismatch",
+    "evidence_binding": "na",
+    "tmp": "identical",
+    "stray_closure_names": false,
+    "manual_disposition": false
+   },
+   "global": {
+    "root_manual_disposition": false,
+    "root_listing": "complete",
+    "live_marker_process": false
+   },
+   "files_present": [
+    "registry.jsonl",
+    "g0_evidence.json",
+    "g0_summary.json",
+    "g0_closed.json",
+    "g0_closed.json.tmp"
+   ],
+   "expected": {
+    "result": "BLOCKED",
+    "reasons": [
+     "CLOSED_RUNID",
+     "SUMMARY_HASH",
+     "EVIDENCE_HASH"
+    ],
+    "human_actions": [
+     "H1"
+    ]
+   },
+   "note": "all matching rules are listed; the first in id order is the primary reason"
+  },
+  {
+   "id": "C9",
+   "title": "summary has the bound hash but is not JSON",
+   "narrative": "the bound summary bytes do not parse as strict JSON",
+   "run_dir": {
+    "entry": "real_dir",
+    "closed": "ok",
+    "closed_runid": "match",
+    "criteria_vs_tool": "match",
+    "criteria_vs_summary": "na",
+    "summary": "unparsable",
+    "summary_binding": "na",
+    "evidence": "ok",
+    "evidence_binding": "match",
+    "tmp": "identical",
+    "stray_closure_names": false,
+    "manual_disposition": false
+   },
+   "global": {
+    "root_manual_disposition": false,
+    "root_listing": "complete",
+    "live_marker_process": false
+   },
+   "files_present": [
+    "registry.jsonl",
+    "g0_evidence.json",
+    "g0_summary.json",
+    "g0_closed.json",
+    "g0_closed.json.tmp"
+   ],
+   "expected": {
+    "result": "BLOCKED",
+    "reasons": [
+     "SUMMARY_PARSE"
+    ],
+    "human_actions": [
+     "H1"
+    ]
+   },
+   "note": ""
+  },
+  {
+   "id": "C10",
+   "title": "evidence has the bound hash but is not JSON",
+   "narrative": "the bound evidence bytes do not parse",
+   "run_dir": {
+    "entry": "real_dir",
+    "closed": "ok",
+    "closed_runid": "match",
+    "criteria_vs_tool": "match",
+    "criteria_vs_summary": "match",
+    "summary": "ok",
+    "summary_binding": "match",
+    "evidence": "unparsable",
+    "evidence_binding": "na",
+    "tmp": "identical",
+    "stray_closure_names": false,
+    "manual_disposition": false
+   },
+   "global": {
+    "root_manual_disposition": false,
+    "root_listing": "complete",
+    "live_marker_process": false
+   },
+   "files_present": [
+    "registry.jsonl",
+    "g0_evidence.json",
+    "g0_summary.json",
+    "g0_closed.json",
+    "g0_closed.json.tmp"
+   ],
+   "expected": {
+    "result": "BLOCKED",
+    "reasons": [
+     "EVIDENCE_PARSE"
+    ],
+    "human_actions": [
+     "H1"
+    ]
+   },
+   "note": ""
+  },
+  {
+   "id": "C11",
+   "title": "summary and evidence not regular files",
+   "narrative": "g0_summary.json and g0_evidence.json are directories / symlinks",
+   "run_dir": {
+    "entry": "real_dir",
+    "closed": "ok",
+    "closed_runid": "match",
+    "criteria_vs_tool": "match",
+    "criteria_vs_summary": "na",
+    "summary": "not_regular",
+    "summary_binding": "na",
+    "evidence": "not_regular",
+    "evidence_binding": "na",
+    "tmp": "identical",
+    "stray_closure_names": false,
+    "manual_disposition": false
+   },
+   "global": {
+    "root_manual_disposition": false,
+    "root_listing": "complete",
+    "live_marker_process": false
+   },
+   "files_present": [
+    "registry.jsonl",
+    "g0_evidence.json",
+    "g0_summary.json",
+    "g0_closed.json",
+    "g0_closed.json.tmp"
+   ],
+   "expected": {
+    "result": "BLOCKED",
+    "reasons": [
+     "SUMMARY_UNREADABLE",
+     "EVIDENCE_UNREADABLE"
+    ],
+    "human_actions": [
+     "H1"
+    ]
+   },
+   "note": ""
+  },
+  {
+   "id": "D",
+   "title": "summary and evidence match each other, marker's criteria_sha256 differs",
+   "narrative": "summary.criteria_sha256 and the running tool's hash agree with each other; closed.criteria_sha256 is another value",
+   "run_dir": {
+    "entry": "real_dir",
+    "closed": "ok",
+    "closed_runid": "match",
+    "criteria_vs_tool": "mismatch",
+    "criteria_vs_summary": "mismatch",
+    "summary": "ok",
+    "summary_binding": "match",
+    "evidence": "ok",
+    "evidence_binding": "match",
+    "tmp": "identical",
+    "stray_closure_names": false,
+    "manual_disposition": false
+   },
+   "global": {
+    "root_manual_disposition": false,
+    "root_listing": "complete",
+    "live_marker_process": false
+   },
+   "files_present": [
+    "registry.jsonl",
+    "g0_evidence.json",
+    "g0_summary.json",
+    "g0_closed.json",
+    "g0_closed.json.tmp"
+   ],
+   "expected": {
+    "result": "BLOCKED",
+    "reasons": [
+     "CRITERIA_MISMATCH"
+    ],
+    "human_actions": [
+     "H1"
+    ]
+   },
+   "note": ""
+  },
+  {
+   "id": "D2",
+   "title": "marker agrees with the summary but not with the running tool",
+   "narrative": "the run was made under another criteria hash",
+   "run_dir": {
+    "entry": "real_dir",
+    "closed": "ok",
+    "closed_runid": "match",
+    "criteria_vs_tool": "mismatch",
+    "criteria_vs_summary": "match",
+    "summary": "ok",
+    "summary_binding": "match",
+    "evidence": "ok",
+    "evidence_binding": "match",
+    "tmp": "identical",
+    "stray_closure_names": false,
+    "manual_disposition": false
+   },
+   "global": {
+    "root_manual_disposition": false,
+    "root_listing": "complete",
+    "live_marker_process": false
+   },
+   "files_present": [
+    "registry.jsonl",
+    "g0_evidence.json",
+    "g0_summary.json",
+    "g0_closed.json",
+    "g0_closed.json.tmp"
+   ],
+   "expected": {
+    "result": "BLOCKED",
+    "reasons": [
+     "CRITERIA_MISMATCH"
+    ],
+    "human_actions": [
+     "H1"
+    ]
+   },
+   "note": "no G0 run exists under any other criteria; a mismatch is an anomaly, not a compatibility case"
+  },
+  {
+   "id": "E",
+   "title": "process died before the marker was published (mid-write of the temporary file)",
+   "narrative": "crash point X2: the temporary file is partial",
+   "run_dir": {
+    "entry": "real_dir",
+    "closed": "absent",
+    "closed_runid": "na",
+    "criteria_vs_tool": "na",
+    "criteria_vs_summary": "na",
+    "summary": "na",
+    "summary_binding": "na",
+    "evidence": "na",
+    "evidence_binding": "na",
+    "tmp": "other",
+    "stray_closure_names": false,
+    "manual_disposition": false
+   },
+   "global": {
+    "root_manual_disposition": false,
+    "root_listing": "complete",
+    "live_marker_process": false
+   },
+   "files_present": [
+    "registry.jsonl",
+    "g0_evidence.json",
+    "g0_summary.json",
+    "g0_closed.json.tmp"
+   ],
+   "expected": {
+    "result": "BLOCKED",
+    "reasons": [
+     "NO_CLOSED"
+    ],
+    "human_actions": [
+     "H1"
+    ]
+   },
+   "note": "allowed to remain: registry, evidence, summary, the partial temporary file; none is deleted by G0"
+  },
+  {
+   "id": "F",
+   "title": "process died after publication, before the directory sync",
+   "narrative": "crash point X4: link returned, the process was killed; the files are intact",
+   "run_dir": {
+    "entry": "real_dir",
+    "closed": "ok",
+    "closed_runid": "match",
+    "criteria_vs_tool": "match",
+    "criteria_vs_summary": "match",
+    "summary": "ok",
+    "summary_binding": "match",
+    "evidence": "ok",
+    "evidence_binding": "match",
+    "tmp": "identical",
+    "stray_closure_names": false,
+    "manual_disposition": false
+   },
+   "global": {
+    "root_manual_disposition": false,
+    "root_listing": "complete",
+    "live_marker_process": false
+   },
+   "files_present": [
+    "registry.jsonl",
+    "g0_evidence.json",
+    "g0_summary.json",
+    "g0_closed.json",
+    "g0_closed.json.tmp"
+   ],
+   "expected": {
+    "result": "CLOSED_OK",
+    "reasons": [],
+    "human_actions": []
+   },
+   "note": "preflight: CLOSED_OK (it judges files). The process-level outcome is not confirmed (closure.publication.reporting_rule): BLOCKED, never PASS"
+  },
+  {
+   "id": "F2",
+   "title": "operating system crash after link, directory entry lost",
+   "narrative": "crash point X7: the final name did not reach the disk; the already fsynced temporary name may still exist",
+   "run_dir": {
+    "entry": "real_dir",
+    "closed": "absent",
+    "closed_runid": "na",
+    "criteria_vs_tool": "na",
+    "criteria_vs_summary": "na",
+    "summary": "na",
+    "summary_binding": "na",
+    "evidence": "na",
+    "evidence_binding": "na",
+    "tmp": "other",
+    "stray_closure_names": false,
+    "manual_disposition": false
+   },
+   "global": {
+    "root_manual_disposition": false,
+    "root_listing": "complete",
+    "live_marker_process": false
+   },
+   "files_present": [
+    "registry.jsonl",
+    "g0_evidence.json",
+    "g0_summary.json",
+    "g0_closed.json.tmp"
+   ],
+   "expected": {
+    "result": "BLOCKED",
+    "reasons": [
+     "NO_CLOSED"
+    ],
+    "human_actions": [
+     "H1"
+    ]
+   },
+   "note": ""
+  },
+  {
+   "id": "F3",
+   "title": "directory fsync failed (K5), process exited 3",
+   "narrative": "G0-CLOSE-UNCONFIRMED printed; the marker is published and intact",
+   "run_dir": {
+    "entry": "real_dir",
+    "closed": "ok",
+    "closed_runid": "match",
+    "criteria_vs_tool": "match",
+    "criteria_vs_summary": "match",
+    "summary": "ok",
+    "summary_binding": "match",
+    "evidence": "ok",
+    "evidence_binding": "match",
+    "tmp": "identical",
+    "stray_closure_names": false,
+    "manual_disposition": false
+   },
+   "global": {
+    "root_manual_disposition": false,
+    "root_listing": "complete",
+    "live_marker_process": false
+   },
+   "files_present": [
+    "registry.jsonl",
+    "g0_evidence.json",
+    "g0_summary.json",
+    "g0_closed.json",
+    "g0_closed.json.tmp"
+   ],
+   "expected": {
+    "result": "CLOSED_OK",
+    "reasons": [],
+    "human_actions": []
+   },
+   "note": "CLOSED_OK for preflight; the outcome of that run is reported as BLOCKED (closure not confirmed)"
+  },
+  {
+   "id": "G",
+   "title": "valid marker but MANUAL_DISPOSITION_REQUIRED.json in the run directory",
+   "narrative": "the run ended with a surviving process; the marker was still published for the saved files",
+   "run_dir": {
+    "entry": "real_dir",
+    "closed": "ok",
+    "closed_runid": "match",
+    "criteria_vs_tool": "match",
+    "criteria_vs_summary": "match",
+    "summary": "ok",
+    "summary_binding": "match",
+    "evidence": "ok",
+    "evidence_binding": "match",
+    "tmp": "identical",
+    "stray_closure_names": false,
+    "manual_disposition": true
+   },
+   "global": {
+    "root_manual_disposition": false,
+    "root_listing": "complete",
+    "live_marker_process": false
+   },
+   "files_present": [
+    "registry.jsonl",
+    "g0_evidence.json",
+    "g0_summary.json",
+    "g0_closed.json",
+    "g0_closed.json.tmp",
+    "MANUAL_DISPOSITION_REQUIRED.json"
+   ],
+   "expected": {
+    "result": "BLOCKED",
+    "reasons": [
+     "MANUAL_DISPOSITION"
+    ],
+    "human_actions": [
+     "H2"
+    ]
+   },
+   "note": "the marker does not resolve a manual disposition"
+  },
+  {
+   "id": "G2",
+   "title": "valid marker but a live process carries the g0_run.py marker",
+   "narrative": "the original process (or its child) has not exited",
+   "run_dir": {
+    "entry": "real_dir",
+    "closed": "ok",
+    "closed_runid": "match",
+    "criteria_vs_tool": "match",
+    "criteria_vs_summary": "match",
+    "summary": "ok",
+    "summary_binding": "match",
+    "evidence": "ok",
+    "evidence_binding": "match",
+    "tmp": "identical",
+    "stray_closure_names": false,
+    "manual_disposition": false
+   },
+   "global": {
+    "root_manual_disposition": false,
+    "root_listing": "complete",
+    "live_marker_process": true
+   },
+   "files_present": [
+    "registry.jsonl",
+    "g0_evidence.json",
+    "g0_summary.json",
+    "g0_closed.json",
+    "g0_closed.json.tmp"
+   ],
+   "expected": {
+    "result": "BLOCKED",
+    "reasons": [
+     "LIVE_RESIDUE"
+    ],
+    "human_actions": [
+     "H2"
+    ]
+   },
+   "note": "the marker is not proof that the original process exited"
+  },
+  {
+   "id": "G3",
+   "title": "valid marker, manual disposition and a live process",
+   "narrative": "both residue evidences",
+   "run_dir": {
+    "entry": "real_dir",
+    "closed": "ok",
+    "closed_runid": "match",
+    "criteria_vs_tool": "match",
+    "criteria_vs_summary": "match",
+    "summary": "ok",
+    "summary_binding": "match",
+    "evidence": "ok",
+    "evidence_binding": "match",
+    "tmp": "identical",
+    "stray_closure_names": false,
+    "manual_disposition": true
+   },
+   "global": {
+    "root_manual_disposition": false,
+    "root_listing": "complete",
+    "live_marker_process": true
+   },
+   "files_present": [
+    "registry.jsonl",
+    "g0_evidence.json",
+    "g0_summary.json",
+    "g0_closed.json",
+    "g0_closed.json.tmp",
+    "MANUAL_DISPOSITION_REQUIRED.json"
+   ],
+   "expected": {
+    "result": "BLOCKED",
+    "reasons": [
+     "MANUAL_DISPOSITION",
+     "LIVE_RESIDUE"
+    ],
+    "human_actions": [
+     "H2"
+    ]
+   },
+   "note": ""
+  },
+  {
+   "id": "G4",
+   "title": "MANUAL_DISPOSITION_REQUIRED.json in the evidence root",
+   "narrative": "an earlier abnormal run left it at the root; this run directory is fine",
+   "run_dir": {
+    "entry": "real_dir",
+    "closed": "ok",
+    "closed_runid": "match",
+    "criteria_vs_tool": "match",
+    "criteria_vs_summary": "match",
+    "summary": "ok",
+    "summary_binding": "match",
+    "evidence": "ok",
+    "evidence_binding": "match",
+    "tmp": "identical",
+    "stray_closure_names": false,
+    "manual_disposition": false
+   },
+   "global": {
+    "root_manual_disposition": true,
+    "root_listing": "complete",
+    "live_marker_process": false
+   },
+   "files_present": [
+    "registry.jsonl",
+    "g0_evidence.json",
+    "g0_summary.json",
+    "g0_closed.json",
+    "g0_closed.json.tmp"
+   ],
+   "expected": {
+    "result": "BLOCKED",
+    "reasons": [
+     "ROOT_MANUAL_DISPOSITION"
+    ],
+    "human_actions": [
+     "H2"
+    ]
+   },
+   "note": ""
+  },
+  {
+   "id": "H",
+   "title": "everything valid, no residue",
+   "narrative": "recorded PASS, marker valid, bindings hold, no manual file, no live process",
+   "run_dir": {
+    "entry": "real_dir",
+    "closed": "ok",
+    "closed_runid": "match",
+    "criteria_vs_tool": "match",
+    "criteria_vs_summary": "match",
+    "summary": "ok",
+    "summary_binding": "match",
+    "evidence": "ok",
+    "evidence_binding": "match",
+    "tmp": "identical",
+    "stray_closure_names": false,
+    "manual_disposition": false
+   },
+   "global": {
+    "root_manual_disposition": false,
+    "root_listing": "complete",
+    "live_marker_process": false
+   },
+   "files_present": [
+    "registry.jsonl",
+    "g0_evidence.json",
+    "g0_summary.json",
+    "g0_closed.json",
+    "g0_closed.json.tmp"
+   ],
+   "expected": {
+    "result": "CLOSED_OK",
+    "reasons": [],
+    "human_actions": []
+   },
+   "note": "the only accepted state"
+  },
+  {
+   "id": "H2",
+   "title": "recorded FAIL is also closed",
+   "narrative": "the marker records FAIL / exit 1; closure is independent of the verdict",
+   "run_dir": {
+    "entry": "real_dir",
+    "closed": "ok",
+    "closed_runid": "match",
+    "criteria_vs_tool": "match",
+    "criteria_vs_summary": "match",
+    "summary": "ok",
+    "summary_binding": "match",
+    "evidence": "ok",
+    "evidence_binding": "match",
+    "tmp": "identical",
+    "stray_closure_names": false,
+    "manual_disposition": false
+   },
+   "global": {
+    "root_manual_disposition": false,
+    "root_listing": "complete",
+    "live_marker_process": false
+   },
+   "files_present": [
+    "registry.jsonl",
+    "g0_evidence.json",
+    "g0_summary.json",
+    "g0_closed.json",
+    "g0_closed.json.tmp"
+   ],
+   "expected": {
+    "result": "CLOSED_OK",
+    "reasons": [],
+    "human_actions": []
+   },
+   "note": "decision CL-D"
+  },
+  {
+   "id": "H3",
+   "title": "recorded BLOCKED is also closed",
+   "narrative": "the marker records BLOCKED / exit 3",
+   "run_dir": {
+    "entry": "real_dir",
+    "closed": "ok",
+    "closed_runid": "match",
+    "criteria_vs_tool": "match",
+    "criteria_vs_summary": "match",
+    "summary": "ok",
+    "summary_binding": "match",
+    "evidence": "ok",
+    "evidence_binding": "match",
+    "tmp": "identical",
+    "stray_closure_names": false,
+    "manual_disposition": false
+   },
+   "global": {
+    "root_manual_disposition": false,
+    "root_listing": "complete",
+    "live_marker_process": false
+   },
+   "files_present": [
+    "registry.jsonl",
+    "g0_evidence.json",
+    "g0_summary.json",
+    "g0_closed.json",
+    "g0_closed.json.tmp"
+   ],
+   "expected": {
+    "result": "CLOSED_OK",
+    "reasons": [],
+    "human_actions": []
+   },
+   "note": ""
+  },
+  {
+   "id": "H4",
+   "title": "temporary name already removed by a person",
+   "narrative": "marker valid, no temporary file",
+   "run_dir": {
+    "entry": "real_dir",
+    "closed": "ok",
+    "closed_runid": "match",
+    "criteria_vs_tool": "match",
+    "criteria_vs_summary": "match",
+    "summary": "ok",
+    "summary_binding": "match",
+    "evidence": "ok",
+    "evidence_binding": "match",
+    "tmp": "absent",
+    "stray_closure_names": false,
+    "manual_disposition": false
+   },
+   "global": {
+    "root_manual_disposition": false,
+    "root_listing": "complete",
+    "live_marker_process": false
+   },
+   "files_present": [
+    "registry.jsonl",
+    "g0_evidence.json",
+    "g0_summary.json",
+    "g0_closed.json"
+   ],
+   "expected": {
+    "result": "CLOSED_OK",
+    "reasons": [],
+    "human_actions": []
+   },
+   "note": "the temporary file is optional for preflight"
+  },
+  {
+   "id": "I",
+   "title": "a different temporary file next to a valid marker",
+   "narrative": "g0_closed.json.tmp with other content",
+   "run_dir": {
+    "entry": "real_dir",
+    "closed": "ok",
+    "closed_runid": "match",
+    "criteria_vs_tool": "match",
+    "criteria_vs_summary": "match",
+    "summary": "ok",
+    "summary_binding": "match",
+    "evidence": "ok",
+    "evidence_binding": "match",
+    "tmp": "other",
+    "stray_closure_names": false,
+    "manual_disposition": false
+   },
+   "global": {
+    "root_manual_disposition": false,
+    "root_listing": "complete",
+    "live_marker_process": false
+   },
+   "files_present": [
+    "registry.jsonl",
+    "g0_evidence.json",
+    "g0_summary.json",
+    "g0_closed.json",
+    "g0_closed.json.tmp"
+   ],
+   "expected": {
+    "result": "BLOCKED",
+    "reasons": [
+     "STRAY_CLOSURE_FILE"
+    ],
+    "human_actions": [
+     "H1"
+    ]
+   },
+   "note": ""
+  },
+  {
+   "id": "I2",
+   "title": "another g0_closed* file",
+   "narrative": "g0_closed.json.bak next to a valid marker",
+   "run_dir": {
+    "entry": "real_dir",
+    "closed": "ok",
+    "closed_runid": "match",
+    "criteria_vs_tool": "match",
+    "criteria_vs_summary": "match",
+    "summary": "ok",
+    "summary_binding": "match",
+    "evidence": "ok",
+    "evidence_binding": "match",
+    "tmp": "identical",
+    "stray_closure_names": true,
+    "manual_disposition": false
+   },
+   "global": {
+    "root_manual_disposition": false,
+    "root_listing": "complete",
+    "live_marker_process": false
+   },
+   "files_present": [
+    "registry.jsonl",
+    "g0_evidence.json",
+    "g0_summary.json",
+    "g0_closed.json",
+    "g0_closed.json.tmp"
+   ],
+   "expected": {
+    "result": "BLOCKED",
+    "reasons": [
+     "STRAY_CLOSURE_FILE"
+    ],
+    "human_actions": [
+     "H1"
+    ]
+   },
+   "note": ""
+  },
+  {
+   "id": "J",
+   "title": "a 'g0_' entry that is a symlink",
+   "narrative": "evidence/g0_x -> elsewhere",
+   "run_dir": {
+    "entry": "not_a_directory"
+   },
+   "global": {
+    "root_manual_disposition": false,
+    "root_listing": "complete",
+    "live_marker_process": false
+   },
+   "files_present": [],
+   "expected": {
+    "result": "BLOCKED",
+    "reasons": [
+     "NOT_A_DIRECTORY"
+    ],
+    "human_actions": [
+     "H1"
+    ]
+   },
+   "note": ""
+  },
+  {
+   "id": "K",
+   "title": "evidence root cannot be listed completely",
+   "narrative": "listdir failed / returned an error",
+   "run_dir": null,
+   "global": {
+    "root_manual_disposition": false,
+    "root_listing": "incomplete",
+    "live_marker_process": false
+   },
+   "files_present": [],
+   "expected": {
+    "result": "BLOCKED",
+    "reasons": [
+     "ROOT_LISTING_INCOMPLETE"
+    ],
+    "human_actions": [
+     "H1"
+    ]
+   },
+   "note": ""
+  }
+ ],
+ "pipeline_cases": [
+  {
+   "id": "PC-P2",
+   "failing_step": "P2",
+   "failure": "g0_evidence.json cannot be written (ENOSPC)",
+   "published": false,
+   "recorded": null,
+   "stderr_marker": "G0-EVIDENCE-UNSAVED",
+   "files_present": [
+    "registry.jsonl",
+    "g0_evidence.json"
+   ],
+   "closed_after": "absent",
+   "tmp_after": "absent",
+   "expected": {
+    "process_exit_code": 3,
+    "reportable_outcome": "BLOCKED",
+    "next_preflight_reasons": [
+     "NO_CLOSED"
+    ],
+    "human_actions": [
+     "H1"
+    ]
+   },
+   "note": "partial evidence file kept"
+  },
+  {
+   "id": "PC-P3",
+   "failing_step": "P3",
+   "failure": "read-back bytes differ from the written bytes",
+   "published": false,
+   "recorded": null,
+   "stderr_marker": "G0-EVIDENCE-UNVERIFIED",
+   "files_present": [
+    "registry.jsonl",
+    "g0_evidence.json"
+   ],
+   "closed_after": "absent",
+   "tmp_after": "absent",
+   "expected": {
+    "process_exit_code": 3,
+    "reportable_outcome": "BLOCKED",
+    "next_preflight_reasons": [
+     "NO_CLOSED"
+    ],
+    "human_actions": [
+     "H1"
+    ]
+   },
+   "note": ""
+  },
+  {
+   "id": "PC-P5",
+   "failing_step": "P5",
+   "failure": "the judge raises an exception",
+   "published": false,
+   "recorded": null,
+   "stderr_marker": "G0-JUDGE-ERROR",
+   "files_present": [
+    "registry.jsonl",
+    "g0_evidence.json"
+   ],
+   "closed_after": "absent",
+   "tmp_after": "absent",
+   "expected": {
+    "process_exit_code": 3,
+    "reportable_outcome": "BLOCKED",
+    "next_preflight_reasons": [
+     "NO_CLOSED"
+    ],
+    "human_actions": [
+     "H1"
+    ]
+   },
+   "note": "no summary is written"
+  },
+  {
+   "id": "PC-P6a",
+   "failing_step": "P6",
+   "failure": "summary write fails halfway",
+   "published": false,
+   "recorded": null,
+   "stderr_marker": "G0-SUMMARY-UNSAVED",
+   "files_present": [
+    "registry.jsonl",
+    "g0_evidence.json",
+    "g0_summary.json"
+   ],
+   "closed_after": "absent",
+   "tmp_after": "absent",
+   "expected": {
+    "process_exit_code": 3,
+    "reportable_outcome": "BLOCKED",
+    "next_preflight_reasons": [
+     "NO_CLOSED"
+    ],
+    "human_actions": [
+     "H1"
+    ]
+   },
+   "note": "F-23: a partial summary exists but is not closure"
+  },
+  {
+   "id": "PC-P6b",
+   "failing_step": "P6",
+   "failure": "summary read-back differs",
+   "published": false,
+   "recorded": null,
+   "stderr_marker": "G0-SUMMARY-UNSAVED",
+   "files_present": [
+    "registry.jsonl",
+    "g0_evidence.json",
+    "g0_summary.json"
+   ],
+   "closed_after": "absent",
+   "tmp_after": "absent",
+   "expected": {
+    "process_exit_code": 3,
+    "reportable_outcome": "BLOCKED",
+    "next_preflight_reasons": [
+     "NO_CLOSED"
+    ],
+    "human_actions": [
+     "H1"
+    ]
+   },
+   "note": ""
+  },
+  {
+   "id": "PC-P6c",
+   "failing_step": "P6",
+   "failure": "summary fsync fails",
+   "published": false,
+   "recorded": null,
+   "stderr_marker": "G0-SUMMARY-UNSAVED",
+   "files_present": [
+    "registry.jsonl",
+    "g0_evidence.json",
+    "g0_summary.json"
+   ],
+   "closed_after": "absent",
+   "tmp_after": "absent",
+   "expected": {
+    "process_exit_code": 3,
+    "reportable_outcome": "BLOCKED",
+    "next_preflight_reasons": [
+     "NO_CLOSED"
+    ],
+    "human_actions": [
+     "H1"
+    ]
+   },
+   "note": "summary complete but unverified"
+  },
+  {
+   "id": "PC-K1",
+   "failing_step": "K1",
+   "failure": "marker serialisation or validation raises (for example an impossible verdict / exit pair)",
+   "published": false,
+   "recorded": {
+    "verdict": "PASS",
+    "exit_code": 0
+   },
+   "stderr_marker": "G0-CLOSE-UNPUBLISHED",
+   "files_present": [
+    "registry.jsonl",
+    "g0_evidence.json",
+    "g0_summary.json"
+   ],
+   "closed_after": "absent",
+   "tmp_after": "absent",
+   "expected": {
+    "process_exit_code": 3,
+    "reportable_outcome": "BLOCKED",
+    "next_preflight_reasons": [
+     "NO_CLOSED"
+    ],
+    "human_actions": [
+     "H1"
+    ]
+   },
+   "note": ""
+  },
+  {
+   "id": "PC-K2a",
+   "failing_step": "K2",
+   "failure": "g0_closed.json.tmp already exists (EEXIST)",
+   "published": false,
+   "recorded": {
+    "verdict": "PASS",
+    "exit_code": 0
+   },
+   "stderr_marker": "G0-CLOSE-UNPUBLISHED",
+   "files_present": [
+    "registry.jsonl",
+    "g0_evidence.json",
+    "g0_summary.json",
+    "g0_closed.json.tmp"
+   ],
+   "closed_after": "absent",
+   "tmp_after": "other",
+   "expected": {
+    "process_exit_code": 3,
+    "reportable_outcome": "BLOCKED",
+    "next_preflight_reasons": [
+     "NO_CLOSED"
+    ],
+    "human_actions": [
+     "H1"
+    ]
+   },
+   "note": "the existing file is never overwritten or reused"
+  },
+  {
+   "id": "PC-K2b",
+   "failing_step": "K2",
+   "failure": "temporary file write fails halfway (ENOSPC)",
+   "published": false,
+   "recorded": {
+    "verdict": "PASS",
+    "exit_code": 0
+   },
+   "stderr_marker": "G0-CLOSE-UNPUBLISHED",
+   "files_present": [
+    "registry.jsonl",
+    "g0_evidence.json",
+    "g0_summary.json",
+    "g0_closed.json.tmp"
+   ],
+   "closed_after": "absent",
+   "tmp_after": "other",
+   "expected": {
+    "process_exit_code": 3,
+    "reportable_outcome": "BLOCKED",
+    "next_preflight_reasons": [
+     "NO_CLOSED"
+    ],
+    "human_actions": [
+     "H1"
+    ]
+   },
+   "note": ""
+  },
+  {
+   "id": "PC-K2c",
+   "failing_step": "K2",
+   "failure": "temporary file fsync fails (EIO)",
+   "published": false,
+   "recorded": {
+    "verdict": "PASS",
+    "exit_code": 0
+   },
+   "stderr_marker": "G0-CLOSE-UNPUBLISHED",
+   "files_present": [
+    "registry.jsonl",
+    "g0_evidence.json",
+    "g0_summary.json",
+    "g0_closed.json.tmp"
+   ],
+   "closed_after": "absent",
+   "tmp_after": "other",
+   "expected": {
+    "process_exit_code": 3,
+    "reportable_outcome": "BLOCKED",
+    "next_preflight_reasons": [
+     "NO_CLOSED"
+    ],
+    "human_actions": [
+     "H1"
+    ]
+   },
+   "note": ""
+  },
+  {
+   "id": "PC-K3",
+   "failing_step": "K3",
+   "failure": "read-back of the temporary file differs",
+   "published": false,
+   "recorded": {
+    "verdict": "PASS",
+    "exit_code": 0
+   },
+   "stderr_marker": "G0-CLOSE-UNPUBLISHED",
+   "files_present": [
+    "registry.jsonl",
+    "g0_evidence.json",
+    "g0_summary.json",
+    "g0_closed.json.tmp"
+   ],
+   "closed_after": "absent",
+   "tmp_after": "other",
+   "expected": {
+    "process_exit_code": 3,
+    "reportable_outcome": "BLOCKED",
+    "next_preflight_reasons": [
+     "NO_CLOSED"
+    ],
+    "human_actions": [
+     "H1"
+    ]
+   },
+   "note": ""
+  },
+  {
+   "id": "PC-K4a",
+   "failing_step": "K4",
+   "failure": "link fails with EEXIST: a foreign file occupies g0_closed.json",
+   "published": false,
+   "recorded": {
+    "verdict": "PASS",
+    "exit_code": 0
+   },
+   "stderr_marker": "G0-CLOSE-UNPUBLISHED",
+   "files_present": [
+    "registry.jsonl",
+    "g0_evidence.json",
+    "g0_summary.json",
+    "g0_closed.json",
+    "g0_closed.json.tmp"
+   ],
+   "closed_after": "schema_invalid",
+   "tmp_after": "other",
+   "expected": {
+    "process_exit_code": 3,
+    "reportable_outcome": "BLOCKED",
+    "next_preflight_reasons": [
+     "CLOSED_SCHEMA"
+    ],
+    "human_actions": [
+     "H1"
+    ]
+   },
+   "note": "the foreign file is untouched; the closure state is judged on it"
+  },
+  {
+   "id": "PC-K4b",
+   "failing_step": "K4",
+   "failure": "link is not supported (EPERM / ENOTSUP / EXDEV)",
+   "published": false,
+   "recorded": {
+    "verdict": "PASS",
+    "exit_code": 0
+   },
+   "stderr_marker": "G0-CLOSE-UNPUBLISHED",
+   "files_present": [
+    "registry.jsonl",
+    "g0_evidence.json",
+    "g0_summary.json",
+    "g0_closed.json.tmp"
+   ],
+   "closed_after": "absent",
+   "tmp_after": "other",
+   "expected": {
+    "process_exit_code": 3,
+    "reportable_outcome": "BLOCKED",
+    "next_preflight_reasons": [
+     "NO_CLOSED"
+    ],
+    "human_actions": [
+     "H1"
+    ]
+   },
+   "note": "L-7: no fallback to a non-exclusive scheme"
+  },
+  {
+   "id": "PC-K5",
+   "failing_step": "K5",
+   "failure": "directory fsync fails after link",
+   "published": true,
+   "recorded": {
+    "verdict": "PASS",
+    "exit_code": 0
+   },
+   "stderr_marker": "G0-CLOSE-UNCONFIRMED",
+   "files_present": [
+    "registry.jsonl",
+    "g0_evidence.json",
+    "g0_summary.json",
+    "g0_closed.json",
+    "g0_closed.json.tmp"
+   ],
+   "closed_after": "ok",
+   "tmp_after": "identical",
+   "expected": {
+    "process_exit_code": 3,
+    "reportable_outcome": "BLOCKED",
+    "next_preflight_reasons": [],
+    "human_actions": []
+   },
+   "note": "published marker kept"
+  },
+  {
+   "id": "PC-K6",
+   "failing_step": "K6",
+   "failure": "read-back of the published name differs",
+   "published": true,
+   "recorded": {
+    "verdict": "PASS",
+    "exit_code": 0
+   },
+   "stderr_marker": "G0-CLOSE-UNCONFIRMED",
+   "files_present": [
+    "registry.jsonl",
+    "g0_evidence.json",
+    "g0_summary.json",
+    "g0_closed.json",
+    "g0_closed.json.tmp"
+   ],
+   "closed_after": "noncanonical",
+   "tmp_after": "other",
+   "expected": {
+    "process_exit_code": 3,
+    "reportable_outcome": "BLOCKED",
+    "next_preflight_reasons": [
+     "CLOSED_NONCANONICAL"
+    ],
+    "human_actions": [
+     "H1"
+    ]
+   },
+   "note": "someone altered the published file between K4 and K6"
+  },
+  {
+   "id": "PC-K7",
+   "failing_step": "K7",
+   "failure": "uncaught exception after K6 verified",
+   "published": true,
+   "recorded": {
+    "verdict": "PASS",
+    "exit_code": 0
+   },
+   "stderr_marker": "G0-CLOSE-UNCONFIRMED",
+   "files_present": [
+    "registry.jsonl",
+    "g0_evidence.json",
+    "g0_summary.json",
+    "g0_closed.json",
+    "g0_closed.json.tmp"
+   ],
+   "closed_after": "ok",
+   "tmp_after": "identical",
+   "expected": {
+    "process_exit_code": 3,
+    "reportable_outcome": "BLOCKED",
+    "next_preflight_reasons": [],
+    "human_actions": []
+   },
+   "note": ""
+  },
+  {
+   "id": "PC-K7b",
+   "failing_step": "K7",
+   "failure": "uncaught exception right after link returned",
+   "published": true,
+   "recorded": {
+    "verdict": "FAIL",
+    "exit_code": 1
+   },
+   "stderr_marker": "G0-CLOSE-UNCONFIRMED",
+   "files_present": [
+    "registry.jsonl",
+    "g0_evidence.json",
+    "g0_summary.json",
+    "g0_closed.json",
+    "g0_closed.json.tmp"
+   ],
+   "closed_after": "ok",
+   "tmp_after": "identical",
+   "expected": {
+    "process_exit_code": 3,
+    "reportable_outcome": "BLOCKED",
+    "next_preflight_reasons": [],
+    "human_actions": []
+   },
+   "note": ""
+  },
+  {
+   "id": "PC-OK",
+   "failing_step": null,
+   "failure": "none: all of K1..K7 succeed",
+   "published": true,
+   "recorded": {
+    "verdict": "FAIL",
+    "exit_code": 1
+   },
+   "stderr_marker": null,
+   "files_present": [
+    "registry.jsonl",
+    "g0_evidence.json",
+    "g0_summary.json",
+    "g0_closed.json",
+    "g0_closed.json.tmp"
+   ],
+   "closed_after": "ok",
+   "tmp_after": "identical",
+   "expected": {
+    "process_exit_code": 1,
+    "reportable_outcome": "FAIL",
+    "next_preflight_reasons": [],
+    "human_actions": []
+   },
+   "note": "exit code = recorded_exit_code"
+  },
+  {
+   "id": "PC-OK2",
+   "failing_step": null,
+   "failure": "none",
+   "published": true,
+   "recorded": {
+    "verdict": "PASS",
+    "exit_code": 0
+   },
+   "stderr_marker": null,
+   "files_present": [
+    "registry.jsonl",
+    "g0_evidence.json",
+    "g0_summary.json",
+    "g0_closed.json",
+    "g0_closed.json.tmp"
+   ],
+   "closed_after": "ok",
+   "tmp_after": "identical",
+   "expected": {
+    "process_exit_code": 0,
+    "reportable_outcome": "PASS",
+    "next_preflight_reasons": [],
+    "human_actions": []
+   },
+   "note": "exit code 0"
+  }
+ ]
+}
