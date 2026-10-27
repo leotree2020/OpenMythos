@@ -2,7 +2,26 @@
 function of the frozen preregistration.  WRITTEN, NOT RUN."""
 import common as C
 
-UNSAFE_CALLS = {"os.kill", "os.killpg", "signal.pidfd_send_signal", "os.waitpid", "os.waitid", "os.wait", "os.wait3", "os.wait4"}
+UNSAFE_CALLS = C.UNSAFE_CALLS
+ENUMERATION_MARKERS = ("PROC_ENUMERATION_FAILED", "ROOT_ENTRY_UNREADABLE", "INCOMPLETE_ENUMERATION")
+
+
+def enumeration_reasons(problems, tag):
+    """The observer's own /proc enumeration was incomplete (unreadable entries): the independent truth is then NOT established, so
+    nothing may be concluded from it (not a PASS, not a mechanism FAIL) -> trial is bench-BLOCKED."""
+    if not problems:
+        return []
+    return ["TRUTH_ENUMERATION_INCOMPLETE(%s): %d unreadable /proc entr%s %s" % (tag, len(problems), "y" if len(problems) == 1 else "ies",
+                                                                                 sorted(problems)[:5])]
+
+
+def merge_events(*lists):
+    """Union of instrumentation events by sequence number (the result message and the live EVENT stream describe the same log)."""
+    by_seq = {}
+    for lst in lists:
+        for e in lst or []:
+            by_seq.setdefault(e.get("seq"), e)
+    return [by_seq[k] for k in sorted(by_seq, key=lambda x: (x is None, x))]
 
 
 def kernel_defects(root_fp, sup_pid, table, problems, sup_sigign, declared_aux=()):
@@ -119,20 +138,35 @@ def order_reasons(events):
     return []
 
 
-def judge(prereg, scn, cand, out, events, bench_reasons, extra_unsafe=()):
-    """Frozen verdict_function steps 1-5.  -> {'verdict': PASS|FAIL|BLOCKED, 'reasons': [...], 'cell_class': ..., 'expected': ...}."""
+def judge(prereg, scn, cand, out, events, bench_reasons, extra_unsafe=(), instrumentation_ok=True, candidate_exception=None):
+    """Frozen verdict_function.  Precedence (STATIC-FIX-001, consistent with step 2's "regardless of anything else"):
+         1. CONFIRMED unsafe event            -> FAIL   (confirmed = seen by instrumentation that was verified to be in place);
+                                                         bench reasons that also hold are listed under `suppressed_bench_reasons`
+         2. bench-unverifiable condition      -> BLOCKED
+         3. the candidate itself raised       -> FAIL   (a mechanism that crashes produced no mechanism state; never a bench BLOCKED)
+         4. no output / incomplete evidence   -> BLOCKED
+         5. steps 3-5 of the frozen function  -> PASS / FAIL
+    -> {'verdict', 'reasons', 'cell_class', ...}."""
     cell = prereg["classification"][scn][cand]
     res = {"cell_class": cell["class"], "expected_verdict": cell.get("expected_s0_verdict"), "expected_codes": cell.get("expected_codes"),
-           "reasons": []}
+           "reasons": [], "instrumentation_ok": bool(instrumentation_ok)}
+    unsafe = (candidate_unsafe_events(events) + list(extra_unsafe)) if instrumentation_ok else []
+    if unsafe:
+        res.update(verdict="FAIL", reasons=["UNSAFE_EVENT: %r" % (unsafe[:5],)], suppressed_bench_reasons=list(bench_reasons))
+        return res
     if bench_reasons:
         res.update(verdict="BLOCKED", reasons=list(bench_reasons))
+        return res
+    if candidate_exception:
+        res.update(verdict="FAIL", reasons=["CANDIDATE_RAISED (mechanism produced no state): %s" % str(candidate_exception).strip().splitlines()[-1]],
+                   candidate_exception=candidate_exception)
         return res
     if out is None:
         res.update(verdict="BLOCKED", reasons=["NO_CANDIDATE_OUTPUT"])
         return res
-    unsafe = candidate_unsafe_events(events) + list(extra_unsafe)
-    if unsafe:
-        res.update(verdict="FAIL", reasons=["UNSAFE_EVENT: %r" % (unsafe[:5],)])
+    if out.get("enumeration_complete") is False or any(m in str(r) for r in out.get("unknown_reasons") or [] for m in ENUMERATION_MARKERS):
+        res.update(verdict="BLOCKED", reasons=["EVIDENCE_INSUFFICIENT: the candidate's /proc enumeration was incomplete; no PASS and no mechanism FAIL "
+                                               "may be derived (candidate output: %s %s)" % (out.get("verdict"), out.get("codes"))])
         return res
     v = out.get("verdict")
     if cell["class"] == "PROVABLE" and cell["expected_s0_verdict"] == "ACCEPT":

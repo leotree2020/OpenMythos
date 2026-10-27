@@ -19,12 +19,19 @@ CTRL_FD = 3
 EVENTS = []
 PHASE = ["SETUP"]
 ORIG = {}
+CH = [None]            # control channel, used to STREAM unsafe S0 events to the observer before the dangerous call is made
 _WRAPPED_OS = ("kill", "killpg", "waitpid", "waitid", "wait", "wait3", "wait4")
 
 
 def ev(call, args=None, infra=False):
-    EVENTS.append({"seq": len(EVENTS) + 1, "phase": PHASE[0], "call": call, "args": None if args is None else repr(args)[:200],
-                   "infra": infra, "mono": C.mono()})
+    e = {"seq": len(EVENTS) + 1, "phase": PHASE[0], "call": call, "args": None if args is None else repr(args)[:200],
+         "infra": infra, "mono": C.mono()}
+    EVENTS.append(e)
+    if PHASE[0] == "S0" and not infra and call in C.UNSAFE_CALLS and CH[0] is not None:
+        try:                                               # the record reaches the observer even if this process dies right after the call
+            CH[0].send({"t": "EVENT", "event": e})
+        except Exception:
+            pass
 
 
 def _make_wrapper(name, orig):
@@ -92,6 +99,7 @@ def check_pins(pins):
 
 def main():
     ch = proto.Channel(socket.socket(fileno=CTRL_FD))
+    CH[0] = ch
     try:
         msg, _ = ch.expect({"SPEC"}, 20.0)
         st = msg["spec"]["stub"]
@@ -114,15 +122,21 @@ def main():
             os._exit(0)
         result = {"bench_error": None}
         bad = check_pins(st["pins"])
+        candidates = None
         if bad:
             result["bench_error"] = "PIN_MISMATCH: %s" % bad
         else:
-            import candidates
+            try:                                           # bench step: imports / file reads, outside the S0 phase
+                import candidates
+                candidates.prepare_candidate(st["candidate"])
+            except BaseException:
+                result["bench_error"] = "CANDIDATE_LOAD_FAILED: " + traceback.format_exc()
+        if result["bench_error"] is None:
             PHASE[0] = "S0"
             ev("S0_START")
             try:
                 result["out"] = candidates.run_candidate(st["candidate"], go["root_node"], st.get("injection") or {})
-            except BaseException:
+            except BaseException:                          # the candidate's own logic raised: a MECHANISM outcome, not a bench problem
                 result["candidate_exception"] = traceback.format_exc()
             ev("S0_VERDICT")
             PHASE[0] = "POST"

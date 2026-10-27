@@ -6,7 +6,7 @@ import os
 
 import common as C
 
-KINDS = ("RUN_START", "INTENT", "REGISTERED", "RELEASED", "ABORTED", "DEAD", "RUN_END")
+KINDS = ("RUN_START", "INTENT", "FORKED", "REGISTERED", "RELEASED", "ABORTED", "DEAD", "RUN_END")
 
 
 class RegWriter:
@@ -50,16 +50,18 @@ def parse_reg(path):
 
 
 def fold(records):
-    """node_id -> merged view {intent, registered, released, aborted, dead} (the record dicts or None)."""
+    """node_id -> merged view {intent, forked, registered, released, aborted, dead} (the record dicts or None)."""
     nodes = {}
     for r in records:
         nid = r.get("node_id")
         if nid is None:
             continue
-        n = nodes.setdefault(nid, {"intent": None, "registered": None, "released": None, "aborted": None, "dead": None})
+        n = nodes.setdefault(nid, {"intent": None, "forked": None, "registered": None, "released": None, "aborted": None, "dead": None})
         k = r["kind"]
         if k == "INTENT":
             n["intent"] = r
+        elif k == "FORKED":
+            n["forked"] = r
         elif k == "REGISTERED":
             n["registered"] = r
         elif k == "RELEASED":
@@ -73,16 +75,37 @@ def fold(records):
 
 def cleanup_targets(records):
     """Janitor rule: act only on nodes that have an INTENT AND a complete REGISTERED record with pid+starttime and that are
-    neither ABORTED nor marked DEAD.  INTENT-only nodes were never registered: their process is gated and ends by itself."""
+    not marked DEAD.  ABORTED does NOT end the responsibility: an aborted node whose process has not been confirmed dead
+    (no DEAD record) is still a target.  INTENT-only nodes never produced a known process (it is gated and ends by itself)."""
     out = []
     for nid, n in fold(records).items():
         reg = n["registered"]
-        if n["intent"] is None or reg is None or n["aborted"] is not None or n["dead"] is not None:
+        if n["intent"] is None or reg is None or n["dead"] is not None:
             continue
         if not isinstance(reg.get("pid"), int) or not isinstance(reg.get("starttime"), int):
             continue
         out.append({"node_id": nid, "pid": reg["pid"], "starttime": reg["starttime"], "role": reg.get("role")})
     return sorted(out, key=lambda t: t["node_id"])
+
+
+def unresolved_forked(records):
+    """Nodes whose process is known (a FORKED record with a pid) but was never identity-registered and never confirmed dead.
+    The janitor must NOT signal them (identity unverified) but must keep reporting them until they are confirmed gone."""
+    out = []
+    for nid, n in fold(records).items():
+        fk = n["forked"]
+        if n["intent"] is None or fk is None or n["registered"] is not None or n["dead"] is not None:
+            continue
+        if not isinstance(fk.get("pid"), int):
+            continue
+        out.append({"node_id": nid, "pid": fk["pid"], "starttime": fk.get("starttime"), "role": fk.get("role")})
+    return sorted(out, key=lambda t: t["node_id"])
+
+
+def last_run_end(records):
+    """The last RUN_END record, or None."""
+    ends = [r for r in records if r.get("kind") == "RUN_END"]
+    return ends[-1] if ends else None
 
 
 def check_order(records):
@@ -106,6 +129,8 @@ def check_order(records):
             bad.append("%s: REGISTERED without earlier INTENT" % nid)
         if "RELEASED" in s and "ABORTED" in s:
             bad.append("%s: both RELEASED and ABORTED" % nid)
+        if "FORKED" in s and ("INTENT" not in s or s["INTENT"] > s["FORKED"]):
+            bad.append("%s: FORKED without earlier INTENT" % nid)
     intents = {r["node_id"]: r for r in records if r["kind"] == "INTENT"}
     for nid, r in intents.items():
         cr = r.get("creator")

@@ -132,17 +132,34 @@ def bv7_janitor_ignores_intent_only_and_torn(workdir):
     """Pure file test: INTENT-only nodes and a torn final line yield no cleanup target."""
     path = os.path.join(workdir, "bv7_torn.jsonl")
     w = R.RegWriter(path)
+    me = C.read_stat(os.getpid())
     w.write("INTENT", node_id="a", creator="O", creator_pid=1, role="x", label="A", mode="none")
     w.write("INTENT", node_id="b", creator="O", creator_pid=1, role="x", label="B", mode="none")
-    with open(path, "ab") as f:
-        f.write(b'{"seq":3,"kind":"REGISTERED","node_id":"b","pid":' + str(os.getpid()).encode() + b',"starttime":1')   # torn: no newline
+    w.write("INTENT", node_id="c", creator="O", creator_pid=1, role="x", label="C", mode="none")
+    w.write("FORKED", node_id="c", pid=os.getpid(), starttime=me["starttime"], creator="O", creator_pid=1, role="x", label="C")
+    with open(path, "ab") as f:                              # the torn tail is written LAST (nothing may be appended after it)
+        f.write(b'{"seq":9,"kind":"REGISTERED","node_id":"b","pid":' + str(os.getpid()).encode() + b',"starttime":1')   # no newline
     recs, info = R.parse_reg(path)
     targets = R.cleanup_targets(recs)
-    results = janitor.run_cleanup(path, signal_fn=lambda h, s: (_ for _ in ()).throw(AssertionError("must not signal")))
-    return {"ok": info["torn_tail"] and targets == [] and results == [], "detail": {"torn": info["torn_tail"], "targets": targets}}
+    full = janitor.run_cleanup_full(path, signal_fn=lambda h, s: (_ for _ in ()).throw(AssertionError("must not signal")), skip_pids=())
+    unresolved_alive = [u["node_id"] for u in full["unresolved"] if u["alive"]]
+    ok = info["torn_tail"] and targets == [] and full["targets"] == [] and unresolved_alive == ["c"]      # FORKED-only: reported, never signalled
+    return {"ok": ok, "detail": {"torn": info["torn_tail"], "targets": targets, "unresolved_alive": unresolved_alive}}
 
 
-def run_all(obs, workdir):
+RUN_LEVEL_IDS = ("BV-1", "BV-2", "BV-3", "BV-6", "BV-7")
+# Which checks inject process faults / signals.  BV-7 is a pure file test.  Each id is authorizable on its own.
+FAULT_INJECTING = {"BV-1": "forks a gated process and aborts it", "BV-2": "kills its mini-observer so the gate sees EOF",
+                   "BV-3": "leaves a gated process silent until it times out", "BV-6": "SIGKILLs a sacrificial node through the janitor",
+                   "BV-7": None}
+
+
+def run_all(obs, workdir, only):
+    """Run EXACTLY the requested run-level checks (`only` is mandatory: there is no implicit 'all')."""
+    only = list(only)
+    unknown = [x for x in only if x not in RUN_LEVEL_IDS]
+    if not only or unknown:
+        raise ValueError("run_all needs an explicit, known subset of %s (got %r)" % (RUN_LEVEL_IDS, only))
     os.makedirs(workdir, exist_ok=True)
     results = {}
     for name, fn in (("BV-1", lambda: bv1_unreleased_cannot_act(obs)),
@@ -150,6 +167,8 @@ def run_all(obs, workdir):
                      ("BV-3", lambda: bv3_gate_silent_timeout(obs)),
                      ("BV-6", lambda: bv6_janitor_refuses_wrong_identity(obs, workdir)),
                      ("BV-7", lambda: bv7_janitor_ignores_intent_only_and_torn(workdir))):
+        if name not in only:
+            continue
         try:
             results[name] = fn()
         except Exception:

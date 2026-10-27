@@ -29,7 +29,8 @@ class NodeRec:
         self.exit_status = None
         self.messages = []                    # other messages received from the node
         self.trial = None                     # trial tag at creation time
-        self.forked_pid = None                # pid returned by fork (direct children), kept even if registration fails
+        self.forked_pid = None                # pid of the forked process, kept even if registration fails or the node is ABORTED
+        self.forked_starttime = None          # best-effort starttime read right after the fork (None if unreadable)
         self.gate_ino = None                  # inode of the gate pipe (BV-8: must not appear in any node)
         self.spec_send_error = None
 
@@ -70,9 +71,21 @@ class Observer:
         os.close(gate_r)
         node_end.close()
         rec.state = "FORKED"
-        rec.forked_pid = pid
+        self._note_forked(rec, pid, os.getpid())
         self._register(rec, pid, os.getpid(), hold_release)
         return rec
+
+    def _note_forked(self, rec, pid, creator_pid):
+        """From this point the observer is responsible for the process until it is CONFIRMED dead (DEAD record), whatever happens
+        to the registration."""
+        rec.forked_pid = pid
+        try:
+            st = C.read_stat(pid)
+        except C.ProcUnreadable:
+            st = None
+        rec.forked_starttime = None if st is None else st["starttime"]
+        self.reg.write("FORKED", node_id=rec.node_id, pid=pid, starttime=rec.forked_starttime, creator=rec.creator,
+                       creator_pid=creator_pid, role=rec.role, label=rec.label)
 
     # ------------------------------------------------------------ registration / release / abort
     def _register(self, rec, pid, creator_pid, hold_release=False):
@@ -203,6 +216,7 @@ class Observer:
             self.problems.append("CREATED for unknown/foreign ticket %r from %s" % (msg, creator.node_id))
             return
         child.state = "FORKED"
+        self._note_forked(child, int(msg["pid"]), creator.pid)
         ok = self._register(child, int(msg["pid"]), creator.pid)
         try:
             proto.send_msg(creator.sock, {"t": "REGISTERED_OK" if ok else "REGISTER_FAILED", "node_id": child.node_id})
@@ -232,11 +246,18 @@ class Observer:
         ids = {r.node_id for r in self.trial_nodes()}
         return [x for x in self.reg.records if x.get("node_id") in ids]
 
-    # ------------------------------------------------------------ cleanup (registered identities only)
-    def kill_registered(self, only=None):
-        """SIGKILL every still-running registered node of the CURRENT trial through its identity-confirmed pidfd.  -> per-node results."""
+    # ------------------------------------------------------------ cleanup
+    # Responsibility starts at fork (FORKED record) and ends only when the process is CONFIRMED dead (DEAD record).  ABORTED, a failed
+    # registration or an unreadable /proc entry never end it.  Signals go only to (a) identity-confirmed registered nodes through their
+    # pidfd and (b) unreaped direct children of this observer (the pid cannot be reused while the child is unreaped).  An
+    # identity-unverified process of another creator is never signalled: it stays in the residual set (cleanup fails, run aborts).
+    def _nodes(self, nodes):
+        return self.trial_nodes() if nodes is None else list(nodes)
+
+    def kill_registered(self, only=None, nodes=None):
+        """SIGKILL every still-running registered node through its identity-confirmed pidfd.  -> list of per-node results."""
         out = []
-        for r in self.trial_nodes():
+        for r in self._nodes(nodes):
             if only is not None and r.node_id not in only:
                 continue
             if r.handle is None:
@@ -247,10 +268,35 @@ class Observer:
             out.append({"node_id": r.node_id, "result": r.handle.send(signal.SIGKILL)})
         return out
 
-    def reap_direct(self, timeout=5.0):
+    def kill_unregistered_direct(self, nodes=None):
+        """Direct, never-registered (or registration-failed) children of this observer that are still alive and UNREAPED."""
+        out = []
+        for r in self._nodes(nodes):
+            if r.handle is not None or not r.direct or r.forked_pid is None or r.exit_status is not None or r.state == "DEAD":
+                continue
+            try:
+                st = C.read_stat(r.forked_pid)
+            except C.ProcUnreadable as e:
+                out.append({"node_id": r.node_id, "result": "unreadable", "detail": str(e)})
+                continue
+            if st is None or st["state"] in ("Z", "X"):
+                out.append({"node_id": r.node_id, "result": "already_exited"})
+                continue
+            h = None
+            try:
+                h = C.PidfdHandle(r.forked_pid, st["starttime"])      # unreaped direct child: the pid is certainly ours
+                out.append({"node_id": r.node_id, "result": h.send(signal.SIGKILL)})
+            except (C.IdentityError, OSError) as e:
+                out.append({"node_id": r.node_id, "result": "refused", "detail": repr(e)})
+            finally:
+                if h is not None:
+                    h.close()
+        return out
+
+    def reap_direct(self, timeout=5.0, nodes=None):
         """waitpid by specific pid on the observer's own children (never -1)."""
         deadline = C.mono() + timeout
-        for r in self.trial_nodes():
+        for r in self._nodes(nodes):
             if not r.direct or r.forked_pid is None or r.exit_status is not None:
                 continue
             while True:
@@ -266,43 +312,69 @@ class Observer:
                     break
                 time.sleep(0.01)
 
-    def residual(self):
-        """Registered nodes that are not provably dead (identity from /proc fingerprint, independent of the pidfd)."""
-        left = []
-        for r in self.trial_nodes():
-            if r.pid is None or r.state not in ("REGISTERED", "RELEASED"):
-                continue
-            try:
-                if not C.process_is_dead(r.pid, r.starttime):
-                    left.append(r.node_id)
-            except C.ProcUnreadable:
-                left.append(r.node_id)
-        return left
+    def _confirmed_dead(self, r):
+        """True only with positive evidence.  Unreadable /proc -> not confirmed."""
+        if r.state == "DEAD":
+            return True
+        try:
+            if r.pid is not None:                                     # identity-registered
+                return C.process_is_dead(r.pid, r.starttime)
+            if r.forked_pid is not None:                              # forked but not (or no longer) registered
+                if r.direct and r.exit_status is not None:
+                    return True
+                st = C.read_stat(r.forked_pid)
+                if st is None or st["state"] in ("Z", "X"):
+                    return True
+                return r.forked_starttime is not None and st["starttime"] != r.forked_starttime
+        except C.ProcUnreadable:
+            return False
+        return True                                                   # never forked: nothing to clean up
 
-    def mark_dead(self):
-        still = set(self.residual())
-        for r in self.trial_nodes():
-            if r.pid is not None and r.state in ("REGISTERED", "RELEASED") and r.node_id not in still:
-                self.reg.write("DEAD", node_id=r.node_id)
-                r.state = "DEAD"
-                if r.handle is not None:
-                    r.handle.close()
-                    r.handle = None
-                if r.sock is not None:
-                    try:
-                        r.sock.close()
-                    except OSError:
-                        pass
-                    r.sock = None
+    def residual(self, nodes=None):
+        """Node ids whose process is not confirmed dead -- INCLUDING ABORTED and registration-failed nodes."""
+        return [r.node_id for r in self._nodes(nodes) if not self._confirmed_dead(r)]
+
+    def residual_detail(self, nodes=None):
+        out = []
+        for r in self._nodes(nodes):
+            if not self._confirmed_dead(r):
+                out.append({"node_id": r.node_id, "label": r.label, "state": r.state, "pid": r.pid if r.pid is not None else r.forked_pid,
+                            "identity": "registered" if r.pid is not None else "UNVERIFIED (never signalled)"})
+        return out
+
+    def mark_dead(self, nodes=None):
+        still = set(self.residual(nodes))
+        for r in self._nodes(nodes):
+            if r.state == "DEAD" or r.node_id in still or (r.pid is None and r.forked_pid is None):
+                continue
+            self.reg.write("DEAD", node_id=r.node_id, basis="confirmed dead from /proc" + ("" if r.pid is not None else " (identity never registered)"))
+            r.state = "DEAD"
+            if r.handle is not None:
+                r.handle.close()
+                r.handle = None
+            if r.sock is not None:
+                try:
+                    r.sock.close()
+                except OSError:
+                    pass
+                r.sock = None
+
+    def finish_cleanup(self, nodes=None, grace=3.0):
+        """Kill -> reap -> verify for the given nodes (default: the current trial).  -> report dict."""
+        nodes = self._nodes(nodes)
+        report = {"kill": self.kill_registered(nodes=nodes), "kill_unregistered_direct": self.kill_unregistered_direct(nodes=nodes)}
+        self.wait_for(lambda: not self.residual(nodes), grace)
+        self.reap_direct(nodes=nodes)
+        res = self.residual_detail(nodes)
+        report["residual_after_kill"] = [x["node_id"] for x in res]
+        report["residual_detail"] = res
+        report["cleanup_ok"] = not res
+        self.mark_dead(nodes)
+        return report
 
     def finish_trial_cleanup(self, grace=3.0):
-        """Kill -> reap -> verify.  -> report dict.  Never signals anything that is not a registered, identity-confirmed node."""
-        report = {"kill": self.kill_registered()}
-        self.wait_for(lambda: not self.residual(), grace)
-        self.reap_direct()
-        res = self.residual()
-        report["residual_after_kill"] = res
-        report["cleanup_ok"] = not res
-        if not res:
-            self.mark_dead()
-        return report
+        return self.finish_cleanup(None, grace)
+
+    def run_level_nodes(self, exclude_ids=()):
+        """Every node of the whole run (all trial tags) except the given ones (the janitor)."""
+        return [r for r in self.nodes.values() if r.node_id not in set(exclude_ids)]

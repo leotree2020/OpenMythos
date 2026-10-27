@@ -16,10 +16,29 @@ import common as C
 _PR_SET_CHILD_SUBREAPER, _PR_GET_CHILD_SUBREAPER = 36, 37
 
 
+_CHECKS = {}
+
+
 def load_checks():
-    """S0 check table (id -> rule / code) from the frozen preregistration: the single source of truth."""
-    with open(C.PREREG_PATH, encoding="utf-8") as f:
-        return json.load(f)["s0_checks"]
+    """S0 check table (id -> rule / code) from the frozen preregistration: the single source of truth (read once)."""
+    if not _CHECKS:
+        with open(C.PREREG_PATH, encoding="utf-8") as f:
+            _CHECKS.update(json.load(f)["s0_checks"])
+    return _CHECKS
+
+
+def prepare_candidate(cand):
+    """BENCH step, done BEFORE the S0 phase: imports / file reads that are not the candidate's decision logic.  A failure here is a
+    bench problem (BLOCKED); an exception raised later by the candidate's own logic is a candidate FAIL."""
+    if cand == "P2":
+        load_checks()
+    elif cand == "P0":
+        _load_cpu001()
+    elif cand == "P1":
+        _load_cpu001()
+        _load_cpu002()
+    else:
+        raise ValueError("unknown candidate %r" % (cand,))
 
 
 def p2_prctl_set(flag):
@@ -35,7 +54,7 @@ def p2_prctl_get():
 
 def _base(cand):
     return {"candidate": cand, "verdict": None, "codes": [], "cited_rules": [], "evaluated_rules": [], "unknown_reasons": [],
-            "preflight_executed": False, "detail": None}
+            "preflight_executed": False, "detail": None, "enumeration_complete": True}
 
 
 # ---------------------------------------------------------------- P2: the S0 candidate
@@ -104,6 +123,7 @@ def s0_check(v, sub, checks):
         defects.add("C8")
 
     out["evaluated_rules"] = sorted(set(evaluated))
+    out["enumeration_complete"] = table is not None and not problems
     if defects:
         out["verdict"] = "BLOCKED"
         out["codes"] = sorted(checks[c]["code_p2"] for c in defects)

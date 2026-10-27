@@ -32,6 +32,9 @@ EXIT_CHILD_EXC = 113     # exception in a gated child before / outside its role
 
 SIGIGN_SIGCHLD_BIT = 1 << (signal.SIGCHLD - 1)
 
+# calls that a candidate must not make between the start of preflight and its S0 verdict (instrumented in the supervisor stub)
+UNSAFE_CALLS = frozenset({"os.kill", "os.killpg", "signal.pidfd_send_signal", "os.waitpid", "os.waitid", "os.wait", "os.wait3", "os.wait4"})
+
 
 class IdentityError(RuntimeError):
     """The process behind a pid cannot be confirmed to be the registered one."""

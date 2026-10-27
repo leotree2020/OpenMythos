@@ -79,7 +79,7 @@ def run_trial(obs, prereg, item, pins, run):
     rec = {"trial": item, "scenario_evidence_kind": prereg["scenarios"][scn]["evidence_kind"], "prereg_sha256": run["prereg_sha"],
            "bench_reasons": [], "start_wall": C.wall()}
     bench, out, events, extra_unsafe = rec["bench_reasons"], None, [], []
-    setup = None
+    setup, cand_exc, instr = None, None, {"setup": None, "s0": None}
     obs.trial_tag = item["trial_id"]
     pty_master = pty_slave = None
     sup = None
@@ -111,6 +111,8 @@ def run_trial(obs, prereg, item, pins, run):
             labels = S.all_labels(recipe)
             if not obs.wait_for(lambda: all(obs.find(l) is not None and obs.find(l).ready is not None for l in labels), 10.0):
                 bench.append("NODES_NOT_READY: %s" % [l for l in labels if obs.find(l) is None or obs.find(l).ready is None])
+        if setup is not None:
+            instr["setup"] = _setup_instrumentation_ok(setup)
         if not bench:
             _pre_s0(obs, prereg, scn, recipe, sup, setup, rec, bench)
         if not bench:
@@ -125,6 +127,8 @@ def run_trial(obs, prereg, item, pins, run):
             else:
                 _post_s0(obs, prereg, scn, cand, recipe, sup, res["result"], rec, bench, extra_unsafe)
                 out, events = res["result"].get("out"), res["result"].get("events", [])
+                cand_exc = res["result"].get("candidate_exception")
+                instr["s0"] = all((res["result"].get("wrappers_effective_at_s0") or {"x": False}).values())
     except RunAbort:
         raise
     except Exception:
@@ -142,15 +146,24 @@ def run_trial(obs, prereg, item, pins, run):
         bench.append("OBSERVER_PROBLEMS: %s" % obs.problems[:3])
         obs.problems.clear()
     if not rec["cleanup"]["cleanup_ok"]:
-        raise RunAbort("cleanup failed in %s: residual %s" % (item["trial_id"], rec["cleanup"]["residual_after_kill"]))
+        raise RunAbort("cleanup NOT confirmed in %s (recovery responsibility stays open): %s" % (item["trial_id"], rec["cleanup"]["residual_detail"]))
+    streamed = [m["event"] for m in sup.messages if m.get("t") == "EVENT"] if sup is not None else []
+    events = T.merge_events(events, streamed)                       # live stream survives a stub that died after the unsafe call
+    instrumentation_ok = bool(instr["setup"]) and instr["s0"] is not False
     rec["candidate_output"] = out
     rec["events"] = events
-    rec["judgement"] = T.judge(prereg, scn, cand, out, events, bench, extra_unsafe)
+    rec["streamed_unsafe_events"] = streamed
+    rec["judgement"] = T.judge(prereg, scn, cand, out, events, bench, extra_unsafe, instrumentation_ok, cand_exc)
     rec["verdict"] = rec["judgement"]["verdict"]
     rec["registry_records"] = obs.trial_records()
     rec["end_wall"] = C.wall()
     obs.trial_tag = "RUN"
     return rec
+
+
+def _setup_instrumentation_ok(sd):
+    inst = sd["inst"]
+    return bool(REQUIRED_WRAPPERS <= set(inst["wrapped"]) and not inst["candidate_modules_loaded_at_install"] and all(sd["wrappers_effective"].values()))
 
 
 def _pre_s0(obs, prereg, scn, recipe, sup, setup, rec, bench):
@@ -160,9 +173,10 @@ def _pre_s0(obs, prereg, scn, recipe, sup, setup, rec, bench):
     if any(v in ("TIMEOUT", "ECHILD") for v in sd["reaps"].values()):
         bench.append("SETUP_REAP_FAILED: %s" % sd["reaps"])
     inst = sd["inst"]
-    if not REQUIRED_WRAPPERS <= set(inst["wrapped"]) or inst["candidate_modules_loaded_at_install"] or not all(sd["wrappers_effective"].values()):
+    if not _setup_instrumentation_ok(sd):
         bench.append("BV-10_FAILED: instrumentation not in place before candidate import: %r" % (inst,))
     table, problems = C.scan_proc()
+    bench += T.enumeration_reasons(problems, "pre-S0")
     root = obs.find("root")
     dead = [l for l in S.expected_alive_labels(recipe) if obs.find(l) is None or C.process_is_dead(obs.find(l).pid, obs.find(l).starttime)]
     if dead:
@@ -179,7 +193,7 @@ def _pre_s0(obs, prereg, scn, recipe, sup, setup, rec, bench):
     rec["truth_prereadback"] = {"observed_real_defects": sorted(observed), "notes": notes, "root_live": live, "sup": sup_st,
                                 "sup_sigign": sigign, "root_report": root.ready["fp"]}
     bench += T.topology_reasons(S.expected_real_defects(prereg, scn), observed, root.ready["fp"], live, sd["subreaper_before"], by)
-    bench += _stray_reasons(obs, sup, table, "BV-5_FAILED(pre-S0)")
+    bench += _stray_reasons(obs, sup, table, "BV-5_FAILED(pre-S0)")      # (incomplete enumeration was already reported above)
     # BV-8 / BV-9 / BV-4 timing
     inos = [r.gate_ino for r in obs.trial_nodes() if r.gate_ino is not None]
     for r in obs.trial_nodes():
@@ -201,12 +215,13 @@ def _stray_reasons(obs, sup, table, tag):
 
 
 def _post_s0(obs, prereg, scn, cand, recipe, sup, result, rec, bench, extra_unsafe):
-    bench += _stray_reasons(obs, sup, C.scan_proc()[0], "BV-5_FAILED(post-S0)")
+    table, problems = C.scan_proc()
+    bench += T.enumeration_reasons(problems, "post-S0")
+    bench += _stray_reasons(obs, sup, table, "BV-5_FAILED(post-S0)")
     rec["stub_result_meta"] = {k: result.get(k) for k in ("bench_error", "candidate_exception", "subreaper_after", "wrappers_effective_at_s0")}
     if result.get("bench_error"):
         bench.append("STUB_BENCH_ERROR: %s" % result["bench_error"])
-    if result.get("candidate_exception"):
-        bench.append("CANDIDATE_RAISED: %s" % result["candidate_exception"])
+    # a candidate exception is NOT a bench condition: it is passed to T.judge as a mechanism outcome (FAIL)
     if not all((result.get("wrappers_effective_at_s0") or {"x": False}).values()):
         bench.append("BV-10_FAILED: wrappers not effective at S0")
     bench += T.order_reasons(result.get("events", []))

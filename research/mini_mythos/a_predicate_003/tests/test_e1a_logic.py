@@ -223,15 +223,15 @@ class TestRegistryLogic(unittest.TestCase):
             self.assertTrue(info["torn_tail"])
             self.assertEqual([t["node_id"] for t in R.cleanup_targets(recs)], ["b"])
 
-    def test_dead_and_aborted_nodes_are_not_targets(self):
+    def test_dead_nodes_are_not_targets_but_aborted_ones_stay_until_dead(self):
         with tempfile.TemporaryDirectory() as d:
             w = self.reg(d)
             for n in ("a", "b"):
                 w.write("INTENT", node_id=n, creator="O")
                 w.write("REGISTERED", node_id=n, pid=11, starttime=5)
             w.write("DEAD", node_id="a")
-            w.write("ABORTED", node_id="b", reason="x")
-            self.assertEqual(R.cleanup_targets(R.parse_reg(w.path)[0]), [])
+            w.write("ABORTED", node_id="b", reason="x")                  # STATIC-FIX-001: ABORTED does not end the cleanup responsibility
+            self.assertEqual([t["node_id"] for t in R.cleanup_targets(R.parse_reg(w.path)[0])], ["b"])
 
     def test_check_order_detects_release_before_register(self):
         good = [{"seq": 1, "kind": "INTENT", "node_id": "a", "creator": "O"}, {"seq": 2, "kind": "REGISTERED", "node_id": "a"}, {"seq": 3, "kind": "RELEASED", "node_id": "a"}]

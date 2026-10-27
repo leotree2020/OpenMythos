@@ -1,7 +1,14 @@
-"""Fail-closed janitor.  Exec'd as `python -I -S janitor.py REG OBSERVER_PID OBSERVER_STARTTIME LOG` by the observer, or called
-as run_cleanup() from the validity checks.  It acts ONLY on nodes that have an INTENT record AND a complete REGISTERED record,
+"""Fail-closed janitor.  Exec'd as `python -I -S -B janitor.py REG OBSERVER_PID OBSERVER_STARTTIME LOG` by the observer, or called
+as library functions from the validity checks.  It acts ONLY on nodes that have an INTENT record AND a complete REGISTERED record,
 re-opens a pidfd first and compares the live starttime with the registered one, and refuses to signal when identity cannot be
-confirmed.  It never matches names or command lines, never signals process groups.  WRITTEN, NOT RUN."""
+confirmed.  It never matches names or command lines, never signals process groups.
+
+Responsibility rules (STATIC-FIX-001):
+  * ABORTED does not end responsibility: only a DEAD record (written after the observer CONFIRMED death) does;
+  * a node that was forked but never identity-registered is reported as UNRESOLVED while its process may still exist (never signalled);
+  * RUN_END carries `cleanup_confirmed`.  True is trusted only after a read-only re-verification; False / missing means the run
+    ended with recovery still owed, so the janitor works until cleanup is confirmed and exits non-zero if it cannot confirm it.
+WRITTEN, NOT RUN."""
 import os
 import signal
 import sys
@@ -11,6 +18,12 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import common as C            # noqa: E402
 import registry as R          # noqa: E402
 
+EXIT_CLEAN = 0
+EXIT_IDENTITY = 2
+EXIT_INCOMPLETE = 4           # cleanup could not be confirmed: recovery responsibility is STILL OPEN
+CLEANUP_ATTEMPTS = 15
+CLEANUP_INTERVAL = 1.0
+
 
 def _default_signal(handle, sig):
     return handle.send(sig)
@@ -19,6 +32,10 @@ def _default_signal(handle, sig):
 def run_cleanup(reg_path, signal_fn=_default_signal, log=None, skip_pids=None):
     """One pass over the REG file.  -> list of per-target result dicts (also appended to `log` if given).
     The janitor never signals itself."""
+    return run_cleanup_full(reg_path, signal_fn, log, skip_pids)["targets"]
+
+
+def run_cleanup_full(reg_path, signal_fn=_default_signal, log=None, skip_pids=None):
     skip = {os.getpid()} if skip_pids is None else set(skip_pids)
     records, info = R.parse_reg(reg_path)
     results = []
@@ -49,14 +66,79 @@ def run_cleanup(reg_path, signal_fn=_default_signal, log=None, skip_pids=None):
         results.append(res)
         if log:
             C.append_jsonl(log, dict(res, who="janitor", mono=C.mono()))
+    unresolved = unresolved_report(records, skip)
+    for u in unresolved:
+        if log:
+            C.append_jsonl(log, dict(u, who="janitor", event="UNRESOLVED_FORKED_NOT_REGISTERED", mono=C.mono()))
     if log:
-        C.append_jsonl(log, {"who": "janitor", "pass_done": True, "targets": len(results), "reg_info": info, "mono": C.mono()})
-    return results
+        C.append_jsonl(log, {"who": "janitor", "pass_done": True, "targets": len(results), "unresolved": len(unresolved), "reg_info": info,
+                             "mono": C.mono()})
+    return {"targets": results, "unresolved": unresolved, "reg_info": info}
 
 
-def _run_end_seen(reg_path):
-    records, _ = R.parse_reg(reg_path)
-    return any(r.get("kind") == "RUN_END" for r in records)
+def unresolved_report(records, skip=()):
+    """Forked-but-unregistered nodes whose process may still exist.  Read-only: NEVER signalled.  alive is True / False / None (unreadable)."""
+    out = []
+    for u in R.unresolved_forked(records):
+        if u["pid"] in skip:
+            continue
+        try:
+            st = C.read_stat(u["pid"])
+            if st is None or st["state"] in ("Z", "X"):
+                alive = False
+            elif u.get("starttime") is not None and st["starttime"] != u["starttime"]:
+                alive = False
+            else:
+                alive = True
+        except C.ProcUnreadable:
+            alive = None
+        out.append(dict(u, alive=alive))
+    return out
+
+
+def registered_still_alive(records, skip=()):
+    """Read-only: registered, not-DEAD targets whose process still exists (None entries = unreadable, counted as alive)."""
+    left = []
+    for t in R.cleanup_targets(records):
+        if t["pid"] in skip:
+            continue
+        try:
+            if not C.process_is_dead(t["pid"], t["starttime"]):
+                left.append(t["node_id"])
+        except C.ProcUnreadable:
+            left.append(t["node_id"])
+    return left
+
+
+def decide(records, observer_exited, skip=()):
+    """Pure decision (no I/O except the read-only liveness checks inside `registered_still_alive` when RUN_END claims success).
+    -> 'WAIT' | 'EXIT_CONFIRMED' | 'CLEANUP'.
+      * no RUN_END and observer alive            -> WAIT
+      * no RUN_END and observer dead             -> CLEANUP   (abnormal exit never lifts responsibility)
+      * RUN_END with cleanup_confirmed != True   -> CLEANUP   (recovery still owed; also when the field is missing)
+      * RUN_END with cleanup_confirmed == True   -> EXIT_CONFIRMED only if nothing registered is still alive, else CLEANUP"""
+    end = R.last_run_end(records)
+    if end is None:
+        return "CLEANUP" if observer_exited else "WAIT"
+    if end.get("cleanup_confirmed") is not True:
+        return "CLEANUP"
+    if registered_still_alive(records, skip) or any(u["alive"] is not False for u in unresolved_report(records, skip)):
+        return "CLEANUP"
+    return "EXIT_CONFIRMED"
+
+
+def cleanup_until_clear(reg_path, log, attempts=CLEANUP_ATTEMPTS, interval=CLEANUP_INTERVAL):
+    """Repeat passes until every registered target is gone and no forked-unregistered process is alive/unreadable.
+    -> (clear: bool, last_result)."""
+    last = None
+    for _ in range(attempts):
+        last = run_cleanup_full(reg_path, log=log)
+        records, _ = R.parse_reg(reg_path)
+        skip = {os.getpid()}
+        if not registered_still_alive(records, skip) and all(u["alive"] is False for u in unresolved_report(records, skip)):
+            return True, last
+        time.sleep(interval)
+    return False, last
 
 
 def main(argv):
@@ -66,24 +148,21 @@ def main(argv):
         obs = C.PidfdHandle(obs_pid, obs_start)
     except (C.IdentityError, ProcessLookupError, OSError, C.ProcUnreadable) as e:
         C.append_jsonl(log, {"who": "janitor", "event": "OBSERVER_IDENTITY_UNCONFIRMED_NO_ACTION", "detail": repr(e)})
-        return 2
-    deadline = C.mono() + C.T_JANITOR_MAX
-    while C.mono() < deadline:
-        if obs.exited():
-            if _run_end_seen(reg_path):
-                C.append_jsonl(log, {"who": "janitor", "event": "OBSERVER_EXITED_AFTER_RUN_END_NO_ACTION"})
-                return 0
-            C.append_jsonl(log, {"who": "janitor", "event": "OBSERVER_DIED_WITHOUT_RUN_END_CLEANUP"})
-            run_cleanup(reg_path, log=log)
-            time.sleep(1.0)
-            run_cleanup(reg_path, log=log)
-            return 0
-        if _run_end_seen(reg_path):
-            C.append_jsonl(log, {"who": "janitor", "event": "RUN_END_SEEN_NO_ACTION"})
-            return 0
+        return EXIT_IDENTITY
+    while True:                                   # no lifetime cap while the observer is alive: a silent exit would drop the responsibility
+        records, _ = R.parse_reg(reg_path)
+        action = decide(records, obs.exited(), {os.getpid()})
+        if action == "EXIT_CONFIRMED":
+            C.append_jsonl(log, {"who": "janitor", "event": "RUN_END_CLEANUP_CONFIRMED_AND_VERIFIED_NO_ACTION"})
+            return EXIT_CLEAN
+        if action == "CLEANUP":
+            C.append_jsonl(log, {"who": "janitor", "event": "CLEANUP_REQUIRED", "observer_exited": obs.exited(),
+                                 "run_end": R.last_run_end(records)})
+            clear, last = cleanup_until_clear(reg_path, log)
+            C.append_jsonl(log, {"who": "janitor", "event": "CLEANUP_CONFIRMED" if clear else "CLEANUP_INCOMPLETE_RESPONSIBILITY_OPEN",
+                                 "last": last})
+            return EXIT_CLEAN if clear else EXIT_INCOMPLETE
         C.poll_ready([obs.fd], 0.5)
-    C.append_jsonl(log, {"who": "janitor", "event": "LIFETIME_CAP_NO_ACTION"})
-    return 3
 
 
 if __name__ == "__main__":

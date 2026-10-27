@@ -4,10 +4,12 @@ import os
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, "..", "bench"))
 import common as C          # noqa: E402
+import janitor as J         # noqa: E402
 import node as N            # noqa: E402
 import observer as O        # noqa: E402
 import registry as R        # noqa: E402
@@ -77,6 +79,45 @@ class TestGateProtocol(GateCase):
 
     def test_janitor_ignores_intent_only_and_torn_records(self):
         self.assertTrue(V.bv7_janitor_ignores_intent_only_and_torn(self.tmp.name)["ok"])
+
+
+class TestStaticFixProcessPaths(GateCase):
+    """Process-level failure paths for STATIC-FIX-001 (fix 2 and fix 3).  Pure-logic counterparts: test_e1a_staticfix.py."""
+
+    def test_failed_registration_keeps_cleanup_responsibility_until_death_is_confirmed(self):
+        real = C.fingerprint
+
+        def wrong_ppid(pid):
+            fp = real(pid)
+            return None if fp is None else dict(fp, ppid=fp["ppid"] + 1)
+        with mock.patch.object(C, "fingerprint", wrong_ppid):
+            rec = self.obs.spawn_direct("t", "T", dict(SLEEPER), N.node_main)
+        self.assertEqual(rec.state, "ABORTED")
+        self.assertIsNotNone(rec.forked_pid)
+        self.assertTrue([x for x in self.obs.reg.records if x["kind"] == "FORKED" and x["node_id"] == rec.node_id])   # known from fork on
+        rep = self.obs.finish_cleanup(grace=5.0)
+        self.assertTrue(rep["cleanup_ok"], rep)
+        self.assertEqual(rec.exit_status, C.EXIT_GATE_ABORT)                    # the gated child saw the abort byte
+        self.assertEqual(rec.state, "DEAD")
+        self.assertTrue([x for x in self.obs.reg.records if x["kind"] == "DEAD" and x["node_id"] == rec.node_id])
+        self.obs.problems.clear()
+
+    def test_janitor_cleans_up_when_run_end_does_not_confirm_cleanup(self):
+        rec = self.obs.spawn_direct("t", "T", dict(SLEEPER), N.node_main)
+        self.assertTrue(self.obs.wait_for(lambda: rec.ready is not None, 5.0))
+        self.obs.reg.write("RUN_END", aborted="runner exception", cleanup_confirmed=False)
+        records = R.parse_reg(self.obs.reg_path)[0]
+        self.assertEqual(J.decide(records, False), "CLEANUP")
+        clear, _ = J.cleanup_until_clear(self.obs.reg_path, None, attempts=10, interval=0.2)
+        self.assertTrue(clear)
+        self.assertTrue(C.process_is_dead(rec.pid, rec.starttime))
+        self.obs.reap_direct()
+
+    def test_janitor_does_not_trust_a_false_confirmation(self):
+        rec = self.obs.spawn_direct("t", "T", dict(SLEEPER), N.node_main)
+        self.assertTrue(self.obs.wait_for(lambda: rec.ready is not None, 5.0))
+        self.obs.reg.write("RUN_END", aborted=None, cleanup_confirmed=True)     # a lie: the registered node is alive
+        self.assertEqual(J.decide(R.parse_reg(self.obs.reg_path)[0], False), "CLEANUP")
 
 
 class TestFullTrialSmoke(GateCase):
