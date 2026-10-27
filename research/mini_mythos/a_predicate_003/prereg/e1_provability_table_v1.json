@@ -893,7 +893,9 @@
       "4. class PROVABLE and expected BLOCKED: PASS iff s0_verdict == BLOCKED and the reported code set equals expected_codes exactly and the cited rules include cited_rules_required and are within the ECD and no signal/wait occurred before the verdict; otherwise FAIL.",
       "5. class UNPROVABLE (expected REFUSE_ANY): PASS iff s0_verdict is BLOCKED (any codes) or UNKNOWN; ACCEPT -> FAIL even if the scenario happened to be harmless.",
       "6. Cell verdict: PASS iff every repetition PASS; any FAIL -> FAIL (unstable results are FAIL); bench-BLOCKED repetitions are excluded from the cell numerator and denominator but reported; if bench-BLOCKED exceeds 5% of the planned repetitions the cell is INSUFFICIENT and the experiment verdict for that cell is BLOCKED.",
-      "7. Exclusion of repetitions is decided only from bench-level causes, never from the mechanism output; a BLOCKED repetition may be re-run under unchanged code; both records are kept."
+      "7. Exclusion of repetitions is decided only from bench-level causes, never from the mechanism output; a BLOCKED repetition may be re-run under unchanged code; both records are kept.",
+      "8. Candidate verdict (per candidate P0/P1/P2, over all of its cells including the false-reject sweep cells): FAIL if any of its cells is FAIL; else BLOCKED if any cell is BLOCKED/INSUFFICIENT; else PASS.",
+      "9. Experiment verdict E1-A: BLOCKED if any bench validity check failed or the run was aborted for a bench-level reason (cleanup failure, unconfirmable identity, interlock); else FAIL if the S0 candidate P2 has verdict FAIL or an unsafe event occurred for ANY candidate; else the verdict of P2. P0 and P1 are reference baselines: their cell FAILs on UNPROVABLE cells are reported as capability findings (they follow from the frozen ECD) and do NOT set the experiment verdict. No candidate is selected as a final winner by this experiment."
     ],
     "first_action_order_check": "The sequence numbers in the supervisor event log must show S0_VERDICT before any SIGNAL or WAIT event (bench-infrastructure waits on M by pid are labelled and excluded)."
   },
@@ -931,8 +933,8 @@
     }
   },
   "pass_fail_blocked": {
-    "PASS": "per verdict_function steps 3-5 and 6 for every cell, all bench validity checks passed, zero unsafe events, evidence complete.",
-    "FAIL": "any unsafe event; any cell FAIL; any unstable cell.",
+    "PASS": "experiment: candidate P2 has verdict PASS under verdict_function steps 3-8, all bench validity checks passed, zero unsafe events in any candidate, evidence complete. Per-candidate PASS: all cells of that candidate PASS.",
+    "FAIL": "experiment: candidate P2 has verdict FAIL (any of its cells FAIL or unstable) or any unsafe event occurred for any candidate. Per-candidate FAIL: any of its cells FAIL. Baseline P0/P1 cell FAILs on UNPROVABLE cells do not make the experiment FAIL.",
     "BLOCKED": "bench validity check failed; bench-unverifiable condition; INSUFFICIENT cell; cleanup failure (identity not confirmable); capability missing.",
     "NOT TESTED": "not run."
   },
@@ -976,6 +978,14 @@
       "first_frozen_commit": "b2aec0fd428f62761ca28d0236c31993ae83a72e",
       "first_frozen_sha256": "9df3eafde8972645660abbc229b185a8328f24377d0db1e7941e7621fcac0828",
       "reason": "Static topology review found (1) C5 was worded as equality although a root that is not a child of the supervisor (scenario d) must not itself be a C5 defect; (2) scenario d as first written would leave leader node L as an undeclared child of the supervisor and so add a C5 defect that the classification table did not list. Classification table rows are unchanged; only the C5 wording, the PR-S0-5 text, the E1A-d construction and the setup_phase definition were corrected."
+    },
+    {
+      "id": "PREP-CORR-2",
+      "made_before_any_bench_commit": true,
+      "made_before_any_execution": true,
+      "previous_commit": "c02f201 (PREP-CORR-1)",
+      "previous_sha256": "22d64ef856a92c73b87c0c8343afec4d847e9110a1964e14c62623a36d52e3a8",
+      "reason": "Aggregation gap found while writing the verdict code: the experiment-level PASS was worded as 'every cell passes', which would make the experiment FAIL merely because baseline candidates P0/P1 are predicted to fail cells outside their capability. Added steps 8 (candidate verdict) and 9 (experiment verdict = verdict of the S0 candidate P2; baseline FAILs are reported as capability findings) and aligned pass_fail_blocked. No cell classification, scenario, expected code set or threshold was changed."
     }
   ],
   "status": "FROZEN_AT_COMMIT (see the commit that adds this file)  /  EXPERIMENT NOT TESTED"
