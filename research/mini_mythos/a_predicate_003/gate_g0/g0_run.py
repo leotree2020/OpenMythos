@@ -796,26 +796,33 @@ def finalize(ev, run_id, run_dir, crit, crit_sha):
     return publish_closure(run_dir, run_id, crit_sha, b2, bs2, s2)                                         # P7
 
 
-def main(argv=None):
-    """Entry point.  ANY exception that escapes the start-up or the run is mapped to exit code 3 (BLOCKED) with a marker on stderr -- never to Python's
-    default exit code 1, which is the FAIL code.  Usage errors (argparse) keep their SystemExit(2); a refusal is 2."""
-    try:
-        return _main(argv)
-    except SystemExit:
-        raise
-    except BaseException as e:
-        stderr_marker("G0-STARTUP-ERROR", reason="%s: %s" % (type(e).__name__, e))
-        return 3
-
-
-def _main(argv=None):
+def _parser():
     ap = argparse.ArgumentParser(description="G0 minimal process-gate test.  --execute needs a valid single-use G0 authorization.")
     ap.add_argument("--check", action="store_true", help="print bindings and authorization status; starts no process")
     ap.add_argument("--template", action="store_true", help="print a NON-VALID authorization template")
     ap.add_argument("--execute", action="store_true")
     ap.add_argument("--auth", default=GA.AUTH_DEFAULT)
     ap.add_argument("--run-id", default=None)
-    args = ap.parse_args(argv)
+    return ap
+
+
+def main(argv=None):
+    """Entry point.  The command line is parsed first, OUTSIDE the safety net: argparse alone may exit, with 0 (--help) or 2 (usage error).
+    From then on ANY exception that escapes the start-up or the run -- and ANY SystemExit, whatever its code (sys.exit(1), sys.exit(0), sys.exit("text"),
+    ...) -- is mapped to exit code 3 (BLOCKED) with a marker on stderr, never to Python's default exit code 1, which is the FAIL code, and never to
+    a stray 0, which would read as PASS.  A refusal is 2."""
+    args = _parser().parse_args(argv)
+    try:
+        return _main(args)
+    except SystemExit as e:
+        stderr_marker("G0-STARTUP-ERROR", reason="unexpected SystemExit(%r)" % (e.code,))
+        return 3
+    except BaseException as e:
+        stderr_marker("G0-STARTUP-ERROR", reason="%s: %s" % (type(e).__name__, e))
+        return 3
+
+
+def _main(args):
     if args.template:
         print(GA.template())
         return 0

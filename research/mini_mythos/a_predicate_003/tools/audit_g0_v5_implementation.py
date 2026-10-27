@@ -19,7 +19,7 @@ A003 = os.path.dirname(HERE)
 G0 = os.path.join(A003, "gate_g0")
 TESTS = os.path.join(A003, "tests")
 IMPL = ("g0_auth.py", "g0_judge.py", "g0_run.py")
-NEW_TESTS = ("test_g0_interlock_and_judge.py", "test_g0_v5_cases.py", "test_g0_v5_closure_cases.py", "test_g0_v5_pipeline.py", "test_g0_v5_run_parts.py", "test_g0_v5_supplement.py")
+NEW_TESTS = ("test_g0_interlock_and_judge.py", "test_g0_v5_cases.py", "test_g0_v5_closure_cases.py", "test_g0_v5_pipeline.py", "test_g0_v5_run_parts.py", "test_g0_v5_supplement.py", "test_g0_v5_boundaries.py")
 FILES = {"auth": os.path.join(G0, "g0_auth.py"), "judge": os.path.join(G0, "g0_judge.py"), "run": os.path.join(G0, "g0_run.py")}
 for t in NEW_TESTS:
     FILES["t:" + t] = os.path.join(TESTS, t)
@@ -167,6 +167,7 @@ def loc(key, pattern):
 # (requirement id, V5 source, implementation locators [(file, regex)], test locators [(file, regex)])
 T_J, T_R, T_A = "judge", "run", "auth"
 TS = "t:test_g0_v5_supplement.py"
+TB = "t:test_g0_v5_boundaries.py"
 TI, TC, TL, TP, TR = "t:test_g0_interlock_and_judge.py", "t:test_g0_v5_cases.py", "t:test_g0_v5_closure_cases.py", "t:test_g0_v5_pipeline.py", "t:test_g0_v5_run_parts.py"
 ROWS = [
     ("G0-C01 preflight_clean (V5: earlier runs closed by a valid marker; residue independent)", "checks.G0-C01", [(T_J, r"^def c01\("), (T_R, r"^def closure_preflight\("), (T_R, r"^def preflight\(")], [(TI, r"def test_preflight_problems_are_blocked"), (TL, r"def test_c01_text_and_the_unresolved_format")]),
@@ -234,6 +235,9 @@ ROWS = [
     ("version isolation (V1..V4 frozen bytes unchanged; V1..V4 bindings void)", "CL-08", [(T_A, r"^FROZEN_FILES")], [(TI, r"def test_frozen_files_V1_to_V5_have_their_frozen_bytes"), (TI, r"def test_authorization_bound_to_a_historical_version_is_void")]),
     ("preflight never raises (BLOCKED, never FAIL)", "checks.G0-C01", [(T_R, r"^def safe_preflight\(")], [(TR, r"def test_safe_preflight_never_raises")]),
     ("any start-up / run exception -> exit code 3, never Python's default 1 (PURE-TEST-001 S-1)", "evidence_pipeline P7 / exit_codes", [(T_R, r"^def main\("), (T_R, r"G0-STARTUP-ERROR")], [(TS, r"def test_every_unexpected_exception_in_the_start_up_path_gives_3_never_1"), (TS, r"def test_no_code_path_of_main_returns_1")]),
+    ("closeout B-1: any SystemExit after argument parsing -> exit code 3 (never 1/0); argparse keeps 0/2", "evidence_pipeline P7 / exit_codes", [(T_R, r"^def _parser\("), (T_R, r"unexpected SystemExit")], [(TB, r"def test_system_exit_one_is_the_named_negative_control"), (TB, r"def test_argparse_usage_error_keeps_exit_code_2"), (TB, r"def test_the_command_line_is_parsed_outside_the_safety_net")]),
+    ("closeout B-2: environment facts without an external process, sentinels installed first", "PURE-TEST-001 process safety", [(T_R, r"^def _main\(")], [(TB, r"def test_environment_info_needs_no_external_process"), (TB, r"def test_the_runner_installs_the_sentinels_before_anything_else_runs")]),
+    ("closeout B-3: independent checkout HEAD verification and key-file hashes", "PURE-TEST-001 identity", [(T_R, r"^def _main\(")], [(TB, r"def test_verify_checkout_accepts_only_the_real_head"), (TB, r"def test_the_key_implementation_files_are_hashed_both_ways")]),
     ("format-damaged release / fork evidence is unavailable, never an evidenced FAIL (PURE-TEST-001 S-2)", "checks.G0-C07 / G0-C03 F3", [(T_J, r"^def independent\("), (T_J, r"Format-damaged guard evidence")], [(TS, r"def test_a_malformed_list_never_gives_a_c07_fail_or_a_run_fail"), (TS, r"def test_negative_controls_well_formed_violations_still_fail")]),
 ]
 trace = []

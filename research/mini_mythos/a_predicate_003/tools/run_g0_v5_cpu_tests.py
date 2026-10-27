@@ -4,11 +4,12 @@
 Safety: before any test module is imported it replaces EVERY process-creating / signalling / waiting function (os.fork*, os.kill*, os.exec*, os.spawn*,
 os.system/popen, os.wait*, signal senders, subprocess) by a sentinel that raises ProcessSafetyViolation and is counted; a run is only PASS when the
 count is zero.  Tests run in an isolated temporary directory (TMPDIR), with bytecode writing off, in the fixed group order of the task.  Results are
-recorded per test (status, time, traceback) together with the environment and the Git SHA given in G0_TEST_GIT_SHA.
-usage: run_g0_v5_cpu_tests.py [--groups g1,g2,...] [--json OUT.json] [--txt OUT.txt]       Exit 0 = every selected test passed and no sentinel fired."""
+recorded per test (status, time, traceback) together with the environment, the ACTUAL checkout HEAD (read from .git, compared with the expected SHA; a
+mismatch, a changed frozen file or a changed bench refuses the run) and the hashes of the key implementation and test files.  The sentinels are
+installed before anything else; environment facts come from os.uname() (no subprocess).
+usage: run_g0_v5_cpu_tests.py --expect-sha SHA | G0_TEST_GIT_SHA=SHA [--groups g1,g2,...] [--json OUT.json] [--txt OUT.txt]       Exit 0 = every selected test passed and no sentinel fired."""
 import json
 import os
-import platform
 import signal
 import subprocess
 import sys
@@ -20,12 +21,11 @@ import unittest
 sys.dont_write_bytecode = True
 HERE = os.path.dirname(os.path.abspath(__file__))
 A003 = os.path.dirname(HERE)
+sys.path.insert(0, HERE)
 sys.path.insert(0, os.path.join(A003, "tests"))
 sys.path.insert(0, os.path.join(A003, "bench"))
 sys.path.insert(0, os.path.join(A003, "gate_g0"))
 
-# environment facts are collected BEFORE the sentinels exist (platform.platform() runs `uname -p` through subprocess on some systems)
-ENV0 = {"python": sys.version.split()[0], "platform": platform.platform(), "kernel": platform.release(), "cpu_count": os.cpu_count(), "uid": os.getuid()}
 VIOLATIONS = []
 
 
@@ -57,7 +57,7 @@ GROUPS = [
                                    "test_g0_interlock_and_judge.TestJudge"]),
     ("g2_directory_pipeline_fault_injection", ["test_g0_v5_closure_cases.TestClosureCasesMaterialised", "test_g0_v5_pipeline", "test_g0_v5_run_parts"]),
     ("g3_interlock_and_source_constraints", ["test_g0_interlock_and_judge.TestInterlock", "test_g0_interlock_and_judge.TestSourceConstraints"]),
-    ("g4_supplementary", ["test_g0_v5_supplement"]),
+    ("g4_supplementary", ["test_g0_v5_supplement", "test_g0_v5_boundaries"]),
 ]
 
 
@@ -99,13 +99,25 @@ def main(argv):
     sel = None
     if "--groups" in argv:
         sel = set(argv[argv.index("--groups") + 1].split(","))
+    import g0_test_env as E
+    import g0_auth as GA
+    expect = argv[argv.index("--expect-sha") + 1] if "--expect-sha" in argv else os.environ.get("G0_TEST_GIT_SHA")
+    ident = E.verify_checkout(A003, expect, GA.FROZEN_FILES)
     tmp = tempfile.mkdtemp(prefix="g0v5_cpu_tests_")
     os.environ["TMPDIR"] = tmp
     tempfile.tempdir = tmp
-    env = {**ENV0, "tmpdir": tmp, "cwd": os.getcwd(), "git_sha": os.environ.get("G0_TEST_GIT_SHA", "UNKNOWN"), "dont_write_bytecode": sys.dont_write_bytecode,
-           "gpu_used": False}
+    env = {**E.environment_info(), "tmpdir": tmp, "cwd": os.getcwd(), "git_sha_expected": expect, "git_head_actual": ident.get("actual_head"),
+           "git_sha_match": ident.get("actual_head") == expect and expect is not None, "checkout_identity": ident}
     report = {"environment": env, "groups": [], "started_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
     all_ok = True
+    if not ident["ok"]:
+        report["sentinel_violations"] = list(VIOLATIONS)
+        report["verdict"] = "REFUSED"
+        print("REFUSED: checkout identity not verified:", "; ".join(ident["problems"]))
+        if "--json" in argv:
+            with open(argv[argv.index("--json") + 1], "w") as f:
+                json.dump(report, f, indent=1)
+        return 3
     for gname, mods in GROUPS:
         if sel is not None and gname not in sel:
             continue
@@ -149,4 +161,9 @@ def main(argv):
 
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv[1:]))
+    try:
+        rc = main(sys.argv[1:])
+    except BaseException as e:                                      # never leave through Python's default exit code 1 (= a test FAIL)
+        print("RUNNER-ERROR (BLOCKED): %s: %s" % (type(e).__name__, e))
+        rc = 3
+    sys.exit(rc)
