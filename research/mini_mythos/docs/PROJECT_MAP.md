@@ -289,3 +289,7 @@ Claude Code 接替 Grok 担任主要研发工程师（项目负责人 2026-10-26
 ## D1 CPU-003 E1-A 纯逻辑测试 LOGIC-TEST-001（2026-10-27）
 
 分支 `d1-r3-a-cpu-003-e1a-prep-20261027`（基线 `fcb6de8`）。按授权只运行五个纯逻辑 / Mock 测试文件；第 1 个文件被本轮新增的执行守卫的 argv 缺陷阻断（未执行任何测试断言），按规则暂停、未修复。证据在 `a_predicate_003/logic_test_results/`，检查点 `docs/F3B_D1_A_CPU_003_E1A_LOGIC_TEST_CHECKPOINT_20261027.md`。台架 / 测试 / 预注册未改；进程级测试未授权。
+
+## D1 CPU-003 E1-A 纯逻辑测试重新执行（2026-10-27）
+
+LOGIC-TEST-001-RERUN-001：修复执行守卫的 argv 缺陷（+1 行）后，五个纯逻辑 / Mock 测试文件共 172 个测试全部通过（0 失败 / 0 错误 / 0 跳过，守卫越界调用 0）。证据 `a_predicate_003/logic_test_results_rerun1/`，检查点 `docs/F3B_D1_A_CPU_003_E1A_LOGIC_TEST_RERUN_CHECKPOINT_20261027.md`。台架 / 测试 / 预注册未改；进程级测试、BV、E1-A 仍未授权。

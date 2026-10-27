@@ -1,5 +1,9 @@
 # Mini-Mythos / OpenMythos — 全项目研发进度（2026-10-25 更新版）
 
+## D1 CPU-003 E1-A 纯逻辑测试重新执行检查点（2026-10-27；本文件最新阶段进度，优先于下方 E1-A 纯逻辑测试检查点）
+
+LOGIC-TEST-001-RERUN-001：守卫修复后五个纯逻辑 / Mock 测试文件 172 测试全部通过，越界调用 0；台架代码哈希、预注册未变。进程级行为（EPIPE、GATED-SPAWN、pidfd）、BV、E1-A 仍 NOT TESTED。下一条唯一指令：提交 ChatGPT 独立审核；不自动进入进程级测试。R3 SPEC FROZEN；真实 D1 NOT AUTHORIZED；NO A-B WINNER。
+
 ## D1 CPU-003 E1-A 纯逻辑测试检查点（2026-10-27；本文件最新阶段进度，优先于下方 E1-A 静态审核最终收口检查点）
 
 F3B-D1-A-CPU-003-E1A-LOGIC-TEST-001：执行前核对全部通过；第 1 个测试文件被执行守卫（`guard_runner.py`）的 argv 缺陷阻断，没有任何测试断言被执行，按失败规则暂停，其余四个文件 NOT TESTED。台架 / 测试 / 预注册未改。下一条唯一指令：审核者与负责人确认是否允许只修正守卫的 argv 传递并重新开始；进程级测试仍未授权。R3 SPEC FROZEN；真实 D1 NOT AUTHORIZED；NO A-B WINNER。

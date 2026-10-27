@@ -36,6 +36,7 @@ for mod, names in TRAPS.items():
 
 test_file, guard_json = sys.argv[1], sys.argv[2]
 code = 0
+sys.argv = [test_file]          # RERUN-001: unittest.main() must not read the guard's own arguments as test names
 try:
     runpy.run_path(test_file, run_name="__main__")
 except SystemExit as e:
