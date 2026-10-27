@@ -1,0 +1,472 @@
+{
+ "criteria_id": "E1A-GATE-G0-CRITERIA-V2",
+ "schema_version": "e1a-gate-g0-criteria-2",
+ "stage": "G0",
+ "date": "2026-10-27",
+ "base_commit": "e0ffef9b4a81e9d11266a09475271f4c57669c8d",
+ "supersedes": {
+  "criteria_id": "E1A-GATE-G0-CRITERIA-V1",
+  "criteria_file": "gate_g0/g0_criteria_v1.json",
+  "criteria_sha256": "4d3acd67d9d98e26d8c608cbfd037b5b7f75e78afe4a2c33e7de63fb7dee3ce2",
+  "prereg_text_file": "gate_g0/E1A_GATE_G0_PREREG.md",
+  "prereg_text_sha256": "9eca01eda5a4c24eb5784c53e65e215e2892c6d0e3bbf7206346184e949051eb",
+  "v1_freeze_commit": "e287b952124e8aaf22098e1957c61da5359a5e2c",
+  "relation": "V2 is a NEW, separate version. The V1 files, their hashes and their commit stay unmodified and in the history. V1 is not reinterpreted. No G0 run was executed under V1, so no result exists that V2 could change."
+ },
+ "scope": "first minimal controlled Linux process-gate test: ONE sacrificial child, protocol INTENT -> fork -> GATE -> REGISTERED -> RELEASE -> EXIT -> REAP, zero signals",
+ "not_in_scope": [
+  "G1 negative gate tests",
+  "G2 identity/descendant tests",
+  "G3 recovery and fault injection",
+  "BV-1..BV-10",
+  "E1-A cells",
+  "E1-B/C/D",
+  "E2",
+  "E3"
+ ],
+ "status": "FROZEN_AT_COMMIT (the commit that adds this file) / G0 NOT TESTED / EXECUTION NOT AUTHORIZED / IMPLEMENTATION NOT YET CONFORMING",
+ "limits": {
+  "max_runs_per_authorization": 1,
+  "max_forks": 1,
+  "max_concurrent_children": 1,
+  "max_descendants_of_child": 0,
+  "max_signals": 0,
+  "max_seconds": 20.0,
+  "t_gate_max_s": 5.0,
+  "hold_before_release_s": 0.3,
+  "ready_deadline_s": 5.0,
+  "exit_deadline_s": 5.0,
+  "reap_deadline_s": 5.0,
+  "python": "3.13.16",
+  "cpu_only": true
+ },
+ "enforcement": {
+  "reap_wait": "the wait for the child to be reaped is bounded by limits.reap_deadline_s; no unbounded wait (finding F-8)",
+  "total_budget": "limits.max_seconds is checked at every phase boundary and loop iteration while the run is in progress, not only at the end (finding F-9); the deadline-hit names are ready, exit, reap, proc_gone, total",
+  "summary_write": "g0_summary.json and the evidence files are written only into a run directory created by this very process (finding F-12)",
+  "directories": "the evidence root is created by the run only if absent (non-recursive, mode 0755) and validated otherwise (real directory, not a symlink, owned by the effective uid, not group/other-writable); the run directory and the consumption directory are created exclusively; nothing existing is overwritten; any failure is BLOCKED with the error saved where possible (finding F-13)"
+ },
+ "protocol_sequence": [
+  "RUN_START",
+  "INTENT",
+  "FORKED",
+  "REGISTERED",
+  "RELEASED",
+  "READY",
+  "EXIT_MESSAGE",
+  "EXITED_UNREAPED",
+  "REAPED",
+  "PROC_GONE",
+  "DEAD",
+  "RUN_END"
+ ],
+ "snapshots": [
+  "S0_before_fork",
+  "S1_held_registered_unreleased",
+  "S2_ready_after_release",
+  "S3_exited_unreaped",
+  "S4_reaped",
+  "S5_final"
+ ],
+ "checks": {
+  "G0-C01": {
+   "name": "preflight_clean",
+   "on_fail": "BLOCKED",
+   "v1_relation": "CLARIFIED",
+   "text": "no unresolved earlier run (no MANUAL_DISPOSITION_REQUIRED.json, no earlier g0_ run directory without a closed g0_summary.json); no live non-zombie process, other than this observer and its ancestors, whose command line contains the marker 'g0_run.py' (this marker is the definition of the V1 term 'bench token'); observer has 0 children; /proc enumeration complete; run id unique (its run directory does not exist before this run creates it); Python is 3.13.16 started with -B; SIGCHLD is not ignored; pidfd_open and socket.send_fds are available",
+   "note": "defines 'bench token' (deviation 5); lists the interpreter/signal/syscall preconditions the implementation already checks; run-id uniqueness is 'directory does not exist yet' (deviation 3)"
+  },
+  "G0-C02": {
+   "name": "authorization_and_bindings",
+   "on_fail": "BLOCKED",
+   "v1_relation": "CLARIFIED",
+   "text": "a valid single-use G0 authorization bound to THIS criteria file (V2) was consumed: its consumption marker is created exclusively after a clean preflight and BEFORE the fork (a run whose preflight failed consumes nothing); git head, E1-A prereg, G0 criteria, G0 prereg text, bench code and G0 code hashes equal the authorized values at the start AND again at the end",
+   "note": "consumption timing stated (deviation 2); binding to V2 files follows from the hash bindings"
+  },
+  "G0-C03": {
+   "name": "registration_sequence_and_integrity",
+   "on_fail": "FAIL",
+   "v1_relation": "MODIFIED",
+   "text": "registration-file order and integrity, decided by rules.fail_when / rules.unevaluable_when / rules.pass_when (evaluated in that order). FAIL when the registry itself, or evidence independent of it, PROVES an order/integrity/protocol violation. UNEVALUABLE -> BLOCKED when the run stopped early (exception, abort, deadline) or the registry evidence is damaged and no proof of a violation exists. PASS on a completed run when RUN_START is first and unique, for the single node INTENT < FORKED < REGISTERED < RELEASED < DEAD, RUN_END is last and unique, registry.integrity_issues() is empty and the parse report is clean",
+   "rules": {
+    "definitions": {
+     "completed_run": "evidence.exception is null AND evidence.aborted is null AND evidence.deadline_hits is empty",
+     "early_stop": "not completed_run",
+     "parse_clean": "reg_parse_info has missing=false, unreadable=false, torn_tail=false and corrupt_lines=0",
+     "independent_evidence": [
+      "guard.fork_calls and guard.fork_pids",
+      "guard.release_byte_pre_write_monos (the observer's own record that it was about to write the release byte)",
+      "child-originated facts: evidence.events.first_action_mono, snapshot S1.messages_received, existence of snapshot S2 (READY was received)",
+      "/proc snapshots S0..S5"
+     ],
+     "release_byte_written": "guard.release_byte_pre_write_monos is non-empty",
+     "child_acted": "events.first_action_mono is set, or S1.messages_received > 0, or snapshot S2 exists",
+     "positive_violation": "a violation visible in records that ARE present (cannot be produced by a lost or unparsed line)",
+     "absence_based_violation": "a violation that consists of a record NOT being present (can be produced by a lost or unparsed line, hence only trusted when parse_clean)"
+    },
+    "fail_when": [
+     {
+      "id": "C03-F1",
+      "applies": "always (also when the file is damaged)",
+      "kind": "positive_violation",
+      "when": "among the records that are present: a successor has an earlier seq than its predecessor (RELEASED before REGISTERED, REGISTERED before INTENT, FORKED before INTENT); non-monotonic or duplicated seq; more than one RUN_START, RUN_END, INTENT or DEAD; a record before RUN_START; any record after RUN_END; any record of the node after its DEAD; RELEASED and ABORTED both present; a RUN_END or RUN_START whose fields are malformed or whose run_id differs"
+     },
+     {
+      "id": "C03-F2",
+      "applies": "only when parse_clean",
+      "kind": "absence_based_violation",
+      "when": "the registry itself proves a missing record: a successor is present while its required predecessor is absent (RELEASED without REGISTERED, REGISTERED without INTENT, FORKED without INTENT, DEAD without INTENT); a node record without any INTENT (orphan); a gap in seq; a RUN_END with cleanup_confirmed true while the node has no DEAD record"
+     },
+     {
+      "id": "C03-F3",
+      "applies": "only when parse_clean",
+      "kind": "absence_based_violation",
+      "when": "independent evidence proves that an action took place whose preceding record is absent: no RELEASED record although release_byte_written or child_acted; no REGISTERED record although release_byte_written, child_acted or a RELEASED record exists; no INTENT record although guard.fork_calls >= 1"
+     },
+     {
+      "id": "C03-F4",
+      "applies": "only when parse_clean and completed_run",
+      "kind": "absence_based_violation",
+      "when": "a required record is absent from a run that completed normally: any of RUN_START, INTENT, FORKED, REGISTERED, RELEASED, DEAD (with basis), RUN_END; or ABORTED is present"
+     }
+    ],
+    "unevaluable_when": [
+     {
+      "id": "C03-U1",
+      "when": "early_stop AND parse_clean AND no fail rule fired: the only deviations are missing later-lifecycle records (FORKED, REGISTERED, RELEASED, DEAD, RUN_END, or an ABORTED record from a failed registration) and no independent evidence shows that an action happened without its record -> the lifecycle could not be completed, which proves nothing about the protocol"
+     },
+     {
+      "id": "C03-U2",
+      "when": "no fail rule fired AND (the registry file is missing or unreadable, or has a torn tail or corrupt lines, or the independent evidence needed by C03-F3 is itself missing) -> the evidence is damaged or absent"
+     }
+    ],
+    "pass_when": "completed_run AND parse_clean AND the PASS condition of the check text holds. The rules are exhaustive: a completed, parse-clean run that does not satisfy pass_when has a missing or irregular record and therefore fires C03-F1, F2 or F4; an early stop that fires no fail rule is C03-U1 or C03-U2.",
+    "precedence": "fail_when is evaluated first: a proven violation is never hidden by an early stop (this is what V1 intended with 'a confirmed protocol or safety violation takes precedence'); unevaluable_when only applies if no fail rule fires; a damaged file suppresses every absence-based rule, keeping only the positive ones",
+    "v1_inconsistency_resolved": "V1 listed C03 as a FAIL-class check demanding DEAD and RUN_END, while V1 section 3 step 8 says that a timeout or exception is judged BLOCKED. Read literally, every early stop would be an evaluable C03 failure and therefore FAIL. V2 states the rule explicitly. V1 is not reinterpreted: no G0 run was ever executed under V1."
+   },
+   "note": "the only check whose decision semantics change: early stops and damaged evidence are UNEVALUABLE (BLOCKED) unless a violation is proven"
+  },
+  "G0-C04": {
+   "name": "identity_registered_before_release",
+   "on_fail": "FAIL",
+   "v1_relation": "IDENTICAL",
+   "text": "REGISTERED pid/starttime equal the /proc fingerprint read while the child was held; the child's ppid is the observer; pid equals the pid returned by fork"
+  },
+  "G0-C05": {
+   "name": "no_action_before_release",
+   "on_fail": "FAIL",
+   "v1_relation": "CLARIFIED",
+   "text": "while REGISTERED but unreleased, observed at the END of the hold (snapshot S1, taken after the observer drained the control channel for hold_before_release_s; messages are counted cumulatively over the whole hold): the child is blocked (state S), sent no message, kept the observer's sid/pgrp; its FIRST_ACTION is not earlier than the RELEASED record",
+   "note": "S1 timing and cumulative message count stated (deviation 1)"
+  },
+  "G0-C06": {
+   "name": "gate_descriptor_hygiene",
+   "on_fail": "FAIL",
+   "v1_relation": "CLARIFIED",
+   "text": "held (snapshot S1, end of the hold): child descriptors are a subset of {0,1,2,gate read end,control socket}, the gate pipe appears exactly once and read-only (no write-capable descriptor); after release (snapshot S2): no descriptor refers to the gate pipe",
+   "note": "S1 timing stated (deviation 1)"
+  },
+  "G0-C07": {
+   "name": "release_only_after_registration",
+   "on_fail": "FAIL",
+   "v1_relation": "IDENTICAL",
+   "text": "monotonic times satisfy REGISTERED <= RELEASED <= release byte written <= child FIRST_ACTION"
+  },
+  "G0-C08": {
+   "name": "exit_observed_unreaped",
+   "on_fail": "BLOCKED",
+   "v1_relation": "IDENTICAL",
+   "text": "after the EXIT message and before any wait call the child was observed exited-but-unreaped: pidfd readable and /proc state Z with ppid = observer"
+  },
+  "G0-C09": {
+   "name": "reap_by_specific_pid",
+   "on_fail": "BLOCKED",
+   "v1_relation": "CLARIFIED",
+   "text": "waitpid on that specific pid (non-blocking polls bounded by reap_deadline_s are allowed; exactly one call returns that pid, every other call on it returns 0) returned that pid; afterwards /proc/<pid> is absent (or carries a different starttime), waited for at most reap_deadline_s; times EXITED_UNREAPED < REAPED <= PROC_GONE",
+   "note": "states that the reap wait is bounded and may be a non-blocking poll of the one specific pid (finding F-8); the decision semantics are unchanged"
+  },
+  "G0-C10": {
+   "name": "exit_status_zero",
+   "on_fail": "FAIL",
+   "v1_relation": "IDENTICAL",
+   "text": "the reaped exit code is 0 (normal exit after the EXIT message)"
+  },
+  "G0-C11": {
+   "name": "process_budget",
+   "on_fail": "FAIL",
+   "v1_relation": "IDENTICAL",
+   "text": "exactly one fork in the whole run; at every snapshot the observer has at most one child and the child has no child; the registry contains exactly one node and no ticket"
+  },
+  "G0-C12": {
+   "name": "zero_signals",
+   "on_fail": "FAIL",
+   "v1_relation": "IDENTICAL",
+   "text": "no kill/killpg/pidfd_send_signal/raise_signal/pthread_kill/exec/spawn/subprocess call was attempted (guard violations empty) and every cleanup kill entry is 'already_exited'"
+  },
+  "G0-C13": {
+   "name": "cleanup_and_no_residue",
+   "on_fail": "BLOCKED",
+   "v1_relation": "CLARIFIED",
+   "text": "final cleanup ok, run set consistent, DEAD record with basis present, observer has no child, diagnostic token scan finds no unregistered live process, no snapshot reported incomplete /proc enumeration, RUN_END present with cleanup_confirmed true (on any abnormal stop the run writes RUN_END with cleanup_confirmed false, which fails this check)",
+   "note": "RUN_END on the abnormal path stated (deviation 4)"
+  },
+  "G0-C14": {
+   "name": "observer_descriptor_baseline",
+   "on_fail": "BLOCKED",
+   "v1_relation": "IDENTICAL",
+   "text": "the observer's open descriptor count at S5 equals S0"
+  },
+  "G0-C15": {
+   "name": "time_bounds",
+   "on_fail": "BLOCKED",
+   "v1_relation": "CLARIFIED",
+   "text": "total duration <= max_seconds, measured at the end AND enforced while the run is in progress (checked at every phase boundary and loop iteration; a breach records the deadline hit 'total' and stops the run); no phase deadline was hit (ready, exit, reap, proc_gone, total)",
+   "note": "runtime enforcement of the total budget stated (finding F-9); the check itself is unchanged"
+  },
+  "G0-C16": {
+   "name": "evidence_complete",
+   "on_fail": "BLOCKED",
+   "v1_relation": "CLARIFIED",
+   "text": "all snapshots, events, REG records and bindings required by this file are present in the evidence, together with the registry parse report, the in-memory record count of the registry, the evidence-root ownership record and the run-directory creation record",
+   "note": "evidence list extended for C03 (parse report, record count) and finding F-13 (ownership records)"
+  },
+  "G0-C17": {
+   "name": "no_unexplained_error",
+   "on_fail": "BLOCKED",
+   "v1_relation": "IDENTICAL",
+   "text": "no exception, no abort reason, exit-code policy consistent with the verdict"
+  }
+ },
+ "v1_to_v2_mapping": [
+  {
+   "id": "G0-C01",
+   "v1_name": "preflight_clean",
+   "v2_name": "preflight_clean",
+   "v1_on_fail": "BLOCKED",
+   "v2_on_fail": "BLOCKED",
+   "relation": "CLARIFIED",
+   "note": "defines 'bench token' (deviation 5); lists the interpreter/signal/syscall preconditions the implementation already checks; run-id uniqueness is 'directory does not exist yet' (deviation 3)"
+  },
+  {
+   "id": "G0-C02",
+   "v1_name": "authorization_and_bindings",
+   "v2_name": "authorization_and_bindings",
+   "v1_on_fail": "BLOCKED",
+   "v2_on_fail": "BLOCKED",
+   "relation": "CLARIFIED",
+   "note": "consumption timing stated (deviation 2); binding to V2 files follows from the hash bindings"
+  },
+  {
+   "id": "G0-C03",
+   "v1_name": "registration_sequence_and_integrity",
+   "v2_name": "registration_sequence_and_integrity",
+   "v1_on_fail": "FAIL",
+   "v2_on_fail": "FAIL",
+   "relation": "MODIFIED",
+   "note": "the only check whose decision semantics change: early stops and damaged evidence are UNEVALUABLE (BLOCKED) unless a violation is proven"
+  },
+  {
+   "id": "G0-C04",
+   "v1_name": "identity_registered_before_release",
+   "v2_name": "identity_registered_before_release",
+   "v1_on_fail": "FAIL",
+   "v2_on_fail": "FAIL",
+   "relation": "IDENTICAL",
+   "note": "text byte-identical to V1"
+  },
+  {
+   "id": "G0-C05",
+   "v1_name": "no_action_before_release",
+   "v2_name": "no_action_before_release",
+   "v1_on_fail": "FAIL",
+   "v2_on_fail": "FAIL",
+   "relation": "CLARIFIED",
+   "note": "S1 timing and cumulative message count stated (deviation 1)"
+  },
+  {
+   "id": "G0-C06",
+   "v1_name": "gate_descriptor_hygiene",
+   "v2_name": "gate_descriptor_hygiene",
+   "v1_on_fail": "FAIL",
+   "v2_on_fail": "FAIL",
+   "relation": "CLARIFIED",
+   "note": "S1 timing stated (deviation 1)"
+  },
+  {
+   "id": "G0-C07",
+   "v1_name": "release_only_after_registration",
+   "v2_name": "release_only_after_registration",
+   "v1_on_fail": "FAIL",
+   "v2_on_fail": "FAIL",
+   "relation": "IDENTICAL",
+   "note": "text byte-identical to V1"
+  },
+  {
+   "id": "G0-C08",
+   "v1_name": "exit_observed_unreaped",
+   "v2_name": "exit_observed_unreaped",
+   "v1_on_fail": "BLOCKED",
+   "v2_on_fail": "BLOCKED",
+   "relation": "IDENTICAL",
+   "note": "text byte-identical to V1"
+  },
+  {
+   "id": "G0-C09",
+   "v1_name": "reap_by_specific_pid",
+   "v2_name": "reap_by_specific_pid",
+   "v1_on_fail": "BLOCKED",
+   "v2_on_fail": "BLOCKED",
+   "relation": "CLARIFIED",
+   "note": "states that the reap wait is bounded and may be a non-blocking poll of the one specific pid (finding F-8); the decision semantics are unchanged"
+  },
+  {
+   "id": "G0-C10",
+   "v1_name": "exit_status_zero",
+   "v2_name": "exit_status_zero",
+   "v1_on_fail": "FAIL",
+   "v2_on_fail": "FAIL",
+   "relation": "IDENTICAL",
+   "note": "text byte-identical to V1"
+  },
+  {
+   "id": "G0-C11",
+   "v1_name": "process_budget",
+   "v2_name": "process_budget",
+   "v1_on_fail": "FAIL",
+   "v2_on_fail": "FAIL",
+   "relation": "IDENTICAL",
+   "note": "text byte-identical to V1"
+  },
+  {
+   "id": "G0-C12",
+   "v1_name": "zero_signals",
+   "v2_name": "zero_signals",
+   "v1_on_fail": "FAIL",
+   "v2_on_fail": "FAIL",
+   "relation": "IDENTICAL",
+   "note": "text byte-identical to V1"
+  },
+  {
+   "id": "G0-C13",
+   "v1_name": "cleanup_and_no_residue",
+   "v2_name": "cleanup_and_no_residue",
+   "v1_on_fail": "BLOCKED",
+   "v2_on_fail": "BLOCKED",
+   "relation": "CLARIFIED",
+   "note": "RUN_END on the abnormal path stated (deviation 4)"
+  },
+  {
+   "id": "G0-C14",
+   "v1_name": "observer_descriptor_baseline",
+   "v2_name": "observer_descriptor_baseline",
+   "v1_on_fail": "BLOCKED",
+   "v2_on_fail": "BLOCKED",
+   "relation": "IDENTICAL",
+   "note": "text byte-identical to V1"
+  },
+  {
+   "id": "G0-C15",
+   "v1_name": "time_bounds",
+   "v2_name": "time_bounds",
+   "v1_on_fail": "BLOCKED",
+   "v2_on_fail": "BLOCKED",
+   "relation": "CLARIFIED",
+   "note": "runtime enforcement of the total budget stated (finding F-9); the check itself is unchanged"
+  },
+  {
+   "id": "G0-C16",
+   "v1_name": "evidence_complete",
+   "v2_name": "evidence_complete",
+   "v1_on_fail": "BLOCKED",
+   "v2_on_fail": "BLOCKED",
+   "relation": "CLARIFIED",
+   "note": "evidence list extended for C03 (parse report, record count) and finding F-13 (ownership records)"
+  },
+  {
+   "id": "G0-C17",
+   "v1_name": "no_unexplained_error",
+   "v2_name": "no_unexplained_error",
+   "v1_on_fail": "BLOCKED",
+   "v2_on_fail": "BLOCKED",
+   "relation": "IDENTICAL",
+   "note": "text byte-identical to V1"
+  }
+ ],
+ "verdict_rule": [
+  "A check whose evidence is missing or unreadable is UNEVALUABLE and counts as BLOCKED, whatever its on_fail class (FAIL requires evidence).",
+  "1. any evaluable check that failed with on_fail FAIL -> experiment verdict FAIL (a confirmed protocol or safety violation takes precedence over bench-level problems)",
+  "2. else any failed or unevaluable check -> BLOCKED",
+  "3. else PASS",
+  "NOT TESTED = the run did not start. An exit code of 0 never replaces the verdict.",
+  "V2 clarification: for G0-C03 the rules in checks.G0-C03.rules decide what is a proven violation (FAIL) and what is insufficient evidence (UNEVALUABLE -> BLOCKED); an early stop alone never makes C03 a FAIL, and never hides a proven violation.",
+  "V2 known limitation L-1 (conservative, unchanged from V1): a check composed of several sub-conditions other than G0-C03 (for example C05, C06, C11) is UNEVALUABLE as a whole when part of its evidence is missing after an early stop; a violation visible in the available part is then reported as BLOCKED instead of FAIL. This can only turn a FAIL into BLOCKED, never into PASS; the evidence is kept and read by a person. Whether to make C05/C06/C11 evaluate sub-conditions independently is left to a later version (finding F-14)."
+ ],
+ "exit_codes": {
+  "PASS": 0,
+  "FAIL": 1,
+  "BLOCKED": 3
+ },
+ "residue_policy": "no signal is ever sent in G0; if the child is still alive after the deadlines the run is BLOCKED, MANUAL_DISPOSITION_REQUIRED.json lists its verified identity, the child ends by itself (EXIT message / control EOF when the observer exits / T_NODE_MAX), a person decides",
+ "amendment_policy": "no change after the first execution of G0 under V2; a correction is a new file g0_criteria_v3.json (+ E1A_GATE_G0_PREREG_V3.md) and the earlier files and every result obtained under them are kept",
+ "meaning_of_pass": "PASS means: one gated sacrificial child was created, registered, released, exited and was reaped in the order specified, without signals, extra processes or residue, on this kernel and this Python. It is NOT evidence for G1/G2/G3, BV, EPIPE revocation proofs, ticket descendants, janitor recovery, observer death, or any E1-A cell.",
+ "deviation_disposition": [
+  {
+   "n": 1,
+   "v1_review": "ACCEPTABLE",
+   "deviation": "S1 is taken after the hold, not before it",
+   "v2_location": "E1A_GATE_G0_PREREG_V2.md section 3 step 3; checks G0-C05 and G0-C06"
+  },
+  {
+   "n": 2,
+   "v1_review": "ACCEPTABLE",
+   "deviation": "authorization consumed before the fork",
+   "v2_location": "section 3 steps 2-3; check G0-C02"
+  },
+  {
+   "n": 3,
+   "v1_review": "ACCEPTABLE",
+   "deviation": "preflight before the run directory exists; run-id uniqueness = directory does not exist",
+   "v2_location": "section 3 steps 1-2; check G0-C01"
+  },
+  {
+   "n": 4,
+   "v1_review": "ACCEPTABLE",
+   "deviation": "RUN_END(cleanup_confirmed=false) on the abnormal path",
+   "v2_location": "section 3 step 8; checks G0-C13 and G0-C03"
+  },
+  {
+   "n": 5,
+   "v1_review": "ACCEPTABLE",
+   "deviation": "token = command line contains g0_run.py",
+   "v2_location": "check G0-C01"
+  },
+  {
+   "n": 6,
+   "v1_review": "REQUIRES V2",
+   "deviation": "C03 on incomplete runs",
+   "v2_location": "check G0-C03 (MODIFIED) and its rules"
+  }
+ ],
+ "implementation_obligations": [
+  {
+   "id": "F-8",
+   "requirement": "bounded reap: non-blocking waitpid polls of the one specific pid, bounded by reap_deadline_s"
+  },
+  {
+   "id": "F-9",
+   "requirement": "runtime total budget checked at phase boundaries and loop iterations; phase deadlines capped by the remaining total"
+  },
+  {
+   "id": "F-12",
+   "requirement": "evidence and summary files are written only into a run directory created by this process"
+  },
+  {
+   "id": "F-13",
+   "requirement": "evidence root and consumption directory are created or validated with explicit ownership; run directory exclusive; failures BLOCKED with the error saved"
+  },
+  {
+   "id": "C03",
+   "requirement": "the judge implements checks.G0-C03.rules; the registry parse report and the in-memory record count are recorded in the evidence"
+  }
+ ]
+}
