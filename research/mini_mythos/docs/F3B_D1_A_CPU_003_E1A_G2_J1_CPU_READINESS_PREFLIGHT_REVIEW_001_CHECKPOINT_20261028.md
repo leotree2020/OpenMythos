@@ -66,5 +66,13 @@
 
 ## Git stage closeout and one next instruction
 
-- **Review branch changed-file scope:** PENDING independent remote compare once report, this checkpoint and navigation-only docs have been committed. All edits in this review shall remain Markdown-only; no implementation source, test fixture, old project checkpoint or frozen artifacts may be changed.
+- **Review branch changed-file scope independently VERIFIED at pre-addendum HEAD `6c1d8c12c392b8ac1886e5a3c741ee11eddd3027` versus preflight authoring SHA `a546ca92c2e69edb46929599de398e174c0683ea`: exactly 5 documentation commits, 4 Markdown files, +178/-0 lines; NO J1 implementation, Bench, Parcae, G0/G1/R3, test code, spec V0.1, preflight source draft or evidence changed.** This verification addendum adds a sixth checkpoint-only commit; fetch actual final remote SHA after it.
 - **NEXT ONLY:** after explicit authorization, prepare one doc-only PF-02/PF-06 criteria addendum describing evidence-origin grade taxonomy and versioned 18-case S/O pairing metadata. Preserve V0.1 expected values, current `FORMAL_ACCEPTANCE_READY=False`, SMOKE_ONLY limits, current G2 REAL BLOCKED and Grok DEFERRED. Submit addendum for independent review and checkpoint. Future code remains Claude Code's separate authorized responsibility.
+
+## Verified remote readback / Git closeout addendum
+
+- GitHub readback at review pre-addendum HEAD `6c1d8c12c392b8ac1886e5a3c741ee11eddd3027`, compared to verified authored preflight HEAD `a546ca92c2e69edb46929599de398e174c0683ea`, confirms **5 commits, 4 Markdown paths, +178/-0**. Exact paths: `a_predicate_003/gate_g2/G2_J1_CPU_READINESS_PREFLIGHT_DRAFT_001_INDEPENDENT_REVIEW_20261028.md`, this checkpoint, `docs/PROJECT_MAP.md`, `docs/SESSION_START_PROTOCOL.md`.
+- Updated independent review report Git Blob `b41508168100b9c1b1710fbc66c0ef54917da90f`; checkpoint pre-addendum Blob `7b157d90f2486e8f90a5d12e2e4a82752a790e92`. The reviewed preflight input checkpoint's **actual final Blob** is `d72be8951bf33261300a6988cc3c3f8bb3abb478`, distinct from its historical pre-addendum Blob printed inside that older document.
+- **Git scope PASS for docs-only independent review.** There are zero code/fixture/generator/runner/CPU/GPU/REAL experimental changes in this review. The preflight's 18 IDs and V0.1 proposed 5/5/8 expected outcomes are **document expectations, NOT TESTED**.
+- Reviewer disposition: `PREFLIGHT DOCUMENT PASS (SCOPED)` with explicit `J1-PF-R01/R02/R03` **required before freeze** and `CPU_FORMAL_ACCEPTANCE_READINESS=BLOCKED/NOT_READY`. Grok `DEFERRED`; OQ-13, owner O-1…O-15 still unresolved. No automatic code stage.
+- The final reviewer HEAD **must be fetched after this single documentation append**; do not quote the pre-addendum SHA as the actual reviewer branch final commit.
