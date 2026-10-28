@@ -42,7 +42,7 @@
 
 - No new Python packages, process capabilities, GPU or data assets. Dependencies are only existing GitHub source and checkpoint artifacts.
 - Root risks: gate uniqueness cannot be proven merely by fd/PPID; creator wait wrapper needs explicit trust; no-signal abnormal orphan process lacks assured lawful reaper/closed recovery; sidecar integrity does not authenticate events or prevent writer fabrication.
-- Intended diff: new V2.1 delta and this checkpoint, plus navigation-only additions to docs/PROJECT_MAP.md and docs/SESSION_START_PROTOCOL.md. A new file/delta is **not** a Bench patch. Verify exact diff after commits; distinguish GitHub remote HEAD from unknown local checkout state.
+- **Git diff VERIFIED at pre-addendum HEAD `62b5628c378eae9bf2b7b818e6fdc538e19bd37c`** vs pinned source `cf9a77b22af4487452e1ecf5add6fb284b0aa69e`: **4 documentation commits, exactly four Markdown paths (2 added + 2 append-only navigation edits), 184 lines inserted, 0 deleted, 0 runtime/source/test/Bench/Parcae/criteria/prereg/evidence changes**. V2.1 design Git Blob: `c2ed7330e9f5e9f18ea6d9461d47aee5eeaeace2`. The current checkpoint amendment will add one additional document-only commit; read final remote HEAD after the amendment; user's local checkout status remains unknown.
 - This checkpoint is created prior to navigation commits. Final HEAD must be fetched from GitHub after last write and checked against source SHA. The G1 execution SHA 3eef8d75d61fa6acad3b45a6e632c21ae1ee8f9d is a historical runtime binding, not this document SHA.
 
 ## One next instruction
