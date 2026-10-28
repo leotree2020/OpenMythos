@@ -385,3 +385,9 @@ HEAD `0cf75c1`（代码与 CPU 验收提交 `a4a8509` 相同）。执行前检�
 来源：`d1-r3-a-cpu-003-e1a-g2-v2-design-20261028` @ `6c223ef2efa8830c1552d44e046b72063d87a637`，冻结 V2 设计 blob `e58fe0e0881beebcef2f3d8b0510b7e4175da1da`。本次 ChatGPT **只读复核真实源码、只对独立审核文档及导航做 Git 写入**，审核分支 `d1-r3-a-cpu-003-e1a-g2-v2-review-20261028`。
 
 审核结论：**G2 V2 DESIGN CHANGES REQUIRED / REAL DESIGN PREREQUISITES BLOCKED / CRITERIA NOT FROZEN / G2 CPU & REAL NOT TESTED, NOT AUTHORIZED。** 发现与最小反例见 `a_predicate_003/gate_g2/G2_V2_INDEPENDENT_DESIGN_REVIEW_001.md`（V2-F01…F06，特别是 B0 `_on_created` 自动放行导致 D01 无放行前 gate 见证；创建者 wait 报告/可信插桩的证明等级；无信号异常清理与孤儿责任；sidecar 完整性；CPU subject 与 test 双层验收）。阶段 checkpoint：`docs/F3B_D1_A_CPU_003_E1A_G2_V2_INDEPENDENT_DESIGN_REVIEW_001_CHECKPOINT_20261028.md`。O-1…O-15 是 **ChatGPT 待审批建议、OWNER DECISION UNDECIDED**。Grok 受额度限制为 `DEFERRED / NOT PERFORMED`；用户的临时例外仅允许继续**文档工作**，不等于 Grok PASS。原生 Parcae、Bench、冻结 G0/G1、R3、测试、实验数据一律未授权改动。下一条唯一指令：仅提出 V2.1 最小文档修订后重新独立审核；不得冻判据、实现、CPU 运行、真实 fork、信号或进入 G3/BV/E1-A。
+
+## G2 V2.1 最小文档修订（2026-10-28；仅准备，审核待完成）
+
+只读源与审核基准：`d1-r3-a-cpu-003-e1a-g2-v2-review-20261028` @ `cf9a77b22af4487452e1ecf5add6fb284b0aa69e`。本轮另开文档分支 `d1-r3-a-cpu-003-e1a-g2-v21-doc-20261028`，按 V2 审核 F01–F06 编写 **G2 V2.1 最小设计差分**：`a_predicate_003/gate_g2/G2_DESIGN_V2_1_MINIMAL_DELTA_20261028.md`，阶段记录：`docs/F3B_D1_A_CPU_003_E1A_G2_DESIGN_V2_1_CHECKPOINT_20261028.md`。V2.1 区分 B0 原生 Observer 的事后检测与 P1 隔离驱动的拟议放行前检查；不将同管道 FD/PPID 视为唯一创建血缘；限定创建者 WAIT_REPORT 与可信 wait 调用记录的证明等级；孤儿、异常 EOF、未决回收明确 BLOCKED；sidecar 哈希链只证明归档内部一致性、不证明发送者或内核真值；CPU 夹具将被测判定与测试验收分离。14 个旧卡 ID，D01 分 B0/P1 后为 15 个候选 arm 项，均未冻结。
+
+**G2 V2.1 DESIGN DELTA PREPARED / REVIEW PENDING；OWNER O-1…O-15 UNDECIDED；Grok DEFERRED（不是 PASS）；G2 CRITERIA NOT FROZEN；IMPLEMENTATION / CPU / REAL NOT TESTED / NOT AUTHORIZED；REAL 仍被合法回收与无信号异常责任阻断。** 无法用“默认许可”代替独立 Grok 的实际审查。G0/G1 已验收结果、原生 Parcae、Bench 与模型架构保持不变。**下一步唯一指令：只读审核 V2.1 文档是否足以成为后续 CPU-only 规格设计依据；不得自动冻结/实施/运行。**
