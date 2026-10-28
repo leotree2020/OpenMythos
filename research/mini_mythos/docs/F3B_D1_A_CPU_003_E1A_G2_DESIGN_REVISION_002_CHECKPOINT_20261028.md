@@ -18,7 +18,7 @@
 | Expected | Byte-identical V1 archive; explicit Grok-deferral provenance; standalone V2 addressing identity/wait proof/two-layer CPU verdict/exit horizon; checkpoint, project map and new-session index; strictly document-only Git diff. |
 | Actual | V1 archived byte-identically; V1 default file prominently points to standalone V2; Grok deferral/review register and V2 standalone design created; navigation/checkpoint updated as documentation only. |
 | Document draft result | **PREPARED (not design-review PASS)**. |
-| Git provenance and file scope | **To verify against pinned parent SHA after final document commits.** No source, runtime, bench, tests, frozen criteria, prereg, R3, Parcae, auth files or evidence should be changed. |
+| Git provenance and file scope | **PASS**: independently compared parent `ee7e9d46bc46b8dc15cc66ca06569d32a677561d` against V2 branch at `d0a12703fa3b5cc10f241159074e5d004618ec50`: 9 documentation commits, **7 Markdown files only**, no `bench/`, runtime code, G0/G1, R3, Parcae, prereg, tests, tools or original evidence diff. This checkpoint's addendum will create one further documentation-only commit; verify the resulting remote HEAD. |
 | G2 implementation / CPU / REAL | **NOT TESTED / NOT AUTHORIZED**. |
 
 ## Independent review findings and V2 response
@@ -54,3 +54,11 @@ Never patch `bench/`, frozen G0/G1, R3, Parcae, prereg, model source, execution 
 **Read the active V2 design and this checkpoint, then perform a second source-grounded independent design review of V2, prioritizing the limit of adversarial identity proof, reaper/creator trust boundaries, evidence-chain durability, per-fixture double verdict and bounded no-signal safety.** Record any additional counterexample with smallest possible CPU fixture *proposal*, not execution. Grok remains deferred with provenance; no fictional Grok PASS.
 
 No G2 criteria freeze, implementation, CPU tests, real fork/process experiments, signals, GPU or entry into G3/BV/E1-A without separate explicit owner authorization.
+
+## Post-commit independent document checks (addendum)
+
+- V1 historical archive matches the pinned V1 Git Blob **exactly**: `44848301559916ee8cc6230c03aefaefab9d1d61` (not merely a similar text copy).
+- Standalone V2 Blob at pre-addendum branch HEAD: `e58fe0e0881beebcef2f3d8b0510b7e4175da1da` (151 new lines, including the per-card table). It contains **14/14** unique case identifiers `G2-D01`, `D02`, `D03a`–`D03e`, `D04`–`D10`; all are proposed, **NOT EXECUTED**.
+- Git compare from V1 parent shows changed files exactly: `gate_g2/G2_IDENTITY_DESCENDANTS_DESIGN.md` (supersession banner), archived V1, V2 standalone, V1 review/Grok deferral record, this checkpoint, `PROJECT_MAP.md`, `SESSION_START_PROTOCOL.md`. Other file paths **zero diff**. No claim about the user's local checkout cleanliness is made.
+- **PASS** only for **documentation scope and verification**; technical G2 V2 design review remains **PENDING**, not PASS. No G2 CPU/REAL execution happened.
+- Latest branch SHA: read current remote branch after this addendum; do not reuse the pre-addendum HEAD for future authorization bindings.
