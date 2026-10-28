@@ -31,7 +31,7 @@
 | J1 implementation / CPU run | **NOT TESTED / NOT AUTHORIZED**. |
 | G2 REAL lawful reaping / abnormal cleanup | **BLOCKED / NOT AUTHORIZED**. |
 | Grok review | **DEFERRED / NOT PERFORMED**, no review opinion invented. |
-| Git changed-file scope | Compare final branch vs pinned source and add verified results before handing off. |
+| Git changed-file scope | **PASS (pre-addendum):** compared source `fb5bb8779b93fb9027964e43229f368c1750488e` against review branch at `d58b0cb06c5b183b7de1f778120aab6286986f7f`: 4 commits, exactly 4 Markdown files (2 additions + 2 append-only navigation edits), 145 added lines, 0 deleted, **no Bench/Parcae/criteria/tests/runtime/evidence changes**. This verification addendum creates one further checkpoint-only doc commit; fetch final remote HEAD afterward. |
 
 ## Independent review findings / open questions
 
@@ -57,3 +57,11 @@ The V0 document is **not rewritten in this review**; this finding file preserves
 ## Unique next instruction
 
 **Prepare a minimal J1 CPU SPEC V0.1 DOCUMENT-ONLY revision** to address F01…F06. Keep 6 families unless explicitly justified, close input API so expected fixture IDs/oracle truth cannot leak, add or label single-outcome assertions as SMOKE_ONLY, separate positive sidecar-integrity violation FAIL from downstream unusable-evidence BLOCKED, specify trust tiers for hypothetical witnesses, retain independent canonical/hash assumptions as draft. Return for new independent source-grounded doc review. **Do not implement, freeze, materialize fixture JSON, run CPU/process tests, use GPU, modify Parcae/Bench or start G2 REAL.**
+
+## Post-commit review integrity and diff verification
+
+- Review report blob at pre-addendum HEAD: `4333dec6fb4e492039a96296316c8a34a12969e8`; checkpoint blob before this addendum: `66db99c2c3d6afac337dc54188befba7c99740a7`.
+- All **6** findings `J1-V0-F01…F06` present in committed review; reviewed V0 draft remains unchanged (Git Blob `44cd58d1089ca8b394658acafe4f8477e371d2f0`).
+- Verified changed paths: `gate_g2/G2_J1_CPU_SPEC_V0_INDEPENDENT_REVIEW_001.md`, this checkpoint, `docs/PROJECT_MAP.md`, `docs/SESSION_START_PROTOCOL.md`; only Markdown. No local checkout status assertion; GitHub remote comparison only.
+- Stage result remains **CHANGES REQUIRED** for spec V0; actual G2 CPU/REAL **NOT TESTED / NOT AUTHORIZED**. A document-only review cannot be represented as a CPU PASS. Grok remains DEFERRED, all owner decisions O-1…O-15 UNDECIDED.
+- Source or execution bindings must use exact Git SHAs appropriate to their roles; the final review branch HEAD after this amendment is retrieved separately.
