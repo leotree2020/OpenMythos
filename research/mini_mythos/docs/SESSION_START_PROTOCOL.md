@@ -2,6 +2,8 @@
 
 **适用范围：** 任何新 ChatGPT / Grok / 编程 Agent 对话，包含换模型、额度恢复、重新打开 Codespaces、交接研发。**优先级：** 新会话必须先读本文、项目地图及最新检查点；旧聊天记忆只是线索，不能作为实验事实。
 
+**最新阶段检查点（2026-10-28：G2 V2 文档修订；优先于下方 V1 / G1 历史块）：** 当前研发入口 `docs/F3B_D1_A_CPU_003_E1A_G2_DESIGN_REVISION_002_CHECKPOINT_20261028.md`；活跃设计草稿 `a_predicate_003/gate_g2/G2_IDENTITY_DESCENDANTS_DESIGN_V2.md`。V1 审核结论 CHANGES REQUIRED，V2 只是将 R1–R5 修订到纸面、尚未审核 PASS。**Grok 因额度限制暂缓：用户许可仅在未获 Grok 意见时继续文档设计，不允许虚构 Grok 审核结论。** G0/G1 REAL 历史 PASS 保持；G2 判据未冻结，G2 实现/CPU/REAL、G3、BV、E1-A 全部 NOT AUTHORIZED。下一步只读审核 V2，重点 identity/gate 唯一性不能被假定、合法 wait 证据、双层 CPU verdict、无信号收尾的阻断项。任何实验和代码实施需另行负责人授权。
+
 **最新阶段检查点（2026-10-28：G1 REAL 双重审核结案 / G2 设计草稿；优先于下方旧版“最新”块）：** G1-REAL-001 的原始证据已由 ChatGPT 独立读取并复核，负责人提供的 Grok 交叉复核结论亦为 PASS，故状态为 **G1 REAL-001 CROSS-REVIEW PASS**（仅对单次受控负向门控成立）。首先读取 `docs/F3B_D1_A_CPU_003_E1A_G1_REAL_001_FINAL_CROSS_REVIEW_CHECKPOINT_20261028.md` 和 `docs/PROJECT_MAP.md`。G2 已建立**仅源码审计与设计草稿** `a_predicate_003/gate_g2/G2_IDENTITY_DESCENDANTS_DESIGN.md`，再读 `docs/F3B_D1_A_CPU_003_E1A_G2_DESIGN_CHECKPOINT_20261028.md`；**G2 DESIGN CROSS-REVIEW PENDING / G2 IMPLEMENTATION NOT AUTHORIZED / G2 CPU NOT TESTED / G2 REAL NOT AUTHORIZED**。先审核 G2 身份、血缘、合法 reaper 和独立真值方案，禁止自动启动 G2/G3/BV/E1-A 或复用 G1 授权。
 
 **最新 D1 CPU-003 E1-A 纯逻辑测试重新执行检查点（2026-10-27；优先于下方 E1-A 纯逻辑测试检查点）：** RERUN-001：守卫 argv 修复后五个纯逻辑测试文件 172 测试全部通过、越界调用 0，仅适用于纯逻辑 / Mock 范围；台架 / 测试 / 预注册未改；进程级测试、BV、E1-A 未授权。详见 `docs/F3B_D1_A_CPU_003_E1A_LOGIC_TEST_RERUN_CHECKPOINT_20261027.md`。下一条唯一指令：提交 ChatGPT 审核；**不自动进入进程级测试**。
