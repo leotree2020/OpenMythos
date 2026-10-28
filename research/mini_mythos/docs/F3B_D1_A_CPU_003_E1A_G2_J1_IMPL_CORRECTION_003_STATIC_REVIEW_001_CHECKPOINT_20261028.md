@@ -32,7 +32,7 @@
 | Functional syntax/import/CPU test result | **NOT TESTED**, not PASS; no runtime inputs, observed outputs or exit-code evidence. |
 | 18 formal S/O fixtures and external oracle | **NOT MATERIALIZED / NOT TESTED**; `test_acceptance_verdict` remains BLOCKED/NOT_READY. |
 | Git developer permitted-file scope | **PASS (REMOTE GIT VERIFIED)**. |
-| Review-branch Git changed-file scope | **PENDING** final comparison after navigation/checkpoint commits. |
+| Review-branch Git changed-file scope | **PASS at pre-addendum HEAD `68fac034da93ba7b9d141e4b1f0cd6c647bf4eec` vs developer HEAD `38e8a9141ebd738a34628acc928adb28cd8c54cf`**: 6 docs-only commits, 4 Markdown paths (+137/-0 lines), no J1 code/Bench/Parcae/tests/frozen criteria/evidence modified. This addendum adds one more checkpoint-only commit; fetch actual final HEAD after it. |
 | G2 REAL | **BLOCKED / NOT AUTHORIZED**; lawful reaper, orphan cleanup, zero-signal containment remain unresolved. |
 | Grok | **DEFERRED / NOT PERFORMED (not PASS)**. |
 
@@ -62,3 +62,11 @@
 **Prepare a documentation-only `J1_CPU_READINESS_PREFLIGHT_DRAFT`**, strictly derived from the latest accepted source-static review. Inventory needed artifacts and acceptance gates for future CPU testing: 18 official Lane S/O fixtures with independent oracle truth and hashes (NONE to materialize yet), source-trust assumption labels, fail-closed Oracle attestation, frozen test scope / no skipping, guard and runner permission, environment/dependency reproducibility, and OQ-13 scope decision. Identify which are BLOCKED/NOT_READY now; no code edits or actual tests in this preflight. User approval required before initiating that document stage. If a later code task is authorized, Claude Code alone implements it; ChatGPT independently reviews its diff.
 
 **STOP after saving independent review and checkpoint.** Do not freeze J1 criteria, change Bench/Parcae, assume Grok PASS, or run CPU/REAL/GPU.
+
+## GitHub remote readback / final scope verification addendum
+
+- **Pre-addendum remote reviewer HEAD** `68fac034da93ba7b9d141e4b1f0cd6c647bf4eec` was verified against reviewed developer source HEAD `38e8a9141ebd738a34628acc928adb28cd8c54cf`: **6 commits, exactly 4 Markdown files, 137 insertions / 0 deletions**, verified by GitHub compare. This post-verification checkpoint commit makes a seventh documentation commit.
+- **Readback blobs:** independent review `6acf1bef20613a346d7a39282d455f16c6c8ed13`; pre-addendum checkpoint `f96380f05f8357c9757a71b3185320a6ee27080c`. Earlier judge, test, schema, README and Bench source blobs remain pinned above.
+- **Exact changed paths:** `a_predicate_003/gate_g2/G2_J1_IMPL_CORRECTION_003_INDEPENDENT_STATIC_REVIEW_001.md`, this checkpoint, `docs/PROJECT_MAP.md`, `docs/SESSION_START_PROTOCOL.md` — all Markdown. There are **ZERO implementation or test-code changes in this independent reviewer branch**. Source review **PASS limited to F05** does not imply any CPU test passed.
+- Review did **not** execute proposed negative/positive cases, inspect local shell/process history, write official fixture S/O files, create hashes, run code, merge or freeze criteria. `CPU NOT TESTED`; `REAL BLOCKED`; `GROK DEFERRED`.
+- **Fetch the actual final remote branch SHA after this addendum**; a documentation HEAD must never be confused with a new code-implementation or scientific execution commit. The single next instruction remains a separately authorized **documentation-only CPU-readiness preflight**, not an immediate CPU experiment.
