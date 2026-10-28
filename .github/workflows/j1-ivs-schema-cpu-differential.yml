@@ -1,0 +1,36 @@
+name: J1 isolated schema differential CPU
+on:
+  push:
+    branches: [d1-r3-a-cpu-003-e1a-g2-j1-direct-schema-differential-20261029]
+    paths:
+      - 'research/mini_mythos/a_predicate_003/gate_g2/j1_iv_s/**'
+      - '.github/workflows/j1-ivs-schema-cpu-differential.yml'
+permissions:
+  contents: read
+jobs:
+  native-schema-vs-ivs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Pin J1 and independent IV-S source blobs
+        shell: bash
+        run: |
+          test "$(git hash-object research/mini_mythos/a_predicate_003/gate_g2/j1/schema.py)" = "551c4a01ed37f73c809776e123f98f6d055ac998"
+          test "$(git hash-object research/mini_mythos/a_predicate_003/gate_g2/j1_iv_s/lane_s.py)" = "264971258c6e7ae709d0a884afb35c6538c668d0"
+          test "$(git hash-object research/mini_mythos/a_predicate_003/gate_g2/j1_iv_s/tests/test_j1_schema_direct_cpu.py)" = "c4009f2d17853863d2427098d7d86adcc90b0379"
+          git rev-parse HEAD
+          python --version
+      - name: CPU-only direct J1 schema differential
+        env:
+          PYTHONPATH: research/mini_mythos/a_predicate_003/gate_g2
+        run: python -m unittest discover -s research/mini_mythos/a_predicate_003/gate_g2/j1_iv_s/tests -p 'test_j1_schema_direct_cpu.py' -v
+      - name: CPU-only isolated regression suite
+        env:
+          PYTHONPATH: research/mini_mythos/a_predicate_003/gate_g2
+        run: python -m unittest discover -s research/mini_mythos/a_predicate_003/gate_g2/j1_iv_s/tests -p 'test_*.py' -v
