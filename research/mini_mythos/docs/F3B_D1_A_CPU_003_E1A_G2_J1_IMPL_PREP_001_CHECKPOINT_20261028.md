@@ -67,3 +67,10 @@ No criteria freeze, no fixture S/O JSON or hashes, no CPU run, no real process /
 ## Only next instruction
 
 Hand the development branch `d1-r3-a-cpu-003-e1a-g2-j1-impl-20261028`, its final HEAD (addendum below), the diff against `02d79a26…` and this checkpoint to **ChatGPT** for an independent static code review. Only after that review and a separate owner authorization may fixture materialisation and a CPU acceptance run be considered. **Stop here: no tests, no merge, no next stage.**
+
+## Git SHA addendum (separate documentation commit)
+
+* Implementation commit (source + checkpoint + navigation): `f9151a9c6156ada24f6f4f77270eb004a713bf0a`
+* Baseline commit: `02d79a26e4ad6b49527bc90e6be4fe9130b45cff` (diff `02d79a2..f9151a9c6156ada24f6f4f77270eb004a713bf0a`: 10 files, 1798 insertions, 0 deletions; 0 paths outside `gate_g2/j1/` and `docs/`; 0 paths in bench / gate_g0 / gate_g1 / prereg / evidence / tools / a_predicate_003/tests / Parcae / R3).
+* This addendum is one further documentation-only commit; the final branch HEAD is the remote HEAD of `d1-r3-a-cpu-003-e1a-g2-j1-impl-20261028` and must not be confused with the implementation or baseline SHA.
+* Working tree after commit: clean (the ignored local G0/G1 authorization files are untouched).
