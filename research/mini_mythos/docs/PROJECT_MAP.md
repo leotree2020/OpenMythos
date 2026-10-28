@@ -542,3 +542,7 @@ The preflight explicitly keeps the **18 unique V0.1 proposed fixture IDs** with 
 ## J1 ERRATA 003 — source-static recheck and Grok handoff (2026-10-28)
 
 仅文档。基于 ERRATA 003 `d59c01808bf1d42984ead018c10e4330f37248e8` 的作者关联源码复核（**不具备外部独立审核资格**），分支 `d1-r3-a-cpu-003-e1a-g2-j1-errata003-static-recheck-grok-handoff-20261028`，报告 `a_predicate_003/gate_g2/G2_J1_ERRATA_003_SOURCE_STATIC_RECHECK_AND_GROK_HANDOFF_20261028.md`，检查点 `docs/F3B_D1_A_CPU_003_E1A_G2_J1_ERRATA_003_STATIC_RECHECK_GROK_HANDOFF_CHECKPOINT_20261028.md`。四项旧问题基本在文档中有对应更正，但 `R03-SELF-01` 指出 P09 跨断言切换不可称为同一断言的原子因果试验；P08 外部单字段含内部新增链记录也须标明证据粒度。未获得真实 Grok 报告；当前接口无 Grok/xAI 调用能力，Grok 保持 DEFERRED。**全部测试 NOT TESTED；Oracle BLOCKED/NOT_READY；PF-02…06/PF-08 BLOCKED；G2 REAL BLOCKED。下一步唯一：取得可核验的独立交叉审核后再裁决；不冻结、不实现、不运行。**
+
+## J1 IV-S independent sidecar CPU candidate (2026-10-28)
+
+在基线 f73d8c5ae9be2b3b0674c0c0ba89b36bb85b091f 上创建独立开发分支 d1-r3-a-cpu-003-e1a-g2-j1-iv-s-cpu-unit-candidate-20261028。新增 a_predicate_003/gate_g2/j1_iv_s/，真实执行 23 项 CPU 单元测试，23 PASS/0 FAIL（仅验证新组件），覆盖侧栏日志完整解析、哈希链、严格规范 JSON 与 F05 合法 2 条记录 / 可信 3 条记录参考 seal 不匹配。完整记录：docs/F3B_D1_A_CPU_003_E1A_G2_J1_IV_S_CPU_UNIT_CANDIDATE_CHECKPOINT_20261028.md。原始 J1/Oracle/Bench/Parcae/V0.1/R3/模型未改；官方 18 案例 NOT TESTED；GroK DEFERRED；Oracle BLOCKED/NOT_READY；G2 REAL BLOCKED。下一步仅独立源码复审、固定 SHA CPU 复跑。
