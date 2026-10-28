@@ -41,3 +41,10 @@ Design-consistency note: each §3.2 row was walked through the J1 source as read
 ## Only next instruction
 
 Submit the addendum and this checkpoint to **ChatGPT** for independent source-grounded review and to **Grok** for cross-review when a real report is available (record it only if actually supplied; absence stays `DEFERRED`). Resolve disagreements by a proposed minimal controlled experiment, not by choosing a reviewer. **Do not** implement code, materialise any S/O artefact, compute any hash, create a signature, freeze criteria, unlock the Oracle, run Python / CPU / GPU, merge, or enter G2 REAL without a separate owner authorisation. **Stop here.**
+
+## Git SHA addendum (separate documentation commit)
+
+* Documentation commit (addendum + checkpoint + navigation): `a312d28c52d10509e6ef9cde596495f0d57665ae`
+* Baseline: `466f28f7b36e4c851f6f4865903a3827e2d3ec5a`. Diff `466f28f..a312d28c52d10509e6ef9cde596495f0d57665ae`: 4 files, 321 insertions, 0 deletions, all Markdown; 0 non-Markdown paths; 0 paths outside `a_predicate_003/gate_g2/*.md` and `docs/*.md`; no `j1/` source, test, V0.1 file, Bench, Parcae, G0/G1, R3 or model path.
+* This addendum is one further documentation-only commit; the final branch HEAD is the remote HEAD of `d1-r3-a-cpu-003-e1a-g2-j1-pf02-pf06-addendum-20261028` and must not be confused with the documentation or baseline SHA.
+* Working tree after commit: clean (ignored local G0/G1 authorization files untouched).
