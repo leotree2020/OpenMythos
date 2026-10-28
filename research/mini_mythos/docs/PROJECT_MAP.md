@@ -407,3 +407,11 @@ HEAD `0cf75c1`（代码与 CPU 验收提交 `a4a8509` 相同）。执行前检�
 预注册草稿覆盖 **6 个场景族、12 个唯一夹具 ID（4 个严格限定的预期 PASS 正向控制、2 个明确 FAIL、6 个预期 BLOCKED）**。每个案例分为 J1 可见的 `Lane S` 模拟观察与不提供给 J1 的独立真值 `Lane O`（后者仅供独立验收 oracle 比较）；分开 `expected_subject_verdict`、`observed_behavior_label` 与 `test_acceptance_verdict`，禁止将“缺陷复现测试 PASS”误报为原生安全 PASS。15 个 arm-qualified 历史卡仅选 6 个，其他 9 个均标注 `DEFERRED_BY_SCOPE`，不是 PASS。**全部夹具字节/哈希未生成，所有实际 CPU 测试 NOT TESTED。**
 
 **状态：SPEC DRAFT PREPARED / INDEPENDENT DOCUMENT REVIEW PENDING / CRITERIA NOT FROZEN / IMPLEMENTATION & CPU NOT AUTHORIZED / REAL BLOCKED & NOT AUTHORIZED / Grok DEFERRED (NOT PASS) / O-1…O-15 UNDECIDED。** 原生 Parcae、Bench、冻结 G0/G1、R3、已存证据及模型架构保持不变。下一条唯一指令：对规范草稿做独立、源码可追溯的只读设计审核；不冻结、不实施、不运行任何测试/进程。
+
+## G2 J1 CPU SPEC V0 独立审核：CHANGES REQUIRED（2026-10-28）
+
+来源：`d1-r3-a-cpu-003-e1a-g2-j1-cpu-spec-draft-20261028` @ `fb5bb8779b93fb9027964e43229f368c1750488e`；V0 spec Git Blob `44cd58d1089ca8b394658acafe4f8477e371d2f0`。在独立审核分支 `d1-r3-a-cpu-003-e1a-g2-j1-spec-review-20261028`，ChatGPT 以冻结 `bench/observer.py`、`registry.py` 等源码复核六族 12 个拟议合成夹具的真值隔离、断言与判定，形成**`G2 J1 CPU SPEC V0 DOCUMENT REVIEW CHANGES REQUIRED`**（规范可审查，不是实际 CPU 测试 FAIL）。
+
+审核报告：`a_predicate_003/gate_g2/G2_J1_CPU_SPEC_V0_INDEPENDENT_REVIEW_001.md`；检查点：`docs/F3B_D1_A_CPU_003_E1A_G2_J1_CPU_SPEC_V0_REVIEW_001_CHECKPOINT_20261028.md`。六项发现 F01～F06：J1 输入没有明确排除夹具 ID/答案元数据；单一断言状态能被固定输出应付；sidecar 可信 seal 不匹配的完整性 FAIL 与依赖日志推理的 BLOCKED 混用；假设性模拟见证者不能等同原生 B0 真实来源；序列化/读取完整性不够封闭；J1 检出缺陷 TEST PASS 不等于 B0 安全 PASS。12 个 ID/6 族/4 narrow PASS+2 FAIL+6 BLOCKED 都是**拟议预期**，实际测试与夹具字节为 NOT TESTED/NOT MATERIALIZED；9 个其他 arm 保留 DEFERRED_BY_SCOPE。
+
+**状态：G2 SPEC V0 REVIEW CHANGES REQUIRED / V0.1 DOC REVISION NEXT / G2 CRITERIA NOT FROZEN / G2 CODE & CPU NOT AUTHORIZED / G2 REAL BLOCKED & NOT AUTHORIZED / Grok DEFERRED（不是 PASS）/ O-1…O-15 OWNER UNDECIDED。** G0/G1 已验收与原生 Parcae/Bench/R3/模型架构未改。下一条唯一指令：**仅修订 J1 SPEC V0.1 文档并重新只读审核**，先解决输入隔离与单一断言固定输出，不实施/运行任何代码或进程。
