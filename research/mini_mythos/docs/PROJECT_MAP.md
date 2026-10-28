@@ -371,3 +371,11 @@ HEAD `0cf75c1`（代码与 CPU 验收提交 `a4a8509` 相同）。执行前检�
 ## D1 CPU-003 E1-A G2 设计修订 G2-DESIGN-REVISION-001（2026-10-28）
 
 基线 `8f9e8b2c027b3f6c0b738650b57af62d52dce141`（G2-DESIGN-001 审核结论 CHANGES REQUIRED，原始 F1–F9 保存于 `a_predicate_003/gate_g2/G2_DESIGN_REVIEW_001_FINDINGS.md`）。仅文档修订：`G2_IDENTITY_DESCENDANTS_DESIGN.md` 升为 V1（V0 原样归档为 `…_V0_8f9e8b2.md`），新增修订记录 `G2_DESIGN_REVISION_001_RECORD.md`。要点：声明 PID / 内核身份 / gate 持有证明 / 创建血缘分层，放行前后证据分类（READY 不能证明放行前验证）；同父错 PID、重复 PID、共享 gate fd 反例；EXIT_OBSERVED / ZOMBIE / REAP_CONFIRMED / PROC_GONE 四态分离；回收者方案 A（创建者回收）与 B（观察者 subreaper）均给出可验证设计，**未选择**；隔离 sidecar 证据；撤回“两次稳定扫描即证明无后代”的暗示，不可证实的完整性声明保持 UNKNOWN / BLOCKED；逐卡片 SUT / 独立真值 / 预防性与检测性要求；不调用原 SIGKILL 清理路径的安全退出与人工处置流程；进程预算、判据优先级 FAIL > BLOCKED > PASS、CPU-only 与 REAL 阶段边界、15 项未决选择 O-1…O-15。状态：**G2 DESIGN REVISION PREPARED — CROSS-REVIEW PENDING；G2 CRITERIA NOT FROZEN；G2 CPU / REAL NOT AUTHORIZED**。检查点 `docs/F3B_D1_A_CPU_003_E1A_G2_DESIGN_REVISION_001_CHECKPOINT_20261028.md`。下一步：ChatGPT 与 Grok 审核新版设计。
+
+## D1 CPU-003 E1-A G2 V2 设计草案与 Grok 审核暂缓（2026-10-28）
+
+**阶段：DESIGN V2 DRAFT PREPARED / REVIEW PENDING；G2 CRITERIA NOT FROZEN / IMPLEMENTATION-CPU-REAL NOT AUTHORIZED。** 从已核对 GitHub 远端提交 `ee7e9d46bc46b8dc15cc66ca06569d32a677561d`（V1）建立独立文档分支 `d1-r3-a-cpu-003-e1a-g2-v2-design-20261028`；原 Bench、Parcae、G0/G1 冻结源码和既有证据未授权修改。用户明确说明 Grok 额度受限，许可暂不等待 Grok 而**只推进文档修订**；Grok 对 G2 V1/V2 的状态是 **DEFERRED / NOT REVIEWED，不是 PASS**，不得把临时例外当作授权实施或执行。
+
+主要入口：`a_predicate_003/gate_g2/G2_IDENTITY_DESCENDANTS_DESIGN_V2.md`（当前设计 V2）；`a_predicate_003/gate_g2/G2_V1_REVIEW_AND_GROK_DEFER_RECORD.md`（ChatGPT 对 V1 的 R1–R5 发现与审核来源）；`docs/F3B_D1_A_CPU_003_E1A_G2_DESIGN_REVISION_002_CHECKPOINT_20261028.md`（本阶段 checkpoint）。V1 逐字节归档为 `G2_IDENTITY_DESCENDANTS_DESIGN_V1_ee7e9d4.md`，旧默认 `G2_IDENTITY_DESCENDANTS_DESIGN.md` 顶部指向 V2。V2 不把 gate 管道持有当作唯一创建血缘证明，不把创建者 WAIT_REPORT 当作独立回收证明，区分 CPU 夹具 subject BLOCKED 与 test PASS，并把不发信号的异常回收责任列为 REAL 阻断项。建议方案 A（合法创建者回收）仅为研究偏好；O-1…O-15 仍未冻结。
+
+**下一条唯一指令：** 只读审核 V2 文档和新 checkpoint，记录反例/剩余设计阻断；未获后续负责人分阶段授权前，不冻结、不实现、不运行 CPU/REAL，不进入 G3/BV/E1-A。
