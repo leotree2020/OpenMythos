@@ -77,9 +77,11 @@ def msgs(rec):
     return int(rec.ready is not None) + int(rec.first_action_mono is not None) + len(rec.messages)
 
 
-def in_run_assessment(t, scn, exit_status, violations, deadline_hits):
+def in_run_assessment(t, scn, exit_status, violations, deadline_hits, judged=None):
     """The in-run safety rule: -> (ok, reasons).  `ok` only when the test is clearly as expected; anything else stops the run (the remaining tests are
-    NOT_RUN).  This is NOT the verdict: the judge decides from the read-back evidence."""
+    NOT_RUN).  `judged` is the result of g1_judge.judge_test_in_run() (the very check functions of the judge applied to the evidence so far): any non-PASS
+    check of this test stops the run, so the first test that is not PASS is also the last one executed.  This is NOT the verdict: the judge decides from
+    the read-back evidence at the end."""
     reasons = []
     if exit_status != scn["expected_exit"]:
         reasons.append("exit status %r != expected %r" % (exit_status, scn["expected_exit"]))
@@ -92,7 +94,57 @@ def in_run_assessment(t, scn, exit_status, violations, deadline_hits):
         reasons.append("guard violations %r" % (violations,))
     if deadline_hits:
         reasons.append("deadline hits %r" % (deadline_hits,))
+    if judged is not None and judged.get("verdict") != "PASS":
+        reasons.append("in-run judge %s: %s" % (judged.get("verdict"), judged.get("non_pass")))
     return not reasons, reasons
+
+
+def alive_nodes(nodes, live_pid, read_stat=None):
+    """Every process of THIS run that may still be alive and has not been reaped: the identity-registered nodes (verified by the REGISTERED record and the
+    pidfd), the forked-but-unregistered ones (identity NOT verified), and an unreaped child the guard knows (`live_pid`) that no node record accounts for
+    (fork returned, node record missing).  A node confirmed DEAD is skipped; an exited-unreaped (Z / X) or vanished process is nothing alive; an unreadable
+    /proc entry is treated as alive (never guessed away).  -> list of identity dicts (empty = nothing alive).  Reads only; sends nothing."""
+    read_stat = read_stat or C.read_stat
+
+    def stat_of(pid):
+        try:
+            return read_stat(pid)
+        except C.ProcUnreadable:
+            return {"state": "UNREADABLE", "starttime": None}
+    out, covered = [], set()
+    ends = "gate byte / EOF / gate timer (EXIT message for a child that passed the gate); NO signal was or will be sent by G1"
+    for rec in nodes:
+        if getattr(rec, "state", None) == "DEAD":
+            continue
+        pid = rec.pid if rec.pid is not None else rec.forked_pid
+        if pid is not None:
+            covered.add(pid)
+        if rec.pid is not None and rec.handle is not None:
+            try:
+                gone = rec.handle.exited()
+            except OSError:
+                gone = False
+            if not gone:
+                out.append({"pid": rec.pid, "starttime": rec.starttime, "node_id": rec.node_id, "state": "ALIVE", "verified_by": "REGISTERED record + pidfd", "ends_by": ends})
+        elif rec.forked_pid is not None:
+            st = stat_of(rec.forked_pid)
+            if st is not None and st.get("state") not in ("Z", "X"):
+                out.append({"pid": rec.forked_pid, "starttime": rec.starttime if rec.pid is not None else rec.forked_starttime, "node_id": rec.node_id, "state": st.get("state"),
+                            "verified_by": "NONE (identity not verified; never signalled)", "ends_by": ends})
+    if live_pid is not None and live_pid not in covered:
+        st = stat_of(live_pid)
+        if st is not None and st.get("state") not in ("Z", "X"):
+            out.append({"pid": live_pid, "starttime": st.get("starttime"), "node_id": None, "state": st.get("state"),
+                        "verified_by": "NONE (fork returned, no node record accounts for the child; never signalled)", "ends_by": ends})
+    return out
+
+
+def report_residue(run_dir, run_id, ev, nodes, live_pid):
+    """Exception path: record MANUAL_DISPOSITION_REQUIRED.json for every node of this run that may still be alive (all of them, not only the latest one)."""
+    alive = alive_nodes(nodes, live_pid)
+    if alive:
+        _manual(run_dir, run_id, alive[0] if len(alive) == 1 else {"alive_nodes": alive, "count": len(alive)}, ev)
+    return alive
 
 
 # ------------------------------------------------------------------ Python-level guard
@@ -355,12 +407,21 @@ def _held_snapshot(S, name, rec):
     return s
 
 
+def _in_run_view(S):
+    """The evidence so far, as the judge needs it for one test: the guard summary, the writer's ledger, the registry file parsed now, the run time so far."""
+    import registry as RG
+    reg, info = RG.parse_reg(S.obs.reg_path)
+    return dict(S.ev, guard=copy.deepcopy(S.guard.summary()), reg_memory_records=copy.deepcopy(S.obs.reg.records), reg_writer_seq=S.obs.reg.seq, reg=reg,
+                reg_parse_info=info, timing={"duration": C.mono() - S.t0})
+
+
 def run_test(S, tid):
     """One test: spawn, hold, snapshot, stimulus, observe the exit, reap, clean up.  -> True when the test was clearly as expected (in-run safety rule)."""
     ev, obs, guard, budget, lim = S.ev, S.obs, S.guard, S.budget, S.lim
     scn = S.crit["scenarios"]["tests"][tid]
     stim = scn["stimulus"]
     t = ev["tests"][tid]
+    S.rec = None                                                              # never a node of an earlier test
     t["ran"] = True
     t["t_gate_max"] = float(scn["t_gate_max_s"])
     t0 = C.mono()
@@ -462,12 +523,15 @@ def run_test(S, tid):
         t["timing"] = {"duration": events["end_mono"] - t0}
         if t["timing"]["duration"] > lim["per_test_seconds"]:
             ev["deadline_hits"].append("test:" + tid)
-        ok, reasons = in_run_assessment(t, scn, rec.exit_status, guard.violations, ev["deadline_hits"])
+        judged = GJ.judge_test_in_run(_in_run_view(S), S.crit, tid)
+        ok, reasons = in_run_assessment(t, scn, rec.exit_status, guard.violations, ev["deadline_hits"], judged)
         if not ok:
             stderr_marker("G1-TEST-STOP", run_id=ev["run_id"], test=tid, reasons="; ".join(reasons))
         return ok
     except BaseException:
         t["exception"] = traceback.format_exc()[-800:]
+        if ev["stopped_after"] is None:
+            ev["stopped_after"] = tid                                         # the run stopped inside this test (exception / deadline)
         raise
     finally:
         guard.watch_fd = None
@@ -493,6 +557,7 @@ def run(auth, auth_raw, run_id, run_dir, pf, dirs, crit):
     ev["observer"] = {"pid": obs_pid, "sid": C.fingerprint(obs_pid)["sid"], "pgrp": C.fingerprint(obs_pid)["pgrp"]}
     S = _Run()
     S.ev, S.guard, S.budget, S.lim, S.crit, S.obs_pid, S.rec, S.node, S.proto, S.obs = ev, guard, budget, lim, crit, obs_pid, None, node, proto, None
+    S.t0 = t0
     obs = None
     try:
         with open(os.path.join(run_dir, "authorization_used.json"), "xb") as f:
@@ -525,24 +590,7 @@ def run(auth, auth_raw, run_id, run_dir, pf, dirs, crit):
         budget.check("end")
     except BaseException:
         ev["exception"] = traceback.format_exc()
-        rec = S.rec
-        if rec is None and obs is not None and obs.nodes:
-            rec = list(obs.nodes.values())[-1]
-        if rec is not None and rec.pid is not None and rec.handle is not None and not rec.handle.exited():
-            ident = {"pid": rec.pid, "starttime": rec.starttime, "node_id": rec.node_id, "verified_by": "REGISTERED record + pidfd",
-                     "ends_by": "gate byte / EOF / gate timer (EXIT message for a child that passed the gate); NO signal was or will be sent by G1"}
-            _manual(run_dir, run_id, ident, ev)
-        elif rec is not None and rec.pid is None and rec.forked_pid is not None:
-            try:
-                st = C.read_stat(rec.forked_pid)
-            except C.ProcUnreadable:
-                st = {"state": "UNREADABLE"}
-            if st is None or st["state"] in ("Z", "X"):
-                pass                                                  # gone or exited-unreaped: nothing alive to dispose of
-            else:
-                ident = {"pid": rec.forked_pid, "starttime": rec.forked_starttime, "node_id": rec.node_id, "verified_by": "NONE (registration failed; never signalled)",
-                         "ends_by": "abort byte already written / gate EOF when this observer exits / gate timer; NO signal was or will be sent by G1"}
-                _manual(run_dir, run_id, ident, ev)
+        report_residue(run_dir, run_id, ev, list(obs.nodes.values()) if obs is not None else [], guard.live_pid)       # EVERY node of this run, not only the latest one
         if obs is not None and not any(r["kind"] == "RUN_END" for r in obs.reg.records):
             try:                                                      # honest end marker: cleanup NOT confirmed (a person decides; no signal)
                 obs.reg.write("RUN_END", run_id=run_id, aborted=ev["exception"].strip().splitlines()[-1][:200], cleanup_confirmed=False)

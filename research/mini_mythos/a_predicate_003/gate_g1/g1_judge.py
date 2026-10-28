@@ -774,6 +774,27 @@ def judge(ev, crit=None, criteria_sha256=None, validation=None):
             "blocked_class": sorted(set(blocks_all)), "incomplete": incomplete or (not ran), "invalid_fields": invalid, "c03_fidelity_report": c03_report}
 
 
+IN_RUN_CHECKS = ("G1-C04", "G1-C05", "G1-C06", "G1-C07", "G1-C08", "G1-C09", "G1-C10", "G1-C11", "G1-C12", "G1-C13", "G1-C14", "G1-C15")
+
+
+def judge_test_in_run(ev, crit, tid):
+    """The in-run safety rule (criteria enforcement.stop_rule: stop after the first test that is not clearly as expected).  Judges ONE test of a run that is
+    still in progress with the very check functions of judge(), restricted to the checks that do not need the end of the run (no RUN_START / RUN_END ledger
+    comparison -> no G1-C03, no run-level C01 / C02 / C16 / C17, and the last-test parts of C12 / C13 / C14 are skipped).  `ev` is a view of the evidence so far
+    (guard summary, ledger, parsed registry, tests).  Nothing here is a verdict: the authoritative verdict is judge() on the read-back evidence.
+    -> {'verdict': 'PASS' | 'FAIL' | 'BLOCKED', 'non_pass': {check id: 'STATE/rule'}}; any non-PASS stops the run."""
+    order = list(crit["scenarios"]["order"])
+    tests = ev.get("tests") if isinstance(ev.get("tests"), dict) else {}
+    ran = [x for x in order if isinstance(tests.get(x), dict) and tests[x].get("ran") is True]
+    if tid not in ran:
+        return {"verdict": "BLOCKED", "non_pass": {"RUN": "the test is not marked as run"}}
+    ctx = {"invalid": [], "fid": fidelity(ev), "criteria_sha256": None, "ran": ran, "last_ran": None, "c03": c03_facts(ev), "abort_nodes": set()}
+    entries = {cid: _entry(cid, _run_check(cid, ev, crit, tid, ctx), crit) for cid in IN_RUN_CHECKS}
+    fails, blocks = _classify(entries)
+    non_pass = {cid: "%s/%s" % (e["state"], e.get("rule", "")) for cid, e in entries.items() if e["status"] != "PASS"}
+    return {"verdict": "FAIL" if fails else ("BLOCKED" if blocks else "PASS"), "non_pass": non_pass}
+
+
 # ------------------------------------------------------------------ the closure marker g1_closed.json
 MARKER_KEYS = ("closed_schema", "run_id", "criteria_id", "criteria_sha256", "evidence_sha256", "evidence_bytes", "summary_sha256", "summary_bytes",
                "recorded_verdict", "recorded_exit_code", "process_exit_proof")

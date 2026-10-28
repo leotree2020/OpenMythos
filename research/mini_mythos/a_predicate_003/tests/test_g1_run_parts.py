@@ -261,6 +261,187 @@ class TestInRunAssessment(unittest.TestCase):
         self.assertIn("This is NOT the verdict", src)
 
 
+def mk_node(state="REGISTERED", pid=5001, starttime=700001, forked_pid=-1, forked_starttime=None, handle=None, node_id="n00002"):
+    return types.SimpleNamespace(state=state, pid=pid, starttime=starttime, forked_pid=pid if forked_pid == -1 else forked_pid, forked_starttime=forked_starttime,
+                                 handle=handle, node_id=node_id)
+
+
+def alive_handle():
+    return types.SimpleNamespace(exited=lambda: False)
+
+
+def exited_handle():
+    return types.SimpleNamespace(exited=lambda: True)
+
+
+class TestAliveNodesOnTheExceptionPath(unittest.TestCase):
+    """The exception path looks at EVERY node of this run (not only the latest one) and at an unreaped child the guard knows; it records, never signals."""
+
+    def stat(self, table):
+        def read_stat(pid):
+            v = table.get(pid)
+            if isinstance(v, Exception):
+                raise v
+            return v
+        return read_stat
+
+    def test_nothing_alive_when_every_node_is_dead(self):
+        self.assertEqual(R.alive_nodes([mk_node(state="DEAD", handle=exited_handle())], None, self.stat({})), [])
+        self.assertEqual(R.alive_nodes([], None, self.stat({})), [])
+
+    def test_a_registered_node_with_a_live_pidfd_is_listed_with_its_verified_identity(self):
+        out = R.alive_nodes([mk_node(handle=alive_handle())], 5001, self.stat({}))
+        self.assertEqual(len(out), 1)
+        self.assertEqual((out[0]["pid"], out[0]["starttime"], out[0]["node_id"], out[0]["verified_by"]), (5001, 700001, "n00002", "REGISTERED record + pidfd"))
+        self.assertIn("NO signal", out[0]["ends_by"])
+
+    def test_a_registered_node_whose_pidfd_says_exited_is_not_alive(self):
+        self.assertEqual(R.alive_nodes([mk_node(handle=exited_handle())], None, self.stat({})), [])
+
+    def test_a_pidfd_that_cannot_be_asked_is_treated_as_alive(self):
+        bad = types.SimpleNamespace(exited=mock.Mock(side_effect=OSError(9, "bad fd")))
+        self.assertEqual(len(R.alive_nodes([mk_node(handle=bad)], None, self.stat({}))), 1)
+
+    def test_a_forked_but_unregistered_node_is_listed_with_an_unverified_identity(self):
+        n = mk_node(state="ABORTED", pid=None, forked_pid=5001, forked_starttime=700001)
+        out = R.alive_nodes([n], 5001, self.stat({5001: {"state": "S", "starttime": 700001}}))
+        self.assertEqual(len(out), 1)
+        self.assertEqual((out[0]["pid"], out[0]["starttime"], out[0]["node_id"], out[0]["state"]), (5001, 700001, "n00002", "S"))
+        self.assertTrue(out[0]["verified_by"].startswith("NONE"))
+
+    def test_gone_or_exited_unreaped_processes_are_nothing_alive(self):
+        n = mk_node(state="ABORTED", pid=None, forked_pid=5001, forked_starttime=700001)
+        for st in (None, {"state": "Z", "starttime": 700001}, {"state": "X", "starttime": 700001}):
+            self.assertEqual(R.alive_nodes([n], None, self.stat({5001: st})), [], st)
+
+    def test_an_unreadable_proc_entry_is_never_guessed_away(self):
+        n = mk_node(state="ABORTED", pid=None, forked_pid=5001, forked_starttime=700001)
+        out = R.alive_nodes([n], None, self.stat({5001: R.C.ProcUnreadable("denied")}))
+        self.assertEqual((len(out), out[0]["state"]), (1, "UNREADABLE"))
+
+    def test_the_previous_dead_node_never_hides_the_current_one_the_stale_s_rec_case(self):
+        prev = mk_node(state="DEAD", pid=5000, starttime=700000, handle=exited_handle(), node_id="n00001")
+        cur = mk_node(state="FORKED", pid=None, forked_pid=5001, forked_starttime=700001, node_id="n00002")
+        out = R.alive_nodes([prev, cur], 5001, self.stat({5001: {"state": "S", "starttime": 700001}}))
+        self.assertEqual([x["node_id"] for x in out], ["n00002"])
+
+    def test_a_node_whose_spawn_did_not_return_is_found_through_the_guards_unreaped_pid(self):
+        prev = mk_node(state="DEAD", pid=5000, handle=exited_handle(), node_id="n00001")
+        cur = mk_node(state="INTENT", pid=None, forked_pid=None, node_id="n00002")           # created before the fork; fork returned, nothing recorded
+        out = R.alive_nodes([prev, cur], 5001, self.stat({5001: {"state": "S", "starttime": 700001}}))
+        self.assertEqual(len(out), 1)
+        self.assertEqual((out[0]["pid"], out[0]["node_id"], out[0]["starttime"]), (5001, None, 700001))
+        self.assertIn("never signalled", out[0]["verified_by"])
+
+    def test_a_pid_that_a_node_accounts_for_is_not_listed_twice(self):
+        out = R.alive_nodes([mk_node(handle=alive_handle())], 5001, self.stat({5001: {"state": "S", "starttime": 700001}}))
+        self.assertEqual(len(out), 1)
+
+    def test_a_registered_node_without_a_handle_is_checked_through_proc(self):
+        n = mk_node(state="REGISTERED", pid=5001, starttime=700001, forked_pid=5001, handle=None)
+        out = R.alive_nodes([n], None, self.stat({5001: {"state": "S", "starttime": 700001}}))
+        self.assertEqual((len(out), out[0]["starttime"]), (1, 700001))
+
+    def test_a_node_before_its_fork_has_no_process(self):
+        self.assertEqual(R.alive_nodes([mk_node(state="INTENT", pid=None, forked_pid=None)], None, self.stat({})), [])
+
+    def test_report_residue_writes_the_manual_disposition_for_the_current_node_only_when_the_previous_is_dead(self):
+        prev = mk_node(state="DEAD", pid=5000, handle=exited_handle(), node_id="n00001")
+        cur = mk_node(state="ABORTED", pid=None, forked_pid=5001, forked_starttime=700001, node_id="n00002")
+        ev = {"exception": None, "manual_disposition": None}
+        with tempfile.TemporaryDirectory() as d, mock.patch.object(R.C, "read_stat", self.stat({5001: {"state": "S", "starttime": 700001}})):
+            alive = R.report_residue(d, F.RUN_ID, ev, [prev, cur], 5001)
+            body = json.load(open(os.path.join(d, "MANUAL_DISPOSITION_REQUIRED.json")))
+        self.assertEqual(len(alive), 1)
+        self.assertEqual((body["alive"]["node_id"], body["alive"]["pid"], body["decision"]), ("n00002", 5001, "a person decides"))
+        self.assertEqual(ev["manual_disposition"]["node_id"], "n00002")
+
+    def test_report_residue_lists_every_live_node(self):
+        a = mk_node(handle=alive_handle(), node_id="n00001", pid=5000, starttime=700000)
+        b = mk_node(state="ABORTED", pid=None, forked_pid=5001, forked_starttime=700001, node_id="n00002")
+        ev = {"exception": None, "manual_disposition": None}
+        with tempfile.TemporaryDirectory() as d, mock.patch.object(R.C, "read_stat", self.stat({5001: {"state": "S", "starttime": 700001}})):
+            alive = R.report_residue(d, F.RUN_ID, ev, [a, b], 5001)
+            body = json.load(open(os.path.join(d, "MANUAL_DISPOSITION_REQUIRED.json")))
+        self.assertEqual(len(alive), 2)
+        self.assertEqual((body["alive"]["count"], sorted(x["node_id"] for x in body["alive"]["alive_nodes"])), (2, ["n00001", "n00002"]))
+        self.assertEqual(ev["manual_disposition"]["count"], 2)
+
+    def test_report_residue_writes_nothing_when_nothing_is_alive(self):
+        ev = {"exception": None, "manual_disposition": None}
+        with tempfile.TemporaryDirectory() as d:
+            self.assertEqual(R.report_residue(d, F.RUN_ID, ev, [mk_node(state="DEAD", handle=exited_handle())], None), [])
+            self.assertEqual(os.listdir(d), [])
+        self.assertIsNone(ev["manual_disposition"])
+
+    def test_the_exception_handler_of_run_uses_every_node_not_s_rec(self):
+        import ast
+        tree = ast.parse(open(os.path.join(G1A.HERE, "g1_run.py"), encoding="utf-8").read())
+        run = next(n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef) and n.name == "run")
+        handlers = [h for t in ast.walk(run) if isinstance(t, ast.Try) for h in t.handlers if h.type is not None and isinstance(h.type, ast.Name) and h.type.id == "BaseException"]
+        self.assertEqual(len(handlers), 1)
+        body = ast.dump(ast.Module(body=handlers[0].body, type_ignores=[]))
+        self.assertNotIn("attr='rec'", body)                                  # no S.rec / stale node in the exception path
+        self.assertIn("report_residue", body)
+        self.assertIn("guard", body)
+        self.assertIn("live_pid", body)
+        self.assertIn("nodes", body)
+
+    def test_run_test_forgets_the_previous_node_before_it_spawns_and_marks_the_stop_on_an_exception(self):
+        import ast
+        src = open(os.path.join(G1A.HERE, "g1_run.py"), encoding="utf-8").read()
+        tree = ast.parse(src)
+        fn = next(n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef) and n.name == "run_test")
+        seg = ast.get_source_segment(src, fn)
+        self.assertLess(seg.index("S.rec = None"), seg.index("obs.spawn_direct("))
+        self.assertIn('ev["stopped_after"] = tid', seg)
+        self.assertIn("GJ.judge_test_in_run(_in_run_view(S), S.crit, tid)", seg)
+        self.assertIn("in_run_assessment(t, scn, rec.exit_status, guard.violations, ev[\"deadline_hits\"], judged)", seg)
+
+
+class TestInRunJudgementWiring(unittest.TestCase):
+    def good(self):
+        return {"messages_received": 0, "first_action_mono": None, "ready_received": False, "cleanup": {"cleanup_ok": True}}
+
+    def test_a_non_pass_in_run_judgement_stops_the_run_even_when_everything_else_looks_fine(self):
+        for verdict in ("FAIL", "BLOCKED"):
+            ok, reasons = R.in_run_assessment(self.good(), {"expected_exit": 111}, 111, [], [], {"verdict": verdict, "non_pass": {"G1-C04": "FAIL/C04-F1"}})
+            self.assertFalse(ok, verdict)
+            self.assertTrue(any("in-run judge" in r for r in reasons))
+        self.assertEqual(R.in_run_assessment(self.good(), {"expected_exit": 111}, 111, [], [], {"verdict": "PASS", "non_pass": {}}), (True, []))
+
+    def test_minimal_counterexample_a_pid_mismatch_with_the_expected_exit_code_used_to_continue_the_run(self):
+        ev = F.mutate(F.good_evidence(ran=2), **{"tests.T2_EOF.snapshots.S1b_pre_stimulus.child.pid": 6000})
+        t = ev["tests"]["T2_EOF"]
+        before_the_review = R.in_run_assessment(t, {"expected_exit": 111}, 111, [], [])              # exit status, messages, cleanup, violations, deadlines only
+        self.assertEqual(before_the_review, (True, []))
+        judged = GJ.judge_test_in_run(ev, CRIT, "T2_EOF")
+        self.assertEqual((judged["verdict"], "G1-C04" in judged["non_pass"]), ("FAIL", True))
+        ok, reasons = R.in_run_assessment(t, {"expected_exit": 111}, 111, [], [], judged)
+        self.assertFalse(ok)
+        self.assertTrue(any("G1-C04" in r for r in reasons))
+
+    def test_the_view_has_everything_the_judge_needs_for_one_test(self):
+        ev = F.good_evidence(ran=2)
+        ledger = [r for r in ev["reg_memory_records"] if r["kind"] != "RUN_END"]                 # the run is still in progress: no RUN_END yet
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, "registry.jsonl")
+            with open(path, "w") as f:
+                for r in ledger:
+                    f.write(json.dumps(r, sort_keys=True) + "\n")
+            S = types.SimpleNamespace(ev=ev, obs=types.SimpleNamespace(reg_path=path, reg=types.SimpleNamespace(records=ledger, seq=len(ledger))),
+                                      guard=types.SimpleNamespace(summary=lambda: ev["guard"]), t0=R.C.mono() - 1.0)
+            view = R._in_run_view(S)
+        self.assertEqual(view["reg_memory_records"], ledger)
+        self.assertEqual(view["reg"], ledger)
+        self.assertEqual((view["reg_writer_seq"], view["reg_parse_info"]["corrupt_lines"], view["reg_parse_info"]["torn_tail"]), (len(ledger), 0, False))
+        self.assertGreaterEqual(view["timing"]["duration"], 1.0)
+        for tid in ("T1_ABORT", "T2_EOF"):
+            res = GJ.judge_test_in_run(view, CRIT, tid)
+            self.assertEqual((res["verdict"], res["non_pass"]), ("PASS", {}), tid)
+        self.assertIsNot(view["guard"], ev["guard"])
+
+
 class TestSmallHelpers(unittest.TestCase):
     def test_blank_test_has_exactly_the_per_test_schema_fields(self):
         names = {f["path"].split(".")[-1] for f in CRIT["evidence_schema"]["fields"] if f["path"].startswith("tests.T1_ABORT.")}

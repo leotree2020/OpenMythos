@@ -3,7 +3,7 @@
 
 Uses ONLY source reading, ast, json, re, hashlib and the text of `git diff --name-status` (passed in with --changed-files; this tool starts no process).
 It never imports or executes g1_*.py, g0_*.py, the bench, or any test; the CPU tests are NOT run by this tool.
-usage: audit_g1_implementation.py [--changed-files FILE] [--out DIR]       Exit 0 = no finding, 1 = findings (all listed).
+usage: audit_g1_implementation.py [--changed-files FILE] [--review-changed-files FILE] [--out DIR]       Exit 0 = no finding, 1 = findings (all listed).
 Writes (with --out): G1_STATIC_AUDIT.md, G1_TRACEABILITY.md, g1_static_audit.json."""
 import ast
 import builtins
@@ -19,9 +19,9 @@ G0 = os.path.join(A003, "gate_g0")
 G1 = os.path.join(A003, "gate_g1")
 TESTS = os.path.join(A003, "tests")
 IMPL = ("g1_auth.py", "g1_judge.py", "g1_run.py")
-TEST_FILES = ("test_g1_judge_cases.py", "test_g1_auth_preflight.py", "test_g1_run_parts.py", "test_g1_boundaries.py", "test_g1_mutations.py")
+TEST_FILES = ("test_g1_judge_cases.py", "test_g1_auth_preflight.py", "test_g1_run_parts.py", "test_g1_boundaries.py", "test_g1_mutations.py", "test_g1_runner_acceptance.py")
 FILES = {"auth": os.path.join(G1, "g1_auth.py"), "judge": os.path.join(G1, "g1_judge.py"), "run": os.path.join(G1, "g1_run.py"),
-         "t:fixtures": os.path.join(TESTS, "g1_fixtures.py"), "tool:runner": os.path.join(HERE, "run_g1_cpu_tests.py"), "tool:audit": os.path.join(HERE, "audit_g1_implementation.py")}
+         "t:fixtures": os.path.join(TESTS, "g1_fixtures.py"), "tool:runner": os.path.join(HERE, "run_g1_cpu_tests.py"), "tool:acceptance": os.path.join(HERE, "g1_test_acceptance.py"), "tool:audit": os.path.join(HERE, "audit_g1_implementation.py")}
 for t in TEST_FILES:
     FILES["t:" + t] = os.path.join(TESTS, t)
 SRC = {k: open(p, encoding="utf-8").read() for k, p in FILES.items()}
@@ -223,6 +223,7 @@ need(sha(os.path.join(d0, "g0_closed.json")) == g0_ref["closed_sha256"] and sha(
      and sha(os.path.join(d0, "g0_summary.json")) == g0_ref["summary_sha256"], "the G0 REAL-001 evidence changed")
 ALLOWED_PREFIXES = ("research/mini_mythos/a_predicate_003/gate_g1/", "research/mini_mythos/a_predicate_003/tests/g1_fixtures.py", "research/mini_mythos/a_predicate_003/tests/test_g1_",
                     "research/mini_mythos/a_predicate_003/tools/run_g1_cpu_tests.py", "research/mini_mythos/a_predicate_003/tools/audit_g1_implementation.py",
+                    "research/mini_mythos/a_predicate_003/tools/g1_test_acceptance.py",
                     "research/mini_mythos/a_predicate_003/g1_impl_static_audit/", "research/mini_mythos/docs/")
 changed = None
 if "--changed-files" in sys.argv:
@@ -237,6 +238,50 @@ if "--changed-files" in sys.argv:
         for p in paths:
             if p.endswith(("g1_criteria_v1.json", "E1A_GATE_G1_PREREG.md", "g1_criteria_v1.json.sha256", "E1A_GATE_G1_PREREG.md.sha256")):
                 need(status == "A", "a frozen G1 file is reported as %s (only its freezing commit may add it)" % status)
+
+REVIEW_ALLOWED = ("research/mini_mythos/a_predicate_003/gate_g1/g1_run.py", "research/mini_mythos/a_predicate_003/gate_g1/g1_judge.py", "research/mini_mythos/a_predicate_003/tests/",
+                  "research/mini_mythos/a_predicate_003/tools/", "research/mini_mythos/a_predicate_003/g1_impl_static_audit/", "research/mini_mythos/docs/")
+review_changed = None
+if "--review-changed-files" in sys.argv:        # git diff --name-status <reviewed commit 453fe4e> HEAD: only the two implementation files, tests, tools, audit outputs and docs may change
+    review_changed = [ln.split("\t") for ln in open(sys.argv[sys.argv.index("--review-changed-files") + 1], encoding="utf-8").read().splitlines() if ln.strip()]
+    for status, *paths in review_changed:
+        for p in paths:
+            need(p.startswith(REVIEW_ALLOWED), "review-fix change outside the allowed files: %s %s" % (status, p))
+            need(not p.endswith(("g1_criteria_v1.json", "E1A_GATE_G1_PREREG.md", ".sha256", "g1_auth.py", "E1A_GATE_G1_DESIGN.md")), "a frozen / untouched G1 file changed in the review fix: %s" % p)
+        need(status.startswith(("A", "M")), "unexpected review-fix status %s %s" % (status, paths))
+
+# ------------------------------------------------------------------ 4b. review fixes: residue on the exception path, in-run judgement, runner acceptance
+run_tree = ast.parse(SRC["run"])
+run_fn = next(n for n in ast.walk(run_tree) if isinstance(n, ast.FunctionDef) and n.name == "run")
+handlers = [h for t in ast.walk(run_fn) if isinstance(t, ast.Try) for h in t.handlers if isinstance(h.type, ast.Name) and h.type.id == "BaseException"]
+need(len(handlers) == 1, "run() must have exactly one BaseException handler")
+if handlers:
+    hdump = ast.dump(ast.Module(body=handlers[0].body, type_ignores=[]))
+    need("attr='rec'" not in hdump, "the exception path of run() must not use S.rec (stale node of an earlier test)")
+    need("report_residue" in hdump and "live_pid" in hdump and "nodes" in hdump, "the exception path of run() must report every node and the guard's unreaped child")
+rt_src = ast.get_source_segment(SRC["run"], next(n for n in ast.walk(run_tree) if isinstance(n, ast.FunctionDef) and n.name == "run_test"))
+need(rt_src.index("S.rec = None") < rt_src.index("obs.spawn_direct("), "run_test must forget the previous node before it spawns")
+need("GJ.judge_test_in_run(_in_run_view(S), S.crit, tid)" in rt_src and 'ev["deadline_hits"], judged)' in rt_src, "run_test must stop on the in-run judgement")
+need('ev["stopped_after"] = tid' in rt_src, "run_test must mark the stop on an exception")
+need("def judge_test_in_run(" in SRC["judge"] and "IN_RUN_CHECKS = (" in SRC["judge"], "g1_judge: in-run judgement")
+acc_src = SRC["tool:acceptance"]
+need(re.search(r"EXPECTED_TOTAL_TESTS = (\d+)", acc_src), "acceptance: expected total constant")
+runner_src = SRC["tool:runner"]
+for must in ("ACC.assess(full_selection, all_rows,", "full_selection = sel is None", 'report["verdict"] = acc["verdict"]', 'return acc["exit_code"]', "def addSkip(", "def addExpectedFailure(", "def addUnexpectedSuccess("):
+    need(must in runner_src, "runner acceptance: %r missing" % must)
+need("all_ok" not in runner_src and 'report["verdict"] = "PASS"' not in runner_src, "runner: a PASS must only come from the acceptance function")
+ids = []
+for t in TEST_FILES:
+    for c in ast.parse(SRC["t:" + t]).body:
+        if isinstance(c, ast.ClassDef):
+            ids += ["%s.%s.%s" % (t[:-3], c.name, m.name) for m in c.body if isinstance(m, ast.FunctionDef) and m.name.startswith("test_")]
+need(len(ids) == len(set(ids)), "duplicate test ids (a later definition would silently replace an earlier test)")
+total_const = int(re.search(r"EXPECTED_TOTAL_TESTS = (\d+)", acc_src).group(1))
+need(total_const == len(ids), "EXPECTED_TOTAL_TESTS %d != the %d tests found by ast" % (total_const, len(ids)))
+groups_node = next(n for n in ast.parse(runner_src).body if isinstance(n, ast.Assign) and any(isinstance(t, ast.Name) and t.id == "GROUPS" for t in n.targets))
+grouped = {c.value for c in ast.walk(groups_node.value) if isinstance(c, ast.Constant) and isinstance(c.value, str) and c.value.startswith("test_g1_")}
+need(grouped == {t[:-3] for t in TEST_FILES}, "runner GROUPS differ from the test files: %s" % sorted(grouped ^ {t[:-3] for t in TEST_FILES}))
+need(len([f for f in os.listdir(TESTS) if re.match(r"test_g1_.*\.py$", f)]) == len(TEST_FILES), "a test_g1_*.py file is not audited")
 
 # ------------------------------------------------------------------ 5. test inventory (never run by this tool)
 inventory = {}
@@ -315,8 +360,17 @@ ROWS = [
     ("T3 INVALID_BYTE scenario (one byte r, exit 111)", "scenarios.T3_INVALID_BYTE", [(T_R, r'kind == "write_byte"')], [(TJ, r"def test_the_wrong_byte_instead_of_the_planned_one_is_c07_f2")]),
     ("T4 TIMEOUT scenario (silent gate, t_gate_max 2.0 s, fork-time reference, exit 112)", "scenarios.T4_TIMEOUT", [(T_R, r'kind == "none"'), (T_J, r"earliest = fe\[\"mono_before\"\]")],
      [(TJ, r"def test_t4_exit_observed_later_than_5s_after_the_fork_blocks"), (TJ, r"def test_t4_identity_taken_too_late_for_the_gate_timer_is_unevaluable_never_pass")]),
-    ("sequential execution T1 -> T4, first non-PASS stops the run (in-run safety rule)", "enforcement.stop_rule", [(T_R, r"^def in_run_assessment\("), (T_R, r"if not run_test\(S, tid\):")],
-     [(TR, r"class TestInRunAssessment"), (TM, r"def test_an_in_run_rule_that_ignores_the_exit_status")]),
+    ("sequential execution T1 -> T4, first non-PASS stops the run (in-run safety rule = the judge's own checks on the evidence so far)", "enforcement.stop_rule",
+     [(T_R, r"^def in_run_assessment\("), (T_R, r"if not run_test\(S, tid\):"), (T_R, r"^def _in_run_view\("), (T_J, r"^def judge_test_in_run\("), (T_J, r"^IN_RUN_CHECKS")],
+     [(TR, r"class TestInRunAssessment"), (TR, r"def test_minimal_counterexample_a_pid_mismatch_with_the_expected_exit_code_used_to_continue_the_run"), (TJ, r"class TestInRunJudgement"),
+      (TM, r"def test_an_in_run_rule_that_ignores_the_exit_status"), (TM, r"def test_a_stop_rule_without_the_identity_check_lets_a_pid_mismatch_through")]),
+    ("exception path: every node of this run and the guard's unreaped child are checked; manual disposition, no signal (no stale S.rec)", "enforcement.no_signals / residue_policy",
+     [(T_R, r"^def alive_nodes\("), (T_R, r"^def report_residue\("), (T_R, r"report_residue\(run_dir, run_id, ev, list\(obs\.nodes\.values\(\)\)")],
+     [(TR, r"class TestAliveNodesOnTheExceptionPath"), (TR, r"def test_the_previous_dead_node_never_hides_the_current_one_the_stale_s_rec_case"), (TR, r"def test_a_node_whose_spawn_did_not_return_is_found_through_the_guards_unreaped_pid"),
+      (TR, r"def test_the_exception_handler_of_run_uses_every_node_not_s_rec"), (TM, r"class TestReviewFixMutations")]),
+    ("CPU runner: PASS only for a FULL run with every expected test id executed once and PASS (0 SKIP / FAIL / ERROR / load error / sentinel hit)", "(CPU test obligation)",
+     [("tool:acceptance", r"^def assess\("), ("tool:acceptance", r"^def discover_expected_ids\("), ("tool:runner", r"ACC\.assess\(full_selection")],
+     [("t:test_g1_runner_acceptance.py", r"class TestIncompleteIsNeverPass"), ("t:test_g1_runner_acceptance.py", r"def test_a_skip_is_not_a_pass"), ("t:test_g1_runner_acceptance.py", r"class TestAcceptanceMutations")]),
     ("PASS / FAIL / BLOCKED / NOT_RUN strictly apart; RUN-INCOMPLETE", "verdict_policy", [(T_J, r"^def judge\("), (T_J, r"incomplete = bool\(not_run\)"), (T_R, r"^def blank_test\(")],
      [(TJ, r"def test_a_run_that_stopped_early_but_passed_so_far_is_blocked_not_pass"), (TJ, r"def test_not_run_after_a_failed_test_is_legitimate_and_the_verdict_is_fail"), (TM, r"def test_a_mutant_that_calls_an_incomplete_run_pass")]),
     ("damaged evidence is UNEVALUABLE, never a wrong FAIL", "verdict_policy.4", [(T_J, r"^def _run_check\("), (T_J, r"^def _consumed_invalid\(")],
@@ -358,7 +412,7 @@ for cid in crit["checks"]:
 files_hashes = {}
 for rel in ("gate_g1/g1_auth.py", "gate_g1/g1_judge.py", "gate_g1/g1_run.py", "gate_g1/g1_criteria_v1.json", "gate_g1/E1A_GATE_G1_PREREG.md", "tests/g1_fixtures.py",
             "tests/test_g1_judge_cases.py", "tests/test_g1_auth_preflight.py", "tests/test_g1_run_parts.py", "tests/test_g1_boundaries.py", "tests/test_g1_mutations.py",
-            "tools/run_g1_cpu_tests.py", "tools/audit_g1_implementation.py"):
+            "tests/test_g1_runner_acceptance.py", "tools/run_g1_cpu_tests.py", "tools/g1_test_acceptance.py", "tools/audit_g1_implementation.py"):
     files_hashes[rel] = {"sha256": sha(os.path.join(A003, rel)), "git_blob_sha1": blob(os.path.join(A003, rel)), "lines": len(open(os.path.join(A003, rel), encoding="utf-8").read().splitlines())}
 
 print("files audited:", len(SRC), "| syntax + undefined-name + unused-import audit:", "clean" if not any(u or v for _, u, v in name_rows) else "FINDINGS")

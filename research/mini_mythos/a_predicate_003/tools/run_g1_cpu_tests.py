@@ -56,12 +56,12 @@ for _n in ("Popen", "run", "call", "check_call", "check_output"):
 GROUPS = [
     ("g1_judge_cases", ["test_g1_judge_cases"]),
     ("g2_auth_preflight_pipeline", ["test_g1_auth_preflight", "test_g1_run_parts"]),
-    ("g3_boundaries_and_mutations", ["test_g1_boundaries", "test_g1_mutations"]),
+    ("g3_boundaries_mutations_acceptance", ["test_g1_boundaries", "test_g1_mutations", "test_g1_runner_acceptance"]),
 ]
 G1_KEY_FILES = ("gate_g1/g1_auth.py", "gate_g1/g1_judge.py", "gate_g1/g1_run.py", "gate_g1/g1_criteria_v1.json", "gate_g1/E1A_GATE_G1_PREREG.md",
                 "gate_g1/g1_criteria_v1.json.sha256", "gate_g1/E1A_GATE_G1_PREREG.md.sha256", "tests/g1_fixtures.py", "tests/test_g1_judge_cases.py",
                 "tests/test_g1_auth_preflight.py", "tests/test_g1_run_parts.py", "tests/test_g1_boundaries.py", "tests/test_g1_mutations.py",
-                "tools/run_g1_cpu_tests.py", "tools/audit_g1_implementation.py")
+                "tools/run_g1_cpu_tests.py", "tools/g1_test_acceptance.py", "tests/test_g1_runner_acceptance.py", "tools/audit_g1_implementation.py")
 
 
 class Result(unittest.TextTestResult):
@@ -91,6 +91,14 @@ class Result(unittest.TextTestResult):
     def addSkip(self, test, reason):
         unittest.TextTestResult.addSkip(self, test, reason)
         self._row(test, "SKIP", reason)
+
+    def addExpectedFailure(self, test, err):
+        unittest.TextTestResult.addExpectedFailure(self, test, err)
+        self._row(test, "XFAIL", "expected failure: the test did not pass")           # an unknown status: never part of an acceptance PASS
+
+    def addUnexpectedSuccess(self, test):
+        unittest.TextTestResult.addUnexpectedSuccess(self, test)
+        self._row(test, "XPASS", "unexpected success")
 
     def addSubTest(self, test, subtest, err):
         unittest.TextTestResult.addSubTest(self, test, subtest, err)
@@ -126,7 +134,9 @@ def main(argv):
     env = {**E.environment_info(), "tmpdir": tmp, "cwd": os.getcwd(), "git_sha_expected": expect, "git_head_actual": ident.get("actual_head"),
            "git_sha_match": ident.get("actual_head") == expect and expect is not None, "checkout_identity": ident}
     report = {"environment": env, "groups": [], "started_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
-    all_ok = True
+    import g1_test_acceptance as ACC
+    full_selection = sel is None
+    all_rows, all_load_errors = [], []
     if not ident["ok"]:
         report["sentinel_violations"] = list(VIOLATIONS)
         report["verdict"] = "REFUSED"
@@ -152,11 +162,21 @@ def main(argv):
         rows = res.rows
         counts = {k: sum(1 for r in rows if r["status"] == k) for k in ("PASS", "FAIL", "ERROR", "SKIP")}
         report["groups"].append({"group": gname, "modules": mods, "tests_run": res.testsRun, "counts": counts, "load_errors": load_errors, "rows": rows})
-        all_ok = all_ok and not load_errors and counts["FAIL"] == 0 and counts["ERROR"] == 0
+        all_rows.extend(rows)
+        all_load_errors.extend(load_errors)
         print("%-42s run=%3d PASS=%3d FAIL=%3d ERROR=%3d SKIP=%3d load_errors=%d" % (gname, res.testsRun, counts["PASS"], counts["FAIL"], counts["ERROR"], counts["SKIP"], len(load_errors)))
     report["sentinel_violations"] = list(VIOLATIONS)
-    report["verdict"] = "PASS" if (all_ok and not VIOLATIONS) else "FAIL"
-    print("process-safety sentinel violations:", len(VIOLATIONS), "| verdict:", report["verdict"])
+    acc = ACC.assess(full_selection, all_rows, ACC.discover_expected_ids(os.path.join(A003, "tests")), ACC.EXPECTED_TOTAL_TESTS, all_load_errors, VIOLATIONS)
+    report["acceptance"] = acc
+    report["verdict"] = acc["verdict"]                                  # PASS only for a FULL run in which every expected test id executed once and passed
+    print("process-safety sentinel violations:", len(VIOLATIONS), "| verdict:", report["verdict"], "| scope:", acc["acceptance_scope"])
+    print("acceptance: expected %d (unique %d) | executed %d (unique %d) | PASS unique %d | missing %d | unexpected %d | duplicates %d | SKIP %d | load errors %d" % (
+        acc["expected_total"], acc["expected_unique"], acc["executed_rows"], acc["executed_unique"], acc["pass_unique"], len(acc["missing_ids"]), len(acc["unexpected_ids"]),
+        len(acc["duplicate_ids"]), acc["counts"]["SKIP"], acc["load_errors"]))
+    if not full_selection:
+        print("DIAGNOSTIC ONLY: a partial (--groups) run is never an acceptance PASS")
+    for reason in acc["reasons"]:
+        print("  reason:", reason)
     for g in report["groups"]:
         for r in g["rows"]:
             if r["status"] in ("FAIL", "ERROR"):
@@ -174,7 +194,7 @@ def main(argv):
                     f.write("%-5s %s (%.3fs)\n" % (r["status"], r["id"], r["seconds"]))
                     if r["status"] in ("FAIL", "ERROR"):
                         f.write(r["detail"] + "\n")
-    return 0 if report["verdict"] == "PASS" else 1
+    return acc["exit_code"]
 
 
 if __name__ == "__main__":

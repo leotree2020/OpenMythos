@@ -256,5 +256,81 @@ class TestRunnerMutations(unittest.TestCase):
             self.assertEqual(src.count(old), 1, old)
 
 
+def mk_node(state="REGISTERED", pid=5001, starttime=700001, forked_pid=-1, forked_starttime=None, handle=None, node_id="n00002"):
+    return types.SimpleNamespace(state=state, pid=pid, starttime=starttime, forked_pid=pid if forked_pid == -1 else forked_pid, forked_starttime=forked_starttime,
+                                 handle=handle, node_id=node_id)
+
+
+def live_handle():
+    return types.SimpleNamespace(exited=lambda: False)
+
+
+class TestReviewFixMutations(unittest.TestCase):
+    """Mutants of the two review fixes (residue on the exception path, in-run judgement as the stop rule)."""
+    ALIVE = {5001: {"state": "S", "starttime": 700001}}
+
+    def stat(self, pid):
+        if pid == 5099:
+            raise R.C.ProcUnreadable("denied")
+        return self.ALIVE.get(pid)
+
+    def test_a_stop_rule_without_the_identity_check_lets_a_pid_mismatch_through(self):
+        ev = F.mutate(F.good_evidence(ran=2), **{"tests.T2_EOF.snapshots.S1b_pre_stimulus.child.pid": 6000})
+        real = GJ.judge_test_in_run(ev, CRIT, "T2_EOF")["verdict"]
+        mutant = load_mutant("g1_judge.py", [('IN_RUN_CHECKS = ("G1-C04", ', "IN_RUN_CHECKS = (")]).judge_test_in_run(ev, CRIT, "T2_EOF")["verdict"]
+        self.assertEqual((real, mutant), ("FAIL", "PASS"))
+
+    def test_a_stop_rule_that_always_says_pass(self):
+        ev = F.mutate(F.good_evidence(ran=2), **{"tests.T2_EOF.reap.exit_status": 0})
+        m = load_mutant("g1_judge.py", [('return {"verdict": "FAIL" if fails else ("BLOCKED" if blocks else "PASS"), "non_pass": non_pass}', 'return {"verdict": "PASS", "non_pass": non_pass}')])
+        self.assertEqual((GJ.judge_test_in_run(ev, CRIT, "T2_EOF")["verdict"], m.judge_test_in_run(ev, CRIT, "T2_EOF")["verdict"]), ("FAIL", "PASS"))
+
+    def test_an_assessment_that_ignores_the_in_run_judgement(self):
+        t = {"messages_received": 0, "first_action_mono": None, "ready_received": False, "cleanup": {"cleanup_ok": True}}
+        judged = {"verdict": "FAIL", "non_pass": {"G1-C04": "FAIL/C04-F1"}}
+        m = load_mutant("g1_run.py", [('if judged is not None and judged.get("verdict") != "PASS":', "if False:")])
+        self.assertFalse(R.in_run_assessment(t, {"expected_exit": 111}, 111, [], [], judged)[0])
+        self.assertTrue(m.in_run_assessment(t, {"expected_exit": 111}, 111, [], [], judged)[0])
+
+    def test_an_exception_path_that_forgets_the_guards_unreaped_child(self):
+        nodes = [mk_node(state="DEAD", pid=5000, handle=types.SimpleNamespace(exited=lambda: True), node_id="n00001"), mk_node(state="INTENT", pid=None, forked_pid=None)]
+        m = load_mutant("g1_run.py", [("    if live_pid is not None and live_pid not in covered:\n", "    if False:\n")])
+        self.assertEqual(len(R.alive_nodes(nodes, 5001, self.stat)), 1)
+        self.assertEqual(m.alive_nodes(nodes, 5001, self.stat), [])
+
+    def test_an_exception_path_that_only_looks_at_the_latest_node(self):
+        nodes = [mk_node(handle=live_handle(), pid=5000, starttime=700000, node_id="n00001"), mk_node(state="ABORTED", pid=None, forked_pid=5001, forked_starttime=700001)]
+        m = load_mutant("g1_run.py", [('    for rec in nodes:\n        if getattr(rec, "state", None) == "DEAD":', '    for rec in list(nodes)[-1:]:\n        if getattr(rec, "state", None) == "DEAD":')])
+        self.assertEqual(len(R.alive_nodes(nodes, None, self.stat)), 2)
+        self.assertEqual(len(m.alive_nodes(nodes, None, self.stat)), 1)
+
+    def test_an_exception_path_that_guesses_an_unreadable_process_away(self):
+        n = mk_node(state="ABORTED", pid=None, forked_pid=5099, forked_starttime=1)
+        m = load_mutant("g1_run.py", [('            return {"state": "UNREADABLE", "starttime": None}', "            return None")])
+        self.assertEqual(len(R.alive_nodes([n], None, self.stat)), 1)
+        self.assertEqual(m.alive_nodes([n], None, self.stat), [])
+
+    def test_an_exception_path_that_finds_a_child_but_writes_no_manual_disposition(self):
+        n = mk_node(state="ABORTED", pid=None, forked_pid=5001, forked_starttime=700001)
+        m = load_mutant("g1_run.py", [('    if alive:\n        _manual(run_dir, run_id,', '    if False:\n        _manual(run_dir, run_id,')])
+        outcomes = []
+        for mod in (R, m):
+            ev = {"exception": None, "manual_disposition": None}
+            with tempfile.TemporaryDirectory() as d, mock.patch.object(mod.C, "read_stat", self.stat):
+                mod.report_residue(d, F.RUN_ID, ev, [n], 5001)
+                outcomes.append((os.path.exists(os.path.join(d, "MANUAL_DISPOSITION_REQUIRED.json")), ev["manual_disposition"] is not None))
+        self.assertEqual(outcomes, [(True, True), (False, False)])
+
+    def test_all_review_fix_anchors_exist_exactly_once(self):
+        jsrc = open(os.path.join(G1A.HERE, "g1_judge.py"), encoding="utf-8").read()
+        rsrc = open(os.path.join(G1A.HERE, "g1_run.py"), encoding="utf-8").read()
+        for old in ('IN_RUN_CHECKS = ("G1-C04", ', 'return {"verdict": "FAIL" if fails else ("BLOCKED" if blocks else "PASS"), "non_pass": non_pass}'):
+            self.assertEqual(jsrc.count(old), 1, old)
+        for old in ('if judged is not None and judged.get("verdict") != "PASS":', "    if live_pid is not None and live_pid not in covered:\n",
+                    '    for rec in nodes:\n        if getattr(rec, "state", None) == "DEAD":', '            return {"state": "UNREADABLE", "starttime": None}',
+                    '    if alive:\n        _manual(run_dir, run_id,'):
+            self.assertEqual(rsrc.count(old), 1, old)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

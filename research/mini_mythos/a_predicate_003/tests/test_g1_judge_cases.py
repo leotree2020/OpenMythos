@@ -648,6 +648,105 @@ class TestManualDispositionAndErrors(unittest.TestCase):
         self.assertEqual(res["verdict"], "BLOCKED")
 
 
+class TestInRunJudgement(unittest.TestCase):
+    """The in-run safety rule uses the very check functions of the judge, so the first test that is not PASS is also the last one executed."""
+
+    def view(self, ev=None):
+        return F.good_evidence(ran=2) if ev is None else ev
+
+    def test_a_clean_partial_run_passes_for_every_executed_test(self):
+        for tid in ("T1_ABORT", "T2_EOF"):
+            res = GJ.judge_test_in_run(self.view(), CRIT, tid)
+            self.assertEqual((res["verdict"], res["non_pass"]), ("PASS", {}), tid)
+
+    def test_only_checks_that_do_not_need_the_end_of_the_run_are_used(self):
+        self.assertEqual(GJ.IN_RUN_CHECKS, tuple("G1-C%02d" % i for i in range(4, 16)))
+        for cid in ("G1-C01", "G1-C02", "G1-C03", "G1-C16", "G1-C17"):
+            self.assertNotIn(cid, GJ.IN_RUN_CHECKS)
+        self.assertTrue(set(GJ.IN_RUN_CHECKS) <= set(GJ.CHECK_IDS))
+
+    def test_run_level_and_end_of_run_parts_do_not_matter_in_run(self):
+        ev = self.view()
+        L = ev["reg_memory_records"]
+        L[:] = [r for r in L if r["kind"] != "RUN_END"]
+        F.sync_ledger(ev)
+        ev["cleanup"] = None
+        ev["run_snapshots"] = {}
+        ev["preflight"]["ok"] = False
+        res = GJ.judge_test_in_run(ev, CRIT, "T2_EOF")
+        self.assertEqual(res["verdict"], "PASS", res)
+
+    def test_the_evidence_is_not_modified(self):
+        ev = self.view()
+        before = copy.deepcopy(ev)
+        GJ.judge_test_in_run(ev, CRIT, "T1_ABORT")
+        self.assertEqual(ev, before)
+
+    def test_a_test_that_is_not_marked_as_run_is_not_pass(self):
+        res = GJ.judge_test_in_run(self.view(), CRIT, "T3_INVALID_BYTE")
+        self.assertEqual(res["verdict"], "BLOCKED")
+        self.assertIn("RUN", res["non_pass"])
+
+    def test_each_evidenced_violation_stops_the_run_with_fail(self):
+        def extra_byte(ev):
+            ev["guard"]["gate_writes"].append({"test": "T2_EOF", "byte": 65, "mono_before": 1010.43, "mono_after": 1010.431, "result": "ok", "returned": 1, "errno": None, "error": None})
+            return ev
+
+        def gate_end(ev):
+            ev["tests"]["T2_EOF"]["snapshots"]["S1_held_registered_unreleased"]["fds"]["5"] = {"target": "pipe:[9001]", "access": "w"}
+            return ev
+
+        def violation(call):
+            def f(ev):
+                ev["guard"]["violations"].append({"call": call, "mono": 1.0, "test": "T2_EOF", "args": ""})
+                return ev
+            return f
+
+        def ticket(ev):
+            return edit_both(ev, "INTENT", NIDS["T2_EOF"], creator="n00001")
+        cases = [("identity mismatch", lambda ev: F.mutate(ev, **{"tests.T2_EOF.snapshots.S1b_pre_stimulus.child.pid": 6000}), "G1-C04"),
+                 ("registered pid differs", lambda ev: edit_both(ev, "REGISTERED", NIDS["T2_EOF"], pid=4999), "G1-C04"),
+                 ("message before release", lambda ev: F.mutate(ev, **{"tests.T2_EOF.snapshots.S1_held_registered_unreleased.messages_received": 1}), "G1-C05"),
+                 ("gate write end in the child", gate_end, "G1-C06"), ("extra gate byte", extra_byte, "G1-C07"), ("R write attempt", violation(GJ.R_WRITE_CALL), "G1-C07"),
+                 ("wrong exit code", lambda ev: F.mutate(ev, **{"tests.T2_EOF.reap.exit_status": 112}), "G1-C10"),
+                 ("exit status 0", lambda ev: F.mutate(ev, **{"tests.T2_EOF.reap.exit_status": 0}), "G1-C10"),
+                 ("second fork", lambda ev: F.mutate(ev, **{"guard.fork_calls": 3}), "G1-C11"), ("ticket", ticket, "G1-C11"),
+                 ("signal call", violation("os.kill"), "G1-C12")]
+        for name, build, cid in cases:
+            res = GJ.judge_test_in_run(build(self.view()), CRIT, "T2_EOF")
+            self.assertEqual(res["verdict"], "FAIL", name)
+            self.assertIn(cid, res["non_pass"], name)
+
+    def test_each_unconfirmed_condition_stops_the_run_with_blocked(self):
+        cases = [("exit 113", {"tests.T2_EOF.reap.exit_status": 113}, "G1-C10"), ("no zombie observed", {"tests.T2_EOF.snapshots.S3_exited_unreaped.child.state": "S"}, "G1-C08"),
+                 ("cleanup not ok", {"tests.T2_EOF.cleanup.cleanup_ok": False}, "G1-C13"), ("descriptors changed", {"tests.T2_EOF.snapshots.S5_after_cleanup.fd_count": 6}, "G1-C14"),
+                 ("test over budget", {"tests.T2_EOF.timing.duration": 7.5}, "G1-C15"), ("deadline hit", {"deadline_hits": ["exit:T2_EOF"]}, "G1-C15"),
+                 ("child absent at S1", {"tests.T2_EOF.snapshots.S1_held_registered_unreleased.child": None}, "G1-C04")]
+        for name, change, cid in cases:
+            res = GJ.judge_test_in_run(F.mutate(self.view(), **change), CRIT, "T2_EOF")
+            self.assertEqual(res["verdict"], "BLOCKED", name)
+            self.assertIn(cid, res["non_pass"], name)
+
+    def test_an_unfaithful_durable_copy_stops_the_run(self):
+        ev = self.view()
+        ev["reg"][2]["label"] = "tampered"
+        res = GJ.judge_test_in_run(ev, CRIT, "T2_EOF")
+        self.assertEqual(res["verdict"], "BLOCKED")
+        self.assertTrue({"G1-C04", "G1-C05", "G1-C11", "G1-C13"} <= set(res["non_pass"]))
+
+    def test_the_in_run_judgement_agrees_with_the_final_judge_on_the_same_test(self):
+        for build in (lambda e: e, lambda e: F.mutate(e, **{"tests.T2_EOF.snapshots.S1b_pre_stimulus.child.pid": 6000}),
+                      lambda e: F.mutate(e, **{"tests.T2_EOF.reap.exit_status": 113}), lambda e: F.mutate(e, **{"tests.T2_EOF.reap.exit_status": 0})):
+            ev = build(self.view())
+            final = J(ev)
+            in_run = GJ.judge_test_in_run(ev, CRIT, "T2_EOF")
+            in_run_checks = {cid: final["tests"]["T2_EOF"]["checks"][cid]["state"] for cid in GJ.IN_RUN_CHECKS}
+            if any(st != "PASS" for st in in_run_checks.values()):
+                self.assertNotEqual(in_run["verdict"], "PASS")                      # a check of the final judge that fails also stops the run
+            else:
+                self.assertEqual(in_run["verdict"], "PASS")
+
+
 class TestClosureMarker(unittest.TestCase):
     def build(self, verdict="PASS", code=0):
         return GJ.build_marker("g1_20261101_120000_abc123", "a" * 64, b"evidence", b"summary", verdict, code)
