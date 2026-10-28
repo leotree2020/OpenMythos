@@ -58,3 +58,7 @@ Then check source SHA pins and, separately, the complete isolated suite:
 Record actual command, Python version, test counts, failures, Git HEAD and independent reviewer source. Resolve failures with minimal controlled differential, not by altering original J1 or silently changing criteria. Owner decisions D-BC-01 (regex), D-BC-02 (NFC), D-BC-03 (resource budget) remain UNDECIDED. Earlier D-E02/D-E03, OQ-13, OBS-J1-SEAL-01, G2 O-1…O-15 are still open.
 
 **No formal acceptance freeze; original J1, Oracle, Parcae, frozen Bench, R3 and model must stay unchanged.** Formal 18 cases are NOT MATERIALIZED / NOT TESTED. Oracle FORMAL_ACCEPTANCE_READY=False, BLOCKED/NOT_READY. G2 REAL BLOCKED. External peer/Grok cross-review still outstanding.
+
+## CI launch-channel experiment (2026-10-29)
+
+A branch-local, docs-only Contents API update was requested to test whether the pre-existing branch-specific CPU workflow receives a GitHub Actions push event. This is not a CPU test or an approval; if no workflow run and actual logs appear, preserve DIRECT_J1_CPU=NOT_TESTED. Do not infer success from a GitHub commit alone. Formal Oracle remains BLOCKED/NOT_READY.
