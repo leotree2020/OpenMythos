@@ -349,3 +349,7 @@ HEAD `0cf75c1`（代码与 CPU 验收提交 `a4a8509` 相同）。执行前检�
 ## D1 CPU-003 E1-A G1 负向门控实现 G1-IMPLEMENTATION-001（2026-10-27）
 
 基线 `48d241f`；分支 `d1-r3-a-cpu-003-e1a-g1-impl-20261027`。先以独立提交 `8385cd1` 冻结 G1 判据 V1（`gate_g1/g1_criteria_v1.json` `1992d75d…1257` + 预注册文本 `37487237…cd69`），再实现 `g1_auth.py` / `g1_judge.py` / `g1_run.py`（T1 ABORT / T2 EOF / T3 INVALID_BYTE / T4 TIMEOUT，17 项判据，只读复用 G0 设施，未改 G0 / Bench / Parcae / R3）；CPU 测试 222 个只写未跑（NOT TESTED）；静态审计 FINDINGS 0、追溯 36 行。状态：G1 IMPLEMENTATION COMPLETE / STATIC AUDIT RECORDED / CPU TESTS NOT TESTED / G1 REAL NOT AUTHORIZED。检查点 `docs/F3B_D1_A_CPU_003_E1A_G1_IMPLEMENTATION_CHECKPOINT_20261027.md`，审核报告 `a_predicate_003/g1_impl_static_audit/`。下一步：ChatGPT / Grok 审核，随后另行授权 CPU 测试。
+
+## D1 CPU-003 E1-A G1 实现审核修复 REVIEW-FIX-001（2026-10-28）
+
+审核基准 `453fe4e`，修复提交 `a5d9168`。三项实施层修复：① `run()` 异常路径检查本轮全部节点及 guard 的未回收子进程（不再用可能过期的 `S.rec`）；② CPU runner 验收：仅完整选择且全部 289 个预期测试 ID 各执行一次并 PASS（0 SKIP/FAIL/ERROR/加载错误/哨兵违规）才算 PASS，诊断分组最多 INCOMPLETE；③ 逐测试停止规则改为判定器自己的 C04–C15 检查（最小反例：pid 不一致但退出码正确时旧规则继续运行）。G1 V1 判据与预注册、G0、Bench、R3、Parcae 不变；测试只写未跑（NOT TESTED）；静态审计 FINDINGS 0、追溯 38 行。检查点 `docs/F3B_D1_A_CPU_003_E1A_G1_IMPLEMENTATION_REVIEW_FIX_001_CHECKPOINT_20261028.md`。状态：G1 IMPLEMENTATION COMPLETE / STATIC AUDIT RECORDED / CPU TESTS NOT TESTED / G1 REAL NOT AUTHORIZED。
