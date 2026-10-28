@@ -361,3 +361,9 @@ HEAD `0cf75c1`（代码与 CPU 验收提交 `a4a8509` 相同）。执行前检�
 ## D1 CPU-003 E1-A G1 真实执行 G1-REAL-001（2026-10-28）
 
 执行时 Git SHA `3eef8d7`（证据提交另记于 `g1_real_001_results/EVIDENCE_COMMIT_RECORD.md`）。项目负责人授权一次真实 CPU 执行：run_id `g1_20261028_025922_68ac93`，T1 ABORT / T2 EOF / T3 INVALID_BYTE / T4 TIMEOUT 依序各一次 fork，共 4 次，零信号、零残留；退出 111/111/111/112；17 项判据对四个测试全部 PASS，`g1_closed.json` 已发布并与 evidence / summary 哈希绑定；独立脚本逐项复核通过。授权文件与 `authorization_used.json` 不提交。G1 V1 判据、G0、Bench、R3、Parcae 与架构未改。状态：G1 REAL EXECUTED — CROSS-REVIEW PENDING（记录判定 PASS，待 ChatGPT / Grok 独立复核）；G2 / G3 / BV / E1-A 未授权。结果 `a_predicate_003/g1_real_001_results/`，检查点 `docs/F3B_D1_A_CPU_003_E1A_G1_REAL_001_CHECKPOINT_20261028.md`。
+
+## D1 CPU-003 E1-A G1 最终交叉审核结案与 G2 身份/后代设计草案（2026-10-28）
+
+基线 `450914367c247231c51be02e13775cb001e69c5d`（原 G1 实验与证据最终记录 HEAD），本次仅文档提交，另起分支 `d1-r3-a-cpu-003-e1a-g1-closeout-g2-design-20261028`。**G1-REAL-001 已由 ChatGPT 直接核验（归档 SHA-256 18/18、独立原始证据检查 60/60）与项目负责人提供的 Grok 独立审核结果共同确认：G1 REAL-001 CROSS-REVIEW PASS**；run_id `g1_20261028_025922_68ac93`，原始 G1 执行 checkpoint 和证据保持不变。正式结案记录：`docs/F3B_D1_A_CPU_003_E1A_G1_REAL_001_FINAL_CROSS_REVIEW_CHECKPOINT_20261028.md`（注明 Grok 原始报告未单独入库）。
+
+**G2-DESIGN-001：仅设计草稿 / 源码审计记录 / ChatGPT 与 Grok 设计复核待进行。** 设计位于 `a_predicate_003/gate_g2/G2_IDENTITY_DESCENDANTS_DESIGN.md`，含 G2-D01…D07 候选身份、后代、跨会话、迟到 CREATED、旁观者、回收与不确定性用例，以及 G2-R01…R08 风险。核心未解决问题：**后代的合法 waitpid 回收者与独立真值机制未确定，不能执行真实 G2**。设计 checkpoint：`docs/F3B_D1_A_CPU_003_E1A_G2_DESIGN_CHECKPOINT_20261028.md`。明确区分 E1-A Gate G2 与此前归档 R3-A 存活谓词 G1/G2 FAIL；G2 判据未冻结，未实施、未运行 CPU/真实测试，G2/G3/BV/E1-A 均未授权；冻结 G0/G1、Bench、R3、Parcae 和模型架构未动。下一条唯一指令：交 ChatGPT 与 Grok 独立审核 G2 设计，解决回收所有权与身份/血缘独立真值分歧；未经负责人后续单独授权，不实施或执行。
