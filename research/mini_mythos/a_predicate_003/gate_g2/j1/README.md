@@ -1,6 +1,6 @@
 # J1 — synthetic evidence judge (SYNTHETIC_CPU_ONLY) — implementation source
 
-**Status: SOURCE CORRECTION 001 PREPARED (J1-IMPL-F01…F06) — STATIC REVIEW PENDING. CPU NOT TESTED. G2 CRITERIA NOT FROZEN. G2 REAL BLOCKED.**
+**Status: SOURCE CORRECTION 002 PREPARED (J1-FIX-REVIEW-F01…F04, on top of correction 001 F01…F06) — STATIC REVIEW PENDING. CPU NOT TESTED. G2 CRITERIA NOT FROZEN. G2 REAL BLOCKED.**
 Correction 001 (task `F3B-D1-A-CPU-003-E1A-G2-J1-IMPL-CORRECTION-001`) answers the independent static review `CHANGES REQUIRED`; the historical F07 procedural
 deviation (one accidental empty `python3` start in the first implementation task: `SRC-07 strict procedural compliance FAIL (self-reported)`, Git file scope
 PASS) is preserved and is not rewritten. No Python of any kind was run in the correction (no import, compile, pytest, unittest, empty call).
@@ -75,6 +75,15 @@ coverage, input_diagnostics, measurement_target, native_B0_safety_status, scope`
 | F04 | RUN_START needs a non-empty string `run_id` and a non-bool integer `observer_pid`; RUN_END needs the same `run_id` and a boolean `cleanup_confirmed`, and a confirmed RUN_END needs `DEAD` for every non-janitor node; creator must be registered before a child's INTENT; PASS is claimed only for the finite supplied validated set. Duplicate-identity FAIL is preserved. |
 | F05 | Trust is stated as a hypothetical, unauthenticated declaration by an external harness (`trust_basis`); every source, the B0-shaped ledger included, must be declared `synthetic_assumption=True`. J1 does not and cannot authenticate the map. |
 | F06 | J1 is synthetic-only (`input_domain`). A native-to-J1 adapter is an OPEN question and **NOT IMPLEMENTED**; direct compatibility with native `bench/registry.py` records (float `mono` / `wall`, extra keys) is **NOT SUPPORTED** (`native_b0_adapter_status`). |
+
+## Correction 002 (task `F3B-D1-A-CPU-003-E1A-G2-J1-IMPL-CORRECTION-002`) — what changed
+
+| Finding | Change (source only; nothing executed, no Python invoked) |
+|---|---|
+| J1-FIX-REVIEW-F01 | `UNIQUE_REGISTRY` lifecycle checks add `ORPHAN_RECORD` (frozen `integrity_issues`: any node with records but no INTENT, e.g. DEAD-only / ABORTED-only -> BLOCKED) and the stronger synthetic-only `RECORD_BEFORE_INTENT`. A well-formed INTENT then DEAD is not an orphan. A sound duplicate FAIL is still evaluated first. |
+| J1-FIX-REVIEW-F02 | Duplicate detection uses exactly the V0.1 key `(pid, starttime)` (`judge._pair`), not `Identity.same_instance`; optional `boot_id` / `pidns` can no longer hide an equal pair. Two populated, different `boot_id` / `pidns` values inside one supplied ledger are reported separately (`LEDGER_BOOT_OR_PIDNS_INCONSISTENT`) and block the PASS path. `same_instance` itself is unchanged (still used by `ZOMBIE_AT_T`). |
+| J1-FIX-REVIEW-F03 | ATTRIBUTION compares ALL known identities pairwise (registered + every node witness): a populated `boot_id` / `pidns` conflict between any two blocks even when a third omits it (`IDENTITY_METADATA_CONFLICT`); witnesses must agree on `(pid, starttime)` (`CONFLICTING_TRUSTED_WITNESSES`); a trusted witness (or another REGISTERED record) carrying the same gate token for a different node blocks (`GATE_SHARED_WITH_OTHER_NODE_UNRESOLVED`); the verdict does not depend on record order. Agreement / mismatch is decided on the `(pid, starttime)` pair. Still retrospective, synthetic-only, unauthenticated trust. |
+| J1-FIX-REVIEW-F04 | `oracle.aggregate` type-checks every row and every `fixture_id` before any set / count operation: list, dict, bool, int, float, None or a non-dict row is a diagnostic reason, never an exception. Formal result stays BLOCKED / NOT_READY; `expected_ids` still does not exist. |
 
 ## Open questions (implementer proposals that need an owner / reviewer decision before any criteria freeze)
 

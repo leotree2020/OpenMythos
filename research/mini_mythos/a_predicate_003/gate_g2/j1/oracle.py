@@ -221,20 +221,29 @@ def aggregate(case_results):
     18-id V0.1 inventory, and a different suite is a new versioned scope that needs owner review, not a keyword argument.  The diagnostics below
     (duplicate / unknown / missing ids, non-formal rows) are informational and can only ADD reasons; they can never lift the result.  No count here
     is an acceptance claim; a SMOKE_ONLY pass carries no broad accuracy claim; nothing here says anything about native B0 safety."""
+    # J1-FIX-REVIEW-F04: every row and every fixture_id is type-checked BEFORE any set / count operation, so a list, dict, bool, int or None used as an id
+    # (unhashable or not) is a diagnostic, never an exception.  Only plain `str` ids ever enter a set.
     rows = list(case_results) if isinstance(case_results, (list, tuple)) else []
-    ids = [r.get("fixture_id") if type(r) is dict else None for r in rows]
-    expected = set(SPEC_V0_1_INVENTORY)
     reasons = list(NOT_READY_REASONS)
     if not isinstance(case_results, (list, tuple)):
         reasons.append("case_results is not a list")
-    if any(i is None for i in ids):
-        reasons.append("a row has no fixture_id")
-    if len({i for i in ids if i is not None}) != len([i for i in ids if i is not None]):
+    expected = set(SPEC_V0_1_INVENTORY)
+    str_ids = []
+    for r in rows:
+        if type(r) is not dict:
+            reasons.append("a row is not a dict")
+        elif "fixture_id" not in r or r["fixture_id"] is None:
+            reasons.append("a row has no fixture_id")
+        elif type(r["fixture_id"]) is not str:
+            reasons.append("a row has a malformed fixture_id")
+        else:
+            str_ids.append(r["fixture_id"])
+    if len(set(str_ids)) != len(str_ids):
         reasons.append("duplicate fixture ids")
-    if any(i is not None and i not in expected for i in ids):
+    if any(i not in expected for i in str_ids):
         reasons.append("unknown fixture ids")
-    if expected - set(ids):
-        reasons.append("%d of the 18 inventory ids are missing" % len(expected - set(ids)))
+    if expected - set(str_ids):
+        reasons.append("%d of the 18 inventory ids are missing" % len(expected - set(str_ids)))
     if any(type(r) is dict and r.get("test_acceptance_verdict") not in (None, "BLOCKED") for r in rows):
         reasons.append("a row claims a formal acceptance verdict that this stage cannot grant")
     inline = [r.get("inline_check_verdict") if type(r) is dict else None for r in rows]

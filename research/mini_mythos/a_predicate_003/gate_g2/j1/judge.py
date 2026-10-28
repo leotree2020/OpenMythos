@@ -87,6 +87,18 @@ def _claims(events, trust, claim_kind):
             and e.raw.get("claim_kind") == claim_kind]
 
 
+def _pair(identity):
+    """The V0.1 identity key: exactly (pid, starttime).  boot_id / pidns are NOT part of it (J1-FIX-REVIEW-F02)."""
+    return (identity.pid, identity.starttime)
+
+
+def _metadata_conflict(a, b):
+    """True iff BOTH identities carry a populated boot_id (or pidns) and the values differ.  An omitted field is unknown, not a match: callers must
+    apply this to EVERY pair, because 'compatible' is not transitive when fields are omitted."""
+    return ((a.boot_id is not None and b.boot_id is not None and a.boot_id != b.boot_id)
+            or (a.pidns is not None and b.pidns is not None and a.pidns != b.pidns))
+
+
 def _aggregate(verdicts):
     if S.FAIL in verdicts:
         return S.FAIL
@@ -101,7 +113,8 @@ def _ledger_prerequisite_problems(evs):
     exactly one RUN_START, first, with a non-empty string run_id and a non-bool integer observer_pid; at most one RUN_END, last, naming the same run_id
     with a boolean cleanup_confirmed, and a confirmed RUN_END only when every non-janitor node has DEAD; no duplicate INTENT / DEAD, no record after
     DEAD; INTENT before FORKED / REGISTERED, REGISTERED before RELEASED, no RELEASED + ABORTED; a creator other than 'O' registered before the child's
-    INTENT; contiguous order from 1 (no lost row).
+    INTENT; contiguous order from 1 (no lost row); ORPHAN_RECORD (frozen integrity_issues: a node with ANY record but no INTENT, e.g. DEAD-only or
+    ABORTED-only, J1-FIX-REVIEW-F01) -- plus the stronger SYNTHETIC-ONLY condition RECORD_BEFORE_INTENT (no node record may precede its INTENT).
     Passing these proves only that the SUPPLIED rows are internally consistent.  It does NOT prove that the original B0 log has no omitted rows: a
     source-labelled completeness statement for the original readback does not exist in this stage, so PASS claims are limited to the finite set."""
     p = set()
@@ -144,6 +157,8 @@ def _ledger_prerequisite_problems(evs):
             p.add("RECORD_AFTER_DEAD")
         if k in _DUPLICATE_UNIQUE_KINDS and k in d:
             p.add("DUPLICATE_" + k)
+        if k != "INTENT" and "INTENT" not in d:
+            p.add("RECORD_BEFORE_INTENT")        # stronger SYNTHETIC-ONLY condition: INTENT must also come first (frozen check_order enforces it for FORKED / REGISTERED)
         if k in ("FORKED", "REGISTERED") and "INTENT" not in d:
             p.add(k + "_WITHOUT_INTENT")
         if k == "RELEASED" and "REGISTERED" not in d:
@@ -159,6 +174,10 @@ def _ledger_prerequisite_problems(evs):
         if k == "DEAD":
             dead.add(n)
     for n, d in seen.items():
+        if "INTENT" not in d:
+            # J1-FIX-REVIEW-F01: frozen bench/registry.py::integrity_issues reports ORPHAN_RECORD for ANY node that has records but no INTENT, even if
+            # its only record is DEAD or ABORTED (fold() creates the node entry from any node-bearing record).
+            p.add("ORPHAN_RECORD")
         if "RELEASED" in d and "ABORTED" in d:
             p.add("RELEASED_AND_ABORTED")
         if confirmed_end and "INTENT" in d and roles.get(n) != "janitor" and "DEAD" not in d:
@@ -239,13 +258,15 @@ def _attribution(events, trust):
         if any(c.node_token == node for c in claims):
             codes.add("UNTRUSTED_NODE_CLAIM_NOT_EVIDENCE")
         usable = [w for w in witnesses if w.node_token == node]
-        if not usable:
+        # J1-FIX-REVIEW-F03: also relevant is every trusted witness that carries THIS node's gate token but names a DIFFERENT node.
+        cross = [w for w in witnesses if w.node_token != node and reg.gate_token is not None and w.gate_token == reg.gate_token]
+        if not usable and not cross:
             codes.add("NO_TRUSTED_GATE_CHILD_WITNESS")
             verdicts.append(S.BLOCKED)
             continue
-        for w in usable:
+        for w in usable + cross:
             refs.add(w.ref)
-        if any(w.read_status != "OK" for w in usable):
+        if any(w.read_status != "OK" for w in usable + cross):
             codes.add("WITNESS_READ_NOT_OK")                     # never dropped silently: an unreadable witness blocks the comparison
             verdicts.append(S.BLOCKED)
             continue
@@ -257,12 +278,25 @@ def _attribution(events, trust):
             codes.add("GATE_ASSOCIATION_UNVERIFIED")
             verdicts.append(S.BLOCKED)
             continue
+        if cross or any(r.gate_token == reg.gate_token for n2, rs in by_node.items() if n2 != node for r in rs):
+            # the same gate/ticket token is claimed for another node (by a trusted witness or by another REGISTERED record): without an independently
+            # disambiguating trusted mapping the association is not one-to-one, so no PASS and no FAIL (J1-FIX-REVIEW-F03 counterexample B)
+            codes.add("GATE_SHARED_WITH_OTHER_NODE_UNRESOLVED")
+            verdicts.append(S.BLOCKED)
+            continue
         if len(gates) != 1:
             codes.add("GATE_ASSOCIATION_CONFLICT")
             verdicts.append(S.BLOCKED)
             continue
-        first = usable[0].identity
-        if not all(w.identity.same_instance(first) for w in usable):
+        # Pairwise over ALL known identities (registered + every witness), never against a first element: the optional-field comparison is not
+        # transitive, so a populated boot_id / pidns conflict between any two records must block even when a third record omits the field.
+        idents = [reg.identity] + [w.identity for w in usable]
+        if any(_metadata_conflict(idents[i], idents[j]) for i in range(len(idents)) for j in range(i + 1, len(idents))):
+            codes.add("IDENTITY_METADATA_CONFLICT")
+            verdicts.append(S.BLOCKED)
+            continue
+        witness_pairs = {_pair(w.identity) for w in usable}
+        if len(witness_pairs) != 1:
             codes.add("CONFLICTING_TRUSTED_WITNESSES")
             verdicts.append(S.BLOCKED)
             continue
@@ -274,7 +308,7 @@ def _attribution(events, trust):
             codes.add("WITNESS_BEFORE_RELEASED_INTENT")
         else:
             codes.add("WITNESS_NOT_BEFORE_RELEASED_INTENT")
-        if reg.identity.same_instance(first):
+        if _pair(reg.identity) in witness_pairs:
             codes.add("ATTRIBUTION_AGREEMENT_OBSERVED_UNDER_SIMULATED_TRUST")
             verdicts.append(S.PASS)
         else:
@@ -295,7 +329,8 @@ def _unique_registry(events, trust):
     for i in range(len(regs)):
         for j in range(i + 1, len(regs)):
             a, b = regs[i], regs[j]
-            if a.node_token != b.node_token and a.identity.same_instance(b.identity):
+            # J1-FIX-REVIEW-F02: the V0.1 key is exactly (pid, starttime); an optional boot_id / pidns must never hide an equal pair.
+            if a.node_token != b.node_token and _pair(a.identity) == _pair(b.identity):
                 duplicate = True
                 refs.add(a.ref)
                 refs.add(b.ref)
@@ -316,6 +351,14 @@ def _unique_registry(events, trust):
         return S.BLOCKED, codes, refs
     if not regs:
         codes.add("NO_B0_REGISTERED_RECORD")
+        return S.BLOCKED, codes, refs
+    # Optional boot_id / pidns are not part of the key, but one supplied single-run ledger that names two different populated values is internally
+    # inconsistent metadata: no PASS (evidence BLOCKED), reported separately from the duplicate-pair rule.
+    for i in range(len(regs)):
+        for j in range(i + 1, len(regs)):
+            if _metadata_conflict(regs[i].identity, regs[j].identity):
+                codes.add("LEDGER_BOOT_OR_PIDNS_INCONSISTENT")
+    if "LEDGER_BOOT_OR_PIDNS_INCONSISTENT" in codes:
         return S.BLOCKED, codes, refs
     for e in regs:
         refs.add(e.ref)

@@ -406,6 +406,177 @@ class TestF04UniqueRegistryLifecycle(unittest.TestCase):
         self.assertEqual(_verdict("UNIQUE_REGISTRY", _ledger(self.TWO_OK)[1:]), BLOCKED)           # no RUN_START at order 1
 
 
+# ---------------------------------------------------------------- Correction 002 (J1-FIX-REVIEW-F01 ... F04): minimal counterexamples, NOT RUN
+def _regs(events):
+    return [e for e in events if e["event_kind"] == "REGISTERED"]
+
+
+class TestFixReviewF01OrphanRecord(unittest.TestCase):
+    TWO = [("nA", 4101, 101), ("nB", 4102, 102)]
+
+    def test_dead_only_node_without_intent_blocks(self):                         # reviewer counterexample: DEAD(nGhost), no INTENT(nGhost)
+        events = _ledger(self.TWO)
+        events.append(_ev("L", "DEAD", len(events) + 1, node="nGhost"))
+        self.assertEqual(_verdict("UNIQUE_REGISTRY", events), BLOCKED)
+        self.assertIn("LEDGER_PREREQUISITE_FAILED_ORPHAN_RECORD", _codes("UNIQUE_REGISTRY", events))
+
+    def test_aborted_only_node_without_intent_blocks(self):
+        events = _ledger(self.TWO)
+        events.append(_ev("L", "ABORTED", len(events) + 1, node="nGhost"))
+        self.assertEqual(_verdict("UNIQUE_REGISTRY", events), BLOCKED)
+        self.assertIn("LEDGER_PREREQUISITE_FAILED_ORPHAN_RECORD", _codes("UNIQUE_REGISTRY", events))
+
+    def test_well_formed_intent_then_dead_is_not_an_orphan(self):                # positive control
+        events = _ledger(self.TWO)
+        events.append(_ev("L", "INTENT", len(events) + 1, node="nGhost", raw={"creator": "O"}))
+        events.append(_ev("L", "DEAD", len(events) + 1, node="nGhost"))
+        self.assertEqual(_verdict("UNIQUE_REGISTRY", events), PASS)
+
+    def test_dead_before_its_intent_is_blocked_as_a_stronger_synthetic_condition(self):
+        events = _ledger(self.TWO)
+        events.append(_ev("L", "DEAD", len(events) + 1, node="nGhost"))
+        events.append(_ev("L", "INTENT", len(events) + 1, node="nGhost", raw={"creator": "O"}))
+        out = _codes("UNIQUE_REGISTRY", events)
+        self.assertEqual(_verdict("UNIQUE_REGISTRY", events), BLOCKED)
+        self.assertIn("LEDGER_PREREQUISITE_FAILED_RECORD_BEFORE_INTENT", out)
+        self.assertNotIn("LEDGER_PREREQUISITE_FAILED_ORPHAN_RECORD", out)        # an INTENT exists, only its position is wrong
+
+    def test_sound_duplicate_fail_survives_an_unrelated_orphan(self):
+        events = _ledger([("nA", 4101, 101), ("nB", 4101, 101)])
+        events.append(_ev("L", "DEAD", len(events) + 1, node="nGhost"))
+        self.assertEqual(_verdict("UNIQUE_REGISTRY", events), FAIL)
+
+
+class TestFixReviewF02PairKey(unittest.TestCase):
+    def _two_same_pair(self, boot_a=None, boot_b=None, ns_a=None, ns_b=None):
+        events = _ledger([("nA", 4101, 101), ("nB", 4101, 101)])
+        ra, rb = _regs(events)
+        for rec, boot, ns in ((ra, boot_a, ns_a), (rb, boot_b, ns_b)):
+            if boot is not None:
+                rec["identity"]["boot_id"] = boot
+            if ns is not None:
+                rec["identity"]["pidns"] = ns
+        return events
+
+    def test_equal_pair_with_different_boot_id_is_still_a_duplicate(self):       # reviewer counterexample
+        events = self._two_same_pair(boot_a="boot-A", boot_b="boot-B")
+        self.assertEqual(_verdict("UNIQUE_REGISTRY", events), FAIL)
+        self.assertIn("DUPLICATE_PID_STARTTIME_ACROSS_NODES", _codes("UNIQUE_REGISTRY", events))
+
+    def test_equal_pair_with_different_pidns_is_still_a_duplicate(self):
+        self.assertEqual(_verdict("UNIQUE_REGISTRY", self._two_same_pair(ns_a="ns-A", ns_b="ns-B")), FAIL)
+
+    def test_equal_pair_with_one_side_omitting_metadata_is_a_duplicate(self):
+        self.assertEqual(_verdict("UNIQUE_REGISTRY", self._two_same_pair(boot_a="boot-A")), FAIL)
+
+    def test_different_starttime_is_not_a_duplicate_pair_but_conflicting_boot_ids_block(self):
+        events = _ledger([("nA", 4101, 101), ("nB", 4101, 102)])
+        ra, rb = _regs(events)
+        ra["identity"]["boot_id"], rb["identity"]["boot_id"] = "boot-A", "boot-B"
+        self.assertEqual(_verdict("UNIQUE_REGISTRY", events), BLOCKED)
+        self.assertIn("LEDGER_BOOT_OR_PIDNS_INCONSISTENT", _codes("UNIQUE_REGISTRY", events))
+
+    def test_different_starttime_and_consistent_boot_id_passes(self):
+        events = _ledger([("nA", 4101, 101), ("nB", 4101, 102)])
+        for rec in _regs(events):
+            rec["identity"]["boot_id"] = "boot-A"
+        self.assertEqual(_verdict("UNIQUE_REGISTRY", events), PASS)
+
+
+class TestFixReviewF03WitnessConflicts(unittest.TestCase):
+    def _base(self, reg_boot=None, reg_ns=None):
+        events = _ledger([("nA", 4101, 101)], release=("nA",), gates={"nA": "gate-A"})
+        ident = _regs(events)[0]["identity"]
+        if reg_boot is not None:
+            ident["boot_id"] = reg_boot
+        if reg_ns is not None:
+            ident["pidns"] = reg_ns
+        return events
+
+    @staticmethod
+    def _wit(order, node, gate, pid=4101, st=101, boot=None, ns=None):
+        ident = _idn(pid, st)
+        if boot is not None:
+            ident["boot_id"] = boot
+        if ns is not None:
+            ident["pidns"] = ns
+        return _ev("W", "GATE_CHILD_OBSERVATION", order, node=node, ident=ident, gate=gate)
+
+    def test_a_omitted_boot_id_does_not_hide_a_populated_boot_conflict(self):    # reviewer counterexample A (non-transitive optional fields)
+        events = self._base(reg_boot="boot-A") + [self._wit(50, "nA", "gate-A"), self._wit(51, "nA", "gate-A", boot="boot-B")]
+        self.assertEqual(_verdict("ATTRIBUTION", events), BLOCKED)
+        self.assertIn("IDENTITY_METADATA_CONFLICT", _codes("ATTRIBUTION", events))
+
+    def test_a_verdict_does_not_depend_on_record_order(self):
+        events = self._base(reg_boot="boot-A") + [self._wit(50, "nA", "gate-A"), self._wit(51, "nA", "gate-A", boot="boot-B")]
+        self.assertEqual(_verdict("ATTRIBUTION", list(reversed(events))), _verdict("ATTRIBUTION", events))
+        swapped = self._base(reg_boot="boot-A") + [self._wit(50, "nA", "gate-A", boot="boot-B"), self._wit(51, "nA", "gate-A")]
+        self.assertEqual(_verdict("ATTRIBUTION", swapped), BLOCKED)
+
+    def test_b_same_gate_witness_on_another_node_blocks(self):                   # reviewer counterexample B
+        events = self._base() + [self._wit(50, "nA", "gate-A"), self._wit(51, "nB", "gate-A", pid=4102, st=102)]
+        self.assertEqual(_verdict("ATTRIBUTION", events), BLOCKED)
+        self.assertIn("GATE_SHARED_WITH_OTHER_NODE_UNRESOLVED", _codes("ATTRIBUTION", events))
+
+    def test_b_cross_node_witness_alone_cannot_stand_in_for_the_node_witness(self):
+        events = self._base() + [self._wit(51, "nB", "gate-A")]
+        self.assertEqual(_verdict("ATTRIBUTION", events), BLOCKED)
+
+    def test_another_registered_node_with_the_same_gate_blocks(self):
+        events = _ledger([("nA", 4101, 101), ("nB", 4102, 102)], release=("nA", "nB"), gates={"nA": "gate-A", "nB": "gate-A"})
+        events += [self._wit(50, "nA", "gate-A"), self._wit(51, "nB", "gate-A", pid=4102, st=102)]
+        self.assertEqual(_verdict("ATTRIBUTION", events), BLOCKED)
+
+    def test_c_conflicting_pidns_between_witnesses_blocks(self):
+        events = self._base() + [self._wit(50, "nA", "gate-A", ns="ns-A"), self._wit(51, "nA", "gate-A", ns="ns-B")]
+        self.assertEqual(_verdict("ATTRIBUTION", events), BLOCKED)
+        self.assertIn("IDENTITY_METADATA_CONFLICT", _codes("ATTRIBUTION", events))
+
+    def test_c_conflicting_pid_or_starttime_between_witnesses_blocks(self):
+        events = self._base() + [self._wit(50, "nA", "gate-A"), self._wit(51, "nA", "gate-A", pid=4102, st=102)]
+        self.assertEqual(_verdict("ATTRIBUTION", events), BLOCKED)
+        self.assertIn("CONFLICTING_TRUSTED_WITNESSES", _codes("ATTRIBUTION", events))
+
+    def test_registered_and_single_witness_with_conflicting_boot_ids_block(self):
+        events = self._base(reg_boot="boot-A") + [self._wit(50, "nA", "gate-A", boot="boot-B")]
+        self.assertEqual(_verdict("ATTRIBUTION", events), BLOCKED)
+
+    def test_clean_agreement_passes_and_a_single_unambiguous_contradiction_fails(self):
+        self.assertEqual(_verdict("ATTRIBUTION", self._base(reg_boot="boot-A") + [self._wit(50, "nA", "gate-A", boot="boot-A")]), PASS)
+        self.assertEqual(_verdict("ATTRIBUTION", self._base() + [self._wit(50, "nA", "gate-A"), self._wit(51, "nA", "gate-A")]), PASS)
+        self.assertEqual(_verdict("ATTRIBUTION", self._base() + [self._wit(50, "nA", "gate-A", pid=4102, st=102)]), FAIL)
+
+    def test_attribution_stays_retrospective(self):
+        codes = _codes("ATTRIBUTION", self._base() + [self._wit(50, "nA", "gate-A")])
+        self.assertIn("RETROSPECTIVE_AGREEMENT_NOT_PREVENT_PROOF", codes)
+
+
+class TestFixReviewF04AggregateMalformedIds(unittest.TestCase):
+    def _assert_not_ready(self, agg):
+        self.assertEqual(agg["run_acceptance_verdict"], BLOCKED)
+        self.assertEqual(agg["acceptance_state"], "NOT_READY")
+        self.assertFalse(agg["formal_acceptance_ready"])
+
+    def test_unhashable_and_non_string_ids_give_a_structured_blocked_result(self):
+        for bad in (["J1-F01-A"], {"x": 1}, True, None, 5, 1.5, ("J1-F01-A",)):
+            agg = oracle.aggregate([{"fixture_id": bad}])
+            self._assert_not_ready(agg)
+            self.assertTrue(any("fixture_id" in r for r in agg["reasons"]), repr(bad))
+
+    def test_malformed_rows_and_containers_do_not_raise(self):
+        for rows in ([5], ["J1-F01-A"], [None], [{}], [[]], "not a list", None, 7):
+            self._assert_not_ready(oracle.aggregate(rows))
+
+    def test_unhashable_formal_verdict_value_does_not_raise(self):
+        agg = oracle.aggregate([{"fixture_id": "J1-F01-A", "test_acceptance_verdict": ["PASS"], "inline_check_verdict": {"x": 1}}])
+        self._assert_not_ready(agg)
+
+    def test_forged_eighteen_pass_rows_with_one_malformed_id_stay_blocked(self):
+        rows = [{"fixture_id": fid, "test_acceptance_verdict": PASS} for fid in oracle.SPEC_V0_1_INVENTORY]
+        rows[3]["fixture_id"] = ["J1-F01-D"]
+        self._assert_not_ready(oracle.aggregate(rows))
+
+
 # ---------------------------------------------------------------- J1-IMPL-F05: trust is a hypothetical, unauthenticated harness declaration
 class TestF05TrustIsHypotheticalAndUnauthenticated(unittest.TestCase):
     def test_every_result_labels_the_trust_basis(self):
