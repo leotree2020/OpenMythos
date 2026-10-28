@@ -37,7 +37,7 @@
 ## Dependencies and Git hygiene
 
 - Dependencies for this design: reviewed GitHub source and prior G0/G1 checkpoints only; **no new software packages, runtime artifacts, GPU or data downloads**.
-- Git file scope intended: additions `docs/F3B_D1_A_CPU_003_E1A_G1_REAL_001_FINAL_CROSS_REVIEW_CHECKPOINT_20261028.md`, `a_predicate_003/gate_g2/G2_IDENTITY_DESCENDANTS_DESIGN.md`, this checkpoint; an append-only addition to `docs/PROJECT_MAP.md`. Verify this exact scope against the parent SHA before handing over.
+- **Git scope independently verified** at branch HEAD `028854c5c21f83f83b8058d485a31765be56aa24` versus parent `450914367c247231c51be02e13775cb001e69c5d`: **5 documentation files, 3 added + 2 append-only updates**, 0 changes to Bench, G0/G1 criteria, runtime code, tests, prior evidence, R3, Parcae or model. New docs: `docs/F3B_D1_A_CPU_003_E1A_G1_REAL_001_FINAL_CROSS_REVIEW_CHECKPOINT_20261028.md`, `a_predicate_003/gate_g2/G2_IDENTITY_DESCENDANTS_DESIGN.md`, this checkpoint. Updated navigation: `docs/PROJECT_MAP.md` (+6 lines), `docs/SESSION_START_PROTOCOL.md` (+2 lines). This checkpoint addendum will create one more **documentation-only** commit; inspect latest GitHub branch HEAD after it.
 - Do not claim the user's local checkout clean from a GitHub remote check: record local status separately when a local checkout is available.
 
 ## One next instruction
