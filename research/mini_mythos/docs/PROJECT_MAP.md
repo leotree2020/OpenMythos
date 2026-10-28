@@ -477,3 +477,12 @@ ChatGPT 在独立审查分支 `d1-r3-a-cpu-003-e1a-g2-j1-impl-static-review-2026
 ## D1 CPU-003 E1-A G2 J1 源码修正 G2-J1-IMPL-CORRECTION-002（2026-10-28）
 
 基线 = 交接分支 HEAD `a3f6eef883be123028377b3dd1d62ccd5a8e975c`（已核验），修正分支 `d1-r3-a-cpu-003-e1a-g2-j1-impl-fix2-20261028`。仅在 `a_predicate_003/gate_g2/j1/` 修复独立静态复审四项：F01 补 `ORPHAN_RECORD`（无 INTENT 的 DEAD/ABORTED 节点不得使 UNIQUE_REGISTRY PASS）；F02 重复判定改用 V0.1 的 `(pid,starttime)` 键，boot_id/pidns 不得隐藏重复；F03 ATTRIBUTION 对所有可信见证做两两冲突检查（含 boot_id/pidns 填写冲突与同 gate 跨节点见证），结果与记录顺序无关；F04 `oracle.aggregate` 对畸形/不可哈希 fixture_id 稳定返回 BLOCKED/NOT_READY。18 个预期 verdict 与正式验收恒 BLOCKED 不变。补充对应未运行的最小反例测试源码。**本任务未调用任何 Python**，全部 NOT TESTED；未改 Bench / Parcae / G0 / G1 / R3、未冻结判据、未生成夹具；Grok DEFERRED（无双重审核），G2 REAL BLOCKED。检查点 `docs/F3B_D1_A_CPU_003_E1A_G2_J1_IMPL_CORRECTION_002_CHECKPOINT_20261028.md`。下一步：交 ChatGPT 独立静态复审。
+
+
+## J1 Correction 002 独立静态复审（2026-10-28）
+
+Claude Code 最新源代码分支 `d1-r3-a-cpu-003-e1a-g2-j1-impl-fix2-20261028` 已独立核验远端 HEAD `26da6082af73c0505d5520001d1cea6ec086df47`，比较源基准 `a3f6eef883be123028377b3dd1d62ccd5a8e975c`，源码开发差异 **2 commits / 7 files / +314/-17**，局限在 `gate_g2/j1/` 和文档，原生 Parcae/Bench/R3/G0/G1/证据未改。
+
+独立复审报告 `a_predicate_003/gate_g2/G2_J1_IMPL_CORRECTION_002_INDEPENDENT_STATIC_REVIEW_001.md`，对应阶段 checkpoint `docs/F3B_D1_A_CPU_003_E1A_G2_J1_IMPL_CORRECTION_002_STATIC_REVIEW_001_CHECKPOINT_20261028.md`；二者保存于独立文档分支 `d1-r3-a-cpu-003-e1a-g2-j1-fix2-static-review-20261028`。**四项指定 F01–F04 在源码层面限定范围 PASS**：ORPHAN_RECORD、(pid,starttime) 重复、同 gate 多见证冲突、Oracle 畸形 fixture_id fail-closed；但独立发现 **`J1-FIX2-REVIEW-F05 HIGH`**：冻结 registry 对缺失 PID 的 `FORKED` 报 `MALFORMED_FORKED`，J1 synthetic schema 却可接受缺失 FORKED identity/PID，并让另有正常 REGISTERED 的有限账本取得 `UNIQUE_REGISTRY=PASS`。所有最小反例**未运行**，源码整体 **CHANGES REQUIRED**，不能进入 CPU 测试。
+
+**后续仅由 Claude Code 在新隔离分支修复 F05**，维持前四项修复、V0.1 18 个预期、正式 Oracle `BLOCKED/NOT_READY`，新增未执行的 FORKED 缺 pid/有效 pid 反例测试源码，并记录 checkpoint；不修改 Bench/Parcae/G0/G1/R3、判据、模型，不调用 Python/pytest/真实进程。**CPU NOT TESTED / 18 S/O NOT MATERIALIZED / CRITERIA NOT FROZEN / REAL BLOCKED / Grok DEFERRED (not PASS) / O-1…O-15 UNDECIDED**。下一条指令：为 Claude Code 准备绑定审核最终 HEAD 的 SOURCE-ONLY correction 003 任务书，经负责人单独授权后实施。
