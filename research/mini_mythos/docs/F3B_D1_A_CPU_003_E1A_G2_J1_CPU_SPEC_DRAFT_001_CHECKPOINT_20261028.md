@@ -30,7 +30,7 @@
 | G2 frozen criteria | **NOT FROZEN / NOT AUTHORIZED**. |
 | G2 implementation & CPU actual tests | **NOT TESTED / NOT AUTHORIZED**. |
 | G2 REAL | **BLOCKED / NOT AUTHORIZED**. |
-| Git file diff | Requires verification after this checkpoint, navigation commits; update this section with real diff before completion. |
+| Git file diff | **PASS (pre-addendum)**: against frozen source `672b20bc8091c42c31786c66b8ea28191584def7`, current HEAD `9939f33f69bd2699c64c26f0e473ef442dd16a06` = **4 documentation commits**, exactly 4 Markdown files (2 added, 2 append-only map/SOP), 175 insertions / 0 deletions, **no Bench/Parcae/criteria/tests/runtime/evidence changes**. This checkpoint amendment adds one more doc-only commit; retrieve new remote HEAD. |
 
 ## Selected test-scope inventory and excluded targets
 
@@ -54,3 +54,11 @@ The independent truth **must never be passed to J1**; the future acceptance orac
 ## Single next instruction
 
 **Submit the pinned J1 CPU-only SPEC DRAFT V0 for an independent read-only source/design audit**, checking that six family categories, 12 exact fixture IDs, allowed S-lane vs private O-lane, source-specific evidence limits, behavior label vs subject vs acceptance, four narrow positive controls and `DEFERRED_BY_SCOPE` tracking are logically consistent. Record reviewer findings and any disagreement without modifying upstream. If accepted, separately ask the owner to authorize **fixture-materialization/freeze work**, then later the implementation and CPU run; do **not** automatically grant those permissions. G2 REAL/G3/BV/E1-A remain NOT AUTHORIZED. Grok remains deferred / not reviewed.
+
+## Verified selected fixture enumeration and draft integrity (addendum)
+
+- SPEC DRAFT Git Blob at pre-addendum HEAD: `44cd58d1089ca8b394658acafe4f8477e371d2f0`; expected 12 exact fixture rows; direct GitHub read-back found **12/12 unique IDs**: J1-F01-A/B, F02-A/B, F03-A/B, F04-A/B, F05-A/B, F06-A/B.
+- Scoped synthetic draft has 4 conditionally expected limited subject PASS cases, 2 positively expected subject FAIL cases, 6 expected subject BLOCKED cases. **These are expectations, not executed test results.**
+- Private oracle Lane O remains isolated by design from allowed SUT input Lane S; no fixture bytes materialized and no SHA256 digests invented. The synthetic witness and synthetic seal assumptions **do not establish** actual frozen-B0 witness availability, real provenance, or a certified G2 REAL PASS.
+- Source-to-branch Git comparison found **only**: `gate_g2/G2_J1_CPU_ONLY_FIXTURE_PREREG_DRAFT_V0_20261028.md`, this checkpoint, `docs/PROJECT_MAP.md`, `docs/SESSION_START_PROTOCOL.md`. All changes are Markdown. Local checkout git status **NOT TESTED**; only GitHub remote diff is verified.
+- **Latest HEAD after this amendment must be fetched from GitHub**; do not reuse pre-amendment SHA for next-stage authorization binding.
