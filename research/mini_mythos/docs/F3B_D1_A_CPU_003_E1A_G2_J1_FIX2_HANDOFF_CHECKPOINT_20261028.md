@@ -32,7 +32,7 @@
 | J1 functional tests / 18 S/O hashes | **NOT TESTED / NOT MATERIALIZED**. |
 | G2 REAL safety | **BLOCKED / NOT AUTHORIZED**. |
 | Grok independent review | **DEFERRED / NOT PERFORMED**; no opinion fabricated. |
-| Git branch changed-file scope | **PENDING independent final remote compare**, to be updated after navigation docs. |
+| Git branch changed-file scope | **PASS (pre-addendum)**: independently compared review source `41030bc9e7d01a714fc091c60ba3a07b0a8be5cd` → current `4cbe376e847303665be311bea3f08594d6a6595d`: 5 commits, 4 Markdown files, 177 insertions/0 deletions, **0 J1 code/Bench/Parcae/criteria/evidence changes**. Checkpoint-only verification addendum creates one more doc commit; fetch its final HEAD. |
 
 ## Open residual findings (no execution)
 
@@ -55,3 +55,11 @@ Original prior F01/F02 Oracle fail-closed source changes should remain preserved
 ## Single next instruction
 
 **Give the user the current `CLAUDE_CODE_J1_SOURCE_ONLY_CORRECTION_002_HANDOFF_20261028.md` and the verified final Git branch HEAD, then stop**. The user may hand it to Claude Code; Claude Code must create its own isolated correction branch from the final handoff commit, fix F01–F04 in source plus unexecuted negative tests, commit/push and write checkpoint **without invoking Python or tests**. The next ChatGPT review starts by independently retrieving Claude's new branch/checkpoint and actual diff; do **not** proceed to CPU/REAL, freeze or merge.
+
+## Verified remote handoff deliverable, Git and scope (addendum)
+
+- At pre-addendum remote HEAD `4cbe376e847303665be311bea3f08594d6a6595d`, handoff file blob `81391b48698add404477794214b79eedc28b823e` and checkpoint pre-addendum blob `1cddf7cf18b02e77490bb9b5873ac49758c18d8c` were fetched from GitHub.
+- Verified **all four exact finding IDs** `J1-FIX-REVIEW-F01,F02,F03,F04` are present and individually described in the code-only handoff, with controlled minimal counterexamples and `FIX2-01…FIX2-08` static acceptance criteria.
+- **Exactly four changed Markdown paths** relative to the frozen input review: `a_predicate_003/gate_g2/CLAUDE_CODE_J1_SOURCE_ONLY_CORRECTION_002_HANDOFF_20261028.md`, this checkpoint, `docs/PROJECT_MAP.md`, `docs/SESSION_START_PROTOCOL.md`. There are **no** program/code/test/fixture/frozen source modifications on this handoff branch.
+- Source-level test cases in the handoff are **proposals**, not executed proofs. No package/runtime was used; this is not a real G2 process safety result.
+- **Actual final branch HEAD must be re-fetched after this addendum**. Claude Code must pin that HEAD at task start rather than the earlier base or an intermediate docs commit. Local checkout clean state **NOT TESTED** by this GitHub-only work.
