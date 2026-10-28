@@ -437,3 +437,11 @@ V0.1 在 **6 个场景族内设计 18 个待审核夹具**，其中**预期** 5 
 ## D1 CPU-003 E1-A G2 J1 实现源码 G2-J1-IMPL-PREP-001（2026-10-28）
 
 基线 `02d79a26e4ad6b49527bc90e6be4fe9130b45cff`（交接分支 HEAD，已核对），开发分支 `d1-r3-a-cpu-003-e1a-g2-j1-impl-20261028`。仅新增 `a_predicate_003/gate_g2/j1/` 纯 Python 合成证据判定器源码（`schema.py` / `judge.py` / `codec.py` / `oracle.py` / `README.md` / 未运行的测试源码）：五类有对照断言 + 四类 SMOKE_ONLY（无 PASS 路径）、Lane S/Lane O 隔离、harness 绑定信任表、严格 bool≠int、RELEASED=放行意图、Zombie/DEAD/ECHILD≠合法回收、哈希一致≠内核事件真实性。**未运行任何测试或 Python 项目代码（含语法检查），均为 NOT TESTED**；未冻结判据、未生成夹具、未改 Bench / Parcae / G0 / G1 / R3；Grok DEFERRED，O-1…O-15 未决，G2 REAL BLOCKED。状态：IMPLEMENTATION SOURCE PREPARED — STATIC REVIEW PENDING。检查点 `docs/F3B_D1_A_CPU_003_E1A_G2_J1_IMPL_PREP_001_CHECKPOINT_20261028.md`。下一步：交 ChatGPT 做独立静态代码审查，之后另行授权才可考虑夹具与 CPU 验收。
+
+## J1 实施源码独立静态审核：CHANGES REQUIRED（2026-10-28）
+
+Claude Code 开发分支 `d1-r3-a-cpu-003-e1a-g2-j1-impl-20261028` 远端 HEAD 已独立核验为 `a1678a5a31ae49ac1aca33cdcfd625efe2108e68`，开发基准 `02d79a26e4ad6b49527bc90e6be4fe9130b45cff`。Git compare 确认只新增 `gate_g2/j1/` 7 个文件（其中单元测试源码未运行）、新增开发 checkpoint、更新两份导航：10 文件/1805 行新增/0 删除，冻结 Bench、Parcae、G0/G1、R3、已有证据不变。
+
+ChatGPT 在独立审查分支 `d1-r3-a-cpu-003-e1a-g2-j1-impl-static-review-20261028` 完成 **只读源码静态审核**，结论 **`J1 IMPLEMENTATION STATIC REVIEW CHANGES REQUIRED`**。完整报告：`a_predicate_003/gate_g2/G2_J1_IMPL_SOURCE_INDEPENDENT_STATIC_REVIEW_001.md`；最新 checkpoint：`docs/F3B_D1_A_CPU_003_E1A_G2_J1_IMPL_STATIC_REVIEW_001_CHECKPOINT_20261028.md`。7 项发现 F01–F07：Oracle 对 `INPUT_INVALID` 的 BLOCKED 可能误判 test PASS；预期答案与 18 项清单及 S/O 证据无独立绑定；ATTRIBUTION 未强制 same-ticket/gate 见证；UNIQUE_REGISTRY 可以在不完整 RUN_START/生命周期上 PASS；调用者给定信任角色不等于真实性认证；真实原生 registry 带浮点 mono/wall 与当前封闭合成输入不兼容；Claude 自报一次空 `python3` 启动，**Git 范围 PASS 但严格零-Python 程序约束 FAIL**。所有反例仅源码推导，**未执行**。
+
+**状态：代码已写但 STATIC REVIEW CHANGES REQUIRED / CPU 与 18 夹具 NOT TESTED / CRITERIA NOT FROZEN / G2 REAL BLOCKED / Grok DEFERRED 非 PASS / O-1…O-15 OWNER UNDECIDED。** 下一条唯一指令：准备给 Claude Code 的 *SOURCE-ONLY 修正任务*，由负责人另行授权；不得由 ChatGPT 修改代码，不得运行 CPU/REAL 或改上游，修复后重新提交并独立静态审核。
