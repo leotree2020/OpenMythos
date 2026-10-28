@@ -15,7 +15,7 @@
 - **Source branch:** `d1-r3-a-cpu-003-e1a-g2-j1-spec-review-20261028` verified remote HEAD `32bf2c18803b946e3cfe387d1296e9b7f6e5d7b6` before work. A new isolated document branch `d1-r3-a-cpu-003-e1a-g2-j1-spec-v01-doc-20261028` was created from that exact SHA.
 - **Main new document:** `a_predicate_003/gate_g2/G2_J1_CPU_ONLY_FIXTURE_PREREG_DRAFT_V0_1_20261028.md`; initial creation commit `ad45fbed3f13a397567be10d73880036a819706b`; Git Blob `9574f90687b632f35c419a14963437c49dd35f58` from readback.
 - **Frozen Bench source pins:** `observer.py=635e73b34203219a3687f86332d0e82362b89670`, `registry.py=3f2179e132371dd323f865be8a4d41fa5e58786d`, `node.py=5bda87c6c9e98a91c32e3d4eadcd1ca94cb2bd8b`, `gate.py=7772c913828ea2184e6acf04cf5628c075dd5a57`, `common.py=9b6532bcb42c8724115b2bca78e220a8c315632f`. No source changes authorized.
-- **Final Git HEAD and diff:** to be verified after checkpoint and navigation updates, then recorded in an addendum. Local `git status` not available from remote GitHub view; local cleanliness is **NOT TESTED**, distinct from remote diff checks.
+- **Git scope VERIFIED at pre-addendum HEAD `aff3ca8052fb2aa8134a54053dfbf265ac2452b2`** vs pinned source `32bf2c18803b946e3cfe387d1296e9b7f6e5d7b6`: **4 documentation commits, exactly four Markdown paths** (new V0.1 spec, new checkpoint, append-only PROJECT_MAP and SESSION_START_PROTOCOL), **194 additions, 0 deletions**, 0 Bench/Parcae/code/tests/frozen criteria/prereg/evidence/auth changes. This addendum makes one further doc-only commit; fetch final remote HEAD. Local `git status` was NOT TESTED.
 
 ## Required experiment-management fields (documentation review only)
 
@@ -30,7 +30,7 @@
 | V0.1 independent design review | **PENDING / NOT TESTED**, not implied PASS. |
 | Fixture materialization / SHA256 / J1 implementation / CPU | **NOT MATERIALIZED / NOT TESTED / NOT AUTHORIZED**; cannot fabricate hashes or execution results. |
 | REAL reaping, abnormal cleanup, zero-signal safety | **BLOCKED / NOT AUTHORIZED**. |
-| Git diff file scope | **PENDING** final independent comparison and checkpoint addendum. |
+| Git diff file scope | **PASS for doc-only Git scope** at pre-addendum HEAD `aff3ca8052fb2aa8134a54053dfbf265ac2452b2` vs `32bf2c18803b946e3cfe387d1296e9b7f6e5d7b6`: 4 files, no code/frozen criteria diff. Final HEAD fetched after this checkpoint commit. |
 
 ## Independent review findings dispositions (no claim of technical validation)
 
@@ -56,3 +56,10 @@ Discriminative within synthetic trust: `ATTRIBUTION,UNIQUE_REGISTRY,ZOMBIE_AT_T,
 ## Only next instruction
 
 **Independently audit J1 CPU SPEC V0.1 against frozen B0 source and V0 findings F01…F06**. Verify 18 fixture IDs, five truly evidence-sensitive assertions, four truthful SMOKE_ONLY labels, Lane S/O firewall, simulated trust boundaries, and the versioned seal mismatch `FAIL` vs downstream `BLOCKED`. Record actual disagreements, limits and a new checkpoint. If V0.1 review accepts it, ask for **separate owner authorization** to create a bounded Claude Code *implementation-only* task; **do not** silently freeze criteria or execute CPU tests/REAL. No G2 code, CPU, process, signal, GPU or model changes under this document-only stage.
+
+## GitHub remote read-back validation addendum
+
+- V0.1 specification Git Blob `9574f90687b632f35c419a14963437c49dd35f58` was independently read back. **18/18 unique fixture IDs** found, with **5 expected scoped PASS, 5 expected FAIL, 8 expected BLOCKED**; 0 actual fixture files and 0 executed tests.
+- The independent compare verified exactly 4 Markdown paths under `research/mini_mythos/a_predicate_003/gate_g2/` and `research/mini_mythos/docs/`; no old V0 or upstream/Bench source file changed. `PROJECT_MAP` and `SESSION_START_PROTOCOL` updates are append/insert-only.
+- Claude Code is listed only as a **future code-stage implementer contingent upon separate explicit approval**. This doc submission did not send a task to Claude Code or execute code; no permission to materialize/implement/run tests is inferred.
+- Latest remote HEAD should be re-read after the addendum commit. Full model Parcae P1 progress still needs a separate checkpoint audit, rather than inferring from G2 infrastructure docs.
