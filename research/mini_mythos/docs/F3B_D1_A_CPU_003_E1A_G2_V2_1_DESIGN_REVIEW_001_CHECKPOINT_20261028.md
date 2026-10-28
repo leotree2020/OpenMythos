@@ -54,6 +54,6 @@
 
 ## Git hygiene and only next instruction
 
-Intended review branch diff from `870fb38c7beec33c090e743dd27fa4d3682b6700`: add the review report, add this checkpoint, append navigation in PROJECT_MAP.md and SESSION_START_PROTOCOL.md; **no source or frozen files changed**. Verify after commits and record actual remote HEAD. Historical repo upstream Parcae unchanged.
+**Git diff VERIFIED** at pre-addendum remote HEAD `123ec6ac210b1905065dfa80fbce3e582e5c7804` compared with source `870fb38c7beec33c090e743dd27fa4d3682b6700`: **4 commits changing exactly 4 Markdown paths** (2 new review/checkpoint docs; 2 append-only navigation updates), 131 insertions / 0 deletions, **zero source, Bench, Parcae, G0/G1, tests, prereg, frozen criteria, authorization or evidence modifications**. This verification addendum creates one further checkpoint-only documentation commit; re-fetch actual remote HEAD after it and do not conflate documentation HEAD with execution/code SHAs. The user's local working tree was NOT TESTED.
 
 **Only next instruction:** prepare a **J1 CPU-only fixture pre-registration SPECIFICATION DOCUMENT DRAFT** with exact assertion-level truth/acceptance separation, using the six small fixture families and leaving REAL blocked. Do not freeze, implement, import potentially side-effectful code, run tests/processes, send signals or graduate to G3/BV/E1-A. If an essential claim lacks independent synthetic truth, set spec NOT_READY/BLOCKED, never invent a PASS.
