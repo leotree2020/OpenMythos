@@ -13,7 +13,7 @@
 - This stage's review branch: `d1-r3-a-cpu-003-e1a-g2-j1-v01-review-claude-handoff-20261028`, created from exact `07ec81519684e7cc6b0477f086787c4dc32f4520`.
 - **Committed review:** `research/mini_mythos/a_predicate_003/gate_g2/G2_J1_CPU_SPEC_V0_1_INDEPENDENT_REVIEW_001.md`, creation commit `b0fa8bdc87163093d0ec0b022ec89ef52afdde79`.
 - **Committed Claude Code instructions:** `research/mini_mythos/a_predicate_003/gate_g2/CLAUDE_CODE_J1_IMPLEMENTATION_ONLY_HANDOFF_20261028.md`, creation commit `e5a7d57baf3fe8393ea9ada4f984285272570fea`.
-- This checkpoint is written before navigation edits; **fetch final remote HEAD after all documentation writes**, compare to the source SHA and preserve proof that there was no code/test/frozen-file diff.
+- **Git scope VERIFIED at pre-addendum HEAD `374ffa7daf586d658fd690d52dc37633251e6a5c` versus `07ec81519684e7cc6b0477f086787c4dc32f4520`: 5 commits, exactly five Markdown files (3 added documents + 2 navigation-only additions), 208 insertions, 0 deletions, 0 code/Bench/Parcae/G0/G1/R3/tests/frozen criteria/prereg/evidence/auth modifications.** This addendum adds one checkpoint-only commit; re-fetch the final remote SHA and do not confuse it with source/execution SHA.
 - Prior accepted G1 run execution SHA `3eef8d75d61fa6acad3b45a6e632c21ae1ee8f9d` is historical and **not** this documentation SHA. User local `git status` was not checked via remote tool; status `NOT TESTED`.
 
 ## Objective, environment, expected and actual (NO experiment executed)
@@ -49,3 +49,10 @@
 ## One next instruction (stop at delivery)
 
 **Give the user the Claude Code task instruction from** `a_predicate_003/gate_g2/CLAUDE_CODE_J1_IMPLEMENTATION_ONLY_HANDOFF_20261028.md`, instructing Claude Code to read this checkpoint, verify the latest final remote HEAD and write isolated **SOURCE ONLY**, no tests, no REAL. **Stop after providing this handoff.** Do not self-implement code or run experiments in this conversation. A later ChatGPT conversation should start by reading Claude Code's new code branch/checkpoint, not by inferring its completion from chat memory.
+
+## Final stage readback and Git comparison addendum
+
+- Review report Git Blob `e3ddfb1594f75ef0cc6366db9ec9aa2d764f751c`; Claude Code handoff Blob `5ad0452f18794e8b18fb4e4d90124ebe3092ec39`; checkpoint prior to this addendum Blob `d962566fb666c6b960c630f25ce1db5843f6b251`.
+- The *entire* diff from reviewed V0.1 input consists of five Markdown paths: `a_predicate_003/gate_g2/G2_J1_CPU_SPEC_V0_1_INDEPENDENT_REVIEW_001.md`, `a_predicate_003/gate_g2/CLAUDE_CODE_J1_IMPLEMENTATION_ONLY_HANDOFF_20261028.md`, this checkpoint, `docs/PROJECT_MAP.md`, `docs/SESSION_START_PROTOCOL.md`. No implementation code was produced in this stage.
+- **Status:** source-grounded V0.1 document review **PASS for handoff only**; 18 future fixture expected statuses as draft, **CPU NOT TESTED**, no REAL authorization; Grok deferred and O-1…O-15 undecided. Next action is to give the user the Claude Code handoff instruction and stop.
+- Actual final branch HEAD must be fetched after this addendum and used as the Claude Code implementation branch baseline. No local checkout status was inspected, so it is **NOT TESTED**.
