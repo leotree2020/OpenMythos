@@ -425,3 +425,11 @@ V0.1 在 **6 个场景族内设计 18 个待审核夹具**，其中**预期** 5 
 **研发职责：** ChatGPT 负责验收设计、独立审核与 checkpoint；用户要求**以后实际代码开发由 Claude Code 负责**，但必须在 V0.1 独立审核后另行获得代码阶段授权，再形成绑定 Git SHA 的 Claude Code 实施指令。**目前代码未授权、未委派执行；所有 CPU/REAL 均 NOT TESTED / NOT AUTHORIZED。** Grok 因额度限制 `DEFERRED / NOT PERFORMED` 不是 PASS，O-1～O-15 OWNER UNDECIDED；G2 REAL 仍 BLOCKED，原生 Parcae/Bench/R3/G0/G1 及模型架构未动。
 
 **下一条唯一指令：** 对 V0.1 规范文档做独立只读源码设计审核，记录反例及 checkpoint；不冻结、不写代码、不运行测试，也不代替 Claude Code 启动实施。
+
+## G2 J1 V0.1 限定审核及 Claude Code 开发指令交接（2026-10-28）
+
+从 `d1-r3-a-cpu-003-e1a-g2-j1-spec-v01-doc-20261028` @ `07ec81519684e7cc6b0477f086787c4dc32f4520` 创建独立文档/交接分支 `d1-r3-a-cpu-003-e1a-g2-j1-v01-review-claude-handoff-20261028`。ChatGPT 已对 **V0.1 18 个拟议 J1 合成 CPU 夹具及五类对照、四类 SMOKE_ONLY** 做独立只读源码审查，结论为 **`DOCUMENT REVIEW PASS — ONLY AS CODE-IMPLEMENTATION HANDOFF INPUT`**。该结论**不**等于 G2 整体设计、冻结判据、代码/CPU 测试或 REAL 通过。V0.1 当前预期被测输出为 5 limited PASS、5 FAIL、8 BLOCKED；实际 0/18 NOT TESTED；Grok 审核 DEFERRED（不是 PASS），O-1～O-15 OWNER UNDECIDED。
+
+**新审核报告：** `a_predicate_003/gate_g2/G2_J1_CPU_SPEC_V0_1_INDEPENDENT_REVIEW_001.md`。**Claude Code 开发任务书：** `a_predicate_003/gate_g2/CLAUDE_CODE_J1_IMPLEMENTATION_ONLY_HANDOFF_20261028.md`。**最新 checkpoint：** `docs/F3B_D1_A_CPU_003_E1A_G2_J1_V0_1_REVIEW_AND_CLAUDE_HANDOFF_CHECKPOINT_20261028.md`。
+
+**分工与边界：** ChatGPT 负责设计、审查、验收/checkpoint；用户要求由 Claude Code 负责实际编码。本次已准备完整开发任务，但**尚未调用 Claude Code**。未来由用户将任务书交给 Claude Code，它只能在**新的隔离代码分支**实现纯 J1 schema/judge/oracle/codec 和未经执行的静态测试源码，不能跑 Python/pytest/CPU 夹具或真实进程、不能生成运行证据、不能修改 Parcae/Bench/冻结 G0/G1/R3、不能自行冻结判据或进入 REAL。完成后代码 commit/push 并停止，回交 ChatGPT 审核。**G2 REAL 仍因合法回收者、孤儿和无信号异常收尾 BLOCKED。下一条唯一指令：交付 Claude Code 实施指令并停止本会话工作。**
