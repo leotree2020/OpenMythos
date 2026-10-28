@@ -45,7 +45,7 @@
 ## Dependencies, source integrity and Git
 
 - No new packages, network data downloads, model weights, GPU or experiment runtime dependency. Only GitHub files are referenced.
-- Intended Git diff from source HEAD: **add review record + this checkpoint; append-only PROJECT_MAP / SESSION_START_PROTOCOL navigation**. Verify after writes. No change to G2 V2 draft, old checkpoints, Bench, G0/G1, R3, prereg, Parcae, model, test, authorization or evidence files.
+- **Git diff independently VERIFIED** at branch HEAD `d614e91627919ad54e6178754c559a11d10d8c4b` compared with source SHA `6c223ef2efa8830c1552d44e046b72063d87a637`: **4 commits affecting exactly 4 Markdown files: 2 added (review and this checkpoint), 2 append-only edits (PROJECT_MAP, SESSION_START_PROTOCOL)**; 0 code, frozen criteria, benchmarks, test, evidence or upstream changes. This Git-verification addendum will result in one additional checkpoint-only commit; obtain and record actual latest HEAD from remote before further work.
 - Current user/local working-tree status cannot be verified through remote GitHub connection, and is **NOT TESTED**. Only GitHub remote file scope is verifiable.
 - Review is an assessment, not an implementation or a new G2 experiment. A Grok report, when available, should be kept separate and source-backed, with disagreement unresolved until an authorized minimal CPU experiment if needed.
 
