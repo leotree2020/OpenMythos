@@ -49,3 +49,11 @@ Source-level counts (not results): static contracts 7; correction-001 classes F0
 ## Only next instruction
 
 Return branch `d1-r3-a-cpu-003-e1a-g2-j1-impl-fix2-20261028`, its final HEAD (addendum), the diff against `a3f6eef8…` and this checkpoint to **ChatGPT** for an independent static review. Without a new owner authorization: no fixture materialisation, no Python or test execution, no criteria freeze, no merge, no G2 REAL, no Grok claim. **Stop here.**
+
+## Git SHA addendum (separate documentation commit)
+
+* Correction commit (source + tests + README + checkpoint + navigation): `e70b278a15ce6bf432c95c1b0f5853f13837f1ad`
+* Baseline (handoff HEAD): `a3f6eef883be123028377b3dd1d62ccd5a8e975c`; prior correction HEAD `045fa24a1b25f57d27d18dfc9b70b7c437c55898` (untouched).
+* Diff `a3f6eef..e70b278a15ce6bf432c95c1b0f5853f13837f1ad`: 7 files, 306 insertions, 17 deletions; changed J1 files are `judge.py`, `oracle.py`, `README.md`, `tests/test_j1_static_and_unit.py` only (`schema.py` and `codec.py` unchanged); 0 paths outside `gate_g2/j1/` and `docs/`; 0 paths in bench / gate_g0 / gate_g1 / prereg / evidence / tools / a_predicate_003/tests / Parcae / R3.
+* This addendum is one further documentation-only commit; the final branch HEAD is the remote HEAD of `d1-r3-a-cpu-003-e1a-g2-j1-impl-fix2-20261028` and must not be confused with the correction or baseline SHA.
+* Working tree after commit: clean (ignored local G0/G1 authorization files untouched).
