@@ -166,3 +166,5 @@
 
 
 **最新阶段检查点（2026-10-28：G2 设计修订 REVISION-001；优先于上方 G2 设计草稿块）：** G2-DESIGN-001 审核结论为 CHANGES REQUIRED，已按 F1–F9 修订为设计 V1（仅文档）。状态 **G2 DESIGN REVISION PREPARED — CROSS-REVIEW PENDING / G2 CRITERIA NOT FROZEN / G2 CPU / REAL NOT AUTHORIZED**。先读 `docs/F3B_D1_A_CPU_003_E1A_G2_DESIGN_REVISION_001_CHECKPOINT_20261028.md`、`a_predicate_003/gate_g2/G2_IDENTITY_DESCENDANTS_DESIGN.md` 与 `G2_DESIGN_REVISION_001_RECORD.md`。唯一下一步：提交 ChatGPT 与 Grok 审核新版设计，**不实现、不测试、不冻结判据、不进入 G3 / BV / E1-A**。
+
+**最新阶段检查点（2026-10-28：G2 J1 实现源码已提交，静态审查待办；优先于上方 J1 V0.1 交接块）：** 先读 `docs/F3B_D1_A_CPU_003_E1A_G2_J1_IMPL_PREP_001_CHECKPOINT_20261028.md` 与 `a_predicate_003/gate_g2/j1/README.md`。开发分支 `d1-r3-a-cpu-003-e1a-g2-j1-impl-20261028`（基线 `02d79a26…`，最终 HEAD 见检查点 addendum）。**状态：IMPLEMENTATION SOURCE PREPARED — STATIC REVIEW PENDING；全部测试 NOT TESTED；G2 判据未冻结；夹具未生成；G2 REAL BLOCKED；Grok DEFERRED 非 PASS。** 唯一下一步：ChatGPT 独立静态审查该分支 diff；未获新授权不得运行测试、生成夹具、合并或进入下一阶段。

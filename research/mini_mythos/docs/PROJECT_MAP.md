@@ -433,3 +433,7 @@ V0.1 在 **6 个场景族内设计 18 个待审核夹具**，其中**预期** 5 
 **新审核报告：** `a_predicate_003/gate_g2/G2_J1_CPU_SPEC_V0_1_INDEPENDENT_REVIEW_001.md`。**Claude Code 开发任务书：** `a_predicate_003/gate_g2/CLAUDE_CODE_J1_IMPLEMENTATION_ONLY_HANDOFF_20261028.md`。**最新 checkpoint：** `docs/F3B_D1_A_CPU_003_E1A_G2_J1_V0_1_REVIEW_AND_CLAUDE_HANDOFF_CHECKPOINT_20261028.md`。
 
 **分工与边界：** ChatGPT 负责设计、审查、验收/checkpoint；用户要求由 Claude Code 负责实际编码。本次已准备完整开发任务，但**尚未调用 Claude Code**。未来由用户将任务书交给 Claude Code，它只能在**新的隔离代码分支**实现纯 J1 schema/judge/oracle/codec 和未经执行的静态测试源码，不能跑 Python/pytest/CPU 夹具或真实进程、不能生成运行证据、不能修改 Parcae/Bench/冻结 G0/G1/R3、不能自行冻结判据或进入 REAL。完成后代码 commit/push 并停止，回交 ChatGPT 审核。**G2 REAL 仍因合法回收者、孤儿和无信号异常收尾 BLOCKED。下一条唯一指令：交付 Claude Code 实施指令并停止本会话工作。**
+
+## D1 CPU-003 E1-A G2 J1 实现源码 G2-J1-IMPL-PREP-001（2026-10-28）
+
+基线 `02d79a26e4ad6b49527bc90e6be4fe9130b45cff`（交接分支 HEAD，已核对），开发分支 `d1-r3-a-cpu-003-e1a-g2-j1-impl-20261028`。仅新增 `a_predicate_003/gate_g2/j1/` 纯 Python 合成证据判定器源码（`schema.py` / `judge.py` / `codec.py` / `oracle.py` / `README.md` / 未运行的测试源码）：五类有对照断言 + 四类 SMOKE_ONLY（无 PASS 路径）、Lane S/Lane O 隔离、harness 绑定信任表、严格 bool≠int、RELEASED=放行意图、Zombie/DEAD/ECHILD≠合法回收、哈希一致≠内核事件真实性。**未运行任何测试或 Python 项目代码（含语法检查），均为 NOT TESTED**；未冻结判据、未生成夹具、未改 Bench / Parcae / G0 / G1 / R3；Grok DEFERRED，O-1…O-15 未决，G2 REAL BLOCKED。状态：IMPLEMENTATION SOURCE PREPARED — STATIC REVIEW PENDING。检查点 `docs/F3B_D1_A_CPU_003_E1A_G2_J1_IMPL_PREP_001_CHECKPOINT_20261028.md`。下一步：交 ChatGPT 做独立静态代码审查，之后另行授权才可考虑夹具与 CPU 验收。
