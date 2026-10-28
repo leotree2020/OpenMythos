@@ -1,3 +1,9 @@
+# Historical G2 design V1 — superseded by the separate V2 draft
+
+> **ACTIVE DESIGN DRAFT (NOT FROZEN):** [`G2_IDENTITY_DESCENDANTS_DESIGN_V2.md`](G2_IDENTITY_DESCENDANTS_DESIGN_V2.md). This V1 body remains here as a historical review target and is archived byte-identically at `G2_IDENTITY_DESCENDANTS_DESIGN_V1_ee7e9d4.md`. Its stronger `GATE_HOLD_PROOF` / `CREATION_LINEAGE`, creator-reported `REAP_CONFIRMED`, and single-level BLOCKED test semantics are **not approved claims**. The V2 draft corrects them. Grok design review is temporarily deferred due to reported usage limits, **not PASS**. G2 criteria/code/CPU/REAL remain NOT AUTHORIZED.
+
+---
+
 # E1-A Gate G2 — process identity, descendant lineage, reaping and observation safety (DESIGN DRAFT V1, revision 001)
 
 **Task:** `F3B-D1-A-CPU-003-E1A-G2-DESIGN-REVISION-001` (revises `F3B-D1-A-CPU-003-E1A-G2-DESIGN-001`)  
