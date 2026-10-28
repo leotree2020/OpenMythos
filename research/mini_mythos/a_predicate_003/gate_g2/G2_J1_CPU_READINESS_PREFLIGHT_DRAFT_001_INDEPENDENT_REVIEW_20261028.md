@@ -5,7 +5,7 @@
 
 **Reviewed branch:** `d1-r3-a-cpu-003-e1a-g2-j1-cpu-readiness-preflight-doc-20261028`, independently verified remote HEAD `a546ca92c2e69edb46929599de398e174c0683ea`.  
 **Reviewed preflight:** `research/mini_mythos/a_predicate_003/gate_g2/G2_J1_CPU_READINESS_PREFLIGHT_DRAFT_001_20261028.md`, Git Blob `2d913119df54b301e6012910245d03deec065d4e`.  
-**Read-first checkpoint:** `research/mini_mythos/docs/F3B_D1_A_CPU_003_E1A_G2_J1_CPU_READINESS_PREFLIGHT_DRAFT_001_CHECKPOINT_20261028.md`; Git Blob `d0760cdda252b679f21bfecafed7801b65822453` at pre-addendum as recorded in the checkpoint; exact current readback blob separately verified as part of this review.  
+**Read-first checkpoint:** `research/mini_mythos/docs/F3B_D1_A_CPU_003_E1A_G2_J1_CPU_READINESS_PREFLIGHT_DRAFT_001_CHECKPOINT_20261028.md`; independently verified final Git Blob `d72be8951bf33261300a6988cc3c3f8bb3abb478`; the older blob `d0760cdda252b679f21bfecafed7801b65822453` appears only in that checkpoint's historical pre-addendum log and is **not** the final input blob.  
 **V0.1 authority:** `research/mini_mythos/a_predicate_003/gate_g2/G2_J1_CPU_ONLY_FIXTURE_PREREG_DRAFT_V0_1_20261028.md`, Git Blob `9574f90687b632f35c419a14963437c49dd35f58`; **draft, NOT FROZEN**.  
 **Code under prospective test:** Correction 003 developer source `38e8a9141ebd738a34628acc928adb28cd8c54cf`, source-static review `f51f77842c1eed88c2f7f9771b712cd969604321`. `j1/oracle.py=0df6e5da8e8d08b39f19ff4188f34d33a44a2282`; `schema.py=551c4a01ed37f73c809776e123f98f6d055ac998`; `judge.py=8aef00cb1b66ee107c91086cd537c759858940cd`. Frozen `bench/registry.py=3f2179e132371dd323f865be8a4d41fa5e58786d`, `bench/observer.py=635e73b34203219a3687f86332d0e82362b89670`, unchanged.
 
