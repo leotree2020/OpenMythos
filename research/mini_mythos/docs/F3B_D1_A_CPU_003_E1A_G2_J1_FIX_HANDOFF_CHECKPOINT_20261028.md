@@ -66,3 +66,10 @@ Deliver to the user:
 4. **No code execution, no CPU or REAL, no Grok review claim.**
 
 After the user submits it to Claude Code, the next ChatGPT turn begins by reading **Claude's newest code branch checkpoint and actual changed SHA**. Do not infer progress from chat memory or from this unexecuted task brief.
+
+## Verified Git-only stage closure addendum (remote readback)
+
+- At pre-addendum remote HEAD `8644985a65b818c0f27e0f7c6d9f336449bcd4b3` compared with input review SHA `1b2ba339d267b8c04e1db5fb71d29da45a597758`, GitHub returned **5 documentation commits** touching exactly **4 Markdown paths** (new Claude Code correction handoff and this checkpoint, plus navigation-only PROJECT_MAP and SESSION_START_PROTOCOL); **204 insertions, 0 deletions**. No `gate_g2/j1/` source code, Bench, Parcae, R3, G0/G1, frozen criteria/prereg, evidence, tests or tools changed.
+- Handoff Git Blob at readback: `5026f1070e8ea9dcf92c8c6de7dc45896d038d51`. Explicit names **J1-IMPL-F01, F02, F03, F04, F05, F06** are present in the handoff; historical F07 procedural deviation preserved separately.
+- **Git scope: PASS (docs-only)**; **Claude Code correction: NOT STARTED**; **J1 CPU: NOT TESTED / NOT AUTHORIZED**; **G2 REAL: BLOCKED**. The reviewer local checkout was not inspected; only remote GitHub branch/diff were verified.
+- This checkpoint append writes another Markdown-only commit, so **the actual final branch HEAD must be re-fetched after this write** and used in the Claude Code prompt.
