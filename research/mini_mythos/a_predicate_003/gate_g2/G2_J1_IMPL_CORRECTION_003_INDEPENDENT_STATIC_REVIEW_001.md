@@ -5,7 +5,7 @@
 **Developer source branch:** `d1-r3-a-cpu-003-e1a-g2-j1-impl-fix3-20261028`, remote HEAD **VERIFIED `38e8a9141ebd738a34628acc928adb28cd8c54cf`**.  
 **Correction baseline:** `24b3ffa26c5979f604e6208cb91713cfa8ed21ff`; developer source commit `8e75b9cc802dd7852ae83015c203a5b54c99dfb6`.  
 **Developer checkpoint:** `docs/F3B_D1_A_CPU_003_E1A_G2_J1_IMPL_CORRECTION_003_CHECKPOINT_20261028.md`, blob `77e17271c6218e4cb99f9aa207755fdf9adfe096`.  
-**Relevant Git blobs read:** `j1/schema.py=551c4a01ed37f73c809776e123f98f6d055ac998`; `j1/judge.py=` and `j1/tests/test_j1_static_and_unit.py=` read at the pinned source HEAD (final exact blobs to be verified in checkpoint); `j1/README.md=56be17c751ec9bc0b66a82d9d08c1e38a4d01eaf`. Frozen `bench/registry.py=3f2179e132371dd323f865be8a4d41fa5e58786d`; `bench/observer.py=635e73b34203219a3687f86332d0e82362b89670` (unchanged).  
+**Relevant Git blobs read:** `j1/schema.py=551c4a01ed37f73c809776e123f98f6d055ac998`; `j1/judge.py=8aef00cb1b66ee107c91086cd537c759858940cd`; `j1/tests/test_j1_static_and_unit.py=ab71b1dca8e90cc63f2763ed5391a492200f6dc8` independently fetched at the pinned source HEAD; `j1/README.md=56be17c751ec9bc0b66a82d9d08c1e38a4d01eaf`. Frozen `bench/registry.py=3f2179e132371dd323f865be8a4d41fa5e58786d`; `bench/observer.py=635e73b34203219a3687f86332d0e82362b89670` (unchanged).  
 **Original finding:** `J1-FIX2-REVIEW-F05` HIGH from `G2_J1_IMPL_CORRECTION_002_INDEPENDENT_STATIC_REVIEW_001.md` and prior checkpoint. The original counterexample was source-inferred, NOT EXECUTED.
 
 ## Independent verdict
