@@ -357,3 +357,7 @@ HEAD `0cf75c1`（代码与 CPU 验收提交 `a4a8509` 相同）。执行前检�
 ## D1 CPU-003 E1-A G1 CPU 测试 G1-CPU-TEST-001（2026-10-28）
 
 被测代码 `d175a1a`（证据提交另记于 `g1_cpu_test_results_001/EVIDENCE_COMMIT_RECORD.md`）。在进程安全哨兵下完整运行两次（无 `--groups`）：各 289 个唯一测试全部 PASS，0 FAIL / ERROR / SKIP / XFAIL / XPASS / 加载错误 / 哨兵违规，退出码 0，两次结果一致；独立脚本逐项核对。状态：G1 CPU TEST PASS；G1 REAL NOT AUTHORIZED（CPU 测试 PASS ≠ 真实 G1 PASS）。结果 `a_predicate_003/g1_cpu_test_results_001/`，检查点 `docs/F3B_D1_A_CPU_003_E1A_G1_CPU_TEST_001_CHECKPOINT_20261028.md`。下一步：ChatGPT / Grok 审核，随后由负责人单独决定是否授权真实 G1。
+
+## D1 CPU-003 E1-A G1 真实执行 G1-REAL-001（2026-10-28）
+
+执行时 Git SHA `3eef8d7`（证据提交另记于 `g1_real_001_results/EVIDENCE_COMMIT_RECORD.md`）。项目负责人授权一次真实 CPU 执行：run_id `g1_20261028_025922_68ac93`，T1 ABORT / T2 EOF / T3 INVALID_BYTE / T4 TIMEOUT 依序各一次 fork，共 4 次，零信号、零残留；退出 111/111/111/112；17 项判据对四个测试全部 PASS，`g1_closed.json` 已发布并与 evidence / summary 哈希绑定；独立脚本逐项复核通过。授权文件与 `authorization_used.json` 不提交。G1 V1 判据、G0、Bench、R3、Parcae 与架构未改。状态：G1 REAL EXECUTED — CROSS-REVIEW PENDING（记录判定 PASS，待 ChatGPT / Grok 独立复核）；G2 / G3 / BV / E1-A 未授权。结果 `a_predicate_003/g1_real_001_results/`，检查点 `docs/F3B_D1_A_CPU_003_E1A_G1_REAL_001_CHECKPOINT_20261028.md`。
