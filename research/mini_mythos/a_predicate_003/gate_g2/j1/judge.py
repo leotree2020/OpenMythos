@@ -114,7 +114,8 @@ def _ledger_prerequisite_problems(evs):
     with a boolean cleanup_confirmed, and a confirmed RUN_END only when every non-janitor node has DEAD; no duplicate INTENT / DEAD, no record after
     DEAD; INTENT before FORKED / REGISTERED, REGISTERED before RELEASED, no RELEASED + ABORTED; a creator other than 'O' registered before the child's
     INTENT; contiguous order from 1 (no lost row); ORPHAN_RECORD (frozen integrity_issues: a node with ANY record but no INTENT, e.g. DEAD-only or
-    ABORTED-only, J1-FIX-REVIEW-F01) -- plus the stronger SYNTHETIC-ONLY condition RECORD_BEFORE_INTENT (no node record may precede its INTENT).
+    ABORTED-only, J1-FIX-REVIEW-F01) -- plus the stronger SYNTHETIC-ONLY condition RECORD_BEFORE_INTENT (no node record may precede its INTENT); every FORKED
+    record carries a valid source-reported raw_fields.pid (MALFORMED_FORKED, J1-FIX2-REVIEW-F05) that any optional FORKED.identity does not contradict.
     Passing these proves only that the SUPPLIED rows are internally consistent.  It does NOT prove that the original B0 log has no omitted rows: a
     source-labelled completeness statement for the original readback does not exist in this stage, so PASS claims are limited to the finite set."""
     p = set()
@@ -161,6 +162,15 @@ def _ledger_prerequisite_problems(evs):
             p.add("RECORD_BEFORE_INTENT")        # stronger SYNTHETIC-ONLY condition: INTENT must also come first (frozen check_order enforces it for FORKED / REGISTERED)
         if k in ("FORKED", "REGISTERED") and "INTENT" not in d:
             p.add(k + "_WITHOUT_INTENT")
+        if k == "FORKED":
+            # J1-FIX2-REVIEW-F05: frozen registry.integrity_issues reports MALFORMED_FORKED when a FORKED record has no integer pid.  The pid is NOT
+            # inferred from a later REGISTERED record, from a creator claim, from ppid or from a gate token.  The FORKED starttime is deliberately NOT
+            # required (the native observer may record None).  The schema already rejected a present-but-invalid pid as INPUT_INVALID.
+            fork_pid = e.raw.get("pid")
+            if type(fork_pid) is not int or fork_pid < 1:
+                p.add("MALFORMED_FORKED_PID_MISSING")
+            elif e.identity is not None and e.identity.pid != fork_pid:
+                p.add("FORKED_IDENTITY_PID_CONFLICT")           # an optional FORKED.identity must not contradict the reported pid
         if k == "RELEASED" and "REGISTERED" not in d:
             p.add("RELEASED_WITHOUT_REGISTERED")
         if k == "INTENT":

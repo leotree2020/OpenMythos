@@ -1,6 +1,6 @@
 # J1 — synthetic evidence judge (SYNTHETIC_CPU_ONLY) — implementation source
 
-**Status: SOURCE CORRECTION 002 PREPARED (J1-FIX-REVIEW-F01…F04, on top of correction 001 F01…F06) — STATIC REVIEW PENDING. CPU NOT TESTED. G2 CRITERIA NOT FROZEN. G2 REAL BLOCKED.**
+**Status: SOURCE CORRECTION 003 PREPARED (J1-FIX2-REVIEW-F05, on top of correction 002 F01…F04 and correction 001 F01…F06) — STATIC REVIEW PENDING. CPU NOT TESTED. G2 CRITERIA NOT FROZEN. G2 REAL BLOCKED.**
 Correction 001 (task `F3B-D1-A-CPU-003-E1A-G2-J1-IMPL-CORRECTION-001`) answers the independent static review `CHANGES REQUIRED`; the historical F07 procedural
 deviation (one accidental empty `python3` start in the first implementation task: `SRC-07 strict procedural compliance FAIL (self-reported)`, Git file scope
 PASS) is preserved and is not rewritten. No Python of any kind was run in the correction (no import, compile, pytest, unittest, empty call).
@@ -85,7 +85,25 @@ coverage, input_diagnostics, measurement_target, native_B0_safety_status, scope`
 | J1-FIX-REVIEW-F03 | ATTRIBUTION compares ALL known identities pairwise (registered + every node witness): a populated `boot_id` / `pidns` conflict between any two blocks even when a third omits it (`IDENTITY_METADATA_CONFLICT`); witnesses must agree on `(pid, starttime)` (`CONFLICTING_TRUSTED_WITNESSES`); a trusted witness (or another REGISTERED record) carrying the same gate token for a different node blocks (`GATE_SHARED_WITH_OTHER_NODE_UNRESOLVED`); the verdict does not depend on record order. Agreement / mismatch is decided on the `(pid, starttime)` pair. Still retrospective, synthetic-only, unauthenticated trust. |
 | J1-FIX-REVIEW-F04 | `oracle.aggregate` type-checks every row and every `fixture_id` before any set / count operation: list, dict, bool, int, float, None or a non-dict row is a diagnostic reason, never an exception. Formal result stays BLOCKED / NOT_READY; `expected_ids` still does not exist. |
 
+## Correction 003 (task `F3B-D1-A-CPU-003-E1A-G2-J1-IMPL-CORRECTION-003`) — synthetic `FORKED.raw_fields.pid`
+
+Finding `J1-FIX2-REVIEW-F05` (HIGH): `UNIQUE_REGISTRY` could return a finite-set PASS for a transcript whose `FORKED` record reported no pid, although the frozen
+`bench/registry.py::integrity_issues` reports `MALFORMED_FORKED` for it. Source only; nothing executed, no Python invoked.
+
+* **Normalised field:** the synthetic `FORKED` event may carry `raw_fields.pid`, the projection of the native FORKED record's source-reported fork pid
+  (`bench/observer.py::_note_forked` writes `pid=<fork pid>`). It is an *optional* schema key on purpose.
+* **Absent:** the input stays valid (`input_valid=True`) but `UNIQUE_REGISTRY` is subject BLOCKED (`LEDGER_PREREQUISITE_FAILED_MALFORMED_FORKED_PID_MISSING`). The pid is
+  never inferred from a later REGISTERED record, a creator claim, `ppid`, a gate token or `FORKED.identity`.
+* **Present but invalid** (bool, string, `None`, `0`, negative, float): `INPUT_INVALID`, `subject_verdict=None`.
+* **Valid:** eligible for the remaining finite-ledger checks; the PASS claim is still limited to the finite supplied set.
+* **`FORKED` starttime stays optional:** the frozen observer may record `starttime=None`. If an optional `FORKED.identity` is supplied it must not contradict
+  `raw_fields.pid` (`FORKED_IDENTITY_PID_CONFLICT` -> BLOCKED). A FORKED pid record is not authenticated kernel lineage, and no native log adapter exists.
+* **Preserved:** the sound duplicate `(pid, starttime)` FAIL is still decided before the lifecycle checks; corrections 001 / 002, the 18 V0.1 expected verdicts and the
+  formal Oracle BLOCKED / NOT_READY are unchanged. `FORKED.pid` vs `REGISTERED.pid` agreement for the same node is **not** checked (open question OQ-13).
+
 ## Open questions (implementer proposals that need an owner / reviewer decision before any criteria freeze)
+
+* **OQ-13 (new)** Whether a FORKED pid that differs from the same node's REGISTERED pid must also block (the frozen registry rules do not check it; the correction deliberately stayed minimal).
 
 * **OQ-11 (new)** The gate/ticket association is currently a `gate_token` field on the synthetic `REGISTERED` record and on the witness. Whether it should instead be a separate trusted binding record (and who may issue it) is undecided; native B0 supplies none.
 * **OQ-12 (new)** What independent attestation (sealed Lane S / Lane O bytes, verifier, reviewed CPU guard, authenticated trust-map origin) would make formal acceptance ready; until then it is BLOCKED by design.

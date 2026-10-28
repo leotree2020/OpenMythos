@@ -577,6 +577,73 @@ class TestFixReviewF04AggregateMalformedIds(unittest.TestCase):
         self._assert_not_ready(oracle.aggregate(rows))
 
 
+# ---------------------------------------------------------------- Correction 003 (J1-FIX2-REVIEW-F05 MALFORMED_FORKED): cases A-F, NOT RUN
+def _fork_ledger(fork_raw, fork_ident=None, registered=(4101, 101)):
+    """RUN_START -> INTENT(nA) -> FORKED(nA) -> REGISTERED(nA), contiguous order from 1, every record read_status OK."""
+    return [
+        _ev("L", "RUN_START", 1, raw={"run_id": "run-1", "observer_pid": 300}),
+        _ev("L", "INTENT", 2, node="nA", raw={"creator": "O"}),
+        _ev("L", "FORKED", 3, node="nA", ident=fork_ident, raw=fork_raw),
+        _ev("L", "REGISTERED", 4, node="nA", ident=_idn(registered[0], registered[1], ppid=4100)),
+    ]
+
+
+class TestFix2ReviewF05MalformedForked(unittest.TestCase):
+    def test_a_missing_fork_pid_is_a_valid_input_but_blocks_the_registry_pass(self):      # reviewer counterexample: FORKED with no identity and no pid
+        out = _out("UNIQUE_REGISTRY", _fork_ledger({}))
+        self.assertTrue(out["input_valid"])
+        self.assertEqual(out["result_kind"], "SUBJECT_VERDICT")
+        self.assertEqual(out["subject_verdict"], BLOCKED)
+        self.assertIn("LEDGER_PREREQUISITE_FAILED_MALFORMED_FORKED_PID_MISSING", out["evidence_basis_codes"])
+        self.assertIsNone(out["accepted_claim"])
+
+    def test_a_the_pid_is_not_inferred_from_the_registered_record(self):
+        events = _fork_ledger({}, registered=(4101, 101))
+        self.assertNotEqual(_verdict("UNIQUE_REGISTRY", events), PASS)
+
+    def test_b_valid_fork_pid_allows_only_the_finite_set_claim(self):
+        out = _out("UNIQUE_REGISTRY", _fork_ledger({"pid": 4101}))
+        self.assertTrue(out["input_valid"])
+        self.assertEqual(out["subject_verdict"], PASS)
+        self.assertIn("ORIGINAL_LOG_COMPLETENESS_NOT_ASSERTED", out["evidence_basis_codes"])
+        self.assertIn("FINITE", out["accepted_claim"])
+
+    def test_c_present_but_invalid_fork_pid_is_input_invalid(self):
+        for bad in (True, False, "4101", None, 0, -1, 1.5):
+            out = _out("UNIQUE_REGISTRY", _fork_ledger({"pid": bad}))
+            self.assertFalse(out["input_valid"], repr(bad))
+            self.assertEqual(out["result_kind"], "INPUT_INVALID", repr(bad))
+            self.assertIsNone(out["subject_verdict"], repr(bad))
+
+    def test_d_unknown_fork_starttime_is_not_required(self):                          # native FORKED.starttime may be None: no FORKED identity at all
+        events = _fork_ledger({"pid": 4101})
+        self.assertNotIn("identity", events[2])
+        self.assertEqual(_verdict("UNIQUE_REGISTRY", events), PASS)
+
+    def test_e_a_sound_duplicate_fail_is_not_destroyed_by_an_unrelated_malformed_fork(self):
+        events = _ledger([("nA", 4101, 101), ("nB", 4101, 101)])
+        n = len(events)
+        events.append(_ev("L", "INTENT", n + 1, node="nC", raw={"creator": "O"}))
+        events.append(_ev("L", "FORKED", n + 2, node="nC", raw={}))
+        out = _out("UNIQUE_REGISTRY", events)
+        self.assertEqual(out["subject_verdict"], FAIL)
+        self.assertIn("DUPLICATE_PID_STARTTIME_ACROSS_NODES", out["evidence_basis_codes"])
+
+    def test_f_an_optional_fork_identity_that_contradicts_the_pid_blocks(self):
+        events = _fork_ledger({"pid": 4101}, fork_ident=_idn(4102, 102))
+        out = _out("UNIQUE_REGISTRY", events)
+        self.assertEqual(out["subject_verdict"], BLOCKED)
+        self.assertIn("LEDGER_PREREQUISITE_FAILED_FORKED_IDENTITY_PID_CONFLICT", out["evidence_basis_codes"])
+
+    def test_f_a_consistent_optional_fork_identity_is_accepted(self):
+        self.assertEqual(_verdict("UNIQUE_REGISTRY", _fork_ledger({"pid": 4101}, fork_ident=_idn(4101, 101))), PASS)
+
+    def test_prior_fixes_are_unaffected_by_the_new_rule(self):
+        events = _fork_ledger({"pid": 4101})
+        events.append(_ev("L", "DEAD", len(events) + 1, node="nGhost"))                 # orphan DEAD still blocks (correction 002 F01)
+        self.assertEqual(_verdict("UNIQUE_REGISTRY", events), BLOCKED)
+
+
 # ---------------------------------------------------------------- J1-IMPL-F05: trust is a hypothetical, unauthenticated harness declaration
 class TestF05TrustIsHypotheticalAndUnauthenticated(unittest.TestCase):
     def test_every_result_labels_the_trust_basis(self):

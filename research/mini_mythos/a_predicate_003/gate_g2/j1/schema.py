@@ -166,6 +166,11 @@ def _v_nonneg_int(v):
     return _is_int(v) and v >= 0
 
 
+def _v_pid(v):
+    """A source-reported process id: a non-bool integer >= 1 (None, 0, negatives, bools and strings are all invalid when the key is present)."""
+    return _is_int(v) and v >= 1
+
+
 def _v_bool(v):
     return type(v) is bool
 
@@ -212,7 +217,11 @@ def _v_log(v):
 _RAW_SCHEMA = {
     "RUN_START": ({}, {"run_id": _v_str, "observer_pid": _v_nonneg_int}),
     "INTENT": ({}, {"role": _v_str, "label": _v_str, "creator": _v_str, "creator_pid": _v_nonneg_int, "mode": _v_str_or_none}),
-    "FORKED": ({}, {"role": _v_str, "label": _v_str, "creator": _v_str, "creator_pid": _v_nonneg_int}),
+    # J1-FIX2-REVIEW-F05: `pid` is the normalised synthetic projection of the native FORKED record's source-reported pid (bench/observer.py::_note_forked
+    # writes pid=<fork pid>; bench/registry.py::integrity_issues rejects a non-integer one as MALFORMED_FORKED).  It is OPTIONAL in the schema on purpose:
+    # an ABSENT pid is a well-formed input with missing evidence (judge: subject BLOCKED), whereas a PRESENT but invalid pid is a malformed input
+    # (INPUT_INVALID).  The native FORKED starttime may legitimately be None (unreadable /proc), so no FORKED starttime is required here.
+    "FORKED": ({}, {"role": _v_str, "label": _v_str, "creator": _v_str, "creator_pid": _v_nonneg_int, "pid": _v_pid}),
     "REGISTERED": ({}, {"role": _v_str, "label": _v_str, "creator": _v_str, "creator_pid": _v_nonneg_int, "sid": _v_nonneg_int,
                         "pgrp": _v_nonneg_int}),
     "RELEASED": ({}, {}),
