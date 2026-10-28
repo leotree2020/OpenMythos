@@ -15,3 +15,10 @@
 
 * 基准提交：`8f9e8b2c027b3f6c0b738650b57af62d52dce141`
 * 修订内容提交与分支最终 HEAD：见下方追加记录（单独提交，避免自引用）。
+
+### Addendum (separate documentation commit)
+
+* 修订内容提交 SHA：`00e5044d00bc6bb483a6d56d48346428b534875d`（设计 V1、审核发现、V0 归档、修订记录、PROJECT_MAP / SOP 更新、本 checkpoint）；
+* 本 addendum 为其后的单独仅文档提交，其 SHA 以远端分支 HEAD 为准；
+* 文档 diff（`git diff --stat 8f9e8b2 00e5044d00bc6bb483a6d56d48346428b534875d`）：7 个文件，仅 `gate_g2/` 与 `docs/`；
+* 执行类 SHA 说明：本阶段无任何执行；G1 执行时 SHA `3eef8d75d61fa6acad3b45a6e632c21ae1ee8f9d` 不变。
