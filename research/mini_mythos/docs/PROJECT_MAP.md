@@ -465,3 +465,11 @@ ChatGPT 在独立审查分支 `d1-r3-a-cpu-003-e1a-g2-j1-impl-static-review-2026
 **复审结论：`STATIC REVIEW CHANGES REQUIRED`。** 原 F01/F02 的 Oracle 正式验收通道已静态收紧为始终 `BLOCKED / NOT_READY`，无效输入不再取得 formal PASS；原 F05/F06 仍严格合成范围。但发现 4 项新/剩余问题：`J1-FIX-REVIEW-F01` 高：缺 INTENT 的 DEAD/ABORTED 节点绕过 frozen registry ORPHAN_RECORD；`F02` 高：UNIQUE_REGISTRY 明定的 (pid,starttime) 与实现采用可选 boot_id/pidns 的 `same_instance` 不同；`F03` 高：ATTRIBUTION 的多见证 identity 冲突与同 gate 跨节点冲突可能被遗漏；`F04` 中：Oracle 汇总遇到不可 hash 的 fixture_id 可能 TypeError，而非 fail-closed。**这些均为源码反例推断，未执行。** Claude Code 自报这次没有调用 Python，连接器无法独立验证其本地命令记录；前次空 Python 解释器偏差继续保留历史记录。
 
 **状态：J1 源码已提交但静态复审 CHANGES REQUIRED / CPU 与 18 S/O 均 NOT TESTED / 判据 NOT FROZEN / G2 REAL BLOCKED / Grok DEFERRED 非 PASS / O-1…O-15 OWNER UNDECIDED。** 下一条唯一任务：获得负责人对 **Claude Code SOURCE-ONLY 修正** 的授权后，在隔离分支处理 F01～F04 并补未运行反例测试源码，commit/push/STOP，交回 ChatGPT 复审。不得在 ChatGPT 直接改代码、运行 Python/CPU/G2 REAL，亦不可改上游 Parcae、Bench 或既有证据。
+
+## G2 J1 源码第二轮最小修复交接 — Claude Code（2026-10-28）
+
+**最新源审核分支：** `d1-r3-a-cpu-003-e1a-g2-j1-fix-static-review-20261028`，远端已核验 @ `41030bc9e7d01a714fc091c60ba3a07b0a8be5cd`。**最新 Claude Code 已提交源码：** `d1-r3-a-cpu-003-e1a-g2-j1-impl-fix-20261028` @ `045fa24a1b25f57d27d18dfc9b70b7c437c55898`；独立结论仍为 `STATIC REVIEW CHANGES REQUIRED`，未通过源码静态验收，更不是 CPU FAIL。
+
+从当前审核 HEAD 建立只含**文档交接**的新分支 `d1-r3-a-cpu-003-e1a-g2-j1-fix2-handoff-20261028`，主要任务书 `a_predicate_003/gate_g2/CLAUDE_CODE_J1_SOURCE_ONLY_CORRECTION_002_HANDOFF_20261028.md`，阶段 checkpoint `docs/F3B_D1_A_CPU_003_E1A_G2_J1_FIX2_HANDOFF_CHECKPOINT_20261028.md`。该交接要求 Claude Code 独立分支只修复 `J1-FIX-REVIEW-F01～F04`：（1）无 INTENT 的 DEAD/ABORTED `ORPHAN_RECORD` 不得让 UNIQUE_REGISTRY PASS；（2）唯一性遵守 V0.1 的 `(pid,starttime)` 键；（3）ATTRIBUTION 解决多见证非传递身份冲突和同 gate 跨节点矛盾，无法证明时 BLOCKED；（4）Oracle aggregate 对不可哈希的畸形 fixture ID 返回 `BLOCKED/NOT_READY` 而非异常。配套未执行反例测试源码与 FIX2-01～FIX2-08 静态验收，原 V0.1 的 18 个预期不改。
+
+**本轮只准备交接文档，没有修改 J1 代码，没有调用 Claude Code，没有运行 Python/CPU/模型/真实进程或生产任何测试数据。** `FORMAL ORACLE ACCEPTANCE=BLOCKED/NOT_READY`、`18 S/O NOT MATERIALIZED`、`G2 CRITERIA NOT FROZEN`、`G2 REAL BLOCKED`、`Grok DEFERRED/NOT PERFORMED` 非 PASS、`O-1…O-15 OWNER UNDECIDED`。**唯一下一步：** 将任务书及最新远端 HEAD 交给 Claude Code；其 SOURCE-ONLY 修改提交 checkpoint 后停止，回 ChatGPT 独立静态审核，不得提前启动 CPU 或 REAL。
