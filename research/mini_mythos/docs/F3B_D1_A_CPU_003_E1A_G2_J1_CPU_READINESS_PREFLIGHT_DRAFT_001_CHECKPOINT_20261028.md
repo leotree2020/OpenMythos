@@ -34,7 +34,7 @@
 | Runtime/functional/syntax | **NOT TESTED**. |
 | REAL process safety | **BLOCKED** on separate lawful reaper, creator/orphan, no-signal containment and private disposable environment questions. |
 | Grok dual review | **DEFERRED / NOT PERFORMED**, cannot be called PASS. |
-| Git allowed-change scope | **PENDING final remote compare**; do not equate file creation with test PASS. |
+| Git allowed-change scope | **PASS (REMOTE DOC SCOPE)** verified at pre-addendum HEAD `b1761e922e6b4482d04a3d0e4e551477c5ddaf76` against source `f51f77842c1eed88c2f7f9771b712cd969604321`: exactly 4 commits, 4 Markdown paths, 212 added / 0 deleted lines, **no code/test/frozen artifacts changed**. This audit addendum creates one more checkpoint-only commit; final HEAD must be re-fetched. |
 
 ## Readiness gate inventory from new draft
 
@@ -62,3 +62,11 @@
 - No new source changes are authorized. No Parcae, frozen Bench, G0/G1, R3, old V0.1 spec, evidence, model architecture, or actual J1 code touched during this stage.
 - Historical earlier empty Python invocation by Claude is still recorded as self-reported procedural FAIL; current GitHub work does not independently observe a developer command history.
 - **Only next instruction (repeat):** deliver draft + checkpoint; after a **new owner-authorized document-only independent review**, resolve spec contradictions, publish findings/checkpoint. No code, fixture byte generation, SHA fabrication, tests, criteria freeze, G2 REAL or merge today.
+
+## Post-commit independent Git verification addendum
+
+- **Pre-addendum remote HEAD `b1761e922e6b4482d04a3d0e4e551477c5ddaf76` vs pinned review source `f51f77842c1eed88c2f7f9771b712cd969604321`: 4 commits, exactly 4 Markdown paths, 212 inserted / 0 deleted lines.** No `gate_g2/j1/` Python implementation or tests, `bench/`, upstream Parcae, G0/G1, R3, frozen criteria, prereg, evidence, model/training, or dependencies were edited.
+- Exact changed paths: `a_predicate_003/gate_g2/J1_CPU_READINESS_PREFLIGHT_DRAFT_V0_20261028.md`, this checkpoint, `docs/PROJECT_MAP.md`, `docs/SESSION_START_PROTOCOL.md`.
+- Git readback of new preflight document at pre-addendum HEAD: blob `4789ac9bb2a53439ddf96c2740a7106a22c8ea19`; checkpoint blob `9e40d2405dcebeb18ce52df40268d2a132c33692`. The preflight contains all 18 proposed identifiers, RDY-01…RDY-11 readiness gates and the explicit OQ-13 undecided scope. **Content checklist PASS for document presence; scientific independent review is PENDING**.
+- Current stage created **no** SHA for any nonexistent S/O file, no test results, no oracle seal, no runner/guard and no Python invocation. `CPU NOT TESTED`; `G2 REAL BLOCKED`; Grok `DEFERRED/NOT PERFORMED`.
+- This update adds one checkpoint-only documentation commit; **fetch the actual final remote HEAD and preserve it** as the next session's baseline. This documentation HEAD is not a new J1 code or experimental test SHA.
