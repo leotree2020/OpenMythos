@@ -79,6 +79,27 @@ Three required per-fixture fields: `expected_subject_verdict`, `actual_subject_v
 
 The CPU suite must explicitly bind unique IDs for **14 scenario cards** grouped into 10 families: `G2-D01,D02,D03a,D03b,D03c,D03d,D03e,D04,D05,D06,D07,D08,D09,D10`. Maintain distinct SUT (B0 / P1 / J1 / guard), independent truth provider and preventive/detective expectations per card; first REAL does not inherit permission to run the CPU fixture's malicious actors.
 
+### Exact 14-card acceptance inventory (V2; **proposed, not frozen**)
+
+| Unique ID | SUT | Truth source | Required *subject* result/limit | Test permission boundary |
+|---|---|---|---|---|
+| G2-D01 | B0/P1 separate, J1 judge | TP-KERNEL + declared honest-creator truth | Attribution corroborated only in trust-limited REAL; missing pre-release links -> BLOCKED | REAL later; no permission now |
+| G2-D02 | J1 on time-indexed sid/pgrp | TP-KERNEL before/after READY | Never infer bloodline from current sid/pgrp; undocumented transition -> BLOCKED | REAL later |
+| G2-D03a | B0 identity check + J1 | TP-FIXTURE wrong starttime | Refuse/identity UNKNOWN; unsafe accepted identity -> FAIL | CPU only |
+| G2-D03b | B0 ticket check + J1 | TP-FIXTURE foreign node id | Refuse foreign ticket; unsafe accepted child -> FAIL | CPU only |
+| G2-D03c | B0 defect replay / J1 | TP-FIXTURE same-parent wrong PID | B0 ACCEPTED_UNSAFE is expected diagnostic reproduction, **not safety PASS**; J1 unsafe PASS -> test FAIL | CPU only |
+| G2-D03d | B0 defect replay / J1 | TP-FIXTURE duplicate pid/starttime | No proof of unique owner, J1 BLOCKED or FAIL when positive conflict known | CPU only |
+| G2-D03e | J1 pid-reuse identity | TP-FIXTURE time-indexed starttime | Wrong instance not accepted; unknown race -> BLOCKED | CPU only |
+| G2-D04 | B0 revoke/late handling + J1 | TP-FIXTURE, gate EPIPE if positively supplied | Unresolved ticket -> subject BLOCKED, correct decision -> CPU test PASS | CPU only |
+| G2-D05 | J1 ledger / sidecar integrity | TP-FIXTURE torn, altered, missing record | subject BLOCKED when integrity unknown; correct BLOCKED -> CPU test PASS | CPU only |
+| G2-D06 | J1 outsider / spoofed socket | TP-FIXTURE independent outsider labels | No outsider signal/wait; origin unverifiable -> BLOCKED | CPU only |
+| G2-D07 | J1 reaping states, later A recorder | TP-FIXTURE + TP-KERNEL for future REAL | Z/DEAD/ECHILD not REAP; claimed wait not confirmed; correct BLOCKED -> CPU test PASS | CPU first; REAL later |
+| G2-D08 | J1 gate shared holder | TP-FIXTURE two readers | No unique gate recipient proof; subject BLOCKED, positive wrong-pass -> FAIL | CPU only |
+| G2-D09 | J1 release delivery | TP-FIXTURE RELEASED without R/action proof | RELEASED is intent; unconfirmed delivery -> BLOCKED | CPU only |
+| G2-D10 | G2 guard and exception judge | TP-FIXTURE forbidden call / residual | guard blocks forbidden call; subject FAIL for proven unsafe attempt / BLOCKED for missing guard | CPU first; REAL only in authorized run |
+
+**All rows require** separate fixture-declared `expected_subject_verdict`, observed `actual_subject_verdict` and `test_acceptance_verdict` (PASS on exact expected response plus intact guard/evidence). `ACCEPTED_UNSAFE` is a **diagnostic baseline behavior label** in a defect-reproduction fixture, not a G2 safe subject PASS. Every positive FAIL requires a witness of the protocol violation, while missing required proof yields subject BLOCKED. For each REAL candidate, specify PREVENT vs DETECT semantics and do not claim inherited permissions from CPU fixtures.
+
 ## 7. Card scope, stop rules and process budget
 
 | Scope | Candidate cards | Truth/expected limit |
