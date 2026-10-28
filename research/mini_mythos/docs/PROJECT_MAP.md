@@ -546,3 +546,7 @@ The preflight explicitly keeps the **18 unique V0.1 proposed fixture IDs** with 
 ## J1 IV-S independent sidecar CPU candidate (2026-10-28)
 
 在基线 f73d8c5ae9be2b3b0674c0c0ba89b36bb85b091f 上创建独立开发分支 d1-r3-a-cpu-003-e1a-g2-j1-iv-s-cpu-unit-candidate-20261028。新增 a_predicate_003/gate_g2/j1_iv_s/，真实执行 23 项 CPU 单元测试，23 PASS/0 FAIL（仅验证新组件），覆盖侧栏日志完整解析、哈希链、严格规范 JSON 与 F05 合法 2 条记录 / 可信 3 条记录参考 seal 不匹配。完整记录：docs/F3B_D1_A_CPU_003_E1A_G2_J1_IV_S_CPU_UNIT_CANDIDATE_CHECKPOINT_20261028.md。原始 J1/Oracle/Bench/Parcae/V0.1/R3/模型未改；官方 18 案例 NOT TESTED；GroK DEFERRED；Oracle BLOCKED/NOT_READY；G2 REAL BLOCKED。下一步仅独立源码复审、固定 SHA CPU 复跑。
+
+## J1 IV-S 原代码复测与对抗负例扩充（2026-10-28）
+
+基线 `5c3a14b45322da4ca4d748477789e9ebc30158a3`，新隔离分支 `d1-r3-a-cpu-003-e1a-g2-j1-ivs-cpu-recheck-negative-controls-20261028`。本轮先核对 GitHub 原始三份 Python blob 与本地文件完全一致（容器网络 DNS 不可用，未声称 clone 成功），CPU 重新执行原 23 项单测全部 PASS。新增独立 helper 的 10 项对抗测试 `a_predicate_003/gate_g2/j1_iv_s/tests/test_sidecar_adversarial_cpu.py`，合计 **33/33 PASS，0 FAIL/ERROR**。对抗测试证明自造参考日志+自造 manifest 可以产生 `VALID_SEAL_MATCH`，**只能证明字节相符，不能证明独立真实来源**。审查记录 `a_predicate_003/gate_g2/j1_iv_s/IV_S_CPU_RECHECK_AND_ADVERSARIAL_REVIEW_20261028.md`，checkpoint `docs/F3B_D1_A_CPU_003_E1A_G2_J1_IV_S_CPU_RECHECK_ADVERSARIAL_CHECKPOINT_20261028.md`。外部独立审核仍 PENDING，Oracle BLOCKED/NOT_READY，官方 18 案例 NOT TESTED，Grok DEFERRED，G2 REAL BLOCKED。唯一下一步：外部审查后做独立 Lane S 完整语义的受控开发；未授权不得冻结正式判据。
