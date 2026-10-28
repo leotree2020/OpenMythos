@@ -415,3 +415,13 @@ HEAD `0cf75c1`（代码与 CPU 验收提交 `a4a8509` 相同）。执行前检�
 审核报告：`a_predicate_003/gate_g2/G2_J1_CPU_SPEC_V0_INDEPENDENT_REVIEW_001.md`；检查点：`docs/F3B_D1_A_CPU_003_E1A_G2_J1_CPU_SPEC_V0_REVIEW_001_CHECKPOINT_20261028.md`。六项发现 F01～F06：J1 输入没有明确排除夹具 ID/答案元数据；单一断言状态能被固定输出应付；sidecar 可信 seal 不匹配的完整性 FAIL 与依赖日志推理的 BLOCKED 混用；假设性模拟见证者不能等同原生 B0 真实来源；序列化/读取完整性不够封闭；J1 检出缺陷 TEST PASS 不等于 B0 安全 PASS。12 个 ID/6 族/4 narrow PASS+2 FAIL+6 BLOCKED 都是**拟议预期**，实际测试与夹具字节为 NOT TESTED/NOT MATERIALIZED；9 个其他 arm 保留 DEFERRED_BY_SCOPE。
 
 **状态：G2 SPEC V0 REVIEW CHANGES REQUIRED / V0.1 DOC REVISION NEXT / G2 CRITERIA NOT FROZEN / G2 CODE & CPU NOT AUTHORIZED / G2 REAL BLOCKED & NOT AUTHORIZED / Grok DEFERRED（不是 PASS）/ O-1…O-15 OWNER UNDECIDED。** G0/G1 已验收与原生 Parcae/Bench/R3/模型架构未改。下一条唯一指令：**仅修订 J1 SPEC V0.1 文档并重新只读审核**，先解决输入隔离与单一断言固定输出，不实施/运行任何代码或进程。
+
+## G2 J1 CPU SPEC V0.1 六项问题修订 — Claude Code 实施分工（2026-10-28）
+
+**最新文档分支：** `d1-r3-a-cpu-003-e1a-g2-j1-spec-v01-doc-20261028`，基于已核对 `d1-r3-a-cpu-003-e1a-g2-j1-spec-review-20261028` @ `32bf2c18803b946e3cfe387d1296e9b7f6e5d7b6`。历史 V0 审核为 **CHANGES REQUIRED**，六项 F01～F06。独立文件 `a_predicate_003/gate_g2/G2_J1_CPU_ONLY_FIXTURE_PREREG_DRAFT_V0_1_20261028.md` 是**新 V0.1 草稿，不替换/篡改已审核的 V0**。阶段 checkpoint：`docs/F3B_D1_A_CPU_003_E1A_G2_J1_CPU_SPEC_V0_1_REVISION_CHECKPOINT_20261028.md`。
+
+V0.1 在 **6 个场景族内设计 18 个待审核夹具**，其中**预期** 5 narrow PASS / 5 FAIL / 8 BLOCKED，均是拟议的 **subject verdict**，**尚无实际 CPU 测试**。现在 J1 API 不得收到 fixture_id/评分/私有 truth；私有 oracle 仅由独立验收器使用；五类 assertion 有相反结果对照，四类无法全面区分的 assertion 明确 `SMOKE_ONLY`；可信 seal 不匹配的完整性断言预期 FAIL、依赖缺陷日志作推断预期 BLOCKED；G2_WITNESS_SIM、G2_WRAP_SIM、SEAL_MANIFEST_SIM 被标注为假设性证据，不能冒充原生 B0 的真实记录。另 9 个 arm `DEFERRED_BY_SCOPE`，非 PASS。所有夹具字节和 SHA256 尚未生成。
+
+**研发职责：** ChatGPT 负责验收设计、独立审核与 checkpoint；用户要求**以后实际代码开发由 Claude Code 负责**，但必须在 V0.1 独立审核后另行获得代码阶段授权，再形成绑定 Git SHA 的 Claude Code 实施指令。**目前代码未授权、未委派执行；所有 CPU/REAL 均 NOT TESTED / NOT AUTHORIZED。** Grok 因额度限制 `DEFERRED / NOT PERFORMED` 不是 PASS，O-1～O-15 OWNER UNDECIDED；G2 REAL 仍 BLOCKED，原生 Parcae/Bench/R3/G0/G1 及模型架构未动。
+
+**下一条唯一指令：** 对 V0.1 规范文档做独立只读源码设计审核，记录反例及 checkpoint；不冻结、不写代码、不运行测试，也不代替 Claude Code 启动实施。
