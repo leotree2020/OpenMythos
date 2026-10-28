@@ -31,7 +31,7 @@
 | Task handoff document | **PASS (document creation)**, not CPU/test PASS; Git readback pending. |
 | Correction 003 actual implementation | **NOT STARTED**; no Claude Code call in this conversation. |
 | Functional syntax/import/CPU/18 fixtures | **NOT TESTED / NOT MATERIALIZED**. |
-| Git doc-only changed-path scope | **PENDING final GitHub remote compare**, record in addendum before stage close. |
+| Git doc-only changed-path scope | **PASS at pre-addendum HEAD `52bb9f2ad35d3e8d79539c0be4935ed20d65749f`** vs pinned reviewed source `801489ec5b42c9d8e5e27bb11c619fe3f6506312`: 4 commits, exactly 4 Markdown paths (2 new docs and 2 navigation-only entries), +162/-0 lines; 0 J1 code/test/Bench/Parcae/criteria/evidence/frozen files touched. This addendum adds one checkpoint-only commit; fetch actual final HEAD after it. |
 | G2 REAL safety | **BLOCKED / NOT AUTHORIZED**. |
 | Grok independent review | **DEFERRED / NOT PERFORMED**, not a dual-PASS. |
 
@@ -55,3 +55,11 @@ Required source-only negative/positive controls: (A) missing pid → subject BLO
 ## Stop condition
 
 Deliver user the committed **Correction 003 handoff link**, the final verified handoff branch HEAD, and the concise Claude Code copy-paste task. **Stop**. No ChatGPT implementation edit, no Python/test, no fixture materialization, no G2 REAL and no claims of Grok approval.
+
+## Independent post-commit Git readback / verification addendum
+
+- GitHub verified pre-addendum branch HEAD `52bb9f2ad35d3e8d79539c0be4935ed20d65749f` vs source review SHA `801489ec5b42c9d8e5e27bb11c619fe3f6506312`; **4 Markdown paths, +162 insertions / 0 deletions**. New task Git blob `a275065acfc5e7478a26b7b6e87bb0bfb5aa9001`; checkpoint pre-addendum blob `d0fe9a406e02d7a02844f113f143c6dd76b182c5`.
+- Exact touched files: `a_predicate_003/gate_g2/CLAUDE_CODE_J1_SOURCE_ONLY_CORRECTION_003_HANDOFF_20261028.md`, this checkpoint, `docs/PROJECT_MAP.md`, `docs/SESSION_START_PROTOCOL.md`. **No code, test files, upstream, frozen rules or experimental evidence edited**, even on the review-derived branch.
+- The task document was read back: precise HIGH `J1-FIX2-REVIEW-F05`, explicit synthetic `FORKED.raw_fields.pid` plan, six unexecuted negative/positive source cases, FIX3-01…FIX3-08 static criteria, prohibitions and a STOP condition are present.
+- No Claude Code invocation or experiment occurred in this document stage. **Final branch SHA still needs to be fetched after this checkpoint-only verification commit**; give that final HEAD to Claude Code, not this pre-addendum SHA.
+- The actual future code source remains inherited from reviewed `26da6082af73c0505d5520001d1cea6ec086df47`; a documentation HEAD is **not** a new implementation/test result. Local checkout Git status was **NOT TESTED** via this GitHub-only review; developer process history cannot be inferred.
