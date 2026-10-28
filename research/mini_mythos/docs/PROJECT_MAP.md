@@ -379,3 +379,9 @@ HEAD `0cf75c1`（代码与 CPU 验收提交 `a4a8509` 相同）。执行前检�
 主要入口：`a_predicate_003/gate_g2/G2_IDENTITY_DESCENDANTS_DESIGN_V2.md`（当前设计 V2）；`a_predicate_003/gate_g2/G2_V1_REVIEW_AND_GROK_DEFER_RECORD.md`（ChatGPT 对 V1 的 R1–R5 发现与审核来源）；`docs/F3B_D1_A_CPU_003_E1A_G2_DESIGN_REVISION_002_CHECKPOINT_20261028.md`（本阶段 checkpoint）。V1 逐字节归档为 `G2_IDENTITY_DESCENDANTS_DESIGN_V1_ee7e9d4.md`，旧默认 `G2_IDENTITY_DESCENDANTS_DESIGN.md` 顶部指向 V2。V2 不把 gate 管道持有当作唯一创建血缘证明，不把创建者 WAIT_REPORT 当作独立回收证明，区分 CPU 夹具 subject BLOCKED 与 test PASS，并把不发信号的异常回收责任列为 REAL 阻断项。建议方案 A（合法创建者回收）仅为研究偏好；O-1…O-15 仍未冻结。
 
 **下一条唯一指令：** 只读审核 V2 文档和新 checkpoint，记录反例/剩余设计阻断；未获后续负责人分阶段授权前，不冻结、不实现、不运行 CPU/REAL，不进入 G3/BV/E1-A。
+
+## G2 V2 独立源码设计审核（2026-10-28；CHANGES REQUIRED）
+
+来源：`d1-r3-a-cpu-003-e1a-g2-v2-design-20261028` @ `6c223ef2efa8830c1552d44e046b72063d87a637`，冻结 V2 设计 blob `e58fe0e0881beebcef2f3d8b0510b7e4175da1da`。本次 ChatGPT **只读复核真实源码、只对独立审核文档及导航做 Git 写入**，审核分支 `d1-r3-a-cpu-003-e1a-g2-v2-review-20261028`。
+
+审核结论：**G2 V2 DESIGN CHANGES REQUIRED / REAL DESIGN PREREQUISITES BLOCKED / CRITERIA NOT FROZEN / G2 CPU & REAL NOT TESTED, NOT AUTHORIZED。** 发现与最小反例见 `a_predicate_003/gate_g2/G2_V2_INDEPENDENT_DESIGN_REVIEW_001.md`（V2-F01…F06，特别是 B0 `_on_created` 自动放行导致 D01 无放行前 gate 见证；创建者 wait 报告/可信插桩的证明等级；无信号异常清理与孤儿责任；sidecar 完整性；CPU subject 与 test 双层验收）。阶段 checkpoint：`docs/F3B_D1_A_CPU_003_E1A_G2_V2_INDEPENDENT_DESIGN_REVIEW_001_CHECKPOINT_20261028.md`。O-1…O-15 是 **ChatGPT 待审批建议、OWNER DECISION UNDECIDED**。Grok 受额度限制为 `DEFERRED / NOT PERFORMED`；用户的临时例外仅允许继续**文档工作**，不等于 Grok PASS。原生 Parcae、Bench、冻结 G0/G1、R3、测试、实验数据一律未授权改动。下一条唯一指令：仅提出 V2.1 最小文档修订后重新独立审核；不得冻判据、实现、CPU 运行、真实 fork、信号或进入 G3/BV/E1-A。
