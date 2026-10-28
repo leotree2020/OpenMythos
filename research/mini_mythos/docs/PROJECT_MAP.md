@@ -550,3 +550,7 @@ The preflight explicitly keeps the **18 unique V0.1 proposed fixture IDs** with 
 ## J1 IV-S 原代码复测与对抗负例扩充（2026-10-28）
 
 基线 `5c3a14b45322da4ca4d748477789e9ebc30158a3`，新隔离分支 `d1-r3-a-cpu-003-e1a-g2-j1-ivs-cpu-recheck-negative-controls-20261028`。本轮先核对 GitHub 原始三份 Python blob 与本地文件完全一致（容器网络 DNS 不可用，未声称 clone 成功），CPU 重新执行原 23 项单测全部 PASS。新增独立 helper 的 10 项对抗测试 `a_predicate_003/gate_g2/j1_iv_s/tests/test_sidecar_adversarial_cpu.py`，合计 **33/33 PASS，0 FAIL/ERROR**。对抗测试证明自造参考日志+自造 manifest 可以产生 `VALID_SEAL_MATCH`，**只能证明字节相符，不能证明独立真实来源**。审查记录 `a_predicate_003/gate_g2/j1_iv_s/IV_S_CPU_RECHECK_AND_ADVERSARIAL_REVIEW_20261028.md`，checkpoint `docs/F3B_D1_A_CPU_003_E1A_G2_J1_IV_S_CPU_RECHECK_ADVERSARIAL_CHECKPOINT_20261028.md`。外部独立审核仍 PENDING，Oracle BLOCKED/NOT_READY，官方 18 案例 NOT TESTED，Grok DEFERRED，G2 REAL BLOCKED。唯一下一步：外部审查后做独立 Lane S 完整语义的受控开发；未授权不得冻结正式判据。
+
+## J1 IV-S 独立 Lane S 结构验证器 CPU 候选（2026-10-28）
+
+实际继续开发：隔离分支 `d1-r3-a-cpu-003-e1a-g2-j1-independent-lane-s-cpu-candidate-20261028` 从已核验 `78a42b9f4863a78bbf7778171c6c276fcd30c4ae` 建立。新增 `a_predicate_003/gate_g2/j1_iv_s/lane_s.py` 与 `tests/test_lane_s_cpu.py`，独立实现 Lane S JSON/角色白名单/事件及身份闭合字段检查、重复记录检查、答案泄漏防护等，并与原 sidecar 33 项合并进行 **67/67 CPU 单元测试 PASS**。独立审核 PENDING；测试仅属于组件，**不代表完整 IV-S 或正式 Oracle**。阶段 checkpoint：`docs/F3B_D1_A_CPU_003_E1A_G2_J1_INDEPENDENT_LANE_S_CPU_CANDIDATE_CHECKPOINT_20261028.md`。旧 J1/Oracle、Parcae、Bench、V0.1、R3、模型未修改。正式 18 项 NOT TESTED，S/O/签名未物化，Grok DEFERRED，G2 REAL BLOCKED。唯一下一步：独立源码审查并设计 SC-08 语义契约，不能自动解锁正式验收。

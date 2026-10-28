@@ -1,21 +1,26 @@
-# J1 IV-S independent sidecar verifier — isolated CPU candidate
+# J1 IV-S — independent sidecar and Lane S structural candidates
 
-Status: PROVISIONAL CODE; 23/23 LOCAL UNIT TESTS PASS; FORMAL J1 ACCEPTANCE BLOCKED/NOT_READY. This package is NOT an acceptance oracle, authenticated custody mechanism, or G2 REAL verifier.
+**Status: ISOLATED CPU COMPONENT TESTS 67/67 PASS (LOCAL); INDEPENDENT REVIEW PENDING; FORMAL ORACLE BLOCKED/NOT_READY.**
 
-## Functionality
+This package imports no J1, Bench, Parcae, Oracle or model code. It consists of two separately isolated proposed checker components:
 
-- sidecar.py independently verifies nonempty newline-terminated canonical JSON records, strict field sets and duplicate keys, UTF-8, Unicode NFC, no floats, depth limits, sequence numbers, genesis, previous-record links and SHA-256 digests.
-- verify_f05_reference(readback, reference, manifest, run_id) fully validates both sidecar chains, the manifest against the three-record reference, and a two- or three-record exact prefix. It returns INVALID_INSTRUMENT, VALID_SEAL_MATCH, or VALID_SEAL_MISMATCH, not a formal case verdict.
-- Imports only Python standard library; NO import of existing j1.codec, j1.schema, j1.judge, j1.oracle, frozen Bench, Parcae or model code.
-- The 4,000,001-byte safety cap is a provisional resource bound, NOT a certified equivalence to the original J1 input schema. This standalone tool does not verify independent origin of the reference, manifest, trust map or S/O truth.
-- Test vectors are created deterministically in memory during local unit tests. There are no stored official Lane S/O fixtures, signatures or custody proofs.
+- `sidecar.py`: canonical sidecar bytes, record-chain integrity, and F05 reference-prefix comparison. It does not authenticate the reference/manifests. Its 4,000,001-byte safety bound is provisional.
+- `lane_s.py`: independent **structural** validation of a Lane S input document (`assertion_id`, `subject_observables`, `declared_trust_model`). It enforces the nine assertion identifiers, 14 event kinds, seven hypothetical role ceilings/tiers, closed event/identity/raw-field whitelists, non-bool integer rules, source/order uniqueness, answer-firewall tokens, NFC and canonical UTF-8 JSON with duplicate-key rejection. `validate_lane_s_bytes(data: bytes)` returns a `LaneSResult(valid, reason, events, trust_handles)`, **never** a formal case/run verdict.
+- `tests/test_sidecar_cpu.py`, `tests/test_sidecar_adversarial_cpu.py`, `tests/test_lane_s_cpu.py`: deterministic, in-memory, **nonofficial synthetic CPU** tests. No fixture bytes are written into the repository.
 
-## Reproduce CPU-only tests from repository root
+## CPU reproduction (from repository root)
 
-    PYTHONPATH=research/mini_mythos/a_predicate_003/gate_g2 python -m unittest discover -s research/mini_mythos/a_predicate_003/gate_g2/j1_iv_s/tests -p 'test_*.py' -v
+```bash
+PYTHONPATH=research/mini_mythos/a_predicate_003/gate_g2 \
+python -m unittest discover \
+  -s research/mini_mythos/a_predicate_003/gate_g2/j1_iv_s/tests \
+  -p 'test_*.py' -v
+```
 
-Author-side local execution: Python 3.13.5, Linux x86-64, 23 tests, 23 PASS, 0 FAIL, 0 ERROR, approximately 0.002 seconds. The executed local Python file Git blobs match the uploaded blobs for the branch commit. No GPU, native G2 process, or formal Oracle was run.
+The author ran byte-matched local files on Python 3.13.5, Linux x86-64 CPU; result: **67 tests, 67 PASS, 0 FAIL/ERROR, ~0.009s**. This is **not** a remote CI run or a separate external reviewer. Git blobs: `lane_s.py=264971258c6e7ae709d0a884afb35c6538c668d0`, `tests/test_lane_s_cpu.py=a8d9eacc8fb0d9095193a1c7fc15805bd034d3ae`.
 
-## Pending gates
+## Scientific boundary and blockers
 
-Independent static code review; independent rerun on the pinned Git commit; review of byte cap, Unicode and reference provenance; complete Lane S validator; independently authored/sealed Lane O truth; trust-root and custodian; guard and runner; frozen acceptance criteria and official 18 cases. The formal Oracle remains BLOCKED/NOT_READY and FORMAL_ACCEPTANCE_READY=False.
+**STRUCTURE_VALID is not VERIFIED_VALID IV-S.** The checker does *not* validate each case's O-authored meaning (SC-08), cannot independently establish a source's authentic role or provenance, and does not implement trusted Lane O truth, IAV custody, signature/key trust root, formal run guard or formal case acceptance. The untrusted caller can supply self-consistent roles and a self-matching reference log. The `MAX_INPUT_BYTES=8_000_000` limit is an independent, unfrozen defensive cap, not a pinned J1 schema scientific limit. A non-OK `read_status` is structurally legal even though evidence may be unusable.
+
+Review these distinctions before any integration. All official 18 planned J1 S/O cases remain `NOT TESTED / NOT MATERIALIZED`; `FORMAL_ACCEPTANCE_READY=False`, Oracle `BLOCKED/NOT_READY`, G2 REAL `BLOCKED`, Grok `DEFERRED`. No change to existing `j1/`, upstream Parcae, frozen Bench, V0.1, R3 or model architecture.
