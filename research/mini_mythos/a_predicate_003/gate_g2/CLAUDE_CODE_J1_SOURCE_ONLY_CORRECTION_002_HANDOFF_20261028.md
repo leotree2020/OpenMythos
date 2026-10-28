@@ -7,6 +7,15 @@
 **Status:** `HANDOFF PREPARED / CODE CORRECTION NOT STARTED / CPU NOT TESTED / G2 REAL BLOCKED`.  
 **Scope:** smallest defensible source-only fix of **four findings** in the latest independent static review. **Absolutely NO Python execution, imports, compile, pytest/unittest, run, actual fixture data, process tests, or criteria freeze.**
 
+## Exact finding identifiers (review source, no renaming)
+
+| ID | Severity | Code review requirement |
+|---|---|---|
+| `J1-FIX-REVIEW-F01` | HIGH | Frozen `ORPHAN_RECORD` rejects DEAD/ABORTED with no node INTENT |
+| `J1-FIX-REVIEW-F02` | HIGH | `UNIQUE_REGISTRY` uses V0.1 pair `(pid,starttime)`, not optional boot/namespace to create a false PASS |
+| `J1-FIX-REVIEW-F03` | HIGH | ATTRIBUTION resolves all trusted simulated witness contradictions and cross-node same-gate conflict |
+| `J1-FIX-REVIEW-F04` | MEDIUM | Oracle aggregate safely rejects malformed fixture IDs without exceptions or formal acceptance PASS |
+
 ## 0. Provenance and mandatory read-first protocol
 
 Repository: `leotree2020/OpenMythos`.
