@@ -83,7 +83,7 @@ Current source: `j1/schema.py:202–219`, `j1/judge.py:83–118,231–268`, comp
 
 **Source-only negative controls:** absent run_id/observer_pid, orphan creator INTENT, RUN_END wrong run_id, torn/read_status non-OK, duplicate across nodes. Nothing is executed now.
 
-## 6. J1-IMPL-F05/F06 — synthetic trust vs real B0 record mismatch
+## 6. J1-IMPL-F05 (synthetic trust provenance) and J1-IMPL-F06 (real B0 record mismatch)
 
 **F05 trust:** `schema.validate_trust_model` only validates a caller-provided role/kind map and cannot authenticate the provider. **Treat all trusted simulated source roles as an explicitly declared harness contract outside J1**, not kernel identity or cryptographically authenticated sender. The judge must not elevate a raw message's role string or `synthetic_assumption=True` to physical authority. Before any formal CPU acceptance, a distinct trusted harness and its origin/seal rules must be reviewed. If no such harness exists, mark provenance `BLOCKED`. Do not build a fake signature/key/identity mechanism for this draft.
 
