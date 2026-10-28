@@ -353,3 +353,7 @@ HEAD `0cf75c1`（代码与 CPU 验收提交 `a4a8509` 相同）。执行前检�
 ## D1 CPU-003 E1-A G1 实现审核修复 REVIEW-FIX-001（2026-10-28）
 
 审核基准 `453fe4e`，修复提交 `a5d9168`。三项实施层修复：① `run()` 异常路径检查本轮全部节点及 guard 的未回收子进程（不再用可能过期的 `S.rec`）；② CPU runner 验收：仅完整选择且全部 289 个预期测试 ID 各执行一次并 PASS（0 SKIP/FAIL/ERROR/加载错误/哨兵违规）才算 PASS，诊断分组最多 INCOMPLETE；③ 逐测试停止规则改为判定器自己的 C04–C15 检查（最小反例：pid 不一致但退出码正确时旧规则继续运行）。G1 V1 判据与预注册、G0、Bench、R3、Parcae 不变；测试只写未跑（NOT TESTED）；静态审计 FINDINGS 0、追溯 38 行。检查点 `docs/F3B_D1_A_CPU_003_E1A_G1_IMPLEMENTATION_REVIEW_FIX_001_CHECKPOINT_20261028.md`。状态：G1 IMPLEMENTATION COMPLETE / STATIC AUDIT RECORDED / CPU TESTS NOT TESTED / G1 REAL NOT AUTHORIZED。
+
+## D1 CPU-003 E1-A G1 CPU 测试 G1-CPU-TEST-001（2026-10-28）
+
+被测代码 `d175a1a`（证据提交另记于 `g1_cpu_test_results_001/EVIDENCE_COMMIT_RECORD.md`）。在进程安全哨兵下完整运行两次（无 `--groups`）：各 289 个唯一测试全部 PASS，0 FAIL / ERROR / SKIP / XFAIL / XPASS / 加载错误 / 哨兵违规，退出码 0，两次结果一致；独立脚本逐项核对。状态：G1 CPU TEST PASS；G1 REAL NOT AUTHORIZED（CPU 测试 PASS ≠ 真实 G1 PASS）。结果 `a_predicate_003/g1_cpu_test_results_001/`，检查点 `docs/F3B_D1_A_CPU_003_E1A_G1_CPU_TEST_001_CHECKPOINT_20261028.md`。下一步：ChatGPT / Grok 审核，随后由负责人单独决定是否授权真实 G1。
