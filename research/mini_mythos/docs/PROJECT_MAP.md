@@ -457,3 +457,11 @@ ChatGPT 在独立审查分支 `d1-r3-a-cpu-003-e1a-g2-j1-impl-static-review-2026
 ## D1 CPU-003 E1-A G2 J1 源码修正 G2-J1-IMPL-CORRECTION-001（2026-10-28）
 
 基线 = 交接分支 HEAD `692e551126c5171b13565f2ece30bf39d6ce8352`（已核验），修正分支 `d1-r3-a-cpu-003-e1a-g2-j1-impl-fix-20261028`。仅在 `a_predicate_003/gate_g2/j1/` 修复独立静态审核 J1-IMPL-F01…F06：无效输入走独立的 `input_valid / INPUT_INVALID` 通道且 Oracle 永不给出正式 PASS；预期结果钉死到 V0.1 的 18 项清单（18 个预期值未改），`aggregate` 去掉 `expected_ids` 且在无独立 S/O 封存与证明前恒为 BLOCKED/NOT_READY；ATTRIBUTION 需要显式、一致的 gate/ticket 关联否则 BLOCKED；UNIQUE_REGISTRY 按冻结 Bench 生命周期规则按值复述并仅声称有限给定集合；信任映射明示为未认证的假设性 harness 声明，J1 仅限手写合成 B0 形态输入，原生适配器未实现。补充 F01–F06 的未运行负向测试源码。**本任务未调用任何 Python**，全部 NOT TESTED；F07 历史程序性偏差保留；未改 Bench / Parcae / G0 / G1 / R3、未冻结判据、未生成夹具；Grok DEFERRED，G2 REAL BLOCKED。检查点 `docs/F3B_D1_A_CPU_003_E1A_G2_J1_IMPL_CORRECTION_001_CHECKPOINT_20261028.md`。下一步：交 ChatGPT 独立静态复审。
+
+## J1 修正源码独立静态复审：仍有未经验证的 PASS 路径（2026-10-28）
+
+来源：Claude Code 修正分支 `d1-r3-a-cpu-003-e1a-g2-j1-impl-fix-20261028` @ `045fa24a1b25f57d27d18dfc9b70b7c437c55898`，基准 `692e551126c5171b13565f2ece30bf39d6ce8352`；原修正 Git compare 为 2 commits / 8 files / +628/-199，只在 `gate_g2/j1/` 及 `docs/` 修改，Bench/Parcae/G0/G1/R3/原始证据未改。ChatGPT 建立独立文档审核分支 `d1-r3-a-cpu-003-e1a-g2-j1-fix-static-review-20261028`，只读源码后形成报告 `a_predicate_003/gate_g2/G2_J1_IMPL_CORRECTION_INDEPENDENT_STATIC_REVIEW_001.md`，新 checkpoint `docs/F3B_D1_A_CPU_003_E1A_G2_J1_IMPL_CORRECTION_STATIC_REVIEW_001_CHECKPOINT_20261028.md`。
+
+**复审结论：`STATIC REVIEW CHANGES REQUIRED`。** 原 F01/F02 的 Oracle 正式验收通道已静态收紧为始终 `BLOCKED / NOT_READY`，无效输入不再取得 formal PASS；原 F05/F06 仍严格合成范围。但发现 4 项新/剩余问题：`J1-FIX-REVIEW-F01` 高：缺 INTENT 的 DEAD/ABORTED 节点绕过 frozen registry ORPHAN_RECORD；`F02` 高：UNIQUE_REGISTRY 明定的 (pid,starttime) 与实现采用可选 boot_id/pidns 的 `same_instance` 不同；`F03` 高：ATTRIBUTION 的多见证 identity 冲突与同 gate 跨节点冲突可能被遗漏；`F04` 中：Oracle 汇总遇到不可 hash 的 fixture_id 可能 TypeError，而非 fail-closed。**这些均为源码反例推断，未执行。** Claude Code 自报这次没有调用 Python，连接器无法独立验证其本地命令记录；前次空 Python 解释器偏差继续保留历史记录。
+
+**状态：J1 源码已提交但静态复审 CHANGES REQUIRED / CPU 与 18 S/O 均 NOT TESTED / 判据 NOT FROZEN / G2 REAL BLOCKED / Grok DEFERRED 非 PASS / O-1…O-15 OWNER UNDECIDED。** 下一条唯一任务：获得负责人对 **Claude Code SOURCE-ONLY 修正** 的授权后，在隔离分支处理 F01～F04 并补未运行反例测试源码，commit/push/STOP，交回 ChatGPT 复审。不得在 ChatGPT 直接改代码、运行 Python/CPU/G2 REAL，亦不可改上游 Parcae、Bench 或既有证据。
