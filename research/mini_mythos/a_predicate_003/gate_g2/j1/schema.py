@@ -13,6 +13,13 @@ from dataclasses import dataclass
 
 # ---------------------------------------------------------------- scope labels (mandatory in every report)
 MEASUREMENT_TARGET = "J1_SYNTHETIC_DETECTOR"
+# Correction 001 (J1-IMPL-F05 / F06): J1 accepts HAND-AUTHORED SYNTHETIC B0-SHAPED input only.  The trust map is a hypothetical contract declared by an
+# EXTERNAL harness; J1 cannot authenticate it, and nothing here is kernel identity or an authenticated sender.  A native-to-J1 adapter (original bytes,
+# digests, sequence, missing / torn status, float timestamps, independent custody) is an OPEN question and is NOT IMPLEMENTED; direct compatibility with
+# native bench/registry.py records is NOT SUPPORTED (they carry float mono / wall and extra keys that the closed schema rejects).
+INPUT_DOMAIN = "HAND_AUTHORED_SYNTHETIC_B0_SHAPED_ONLY"
+NATIVE_B0_ADAPTER_STATUS = "NOT_IMPLEMENTED_OPEN_QUESTION"
+TRUST_BASIS = "HYPOTHETICAL_HARNESS_DECLARED_UNAUTHENTICATED"
 NATIVE_B0_SAFETY_STATUS = "NOT_EVALUATED_BY_J1"
 SCOPE = "SYNTHETIC_CPU_ONLY"
 
@@ -52,10 +59,12 @@ ROLE_CEILING = {
 }
 # Roles that can ever carry authority.  NODE_CLAIM_SIM and SUBJECT_LOG_READBACK never do.
 AUTHORITY_ROLES = frozenset({ROLE_B0_LEDGER, ROLE_KERNEL_SNAPSHOT, ROLE_G2_WITNESS, ROLE_G2_WRAP, ROLE_SEAL_MANIFEST})
-# The four hypothetical sensors (and the untrusted claim source) are synthetic assumptions, never real B0 evidence.
-SYNTHETIC_ONLY_ROLES = frozenset({ROLE_NODE_CLAIM, ROLE_KERNEL_SNAPSHOT, ROLE_G2_WITNESS, ROLE_G2_WRAP, ROLE_SEAL_MANIFEST})
+# Every source in this stage is synthetic: the four hypothetical sensors, the untrusted claim source, the hand-authored B0-SHAPED ledger and the subject
+# log.  None is real B0 evidence and none is authenticated by J1; the harness declares them (J1-IMPL-F05).
+SYNTHETIC_ONLY_ROLES = frozenset({ROLE_B0_LEDGER, ROLE_NODE_CLAIM, ROLE_KERNEL_SNAPSHOT, ROLE_G2_WITNESS, ROLE_G2_WRAP, ROLE_SEAL_MANIFEST,
+                                  ROLE_SUBJECT_LOG})          # every source is synthetic in this stage, the B0-shaped ledger and the subject log included
 ROLE_TIER = {
-    ROLE_B0_LEDGER: "NATIVE_B0_TRANSCRIPT",
+    ROLE_B0_LEDGER: "SYNTHETIC_B0_SHAPED_TRANSCRIPT",
     ROLE_NODE_CLAIM: "UNTRUSTED_CLAIM",
     ROLE_KERNEL_SNAPSHOT: "SYNTHETIC_ASSUMPTION",
     ROLE_G2_WITNESS: "SYNTHETIC_ASSUMPTION",
@@ -279,7 +288,11 @@ def _scan(obj, where, problems, depth):
 # ---------------------------------------------------------------- trust map
 def validate_trust_model(trust_model):
     """-> (dict handle -> TrustEntry, problems).  The harness MUST call this (or judge.evaluate does) BEFORE any judging.
-    The map is the only place where authority is granted; a record cannot grant itself authority."""
+    The map is the only place where authority is granted; a record cannot grant itself authority.
+    LIMIT (J1-IMPL-F05): this function checks the SHAPE of a caller-supplied map; it cannot authenticate who supplied it.  A caller that controls both
+    the map and the records can label its own record with any role.  The map is therefore an explicitly hypothetical contract declared by an EXTERNAL
+    harness (TRUST_BASIS); a role string or synthetic_assumption=True is never kernel identity or an authenticated sender, and any PASS built on it is
+    limited to that declared assumption.  The harness's origin and seal rules are an unresolved prerequisite of any formal acceptance."""
     problems = []
     out = {}
     if type(trust_model) is not dict:
@@ -310,7 +323,7 @@ def validate_trust_model(trust_model):
             problems.append("%s: synthetic_assumption must be a bool" % where)
             continue
         if role in SYNTHETIC_ONLY_ROLES and syn is not True:
-            problems.append("%s: a simulated source must be declared synthetic_assumption=True" % where)
+            problems.append("%s: every source must be declared synthetic_assumption=True (synthetic-only stage)" % where)
             continue
         if type(tier) is not str or tier != ROLE_TIER[role]:
             problems.append("%s: provenance_tier does not match the role" % where)

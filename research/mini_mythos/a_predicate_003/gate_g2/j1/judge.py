@@ -8,6 +8,11 @@
       can never promote itself, and NODE_CLAIM_SIM / SUBJECT_LOG_READBACK never carry authority.
     * PASS means "established inside the stated data and the stated synthetic trust" -- see ACCEPTED_CLAIM.  It never means native B0 safety.
 
+Correction 001 (static-review findings): an invalid or Lane-O-tainted input yields input_valid=False / result_kind=INPUT_INVALID and NO subject verdict
+(F01); ATTRIBUTION needs an explicit identical gate/ticket association on the REGISTERED record and on every trusted witness, else BLOCKED (F03);
+UNIQUE_REGISTRY checks the restated frozen lifecycle rules and claims only the finite supplied set (F04); the trust map is an unauthenticated,
+hypothetical harness declaration (F05); input is hand-authored synthetic B0-shaped data only, no native adapter exists (F06).
+
 Coverage honesty (V0.1): ATTRIBUTION, UNIQUE_REGISTRY, ZOMBIE_AT_T, LOG_MATCHES_SEAL and WRITE_COMPLETE have contrasting outcomes.  PREVENT_PROOF,
 LAWFUL_REAP, EVIDENCE_USABLE and DELIVERY are SMOKE_ONLY: V0.1 defines no trusted source that could ever establish them, so their handlers validate
 the input and explain WHY the evidence is insufficient (distinct basis codes) but have NO PASS path.  Nothing here claims they discriminate.
@@ -19,10 +24,12 @@ from . import codec
 from . import schema as S
 
 ACCEPTED_CLAIM = {
-    "ATTRIBUTION": "Observed agreement between the B0-registered identity and the harness-declared SIMULATED trusted gate-child witness for the same "
-                   "node token. Not a proof of unique fork, of lineage, of the recipient of R, or of native B0 safety.",
-    "UNIQUE_REGISTRY": "No duplicate (pid, starttime) among the supplied, prerequisite-complete B0 REGISTERED records. Not a statement about "
-                       "unobserved processes, kernel PID reuse or native B0 safety.",
+    "ATTRIBUTION": "RETROSPECTIVE observed agreement between the B0-shaped REGISTERED identity and the harness-declared SIMULATED trusted gate-child "
+                   "witness that carry the same explicit, non-empty gate/ticket association. Not a proof of unique fork, of lineage, of the recipient "
+                   "of R, of pre-release prevention, or of native B0 safety.",
+    "UNIQUE_REGISTRY": "No duplicate (pid, starttime) among the FINITE SUPPLIED records, which passed the internal lifecycle checks restated from the "
+                       "frozen registry rules. Not a statement that the original log has no omitted records, about unobserved processes, kernel "
+                       "PID reuse, or native B0 safety.",
     "ZOMBIE_AT_T": "The pinned identity was in state Z in the single trusted snapshot. Not a lawful reap, not an exit status, not a statement "
                    "about any other time.",
     "LOG_MATCHES_SEAL": "The read-back log bytes, final sequence, last digest and run id match the independently declared SIMULATED seal manifest. "
@@ -35,7 +42,10 @@ _DUPLICATE_UNIQUE_KINDS = ("INTENT", "FORKED", "REGISTERED", "RELEASED", "DEAD")
 
 
 # ---------------------------------------------------------------- helpers
-def _result(assertion_id, verdict, codes, refs, diagnostics=()):
+def _result(assertion_id, verdict, codes, refs, diagnostics=(), input_valid=True):
+    """`input_valid` is the INSTRUMENT channel (J1-IMPL-F01).  input_valid=False means the Lane S input was malformed or Lane-O-tainted: there is then NO
+    subject verdict (subject_verdict is None, result_kind is INPUT_INVALID).  An invalid input is never reported as a valid sample whose evidence is
+    merely missing; a consumer that matches 'BLOCKED' against an expectation must first check input_valid and input_diagnostics."""
     valid = type(assertion_id) is str and assertion_id in S.ASSERTION_IDS
     if valid and assertion_id in S.EVIDENCE_SENSITIVE:
         coverage = "DISCRIMINATIVE"
@@ -45,12 +55,17 @@ def _result(assertion_id, verdict, codes, refs, diagnostics=()):
         coverage = None
     return {
         "assertion_id": assertion_id if valid else None,
-        "subject_verdict": verdict,
+        "input_valid": bool(input_valid),
+        "result_kind": "SUBJECT_VERDICT" if input_valid else "INPUT_INVALID",
+        "subject_verdict": verdict if input_valid else None,
         "evidence_basis_codes": sorted(set(codes)),
         "supporting_observable_refs": sorted(set(refs)),
-        "accepted_claim": ACCEPTED_CLAIM.get(assertion_id) if (valid and verdict == S.PASS) else None,
+        "accepted_claim": ACCEPTED_CLAIM.get(assertion_id) if (input_valid and valid and verdict == S.PASS) else None,
         "coverage": coverage,
         "input_diagnostics": list(diagnostics),
+        "input_domain": S.INPUT_DOMAIN,
+        "trust_basis": S.TRUST_BASIS,
+        "native_b0_adapter_status": S.NATIVE_B0_ADAPTER_STATUS,
         "measurement_target": S.MEASUREMENT_TARGET,
         "native_B0_safety_status": S.NATIVE_B0_SAFETY_STATUS,
         "scope": S.SCOPE,
@@ -81,8 +96,14 @@ def _aggregate(verdicts):
 
 
 def _ledger_prerequisite_problems(evs):
-    """Prerequisites for treating ONE source's B0 records as a complete scoped ledger (implementer proposal, open question OQ-4).  `evs` sorted by
-    order.  Rules mirror bench/registry.py::lifecycle_issues / check_order, re-stated by value (J1 never imports the Bench)."""
+    """Internal lifecycle checks of ONE source's FINITE SUPPLIED B0-shaped records (J1-IMPL-F04; open question OQ-4).  `evs` sorted by order.
+    The rules are restated BY VALUE from the frozen bench/registry.py::lifecycle_issues / integrity_issues / check_order (J1 never imports the Bench):
+    exactly one RUN_START, first, with a non-empty string run_id and a non-bool integer observer_pid; at most one RUN_END, last, naming the same run_id
+    with a boolean cleanup_confirmed, and a confirmed RUN_END only when every non-janitor node has DEAD; no duplicate INTENT / DEAD, no record after
+    DEAD; INTENT before FORKED / REGISTERED, REGISTERED before RELEASED, no RELEASED + ABORTED; a creator other than 'O' registered before the child's
+    INTENT; contiguous order from 1 (no lost row).
+    Passing these proves only that the SUPPLIED rows are internally consistent.  It does NOT prove that the original B0 log has no omitted rows: a
+    source-labelled completeness statement for the original readback does not exist in this stage, so PASS claims are limited to the finite set."""
     p = set()
     if [e.order for e in evs] != list(range(1, len(evs) + 1)):
         p.add("SEQ_NOT_CONTIGUOUS_FROM_1")
@@ -90,10 +111,28 @@ def _ledger_prerequisite_problems(evs):
     starts = [i for i, k in enumerate(kinds) if k == "RUN_START"]
     if len(starts) != 1 or starts[0] != 0:
         p.add("RUN_START_NOT_SINGLE_FIRST")
+    run_id = None
+    if len(starts) == 1 and starts[0] == 0:
+        rs = evs[0].raw
+        run_id = rs.get("run_id")
+        observer_pid = rs.get("observer_pid")
+        if not (type(run_id) is str and run_id) or not (type(observer_pid) is int and observer_pid >= 1):
+            p.add("RUN_START_METADATA_MISSING_OR_INVALID")
     ends = [i for i, k in enumerate(kinds) if k == "RUN_END"]
     if len(ends) > 1 or (ends and ends[0] != len(kinds) - 1):
         p.add("RUN_END_NOT_SINGLE_LAST")
+    confirmed_end = False
+    if len(ends) == 1 and ends[0] == len(kinds) - 1:
+        re_raw = evs[-1].raw
+        if type(re_raw.get("cleanup_confirmed")) is not bool:
+            p.add("RUN_END_CLEANUP_CONFIRMED_MISSING_OR_NOT_BOOL")
+        else:
+            confirmed_end = re_raw["cleanup_confirmed"]
+        if not (type(run_id) is str and run_id) or re_raw.get("run_id") != run_id:
+            p.add("RUN_END_RUN_ID_MISSING_OR_MISMATCH")
     seen = {}
+    roles = {}
+    registered = set()
     dead = set()
     for e in evs:
         n = e.node_token
@@ -109,12 +148,21 @@ def _ledger_prerequisite_problems(evs):
             p.add(k + "_WITHOUT_INTENT")
         if k == "RELEASED" and "REGISTERED" not in d:
             p.add("RELEASED_WITHOUT_REGISTERED")
+        if k == "INTENT":
+            roles[n] = e.raw.get("role")
+            creator = e.raw.get("creator")
+            if creator not in (None, "O") and creator not in registered:
+                p.add("CREATOR_NOT_REGISTERED_BEFORE_CHILD_INTENT")
+        if k == "REGISTERED":
+            registered.add(n)
         d.add(k)
         if k == "DEAD":
             dead.add(n)
     for n, d in seen.items():
         if "RELEASED" in d and "ABORTED" in d:
             p.add("RELEASED_AND_ABORTED")
+        if confirmed_end and "INTENT" in d and roles.get(n) != "janitor" and "DEAD" not in d:
+            p.add("CONFIRMED_RUN_END_WITH_UNFINISHED_NODES")
     return p
 
 
@@ -190,28 +238,35 @@ def _attribution(events, trust):
             codes.add("PPID_NOT_USED_AS_LINEAGE_PROOF")
         if any(c.node_token == node for c in claims):
             codes.add("UNTRUSTED_NODE_CLAIM_NOT_EVIDENCE")
-        usable = []
-        for w in witnesses:
-            if w.node_token != node:
-                continue
-            if w.read_status != "OK":
-                codes.add("WITNESS_READ_NOT_OK")
-                continue
-            if w.gate_token is not None and reg.gate_token is not None and w.gate_token != reg.gate_token:
-                codes.add("WITNESS_GATE_TOKEN_MISMATCH")
-                continue
-            usable.append(w)
+        usable = [w for w in witnesses if w.node_token == node]
         if not usable:
             codes.add("NO_TRUSTED_GATE_CHILD_WITNESS")
             verdicts.append(S.BLOCKED)
             continue
         for w in usable:
             refs.add(w.ref)
+        if any(w.read_status != "OK" for w in usable):
+            codes.add("WITNESS_READ_NOT_OK")                     # never dropped silently: an unreadable witness blocks the comparison
+            verdicts.append(S.BLOCKED)
+            continue
+        # J1-IMPL-F03: a shared node_token is NOT a same-ticket proof.  A PASS or FAIL needs an explicit, non-empty gate/ticket association that the
+        # B0-shaped REGISTERED record AND every trusted witness carry and that is identical.  Absent -> BLOCKED; contradictory -> BLOCKED (no
+        # convenient choice among conflicting associations).  Native B0 REGISTERED records carry no gate token, so native-shaped input stays BLOCKED.
+        gates = {w.gate_token for w in usable} | {reg.gate_token}
+        if reg.gate_token is None or any(w.gate_token is None for w in usable):
+            codes.add("GATE_ASSOCIATION_UNVERIFIED")
+            verdicts.append(S.BLOCKED)
+            continue
+        if len(gates) != 1:
+            codes.add("GATE_ASSOCIATION_CONFLICT")
+            verdicts.append(S.BLOCKED)
+            continue
         first = usable[0].identity
         if not all(w.identity.same_instance(first) for w in usable):
             codes.add("CONFLICTING_TRUSTED_WITNESSES")
             verdicts.append(S.BLOCKED)
             continue
+        codes.add("RETROSPECTIVE_AGREEMENT_NOT_PREVENT_PROOF")      # V0.1 ATTRIBUTION is retrospective; pre-release prevention is a different assertion
         rel = releases.get(node)
         if rel is None:
             codes.add("WITNESS_ORDER_NOT_COMPARABLE_NO_RELEASED_RECORD")
@@ -264,7 +319,8 @@ def _unique_registry(events, trust):
         return S.BLOCKED, codes, refs
     for e in regs:
         refs.add(e.ref)
-    codes.add("NO_DUPLICATE_IN_SUPPLIED_COMPLETE_SET")
+    codes.add("NO_DUPLICATE_IN_FINITE_SUPPLIED_VALIDATED_SET")
+    codes.add("ORIGINAL_LOG_COMPLETENESS_NOT_ASSERTED")
     return S.PASS, codes, refs
 
 
@@ -454,6 +510,6 @@ def evaluate(assertion_id, subject_observables, declared_trust_model):
     try:
         events, trust = S.validate_input(assertion_id, subject_observables, declared_trust_model)
     except S.InputInvalid as exc:
-        return _result(assertion_id, S.BLOCKED, ["INPUT_INVALID"], [], exc.problems)
+        return _result(assertion_id, None, ["INPUT_INVALID"], [], exc.problems, input_valid=False)
     verdict, codes, refs = _HANDLERS[assertion_id](events, trust)
     return _result(assertion_id, verdict, codes, refs)

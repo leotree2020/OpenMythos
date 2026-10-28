@@ -453,3 +453,7 @@ ChatGPT 在独立审查分支 `d1-r3-a-cpu-003-e1a-g2-j1-impl-static-review-2026
 静态审查 **`CHANGES REQUIRED`** 未解除：F01 无效 Lane S 的 BLOCKED 可能被当作测试 PASS；F02 原始 expected 及 aggregate 可被伪造；F03 同 node 但 gate/ticket 关联不足；F04 native B0 RUN_START/生命周期不完整仍可能得到 UNIQUE_REGISTRY PASS；F05 信任来源只是假设性 harness；F06 原生 B0 浮点记录与合成 J1 接口不兼容；F07 历史一次空 Python 启动作为自报程序性 FAIL 保留。最新交接说明采用保守的 **synthetic-only** 边界，不在本次制作真实 B0 adapter 或可信内核见证；正式 18 个夹具仍为未物化/未测试。
 
 **下一步唯一指令：用户向 Claude Code 发送上述 SOURCE-ONLY 修复任务**；Claude 独立分支仅改 `gate_g2/j1/` 和新 checkpoint/导航，添加**未运行**反例测试源码，commit/push 后 STOP，交回 ChatGPT 做新一轮独立静态审核。**ChatGPT 本轮不改程序；G2 CPU NOT TESTED，判据 NOT FROZEN，REAL BLOCKED，Grok DEFERRED（非 PASS），O-1…O-15 未决定。**
+
+## D1 CPU-003 E1-A G2 J1 源码修正 G2-J1-IMPL-CORRECTION-001（2026-10-28）
+
+基线 = 交接分支 HEAD `692e551126c5171b13565f2ece30bf39d6ce8352`（已核验），修正分支 `d1-r3-a-cpu-003-e1a-g2-j1-impl-fix-20261028`。仅在 `a_predicate_003/gate_g2/j1/` 修复独立静态审核 J1-IMPL-F01…F06：无效输入走独立的 `input_valid / INPUT_INVALID` 通道且 Oracle 永不给出正式 PASS；预期结果钉死到 V0.1 的 18 项清单（18 个预期值未改），`aggregate` 去掉 `expected_ids` 且在无独立 S/O 封存与证明前恒为 BLOCKED/NOT_READY；ATTRIBUTION 需要显式、一致的 gate/ticket 关联否则 BLOCKED；UNIQUE_REGISTRY 按冻结 Bench 生命周期规则按值复述并仅声称有限给定集合；信任映射明示为未认证的假设性 harness 声明，J1 仅限手写合成 B0 形态输入，原生适配器未实现。补充 F01–F06 的未运行负向测试源码。**本任务未调用任何 Python**，全部 NOT TESTED；F07 历史程序性偏差保留；未改 Bench / Parcae / G0 / G1 / R3、未冻结判据、未生成夹具；Grok DEFERRED，G2 REAL BLOCKED。检查点 `docs/F3B_D1_A_CPU_003_E1A_G2_J1_IMPL_CORRECTION_001_CHECKPOINT_20261028.md`。下一步：交 ChatGPT 独立静态复审。
