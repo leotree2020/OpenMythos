@@ -16,7 +16,7 @@ This review performed **zero Python/interpreter/compile/import/unit tests, zero 
 - **Independent source compare:** baseline→developer HEAD = **2 commits, exactly 7 paths, 314 added / 17 deleted**: `gate_g2/j1/{judge.py,oracle.py,README.md,tests/test_j1_static_and_unit.py}` plus developer checkpoint and `PROJECT_MAP`, `SESSION_START_PROTOCOL`. No Bench, Parcae, G0/G1, R3, original evidence/prereg or model changes. `schema.py`/`codec.py` remain unchanged.
 - **Read-only source blobs:** `j1/judge.py=cd5063dbf2754b925a9871cc7d478076ca680cd7`, `oracle.py=0df6e5da8e8d08b39f19ff4188f34d33a44a2282`, `schema.py=e8b1e3439df54939ee67c9a795187a0174cba853`, `tests/test_j1_static_and_unit.py=e9fd2410a382dd569439cadfca79ca822cf6daeb`, frozen `bench/registry.py=3f2179e132371dd323f865be8a4d41fa5e58786d`.
 - **Isolated documentation review branch:** `d1-r3-a-cpu-003-e1a-g2-j1-fix2-static-review-20261028` created from exactly pinned developer HEAD `26da6082af73c0505d5520001d1cea6ec086df47`.
-- **New review:** `a_predicate_003/gate_g2/G2_J1_IMPL_CORRECTION_002_INDEPENDENT_STATIC_REVIEW_001.md`, initial creation commit `42f949b43a7c8e3bcc8306a64fbb9ffe28b8b02f`. This checkpoint and nav updates are docs-only; **fetch final branch HEAD and compare Git diff before closing**. Historical source/reviews/checkpoints must not be rewritten.
+- **New review:** `a_predicate_003/gate_g2/G2_J1_IMPL_CORRECTION_002_INDEPENDENT_STATIC_REVIEW_001.md`, initial creation commit `42f949b43a7c8e3bcc8306a64fbb9ffe28b8b02f`. **Git diff independently VERIFIED** at pre-addendum HEAD `181d786c2fd756c7647fef2bd27c4c91f3fc6b90` versus developer HEAD `26da6082af73c0505d5520001d1cea6ec086df47`: **4 documentation commits, exactly 4 Markdown paths (new report/checkpoint, two navigation-only additions), 163 added lines/0 deletions, no J1 code/test/frozen-source/criteria/evidence changes**. This verification addendum adds one doc-only checkpoint commit; retrieve final remote HEAD after updating. Historical source/reviews/checkpoints remain unchanged.
 
 ## Research management record: purpose, environment, expected, actual, acceptance
 
@@ -71,3 +71,11 @@ This review performed **zero Python/interpreter/compile/import/unit tests, zero 
 **Prepare and deliver a minimal Claude Code SOURCE-ONLY correction 003 task for HIGH `J1-FIX2-REVIEW-F05`**, with no scope creep: require source-grounded normalized synthetic FORKED pid, fail-closed missing PID, positive complete FORKED and negative missing PID test source (unexecuted), no Python/tests, no fixture JSON or hashes, no native adapter, no criteria freeze, no merge, no CPU or G2 REAL. New isolated code branch from the final reviewed checkpoint SHA, commit/push and STOP. Next ChatGPT turn reviews Claude Code's actual resulting source/diff.
 
 This document **does not itself authorize Claude Code code edits or any experiment**; user must submit/approve the code-only task.
+
+## Verified review-branch scope and source-readback addendum
+
+- Remote pre-addendum HEAD `181d786c2fd756c7647fef2bd27c4c91f3fc6b90` was fetched. Reviewer report Git blob `eb16fc45752605d487eb14d0cbdca0b213c087d8`; pre-addendum checkpoint blob `96d39e34f551f1f255d3d9e4ed4c4c06a14d8529`.
+- The four changed paths are **only Markdown**: `a_predicate_003/gate_g2/G2_J1_IMPL_CORRECTION_002_INDEPENDENT_STATIC_REVIEW_001.md`, this checkpoint, `docs/PROJECT_MAP.md`, `docs/SESSION_START_PROTOCOL.md`. No `gate_g2/j1/` source correction was performed by ChatGPT. Git review documentation scope: **PASS**.
+- Reviewed developer code at `26da6082af73c0505d5520001d1cea6ec086df47` remains the source input and **must not be replaced by the newer documentation SHA as if code had been fixed**.
+- The single new residual `J1-FIX2-REVIEW-F05` remains a **source-inferred proposed counterexample, NOT EXECUTED**. The next step is a narrowly scoped Claude Code handoff only after owner approval, not CPU or REAL.
+- Local working tree cleanliness and developer's claim of zero Python commands are **not independently inspectable from remote GitHub**, and all J1 functional tests remain NOT TESTED.
