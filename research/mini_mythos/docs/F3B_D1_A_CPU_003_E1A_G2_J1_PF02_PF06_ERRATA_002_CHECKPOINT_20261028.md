@@ -38,3 +38,10 @@ No source / V0.1 / Oracle edit, no fixture, hash, key or signature, no criteria 
 ## Only next instruction
 
 Submit ERRATA 002 and this checkpoint to **ChatGPT** for the next independent review round and to **Grok** for cross-review when a real report exists. **Stop here**: no implementation, materialisation, hashing, signing, freeze, Oracle unlock, execution, merge or G2 REAL without a separate owner authorisation.
+
+## Git SHA addendum (separate documentation commit)
+
+* Documentation commit (errata + checkpoint + navigation): `529ea95826a4991eeda963a64669c4f5ca99af68`
+* Reviewed baseline: `ac5806f004242c6e018151d5543f7106fcf92829`. Diff `ac5806f..529ea95826a4991eeda963a64669c4f5ca99af68`: 4 files, 261 insertions, 0 deletions, all Markdown; two new files and two append-only navigation changes; no `j1/` source or test, V0.1, Oracle, Bench, Parcae, G0/G1, R3 or model path; the base addendum file is unchanged.
+* This addendum is one further documentation-only commit; the final branch HEAD is the remote HEAD of `d1-r3-a-cpu-003-e1a-g2-j1-pf02-pf06-errata-002-20261028` and must not be confused with the documentation or baseline SHA.
+* Working tree after commit: clean (ignored local G0/G1 authorization files untouched).
