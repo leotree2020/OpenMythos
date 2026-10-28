@@ -37,7 +37,7 @@
 | Independent trust root/oracle attestation | **BLOCKED / NOT IMPLEMENTED**: `verify_fixture_attestation` intentionally returns False; run-level formal result remains BLOCKED. |
 | Guard/runner implementation and bounded CPU execution | **BLOCKED / NOT IMPLEMENTED / NOT AUTHORIZED**. |
 | Bench G2 REAL safety | **BLOCKED / OUT OF J1 SCOPE**. |
-| Git-only Markdown changed scope | **PENDING final verified comparison**. |
+| Git-only Markdown changed scope | **PASS at pre-addendum HEAD `d49d459a1594959ad7b769ee007b98e6ae5485c7` relative to pinned source SHA `f51f77842c1eed88c2f7f9771b712cd969604321`**: exactly 4 commits / 4 Markdown paths / +241/-0; no J1 source, native Bench/Parcae, test code or frozen evidence changed. The verification addendum adds one further checkpoint-only commit; fetch final HEAD after. |
 
 ## Actual inventory and coverage boundaries
 
@@ -76,3 +76,11 @@ The V0.1 proposed subject statuses remain **5 PASS / 5 FAIL / 8 BLOCKED**, but t
 ## Only next instruction
 
 **Independent source-grounded document design review of** `a_predicate_003/gate_g2/G2_J1_CPU_READINESS_PREFLIGHT_DRAFT_001_20261028.md`, with explicit assessment of 18 S/O proposed rows, no-answer-leak, independent attestation/custody, current Oracle formal BLOCKED, guard/runner threat boundary, OQ-13 and PF statuses. Record `PASS (DOC SCOPE)` or `CHANGES REQUIRED` honestly, preserve any reviewer disagreement, and write a fresh Git checkpoint. **No code, no Python, no fixture files/hashes, no CPU/REAL, no criteria freeze or Grok fabrication**.
+
+## GitHub readback and stage-closeout verification addendum
+
+- At pre-addendum remote HEAD `d49d459a1594959ad7b769ee007b98e6ae5485c7` versus verified input `f51f77842c1eed88c2f7f9771b712cd969604321`, **exactly 4 documentation commits / 4 Markdown files / 241 insertions / 0 deletions**. Verified changed paths: `a_predicate_003/gate_g2/G2_J1_CPU_READINESS_PREFLIGHT_DRAFT_001_20261028.md`, this checkpoint, `docs/PROJECT_MAP.md`, `docs/SESSION_START_PROTOCOL.md`. No `j1/` Python, native Bench, upstream Parcae, R3/G0/G1, existing test, evidence, prereg, or acceptance-code changes.
+- Principal preflight Git Blob `2d913119df54b301e6012910245d03deec065d4e`; pre-addendum checkpoint Git Blob `d0760cdda252b679f21bfecafed7801b65822453`. Checked with GitHub readback and **non-executing text-count verification only**: exactly 18 unique proposed fixture rows, same ID set as current `j1/oracle.py`, expected subject PASS=5/FAIL=5/BLOCKED=8, and 11 total `PF-00…PF-09, PF-REAL` readiness rows.
+- **Stage result:** `DOCUMENT PREFLIGHT DRAFT PREPARED`, `SOURCE/INVENTORY TRACEABILITY PASS (DOCUMENT)`; **INDEPENDENT PREFLIGHT DESIGN REVIEW PENDING**. Real full CPU readiness remains `BLOCKED / NOT_READY`. This text-only verification is **not** a Python, CPU, unit-test, fixture-materialization or REAL execution.
+- Claude Code's code responsibility remains future and separately authorized; current ChatGPT work was only documentation. Grok review remains `DEFERRED / NOT PERFORMED`; owner safety questions remain undecided.
+- This addendum writes one further **Markdown-only** commit. Fetch final remote HEAD after commit and use that exact SHA as the next independent reviewer base; do not use the pre-addendum SHA for an unverified new branch.
