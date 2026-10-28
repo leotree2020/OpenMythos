@@ -399,3 +399,11 @@ HEAD `0cf75c1`（代码与 CPU 验收提交 `a4a8509` 相同）。执行前检�
 独立审核记录：`a_predicate_003/gate_g2/G2_V2_1_INDEPENDENT_DESIGN_REVIEW_001.md`；新 checkpoint：`docs/F3B_D1_A_CPU_003_E1A_G2_V2_1_DESIGN_REVIEW_001_CHECKPOINT_20261028.md`。审核区分 B0 的原生自动放行与 P1 的假设性 held-release 驱动；禁止把 B0 缺陷复现 TEST PASS 当 B0 安全 PASS；创建者回收证据仅在明示的可信边界内成立，后代异常清理/合法回收仍为 REAL BLOCKED。Sidecar 的完整性哈希不构成事件真实性；未来 CPU 夹具独立真值不可直接输入 J1，必须由独立验收 oracle 比较。O-1…O-15 全部 OWNER UNDECIDED；Grok 因额度限制 `DEFERRED / NOT PERFORMED`，非 PASS。
 
 下一步唯一指令：仅起草以 B0 缺陷侦测为目标的 **纯 CPU J1 夹具预注册规范文档**，优先六类最小对照：同父错误 PID、重复身份、缺失放行前证据、Z/DEAD/ECHILD、sidecar 缺尾、RELEASED 无 R；未纳入的历史卡记 `DEFERRED_BY_SCOPE`。不得冻结判据、实施或运行代码、测试、进程、GPU，也不得改变原生 Parcae、Bench、G0/G1 或进入 G3/BV/E1-A。
+
+## E1-A G2 J1 CPU-only 夹具预注册规范草稿 V0（2026-10-28）
+
+从已核对的 V2.1 限定审核基准 `d1-r3-a-cpu-003-e1a-g2-v21-review-20261028` @ `672b20bc8091c42c31786c66b8ea28191584def7` 建立独立 **纯文档** 分支 `d1-r3-a-cpu-003-e1a-g2-j1-cpu-spec-draft-20261028`。新增规范 `a_predicate_003/gate_g2/G2_J1_CPU_ONLY_FIXTURE_PREREG_DRAFT_V0_20261028.md`，阶段记录 `docs/F3B_D1_A_CPU_003_E1A_G2_J1_CPU_SPEC_DRAFT_001_CHECKPOINT_20261028.md`。拟议研究问题仅为纯 CPU J1 检测冻结 B0 的合成账本/观察证据中是否存在**明确异常或证据不足**，不是 B0/P1 实时放行或 Parcae 模型测试。
+
+预注册草稿覆盖 **6 个场景族、12 个唯一夹具 ID（4 个严格限定的预期 PASS 正向控制、2 个明确 FAIL、6 个预期 BLOCKED）**。每个案例分为 J1 可见的 `Lane S` 模拟观察与不提供给 J1 的独立真值 `Lane O`（后者仅供独立验收 oracle 比较）；分开 `expected_subject_verdict`、`observed_behavior_label` 与 `test_acceptance_verdict`，禁止将“缺陷复现测试 PASS”误报为原生安全 PASS。15 个 arm-qualified 历史卡仅选 6 个，其他 9 个均标注 `DEFERRED_BY_SCOPE`，不是 PASS。**全部夹具字节/哈希未生成，所有实际 CPU 测试 NOT TESTED。**
+
+**状态：SPEC DRAFT PREPARED / INDEPENDENT DOCUMENT REVIEW PENDING / CRITERIA NOT FROZEN / IMPLEMENTATION & CPU NOT AUTHORIZED / REAL BLOCKED & NOT AUTHORIZED / Grok DEFERRED (NOT PASS) / O-1…O-15 UNDECIDED。** 原生 Parcae、Bench、冻结 G0/G1、R3、已存证据及模型架构保持不变。下一条唯一指令：对规范草稿做独立、源码可追溯的只读设计审核；不冻结、不实施、不运行任何测试/进程。
