@@ -445,3 +445,11 @@ Claude Code 开发分支 `d1-r3-a-cpu-003-e1a-g2-j1-impl-20261028` 远端 HEAD �
 ChatGPT 在独立审查分支 `d1-r3-a-cpu-003-e1a-g2-j1-impl-static-review-20261028` 完成 **只读源码静态审核**，结论 **`J1 IMPLEMENTATION STATIC REVIEW CHANGES REQUIRED`**。完整报告：`a_predicate_003/gate_g2/G2_J1_IMPL_SOURCE_INDEPENDENT_STATIC_REVIEW_001.md`；最新 checkpoint：`docs/F3B_D1_A_CPU_003_E1A_G2_J1_IMPL_STATIC_REVIEW_001_CHECKPOINT_20261028.md`。7 项发现 F01–F07：Oracle 对 `INPUT_INVALID` 的 BLOCKED 可能误判 test PASS；预期答案与 18 项清单及 S/O 证据无独立绑定；ATTRIBUTION 未强制 same-ticket/gate 见证；UNIQUE_REGISTRY 可以在不完整 RUN_START/生命周期上 PASS；调用者给定信任角色不等于真实性认证；真实原生 registry 带浮点 mono/wall 与当前封闭合成输入不兼容；Claude 自报一次空 `python3` 启动，**Git 范围 PASS 但严格零-Python 程序约束 FAIL**。所有反例仅源码推导，**未执行**。
 
 **状态：代码已写但 STATIC REVIEW CHANGES REQUIRED / CPU 与 18 夹具 NOT TESTED / CRITERIA NOT FROZEN / G2 REAL BLOCKED / Grok DEFERRED 非 PASS / O-1…O-15 OWNER UNDECIDED。** 下一条唯一指令：准备给 Claude Code 的 *SOURCE-ONLY 修正任务*，由负责人另行授权；不得由 ChatGPT 修改代码，不得运行 CPU/REAL 或改上游，修复后重新提交并独立静态审核。
+
+## J1 独立静态审核后的 Claude Code 代码修复交接（2026-10-28）
+
+只读核验起点：`d1-r3-a-cpu-003-e1a-g2-j1-impl-static-review-20261028` @ `1b2ba339d267b8c04e1db5fb71d29da45a597758`，原 Claude Code 实现 HEAD `a1678a5a31ae49ac1aca33cdcfd625efe2108e68` 不变。最新文档交接分支：`d1-r3-a-cpu-003-e1a-g2-j1-fix-handoff-20261028`，新增 **`a_predicate_003/gate_g2/CLAUDE_CODE_J1_SOURCE_ONLY_CORRECTION_HANDOFF_20261028.md`** 与 **`docs/F3B_D1_A_CPU_003_E1A_G2_J1_FIX_HANDOFF_CHECKPOINT_20261028.md`**，未提交任何代码修正。
+
+静态审查 **`CHANGES REQUIRED`** 未解除：F01 无效 Lane S 的 BLOCKED 可能被当作测试 PASS；F02 原始 expected 及 aggregate 可被伪造；F03 同 node 但 gate/ticket 关联不足；F04 native B0 RUN_START/生命周期不完整仍可能得到 UNIQUE_REGISTRY PASS；F05 信任来源只是假设性 harness；F06 原生 B0 浮点记录与合成 J1 接口不兼容；F07 历史一次空 Python 启动作为自报程序性 FAIL 保留。最新交接说明采用保守的 **synthetic-only** 边界，不在本次制作真实 B0 adapter 或可信内核见证；正式 18 个夹具仍为未物化/未测试。
+
+**下一步唯一指令：用户向 Claude Code 发送上述 SOURCE-ONLY 修复任务**；Claude 独立分支仅改 `gate_g2/j1/` 和新 checkpoint/导航，添加**未运行**反例测试源码，commit/push 后 STOP，交回 ChatGPT 做新一轮独立静态审核。**ChatGPT 本轮不改程序；G2 CPU NOT TESTED，判据 NOT FROZEN，REAL BLOCKED，Grok DEFERRED（非 PASS），O-1…O-15 未决定。**
