@@ -2,6 +2,8 @@
 
 **适用范围：** 任何新 ChatGPT / Grok / 编程 Agent 对话，包含换模型、额度恢复、重新打开 Codespaces、交接研发。**优先级：** 新会话必须先读本文、项目地图及最新检查点；旧聊天记忆只是线索，不能作为实验事实。
 
+**最新阶段检查点（2026-10-28：G2 V2.1 最小设计修订；优先于 V2 REVIEW 块）：** 起点 `cf9a77b22af4487452e1ecf5add6fb284b0aa69e`；新文档分支 `d1-r3-a-cpu-003-e1a-g2-v21-doc-20261028`。先读 `docs/F3B_D1_A_CPU_003_E1A_G2_DESIGN_V2_1_CHECKPOINT_20261028.md`，再读 `a_predicate_003/gate_g2/G2_DESIGN_V2_1_MINIMAL_DELTA_20261028.md` 与历史 V2 审核记录。**状态：V2.1 DESIGN DELTA PREPARED / REVIEW PENDING；O-1…O-15 OWNER UNDECIDED；Grok DEFERRED / NOT PERFORMED（不可视为 PASS）；G2 判据未冻结、代码/CPU/REAL 未授权。** 只允许下一步独立文档审计；不得把 B0 缺陷复现等同安全 PASS，不得把 sidecar hash 或创建者 wait 报告当作不可伪造内核证据；真实后代安全回收与无信号异常收尾仍是阻断项。不能自动改 Bench/Parcae 或启动 G2/G3/BV/E1-A。
+
 **最新阶段检查点（2026-10-28：G2 V2 独立设计审核，优先于旧 V2 草稿检查点）：** 先读 `docs/F3B_D1_A_CPU_003_E1A_G2_V2_INDEPENDENT_DESIGN_REVIEW_001_CHECKPOINT_20261028.md` 和 `a_predicate_003/gate_g2/G2_V2_INDEPENDENT_DESIGN_REVIEW_001.md`，再读活动设计 `a_predicate_003/gate_g2/G2_IDENTITY_DESCENDANTS_DESIGN_V2.md`。源设计提交 `6c223ef2efa8830c1552d44e046b72063d87a637`；**G2 V2 REVIEW CHANGES REQUIRED**（V2-F01…F06），G2 REAL 安全前置条件 BLOCKED，判据 NOT FROZEN，CPU/REAL NOT AUTHORIZED。O-1…O-15 仅建议，未获负责人决策；Grok 因额度限额 `DEFERRED / NOT PERFORMED`，用户的临时许可仅为文档研发，不是 Grok PASS 或测试授权。下一步只做 V2.1 最小设计文本修订，不能修改上游/Bench、执行进程测试或进入 G3/BV/E1-A。
 
 **最新阶段检查点（2026-10-28：G2 V2 文档修订；优先于下方 V1 / G1 历史块）：** 当前研发入口 `docs/F3B_D1_A_CPU_003_E1A_G2_DESIGN_REVISION_002_CHECKPOINT_20261028.md`；活跃设计草稿 `a_predicate_003/gate_g2/G2_IDENTITY_DESCENDANTS_DESIGN_V2.md`。V1 审核结论 CHANGES REQUIRED，V2 只是将 R1–R5 修订到纸面、尚未审核 PASS。**Grok 因额度限制暂缓：用户许可仅在未获 Grok 意见时继续文档设计，不允许虚构 Grok 审核结论。** G0/G1 REAL 历史 PASS 保持；G2 判据未冻结，G2 实现/CPU/REAL、G3、BV、E1-A 全部 NOT AUTHORIZED。下一步只读审核 V2，重点 identity/gate 唯一性不能被假定、合法 wait 证据、双层 CPU verdict、无信号收尾的阻断项。任何实验和代码实施需另行负责人授权。
