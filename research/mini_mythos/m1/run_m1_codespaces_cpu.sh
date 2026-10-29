@@ -14,13 +14,17 @@ if [[ ! -x "$ENV_DIR/bin/python" ]]; then "$PYTHON_BIN" -m venv "$ENV_DIR"; fi
 "$ENV_DIR/bin/python" -m pip install -r research/mini_mythos/scripts/requirements-p1b-parcae.txt
 if [[ ! -d "$PARCAE_DIR/.git" ]]; then
   git clone -q --no-checkout https://github.com/sandyresearch/parcae.git "$PARCAE_DIR"
-fi
-if [[ -n "$(git -C "$PARCAE_DIR" status --porcelain --untracked-files=no)" ]]; then
+  # A new --no-checkout clone has an empty index/worktree. Populate it before
+  # checking status; otherwise all tracked files appear deleted.
+  git -C "$PARCAE_DIR" fetch -q --depth 1 origin "$PIN"
+  git -C "$PARCAE_DIR" checkout -q --detach "$PIN"
+elif [[ -n "$(git -C "$PARCAE_DIR" status --porcelain --untracked-files=no)" ]]; then
   echo "Upstream has modifications; abort" >&2; exit 2
 fi
 git -C "$PARCAE_DIR" fetch -q --depth 1 origin "$PIN"
 git -C "$PARCAE_DIR" checkout -q --detach "$PIN"
 test "$(git -C "$PARCAE_DIR" rev-parse HEAD)" = "$PIN"
+test -z "$(git -C "$PARCAE_DIR" status --porcelain --untracked-files=no)"
 M1="research/mini_mythos/m1/native_parcae_cpu_learning.py"
 "$ENV_DIR/bin/python" "$M1" --arm standard --seed "$SEED" --out "$OUT/A_$SEED.json" 2>&1 | tee "$OUT/A_$SEED.log"
 "$ENV_DIR/bin/python" "$M1" --arm parcae --parcae-dir "$PARCAE_DIR" --seed "$SEED" --out "$OUT/B_$SEED.json" 2>&1 | tee "$OUT/B_$SEED.log"
