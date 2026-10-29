@@ -84,8 +84,7 @@ Initial default Python 3.14.2 setup was abandoned when NumPy attempted source
 compilation; its log is retained. Formal runs only used pinned Python 3.12.3.
 A multiline browser archival input was interrupted before execution; short
 commands then copied and committed the raw evidence. No retraining was needed.
-The original main exit record contains literal backslash-n after 0 due to shell
-formatting; replay has a normal newline. Exit records are not used as PASS gates.
+Both exit records contain zero. Exit records alone are not used as PASS gates.
 
 ## Next instruction
 
