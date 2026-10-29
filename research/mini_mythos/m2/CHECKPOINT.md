@@ -1,5 +1,9 @@
 # Mythos M1/M2 checkpoint — 2026-10-29
 
+Latest continuation: ../m2_matched/CHECKPOINT.md records the new pre-training
+calibration, actual Linux six-run matched pilot and fresh-process replay.
+The original pilot findings below remain unchanged.
+
 ## Git and scope
 
 Verified GitHub PR #12 open, Draft, base mini-mythos-research @107c966,
