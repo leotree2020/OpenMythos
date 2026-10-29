@@ -15,7 +15,7 @@
 
 ## Evidence and reproduction
 
-Local-only complete archive `Mythos_P1C_Native_Muon_CPU_Eager_20261029.zip` SHA-256 `3df8226f02b3874b560dc2efe78e27937e6c9e01288bb7e857a007f1e4cf6db6`, 42 ZIP entries with internal checked SHA256SUMS manifest, containing byte-pinned source, test runner, validator, 15 full subprocess logs, raw per-mode JSON, three independent disk checkpoints, acceptance JSON/log, and detailed checkpoint. **The local scripts are not committed here; this branch is an evidence checkpoint only.** The source is also public at https://github.com/sandyresearch/parcae/blob/69284c13746e849104f738d6d1a347b1f457df76/recpre/optim/muon_adamw.py.
+Local-only complete archive `Mythos_P1C_Native_Muon_CPU_Eager_MIT_20261029.zip` SHA-256 `8269d134968459ea2c8398f7d718cbd0c67664fcd7a399af5c3400ff2c9227a1`, 44 ZIP entries (including original upstream MIT LICENSE) with internal checked SHA256SUMS manifest, containing byte-pinned source, test runner, validator, 15 full subprocess logs, raw per-mode JSON, three independent disk checkpoints, acceptance JSON/log, and detailed checkpoint. **The local scripts are not committed here; this branch is an evidence checkpoint only.** The source is also public at https://github.com/sandyresearch/parcae/blob/69284c13746e849104f738d6d1a347b1f457df76/recpre/optim/muon_adamw.py.
 
 Acceptance JSON SHA-256 `00b8a7e6478c49bb077ab4737309447bd1fed5727d3e34067773e1761a9d08de`. Raw upstream source SHA-256 `c01b2c54a65e0102b5fa546ae9e8423194daa549619454438b3c9ae38d41a053`.
 
