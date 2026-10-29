@@ -9,6 +9,9 @@ TEXT="research/mini_mythos/m2/evidence/tinyshakespeare.txt"
 ALICE="research/mini_mythos/m2_long/evidence/alice_publicdomain.txt"
 PIN="69284c13746e849104f738d6d1a347b1f457df76"
 if [[ ! -x "$PY" ]]; then echo "BLOCKED: pinned CPU Python missing: $PY" >&2; exit 2; fi
+# Fail fast on syntax problems before data download, dependency checks or training.
+"$PY" -m py_compile research/mini_mythos/m2_long/experiment.py
+bash -n research/mini_mythos/m2_long/run_codespaces_cpu.sh
 if [[ ! -d "$PARCAE/.git" ]]; then
   if [[ -d /tmp/mythos-m1-parcae-clean-20261029/.git ]]; then
     PARCAE="/tmp/mythos-m1-parcae-clean-20261029"
