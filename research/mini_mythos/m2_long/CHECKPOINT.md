@@ -1,72 +1,87 @@
-# M2-L CPU long-run stage checkpoint — 2026-10-29
+# Mythos M2-L — measured outcome checkpoint (2026-10-29)
 
-## Latest saved execution preparation
+**Current decision: execution completed according to user-supplied Codespaces output; preregistered 1920-step validation-quality gate FAIL.** This is a useful negative model result, not an environment failure. Do not relax the tolerance, overwrite the result, call the entire stage PASS, or rerun until it passes. Raw artifact review and Grok review of this new outcome are still pending.
 
-- Dependent Draft review: [PR #13](https://github.com/leotree2020/OpenMythos/pull/13), base Draft PR #12; **do not merge either** without actual evidence.
-- After initial code freeze, pre-execution QA added fail-fast `py_compile`/`bash -n` to launcher (`f2ac59792814f1ebd8a23b2dd2d05b163f76a765`), ignore rules for outside public-domain text (`95a37a7f3da21f230d05b140417ba83770658755`), and corrected initial weight-hash timing to precisely match original M2 reference (`243c1295becec71480972fa87272bfba23eb3c09`). All changes are pre-training; no M2-L quality evidence was inspected.
-- Source inspection checked bracket/quote balance, but **remote Python compilation, native model import, and CPU model training remain NOT TESTED** until user Codespaces execution. The launcher's own preflight executes compilation before corpus I/O.
+## 1. Provenance and evidence limits
 
-## Status (exactly at protocol/code freeze; no model execution yet)
+- Repository: `leotree2020/OpenMythos`; isolated branch `mini-mythos-m2l-long-curve-cpu-20261029`; Draft PR #13 depends on Draft PR #12. No merge performed.
+- Actual experiment code recorded by the user's terminal: `09d0d508fa0eef459c8b767b109b236f9490c014`.
+- Fixed native GPT/Parcae upstream: `69284c13746e849104f738d6d1a347b1f457df76`.
+- Protocol freeze: `3bf4be4b8463d13ae83636c977fb89ac66862ee9`. `PROTOCOL.md`, `experiment.py`, the launcher and thresholds are unchanged by this result review.
+- Input terminal excerpt is preserved in `evidence/user_supplied_terminal_20261029.txt` (commit `c540242d1d794cf89678648bffafc54fcf8064f5`). This is user-provided output, not a remotely acquired raw log.
+- Original user-side evidence directory: `/workspaces/OpenMythos/mythos_evidence/m2_long_v1/`.
+- User-reported `pilot.json` SHA-256: `c5be0f6da8eab77ab499ad97a3aaf318633d2d44f234083165ffcacc3b26d7bb`. The reviewer has NOT downloaded that file or independently recomputed this digest. Binary checkpoints, optimizer/RNG snapshots, full traces and raw logs have NOT been inspected in this review.
+- ChatGPT re-read the pinned protocol and result-classification source, and recomputed averages/differences from the 18 displayed validation values. This was arithmetic/source review, NOT retraining, binary audit, or an independent model rerun.
+- The pre-execution checkpoint remains available in Git at experiment commit `09d0d508fa0eef459c8b767b109b236f9490c014`; its historical NOT TESTED status is superseded only as qualified below.
 
-**M2-L MODEL TRAINING: NOT TESTED.** Evidence of a GitHub commit or executable script is **not** a passing training experiment. No 120/480/1920 learning-curve values have been obtained here. No GPU rented. Upstream code unchanged. M1/M2 matched original evidence remains unchanged in PR #12.
+## 2. Purpose, environment, inputs and expected outcome
 
-## Inputs and Git provenance
+Purpose: determine whether the fixed native GPT/Parcae validation-quality gap closes or persists with continuous training at 120/480/1920 optimizer steps, without modifying the upstream architecture or optimizing on the already viewed test split.
 
-- Main research repo: `leotree2020/OpenMythos`.
-- This isolated branch: `mini-mythos-m2l-long-curve-cpu-20261029`, forked from Draft PR #12 at base **`934bc12c2f5737cd233cf8076d820435b95280a8`**. Never modify `mini-mythos-research` or native upstream during this experiment.
-- Protocol frozen before M2-L model training: **`3bf4be4b8463d13ae83636c977fb89ac66862ee9`**.
-- Runner version after safeguards: **`907bd28e92fbfaf81d11d34d3f871de26f0a346e`**.
-- Codespaces launcher: **`a10a83bd88e3ed838aa4ef831840bd117f911645`**.
-- Grok review archived from user (not connected Grok execution): **`7395626e1070d6fb85a41fe11ff3dd54ca1e4ff9`**.
-- Official native GPT+Parcae pin: **`69284c13746e849104f738d6d1a347b1f457df76`**.
-- Reference matched M2 training data `research/mini_mythos/m2_matched/evidence/linux_e533fbe/pilot.json` (no reference quality-based model selection). GPT FFN60, Parcae FFN64 with `[0,2]`. Preserve historical original fair-pilot positive and negative results.
+Protocol environment: Linux CPU, Python 3.12, torch 2.11.0+cpu, NumPy 1.26.4, einops 0.8.0, one thread, deterministic algorithms, math SDPA. The supplied terminal explicitly reports `M2-L CPU ENV PASS 2.11.0+cpu`; a separate current pip freeze has not been retrieved by the reviewer.
 
-## Purpose, environment, inputs, expected result
+Inputs: frozen Tiny Shakespeare UTF-8 bytes, sequence 32, batch 8, AdamW settings retained, GPT FFN60 versus Parcae FFN64 with recurrence `[0,2]`, seeds 42/20261029/20261030. Target-token exposures per model/seed: 30,720 / 122,880 / 491,520 at 120 / 480 / 1920 steps. These are exposures, not unique corpus sizes. Three seeds times two arms yields six training runs and 18 displayed validation measurements.
 
-See [PROTOCOL.md](PROTOCOL.md). Purpose: test whether recurring architecture's validation NLL gap improves after **continuous** fixed-budget learning at 120, 480, and 1920 steps. CPU Python3.12/torch2.11.0+cpu/NumPy1.26.4/einops0.8.0, one thread. Fixed Tiny Shakespeare train/val bytes. Fresh immutable independent Alice out-of-domain heldout SHA256 `146e69455b17fac23bee136d0121ced326e0b99caf206df0281cb67241963875`, evaluated only once after all six runs.
+Frozen acceptance: exact step-120 reference continuity; complete finite-loss/finite-gradient training; max/min parameter and counted-operator FLOP ratios <=1.10; and, separately, final mean paired validation NLL delta <=+0.02 AND each seed delta <=+0.05. The quality thresholds were frozen before this run and must not be changed after viewing these results.
 
-Predeclared expected acceptance, **NOT YET ACTUAL OUTCOMES**:
-- First 120 steps reproduce every saved M2 matched loss/gradient and weight/validation/batch hash **exactly**.
-- All six official-model training trajectories run 1920 finite steps, with three checkpoints and full model/optimizer/CPU RNG snapshots.
-- Max/min parameter and counted FLOP ratios <=1.10, matching fixed calibration.
-- 1920-step validation mean Parcae-minus-GPT NLL <=+.02 and each seed <=+.05 as an *exploratory*, non-statistical tolerance. **This may FAIL and must be preserved unedited.**
-- Alice final OOD scores are descriptive only, never a superiority/quality PASS.
-- Real inference latency, GPU memory, ACT, reasoning and P2 efficiency superiority: NOT TESTED here.
+## 3. Actual results from the supplied terminal
 
-## Actual results and outstanding gates
+All deltas below are **Parcae minus GPT**, where lower NLL is better. All entries are validation NLL; do not mix these with the earlier M2 test-NLL delta +0.01877512.
 
-| Gate | Status | Evidence |
+| Seed | Step | GPT validation NLL | Parcae validation NLL | Delta |
+|---|---:|---:|---:|---:|
+| 42 | 120 | 2.581361235231375 | 2.615692199148783 | +0.034330963917408 |
+| 42 | 480 | 2.256879207701389 | 2.2658601216298435 | +0.008980913928454 |
+| 42 | 1920 | 1.9965992146277187 | 2.024607268912207 | +0.028008054284488 |
+| 20261029 | 120 | 2.5890875615895736 | 2.594146877587098 | +0.005059315997524 |
+| 20261029 | 480 | 2.246342994971802 | 2.268721171944179 | +0.022378176972377 |
+| 20261029 | 1920 | 1.9938065591809397 | 2.0270527896443262 | +0.033246230463386 |
+| 20261030 | 120 | 2.5835604742233516 | 2.597228800241369 | +0.013668326018017 |
+| 20261030 | 480 | 2.2384113528636127 | 2.275333089431697 | +0.036921736568084 |
+| 20261030 | 1920 | 1.9953048563756082 | 2.0369087975883757 | +0.041603941212768 |
+
+| Step | Mean GPT validation NLL | Mean Parcae validation NLL | Mean paired delta |
+|---:|---:|---:|---:|
+| 120 | 2.584669757014767 | 2.602355958992417 | +0.017686201977650 |
+| 480 | 2.2472111851789345 | 2.2699714610019064 | +0.022760275822972 |
+| 1920 | 1.9952368767280888 | 2.029522952048303 | +0.034286075320214 |
+
+**Final quality verdict: FAIL.** The mean is +0.03428607532021418, above +0.02 by +0.01428607532021418. Every individual delta is below +0.05, but the protocol requires BOTH conditions. The individual-seed condition passing cannot cancel the mean failure.
+
+Both models improve with longer training. Across the three seeds, the mean gap increases from 120 to 480 to 1920. This is not a claim that every seed's gap increases monotonically: seed 42 improves at 480 then worsens at 1920, and its final gap is smaller than its own step-120 gap. These data do not support the hypothesis that increasing this fixed training budget closes the average validation gap within the frozen tolerance.
+
+## 4. Independent-corpus diagnostic
+
+The terminal reports one-time Alice OOD evaluation completion and Parcae-minus-GPT NLL deltas:
+
+- seed 42: +0.013180145836532375
+- seed 20261029: +0.0758198216802346
+- seed 20261030: +0.001803123090027281
+- mean: +0.03026769686893142 (recomputed)
+
+All three displayed OOD deltas are positive, so none favors Parcae on this diagnostic. `ood_status PASS` means the evaluation completed, NOT that OOD quality passed a tolerance or that Parcae generalized better. The OOD corpus is out of domain and had no preregistered quality gate; do not transfer the validation +0.05 threshold to the OOD row after the fact. Individual OOD NLL/PPL and full evaluation target counts require the original JSON for independent checking.
+
+## 5. Acceptance matrix
+
+| Item | Outcome | Evidence level |
 |---|---|---|
-| Freeze-before-training protocol | PASS (Git commit) | 3bf4be4 and PROTOCOL.md |
-| Isolated source and pinned-model paths in scripts | PREPARED, NOT TESTED | experiment.py, run_codespaces_cpu.sh |
-| Local Python syntax + pinned remote runtime | NOT TESTED | Must run `python -m py_compile` and pinned Linux checks |
-| Exact historic M2 120-step replay | NOT TESTED | Expected new `pilot.json` and checkpoint hashes |
-| 120/480/1920 continuous training x six | NOT TESTED | Expected per-arm JSON, torch .pt checkpoints |
-| Validation tolerance at 1920 | NOT TESTED | No new NLL measurements yet |
-| Independent OOD Alice final evaluation | NOT TESTED | Sealed input source; no model scores yet |
-| Robust interruption/resumption parity | NOT TESTED | Snapshots supplied; exact resumed vs uninterrupted behavior unverified |
-| Grok review of M2-L implementation | NOT TESTED | Prior Grok M1/M2 audit user supplied; no Grok M2-L review yet |
+| Six 1920-step native CPU runs | PASS as reported | Terminal has all 18 checkpoint measurements and final execution PASS; full training traces not yet retrieved |
+| Exact historical 120-step continuity | PASS as reported | Native runner reports continuity PASS; reviewer checked visible step-120 NLLs, not original weight/gradient binaries |
+| Frozen parameter/FLOP-budget tolerance | PASS as reported | Runner budget PASS; <=10% counted-op matching, not identical hardware cost |
+| Final mean validation-quality margin | **FAIL** | Independently recomputed from the displayed values; +0.034286 > +0.02 |
+| Final individual-seed quality margins | PASS | All three < +0.05; joint quality verdict remains FAIL |
+| Alice diagnostic execution | PASS as reported | Completion and three deltas in terminal; no quality PASS assigned |
+| Independent pilot.json and snapshot integrity audit | NOT TESTED | Original bytes not received in this review; user-supplied SHA only |
+| Exact interrupted/resumed vs continuous parity | NOT TESTED | Snapshot saving is not proof of recovery equivalence |
+| Grok review of the new M2-L results | NOT TESTED | Previous user-supplied M1/M2 review is not review of these new results |
+| P2 efficiency superiority, statistical noninferiority, ACT/reasoning | NOT TESTED / NOT ESTABLISHED | No new end-to-end benchmark or reasoning experiment |
 
-## Next single execution instruction — user Codespaces terminal
+## 6. Development decision and next single instruction
 
-These commands run only in the **user's Codespaces** because this session's local Python environment does not have the pinned Parcae checkout and cannot directly execute shell commands in that Codespace. No remote training or GitHub Actions run is claimed here.
+**NO-GO for automatically scaling this fixed configuration or claiming efficiency/quality superiority on the basis of M2-L.** Stop blind step-count escalation and GPU scale-up justified solely by an expectation that this gap will disappear. Preserve both positive execution evidence and the negative quality result. This limited experiment does not disprove all recursive Transformers or Parcae at other scales/tasks. Existing M1 trainability and the older M2 exploratory result remain valid within their own scope.
 
-```bash
-cd /workspaces/OpenMythos
-git fetch origin mini-mythos-m2l-long-curve-cpu-20261029
-git worktree add --detach /workspaces/mythos-m2long-20261029 FETCH_HEAD
-cd /workspaces/mythos-m2long-20261029
-bash research/mini_mythos/m2_long/run_codespaces_cpu.sh
-```
+Next single action: archive the existing `m2_long_v1` directory (pilot JSON, per-arm JSON, run log and all model/optimizer/RNG snapshots), independently verify its bytes and checkpoint metadata, and provide it with this FAIL interpretation to Grok. Do not rerun training or reevaluate Alice merely to create another archive, and do not overwrite original evidence. Keep PR #13 Draft.
 
-Actual experiment output is saved persistently to
-`/workspaces/OpenMythos/mythos_evidence/m2_long_v1`. The launcher verifies/checksums both corpus inputs, prevents upstream modifications and uses the existing pinned CPU virtualenv. If paths differ, set `M2_CPU_PYTHON` or `M2_PARCAE_DIR` explicitly.
+After artifact review, a possible separately preregistered low-cost research step is a **validation-only inference-depth diagnostic using the existing Parcae weights**, with fixed RNG and explicit counted compute. This is only a candidate, NOT TESTED and not authorized as a silent new experiment by this checkpoint. A model trained at depth 2 extrapolated to other depths is not evidence of the benefits of retraining at those depths. Do not tune on the now-observed Alice diagnostic.
 
-On completion inspect `pilot.json`, per-arm JSON, 18 `.pt` snapshots, `run.log`, `BLOCKED_error.txt` if any, original upstream Git status, current Git branch/commit, and SHA256 before assigning PASS/FAIL. **Negative learning or quality is legitimate evidence.**
-
-## Unresolved issues, next reviewer action
-
-- Fresh Codespaces CPU execution / 120-step equality may expose code or dependency mismatch: preserve error as BLOCKED, do not fake a run or edit upstream.
-- The frozen Alice source is an OOD **domain shift**, not an untouched in-domain Shakespeare test; do not substitute conclusions.
-- Grok's previous report criticized possible undercounting in operator FLOPs and short-run comparability. Continue to label `counted FLOPs`; model quality may be inferior even when an exploratory gate passes.
-- Stage exit checkpoint must incorporate raw results, code commit, dependency freeze, observed statuses, unresolved differences with Grok and one next experimental instruction. No PR merge until evidenced review.
+No upper-layer model, Parcae source, original training program, frozen thresholds, J1, Oracle or G2 REAL component was changed during this outcome review. No new training or GPU use occurred. Formal Oracle remains blocked; no G2 REAL claim follows from this model result.
