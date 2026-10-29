@@ -86,6 +86,10 @@ A multiline browser archival input was interrupted before execution; short
 commands then copied and committed the raw evidence. No retraining was needed.
 Both exit records contain zero. Exit records alone are not used as PASS gates.
 
+## ChatGPT source/JSON review checkpoint (2026-10-29)
+
+PR #12 discussion comment [#6489062129](https://github.com/leotree2020/OpenMythos/pull/12#issuecomment-6489062129) is an explicit **ChatGPT-only** independent read-only review of the committed harness, pinned upstream forward/recurrence implementation, Linux pilot and fresh-process replay JSONs. Direct reaggregation confirms six 120-step finite traces, same 30,720 training tokens per arm, parameter ratio 1.08501594, supported-op compute ratio 1.08201058, seed-42 replay equality across 15 compared fields per arm, and test NLL deltas +0.03655765/+0.00650032/+0.01326738 (mean +0.01877512). All previously frozen pilot gates remain PASS at the recorded-evidence level; Parcae is worse than GPT in each seed. This audit does not constitute a fresh training run, independent binary-weight rehash, full FLOP accounting, or statistical noninferiority. Actual Grok review remains NOT TESTED. Preserve previous training and archive evidence unchanged; keep PR Draft.
+
 ## Next instruction
 
 Obtain and preserve Grok's actual independent response using REVIEW_REQUEST.md.
