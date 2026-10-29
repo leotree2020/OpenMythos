@@ -204,7 +204,6 @@ def main(args):
                        "batch_starts_sha256_120": reference_starts_sha,
                        "batch_starts_sha256_all": m2.tensor_sha(starts),
                        "shared_io_initialization": pair_init,
-                       "init_sha": m2.weights_sha(model),
                        "checkpoints": {}, "total_train_tokens": CHECKPOINTS[-1]*m2.BATCH*m2.SEQ}
             preflight = m2.preflight(model, arm)
             require(preflight["status"] == "PASS", "native preflight failure")
@@ -213,6 +212,11 @@ def main(args):
             require(all(counts[k] == expected[k] for k in counts), "parameter/FLOP count drift")
             row["counts"] = counts
             row["preflight"] = preflight
+            # Same ordering as the pinned M2 pilot: preflight, FLOP count, then initial weight hash.
+            current_initial_sha = m2.weights_sha(model)
+            if "init_sha" in row:
+                require(row["init_sha"] == current_initial_sha, "initial weight hash changed")
+            row["init_sha"] = current_initial_sha
 
             # Fresh historical trajectory starts exactly like original M2 matched.
             initial_validation = m2.evaluate(model, arm, val, 1212)
