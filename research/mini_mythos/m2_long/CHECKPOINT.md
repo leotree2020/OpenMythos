@@ -1,5 +1,11 @@
 # M2-L CPU long-run stage checkpoint — 2026-10-29
 
+## Latest saved execution preparation
+
+- Dependent Draft review: [PR #13](https://github.com/leotree2020/OpenMythos/pull/13), base Draft PR #12; **do not merge either** without actual evidence.
+- After initial code freeze, pre-execution QA added fail-fast `py_compile`/`bash -n` to launcher (`f2ac59792814f1ebd8a23b2dd2d05b163f76a765`), ignore rules for outside public-domain text (`95a37a7f3da21f230d05b140417ba83770658755`), and corrected initial weight-hash timing to precisely match original M2 reference (`243c1295becec71480972fa87272bfba23eb3c09`). All changes are pre-training; no M2-L quality evidence was inspected.
+- Source inspection checked bracket/quote balance, but **remote Python compilation, native model import, and CPU model training remain NOT TESTED** until user Codespaces execution. The launcher's own preflight executes compilation before corpus I/O.
+
 ## Status (exactly at protocol/code freeze; no model execution yet)
 
 **M2-L MODEL TRAINING: NOT TESTED.** Evidence of a GitHub commit or executable script is **not** a passing training experiment. No 120/480/1920 learning-curve values have been obtained here. No GPU rented. Upstream code unchanged. M1/M2 matched original evidence remains unchanged in PR #12.
