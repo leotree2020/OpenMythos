@@ -21,7 +21,7 @@
 
 - Unique trainable parameters: A=18,704; B=10,160; **45.6801% lower**. Both execute two layers; weight tying does not by itself establish fewer FLOPs, better throughput, or less peak memory.
 - **Important adverse observation:** B NLL is **32.5145% higher** relative to A. A **post-hoc stricter 10% relative noninferiority threshold is NOT MET**; it was not predeclared, so record as a follow-up caution, not relabel the preregistered trial. The initial absolute +0.05 criterion is loose on this easy task. No architecture breakthrough / natural-language result.
-- Full machine outputs and two independent rerun logs: local ZIP `Mythos_M1_P2_CPU_Measured_20261029.zip` SHA256 `d38cd5d2e5277aa9a8647205c7c171951be2cd9163e09605dd0b625b20377f20` (not uploaded to GitHub).
+- Full machine outputs and two independent rerun logs: local ZIP `Mythos_M1_P2_CPU_Measured_20261029.zip` SHA256 `90f84be34d25fa514a0c2273f7070de01f5e38d3a0758b2051dd6c3f4da96ed9` (not uploaded to GitHub).
 
 ## Stage decision and next instruction
 - **P2 preflight: PASS limited; formal matched compute/quality performance: NOT TESTED.**
