@@ -1,0 +1,134 @@
+{
+  "schema": "mythos_sprint_1.0",
+  "date_timezone": "Asia/Tokyo",
+  "baseline_date": "2026-10-29",
+  "intent": "scientific_results_not_reports",
+  "reference": "docs/MYTHOS_7DAY_AUDIT_AND_SCIENCE_FIRST_SPRINT_20261029.md",
+  "pin": {
+    "openmythos_base": "107c966a4046ebe3b596ae17fd2db3d39e05e768",
+    "parcae_upstream": "69284c13746e849104f738d6d1a347b1f457df76",
+    "f2_f3_research": "e1487638050d898883d7bf088b840dc0e19be723"
+  },
+  "rules": {
+    "cpu_first": true,
+    "no_upstream_edit": true,
+    "grok_and_chatgpt_cross_review": true,
+    "all_tests_need_expected_actual": true,
+    "allowed_status": [
+      "PASS",
+      "FAIL",
+      "BLOCKED",
+      "NOT TESTED"
+    ],
+    "max_blocker_hours": 2,
+    "stop_new_guard_versions": true,
+    "formal_g2_real_remains_blocked": true,
+    "proof_before_promotion": true,
+    "checkpoint_per_phase": 1
+  },
+  "milestones": [
+    {
+      "id": "M0",
+      "due_jst": "2026-10-29",
+      "title": "Seven-day audit and science-first governance",
+      "status": "PASS",
+      "nature": "project_process_only",
+      "depends_on": [],
+      "acceptance": "GitHub 1 checkpoint + this JSON, pinned heads, clear STOP/GO; no new model claim",
+      "actual": "GitHub standalone research branch checkpoint created; schedule file to be verified in same branch",
+      "evidence": [
+        "98796a8b04da10a3736d7b5664ea3e9e3a1acb59"
+      ]
+    },
+    {
+      "id": "M1",
+      "due_jst": "2026-10-30",
+      "title": "First native Parcae vs standard Transformer CPU learning trace",
+      "status": "NOT TESTED",
+      "nature": "model_experiment",
+      "depends_on": [
+        "M0"
+      ],
+      "acceptance": "actual 1-seed both model updates, train loss, heldout NLL, fixed hashes, same AdamW family and data, raw logs",
+      "actual": "No paired native Parcae vs standard CPU learning experiment executed by 2026-10-29",
+      "evidence": [],
+      "next": "Run first fixed CPU learning experiment in authorized Codespaces; compare real heldout metrics",
+      "fallback": "If no runnable pinned checkout, record precise BLOCKED cause, do not expand Guard"
+    },
+    {
+      "id": "M2",
+      "due_jst": "2026-11-02",
+      "title": "Replicated CPU learning/efficiency pilot and decision",
+      "status": "NOT TESTED",
+      "nature": "model_experiment",
+      "depends_on": [
+        "M1"
+      ],
+      "acceptance": "At least two seeds for pilot, independent NLL/PPL, parameters, actual CPU time/memory, separately stated equal-token and matched-FLOPs protocol; no superiority claim until 3 seeds",
+      "actual": "Requires M1 evidence",
+      "evidence": [],
+      "fallback": "GO or NO-GO on actual evidence; no infinite infra work"
+    },
+    {
+      "id": "M3",
+      "due_jst": "2026-11-05",
+      "title": "Official Parcae train.py MuonAdamW Lightning CUDA A/B/C restore",
+      "status": "BLOCKED",
+      "nature": "official_training_verification",
+      "depends_on": [
+        "M0"
+      ],
+      "acceptance": "actual official CUDA process logs for A continuous B resumed C extra-skip negative, model/optimizer/LR/data/RNG hashes, GPU memory/cost, reviewed tolerances",
+      "actual": "No accessible GPU execution terminal/provider connection in current assistant environment; CPU eager native optimizer subgate PASS separately",
+      "evidence": [],
+      "blocker": "BLOCKED_RESOURCE: GPU instance access and actual provisioning not yet available",
+      "constraints": {
+        "gpu_authorization_in_conversation": true,
+        "max_cumulative_jpy": 5000,
+        "target_per_run_jpy": 700,
+        "gpu_time_window_minutes": 60
+      },
+      "fallback": "Keep BLOCKED_RESOURCE, continue M1/M2 CPU work, do not claim the GPU run occurred"
+    },
+    {
+      "id": "M4",
+      "due_jst": "2026-11-08",
+      "title": "First quality-vs-compute A/B and optional C pilot",
+      "status": "NOT TESTED",
+      "nature": "model_experiment",
+      "depends_on": [
+        "M2"
+      ],
+      "acceptance": "standard vs native recurrence heldout NLL vs FLOPs/memory/latency; C dynamic depth only with independent controls; use 3 seeds for positive claim",
+      "actual": "Not started; M2 gate pending",
+      "evidence": [],
+      "fallback": "Report negative/INCONCLUSIVE observations without modifying pinned architecture"
+    },
+    {
+      "id": "M5",
+      "due_jst": "2026-11-10",
+      "title": "Scientific P1 to P2 decision",
+      "status": "NOT TESTED",
+      "nature": "research_governance",
+      "depends_on": [
+        "M2",
+        "M4"
+      ],
+      "acceptance": "cross-reviewed real metrics, explicit GO/NO-GO/BLOCKED, one checkpoint and next controlled hypothesis",
+      "actual": "Not due; evidence dependent",
+      "evidence": [],
+      "fallback": "Keep closed gates closed; no premature P3/P4/P5"
+    }
+  ],
+  "maintenance": {
+    "j1_direct_cases": "NOT TESTED",
+    "j1_formal_18": "NOT TESTED",
+    "oracle": "BLOCKED",
+    "g2_real": "BLOCKED",
+    "parcae_official_training": "NOT TESTED",
+    "prior_native_parcae_cpu_bounded": "PASS",
+    "latest_native_muon_eager": "PASS",
+    "guard_v4_plus": "STOP_UNTIL_NEW_CAUSAL_NEED"
+  },
+  "change_policy": "When updating milestone actual/status, attach artifact SHA, Git ref, exact environment and per-condition evidence. No status PASS on command exit alone. Prior result artifacts immutable. Dates are decision deadlines, not promised PASS."
+}
