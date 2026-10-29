@@ -134,6 +134,9 @@ def main(args):
             "invalid or repeated seed list")
     m2 = load_matched()
     require(source_version(ROOT) != "", "unversioned OpenMythos code")
+    require(not subprocess.check_output(["git", "-C", str(ROOT), "status",
+                                         "--porcelain", "--untracked-files=no"],
+                                        text=True).strip(), "tracked research files changed")
     require(file_sha(BASE_CONFIG) == "a49b38521a45e716b1cb5f2c2b55d317d06ca7542d02623349c5331e9fe26447",
             "frozen M2 config drift")
     require(file_sha(BASE_PY) == "74f00c64448ddbc224a48ef83dc031a90c33448ccb92647666707f6b8f988967",
@@ -172,7 +175,7 @@ def main(args):
         report = read(report_path)
         for key in ("experiment", "protocol_sha256", "script_sha256",
                     "reference_config_sha256", "reference_pilot_sha256",
-                    "original_parcae_pin", "data", "seeds"):
+                    "original_parcae_pin", "data", "seeds", "code_head", "environment"):
             require(report[key] == identity[key], "resume incompatible report: " + key)
     else:
         report = dict(identity, execution_status="NOT TESTED", continuity_status="NOT TESTED",
@@ -251,6 +254,7 @@ def main(args):
                 else:
                     torch.set_rng_state(resume_rng)
                 for ix in range(step_start, CHECKPOINTS[-1]):
+                    step_clock = time.perf_counter()
                     batch_ids = starts[ix]
                     model.train()
                     opt.zero_grad(set_to_none=True)
@@ -262,6 +266,7 @@ def main(args):
                     gn = float(torch.nn.utils.clip_grad_norm_(model.parameters(), 1.))
                     require(math.isfinite(gn), "nonfinite gradient norm")
                     opt.step()
+                    total_train_seconds += time.perf_counter() - step_clock
                     loss_trace.append(float(value.detach()))
                     grad_trace.append(gn)
                     if ix+1 not in CHECKPOINTS:
@@ -347,7 +352,7 @@ def main(args):
     # OOD test is strictly delayed until *all* six training runs and hypotheses are frozen.
     alice = pinned_file(args.alice, ALICE_SHA, ALICE_URL)
     require(len(alice) == 167497, "OOD byte length mismatch")
-    git_blob = hashlib.sha1(b"blob " + str(len(alice)).encode() + b"\\0" + alice).hexdigest()
+    git_blob = hashlib.sha1(b"blob " + str(len(alice)).encode() + bytes([0]) + alice).hexdigest()
     require(git_blob == ALICE_GIT_BLOB, "OOD Git blob mismatch")
     ood_pool = torch.tensor(list(alice), dtype=torch.long)
     ood_rows = []
