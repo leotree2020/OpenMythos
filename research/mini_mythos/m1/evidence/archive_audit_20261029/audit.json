@@ -1,0 +1,102 @@
+{
+  "experiment": "M1_ARCHIVE_INDEPENDENT_AUDIT",
+  "status": "PASS",
+  "archive_sha256": "f5542ebd2e92dd165b5e3155f7496c3698924b834f14b11e00a391366a54ed4c",
+  "archive_bytes": 3895,
+  "files": [
+    {
+      "file": "A_42.json",
+      "sha256": "7c57a3286a7b2f40ef3abfb73bce6975572564c7ebc1b948c7ecf68e78c30000",
+      "status": "PASS",
+      "seed": 42,
+      "arm": "standard",
+      "params": 18704,
+      "initial_val_nll": 2.9041820764541626,
+      "final_val_nll": 0.02085367904510349,
+      "final_test_nll": 0.021997463889420033,
+      "training_s": 1.5217278220000026
+    },
+    {
+      "file": "B_42.json",
+      "sha256": "6b8d434fe5709bb9184eb937b514cf7efe2e509292d70f73847d591f1791b15b",
+      "status": "PASS",
+      "seed": 42,
+      "arm": "parcae",
+      "params": 28736,
+      "initial_val_nll": 2.9697938561439514,
+      "final_val_nll": 0.1602221606299281,
+      "final_test_nll": 0.17950838152319193,
+      "training_s": 3.539561143000128
+    },
+    {
+      "file": "A_20261029.json",
+      "sha256": "c1de6777b979edd7d54b1a7efd6b82e3051e0832084a9aa9a81b6e455c0f2639",
+      "status": "PASS",
+      "seed": 20261029,
+      "arm": "standard",
+      "params": 18704,
+      "initial_val_nll": 2.9449751377105713,
+      "final_val_nll": 0.023676223237998784,
+      "final_test_nll": 0.023930309573188424,
+      "training_s": 1.5470784499998445
+    },
+    {
+      "file": "B_20261029.json",
+      "sha256": "43d059d9407d9b6ec50e2167025ea2a3e4e1eea30fd89bd18d2af3a275e401fd",
+      "status": "PASS",
+      "seed": 20261029,
+      "arm": "parcae",
+      "params": 28736,
+      "initial_val_nll": 2.9632424414157867,
+      "final_val_nll": 0.1520849782973528,
+      "final_test_nll": 0.1281167627312243,
+      "training_s": 3.3546303099999477
+    },
+    {
+      "file": "A_20261030.json",
+      "sha256": "f0390ca0dd20c980d20d9cd7d1851e1da3670d455bb379172cc2153835d98b2a",
+      "status": "PASS",
+      "seed": 20261030,
+      "arm": "standard",
+      "params": 18704,
+      "initial_val_nll": 2.9202877432107925,
+      "final_val_nll": 0.021263317088596523,
+      "final_test_nll": 0.0219062507385388,
+      "training_s": 1.3318238740000652
+    },
+    {
+      "file": "B_20261030.json",
+      "sha256": "b4a851eb835bdf103fcbfcb2be9026ae422fcb7d7e5b09fe76d08338f180fc5d",
+      "status": "PASS",
+      "seed": 20261030,
+      "arm": "parcae",
+      "params": 28736,
+      "initial_val_nll": 2.9127853214740753,
+      "final_val_nll": 0.1344044734723866,
+      "final_test_nll": 0.12361699622124434,
+      "training_s": 3.71708420799996
+    }
+  ],
+  "auditor_environment": {
+    "python": "3.12.14",
+    "torch": "2.9.0+cpu"
+  },
+  "verified": [
+    "archive bytes match user-reported SHA256",
+    "exact six regular JSON members",
+    "configuration and parameter counts match frozen M1 specification",
+    "batch/split IDs independently regenerated and SHA256 matched",
+    "split ID sets disjoint",
+    "saved losses finite and PPL=exp(NLL)",
+    "validation NLL decrease >=.05 in all six reports",
+    "reported initial/final weight hashes differ"
+  ],
+  "limitations": [
+    "Evidence audit, not an independent training rerun",
+    "Actual model weights and per-step gradients are absent",
+    "Weight hash correctness and all 180 gradient steps not independently verified",
+    "JSON does not embed experiment Git commit or full pip freeze",
+    "M1 FLOPs not measured; architecture superiority NOT TESTED",
+    "Grok independent review NOT TESTED"
+  ]
+}

@@ -1,0 +1,86 @@
+name: Mythos M1 original Parcae CPU learning
+on:
+  pull_request:
+    paths:
+      - 'research/mini_mythos/m1/**'
+      - '.github/workflows/mythos-m1-native-learning.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  m1-learning:
+    name: M1 CPU baseline + native Parcae (seed ${{ matrix.seed }})
+    runs-on: ubuntu-22.04
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        seed: [42, 20261029, 20261030]
+    env:
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      TORCHDYNAMO_DISABLE: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned P1-B compatible CPU packages
+        run: |
+          python -m pip install 'torch==2.11.0' 'numpy==1.26.4' 'einops==0.8.0'
+          python -c 'import torch,einops,numpy;print(torch.__version__,torch.cuda.is_available(),numpy.__version__,einops.__version__)'
+      - name: Fetch exact original Parcae commit into a separate checkout
+        run: |
+          git clone --filter=blob:none --no-checkout https://github.com/sandyresearch/parcae.git /tmp/mythos-pinned-parcae
+          git -C /tmp/mythos-pinned-parcae fetch --depth=1 origin 69284c13746e849104f738d6d1a347b1f457df76
+          git -C /tmp/mythos-pinned-parcae checkout --detach 69284c13746e849104f738d6d1a347b1f457df76
+          test "$(git -C /tmp/mythos-pinned-parcae rev-parse HEAD)" = "69284c13746e849104f738d6d1a347b1f457df76"
+          test -z "$(git -C /tmp/mythos-pinned-parcae status --porcelain --untracked-files=no)"
+      - name: Verify standard Transformer learning on the identical task
+        run: |
+          mkdir -p research/mini_mythos/m1/results
+          set -o pipefail
+          python research/mini_mythos/m1/native_parcae_cpu_learning.py --arm standard --seed ${{ matrix.seed }} --steps 180 --batch 32 --out research/mini_mythos/m1/results/A_${{ matrix.seed }}.json | tee research/mini_mythos/m1/results_A_${{ matrix.seed }}.log
+      - name: Execute untouched original Parcae learning arm
+        run: |
+          set -o pipefail
+          python research/mini_mythos/m1/native_parcae_cpu_learning.py --arm parcae --parcae-dir /tmp/mythos-pinned-parcae --seed ${{ matrix.seed }} --steps 180 --batch 32 --out research/mini_mythos/m1/results/B_${{ matrix.seed }}.json | tee research/mini_mythos/m1/results_B_${{ matrix.seed }}.log
+          test -z "$(git -C /tmp/mythos-pinned-parcae status --porcelain --untracked-files=no)"
+      - name: Verify equal dataset identities and report measured comparison only
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          seed='${{ matrix.seed }}'
+          p=Path('research/mini_mythos/m1/results')
+          a=json.loads((p/f'A_{seed}.json').read_text())
+          b=json.loads((p/f'B_{seed}.json').read_text())
+          assert a['data']==b['data'], 'DATA IDENTITY MISMATCH'
+          assert a['status']=='PASS' and b['status']=='PASS'
+          print('M1 A/B TASK LEARNING PASS, identical data SHA-256')
+          for row in (a,b):
+              print(row['arm'],'params',row['model']['params'],
+                    'validation NLL',row['observed']['final_val_nll'],
+                    'test NLL',row['observed']['final_test_nll'],
+                    'train seconds',row['observed']['training_s'])
+          print('NO ARCHITECTURE SUPERIORITY CLAIM: FLOPs/blocks not matched')
+          PY
+      - name: Preserve source provenance
+        if: always()
+        run: |
+          git rev-parse HEAD
+          git -C /tmp/mythos-pinned-parcae rev-parse HEAD || true
+          git -C /tmp/mythos-pinned-parcae status --short || true
+          python --version
+      - name: Upload M1 results even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mythos-m1-cpu-${{ matrix.seed }}
+          path: |
+            research/mini_mythos/m1/results/
+            research/mini_mythos/m1/results_*.log
+          if-no-files-found: ignore

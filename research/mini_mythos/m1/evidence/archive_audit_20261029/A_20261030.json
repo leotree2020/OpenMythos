@@ -1,0 +1,84 @@
+{
+  "experiment": "MYTHOS-M1-CPU-STANDARD-001",
+  "status": "PASS",
+  "arm": "standard",
+  "source": "torch.nn.TransformerEncoderLayer",
+  "environment": {
+    "python": "3.12.3",
+    "torch": "2.11.0+cu130",
+    "cpu": true,
+    "threads": 1
+  },
+  "config": {
+    "seed": 20261030,
+    "steps": 180,
+    "batch": 32,
+    "sequence_length": 16,
+    "vocab": 16,
+    "period": 4,
+    "optimizer": "AdamW",
+    "lr": 0.002,
+    "weight_decay": 0.0,
+    "native_pair": null,
+    "parcae_core_repeats": null
+  },
+  "data": {
+    "train_batch_codes_sha256": "48d974cdb974655bdfb0b2bbe28b5e0bc499cf2e4e582dd422979eba13e3d712",
+    "val_ids_sha256": "115a92a8f2e7ce361317c508d5c81b2e149d879350fe4cf8648a046b56aa6c11",
+    "test_ids_sha256": "a3b8a969ad2c2bfa10a53a5b6a90ea245baccefd41e412f344855c2cb5edf07e",
+    "zero_split_overlap": true
+  },
+  "model": {
+    "params": 18704,
+    "initial_weights_sha256": "5dd80da0beb70b7bc6fb8f9d77038c0179646b3396fb3b64480cd456763d65a0",
+    "final_weights_sha256": "760d3e6a66fdc7fec6fb1fae94a7d7af8bb6f12b7201aaaf8b0d04df81706785"
+  },
+  "observed": {
+    "initial_val_nll": 2.9202877432107925,
+    "final_val_nll": 0.021263317088596523,
+    "final_test_nll": 0.0219062507385388,
+    "initial_val_ppl": 18.54662335698005,
+    "final_val_ppl": 1.0214909922617537,
+    "final_test_ppl": 1.022147954362682,
+    "first_10_train_loss": [
+      2.9168851375579834,
+      2.9459292888641357,
+      2.9011952877044678,
+      2.841919183731079,
+      2.853628635406494,
+      2.8645453453063965,
+      2.8917863368988037,
+      2.839102268218994,
+      2.825178384780884,
+      2.854823589324951
+    ],
+    "last_10_train_loss": [
+      0.024837443605065346,
+      0.023936012759804726,
+      0.023877080529928207,
+      0.023181846365332603,
+      0.023123588413000107,
+      0.023117290809750557,
+      0.02243698388338089,
+      0.02228565327823162,
+      0.022048156708478928,
+      0.021771665662527084
+    ],
+    "training_s": 1.3318238740000652,
+    "maxrss_kib": 630380,
+    "flops": "NOT MEASURED"
+  },
+  "criteria": {
+    "validation_nll_decrease_min": 0.05,
+    "weights_updated": true,
+    "finite_loss_grad": true,
+    "identical_dataset_seeds": true
+  },
+  "limitations": [
+    "synthetic periodic sequences, not natural language",
+    "Parcae prelude + 2 core passes + coda = 4 block passes vs standard 2 independent blocks",
+    "RoPE vs absolute position encoding and other architecture differences",
+    "NOT matched FLOPs/parameter count; this tests learning feasibility only",
+    "NOT official scripts/train.py or MuonAdamW/GPU"
+  ]
+}

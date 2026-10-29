@@ -1,0 +1,87 @@
+{
+  "experiment": "MYTHOS-M1-CPU-PARCAE-001",
+  "status": "PASS",
+  "arm": "parcae",
+  "source": "official Parcae @ 69284c13746e849104f738d6d1a347b1f457df76",
+  "environment": {
+    "python": "3.12.3",
+    "torch": "2.11.0+cu130",
+    "cpu": true,
+    "threads": 1
+  },
+  "config": {
+    "seed": 42,
+    "steps": 180,
+    "batch": 32,
+    "sequence_length": 16,
+    "vocab": 16,
+    "period": 4,
+    "optimizer": "AdamW",
+    "lr": 0.002,
+    "weight_decay": 0.0,
+    "native_pair": [
+      0,
+      2
+    ],
+    "parcae_core_repeats": 2
+  },
+  "data": {
+    "train_batch_codes_sha256": "d6c6001e83fc7de49790832c9278b81a1b19487dc83e78a0310fa8b54c2edfc0",
+    "val_ids_sha256": "115a92a8f2e7ce361317c508d5c81b2e149d879350fe4cf8648a046b56aa6c11",
+    "test_ids_sha256": "a3b8a969ad2c2bfa10a53a5b6a90ea245baccefd41e412f344855c2cb5edf07e",
+    "zero_split_overlap": true
+  },
+  "model": {
+    "params": 28736,
+    "initial_weights_sha256": "3f1089488bf6e034490452d2ed3f103bc9b67fd65aa750dc07e71c6873dda9ec",
+    "final_weights_sha256": "55b5dff2cd95afc4d50f080134673a5331fe1d5d536087bad038452a45f8a4a3"
+  },
+  "observed": {
+    "initial_val_nll": 2.9697938561439514,
+    "final_val_nll": 0.1602221606299281,
+    "final_test_nll": 0.17950838152319193,
+    "initial_val_ppl": 19.487901870692728,
+    "final_val_ppl": 1.173771607867799,
+    "final_test_ppl": 1.1966289335986084,
+    "first_10_train_loss": [
+      2.890355110168457,
+      2.8261311054229736,
+      2.8279261589050293,
+      2.8092868328094482,
+      2.774263620376587,
+      2.636913537979126,
+      2.54361629486084,
+      2.5127904415130615,
+      2.5220658779144287,
+      2.3576550483703613
+    ],
+    "last_10_train_loss": [
+      0.19879095256328583,
+      0.18342100083827972,
+      0.1883569061756134,
+      0.15847563743591309,
+      0.22752705216407776,
+      0.22918035089969635,
+      0.20181049406528473,
+      0.21333685517311096,
+      0.17819952964782715,
+      0.15293140709400177
+    ],
+    "training_s": 3.539561143000128,
+    "maxrss_kib": 642220,
+    "flops": "NOT MEASURED"
+  },
+  "criteria": {
+    "validation_nll_decrease_min": 0.05,
+    "weights_updated": true,
+    "finite_loss_grad": true,
+    "identical_dataset_seeds": true
+  },
+  "limitations": [
+    "synthetic periodic sequences, not natural language",
+    "Parcae prelude + 2 core passes + coda = 4 block passes vs standard 2 independent blocks",
+    "RoPE vs absolute position encoding and other architecture differences",
+    "NOT matched FLOPs/parameter count; this tests learning feasibility only",
+    "NOT official scripts/train.py or MuonAdamW/GPU"
+  ]
+}
