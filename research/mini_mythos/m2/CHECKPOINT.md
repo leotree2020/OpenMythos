@@ -12,14 +12,19 @@ changes before/after M2. Native GPT and Parcae source remain unchanged.
 
 ## M1 evidence status
 
-User supplied terminal transcripts for all three seeds; those transcripts report
-both arms PASS. Their attachments were read in this session. This is terminal
-evidence, not independent execution or archive audit. Six full JSONs remain in
-the user's Codespaces /tmp/mythos-m1-pr12/research/mini_mythos/results/m1_cpu.
+User supplied terminal transcripts for all three seeds. Subsequently, the user
+provided Codespaces access and the original archive was retrieved through the
+authenticated browser terminal, transferred losslessly and independently audited.
+Six full JSONs remain in the user's Codespaces
+/tmp/mythos-m1-pr12/research/mini_mythos/results/m1_cpu.
 Archive /workspaces/OpenMythos/mythos_evidence/M1_CPU_3seeds_20261029.tar.gz
-has USER-REPORTED SHA256
+has independently verified SHA256
 f5542ebd2e92dd165b5e3155f7496c3698924b834f14b11e00a391366a54ed4c.
-Archive bytes unavailable: independent SHA and JSON audit NOT TESTED.
+Archive integrity and six-JSON consistency audit PASS. The 3,895-byte archive,
+verbatim member JSONs and audit.json are preserved in
+../m1/evidence/archive_audit_20261029/. Train/val/test ID hashes were independently
+regenerated. All six reports meet the .05 NLL decrease gate. Actual weights and
+per-step gradients are absent, so those remain NOT TESTED; this is not a rerun.
 
 M1 shell regression PASS: bash syntax, fresh clone, existing clean checkout,
 and existing dirty checkout rejected with user modification preserved. Local Git
@@ -55,19 +60,43 @@ The first attempt failed on GPT optional fused-head construction before training
 preserved as attempt01_fused_head_error.log. Corrected experiment configuration
 uses the official non-fused GPT path, without editing upstream. Local dependencies
 are Python 3.12.14/torch 2.9.0+cpu/NumPy 2.2.6/einops .8.0: outside M1 pinned
-Linux environment, particularly upstream NumPy<2. Linux replay NOT TESTED.
+Linux environment, particularly upstream NumPy<2. The subsequent Linux replay
+below resolves the missing pinned-environment execution, not the fairness failure.
+
+## Codespaces Linux replay — completed 2026-10-29
+
+Code: 45038f602470001e0bf82d970fc67d1763477871, isolated detached worktree
+/tmp/mythos-m2-linux-45038f6. Existing M1 worktree and evidence were preserved.
+Upstream: /tmp/mythos-m1-parcae-clean-20261029 at 69284c1, tracked status clean.
+Environment: existing /tmp/mythos-m1-cpu-venv, Python 3.12.3, torch 2.11.0+cu130,
+NumPy 1.26.4, einops 0.8.0, Linux, CPU only, one thread. No installation or GPU.
+Purpose: rerun the unchanged M2 protocol in the existing pinned Linux environment.
+Expected: same per-run learning gates and separate fairness assessment; no new
+cross-environment numeric-equality threshold was introduced after observing data.
+
+Actual: 9/9 learning runs PASS, exact matched batch hashes/tokens/params/counted
+FLOPs against Windows. Linux mean test NLL: GPT4=2.8141905467,
+GPT3=2.7849675814, Parcae=2.8096792698. Maximum test NLL absolute difference
+across environments is 2.384185791015625e-7 (descriptive, not a preregistered
+equivalence PASS). Simultaneous 10% fairness gates still FAIL.
+Original JSON, log, exit code, provenance and cross-environment comparison are in
+evidence/linux_45038f6/. Remote originals are under
+/workspaces/OpenMythos/mythos_evidence/m2_linux_45038f6/.
+
+Native source stayed clean. The old /tmp/mythos-m1-official-parcae incomplete
+clone was not repaired or used; the separately verified clean checkout was used.
 
 ## Open items and next experiment
 
 Grok independent cross-review NOT TESTED; no connected Grok execution channel.
 Keep PR Draft. Review PROTOCOL.md, run_cpu.py, pilot.json and failure evidence.
-No direct Codespaces connection is available here. Uploading the existing M1
-archive is the only user action needed to allow independent archive audit.
+Codespaces browser access now works. No archive upload is needed: M1 bytes have
+been obtained and audited. The remote browser was kept in restricted mode.
 
-Next instruction: review this checkpoint first. Audit uploaded M1 archive against
-the user-reported SHA. Obtain Grok review of native initialization, byte split,
+Next instruction: review this checkpoint first. Obtain Grok review of the M1
+archive audit and native initialization, byte split,
 FLOP accounting and 10% gates, preserving disagreements. Before further training,
 perform a CPU-only architecture/configuration calibration using parameter/FLOP
 counts WITHOUT quality inspection; freeze a new protocol meeting both gates (or
-predeclare distinct compute/parameter comparisons). Then run a pinned Linux
-three-seed reproduction with larger held-out coverage. Do not change upstream.
+predeclare distinct compute/parameter comparisons). Then run a new pinned Linux
+three-seed experiment with larger held-out coverage. Do not change upstream.
