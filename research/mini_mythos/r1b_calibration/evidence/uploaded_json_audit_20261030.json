@@ -1,0 +1,32 @@
+{
+  "audit": "MYTHOS-R1B-UPLOADED-JSON-READONLY-AUDIT-20261030",
+  "input": {"name": "result(3).json", "bytes": 1546502, "sha256": "d87bb8be14573379ef2936b1c7f7b50aad5c0b9db0cf7724c67cb2aa1ae23a86", "prior_external_digest": "NOT SUPPLIED"},
+  "executed_source": "f13e498951e13d3a73db26e9111724b54984e35c",
+  "protocol_first_commit": "5b60718a1e6388a91ee9f00a811f41265b92b548",
+  "source_pin": "69284c13746e849104f738d6d1a347b1f457df76",
+  "record_audit_status": "PASS",
+  "record_assertions": 134,
+  "failed_record_assertions": 0,
+  "actual_scope": {"predictions_rescored": 6144, "unique_development_problems": 1024, "loss_values_checked": 18000, "gradient_norm_values_checked": 18000, "integer_batch_tensors_regenerated": 3, "native_model_runs": 0, "model_binary_loads": 0, "final_test_evaluations": 0, "depth4_evaluations": 0},
+  "auditor_environment": {"python": "3.13.5", "torch": "2.10.0+cpu", "torch_usage": "integer batch indices only, no model import"},
+  "data": {"train_examples": 19977, "train_canonical_pairs": 10000, "development_examples": 1024, "development_per_carry": 256, "train_sha256": "d2603d85dca18da104b6138e4513fd47be7c8f2063f447534807f86d68e3c458", "development_sha256": "f232a8bc703e5aea07d89637f67110442a5d3882f560b05487c4462d31cd02cd", "reserved_labels_or_metrics_created_by_auditor": false},
+  "counts_order": ["all/1024", "carry0/256", "carry1/256", "carry2/256", "carry3/256"],
+  "endpoints": [
+    {"seed": 42, "arm": "gpt", "correct": [1009,255,252,251,251], "learning_floor": "PASS"},
+    {"seed": 42, "arm": "parcae", "correct": [807,213,196,189,209], "learning_floor": "FAIL", "failed_conditions": ["overall>=0.80", "carry0>=0.90"], "hard_accuracy_le_0_90": true},
+    {"seed": 20261029, "arm": "gpt", "correct": [979,246,251,241,241], "learning_floor": "PASS"},
+    {"seed": 20261029, "arm": "parcae", "correct": [979,240,242,247,250], "learning_floor": "PASS", "hard_accuracy_le_0_90": false},
+    {"seed": 20261030, "arm": "gpt", "correct": [1019,254,256,254,255], "learning_floor": "PASS"},
+    {"seed": 20261030, "arm": "parcae", "correct": [978,249,238,247,244], "learning_floor": "PASS", "hard_accuracy_le_0_90": false}
+  ],
+  "qualification": {"baseline_learning_status": "PASS", "parcae_learning_status": "FAIL", "task_qualification_status": "FAIL", "reason": "PARCAE_NOT_LEARNED_AT_FIXED_BUDGET", "hard_d2_accuracy": [0.81640625,0.9765625,0.953125], "final_test_status": "NOT TESTED", "extra_depth_benefit_status": "NOT TESTED"},
+  "reported_execution_status": "PASS",
+  "exit_code_verified": 1,
+  "mean_development_accuracy": {"gpt": 0.9788411458333334, "parcae": 0.8997395833333334},
+  "budget": {"gpt_step_counted_flops": 73433088, "parcae_step_counted_flops": 80289792, "counted_compute_ratio": 1.0933734939759037, "registered_parameter_ratio": 1.0850159404888418, "scope": "saved supported-operator counts and arithmetic, not new profiler or hardware cost"},
+  "source_identity_scope": "Actual prepared task.py and run_cpu.py bytes match recorded SHA256s; frozen protocol/checkpoint read through GitHub. No independent raw-protocol-byte hash claimed.",
+  "initial_identity_scope": "Six recorded initial-state hashes and input-embedding fingerprints linked to actual prior P1-R1 JSON; paired metadata agree. No initializer replay or tensor binary check.",
+  "interpretation": ["Learning-floor failure has priority in the frozen classifier; retain task FAIL, not overall ceiling BLOCKED.", "No Parcae seed meets both readiness conditions: seed42 misses learning floor, other two exceed the hard upper bound.", "Carry-count categories do not establish a monotonic empirical difficulty ranking.", "Combined seeds change initialization, training batches and native randomness; cause of outcome variation remains unisolated.", "Do not select seeds, average away per-seed conditions, retune thresholds or open the reserved test."],
+  "not_tested": ["six output .pt binary states", "native development-score replay", "training replay", "resume equivalence", "final test", "depth4 benefit", "new Grok/Claude cross-review"],
+  "decision": "Close requested JSON handoff and fixed candidate. Preserve qualification FAIL; no automatic new training, difficulty/depth sweep, GPU, source patch or merge. Next limited action is targeted review of existing evidence."
+}
