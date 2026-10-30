@@ -1,81 +1,83 @@
-# M2-T — user-reported outcome and decision checkpoint
+# M2-T — actual uploaded-JSON audit and stage checkpoint (2026-10-30)
 
-**Decision: preserve a negative equal-counted-budget training-depth intervention result.** The user read an existing Codespaces result: execution, baseline and budget PASS; primary FAIL; depth2 safeguard PASS; combined intervention FAIL; extra inference-depth benefit FAIL. ChatGPT independently recomputed those scientific verdicts and the difference-in-differences identity from the pasted numeric arrays. This review did NOT rerun training, inspect original result.json bytes, inspect new binary snapshots, or execute Grok/Claude. Do not call the entire stage PASS or hide the failed primary behind the safeguard.
+**Uploaded file identity / recorded-data consistency: PASS. Primary intervention: FAIL. Depth2 safeguard: PASS. Combined intervention: FAIL. Extra-inference-depth benefit: FAIL.** The actual original `result.json` has now been received, read and independently hashed. Do not keep requesting it, and do not replace these results with another training run.
 
-## 1. Provenance and evidence boundary
+This is a read-only artifact audit, integer-index/schedule regeneration and linkage to existing M2-L input states. It is **not** a new model run, independent NLL/profiler evaluation, audit of six new final binaries, Grok/Claude review, or permission to merge. Formal Oracle remains BLOCKED/NOT_READY, `FORMAL_ACCEPTANCE_READY=False`; no G2 REAL.
 
-- Repository: leotree2020/OpenMythos; branch mini-mythos-m2t-mixed-depth-control-20261029; Draft PR #15, dependent on PR #14. No merge.
-- Code HEAD displayed by the user: **6bd5dd0de4d6c98cb35e0ae263a555544f5a325b**. Initial protocol committed first at **a28cd9026d1074d059d2402cd172e8c9e6d32fa6**.
-- Training harness blob: e9391b9728768da37b4171c03e74284616915221; launcher blob: 52b96d1a7943ad519f0060714eb415de400bbff6. Neither code nor frozen protocol was modified by this outcome review.
-- Original native Parcae remains pinned to 69284c13746e849104f738d6d1a347b1f457df76. The shared initial inputs are the already audited M2-L model/AdamW/CPU-RNG snapshots, not replacements for missing M2-D evidence.
-- User-side new result: `/workspaces/OpenMythos/mythos_evidence/m2_trainmix_v1/result.json`.
-- USER-REPORTED SHA256: **874a4199ce781632160ff4ea95b59d1e25cdcc792fa0276e303a9b06e2f2bcf7**. Original result bytes have NOT been retrieved or independently rehashed in this review.
-- User-provided summary is preserved as `evidence/user_supplied_result_summary_001.txt` in commit 2a79e30d1ba6638c2e9987906e1db057673fd214. It is explicitly labelled as copied terminal output, not original JSON or independently captured stdout.
-- Six groups are reported. Their absolute NLLs, full traces, snapshots, measured costs, RNG pairing and original dependency dump require the original result and, where necessary, referenced files. No absolute final NLL, measured wall time or hardware performance was inferred from differences alone.
-- The worktree already existed, and the last user command read an existing result instead of starting training. The directory conflict was not a new training failure. Preserve the actual run independently of that failed worktree-creation attempt.
-- Preparation checkpoint and limited controller/snapshot tests remain immutable in history at the original code HEAD. Those preparation PASS results are not promoted into independent model execution evidence.
+## 1. Version and evidence provenance
 
-## 2. Purpose, fixed environment, inputs and expectations
+- Repository `leotree2020/OpenMythos`; branch `mini-mythos-m2t-mixed-depth-control-20261029`, Draft PR #15, dependent on PR #14. Do not merge automatically.
+- Original executed source: `6bd5dd0de4d6c98cb35e0ae263a555544f5a325b`. Protocol frozen first at `a28cd9026d1074d059d2402cd172e8c9e6d32fa6`. Neither protocol nor runner changed.
+- Untouched upstream pin: `69284c13746e849104f738d6d1a347b1f457df76`.
+- Prior terminal-summary checkpoint remains in history at `3ede67c0b3e02278b9bcd25edd38ab5180576bd5`; copied terminal summary remains `evidence/user_supplied_result_summary_001.txt`. This audit supersedes its pending-JSON status only, not its scientific FAIL or other outstanding evidence.
+- Actual uploaded JSON: **430,774 bytes**, SHA256 **`874a4199ce781632160ff4ea95b59d1e25cdcc792fa0276e303a9b06e2f2bcf7`**, independently computed and exactly matching the prior user digest. Input was unchanged after analysis.
+- User-side source remains `/workspaces/OpenMythos/mythos_evidence/m2_trainmix_v1/result.json`. No output directory, snapshots or old evidence overwritten.
+- Saved summary: [`evidence/uploaded_json_audit_20261030.json`](evidence/uploaded_json_audit_20261030.json), initial commit `9f653cf78ab127be3f70b5894acd93bd840d5145`.
+- Conversation audit bundle `Mythos_M2T_JSON_Audit_20261030.zip`, SHA256 `05a4a2de8b6a504ac2d1090ba561cba5fcf212858995633958a280124bc60ab4`, contains original uploaded JSON bytes, actual audit script, detailed assertions/results, log, Chinese report and manifest. Original full JSON is in this bundle; this commit records its summary, not a fabricated replacement raw file.
 
-Question: after the fixed-weight M2-D screen failed, can brief balanced training at depths1/3 improve depth4 prediction over equally budgeted fixed2 continuation? This compares two training schedules on the SAME native model, not GPT versus Parcae or an architectural repair.
+## 2. Purpose, frozen input, environment and expected outcomes
 
-Frozen runtime: Linux Python3.12.3, torch2.11.0+cpu, NumPy1.26.4, einops0.8.0; FP32 CPU, single thread, deterministic algorithms, math SDPA. These are source preconditions, not a fresh environment measurement by this reviewer.
+Question: does balanced depth1/3 continuation improve depth4 validation NLL relative to equally budgeted fixed2 continuation of the SAME native Parcae starting state? Three paired seeds 42/20261029/20261030, old step1920 model/AdamW/CPU RNG states, 480 new updates per arm, unchanged Tiny Shakespeare byte train/validation intervals, sequence32 and batch8. No old test or Alice metrics.
 
-Inputs: the same per-seed native Parcae step1920 model, AdamW and CPU RNG snapshots for both arms; Tiny Shakespeare training and already-explored validation intervals; byte tokenizer256, sequence32, batch8; seeds42/20261029/20261030. No Alice or original test evaluation. A-M2L-01 inactive native paths remain unchanged, and A-M2L-02 is not resolved by using complete stored state.
+Each arm has 122,880 new target-token exposures and 960 core calls. FIXED uses depth2 at every update; MIXED has exactly240 depth1 and240 depth3, one of each in every adjacent pair, order from seed+37000. Identical sampled batches and recorded pre-forward RNG digests are mandatory.
 
-FIXED: 480 additional updates at depth2. MIXED: 480 updates, exactly240 depth1 and240 depth3, predefined adjacent-pair order. Both: 960 core calls,122880 new target-token exposures and identical sampled batches. Before training the harness requires counted C1+C3=2*C2; compare paired pre-forward RNG identities and all initial model/optimizer/RNG digests. Equal counted operations does not prove equal hardware time, memory or energy.
+Producer environment recorded in the file: Python3.12.3 / torch2.11.0+cpu / NumPy1.26.4 / einops0.8.0, Linux. This audit runtime: Python3.13.5 / torch2.10.0+cpu, CPU one thread. Different versions are used only for safe tensor reading, hash arithmetic and integer generation; no cross-build model-execution equivalence claim.
 
-Let F2/F4 denote FIXED validation NLL at depths2/4, M2/M4 denote MIXED validation NLL. Lower NLL is better. Frozen criteria:
-- Primary: mean(M4-F4)<=-0.01 AND every seed delta<0.
-- Safeguard: mean(M2-F2)<=+0.02 AND each<=+0.05.
-- Combined intervention: primary AND safeguard.
-- Separate extra-inference benefit: mean(M4-M2)<=-0.01 AND each<0.
-- These are exploratory validation screens, not statistical significance or a fresh held-out superiority claim.
+Frozen success requires mean(MIXED d4 - FIXED d4)<=-0.01 and each seed<0, together with d2 safeguard mean(MIXED d2 - FIXED d2)<=+0.02 and each<=+0.05. Separate extra-depth screen requires mean(MIXED d4 - MIXED d2)<=-0.01 and each<0. No post-hoc tolerance change.
 
-## 3. Independently recomputed summary arithmetic
+## 3. Actual audit results
 
-| Seed | M4-F4 primary | M2-F2 safeguard | M4-M2 extra-depth | (M4-M2)-(F4-F2) |
-|---|---:|---:|---:|---:|
-|42|+0.0008100684096175037|+0.0051906591166384075|+0.0062266141817595155|-0.004380590707020904|
-|20261029|+0.0005262664264038541|+0.0064143481179324|+0.007826318084081851|-0.005888081691528546|
-|20261030|+0.0010453290542535854|+0.00637812764949075|+0.004165987099602031|-0.005332798595237165|
-|Mean|**+0.000793887963424981**|**+0.005994378294687186**|**+0.006072973121814466**|**-0.005200490331262205**|
-
-Primary **FAIL**: all three deltas are positive (slightly worse), and the mean is not <=-0.01. This is a failure to show the prespecified benefit, not a claim of statistically significant harm.
-
-Safeguard **PASS**: the observed depth2 degradation stays within the preregistered allowable loss. Safeguard PASS does NOT mean improved or exactly unchanged depth2 quality. Combined intervention **FAIL** because its primary failed.
-
-Extra-inference benefit **FAIL**: after mixed training, depth4 still has higher NLL than depth2 in every seed. The mean +0.006072973121814466 is not the required <=-0.01 improvement.
-
-### Do not misread the negative difference-in-differences
-
-The identity is `(M4-M2)-(F4-F2) = (M4-F4)-(M2-F2)`; the four supplied arrays are numerically consistent with it. Inferred from these differences (not new absolute NLL measurements): FIXED's mean d4-minus-d2 gap is +0.01127346345307667, MIXED's gap is +0.006072973121814466.
-
-The gap contracted by about0.00520049, but BOTH fixed-depth endpoint comparisons worsened: MIXED d2 is about0.00599438 higher and MIXED d4 about0.00079389 higher than their FIXED counterparts. The reduced gap therefore does not establish improved deep prediction; it largely reflects relatively greater deterioration at d2. Do not select this secondary contrast as a replacement success metric. All twelve absolute NLLs still need the original JSON for inspection.
-
-## 4. Gate matrix
-
-| Gate | Status | Actual evidence level |
+| Check | Actual result | Scope |
 |---|---|---|
-| Six completed paired continuation groups | PASS as reported | Existing result-reading terminal excerpt; no independent inspection of all480-step traces yet |
-| Original depth2 baseline replay | PASS as reported | Runner status, not independent fresh evaluation |
-| Matched counted budgets/data/start/RNG controls | PASS as reported | Frozen harness checks verified in source; raw measured cost/pairing fields not yet received |
-| Primary intervention benefit | **FAIL** | Independently recomputed from all three supplied deltas and frozen rule |
-| Depth2 quality safeguard | **PASS** | Independently recomputed; permits small loss, not quality gain |
-| Combined intervention | **FAIL** | Primary failed despite safeguard PASS |
-| Extra inference-depth benefit | **FAIL** | Each mixed d4-minus-d2 delta positive |
-| Difference-in-differences arithmetic | PASS | Computed identity consistent; not assigned a benefit verdict |
-| New result.json byte identity/full record audit | NOT TESTED | Only user-reported digest received |
-| Six new final binary model/optimizer/RNG states | NOT TESTED by this review | Prior M2-L snapshot audit does not cover new M2-T states |
-| New M2-T Claude/Grok review | NOT TESTED | Earlier reviews are different stages |
-| General efficiency/ACT/reasoning/statistical superiority | NOT TESTED / NOT ESTABLISHED | This narrow pilot does not establish any of these |
+| Original uploaded SHA256 and strict JSON parsing | PASS | Exact bytes, no duplicate keys or nonfinite constants |
+| Six unique seed/arm records and three baselines | PASS | Entire JSON parsed, not snippets |
+| Twelve endpoint NLL/PPL values and window arithmetic | PASS | 3485 windows,111520 targets,18 discarded tail targets; PPL=exp(NLL) |
+| Recorded training traces | PASS | 2880 finite loss values and2880 finite gradient-norm values;480 per row |
+| Paired pre-forward RNG digests | PASS | All1440 stepwise pairs equal; raw per-step RNG states not supplied |
+| Mixed schedules | PASS | Independently regenerated exact sequence for each seed; composition and pair order match |
+| Sampled training windows | PASS | Independently regenerated old1920 prefix and new480 batch hashes using old pilot's recorded train length |
+| Starting snapshot/model/AdamW/CPU RNG identities | PASS | Actually read only three original M2-L step1920 snapshots with weights_only=True; recomputed all four digests and matched both arms and baselines |
+| Baseline records versus old pilot | PASS | Complete saved metric-object equality; not a fresh native evaluation |
+| Counted training and inference budget arithmetic | PASS | Recalculated from saved operator counts, not a new profiler run |
+| Producer script bytes | PASS | Prepared bundle script SHA matches result; Git blob e9391b9728768da37b4171c03e74284616915221 matches pinned record; script was not executed |
+| All four scientific verdicts and paired deltas | PASS for classification consistency | Benefit verdicts below remain FAIL |
+| Six new step2400 binary snapshots | NOT TESTED | Only filenames/digest fields supplied; old input snapshot audit does not cover new output binaries |
+| Independent native NLL/FLOP reevaluation, training replay or resume parity | NOT TESTED | No model computation performed |
+| New M2-T Grok/Claude independent review | NOT TESTED / DEFERRED | Earlier reviewers addressed other tasks |
 
-## 5. Decision and next single action
+Original M2-L archive SHA `0f14ef97493c86f04b02c2d62b381142599fe0640e8729d215a723753172a257` and pilot SHA `c5be0f6da8eab77ab499ad97a3aaf318633d2d44f234083165ffcacc3b26d7bb` were recomputed for the starting-state link and stayed unchanged. This was not another18-snapshot audit or repeat gradient diagnostic.
 
-**NO-GO for automatic tuning of further depth schedules, extending this continuation, or scaling to GPU merely to seek a green result.** Preserve the failed primary and all secondary contrasts. Under this fixed micro-configuration, the preregistered480-step mixed1/3 intervention did not deliver its intended benefit. This does not disprove all mixed-depth training, other scales, or models trained with different depth distributions from the start.
+## 4. Absolute quality results and new clarification
 
-M2-L longer-training quality FAIL and M2-D fixed-weight depth4-benefit FAIL remain separate limited results. Do not combine the three pilots into a universal disproof of recurrence or use the inactive paths as an untested causal explanation. No automatic next experimental branch is created by this checkpoint.
+| Seed | FIXED d2 | MIXED d2 | FIXED d4 | MIXED d4 |
+|---:|---:|---:|---:|---:|
+|42|2.012946388745|2.018137047862|2.023553593634|2.024363662044|
+|20261029|1.981784499359|1.988198847477|1.995498899134|1.996025165561|
+|20261030|2.001950007771|2.008328135421|2.011448793466|2.012494122520|
+|Mean|1.998893631958|2.004888010253|2.010167095411|2.010960983375|
 
-**Next only:** transfer the existing `m2_trainmix_v1/result.json` (not M1/M2-L/M2-D result files) and independently verify its user-reported SHA256, six full rows, all12 endpoint NLLs, counts, paired identities, schedules and recorded traces. Do not retrain, reinstall, delete outputs or repackage the already-audited old M2-L archive. The six new snapshots are a separate stronger integrity check if provided; JSON-only review must not claim binary audit. Keep PR #15 Draft and preserve the existing output directory. Claude's original A-M2L-01 reviewer files and M2-D raw JSON remain pending separately.
+Mean starting d2 validation NLL was2.029522952048303. FIXED changes by -0.030629320089923102 and MIXED by -0.024634941795235916; both arms improve d2 relative to their own shared start in all three seeds. The failed hypothesis is incremental benefit over the equally trained control, **not** that continuation failed to learn.
 
-This outcome review changed documentation/evidence only, not the frozen protocol, runner, upstream, earlier results, J1, Oracle or G2 REAL. No model forward/backward, optimizer updates, GPU use or PR merge were performed here. Formal Oracle and G2 REAL remain gated.
+- Primary M4-F4 mean **+0.000793887963424981: FAIL**; all three differences positive. Small magnitude does not establish statistically significant harm.
+- Safeguard M2-F2 mean **+0.005994378294687186: PASS**, permissible relative loss only, not improvement.
+- Combined intervention **FAIL**.
+- Extra inference M4-M2 mean **+0.006072973121814466: FAIL**; deeper evaluation remains worse in every mixed seed.
+- Difference-in-differences **-0.005200490331262205**, descriptive only. It reflects relatively greater MIXED deterioration at d2 versus FIXED than at d4; it does not substitute for the failed deep-endpoint benefit.
+
+## 5. Counted budget, not hardware efficiency
+
+Per-step saved operator counts: C1=63,111,168; C2=80,412,672; C3=97,714,176. Independently verified **C1+C3=2*C2=160,825,344**, separately for forward/backward as well as total. Both arms record **38,598,082,560** additional counted FLOPs per seed; all six runs sum to231,588,495,360. Target exposures sum to737,280 across all six runs, not unique corpus tokens.
+
+Inference full-validation totals are11,676,590,080 at d2 and16,701,235,200 at d4 in both arms; last partial batch29 is correctly included. No end-to-end speed, memory, energy or full hardware FLOPs claim. Saved duration fields are descriptive only.
+
+## 6. Open items and stage disposition
+
+The requested uploaded-JSON audit is **complete**. Preserve M2-T as a limited negative mechanism result with open binary/reviewer items. No automatic new schedule, longer continuation, deeper sweep, GPU scale-up, protocol relaxation or merge.
+
+Six new final binary states, full producer pip-freeze and independent native metric replay are outside this upload; do not claim those checked. Digest agreement establishes record consistency, not independent attestation of every operation. The corpus digest is linked to the old pilot; raw corpus bytes were not supplied again.
+
+A-M2L-01 remains in both arms. A-M2L-02 initialization reconstruction remains OPEN; complete saved-state use does not resolve it. Claude's six original reviewer files and M2-D original result JSON remain separate pending records. Neither prevents recording the scoped negative outcome, but neither may be silently marked PASS.
+
+**Next single action: stage decision / targeted independent review using the now-available source and raw M2-T JSON; no repeat upload request for this JSON, no retraining for sealing.** Binary-output audit, if separately supplied, must be labelled separately. Keep PR #15 Draft. Do not launch another research branch as a consequence of this bookkeeping update.
+
+This stage update modifies only evidence summary/checkpoint and PR description; frozen models, scripts, protocol, upstream Parcae, J1, Bench, R3 and formal Oracle are untouched. No native forward/backward, optimizer update, GPU rental or merge was performed in this audit.
