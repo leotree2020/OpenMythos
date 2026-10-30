@@ -1,78 +1,78 @@
-# R1-B-CAL checkpoint — 2026-10-30
+# R1-B-CAL — uploaded development result and scoped closure (2026-10-30)
 
-## Goal and current status
+**Uploaded JSON / record consistency PASS. GPT learning floor PASS; Parcae learning floor FAIL; task qualification FAIL / PARCAE_NOT_LEARNED_AT_FIXED_BUDGET.** User-run records contain six completed 3000-step arms and six development endpoints. Final test and extra-depth benefit remain NOT TESTED. This update is actual read-only record auditing, not another native run. The requested original JSON handoff is COMPLETE; do not request it again or rerun for sealing.
 
-Continue from R1-A's actual uploaded-result audit at PR18 HEAD84b594c3c96df5255eeb5312a3b281b4e4ea8bac, read live before changes. R1-A arithmetic learnability PASS is retained; its extra-depth screen remains BLOCKED/CEILING_LIMIT with observed average depth4 declines. The old result is already received/audited: do not request it again, lower its threshold, mine its test mistakes or rerun old training.
+## 1. Purpose, source and evidence
 
-**R1-B native training: NOT TESTED. Development qualification: NOT TESTED. Final test and extra-depth benefit: NOT TESTED and outside this stage.** Current deliverable is runnable, tested preparation for ONE new task candidate, not a capability result or a completed cross-review.
+Question: at one fixed budget, is strictly-three-digit addition both learnable by the existing native models and sufficiently below ceiling for a later compute-benefit comparison? This is task qualification, not architecture superiority, ACT or P3 completion.
 
-Purpose: determine whether a strictly three-digit arithmetic development task is both learnable by existing native models and unsaturated enough to support a future meaningful compute-benefit experiment. Only GPT native and Parcae [0,2] are run. No depth4, early checkpoint selection, repeated candidate search or automatic final-test opening.
+- Repository leotree2020/OpenMythos; branch mini-mythos-r1b-difficulty-cpu-20261030; Draft PR #19, dependent on PR #18.
+- Executed source **f13e498951e13d3a73db26e9111724b54984e35c**. Protocol frozen FIRST at **5b60718a1e6388a91ee9f00a811f41265b92b548**. Preparation checks and original checkpoint remain at executed commit; no protocol/runner/task/threshold change.
+- Unchanged native source **69284c13746e849104f738d6d1a347b1f457df76**, original factory/pair_io SHA25674f00c64448ddbc224a48ef83dc031a90c33448ccb92647666707f6b8f988967.
+- Actual uploaded `result(3).json`: **1,546,502 bytes**, independently computed SHA256 **d87bb8be14573379ef2936b1c7f7b50aad5c0b9db0cf7724c67cb2aa1ae23a86**. No separately supplied user terminal hash; no invented digest match/authenticity claim.
+- User-side output: `/workspaces/OpenMythos/mythos_evidence/r1b_calibration_v1/result.json`.
+- Audit summary: [evidence/uploaded_json_audit_20261030.json](evidence/uploaded_json_audit_20261030.json), first committed at **120c2cabfbad444ee89e1084c9ae39d076c0c80d**.
+- Actual earlier P1-R1 JSON SHA256 bf2b75fbcc49179cbdb059916a744ae8fa4cc682675bd802b662b32e791126ea was read only for six initial hash/input-embedding links; no initializer was run.
+- Actual prepared task.py SHA2561baebb6e47f39de63e894e7d8379bdcd8403e8cd79ead1e33fa6e525278940af and run_cpu.py SHA25652e485d9f4f880e66ac21b49dbd5ebcf93ce600714066a9781607656eb9bac42 match this result. Frozen protocol and previous checkpoint were read through live GitHub; no independent raw-protocol-byte hashing is claimed.
 
-## Source / isolation
+## 2. Frozen inputs, environment and expected criteria
 
-- Repository: leotree2020/OpenMythos.
-- Single new branch: mini-mythos-r1b-difficulty-cpu-20261030.
-- Base: 84b594c3c96df5255eeb5312a3b281b4e4ea8bac, dependent on Draft PR18.
-- Protocol committed FIRST, before native execution: **5b60718a1e6388a91ee9f00a811f41265b92b548**.
-- Task commit: d8508e0264421979f7b48a5a886fad4996ae30f5.
-- Runner commit: 3fb81f0f92c6efbd74b23d337aca3eef78e04dd8.
-- Launcher commit: 6a3b72e030dff5f87c8accc287e7bfa63ee4cf14.
-- Tests commit: e142950acc3283c7576b7ddfbcfe5eec5af9b3ef.
-- Untouched GPT/Parcae upstream: 69284c13746e849104f738d6d1a347b1f457df76. Existing m2_matched factory/pair_io reused, SHA25674f00c64448ddbc224a48ef83dc031a90c33448ccb92647666707f6b8f988967. No model implementation, upstream repair or initialization replay tool added.
-- Remote full-file Git blobs re-read and equal the locally compiled/tested bytes: runner61e3d083f509b6dae95ecb324fa7ec20f245c785; task9dd0a29b673d9326096b816dbdb062c2c7e87d91; launcherc1b1c5c35da6d96dfaa5cd0268e51372b63859a4; tests5ccd77d3f50e354fac173cc0611c14cb1af3d627.
+Operands100..999; six input digits, four reversed answer digits; answer-only training labels. Full256-way free greedy generation, no correct answer prefix or calculator. Train/development role hash keeps swapped pairs together; future-test reserved role is not model-evaluated here. One fixed final checkpoint per model/seed, no early/best checkpoint selection.
 
-## Inputs, environment and acceptance
+Train19977 ordered examples from10000 canonical pairs; development1024 canonical questions,256 each carry0/1/2/3. Development is equally stratified, NOT natural-frequency arithmetic accuracy and not directly comparable to R1-A's differently weighted test. Three seeds42/20261029/20261030; same per-seed batches;3000 steps/batch32, original AdamW;384000 supervised target exposures and864000 input positions per arm. Repeated exposures are not unique training examples.
 
-See PROTOCOL.md for complete frozen definitions. Operands100..999, six input digits, four reversed sum digits, shifted length9 and answer-only mask. No numerical pair overlaps old two-digit R1-A. Canonical operand pairs stay together; SHA role assignment reserves a future-test region that is not emitted or model-evaluated here. Exactly one development order per pair. Prediction receives only prompts, then its own full256-way greedy outputs; arithmetic reference is used only for labels/scoring.
+Recorded producer: Linux Python3.12.3/torch2.11.0+cpu/NumPy1.26.4/einops0.8.0, FP32, one CPU thread. These are inspected environment records, not a live shell measurement. Auditor: Python3.13.5/torch2.10.0+cpu, Torch used ONLY for integer batch-index generation; zero model imports, binary loads, forward/backward or optimizer steps.
 
-Actual model-free dataset construction:
+Learning floor, EACH seed in BOTH arms: overall>=80%, carry0>=90%, EACH carry group>=60%. Only after both learning floors pass does the classifier require EACH Parcae carry3<=90%. Learning failure precedes headroom failure. No mean-only gate, seed exclusion or threshold change.
 
-| Split | Ordered examples | Canonical pairs | Carry0/1/2/3 |
-|---|---:|---:|---|
-|train|19977|10000|4996/4991/4994/4996|
-|development|1024|1024|256/256/256/256|
+## 3. Actual development endpoints
 
-Train object SHA256 d2603d85dca18da104b6138e4513fd47be7c8f2063f447534807f86d68e3c458. Development SHA256 f232a8bc703e5aea07d89637f67110442a5d3882f560b05487c4462d31cd02cd. Balanced development accuracy is not comparable to the old naturally weighted test average. No final-test list is generated; the public role rule is not cryptographic secrecy.
+All values are complete-answer correct counts, not digit accuracy. All six models answer the SAME1024 unique questions;6144 answer instances are not6144 independent unique tasks. GPT uses its native four blocks; the shared d2 interface label is not GPT recursion.
 
-Required producer: Linux Python3.12.3/torch2.11.0+cpu/NumPy1.26.4/einops0.8.0, FP32 CPU one thread, math SDPA. Same native configuration/seeds42,20261029,20261030. Exactly3000 AdamW steps/batch32 per executed arm; paired sample batches, fixed optimizer. 96000 repeated problems,384000 supervised tokens,864000 input positions per arm. This is NOT equal work to the old shorter task. Actual32x9 forward/backward counts measured before training, max/min registered/count ratio<=1.10 required; known active-parameter mismatch remains.
+| Arm | Seed | All /1024 | Carry0 /256 | Carry1 /256 | Carry2 /256 | Carry3 /256 |
+|---|---:|---:|---:|---:|---:|---:|
+|GPT|42|1009|255|252|251|251|
+|GPT|20261029|979|246|251|241|241|
+|GPT|20261030|1019|254|256|254|255|
+|Parcae d2|42|807|213|196|189|209|
+|Parcae d2|20261029|979|240|242|247|250|
+|Parcae d2|20261030|978|249|238|247|244|
 
-Learning floor for EACH seed in BOTH arms: overall>=80%, no-carry>=90%, each carry category>=60%. Train GPT controls first, stop before Parcae if controls fail. After both learn, require EACH Parcae three-carry development score<=90%. Thus qualifying hard scores lie in60%..90%; these are NEW task-readiness design thresholds, not changes to R1-A or evidence of general competence.
+GPT mean overall97.8841%; Parcae mean overall89.9740%. Means cannot override per-seed acceptance.
 
-Learning failure -> qualification FAIL with reason. Too-high hard score -> qualification BLOCKED/DEVELOPMENT_CEILING. Both pass -> qualification PASS only, extra-depth/final-test NOT TESTED. One fixed endpoint; no checkpoint picking, budget extension, alternative task/depth sweep or automatic continuation. Future final-test comparison needs its own frozen protocol and review and may still fail or saturate.
+**Direct failure:** Parcae seed42 overall807/1024=78.8086% and carry0 213/256=83.2031% miss80% and90%. Its carry3=81.6406% is inside the headroom interval, but that alone cannot qualify it. All its carry bins are above60%; do not describe it as unable to perform addition.
 
-## Actual preparation checks this turn
+**Separate observed constraint:** other Parcae seeds meet the learning floor but carry3 scores250/256=97.6563% and244/256=95.3125% exceed90%. Thus no seed meets both readiness requirements. Because the frozen classifier stops on learning-floor failure, overall qualification remains **FAIL**, not relabelled BLOCKED. Upper-bound observations are retained without pretending a second formal branch ran.
+
+All three Parcae carry3 scores exceed their carry2 scores; carry-count labels are not an empirically established monotonic model-difficulty scale. The broad seed42 performance reduction and across-seed endpoint variation do not isolate initialization, sample order, native stochastic states, or an architectural cause. These factors change jointly with seed. No statistical superiority/harm or causal dead-parameter claim follows.
+
+## 4. Actual audit acceptance and boundaries
+
+134 record/identity assertions PASS, zero failures. These are audit checks, not134 new neural experiments.
 
 | Check | Actual result | Boundary |
 |---|---|---|
-| Latest PR18 and checkpoint read | DONE | No repeated artifact audit |
-| Python compile and Bash syntax | PASS | Syntax, not native execution |
-| Task/helper unit tests |18/18 PASS|All405450 canonical sums plus swapped symmetry; exact quotas/hashes; masks; invalid outputs; gate boundaries; no test split; fake spy outputs prove prompt-only unconstrained decoding |
-| Existing-output launcher fixtures |6/6 PASS|PASS/FAIL/ceiling/partial/wrong-experiment/empty-directory behavior; input bytes retained; no native model |
-| Actual incompatible local runtime rejection |Expected rejection PASS|Subprocess exits2 with execution BLOCKED before factory/native construction, rows empty, no .pt files |
-| Remote source identities |PASS|All four published code blobs equal locally tested byte identities |
-| Native32x9 loss/count probe |NOT TESTED|Requires existing pinned user runtime |
-| Native GPT/Parcae training and development scores |NOT TESTED|No neural training occurred in this preparation |
-| Final test, depth4 benefit |NOT TESTED|Intentionally absent; no PASS promotion |
-| New Grok/Claude review |NOT TESTED / DEFERRED|No actual report supplied or invented |
+| Original bytes and strict JSON; six seed/arm records | PASS | No external terminal digest/authenticity proof |
+| Independent role/rank/data reconstruction | PASS |405450 candidate roles; no reserved labels or model-facing test generated; train/dev hashes equal |
+| Grouped split isolation and exact counts | PASS |19977 train rows/10000 pairs;1024 unique development pairs |
+| All6144 saved answers rescored | PASS | Every total/accuracy/invalid count agrees; no native inference |
+|18000 loss and18000 norm values | PASS | Full3000 per arm, finite nonnegative records; not raw gradients |
+| Three3000x32 integer batch tensors | PASS | Regenerated; both arms' hashes agree |
+| Initial hashes/input fingerprints and paired metadata | PASS | Linked to original P1-R1 records, not raw state binaries |
+| Saved counts/ratios/classifier/exit code | PASS | Arithmetic and exact frozen logic only |
+| Six new model/AdamW/RNG .pt files | NOT TESTED | Not uploaded; hash fields do not substitute for loading files |
+| Native score/profiler/training replay, resume equality | NOT TESTED | No model execution in this audit |
+| Final test and depth4 benefit | NOT TESTED | Intentionally outside the executed stage |
+| New Grok/Claude independent review | NOT TESTED / DEFERRED | No actual report exists here |
 
-Actual local preparation environment: Python3.13.5/torch2.10.0+cpu/NumPy2.3.5/einops0.8.2; only helper/spy checks ran. Current environment was not waived into producer compatibility. No packages, corpora or model weights downloaded; no GPU. A raw GitHub byte download attempt from the container failed DNS; repository reads/writes used the live connector, and source identity was compared by Git blob against actual local bytes. No user's Codespaces shell execution is claimed.
+Saved per-step training counts: GPT73,433,088; Parcae80,289,792; ratio1.09337349 (~+9.34%). Registered parameter ratio1.08501594. These meet the frozen10% margins, not identical budgets, effective capacity or hardware costs. Parcae probe again records51904 participating of60224 registered parameters; known8320 inactive paths unchanged. This audit did not run that probe or establish that it caused the lower seed42 outcome.
 
-## One next action
+## 5. Stage decision and single next action
 
-In the existing OpenMythos Codespace, fetch this branch, create an isolated pinned worktree only if absent, and run:
+Close the requested raw-JSON handoff and record audit. End THIS frozen candidate with task qualification FAIL. Do not request the same file again, retrain for sealing, choose only passing seeds, average away failures, pick an earlier checkpoint, extend the budget, open reserved test, try depth4/8/16, or increase operand digits automatically.
 
-    bash research/mini_mythos/r1b_calibration/run_codespaces_cpu.sh
+**Next limited action:** targeted cross-review of the already-existing result/protocol and saved error distributions, focusing on (a) the exact seed42 learning-floor failures, (b) upper-bound failures in the other seeds, and (c) whether carry-count labels provide the task sensitivity needed. Do not repeat initialization/archive work or run new training. Any later causal diagnosis must have one controlled variable and its own preregistered stopping rule; this checkpoint authorizes no new experiment.
 
-Defaults: /workspaces/mythos-m2-cpu312/bin/python; /workspaces/mythos-parcae-pinned. New output:
+Conversation audit bundle contains exact original input, prior initial-hash reference, actual audit code/log/results, full development mistakes, Chinese stage report, review instructions and manifest. Error analysis is descriptive development evidence, never a new final test or retroactive acceptance rule.
 
-    /workspaces/OpenMythos/mythos_evidence/r1b_calibration_v1/result.json
-
-Other files: train/development data, pip-freeze, final states for actually trained arms and sibling .console.log. Existing result is read-only; partial evidence is preserved. Exit0=qualification PASS,1=completed learning-floor FAIL,2=BLOCKED. Inspect reason to separate headroom from operational block. No automatic retry/resume and no rerequest for old JSONs.
-
-After one complete run, review actual per-stratum correctness and stop. If qualification passes, independently review the development-only selection before proposing a separate sealed-test comparison. If it fails, preserve the failure and explicitly decide the route rather than auto-expanding this experiment.
-
-## Boundaries and focused reviewer request
-
-R1-A cross-review remains pending; new development work does not convert it to PASS. Reviewers should check numerical-pair isolation from R1-A, reserved-role exclusion, full-answer generation, new thresholds versus unchanged old criteria, no depth4-based selection, exact update cap and fairness caveats. Do not reopen initialization auditing or add a Guard framework.
-
-All prior results and limits preserved: A-M2L-01 inactive native paths; A-M2L-02 producer recipe reconstructed but Claude root cause OPEN; old model-quality negatives. Keep Draft/unmerged. Upstream Parcae, J1, Bench, R3, existing protocols/runners and model architecture unchanged. Formal Oracle BLOCKED/NOT_READY, FORMAL_ACCEPTANCE_READY=False; no G2 REAL or GPU scale-up.
+Keep PR19 Draft/unmerged. Preserve R1-A learning PASS/ceiling result, all M2 scientific negatives, A-M2L-01 and Claude initialization root-cause OPEN. This update changes documentation/evidence only. Original code/protocol, upstream Parcae, J1, Bench, R3 and model architecture remain unchanged. Formal Oracle BLOCKED/NOT_READY, FORMAL_ACCEPTANCE_READY=False; no G2 REAL, GPU or automatic merge.
