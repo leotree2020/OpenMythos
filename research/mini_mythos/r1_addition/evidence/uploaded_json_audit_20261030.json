@@ -1,0 +1,49 @@
+{
+  "audit_date": "2026-10-30",
+  "audit_status": "PASS",
+  "scope": "Actual uploaded JSON identity and recorded-data consistency; independent task regeneration and per-answer rescoring. Not native model replay or final-binary audit.",
+  "input": {
+    "name": "result(2).json",
+    "bytes": 1899747,
+    "sha256": "13bfccd565fd4ccb57c28bb901fc61f99dd55fe0a4ba378706880159b11e30cb",
+    "separate_prior_user_terminal_digest_available": false,
+    "unchanged_after_audit": true
+  },
+  "executed_source": "936c52cf6036232de3fd9d034c4366d81c17dbea",
+  "upstream_pin": "69284c13746e849104f738d6d1a347b1f457df76",
+  "auditor": {"python": "3.13.5", "torch": "2.10.0+cpu", "torch_usage": "integer batch-index regeneration only; no model or checkpoint loading"},
+  "checks": {"pass": 165, "fail": 0, "training_rows": 6, "validation_conditions": 6, "test_conditions": 9, "rescored_answer_sequences": 11376, "finite_recorded_losses": 18000, "finite_recorded_gradient_norms": 18000},
+  "independent_checks": [
+    "Regenerated all 5050 canonical operand pairs and exchange-grouped hash splits; all three split manifests match",
+    "10000 ordered arithmetic labels agree with column arithmetic; answer-only shifted-mask contract checked",
+    "4536 validation and 6840 test predictions rescored from regenerated labels, including invalid-token rules; all metrics match",
+    "Three 3000x32 sampled training-index tensors regenerated; both arms' recorded hashes match",
+    "Six initial-state hashes and shared IO fingerprints match the actual prior P1-R1 JSON; no initializer rerun",
+    "Recomputed paired parameter and counted-training budgets, full-generation cost ratios, learning gates and primary ceiling classification"
+  ],
+  "learning_gates": {"gpt": "PASS", "parcae": "PASS"},
+  "test_mean_accuracy": {
+    "gpt_native": {"all": 0.9802631578947368, "carry0": 0.9927536231884058, "carry1": 0.9902534113060429, "carry2": 0.9468085106382979},
+    "parcae_d2": {"all": 0.9842105263157895, "carry0": 0.9840579710144928, "carry1": 0.9873294346978557, "carry2": 0.9787234042553191},
+    "parcae_d4": {"all": 0.9728070175438597, "carry0": 0.9695652173913043, "carry1": 0.9775828460038986, "carry2": 0.9680851063829787}
+  },
+  "primary": {
+    "status": "BLOCKED",
+    "reason": "CEILING_LIMIT",
+    "hard_d2_mean": 0.9787234042553191,
+    "maximum_possible_mean_gain": 0.021276595744680882,
+    "prespecified_required_mean_gain": 0.05,
+    "actual_hard_d4_minus_d2": [0.010638297872340385, -0.010638297872340385, -0.03191489361702127],
+    "actual_mean_hard_gain": -0.010638297872340422,
+    "actual_easy_d4_minus_d2": [0.0, 0.008695652173913104, -0.05217391304347818],
+    "actual_mean_all_gain": -0.011403508771929824,
+    "exit_code": 2
+  },
+  "cost": {"registered_parameter_ratio": 1.0850159404888418, "counted_training_ratio": 1.0950920245398772, "d4_over_d2_full_generation_ratio": 1.4197785700881966, "scope": "saved supported-operator counts; not hardware cost/latency equivalence"},
+  "paired_answer_transitions_all_seeds": {"wrong_to_right": 18, "right_to_wrong": 44, "net_correct_change": -26, "note": "760 unique test pairs repeated across 3 seeds, not 2280 independent questions"},
+  "not_tested": ["six final model/AdamW/RNG binaries", "independent native accuracy or training replay", "native profiler remeasurement", "resume equivalence", "new Grok/Claude review"],
+  "source_verification_limit": "Pinned protocol/task/runner read through GitHub connector. Direct container source download failed DNS; no independent raw-source-byte rehash claimed.",
+  "bundle": {"name": "Mythos_R1A_Result_Audit_20261030.zip", "sha256": "929ac8deef70d6cc0e039a7f78ab47e62516253f00840fe9c358a9f33463b169", "contents": "Exact input, prior initializer JSON, actual audit script/log/full checks, mistakes, Chinese report and manifest"},
+  "decision": "Close requested JSON handoff at its recorded scope. Preserve arithmetic learnability and ceiling-blocked benefit as separate results. No rerun, relaxed gate, new experiment or automatic merge. Further task-difficulty calibration needs a separate prespecified stage and fresh held-out test; current test is already viewed.",
+  "formal_oracle": "BLOCKED/NOT_READY; FORMAL_ACCEPTANCE_READY=False; no G2 REAL"
+}
