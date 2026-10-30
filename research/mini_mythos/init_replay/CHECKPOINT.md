@@ -1,58 +1,77 @@
-# P1-R1 checkpoint — 2026-10-30
+# P1-R1 — consolidated initializer outcome checkpoint (2026-10-30)
 
-## Current decision
+**Original-producer initializer replay: PASS as reported in the user's six-row terminal output. Probe preservation: PASS as reported. Claude discrepancy root cause: OPEN. Raw new-result byte audit: NOT TESTED.** This update is source inspection plus review of pasted result lines, not an independently executed model experiment or a full JSON/binary audit.
 
-The M2-L/D/T tiny-model depth series is finished at its frozen scopes, with the negative results retained. The user explicitly authorized continued development after the project summary. This new stage addresses **A-M2L-02 original initialization provenance**, not another schedule, longer training, architecture repair or Guard expansion.
+## 1. One tracking entry, no duplicate continuation
 
-**Native P1-R1 execution: NOT TESTED. Root cause of the reviewer initialization mismatch: OPEN.** Code preparation is not scientific acceptance. Six historical initial hashes are the targets; no quality result can change in this stage.
+INIT-01 (PR #16) and P1-R1 (PR #17) were both prepared for substantially the same initializer question and have now both been run by the user. This duplicated task preparation was unnecessary; the user did not run the wrong command. Use **P1-R1 / PR #17 as the consolidated follow-up entry**, retaining INIT-01 as supplementary same-environment corroboration. These are six unique historical seed/model targets replayed twice, NOT twelve independent initial conditions or an independent AI cross-review. Stop both bounded native replay tasks; no third implementation or repeat run is requested.
 
-## Actual reads and historical evidence
+This administrative consolidation does not merge, close or delete either PR, either branch, worktree or result directory. Both PRs remain Draft. The original protocols and runners are unchanged.
 
-The latest PR #15 and `m2_trainmix/CHECKPOINT.md` were read at `4d1ecadc062e190a9bfc8b66b8e2d2962abb266a` before editing. The original M2-T JSON is already supplied/audited: do not ask for it again. Its intervention and extra-depth hypotheses remain FAIL. The current M2-L checkpoint at `bfbb5d01...` records six initialization mismatches and pending raw Claude files; no cause was established.
+## 2. Purpose, source and history
 
-Original matched-run source was re-read: it constructs GPT then Parcae; applies `pair_io`; executes preflight and count per arm; and only then records `initial_weights_sha256`. Native GPT construction resets embedding/norm parameters. Merely reseeding and creating a standalone unpaired model is not definitionally the same measurement. This is a candidate distinction to measure, **not** an accusation that Claude used an incorrect procedure.
+Purpose: establish whether the original native GPT/Parcae initial-state recipe reconstructs the historical M2/M2-L identities before another from-scratch causal comparison. This is not a model-quality or efficiency experiment.
 
-The original M2-L pilot bytes in the uploaded archive were read to extract the six `init_sha` values, IO digests and producer dependencies; its hash is still `c5be0f6da8eab77ab499ad97a3aaf318633d2d44f234083165ffcacc3b26d7bb`. This was not another 18-snapshot audit and no trained weights were loaded here.
+- Repository: leotree2020/OpenMythos.
+- Consolidated branch: mini-mythos-p1r-init-origin-20261030; Draft PR #17; base 4d1ecadc062e190a9bfc8b66b8e2d2962abb266a.
+- P1-R1 executed code: **a097562ca8085eecd49c53f59a8ad83bc66ce066**. Protocol frozen first at ce46fc2a7d053e609c94fed7ecf67ba3f6bc171d. Runner blob 6d4e65424d52145d44a275a0012b56798aec913c, SHA256 d6bf602f2f714b9d232da927ebc49a684d40fe1289005dc4531970681b759070.
+- INIT-01 executed code: **c3ed3725beecb05f0bfb5f0819a7acd8d18098b5**; branch mini-mythos-init-replay-20261030; Draft PR #16. Initial protocol 366c80b7cf0b9d84b0720581f6e102a423b784bd.
+- Native source pin: sandyresearch/parcae@69284c13746e849104f738d6d1a347b1f457df76.
+- P1-R1 preparation checkpoint, eight helper tests and exact original preparation limits remain in Git history at a097562ca8085eecd49c53f59a8ad83bc66ce066:research/mini_mythos/init_replay/CHECKPOINT.md. They are not additional native run results.
+- Copied user output and scope: [evidence/user_supplied_init_dual_run_20261030.txt](evidence/user_supplied_init_dual_run_20261030.txt), committed at **41e812cd5fffa190a9d082acec7084aafd53b6e9**. This is NOT a reconstructed result.json or independently captured stdout.
 
-## Git identities
+## 3. Inputs, environment and frozen expected result
 
-- New branch: `mini-mythos-p1r-init-origin-20261030`.
-- Base: `4d1ecadc062e190a9bfc8b66b8e2d2962abb266a` (PR #15).
-- Preregistration committed first: `ce46fc2a7d053e609c94fed7ecf67ba3f6bc171d`.
-- Native diagnostic code commit: `5287cfccada9802c123a3fdf3e8e583e2ab689fb`.
-- Launcher commit: `a70ec9df0ab23a8532364d0750cff46e31215632`.
-- Helper tests commit: `62e7e5256c6920825dabdb62bef46494f9caa698`.
-- Diagnostic source Git blob `6d4e65424d52145d44a275a0012b56798aec913c`, SHA256 `d6bf602f2f714b9d232da927ebc49a684d40fe1289005dc4531970681b759070`; connector blob matches locally compiled/tested bytes.
-- Untouched upstream: `69284c13746e849104f738d6d1a347b1f457df76`.
+Three seeds 42, 20261029, 20261030; official GPT FFN60 and original Parcae FFN64 configuration. Follow exact original factory order: make GPT, make Parcae, pair_io, original per-arm preflight, original synthetic count forward/backward, then historical full-state hash. Compare with both immutable M2 and M2-L records, including old pilot SHA256 c5be0f6da8eab77ab499ad97a3aaf318633d2d44f234083165ffcacc3b26d7bb.
 
-## Purpose / expected / actual
+Pinned source requirements: Linux Python3.12.3, torch2.11.0+cpu, NumPy1.26.4, einops0.8.0, FP32, single CPU thread. The reviewed source fails on incompatible builds, altered inputs or upstream. PASS output is evidence that the runner reported those preconditions met; the complete environment dump has not been independently received in this update.
 
-Purpose: recover a trustworthy model starting recipe before any future from-scratch causal comparison. See PROTOCOL.md for exact six-sequence bound and status rules. Required producer-equivalent dependencies are Linux Python3.12.3, torch2.11.0+cpu, NumPy1.26.4, einops0.8.0. Record hardware/build; do not claim different builds are bitwise identical.
+Expected: all six historical full-state/shared-IO/preflight/count identities match exactly; permitted pairing scope only; probes preserve model state and caller CPU RNG; saved tensor values finite. No optimizer construction/step, training/validation/test/Alice batches, new dependencies, upstream edits or GPU use. Synthetic backward is present solely at the original measurement boundary; do not call this a zero-computation audit.
 
-| Item | Expected | Actual / status |
+## 4. Actual user-reported outcomes
+
+| Model, across all three seeds | Native constructor matches history | After pair_io | After preflight | After count | Pairing changed tensor bytes |
+|---|---|---|---|---|---|
+| GPT | true | true | true | true | none |
+| Parcae | false | true | true | true | lm_head.weight; transformer.wte.weight |
+
+INIT-01 independently printed the same phase pattern for the same six targets and exit0. P1-R1 printed history_match=true and probe_state_preserved=true for all six rows; final execution, historical_init_status, probe_preservation_status and comparison_status all PASS; exit0. The classifier also requires probe RNG preservation, finite states, bounded pairing scope and matching old shared-IO/preflight/count results. Those raw fields remain uninspected here; do not call the status-line review a complete replay audit.
+
+| Acceptance item | Status | Evidence level |
 |---|---|---|
-| Python compile | diagnostic compiles | PASS in local Python3.13.5 |
-| Bash syntax | launcher parses | PASS (`bash -n`) |
-| Helper unit tests | missing/duplicate rows rejected; mismatches/mutations not promoted; full-state hashing includes buffers | 8/8 PASS in local torch2.10.0+cpu; synthetic fixtures only |
-| Source upload identity | GitHub diagnostic blob equals locally checked bytes | PASS |
-| Original six initial states reconstructed | exact original hashes after original factory/pairing/preflight/count | NOT TESTED |
-| Per-tensor stage localization | changed names and stage hashes recorded | NOT TESTED on native models |
-| Original probes preserve model state and caller RNG | exact pre/post identities | NOT TESTED |
-| Reviewer mismatch explained | original Claude method/output or controlled comparative evidence | OPEN; original files still missing |
-| New Grok/Claude cross-review | actual review | NOT TESTED/DEFERRED |
+| Original-producer recipe reconstructs six historical initial states | PASS as reported | Both terminal excerpts; historical hash bytes not yet independently read |
+| Probe model-state preservation | PASS as reported | Six per-row booleans and classifier result |
+| Probe caller RNG preservation | PASS as reported | Included in aggregate classifier; individual RNG hashes pending |
+| Phase/tensor localization | Supported by terminal output and source | Three Parcae pairing differences restricted to input/output weights |
+| Original JSON byte identity and complete field consistency | NOT TESTED | User-reported SHA256 only |
+| INIT-01 six reconstructed initial binaries | NOT TESTED by this reviewer | No raw binary inspection in this update |
+| Claude's original six initialization mismatches explained | OPEN | Original reviewer procedure/output absent; no controlled cross-build comparison |
+| New independent Grok/Claude review | NOT TESTED / DEFERRED | These two tools are not separate AI reviewers |
+| Full training/resume/metric reproduction or quality improvement | NOT TESTED here | Zero optimizer updates; old scientific FAIL results unchanged |
 
-No native GPT/Parcae import, forward/backward, optimizer construction/update, corpus metric, training, GPU or upstream modification occurred locally. Local environment is Python3.13.5/torch2.10.0+cpu/NumPy2.3.5/einops0.8.2, unlike the required producer. A network attempt from the container could not resolve upstream GitHub; actual repository reads/writes used the connector. No user's Codespaces terminal is exposed by that connector.
+## 5. Interpretation: what changed and what did not
 
-The runnable diagnostic intentionally replays the **original six synthetic preflights and six synthetic count forward/backward probes** to preserve the historical measurement point. That future native execution is not training and has zero optimizer steps. It is not a repeat parameter-coverage sweep; no additional native run has happened yet.
+Source-confirmed pair_io copies GPT's input embedding into Parcae, transposes and copies the GPT output head, and copies final LayerNorm state. Changed tensor bytes reported here are only lm_head.weight and transformer.wte.weight. Copying an already equal normalization state need not produce a changed hash; do not infer that normalization copying was skipped.
 
-## Next one execution
+The Parcae native-constructor false flag is **not a failed replay**: the frozen historical target is the paired/probed state, not the standalone native-constructor state. GPT's own values are unchanged by pair_io and already match history at construction. Original probe/count code therefore need not be blamed for initial-state mutation based on the supplied observations.
 
-In the existing user Codespace, fetch this branch and invoke the launcher FROM a pinned Git commit. It reuses `/workspaces/mythos-m2-cpu312/bin/python`, `/workspaces/mythos-parcae-pinned`, and existing `m2_long_v1/pilot.json`. It creates `/workspaces/mythos-p1r1-20261030` only when absent; a conflicting commit is never reset. Existing output is read, never rerun or overwritten.
+**Supported inference:** skipping or changing the prescribed pairing can produce a standalone Parcae-vs-historical mismatch. **Not established:** that Claude actually skipped it, that this explains Claude's GPT mismatch, or that the CPU versus CUDA-enabled wheel caused any mismatch. GPT already matches without pairing in this run, so missing Parcae pairing alone cannot explain all six reviewer failures.
 
-Output: `/workspaces/OpenMythos/mythos_evidence/p1r_init_v1/result.json`, plus dependency list and sibling console log. No packages, corpora or new trained-weight files are downloaded. No M2-T result upload is needed for this stage.
+Track A-M2L-02 as two subquestions, without erasing historical failures: producer-recipe reconstructability PASS as reported; cross-review mismatch cause OPEN. The latter must not trigger an open-ended repeat-replay campaign. No claim of cross-build bitwise equivalence or universal native-model reproducibility.
 
-On completion record separately: execution, historical hash reproduction, probe preservation and reviewer-root-cause status. If exact reproduction passes, only the producer-recipe subquestion closes; A-M2L-02's reviewer discrepancy remains OPEN until supported. If valid native execution mismatches, preserve all stage hashes and FAIL without adjusting seeds, input tensors or tolerances. An unavailable environment is BLOCKED.
+## 6. Existing result identities and single next handoff
 
-## Boundaries
+USER-REPORTED ONLY, not independently calculated in this review:
 
-Old scientific results, frozen code/protocols, Parcae, J1, Bench, R3, model architecture and formal Oracle are unchanged. Formal Oracle remains BLOCKED/NOT_READY, FORMAL_ACCEPTANCE_READY=False; no G2 REAL. All prior PRs remain Draft/unmerged. New negative or positive initializer results do not authorize GPU scale-up, new training, automatic PR merge or an efficiency/ACT/reasoning claim.
+- Primary P1-R1: /workspaces/OpenMythos/mythos_evidence/p1r_init_v1/result.json
+  SHA256 **bf2b75fbcc49179cbdb059916a744ae8fa4cc682675bd802b662b32e791126ea**.
+- Supplementary INIT-01: /workspaces/OpenMythos/mythos_evidence/init_replay_v1/result.json
+  SHA256 **f5c3b716e0c337f0da3c7b77da16f1efc169006c123deff2f9aded14ac0a26ee**.
+
+**Next only:** hand off the existing P1-R1 result.json for byte identity and six complete phase records; retain INIT-01 output without re-executing either tool. If reviewer files later become available, inspect their existing procedure against this recipe; do not speculate or launch a build matrix by default. No need to resend the already-audited M2-T JSON. No third initialization diagnostic or automatic new training is authorized by this checkpoint.
+
+## 7. Unchanged boundaries
+
+M2-L quality FAIL, M2-D depth benefit FAIL and M2-T intervention/extra-depth FAIL remain separate negative results. A-M2L-01 inactive paths remain unchanged. Prior binary/reviewer handoffs and resume-equivalence limits remain explicitly scoped.
+
+This outcome update changes documentation/evidence/PR descriptions only. The reviewer performed repository reads and status interpretation, not native model construction, backward, raw-result hashing, binary loading, training, source repair, GPU rental or merge. Parcae, Bench, J1, R3, models and frozen protocols/runners are untouched. Formal Oracle stays BLOCKED/NOT_READY, FORMAL_ACCEPTANCE_READY=False; no G2 REAL.
