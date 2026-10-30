@@ -1,70 +1,79 @@
-# R1-A checkpoint — 2026-10-30
+# R1-A — uploaded-result audit and capability checkpoint (2026-10-30)
 
-## Decision: return to measurable capability
+**Original JSON and recorded-data consistency: PASS. GPT and Parcae validation learnability: PASS. Primary extra-inference-depth benefit: BLOCKED / CEILING_LIMIT, not PASS or reclassified FAIL.** The user-run experiment reports all six training arms and nine test conditions complete. This update actually reads the original uploaded JSON and rescores every saved answer; it is not another native model run. The requested result handoff is COMPLETE: do not ask for the same JSON again or rerun for sealing.
 
-Read PR17 and its checkpoint at36c21aaf245b4ed8999d2a6d070948e231605676. P1-R1 producer-path reconstruction and requested JSON audit are complete; Claude discrepancy root cause remains OPEN. Do not repeat either initializer tool. M2-L/D/T scientific negatives stay unchanged. User then asked to continue toward the original Mythos goal, not another bookkeeping loop.
+## 1. Purpose, sources and evidence identity
 
-This stage implements an elementary arithmetic capability pilot: first a native GPT positive-learning control, then native Parcae, then a prespecified same-Parcae depth2/4 accuracy-and-cost comparison. It is a NEW task, not another Shakespeare schedule sweep. It does NOT promote P1/P2/P3 as complete, establish complex/general reasoning, fix active-parameter mismatch, or change upstream architecture.
+Purpose: establish an elementary exact-answer capability baseline, then assess whether more inference computation helps the SAME trained Parcae on consecutive-carry two-digit addition. Not general reasoning, ACT, dynamic stopping, P3 acceptance or hardware efficiency.
 
-## Source and isolation
+- Repository leotree2020/OpenMythos, branch mini-mythos-r1a-carry-addition-cpu-20261030, Draft PR #18; base 36c21aaf245b4ed8999d2a6d070948e231605676.
+- Executed source **936c52cf6036232de3fd9d034c4366d81c17dbea**. Protocol frozen first at **82b70032423d7a87b6109ab2dc5b75470635cee5**. Prior preparation checks and original checkpoint remain in that Git history; no protocol, task, runner or thresholds changed by this update.
+- Untouched native GPT/Parcae pin **69284c13746e849104f738d6d1a347b1f457df76**; original factory/pair_io reused. No model patch or repair of known inactive parameters.
+- Task-format inspiration: minGPT projects/adder at37baab71b9abea1b76ab957409a1cc2fbfba8a26. Independent grouped-split adaptation, not a minGPT performance replication.
+- Actual upload `result(2).json`: **1,899,747 bytes**, independently computed SHA256 **13bfccd565fd4ccb57c28bb901fc61f99dd55fe0a4ba378706880159b11e30cb**; input unchanged. No separate prior user terminal digest was supplied, so do not invent a match to one or call this independent authenticity proof.
+- User-side output: /workspaces/OpenMythos/mythos_evidence/r1_addition_v1/result.json.
+- Audit summary: [evidence/uploaded_json_audit_20261030.json](evidence/uploaded_json_audit_20261030.json), first saved at32934c230c7118ffd30930017f0be7a4b1dae1f4.
+- Conversation bundle Mythos_R1A_Result_Audit_20261030.zip, SHA256 **929ac8deef70d6cc0e039a7f78ab47e62516253f00840fe9c358a9f33463b169**. Contains exact uploaded bytes, prior P1-R1 JSON, actual audit script/log/results, per-condition mistakes, Chinese report and manifest.
 
-- Repository leotree2020/OpenMythos.
-- One new branch only: mini-mythos-r1a-carry-addition-cpu-20261030; base36c21aaf245b4ed8999d2a6d070948e231605676, dependent on Draft PR17. No old PR merges/closures or duplicate implementation.
-- Preregistration committed BEFORE any model result:82b70032423d7a87b6109ab2dc5b75470635cee5.
-- Data/verdict code:64a94de5dae47c1f1a0cd5b0695583b24a253fae; runner:35ff6747345373c94db83975aeb7e8a16a3a5c88; tests:e7aeb29a482449a7d2e94ac08e6a34f00c0029cf; launcher:56320c8a7bf565be358fa267e603f557573dc29e.
-- Unchanged native GPT/Parcae pin69284c13746e849104f738d6d1a347b1f457df76. Reuse existing verified factory/pair_io, no own Transformer implementation, no monkeypatch or layer-index repair.
-- Task-format reference actually read: karpathy/minGPT@37baab71b9abea1b76ab957409a1cc2fbfba8a26/projects/adder/adder.py, blob55f03ee1caf4290e86f5ce02570553a87caeee23. Our independently implemented task adapts its reversed-sum/answer-only format with grouped splits, not its result or model. No external dataset/package download.
+## 2. Frozen inputs/environment and expected results
 
-## Frozen inputs and expected acceptance
+Operands0..99, all5050 canonical unordered pairs grouped by carry0/1/2 then fixed hash-split. Swapped operands cannot cross partitions. Train6993 ordered examples from3534 canonical pairs; validation756 unique pairs; test760 unique pairs (carry0/1/2:230/342/188). Fixed-width4-digit prompt, reversed3-digit answer. Generation receives only operands and greedily emits three tokens from the full256-token vocabulary; invalid tokens count wrong. Test scores are from fixed final checkpoints, never best-checkpoint selection.
 
-See PROTOCOL.md for the complete predeclared design. All5050 unordered pairs of operands0..99, grouped by carry count0/1/2 and hash-split70/15/15. Swapped operands cannot cross partitions. Generation sees4 operand digits only and predicts3 reversed answer digits; native256-way greedy argmax, invalid tokens wrong. Test is used once at fixed final checkpoints, never for selection.
+Three seeds42/20261029/20261030, two original native models, 3000 AdamW steps/batch32. Each arm/seed has96000 problem exposures,288000 supervised answer tokens,576000 input token positions. Recorded producer: Linux Python3.12.3/torch2.11.0+cpu/NumPy1.26.4/einops0.8.0, FP32 CPU one thread. These are recorded environment values, not a new live Codespaces measurement.
 
-Actual deterministic dataset preparation (not model results):
+Expected gates: GPT validation EACH seed overall>=.95 and EACH carry group>=.90; then Parcae validation EACH seed overall>=.90 and each group>=.80. Only after both gates do final tests run. Primary hard-test d4−d2 mean>=.05, every seed positive, easy loss<=.01 each. Predeclared mean hard d2>.95 takes precedence as CEILING_LIMIT/BLOCKED. Preserve this rule even when observed d4 results decrease.
 
-| Split | Represented problems | Canonical pairs | Carry0/1/2 |
-|---|---:|---:|---|
-|train|6993|3534|2117/3146/1730|
-|validation|756|756|228/341/187|
-|test|760|760|230/342/188|
+## 3. Actual artifact checks
 
-Required runtime is existing Linux Python3.12.3/torch2.11.0+cpu/NumPy1.26.4/einops0.8.0, CPU FP32 one thread. Three seeds42/20261029/20261030; exactly3000 steps per trained arm, batch32, original AdamW settings. Repeated exposures288000 supervised targets per arm/seed. Native task-shape budgets are measured BEFORE training, not borrowed from old sequence32 counts; total-parameter and counted-compute ratios must both<=1.10. Known inactive parameters remain explicitly reported; no equal-active-capacity claim.
+Auditor Python3.13.5; torch2.10.0+cpu used ONLY for integer batch-index regeneration. No native model imports, forward/backward, optimizer steps, profiler or model-binary loading. Local audit-script summary assembly initially had a variable-shadowing error, fixed before the successful read-only audit; this did not change input or any experiment criterion. Details are in the audit bundle.
 
-Run three GPT controls first. Each must reach validation overall>=95%, every carry category>=90%. Otherwise stop with baseline_learning FAIL, Parcae/test NOT TESTED and primary BLOCKED, without auto-retuning. If GPT passes, train Parcae once with same per-seed batches; require validation overall>=90%, each category>=80% before final test. Final primary is same-Parcae hard-test d4-minus-d2 accuracy gain:mean>=5 percentage points, every seed positive, easy loss<=1pp per seed. High d2 hard accuracy>95% mean gives prespecified ceiling BLOCKED, not an architecture failure or PASS. Cost reported separately. No significance/general reasoning/efficiency superiority claim.
+165 record assertions PASS,0 failures; not165 neural experiments:
 
-## What actually ran in this preparation
-
-| Check | Actual result | Boundary |
+| Audit item | Status | Boundary |
 |---|---|---|
-| Read latest checkpoint, original factory and minGPT task | PASS for source review | Not a native experiment |
-| Python compilation / Bash syntax | PASS | Local Python3.13.5; not import/training acceptance |
-| Task and evaluation unit tests |13/13 PASS|Exhaustive10000 ordered arithmetic labels; grouped leakage; mask/shift; exact/invalid outputs; learning/benefit/ceiling rules; spy-model confirms no target prefix passed during evaluation |
-| Deterministic split construction |PASS|Counts and hashes above reproduced, no neural predictions |
-| Existing-output launcher fixtures |5/5 PASS|PASS/FAIL/BLOCKED/wrong-experiment/partial cases; bytes preserved, no model run |
-| Wrong local runtime rejection |Expected rejection PASS|Actual process exit2/execution BLOCKED before native construction; zero rows/weights. This is not a successful capability run |
-| Uploaded runner identity |PASS|Git blob2429b7fa7791541ca4e4b6fbdd336658e8ff7504 equals locally compiled/tested bytes; task blobb4907d1c1d6edd41bf0e5bee67585b625963a2d9 also matches |
-| Native GPT/Parcae arithmetic trainability |NOT TESTED|No native model run in this session |
-| Actual task-shape parameter/FLOP budget |NOT TESTED|Runner will measure on native models |
-| Held-out exact-answer accuracy / extra-depth gain |NOT TESTED|No benchmark scores available |
-| Grok/Claude new independent review |NOT TESTED / DEFERRED|No reviewer execution invented |
+| Original bytes, strict JSON, exact six seed/arm records | PASS | No separate external terminal digest/authenticity claim |
+| Independently regenerated canonical splits and all three manifest hashes | PASS | Grouped train/val/test disjoint,5050 canonical coverage |
+| All10000 ordered labels and shifted answer-only mask specification | PASS | Task reconstruction, not fresh native CE evaluation |
+| All11376 saved full-answer predictions rescored | PASS | 4536 validation,6840 test; all totals/accuracies/invalid counts match |
+| Recorded loss/norm traces | PASS | 18000 finite losses +18000 finite gradient norms;3000 per arm |
+| Training indices and paired hashes | PASS | Three3000x32 integer tensors regenerated, both arms match |
+| Initial-state/IO identities vs actual old P1-R1 JSON | PASS | Recorded hash linkage; no initialization rerun/raw tensor check |
+| Budget and full-generation cost arithmetic | PASS | Saved supported-operator counters, not hardware cost or new profiler |
+| Learning gates, ceiling precedence and exit code | PASS for classification | Primary benefit itself remains BLOCKED |
+| Six new model/AdamW/CPU-RNG .pt files | NOT TESTED | Not uploaded; digest fields are not binary audits |
+| Native score replay, full training replay and resume equality | NOT TESTED | No model execution by auditor |
+| New Grok/Claude cross-review | NOT TESTED / DEFERRED | No report fabricated |
 
-Local preparation runtimePython3.13.5/torch2.10.0+cpu; no dependency installation, GPU rental or connection to the user's Codespaces terminal. The spy fixture deliberately predicts invalid tokens and is not a substitute for the native model. Expected version rejection is recorded in the local preparation bundle, not mixed with future user evidence.
+Pinned protocol/task/runner were read through the live GitHub connector. Direct local raw-file download failed DNS; independent raw-source-byte hash verification is NOT claimed. JSON state/profiler labels do not prove every operation was independently observed.
 
-## One next CPU execution
+## 4. Actual capability and extra-depth results
 
-Use an isolated worktree of this branch at the delivered exact commit. Create only when absent; verify existing worktree path/HEAD and never force-reset. Then:
+| Mean test full-answer accuracy | All | No carry | One carry | Two carries |
+|---|---:|---:|---:|---:|
+|GPT native four blocks|98.0263%|99.2754%|99.0253%|94.6809%|
+|Parcae d2|98.4211%|98.4058%|98.7329%|97.8723%|
+|Same Parcae d4|97.2807%|96.9565%|97.7583%|96.8085%|
 
-    bash research/mini_mythos/r1_addition/run_codespaces_cpu.sh
+GPT JSON test key2 is only the shared evaluation-interface label; it is not a two-block or recursive GPT. All seeds use the same760 unique test pairs; do not call2280 seed-problem evaluations independent questions.
 
-Defaults reuse /workspaces/mythos-m2-cpu312/bin/python and /workspaces/mythos-parcae-pinned. No corpus, package or weight download. New output:
+The GPT validation gate and Parcae validation gate recompute PASS. Descriptive Parcae d2 versus GPT mean overall advantage is+0.3947 percentage points and two-carry advantage+3.1915pp. Overall advantage does NOT hold in every seed; no prespecified architecture-superiority/NI hypothesis and no statistical superiority claim. Registered and active-capacity differences persist.
 
-    /workspaces/OpenMythos/mythos_evidence/r1_addition_v1/result.json
+Primary ceiling: hard d2 counts185/188,184/188,183/188 give97.8723404255% mean. Maximum possible improvement to100% is only2.1276595745pp, less than the required5pp. Thus **primary BLOCKED/CEILING_LIMIT** is correct; exit2 is not an environment crash. This is a task/endpoint sensitivity limitation, not a benefit PASS and not evidence all recurrence is impossible.
 
-Also data.json, pip-freeze.txt, final model/AdamW/RNG states for actually trained arms and sibling .console.log. Existing result is READ ONLY with its saved status, not rerun. Incomplete output is preserved. A model may fail learning or the primary screen; do not delete the directory or increase budget to obtain PASS.
+Observed hard d4−d2 seed differences are **+1.0638pp,-1.0638pp,-3.1915pp**, mean **-1.0638pp**. Overall mean change is **-1.1404pp**; all three overall changes are negative. Seed20261030 easy accuracy drops223/230 to211/230 (-5.2174pp), beyond the easy safeguard. Retain these descriptive declines rather than hiding them behind the ceiling label, but do not replace the frozen main classification.
 
-Next evidence is the bounded actual run summary and this NEW JSON. Do not request old M2-T/P1-R1 JSONs again. Stop after this stage; no automatic digits/depths/schedules/GPU follow-up.
+Across three seeds'2280 answer instances, d4 fixes18 wrong d2 answers and breaks44 correct ones, net26 fewer correct. This paired description is not statistical significance evidence.
 
-## Focused independent-review request (not yet executed)
+## 5. Counts and scope
 
-Review grouped commutative split isolation; answer-only mask and free generation; fixed task seeds and budget; no test-driven selection; difficulty/ceiling gate; counts cover all greedy forwards including last batch; A-M2L-01 prevents causal equal-capacity GPT claims. Return evidence-based PASS/FAIL/BLOCKED/NOT TESTED with actual run scope. Do not reopen completed initialization auditing or make a performance claim from fixture tests. A future positive result must be independently reviewed before promotion/merge.
+Actual-task saved per-step training counts: GPT48,070,656; Parcae52,641,792. Ratio1.09509202454 (~+9.51%). Registered parameter ratio1.08501594049. Both<=1.10, not identical budgets or active capacity. Known8320 inactive native parameters remain disclosed.
 
-Formal Oracle BLOCKED/NOT_READY and FORMAL_ACCEPTANCE_READY=False; no G2 REAL. J1/Bench/R3/model architecture and upstream unchanged. Old scientific FAILs and Claude root-cause OPEN remain. This bounded capability experiment is not permission for scale training, hardware spend or automatic PR merging.
+Full760-question three-token greedy generation: Parcae d2 **1,036,810,240**, d4 **1,472,040,960** counted FLOPs; ratio1.41977857009 (~+41.98%). Includes repeated prefix forwards and final partial batch. Not end-to-end latency, memory, energy or total hardware FLOPs. Counted-cost increase did not improve observed average accuracy here.
+
+## 6. Decision / next single action
+
+Close the requested original-JSON handoff and record audit. Preserve a useful bounded arithmetic capability baseline PLUS a ceiling-blocked extra-depth screen. Do not rerun for sealing or request the same upload again. Do not reclassify the primary, lower5pp, retune on this already-viewed test, extend old training, sweep more depths or rent GPU.
+
+Next decision should be targeted independent review of this existing protocol/raw JSON, followed by a separately authorized task-difficulty design if warranted. Such a new design must calibrate using an independent development/validation set, require both learnability and enough headroom, then seal a NEW held-out test before model comparisons. No new experiment, branch, model repair or merge is launched by this checkpoint.
+
+Six output binaries and reviewer evidence stay separately scoped; their absence does not require new training to retain this result. No repeat of completed P1-R1 or M2-T JSON audits. Prior M2-L/D/T negatives unchanged; A-M2L-01 retained; Claude mismatch root cause OPEN. Keep PR18 Draft. Formal Oracle BLOCKED/NOT_READY, FORMAL_ACCEPTANCE_READY=False; no G2 REAL. J1/Bench/R3/upstream/model architecture and frozen sources remain untouched.
