@@ -1,0 +1,43 @@
+{
+  "audit": "P1R1-UPLOADED-JSON-READONLY-20261030",
+  "input_bytes": 352876,
+  "input_sha256": "bf2b75fbcc49179cbdb059916a744ae8fa4cc682675bd802b662b32e791126ea",
+  "input_identity_status": "PASS",
+  "record_consistency_status": "PASS",
+  "historical_initializer_record_link_status": "PASS (6/6 against actual prior M2-L pilot bytes)",
+  "stage_records": 24,
+  "tensor_fingerprint_records": 1128,
+  "phase_pattern": {
+    "gpt": "constructor/paired_io/preflight/count all match historical target",
+    "parcae": "constructor differs; paired_io/preflight/count match historical target"
+  },
+  "changed_parcae_tensor_fingerprints": [
+    "lm_head.weight",
+    "transformer.wte.weight"
+  ],
+  "probe_state_record_preservation": "PASS 6/6",
+  "probe_rng_digest_preservation": "PASS 6/6",
+  "historical_pilot_sha256": "c5be0f6da8eab77ab499ad97a3aaf318633d2d44f234083165ffcacc3b26d7bb",
+  "producer_code_head": "a097562ca8085eecd49c53f59a8ad83bc66ce066",
+  "producer_script_sha256": "d6bf602f2f714b9d232da927ebc49a684d40fe1289005dc4531970681b759070",
+  "producer_script_git_blob": "6d4e65424d52145d44a275a0012b56798aec913c",
+  "upstream_pin": "69284c13746e849104f738d6d1a347b1f457df76",
+  "audit_method": "standard-library byte hashing, strict JSON parse, historical JSON comparison and independent fingerprint-map differencing; no model imports",
+  "audit_checks": 138,
+  "failed_checks": 0,
+  "reviewer_mismatch_root_cause": "OPEN",
+  "independent_native_rerun": "NOT TESTED",
+  "raw_tensor_binary_and_rng_state_audit": "NOT TESTED; only digests/metadata supplied",
+  "new_Grok_Claude_review": "NOT TESTED / DEFERRED",
+  "decision": "P1-R1 requested raw-result handoff and record audit complete. No rerun, duplicate task, automatic training or merge. PR17 single tracking entry; PR16 supplementary.",
+  "limits": [
+    "No model construction, forward/backward, training, or optimizer updates by this audit.",
+    "Whole-state hashes and finite flags are compared as recorded; no raw tensor bytes supplied.",
+    "Cannot recompute whole-state hash from individual tensor hashes.",
+    "Cannot verify transposed GPT output-head bytes from a digest; prior canonical Parcae output digest is checked.",
+    "Raw CPU RNG bytes and INIT-01 reconstructed binaries were not provided.",
+    "Matched M2 pilot digest linked via M2-L; matched pilot bytes not independently reopened here.",
+    "No Claude/Grok run, no cross-build reproduction, no full training/resume equivalence.",
+    "Reviewer mismatch root cause stays OPEN; no model-quality result is changed."
+  ]
+}

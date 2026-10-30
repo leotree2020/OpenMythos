@@ -1,0 +1,47 @@
+# User-supplied INIT-01 / P1-R1 console excerpts — recorded 2026-10-30
+
+PROVENANCE: The user pasted these result lines and source commits into the conversation. This is a transcription of selected terminal lines, NOT original result.json bytes, independently captured stdout, or a fresh model run by the reviewer. Both full result files and INIT-01 saved initial binaries have not been independently inspected in this outcome review. Digests below are USER-REPORTED ONLY.
+
+Both tools address the same original-producer initializer replay question using the same historical factory/records. Treat them as overlapping same-environment corroboration, NOT twelve independent initial conditions, independent implementations of the native model, or a Claude/Grok cross-review. P1-R1/PR17 is the consolidated tracking entry; INIT-01/PR16 remains supplementary preserved evidence. No repeat execution is requested.
+
+## INIT-01 / PR16
+Executed source: c3ed3725beecb05f0bfb5f0819a7acd8d18098b5
+Branch: mini-mythos-init-replay-20261030
+Result path: /workspaces/OpenMythos/mythos_evidence/init_replay_v1/result.json
+User-reported SHA256: f5c3b716e0c337f0da3c7b77da16f1efc169006c123deff2f9aded14ac0a26ee
+
+{"seed": 42, "arm": "gpt", "initial_replay": "PASS", "matching_phases": ["constructed", "paired_io", "after_preflight", "after_count"]}
+{"seed": 42, "arm": "parcae", "initial_replay": "PASS", "matching_phases": ["paired_io", "after_preflight", "after_count"]}
+{"seed": 20261029, "arm": "gpt", "initial_replay": "PASS", "matching_phases": ["constructed", "paired_io", "after_preflight", "after_count"]}
+{"seed": 20261029, "arm": "parcae", "initial_replay": "PASS", "matching_phases": ["paired_io", "after_preflight", "after_count"]}
+{"seed": 20261030, "arm": "gpt", "initial_replay": "PASS", "matching_phases": ["constructed", "paired_io", "after_preflight", "after_count"]}
+{"seed": 20261030, "arm": "parcae", "initial_replay": "PASS", "matching_phases": ["paired_io", "after_preflight", "after_count"]}
+{"execution": "PASS", "initialization_replay": "PASS", "sha256": "f5c3b716e0c337f0da3c7b77da16f1efc169006c123deff2f9aded14ac0a26ee", "result": "/workspaces/OpenMythos/mythos_evidence/init_replay_v1/result.json"}
+INIT-01 exit 0: 0=exact six-state replay PASS, 1=completed mismatch, 2=BLOCKED. No training occurred.
+
+## P1-R1 / PR17
+Executed source: a097562ca8085eecd49c53f59a8ad83bc66ce066
+Branch: mini-mythos-p1r-init-origin-20261030
+Result path: /workspaces/OpenMythos/mythos_evidence/p1r_init_v1/result.json
+User-reported SHA256: bf2b75fbcc49179cbdb059916a744ae8fa4cc682675bd802b662b32e791126ea
+
+P1-R1 source: a097562ca8085eecd49c53f59a8ad83bc66ce066; six original initializer/probe sequences, zero optimizer updates.
+{"seed": 42, "arm": "gpt", "history_match": true, "stages_matching_history": {"native_constructor": true, "paired_io": true, "after_preflight": true, "after_count": true}, "pairing_changed_tensors": [], "probe_state_preserved": true}
+{"seed": 42, "arm": "parcae", "history_match": true, "stages_matching_history": {"native_constructor": false, "paired_io": true, "after_preflight": true, "after_count": true}, "pairing_changed_tensors": ["lm_head.weight", "transformer.wte.weight"], "probe_state_preserved": true}
+{"seed": 20261029, "arm": "gpt", "history_match": true, "stages_matching_history": {"native_constructor": true, "paired_io": true, "after_preflight": true, "after_count": true}, "pairing_changed_tensors": [], "probe_state_preserved": true}
+{"seed": 20261029, "arm": "parcae", "history_match": true, "stages_matching_history": {"native_constructor": false, "paired_io": true, "after_preflight": true, "after_count": true}, "pairing_changed_tensors": ["lm_head.weight", "transformer.wte.weight"], "probe_state_preserved": true}
+{"seed": 20261030, "arm": "gpt", "history_match": true, "stages_matching_history": {"native_constructor": true, "paired_io": true, "after_preflight": true, "after_count": true}, "pairing_changed_tensors": [], "probe_state_preserved": true}
+{"seed": 20261030, "arm": "parcae", "history_match": true, "stages_matching_history": {"native_constructor": false, "paired_io": true, "after_preflight": true, "after_count": true}, "pairing_changed_tensors": ["lm_head.weight", "transformer.wte.weight"], "probe_state_preserved": true}
+{"execution": "PASS", "outcome": {"historical_init_status": "PASS", "probe_preservation_status": "PASS", "comparison_status": "PASS", "reviewer_mismatch_root_cause": "OPEN; original reviewer code/output not supplied", "scope": "original CPU dependency recipe; not cross-build or training reproduction"}}
+bf2b75fbcc49179cbdb059916a744ae8fa4cc682675bd802b662b32e791126ea  /workspaces/OpenMythos/mythos_evidence/p1r_init_v1/result.json
+Exit 0: 0=bounded reproduction PASS; 1=executed comparison FAIL; 2=BLOCKED.
+
+## Read-only review disposition
+
+- Six unique seed/arm pairs are shown in each tool; paired historical replay PASS is reported for all six.
+- P1-R1 also reports probe-preservation PASS. Source classification requires state/RNG preservation, pairing scope, finite state, historical full-state/shared-IO/preflight/count matches. Individual raw fields are not independently checked here.
+- Original factory pair_io copies GPT input embeddings, transposed output-head weights and final LayerNorm state into Parcae. The supplied phase output reports changed bytes for exactly lm_head.weight and transformer.wte.weight; unchanged LayerNorm bytes do NOT imply the copy was omitted.
+- Native-constructor Parcae mismatch is not a failed historical replay: historical identity was measured AFTER this predefined pairing. GPT already matches before pairing.
+- Inference: omitting the prescribed pairing can explain a standalone Parcae vs historical paired-state mismatch, but cannot by itself explain Claude's reported GPT mismatch or establish the cause of all six historical reviewer failures. Original reviewer procedure/output is still absent; root cause stays OPEN. No Torch-build attribution has been proven.
+- No new training, model computation, metric replay, raw JSON hashing, binary audit, upstream edit, merge, or independent Claude/Grok run occurred in this documentation review.
+- Old M2-L/M2-D/M2-T negative scientific outcomes are unchanged. Formal Oracle remains BLOCKED/NOT_READY, FORMAL_ACCEPTANCE_READY=False; no G2 REAL.
