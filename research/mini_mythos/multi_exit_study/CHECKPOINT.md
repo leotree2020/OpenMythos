@@ -1,65 +1,72 @@
-# MES-1 checkpoint — GPT interface fix, 2026-10-31
+# MES-1 checkpoint — native prepare reported PASS, 2026-10-31
 
-## Current state
+## Current status and evidence boundary
 
-**User's original-runtime prepare at a8f329ed3ae7e0e55a703dfaee9c2ce56339b953 is BLOCKED by a real MES/GPT interface bug. The scoped fix is committed and locally regression-tested. Original-runtime prepare AFTER this fix remains NOT TESTED. Twenty native training trajectories and H1 model evaluation remain NOT TESTED. Actual pre-training independent review remains DEFERRED.** This is not a model-quality failure, and no training result has been produced.
+**The user supplied actual Codespaces terminal output for the fixed prepare run: all five seeds report native_prepare PASS, phase prepare reports PASS and exit_code 0. The original GPT interface blocker is no longer observed in this run. Twenty native training trajectories and H1 quality evaluation remain NOT TESTED. Independent pre-training review remains DEFERRED.**
 
-The previous preparation checkpoint remains available at the original delivery commit. Existing MECH-AB/C results, protocols, original JSON handoffs and old initialization evidence remain unchanged. Do not restart any of those tasks or infer that their models failed from this exception.
+This update records USER-PROVIDED EXECUTION OUTPUT, not an independent rerun or byte audit. The new prepared.json has not been uploaded in this handoff; its SHA-256 below is terminal-reported only. Do not claim to have independently loaded its detailed native checks, verified its bytes, or confirmed training performance. Preparation includes bounded forward/backward and compute probes, but no optimizer updates and no H1 model scoring.
 
-## 1. Sources, Git and incident
+The latest request contains duplicated/garbled shell-echo text, but the supplied execution output identifies the fixed commit, all five successful seeds and the final result. Do not infer the exact actual worktree directory from the corrupted echo, delete directories, or rerun prepare solely to clean up the pasted command.
 
-Repository leotree2020/OpenMythos; existing Draft PR22 and branch mini-mythos-mes1-budget-holdout-cpu-20261031, base4cf60b053c7b9c2e89e64646cd986d33a34a7657. No new PR or branch is needed for this integration fix.
+## 1. Git, previous incident and unchanged boundaries
 
-Original delivery a8f329ed3ae7e0e55a703dfaee9c2ce56339b953; protocol preregistered at c74728c3efb6f27e29aacf146d719e37c5dbbd1c. Upstream sandyresearch/parcae@69284c13746e849104f738d6d1a347b1f457df76 remains unmodified.
+Repository leotree2020/OpenMythos; existing Draft PR22; branch mini-mythos-mes1-budget-holdout-cpu-20261031; base4cf60b053c7b9c2e89e64646cd986d33a34a7657. Executed source remains **7bcb08f480d0bda2dba5b1351442190001492782**. This checkpoint update is documentation only; do not replace the execution pin with a new documentation commit when resuming the existing experiment.
 
-User terminal reports `/workspaces/OpenMythos/mythos_evidence/mes1_v1/prepared.json`, SHA256 `5d1dfb655170b8e6bfb5c98f507b490266e708b65231fc053d0906cd2169589f`, status BLOCKED/exit2. The raw prepared.json was NOT uploaded, so this is terminal-reported identity, not an independently verified file hash. No optimizer updates occur in prepare; H1 model evaluation was not reached.
+Protocol was committed first at c74728c3efb6f27e29aacf146d719e37c5dbbd1c. Upstream sandyresearch/parcae@69284c13746e849104f738d6d1a347b1f457df76 remains the required read-only source. Reused factory/task/A, protocol, policy constants, budgets and thresholds are unchanged by this status update.
 
-Root cause confirmed from live pinned source: GPT.forward defines `outputs` only when labels are absent but returns that variable when return_logits=True. MES requested labels and return_logits=True in BOTH GPTPath.forward and the subsequent preparation CE check. The old GPT fixture wrongly permitted that joint request. Existing m2_matched.call already separates the two supported paths. This is an integration/test-coverage mistake, not a reason to patch the pinned upstream model or change architecture.
+Historical failed prepare at a8f329ed3ae7e0e55a703dfaee9c2ce56339b953 remains BLOCKED/exit2. Keep `/workspaces/OpenMythos/mythos_evidence/mes1_v1/prepared.json` and all old outputs intact. Its terminal-reported SHA256 is5d1dfb655170b8e6bfb5c98f507b490266e708b65231fc053d0906cd2169589f; no independent file audit was performed.
 
-Evidence: [evidence/gpt_interface_fix_20261031.json](evidence/gpt_interface_fix_20261031.json), first saved at3e44ced7724fcdb88aad93b2295d2e10ae8b4b92.
+The bug was the MES wrapper and CE check requesting GPT labels and logits together. Fixed native calls separate labelled loss from unlabelled logits; no upstream modification or changed objective. Full incident history and local regression details remain in this checkpoint at commit7bcb08f480d0bda2dba5b1351442190001492782 and [evidence/gpt_interface_fix_20261031.json](evidence/gpt_interface_fix_20261031.json). Those historical local checks are not newly executed by this update:29 component tests,40 pinned-forward component-double cases, fixture pipeline and21 launcher cases passed in the previous session; they are not independent native training evidence.
 
-## 2. Fix and unchanged scientific design
+## 2. New user-reported preparation result
 
-- Runtime fix9833b407c31d4297b161074897749d8f872301e0: GPT training makes ONE native labelled loss call with return_logits=False. Generation makes ONE no-label logits call. Native CE, masking, gradients and counted training path are retained.
-- Prepare fixa252aad2f67083008e970b800fdfc826f6ab55d3: separate no-grad native loss/logits calls for the masked-CE equivalence check; same RNG seed, caller RNG and training mode restored. This check is outside the counted training probe. Its results are saved under gpt_objective_checks and propagated to the final report.
-- Regression testscf233e1629df4a43a7ba0ac337c0ab035d5ac03d: strict GPT interface, one-call training/inference, exact loss/gradient/RNG, probe cost, and full prepare fixture across all five seeds/four arms.
-- Published tested code blobs: runtime5cec3241bb8a45f6559c9505793c598e6768390e; runner1f3c330d66d6e5c0a9d4ef647b09773972a2fa14; tests923993ae2d365e0624932f1b9d24542645cb6f20.
+- Experiment: MYTHOS-MES1-EQUAL-COUNT-HOLDOUT-V1.
+- Source shown in terminal:7bcb08f480d0bda2dba5b1351442190001492782.
+- Seeds101,202,303,404,505: native_prepare PASS; training NOT TESTED for each.
+- Phase prepare, status PASS, exit_code0.
+- Output `/workspaces/OpenMythos/mythos_evidence/mes1_v1_gptfix1/prepared.json`.
+- Terminal-reported SHA256 **d6ec93cb908d3994b6098b913c9b045d06b055a8fbade92bf62cdd0c5ae20678**; NOT independently byte-verified here.
+- Common counted training ceiling436285440000 FLOPs per seed/arm.
 
-Protocol, policy constants, launcher, factory, task, upstream and reused A remain byte-unchanged. No threshold repair, budget relaxation, removed test or catch-and-ignore bypass.
+|Arm|Steps|Counted FLOPs/step|Allocated total|Unused fraction|
+|---|---:|---:|---:|---:|
+|GPT|5941|73433088|436265975808|0.00004461343472750317|
+|P2|5433|80289792|436214439936|0.00016273764258555132|
+|P4|3822|114130944|436208467968|0.00017642585551330797|
+|A|3000|145428480|436285440000|0|
 
-Four arms GPT/P2/P4/A, five new seeds101/202/303/404/505. A remains0.25 exit2 +0.75 exit4 on the SAME four-step trajectory/shared suffix. Common supported-op budget436285440000; frozen steps GPT5941/P2=5433/P4=3822/A3000 with<=0.1% integer slack, still checked by native runtime profiling. Same budget is not equal sample exposure or hardware work. No B/C/D/E combination or inactive-path repair.
+These printed counts and allocations match the predeclared values. The largest reported unused fraction is about0.017643%, within the frozen0.1% integer-slack allowance. This is a supported-operator budget, not exact hardware work or equal sample exposure. No budget relaxation was introduced.
 
-Save step3000 and budget endpoint,35 deduplicated model/AdamW/RNG/index snapshots. H1=2048 reserved pairs is scored only after all20 runs and evidence barriers; HC1024/H2=2048 remain unopened. Primary equal-budget A4-P4 mean>=1pp and every seed loss<=1pp, with mathematical ceiling disclosed; other comparisons separate. Bootstrap diagnostic only, no automatic significance/noninferiority claim.
+## 3. Scientific design stays fixed
 
-## 3. Checks actually executed for this fix
+Four arms GPT/P2/P4/A x five new seeds. A uses0.25 exit2 +0.75 exit4 on the same four-step trajectory/shared suffix. Original optimizer and paired initial recipe remain. No B/C/D/E combination or inactive-path repair.
 
-Local runtime Python3.13.5/torch2.10.0+cpu, not production Python3.12.3/torch2.11.0+cpu. No dependency installation, GPU allocation, native learning, original-runtime budget confirmation or user Codespaces shell access claimed.
+Save step3000 and budget endpoint:35 deduplicated model/AdamW/RNG/index snapshots. H1=2048 reserved pairs may be scored only after all20 trajectories and evidence barriers complete. HC1024/H2=2048 remain unopened for model evaluation. Primary equal-budget A4-P4 requires mean gain>=1 percentage point and each seed loss<=1 point, with ceiling disclosed; same-update, GPT/P2 safeguards and depth benefit are separate. Bootstrap is diagnostic, not automatic statistical acceptance.
 
-|Check|Result|Scope|
+## 4. Next action — focused independent review, then train
+
+Do NOT rerun preparation, reset the worktree, reuse the old blocked directory, start another initialization audit or create a new experiment. Retain the existing fixed source and successful preparation output.
+
+Request one actual focused Grok/independent report against **executed commit7bcb08f480d0bda2dba5b1351442190001492782**, covering the MES files and reused interfaces only: native GPT loss/logits separation; immutable A objective; equal-count versus equal-update design; dedicated GPT/P2 controls; sample/RNG pairing; H1/HC/H2 separation and complete20-run barrier;35 snapshot bindings; separate quality/cost claims. Reviewer must distinguish source inspection, any tests actually run, and the user-provided prepare output. No full training, H1 scoring, source modification or protocol changes as part of that review. Unresolved findings stay open. Missing reviewer access must be disclosed rather than inventing PASS.
+
+Train continues to require a REAL report and owner acknowledgement through --review-report FILE --reviewer NAME --review-approved. The flags do not authenticate the author or constitute independent review; merely creating a file or granting permission is not a review. No review has been supplied in this handoff; the live PR discussion was also empty at this read.
+
+Subsequent train/evaluate must explicitly retain:
+
+    MES1_OUTPUT_DIR=/workspaces/OpenMythos/mythos_evidence/mes1_v1_gptfix1
+
+Use the actual existing worktree at executed commit7bcb08f, verifying its path and version rather than assuming the garbled pasted path. Train produces training.json; only completed training permits evaluate/result.json. The review content may require a code fix; if so, preserve evidence and separately decide which affected preparation checks need renewal rather than waiving source identity.
+
+## 5. Stage acceptance and checkpoint rule
+
+|Item|Status|Evidence scope|
 |---|---|---|
-|CPU components and prepare fixture|29/29 PASS|Strict interface fixture; five-seed/four-arm preparation plumbing; NOT native preparation|
-|Before/after regression|PASS|Both targeted tests fail with original UnboundLocalError on old source and pass on fixed source|
-|Pinned GPT.forward method|40/40 PASS|Exact byte-verified source method on tiny component doubles; old error, safe loss/logits, exact base gradients; NOT full native GPT construction|
-|Fixture train/evaluate pipeline|PASS|20 training paths,20 evaluation paths,40 conditions,35 safe snapshots,90 FIXTURE optimizer steps|
-|Launcher evidence preservation|21/21 PASS|Existing PASS/FAIL/BLOCKED, partial and corrupt outputs retained|
-|Original-runtime prepare after fix|NOT TESTED|Must use user's existing pinned CPU environment|
-|Twenty native trajectories/H1 quality|NOT TESTED|No new native model scores|
-|Grok/Claude review|DEFERRED|Local checks are not an independent AI review|
+|Fixed original-runtime prepare|PASS (user execution report)|Five seeds and final phase output received|
+|Printed budget agreement|PASS (reported-count arithmetic)|Not an independent native profiler run|
+|New prepared.json byte/detail audit|NOT TESTED|Raw file not uploaded in this handoff|
+|Independent pre-training review|DEFERRED|No actual report received|
+|Twenty native training trajectories|NOT TESTED|Do not infer from prepare PASS|
+|H1 model evaluation/quality/efficiency|NOT TESTED|No predictions or quality result|
+|Formal Oracle|BLOCKED/NOT_READY|FORMAL_ACCEPTANCE_READY=False|
 
-Source-method regression uses pinned GPT file Git blob33ee78728306d6f64ca1cf50c861269c0748ad48, extracts its unedited forward method, and binds tiny embedding/linear fixtures. It covers5 seeds x2 lengths x2 tie settings x2 softcap settings; no optimizer. Do not label this full original-runtime acceptance. The source copy's trailing newline serialization was corrected to match the Git blob before this test; upstream bytes in the actual repository were never changed.
-
-## 4. Single next action: retry prepare without deleting the failure
-
-Retain BOTH old worktree `/workspaces/mythos-mes1-20261031` and old output `/workspaces/OpenMythos/mythos_evidence/mes1_v1` unchanged. Existing launcher intentionally reads old phase results, so pointing it at that directory will only repeat the BLOCKED report.
-
-Fetch the same branch, create `/workspaces/mythos-mes1-gptfix1-20261031` at the fixed delivered HEAD only if absent, verify exact HEAD, then run:
-
-    MES1_OUTPUT_DIR=/workspaces/OpenMythos/mythos_evidence/mes1_v1_gptfix1 bash research/mini_mythos/multi_exit_study/run_codespaces_cpu.sh prepare
-
-The new output is `/workspaces/OpenMythos/mythos_evidence/mes1_v1_gptfix1/prepared.json`. Use this SAME explicit output override for future train/evaluate; never silently fall back to mes1_v1. No install/download/retry loop. Existing new outputs also stay read-only. Preparation PASS means source/runtime/objective/budget readiness, not model quality.
-
-Keep the original training review requirement: actual focused report plus owner acknowledgement via --review-report/--reviewer/--review-approved. Missing review remains DEFERRED; never fabricate a report or count this self-test as cross-review. Do not train automatically after prepare, score H1 early, or waive a budget mismatch.
-
-## 5. Boundaries
-
-Old A primary FAIL, old results and both A-M2L limitations remain. MES-2/3, full independent native replay and formal efficiency acceptance remain NOT TESTED. Keep PR22 Draft/unmerged. Formal Oracle BLOCKED/NOT_READY, FORMAL_ACCEPTANCE_READY=False; no G2 REAL, J1/Bench/R3 changes, upstream patches or GPU expansion.
+MECH-AB/C and older scientific outcomes remain unchanged. A-M2L-01 and the separate reviewer initialization mismatch cause remain open. Keep PR22 Draft/unmerged. No G2 REAL, GPU expansion, upstream/J1/Bench/R3 modifications, automatic merges, or MES-2/3 launch. The date above is the checkpoint date, not an inferred native run timestamp.
