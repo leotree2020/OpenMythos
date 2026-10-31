@@ -60,9 +60,33 @@ def wrap(base, arm):
             super().__init__(); self.base=base
         def forward(self,tokens,labels=None,depth=4):
             require(depth==4,'GPT label denotes four native blocks, not recursion')
-            out=self.base(tokens,labels=labels,return_logits=True)
+            # Pinned GPT does not define `outputs` on its labelled branch.
+            # Training needs only native loss; generation requests logits without labels.
+            # Keep one native forward per training update (no extra counted compute).
+            out=self.base(tokens,labels=labels,return_logits=labels is None)
             return dict(logits=out['logits'],loss=out['loss'],final_loss=out['loss'],aux_loss=None)
     return GPTPath()
+
+
+
+def gpt_objective_check(base,x,y,torch):
+    """Compare the two supported native GPT routes outside the counted train probe."""
+    from mechanisms import answer_ce
+    was_training=base.training
+    try:
+        base.eval()
+        with torch.no_grad(),torch.random.fork_rng(devices=[]):
+            torch.manual_seed(9001)
+            labelled=base(x,labels=y,return_logits=False)
+            torch.manual_seed(9001)
+            logits=base(x,return_logits=True)['logits']
+            error=abs(float(labelled['loss']-answer_ce(logits,y)))
+            require(error<=1e-6,'GPT masked CE mismatch')
+        return dict(status='PASS',masked_ce_abs_error=error,
+                    scope='separate native loss/logits calls; not optimizer updates')
+    finally:
+        base.train(was_training)
+
 
 
 def probe(model,x,y,depth,torch,m2):
