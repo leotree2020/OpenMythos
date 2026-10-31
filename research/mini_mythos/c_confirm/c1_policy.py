@@ -24,6 +24,7 @@ INHERITED = {
     'mech_ab/metrics.py': '54249a6edce2c3dcc534b180c047a3539f358ff2f21a55a287d75fd623422c6a',
     'mech_ab/run_cpu.py': 'fef3bcaac0b3b58f6660ba52529df85175187f5f8fa02b680b64c3d3bca15955',
 }
+INHERITED['mech_c/c_adapters.py'] = '7696f81ac867e030b4d894c44e2fad176a79ec407e1919cf284f5fdb130b9101'
 
 
 def require(ok, message):
