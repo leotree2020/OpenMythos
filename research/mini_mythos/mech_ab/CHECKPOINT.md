@@ -1,65 +1,79 @@
-# MECH-AB checkpoint — 2026-10-30
+# MECH-AB — uploaded-result audit and mechanism decision (2026-10-31)
 
-## Current deliverable and goal
+**Original JSON / recorded-data consistency PASS. Nine user-run training records complete. A/B primary quality screens both FAIL. P4/A/B secondary d4-versus-d2 screens PASS within the four-step training horizon.** The raw JSON handoff is COMPLETE; do not request the same file or rerun training for sealing. This is an actual read-only record audit, not an independent native training/replay.
 
-User explicitly requested implementation after selecting independent mechanism comparisons. Read live PR19 and checkpoint at78d9c49112f5e1299767d450593f3db08feaf7c6 before development. R1-B qualification FAIL remains historical; final test/depth benefit there remain NOT TESTED. This new stage is mechanism exploration, not another difficulty search, initialization audit, or relabelled old experiment.
+## 1. Goal, Git and evidence identity
 
-**Implemented:** P4 native four-step control, A same-trajectory exit2/4 supervision, B whole-iteration damping. **Local component/fixture checks PASS. Pinned-native compatibility gate and nine native training runs NOT TESTED. No mechanism-quality result yet.**
+User authorized separate mechanism development. This first batch compares the same native Parcae with P4 final-only training, A multi-exit supervision, and B whole-iteration damping. It is not another task-calibration search.
 
-## Git and isolation
+- Repository leotree2020/OpenMythos; branch mini-mythos-mech-ab-cpu-20261030; Draft PR20; base PR19 at78d9c49112f5e1299767d450593f3db08feaf7c6.
+- Executed commit **b0bdac11f73f149fbb7cc7dc2ab39cef8e3ca545**, protocol preregistered first atafb21e5409264a9b609ab727fd1e640d35a2700c. Original preparation checkpoint/tests remain at the executed commit. No protocol, code, thresholds or previous results are changed by this audit.
+- Native GPT/Parcae pin **69284c13746e849104f738d6d1a347b1f457df76** remains untouched. Factory SHA25674f00c64448ddbc224a48ef83dc031a90c33448ccb92647666707f6b8f988967; task SHA2561baebb6e47f39de63e894e7d8379bdcd8403e8cd79ead1e33fa6e525278940af.
+- Actual uploaded result(4).json: **6,668,660 bytes**, independently computed SHA256 **fe50a0881b360088e5794b2b811830be9d1b3763a2aa422bce13aa823de5ee15**. No separate user terminal digest was supplied, so no external digest match or independent authenticity proof is claimed. Input bytes unchanged.
+- Evidence summary: [evidence/uploaded_json_audit_20261031.json](evidence/uploaded_json_audit_20261031.json), first saved at **085ba185c30ebfc4c7bf2a0f728bc76a4b64b055**.
+- User output: /workspaces/OpenMythos/mythos_evidence/mech_ab_v1/result.json; binary snapshots under jobs/. Nine binary snapshots were NOT uploaded in this handoff.
+- The audit date is 2026-10-31. Do not infer the native run completion date from filenames or this date.
 
-- Repository leotree2020/OpenMythos; new branch mini-mythos-mech-ab-cpu-20261030, based on PR19 HEAD78d9c49112f5e1299767d450593f3db08feaf7c6. Keep Draft; no old PR merges or branch resets.
-- Protocol committed FIRST atafb21e5409264a9b609ab727fd1e640d35a2700c before any native result. Code-only delivery through4b5f2b32783781d94d308e53c6593404bca5ade4. The current PR HEAD additionally carries this checkpoint/preparation evidence.
-- Only new directory research/mini_mythos/mech_ab is changed. Original Parcae source69284c13746e849104f738d6d1a347b1f457df76, old factory, task, protocols, scores, J1/Bench/R3 untouched.
-- Live GitHub directory metadata confirms all six published blobs equal the bytes actually tested locally: protocol233fbb67b9c3562885121bc1d861226fa2da1201; wrapper e1d531d7f2940602442e85625f6fd094fc59a19c; metrics a935f19f4d694c12a9574b5454bdd19dc4181a1a; runner22cb2fa359b27f45fb74990b3e64029b63e036d0; tests c27dea09ff05c0ebf41cba5c83a2885213837242; launcher f3d7f2f3d3d74758747b540971fef1958fffbc94.
+## 2. Frozen design and acceptance
 
-## Implemented experiment
+P4: unchanged native recurrent transition, final CE at4. A: SAME trajectory/shared native suffix,0.25 CE(exit2)+0.75 CE(exit4), no detach. B: old+0.5*(native_candidate-old) each WHOLE iteration including injection/core, final CE at4. All three retain original config mean_recurrence=2, original layer IDs/initialization and explicitly unroll [0,4]; no additional trainable tensors or inactive-parameter repair.
 
-All arms retain the exact original paired Parcae configuration/initial weights; explicit [0,4] controls unrolling without changing config mean_recurrence, layer IDs or initialization. All train3000 updates/batch32 from scratch for seeds42,20261029,20261030; same sampled data and training RNG.
+Three seeds42/20261029/20261030,3000 AdamW updates/batch32 each, same starts/sample sequence/training RNG. Recorded producer Linux Python3.12.3/torch2.11.0+cpu/NumPy1.26.4/einops0.8.0,FP32 one thread. Original optimizer lr.002,betas(.9,.999),eps1e-8,weight_decay0,clip_norm1. Each arm sees96000 problem exposures,384000 supervised answer-token exposures,864000 input positions. A has two supervised exits for the same labels, not twice as many unique examples.
 
-P4: native transition, final-only CE. A: native transition,0.25*CE(exit2)+0.75*CE(exit4) from ONE trajectory, same output modules, no detach. B: h_old+0.5*(native_candidate-h_old), final-only CE. No added trainable parameters. Separate scoped PyTorch hooks on adapter input and last core output are removed in finally; no upstream method replacement or global hook. A's auxiliary suffix is read after the final forward under fork_rng, preserving subsequent caller RNG.
+Reuse19977 training examples/10000 canonical pairs and1024 balanced development questions,256 per carry0..3. Previously viewed development is NOT a new confirmatory test. Reserved future-test role is not opened. No upper90% learned-capability cap applies to this mechanism study.
 
-Reuse R1-B's existing10000 canonical training pairs and1024 balanced development pairs; reserved test stays unused. New code does not call the old qualification gate or impose a90% upper capability bound. Only a mathematical >99% control ceiling is disclosed for the new1pp exploratory improvement screen. The already-viewed development set is not a confirmatory holdout.
+Primary EACH A/B versus P4 at d4: mean paired accuracy gain>=1pp AND every seed loses<=1pp. Control mean>99% gives mathematical ceiling BLOCKED. Secondary EACH arm d4-d2: mean>=1pp, every seed strictly improves, carry0 loss<=1pp; its d2 ceiling is separately checked. No post-hoc threshold changes. Same data/updates, NOT equal compute.
 
-Each arm runs in its own child process. Save all nine final model/AdamW/RNG states, batch-index arrays, initial/final hashes, every500-step progress, full loss/norm/RNG traces, all18 development predictions at depths2/4, per-category accuracy, teacher-forced answer CE, correction/corruption counts, supported-op compute, descriptive timing and worker-process peak RSS. Process RSS is lifetime usage including imports/evaluation, not isolated training tensor memory. Teacher-forced CE is separate from prompt-only free generation. Auxiliary and damping costs are not claimed free; supported counters may omit elementwise/optimizer work.
+## 3. Actual endpoint results
 
-Primary A/B vs P4: mean d4 exact-answer gain>=1pp, each seed loses<=1pp; separate extra-depth screen, separate cost record. This is same data/updates, NOT equal compute. Equal-compute efficiency and fresh held-out confirmation are NOT TESTED. Full criteria and stopping in PROTOCOL.md. All9 arms run regardless of another arm's scientific result; numerical/source errors retain partial evidence and block completion. No automatic hyperparameter/depth search or C/D/E/combined intervention.
+All counts are complete answers to the SAME1024 development questions.
 
-## What actually ran in this development session
+|Seed|P4 d2|P4 d4|A d2|A d4|B d2|B d4|
+|---|---:|---:|---:|---:|---:|---:|
+|42|25|262|963|989|221|894|
+|20261029|244|1004|974|987|794|1016|
+|20261030|575|981|858|883|566|896|
+|Mean accuracy|27.4740%|73.1445%|90.9831%|93.0664%|51.4648%|91.3411%|
 
-Local environment: Python3.13.5, torch2.10.0+cpu, numpy2.3.5, einops0.8.2, CPU. No package/GPU purchase, no Codespaces terminal connection. A public raw-source download failed DNS; primary source was read through the live GitHub connector. Published byte identities verified via Git blobs.
+A d4 gains over P4: **+70.9961,-1.6602,-9.5703pp**, mean+19.9219pp. B: **+61.7188,+1.1719,-8.3008pp**, mean+18.1966pp. Both miss the per-seed no-worse-than-1pp condition. Thus BOTH primary FAILs stand despite positive means. Large averages are dominated by seed42 recovery; do not select that seed, average away regressions, or label these uniformly improved models.
 
-| Check | Actual result | Scope |
-|---|---|---|
-| Python AST / Bash syntax | PASS | All new Python and launcher |
-| Component mathematics/plumbing |16/16 PASS|Affine/tanh fixture, not a new Transformer or native Parcae result |
-| Nine-worker-path integration |PASS|Fixture only,3 updates each; save/load metadata, eval/summary and RNG pairing; NOT9x3000 native training |
-| Launcher evidence preservation |7/7 PASS|PASS/FAIL/BLOCKED/wrong experiment/corrupt JSON/partial directory/log-only, existing bytes unchanged |
-| Incompatible actual local runtime |Expected rejection PASS|Process exits2 before source/native construction, rows empty; actual run status BLOCKED, not native PASS |
-| Published source identity |PASS|Remote blobs listed above match local checked bytes |
-| Native disabled-wrapper logits/loss/gradient equivalence |NOT TESTED|Executable gate automatically precedes all training in original runtime |
-| Native nine-arm quality/cost results |NOT TESTED|No scores invented or borrowed from fixtures |
-| Fresh held-out/equal-compute result |NOT TESTED|Outside this stage |
-| Grok/Claude review |NOT TESTED / DEFERRED|No report yet |
+Observed worst d4 seed: P4 25.5859%,A86.2305%,B87.3047%. Sample standard deviations:41.2023,5.9209,6.8229pp. These are three-run descriptive differences, not proof of robust population stability or a diagnosed reason for seed42's poor control.
 
-Local fixture checks cover disabled logits/loss/gradients/None patterns/RNG, same-trajectory auxiliary values, auxiliary-only core gradients, no added parameters, independent whole-iteration interpolation, suffix/softcap reuse, no state mutation, error cleanup, invalid inputs, prompt-only unconstrained decoding, quality/depth/ceiling separation, transition accounting and incomplete result rejection. Fixture optimizer updates exercise plumbing only; no native model was trained.
+Secondary d4-minus-d2 mean gains: P4+45.6706pp,A+2.0833pp,B+39.8763pp; all three secondary screens recompute PASS. A individual gains+2.5391,+1.2695,+2.4414pp with no easy-category regression. Across three seed-answer sets, A corrects115 wrong responses but corrupts51 correct responses, net64 additional correct; P4 corrects1423/corrupts20, B1256/31. These are repeated evaluations of1024 questions, not18432 independent tasks.
 
-## One next execution
+**Critical scope:** all models were trained for4 steps; d2 evaluation is early/truncated readout. This does NOT establish extrapolation beyond trained depth, monotone improvement every iteration, ACT, general reasoning or reversal of old depth2-trained M2-D/R1-A negatives. A explicitly supervised its d2 exit; P4 did not. The results support an exploratory usable-intermediate-exit signal, not free efficiency or an internal reasoning trace. Hidden-state causal mechanisms were not measured.
 
-Fetch this branch and create an isolated worktree at the delivered PR HEAD only if absent, verify exact path/HEAD, then:
+## 4. Compute and resources
 
-    bash research/mini_mythos/mech_ab/run_codespaces_cpu.sh
+Per-seed counted training FLOPs: P4 **342392832000**, A **436285440000**, B **342392832000**. A costs **27.4225%** more supported-op training FLOPs. B's elementwise damping and optimizer work may not be included; equal counters are not free hardware work.
 
-Defaults reuse /workspaces/mythos-m2-cpu312/bin/python and /workspaces/mythos-parcae-pinned. No installation or downloads. Output:
+Saved mean training seconds: P4 60.9228,A72.9466,B61.3091. These single-process-run timings are descriptive, not controlled repeated hardware benchmarks. All groups register60224 parameters, probe records51904 participating; known8320 inactive paths remain.
 
-    /workspaces/OpenMythos/mythos_evidence/mech_ab_v1/result.json
+Full four-token generation for1024 questions: d2 **2833776640**,d4 **4026531840** counted FLOPs across all groups. d4 adds42.0907%; d2 uses29.6224% fewer counts than d4 but may lose quality. Peak worker-lifetime RSS398960..405104 KiB includes imports/probes/training/evaluation and is NOT isolated training memory. No general efficiency claim.
 
-Existing results are read only; partial directories/logs are preserved without retry/resume. Native gate fails -> no optimizer updates. Exit0=complete and both primary screens PASS;1=complete and any primary FAIL;2=operational/native block or ceiling (inspect reason). A result FAIL does not mean a process crashed. Hand off only this new JSON/console first; do not rerequest already audited R1-A/R1-B/P1-R1/M2-T files.
+## 5. What this audit actually executed
 
-## Review, unresolved items and erratum
+Auditor Python3.13.5/torch2.10.0+cpu; Torch used ONLY to regenerate integer training indices. No native model imports, binaries, forward/backward, optimizer, profiler, GPU or dependency installation. Read live PR20/checkpoint/protocol and executed-commit directory metadata. All seven full source files from the previous delivery match both producer SHA256 and live Git blob IDs. Actual old R1-B/P1-R1 JSONs used only for initial-identity linkage; no repeated initialization.
 
-Focused reviewer: ensure native alpha1/aux0 output AND gradients match; intermediate exit shares trajectory/parameters; no auxiliary RNG drift; damping acts before/after the whole iteration; fair same-start/data/update comparison with actual extra compute; no hidden test access; source/partial-output protection. New positive findings require actual independent review before promotion/merge. A-M2L-01 inactive tensors are intentionally not fixed; A-M2L-02 reviewer mismatch remains OPEN separately.
+**308 record assertions PASS,0 failures**, not308 model experiments:
 
-Documentation erratum to prior PR19 wording: carry3 exceeds carry2 in TWO Parcae seeds, not all three. Counts are209>189,250>247,244<247. Original raw metrics and qualification FAIL remain unchanged. This is not a new scientific result or a reason to alter old acceptance.
+- Strict complete JSON; exactly9 seed/arm rows and18 d2/d4 conditions.
+- Independent canonical split reconstruction; train/dev hashes and swapped-pair isolation match; no reserved labels/test split emitted.
+- **18432 saved full answers rescored**, every category total/accuracy/invalid count and correction/corruption calculation matches.
+-27000 objectives,27000 final losses,9000 auxiliary losses and27000 gradient norms complete/finite;18000 absent auxiliary values are null. A weighted-loss arithmetic agrees within float32 storage rounding (max3.5762786865234375e-7).
+- Three3000x32 integer index tensors regenerated; original-state/shared-IO links match prior records.9000 per-update RNG triples equal across P4/A/B; this is digest-record pairing, not independent reconstruction of native RNG consumption.
+- Independent primary/secondary/dispersion/cost recomputation matches every saved classification; exit1 is completed primary failure, not process failure.
 
-Formal Oracle stays BLOCKED/NOT_READY, FORMAL_ACCEPTANCE_READY=False; no G2 REAL or upstream/J1/Bench/R3 edits. C low-rank phase adapters, D dual-state architecture and E stopping remain planned, NOT IMPLEMENTED/NOT TESTED; this delivery is only the agreed first P4/A/B batch.
+Native preflight: user reports12 identity conditions with maximum gradient error0 and3 auxiliary-core-gradient PASS. Records and implementation were inspected; actual original-runtime numerical execution is USER-REPORTED, not independently rerun in this audit. Original native execution now has real evidence, unlike the earlier preparation fixtures.
+
+**NOT TESTED:**9 .pt binary audits, independent native score/NLL/profiler replay, full training/resume equivalence, equal-compute comparison, fresh held-out confirmation. New Grok/Claude cross-review **NOT TESTED/DEFERRED**. Output checksum fields do not substitute for files; saved NLL is not recomputed from logits because logits/weights were not provided.
+
+## 6. Decision, next action and boundaries
+
+Close this bounded9-arm run and raw-JSON handoff. No reupload/retraining required for sealing. Retain A as a PRIORITY CANDIDATE for multi-exit learning and B as a separate candidate; neither is a passed primary intervention or merge-ready superiority result. This is a useful measured mechanism signal, not a reason to discard every intervention or to promote a favourite result.
+
+Next single action: focused independent cross-review of existing protocol/mechanism code/raw answers, particularly primary-FAIL versus secondary-PASS, A's same-trajectory/shared-suffix supervision, whole-step damping, extra training cost, and trained-depth versus early-exit interpretation. Do not request a repeat of the whole project audit or initialization checks. Before an efficiency/generalization promotion, separately design equal-budget and fresh held-out confirmation; no automatic new training here. C/D/E and A+B remain NOT IMPLEMENTED/NOT TESTED in this batch and are not invalidated by A/B primary failures.
+
+Conversation audit bundle Mythos_MECH_AB_Result_Audit_20261031.zip contains raw bytes, actual audit script/log/results, reconstructed development questions, source/reference identities, Chinese stage report and focused reviewer instructions. Git update details are in bundle DELIVERY.json. Keep Draft/unmerged.
+
+Preserve old R1-B FAIL, R1-A ceiling and M2 negatives; A-M2L-01 and separate Claude init-mismatch root cause OPEN. The previous carry-count erratum remains: carry3>carry2 in TWO R1-B seeds, not three. No model/upstream/J1/Bench/R3/old protocol changes. Formal Oracle BLOCKED/NOT_READY, FORMAL_ACCEPTANCE_READY=False; no G2 REAL, GPU expansion, threshold repair or automatic merging.
