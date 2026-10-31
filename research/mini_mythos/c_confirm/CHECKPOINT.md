@@ -1,71 +1,71 @@
-# C1 checkpoint — confirmation code prepared, native execution pending
+# C1 checkpoint — native prepare received and record audit complete
 
 2026-10-31. Experiment MYTHOS-C1-EQUAL-COUNT-HOLDOUT-V1.
 
 ## Current decision
 
-Owner said "OK，开始C" after MES-1. Implemented a NEW bounded confirmation of the existing C4 recipe versus native P4 and GPT. This is not a repetition of MECH-C development training, not A+C, and not a new model architecture. No native C1 training or heldout inference has occurred in this development session. Claude Code review is NOT TESTED/PENDING, not inherited from the earlier MES approval.
+**User-run native CPU preparation PASS. Original uploaded prepared.json byte identity and bounded record audit PASS:139 checks passed,0 failed,1 source-file byte check NOT TESTED. Fifteen native training trajectories remain NOT TESTED; C1T remains NOT OPENED; the actual C1 Claude Code pre-training review remains PENDING.** No preparation, model forward/backward, optimizer, profiler or training was rerun in this audit.
 
-**Fixed executable source: 8a646eb56a9bcffb9767ad9f50843f85670b2fa1.** All five new Python/Bash code files and PROTOCOL.md match locally checked bytes by Git blob identity. Subsequent checkpoint/review documents do not change the hashed runtime/protocol set. Keep one execution pin once preparation has run.
+Do not rerun prepare, request the same JSON again, create a replacement worktree, or infer a quality result. Next action is ONE focused Claude Code review of the fixed C1 code plus the now-available original preparation file. The old MES APPROVE is not C1 approval. Grok's former role is superseded by the owner's Claude Code policy, not an additional gate.
 
-## 1. Git and immutable baseline
+## 1. Git, history and execution pin
 
-Repository leotree2020/OpenMythos; branch mini-mythos-c1-budget-confirm-cpu-20261031. Base PR21 branch mini-mythos-mech-c-lora-cpu-20261031 at b16f7971f854a9c3bf68f3c24bb2cc6bac9ac31c. All changes under research/mini_mythos/c_confirm/. Do not modify older results or source directories.
+Repository leotree2020/OpenMythos; Draft PR23; branch mini-mythos-c1-budget-confirm-cpu-20261031. The live branch was read at92d61d857c7cedae500cd6e147618815112e7880 before this documentation update. Base is PR21 atb16f7971f854a9c3bf68f3c24bb2cc6bac9ac31c.
 
-Protocol committed FIRST at06794bebae186470a9a05d728b59b4f42869e6ae, before implementation/tests/model-quality measurements. Existing c_adapters.py reused without modification (Git blob28c979185dec965d77d248901a84c0596ae32b54, SHA2567696f81ac867e030b4d894c44e2fad176a79ec407e1919cf284f5fdb130b9101). Native upstream remains read-only sandyresearch/parcae@69284c13746e849104f738d6d1a347b1f457df76. Original factory/task/MECH-AB helpers are hash-bound.
+**Execution/review pin remains8a646eb56a9bcffb9767ad9f50843f85670b2fa1.** Do not switch the successfully prepared worktree to a later documentation commit. Source/protocol, C4 recipe, optimizer, budgets and criteria are unchanged.
 
-MECH-C old primary C4-S16/secondary C4-P4 exploratory PASS and low-seed limitations remain unchanged. MES-1 current A recipe's competitive FAILs remain unchanged. Neither old outcome is a C1 outcome. New primary explicitly asks C4 vs native P4, rather than beating a degraded S16 comparator. No S16 training here, hence no pure depth-specificity causal identification or parameter-matched claim.
+Protocol first commit06794bebae186470a9a05d728b59b4f42869e6ae. Upstream sandyresearch/parcae@69284c13746e849104f738d6d1a347b1f457df76 remains read-only. Inherited C adapter SHA2567696f81ac867e030b4d894c44e2fad176a79ec407e1919cf284f5fdb130b9101.
 
-## 2. Actual implementation
+Full prior implementation/development checks remain in this checkpoint at92d61d857c7cedae500cd6e147618815112e7880 and the development archive. Historical29 component tests,20 launcher cases and toy pipeline are not claimed as newly executed here. Old MECH-C exploratory results and MES-1 negative confirmation remain unchanged.
 
-Three groups GPT/P4/C4, five NEW seeds1101/1202/1303/1404/1505. All from scratch. C4 retains four independent rank4 corrections on native core attention/FFN output projections, scale1, final-only loss. All backbone and adapter parameters are optimized; all are saved and loaded. P4/C4 match base initialization and batch/RNG prefixes. GPT uses the already-known safe interface: labelled native loss OR unlabelled logits, one train forward. No A/B, inactive-parameter repair, LR/rank/depth search or eight-round extrapolation.
+## 2. Actual uploaded preparation
 
-Common ceiling355663872000 supported-op training FLOPs. Planned counts/steps, to be re-measured in native prepare:
+Original file prepared.json: **22,745 bytes**. Independently computed SHA256 **2f3e1251eaf474d3a49f2de826b6ba6c9711a16a15a9d74c09f8386b5db85829**, exactly matching the owner's supplied terminal digest. This establishes correspondence of those bytes, not independent authenticity of every producer claim.
 
-|Arm|Step FLOPs|Steps|Registered parameters|
-|---|---:|---:|---:|
-|GPT|73433088|4843|65344|
-|P4|114130944|3116|60224|
-|C4|118554624|3000|62784|
+Original output /workspaces/OpenMythos/mythos_evidence/mech_c_confirm_v1/prepared.json. The pasted shell echo has duplicated/garbled lines; do not infer the actual worktree path from it, delete existing directories or rerun preparation to tidy the echo.
 
-Count mismatch BLOCKS before training, no automatic re-budgeting. Same count is not equal data exposure/hardware work. Twenty complete full-state snapshots (all15 endpoints plus5 P4@3000) support twenty depth4-only evaluations. No untrained d2 readout study is added. Costs/times/RSS are separately reported.
+Producer declares Python3.12.3/torch2.11.0+cpu/NumPy1.26.4/einops0.8.0,CPU,one thread. Seeds1101/1202/1303/1404/1505. Recorded code/upstream pins match. native_compatibility_status PASS,training_status NOT TESTED,C1T_status NOT OPENED,review_status PENDING Claude Code. Scope explicitly excludes optimizer updates and C1T answer materialization/model scoring.
 
-C1T uses2048 fresh canonical pairs,512 per carry stratum, from reserved role excluding ALL5120 MES H1/HC/H2 keys. Legacy allocation hashes re-created exactly; C1T allocation digest14003d130a3257e5c26d669fe79f6c7b6bed3bf8ce87c1f7c9096605fec595d0. Key/stratum allocation only: actual C1T answer labels and model evaluations not generated in this development. HC/H2 remain reserved. Fixture pipeline used8 hand-picked questions, with zero overlap with C1T/HC/H2; one overlaps already-viewed MES H1 and is not a fresh test claim.
+Twenty distinct native compatibility cases cover5 seeds x P4/C4 x lengths6/9 at depth4. All report PASS and max_base_gradient_abs_error0. Five native GPT masked-CE records report PASS/error0. These are actual producer records read by this auditor, NOT independent numerical re-execution.
 
-Prepare/train/evaluate remain separate explicit commands. Training requires actual Claude report and owner acknowledgement; production dependencies cannot be waived. All15 completed runs plus file/pairing checks precede C1T materialization. Each eval worker hashes/parses the SAME byte buffer, addressing the prior MES R02 omission in this NEW runner (the old MES source is not rewritten). Duplicate workers claim ownership exclusively; errors without ownership never rewrite old row/logs, addressing the prior R03 path in this new implementation.
+|Arm|Steps|Counted FLOPs/update|Allocated counted total|Unused fraction|
+|---|---:|---:|---:|---:|
+|GPT|4843|73433088|355636445184|0.00007711442786069652|
+|P4|3116|114130944|355632021504|0.00008955223880597016|
+|C4|3000|118554624|355663872000|0|
 
-Primary C4-P4 equal-budget: mean gain>=1pp, every seed loss<=1pp, reference>99% means ceiling BLOCKED. GPT safeguard: mean and every paired loss<=1pp. Candidate selection requires BOTH primary and GPT safeguard PASS. Same-update C4-P4@3000 is independent secondary output; it cannot rescue primary failure. Execution PASS is separate. CLI prints all decisions and selection exit0/1/2. Five-seed crossed bootstrap is diagnostic, not statistical acceptance.
+Common ceiling355663872000. Recomputed largest unused percentage0.008955224%,within0.1%. No budget relaxation. Supported-op counts are not hardware work or equal sample exposure.
 
-## 3. Actually executed checks and limits
+All15 parameter/count records are complete and agree across seeds. Registered parameters GPT65344/P460224/C462784. Gradient-present probe counts65344/51904/54464 do not mean every gradient is nonzero or that effective capacities match. Known8320 inactive Parcae parameters remain a limitation. Corresponding P4/C4 base-state digests and all-arm shared-IO records match; raw initial tensor bytes were not supplied.
 
-Development runtime Python3.13.5/torch2.10.0+cpu, not the required production Python3.12.3/torch2.11.0+cpu. No packages installed, no GPU, no native GPT/Parcae construction/training or C1T inference.
+## 3. What this audit actually did
 
-|Check|Actual result|Scope|
-|---|---|---|
-|Python3.12 AST and Bash syntax|PASS|Four Python code files and launcher|
-|New CPU component tests|29/29 PASS|Strict GPT interface, C4 hooks/zero-init math, full adapter snapshot, budgets, exclusions, score and evidence boundaries; mathematical fixtures|
-|Full phase pipeline fixture|PASS|15 train paths/15 eval worker paths/20 conditions/20 safe snapshots/65 tiny fixture optimizer updates; NOT native learning|
-|Launcher existing/partial evidence|20/20 PASS|Existing PASS/FAIL/BLOCKED/PARTIAL, corrupt JSON, missing env, partial directory/log, invalid phase|
-|Published byte identity|6/6 PASS|Five new code files plus protocol match local checked bytes|
-|Production entry attempted locally|BLOCKED as expected|Original Python version gate, before native models; did not bypass guard|
-|Native C1 prepare and cost counts|NOT TESTED|Must use existing Codespaces CPU environment|
-|15 native training trajectories/C1T quality|NOT TESTED|No results yet|
-|Claude Code C1 independent review|NOT TESTED/PENDING|Earlier MES approval is not this review|
+Read and strictly parsed the COMPLETE uploaded JSON; independently computed its byte SHA; rejected duplicate/nonfinite JSON; checked exact seeds/arms/cases/objectives/count arithmetic/budget and start-record pairing. Recomputed source_identity aggregate750d827c88244dfd4d26dc2be6d2fedf88868c399665c882110fbbde9c86a4e0.
 
-Live pinned MECH-C directory blobs matched retained source copies. The factory digest is bound from the frozen project declaration; its native execution was not repeated locally. Tests are not full production acceptance. Local preparation refusal and full logs are preserved in the conversation development ZIP. Initial publication omitted the adapter-digest declaration; corrected at8a646eb BEFORE delivery; final five source blobs match the tested local implementation. No native run used the intermediate incomplete publication.
+Six own code/protocol byte copies in the retained development ZIP match both uploaded SHA256 records and live Git blob metadata at8a646eb. Five inherited source byte copies match recorded SHA256. The sixth inherited file,m2_matched/experiment.py,is absent from that retained archive and was NOT freshly fetched/byte-verified in this audit; its declaration remains bound,not represented as newly verified.
 
-## 4. Next bounded instruction
+Independently rebuilt reserved KEY/stratum allocation using standard-library hashing only,without generating holdout answers: C1T2048 canonical pairs,512/stratum; excludes all5120 legacy H1/HC/H2 keys and has no train/development-role keys. C1T digest14003d130a3257e5c26d669fe79f6c7b6bed3bf8ce87c1f7c9096605fec595d0 and all three legacy digests match. Training/development metadata hashes were compared to frozen values,not represented as fresh raw train.json byte verification.
 
-Create a separate worktree /workspaces/mythos-c1-20261031 at executable8a646eb ONLY if absent; verify actual directory and HEAD, never reset/delete existing work. Run only:
+Actual audit:139 PASS,0 FAIL,1 NOT TESTED(factory bytes). Standard-library only; no Torch/model import,native probes,optimization,weight loading,hardware profiling or test-label generation. Original initial tensors,local train.json,pip-freeze.txt and full Codespaces filesystem were not supplied or independently inspected. This audit does not authenticate the producer or substitute for Claude review.
 
-    bash research/mini_mythos/c_confirm/run_codespaces_cpu.sh prepare
+Conversation handoff includes original prepared.json,audit_prepared.py,audit_result.json,audit.log,a concise Chinese report,updated Claude instructions and the previous development ZIP needed to reproduce the record audit. This is not another model experiment.
 
-Default output /workspaces/OpenMythos/mythos_evidence/mech_c_confirm_v1/prepared.json. Reuses existing /workspaces/mythos-m2-cpu312 and /workspaces/mythos-parcae-pinned. No download/install, optimizer step or C1T scoring. This is C1's new source/budget/interface preparation, NOT a rerun of old MES or initialization audit.
+## 4. Frozen experiment remains unchanged
 
-In parallel obtain ONE focused Claude Code review of C1 delta plus reused C adapter interfaces. Provide actual prepared.json when available; do not claim its byte verification before receipt. Native training waits for real APPROVE and owner's acknowledgement using --review-report/--reviewer/--review-approved. Do not fabricate an approval. Successful prepare does not automatically start training or unlock evaluation.
+GPT/P4/C4 x5 new seeds=15 trajectories. C4 reuses four independent rank4 projection corrections with scale1,final-only CE,all backbone/adapter parameters in optimizer and full snapshots. No A/B/D/E combination,inactive-path fix,rank/lr/depth scan or eight-step extrapolation.
 
-## 5. Governance and stop rules
+Equal counted ceiling and steps above. Save all15 endpoints plus5 P4@3000 snapshots=20 complete states;20 depth4-only evaluations on the SAME2048 C1T questions after the full15-run barrier. Not a parameter-matched or pure depth-specificity causal comparison. Old S16 results remain historical,not a new control.
 
-Claude Code replaces Grok by owner's explicit decision; no extra Grok approval gate. Preserve historical reviewer attribution. Disagreements resolved by evidence or minimal controlled experiments. Keep this PR Draft/unmerged until reviewed and results decided.
+Primary C4-P4 mean gain>=1pp and every seed loss<=1pp;reference mean>99% yields ceiling BLOCKED. GPT protection requires mean/every paired loss<=1pp. Candidate selection needs BOTH primary and GPT protection PASS. Same-update result is separate and cannot rescue primary failure. Five-seed bootstrap is diagnostic,not automatic statistical acceptance.
 
-Preserve previous A-M2L-01/inactive paths and independent initializer mismatch limitations. Stop at frozen outcomes; no seed replacement, threshold repair, repeated target selection, GPU scaling, D/E combination or later MES phases. Formal Oracle BLOCKED/NOT_READY, FORMAL_ACCEPTANCE_READY=False; no G2 REAL, J1/Bench/R3 or upstream changes. End each stage with new actual status and next action, never equate script completion with quality.
+C1T is not scored. MES H1 was previously viewed; HC/H2 remain reserved/unscored. All fresh-test and cost limitations remain.
+
+## 5. Next bounded action and stop rules
+
+Provide Claude Code the actual prepared.json COPY alongside the existing fixed source and updated focused request. This avoids the earlier MES reviewer-access limitation; inability to access /workspaces is not a reason to rerun preparation when the attachment is available.
+
+Review only C1 and necessary inherited interfaces: adapter optimization/serialization/phase selection;GPT loss/logits;budget pairing;fresh-test exclusion and full-run barrier;worker byte-buffer binding and duplicate-evidence preservation;primary/GPT protection logic. CPU components or no-update synthetic native probes may be run with explicit environment limits. No prepare/train/evaluate,test scoring,source/protocol edits,push,merge or GPU during review.
+
+After a real C1 report and owner acknowledgement,proceed through the existing train entry with --review-report/--reviewer/--review-approved. Do not fabricate a report,waive source identity or use the request as approval. Retain C1_OUTPUT_DIR=/workspaces/OpenMythos/mythos_evidence/mech_c_confirm_v1. No automatic training in this handoff.
+
+Keep PR23 Draft/unmerged;Formal Oracle BLOCKED/NOT_READY,FORMAL_ACCEPTANCE_READY=False. No G2 REAL,upstream/J1/Bench/R3 changes or later mechanisms. Previous scientific outcomes and reviewer attributions stay intact.
