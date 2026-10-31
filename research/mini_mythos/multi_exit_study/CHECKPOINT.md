@@ -1,93 +1,91 @@
-# MES-1 checkpoint — complete training records audited, H1 pending (2026-10-31)
+# MES-1 checkpoint — H1 results audited; current A advantage NOT confirmed (2026-10-31)
 
 ## Current decision
 
-**Uploaded training.json is complete:20 user-run trajectories,90980 recorded optimizer updates and35 snapshot references. Actual read-only JSON/record audit PASS,403 checks/0 failures. H1 evaluation and all quality/efficiency claims remain NOT TESTED.** No training was repeated in this audit. Do not request this file again or rerun prepare/train for sealing.
+**All20 user-run training trajectories and40 H1 evaluation conditions are complete in uploaded records. This session actually rescored81,920 saved answers on the same2,048 questions:353 record assertions PASS/0 failures. Primary equal-budget A4-P4 FAIL; same-update comparison FAIL; GPT safeguard FAIL; dedicated-P2 safeguard FAIL. A's own within-four-step depth benefit PASS.** Execution PASS is not quality PASS; exit1 is the valid primary negative result, not a process crash.
 
-The next bounded action is the existing reviewed `evaluate` phase on saved weights, with supplemental endpoint evidence checks. Do not tune models, pick better checkpoints, open HC/H2, or launch MES-2/3. Execution source stays **7bcb08f480d0bda2dba5b1351442190001492782**; do not change the prepared worktree to this documentation HEAD.
+Close this frozen MES-1 run and both raw JSON handoffs. Do not ask for the same files again, repeat prepare/train/evaluate, tune thresholds or pick a better checkpoint. Current A0.25/0.75 is a retained multi-exit behavior candidate without confirmed competitive advantage; do not automatically promote it to scaling, MES-2 subtraction or MES-3 adaptive exit. This conclusion does not reject every possible multi-exit or recurrent architecture.
 
-## 0. Reviewer rule
+Next single action: focused Claude Code post-result cross-review of existing evidence and interpretations; see section6. No new model execution authorized by this audit.
 
-Effective2026-10-31 the owner replaced Grok with **Claude Code** for independent review. ChatGPT and Claude Code cross-review; unresolved disagreements are retained and resolved by source/evidence or minimal controlled experiments. Grok is not an additional pending approval dependency. Historical attribution is preserved; former unperformed Grok assignments are superseded, not retroactively PASS.
+## 0. Reviewer policy
 
-Claude's owner-supplied pre-training report APPROVE remains scope-limited. See [evidence/MES1_CLAUDE_REVIEW_20261031.md](evidence/MES1_CLAUDE_REVIEW_20261031.md), first registered at80c35f7321039f8351a13f56375413408f14407d. Original scratchpad bytes/scripts/logs were not independently retrieved. Its CPU component checks used torch2.11.0+cu130, not the production CPU build. No post-training Claude result audit has yet occurred.
+Effective2026-10-31 the owner replaced Grok's independent-review role with **Claude Code**. ChatGPT and Claude Code cross-review; disagreements remain documented and resolved by evidence or minimal controlled experiments. No extra Grok approval gate. Historical attribution remains; unperformed Grok assignments are superseded, not PASS.
 
-## 1. Git and preserved history
+Claude's supplied pre-training report APPROVE is limited to reviewed code/readiness, not these new results. Original report registration80c35f7321039f8351a13f56375413408f14407d and [evidence/MES1_CLAUDE_REVIEW_20261031.md](evidence/MES1_CLAUDE_REVIEW_20261031.md). New post-result Claude review remains NOT TESTED/DEFERRED.
 
-- Repository leotree2020/OpenMythos; Draft PR22, branch mini-mythos-mes1-budget-holdout-cpu-20261031, base4cf60b053c7b9c2e89e64646cd986d33a34a7657.
-- Reviewed/executed code7bcb08f480d0bda2dba5b1351442190001492782; upstream sandyresearch/parcae@69284c13746e849104f738d6d1a347b1f457df76 unchanged.
-- Protocol first committed c74728c3efb6f27e29aacf146d719e37c5dbbd1c. Factory/task/A, all thresholds and the optimizer remain unchanged.
-- Previous handoff HEAD0cf2162876577230197539a196e6991133cf531a registered the review and train-only launcher. It did not claim training results.
-- This audit evidence summary: [evidence/uploaded_training_audit_20261031.json](evidence/uploaded_training_audit_20261031.json), first commit667113621d1b367705602bdec810c030e8cb9b2a.
-- New supplemental evaluation-only helper: [evidence/evaluate_after_training_20261031.py](evidence/evaluate_after_training_20261031.py), commit eab4d676f3d95beb867f8e468008bfda2c6fb09f. This helper is not part of Claude's prior reviewed code, and does not edit it.
+## 1. Git and evidence lineage
 
-Original a8f329ed prepare remains a preserved BLOCKED incident from the unsupported simultaneous GPT loss/logits request. The fixed prepare later reported all five seeds PASS. Its existing file at mes1_v1_gptfix1/prepared.json has terminal digest d6ec93cb908d3994b6098b913c9b045d06b055a8fbade92bf62cdd0c5ae20678. It is still not uploaded here; its detailed checks must not be described as independently re-audited. Old mes1_v1 failure evidence stays untouched. See earlier checkpoints and gpt_interface_fix_20261031.json for the full incident history.
+- Repository leotree2020/OpenMythos; Draft PR22; branch mini-mythos-mes1-budget-holdout-cpu-20261031; base4cf60b053c7b9c2e89e64646cd986d33a34a7657.
+- Reviewed/executed source stays **7bcb08f480d0bda2dba5b1351442190001492782**. Do not checkout a documentation HEAD in the prepared worktree.
+- Protocol first committed c74728c3efb6f27e29aacf146d719e37c5dbbd1c; pinned read-only upstream sandyresearch/parcae@69284c13746e849104f738d6d1a347b1f457df76. No source/optimizer/data/threshold changes to obtain a result.
+- Previous training-audit checkpoint **df07985774fd4c4d9f2cdcdc782c94337617e603** preserves full previous history and403-check training audit. This session does not claim those earlier checks newly rerun.
+- New H1 audit [evidence/H1_RESULT_AUDIT_20261031.md](evidence/H1_RESULT_AUDIT_20261031.md), first committed **ea1ce9e2dc4b9758ec6f30b798c24b271114d449**.
+- Supplemental evaluation helper remains at eab4d676f3d95beb867f8e468008bfda2c6fb09f; its actual integrity receipt was not uploaded, so helper completion is NOT independently verified here.
 
-## 2. Uploaded training evidence and actual audit
+Original a8f329ed prepare BLOCKED by the GPT labels/logits integration bug remains in history; fixed7bcb08f prepare reported PASS for all5 seeds. No incident was relabelled. Existing evidence directory remains `/workspaces/OpenMythos/mythos_evidence/mes1_v1_gptfix1`; old mes1_v1 failure output preserved.
 
-Original uploaded training.json: **16257800 bytes**; independently computed SHA256 **318b0cfbca08f5c33f36b7514300186e63e3a404c8ee1aac7e1177e4de021f69**. No separately supplied terminal digest for this file; no external hash match or authenticity proof claimed. Input bytes unchanged.
+## 2. Actual new input audit
 
-Top-level records: experiment MYTHOS-MES1-EQUAL-COUNT-HOLDOUT-V1; phase train; status PASS; exit0; pairing_status PASS; H1_status NOT OPENED; quality_status NOT TESTED. Review is owner-acknowledged Claude Code, recorded report SHA256 a6de1292561d416a721e5c8e6bc31655400017d5cfe7c071792f4f1e42c1cad7. Reconstructed declared source identity298cb63094c3c67e76786a387e79d302d707ecc8e959c566561281a097db56c9 matches all20 rows/review.
+Uploaded `result(6).json`: **22,217,437 bytes**, independently computed SHA256 **29ec484bf7e35e1d421ae4f12555f76e1eafc87e16eebf85f55553980730df1d**. No separate terminal result digest supplied; no external identity/authenticity claim. Original bytes unchanged.
 
-Auditor actually ran Python3.13.5/torch2.10.0+cpu. Torch was used only to regenerate integer batch indices. No native model imports, native forward/backward, optimizer updates, profiler replay, weight loading or held-out examples/scoring. Source reading used live GitHub and byte-checked retained code. Six MES code/protocol blobs match live pinned Git metadata; four inherited source files match frozen hashes; factory digest was used from the frozen INHERITED declaration rather than freshly reading factory bytes in this audit.
+Previous `training.json` is still available:16,257,800 bytes, SHA256 **318b0cfbca08f5c33f36b7514300186e63e3a404c8ee1aac7e1177e4de021f69**. Re-read and matched to result.training_summary_sha256. Every embedded training_row and review record is exactly equal to the previously uploaded file, not a new training replay.
 
-403 assertions PASS/0 FAIL cover:
+Auditor Python3.13.5/NumPy2.3.5. No Torch/native-model import, tensor loading, model inference/backprop, optimizer, profiler, GPU or new dependencies. Six source/protocol copies matched their SHA256 records and live pinned Git blobs; four inherited source copies byte-checked. Factory bytes not freshly reconstructed: only frozen declaration and historical training link checked.
 
-- Strict complete JSON, no duplicate keys/nonfinite constants; exactly four arms x five seeds101/202/303/404/505.
-- All20 planned endpoints reached, with90980 objectives,90980 final losses,90980 preclip gradient norms and90980 RNG digests present. Loss/norm numbers finite. Clipping threshold is not an upper bound on the reported preclip norm.
-- A's15000 non-null auxiliary losses satisfy0.75 final+0.25 auxiliary within float32 storage rounding (max absolute error3.5762786865234375e-7); other groups have null auxiliary entries and objective=final loss.
-- All20 full batch-index and3000-step prefix hashes regenerated from the fixed19977-example domain and seed+12000. Within-seed Parcae initialization digest equality and all-arm shared-IO equality checked from records, not native tensor reconstruction.
--15000 P2/P4/A saved RNG prefix triples agree. P2/P4 also agree through3822 steps per seed. GPT is only seed-matched, not falsely claimed to have identical native RNG consumption.
--35 snapshot reference paths/endpoints and digest formats complete; final model digest matches the final snapshot record. Producer safe_reload PASS is recorded; binaries were not supplied, so auditor file/tensor verification is NOT TESTED.
-- Budget/exposure arithmetic and all20 environment records agree with the frozen design. No correctness scores or H1 predictions exist in this training file.
+Independent protocol-based allocation rebuilt H1/HC/H2 keys; canonical keys mutually disjoint and all reserved, outside train/development roles. Only H1 targets generated. H1 has512 questions per outgoing-carry stratum. Its object SHA256 **f4e45835c2a9b38c2d5e0537f65996f006d26a7b0b837307858649fb3aa08328** and producer-format serialized SHA256 **a7d878a5f35104581d7f9f5ec13887578e5ee031d72458b44d73f23a56561d03** both match recorded digests. This is deterministic reconstruction, not reading original H1 bytes from Codespaces.
 
-|Arm|Runs|Steps/run|Counted FLOPs/run|Mean saved training seconds (descriptive)|
-|---|---:|---:|---:|---:|
-|GPT|5|5941|436265975808|84.0930|
-|P2|5|5433|436214439936|79.7986|
-|P4|5|3822|436208467968|74.7398|
-|A|5|3000|436285440000|69.2213|
+40 exact seed/arm/checkpoint/depth keys;81,920 saved full answers rescored, all totals/category accuracies/invalid counts match. Recomputed five gates, correction/corruption, means/worst scores/stddev and the fixed5000-draw paired crossed bootstrap. Probe/count/parameter records checked for completeness/arithmetic only. Saved NLL/timing checked for finite values, NOT recomputed from logits/hardware.353 assertions PASS/0 failures.
 
-Total recorded counted work8724871618560; per-run ceiling436285440000; max unused fraction0.00017642585551330797 (0.017643%). This is supported-operator arithmetic, not a new profiler/hardware measurement. Times include this worker's loop/saves; do not turn single-run times or worker-lifetime RSS into accepted hardware efficiency.
+## 3. Actual results and acceptance
 
-Training minibatch losses are not held-out accuracy. A has a mixed objective. Do not rank models, choose checkpoints or adjust thresholds based on these losses before the already fixed H1 evaluation.
+|Seed|GPT@4 budget end|P2@2 budget end|P4@4 budget end|A@2|A@4|
+|---:|---:|---:|---:|---:|---:|
+|101|2039/2048|2018/2048|2011/2048|1957/2048|2013/2048|
+|202|2033/2048|2028/2048|1968/2048|1859/2048|1931/2048|
+|303|2037/2048|1898/2048|1978/2048|1644/2048|1772/2048|
+|404|2037/2048|2043/2048|1969/2048|1706/2048|1832/2048|
+|505|2016/2048|1841/2048|2030/2048|1904/2048|1940/2048|
+|Mean accuracy|99.23828125%|95.9765625%|97.2265625%|88.57421875%|92.65625%|
 
-## 3. Bounded next action: evaluate existing snapshots only
+|Frozen gate|Mean candidate-reference delta|Status|
+|---|---:|---|
+|Primary equal-count budget A4-P4|-4.5703125pp|FAIL|
+|Same3000 updates A4-P4|+0.517578125pp|FAIL|
+|A4-GPT quality safeguard|-6.58203125pp|FAIL|
+|A2-dedicated P2 quality safeguard|-7.40234375pp|FAIL|
+|A4-A2 trained-horizon depth|+4.08203125pp|PASS|
 
-Keep the existing clean registered worktree at7bcb08f and output:
+Primary is NOT ceiling-blocked. Four of five A4-P4 pairs decline: +0.09765625,-1.806640625,-10.05859375,-6.689453125,-4.39453125pp. Original engineering rules unchanged. A worst final seed86.5234375% vs P4 96.09375%; no new stability advantage.
 
-    /workspaces/OpenMythos/mythos_evidence/mes1_v1_gptfix1
+P4@3000 mean92.138671875%; A3000 mean92.65625% with27.42248062% more counted training work per update. P4's originally fixed budget endpoint3822 raises its own mean by5.087890625pp. Thus neither the equal-update gain nor equal-budget advantage confirms the previous optimistic three-seed signal. Do not silently pool old development data with new H1 to recover a PASS.
 
-The new helper finds that existing worktree; checks current training/prepared/review bytes, source identities, all20 endpoints and35 real snapshot file hashes in Codespaces; then invokes the UNCHANGED reviewed parent `run_codespaces_cpu.sh evaluate`. It never invokes prepare/train or manual --worker, does not install dependencies, and preserves existing/partial evaluation results without automatic retry. Missing snapshots or mismatching bytes cause BLOCKED, not retraining.
+A two-to-four gains all positive;626 wrong responses corrected,208 correct responses corrupted, net418 across five seed-answer sets. A d2 is better than P4's unsupervised early d2 readout44.08203125%, but worse than dedicated P2. All A trained4, so this is within-trained-horizon improvement, not unseen-depth extrapolation, ACT or a general reasoning proof.
 
-After the reviewed evaluation completes it rechecks training/source/snapshot identity, H1 file/object digests against the result and deterministic frozen H1 reconstruction, rescores saved predictions and recomputes all separate outcome fields. This is not a second neural inference pass. HC/H2 allocation identities may be checked, but their labels/model evaluation are not generated. Supplemental receipt: evaluation_handoff_integrity.json.
+Predeclared diagnostic paired crossed bootstrap primary95% interval about[-7.920166,-1.474609]pp, recomputed exactly to floating tolerance. Five seeds; no automatic statistical superiority/noninferiority claim.
 
-**Claude R02 remains OPEN:** these endpoint checks detect persistent H1 corruption and inconsistent saved scoring, but are NOT per-worker read-time validation and do not prove absence of transient changes. Run single-owner/single evaluation with no concurrent evidence-directory writers. No original evaluation source was patched or source-identity binding bypassed. This is a documented nonblocking LOW limitation, not a hidden fix.
+## 4. Budget and compute interpretation
 
-R01: print primary_equal_budget_A4_P4, same_updates_A4_P4, external_GPT_safeguard, intermediate_P2_safeguard and A_extra_depth separately. Evaluate top-level PASS describes execution; its exit_code follows the primary screen, not every safeguard. Preserve scientific FAIL/ceiling BLOCKED even if integrity checks PASS.
+Four arms use common counted ceiling436285440000 per seed. Frozen steps GPT5941/P2=5433/P4=3822/A3000 remain. Maximum integer slack0.017643% within0.1%. Cheaper arms see more repeated training samples; not equal token exposure or hardware work.
 
-R03 remains OPEN for manual duplicate training workers; no such workers are called. Training is complete and is not automatically resumed. R04 late pairing has now been checked from the uploaded complete records. R05 native coverage and R06 statistical/compute/inactive-parameter interpretation limits remain.
+Full2048-question answer generation: GPT5179965440 counted FLOPs; Parcae d2=5667553280; Parcae d4=8053063680. A2 is+9.412955% relative to GPT; A4+55.465587%. A4 costs42.090657% more than A2. Under this task/configuration/counter, GPT has highest mean accuracy and lowest generation count. This does not establish universal architecture or repeated hardware benchmark superiority.
 
-Actual new-helper checks: Python3.12-compatible AST PASS;14/14 synthetic metadata/file check tests PASS; includes modified/missing snapshot, changed review/source/preparation, duplicate rows, H1 endpoint/frozen-content/score/outcome mismatch. These use synthetic records, no real H1 labels or models. No original-runtime full evaluation-handoff execution has occurred here. Do not label helper tests as model acceptance or Claude re-approval.
+Inactive-parameter confounder A-M2L-01 and separate historical reviewer init mismatch remain open; they do not license removing valid within-Parcae negative comparisons. No current A efficiency claim. Hardware efficiency still NOT TESTED.
 
-The fixed evaluation will cover40 conditions on the SAME2048 H1 questions;81920 answers are not81920 independent questions. It selects no best checkpoint; P4@3000 is the predeclared same-update comparison, not an adaptive checkpoint. Result path is result.json in the same directory.
+## 5. Remaining limits, not hidden successes
 
-## 4. Acceptance and limitations
+35 new binary snapshots, original prepared.json and evaluation_handoff_integrity.json were NOT uploaded. No independent verification of actual weight/optimizer/RNG bytes, helper completion, native scoring, training/resume equivalence or profiler measurements occurred here.
 
-|Item|Status/evidence|
-|---|---|
-|Native preparation|PASS, previous owner terminal report|
-|Claude pre-training review|APPROVE, actual supplied limited report|
-|20 native training trajectories|Completed in uploaded producer records; no independent replay|
-|Raw training JSON/record consistency|PASS, actual403-check audit|
-|35 binary snapshots|NOT TESTED by this auditor; checked locally before evaluation|
-|prepared.json detail/byte audit here|NOT TESTED; remains local to Codespaces|
-|H1 quality/primary/safeguards|NOT TESTED|
-|Independent native score/profile/resume replay|NOT TESTED|
-|Post-result Claude review|NOT TESTED; pre-training approval is not result approval|
-|Hardware efficiency|NOT TESTED|
-|Formal Oracle|BLOCKED/NOT_READY; FORMAL_ACCEPTANCE_READY=False|
+R01: status PASS is execution; primary exit1 and all independent gates must be read separately. R02: absent per-worker read-time H1 digest remains OPEN/LOW; endpoint reconstruction and saved-score agreement cannot rule out transient changes. R03: manual duplicate-worker issue remains unchanged; no worker or retry invoked in this audit. R04 pairing is recorded/linked from completed training, not native replay. Other prior limits retained.
 
-Training JSON handoff COMPLETE. Full conversation bundle contains original bytes, actual audit script/results/log, source identity references, supplemental handoff/tests and Chinese report. No same-file reupload, repeated initialization or new generic audit gate.
+H1 is now viewed. HC/H2 labels/model evaluation were not opened by this audit and remain recorded NOT OPENED. New result-level Claude review NOT TESTED/DEFERRED; original pretraining APPROVE remains valid only in its scope. Raw JSON handoff COMPLETE, do not ask to upload it again.
 
-Keep PR22 Draft/unmerged. Preserve old MECH-AB/C/M2/R1 outcomes and both A-M2L limitations. No upstream/J1/Bench/R3 edits, GPU expansion, G2 REAL, automatic merge or later MES phases. The date is the audit date; no original run timestamp is inferred from filenames.
+## 6. Next bounded instruction and route decision
+
+Send the existing H1 result, training link, frozen source/protocol and this audit to Claude Code for ONE targeted result review: independently re-score existing predictions, distinguish same-update/equal-budget/GPT/P2 comparisons, retain primary failures and the narrower A depth signal, inspect uncertainty and remaining integrity limits. No prepare/train/model re-evaluation, source edits, threshold changes, HC/H2 opening, commit/push/merge. Report actual scope and evidence; no repeated project-wide initializer audit.
+
+After cross-review, decide which independently justified mechanism/task to prioritize. Current A recipe is not selected for automatic scaling, adaptive exit, subtraction or parameter search. Do not rescue it by silently changing thresholds or treating now-viewed H1 as fresh after tuning. Keep valid negative evidence and reusable implementation.
+
+Deliverables in conversation bundle `Mythos_MES1_H1_Result_Audit_20261031.zip`: byte-preserved input JSONs; actual audit script/log/results; re-created H1; reference source bytes; Chinese report and focused Claude request. No model weights and no claim that a request is a completed review.
+
+Keep PR22 Draft/unmerged. Formal Oracle BLOCKED/NOT_READY, FORMAL_ACCEPTANCE_READY=False. No G2 REAL, GPU expansion, upstream/J1/Bench/R3 changes, automatic merges or later MES stages. The date is this audit date, not an inferred original run timestamp.
