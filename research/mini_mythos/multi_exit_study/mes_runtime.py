@@ -125,7 +125,7 @@ def train_one(args,prepared):
     max_steps=max(a['steps'] for a in allocation.values())
     indices=torch.randint(len(x),(max_steps,32),generator=torch.Generator().manual_seed(args.seed+12000))[:steps].clone()
     opt=torch.optim.AdamW(base.parameters(),lr=.002,betas=(.9,.999),eps=1e-8,weight_decay=0.)
-    row=dict(arm=args.arm,seed=args.seed,status='NOT TESTED',environment=env) if False else dict(arm=args.arm,seed=args.seed,status='PARTIAL',steps=0,planned_steps=steps,
+    row=dict(arm=args.arm,seed=args.seed,status='PARTIAL',steps=0,planned_steps=steps,
              initial_model_sha256=start,shared_io=io,environment=env,source_identity=ident['sha256'],
              batch_prefix3000_sha256=m2.tensor_sha(indices[:REFERENCE_STEPS]),batch_indices_sha256=m2.tensor_sha(indices),
              counted_training_flops=steps*allocation[args.arm]['step_flops'],problem_exposures=steps*32,
@@ -156,7 +156,7 @@ def train_one(args,prepared):
             if step%500==0:
                 ab.write(job/'row.json',row)
                 print(json.dumps(dict(arm=args.arm,seed=args.seed,step=step,objective=row['loss_trace'][-1])),flush=True)
-    row.update(status='PASS',training_seconds_descriptive=time.perf_counter()-started,steps=steps,
+    row.update(status='PASS',training_seconds_descriptive=time.perf_counter()-started,
                final_model_sha256=m2.weights_sha(base),
                process_high_water_rss_kib=__import__('resource').getrusage(__import__('resource').RUSAGE_SELF).ru_maxrss,
                rss_scope='worker lifetime incl imports; not isolated training memory')
