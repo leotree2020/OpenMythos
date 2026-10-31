@@ -51,7 +51,7 @@ def prepare(args,report):
     _,report['holdouts']=P.allocate(task)
     x,y=R.encoded(task,data['train'],torch)
     ix=[j for c in range(4) for j in [i for i,r in enumerate(data['train']) if r['carry']==c][:8]]
-    report['native_preflight']=[];report['starts']={};report['counts']={}
+    report['native_preflight']=[];report['gpt_objective_checks']=[];report['starts']={};report['counts']={}
     for seed in P.SEEDS:
         base,_,_=R.initial(m2,seed,'P4')
         report['native_preflight'].append(R.ab.native_preflight(base,seed,torch,m2))
@@ -61,11 +61,7 @@ def prepare(args,report):
             starts[arm]=dict(model_sha256=h,shared_io=io)
             counts[arm]=R.probe(R.wrap(base,arm),x[ix],y[ix],P.DEPTH[arm],torch,m2)
             if arm=='GPT':
-                from mechanisms import answer_ce
-                with torch.no_grad(),torch.random.fork_rng(devices=[]):
-                    base.eval();torch.manual_seed(9001)
-                    out=base(x[ix],labels=y[ix],return_logits=True)
-                    require(abs(float(out['loss']-answer_ce(out['logits'],y[ix])))<=1e-6,'GPT masked CE mismatch')
+                report['gpt_objective_checks'].append(dict(seed=seed,**R.gpt_objective_check(base,x[ix],y[ix],torch)))
         require(len({starts[a]['model_sha256'] for a in ('P2','P4','A')})==1,'Parcae starts differ')
         plan=P.budgets({a:counts[a]['step_flops'] for a in P.ARMS})
         if 'budget' in report: require(plan==report['budget'],'seed-dependent compute budget')
@@ -145,7 +141,8 @@ def evaluate(args,report,prepared,training):
                   H1_pairs=len(truth),source_identity=ident,code_head=R.ab.git(root,'rev-parse','HEAD'),
                   training_summary_sha256=R.ab.file_sha(args.out/'training.json'),
                   training_review=training['review'],rows=[],training_rows=training['rows'],
-                  native_preflight=prepared['native_preflight'],budget=prepared['budget'],counts=prepared['counts'],
+                  native_preflight=prepared['native_preflight'],gpt_objective_checks=prepared.get('gpt_objective_checks',[]),
+                  budget=prepared['budget'],counts=prepared['counts'],
                   outcome=None,post_result_review_status='NOT TESTED / DEFERRED')
     R.ab.write(args.out/'result.json',report)
     for seed in P.SEEDS:
