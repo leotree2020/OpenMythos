@@ -34,7 +34,10 @@ def weights(m):
 
 
 class GPTFixture(F.Fixture):
+    """Enforce the actual pinned GPT interface instead of Parcae's richer return path."""
     def forward(self,tokens,labels=None,return_logits=False):
+        if labels is not None and return_logits:
+            raise UnboundLocalError("cannot access local variable 'outputs' where it is not associated with a value")
         return super().forward(tokens,labels,return_logits,[0,4])
 
 
@@ -106,10 +109,98 @@ class RuntimeTests(unittest.TestCase):
             if before is not None:self.assertTrue(torch.equal(before,p.grad))
     def test_GPT_route(self):
         base=GPTFixture();x,y=F.tensors();model=R.wrap(base,'GPT')
-        torch.manual_seed(90);a=base(x,labels=y,return_logits=True)
+        torch.manual_seed(90);a=base(x,labels=y,return_logits=False)
         torch.manual_seed(90);b=model(x,y,depth=4)
         self.assertTrue(torch.equal(a['loss'],b['loss']));self.assertIsNone(b['aux_loss'])
         with self.assertRaises(RuntimeError):model(x,depth=2)
+    def test_GPT_pinned_joint_request_is_rejected(self):
+        base=GPTFixture();x,y=F.tensors()
+        with self.assertRaises(UnboundLocalError):base(x,labels=y,return_logits=True)
+    def test_GPT_training_single_call_and_exact_gradients(self):
+        base=GPTFixture();reference=copy.deepcopy(base);x,y=F.tensors()
+        torch.manual_seed(9001)
+        expected=reference(x,labels=y,return_logits=False);expected['loss'].backward()
+        rng=torch.get_rng_state().clone()
+        torch.manual_seed(9001)
+        with patch.object(base,'forward',wraps=base.forward) as calls:
+            actual=R.wrap(base,'GPT')(x,y,depth=4);actual['loss'].backward()
+            self.assertEqual(calls.call_count,1)
+            self.assertFalse(calls.call_args.kwargs['return_logits'])
+        self.assertIsNone(actual['logits'])
+        self.assertTrue(torch.equal(actual['loss'],expected['loss']))
+        self.assertTrue(torch.equal(rng,torch.get_rng_state()))
+        for a,b in zip(base.parameters(),reference.parameters()):
+            self.assertEqual(a.grad is None,b.grad is None)
+            if a.grad is not None:self.assertTrue(torch.equal(a.grad,b.grad))
+    def test_GPT_inference_single_call_returns_logits(self):
+        base=GPTFixture();x,_=F.tensors()
+        torch.manual_seed(55);expected=base(x,return_logits=True)
+        torch.manual_seed(55)
+        with patch.object(base,'forward',wraps=base.forward) as calls:
+            actual=R.wrap(base,'GPT')(x,depth=4)
+            self.assertEqual(calls.call_count,1)
+            self.assertIsNone(calls.call_args.kwargs['labels'])
+            self.assertTrue(calls.call_args.kwargs['return_logits'])
+        self.assertTrue(torch.equal(actual['logits'],expected['logits']))
+    def test_GPT_objective_check_preserves_rng_mode_weights(self):
+        base=GPTFixture().train();x,y=F.tensors()
+        before=weights(base);rng=torch.get_rng_state().clone()
+        with patch.object(base,'forward',wraps=base.forward) as calls:
+            report=R.gpt_objective_check(base,x,y,torch)
+            self.assertEqual(calls.call_count,2)
+            self.assertFalse(calls.call_args_list[0].kwargs['return_logits'])
+            self.assertNotIn('labels',calls.call_args_list[1].kwargs)
+        self.assertEqual(report['status'],'PASS');self.assertEqual(report['masked_ce_abs_error'],0.)
+        self.assertEqual(before,weights(base));self.assertTrue(base.training)
+        self.assertTrue(torch.equal(rng,torch.get_rng_state()))
+        self.assertTrue(all(p.grad is None for p in base.parameters()))
+    def test_GPT_objective_check_restores_on_error(self):
+        base=GPTFixture().train();x,y=F.tensors();rng=torch.get_rng_state().clone()
+        with patch.object(base,'forward',side_effect=ValueError('controlled failure')):
+            with self.assertRaises(ValueError):R.gpt_objective_check(base,x,y,torch)
+        self.assertTrue(base.training);self.assertTrue(torch.equal(rng,torch.get_rng_state()))
+    def test_GPT_probe_matches_native_single_forward_cost(self):
+        from torch.utils.flop_counter import FlopCounterMode
+        base=GPTFixture();x,y=F.tensors();reference=copy.deepcopy(base)
+        with torch.random.fork_rng(devices=[]):
+            torch.manual_seed(9001)
+            with FlopCounterMode(display=False) as counter:
+                loss=reference(x,labels=y,return_logits=False)['loss']
+                forward=counter.get_total_flops();loss.backward();total=counter.get_total_flops()
+        actual=R.probe(R.wrap(base,'GPT'),x,y,4,torch,SimpleNamespace(weights_sha=weights))
+        self.assertEqual(actual['forward_flops'],forward);self.assertEqual(actual['step_flops'],total)
+
+    def test_prepare_reaches_all_arms_with_strict_GPT_interface(self):
+        def make(arm,ffn,seed):
+            torch.manual_seed(seed)
+            return GPTFixture() if arm=='gpt' else F.Fixture()
+        factory=SimpleNamespace(make=make,pair_io=lambda a,b:{'fixture_only':True},
+                                weights_sha=weights,upstream_check=lambda p:None)
+        data={'train':[task.example(a,b) for a,b in [(100,100),(109,101),(199,101),(999,101)]]}
+        ident={'fixture_only':True}
+        seen=[]
+        def budget(counts):
+            seen.append(set(counts))
+            return {'fixture_only':True}
+        with tempfile.TemporaryDirectory() as td:
+            args=SimpleNamespace(out=Path(td),parcae_dir=Path(td))
+            context=(torch,{'fixture_only':True},Path(td),factory,task,ident)
+            with patch.object(R,'context',return_value=context),patch.object(R,'identity',return_value=ident),\
+                 patch.object(R.ab,'git',return_value='FIXTURE_ONLY'),\
+                 patch.object(R.ab,'check_data',return_value=(data,{'fixture_only':True})),\
+                 patch.object(P,'allocate',return_value=({}, {'fixture_only':True})),\
+                 patch.object(P,'budgets',side_effect=budget),\
+                 patch.object(CLI.subprocess,'check_output',return_value='fixture-only\n'),\
+                 patch.object(torch.optim,'AdamW',side_effect=AssertionError('prepare must not train')):
+                report={};CLI.prepare(args,report)
+            self.assertEqual(report['status'],'PASS')
+            self.assertEqual(len(report['starts']),5);self.assertEqual(len(seen),5)
+            self.assertTrue(all(x==set(P.ARMS) for x in seen))
+            self.assertEqual(len(report['gpt_objective_checks']),5)
+            self.assertTrue(all(x['masked_ce_abs_error']==0 for x in report['gpt_objective_checks']))
+            self.assertEqual(report['training_status'],'NOT TESTED')
+            self.assertFalse((args.out/'H1.json').exists());self.assertFalse((args.out/'jobs').exists())
+
     def test_A_formula_and_rng(self):
         base=F.Fixture();x,y=F.tensors()
         torch.manual_seed(91);a=R.wrap(base,'A')(x,y);rng=torch.get_rng_state().clone()
