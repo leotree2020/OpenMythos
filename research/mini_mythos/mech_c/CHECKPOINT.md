@@ -1,62 +1,76 @@
-# MECH-C checkpoint — 2026-10-31
+# MECH-C — actual uploaded-result audit and scoped decision (2026-10-31)
 
-## Goal and current status
+**Original JSON/record consistency PASS. Nine user-run training records complete. PRIMARY C4 versus S16 PASS; secondary C4 versus P4 PASS; S16 versus P4 FAIL.** All three within-four-step d4-minus-d2 secondary screens PASS. These are predeclared exploratory DEVELOPMENT screens, not formal acceptance or general architecture superiority. The original JSON handoff is COMPLETE; do not request the same file or rerun training for sealing.
 
-User asked to continue the remaining improvement mechanisms. Read live PR20 and its checkpoint at4cf60b053c7b9c2e89e64646cd986d33a34a7657 before work. Preserve the nine-arm MECH-AB result: primary A/B FAIL and within-four-step secondary signals; its original JSON handoff is already complete. Do not request old evidence or repeat its audit.
+## 1. Goal, Git and original evidence
 
-**Implemented C: depth-specific low-rank projection adapters, with a parameter-matched shared adapter control and a native P4 control. Local component/fixture checks PASS. Pinned-native compatibility and nine native training runs NOT TESTED. No new model-quality scores.** D dual-state, E stopping and combinations remain NOT IMPLEMENTED/NOT TESTED in this delivery.
+User authorized separate mechanisms. C tests four phase-specific rank4 projection corrections against a parameter-matched shared rank16 correction and contemporaneous native P4. Preserve MECH-AB primary FAILs and their limited positive signals; do not replace an older result with a new label.
 
-## Git and sources
+- Repository leotree2020/OpenMythos, branch mini-mythos-mech-c-lora-cpu-20261031, Draft PR21; base PR20 at4cf60b053c7b9c2e89e64646cd986d33a34a7657.
+- Executed source **38a6f1dcbbf04ab823686aff9c4e6c4acddc0ad0**. Protocol first committed at **ba968dfd41c56fd8bf0ca7243fea197f576e1f77**. Preparation checkpoint and tests remain at the executed commit. This audit changes no protocol, training source or threshold.
+- Unmodified native upstream **69284c13746e849104f738d6d1a347b1f457df76**. Factory/task/inherited evaluation helpers remain unchanged.
+- Actual upload `result(5).json`: **5,407,979 bytes**, independently calculated SHA256 **b942126365fb0360153117819118a9347e0fabf39d97cb38ed6ded323f37f51a**. No separate terminal digest supplied; no invented external match/authenticity claim. Original bytes unchanged.
+- Evidence summary [evidence/uploaded_json_audit_20261031.json](evidence/uploaded_json_audit_20261031.json), first saved at **0ecb5d2e2466c209adc72276dff5662986714807**.
+- User result location `/workspaces/OpenMythos/mythos_evidence/mech_c_v1/result.json`; nine model+adapter/AdamW/RNG snapshots under jobs/ are not part of this upload.
+- Audit date is not an assertion of native execution time.
 
-Repository leotree2020/OpenMythos; branch mini-mythos-mech-c-lora-cpu-20261031; base PR20 HEAD4cf60b053c7b9c2e89e64646cd986d33a34a7657. Protocol committed FIRST atba968dfd41c56fd8bf0ca7243fea197f576e1f77 before native execution. Code delivery through53edfddc714fa36ab41f8d63ab27da678c5afb2d; current HEAD also contains this checkpoint. Only new research/mini_mythos/mech_c files, no original files changed. Keep Draft/unmerged.
+## 2. Fixed design and acceptance
 
-Fixed upstream sandyresearch/parcae@69284c13746e849104f738d6d1a347b1f457df76 remains read-only. Reuse original factory/pair_io, R1-B task and MECH-AB evaluation helpers with byte-hash checks. Do not copy or rewrite a Transformer. Source inspection verified native attention c_proj; saved P1-R1 shape records confirm core c_proj[32,32],mlp.proj[32,64], without re-running initialization.
+All three arms train the original backbone, retain original configuration mean_recurrence2/initialization and explicitly unroll [0,4]. P4 has no correction; S16 uses a shared rank16 at each core attention output32->32 and FFN output64->32; C4 uses an independent rank4 at each of four iterations. S16/C4 each add2560 parameters, total62784; P4 total60224. Canonical down-factor numbers match, zero up factors preserve initial function. No auxiliary loss, damping, state-init change or inactive-parameter repair. This is not frozen-backbone adapter-only fine-tuning.
 
-Published directory metadata at53edfdd confirms all six delivered file Git blobs equal actual locally tested bytes: protocol98f89f7301f3d7e514e1f97944aeec89b9c7b5de; adapters28c979185dec965d77d248901a84c0596ae32b54; metrics70102e186ce2181b01c0cc0e53ea86c3ede59048; runner57456584917f1aac33647f401eccb2df99b6c094; launchere865583b0dd2e3e4572e8986493a651fc0505438; testsde7327be9f15c7f9370a3caa099d389e569094ef. Exact SHA256/size records are in delivery checks/published_identities.json.
+Seeds42/20261029/20261030;3000 updates, batch32, same starts/data batches/training RNG and original AdamW(.002,betas(.9,.999),eps1e-8,weight_decay0),clip1. Each arm has96000 problem exposures,384000 answer-token exposures,864000 input positions. Recorded producer LinuxPython3.12.3/torch2.11.0+cpu/NumPy1.26.4/einops0.8.0,FP32,one thread.
 
-## Fixed experiment and expected acceptance
+Reuse19977 training rows/10000 canonical pairs and1024 development pairs,256 per carry stratum. Swapped pairs isolated. Already-viewed development is not a fresh held-out test; reserved test remains unopened. No90% upper capability cap.
 
-P4 unchanged native four-step transition, exit4 CE. S16 uses one rank16 correction per target, shared by all iterations. C4 uses one rank4 correction per target per iteration. Targets only core attention output and FFN output projection. S16/C4 both add2560 parameters, expected total62784 versus P4's60224. All original backbone parameters train; this is not frozen-model LoRA fine-tuning. No auxiliary loss, damping, zero-state substitution or inactive-path repair.
+PRIMARY C4-S16 d4 mean paired accuracy gain>=1pp AND each seed delta>=-1pp; S16 mean>99% -> ceiling BLOCKED. C4-P4 and S16-P4 are separately labelled secondary comparisons. Per-arm d4-d2 requires mean>=1pp, each seed positive,carry0 loss<=1pp. No post-hoc changes.
 
-Canonical down-factor values match between S16/C4; up factors start zero, preserving initial function. Private generator seed+31000 does not advance caller RNG. Full adapters enter optimizer, clipping and checkpoints. Loop indices reset every forward; scoped hooks removed even on failure. Four-stage adapters do not imply arbitrary-depth generalization; only d2/d4 are supported.
+## 3. Actual endpoint results
 
-Nine new training arms: P4/S16/C4 x original three seeds,3000 updates/batch32 each. Same base initial weights, batch sequence and training RNG. Same R1-B train/development data; future test is untouched. There is no90% upper quality gate. Original optimizer and environment are retained. See PROTOCOL.md for all constants and hashes.
+Correct complete answers to the SAME1024 development questions:
 
-Primary comparison C4-S16 at d4: mean gain>=1pp and every seed loss<=1pp. Reference mean>99% gives disclosed ceiling BLOCKED. C4-P4 and S16-P4 are separate secondary screens. Within-trained-horizon d4-d2 screens, correction/corruption, all seed scores and costs are reported separately. Primary FAIL does not erase another useful signal; passing versus P4 alone does not establish depth-specific allocation value.
+|Seed|P4 d2|P4 d4|S16 d2|S16 d4|C4 d2|C4 d4|
+|---|---:|---:|---:|---:|---:|---:|
+|42|25|262|10|58|4|284|
+|20261029|244|1004|181|970|321|1004|
+|20261030|575|981|308|942|249|1020|
+|Mean accuracy|27.4740%|73.1445%|16.2435%|64.1276%|18.6849%|75.1302%|
 
-**Same parameters for C4/S16 is NOT same per-iteration rank or compute.** S16 executes rank16 every iteration; C4 rank4. Actual forward/backward/generation counters report this difference. No equal-compute or hardware superiority claim; already-viewed development is not a fresh test. This compares two allocation designs under one recipe, not universal causal proof.
+C4-S16: **+22.0703,+3.3203,+7.6172pp**,mean **+11.0026pp**, PRIMARY PASS. C4-P4: **+2.1484,0,+3.8086pp**,mean **+1.9857pp**,secondary PASS. S16-P4: **-19.9219,-3.3203,-3.8086pp**,mean **-9.0169pp**,secondary FAIL.
 
-## Actually executed here
+Interpretation must retain both references: C4 beats this shared-rank16 comparator in all seeds, but that comparator itself regresses from native P4. Native-relative gain is1.99pp, not11pp. C4 seed42 remains27.7344%, not a solved low-seed/stability problem. Other C4 seeds reach98.0469% and99.6094%. Same total parameters does NOT isolate depth specificity from per-step rank, compute and gradient reuse. No pure causal/universal superiority conclusion.
 
-Local environment Python3.13.5,torch2.10.0+cpu,NumPy2.3.5,einops0.8.2. No installs, GPU, native training or user Codespaces shell access claimed.
+All d4-d2 secondary screens PASS. Mean gains P4+45.6706pp,S16+47.8841pp,C4+56.4453pp. **All models train4/final-only: d2 is early readout, not extrapolation beyond trained depth.** C4 d2 mean18.6849% is lower than P4; this is not MECH-A's usable multi-exit signal. Comparing prior A/B average scores is descriptive, not a new preregistered head-to-head. Different PASS/FAIL contrasts are not a ranking.
 
-|Check|Actual outcome|Scope|
-|---|---|---|
-|Python3.12 AST and Bash syntax|PASS|New implementation files|
-|CPU component/fixture tests|18/18 PASS|Low-rank algebra/gradients, canonical init, zero-output identity, routing, cleanup, optimizer coverage, serialization, result gates|
-|Nine worker paths|PASS|Affine/tanh fixture ONLY;3 optimizer updates per worker,18 fixture evaluations,9 saved full-state reloads; NOT native learning|
-|Existing-output launcher cases|9/9 PASS|Complete PASS/FAIL/BLOCKED, unrelated, bad code/type/JSON, partial directory, log-only; input bytes retained|
-|Actual incompatible runtime rejection|Expected rejection PASS|Exit2, execution BLOCKED, zero rows before native construction; no version waiver|
-|Published source identity|6/6 PASS|Live Git blobs equal local checked bytes|
-|Native compatibility gate|NOT TESTED|Implemented required original-runtime gate before any training updates|
-|Native nine-run quality and costs|NOT TESTED|No model results invented from fixtures|
-|Fresh holdout/equal-compute comparison|NOT TESTED|Not run in this stage|
-|Grok/Claude review|NOT TESTED / DEFERRED|No actual review report supplied|
+## 4. Actual counted cost and resources
 
-Fixture model is explicitly affine/tanh, with unused size padding only to exercise fixed metadata; no fixture score is a model result. Detailed checks/scripts/logs are in Mythos_MECH_C_Development_20261031.zip. These finite checks are implementation work, not a new Guard framework.
+Per-seed training FLOPs: P4 **342392832000**,S16 **395476992000**,C4 **355663872000**. C4 counts10.0671% less than S16 but3.8760% more than P4; S16 counts15.5039% more than P4. Both adapted arms add4.2508% registered parameters.
 
-## Next bounded execution
+Full-development four-token generation d4 counts: P4 **4026531840**,S16 **4655677440**,C4 **4183818240**. C4 is10.1351% below S16 and3.9063% above P4. This quality/count observation is not equal-compute confirmation or hardware speedup. S16 applies rank16 each iteration whereas C4 applies rank4.
 
-In existing OpenMythos Codespace, fetch this branch, create the pinned worktree only if absent, check exact HEAD, and execute:
+Recorded mean training seconds P4 **60.9609**,S16 **64.9542**,C4 **64.8030**. S16/C4 walltimes are close, not evidence of10% faster execution. Single-run timings are descriptive. Worker-lifetime peak RSS398252..401964KiB includes imports/probes/training/evaluation, not training-only memory. No controlled memory/energy benchmark. Supported-op counts exclude optimizer/unsupported work.
 
-    bash research/mini_mythos/mech_c/run_codespaces_cpu.sh
+## 5. What the audit actually executed
 
-Defaults: /workspaces/mythos-m2-cpu312/bin/python; /workspaces/mythos-parcae-pinned. Required LinuxPython3.12.3/torch2.11.0+cpu/NumPy1.26.4/einops0.8.0. No downloads/installations. Native zero-initialized logits/loss/base-gradient/RNG/route gate must pass for all seeds before training. Original environment and source checks fail closed.
+Read live PR21/executed checkpoint/directory Git blobs and complete actual upload. Auditor Python3.13.5/torch2.10.0+cpu; Torch ONLY generated integer batch indices. No model imports, raw output weights, native forward/backward, optimizer, profiler, dependency install or GPU.
 
-Output: /workspaces/OpenMythos/mythos_evidence/mech_c_v1/result.json ; full model+adapter/optimizer/RNG and row files under jobs/. Existing results read-only; partial files never deleted or auto-resumed. One run ends the stage, no automatic ranks/steps/seeds/depth sweep. Exit0=primary C4-S16 PASS,1=completed primary FAIL,2=BLOCKED. Upload only this new result/console initially; old uploads are not required again.
+**247 record assertions PASS,0 FAIL:** strict JSON/finite values;9 unique arms/18 conditions; independent canonical train/development generation and hash matching; rescored18432 saved answers including category/invalid/transition metrics; checked27000 loss and27000 gradient-norm values; regenerated3 integer3000x32 index arrays; verified9000 RNG triples and original initial-state/shared-IO links. Independently recomputed all primary/secondary/depth/descriptive outcomes and cost arithmetic.
 
-## Review and unresolved boundaries
+Six delivered source/protocol/launcher files from the preparation bundle match both producer SHA256 and live Git blobs; three inherited helper files and task.py also match recorded SHA256. Raw checkpoint bytes were read through connector but not independently hashed in this audit; do not broaden the six-file claim.
 
-Focused review: both output projections use correct input/output orientation; C4 phase selection is actual rather than cosmetic; S16/C4 really match capacity; zero-up/down-gradient behavior is correctly interpreted; all adapters saved/updated; evaluation uses prompts only; counters include adapter matmuls; no stronger causal/equal-compute claim. Reviewer disagreements remain recorded, not silently resolved by preference.
+P4 controls in this upload EXACTLY match prior actual MECH-AB records for all3 complete loss/norm/RNG traces, batch/initial/final-base identity, and d2/d4 predictions, metrics, NLL and counts. This is useful two-run record reproducibility, NOT independent auditor training or binary identity validation.
 
-Preserve A-M2L-01 and Claude initialization mismatch root cause OPEN, older negative results and pending cross-reviews. Upstream Parcae, J1, Bench, R3, model factory and old protocols unchanged. Formal Oracle BLOCKED/NOT_READY, FORMAL_ACCEPTANCE_READY=False; no G2 REAL, scale/GPU training or automatic merges. Research inspiration is Relaxed Recursive Transformers, not a claimed reproduction of its published results.
+Producer native preflight contains36 zero-initialization identity cases,all reported max base-gradient error0. The records and code were inspected, not re-executed here. Gradient-participation probe counts include tensors with present but zero initial gradients; do not treat them as effective model capacity.
+
+First audit attempt stopped because local extraction omitted the existing .sh file; extracting it from the unchanged development ZIP allowed full read-only audit completion. First attempt logs are retained in the audit bundle. No production source/input/criteria repair.
+
+**NOT TESTED:**9 actual .pt binary audits; independent native scoring/NLL/profiling; full training/restart equality; equal-compute confirmation; new held-out test. NLL was checked finite/consistent where historical reference exists, not recalculated from absent logits. New Grok/Claude review **NOT TESTED/DEFERRED**.
+
+## 6. Decision and next instruction
+
+Close this bounded nine-run stage and JSON handoff. No same-file reupload or rerun for sealing. Retain C4 as a LIMITED parameter-allocation candidate; do not call it uniformly strong, more robust than A/B, fully accepted or merge-ready. Preserve weak seed42 and S16 regressions.
+
+Next bounded instruction: independently cross-review current C4/S16/P4 implementation and evidence, focusing on reference-group degradation, per-iteration rank/compute differences, routing/serialization, exact frozen outcomes and trained-horizon interpretation. No repeat initializer or whole-project audit. Any later fresh-test/equal-budget promotion needs its own explicit protocol. D dual-state and E stopping remain separate candidates, not implemented by this audit; no automatic combinations, rank/lr/depth sweep or GPU scaling.
+
+Full conversation bundle `Mythos_MECH_C_Result_Audit_20261031.zip` contains original bytes, actual audit script/log/results, regenerated development questions, prior raw reference, source identities, Chinese report and review request. Actual remote delivery SHAs recorded in bundle DELIVERY.json. Keep Draft/unmerged.
+
+Preserve previous results and A-M2L-01; Claude initialization mismatch cause remains separately OPEN. No upstream/J1/Bench/R3/old experiment or protocol edits. Formal Oracle **BLOCKED/NOT_READY**, **FORMAL_ACCEPTANCE_READY=False**; no G2 REAL or automatic merges.
