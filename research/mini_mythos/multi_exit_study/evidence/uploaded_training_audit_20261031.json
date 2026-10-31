@@ -1,0 +1,67 @@
+{
+  "audit": "MES1-UPLOADED-TRAINING-RECORD-AUDIT-20261031",
+  "status": "PASS",
+  "scope": "Actual complete read-only JSON/record audit, not independent native training or binary verification",
+  "input": {
+    "filename": "training.json",
+    "bytes": 16257800,
+    "sha256": "318b0cfbca08f5c33f36b7514300186e63e3a404c8ee1aac7e1177e4de021f69",
+    "external_digest_match": "NOT TESTED; no separate terminal training digest supplied"
+  },
+  "reviewed_execution_commit": "7bcb08f480d0bda2dba5b1351442190001492782",
+  "reconstructed_source_identity": "298cb63094c3c67e76786a387e79d302d707ecc8e959c566561281a097db56c9",
+  "recorded_review_report_sha256": "a6de1292561d416a721e5c8e6bc31655400017d5cfe7c071792f4f1e42c1cad7",
+  "review_provenance": "Claude Code, owner-supplied report; no authorship authentication claimed",
+  "auditor_environment": {
+    "python": "3.13.5",
+    "torch": "2.10.0+cpu",
+    "torch_use": "integer batch-index reconstruction only; no native model import/forward/backward/update"
+  },
+  "producer_environment_record": {
+    "python": "3.12.3",
+    "torch": "2.11.0+cpu",
+    "numpy": "1.26.4",
+    "einops": "0.8.0",
+    "device": "cpu",
+    "threads": 1
+  },
+  "actual_checks": {
+    "record_assertions_passed": 403,
+    "record_assertions_failed": 0,
+    "exact_seed_arm_rows": 20,
+    "seeds": [101, 202, 303, 404, 505],
+    "optimizer_updates_recorded": 90980,
+    "objective_values_checked": 90980,
+    "final_loss_values_checked": 90980,
+    "gradient_norm_values_checked": 90980,
+    "non_null_auxiliary_loss_values": 15000,
+    "max_weighted_objective_abs_error": 0.00000035762786865234375,
+    "batch_indices": "All 20 full digests and 3000-step prefixes independently regenerated from the fixed 19977-example domain and seed+12000",
+    "initialization": "Within-seed Parcae full-state digest equality and all-arm shared-IO equality; no native initialization replay",
+    "rng_pairing": "15000 saved P2/P4/A prefix triples equal; P2/P4 also equal through3822 steps per seed; no RNG reconstruction from native execution",
+    "snapshot_references": 35,
+    "snapshot_reference_check": "Exact endpoint keys/paths, valid digest syntax, final-state link and producer safe-reload records; NOT file hashes verified from binaries",
+    "source": "Six MES code/protocol blobs matched live Git metadata; four inherited files checked from retained bytes; factory digest taken from frozen INHERITED constant",
+    "raw_input_unchanged": true
+  },
+  "arms": {
+    "GPT": {"runs": 5, "steps": 5941, "step_flops": 73433088, "total_flops_per_seed": 436265975808, "mean_training_seconds_descriptive": 84.09304517560007},
+    "P2": {"runs": 5, "steps": 5433, "step_flops": 80289792, "total_flops_per_seed": 436214439936, "mean_training_seconds_descriptive": 79.7985710756},
+    "P4": {"runs": 5, "steps": 3822, "step_flops": 114130944, "total_flops_per_seed": 436208467968, "mean_training_seconds_descriptive": 74.73983330200002},
+    "A": {"runs": 5, "steps": 3000, "step_flops": 145428480, "total_flops_per_seed": 436285440000, "mean_training_seconds_descriptive": 69.22129772339994}
+  },
+  "total_recorded_counted_flops": 8724871618560,
+  "maximum_unused_budget_fraction": 0.00017642585551330797,
+  "NOT_TESTED": [
+    "35 model/optimizer/RNG binary snapshots not uploaded",
+    "prepared.json bytes/details not uploaded in this handoff",
+    "Independent native training, profiler or score replay",
+    "Interrupt/resume equivalence",
+    "H1 model evaluation or any accuracy/quality comparison",
+    "HC/H2 model evaluation",
+    "Hardware efficiency"
+  ],
+  "next_action": "Use existing reviewed evaluate phase only; preserve execution pin and completed training. Supplemental endpoint checks do not close Claude R02's missing per-worker read-time checksum.",
+  "handoff_complete": "training.json received and read; do not request same-file reupload or retrain",
+  "formal_oracle": "BLOCKED/NOT_READY; FORMAL_ACCEPTANCE_READY=False"
+}

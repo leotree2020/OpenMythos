@@ -1,0 +1,59 @@
+{
+  "incident": "MES1-GPT-INTERFACE-001",
+  "date": "2026-10-31",
+  "original_delivery": "a8f329ed3ae7e0e55a703dfaee9c2ce56339b953",
+  "user_run": {
+    "phase": "prepare",
+    "status": "BLOCKED",
+    "error": "UnboundLocalError: cannot access local variable 'outputs' where it is not associated with a value",
+    "location": "mes_runtime.GPTPath.forward -> pinned GPT.forward return",
+    "prepared_path": "/workspaces/OpenMythos/mythos_evidence/mes1_v1/prepared.json",
+    "terminal_reported_sha256": "5d1dfb655170b8e6bfb5c98f507b490266e708b65231fc053d0906cd2169589f",
+    "evidence_level": "user terminal transcript; prepared.json bytes NOT uploaded or independently hashed",
+    "native_optimizer_updates": 0,
+    "quality": "NOT TESTED"
+  },
+  "source_finding": {
+    "upstream_pin": "69284c13746e849104f738d6d1a347b1f457df76",
+    "gpt_file_git_blob": "33ee78728306d6f64ca1cf50c861269c0748ad48",
+    "cause": "Pinned GPT only defines outputs on its no-label path; both MES wrapper and prepare CE check requested labels plus return_logits=True.",
+    "test_gap": "Old GPTFixture inherited the more permissive Parcae-style return contract, masking the incompatibility.",
+    "existing_factory_call": "m2_matched.call already uses return_logits=(y is None); restore the same supported routing in MES.",
+    "upstream_modified": false
+  },
+  "fix": {
+    "runtime_commit": "9833b407c31d4297b161074897749d8f872301e0",
+    "prepare_commit": "a252aad2f67083008e970b800fdfc826f6ab55d3",
+    "regression_commit": "cf233e1629df4a43a7ba0ac337c0ab035d5ac03d",
+    "training": "single labelled native loss call with return_logits=False",
+    "inference": "single unlabelled native call with return_logits=True",
+    "objective_check": "separate supported native loss/logits calls, identical RNG seed, no_grad/fork_rng, mode restored; outside counted train probe",
+    "criterion_or_budget_changed": false,
+    "published_blobs": {
+      "mes_runtime.py": "5cec3241bb8a45f6559c9505793c598e6768390e",
+      "run_cpu.py": "1f3c330d66d6e5c0a9d4ef647b09773972a2fa14",
+      "test_mes.py": "923993ae2d365e0624932f1b9d24542645cb6f20"
+    }
+  },
+  "actual_local_checks": {
+    "environment": "Python 3.13.5 / torch 2.10.0+cpu; NOT the original production runtime",
+    "component_tests": "29/29 PASS",
+    "old_source_regression": "two new strict-interface tests fail with original UnboundLocalError; both pass after fix",
+    "source_method_cases": "40/40 PASS: byte-verified upstream GPT.forward extracted without body edits, bound to tiny component doubles; old error reproduced, loss/base-gradient equality verified. NOT full native model construction.",
+    "source_method_optimizer_updates": 0,
+    "fixture_pipeline": "20 train paths / 20 evaluate paths / 40 conditions / 35 snapshots / 90 fixture optimizer updates PASS; NOT native learning",
+    "launcher_preservation": "21/21 PASS",
+    "original_runtime_prepare_after_fix": "NOT TESTED",
+    "native_20_training_runs": "NOT TESTED",
+    "H1_model_evaluation": "NOT TESTED",
+    "independent_cross_review": "DEFERRED"
+  },
+  "retry": {
+    "policy": "retain old directory and files byte-for-byte; isolated new worktree and explicit MES1_OUTPUT_DIR",
+    "new_worktree": "/workspaces/mythos-mes1-gptfix1-20261031",
+    "new_output": "/workspaces/OpenMythos/mythos_evidence/mes1_v1_gptfix1",
+    "phase": "prepare only",
+    "auto_train_or_merge": false
+  },
+  "formal_oracle": "BLOCKED / NOT_READY; FORMAL_ACCEPTANCE_READY=False"
+}
