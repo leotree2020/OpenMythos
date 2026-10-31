@@ -1,66 +1,87 @@
-# D1 checkpoint — native preparation received; Claude review next
+# D1 checkpoint — Claude review received; approved-code training handoff
 
 2026-10-31. Experiment MYTHOS-D1-DUAL-STATE-PROFILE-V1.
 
 ## Current decision
 
-**Owner-run native CPU prepare PASS. Actual uploaded prepared(1).json was completely parsed and hashed: 135 read-only record/source-copy assertions PASS, 0 FAIL, 1 inherited full-source-byte item NOT TESTED. Twelve native training trajectories, learned-state measurements and quality remain NOT TESTED. Claude Code D-specific review PENDING.**
+**Actual owner-supplied Claude Code report: APPROVE for executable commit596af7f8997ca793e880a6e1d80c25c7b2043329, with one LOW and four INFO findings, none blocking the12 planned CPU training runs. This time Claude reports receiving, hashing and checking the real preparation JSON, plus all six own/eight inherited source hashes. Native training, learned-state measurements and model quality remain NOT TESTED.** Approval is permission to enter the frozen training study, not evidence D works.
 
-Preparation handoff is complete. Do not rerun prepare, request the same JSON again, create another worktree, or launch training without the agreed actual Claude report and owner acknowledgement. This audit did not run any model, optimizer, profiler, data scoring or previous experiment. Preparing a review bundle is not evidence Claude has received it.
+No prepare rerun, same-file reupload, generic repeat review or new worktree is needed. Next action is ONLY the existing reviewed parent train phase, with the supplied actual report and explicit owner acknowledgement. This handoff did not run any native model, optimizer, training, development scoring or historical experiment.
 
-## 1. Git and frozen execution
+## 1. Git and immutable execution
 
-Repository leotree2020/OpenMythos; Draft PR24; branch mini-mythos-d1-dual-state-profile-cpu-20261031. Live head before this documentation update was395d60952f075ed6a37718fdd07ed2516bf2ef21. Base C1 checkpoint4790d0cfd34c90df7be64a18eccd02deb3b74a92. Changes remain isolated under research/mini_mythos/dual_state/.
+Repository leotree2020/OpenMythos; Draft PR24; branch mini-mythos-d1-dual-state-profile-cpu-20261031. Base C1 checkpoint4790d0cfd34c90df7be64a18eccd02deb3b74a92. Branch head was537fa6815cc9bf227716555e230181c90c91b8d3 before review registration.
 
-**Execution/review pin stays596af7f8997ca793e880a6e1d80c25c7b2043329.** Preserve the successfully prepared worktree /workspaces/mythos-d1-20261031 at that commit. Do not switch it to a documentation HEAD. Protocol first committed355d0f5478f28d89e4e75317bf66c09c85077540. Upstream sandyresearch/parcae@69284c13746e849104f738d6d1a347b1f457df76 remains read-only. No runtime/protocol/model/threshold edits in this update.
+**Execution/review pin stays596af7f8997ca793e880a6e1d80c25c7b2043329.** Keep the successfully prepared worktree `/workspaces/mythos-d1-20261031` there. Do not checkout a later documentation/helper HEAD. Protocol first355d0f5478f28d89e4e75317bf66c09c85077540; read-only upstream sandyresearch/parcae@69284c13746e849104f738d6d1a347b1f457df76. Frozen code, protocol, optimizer, seeds and criteria are unchanged.
 
-The full prior development checkpoint is preserved at395d60952f075ed6a37718fdd07ed2516bf2ef21:25 fixture component tests,18 launcher cases,fixture pipeline and expected local version-gate refusal. These are historical,not newly rerun. Prior C1/MES negative outcomes and their pending result reviews are unchanged; D was explicitly authorized separately by the owner. Claude Code replaces Grok; no extra Grok gate.
+- Prior preparation audit and full development lineage: checkpoint537fa6815cc9bf227716555e230181c90c91b8d3 and earlier395d60952f075ed6a37718fdd07ed2516bf2ef21. Historical135 audit checks,25 component tests and18 launcher cases are not newly rerun.
+- Actual review transcript: `evidence/D1_CLAUDE_REVIEW_OWNER_TRANSCRIPT_20261031.md`, committed539310a54492cd219b4e37c252985ac75b73ed7a. Transcript SHA256728d6960a88c997f5cea85d6fa1dcda57d3c5bfdc4378c6e319b9cffeaf57d0d.
+- Train-only convenience entry: `evidence/train_after_claude_20261031.sh`, committed6b6272a165189f348ba63e47490c75ae6667fa97. Its approval scope is separate from Claude's frozen-code review.
 
-## 2. Actual preparation evidence
+The transcript is the owner's pasted report with Markdown/HTML whitespace normalized. Claude's original scratchpad file, scripts, raw logs and authenticated identity were not obtained. No GitHub approval was submitted impersonating Claude. Source and preparation checks below are attributed to the reviewer rather than claimed as newly run by ChatGPT.
 
-Original upload prepared(1).json: **21,440 bytes**. Independently calculated SHA256 **d7ce57ca11316d0ff892bf35b26ec9ed1ef2f04a2b8587dd4671c7eae8b5a1d1**, exactly matching the owner's terminal digest. This establishes correspondence with the reported bytes,not authentication of every producer claim.
+## 2. Preparation and review evidence
 
-Production path /workspaces/OpenMythos/mythos_evidence/dual_state_v1/prepared.json. Producer records Python3.12.3/torch2.11.0+cpu/NumPy1.26.4/einops0.8.0,CPU one thread. Seeds2101/2202/2303; four arms GPT/P4/D0/D1. Code/upstream pins match. Review status PENDING Claude Code;training/quality NOT TESTED;scope old train/development only,no optimizer updates.
+Production preparation remains `/workspaces/OpenMythos/mythos_evidence/dual_state_v1/prepared.json`. Actual retained bytes re-read in this handoff:21,440 bytes,SHA256d7ce57ca11316d0ff892bf35b26ec9ed1ef2f04a2b8587dd4671c7eae8b5a1d1. This matches the previous owner terminal and the reviewer-reported received file `ccb08253-D1_prepared_20261031.json`. Byte correspondence is not producer authentication.
 
-Thirty-six unique native/reference cases cover3 seeds x P4/D0/D1 x depths2/4 x lengths6/9. All record PASS and max_gradient_error0. Three GPT masked-CE checks record PASS/error0. These are producer numerical records read by this auditor,NOT independent model re-execution. P4 compares to the original native path; D0/D1 compare to their respective explicitly unrolled two-state native-module references. Do NOT describe this as D0/D1 being equal to unmodified P4.
+Prepared source aggregate7b7660c5c5ddcd3ca599f45f82c6e8567bfd00e4b968204d600855d8e483e481. The reviewer reports checking all six own/eight inherited files, including the full m2_matched/experiment.py omitted from the earlier handoff artifact. That is new reviewer-reported coverage, not a retroactive rewrite of ChatGPT's earlier factory-byte NOT TESTED item. Raw initial tensors,data.json,pip-freeze were not independently supplied to Claude. Existing worker data/source/start checks stay active.
 
-Corresponding P4/D0/D1 base and full initialization digests match. All four arms' per-seed shared-IO records match. Raw starting tensors were not supplied. Actual learned behavior is still unknown.
+Claude reports strict JSON parsing,15/15 field checks,25/25 fixture tests and real fixed-model forward/backward diagnostics at seed2101 only, without any optimizer.step. It reports exact loss/logit/gradient/RNG equality against native P4 or its independent dual-state unroll, no hook leak even on error, D1 causality, and untrained state/sensitivity profiles. No native probes for2202/2303, prepare, train, evaluate, launcher execution, resume replay or model quality scoring.
 
-|Arm|Registered parameters|Gradient-present probe parameters|Forward FLOPs|Backward FLOPs|Step FLOPs|Projected 3000-update count, NOT a training result|
-|---|---:|---:|---:|---:|---:|---:|
-|GPT|65344|65344|24477696|48955392|73433088|220299264000|
-|P4|60224|51904|38043648|76087296|114130944|342392832000|
-|D0|60224|51904|38043648|76087296|114130944|342392832000|
-|D1|60224|51904|38043648|76087296|114130944|342392832000|
+Reviewer runtime was torch2.11.0+cu130 on CPU, bypassing the production version check for diagnostics. This is NOT production-build reproduction. Production remains Python3.12.3/torch2.11.0+cpu/NumPy1.26.4/einops0.8.0/CPU one thread. No runtime gate is relaxed.
 
-All three seed records agree. P4/D0/D1 match registered parameters and supported-op counters; they do NOT thereby match hardware work,walltime or peak memory. Each Parcae path has about55.42% more counted work per update than GPT. The whole four-arm study is SAME updates/data exposure,NOT equal counted compute. Do not rebudget now. Gradient presence is not nonzero gradient/effective capacity. Known8320 inactive Parcae parameters remain;no repair here.
+The historical prepared.json review_status=PENDING Claude Code must stay unchanged. The later training record separately archives the actual report bytes/hash and owner acknowledgement.
 
-## 3. Actual audit and remaining limits
+## 3. Findings and decisions — no hidden fixes
 
-Used standard-library code only: strict whole JSON parsing (duplicate/nonfinite rejection),file SHA,source aggregate,pins/environment records,seeds/arms/case membership,counts/arithmetic,starting identity pairing and fixed data metadata. Actual135 PASS,0 FAIL,1 NOT TESTED. This is bounded record verification,not scientific quality or full implementation acceptance.
+|ID|Status and disposition|
+|---|---|
+|R01 LOW|OPEN. Worker numerical failure is recorded FAIL, but the unchanged parent can report BLOCKED/exit2. This is a failure-classification defect, not a model-computation change. Reviewer explicitly found it nonblocking. Retain frozen reviewed source for this run. If triggered, stop, preserve both summary and worker evidence, and separately report numerical FAIL plus parent-classification defect; never call it NOT TESTED or automatically retry. No patch is claimed.|
+|R02 INFO|In D0,zero_a clears carried answer state. In D1 it clears that state AND its feedback into e+a. Cross-arm zero_a sensitivity does not isolate answer-state importance;zero is out-of-distribution. Report the joint perturbation explicitly. Reviewer values1.429 vs0.403 are UNTRAINED diagnostics,not learned D results. No new intervention is added here.|
+|R03 INFO|Same-prefix state profiles cover the six-digit prompt only. Call2 confidence/entropy use an unsupervised intermediate readout;some relative changes are zero by construction. Do not infer better correctness,convergence or specialization from confidence/zero-change alone.|
+|R04 INFO|Profile/trace cardinalities hold by loop construction but are not explicitly asserted in the frozen runner. Result audit must count the actual data:12 runs,36 snapshots,21 final conditions,36 learning profiles,27 latent profiles,six sensitivity groups,and3000-step traces. Missing measurements are missing evidence,not automatically PASS.|
+|R05 INFO|Exit0 means execution/measurement completion,even if all exploratory screens FAIL. D-vs-P4 changes routing and state together. Three seeds,old development data,unequal GPT compute and8320 inactive parameters remain. Candidate selection NOT ASSESSED.|
 
-Recomputed source aggregate **7b7660c5c5ddcd3ca599f45f82c6e8567bfd00e4b968204d600855d8e483e481**. Six own source/protocol byte copies from the retained development ZIP match uploaded SHA256 and freshly read pinned Git blob/size metadata. Seven inherited byte copies match uploaded SHA256. The eighth,m2_matched/experiment.py,is not present in that ZIP and was not freshly retrieved/byte-verified here; its declaration stays bound,not falsely marked independently verified.
+A future bookkeeping fix or new isolation experiment must have its own source identity; do not silently patch this prepared/reviewed run. No further generic pretraining review is required by this limited APPROVE. Prior MES/C1 result reviews remain separately DEFERRED.
 
-Data metadata:19977 train rows/10000 canonical pairs;1024 development questions/256 per carry category. data.json,initial tensors,pip-freeze and the owner's full filesystem were not independently obtained. No question labels were reconstructed or scored in this audit. Native/reference checks,hardware measurements,learning/correction/state-sensitivity profiles and resume replay were not run by this auditor.
+## 4. Frozen experiment and acceptance scope
 
-Conversation delivery contains exact production bytes at the review ZIP root as prepared.json,and separately as D1_prepared_20261031.json. It includes audit_prepared.py,audit_result.json,audit.log,source copies,INPUT_MANIFEST.json,SHA256SUMS.txt and focused Claude instructions. The historical development archive's blocked_native/prepared.json is NOT this production evidence and is not included as a competing preparation file in the new bundle.
+F(h,u) is one unchanged native adapter/shared-core call. P4 repeats F(h,e). D0 cycles z=F(z,e),a=F(a,z_new). D1 cycles z=F(z,e+a_old),a=F(a,z_new). Two work/answer cycles mean FOUR core calls,not eight. Initialize z=a=h0. No new parameters,auxiliary loss,damping,LoRA,learned gate,inactive-path repair,cross-example memory or TRM reproduction claim.
 
-## 4. Frozen mechanism and measurement plan
+|Arm|Seeds|Updates per seed|Recorded per-update count|Projected total per seed,not executed|
+|---|---|---:|---:|---:|
+|GPT|2101/2202/2303|3000|73433088|220299264000|
+|P4|2101/2202/2303|3000|114130944|342392832000|
+|D0|2101/2202/2303|3000|114130944|342392832000|
+|D1|2101/2202/2303|3000|114130944|342392832000|
 
-F(h,u) is one native injection/shared-core call; e is the prefix representation; initialize z=a=h0. P4 repeats F(h,e). D0 cycles z=F(z,e),a=F(a,z_new);D1 cycles z=F(z,e+a_old),a=F(a,z_new). Two work/answer cycles mean FOUR total core calls. No detach,new parameters,auxiliary loss,damping,LoRA,learned gate,inactive-path fix or cross-example memory. Latent a is not target truth or a textual reasoning trace. This is one dual-state variant,not TRM reproduction.
+Twelve trajectories,batch32,unchanged AdamW/clipping/FP32. P4/D0/D1 have matched registered parameters and supported-op counts,not necessarily latency/peak memory. GPT has lower counted work;the four-arm study is same data/updates,NOT equal compute. Keep3000 steps;no rebudgeting.
 
-GPT/P4/D0/D1 x3 new seeds=12 trajectories,3000 updates each,batch32,unchanged AdamW/clip/FP32/CPU1thread. Save36 full snapshots at300/1500/3000. Evaluate only after all12 finish:21 final conditions on the same1024 old development questions (21504 repeated answers),36 learning profiles,27 same-prefix latent profiles and6 final dual-state sensitivity groups. No H1/HC/H2/C1T or fresh-test claim.
+Save36 full model/optimizer/RNG/index snapshots at300/1500/3000. Only old19977-row training and1024-question development data. After all12 complete,a separate evaluate phase performs21 final conditions(21504 repeated answers),36 learning profiles,27 prompt-only state profiles,six final sensitivity groups. No H1/HC/H2/C1T. Correction/corruption compares separate depth2/depth4 generation policies,not in-place editing. Logical state bytes are not peak memory.
 
-State RMS/change/separation/cosine and next-token confidence are measurements,not proof of reasoning or correct state specialization. Full-answer depth2-to4 counts compare separate generation policies. Zero-state interventions before cycle2 assess local next-token sensitivity;noop must be identical. Logical state bytes are not actual peak memory. No new mechanism/threshold/seed search.
+Screens D0-P4,D1-P4,D1-D0 at depth4:mean>=1pp and every paired loss<=1pp,reference>99% ceiling handling. Execution and scientific screens remain separate. Candidate selection NOT ASSESSED;equal-compute/fresh-test/statistical/hardware-efficiency/depth-extrapolation claims remain NOT TESTED.
 
-Exploratory D0-P4,D1-P4,D1-D0 screens remain mean>=1pp and every loss<=1pp,reference>99% ceiling handling. **Exit0 means execution/measurement complete even if all screens FAIL;candidate selection NOT ASSESSED.** No statistical,hardware-efficiency,new-holdout or depth-extrapolation acceptance.
+## 5. Next single command and actual handoff tests
 
-## 5. Next single action
+Fetch the branch and extract `evidence/train_after_claude_20261031.sh` from6b6272a165189f348ba63e47490c75ae6667fa97; run it with `--start-training`. That explicit invocation acknowledges use of this limited APPROVE. It uses the existing596af7f worktree,checks existing prepared/data bytes,retrieves the actual registered transcript at539310a,and calls ONLY the unchanged parent `run_codespaces_cpu.sh train --review-report ... --reviewer ... --review-approved`.
 
-Send Claude Code the actual D1_prepared_20261031.json AND D1_Claude_Code_Review_After_Prepare_20261031.md (or the complete Mythos_D1_Prepare_Review_Handoff_20261031.zip). Ask it FIRST to list the received file names/sizes and independently hash the JSON. A request-only attachment is not preparation evidence. If the file is unavailable to Claude,retain that limitation explicitly;do not replace reading existing evidence with a repeated prepare run.
+No new worktree,checkout,source edit,dependency install,prepare,evaluate,manual worker,retry or resume. Existing training/partial evidence or console logs stop the helper before dispatch. Do not run concurrent copies. The report is temporary until the original parent copies it to review.md;only temporary handoff files are deleted. Original runtime/upstream/source/start guards remain active.
 
-Review fixed596af7f sources and necessary inherited interfaces:old-a/new-z routing,gradients/RNG/causality,training/snapshot/pairing,measurement interpretation and byte binding,complete-run barrier,independent output states. CPU fixture or no-update synthetic checks may be run with environment limitations explicit. No prepare/train/evaluate,optimizer.step,heldout scoring,source/protocol edits,commit/push/merge or GPU in review. Output actual APPROVE/CHANGES_REQUIRED/BLOCKED and stop. Previous MES/C1 approval is not a D approval.
+New helper checks actually executed locally:Bash syntax PASS and13/13 synthetic orchestration tests PASS,including exact report forwarding,explicit acknowledgement,wrong HEAD,dirty worktree,changed/missing inputs,partial evidence retention,report mismatch,missing environment,and propagation of exit1/2. Tests remap filesystem paths and mock Git/parent dispatch;they do not execute the production launcher or models. First test process hit a tool timeout before completion;its partial log is retained,not called PASS. Replacing the slow test-only Git stub with a shell stub completed all13 tests;production helper unchanged. Helper SHA2561742783d53f7216068c7295ca57a488c1a9256aeace402b73aedd14146ebb059.
 
-After a real D-specific report and owner acknowledgement,use the existing train phase with --review-report/--reviewer/--review-approved; do not invent approval or call a request a report. This checkpoint provides no automatic training command. Keep output directory dual_state_v1 and original prepared bytes unchanged.
+Expected next user result:`/workspaces/OpenMythos/mythos_evidence/dual_state_v1/training.json` plus terminal summary. This phase does NOT score development data or produce learned-state findings. No duplicate preparation or review needed.
 
-Formal Oracle BLOCKED/NOT_READY,FORMAL_ACCEPTANCE_READY=False. Keep PR24 Draft/unmerged. No G2 REAL,upstream/J1/Bench/R3/old-experiment edits,automatic merge,GPU expansion or E. No direct access to the owner's Codespaces or background execution claimed.
+## 6. Stage state
+
+|Item|Status|
+|---|---|
+|Native original-runtime preparation|PASS,owner execution and previous byte audit|
+|Claude D code review|APPROVE,actual owner-supplied report|
+|Claude preparation/source checks|PASS as reported;all six/eight source files covered|
+|R01 parent failure classification|OPEN/LOW;not patched|
+|Native12 training trajectories|NOT TESTED;not launched here|
+|Learned D profiles/quality/hardware efficiency|NOT TESTED|
+|Candidate selection|NOT ASSESSED|
+|Formal Oracle|BLOCKED/NOT_READY;FORMAL_ACCEPTANCE_READY=False|
+
+Claude Code replaces Grok by owner policy. Preserve old negative results and reviewer attributions. Keep PR24 Draft/unmerged. No G2 REAL,GPU expansion,upstream/J1/Bench/R3/old-experiment changes,automatic merge,hyperparameter search or E. No direct Codespaces access or background work claimed.
