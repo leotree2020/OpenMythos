@@ -1,15 +1,42 @@
-# MYTHOS-DEPTH-BUDGET-CPU-V1 checkpoint: ready for first formal run
+# MYTHOS-DEPTH-BUDGET-CPU-V1 — stopped: source-unit semantic FAIL
 
-The experiment still has **no model results**. Preparation1 remains BLOCKED at `2e28a6e865554c5315350c730075fbeecc1b5358`. The distinct isolated preparation recovery was preregistered at `445304332b7290c07ad7f77c3990ad733d1eaa15` and passed without changing either original environment. Corpus identity PASS;32-article input freeze PASS;16/16 development fixtures PASS. Formal model gates and scientific analysis NOT TESTED. `formal_run_started=False`.
+**Execution and record arithmetic PASS; source-article-unit integrity FAIL; article-level statistical interpretation NOT ACCEPTED.** The formal run finished and stopped. No samples were deleted, regrouped or reselected; no model, score or threshold was changed; no formal model run was retried.
 
-Base checkpoint: `2f7529bd057d52d6cfde14bf05c19ea10c3c08a7`. Branch: `mythos-depth-budget-cpu-v1`. The commit containing this checkpoint and the approved source/manifest is implementation freeze A; its exact SHA is recorded by the following execution reservation before any model invocation. Retrieve it via `git log -1 --format=%H -- research/mini_mythos/base_v01/depth_budget_v1/CHECKPOINT.md` at this stage.
+## Git and provenance
 
-Frozen runner SHA: `c6f55d688fbcb64212c09c910710351e550a385f9164e110232772de1d2fe2e7`. Auditor SHA: `2fe59e330f1f82e3078d44b16ba2965d36c928a981e69601f9a0bba63f625539`. Input JSON167672 bytes SHA `f38a1618d7904df7c530d9f0f322949a847befcb75e4177de2bc8e65bc53a315`, external location in INPUT_MANIFEST.json. Internal static review is recorded separately; this is not Claude/Grok/human review.
+- Branch: mythos-depth-budget-cpu-v1.
+- Restored base: 2f7529bd057d52d6cfde14bf05c19ea10c3c08a7.
+- Preparation1 BLOCKED history: 2e28a6e865554c5315350c730075fbeecc1b5358.
+- Isolated data-reader recovery protocol: 445304332b7290c07ad7f77c3990ad733d1eaa15.
+- Frozen implementation A: d53cbc75a69c74fa96e2f663cf63c8792dff25b4.
+- Execution reservation B: 95eaa48e2fae18902e25f849286ab37155d2db42.
+- Result/evidence commit: 94778a48b750fdf4f5ea32fcfa64348b91c16418.
+- This checkpoint is a subsequent documentation-only commit. Its exact SHA is the latest Git commit modifying this CHECKPOINT.md.
 
-Dependencies: original model environment remains Python3.12.3/Torch2.11.0+cpu/NumPy1.26.4/tokenizers0.23.2. New preparation-only venv uses PyArrow19.0.1, fixed wheel SHA and unchanged baseline NumPy/tokenizers via read-only .pth. Existing evaluation overlay remains untouched. New data-reader environment does not run the model. Full commands/actual imports/original inventories are in ENVIRONMENT_RECOVERY.json.
+Run: depth-budget-v1-20261101T125731Z, external root /workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z. Started2026-11-01T12:57:34Z; launcher completed13:03:26Z. Worker351.684430312seconds. formal_run_started=True; formal_run_completed=True. No active experiment processes in post-stop custody. Worktree was clean after result push; checkpoint commit should leave it clean again.
 
-Protected states: upstream clean at `69284c13746e849104f738d6d1a347b1f457df76`; B1 clean at `d88be474ebb2529c5b095e3732b1f25509f9b824`; PR24 head observed `4308099bfc90d9398f54a47f9272b6bd4582f7b9`, not operated on. No GPU, optimizer, B1 rerun, B2/D2-A or A5 relaxation.
+## Results and acceptance
 
-Unresolved: actual140M gates, depth scores and costs. WikiText is historical development data, pretraining overlap unknown; only one checkpoint is examined. ACT/controller/architectural superiority/fresh-test generalization are NOT TESTED. Historical D1, B1 A5 and partial CORE conclusions remain unchanged. Formal Oracle BLOCKED/NOT_READY; `FORMAL_ACCEPTANCE_READY=False`.
+16/16 artificial development fixtures PASS. Exact original63 state entries and144323136 parameters/61 unique tensors PASS. Nine real-model controls plus288 paired rows (297forwards) complete. Computational/record audit82 PASS/0 FAIL/0 BLOCKED within its stated scope. Independent saved-row arithmetic14 compared outputs exactly equal. Source/asset custody137 files, upstream/B1 checkouts and original package version/origin inventories PASS. This is not a full binary hash of all installed packages.
 
-Next unique instruction: reserve one fresh external run, verify clean freeze/source/input identity, then execute only this frozen CPU protocol once with the unchanged3600s launcher ceiling; stop the first formal BLOCKED/FAIL, save complete or partial evidence, independently audit, commit and checkpoint. Do not extend, retry or launch another model experiment in response to the result.
+On the32 frozen **segments**, mean NLL/PPL: depth2=3.5886484186670757/36.18513570663249; depth4=3.435093689707491/31.034320025691784; depth8=3.448185473707711/31.443285844944914. Depth8 beats depth4 on29/32segments; a few large opposite effects make the aggregate4−8 mean−0.013091784000219972. Do not choose4 from this average.
+
+Post-result original-source inspection found sample3's heading at row2150 (= 1 henry and capacitance C =) is a formula continuation in the same Constant k filter article as sample0 (row2093). The frozen rule was followed but was semantically wrong. Therefore32 segments cannot be claimed as32 independent source articles. **Source-unit gate FAIL; article-level bootstrap acceptance FAIL/NOT ACCEPTED.** Original interval outputs remain unchanged but must not be used as validated article-level confidence intervals. The exact true-article count has not been established.
+
+See RESULTS.md, POST_RESULT_REVIEW.md and evidence/SEMANTIC_SOURCE_GATE.json. A separate internal agent read the raw context and confirmed the issue; this is not Claude/Grok/human review. This is an identified input-processing defect, not a failed model forward or loss computation.
+
+## Evidence and dependencies
+
+38 files copied byte-for-byte into evidence/,4680109bytes total, with EVIDENCE_MANIFEST.json. All copied Git index blobs were checked against original size/SHA values, including explicitly added logs. rows.jsonl:3522313bytes, SHA256 fd77408d7fbf301c761004bd2e297f0e4b791ed7123ac941126e448c66372a51.
+
+Original corpus/body excerpts, selected token windows, weights and environments remain external. Input JSON167672bytes, SHA256 f38a1618d7904df7c530d9f0f322949a847befcb75e4177de2bc8e65bc53a315. Raw source-boundary check6136bytes, SHA256 81fa53b50fe89de58ae7b665a18c9031ad6c3a707ca88b4dae4118d53d2fb04e; only summary/line numbers/hash published to Git.
+
+Model environment remains Python3.12.3/Torch2.11.0+cpu/NumPy1.26.4/tokenizers0.23.2. Preparation1 failed because PyArrow26 requiredNumPy2. Isolated preparation recovery uses pinnedPyArrow19.0.1 in /workspaces/mythos-depth-data-cpu312, with original NumPy/tokenizer reused read-only. Neither existing model nor evaluation environment was modified. Wheel pin/age/hash/installation commands are in WHEEL_SELECTION.json and ENVIRONMENT_RECOVERY.json.
+
+Protected upstream remains69284c13746e849104f738d6d1a347b1f457df76; B1 remainsd88be474ebb2529c5b095e3732b1f25509f9b824; PR24 head observed4308099bfc90d9398f54a47f9272b6bd4582f7b9, not operated on. No GPU, optimizer, B1 rerun, B2/D2-A, upstream edit, weight/buffer replacement or A5 relaxation.
+
+## Unresolved and unique next instruction
+
+Unresolved: reliable source-article boundaries; representative independent data; confirmation of any depth effect; whether an implementable dynamic-depth policy benefits quality/cost. This stage implemented controlled compute-budget measurement inspired by OpenMythos, not trained ACT/LoRA/MoE or architecture replacement. Historical D1, B1 A5 and official CORE conclusions remain unchanged. Candidate selection NOT ASSESSED; equal-compute superiority, fresh-test generalization, statistical confirmation, hardware efficiency, new training/recovery and generation quality NOT TESTED here. Formal Oracle BLOCKED/NOT_READY; FORMAL_ACCEPTANCE_READY=False.
+
+**Next unique instruction:** begin a separately documented CPU data-only repair: audit all candidate title boundaries and surrounding context, design a general segmentation correction, test true titles/formula continuations/same-source identity, and freeze a corrected input manifest. Do not select or exclude by model scores; do not rerun the model, regroup V1 bootstrap or overwrite V1 results in that phase. A subsequent model experiment needs its own frozen protocol and run identity under the user's standing autonomous authorization; do not request repeated permission for this already authorized scope.
