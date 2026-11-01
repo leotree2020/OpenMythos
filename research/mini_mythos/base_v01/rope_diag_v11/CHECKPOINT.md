@@ -1,3 +1,20 @@
+# Latest checkpoint — official loading source trace completed
+
+Date: 2026-11-01. Branch: mythos-base-v01-rope-diag-v11. This commit records a read-only source phase after result checkpoint 02603d03aab9c3d6dc5638a76b86189a2c7622d8. The numerical diagnostic implementation remains d51cd388cde2e202a044ca148c29fd441acc440d and its execution HEAD f008592ae547513e3d51131b33735d6d748e6e01.
+
+Purpose: establish the official pretrained buffer loading contract. Environment: named Codespace source reads plus separate pinned GitHub source review, no Torch import or model execution in this phase. Input: upstream 69284c13746e849104f738d6d1a347b1f457df76. Expected: line-linked evidence for persistence, checkpoint key handling, saving and use; unknown artifact history kept explicit. Actual: persistent freqs_cis; evaluation loader loads the normalized complete checkpoint without excluding it; save_pretrained includes the state_dict; generation uses the existing buffer. Status: source trace PASS; proposed full-model restoration runtime check NOT TESTED. See LOAD_SEMANTICS_REVIEW.md and source_evidence/LOAD_SOURCE_AUDIT.json.
+
+Interpretation: source semantics support testing whether the official evaluation loading path faithfully restores the published artifact. They do not make the constructor's RoPE equal to the artifact, establish the artifact's creation history, or change B1 A5. The convenience entry point differs from receval and must not be substituted silently. strict=False does not verify complete key coverage; the next check must inspect normalized keys, shapes, types and all state bytes independently.
+
+Numerical results remain: one completed CPU run, G0–G5 PASS, 165/165 checks PASS; N/T/P/R/Q all fail the unchanged 1e-6 compatibility screen. Stored-buffer source explanation UNRESOLVED. B1 A5 BLOCKED; A3 overall/A8–A11/language quality NOT TESTED; Formal Oracle BLOCKED/NOT_READY; FORMAL_ACCEPTANCE_READY=False. No new numerical run, generation, training, GPU, upstream change, B1 rerun, B2/D2-A or PR #24 action occurred in this phase.
+
+Dependencies and protected pins are unchanged from the result checkpoint. Full artifact creation hardware, kernel, exact software/export/conversion history remain UNKNOWN; no publication-linked original environment trace was obtained. The source review is not empirical restoration validation.
+
+Next single instruction: implement and statically cross-review a separately frozen CPU official checkpoint restoration check against the existing local artifact and pinned receval loader. Require input/environment identity, collision-free normalized keys, complete key/shape/dtype agreement, bytewise equality of every restored state entry including RoPE, unchanged protected files and a result checkpoint. No forward, generation, optimizer, GPU, manual buffer assignment or original B1 runner invocation. Preserve historical A5 BLOCKED. Runtime execution of this next check has not occurred; all its acceptance items remain NOT TESTED. No Claude handoff or repeated permission loop is needed under the owner's standing autonomy instruction.
+
+---
+Prior result and implementation checkpoints preserved below.
+
 # Latest checkpoint — formal RoPE diagnostic completed, source explanation unresolved
 
 Date: 2026-11-01. Branch: mythos-base-v01-rope-diag-v11. Result checkpoint: this documentation/evidence commit; the execution HEAD was f008592ae547513e3d51131b33735d6d748e6e01 and the frozen implementation is d51cd388cde2e202a044ca148c29fd441acc440d.

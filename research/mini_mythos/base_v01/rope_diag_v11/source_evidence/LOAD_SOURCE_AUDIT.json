@@ -1,0 +1,508 @@
+{
+  "Purpose": "Read-only official persistent-buffer and load-path source audit",
+  "Environment": "Named target Codespace, stdlib file reads only; no model or Torch import",
+  "Input": "upstream 69284c13746e849104f738d6d1a347b1f457df76",
+  "Expected": "Identify constructor persistence and official checkpoint load/filter behavior with line references",
+  "Actual": {
+    "receval/models/parcae.py": {
+      "sha256": "14363edd0b425f6d264517ae6d8f941a394313899425e97aaff596efddb2b382",
+      "size": 8803,
+      "excerpts": [
+        {
+          "line": 1,
+          "text": "import json"
+        },
+        {
+          "line": 2,
+          "text": "import torch"
+        },
+        {
+          "line": 3,
+          "text": "from pathlib import Path"
+        },
+        {
+          "line": 4,
+          "text": "from typing import Optional, Union"
+        },
+        {
+          "line": 5,
+          "text": "from parcae_lm.models.parcae import Parcae, ParcaeConfig"
+        },
+        {
+          "line": 6,
+          "text": ""
+        },
+        {
+          "line": 7,
+          "text": "class ModelingParcae(Parcae):"
+        },
+        {
+          "line": 8,
+          "text": "    def __init__(self, config: ParcaeConfig, objective=None, gradient_checkpointing=False) -> None:"
+        },
+        {
+          "line": 9,
+          "text": "        if objective is None:"
+        },
+        {
+          "line": 10,
+          "text": "            objective = {\"ignore_index\": -100, \"z_regularization\": 0.0}"
+        },
+        {
+          "line": 11,
+          "text": "        super().__init__(config, objective, gradient_checkpointing)"
+        },
+        {
+          "line": 12,
+          "text": "        self._generation_config = None"
+        },
+        {
+          "line": 13,
+          "text": ""
+        },
+        {
+          "line": 14,
+          "text": "    @classmethod"
+        },
+        {
+          "line": 15,
+          "text": "    def from_pretrained(cls, pretrained_model_name_or_path: Union[str, Path], device=None, dtype=None, **kwargs):"
+        },
+        {
+          "line": 16,
+          "text": "        path = Path(pretrained_model_name_or_path)"
+        },
+        {
+          "line": 17,
+          "text": "        if not path.exists():"
+        },
+        {
+          "line": 18,
+          "text": "            from huggingface_hub import snapshot_download"
+        },
+        {
+          "line": 19,
+          "text": "            path = Path(snapshot_download(repo_id=str(pretrained_model_name_or_path), allow_patterns=[\"*.json\", \"*.bin\", \"*.safetensors\"]))"
+        },
+        {
+          "line": 20,
+          "text": "        from parcae_lm.models.config import RoPESettings"
+        },
+        {
+          "line": 21,
+          "text": "        with open(path / \"config.json\") as f:"
+        },
+        {
+          "line": 22,
+          "text": "            config_dict = json.load(f)"
+        },
+        {
+          "line": 23,
+          "text": "        if \"rope_settings\" in config_dict and isinstance(config_dict[\"rope_settings\"], dict):"
+        },
+        {
+          "line": 24,
+          "text": "            config_dict[\"rope_settings\"] = RoPESettings(**config_dict[\"rope_settings\"])"
+        },
+        {
+          "line": 25,
+          "text": "        config_dict.update(kwargs)"
+        },
+        {
+          "line": 26,
+          "text": "        for key in [\"_class_name\", \"init\"]:"
+        },
+        {
+          "line": 27,
+          "text": "            config_dict.pop(key, None)"
+        },
+        {
+          "line": 28,
+          "text": "        model = cls(ParcaeConfig(**config_dict))"
+        },
+        {
+          "line": 29,
+          "text": "        weights_path = None"
+        },
+        {
+          "line": 30,
+          "text": "        for name in [\"pytorch_model.bin\", \"model.safetensors\", \"model.bin\"]:"
+        },
+        {
+          "line": 31,
+          "text": "            if (path / name).exists():"
+        },
+        {
+          "line": 32,
+          "text": "                weights_path = path / name"
+        },
+        {
+          "line": 33,
+          "text": "                break"
+        },
+        {
+          "line": 34,
+          "text": "        if weights_path is None:"
+        },
+        {
+          "line": 35,
+          "text": "            raise FileNotFoundError(f\"No weights found in {path}\")"
+        },
+        {
+          "line": 36,
+          "text": "        if weights_path.suffix == \".safetensors\":"
+        },
+        {
+          "line": 37,
+          "text": "            from safetensors.torch import load_file"
+        },
+        {
+          "line": 38,
+          "text": "            state_dict = load_file(weights_path)"
+        },
+        {
+          "line": 39,
+          "text": "        else:"
+        },
+        {
+          "line": 40,
+          "text": "            state_dict = torch.load(weights_path, map_location=\"cpu\", weights_only=True)"
+        },
+        {
+          "line": 41,
+          "text": "        cleaned = {}"
+        },
+        {
+          "line": 42,
+          "text": "        for k, v in state_dict.items():"
+        },
+        {
+          "line": 43,
+          "text": "            for prefix in [\"module.\", \"_orig_mod.\", \"model.\"]:"
+        },
+        {
+          "line": 44,
+          "text": "                if k.startswith(prefix):"
+        },
+        {
+          "line": 45,
+          "text": "                    k = k[len(prefix):]"
+        },
+        {
+          "line": 46,
+          "text": "            cleaned[k] = v"
+        },
+        {
+          "line": 47,
+          "text": "        model.load_state_dict(cleaned, strict=False)"
+        },
+        {
+          "line": 48,
+          "text": "        if dtype:"
+        },
+        {
+          "line": 49,
+          "text": "            model = model.to(dtype=dtype)"
+        },
+        {
+          "line": 50,
+          "text": "        if device:"
+        },
+        {
+          "line": 51,
+          "text": "            model = model.to(device=device)"
+        },
+        {
+          "line": 52,
+          "text": "        model.eval()"
+        },
+        {
+          "line": 53,
+          "text": "        return model"
+        },
+        {
+          "line": 54,
+          "text": ""
+        },
+        {
+          "line": 55,
+          "text": "    def save_pretrained(self, save_directory: Union[str, Path]) -> None:"
+        },
+        {
+          "line": 56,
+          "text": "        save_dir = Path(save_directory)"
+        },
+        {
+          "line": 57,
+          "text": "        save_dir.mkdir(parents=True, exist_ok=True)"
+        },
+        {
+          "line": 58,
+          "text": "        config_dict = self.config.__getstate__()"
+        },
+        {
+          "line": 59,
+          "text": "        for key in [\"_class_name\", \"_recurrent_block_config\", \"init\"]:"
+        },
+        {
+          "line": 60,
+          "text": "            config_dict.pop(key, None)"
+        },
+        {
+          "line": 61,
+          "text": "        with open(save_dir / \"config.json\", \"w\") as f:"
+        },
+        {
+          "line": 62,
+          "text": "            json.dump(config_dict, f, indent=2, default=str)"
+        },
+        {
+          "line": 63,
+          "text": "        torch.save(self.state_dict(), save_dir / \"pytorch_model.bin\")"
+        },
+        {
+          "line": 64,
+          "text": ""
+        },
+        {
+          "line": 65,
+          "text": "    @property"
+        }
+      ]
+    },
+    "parcae_lm/models/parcae/parcae.py": {
+      "sha256": "c0d792379c3e965ec75bbe88dbdcf500392a12fd0c67f8a484543b2398470c3d",
+      "size": 31686,
+      "excerpts": [
+        {
+          "line": 90,
+          "text": "            self.lm_head = LinearCrossEntropyLoss("
+        },
+        {
+          "line": 91,
+          "text": "                config.n_embd,"
+        },
+        {
+          "line": 92,
+          "text": "                config.padded_vocab_size,"
+        },
+        {
+          "line": 93,
+          "text": "                ignore_index=objective[\"ignore_index\"],"
+        },
+        {
+          "line": 94,
+          "text": "                z_regularization=objective[\"z_regularization\"],"
+        },
+        {
+          "line": 95,
+          "text": "                logit_scale=config.init.logit_scale,"
+        },
+        {
+          "line": 96,
+          "text": "                init_method=config.init.fn(\"head\"),"
+        },
+        {
+          "line": 97,
+          "text": "                transposed_weight=not self.config.tie_embeddings,"
+        },
+        {
+          "line": 98,
+          "text": "            )"
+        },
+        {
+          "line": 99,
+          "text": "        else:"
+        },
+        {
+          "line": 100,
+          "text": "            self.lm_head = config.Linear("
+        },
+        {
+          "line": 101,
+          "text": "                config.n_embd, config.padded_vocab_size, bias=False, init_method=config.init.fn(\"head\")"
+        },
+        {
+          "line": 102,
+          "text": "            )"
+        },
+        {
+          "line": 103,
+          "text": "        if self.config.tie_embeddings:"
+        },
+        {
+          "line": 104,
+          "text": "            self.lm_head.weight = self.transformer.wte.weight"
+        },
+        {
+          "line": 105,
+          "text": "        self.objective = objective"
+        },
+        {
+          "line": 106,
+          "text": ""
+        },
+        {
+          "line": 107,
+          "text": "        self.max_seq_length = self.config.block_size"
+        },
+        {
+          "line": 108,
+          "text": "        self.gradient_checkpointing = gradient_checkpointing"
+        },
+        {
+          "line": 109,
+          "text": "        self.register_buffer(\"freqs_cis\", self._precompute_freqs_cis(), persistent=True)"
+        },
+        {
+          "line": 110,
+          "text": ""
+        },
+        {
+          "line": 111,
+          "text": "        self.step = 0"
+        },
+        {
+          "line": 112,
+          "text": "        self.monitoring = False"
+        },
+        {
+          "line": 113,
+          "text": "        self.latest_metrics = {}"
+        },
+        {
+          "line": 114,
+          "text": "        self.extreme_monitoring = False"
+        },
+        {
+          "line": 115,
+          "text": "        self.extreme_metrics = {}"
+        }
+      ]
+    },
+    "parcae_lm/modules/utils.py": {
+      "sha256": "e21f09ac8b6c33ac43837877c352c723a97218166a139dd0e9e8222dd7b3b2c5",
+      "size": 1518,
+      "excerpts": [
+        {
+          "line": 1,
+          "text": "import torch"
+        },
+        {
+          "line": 2,
+          "text": "from torch import Tensor"
+        },
+        {
+          "line": 3,
+          "text": ""
+        },
+        {
+          "line": 4,
+          "text": ""
+        },
+        {
+          "line": 5,
+          "text": "def precompute_freqs_cis(dim: int, end: int, theta: float = 10000.0, condense_ratio: int = 1):"
+        },
+        {
+          "line": 6,
+          "text": "    with torch.autocast(\"cuda\", enabled=False):"
+        },
+        {
+          "line": 7,
+          "text": "        inv_freqs = 1.0 / (theta ** (torch.arange(0, dim, 2, dtype=torch.float32) / dim))"
+        },
+        {
+          "line": 8,
+          "text": "        t = torch.arange(end, dtype=torch.float32, device=inv_freqs.device) / condense_ratio"
+        },
+        {
+          "line": 9,
+          "text": "        freqs = torch.outer(t, inv_freqs).float()"
+        },
+        {
+          "line": 10,
+          "text": "        return torch.stack([torch.cos(freqs)[None, :, None, :], torch.sin(freqs)[None, :, None, :]], dim=4)"
+        },
+        {
+          "line": 11,
+          "text": "        # equivalent to"
+        },
+        {
+          "line": 12,
+          "text": "        # freqs_cis = torch.polar(torch.ones_like(freqs), freqs)"
+        },
+        {
+          "line": 13,
+          "text": "        # cache = torch.stack([freqs_cis.real, freqs_cis.imag], dim=-1)"
+        },
+        {
+          "line": 14,
+          "text": ""
+        },
+        {
+          "line": 15,
+          "text": ""
+        },
+        {
+          "line": 16,
+          "text": "# @torch.compile # pick this up from general compile call?"
+        },
+        {
+          "line": 17,
+          "text": "def apply_rotary_emb_complex_like(q: Tensor, k: Tensor, freqs_cis: Tensor) -> tuple[Tensor, Tensor]:"
+        },
+        {
+          "line": 18,
+          "text": "    with torch.autocast(\"cuda\", enabled=False):"
+        },
+        {
+          "line": 19,
+          "text": "        # https://github.com/t-vi/lit-llama/blob/9e5eb8b1b376d8ae24e79278008b7190961062e3/lit_llama/model.py"
+        },
+        {
+          "line": 20,
+          "text": "        qk_r2 = torch.cat([q, k], dim=2).unflatten(dim=-1, sizes=(-1, 2)).float()  # cast to float32 for smooth skin"
+        },
+        {
+          "line": 21,
+          "text": "        rotated_qk_r2 = torch.stack("
+        },
+        {
+          "line": 22,
+          "text": "            ["
+        },
+        {
+          "line": 23,
+          "text": "                qk_r2[..., 0] * freqs_cis[..., 0] - qk_r2[..., 1] * freqs_cis[..., 1],"
+        },
+        {
+          "line": 24,
+          "text": "                qk_r2[..., 1] * freqs_cis[..., 0] + qk_r2[..., 0] * freqs_cis[..., 1],"
+        },
+        {
+          "line": 25,
+          "text": "            ],"
+        },
+        {
+          "line": 26,
+          "text": "            -1,"
+        },
+        {
+          "line": 27,
+          "text": "        ).flatten(3)"
+        },
+        {
+          "line": 28,
+          "text": "        rotated_qk = rotated_qk_r2"
+        },
+        {
+          "line": 29,
+          "text": "        return torch.split(rotated_qk.type_as(q), q.shape[2], dim=2)  # type: ignore"
+        }
+      ]
+    }
+  },
+  "Status": "PASS for source retrieval only; runtime behavior NOT TESTED in this phase",
+  "git_status_after": ""
+}
