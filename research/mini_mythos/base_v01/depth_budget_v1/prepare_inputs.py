@@ -2,6 +2,8 @@
 import argparse
 import hashlib
 import json
+import sys
+import importlib.metadata
 from pathlib import Path
 
 import pyarrow.parquet as pq
@@ -65,7 +67,8 @@ def prepare(corpus, tokenizer_file):
         assert len(sample['tokens']) == 257 and all(type(x) is int and 0 <= x < 32768 for x in sample['tokens'])
         sample['window_ids_sha256'] = sha(canonical_ids(sample['tokens']))
         sample['input_ids_sha256'] = sha(canonical_ids(sample['tokens'][:256]))
-        sample['target_ids_sha256'] = sha(canonical_ids(sample['tokens'][1:257][64:256]))
+        sample['target_ids_sha256'] = sha(canonical_ids(sample['tokens'][1:257]))
+        sample['scored_target_ids_sha256'] = sha(canonical_ids(sample['tokens'][1:257][64:256]))
     return {'experiment': 'MYTHOS-DEPTH-BUDGET-CPU-V1',
             'data_label': 'historical development; no fresh-test or pretraining-contamination-free claim',
             'dataset': 'Salesforce/wikitext', 'config': 'wikitext-2-raw-v1', 'split': 'test',
@@ -85,13 +88,16 @@ def main():
     args = parser.parse_args()
     assert not args.output.exists(), 'Never overwrite an input freeze'
     result = prepare(args.corpus, args.tokenizer)
+    assert 'torch' not in sys.modules, 'Preparation unexpectedly imported Torch'
     raw = (json.dumps(result, ensure_ascii=False, sort_keys=True, indent=2) + '\n').encode('utf-8')
     with args.output.open('xb') as target:
         target.write(raw)
     print(json.dumps({'Status': 'PASS', 'samples': len(result['samples']),
                       'source_rows': result['source_rows'], 'articles': result['articles'],
                       'eligible_articles': result['eligible_articles'],
-                      'bytes': len(raw), 'sha256': sha(raw), 'model_execution': False}))
+                      'bytes': len(raw), 'sha256': sha(raw), 'model_execution': False,
+                      'torch_imported': 'torch' in sys.modules,
+                      'packages': {name: importlib.metadata.version(name) for name in ('numpy', 'pyarrow', 'tokenizers')}}))
 
 
 if __name__ == '__main__':
