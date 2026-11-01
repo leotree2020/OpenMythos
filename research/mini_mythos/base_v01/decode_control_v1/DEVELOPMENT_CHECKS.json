@@ -1,0 +1,520 @@
+{
+  "Purpose": "Verify quality aggregation using synthetic Boolean labels, not model outputs",
+  "Environment": {
+    "python": "3.10.11",
+    "platform": "Windows-10-10.0.26300-SP0",
+    "libraries": "standard library only",
+    "utc": "2026-11-01T07:10:32.303274+00:00"
+  },
+  "Input": {
+    "source": "acceptance_review_local\\decode_control_work\\quality_summary.py",
+    "source_sha256": "95226a18137109f0fea2e00722b189c8078af98776afda694b3f5026145d725c",
+    "source_bytes": 9532,
+    "base_fixture": "G panel0 IDs1..12 all auto/reviews true; S/P panels1..3 IDs1..12; auto true for IDs<=9; both reviews true"
+  },
+  "Expected": "Every synthetic acceptance, incompleteness, disagreement and schema case matches its explicit expected result",
+  "Actual": {
+    "checks": 17,
+    "passed": 17,
+    "failed": 0
+  },
+  "Status": "PASS",
+  "checks": [
+    {
+      "Purpose": "all_panels_at_nine",
+      "Environment": "Development-only standard-library synthetic check",
+      "Input": {
+        "description": "All seven panels present; S/P each have exactly 9 joint passes per panel.",
+        "rows": 84,
+        "sha256": "af6e5a54aa1198c769898c5a01c5e0a8dd22b71ca521510c51e43885b98d3c99"
+      },
+      "Expected": {
+        "projection": {
+          "assessment_status": "PASS",
+          "primary_quality_status": "PASS",
+          "secondary_quality_status": "PASS",
+          "S_counts": {
+            "1": 9,
+            "2": 9,
+            "3": 9
+          },
+          "P_min": 9
+        },
+        "input_unchanged": true,
+        "strict_json_serializable": true
+      },
+      "Actual": {
+        "projection": {
+          "assessment_status": "PASS",
+          "primary_quality_status": "PASS",
+          "secondary_quality_status": "PASS",
+          "S_counts": {
+            "1": 9,
+            "2": 9,
+            "3": 9
+          },
+          "P_min": 9
+        },
+        "input_unchanged": true,
+        "strict_json_serializable": true
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "pooled_28_cannot_rescue_eight",
+      "Environment": "Development-only standard-library synthetic check",
+      "Input": {
+        "description": "S panel joint counts are 8/10/10; P remains 9/9/9.",
+        "rows": 84,
+        "sha256": "aca568e812efb0dfbcf6796f96f318fca17a5b95230e7f42142348a15f7ae3bf"
+      },
+      "Expected": {
+        "projection": {
+          "status": "FAIL",
+          "counts": {
+            "1": 8,
+            "2": 10,
+            "3": 10
+          },
+          "pooled": 28,
+          "minimum": 8,
+          "majority_rule_used": false
+        },
+        "input_unchanged": true,
+        "strict_json_serializable": true
+      },
+      "Actual": {
+        "projection": {
+          "status": "FAIL",
+          "counts": {
+            "1": 8,
+            "2": 10,
+            "3": 10
+          },
+          "pooled": 28,
+          "minimum": 8,
+          "majority_rule_used": false
+        },
+        "input_unchanged": true,
+        "strict_json_serializable": true
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "disagreement_review_a",
+      "Environment": "Development-only standard-library synthetic check",
+      "Input": {
+        "description": "S panel1 prompt9 changes review_a from True to False.",
+        "rows": 84,
+        "sha256": "613d1f49119892ea5f0c0ecb357a6e7700b08c1fea217b73c1fdeeb8eace5261"
+      },
+      "Expected": {
+        "projection": {
+          "policy": "FAIL",
+          "panel": "FAIL",
+          "joint": 8,
+          "disagreements": [
+            9
+          ]
+        },
+        "input_unchanged": true,
+        "strict_json_serializable": true
+      },
+      "Actual": {
+        "projection": {
+          "policy": "FAIL",
+          "panel": "FAIL",
+          "joint": 8,
+          "disagreements": [
+            9
+          ]
+        },
+        "input_unchanged": true,
+        "strict_json_serializable": true
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "disagreement_review_b",
+      "Environment": "Development-only standard-library synthetic check",
+      "Input": {
+        "description": "S panel1 prompt9 changes review_b from True to False.",
+        "rows": 84,
+        "sha256": "fbe8aa9b2cf285476636f3212a2d89de022bf26a62144e1dce3f495b2778c7e2"
+      },
+      "Expected": {
+        "projection": {
+          "policy": "FAIL",
+          "panel": "FAIL",
+          "joint": 8,
+          "disagreements": [
+            9
+          ]
+        },
+        "input_unchanged": true,
+        "strict_json_serializable": true
+      },
+      "Actual": {
+        "projection": {
+          "policy": "FAIL",
+          "panel": "FAIL",
+          "joint": 8,
+          "disagreements": [
+            9
+          ]
+        },
+        "input_unchanged": true,
+        "strict_json_serializable": true
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "missing_row_is_blocked",
+      "Environment": "Development-only standard-library synthetic check",
+      "Input": {
+        "description": "Remove S panel1 prompt9.",
+        "rows": 83,
+        "sha256": "0e5060c8e2f735f5cbf94adc99f1c76025bb1a9fee803c18f68de463262ef330"
+      },
+      "Expected": {
+        "projection": {
+          "input": "BLOCKED",
+          "assessment": "BLOCKED",
+          "primary": "BLOCKED",
+          "panel": "BLOCKED"
+        },
+        "input_unchanged": true,
+        "strict_json_serializable": true
+      },
+      "Actual": {
+        "projection": {
+          "input": "BLOCKED",
+          "assessment": "BLOCKED",
+          "primary": "BLOCKED",
+          "panel": "BLOCKED"
+        },
+        "input_unchanged": true,
+        "strict_json_serializable": true
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "duplicate_row_is_blocked",
+      "Environment": "Development-only standard-library synthetic check",
+      "Input": {
+        "description": "Append a duplicate S panel1 prompt9.",
+        "rows": 85,
+        "sha256": "fadf20b5f4174fcd899420bd13c6bc597b1cf7d70479601f7a5a93c293d20056"
+      },
+      "Expected": {
+        "projection": {
+          "assessment": "BLOCKED",
+          "primary": "BLOCKED",
+          "panel": "BLOCKED"
+        },
+        "input_unchanged": true,
+        "strict_json_serializable": true
+      },
+      "Actual": {
+        "projection": {
+          "assessment": "BLOCKED",
+          "primary": "BLOCKED",
+          "panel": "BLOCKED"
+        },
+        "input_unchanged": true,
+        "strict_json_serializable": true
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "null_review_is_not_tested",
+      "Environment": "Development-only standard-library synthetic check",
+      "Input": {
+        "description": "S panel1 prompt9 review_a is explicitly null.",
+        "rows": 84,
+        "sha256": "3695f354317a77d03f8c3071191ecab59e1e190e79a7485015b0d916c051756b"
+      },
+      "Expected": {
+        "projection": {
+          "assessment": "NOT TESTED",
+          "primary": "NOT TESTED",
+          "panel": "NOT TESTED",
+          "joint_so_far": 8,
+          "complete": false
+        },
+        "input_unchanged": true,
+        "strict_json_serializable": true
+      },
+      "Actual": {
+        "projection": {
+          "assessment": "NOT TESTED",
+          "primary": "NOT TESTED",
+          "panel": "NOT TESTED",
+          "joint_so_far": 8,
+          "complete": false
+        },
+        "input_unchanged": true,
+        "strict_json_serializable": true
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "missing_field_not_pending_null",
+      "Environment": "Development-only standard-library synthetic check",
+      "Input": {
+        "description": "Delete required review_a field from S panel1 prompt9.",
+        "rows": 84,
+        "sha256": "d54eaa44f4c574333660086fa137a2d578a2c054b0bf40b1db7e682fb888b0b6"
+      },
+      "Expected": {
+        "projection": {
+          "assessment": "BLOCKED",
+          "panel": "BLOCKED"
+        },
+        "input_unchanged": true,
+        "strict_json_serializable": true
+      },
+      "Actual": {
+        "projection": {
+          "assessment": "BLOCKED",
+          "panel": "BLOCKED"
+        },
+        "input_unchanged": true,
+        "strict_json_serializable": true
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "string_label_is_not_boolean",
+      "Environment": "Development-only standard-library synthetic check",
+      "Input": {
+        "description": "S panel1 prompt9 review_a becomes string false.",
+        "rows": 84,
+        "sha256": "d6ae5ce8c97c4f9913238e560dfe4374978b304bf4192bd3077f16a458fc7ba2"
+      },
+      "Expected": {
+        "projection": {
+          "assessment": "BLOCKED",
+          "panel": "BLOCKED"
+        },
+        "input_unchanged": true,
+        "strict_json_serializable": true
+      },
+      "Actual": {
+        "projection": {
+          "assessment": "BLOCKED",
+          "panel": "BLOCKED"
+        },
+        "input_unchanged": true,
+        "strict_json_serializable": true
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "unexpected_policy_blocks_matrix",
+      "Environment": "Development-only standard-library synthetic check",
+      "Input": {
+        "description": "Append an extra UNKNOWN-policy row.",
+        "rows": 85,
+        "sha256": "ec8e97f46cb95aad7efcf097a113be6bf7fa0d615b8faba967fa5beed66f8381"
+      },
+      "Expected": {
+        "projection": {
+          "assessment": "BLOCKED",
+          "primary": "BLOCKED"
+        },
+        "input_unchanged": true,
+        "strict_json_serializable": true
+      },
+      "Actual": {
+        "projection": {
+          "assessment": "BLOCKED",
+          "primary": "BLOCKED"
+        },
+        "input_unchanged": true,
+        "strict_json_serializable": true
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "sampling_panel_zero_is_invalid",
+      "Environment": "Development-only standard-library synthetic check",
+      "Input": {
+        "description": "Move S panel1 prompt9 to S panel0.",
+        "rows": 84,
+        "sha256": "ccc2ae0cd098591dd306e70eae0cba09a4e4e04359d5c71f2109f29b1e720f90"
+      },
+      "Expected": {
+        "projection": {
+          "assessment": "BLOCKED",
+          "primary": "BLOCKED"
+        },
+        "input_unchanged": true,
+        "strict_json_serializable": true
+      },
+      "Actual": {
+        "projection": {
+          "assessment": "BLOCKED",
+          "primary": "BLOCKED"
+        },
+        "input_unchanged": true,
+        "strict_json_serializable": true
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "boolean_prompt_id_is_invalid",
+      "Environment": "Development-only standard-library synthetic check",
+      "Input": {
+        "description": "S panel1 prompt9 ID becomes Boolean True, not integer 1.",
+        "rows": 84,
+        "sha256": "abae43c08f8d58d228d192338c2080985a30e95b926b2f3cc15ee2b473d4bfde"
+      },
+      "Expected": {
+        "projection": {
+          "assessment": "BLOCKED",
+          "primary": "BLOCKED"
+        },
+        "input_unchanged": true,
+        "strict_json_serializable": true
+      },
+      "Actual": {
+        "projection": {
+          "assessment": "BLOCKED",
+          "primary": "BLOCKED"
+        },
+        "input_unchanged": true,
+        "strict_json_serializable": true
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "secondary_fail_does_not_relabel_primary",
+      "Environment": "Development-only standard-library synthetic check",
+      "Input": {
+        "description": "S 9/9/9; P 9/8/9; both fully reviewed.",
+        "rows": 84,
+        "sha256": "2b8da748c056b9f3d01aa591133f3c7b3ce1f5c38b2909bd0ddba75812b66b38"
+      },
+      "Expected": {
+        "projection": {
+          "assessment_status": "PASS",
+          "primary_quality_status": "PASS",
+          "secondary_quality_status": "FAIL"
+        },
+        "input_unchanged": true,
+        "strict_json_serializable": true
+      },
+      "Actual": {
+        "projection": {
+          "assessment_status": "PASS",
+          "primary_quality_status": "PASS",
+          "secondary_quality_status": "FAIL"
+        },
+        "input_unchanged": true,
+        "strict_json_serializable": true
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "greedy_quality_fail_is_reference_only",
+      "Environment": "Development-only standard-library synthetic check",
+      "Input": {
+        "description": "G has zero automatic passes, S/P remain 9/9/9.",
+        "rows": 84,
+        "sha256": "3ae18260fc90d3ac62c062b00d4b82bfb1fc03c7910df82c6c35f65fcb87cbbe"
+      },
+      "Expected": {
+        "projection": {
+          "assessment_status": "PASS",
+          "primary_quality_status": "PASS",
+          "secondary_quality_status": "PASS",
+          "reference": "FAIL"
+        },
+        "input_unchanged": true,
+        "strict_json_serializable": true
+      },
+      "Actual": {
+        "projection": {
+          "assessment_status": "PASS",
+          "primary_quality_status": "PASS",
+          "secondary_quality_status": "PASS",
+          "reference": "FAIL"
+        },
+        "input_unchanged": true,
+        "strict_json_serializable": true
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "empty_matrix_is_blocked",
+      "Environment": "Development-only standard-library synthetic check",
+      "Input": {
+        "description": "No rows supplied.",
+        "rows": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "Expected": {
+        "projection": {
+          "assessment": "BLOCKED",
+          "primary": "BLOCKED"
+        },
+        "input_unchanged": true,
+        "strict_json_serializable": true
+      },
+      "Actual": {
+        "projection": {
+          "assessment": "BLOCKED",
+          "primary": "BLOCKED"
+        },
+        "input_unchanged": true,
+        "strict_json_serializable": true
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "non_list_is_blocked",
+      "Environment": "Development-only standard-library synthetic check",
+      "Input": {
+        "description": "An object is supplied instead of the required list.",
+        "rows": 0,
+        "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+      },
+      "Expected": {
+        "projection": {
+          "assessment": "BLOCKED",
+          "input": "BLOCKED"
+        },
+        "input_unchanged": true,
+        "strict_json_serializable": true
+      },
+      "Actual": {
+        "projection": {
+          "assessment": "BLOCKED",
+          "input": "BLOCKED"
+        },
+        "input_unchanged": true,
+        "strict_json_serializable": true
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "No numerical or tokenizer module imported",
+      "Environment": "Development process sys.modules",
+      "Input": [
+        "torch",
+        "tokenizers",
+        "numpy"
+      ],
+      "Expected": "All absent",
+      "Actual": {
+        "torch": false,
+        "tokenizers": false,
+        "numpy": false
+      },
+      "Status": "PASS"
+    }
+  ],
+  "scientific_result": "NOT TESTED",
+  "target_or_model_execution": false
+}
