@@ -1,0 +1,15 @@
+# MYTHOS-CPU-LOAD-INTEGRITY-V1 — implementation frozen
+
+Date: 2026-11-01. Branch: mythos-base-v01-cpu-load-v1. Base checkpoint: a20ec43914f8e7bb5a7c17dedd27f1acf2a95ec3. Frozen implementation commit A: aa26e7023d4f634dd6f65e259e5a04f47da2578d. This checkpoint is documentation commit B; its full SHA is reported separately.
+
+Purpose: prepare the separately authorized CPU complete checkpoint restoration check. Environment: specified Codespace, source/AST checks only before freezing; the frozen Python 3.12.3 / torch 2.11.0+cpu environment is reserved for formal execution. Input: pinned official evaluation loader, original weight/config artifacts and a20ec439. Expected: unmodified official load method, independent reference, collision-free keys, full parameter/buffer/alias coverage, direct complete byte checks and first-stop sealing. Actual: source and documentation independently statically reviewed, identified issues corrected before freeze, final APPROVE; local and target AST/hash checks PASS. Status: implementation/static preparation PASS; runtime L0–L5 NOT TESTED; formal_run_started=False.
+
+Files: run_load_check.py, state_checks.py, PROTOCOL.md, README_USAGE.md, STATIC_REVIEW.md, implementation_evidence/RECOVERY.json, STATIC_AUDIT.json and SOURCE_MANIFEST.json. Source was staged locally outside synced sources and verified/frozen in the target checkout. No Torch/new-module import, fixture or model execution has occurred in this new stage. Official source is imported from its pinned file under a separate module name without changing its method.
+
+Git: reused /workspaces/mythos-base-v01-rope-diag-v11 for the new isolated branch. All stage changes are under research/mini_mythos/base_v01/load_integrity_v1. Prior diagnostic remote remains at a20ec439. Protected B1 stays d88be474ebb2529c5b095e3732b1f25509f9b824; upstream stays 69284c13746e849104f738d6d1a347b1f457df76. New branch is normally pushed; no PR.
+
+Dependency basis: existing CPU environment and full B1 dependency inventory; requirements.lock SHA-256 84440f8945041ed314c29b205c5244e074116ede023d5aae0b11b633b4d6a51e. Formal L0 must reverify it and current resources. Historical training/export environment remains UNKNOWN and is not an automatic blocker for restoration fidelity.
+
+Unresolved: actual runtime construction compatibility, complete state restoration, alias preservation, finite values and byte equality. Original B1 A5 remains BLOCKED at unchanged 1e-6; B1 A3 overall/A8–A11, forward/generation/language quality/training/resume remain NOT TESTED. Formal Oracle BLOCKED/NOT_READY; FORMAL_ACCEPTANCE_READY=False. No old B1/RoPE rerun, upstream edit, GPU, B2/D2-A or PR #24 action.
+
+Next single instruction: on the named Codespace, execute the frozen implementation A exactly once with the frozen CPU interpreter and exclusive run claim per README_USAGE.md. If any guard is BLOCKED/FAIL, stop and preserve evidence; do not repair or retry after results. Review/hash all produced evidence, commit the public bundle and result checkpoint, push normally, then stop. The owner explicitly authorized this stage; no Claude handoff or further permission prompt is needed.
