@@ -1,0 +1,11 @@
+# Frozen CPU diagnostic execution
+
+Use the designated Codespace only. Preserve preparation1 BLOCKED. Preparation2 input JSON is external; INPUT_MANIFEST.json fixes exact path/size/hash. The model uses the original CPU environment, never the new data-preparation venv or evaluation overlay. Development tests use artificial tensors only.
+
+1. Read current checkpoint/protocol/static review and all development evidence. Verify clean frozen upstream, original asset hashes, source manifest and frozen implementation commit. Record current repository execution head after an execution-reservation document; do not modify the source or run directories during execution.
+2. Create a fresh external operator directory. Copy the unchanged previously validated mythos_launch.py and verify SHA2568083b948eebdf08c2d14a79d940ccead72db5f10c6bac8d9061816b6c9ea05c3. Save run spec with absolute repo, upstream, model_dir, tokenizer_path, inputs_path, source_manifest_path, run_dir; exact inputs_sha256, freeze_commit and expected_head. Worker run_dir must not yet exist.
+3. Launcher config fixes command `[original_python, '-I', '-B', frozen_run_depth_budget_py, '--spec', absolute_spec]`, cwd to the frozen repo and timeout_seconds3600. Set protocol environment variables before launching. Save command/environment/PID/UTC, launcher outputs, claim and completion. No retry, extra row or budget extension.
+4. After the child stops, run the frozen stdlib auditor with --run, --inputs and an unused --output JSON path. Do not modify original records. Independently retain parent completion and post-stop process/resource/file/environment custody. On any formal BLOCKED/FAIL stop; preserve partial rows without generating success summaries.
+5. Copy compact evidence byte-for-byte into this isolated research directory, explicitly add ignored stdout.log/stderr.log with git add -f, and compare Git blob hashes to the evidence manifest. Preserve corpus, token windows, binary weights and environments externally; back up the selected input JSON outside Git if useful. Commit results then a checkpoint, push normally, verify remote SHA and clean status. No PR creation/merge.
+
+PASS means the registered engineering gate passed. Depth quality/cost interpretations require the actual paired scores; no universal PPL threshold or ACT-efficiency claim is introduced.

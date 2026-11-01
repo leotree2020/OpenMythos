@@ -54,6 +54,74 @@ class FakeModel(torch.nn.Module):
 
 
 class HelperTests(unittest.TestCase):
+    def test_parameter_inventory_counts_tied_parameter_once(self):
+        model = torch.nn.Module()
+        model.weight = torch.nn.Parameter(torch.zeros((2, 3)))
+        model.weight_alias = model.weight
+        model.bias = torch.nn.Parameter(torch.zeros(2))
+        model.register_buffer("not_a_parameter", torch.ones(11))
+        self.assertEqual(runner.parameter_inventory(model),
+                         {"parameter_count": 8, "unique_parameter_tensors": 2,
+                          "parameter_names": ["bias", "weight"]})
+
+    def test_runtime_guard_rejects_changed_version_and_modes(self):
+        fake = mock.Mock()
+        fake.__version__ = "2.11.0+cpu"
+        values = {"get_default_device": "cpu", "get_default_dtype": "torch.float32",
+                  "get_num_threads": 2, "get_num_interop_threads": 1,
+                  "are_deterministic_algorithms_enabled": True,
+                  "is_deterministic_algorithms_warn_only_enabled": False,
+                  "is_autocast_enabled": False}
+        for name, value in values.items():
+            getattr(fake, name).return_value = value
+        fake.cuda.is_available.return_value = False
+        with mock.patch.object(runner.platform, "python_version", return_value="3.12.3"):
+            actual = runner.runtime_snapshot(fake)
+        self.assertTrue(runner.runtime_matches(actual))
+        fake.is_autocast_enabled.assert_any_call("cpu")
+        fake.is_autocast_enabled.assert_any_call("cuda")
+        for key, value in (("python_version", "3.12.4"), ("torch_version", "2.11.0"),
+                           ("default_device", "cuda"), ("deterministic_algorithms", False),
+                           ("deterministic_warn_only", True), ("autocast_cpu_enabled", True),
+                           ("intraop_threads", 1)):
+            self.assertFalse(runner.runtime_matches({**actual, key: value}), key)
+
+    def test_package_inventory_preserves_origin_and_duplicates(self):
+        class Distribution:
+            def __init__(self, name, version, location):
+                self.metadata, self.version, self.location = {"Name": name}, version, location
+            def locate_file(self, suffix):
+                return self.location
+        with tempfile.TemporaryDirectory() as folder:
+            first, second = Path(folder) / "base", Path(folder) / "overlay"
+            distributions = [Distribution("NumPy", "1.26.4", first),
+                             Distribution("NumPy", "2.0.0", second),
+                             Distribution("torch", "2.11.0+cpu", first)]
+            with mock.patch.object(runner.importlib.metadata, "distributions", return_value=distributions):
+                before = runner.package_inventory()
+                distributions[1].version = "2.0.1"
+                after = runner.package_inventory()
+            self.assertEqual(len(before["entries"]), 3)
+            self.assertEqual([item["version"] for item in before["entries"]], ["1.26.4", "2.0.0", "2.11.0+cpu"])
+            self.assertEqual(before["entries"][1]["location"], str(second.resolve()))
+            self.assertNotEqual(before["aggregate_sha256"], after["aggregate_sha256"])
+
+    def test_journal_binds_formal_row_context_without_leaking_to_preservation(self):
+        with tempfile.TemporaryDirectory() as folder:
+            run = runner.Run({}, Path(folder))
+            try:
+                run.phase = "formal"
+                run.context = {"article_index": 9, "replica": 2, "depth": 4}
+                run.check("fixture formal check", True)
+                run.phase, run.context = "preservation", {}
+                run.check("fixture preservation check", True)
+            finally:
+                run.rows.close()
+                run.checks.close()
+            records = [json.loads(line) for line in (Path(folder) / "checks.jsonl").read_text().splitlines()]
+            self.assertEqual(records[0]["Input"], {"phase": "formal", "article_index": 9, "replica": 2, "depth": 4})
+            self.assertEqual(records[1]["Input"], {"phase": "preservation"})
+
     def test_shift_and_score_window_known_binary_distribution(self):
         log_two = float(torch.tensor(math.log(2), dtype=torch.float32))
         logits = torch.tensor([[[0.0, 9.0], [log_two, 0.0], [0.0, 0.0]]])

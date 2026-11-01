@@ -36,6 +36,21 @@ REQUIRED_CHECKS = {
     'control causality depth 4', 'control causality depth 8',
     'state exact restore', 'state invariant', 'protected files invariant',
     'upstream invariant', 'repo invariant', 'complete formal coverage',
+    'actual parameter inventory', 'CPU runtime after import',
+    'CPU runtime after load', 'CPU runtime after evaluation', 'package inventory invariant',
+}
+FORMAL_CHECKS = (
+    'forward shape dtype and finite', 'forward validation consumes no RNG',
+    'actual h0 and block coverage', 'paired actual h0 and CPU RNG',
+    'independent double NLL equality', 'scoring consumes no CPU RNG',
+)
+EXPECTED_RUNTIME = {
+    'python_version': '3.12.3', 'torch_version': '2.11.0+cpu',
+    'default_device': 'cpu', 'default_dtype': 'torch.float32',
+    'intraop_threads': 2, 'interop_threads': 1,
+    'deterministic_algorithms': True, 'deterministic_warn_only': False,
+    'autocast_cpu_enabled': False, 'autocast_cuda_enabled': False,
+    'cuda_available': False,
 }
 
 
@@ -77,6 +92,7 @@ class Audit:
         self.run, self.inputs = run, inputs
         self.checks, self.failures, self.blockers = [], [], []
         self.bindings, self.actual = {}, {}
+        self.journal = []
 
     def issue(self, reason, actual=None, blocked=False):
         (self.blockers if blocked else self.failures).append({'reason': reason, 'actual': actual})
@@ -100,6 +116,17 @@ class Audit:
         raw = self.read(path)
         return strict_json(raw) if raw is not None else None
 
+    def check_terminal(self, completion):
+        status = completion.get('status')
+        blocked = status in (None, 'BLOCKED', 'NOT TESTED')
+        self.check('Successful runner terminal status', 'PASS', status, status == 'PASS', blocked=blocked)
+        for field, expected in [('error', None), ('cleanup_errors', [])]:
+            present = field in completion
+            self.check('Clean runner terminal field ' + field, expected,
+                       {'present': present, 'value': completion.get(field)},
+                       present and completion[field] == expected,
+                       blocked=not present or blocked)
+
     def check_recorded_checks(self, completion):
         collected = []
         for field in ('control_checks', 'preservation_checks'):
@@ -119,6 +146,7 @@ class Audit:
                            {'recorded': len(actual) if isinstance(actual, list) else None, 'equal': actual == expected},
                            actual == expected, blocked=actual is None)
             collected = journal
+            self.journal = journal
         names = []
         for item in collected:
             if not isinstance(item, dict) or not isinstance(item.get('name'), str):
@@ -135,8 +163,22 @@ class Audit:
         missing = sorted(REQUIRED_CHECKS - set(names))
         self.check('Required control and preservation checks present', sorted(REQUIRED_CHECKS),
                    {'name_counts': dict(Counter(names)), 'missing': missing}, not missing, blocked=True)
+        for depth in DEPTHS:
+            records = [item for item in collected if isinstance(item, dict)
+                       and item.get('name') == 'control causality depth ' + str(depth)]
+            self.check('One causal-prefix check at depth ' + str(depth), 1, len(records), len(records) == 1,
+                       blocked=not records)
+            if len(records) == 1:
+                value = records[0].get('Actual')
+                valid = (isinstance(value, dict) and value.get('prefix_tokens') == 128
+                         and digest_text(value.get('baseline_prefix_sha256'))
+                         and value.get('baseline_prefix_sha256') == value.get('mutated_prefix_sha256')
+                         and value.get('bytewise_equal') is True and value.get('h0_equal') is True
+                         and value.get('rng_after_equal') is True)
+                self.check('Recorded causal-prefix digests agree at depth ' + str(depth),
+                           '128-token prefix: equal valid digests plus byte/h0/RNG comparisons', value, valid)
 
-    def check_state(self, completion):
+    def check_state(self, completion, environment):
         before, after = self.load(self.run / 'state_before.json'), self.load(self.run / 'state_after.json')
         for label, state in [('before', before), ('after', after)]:
             if state is None:
@@ -163,9 +205,21 @@ class Audit:
             valid = valid and state['aggregate_sha256'] == canonical_digest(entries)
             self.check('Recorded state manifest structure ' + label, '63 typed, shaped, hashed entries',
                        {'state_count': state.get('state_count'), 'aggregate_sha256': state.get('aggregate_sha256')}, valid)
+            parameter_names = state.get('parameter_names')
+            parameter_valid = (valid and isinstance(parameter_names, list) and len(parameter_names) == 61
+                               and all(isinstance(name, str) for name in parameter_names)
+                               and len(set(parameter_names)) == 61 and parameter_names == sorted(parameter_names)
+                               and all(name in entries for name in parameter_names))
+            counted = sum(math.prod(entries[name]['shape']) for name in parameter_names) if parameter_valid else None
+            parameter_valid = (parameter_valid and counted == 144323136
+                               and state.get('parameter_count') == 144323136 and state.get('unique_parameter_tensors') == 61)
+            self.check('Measured unique parameter inventory ' + label,
+                       {'parameter_count': 144323136, 'unique_parameter_tensors': 61},
+                       {'parameter_count': state.get('parameter_count'), 'unique_parameter_tensors': state.get('unique_parameter_tensors'),
+                        'counted_from_unique_names_and_shapes': counted}, parameter_valid,
+                       blocked=parameter_names is None)
         if isinstance(before, dict) and isinstance(after, dict):
-            same = (before.get('entries') == after.get('entries')
-                    and before.get('aggregate_sha256') == after.get('aggregate_sha256'))
+            same = before == after
             self.check('Recorded parameters and buffers preserved', 'identical before/after manifests',
                        {'identical': same}, same)
             for label, state in [('before', before), ('after', after)]:
@@ -173,6 +227,120 @@ class Audit:
                 self.check('Completion state hash binding ' + label, state.get('aggregate_sha256'), reported,
                            reported == state.get('aggregate_sha256') and digest_text(reported),
                            blocked=reported is None)
+            self.check('Environment original state digest binding', before.get('aggregate_sha256'),
+                       environment.get('state_before_sha256'),
+                       environment.get('state_before_sha256') == before.get('aggregate_sha256')
+                       and digest_text(environment.get('state_before_sha256')),
+                       blocked='state_before_sha256' not in environment)
+            records = [item for item in self.journal if isinstance(item, dict)
+                       and item.get('name') == 'actual parameter inventory']
+            self.check('One measured parameter inventory check', 1, len(records), len(records) == 1,
+                       blocked=not records)
+            if len(records) == 1:
+                expected = {name: before.get(name) for name in ('parameter_count', 'unique_parameter_tensors', 'parameter_names')}
+                self.check('Parameter inventory check/state binding', expected, records[0].get('Actual'),
+                           records[0].get('Actual') == expected)
+
+    def check_runtime_and_packages(self, environment):
+        snapshots = [('runtime_after_import', environment.get('runtime_after_import')),
+                     ('runtime_after_load', environment.get('runtime_after_load'))]
+        for name, phase in [('CPU runtime after import', 'runtime_after_import'),
+                            ('CPU runtime after load', 'runtime_after_load'),
+                            ('CPU runtime after evaluation', 'runtime_after_evaluation')]:
+            records = [item for item in self.journal if isinstance(item, dict) and item.get('name') == name]
+            self.check('One actual runtime check ' + name, 1, len(records), len(records) == 1,
+                       blocked=not records)
+            if len(records) == 1:
+                value = records[0].get('Actual')
+                if phase in environment:
+                    self.check('Runtime check/environment binding ' + name, environment[phase], value,
+                               value == environment[phase])
+                else:
+                    snapshots.append((phase, value))
+        for phase, value in snapshots:
+            valid = (isinstance(value, dict)
+                     and all(value.get(name) == expected and type(value.get(name)) is type(expected)
+                             for name, expected in EXPECTED_RUNTIME.items())
+                     and isinstance(value.get('executable'), str) and bool(value['executable'])
+                     and isinstance(value.get('prefix'), str) and bool(value['prefix']))
+            self.check('Actual runtime getters ' + phase, EXPECTED_RUNTIME, value, valid,
+                       blocked=value is None)
+        packages = {}
+        for label in ('before', 'after'):
+            value = self.load(self.run / ('packages_' + label + '.json'))
+            packages[label] = value
+            if value is None:
+                continue
+            entries = value.get('entries') if isinstance(value, dict) else None
+            valid = (isinstance(entries, list) and bool(entries)
+                     and all(isinstance(entry, dict) and all(isinstance(entry.get(k), str) and bool(entry[k])
+                                                            for k in ('name', 'version', 'location')) for entry in entries))
+            if valid:
+                valid = (entries == sorted(entries, key=lambda entry: (entry['name'].casefold(), entry['version'], entry['location']))
+                         and digest_text(value.get('aggregate_sha256'))
+                         and value['aggregate_sha256'] == canonical_digest(entries))
+            self.check('Measured package inventory ' + label, 'canonical sorted distribution entries and matching SHA256',
+                       {'entries': len(entries) if isinstance(entries, list) else None,
+                        'aggregate_sha256': value.get('aggregate_sha256') if isinstance(value, dict) else None}, valid)
+        before, after = packages['before'], packages['after']
+        if isinstance(before, dict) and isinstance(after, dict):
+            self.check('Installed package inventory preserved', 'before and after exactly equal',
+                       {'equal': before == after}, before == after)
+            self.check('Environment package inventory binding', before.get('aggregate_sha256'),
+                       environment.get('packages_before_sha256'),
+                       environment.get('packages_before_sha256') == before.get('aggregate_sha256')
+                       and digest_text(environment.get('packages_before_sha256')),
+                       blocked='packages_before_sha256' not in environment)
+
+    def check_formal_journal(self, rows):
+        grouped = {name: {} for name in FORMAL_CHECKS}
+        errors = []
+        for item in self.journal:
+            if not isinstance(item, dict) or item.get('name') not in grouped:
+                continue
+            context = item.get('Input')
+            if not isinstance(context, dict) or context.get('phase') != 'formal':
+                continue
+            a, r, d = context.get('article_index'), context.get('replica'), context.get('depth')
+            if type(a) is not int or not 0 <= a < ARTICLES or type(r) is not int or not 0 <= r < 3 or type(d) is not int or d not in DEPTHS:
+                errors.append({'reason': 'invalid formal check context', 'name': item['name'], 'context': context})
+                continue
+            key = (a, r, d)
+            entries = grouped[item['name']].setdefault(key, [])
+            entries.append(item)
+            if len(entries) > 1:
+                errors.append({'reason': 'duplicate mandatory row check', 'name': item['name'], 'key': key})
+            if key not in rows:
+                # Interrupted forwards can have check records without a completed row.
+                self.issue('Formal check has no completed row', {'name': item['name'], 'key': key}, blocked=True)
+                continue
+            row, value, name = rows[key], item.get('Actual'), item['name']
+            if name == 'forward shape dtype and finite':
+                okay = isinstance(value, dict) and value.get('shape') == [1, 256, 32768] and value.get('dtype') == 'torch.float32' and value.get('depth') == d
+            elif name == 'actual h0 and block coverage':
+                okay = (isinstance(value, dict) and value.get('h0_calls') == 1
+                        and value.get('h0_sha256') == row.get('h0_sha256') and value.get('block_calls') == row.get('block_calls'))
+            elif name == 'paired actual h0 and CPU RNG':
+                okay = (isinstance(value, dict) and value.get('article_index') == a and value.get('replica') == r and value.get('depth') == d
+                        and value.get('identity') == [row.get(field) for field in ('h0_sha256', 'rng_before_sha256', 'rng_after_sha256')])
+            elif name == 'independent double NLL equality':
+                expected = item.get('Expected')
+                okay = (isinstance(value, dict) and value.get('scored_tokens') == TARGETS and finite(value.get('max_abs_error'))
+                        and 0 <= value['max_abs_error'] <= ARITHMETIC_TOLERANCE
+                        and isinstance(expected, dict) and expected.get('atol') == ARITHMETIC_TOLERANCE
+                        and expected.get('rtol') == 0 and expected.get('scored_tokens') == TARGETS)
+            else:
+                okay = item.get('status') == 'PASS' and item.get('Status') == 'PASS'
+            if not okay:
+                errors.append({'reason': 'mandatory check does not bind to row', 'name': name, 'key': key, 'actual': value})
+        self.check('Mandatory row checks match recorded numerical/RNG evidence', 'no duplicates or contradictory bindings',
+                   errors, not errors)
+        expected_keys = {(a, r, d) for a in range(ARTICLES) for r in range(3) for d in DEPTHS}
+        for name, mapping in grouped.items():
+            missing = sorted(expected_keys - set(mapping))
+            self.check('All formal row checks: ' + name, 288,
+                       {'unique_row_contexts': len(mapping), 'records': sum(len(v) for v in mapping.values()), 'missing': missing},
+                       not missing and len(mapping) == 288 and all(len(v) == 1 for v in mapping.values()), blocked=True)
 
     def check_protected(self, environment):
         before = self.load(self.run / 'protected_before.json')
@@ -271,6 +439,16 @@ class Audit:
                    {'articles': len(samples)}, valid_inputs)
         if not valid_inputs:
             return
+        token_hash_errors = []
+        for index, sample in enumerate(samples):
+            for field, tokens in [('input_ids_sha256', sample['tokens'][:256]),
+                                  ('target_ids_sha256', sample['tokens'][1:257]),
+                                  ('scored_target_ids_sha256', sample['tokens'][65:257])]:
+                if sample.get(field) != canonical_digest(tokens):
+                    token_hash_errors.append({'article_index': index, 'field': field, 'actual': sample.get(field)})
+        self.check('Frozen input, full shifted target and scored target hashes',
+                   '256 input / 256 shifted target / 192 scored target IDs independently hashed',
+                   token_hash_errors, not token_hash_errors)
         self.check('Unique source articles', ARTICLES, len({s['article_id'] for s in samples}),
                    len({s['article_id'] for s in samples}) == ARTICLES)
         environment = self.load(self.run / 'environment.json')
@@ -278,11 +456,13 @@ class Audit:
             expected_env = {'device': 'cpu', 'dtype': 'torch.float32', 'threads': 2, 'interop': 1,
                             'deterministic': True, 'autocast': False, 'forced_attention_backend': False,
                             'upstream_commit': UPSTREAM, 'torch': '2.11.0+cpu', 'weights_sha256': WEIGHTS,
-                            'autocast_cpu_enabled': False,
+                            'autocast_cpu_enabled': False, 'actual_parameter_count': 144323136,
+                            'unique_parameter_tensors': 61,
                             'inputs_sha256': self.bindings[str(self.inputs)]['sha256']}
             for key, expected in expected_env.items():
                 self.check('Environment binding ' + key, expected, environment.get(key),
-                           environment.get(key) == expected, blocked=key not in environment)
+                           environment.get(key) == expected and type(environment.get(key)) is type(expected),
+                           blocked=key not in environment)
             for key in ('freeze_commit', 'execution_head'):
                 self.check('Valid provenance ' + key, '40-character Git SHA', environment.get(key),
                            digest_text(environment.get(key), 40), blocked=key not in environment)
@@ -295,11 +475,12 @@ class Audit:
             self.issue('Missing environment object', blocked=environment is None)
         completion = self.load(self.run / 'completion.json')
         completion = completion if isinstance(completion, dict) else {}
-        self.check('Successful runner terminal status', 'PASS', completion.get('status'),
-                   completion.get('status') == 'PASS', blocked=completion.get('status') in (None, 'BLOCKED', 'NOT TESTED'))
+        self.check_terminal(completion)
         self.check_recorded_checks(completion)
-        self.check_state(completion)
-        self.check_protected(environment if isinstance(environment, dict) else {})
+        environment = environment if isinstance(environment, dict) else {}
+        self.check_state(completion, environment)
+        self.check_runtime_and_packages(environment)
+        self.check_protected(environment)
         control_count = self.check_controls(completion)
         raw = self.read(self.run / 'rows.jsonl')
         records = []
@@ -328,6 +509,7 @@ class Audit:
                         'seed': SEEDS[r] + 100000 * a, 'order': list(order), 'order_position': order.index(d),
                         'input_ids_sha256': canonical_digest(sample['tokens'][:256]),
                         'target_ids_sha256': canonical_digest(sample['tokens'][1:257]),
+                        'scored_target_ids_sha256': canonical_digest(sample['tokens'][65:257]),
                         'block_calls': {'prelude': 2, 'core': 2 * d, 'coda': 2}}
             errors = [field for field, value in expected.items() if row.get(field) != value]
             if position >= len(expected_order) or key != expected_order[position]:
@@ -358,6 +540,7 @@ class Audit:
         self.check('Recorded row identities, arithmetic and metadata', 'no contradictions', row_errors, not row_errors)
         self.check('Complete formal coverage', 288, {'records': len(records), 'unique': len(by_key), 'missing': missing},
                    len(records) == len(by_key) == 288 and not missing, blocked=True)
+        self.check_formal_journal(by_key)
         pairing_errors = []
         for a in range(ARTICLES):
             for r in range(3):

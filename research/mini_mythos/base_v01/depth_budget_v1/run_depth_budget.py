@@ -2,10 +2,12 @@
 import argparse
 import datetime
 import hashlib
+import importlib.metadata
 import itertools
 import json
 import math
 import os
+import platform
 from pathlib import Path
 import resource
 import signal
@@ -22,6 +24,8 @@ TOKENIZER = "e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77"
 SEEDS = (3101, 3202, 3303)
 DEPTHS = (2, 4, 8)
 ORDERS = tuple(itertools.permutations(DEPTHS))
+PARAMETER_COUNT = 144323136
+PARAMETER_TENSORS = 61
 
 
 class Stop(Exception):
@@ -73,6 +77,43 @@ def tensor_bytes(tensor):
 
 def tensor_hash(tensor):
     return hashlib.sha256(tensor_bytes(tensor)).hexdigest()
+
+
+def package_inventory():
+    """Read distribution metadata only; retain duplicates and their actual roots."""
+    entries = [{"name": dist.metadata["Name"], "version": dist.version,
+                "location": str(Path(dist.locate_file("")).resolve())}
+               for dist in importlib.metadata.distributions()]
+    if any(not item["name"] or not item["version"] for item in entries):
+        raise Stop("BLOCKED", "Incomplete installed distribution metadata")
+    entries.sort(key=lambda item: (item["name"].casefold(), item["version"], item["location"]))
+    return {"entries": entries, "aggregate_sha256": json_hash(entries)}
+
+
+def runtime_snapshot(torch):
+    return {"python_version": platform.python_version(), "torch_version": str(torch.__version__),
+            "executable": sys.executable, "prefix": sys.prefix,
+            "default_device": str(torch.get_default_device()), "default_dtype": str(torch.get_default_dtype()),
+            "intraop_threads": torch.get_num_threads(), "interop_threads": torch.get_num_interop_threads(),
+            "deterministic_algorithms": torch.are_deterministic_algorithms_enabled(),
+            "deterministic_warn_only": torch.is_deterministic_algorithms_warn_only_enabled(),
+            "autocast_cpu_enabled": torch.is_autocast_enabled("cpu"),
+            "autocast_cuda_enabled": torch.is_autocast_enabled("cuda"),
+            "cuda_available": torch.cuda.is_available()}
+
+
+def runtime_matches(actual):
+    expected = {"python_version": "3.12.3", "torch_version": "2.11.0+cpu", "default_device": "cpu",
+                "default_dtype": "torch.float32", "intraop_threads": 2, "interop_threads": 1,
+                "deterministic_algorithms": True, "deterministic_warn_only": False,
+                "autocast_cpu_enabled": False, "autocast_cuda_enabled": False, "cuda_available": False}
+    return all(actual.get(key) == value for key, value in expected.items())
+
+
+def parameter_inventory(model):
+    parameters = list(model.named_parameters(remove_duplicate=True))
+    return {"parameter_count": sum(tensor.numel() for _, tensor in parameters),
+            "unique_parameter_tensors": len(parameters), "parameter_names": sorted(name for name, _ in parameters)}
 
 
 def normalize_checkpoint(raw):
@@ -141,6 +182,7 @@ class Run:
         self.control_forwards = self.total_forwards = self.formal_rows = 0
         self.control_checks, self.preservation_checks, self.control_records = [], [], []
         self.phase = "preflight"
+        self.context = {}
         self.checks = (root / "checks.jsonl").open("x", encoding="utf-8", buffering=1)
         self.rows = (root / "rows.jsonl").open("x", encoding="utf-8", buffering=1)
         self.before = self.after = None
@@ -148,7 +190,7 @@ class Run:
     def check(self, name, okay, actual=None, expected=True, status="FAIL"):
         row = {"name": name, "status": "PASS" if okay else status,
                "Purpose": name, "Environment": "CPU FP32; threads2 interop1; no autocast; no forced SDPA backend",
-               "Input": {"phase": self.phase}, "Expected": expected, "Actual": actual,
+               "Input": {"phase": self.phase, **self.context}, "Expected": expected, "Actual": actual,
                "Status": "PASS" if okay else status}
         self.checks.write(json.dumps(row, allow_nan=False) + "\n")
         if self.phase == "controls":
@@ -296,20 +338,27 @@ def execute(run):
     os.environ["CUDA_VISIBLE_DEVICES"] = ""
     os.environ["OMP_NUM_THREADS"] = "2"
     os.environ["MKL_NUM_THREADS"] = "2"
+    sys.path.insert(0, str(upstream))
+    packages_before = package_inventory()
+    save(root / "packages_before.json", packages_before)
     import torch
     torch.set_default_device("cpu")
     torch.set_default_dtype(torch.float32)
     torch.set_num_threads(2)
     torch.set_num_interop_threads(1)
-    torch.use_deterministic_algorithms(True)
-    run.check("CPU runtime", not torch.cuda.is_available() and torch.get_num_threads() == 2
-              and torch.get_num_interop_threads() == 1 and torch.get_default_dtype() == torch.float32,
-              {"torch": torch.__version__, "threads": torch.get_num_threads(), "interop": torch.get_num_interop_threads()})
-    sys.path.insert(0, str(upstream))
+    torch.use_deterministic_algorithms(True, warn_only=False)
+    runtime_after_import = runtime_snapshot(torch)
+    run.check("CPU runtime after import", runtime_matches(runtime_after_import), runtime_after_import)
     from receval.models.parcae import ModelingParcae
     raw = torch.load(model_dir / "pytorch_model.bin", map_location="cpu", weights_only=True)
     normalized = normalize_checkpoint(raw)
     model = ModelingParcae.from_pretrained(model_dir, device="cpu", dtype=None)
+    runtime_after_load = runtime_snapshot(torch)
+    run.check("CPU runtime after load", runtime_matches(runtime_after_load), runtime_after_load)
+    parameters_before = parameter_inventory(model)
+    run.check("actual parameter inventory", parameters_before["parameter_count"] == PARAMETER_COUNT
+              and parameters_before["unique_parameter_tensors"] == PARAMETER_TENSORS,
+              parameters_before, {"parameter_count": PARAMETER_COUNT, "unique_parameter_tensors": PARAMETER_TENSORS})
     run.check("official model eval configuration", type(model) is ModelingParcae and not model.training
               and all(not part.training for part in model.modules()) and model.config.mean_recurrence == 8
               and model.config.state_init == "like-init"
@@ -317,17 +366,24 @@ def execute(run):
               {"mean_recurrence": model.config.mean_recurrence, "state_init": model.config.state_init})
     with torch.no_grad():
         run.before = state_snapshot(torch, model, normalized)
+        run.before.update(parameters_before)
     run.check("state exact restore", True, {"state_count": run.before["state_count"], "aggregate_sha256": run.before["aggregate_sha256"]})
     save(root / "state_before.json", run.before)
     del raw, normalized
-    environment = {"python": sys.version, "torch": torch.__version__, "device": "cpu", "dtype": "torch.float32",
-                   "threads": 2, "interop": 1, "deterministic": True, "autocast": False,
+    environment = {"python": sys.version, "torch": torch.__version__, "device": runtime_after_load["default_device"],
+                   "dtype": runtime_after_load["default_dtype"], "threads": runtime_after_load["intraop_threads"],
+                   "interop": runtime_after_load["interop_threads"], "deterministic": runtime_after_load["deterministic_algorithms"],
+                   "autocast": runtime_after_load["autocast_cpu_enabled"],
                    "forced_attention_backend": False, "inputs_sha256": spec["inputs_sha256"],
                    "freeze_commit": spec["freeze_commit"], "execution_head": repo_before["head"],
                    "upstream_commit": UPSTREAM, "source_manifest_sha256": protected_before[str(manifest_path)]["sha256"],
                    "state_before_sha256": run.before["aggregate_sha256"], "weights_sha256": WEIGHTS,
                    "timing_includes_readonly_observer": True,
-                   "autocast_cpu_enabled": torch.is_autocast_enabled("cpu")}
+                   "autocast_cpu_enabled": runtime_after_load["autocast_cpu_enabled"],
+                   "runtime_after_import": runtime_after_import, "runtime_after_load": runtime_after_load,
+                   "packages_before_sha256": packages_before["aggregate_sha256"],
+                   "actual_parameter_count": parameters_before["parameter_count"],
+                   "unique_parameter_tensors": parameters_before["unique_parameter_tensors"]}
     run.check("autocast remains disabled", not environment["autocast_cpu_enabled"])
     save(root / "environment.json", environment)
     with torch.no_grad():
@@ -356,10 +412,18 @@ def execute(run):
                                                              control_name="causal%d_base" % depth)
             changed, changed_info, changed_after = run.forward(torch, model, mutated, depth, control_rng, True,
                                                               control_name="causal%d_mut" % depth)
+            baseline_prefix = tensor_bytes(baseline[:, :128])
+            mutated_prefix = tensor_bytes(changed[:, :128])
+            causal_actual = {"prefix_tokens": 128,
+                             "baseline_prefix_sha256": hashlib.sha256(baseline_prefix).hexdigest(),
+                             "mutated_prefix_sha256": hashlib.sha256(mutated_prefix).hexdigest(),
+                             "bytewise_equal": baseline_prefix == mutated_prefix,
+                             "h0_equal": base_info["h0_sha256"] == changed_info["h0_sha256"],
+                             "rng_after_equal": base_after == changed_after}
             run.check("control causality depth " + str(depth),
-                      tensor_bytes(baseline[:, :128]) == tensor_bytes(changed[:, :128])
-                      and base_info["h0_sha256"] == changed_info["h0_sha256"] and base_after == changed_after)
-            del baseline, changed
+                      causal_actual["bytewise_equal"] and causal_actual["h0_equal"] and causal_actual["rng_after_equal"],
+                      causal_actual)
+            del baseline, changed, baseline_prefix, mutated_prefix
         del observed
         run.check("exact control forward count", run.control_forwards == 9, run.control_forwards, 9)
         run.phase = "formal"
@@ -374,12 +438,13 @@ def execute(run):
                 reference = None
                 order = ORDERS[(index * 3 + replica) % len(ORDERS)]
                 for order_position, depth in enumerate(order):
+                    run.context = {"article_index": index, "replica": replica, "depth": depth}
                     logits, info, after = run.forward(torch, model, x, depth, rng, True)
                     identity = (info["h0_sha256"], info["rng_before_sha256"], info["rng_after_sha256"])
                     if reference is None:
                         reference = identity
                     run.check("paired actual h0 and CPU RNG", identity == reference,
-                              {"article": index, "replica": replica, "depth": depth, "identity": identity})
+                              {"article_index": index, "replica": replica, "depth": depth, "identity": identity})
                     metrics = score_token_metrics(torch, logits, labels)
                     lse, target_logits, nll, independent = (metrics[name] for name in
                                                            ("logsumexp", "target_logits", "nll", "independent"))
@@ -392,7 +457,8 @@ def execute(run):
                     row = {"article_index": index, "article_id": sample["article_id"], "replica": replica,
                            "replica_seed": base_seed, "seed": seed, "depth": depth, "order": list(order),
                            "order_position": order_position, "input_ids_sha256": json_hash(ids[:256]),
-                           "target_ids_sha256": json_hash(ids[1:257]), **{k: info[k] for k in
+                           "target_ids_sha256": json_hash(ids[1:257]), "scored_target_ids_sha256": json_hash(ids[65:257]),
+                           **{k: info[k] for k in
                                ("h0_sha256", "rng_before_sha256", "rng_after_sha256", "block_calls", "forward_seconds", "maxrss_kib")},
                            "logsumexp": lse.tolist(), "target_logits": target_logits.tolist(), "nll": nll.tolist(),
                            "mean_nll": float(nll.mean().item())}
@@ -402,13 +468,21 @@ def execute(run):
                     del logits, metrics, lse, target_logits, nll, independent
             print("article %02d/32 complete; rows=%d" % (index + 1, run.formal_rows), flush=True)
         run.phase = "preservation"
+        run.context = {}
         run.check("complete formal coverage", run.formal_rows == 288 and run.total_forwards == 297,
                   {"formal_rows": run.formal_rows, "control_forwards": run.control_forwards, "total_forwards": run.total_forwards},
                   {"formal_rows": 288, "control_forwards": 9, "total_forwards": 297})
         run.after = state_snapshot(torch, model)
+        run.after.update(parameter_inventory(model))
         save(root / "state_after.json", run.after)
         run.check("state invariant", run.after == run.before,
                   {"before": run.before["aggregate_sha256"], "after": run.after["aggregate_sha256"]})
+    runtime_after = runtime_snapshot(torch)
+    run.check("CPU runtime after evaluation", runtime_matches(runtime_after), runtime_after)
+    packages_after = package_inventory()
+    save(root / "packages_after.json", packages_after)
+    run.check("package inventory invariant", packages_after == packages_before,
+              {"before": packages_before["aggregate_sha256"], "after": packages_after["aggregate_sha256"]})
     protected_after = {path: file_info(path) for path in protected_before}
     upstream_after, repo_after = git_state(upstream), git_state(repo)
     save(root / "protected_after.json", {"files": protected_after, "upstream": upstream_after, "repo": repo_after})
