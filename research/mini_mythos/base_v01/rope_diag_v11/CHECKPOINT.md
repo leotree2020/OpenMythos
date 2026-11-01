@@ -1,3 +1,22 @@
+# Latest checkpoint — formal RoPE diagnostic completed, source explanation unresolved
+
+Date: 2026-11-01. Branch: mythos-base-v01-rope-diag-v11. Result checkpoint: this documentation/evidence commit; the execution HEAD was f008592ae547513e3d51131b33735d6d748e6e01 and the frozen implementation is d51cd388cde2e202a044ca148c29fd441acc440d.
+
+Purpose: identify compatibility with the five approved numerical paths while reproducing the historical A5 scalar. Environment: named Codespace, frozen Python 3.12.3 / torch 2.11.0+cpu environment, CPU only. Input: original B1 artifacts and pinned read-only upstream. Expected: G0–G5 controls, bytewise repetitions, exact scalar reproduction, complete metrics and unchanged protected data. Actual: one formal run rope-v11-20261101T051150Z completed; G0–G5 and 165/165 recorded checks PASS; five of five S-to-candidate compatibility screens false. Status: execution PASS; scientific source explanation UNRESOLVED; B1 A5 still BLOCKED.
+
+Primary full-range maxima: N=0.00012207025429233909; T=0.00012207025429233909; P=0.0001735686673782766; R=0.00015680474461987615; Q=0.00012207025429233909. G2 exactly reproduces the historical scalar, not the historical tensor. All bitwise_match flags false. The [0,112) secondary range also fails all five compatibility screens. No causal or harmlessness conclusion is established.
+
+Evidence: RESULT_REVIEW.md and result_evidence/rope-v11-20261101T051150Z/public/ preserve original public bytes and manifest-relative paths. Original sealed run has 232 files and 3 directories; FULL manifest covers 230 entries, excluding the two manifests explicitly. All full-manifest hashes verified on target; 179 public entries additionally verified independently from copied bytes. Raw buffers, repetitions, detailed reports and logs remain privately on the target. Operator audit records are separate; original run files were not edited. Summary SHA-256 e6cd27a4e8625bc59c2f382cb447e1c717554295eacef75f122e23e6741327d6. Independent static/result review limitations are stated in RESULT_REVIEW.md.
+
+Dependencies: frozen lock SHA-256 84440f8945041ed314c29b205c5244e074116ede023d5aae0b11b633b4d6a51e; full installed inventory and actual runtime controls passed. G5 records 132 protected files unchanged, B1 d88be474ebb2529c5b095e3732b1f25509f9b824 clean, upstream 69284c13746e849104f738d6d1a347b1f457df76 clean. PR #24 remote head is still 4308099bfc90d9398f54a47f9272b6bd4582f7b9; no PR action. Frozen diagnostic source was not modified after execution.
+
+Unresolved: actual construction/export history of the stored buffer and relevance to model behavior. B1 A5 BLOCKED; A3 overall/A8–A11/language quality NOT TESTED; Formal Oracle BLOCKED/NOT_READY; FORMAL_ACCEPTANCE_READY=False. No fixture, model forward, generation, training, GPU, buffer replacement, threshold change, B1 rerun or B2/D2-A work. No numerical retry is allowed under this completed protocol.
+
+Next single instruction: read-only audit the pinned official constructor, checkpoint save/load and evaluation loader to determine whether official loading restores or regenerates freqs_cis, and what creation-history facts are documented; record exact source references and UNKNOWNs before designing a separately specified compatibility check. No additional numerical calculation is authorized by this checkpoint. The owner has transferred implementation to Codex; no Claude handoff is required.
+
+---
+Previous checkpoints preserved below.
+
 # Latest checkpoint — implementation frozen; formal diagnostic not yet started
 
 Date: 2026-11-01. Branch: mythos-base-v01-rope-diag-v11. Frozen implementation commit A: d51cd388cde2e202a044ca148c29fd441acc440d.

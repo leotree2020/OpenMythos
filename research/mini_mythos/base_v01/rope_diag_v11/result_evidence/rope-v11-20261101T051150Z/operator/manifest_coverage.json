@@ -1,0 +1,26 @@
+{
+  "Purpose": "Check complete sealed-file inventory without tensor recomputation",
+  "Environment": "Named target Codespace, stdlib only, post-run read-only audit",
+  "Input": "Original FULL_MANIFEST.json and filesystem",
+  "Expected": "Actual files equal 230 manifest entries plus the two explicitly excluded manifests",
+  "Actual": {
+    "file_count": 232,
+    "directory_count": 3,
+    "directories": [
+      "private",
+      "private/native_child",
+      "public"
+    ],
+    "manifest_count": 230,
+    "excluded": [
+      "FULL_MANIFEST.json",
+      "public/GIT_BUNDLE_MANIFEST.json"
+    ],
+    "unlisted": [
+      "FULL_MANIFEST.json",
+      "public/GIT_BUNDLE_MANIFEST.json"
+    ],
+    "missing": []
+  },
+  "Status": "PASS"
+}
