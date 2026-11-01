@@ -1,1 +1,3 @@
 Root statically reviewed independent audit: reconstructs official shuffled input IDs; rescoring from saved losses/answer tokens; item coverage and every aggregate including population SD; full-duration estimates explicitly conditional. No model or Torch execution. Audit code prepared after model launch, frozen before auditing results. Numeric protocol and observer unchanged. Incomplete returns explicitly BLOCKED.
+
+Separate partial-seed summarizer root-reviewed: only complete22-task/264-row seeds receive a descriptive total, incomplete totals are null; full acceptance remains independent and unchanged. Original item identity remains full auditor responsibility. This is post-launch read-only reporting, not a new model experiment.
