@@ -1,0 +1,39 @@
+{
+  "Purpose": "Verify claimed independent source-article units against original corpus",
+  "Environment": "Read-only PyArrow19 reader; no model invocation",
+  "Input": {
+    "raw_check_path": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/source_boundary_check.json",
+    "raw_check_sha256": "81fa53b50fe89de58ae7b665a18c9031ad6c3a707ca88b4dae4118d53d2fb04e",
+    "corpus_sha256": "3ee89cd6a2ab912afd5d01e98867b46a67d9ec7a9eca0910e5e4c3cdd4cc1925",
+    "selected_indices": [
+      0,
+      3
+    ]
+  },
+  "Expected": "32 selected units represent distinct complete source-article bodies, with title rows separated from content",
+  "Actual": {
+    "sample0_title": "= Constant k filter =",
+    "sample0_heading_row": 2093,
+    "sample3_false_title": "= 1 henry and capacitance C =",
+    "sample3_heading_row": 2150,
+    "formula_context_rows": [
+      2147,
+      2148,
+      2149,
+      2150,
+      2151
+    ],
+    "finding": "Sample3 begins inside the same Constant k filter source article as sample0. The frozen equality-sign rule misclassified equation continuation as a top-level article title."
+  },
+  "Status": "FAIL",
+  "scope": "Article selection/unit integrity; not a model forward or loss-arithmetic failure",
+  "consequences": {
+    "formal_rows_coverage": "PASS",
+    "numerical_evidence_audit": "82 PASS / 0 FAIL / 0 BLOCKED within its computational scope",
+    "article_level_bootstrap_acceptance": "FAIL / NOT ACCEPTED",
+    "independent_article_count_claim": "INVALID",
+    "raw_segment_scores": "Retained descriptive only",
+    "formal_run_retry": "FORBIDDEN in this stage"
+  },
+  "utc": "2026-11-01T13:07:36.432447+00:00"
+}

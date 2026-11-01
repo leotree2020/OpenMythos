@@ -1,0 +1,57 @@
+{
+  "utc": "2026-11-01T13:03:59.970077+00:00",
+  "Purpose": "Read-only numerical audit and custody after stopped model",
+  "Environment": "Original Python standard library; no model import or replay",
+  "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z",
+  "Expected": "Complete record audit, independent equal summaries, protected original files/environments",
+  "commands": [
+    {
+      "command": [
+        "/workspaces/mythos-base-v01-cpu312/bin/python",
+        "-I",
+        "-B",
+        "/workspaces/mythos-base-v01-rope-diag-v11/research/mini_mythos/base_v01/depth_budget_v1/audit_depth_budget.py",
+        "--run",
+        "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+        "--inputs",
+        "/workspaces/mythos-evidence/base_v01/depth_budget/preparation-v2-20261101/inputs.json",
+        "--output",
+        "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/read_only_audit.json"
+      ],
+      "exit": 0,
+      "stdout": "{\"Status\": \"PASS\", \"formal_rows\": 288, \"failures\": 0, \"blockers\": 0, \"output\": \"/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/read_only_audit.json\"}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/workspaces/mythos-base-v01-cpu312/bin/python",
+        "-I",
+        "-B",
+        "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/audit_tools/independent_summary.py",
+        "--rows",
+        "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker/rows.jsonl",
+        "--output",
+        "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/independent_summary.json"
+      ],
+      "exit": 0,
+      "stdout": "{\"Status\": \"PASS\", \"unique_rows\": 288, \"errors\": 0, \"blockers\": 0, \"output\": \"/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/independent_summary.json\"}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/workspaces/mythos-base-v01-cpu312/bin/python",
+        "-I",
+        "-B",
+        "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/audit_tools/post_stop_custody.py",
+        "--root",
+        "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z",
+        "--output",
+        "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/post_stop_custody.json"
+      ],
+      "exit": 0,
+      "stdout": "{\"Status\": \"PASS\", \"actual\": {\"protected_files\": 137, \"raw_files\": 34, \"active\": [], \"errors\": []}}\n",
+      "stderr": ""
+    }
+  ],
+  "Status": "PASS"
+}

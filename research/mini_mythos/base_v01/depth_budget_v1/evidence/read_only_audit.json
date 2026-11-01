@@ -1,0 +1,1720 @@
+{
+  "Purpose": "Audit fixed-weight depth-budget evidence and derive preregistered exploratory article-level estimates",
+  "Environment": "Python standard library only; no model/tokenizer/Torch import or forward pass",
+  "Input": {
+    "run": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+    "inputs": "/workspaces/mythos-evidence/base_v01/depth_budget/preparation-v2-20261101/inputs.json",
+    "file_bindings": {
+      "/workspaces/mythos-evidence/base_v01/depth_budget/preparation-v2-20261101/inputs.json": {
+        "bytes": 167672,
+        "sha256": "f38a1618d7904df7c530d9f0f322949a847befcb75e4177de2bc8e65bc53a315"
+      },
+      "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker/environment.json": {
+        "bytes": 2082,
+        "sha256": "d29b7d266131035d9dc3f4250576d50a2e822f51f517ba1d88e8e7d9e8c420c3"
+      },
+      "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker/completion.json": {
+        "bytes": 25283,
+        "sha256": "5ffdc464d263bf208bd785dcec812b347e8ade1449808d22a670c8fcac327713"
+      },
+      "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker/checks.jsonl": {
+        "bytes": 834082,
+        "sha256": "c2ef96015a2f478cc96f3716ef82d1b186a6c6662baf05ea0cf45dc243343f69"
+      },
+      "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker/state_before.json": {
+        "bytes": 17788,
+        "sha256": "d98c16babaafe44e86b165c3cc6abd64e599af813dc8098778549e9e7d852904"
+      },
+      "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker/state_after.json": {
+        "bytes": 17788,
+        "sha256": "d98c16babaafe44e86b165c3cc6abd64e599af813dc8098778549e9e7d852904"
+      },
+      "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker/packages_before.json": {
+        "bytes": 3977,
+        "sha256": "e60273273d83591202f50a904c965c0fe813bb5e1d28fc3fa09f1a9f550c392b"
+      },
+      "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker/packages_after.json": {
+        "bytes": 3977,
+        "sha256": "e60273273d83591202f50a904c965c0fe813bb5e1d28fc3fa09f1a9f550c392b"
+      },
+      "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker/protected_before.json": {
+        "bytes": 26672,
+        "sha256": "91ec48e8b10417c01249a3839a2d61bbe2fa10d995bd8dccc44d1c214f7112a8"
+      },
+      "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker/protected_after.json": {
+        "bytes": 26672,
+        "sha256": "91ec48e8b10417c01249a3839a2d61bbe2fa10d995bd8dccc44d1c214f7112a8"
+      },
+      "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker/rows.jsonl": {
+        "bytes": 3522313,
+        "sha256": "fd77408d7fbf301c761004bd2e297f0e4b791ed7123ac941126e448c66372a51"
+      }
+    }
+  },
+  "Expected": {
+    "articles": 32,
+    "depths": [
+      2,
+      4,
+      8
+    ],
+    "replica_seeds": [
+      3101,
+      3202,
+      3303
+    ],
+    "formal_rows": 288,
+    "control_forwards": 9,
+    "total_forwards": 297,
+    "scored_target_slice": [
+      64,
+      256
+    ],
+    "arithmetic_tolerance": 1e-10
+  },
+  "Actual": {
+    "formal_rows": 288,
+    "unique_formal_rows": 288,
+    "control_records": 9,
+    "missing": [],
+    "target_tokens_per_row": 192,
+    "unique_scored_target_positions": 6144,
+    "scored_target_instances_expected": 55296,
+    "scientific_results": {
+      "analysis_unit": "whole article; three paired initial-state replicas averaged within each article",
+      "articles": 32,
+      "initial_state_replica_seeds": [
+        3101,
+        3202,
+        3303
+      ],
+      "nll_unit": "nats per scored token",
+      "per_depth": {
+        "2": {
+          "mean_nll": 3.5886484186670757,
+          "ppl": 36.18513570663249,
+          "ppl_overflow": false,
+          "rows": 96,
+          "median_observed_forward_seconds": 0.6404644135000126,
+          "observed_forward_seconds": 62.49906261299839,
+          "prelude_core_coda_block_passes": 8,
+          "timing_scope": "descriptive instrumented CPU observations; not an efficiency acceptance test"
+        },
+        "4": {
+          "mean_nll": 3.435093689707491,
+          "ppl": 31.034320025691784,
+          "ppl_overflow": false,
+          "rows": 96,
+          "median_observed_forward_seconds": 0.8597555814999396,
+          "observed_forward_seconds": 84.1199083779984,
+          "prelude_core_coda_block_passes": 12,
+          "timing_scope": "descriptive instrumented CPU observations; not an efficiency acceptance test"
+        },
+        "8": {
+          "mean_nll": 3.448185473707711,
+          "ppl": 31.443285844944914,
+          "ppl_overflow": false,
+          "rows": 96,
+          "median_observed_forward_seconds": 1.304248950000101,
+          "observed_forward_seconds": 126.94224258099621,
+          "prelude_core_coda_block_passes": 20,
+          "timing_scope": "descriptive instrumented CPU observations; not an efficiency acceptance test"
+        }
+      },
+      "paired_contrasts": {
+        "primary_d4_minus_d8": {
+          "mean_delta_nll": -0.013091784000219972,
+          "article_sign_counts": {
+            "negative": 3,
+            "zero": 0,
+            "positive": 29
+          },
+          "exploratory_bootstrap_percentile_interval": [
+            -0.1393962872867443,
+            0.06389571042049569
+          ],
+          "bootstrap_values_sha256": "72b9c02d0e4009cfe5211d0169e0e39191d831b6783b4c7e671f6e6b9ec5af37",
+          "per_replica_mean_delta_nll": {
+            "3101": -0.005098729072282801,
+            "3202": -0.024606858837016812,
+            "3303": -0.0095697640913604
+          },
+          "direction": "negative means the shallower depth has lower NLL on this development sample"
+        },
+        "secondary_d2_minus_d8": {
+          "mean_delta_nll": 0.14046294495936518,
+          "article_sign_counts": {
+            "negative": 2,
+            "zero": 0,
+            "positive": 30
+          },
+          "exploratory_bootstrap_percentile_interval": [
+            0.010527108210464875,
+            0.22270233217487417
+          ],
+          "bootstrap_values_sha256": "1ec804c26f0ded6d30672ae290a0b2b163c5d94e22113735beecbee99bf3d679",
+          "per_replica_mean_delta_nll": {
+            "3101": 0.14894946752356944,
+            "3202": 0.12928969560460138,
+            "3303": 0.1431496717499246
+          },
+          "direction": "negative means the shallower depth has lower NLL on this development sample"
+        }
+      },
+      "per_article": [
+        {
+          "article_index": 0,
+          "article_id": "03102b63d0d7f39f79ec3eca1545f466a03871eb49a17506d8aec140b5d502e3",
+          "title": "= Constant k filter =",
+          "mean_nll_by_depth": {
+            "2": 4.158076998726032,
+            "4": 3.883370357681759,
+            "8": 3.8172010490905386
+          },
+          "primary_d4_minus_d8": 0.0661693085912205,
+          "secondary_d2_minus_d8": 0.3408759496354934
+        },
+        {
+          "article_index": 1,
+          "article_id": "0833ee317b70248610c320cede552fe4c6e9f10ae8adae7ae7f37b850632333d",
+          "title": "= Typhoon Krosa ( 2013 ) =",
+          "mean_nll_by_depth": {
+            "2": 3.841214259332054,
+            "4": 3.674775257073301,
+            "8": 3.638899525726616
+          },
+          "primary_d4_minus_d8": 0.03587573134668531,
+          "secondary_d2_minus_d8": 0.20231473360543806
+        },
+        {
+          "article_index": 2,
+          "article_id": "09c3df88f1a0627bec6b67dc386a048f7a38db160ec79cc79f0cdba1d7272d70",
+          "title": "= Light Tank Mk VII Tetrarch =",
+          "mean_nll_by_depth": {
+            "2": 3.296175993577401,
+            "4": 3.0570872983418416,
+            "8": 3.00518199759407
+          },
+          "primary_d4_minus_d8": 0.051905300747771665,
+          "secondary_d2_minus_d8": 0.2909939959833312
+        },
+        {
+          "article_index": 3,
+          "article_id": "0cb3787e6dd38430b142d814e8a43910956c7552b77372e6a575b038c5017a36",
+          "title": "= 1 henry and capacitance C =",
+          "mean_nll_by_depth": {
+            "2": 4.0369349398234675,
+            "4": 3.9023294711923167,
+            "8": 5.5717388278506865
+          },
+          "primary_d4_minus_d8": -1.6694093566583699,
+          "secondary_d2_minus_d8": -1.534803888027219
+        },
+        {
+          "article_index": 4,
+          "article_id": "0f13816ea573204ba1a49c6768ea6121c78fbbc5c880f26829bed3537012e8a4",
+          "title": "= Zrinski Battalion =",
+          "mean_nll_by_depth": {
+            "2": 3.7631969815616437,
+            "4": 3.573706097550124,
+            "8": 3.5592376172807945
+          },
+          "primary_d4_minus_d8": 0.014468480269329564,
+          "secondary_d2_minus_d8": 0.20395936428084926
+        },
+        {
+          "article_index": 5,
+          "article_id": "0f86b7b3d39f2f3f33b1a46a613b0f769de218f9d2cdbf278f98a11810af5ebb",
+          "title": "= Independiente ( Ricardo Arjona album ) =",
+          "mean_nll_by_depth": {
+            "2": 4.030400789432836,
+            "4": 3.8771464033569587,
+            "8": 3.8188608762649547
+          },
+          "primary_d4_minus_d8": 0.058285527092003964,
+          "secondary_d2_minus_d8": 0.211539913167881
+        },
+        {
+          "article_index": 6,
+          "article_id": "17c63156a3988baa81a379676bdf1a48570df5e887170b415897de891a09c2ec",
+          "title": "= Manila =",
+          "mean_nll_by_depth": {
+            "2": 2.701090779916966,
+            "4": 2.5820977515967973,
+            "8": 2.5322689514326164
+          },
+          "primary_d4_minus_d8": 0.0498288001641809,
+          "secondary_d2_minus_d8": 0.16882182848434946
+        },
+        {
+          "article_index": 7,
+          "article_id": "1c57fe2a518363f0cb1a27a7abf877aece54baffa91bf4b392b8fd8106b076fd",
+          "title": "= Little Gidding ( poem ) =",
+          "mean_nll_by_depth": {
+            "2": 3.7030155545379184,
+            "4": 3.447387526458215,
+            "8": 3.37382231968022
+          },
+          "primary_d4_minus_d8": 0.07356520677799461,
+          "secondary_d2_minus_d8": 0.32919323485769825
+        },
+        {
+          "article_index": 8,
+          "article_id": "1c5c2c83824303b33f283f1029294abaa0a2782e8991a843597b94d32fa304b8",
+          "title": "= Operation Eastern Exit =",
+          "mean_nll_by_depth": {
+            "2": 3.4952608861312373,
+            "4": 3.3866400928258713,
+            "8": 3.3754061399166413
+          },
+          "primary_d4_minus_d8": 0.011233952909230016,
+          "secondary_d2_minus_d8": 0.11985474621459602
+        },
+        {
+          "article_index": 9,
+          "article_id": "21df13152f3bce6ff11a7a716c32c088f1fd5b4cce1710246cb253049b250624",
+          "title": "= Robert Boulter =",
+          "mean_nll_by_depth": {
+            "2": 3.90719686069734,
+            "4": 3.7925519475562637,
+            "8": 3.7351245147460923
+          },
+          "primary_d4_minus_d8": 0.057427432810171375,
+          "secondary_d2_minus_d8": 0.17207234595124765
+        },
+        {
+          "article_index": 10,
+          "article_id": "288c858e27b7c5c8d7cda03e948d9f473c87840a09bbb264b9ac2bc2b58f4b68",
+          "title": "= Tatwine =",
+          "mean_nll_by_depth": {
+            "2": 3.429717770990314,
+            "4": 3.347192317165233,
+            "8": 3.2345795020212886
+          },
+          "primary_d4_minus_d8": 0.11261281514394428,
+          "secondary_d2_minus_d8": 0.1951382689690253
+        },
+        {
+          "article_index": 11,
+          "article_id": "28ef2bf1cbcbd29aee987e27ef380551efbcb3cc1d88cc6656a87550c1fb2ac3",
+          "title": "= Dick Rifenburg =",
+          "mean_nll_by_depth": {
+            "2": 3.604576551270334,
+            "4": 3.4707981669264902,
+            "8": 3.4177709368256473
+          },
+          "primary_d4_minus_d8": 0.05302723010084298,
+          "secondary_d2_minus_d8": 0.1868056144446868
+        },
+        {
+          "article_index": 12,
+          "article_id": "3479ea7f0fe9c72156eede3e956b8dcef7a7063107dfdb5188c41fde02e46851",
+          "title": "= Du Fu =",
+          "mean_nll_by_depth": {
+            "2": 3.6664144300524835,
+            "4": 3.510760212170124,
+            "8": 3.449490394066183
+          },
+          "primary_d4_minus_d8": 0.06126981810394083,
+          "secondary_d2_minus_d8": 0.21692403598630028
+        },
+        {
+          "article_index": 13,
+          "article_id": "348c65427c2dd320cefb15ae78210ca5139e3688965a330641e4db295dbbaa65",
+          "title": "= 1933 Treasure Coast hurricane =",
+          "mean_nll_by_depth": {
+            "2": 3.1829511764660627,
+            "4": 2.938737961681428,
+            "8": 2.8570350145821783
+          },
+          "primary_d4_minus_d8": 0.08170294709924963,
+          "secondary_d2_minus_d8": 0.3259161618838844
+        },
+        {
+          "article_index": 14,
+          "article_id": "38325e564d4f669a1c7d96d4b1a603886fb57473a6be16ab793dd63170d54fff",
+          "title": "= Oxaziridine =",
+          "mean_nll_by_depth": {
+            "2": 3.630351334765731,
+            "4": 3.469449387408451,
+            "8": 3.456955499344877
+          },
+          "primary_d4_minus_d8": 0.012493888063574321,
+          "secondary_d2_minus_d8": 0.17339583542085402
+        },
+        {
+          "article_index": 15,
+          "article_id": "40aef8ae1c41b66ee361f28b8784394ee54bc0dfd3b606688338801a40d8eed8",
+          "title": "= Brad Stevens =",
+          "mean_nll_by_depth": {
+            "2": 3.680165539269101,
+            "4": 3.501211827523408,
+            "8": 3.4528342839071597
+          },
+          "primary_d4_minus_d8": 0.04837754361624835,
+          "secondary_d2_minus_d8": 0.22733125536194132
+        },
+        {
+          "article_index": 16,
+          "article_id": "40cb64101aa665de3d36a57eb7c12e95b033216632b884c936d7706fbf90696b",
+          "title": "= The Hustler ( film ) =",
+          "mean_nll_by_depth": {
+            "2": 4.229576005633231,
+            "4": 4.224068956555503,
+            "8": 4.129129132864546
+          },
+          "primary_d4_minus_d8": 0.09493982369095733,
+          "secondary_d2_minus_d8": 0.10044687276868558
+        },
+        {
+          "article_index": 17,
+          "article_id": "42bc8db770bc340976feb4cc239fee181303271204e96d98cef96198c0a20514",
+          "title": "= German Type UB I submarine =",
+          "mean_nll_by_depth": {
+            "2": 3.393228749754577,
+            "4": 3.235025971199334,
+            "8": 3.163740470090325
+          },
+          "primary_d4_minus_d8": 0.071285501109009,
+          "secondary_d2_minus_d8": 0.22948827966425167
+        },
+        {
+          "article_index": 18,
+          "article_id": "452b3bfe2fc32ce580bdd0f37f13cea42f96c7a84b8ab3868f6362fb547fe634",
+          "title": "= Osbert de Bayeux =",
+          "mean_nll_by_depth": {
+            "2": 3.131859112520788,
+            "4": 3.004940811554091,
+            "8": 2.888587248476832
+          },
+          "primary_d4_minus_d8": 0.11635356307725919,
+          "secondary_d2_minus_d8": 0.2432718640439564
+        },
+        {
+          "article_index": 19,
+          "article_id": "4abb8b35a3f18f7d5d7c0b93fc2ad045e06a3c0a540067cfc87e2c2e6ecb2a15",
+          "title": "= American Beauty ( 1999 film ) =",
+          "mean_nll_by_depth": {
+            "2": 4.405376101779864,
+            "4": 4.28204491297867,
+            "8": 4.793370601990624
+          },
+          "primary_d4_minus_d8": -0.5113256890119535,
+          "secondary_d2_minus_d8": -0.3879945002107599
+        },
+        {
+          "article_index": 20,
+          "article_id": "4dd008d363fc4b31bb283268a2f8f754696a67ab4ce25ad0562211b08f222315",
+          "title": "= Christopher Gore =",
+          "mean_nll_by_depth": {
+            "2": 3.0355212590562064,
+            "4": 2.8672877857031036,
+            "8": 2.815792553671198
+          },
+          "primary_d4_minus_d8": 0.05149523203190576,
+          "secondary_d2_minus_d8": 0.21972870538500855
+        },
+        {
+          "article_index": 21,
+          "article_id": "562c39cd2d415ccc3fbabff95a90c0c085f4714195bd7be45d1e52b30e28c21f",
+          "title": "= Brock Lesnar =",
+          "mean_nll_by_depth": {
+            "2": 3.563232516995276,
+            "4": 3.3428974531336912,
+            "8": 3.2758402641358777
+          },
+          "primary_d4_minus_d8": 0.06705718899781354,
+          "secondary_d2_minus_d8": 0.2873922528593984
+        },
+        {
+          "article_index": 22,
+          "article_id": "5664b6cfa87bb05e3c78cda8e86792ea25430dcc356f97df215081a4f7bd23fa",
+          "title": "= Attalea ( palm ) =",
+          "mean_nll_by_depth": {
+            "2": 3.3601012892911917,
+            "4": 3.294083322576478,
+            "8": 3.222235046056191
+          },
+          "primary_d4_minus_d8": 0.07184827652028725,
+          "secondary_d2_minus_d8": 0.13786624323500085
+        },
+        {
+          "article_index": 23,
+          "article_id": "58634a962b4dd83f9da0a5ba55e4f95fc055f31fbd6b25c1e0c0d816061a7bc0",
+          "title": "= Kirby 's Block Ball =",
+          "mean_nll_by_depth": {
+            "2": 3.344386350858974,
+            "4": 3.19831794574006,
+            "8": 3.087214921636196
+          },
+          "primary_d4_minus_d8": 0.11110302410386375,
+          "secondary_d2_minus_d8": 0.2571714292227778
+        },
+        {
+          "article_index": 24,
+          "article_id": "5b7639a4675e784fa34d3586957db5f4f7ac7f8063920d149aa2f4a2ee12f326",
+          "title": "= The Portage to San Cristobal of A.H. =",
+          "mean_nll_by_depth": {
+            "2": 3.4499814668378868,
+            "4": 3.341545671894012,
+            "8": 3.2306775964191026
+          },
+          "primary_d4_minus_d8": 0.1108680754749094,
+          "secondary_d2_minus_d8": 0.21930387041878419
+        },
+        {
+          "article_index": 25,
+          "article_id": "5d47b1ac412584a3835d1083e33c9121740ed765f8cbd2576c03fcbcfc5bf936",
+          "title": "= Nerva =",
+          "mean_nll_by_depth": {
+            "2": 2.9180101151259445,
+            "4": 2.7366528058553925,
+            "8": 2.7192340666753836
+          },
+          "primary_d4_minus_d8": 0.017418739180008913,
+          "secondary_d2_minus_d8": 0.19877604845056096
+        },
+        {
+          "article_index": 26,
+          "article_id": "6f389dcb1ff09cfd233d50169b6f5e03259be87bd66717c40fa0b15724ec825d",
+          "title": "= New York State Route 93 =",
+          "mean_nll_by_depth": {
+            "2": 3.318951813077673,
+            "4": 3.1720231012884157,
+            "8": 3.1076607231563766
+          },
+          "primary_d4_minus_d8": 0.06436237813203904,
+          "secondary_d2_minus_d8": 0.2112910899212963
+        },
+        {
+          "article_index": 27,
+          "article_id": "7863a680a52de04240129cf162f63cd7d1483e5086ab9e97d09d8fb552c314cb",
+          "title": "= Hannah Dodd =",
+          "mean_nll_by_depth": {
+            "2": 3.2920779952588144,
+            "4": 3.1793724986627985,
+            "8": 3.116417881501766
+          },
+          "primary_d4_minus_d8": 0.06295461716103246,
+          "secondary_d2_minus_d8": 0.17566011375704838
+        },
+        {
+          "article_index": 28,
+          "article_id": "799ca7b5e038a64138e482d732b4b2737d3e30012ba7e6d7d330104176da3259",
+          "title": "= Battle of Dürenstein =",
+          "mean_nll_by_depth": {
+            "2": 3.8272225804946625,
+            "4": 3.6299467669122314,
+            "8": 3.5714524265535617
+          },
+          "primary_d4_minus_d8": 0.05849434035866974,
+          "secondary_d2_minus_d8": 0.2557701539411008
+        },
+        {
+          "article_index": 29,
+          "article_id": "7b5e21a28d8c8850038776dc362b0f6292796d81be75f753c56367dbc7bc8d98",
+          "title": "= Nero =",
+          "mean_nll_by_depth": {
+            "2": 3.5085380047697954,
+            "4": 3.3759465479206745,
+            "8": 3.317449135072646
+          },
+          "primary_d4_minus_d8": 0.058497412848028674,
+          "secondary_d2_minus_d8": 0.19108886969714955
+        },
+        {
+          "article_index": 30,
+          "article_id": "7ba4942f84fd5243b18c92a78792c58c95ee6417169c8c95e3dd7e02482f2785",
+          "title": "= 2010 Claxton Shield =",
+          "mean_nll_by_depth": {
+            "2": 3.6438064728618174,
+            "4": 3.5061375787050486,
+            "8": 3.485725693519063
+          },
+          "primary_d4_minus_d8": 0.02041188518598558,
+          "secondary_d2_minus_d8": 0.15808077934275433
+        },
+        {
+          "article_index": 31,
+          "article_id": "848250ae1727dacbb8edec3077a95207b8d94414d8c07b050065aaf24394a671",
+          "title": "= Kiss You ( One Direction song ) =",
+          "mean_nll_by_depth": {
+            "2": 4.288138716478806,
+            "4": 4.1174638634516185,
+            "8": 4.120999946496492
+          },
+          "primary_d4_minus_d8": -0.003536083044873628,
+          "secondary_d2_minus_d8": 0.16713876998231392
+        }
+      ],
+      "bootstrap": {
+        "resamples": 10000,
+        "seed": 20261101,
+        "same_indices_across_contrasts": true,
+        "interval": "nearest-rank percentile 2.5% and 97.5%; no interpolation",
+        "lower_sorted_index": 249,
+        "upper_sorted_index": 9749
+      },
+      "statistical_confirmation": "NOT TESTED",
+      "equivalence_or_noninferiority": "NOT TESTED",
+      "upgrade_or_depth_selection_policy": "NOT ASSESSED",
+      "hardware_efficiency": "NOT TESTED",
+      "interpretation": "Exploratory conditional estimates; no practical improvement threshold or automatic PASS for a quality hypothesis."
+    }
+  },
+  "Status": "PASS",
+  "Status_scope": "Engineering and recorded-evidence integrity only; not scientific superiority",
+  "checks": [
+    {
+      "Purpose": "Frozen article/token inventory",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": "32 indexed articles, 257 valid token IDs each",
+      "Actual": {
+        "articles": 32
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Frozen input, full shifted target and scored target hashes",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": "256 input / 256 shifted target / 192 scored target IDs independently hashed",
+      "Actual": [],
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Unique source articles",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": 32,
+      "Actual": 32,
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Environment binding device",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": "cpu",
+      "Actual": "cpu",
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Environment binding dtype",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": "torch.float32",
+      "Actual": "torch.float32",
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Environment binding threads",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": 2,
+      "Actual": 2,
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Environment binding interop",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": 1,
+      "Actual": 1,
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Environment binding deterministic",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": true,
+      "Actual": true,
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Environment binding autocast",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": false,
+      "Actual": false,
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Environment binding forced_attention_backend",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": false,
+      "Actual": false,
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Environment binding upstream_commit",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": "69284c13746e849104f738d6d1a347b1f457df76",
+      "Actual": "69284c13746e849104f738d6d1a347b1f457df76",
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Environment binding torch",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": "2.11.0+cpu",
+      "Actual": "2.11.0+cpu",
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Environment binding weights_sha256",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": "ed6eb306464dd0d694e9eacd58f7e06ac3e44b43cb7c5c79dbcb1543059c6621",
+      "Actual": "ed6eb306464dd0d694e9eacd58f7e06ac3e44b43cb7c5c79dbcb1543059c6621",
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Environment binding autocast_cpu_enabled",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": false,
+      "Actual": false,
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Environment binding actual_parameter_count",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": 144323136,
+      "Actual": 144323136,
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Environment binding unique_parameter_tensors",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": 61,
+      "Actual": 61,
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Environment binding inputs_sha256",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": "f38a1618d7904df7c530d9f0f322949a847befcb75e4177de2bc8e65bc53a315",
+      "Actual": "f38a1618d7904df7c530d9f0f322949a847befcb75e4177de2bc8e65bc53a315",
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Valid provenance freeze_commit",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": "40-character Git SHA",
+      "Actual": "d53cbc75a69c74fa96e2f663cf63c8792dff25b4",
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Valid provenance execution_head",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": "40-character Git SHA",
+      "Actual": "95eaa48e2fae18902e25f849286ab37155d2db42",
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Source manifest binding",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": "SHA256",
+      "Actual": "2b83a9ed77ac417773fc65942887167f66e9c9c7fe6d4909c34dff629df9c48a",
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Python version binding",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": "3.12.3",
+      "Actual": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Successful runner terminal status",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": "PASS",
+      "Actual": "PASS",
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Clean runner terminal field error",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": null,
+      "Actual": {
+        "present": true,
+        "value": null
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Clean runner terminal field cleanup_errors",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": [],
+      "Actual": {
+        "present": true,
+        "value": []
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Check journal/completion binding control_checks",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": 33,
+      "Actual": {
+        "recorded": 33,
+        "equal": true
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Check journal/completion binding preservation_checks",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": 7,
+      "Actual": {
+        "recorded": 7,
+        "equal": true
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Required control and preservation checks present",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": [
+        "CPU runtime after evaluation",
+        "CPU runtime after import",
+        "CPU runtime after load",
+        "actual parameter inventory",
+        "complete formal coverage",
+        "control causality depth 2",
+        "control causality depth 4",
+        "control causality depth 8",
+        "control native-wrapper exact",
+        "control observed repeat exact",
+        "control observer no-op exact",
+        "package inventory invariant",
+        "protected files invariant",
+        "repo invariant",
+        "state exact restore",
+        "state invariant",
+        "upstream invariant"
+      ],
+      "Actual": {
+        "name_counts": {
+          "upstream frozen clean": 1,
+          "execution checkout frozen clean": 1,
+          "protected input hash": 137,
+          "exact frozen sample inventory": 1,
+          "valid fixed article tokens": 32,
+          "CPU runtime after import": 1,
+          "CPU runtime after load": 1,
+          "actual parameter inventory": 1,
+          "official model eval configuration": 1,
+          "state exact restore": 1,
+          "autocast remains disabled": 1,
+          "forward shape dtype and finite": 297,
+          "forward validation consumes no RNG": 297,
+          "wrapper creates no cache": 1,
+          "control native-wrapper exact": 1,
+          "actual h0 and block coverage": 295,
+          "control observer no-op exact": 1,
+          "control observed repeat exact": 1,
+          "control causality depth 2": 1,
+          "control causality depth 4": 1,
+          "control causality depth 8": 1,
+          "exact control forward count": 1,
+          "paired actual h0 and CPU RNG": 288,
+          "independent double NLL equality": 288,
+          "scoring consumes no CPU RNG": 288,
+          "complete formal coverage": 1,
+          "state invariant": 1,
+          "CPU runtime after evaluation": 1,
+          "package inventory invariant": 1,
+          "protected files invariant": 1,
+          "upstream invariant": 1,
+          "repo invariant": 1
+        },
+        "missing": []
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "One causal-prefix check at depth 2",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": 1,
+      "Actual": 1,
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Recorded causal-prefix digests agree at depth 2",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": "128-token prefix: equal valid digests plus byte/h0/RNG comparisons",
+      "Actual": {
+        "prefix_tokens": 128,
+        "baseline_prefix_sha256": "400034ee1e0b7ab7e26aa1680ef2a9cd097c44759cf42891a18991becec8e777",
+        "mutated_prefix_sha256": "400034ee1e0b7ab7e26aa1680ef2a9cd097c44759cf42891a18991becec8e777",
+        "bytewise_equal": true,
+        "h0_equal": true,
+        "rng_after_equal": true
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "One causal-prefix check at depth 4",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": 1,
+      "Actual": 1,
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Recorded causal-prefix digests agree at depth 4",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": "128-token prefix: equal valid digests plus byte/h0/RNG comparisons",
+      "Actual": {
+        "prefix_tokens": 128,
+        "baseline_prefix_sha256": "d588dd3ff351e5320ff9489259c8d9085732649b72d56a67711ef8fe16e91842",
+        "mutated_prefix_sha256": "d588dd3ff351e5320ff9489259c8d9085732649b72d56a67711ef8fe16e91842",
+        "bytewise_equal": true,
+        "h0_equal": true,
+        "rng_after_equal": true
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "One causal-prefix check at depth 8",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": 1,
+      "Actual": 1,
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Recorded causal-prefix digests agree at depth 8",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": "128-token prefix: equal valid digests plus byte/h0/RNG comparisons",
+      "Actual": {
+        "prefix_tokens": 128,
+        "baseline_prefix_sha256": "0aa45e0200b24f2a2b7e771555c35f31ef6d26787a92e568a3204c8a7cf1fd99",
+        "mutated_prefix_sha256": "0aa45e0200b24f2a2b7e771555c35f31ef6d26787a92e568a3204c8a7cf1fd99",
+        "bytewise_equal": true,
+        "h0_equal": true,
+        "rng_after_equal": true
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Recorded state manifest structure before",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": "63 typed, shaped, hashed entries",
+      "Actual": {
+        "state_count": 63,
+        "aggregate_sha256": "2d6054eb15ce027b99d1893f62961790d24049704242cb6859c05e922588f676"
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Measured unique parameter inventory before",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": {
+        "parameter_count": 144323136,
+        "unique_parameter_tensors": 61
+      },
+      "Actual": {
+        "parameter_count": 144323136,
+        "unique_parameter_tensors": 61,
+        "counted_from_unique_names_and_shapes": 144323136
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Recorded state manifest structure after",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": "63 typed, shaped, hashed entries",
+      "Actual": {
+        "state_count": 63,
+        "aggregate_sha256": "2d6054eb15ce027b99d1893f62961790d24049704242cb6859c05e922588f676"
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Measured unique parameter inventory after",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": {
+        "parameter_count": 144323136,
+        "unique_parameter_tensors": 61
+      },
+      "Actual": {
+        "parameter_count": 144323136,
+        "unique_parameter_tensors": 61,
+        "counted_from_unique_names_and_shapes": 144323136
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Recorded parameters and buffers preserved",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": "identical before/after manifests",
+      "Actual": {
+        "identical": true
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Completion state hash binding before",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": "2d6054eb15ce027b99d1893f62961790d24049704242cb6859c05e922588f676",
+      "Actual": "2d6054eb15ce027b99d1893f62961790d24049704242cb6859c05e922588f676",
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Completion state hash binding after",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": "2d6054eb15ce027b99d1893f62961790d24049704242cb6859c05e922588f676",
+      "Actual": "2d6054eb15ce027b99d1893f62961790d24049704242cb6859c05e922588f676",
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Environment original state digest binding",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": "2d6054eb15ce027b99d1893f62961790d24049704242cb6859c05e922588f676",
+      "Actual": "2d6054eb15ce027b99d1893f62961790d24049704242cb6859c05e922588f676",
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "One measured parameter inventory check",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": 1,
+      "Actual": 1,
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Parameter inventory check/state binding",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": {
+        "parameter_count": 144323136,
+        "unique_parameter_tensors": 61,
+        "parameter_names": [
+          "transformer.C.weight",
+          "transformer.adapter.A_log",
+          "transformer.adapter.B",
+          "transformer.adapter.dt_bias",
+          "transformer.coda.0.attn.c_k.weight",
+          "transformer.coda.0.attn.c_proj.weight",
+          "transformer.coda.0.attn.c_q.weight",
+          "transformer.coda.0.attn.c_v.weight",
+          "transformer.coda.0.mlp.fc.weight",
+          "transformer.coda.0.mlp.proj.weight",
+          "transformer.coda.0.norm_1.weight",
+          "transformer.coda.0.norm_2.weight",
+          "transformer.coda.1.attn.c_k.weight",
+          "transformer.coda.1.attn.c_proj.weight",
+          "transformer.coda.1.attn.c_q.weight",
+          "transformer.coda.1.attn.c_v.weight",
+          "transformer.coda.1.attn.ve_gate.weight",
+          "transformer.coda.1.mlp.fc.weight",
+          "transformer.coda.1.mlp.proj.weight",
+          "transformer.coda.1.norm_1.weight",
+          "transformer.coda.1.norm_2.weight",
+          "transformer.core_block.0.attn.c_k.weight",
+          "transformer.core_block.0.attn.c_proj.weight",
+          "transformer.core_block.0.attn.c_q.weight",
+          "transformer.core_block.0.attn.c_v.weight",
+          "transformer.core_block.0.mlp.fc.weight",
+          "transformer.core_block.0.mlp.proj.weight",
+          "transformer.core_block.0.norm_1.weight",
+          "transformer.core_block.0.norm_2.weight",
+          "transformer.core_block.1.attn.c_k.weight",
+          "transformer.core_block.1.attn.c_proj.weight",
+          "transformer.core_block.1.attn.c_q.weight",
+          "transformer.core_block.1.attn.c_v.weight",
+          "transformer.core_block.1.attn.ve_gate.weight",
+          "transformer.core_block.1.mlp.fc.weight",
+          "transformer.core_block.1.mlp.proj.weight",
+          "transformer.core_block.1.norm_1.weight",
+          "transformer.core_block.1.norm_2.weight",
+          "transformer.ln_f.weight",
+          "transformer.ln_prelude.weight",
+          "transformer.prelude.0.attn.c_k.weight",
+          "transformer.prelude.0.attn.c_proj.weight",
+          "transformer.prelude.0.attn.c_q.weight",
+          "transformer.prelude.0.attn.c_v.weight",
+          "transformer.prelude.0.mlp.fc.weight",
+          "transformer.prelude.0.mlp.proj.weight",
+          "transformer.prelude.0.norm_1.weight",
+          "transformer.prelude.0.norm_2.weight",
+          "transformer.prelude.1.attn.c_k.weight",
+          "transformer.prelude.1.attn.c_proj.weight",
+          "transformer.prelude.1.attn.c_q.weight",
+          "transformer.prelude.1.attn.c_v.weight",
+          "transformer.prelude.1.attn.ve_gate.weight",
+          "transformer.prelude.1.mlp.fc.weight",
+          "transformer.prelude.1.mlp.proj.weight",
+          "transformer.prelude.1.norm_1.weight",
+          "transformer.prelude.1.norm_2.weight",
+          "transformer.wte.weight",
+          "value_embeds.1.weight",
+          "value_embeds.3.weight",
+          "value_embeds.5.weight"
+        ]
+      },
+      "Actual": {
+        "parameter_count": 144323136,
+        "unique_parameter_tensors": 61,
+        "parameter_names": [
+          "transformer.C.weight",
+          "transformer.adapter.A_log",
+          "transformer.adapter.B",
+          "transformer.adapter.dt_bias",
+          "transformer.coda.0.attn.c_k.weight",
+          "transformer.coda.0.attn.c_proj.weight",
+          "transformer.coda.0.attn.c_q.weight",
+          "transformer.coda.0.attn.c_v.weight",
+          "transformer.coda.0.mlp.fc.weight",
+          "transformer.coda.0.mlp.proj.weight",
+          "transformer.coda.0.norm_1.weight",
+          "transformer.coda.0.norm_2.weight",
+          "transformer.coda.1.attn.c_k.weight",
+          "transformer.coda.1.attn.c_proj.weight",
+          "transformer.coda.1.attn.c_q.weight",
+          "transformer.coda.1.attn.c_v.weight",
+          "transformer.coda.1.attn.ve_gate.weight",
+          "transformer.coda.1.mlp.fc.weight",
+          "transformer.coda.1.mlp.proj.weight",
+          "transformer.coda.1.norm_1.weight",
+          "transformer.coda.1.norm_2.weight",
+          "transformer.core_block.0.attn.c_k.weight",
+          "transformer.core_block.0.attn.c_proj.weight",
+          "transformer.core_block.0.attn.c_q.weight",
+          "transformer.core_block.0.attn.c_v.weight",
+          "transformer.core_block.0.mlp.fc.weight",
+          "transformer.core_block.0.mlp.proj.weight",
+          "transformer.core_block.0.norm_1.weight",
+          "transformer.core_block.0.norm_2.weight",
+          "transformer.core_block.1.attn.c_k.weight",
+          "transformer.core_block.1.attn.c_proj.weight",
+          "transformer.core_block.1.attn.c_q.weight",
+          "transformer.core_block.1.attn.c_v.weight",
+          "transformer.core_block.1.attn.ve_gate.weight",
+          "transformer.core_block.1.mlp.fc.weight",
+          "transformer.core_block.1.mlp.proj.weight",
+          "transformer.core_block.1.norm_1.weight",
+          "transformer.core_block.1.norm_2.weight",
+          "transformer.ln_f.weight",
+          "transformer.ln_prelude.weight",
+          "transformer.prelude.0.attn.c_k.weight",
+          "transformer.prelude.0.attn.c_proj.weight",
+          "transformer.prelude.0.attn.c_q.weight",
+          "transformer.prelude.0.attn.c_v.weight",
+          "transformer.prelude.0.mlp.fc.weight",
+          "transformer.prelude.0.mlp.proj.weight",
+          "transformer.prelude.0.norm_1.weight",
+          "transformer.prelude.0.norm_2.weight",
+          "transformer.prelude.1.attn.c_k.weight",
+          "transformer.prelude.1.attn.c_proj.weight",
+          "transformer.prelude.1.attn.c_q.weight",
+          "transformer.prelude.1.attn.c_v.weight",
+          "transformer.prelude.1.attn.ve_gate.weight",
+          "transformer.prelude.1.mlp.fc.weight",
+          "transformer.prelude.1.mlp.proj.weight",
+          "transformer.prelude.1.norm_1.weight",
+          "transformer.prelude.1.norm_2.weight",
+          "transformer.wte.weight",
+          "value_embeds.1.weight",
+          "value_embeds.3.weight",
+          "value_embeds.5.weight"
+        ]
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "One actual runtime check CPU runtime after import",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": 1,
+      "Actual": 1,
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Runtime check/environment binding CPU runtime after import",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": {
+        "python_version": "3.12.3",
+        "torch_version": "2.11.0+cpu",
+        "executable": "/workspaces/mythos-base-v01-cpu312/bin/python",
+        "prefix": "/workspaces/mythos-base-v01-cpu312",
+        "default_device": "cpu",
+        "default_dtype": "torch.float32",
+        "intraop_threads": 2,
+        "interop_threads": 1,
+        "deterministic_algorithms": true,
+        "deterministic_warn_only": false,
+        "autocast_cpu_enabled": false,
+        "autocast_cuda_enabled": false,
+        "cuda_available": false
+      },
+      "Actual": {
+        "python_version": "3.12.3",
+        "torch_version": "2.11.0+cpu",
+        "executable": "/workspaces/mythos-base-v01-cpu312/bin/python",
+        "prefix": "/workspaces/mythos-base-v01-cpu312",
+        "default_device": "cpu",
+        "default_dtype": "torch.float32",
+        "intraop_threads": 2,
+        "interop_threads": 1,
+        "deterministic_algorithms": true,
+        "deterministic_warn_only": false,
+        "autocast_cpu_enabled": false,
+        "autocast_cuda_enabled": false,
+        "cuda_available": false
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "One actual runtime check CPU runtime after load",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": 1,
+      "Actual": 1,
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Runtime check/environment binding CPU runtime after load",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": {
+        "python_version": "3.12.3",
+        "torch_version": "2.11.0+cpu",
+        "executable": "/workspaces/mythos-base-v01-cpu312/bin/python",
+        "prefix": "/workspaces/mythos-base-v01-cpu312",
+        "default_device": "cpu",
+        "default_dtype": "torch.float32",
+        "intraop_threads": 2,
+        "interop_threads": 1,
+        "deterministic_algorithms": true,
+        "deterministic_warn_only": false,
+        "autocast_cpu_enabled": false,
+        "autocast_cuda_enabled": false,
+        "cuda_available": false
+      },
+      "Actual": {
+        "python_version": "3.12.3",
+        "torch_version": "2.11.0+cpu",
+        "executable": "/workspaces/mythos-base-v01-cpu312/bin/python",
+        "prefix": "/workspaces/mythos-base-v01-cpu312",
+        "default_device": "cpu",
+        "default_dtype": "torch.float32",
+        "intraop_threads": 2,
+        "interop_threads": 1,
+        "deterministic_algorithms": true,
+        "deterministic_warn_only": false,
+        "autocast_cpu_enabled": false,
+        "autocast_cuda_enabled": false,
+        "cuda_available": false
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "One actual runtime check CPU runtime after evaluation",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": 1,
+      "Actual": 1,
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Actual runtime getters runtime_after_import",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": {
+        "python_version": "3.12.3",
+        "torch_version": "2.11.0+cpu",
+        "default_device": "cpu",
+        "default_dtype": "torch.float32",
+        "intraop_threads": 2,
+        "interop_threads": 1,
+        "deterministic_algorithms": true,
+        "deterministic_warn_only": false,
+        "autocast_cpu_enabled": false,
+        "autocast_cuda_enabled": false,
+        "cuda_available": false
+      },
+      "Actual": {
+        "python_version": "3.12.3",
+        "torch_version": "2.11.0+cpu",
+        "executable": "/workspaces/mythos-base-v01-cpu312/bin/python",
+        "prefix": "/workspaces/mythos-base-v01-cpu312",
+        "default_device": "cpu",
+        "default_dtype": "torch.float32",
+        "intraop_threads": 2,
+        "interop_threads": 1,
+        "deterministic_algorithms": true,
+        "deterministic_warn_only": false,
+        "autocast_cpu_enabled": false,
+        "autocast_cuda_enabled": false,
+        "cuda_available": false
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Actual runtime getters runtime_after_load",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": {
+        "python_version": "3.12.3",
+        "torch_version": "2.11.0+cpu",
+        "default_device": "cpu",
+        "default_dtype": "torch.float32",
+        "intraop_threads": 2,
+        "interop_threads": 1,
+        "deterministic_algorithms": true,
+        "deterministic_warn_only": false,
+        "autocast_cpu_enabled": false,
+        "autocast_cuda_enabled": false,
+        "cuda_available": false
+      },
+      "Actual": {
+        "python_version": "3.12.3",
+        "torch_version": "2.11.0+cpu",
+        "executable": "/workspaces/mythos-base-v01-cpu312/bin/python",
+        "prefix": "/workspaces/mythos-base-v01-cpu312",
+        "default_device": "cpu",
+        "default_dtype": "torch.float32",
+        "intraop_threads": 2,
+        "interop_threads": 1,
+        "deterministic_algorithms": true,
+        "deterministic_warn_only": false,
+        "autocast_cpu_enabled": false,
+        "autocast_cuda_enabled": false,
+        "cuda_available": false
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Actual runtime getters runtime_after_evaluation",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": {
+        "python_version": "3.12.3",
+        "torch_version": "2.11.0+cpu",
+        "default_device": "cpu",
+        "default_dtype": "torch.float32",
+        "intraop_threads": 2,
+        "interop_threads": 1,
+        "deterministic_algorithms": true,
+        "deterministic_warn_only": false,
+        "autocast_cpu_enabled": false,
+        "autocast_cuda_enabled": false,
+        "cuda_available": false
+      },
+      "Actual": {
+        "python_version": "3.12.3",
+        "torch_version": "2.11.0+cpu",
+        "executable": "/workspaces/mythos-base-v01-cpu312/bin/python",
+        "prefix": "/workspaces/mythos-base-v01-cpu312",
+        "default_device": "cpu",
+        "default_dtype": "torch.float32",
+        "intraop_threads": 2,
+        "interop_threads": 1,
+        "deterministic_algorithms": true,
+        "deterministic_warn_only": false,
+        "autocast_cpu_enabled": false,
+        "autocast_cuda_enabled": false,
+        "cuda_available": false
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Measured package inventory before",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": "canonical sorted distribution entries and matching SHA256",
+      "Actual": {
+        "entries": 26,
+        "aggregate_sha256": "d4b4441ef4fe3df4e7490063ba6b0961358f1dec31ff385537b06f095083888b"
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Measured package inventory after",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": "canonical sorted distribution entries and matching SHA256",
+      "Actual": {
+        "entries": 26,
+        "aggregate_sha256": "d4b4441ef4fe3df4e7490063ba6b0961358f1dec31ff385537b06f095083888b"
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Installed package inventory preserved",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": "before and after exactly equal",
+      "Actual": {
+        "equal": true
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Environment package inventory binding",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": "d4b4441ef4fe3df4e7490063ba6b0961358f1dec31ff385537b06f095083888b",
+      "Actual": "d4b4441ef4fe3df4e7490063ba6b0961358f1dec31ff385537b06f095083888b",
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Recorded protected source/input manifests preserved",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": "identical before/after records",
+      "Actual": {
+        "equal": true
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Protected file manifest schemas",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": "nonempty path/byte/SHA256 mapping",
+      "Actual": {
+        "files": 138
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Protected upstream identity",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": {
+        "head": "69284c13746e849104f738d6d1a347b1f457df76",
+        "status": ""
+      },
+      "Actual": {
+        "head": "69284c13746e849104f738d6d1a347b1f457df76",
+        "status": ""
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Protected execution checkout identity",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": "clean checkout bound to environment execution_head",
+      "Actual": {
+        "head": "95eaa48e2fae18902e25f849286ab37155d2db42",
+        "status": ""
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Protected manifest contains original weights",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": "ed6eb306464dd0d694e9eacd58f7e06ac3e44b43cb7c5c79dbcb1543059c6621",
+      "Actual": true,
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Protected manifest contains original config",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": "5c8fc785c2f6dba67d0370ad715034860e3b22bfce850da825c06baa03923c13",
+      "Actual": true,
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Protected manifest contains original tokenizer",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": "e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77",
+      "Actual": true,
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Protected manifest contains inputs",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": "f38a1618d7904df7c530d9f0f322949a847befcb75e4177de2bc8e65bc53a315",
+      "Actual": true,
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Protected manifest contains source manifest",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": "2b83a9ed77ac417773fc65942887167f66e9c9c7fe6d4909c34dff629df9c48a",
+      "Actual": true,
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Nine frozen control forward records",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": [
+        "native8",
+        "wrapper8",
+        "observed8",
+        "observed8_repeat",
+        "causal2_base",
+        "causal2_mut",
+        "causal4_base",
+        "causal4_mut",
+        "causal8_mut"
+      ],
+      "Actual": [
+        "native8",
+        "wrapper8",
+        "observed8",
+        "observed8_repeat",
+        "causal2_base",
+        "causal2_mut",
+        "causal4_base",
+        "causal4_mut",
+        "causal8_mut"
+      ],
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Control RNG identity rng_before_sha256",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": "same valid digest in every control",
+      "Actual": [
+        "ab6a93c39f359c0dfec20b7f00a4c234778c479ddc314f15a2052af6eaa3f64b",
+        "ab6a93c39f359c0dfec20b7f00a4c234778c479ddc314f15a2052af6eaa3f64b",
+        "ab6a93c39f359c0dfec20b7f00a4c234778c479ddc314f15a2052af6eaa3f64b",
+        "ab6a93c39f359c0dfec20b7f00a4c234778c479ddc314f15a2052af6eaa3f64b",
+        "ab6a93c39f359c0dfec20b7f00a4c234778c479ddc314f15a2052af6eaa3f64b",
+        "ab6a93c39f359c0dfec20b7f00a4c234778c479ddc314f15a2052af6eaa3f64b",
+        "ab6a93c39f359c0dfec20b7f00a4c234778c479ddc314f15a2052af6eaa3f64b",
+        "ab6a93c39f359c0dfec20b7f00a4c234778c479ddc314f15a2052af6eaa3f64b",
+        "ab6a93c39f359c0dfec20b7f00a4c234778c479ddc314f15a2052af6eaa3f64b"
+      ],
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Control RNG identity rng_after_sha256",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": "same valid digest in every control",
+      "Actual": [
+        "0e172bd7469ebf8425f88a7151239fcdd769e4127a1f1ae8e3e2edcdbae92e96",
+        "0e172bd7469ebf8425f88a7151239fcdd769e4127a1f1ae8e3e2edcdbae92e96",
+        "0e172bd7469ebf8425f88a7151239fcdd769e4127a1f1ae8e3e2edcdbae92e96",
+        "0e172bd7469ebf8425f88a7151239fcdd769e4127a1f1ae8e3e2edcdbae92e96",
+        "0e172bd7469ebf8425f88a7151239fcdd769e4127a1f1ae8e3e2edcdbae92e96",
+        "0e172bd7469ebf8425f88a7151239fcdd769e4127a1f1ae8e3e2edcdbae92e96",
+        "0e172bd7469ebf8425f88a7151239fcdd769e4127a1f1ae8e3e2edcdbae92e96",
+        "0e172bd7469ebf8425f88a7151239fcdd769e4127a1f1ae8e3e2edcdbae92e96",
+        "0e172bd7469ebf8425f88a7151239fcdd769e4127a1f1ae8e3e2edcdbae92e96"
+      ],
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Observed control h0 identity",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": "same valid h0 digest",
+      "Actual": [
+        "07043b1f1a99424d43f1442a53f6612595c9113e8a152ac86930ad0d1af47ba0",
+        "07043b1f1a99424d43f1442a53f6612595c9113e8a152ac86930ad0d1af47ba0",
+        "07043b1f1a99424d43f1442a53f6612595c9113e8a152ac86930ad0d1af47ba0",
+        "07043b1f1a99424d43f1442a53f6612595c9113e8a152ac86930ad0d1af47ba0",
+        "07043b1f1a99424d43f1442a53f6612595c9113e8a152ac86930ad0d1af47ba0",
+        "07043b1f1a99424d43f1442a53f6612595c9113e8a152ac86930ad0d1af47ba0",
+        "07043b1f1a99424d43f1442a53f6612595c9113e8a152ac86930ad0d1af47ba0"
+      ],
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Native/wrapper/observer/repeat control output identity",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": "four equal valid logits digests",
+      "Actual": [
+        "8441f235652a8cb0876f8813ff56a73cf387d3bb99dd1d734ee6fa5552b4c371",
+        "8441f235652a8cb0876f8813ff56a73cf387d3bb99dd1d734ee6fa5552b4c371",
+        "8441f235652a8cb0876f8813ff56a73cf387d3bb99dd1d734ee6fa5552b4c371",
+        "8441f235652a8cb0876f8813ff56a73cf387d3bb99dd1d734ee6fa5552b4c371"
+      ],
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Recorded row identities, arithmetic and metadata",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": "no contradictions",
+      "Actual": [],
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Complete formal coverage",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": 288,
+      "Actual": {
+        "records": 288,
+        "unique": 288,
+        "missing": []
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Mandatory row checks match recorded numerical/RNG evidence",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": "no duplicates or contradictory bindings",
+      "Actual": [],
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "All formal row checks: forward shape dtype and finite",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": 288,
+      "Actual": {
+        "unique_row_contexts": 288,
+        "records": 288,
+        "missing": []
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "All formal row checks: forward validation consumes no RNG",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": 288,
+      "Actual": {
+        "unique_row_contexts": 288,
+        "records": 288,
+        "missing": []
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "All formal row checks: actual h0 and block coverage",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": 288,
+      "Actual": {
+        "unique_row_contexts": 288,
+        "records": 288,
+        "missing": []
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "All formal row checks: paired actual h0 and CPU RNG",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": 288,
+      "Actual": {
+        "unique_row_contexts": 288,
+        "records": 288,
+        "missing": []
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "All formal row checks: independent double NLL equality",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": 288,
+      "Actual": {
+        "unique_row_contexts": 288,
+        "records": 288,
+        "missing": []
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "All formal row checks: scoring consumes no CPU RNG",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": 288,
+      "Actual": {
+        "unique_row_contexts": 288,
+        "records": 288,
+        "missing": []
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Common initialization and RNG pairing",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": "equal h0 and before/after RNG digests within each depth triple",
+      "Actual": [],
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Complete runner count formal_rows",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": 288,
+      "Actual": 288,
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Complete runner count control_forwards",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": 9,
+      "Actual": 9,
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Complete runner count total_forwards",
+      "Environment": "saved evidence; Python standard library only",
+      "Input": "/workspaces/mythos-evidence/base_v01/depth_budget/depth-budget-v1-20261101T125731Z/worker",
+      "Expected": 297,
+      "Actual": 297,
+      "Status": "PASS"
+    }
+  ],
+  "check_counts": {
+    "PASS": 82
+  },
+  "failures": [],
+  "blockers": [],
+  "limitations": [
+    "Only saved logsumexp, target logits and NLL arithmetic are recomputed; vocabulary logits and tokenization are not regenerated.",
+    "State/source preservation is checked from recorded hash manifests and runner checks; original weight tensors are not deserialized here.",
+    "The 32 article windows are the sampling units. Tokens and initial-state replicas are not independent article samples.",
+    "This historical WikiText development sample is not demonstrated free of pretraining overlap or a fresh generalization test.",
+    "Bootstrap intervals are exploratory and conditional on this sample, frozen model, protocol and initialization replicas.",
+    "No confidence-interval inclusion of zero is interpreted as equivalence; no automatic deployment or adaptive-depth policy follows.",
+    "No trained ACT, OpenMythos module transplantation, architecture-superiority or true hardware-efficiency result is established."
+  ],
+  "utc": "2026-11-01T13:04:00.441884+00:00",
+  "source_sha256": "2fe59e330f1f82e3078d44b16ba2965d36c928a981e69601f9a0bba63f625539"
+}
