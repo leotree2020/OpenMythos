@@ -1,0 +1,715 @@
+{
+  "Purpose": "Independently recompute official CORE decisions, aggregates and measured resource estimates",
+  "Environment": {
+    "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+    "yaml": "6.0.3",
+    "model_execution": false
+  },
+  "Input": {
+    "run": "/workspaces/mythos-evidence/base_v01/official_repro/official-core-limited-v1-20261101T093733Z",
+    "bundle": "/workspaces/mythos-evidence/base_v01/official_repro/preparation-v1-20261101/cache/eval_bundle",
+    "max_per_task": 12,
+    "seeds": [
+      1234,
+      2345,
+      3456
+    ],
+    "file_bindings": {
+      "/workspaces/mythos-evidence/base_v01/official_repro/preparation-v1-20261101/cache/eval_bundle/core.yaml": {
+        "bytes": 3199,
+        "sha256": "463f6ae0aa127fbd41fa655f8919e136858f4849eef176922a3be96e102ce7e7"
+      },
+      "/workspaces/mythos-evidence/base_v01/official_repro/preparation-v1-20261101/cache/eval_bundle/eval_data/language_understanding/hellaswag.jsonl": {
+        "bytes": 8258653,
+        "sha256": "52a31d32b14dff7713a705be664cbeff77eb66edcf7f8b0a5e9408633929b448"
+      },
+      "/workspaces/mythos-evidence/base_v01/official_repro/preparation-v1-20261101/cache/eval_bundle/eval_data/world_knowledge/jeopardy_all.jsonl": {
+        "bytes": 364582,
+        "sha256": "187e7f270a440c63d6cf11a57459fdc7e0bce889338225e42cc88e24ee13d52e"
+      },
+      "/workspaces/mythos-evidence/base_v01/official_repro/preparation-v1-20261101/cache/eval_bundle/eval_data/world_knowledge/bigbench_qa_wikidata.jsonl": {
+        "bytes": 1639702,
+        "sha256": "bb0d22727cb25beffb022c8e8c0c3e1159c8b3c7bd7284603c0d6491f8616265"
+      },
+      "/workspaces/mythos-evidence/base_v01/official_repro/preparation-v1-20261101/cache/eval_bundle/eval_data/world_knowledge/arc_easy.jsonl": {
+        "bytes": 636665,
+        "sha256": "d2d12e59543acf9a5ef6079634a72b30215e36c2fd4236fff3bc855d287b87f5"
+      },
+      "/workspaces/mythos-evidence/base_v01/official_repro/preparation-v1-20261101/cache/eval_bundle/eval_data/world_knowledge/arc_challenge.jsonl": {
+        "bytes": 365606,
+        "sha256": "1ae3aeedf1951d881cbd5c2e3a31e78a1993d251479afbe4cb413b6707244636"
+      },
+      "/workspaces/mythos-evidence/base_v01/official_repro/preparation-v1-20261101/cache/eval_bundle/eval_data/commonsense_reasoning/copa.jsonl": {
+        "bytes": 14627,
+        "sha256": "595dca44dec54c849490bd403a3e24a29e3b944065783222ebb0eb1a55298846"
+      },
+      "/workspaces/mythos-evidence/base_v01/official_repro/preparation-v1-20261101/cache/eval_bundle/eval_data/commonsense_reasoning/commonsense_qa.jsonl": {
+        "bytes": 258861,
+        "sha256": "2771f63f8127c0725b1f6b0ef2cd2ef6469168ae5875fc8d276b25b4f32c8c1a"
+      },
+      "/workspaces/mythos-evidence/base_v01/official_repro/preparation-v1-20261101/cache/eval_bundle/eval_data/commonsense_reasoning/piqa.jsonl": {
+        "bytes": 533992,
+        "sha256": "d2870e73aec5154df3faf259b7700876e11608eebdf69e9d6667435673dbe4e0"
+      },
+      "/workspaces/mythos-evidence/base_v01/official_repro/preparation-v1-20261101/cache/eval_bundle/eval_data/commonsense_reasoning/openbook_qa.jsonl": {
+        "bytes": 88043,
+        "sha256": "adb2e5c7f8db810ddad4d6b2bf53dcc86dcc545499f7aafcaf42a8e179476c09"
+      },
+      "/workspaces/mythos-evidence/base_v01/official_repro/preparation-v1-20261101/cache/eval_bundle/eval_data/language_understanding/lambada_openai.jsonl": {
+        "bytes": 1895241,
+        "sha256": "411bfbe5b9054346b6a19299c0242670adbefb9162efd958593cbc0290b8c9dc"
+      },
+      "/workspaces/mythos-evidence/base_v01/official_repro/preparation-v1-20261101/cache/eval_bundle/eval_data/language_understanding/winograd_wsc.jsonl": {
+        "bytes": 60523,
+        "sha256": "746336c27cd2e39a554cb1b8b4869d0f1ae2577ac5bfe799842d26bca5a5bf5e"
+      },
+      "/workspaces/mythos-evidence/base_v01/official_repro/preparation-v1-20261101/cache/eval_bundle/eval_data/language_understanding/winogrande.jsonl": {
+        "bytes": 312369,
+        "sha256": "ea1592526f3bfdd0948ed3acb1b4dfa3f83d23698917118688ee1df7f8d4b8d7"
+      },
+      "/workspaces/mythos-evidence/base_v01/official_repro/preparation-v1-20261101/cache/eval_bundle/eval_data/symbolic_problem_solving/bigbench_dyck_languages.jsonl": {
+        "bytes": 198916,
+        "sha256": "106ba9ac7507c7ab385c5e59c49cd57aa83025abf080d9b2a2661c0d6c6dbcc5"
+      },
+      "/workspaces/mythos-evidence/base_v01/official_repro/preparation-v1-20261101/cache/eval_bundle/eval_data/symbolic_problem_solving/agi_eval_lsat_ar.jsonl": {
+        "bytes": 219517,
+        "sha256": "9ffd73480b51746c11627e56239f8b87035eb255cb92c3a58fd64e2e4b65fb56"
+      },
+      "/workspaces/mythos-evidence/base_v01/official_repro/preparation-v1-20261101/cache/eval_bundle/eval_data/symbolic_problem_solving/bigbench_cs_algorithms.jsonl": {
+        "bytes": 235435,
+        "sha256": "8485683a8c7e7e6c9fc6ca3cc81140fd85edb27f34406a6736d1539cf7ebcb3a"
+      },
+      "/workspaces/mythos-evidence/base_v01/official_repro/preparation-v1-20261101/cache/eval_bundle/eval_data/symbolic_problem_solving/bigbench_operators.jsonl": {
+        "bytes": 35375,
+        "sha256": "41e2964ad619c49edd97c22b2c50f922a0241255d906a754bf81a20f4f66b85f"
+      },
+      "/workspaces/mythos-evidence/base_v01/official_repro/preparation-v1-20261101/cache/eval_bundle/eval_data/symbolic_problem_solving/bigbench_repeat_copy_logic.jsonl": {
+        "bytes": 7158,
+        "sha256": "8febd2c0080a15680cd17f92bfa30d87abcfac021e646e55d0b8ad69f0cfa767"
+      },
+      "/workspaces/mythos-evidence/base_v01/official_repro/preparation-v1-20261101/cache/eval_bundle/eval_data/reading_comprehension/squad.jsonl": {
+        "bytes": 9810616,
+        "sha256": "41fe6c43e725c0dc9161465066932c46edc390bf4019c361c500bbc4b766a350"
+      },
+      "/workspaces/mythos-evidence/base_v01/official_repro/preparation-v1-20261101/cache/eval_bundle/eval_data/reading_comprehension/coqa.jsonl": {
+        "bytes": 18588497,
+        "sha256": "0c2b8029776a138f755d065b9506eb8e91bbd38c44dce321a75f9987bb7875aa"
+      },
+      "/workspaces/mythos-evidence/base_v01/official_repro/preparation-v1-20261101/cache/eval_bundle/eval_data/reading_comprehension/boolq.jsonl": {
+        "bytes": 2210395,
+        "sha256": "454ff101e614370bb1807fe7ebbda6fdb57e794b9662cc1ccae211bf1ff626c8"
+      },
+      "/workspaces/mythos-evidence/base_v01/official_repro/preparation-v1-20261101/cache/eval_bundle/eval_data/language_understanding/bigbench_language_identification.jsonl": {
+        "bytes": 3940808,
+        "sha256": "80c98d8e7ab8213513d1643886229c05c40a6837353b07c19ac7bd860668954e"
+      },
+      "/workspaces/mythos-evidence/base_v01/official_repro/preparation-v1-20261101/cache/eval_bundle/eval_meta_data.csv": {
+        "bytes": 16612,
+        "sha256": "84e279cdc0d836c9ea3a6e55a99102f8ee18f72809fe7aa6ac5a1fe630aa492f"
+      },
+      "/workspaces/mythos-evidence/base_v01/official_repro/official-core-limited-v1-20261101T093733Z/observations.jsonl": {
+        "bytes": 343231,
+        "sha256": "bcd8946b0016b8fa52f0dc1ed15c0a3e8d43ef35dc8ed19cf5dbca62738eb0a2"
+      }
+    },
+    "audit_source_sha256": "5c211b17fa2473a2950b562991a8fe1fe83c5560d07d99cba0d91bf7d71e1f88"
+  },
+  "Expected": "Complete official coverage; depth8/FP32; no exceptions; exit0; all metrics within 2e-7",
+  "Actual": {
+    "expected_examples": 792,
+    "observed_examples": 784,
+    "expected_tasks": 66,
+    "observed_tasks": 65,
+    "observed_examples_by_seed": {
+      "1234": 264,
+      "2345": 264,
+      "3456": 256
+    },
+    "full_examples_three_seeds": 273111,
+    "elapsed_at_loaded_seconds": 114.38998616100002,
+    "process_elapsed_seconds": null,
+    "peak_rss_kib": 2966368,
+    "peak_rss_gib": 2.828948974609375,
+    "task_timings_exclude_model_load": true,
+    "task_timings": {
+      "hellaswag_zeroshot": {
+        "full_rows_per_seed": 10042,
+        "scored_rows_per_seed": 12,
+        "observed_task_seconds_by_seed": {
+          "1234": 25.27179640600002,
+          "2345": 24.678623290999894,
+          "3456": 25.249510779000047
+        },
+        "observed_three_seed_seconds": 75.19993047599996,
+        "estimated_full_three_seed_seconds": 62929.80848666597
+      },
+      "jeopardy": {
+        "full_rows_per_seed": 2117,
+        "scored_rows_per_seed": 12,
+        "observed_task_seconds_by_seed": {
+          "1234": 23.049284680000028,
+          "2345": 22.39839462000009,
+          "3456": 23.5260760630008
+        },
+        "observed_three_seed_seconds": 68.97375536300092,
+        "estimated_full_three_seed_seconds": 12168.120008622745
+      },
+      "bigbench_qa_wikidata": {
+        "full_rows_per_seed": 20321,
+        "scored_rows_per_seed": 12,
+        "observed_task_seconds_by_seed": {
+          "1234": 9.592967173000034,
+          "2345": 9.405319490999773,
+          "3456": 9.671169271000508
+        },
+        "observed_three_seed_seconds": 28.669455935000315,
+        "estimated_full_three_seed_seconds": 48549.334504595114
+      },
+      "arc_easy": {
+        "full_rows_per_seed": 2376,
+        "scored_rows_per_seed": 12,
+        "observed_task_seconds_by_seed": {
+          "1234": 85.79709803700007,
+          "2345": 86.76925593100032,
+          "3456": 90.61749596799928
+        },
+        "observed_three_seed_seconds": 263.18384993599966,
+        "estimated_full_three_seed_seconds": 52110.40228732794
+      },
+      "arc_challenge": {
+        "full_rows_per_seed": 1172,
+        "scored_rows_per_seed": 12,
+        "observed_task_seconds_by_seed": {
+          "1234": 102.2759844760003,
+          "2345": 99.69838004400026,
+          "3456": 101.68259255300018
+        },
+        "observed_three_seed_seconds": 303.65695707300074,
+        "estimated_full_three_seed_seconds": 29657.16280746307
+      },
+      "copa": {
+        "full_rows_per_seed": 100,
+        "scored_rows_per_seed": 12,
+        "observed_task_seconds_by_seed": {
+          "1234": 3.8244326079998245,
+          "2345": 4.060244154999964,
+          "3456": 4.174235405000218
+        },
+        "observed_three_seed_seconds": 12.058912168000006,
+        "estimated_full_three_seed_seconds": 100.49093473333339
+      },
+      "commonsense_qa": {
+        "full_rows_per_seed": 1221,
+        "scored_rows_per_seed": 12,
+        "observed_task_seconds_by_seed": {
+          "1234": 129.36188418600022,
+          "2345": 128.09316158399997,
+          "3456": 130.80285872400054
+        },
+        "observed_three_seed_seconds": 388.25790449400074,
+        "estimated_full_three_seed_seconds": 39505.24178226457
+      },
+      "piqa": {
+        "full_rows_per_seed": 1838,
+        "scored_rows_per_seed": 12,
+        "observed_task_seconds_by_seed": {
+          "1234": 41.775337260000015,
+          "2345": 43.38195885799996,
+          "3456": 42.95320176500081
+        },
+        "observed_three_seed_seconds": 128.1104978830008,
+        "estimated_full_three_seed_seconds": 19622.25792574629
+      },
+      "openbook_qa": {
+        "full_rows_per_seed": 500,
+        "scored_rows_per_seed": 12,
+        "observed_task_seconds_by_seed": {
+          "1234": 5.217735003999678,
+          "2345": 5.338658435999605,
+          "3456": 5.323829109000144
+        },
+        "observed_three_seed_seconds": 15.880222548999427,
+        "estimated_full_three_seed_seconds": 661.6759395416428
+      },
+      "lambada_openai": {
+        "full_rows_per_seed": 5153,
+        "scored_rows_per_seed": 12,
+        "observed_task_seconds_by_seed": {
+          "1234": 6.5508873260000655,
+          "2345": 6.482249343000149,
+          "3456": 6.945329707000383
+        },
+        "observed_three_seed_seconds": 19.978466376000597,
+        "estimated_full_three_seed_seconds": 8579.086436294258
+      },
+      "hellaswag": {
+        "full_rows_per_seed": 10042,
+        "scored_rows_per_seed": 12,
+        "observed_task_seconds_by_seed": {
+          "1234": 305.44699106300004,
+          "2345": 321.0865338979993,
+          "3456": 305.3913304050002
+        },
+        "observed_three_seed_seconds": 931.9248553659995,
+        "estimated_full_three_seed_seconds": 779865.783132114
+      },
+      "winograd": {
+        "full_rows_per_seed": 273,
+        "scored_rows_per_seed": 12,
+        "observed_task_seconds_by_seed": {
+          "1234": 4.482651110999996,
+          "2345": 5.459099317000437,
+          "3456": 4.620494556999802
+        },
+        "observed_three_seed_seconds": 14.562244985000234,
+        "estimated_full_three_seed_seconds": 331.2910734087553
+      },
+      "winogrande": {
+        "full_rows_per_seed": 1267,
+        "scored_rows_per_seed": 12,
+        "observed_task_seconds_by_seed": {
+          "1234": 4.803691580999839,
+          "2345": 4.81640591499945,
+          "3456": 4.703372042999945
+        },
+        "observed_three_seed_seconds": 14.323469538999234,
+        "estimated_full_three_seed_seconds": 1512.3196588260025
+      },
+      "bigbench_dyck_languages": {
+        "full_rows_per_seed": 1000,
+        "scored_rows_per_seed": 12,
+        "observed_task_seconds_by_seed": {
+          "1234": 32.04288635699959,
+          "2345": 32.2842693599996,
+          "3456": 32.621466370000235
+        },
+        "observed_three_seed_seconds": 96.94862208699942,
+        "estimated_full_three_seed_seconds": 8079.0518405832845
+      },
+      "agi_eval_lsat_ar": {
+        "full_rows_per_seed": 230,
+        "scored_rows_per_seed": 12,
+        "observed_task_seconds_by_seed": {
+          "1234": 216.74617044700017,
+          "2345": 218.0299637019998,
+          "3456": 220.47790232700027
+        },
+        "observed_three_seed_seconds": 655.2540364760002,
+        "estimated_full_three_seed_seconds": 12559.035699123337
+      },
+      "bigbench_cs_algorithms": {
+        "full_rows_per_seed": 1320,
+        "scored_rows_per_seed": 12,
+        "observed_task_seconds_by_seed": {
+          "1234": 36.46476772899996,
+          "2345": 37.16215329199986,
+          "3456": 37.20208764900053
+        },
+        "observed_three_seed_seconds": 110.82900867000035,
+        "estimated_full_three_seed_seconds": 12191.19095370004
+      },
+      "bigbench_operators": {
+        "full_rows_per_seed": 210,
+        "scored_rows_per_seed": 12,
+        "observed_task_seconds_by_seed": {
+          "1234": 26.16467047599963,
+          "2345": 25.93611205399975,
+          "3456": 26.185650785999314
+        },
+        "observed_three_seed_seconds": 78.28643331599869,
+        "estimated_full_three_seed_seconds": 1370.0125830299773
+      },
+      "bigbench_repeat_copy_logic": {
+        "full_rows_per_seed": 32,
+        "scored_rows_per_seed": 12,
+        "observed_task_seconds_by_seed": {
+          "1234": 35.01868524199972,
+          "2345": 35.6121158979995,
+          "3456": 35.941737273999934
+        },
+        "observed_three_seed_seconds": 106.57253841399915,
+        "estimated_full_three_seed_seconds": 284.1934357706644
+      },
+      "squad": {
+        "full_rows_per_seed": 10570,
+        "scored_rows_per_seed": 12,
+        "observed_task_seconds_by_seed": {
+          "1234": 145.39753041699987,
+          "2345": 149.90000875500027,
+          "3456": 147.53274078100003
+        },
+        "observed_three_seed_seconds": 442.8302799530002,
+        "estimated_full_three_seed_seconds": 390059.6715919343
+      },
+      "coqa": {
+        "full_rows_per_seed": 7983,
+        "scored_rows_per_seed": 12,
+        "observed_task_seconds_by_seed": {
+          "1234": 30.859806967999702,
+          "2345": 31.40968251999948,
+          "3456": 32.38905458099998
+        },
+        "observed_three_seed_seconds": 94.65854406899916,
+        "estimated_full_three_seed_seconds": 62971.5964419017
+      },
+      "boolq": {
+        "full_rows_per_seed": 3270,
+        "scored_rows_per_seed": 12,
+        "observed_task_seconds_by_seed": {
+          "1234": 276.65817983299985,
+          "2345": 281.16038437600037,
+          "3456": 282.49806268700013
+        },
+        "observed_three_seed_seconds": 840.3166268960003,
+        "estimated_full_three_seed_seconds": 228986.2808291601
+      },
+      "bigbench_language_identification": {
+        "full_rows_per_seed": 10000,
+        "scored_rows_per_seed": 12,
+        "observed_task_seconds_by_seed": {
+          "1234": 460.647899952,
+          "2345": 541.8831465999992
+        },
+        "observed_three_seed_seconds": null,
+        "estimated_full_three_seed_seconds": null
+      }
+    },
+    "observed_all_task_seconds": 5693.007658575999,
+    "estimated_full_three_seed_seconds": null,
+    "empty_lm_answer_slices": [],
+    "metrics_complete": false
+  },
+  "Status": "BLOCKED",
+  "checks": [
+    {
+      "Purpose": "Original CORE task inventory",
+      "Environment": "saved evidence; stdlib and PyYAML only",
+      "Input": "/workspaces/mythos-evidence/base_v01/official_repro/official-core-limited-v1-20261101T093733Z",
+      "Expected": {
+        "tasks": 22,
+        "full_rows_per_seed": 91037
+      },
+      "Actual": {
+        "tasks": 22,
+        "full_rows_per_seed": 91037
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Known observation schemas",
+      "Environment": "saved evidence; stdlib and PyYAML only",
+      "Input": "/workspaces/mythos-evidence/base_v01/official_repro/official-core-limited-v1-20261101T093733Z",
+      "Expected": [
+        "command",
+        "completion",
+        "environment",
+        "error",
+        "example",
+        "example_incomplete",
+        "forward_model_exception",
+        "loaded",
+        "task",
+        "task_incomplete"
+      ],
+      "Actual": [
+        "command",
+        "environment",
+        "example",
+        "loaded",
+        "task"
+      ],
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Exactly one environment observation",
+      "Environment": "saved evidence; stdlib and PyYAML only",
+      "Input": "/workspaces/mythos-evidence/base_v01/official_repro/official-core-limited-v1-20261101T093733Z",
+      "Expected": 1,
+      "Actual": 1,
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Exactly one command observation",
+      "Environment": "saved evidence; stdlib and PyYAML only",
+      "Input": "/workspaces/mythos-evidence/base_v01/official_repro/official-core-limited-v1-20261101T093733Z",
+      "Expected": 1,
+      "Actual": 1,
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Exactly one loaded observation",
+      "Environment": "saved evidence; stdlib and PyYAML only",
+      "Input": "/workspaces/mythos-evidence/base_v01/official_repro/official-core-limited-v1-20261101T093733Z",
+      "Expected": 1,
+      "Actual": 1,
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Exactly one completion observation",
+      "Environment": "saved evidence; stdlib and PyYAML only",
+      "Input": "/workspaces/mythos-evidence/base_v01/official_repro/official-core-limited-v1-20261101T093733Z",
+      "Expected": 1,
+      "Actual": 0,
+      "Status": "BLOCKED"
+    },
+    {
+      "Purpose": "No observed official fallback or runtime exception",
+      "Environment": "saved evidence; stdlib and PyYAML only",
+      "Input": "/workspaces/mythos-evidence/base_v01/official_repro/official-core-limited-v1-20261101T093733Z",
+      "Expected": 0,
+      "Actual": [],
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "No incomplete example or task observations",
+      "Environment": "saved evidence; stdlib and PyYAML only",
+      "Input": "/workspaces/mythos-evidence/base_v01/official_repro/official-core-limited-v1-20261101T093733Z",
+      "Expected": 0,
+      "Actual": [],
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Official loaded model recurrence and precision",
+      "Environment": "saved evidence; stdlib and PyYAML only",
+      "Input": "/workspaces/mythos-evidence/base_v01/official_repro/official-core-limited-v1-20261101T093733Z",
+      "Expected": "ModelingParcae, depth 8, FP32 parameters",
+      "Actual": {
+        "kind": "loaded",
+        "elapsed_s": 114.38998616100002,
+        "maxrss_kib": 1466224,
+        "model_class": "ModelingParcae",
+        "mean_recurrence": 8,
+        "parameter_count": 144323136,
+        "dtypes": [
+          "torch.float32"
+        ],
+        "bos_id": null,
+        "eos_id": null,
+        "pad_id": null,
+        "tokenizer_class": "TokenizersBackend"
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Recorded official CPU command and sample limit",
+      "Environment": "saved evidence; stdlib and PyYAML only",
+      "Input": "/workspaces/mythos-evidence/base_v01/official_repro/official-core-limited-v1-20261101T093733Z",
+      "Expected": {
+        "device": "cpu",
+        "max_per_task": 12
+      },
+      "Actual": {
+        "argv": [
+          "/workspaces/mythos-parcae-pinned/scripts/eval.py",
+          "--hf_repo",
+          "/workspaces/mythos-evidence/base_v01/b1/b1-20261101T021657Z/downloads/model",
+          "--out_dir",
+          "/workspaces/mythos-evidence/base_v01/official_repro/official-core-limited-v1-20261101T093733Z",
+          "--config",
+          "/workspaces/mythos-parcae-pinned/eval_configs/eval-core.yaml",
+          "--device_type",
+          "cpu",
+          "--tasks.core.max_per_task",
+          "12"
+        ],
+        "spec_max_per_task": 12
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Complete unique example coverage",
+      "Environment": "saved evidence; stdlib and PyYAML only",
+      "Input": "/workspaces/mythos-evidence/base_v01/official_repro/official-core-limited-v1-20261101T093733Z",
+      "Expected": 792,
+      "Actual": {
+        "records": 784,
+        "unique": 784,
+        "missing_count": 8,
+        "missing_first_30": [
+          [
+            "bigbench_language_identification",
+            3456,
+            4
+          ],
+          [
+            "bigbench_language_identification",
+            3456,
+            5
+          ],
+          [
+            "bigbench_language_identification",
+            3456,
+            6
+          ],
+          [
+            "bigbench_language_identification",
+            3456,
+            7
+          ],
+          [
+            "bigbench_language_identification",
+            3456,
+            8
+          ],
+          [
+            "bigbench_language_identification",
+            3456,
+            9
+          ],
+          [
+            "bigbench_language_identification",
+            3456,
+            10
+          ],
+          [
+            "bigbench_language_identification",
+            3456,
+            11
+          ]
+        ]
+      },
+      "Status": "BLOCKED"
+    },
+    {
+      "Purpose": "Complete unique task coverage",
+      "Environment": "saved evidence; stdlib and PyYAML only",
+      "Input": "/workspaces/mythos-evidence/base_v01/official_repro/official-core-limited-v1-20261101T093733Z",
+      "Expected": 66,
+      "Actual": {
+        "records": 65,
+        "unique": 65,
+        "missing": [
+          [
+            "bigbench_language_identification",
+            3456
+          ]
+        ]
+      },
+      "Status": "BLOCKED"
+    },
+    {
+      "Purpose": "Every recorded decision recomputes from saved scores/tokens",
+      "Environment": "saved evidence; stdlib and PyYAML only",
+      "Input": "/workspaces/mythos-evidence/base_v01/official_repro/official-core-limited-v1-20261101T093733Z",
+      "Expected": "all recorded examples valid",
+      "Actual": {
+        "valid": 784,
+        "invalid": []
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Successful terminal evidence and complete counts",
+      "Environment": "saved evidence; stdlib and PyYAML only",
+      "Input": "/workspaces/mythos-evidence/base_v01/official_repro/official-core-limited-v1-20261101T093733Z",
+      "Expected": {
+        "exit_code": 0,
+        "counts": {
+          "examples": 792,
+          "forward_model_exceptions": 0
+        }
+      },
+      "Actual": {
+        "process": {},
+        "observation": {}
+      },
+      "Status": "BLOCKED"
+    }
+  ],
+  "failures": [],
+  "blockers": [
+    {
+      "reason": "Exactly one completion observation",
+      "actual": 0
+    },
+    {
+      "reason": "Complete unique example coverage",
+      "actual": {
+        "records": 784,
+        "unique": 784,
+        "missing_count": 8,
+        "missing_first_30": [
+          [
+            "bigbench_language_identification",
+            3456,
+            4
+          ],
+          [
+            "bigbench_language_identification",
+            3456,
+            5
+          ],
+          [
+            "bigbench_language_identification",
+            3456,
+            6
+          ],
+          [
+            "bigbench_language_identification",
+            3456,
+            7
+          ],
+          [
+            "bigbench_language_identification",
+            3456,
+            8
+          ],
+          [
+            "bigbench_language_identification",
+            3456,
+            9
+          ],
+          [
+            "bigbench_language_identification",
+            3456,
+            10
+          ],
+          [
+            "bigbench_language_identification",
+            3456,
+            11
+          ]
+        ]
+      }
+    },
+    {
+      "reason": "Complete unique task coverage",
+      "actual": {
+        "records": 65,
+        "unique": 65,
+        "missing": [
+          [
+            "bigbench_language_identification",
+            3456
+          ]
+        ]
+      }
+    },
+    {
+      "reason": "Successful terminal evidence and complete counts",
+      "actual": {
+        "process": {},
+        "observation": {}
+      }
+    },
+    {
+      "reason": "Official eval/core.json is unavailable",
+      "actual": null
+    },
+    {
+      "reason": "Incomplete decisions prevent full CORE metric recomputation",
+      "actual": null
+    }
+  ],
+  "utc": "2026-11-01T11:18:35.385936+00:00",
+  "limitations": [
+    "Model logits, tokenization, attention and RNG are not rerun; decisions are independently reconstructed from saved outputs.",
+    "Input item identities are checked against original JSONL after official shuffle1337; few-shot rendering is not reconstructed here.",
+    "Task timings measure evaluate_task only, excluding model loading and outer dataset preparation; profiler overhead remains included.",
+    "Full-duration estimates linearly scale each task's measured time by full_rows/scored_rows and are not confidence bounds.",
+    "Limited few-shot pools, sequence lengths, machine load and long-run behavior can change full-run timing and scores.",
+    "Peak RSS is the Linux observer's process high-water mark, not total machine or process-tree memory.",
+    "Pipeline PASS does not establish paper-score replication, positive language quality, fresh-test generalization or training/resume.",
+    "Protected source/environment/input preservation requires the separate pre/post integrity record; this audit binds bytes it read."
+  ]
+}
