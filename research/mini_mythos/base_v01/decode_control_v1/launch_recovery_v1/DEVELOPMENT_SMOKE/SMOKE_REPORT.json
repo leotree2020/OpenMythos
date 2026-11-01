@@ -1,0 +1,133 @@
+{
+  "Purpose": "Validate launch orchestration with harmless real subprocesses before any model work",
+  "Environment": {
+    "codespace": "bookish-pancake-vwqx7rr9x5w3wxjr",
+    "launcher_python": "/workspaces/mythos-base-v01-cpu312/bin/python"
+  },
+  "Input": {
+    "launcher_sha256": "8083b948eebdf08c2d14a79d940ccead72db5f10c6bac8d9061816b6c9ea05c3",
+    "source_bytes": 4374,
+    "smoke_root": "/workspaces/mythos-evidence/base_v01/decode_operator/launch-smoke-v1-20261101T073733Z"
+  },
+  "Expected": "all6 checks PASS; no model imports/weights",
+  "Actual": {
+    "checks": 6,
+    "passed": 6
+  },
+  "Status": "PASS",
+  "development_only": true,
+  "formal_run_started": false,
+  "checks": [
+    {
+      "Purpose": "Successful child completion",
+      "Environment": "target Codespace; frozen Python3.12.3; stdlib only",
+      "Input": "harmless real child processes",
+      "Expected": "COMPLETED, child rc0, launcher rc0",
+      "Actual": {
+        "launcher_rc": 0,
+        "completion": {
+          "status": "COMPLETED",
+          "returncode": 0,
+          "utc": "2026-11-01T07:37:33.605556+00:00"
+        }
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Exact stdout and stderr capture",
+      "Environment": "target Codespace; frozen Python3.12.3; stdlib only",
+      "Input": "harmless real child processes",
+      "Expected": "two exact sentinel lines",
+      "Actual": {
+        "stdout": "MYTHOS_SMOKE_OUT\n",
+        "stderr": "MYTHOS_SMOKE_ERR\n"
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Correct source and isolated stdlib imports",
+      "Environment": "target Codespace; frozen Python3.12.3; stdlib only",
+      "Input": "harmless real child processes",
+      "Expected": "same source, isolated, no numerical modules, genuine stdlib operator",
+      "Actual": {
+        "utc": "2026-11-01T07:37:33.572255+00:00",
+        "pid": 179519,
+        "argv": [
+          "/workspaces/mythos-evidence/base_v01/decode_operator/launch-smoke-v1-20261101T073733Z/mythos_launch.py",
+          "--config",
+          "/workspaces/mythos-evidence/base_v01/decode_operator/launch-smoke-v1-20261101T073733Z/success/config.json"
+        ],
+        "python": "/workspaces/mythos-base-v01-cpu312/bin/python",
+        "python_version": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+        "operator_origin": "/usr/lib/python3.12/operator.py",
+        "isolated": 1,
+        "source_sha256": "8083b948eebdf08c2d14a79d940ccead72db5f10c6bac8d9061816b6c9ea05c3",
+        "config": {
+          "command": [
+            "/workspaces/mythos-base-v01-cpu312/bin/python",
+            "-I",
+            "-B",
+            "-c",
+            "import sys,json,operator; print('MYTHOS_SMOKE_OUT'); print('MYTHOS_SMOKE_ERR',file=sys.stderr); assert not any(n in sys.modules for n in ('torch','numpy','tokenizers'))"
+          ],
+          "cwd": "/workspaces/mythos-base-v01-rope-diag-v11",
+          "timeout_seconds": 20
+        },
+        "numerical_libraries_imported": false
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Duplicate claim refused without overwriting logs",
+      "Environment": "target Codespace; frozen Python3.12.3; stdlib only",
+      "Input": "harmless real child processes",
+      "Expected": "refused, original files byte unchanged",
+      "Actual": {
+        "rc": 1,
+        "unchanged": true
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Nonzero child exit preserved",
+      "Environment": "target Codespace; frozen Python3.12.3; stdlib only",
+      "Input": "harmless real child processes",
+      "Expected": "launcher2, child7, CHILD_FAILED, exact output",
+      "Actual": {
+        "launcher_rc": 2,
+        "completion": {
+          "status": "CHILD_FAILED",
+          "returncode": 7,
+          "utc": "2026-11-01T07:37:33.752594+00:00"
+        }
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Timeout kills TERM-resistant child group",
+      "Environment": "target Codespace; frozen Python3.12.3; stdlib only",
+      "Input": "harmless real child processes",
+      "Expected": "expected negative fixture: BLOCKED TimeoutExpired, group KILL, grandchild absent/zombie",
+      "Actual": {
+        "completion": {
+          "status": "BLOCKED",
+          "returncode": null,
+          "cleanup": {
+            "pgid": 179534,
+            "errors": [],
+            "term_sent": true,
+            "kill_sent": true,
+            "leader_returncode": -15,
+            "group_still_exists": true
+          },
+          "exception_type": "TimeoutExpired",
+          "exception": "TimeoutExpired(['/workspaces/mythos-base-v01-cpu312/bin/python', '-I', '-B', '-c', 'import subprocess,time; p=subprocess.Popen([\\'/workspaces/mythos-base-v01-cpu312/bin/python\\', \\'-I\\', \\'-B\\', \\'-c\\', \"import signal,time,os; signal.signal(signal.SIGTERM,signal.SIG_IGN); print(\\'GRANDCHILD_PID=\\'+str(os.getpid()),flush=True); time.sleep(30)\"],stdout=subprocess.PIPE,text=True); print(p.stdout.readline().strip(),flush=True); time.sleep(30)'], 1)",
+          "traceback": "Traceback (most recent call last):\n  File \"/workspaces/mythos-evidence/base_v01/decode_operator/launch-smoke-v1-20261101T073733Z/mythos_launch.py\", line 55, in main\n    returncode = child.wait(timeout=config[\"timeout_seconds\"])\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.12/subprocess.py\", line 1264, in wait\n    return self._wait(timeout=timeout)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.12/subprocess.py\", line 2045, in _wait\n    raise TimeoutExpired(self.args, timeout)\nsubprocess.TimeoutExpired: Command '['/workspaces/mythos-base-v01-cpu312/bin/python', '-I', '-B', '-c', 'import subprocess,time; p=subprocess.Popen([\\'/workspaces/mythos-base-v01-cpu312/bin/python\\', \\'-I\\', \\'-B\\', \\'-c\\', \"import signal,time,os; signal.signal(signal.SIGTERM,signal.SIG_IGN); print(\\'GRANDCHILD_PID=\\'+str(os.getpid()),flush=True); time.sleep(30)\"],stdout=subprocess.PIPE,text=True); print(p.stdout.readline().strip(),flush=True); time.sleep(30)']' timed out after 1 seconds\n",
+          "utc": "2026-11-01T07:37:36.835953+00:00"
+        },
+        "grandchild_state": "absent"
+      },
+      "Status": "PASS"
+    }
+  ]
+}
