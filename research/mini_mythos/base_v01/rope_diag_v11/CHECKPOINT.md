@@ -6,6 +6,8 @@ Purpose: establish the official pretrained buffer loading contract. Environment:
 
 Interpretation: source semantics support testing whether the official evaluation loading path faithfully restores the published artifact. They do not make the constructor's RoPE equal to the artifact, establish the artifact's creation history, or change B1 A5. The convenience entry point differs from receval and must not be substituted silently. strict=False does not verify complete key coverage; the next check must inspect normalized keys, shapes, types and all state bytes independently.
 
+Review clarification: a separate source reviewer approved the interpretation. For the next loading check, BLOCKED covers inability to verify fixed inputs, pinned code or the current runtime. The already-unknown historical training/export environment stays UNKNOWN and does not itself prevent a faithful-loading check. No new run or acceptance claim was made.
+
 Numerical results remain: one completed CPU run, G0–G5 PASS, 165/165 checks PASS; N/T/P/R/Q all fail the unchanged 1e-6 compatibility screen. Stored-buffer source explanation UNRESOLVED. B1 A5 BLOCKED; A3 overall/A8–A11/language quality NOT TESTED; Formal Oracle BLOCKED/NOT_READY; FORMAL_ACCEPTANCE_READY=False. No new numerical run, generation, training, GPU, upstream change, B1 rerun, B2/D2-A or PR #24 action occurred in this phase.
 
 Dependencies and protected pins are unchanged from the result checkpoint. Full artifact creation hardware, kernel, exact software/export/conversion history remain UNKNOWN; no publication-linked original environment trace was obtained. The source review is not empirical restoration validation.
