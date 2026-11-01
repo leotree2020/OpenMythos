@@ -1,0 +1,26 @@
+{
+  "Purpose": "Apply the preregistered separate language-quality screen to exactly the first 12 continuations",
+  "Environment": "Root and delegated AI-assisted read-only text review; no model execution; not a human evaluation or independent model replication",
+  "Input": "inference-v1-20261101T062256Z / first / inference / public / pass1_prompt01..12_generation.json",
+  "Expected": "At least 9 of 12 satisfy BOTH frozen automatic rules and local semantic/code coherence",
+  "Actual": {"automatic_pass": 0, "coherent": 7, "joint_pass": 0, "samples": 12, "all_12_fail_4gram_rule": true},
+  "Status": "FAIL",
+  "engineering_status": "PASS, unaffected by the separate quality verdict",
+  "interpretation": "Repetition and factual errors do not alone define the coherence label; circular reasoning, contradictory structure or broken code/sequence continuation may fail coherence. Automatic repetition rejection is independent and already makes the joint count zero. Factual/code notes are descriptive flags, not a separately scored or externally verified benchmark.",
+  "reviewer_agreement": "Root read all 12 outputs and agrees with delegated reviewer on all 12 coherence labels. No unresolved scoring disagreement. Both are AI-assisted judgments; this is not statistical confirmation.",
+  "rows": [
+    {"id":1,"coherent":true,"reason":"承接首都提示，语言可理解，但后半段机械重复。","factual_or_code_notes":"首词 Paris 合理；最大国家和世界最大城市的断言混淆或错误，未作为事实能力验收。"},
+    {"id":2,"coherent":true,"reason":"任务名称与人物说明承接提示，随后重复同一句话。","factual_or_code_notes":"Apollo 11 和 Neil Armstrong 的核心提法合理；未开展独立事实基准评测。"},
+    {"id":3,"coherent":true,"reason":"围绕光合作用，语言结构可理解，定义反复重复。","factual_or_code_notes":"把动物泛称为光合作用主体不当，反应解释不完整。"},
+    {"id":4,"coherent":true,"reason":"自然引入人物并描述特征，随后重复讲笑话的能力。","factual_or_code_notes":"虚构叙述；未发展进一步情节。"},
+    {"id":5,"coherent":false,"reason":"对同一三态先列元素，后列固液气，没有解释两套互相冲突的答案。","factual_or_code_notes":"元素与物态混淆；固态总是最稳定的泛化不成立。"},
+    {"id":6,"coherent":false,"reason":"以已经泡好茶作为泡茶的前提，反复交换茶和水，没有有意义的操作顺序。","factual_or_code_notes":"不能作为从原料开始的泡茶方法。"},
+    {"id":7,"coherent":false,"reason":"函数声明和文档字符串后直接接未缩进英语说明，破坏代码续写结构。","factual_or_code_notes":"无函数实现或返回值；没有执行生成代码。"},
+    {"id":8,"coherent":false,"reason":"用法国大革命本身解释其发生，形成循环因果，随后重复背景句。","factual_or_code_notes":"未给出有效成因解释。"},
+    {"id":9,"coherent":true,"reason":"语言可理解且持续讨论两种海拔的沸点，但结论错误并反复重复。","factual_or_code_notes":"没有体现较低气压下沸点降低。"},
+    {"id":10,"coherent":true,"reason":"语法与主题衔接成立，但只重复同一笼统解释。","factual_or_code_notes":"没有解释学习目标或参数更新，不能视为机制理解证据。"},
+    {"id":11,"coherent":true,"reason":"保持求职信口吻，随后反复重复身份声明。","factual_or_code_notes":"职务与身份未核验，不作为真实事实。"},
+    {"id":12,"coherent":false,"reason":"最初接续数列，随后跳数并长期重复 thirty，失去序列规则。","factual_or_code_notes":"漏十九、重复二十、跳到三十后循环。"}
+  ],
+  "limitations": ["Fixed 12 prompts, one seed per prompt, 64 raw greedy tokens, depth 8 only", "No alternative decoding settings or regeneration", "Failure does not identify whether repetition is caused by checkpoint capability, decoding policy, or other factors", "No B1 A5 reclassification; no B2/D2-A or training/resume evidence"]
+}
