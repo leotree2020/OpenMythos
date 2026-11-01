@@ -1,3 +1,56 @@
+# Latest checkpoint — target access recovered; diagnostic still NOT TESTED
+
+2026-11-01. Access record `access-20261101T041221Z` (an operator preflight identifier, **not** a formal diagnostic run-id).
+
+## Decision and scope
+
+**Read-only target access/resource preflight: PASS. Formal diagnostic G0–G5: NOT TESTED. Scientific conclusion: UNRESOLVED.**
+The prior session's inability to access the target is preserved below as a historical fact. In this session, the owner's already-authorized browser connection successfully reached a Linux terminal in Codespace `bookish-pancake-vwqx7rr9x5w3wxjr`. This establishes access for this browser session only; it does not establish execution access for a separate Claude Code session.
+
+No diagnostic implementation or frozen execution commit exists. No Torch import, S extraction, fixture, helper suite, N/T/P/R/Q computation, model loading/forward, generation or training was performed. The formal single run has not started.
+
+## Acceptance record
+
+| Field | Record |
+|---|---|
+| Purpose | Restore the named target's access and verify that frozen B1 resources are available before handing diagnostic implementation back to Claude Code. |
+| Environment | Target Codespace, hostname `codespaces-978a0f`; system Python with `-B` for standard-library inventory/hash reads; metadata subprocess explicitly uses `/workspaces/mythos-base-v01-cpu312/bin/python -B`. |
+| Input | B1 worktree at d88be474; pinned upstream at 69284c13; original B1 run `/workspaces/mythos-evidence/base_v01/b1/b1-20261101T021657Z`; existing requirements.lock; diagnostic checkpoint faf744a2. |
+| Expected | Exact Codespace identity; clean frozen B1/upstream trees; matching file bytes/hashes and selected dependency metadata; no existing entry in the designated diagnostic evidence location. Stop on a conflicting observation. |
+| Actual | Exact target identity; B1/upstream pins and clean states match; all 8 original B1 manifest entries verified across input_metadata.json and original_records_integrity.json; original manifest/summary byte-equal to committed B1 copies; lock hash matches; selected package metadata and interpreter identity match; designated rope_diag directory absent. |
+| Status | **PASS for this limited preflight only.** This is not G0, a numerical result or a new B1 acceptance. |
+
+The frozen interpreter reports Python 3.12.3, prefix `/workspaces/mythos-base-v01-cpu312`, torch 2.11.0+cpu, numpy 1.26.4, einops 0.8.0, tokenizers 0.23.2 and huggingface-hub 1.33.0, with `torch_imported=false`. These are installation metadata checks, not runtime/kernel or full-environment equivalence tests. Available workspace disk was 6,797,541,376 bytes at the recorded observation.
+
+## Git and evidence
+
+- Diagnostic branch: `mythos-base-v01-rope-diag-v11`; pre-seal remote HEAD `faf744a215891b5749bf68b8cdb2f901cb0e106f`. This documentation/evidence checkpoint is not an execution commit.
+- After the read-only observations, an isolated worktree was created at `/workspaces/mythos-base-v01-rope-diag-v11`, starting at `faf744a215891b5749bf68b8cdb2f901cb0e106f`, solely to seal these access records. The earlier JSON observation of an absent local diagnostic ref/worktree precedes this documentation operation.
+- Protocol remains `b0dbc7c7272645a7b7ba125372e507e92868cb4a`, unchanged in this stage.
+- B1 worktree remains `d88be474ebb2529c5b095e3732b1f25509f9b824`, clean including ignored/untracked files in the final read audit.
+- Upstream remains `69284c13746e849104f738d6d1a347b1f457df76`, clean including ignored/untracked files.
+- At the initial preflight observation, the main checkout was `mini-mythos-research` at `d05273c55c69cf75cdfa9c86c6e47bf5ed021cf2`, with pre-existing untracked SETUP_LEOTREE2020.md, overlay zip and mythos_evidence entries. This workflow did not edit those files; their contents were not individually hashed in this audit.
+- PR #24 was read-only queried: open, draft, unmerged, head `4308099bfc90d9398f54a47f9272b6bd4582f7b9`. No PR write.
+- Committable evidence: `access_evidence/access-20261101T041221Z/` alongside this checkpoint. Target operator copy: `/workspaces/mythos-evidence/base_v01/access/rope-access-20261101T041221Z`. No original binary, tokenizer or tensor is exported.
+- The evidence manifest hashes the collected records; it excludes itself and this checkpoint to avoid self-reference. Git identifies this checkpoint's bytes. The terminal transcript preserves the initial malformed bracketed-paste input: it ended with command-not-found before the read-only inventory program executed; no diagnostic or numerical computation was involved.
+
+The full staged `git diff --check` did not pass because the raw terminal transcript retains CRLF/trailing whitespace. Its original bytes and hash were deliberately preserved. Generated Markdown/JSON were checked separately; this is a sealing-format observation, not a diagnostic numerical guard or a changed scientific threshold. The retained transcript includes the exact `--ignored --untracked-files=all` commands for the final B1/upstream read audit.
+
+## Remaining limitations
+
+1. `claude` was not found in the current terminal PATH. This does not prove that every Claude access method is unavailable; no Claude execution channel has been demonstrated in this session, and no CLI was installed.
+2. Only the designated `/workspaces/mythos-evidence/base_v01/rope_diag` location was checked for prior runs. It was absent. The remote diagnostic tree contained only PROTOCOL.md/CHECKPOINT.md before this access evidence was added. This is not a claim about all possible target paths.
+3. The committed protocol still needs to be self-contained and the implementation must be statically reviewed and frozen before any formal numerical run. No fixture rehearsal was performed or newly authorized by this checkpoint.
+4. Full runtime/CPU dispatch, S, candidate paths, repeatability and historical scalar reproduction remain NOT TESTED. B1 remains A5 BLOCKED; A3 overall and A8–A11 NOT TESTED; language quality NOT TESTED; Formal Oracle BLOCKED/NOT_READY; FORMAL_ACCEPTANCE_READY=False.
+
+## Next single instruction
+
+In a Claude Code session that can actually access this named Codespace, read this checkpoint and the frozen protocol, then prepare the diagnostic implementation and a self-contained protocol for static review and a frozen execution commit. Preserve the five paths and all approved guards/thresholds. Do not treat this access preflight as G0 or automatically begin the formal numerical run. Resolve any fixture-only rehearsal scope explicitly before running it. Do not modify upstream, rerun B1, enter B2/D2-A, or merge PR #24.
+
+---
+
+## Historical checkpoint at faf744a215891b5749bf68b8cdb2f901cb0e106f (preserved below)
+
 # MYTHOS-B1-ROPE-DIAG-V1 (protocol v1.1 + C1–C3) — checkpoint: BLOCKED at target-machine access; nothing executed
 
 2026-11-01. Branch `mythos-base-v01-rope-diag-v11`, created from B1 result checkpoint `d88be474ebb2529c5b095e3732b1f25509f9b824`.
