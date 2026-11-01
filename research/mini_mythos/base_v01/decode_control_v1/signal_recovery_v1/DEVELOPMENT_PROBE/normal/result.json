@@ -1,0 +1,499 @@
+{
+  "case": "normal",
+  "status": "PASS",
+  "checks": [
+    {
+      "Purpose": "-D preserves direct child identity",
+      "Environment": "Linux; frozen CPU Python 3.12; strace 6.8; stdlib fixture",
+      "Input": {
+        "case": "normal"
+      },
+      "Expected": "coordinator is the only direct launcher child",
+      "Actual": {
+        "launcher": {
+          "pid": 232312,
+          "ppid": 232276,
+          "pgid": 232312,
+          "sid": 232312,
+          "starttime_ticks": 1613597,
+          "uid": 1000,
+          "cgroup": "0::/init\n",
+          "sigterm_blocked": false
+        },
+        "launcher_claim": {
+          "utc": "2026-11-01T08:16:54.506204+00:00",
+          "pid": 232312,
+          "argv": [
+            "/workspaces/mythos-evidence/base_v01/decode_operator/signal-probe-v1-20261101T081654Z/normal/operator/mythos_launch.py",
+            "--config",
+            "/workspaces/mythos-evidence/base_v01/decode_operator/signal-probe-v1-20261101T081654Z/normal/operator/config.json"
+          ],
+          "python": "/workspaces/mythos-base-v01-cpu312/bin/python",
+          "python_version": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+          "operator_origin": "/usr/lib/python3.12/operator.py",
+          "isolated": 1,
+          "source_sha256": "8083b948eebdf08c2d14a79d940ccead72db5f10c6bac8d9061816b6c9ea05c3",
+          "config": {
+            "command": [
+              "/usr/bin/strace",
+              "-D",
+              "-f",
+              "-ttt",
+              "-e",
+              "trace=none",
+              "-e",
+              "signal=SIGTERM,SIGINT,SIGHUP",
+              "-o",
+              "/workspaces/mythos-evidence/base_v01/decode_operator/signal-probe-v1-20261101T081654Z/normal/operator/signals.log",
+              "--",
+              "/workspaces/mythos-base-v01-cpu312/bin/python",
+              "-I",
+              "-B",
+              "/workspaces/mythos-base-v01-rope-diag-v11/research/mini_mythos/base_v01/decode_control_v1/signal_recovery_v1/probe_fixture.py",
+              "coordinator",
+              "--case-dir",
+              "/workspaces/mythos-evidence/base_v01/decode_operator/signal-probe-v1-20261101T081654Z/normal",
+              "--mode",
+              "normal"
+            ],
+            "cwd": "/workspaces/mythos-evidence/base_v01/decode_operator/signal-probe-v1-20261101T081654Z/normal",
+            "timeout_seconds": 130
+          },
+          "numerical_libraries_imported": false
+        },
+        "launcher_children": [
+          232314
+        ],
+        "coordinator": {
+          "pid": 232314,
+          "ppid": 232312,
+          "pgid": 232314,
+          "sid": 232314,
+          "starttime_ticks": 1613603,
+          "uid": 1000,
+          "cgroup": "0::/init\n",
+          "sigterm_blocked": false
+        },
+        "worker": {
+          "pid": 232319,
+          "ppid": 232314,
+          "pgid": 232314,
+          "sid": 232314,
+          "starttime_ticks": 1613612,
+          "uid": 1000,
+          "cgroup": "0::/init\n",
+          "sigterm_blocked": false
+        },
+        "controller": {
+          "pid": 232276,
+          "ppid": 1,
+          "pgid": 232276,
+          "sid": 232276,
+          "starttime_ticks": 1613576,
+          "uid": 1000,
+          "cgroup": "0::/init\n",
+          "sigterm_blocked": false
+        }
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "fixture identity is current and owned",
+      "Environment": "Linux; frozen CPU Python 3.12; strace 6.8; stdlib fixture",
+      "Input": {
+        "case": "normal"
+      },
+      "Expected": "ready identities equal /proc; same uid",
+      "Actual": {
+        "coordinator": {
+          "pid": 232314,
+          "ppid": 232312,
+          "pgid": 232314,
+          "sid": 232314,
+          "starttime_ticks": 1613603,
+          "uid": 1000,
+          "cgroup": "0::/init\n",
+          "sigterm_blocked": false
+        },
+        "worker": {
+          "pid": 232319,
+          "ppid": 232314,
+          "pgid": 232314,
+          "sid": 232314,
+          "starttime_ticks": 1613612,
+          "uid": 1000,
+          "cgroup": "0::/init\n",
+          "sigterm_blocked": false
+        }
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "SIGTERM remains unblocked",
+      "Environment": "Linux; frozen CPU Python 3.12; strace 6.8; stdlib fixture",
+      "Input": {
+        "case": "normal"
+      },
+      "Expected": false,
+      "Actual": {
+        "coordinator_ready": false,
+        "worker_ready": false,
+        "coordinator_live": false,
+        "worker_live": false
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "stdlib-only isolated processes",
+      "Environment": "Linux; frozen CPU Python 3.12; strace 6.8; stdlib fixture",
+      "Input": {
+        "case": "normal"
+      },
+      "Expected": "-I -B; no torch/numpy/tokenizers",
+      "Actual": {
+        "coordinator": [],
+        "worker": []
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "fixture ready was observed",
+      "Environment": "Linux; frozen CPU Python 3.12; strace 6.8; stdlib fixture",
+      "Input": {
+        "case": "normal"
+      },
+      "Expected": true,
+      "Actual": true,
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "launcher preserves child exit and does not clean up",
+      "Environment": "Linux; frozen CPU Python 3.12; strace 6.8; stdlib fixture",
+      "Input": {
+        "case": "normal"
+      },
+      "Expected": {
+        "status": "COMPLETED",
+        "returncode": 0
+      },
+      "Actual": {
+        "status": "COMPLETED",
+        "returncode": 0,
+        "utc": "2026-11-01T08:18:24.739911+00:00"
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "coordinator preserves worker exit",
+      "Environment": "Linux; frozen CPU Python 3.12; strace 6.8; stdlib fixture",
+      "Input": {
+        "case": "normal"
+      },
+      "Expected": 0,
+      "Actual": 0,
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "stdout and markers are byte-exact",
+      "Environment": "Linux; frozen CPU Python 3.12; strace 6.8; stdlib fixture",
+      "Input": {
+        "case": "normal"
+      },
+      "Expected": "574f524b45525f5245414459206e6f726d616c0a574f524b45525f434f4d504c4554450a434f4f5244494e41544f525f524320300a",
+      "Actual": "574f524b45525f5245414459206e6f726d616c0a574f524b45525f434f4d504c4554450a434f4f5244494e41544f525f524320300a",
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "stderr and launcher console are empty",
+      "Environment": "Linux; frozen CPU Python 3.12; strace 6.8; stdlib fixture",
+      "Input": {
+        "case": "normal"
+      },
+      "Expected": "all empty",
+      "Actual": {
+        "child": "",
+        "worker": "",
+        "launcher": "",
+        "launcher_stdout": ""
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "passive observer completes without signals or model access",
+      "Environment": "Linux; frozen CPU Python 3.12; strace 6.8; stdlib fixture",
+      "Input": {
+        "case": "normal"
+      },
+      "Expected": "return 0; launcher_completed; >= 1 sample; empty streams; no signals/imports/model access",
+      "Actual": {
+        "completion": {
+          "utc": "2026-11-01T08:18:27.102515+00:00",
+          "samples": 93,
+          "elapsed_seconds": 92.61124007200124,
+          "reason": "launcher_completed",
+          "model_artifacts_opened": false,
+          "signals_sent": 0,
+          "numerical_imports": []
+        },
+        "streams": {
+          "stdout": "",
+          "stderr": ""
+        },
+        "returncode": 0
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "observer sample count matches sealed rows",
+      "Environment": "Linux; frozen CPU Python 3.12; strace 6.8; stdlib fixture",
+      "Input": {
+        "case": "normal"
+      },
+      "Expected": 93,
+      "Actual": 93,
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "observer captured owned processes and their actual cgroup",
+      "Environment": "Linux; frozen CPU Python 3.12; strace 6.8; stdlib fixture",
+      "Input": {
+        "case": "normal"
+      },
+      "Expected": "one sample has coordinator and worker with exact PID/starttime/cgroup and numeric memory.current",
+      "Actual": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89
+      ],
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "trace covers coordinator and worker completion",
+      "Environment": "Linux; frozen CPU Python 3.12; strace 6.8; stdlib fixture",
+      "Input": {
+        "case": "normal"
+      },
+      "Expected": 0,
+      "Actual": {
+        "232319": 0,
+        "232314": 0
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "90 seconds without injected or received selected signals",
+      "Environment": "Linux; frozen CPU Python 3.12; strace 6.8; stdlib fixture",
+      "Input": {
+        "case": "normal"
+      },
+      "Expected": ">= 90 seconds; COMPLETED; no selected signal records",
+      "Actual": {
+        "status": "COMPLETED",
+        "signal": null,
+        "elapsed_seconds": 90.00011581299987,
+        "identity_after": {
+          "pid": 232319,
+          "ppid": 232314,
+          "pgid": 232314,
+          "sid": 232314,
+          "uid": 1000,
+          "euid": 1000,
+          "starttime_ticks": 1613612,
+          "status": "Name:\tpython\nUmask:\t0022\nState:\tR (running)\nTgid:\t232319\nNgid:\t0\nPid:\t232319\nPPid:\t232314\nTracerPid:\t232318\nUid:\t1000\t1000\t1000\t1000\nGid:\t1000\t1000\t1000\t1000\nFDSize:\t64\nGroups:\t986 987 988 989 990 991 992 993 994 995 996 1000 1001 \nNStgid:\t232319\nNSpid:\t232319\nNSpgid:\t232314\nNSsid:\t232314\nKthread:\t0\nVmPeak:\t   22068 kB\nVmSize:\t   22040 kB\nVmLck:\t       0 kB\nVmPin:\t       0 kB\nVmHWM:\t   13940 kB\nVmRSS:\t   13940 kB\nRssAnon:\t    6892 kB\nRssFile:\t    7048 kB\nRssShmem:\t       0 kB\nVmData:\t    8308 kB\nVmStk:\t     136 kB\nVmExe:\t    2956 kB\nVmLib:\t    2696 kB\nVmPTE:\t      76 kB\nVmSwap:\t       0 kB\nHugetlbPages:\t       0 kB\nCoreDumping:\t0\nTHP_enabled:\t1\nuntag_mask:\t0xffffffffffffffff\nThreads:\t1\nSigQ:\t0/31741\nSigPnd:\t0000000000000000\nShdPnd:\t0000000000000000\nSigBlk:\t0000000000000000\nSigIgn:\t0000000001001000\nSigCgt:\t0000000000004002\nCapInh:\t0000000000000000\nCapPrm:\t0000000000000000\nCapEff:\t0000000000000000\nCapBnd:\t000001ffffffffff\nCapAmb:\t0000000000000000\nNoNewPrivs:\t0\nSeccomp:\t0\nSeccomp_filters:\t0\nSpeculation_Store_Bypass:\tvulnerable\nSpeculationIndirectBranch:\talways enabled\nCpus_allowed:\t3\nCpus_allowed_list:\t0-1\nMems_allowed:\t00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000001\nMems_allowed_list:\t0\nvoluntary_ctxt_switches:\t7800\nnonvoluntary_ctxt_switches:\t17\nx86_Thread_features:\t\nx86_Thread_features_locked:\t\n",
+          "blocked_signals": [],
+          "sigterm_blocked": false,
+          "python": "/workspaces/mythos-base-v01-cpu312/bin/python",
+          "prefix": "/workspaces/mythos-base-v01-cpu312",
+          "version": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+          "isolated": 1,
+          "dont_write_bytecode": true,
+          "numeric_modules_loaded": [],
+          "utc": "2026-11-01T08:18:24.708600+00:00",
+          "monotonic_ns": 16226235210823
+        }
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "worker remains isolated and stdlib-only",
+      "Environment": "Linux; frozen CPU Python 3.12; strace 6.8; stdlib fixture",
+      "Input": {
+        "case": "normal"
+      },
+      "Expected": "no numeric imports; -I -B; SIGTERM unblocked",
+      "Actual": {
+        "pid": 232319,
+        "ppid": 232314,
+        "pgid": 232314,
+        "sid": 232314,
+        "uid": 1000,
+        "euid": 1000,
+        "starttime_ticks": 1613612,
+        "status": "Name:\tpython\nUmask:\t0022\nState:\tR (running)\nTgid:\t232319\nNgid:\t0\nPid:\t232319\nPPid:\t232314\nTracerPid:\t232318\nUid:\t1000\t1000\t1000\t1000\nGid:\t1000\t1000\t1000\t1000\nFDSize:\t64\nGroups:\t986 987 988 989 990 991 992 993 994 995 996 1000 1001 \nNStgid:\t232319\nNSpid:\t232319\nNSpgid:\t232314\nNSsid:\t232314\nKthread:\t0\nVmPeak:\t   22068 kB\nVmSize:\t   22040 kB\nVmLck:\t       0 kB\nVmPin:\t       0 kB\nVmHWM:\t   13940 kB\nVmRSS:\t   13940 kB\nRssAnon:\t    6892 kB\nRssFile:\t    7048 kB\nRssShmem:\t       0 kB\nVmData:\t    8308 kB\nVmStk:\t     136 kB\nVmExe:\t    2956 kB\nVmLib:\t    2696 kB\nVmPTE:\t      76 kB\nVmSwap:\t       0 kB\nHugetlbPages:\t       0 kB\nCoreDumping:\t0\nTHP_enabled:\t1\nuntag_mask:\t0xffffffffffffffff\nThreads:\t1\nSigQ:\t0/31741\nSigPnd:\t0000000000000000\nShdPnd:\t0000000000000000\nSigBlk:\t0000000000000000\nSigIgn:\t0000000001001000\nSigCgt:\t0000000000004002\nCapInh:\t0000000000000000\nCapPrm:\t0000000000000000\nCapEff:\t0000000000000000\nCapBnd:\t000001ffffffffff\nCapAmb:\t0000000000000000\nNoNewPrivs:\t0\nSeccomp:\t0\nSeccomp_filters:\t0\nSpeculation_Store_Bypass:\tvulnerable\nSpeculationIndirectBranch:\talways enabled\nCpus_allowed:\t3\nCpus_allowed_list:\t0-1\nMems_allowed:\t00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000001\nMems_allowed_list:\t0\nvoluntary_ctxt_switches:\t7800\nnonvoluntary_ctxt_switches:\t17\nx86_Thread_features:\t\nx86_Thread_features_locked:\t\n",
+        "blocked_signals": [],
+        "sigterm_blocked": false,
+        "python": "/workspaces/mythos-base-v01-cpu312/bin/python",
+        "prefix": "/workspaces/mythos-base-v01-cpu312",
+        "version": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+        "isolated": 1,
+        "dont_write_bytecode": true,
+        "numeric_modules_loaded": [],
+        "utc": "2026-11-01T08:18:24.708600+00:00",
+        "monotonic_ns": 16226235210823
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "coordinator remains isolated and stdlib-only",
+      "Environment": "Linux; frozen CPU Python 3.12; strace 6.8; stdlib fixture",
+      "Input": {
+        "case": "normal"
+      },
+      "Expected": "no numeric imports; -I -B; SIGTERM unblocked",
+      "Actual": {
+        "pid": 232314,
+        "ppid": 232312,
+        "pgid": 232314,
+        "sid": 232314,
+        "uid": 1000,
+        "euid": 1000,
+        "starttime_ticks": 1613603,
+        "status": "Name:\tpython\nUmask:\t0022\nState:\tR (running)\nTgid:\t232314\nNgid:\t0\nPid:\t232314\nPPid:\t232312\nTracerPid:\t232318\nUid:\t1000\t1000\t1000\t1000\nGid:\t1000\t1000\t1000\t1000\nFDSize:\t64\nGroups:\t986 987 988 989 990 991 992 993 994 995 996 1000 1001 \nNStgid:\t232314\nNSpid:\t232314\nNSpgid:\t232314\nNSsid:\t232314\nKthread:\t0\nVmPeak:\t   22200 kB\nVmSize:\t   22148 kB\nVmLck:\t       0 kB\nVmPin:\t       0 kB\nVmHWM:\t   13992 kB\nVmRSS:\t   13992 kB\nRssAnon:\t    6904 kB\nRssFile:\t    7088 kB\nRssShmem:\t       0 kB\nVmData:\t    8416 kB\nVmStk:\t     136 kB\nVmExe:\t    2956 kB\nVmLib:\t    2696 kB\nVmPTE:\t      76 kB\nVmSwap:\t       0 kB\nHugetlbPages:\t       0 kB\nCoreDumping:\t0\nTHP_enabled:\t1\nuntag_mask:\t0xffffffffffffffff\nThreads:\t1\nSigQ:\t0/31741\nSigPnd:\t0000000000000000\nShdPnd:\t0000000000000000\nSigBlk:\t0000000000000000\nSigIgn:\t0000000001001000\nSigCgt:\t0000000000004002\nCapInh:\t0000000000000000\nCapPrm:\t0000000000000000\nCapEff:\t0000000000000000\nCapBnd:\t000001ffffffffff\nCapAmb:\t0000000000000000\nNoNewPrivs:\t0\nSeccomp:\t0\nSeccomp_filters:\t0\nSpeculation_Store_Bypass:\tvulnerable\nSpeculationIndirectBranch:\talways enabled\nCpus_allowed:\t3\nCpus_allowed_list:\t0-1\nMems_allowed:\t00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000001\nMems_allowed_list:\t0\nvoluntary_ctxt_switches:\t2372\nnonvoluntary_ctxt_switches:\t4\nx86_Thread_features:\t\nx86_Thread_features_locked:\t\n",
+        "blocked_signals": [],
+        "sigterm_blocked": false,
+        "python": "/workspaces/mythos-base-v01-cpu312/bin/python",
+        "prefix": "/workspaces/mythos-base-v01-cpu312",
+        "version": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+        "isolated": 1,
+        "dont_write_bytecode": true,
+        "numeric_modules_loaded": [],
+        "utc": "2026-11-01T08:18:24.718030+00:00",
+        "monotonic_ns": 16226244636940
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "no fixture exception or timeout cleanup",
+      "Environment": "Linux; frozen CPU Python 3.12; strace 6.8; stdlib fixture",
+      "Input": {
+        "case": "normal"
+      },
+      "Expected": false,
+      "Actual": [],
+      "Status": "PASS"
+    }
+  ],
+  "command": [
+    "/usr/bin/strace",
+    "-D",
+    "-f",
+    "-ttt",
+    "-e",
+    "trace=none",
+    "-e",
+    "signal=SIGTERM,SIGINT,SIGHUP",
+    "-o",
+    "/workspaces/mythos-evidence/base_v01/decode_operator/signal-probe-v1-20261101T081654Z/normal/operator/signals.log",
+    "--",
+    "/workspaces/mythos-base-v01-cpu312/bin/python",
+    "-I",
+    "-B",
+    "/workspaces/mythos-base-v01-rope-diag-v11/research/mini_mythos/base_v01/decode_control_v1/signal_recovery_v1/probe_fixture.py",
+    "coordinator",
+    "--case-dir",
+    "/workspaces/mythos-evidence/base_v01/decode_operator/signal-probe-v1-20261101T081654Z/normal",
+    "--mode",
+    "normal"
+  ],
+  "historical_sender": "UNKNOWN",
+  "model_or_weights_loaded": false,
+  "launcher_returncode": 0,
+  "signal_lines": [],
+  "elapsed_seconds": 92.69566560100066
+}
