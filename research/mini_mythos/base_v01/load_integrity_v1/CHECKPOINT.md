@@ -1,3 +1,26 @@
+# MYTHOS-CPU-LOAD-INTEGRITY-V1 — final result PASS
+
+Date: 2026-11-01. Branch: mythos-base-v01-cpu-load-v1. Result checkpoint: this evidence/documentation commit. Frozen implementation A: aa26e7023d4f634dd6f65e259e5a04f47da2578d. Execution/freeze checkpoint B: acf0ffce9a6a16ab3e11de719fae5459061c96cd. Base: a20ec43914f8e7bb5a7c17dedd27f1acf2a95ec3.
+
+Purpose: establish complete faithful loading through the pinned official CPU evaluation loader. Environment: named Codespace, frozen Python 3.12.3 / torch 2.11.0+cpu, FP32 CPU defaults, one intra/inter-op thread, deterministic algorithms, CUDA uninitialized. Input: existing original B1 model/config, byte-verified upstream and full dependency inventory. Expected: all gates, complete independent reference/key/metadata/tensor byte agreement, explicit RoPE and tied aliases, unchanged protected state and sealed evidence. Actual: one formal run load-v1-20261101T055439Z; L0–L5 PASS, 648 check records PASS and 63 tensor rows PASS; no stop or emergency. Status: PASS for official CPU checkpoint loading integrity only.
+
+Coverage: 63/63 checkpoint state entries, comprising 62 parameter paths (61 unique Parameter tensors; 144,323,136 unique parameter elements) and one persistent RoPE buffer (262,144 elements). All source and model values are finite FP32; shapes/dtypes/keys match exactly; both sides have complete direct byte comparisons. Per-side logical byte total 679,004,416 includes the shared embedding/head twice by path and is not unique storage or file size. No missing/unexpected keys, nonpersistent tensors or None buffer slots. Official loader invoked exactly once; independent reference read is separate from its internal artifact read.
+
+RoPE freqs_cis source and model canonical bytes are identical: SHA-256 abffe7d0ca6dd0684317f48a2dce9d24e825f63e5e1facb9c8a259ca1d4a302b, shape [1,2048,1,64,2], 1,048,576 bytes. Embedding/head paths both match the file and retain object/storage/offset/shape/stride tying. No manual state assignment, extra config filtering, dtype conversion or buffer substitution was used by the harness.
+
+Evidence: RESULT_REVIEW.md and result_evidence/load-v1-20261101T055439Z/public/ preserve original public bytes and manifest-relative paths. Target private run remains /workspaces/mythos-evidence/base_v01/load_integrity/load-v1-20261101T055439Z; operator records remain in /workspaces/mythos-evidence/base_v01/load_operator/load-v1-20261101T055439Z. Run has 725 files plus two directories: 723 full-manifest entries and the two explicit self-excluded manifests. Full manifest re-hash PASS; 718 public listed entries re-hashed on target and independently from copied bytes. Public manifest itself makes 719 public files. Independent evidence review APPROVE; no independent numerical replication was claimed.
+
+Summary: 1,292 bytes, SHA-256 7e9463fb9f58f5b692e8ac1daebe35513ce5618bcbf2d4f8c32737055df127db. FULL_MANIFEST SHA-256 fbef83e3acb8e98446d2bff5dabe7b3d89c26dc891549c3895b40bcc64b788e4. GIT_BUNDLE_MANIFEST SHA-256 d42a000b167c682c0f03c2613c12757226911eaebe6562d885b89b1448535146. No original weight values, restored model or private logs were published.
+
+Dependencies and Git: full B1 inventory matched; lock SHA-256 84440f8945041ed314c29b205c5244e074116ede023d5aae0b11b633b4d6a51e. L5 checked 362 protected files with zero changes/unavailable items/save errors. Upstream 69284c13746e849104f738d6d1a347b1f457df76 and B1 d88be474ebb2529c5b095e3732b1f25509f9b824 stay clean. Old diagnostic remote remains a20ec439; new stage changes are isolated in load_integrity_v1. Frozen executable files are unchanged after execution. Normal push only, no PR creation or PR #24 operation.
+
+Unresolved: actual forward/backend compatibility, generated text quality, training and training-resume, and historical artifact creation/export environment. This loading PASS does not explain why the five reconstructed RoPE paths failed the old screen and does not establish harmlessness. B1 A5 remains BLOCKED at unchanged 1e-6; original B1 A3 overall/A8–A11, forward/generation/language quality/training/resume remain NOT TESTED. Formal Oracle BLOCKED/NOT_READY; FORMAL_ACCEPTANCE_READY=False. No upstream modification, B1/RoPE rerun, GPU, B2/D2-A or merge occurred. No formal retry occurred. This stage is complete and stopped.
+
+Next single instruction: prepare and review a separate CPU forward, fixed-prompt generation and fresh-process reload-consistency protocol using this verified official loader and existing frozen prompts. Freeze backend, finite-output, determinism and quality criteria independently. Do not execute that next stage automatically or rewrite original B1 acceptance.
+
+---
+Previous implementation-freeze checkpoint preserved below.
+
 # MYTHOS-CPU-LOAD-INTEGRITY-V1 — implementation frozen
 
 Date: 2026-11-01. Branch: mythos-base-v01-cpu-load-v1. Base checkpoint: a20ec43914f8e7bb5a7c17dedd27f1acf2a95ec3. Frozen implementation commit A: aa26e7023d4f634dd6f65e259e5a04f47da2578d. This checkpoint is documentation commit B; its full SHA is reported separately.
