@@ -1,0 +1,114 @@
+usage: eval.py [--config CONFIG] [--out_dir OUT_DIR] [--eval_name EVAL_NAME]
+               [--eval_tasks EVAL_TASKS] [--step STEP]
+               [--checkpoint_path CHECKPOINT_PATH] [--hf_path HF_PATH]
+               [--hf_repo HF_REPO] [--device_type DEVICE_TYPE]
+               [--precision {bf16,fp16,fp32}]
+               [--device_batch_size DEVICE_BATCH_SIZE] [--tasks CONFIG]
+               [--tasks.lm_eval CONFIG] [--tasks.lm_eval.tasks [ITEM,...]]
+               [--tasks.lm_eval.num_fewshot NUM_FEWSHOT]
+               [--tasks.lm_eval.batch_size BATCH_SIZE]
+               [--tasks.lm_eval.limit LIMIT] [--tasks.sample CONFIG]
+               [--tasks.sample.prompts [ITEM,...]]
+               [--tasks.sample.num_unconditioned NUM_UNCONDITIONED]
+               [--tasks.sample.max_tokens MAX_TOKENS]
+               [--tasks.sample.temperature TEMPERATURE]
+               [--tasks.sample.top_k TOP_K] [--tasks.sample.top_p TOP_P]
+               [--tasks.bpb CONFIG] [--tasks.bpb.val_data_dir VAL_DATA_DIR]
+               [--tasks.bpb.max_samples MAX_SAMPLES]
+               [--tasks.bpb.max_files MAX_FILES] [--tasks.core CONFIG]
+               [--tasks.core.max_per_task MAX_PER_TASK]
+               [--tasks.core.seeds [ITEM,...]] [--tasks.core_extended CONFIG]
+               [--tasks.core_extended.max_per_task MAX_PER_TASK]
+               [--tasks.core_extended.seeds [ITEM,...]]
+               [--override_mean_recurrence OVERRIDE_MEAN_RECURRENCE]
+
+CLISettings(out_dir: str = '', eval_name: str = 'eval', eval_tasks: str =
+'lm_eval', step: Optional[int] = None, checkpoint_path: Optional[str] = None,
+hf_path: Optional[str] = None, hf_repo: Optional[str] = None, device_type: str
+= '', precision: Literal['bf16', 'fp16', 'fp32'] = 'bf16', device_batch_size:
+int = 32, tasks: receval.settings.TaskSettings = <factory>,
+override_mean_recurrence: Optional[int] = None)
+
+options:
+  -h, --help            Show this help message and exit.
+  --config CONFIG       Path to a configuration file.
+  --print_config [=flags]
+                        Print the configuration after applying all other
+                        arguments and exit. The optional flags customizes the
+                        output and are one or more keywords separated by
+                        comma. The supported flags are: skip_default,
+                        skip_unset.
+  --out_dir OUT_DIR     (type: str, default: )
+  --eval_name EVAL_NAME
+                        (type: str, default: eval)
+  --eval_tasks EVAL_TASKS
+                        (type: str, default: lm_eval)
+  --step STEP           (type: Optional[int], default: null)
+  --checkpoint_path CHECKPOINT_PATH
+                        (type: Optional[str], default: null)
+  --hf_path HF_PATH     (type: Optional[str], default: null)
+  --hf_repo HF_REPO     (type: Optional[str], default: null)
+  --device_type DEVICE_TYPE
+                        (type: str, default: )
+  --precision {bf16,fp16,fp32}
+                        (type: Literal['bf16', 'fp16', 'fp32'], default: bf16)
+  --device_batch_size DEVICE_BATCH_SIZE
+                        (type: int, default: 32)
+  --override_mean_recurrence OVERRIDE_MEAN_RECURRENCE
+                        (type: Optional[int], default: null)
+
+TaskSettings(lm_eval: receval.settings.LMEvalTaskSettings = <factory>, sample: receval.settings.SampleTaskSettings = <factory>, bpb: receval.settings.BPBTaskSettings = <factory>, core: receval.settings.CoreTaskSettings = <factory>, core_extended: receval.settings.CoreExtendedTaskSettings = <factory>):
+  --tasks CONFIG        Path to a configuration file.
+
+LMEvalTaskSettings(tasks: list[str] = <factory>, num_fewshot: Optional[int] = None, batch_size: int = 32, limit: Optional[int] = None):
+  --tasks.lm_eval CONFIG
+                        Path to a configuration file.
+  --tasks.lm_eval.tasks [ITEM,...], --tasks.lm_eval.tasks+ [ITEM,...]
+                        (type: list[str], default: ['hellaswag'])
+  --tasks.lm_eval.num_fewshot NUM_FEWSHOT
+                        (type: Optional[int], default: null)
+  --tasks.lm_eval.batch_size BATCH_SIZE
+                        (type: int, default: 32)
+  --tasks.lm_eval.limit LIMIT
+                        (type: Optional[int], default: null)
+
+SampleTaskSettings(prompts: list[str] = <factory>, num_unconditioned: int = 4, max_tokens: int = 128, temperature: float = 1.0, top_k: Optional[int] = None, top_p: Optional[float] = None):
+  --tasks.sample CONFIG
+                        Path to a configuration file.
+  --tasks.sample.prompts [ITEM,...], --tasks.sample.prompts+ [ITEM,...]
+                        (type: list[str], default: ['The capital of France
+                        is', 'The chemical symbol of gold is'])
+  --tasks.sample.num_unconditioned NUM_UNCONDITIONED
+                        (type: int, default: 4)
+  --tasks.sample.max_tokens MAX_TOKENS
+                        (type: int, default: 128)
+  --tasks.sample.temperature TEMPERATURE
+                        (type: float, default: 1.0)
+  --tasks.sample.top_k TOP_K
+                        (type: Optional[int], default: null)
+  --tasks.sample.top_p TOP_P
+                        (type: Optional[float], default: null)
+
+BPBTaskSettings(val_data_dir: Optional[str] = None, max_samples: int = 1000, max_files: int = 5):
+  --tasks.bpb CONFIG    Path to a configuration file.
+  --tasks.bpb.val_data_dir VAL_DATA_DIR
+                        (type: Optional[str], default: null)
+  --tasks.bpb.max_samples MAX_SAMPLES
+                        (type: int, default: 1000)
+  --tasks.bpb.max_files MAX_FILES
+                        (type: int, default: 5)
+
+CoreTaskSettings(max_per_task: int = -1, seeds: list[int] = <factory>):
+  --tasks.core CONFIG   Path to a configuration file.
+  --tasks.core.max_per_task MAX_PER_TASK
+                        (type: int, default: -1)
+  --tasks.core.seeds [ITEM,...], --tasks.core.seeds+ [ITEM,...]
+                        (type: list[int], default: [1234])
+
+CoreExtendedTaskSettings(max_per_task: int = -1, seeds: list[int] = <factory>):
+  --tasks.core_extended CONFIG
+                        Path to a configuration file.
+  --tasks.core_extended.max_per_task MAX_PER_TASK
+                        (type: int, default: -1)
+  --tasks.core_extended.seeds [ITEM,...], --tasks.core_extended.seeds+ [ITEM,...]
+                        (type: list[int], default: [1234])
