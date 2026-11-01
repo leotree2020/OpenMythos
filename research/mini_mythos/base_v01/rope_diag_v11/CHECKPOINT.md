@@ -1,3 +1,22 @@
+# Latest checkpoint — implementation frozen; formal diagnostic not yet started
+
+Date: 2026-11-01. Branch: mythos-base-v01-rope-diag-v11. Frozen implementation commit A: d51cd388cde2e202a044ca148c29fd441acc440d.
+
+Purpose: implement the previously approved RoPE diagnostic after the owner transferred responsibility to Codex. Environment: named Codespace; frozen CPU interpreter reserved for the formal run. Input: adac90ae recovery and approved v1.1/C1–C3 protocol. Expected: complete source, separate static review, target AST and byte identity, no numerical execution before freezing. Actual: paths/metrics separately cross-reviewed; runner blockers corrected and re-reviewed; all static reviewers APPROVE; target AST/hash matches. Status: PASS for implementation/static review and source freezing only.
+
+Files: paths.py, metrics.py, run_rope_diag.py, self-contained PROTOCOL.md, README_USAGE.md, AUTHORIZATION_AND_SCOPE.md, STATIC_REVIEW.md, implementation_evidence/STATIC_AUDIT.json and SOURCE_MANIFEST.json. No Torch/Parcae/new module import, fixture or numerical computation occurred during preparation. Source was text-staged locally outside synced sources, then installed and frozen in the target worktree; only the target may run the numerical protocol.
+
+Frozen runtime dependency basis remains B1 Python 3.12.3, torch 2.11.0+cpu, numpy 1.26.4, einops 0.8.0, tokenizers 0.23.2, huggingface-hub 1.33.0 and lock SHA 84440f8945041ed314c29b205c5244e074116ede023d5aae0b11b633b4d6a51e. Runtime verification is NOT TESTED in this stage. B1/upstream pins are unchanged. No Claude installation was performed.
+
+Unresolved: empirical correctness, native repetitions, scalar reproduction and all path compatibility results. G0–G5 and runtime_validation remain NOT TESTED; formal_run_started=False; scientific_conclusion=UNRESOLVED. B1 A5 BLOCKED; A3 overall/A8–A11/language quality NOT TESTED; Formal Oracle BLOCKED/NOT_READY; FORMAL_ACCEPTANCE_READY=False.
+
+This checkpoint is documentation commit B after A; B changes only CHECKPOINT.md. Report A and B separately. The latest owner continuation instruction and the bounded execution scope are recorded in AUTHORIZATION_AND_SCOPE.md; no new candidate, threshold or fixture was authorized.
+
+Next single instruction: on this named Codespace, invoke the frozen implementation A once with the frozen CPU interpreter and one exclusive run claim, according to README_USAGE.md; stop on the first BLOCKED/FAIL, seal all evidence, then write the result checkpoint. No repairs/retries after numerical results. No upstream edits, B1 rerun, B2/D2-A or PR #24 action.
+
+---
+Previous checkpoint preserved below.
+
 # Latest checkpoint — target access recovered; diagnostic still NOT TESTED
 
 2026-11-01. Access record `access-20261101T041221Z` (an operator preflight identifier, **not** a formal diagnostic run-id).
