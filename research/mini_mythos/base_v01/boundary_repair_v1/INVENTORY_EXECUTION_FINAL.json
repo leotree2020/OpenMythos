@@ -1,0 +1,37 @@
+{
+  "Purpose": "Source inventory after development-only string-literal correction",
+  "Environment": "Existing prepCPU Python, no model",
+  "Input": "Unchanged fixed parquet; original unsuccessful attempt preserved",
+  "Expected": "Full inventory, no Torch import",
+  "Actual": {
+    "exit": 0,
+    "stdout": {
+      "status": "PASS",
+      "boundary_rows": 710,
+      "old_top": 62,
+      "nested": 644,
+      "other_rows": [
+        3416,
+        3417,
+        3420,
+        3421
+      ],
+      "block_starts": 1320,
+      "rows_sha256": "8a970098c794df2d25494abf3caf6cb8499f57cc54bca35e45b70e168f7d9a74",
+      "inventory_sha256": "e238f1b48fabc31aa2d7dac0c627fbd11bf6f7fb71059c5ac36b23345e5f0077",
+      "inventory_bytes": 2158697
+    },
+    "stderr": ""
+  },
+  "Status": "PASS",
+  "command": [
+    "/workspaces/mythos-depth-data-cpu312/bin/python",
+    "-I",
+    "-B",
+    "/workspaces/mythos-evidence/base_v01/boundary_repair/preparation-20261101T132448Z/inventory_source_v2.py",
+    "/workspaces/mythos-evidence/base_v01/boundary_repair/preparation-20261101T132448Z/inventory.json"
+  ],
+  "source_sha256": "39c1d04b9eb4d8bdfb6b2f95614216d7fcc3774fd8c8933f443a222e4a9f89e7",
+  "development_correction": "First inventory source failed parsing before imports because a newline literal was transported incorrectly. Exact first source and error retained; no rows or model outputs observed. Corrected literal, AST checked before this invocation.",
+  "export_note": "Raw context-bearing stdout remains external; compact export omits body excerpts."
+}

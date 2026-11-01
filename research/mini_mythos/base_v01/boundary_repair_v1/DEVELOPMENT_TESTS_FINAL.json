@@ -1,0 +1,56 @@
+{
+  "Purpose": "Synthetic regression tests before real corpus build",
+  "Environment": "existing CPU data environment; no real corpus/model",
+  "Input": {
+    "PROTOCOL.md": "c02d332ad3ae664dcc442fd8c30b0e5c4164d7753e002164d032986d3c0e4829",
+    "boundary_parser.py": "e2df747fb88e64ad12fe6e9684560c542c77013ff5640a3b931cbea02a38420c",
+    "build_inputs.py": "34d15184c507a253b506a039576266705ac4666d68cb23ab551c7093929c6c7a",
+    "test_boundary_parser.py": "4cacd71f816a7bce7a3e8e709fb215e2472564f1250669069212835fc96a22ee",
+    "test_input_contract.py": "5f8d47c7714f4e7d97b511def82a38fe7d081d0341545f4754ff5a7a9109ea95",
+    "audit_boundary_inputs.py": "7633a52c86813be5d26fae6759209cfa6473e1c51bc4401fa14c2a5ece9b2f2e",
+    "test_audit_boundary_inputs.py": "44516b9e0d234c05cbe23d00bbda49e2db70c307a54950d966ab86083c2468d6",
+    "SEMANTIC_REVIEW_ROOT.md": "94cdaf1fca9bdd9da7a9ad2b59218eae028320e786788e4dae8467ae5a9d1c10",
+    "SEMANTIC_REVIEW_INDEPENDENT.md": "04915611228b16b7ae3afeea6bcc62ef85bedfea6d433826d7c662c2bafdd4d7"
+  },
+  "Expected": "9 parser + 6 builder + 6 independent auditor tests PASS",
+  "Actual": [
+    {
+      "command": [
+        "/workspaces/mythos-depth-data-cpu312/bin/python",
+        "-I",
+        "-B",
+        "/workspaces/mythos-base-v01-rope-diag-v11/research/mini_mythos/base_v01/boundary_repair_v1/test_boundary_parser.py",
+        "-v"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "test_begin_or_end_candidates_both_need_ledger_and_cannot_be_titles (__main__.BoundaryFixtures.test_begin_or_end_candidates_both_need_ledger_and_cannot_be_titles) ... ok\ntest_blank_surrounded_formula_still_requires_explicit_body_decision (__main__.BoundaryFixtures.test_blank_surrounded_formula_still_requires_explicit_body_decision) ... ok\ntest_bof_eof_whitespace_and_no_blank_before_reviewed_title (__main__.BoundaryFixtures.test_bof_eof_whitespace_and_no_blank_before_reviewed_title) ... ok\ntest_duplicate_content_fails_even_with_distinct_reviewed_source_rows (__main__.BoundaryFixtures.test_duplicate_content_fails_even_with_distinct_reviewed_source_rows) ... ok\ntest_formula_continuation_and_nested_section_stay_in_source_article (__main__.BoundaryFixtures.test_formula_continuation_and_nested_section_stay_in_source_article) ... ok\ntest_incorrect_corpus_rows_identity_and_raw_whitespace_are_blocked (__main__.BoundaryFixtures.test_incorrect_corpus_rows_identity_and_raw_whitespace_are_blocked) ... ok\ntest_leading_nonempty_content_and_no_accepted_title_block (__main__.BoundaryFixtures.test_leading_nonempty_content_and_no_accepted_title_block) ... ok\ntest_missing_duplicate_unknown_unresolved_and_reasonless_decisions_block (__main__.BoundaryFixtures.test_missing_duplicate_unknown_unresolved_and_reasonless_decisions_block) ... ok\ntest_source_identity_binds_position_corpus_and_title_not_content (__main__.BoundaryFixtures.test_source_identity_binds_position_corpus_and_title_not_content) ... ok\n\n----------------------------------------------------------------------\nRan 9 tests in 0.003s\n\nOK\n"
+    },
+    {
+      "command": [
+        "/workspaces/mythos-depth-data-cpu312/bin/python",
+        "-I",
+        "-B",
+        "/workspaces/mythos-base-v01-rope-diag-v11/research/mini_mythos/base_v01/boundary_repair_v1/test_input_contract.py",
+        "-v"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "test_bad_token_id_and_duplicate_body_are_not_silently_selected (__main__.InputContract.test_bad_token_id_and_duplicate_body_are_not_silently_selected) ... ok\ntest_boundary_eligibility_rank_and_next_token_hashes (__main__.InputContract.test_boundary_eligibility_rank_and_next_token_hashes) ... ok\ntest_formula_is_encoded_in_same_body_without_normalization_or_added_separator (__main__.InputContract.test_formula_is_encoded_in_same_body_without_normalization_or_added_separator) ... ok\ntest_insufficient_sources_never_adapts_selection_count (__main__.InputContract.test_insufficient_sources_never_adapts_selection_count) ... ok\ntest_production_semantic_gate_requires_two_matching_resolved_approvals (__main__.InputContract.test_production_semantic_gate_requires_two_matching_resolved_approvals) ... ok\ntest_repeat_builds_are_identical_and_do_not_mutate_input_rows_or_ledger (__main__.InputContract.test_repeat_builds_are_identical_and_do_not_mutate_input_rows_or_ledger) ... ok\n\n----------------------------------------------------------------------\nRan 6 tests in 0.005s\n\nOK\n"
+    },
+    {
+      "command": [
+        "/workspaces/mythos-depth-data-cpu312/bin/python",
+        "-I",
+        "-B",
+        "/workspaces/mythos-base-v01-rope-diag-v11/research/mini_mythos/base_v01/boundary_repair_v1/test_audit_boundary_inputs.py",
+        "-v"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "test_duplicate_body_sources_fail_even_with_distinct_titles (__main__.IndependentBoundaryAuditTest.test_duplicate_body_sources_fail_even_with_distinct_titles) ... ok\ntest_every_body_is_tokenized_and_fixed_window_shapes_are_preserved (__main__.IndependentBoundaryAuditTest.test_every_body_is_tokenized_and_fixed_window_shapes_are_preserved) ... ok\ntest_isolated_formula_and_nested_section_remain_exact_source_body (__main__.IndependentBoundaryAuditTest.test_isolated_formula_and_nested_section_remain_exact_source_body) ... ok\ntest_missing_candidate_and_changed_neighbor_evidence_block (__main__.IndependentBoundaryAuditTest.test_missing_candidate_and_changed_neighbor_evidence_block) ... ok\ntest_nonblank_leading_content_and_review_disagreement_block (__main__.IndependentBoundaryAuditTest.test_nonblank_leading_content_and_review_disagreement_block) ... ok\ntest_strict_json_rejects_duplicate_and_nonfinite_evidence (__main__.IndependentBoundaryAuditTest.test_strict_json_rejects_duplicate_and_nonfinite_evidence) ... ok\n\n----------------------------------------------------------------------\nRan 6 tests in 0.002s\n\nOK\n"
+    }
+  ],
+  "Status": "PASS",
+  "utc": "2026-11-01T13:39:52.796971+00:00"
+}
