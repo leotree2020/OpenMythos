@@ -1,9 +1,6 @@
 # MYTHOS-B1-ROPE-DIAG-V1 — protocol v1.1 + C1–C3 + final clarifications (frozen text)
 
-Status: NOT TESTED. This file records the protocol as authorized by the owner in the messages of 2026-11-01
-(v1.1 review package, C1–C3 supplement, implementation/execution authorization). It is a condensed, faithful
-transcription of the definitions; where a wording difference ever matters, the owner's original messages govern.
-It authorizes nothing by itself.
+Status before the single formal run: NOT TESTED. This is the self-contained implementation contract for the previously approved v1.1, C1–C3 and final clarifications. The numerical definitions and thresholds below are unchanged from protocol commit b0dbc7c7272645a7b7ba125372e507e92868cb4a. The owner subsequently transferred implementation/execution responsibility from Claude Code to Codex and instructed continuous progress without further delegation/approval loops. See AUTHORIZATION_AND_SCOPE.md. This file alone does not grant authority.
 
 ## Fixed basis
 - Repository `leotree2020/OpenMythos`; B1 branch `mythos-base-v01-b1`; B1 result checkpoint `d88be474ebb2529c5b095e3732b1f25509f9b824`;
@@ -80,3 +77,20 @@ G2 failure proves a host cause; 1e-6 equals bitwise identity. Whatever happens: 
 ## Evidence
 Each record: Purpose / Environment / Input / Expected / Actual / PASS|FAIL|BLOCKED|NOT TESTED. Full private evidence stays on the target (S, path outputs, repeats, pre-conversion FP64, per-element data, logs); nothing that can reconstruct S or the weights is published.
 Two manifests: full evidence (private + committable, size/sha256/class) and Git bundle. Explicit staging only (no `git add -A`). CHECKPOINT.md in this directory for any outcome; normal push, no force, no PR, no PR #24 action.
+
+## Implementation and execution envelope (no additional numerical candidates)
+
+- Source is frozen in an implementation commit before any Torch import, S extraction or numerical calculation. The checkpoint commit may add documentation only. The run receives the full implementation SHA and verifies its source bytes against that Git commit; the execution HEAD is recorded separately.
+- The one formal run is claimed by exclusive creation of the designated experiment evidence root before importing Torch. Existing root/claim means stop; no retry or alternate run-id. The N3 child is part of this same formal run, not a second run.
+- Code authors and separate reviewers use source text/AST only before freezing. No fixture, helper suite, model construction or numerical rehearsal is run anywhere. Local text staging is not runtime validation; all formal computation remains in the named Codespace and frozen CPU interpreter.
+- N3 reuses the same interpreter executable and -B, imports only the pinned native helper for its numerical work, receives fixed parameters, and never reads S or evaluates I32/T/P/R/Q. PID, runtime, output and warnings are preserved privately. Q computes the full omega64 expression independently; it never reads R's intermediates.
+- Native/candidate outputs are saved before checks that can stop; partially constructed candidate dictionaries are saved without recomputation on a stop. Numeric/structure validation failures are FAIL; unavailable environment/process/I/O or unclassified exceptions are BLOCKED. The first reason is retained even if sealing also fails.
+- G5 distinguishes a complete protection baseline from a partial audit. A partial baseline cannot give G5 PASS; missing proof is BLOCKED rather than evidence of a numerical failure. Private serialization, file hashing and Git audits after a stop are allowed; no new tensor diagnostics may be computed then.
+- The historical A5 scalar is read from the hash-verified record, with both recorded copies checked for agreement. G2 compares the original FP32 subtraction/abs/max Python scalar exactly. No rounding, isclose or tolerance is added.
+- Historical operator CPU flags are read from the committed source_preflight.json, not treated as missing or as same-process observations. Historical env_before, source-declared settings, measured current state and unknown historical dispatch are kept distinct.
+- For T/P/R/Q, both complete independent evaluations precede the next path. All retained intermediate/output bytes must match. A candidate's diagnostic_match=False is merely an incompatible candidate screen, never a retry trigger or a guard failure.
+- T-N means T minus N; P-T, R-P, Q-N and N-R follow the same reference-to-candidate convention. T-N describes the trigonometric evaluation path plus output rounding. Pre-cast FP64 tensors are private secondary evidence only.
+- Undefined angle/ratio observations are serialized as null plus reason/count. Internal masked placeholders or sorting sentinels are not observations and are excluded from all summaries and JSON.
+- Full-scope and 112-position aggregates are public. All per-element errors, worst component values and per-position/per-frequency data stay private; input/candidate/I32 tensors are preserved privately to reconstruct pair-level quantities. Raw weights/tokenizer/S are never committed or redistributed.
+- Main stdout/stderr, child logs, repeats and tensor identities are private. Full manifest records public/private classes; Git bundle manifest records public artifacts only. Both exclude themselves/each other to avoid circular hashes; final checkpoint is identified by its Git commit.
+- After the run, report exact candidate maximum errors, matching and bitwise flags, G0–G5 statuses, the first stop reason if any, protected-state audits, implementation/execute/result SHAs and unresolved interpretations. B1 remains blocked regardless of candidate compatibility.
