@@ -1,0 +1,400 @@
+{
+  "Purpose": "Read-only post-stop audit of external observation and prior evidence preservation",
+  "Environment": {
+    "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+    "libraries": "stdlib only",
+    "model_execution": false
+  },
+  "Input": {
+    "run": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z",
+    "operator": "/workspaces/mythos-evidence/base_v01/decode_operator/decode-v1-20261101T082021Z",
+    "record": "/workspaces/mythos-base-v01-rope-diag-v11/research/mini_mythos/base_v01/decode_control_v1/signal_recovery_v1/RUN_RECORD.json",
+    "audit_source": {
+      "size": 13287,
+      "sha256": "dc7e638c8034fccdf1efaac12961ea898ac12c7a40bef1272876f301950ce507"
+    }
+  },
+  "Expected": "Fixed identities, consistent terminal/signal/resource records and unchanged prior attempts",
+  "Actual": {
+    "formal_status": "FAIL",
+    "historical_signal_cause": "UNRESOLVED",
+    "formal_gates": {
+      "D0": "PASS",
+      "D1": "PASS",
+      "D2": "PASS",
+      "D3": "FAIL",
+      "D4": "NOT TESTED"
+    },
+    "launcher_completion": {
+      "status": "CHILD_FAILED",
+      "returncode": 2,
+      "utc": "2026-11-01T08:26:04.034258+00:00"
+    },
+    "worker_stop": {
+      "phase": "D3",
+      "reason": "probability mass normalized before sampling",
+      "actual": {
+        "status": "FAIL",
+        "phase": "D3",
+        "reason": "probability mass normalized before sampling",
+        "actual": {
+          "first_failure": 1.0000113072183736,
+          "cleanup_errors": []
+        },
+        "exception_type": "GenerationStop",
+        "traceback": "Traceback (most recent call last):\n  File \"/workspaces/mythos-base-v01-rope-diag-v11/research/mini_mythos/base_v01/decode_control_v1/generation_checks.py\", line 363, in run_condition\n    token, selection = select_token(logits[:, -1, :], policy, generator, info)\n                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/workspaces/mythos-base-v01-rope-diag-v11/research/mini_mythos/base_v01/decode_control_v1/generation_checks.py\", line 236, in select_token\n    require(abs(probability_sum - 1.0) <= PROBABILITY_SUM_TOLERANCE,\n  File \"/workspaces/mythos-base-v01-rope-diag-v11/research/mini_mythos/base_v01/decode_control_v1/generation_checks.py\", line 187, in require\n    raise GenerationStop(failure, purpose, actual, phase)\ngeneration_checks.GenerationStop: probability mass normalized before sampling\n\nThe above exception was the direct cause of the following exception:\n\nTraceback (most recent call last):\n  File \"/workspaces/mythos-base-v01-rope-diag-v11/research/mini_mythos/base_v01/decode_control_v1/generation_checks.py\", line 474, in run_generation\n    run_condition(prompt, policy, panel)\n  File \"/workspaces/mythos-base-v01-rope-diag-v11/research/mini_mythos/base_v01/decode_control_v1/generation_checks.py\", line 414, in run_condition\n    raise GenerationStop(status, getattr(primary_error, \"reason\", str(primary_error)),\ngeneration_checks.GenerationStop: probability mass normalized before sampling\n"
+      },
+      "type": "GenerationStop"
+    },
+    "observer": {
+      "rows": 163,
+      "coverage": {
+        "237392": {
+          "owned_samples": 161,
+          "cgroup_samples": 161
+        },
+        "237416": {
+          "owned_samples": 160,
+          "cgroup_samples": 160
+        },
+        "237750": {
+          "owned_samples": 145,
+          "cgroup_samples": 145
+        }
+      },
+      "identity_pins": {
+        "237392": {
+          "starttime": "1635613",
+          "ppid": null
+        },
+        "237416": {
+          "starttime": "1635626",
+          "ppid": 237392
+        },
+        "237750": {
+          "starttime": "1637017",
+          "ppid": 237416
+        }
+      },
+      "explicit_limits": []
+    },
+    "signals": [],
+    "unparsed_signal_records": [],
+    "trace_exits": {
+      "237416": 2,
+      "237750": 2
+    },
+    "signal_limit": "Original siginfo describes its recorded event only. Post-hoc sender /proc data can be absent or reused. No historical cause is inferred from either presence or absence of a signal.",
+    "prior_preservation": {
+      "/workspaces/mythos-evidence/base_v01/decode_operator/decode-v1-20261101T071421Z": {
+        "files": 6,
+        "unchanged": true,
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T074027Z": {
+        "files": 51,
+        "unchanged": true,
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      "/workspaces/mythos-evidence/base_v01/decode_operator/decode-v1-20261101T074027Z": {
+        "files": 17,
+        "unchanged": true,
+        "added": [],
+        "removed": [],
+        "changed": []
+      }
+    },
+    "operator_manifest": [
+      {
+        "path": "PARTIAL_STEP_AUDIT.json",
+        "size": 4627,
+        "sha256": "b8ac0af94e3906d4fca017506674a65569af0e5225ebe174775496048930f771"
+      },
+      {
+        "path": "POST_RUN_AUDIT.json",
+        "size": 26094,
+        "sha256": "235256cd0b2f838df57d0d71d9f1e12a3d133b230d521bea2aa722013412c33d"
+      },
+      {
+        "path": "audit.stderr",
+        "size": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "audit.stdout",
+        "size": 3548,
+        "sha256": "022b18c95ce21fb3598cd16c5d0ee4058c6f35565c2c34e06393c719d65081ee"
+      },
+      {
+        "path": "audit_execution.json",
+        "size": 887,
+        "sha256": "6f1502dd78b0d4ebb41cc29c0fb49b692084c3b73f499b415964508a3d36cec7"
+      },
+      {
+        "path": "audit_run.py",
+        "size": 48662,
+        "sha256": "4c7da8ea1b243f32c0064d12b0a53cef9f5ab03270a628b8465797750f2927eb"
+      },
+      {
+        "path": "claim.json",
+        "size": 1375,
+        "sha256": "8bac4ce059c9f1de22f39f708e5532b5af9f938803f6441df287e176fc1b4b00"
+      },
+      {
+        "path": "completion.json",
+        "size": 95,
+        "sha256": "517142aebdfdf95535e6dec523e6f08c3b3e47fa5bbde0dd90dda2f34bfdf08e"
+      },
+      {
+        "path": "config.json",
+        "size": 679,
+        "sha256": "ff4edd9650e58e15d3db3ab1a464389fc574d4c1177eccfc60abd4cf20a9967e"
+      },
+      {
+        "path": "launch_observation.json",
+        "size": 804,
+        "sha256": "d0027742fa9f6e8ce88dae0615eb5766f88519ece7f0730eb1973d26a0e2e051"
+      },
+      {
+        "path": "launcher.stderr",
+        "size": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "launcher.stdout",
+        "size": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "mythos_launch.py",
+        "size": 4374,
+        "sha256": "8083b948eebdf08c2d14a79d940ccead72db5f10c6bac8d9061816b6c9ea05c3"
+      },
+      {
+        "path": "observer.stderr",
+        "size": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "observer.stdout",
+        "size": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "observer_completion.json",
+        "size": 223,
+        "sha256": "7a674fff2a13c70a5b443d4f24e82de0a09d7ebea01682101a37434ca27f289b"
+      },
+      {
+        "path": "observer_launch.json",
+        "size": 65,
+        "sha256": "fa4c70780e81bddb6f63b30f630e162c021ff717ee2b49bb7a227bfcab77dc54"
+      },
+      {
+        "path": "partial_step_audit.py",
+        "size": 5288,
+        "sha256": "240dd4bf29b708ce2fe48eb2d98c4a0eb0009cda4dc081ba618718171a8836d9"
+      },
+      {
+        "path": "post_operator_audit.py",
+        "size": 13287,
+        "sha256": "dc7e638c8034fccdf1efaac12961ea898ac12c7a40bef1272876f301950ce507"
+      },
+      {
+        "path": "prior_attempts_before.json",
+        "size": 10706,
+        "sha256": "2fec4bd16b685c9a72c649cbef754866be2099347cd02fbe4a7cb7d8b333e1f7"
+      },
+      {
+        "path": "resource_observer.py",
+        "size": 7019,
+        "sha256": "77a053266449fa82ab9fe287a8f145bd9a3118c322b106783f209c03a874824b"
+      },
+      {
+        "path": "resource_samples.jsonl",
+        "size": 457506,
+        "sha256": "f6cd2845ff4b69cee22c58d667adb4d78f38bf61858f1ad4364946dd99ad4485"
+      },
+      {
+        "path": "signals.log",
+        "size": 2021,
+        "sha256": "e71bfb96afe5d72df00297f2548ee9a475cc3d729a5ada6b1e8a4f80946ad8c1"
+      },
+      {
+        "path": "stderr.log",
+        "size": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "stdout.log",
+        "size": 5279,
+        "sha256": "5c7afbbc4191be89554b67a3f65f5b642e9bd71097a40e3adda798cf9ecba2cc"
+      }
+    ]
+  },
+  "Status": "PASS",
+  "external_integrity_status": "PASS",
+  "full_run_accepted_by_this_audit": false,
+  "checks": [
+    {
+      "Purpose": "Registered A/L/O and attempt count",
+      "Status": "PASS",
+      "Actual": null
+    },
+    {
+      "Purpose": "Registered run/operator paths",
+      "Status": "PASS",
+      "Actual": null
+    },
+    {
+      "Purpose": "Exact wrapper and unchanged coordinator command",
+      "Status": "PASS",
+      "Actual": null
+    },
+    {
+      "Purpose": "Exact helper source/copy: mythos_launch.py",
+      "Status": "PASS",
+      "Actual": null
+    },
+    {
+      "Purpose": "Exact helper source/copy: resource_observer.py",
+      "Status": "PASS",
+      "Actual": null
+    },
+    {
+      "Purpose": "Pinned tracing tool",
+      "Status": "PASS",
+      "Actual": null
+    },
+    {
+      "Purpose": "Launch A/L/O/R identities",
+      "Status": "PASS",
+      "Actual": null
+    },
+    {
+      "Purpose": "Launcher claim",
+      "Status": "PASS",
+      "Actual": null
+    },
+    {
+      "Purpose": "Formal identity and status",
+      "Status": "PASS",
+      "Actual": null
+    },
+    {
+      "Purpose": "Launcher agrees with legitimate formal PASS/FAIL/BLOCKED",
+      "Status": "PASS",
+      "Actual": null
+    },
+    {
+      "Purpose": "Coordinator claim",
+      "Status": "PASS",
+      "Actual": null
+    },
+    {
+      "Purpose": "Worker parent and copied summary",
+      "Status": "PASS",
+      "Actual": null
+    },
+    {
+      "Purpose": "Formal stop record agrees with outcome",
+      "Status": "PASS",
+      "Actual": null
+    },
+    {
+      "Purpose": "Passive observer completion and actual row count",
+      "Status": "PASS",
+      "Actual": null
+    },
+    {
+      "Purpose": "Empty observer console",
+      "Status": "PASS",
+      "Actual": null
+    },
+    {
+      "Purpose": "Observer PID",
+      "Status": "PASS",
+      "Actual": null
+    },
+    {
+      "Purpose": "Increasing observation clock",
+      "Status": "PASS",
+      "Actual": null
+    },
+    {
+      "Purpose": "Observed PID/starttime/parent identities",
+      "Status": "PASS",
+      "Actual": null
+    },
+    {
+      "Purpose": "Observed owned-process SIGTERM unblocked",
+      "Status": "PASS",
+      "Actual": null
+    },
+    {
+      "Purpose": "Observer retained every signal record",
+      "Status": "PASS",
+      "Actual": null
+    },
+    {
+      "Purpose": "Coordinator/worker trace exits agree",
+      "Status": "PASS",
+      "Actual": {
+        "expected": {
+          "237416": 2,
+          "237750": 2
+        },
+        "actual": {
+          "237416": 2,
+          "237750": 2
+        }
+      }
+    },
+    {
+      "Purpose": "Registered prior-attempt directories",
+      "Status": "PASS",
+      "Actual": null
+    },
+    {
+      "Purpose": "Prior-attempt bytes and membership unchanged",
+      "Status": "PASS",
+      "Actual": "/workspaces/mythos-evidence/base_v01/decode_operator/decode-v1-20261101T071421Z"
+    },
+    {
+      "Purpose": "Prior-attempt bytes and membership unchanged",
+      "Status": "PASS",
+      "Actual": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T074027Z"
+    },
+    {
+      "Purpose": "Prior-attempt bytes and membership unchanged",
+      "Status": "PASS",
+      "Actual": "/workspaces/mythos-evidence/base_v01/decode_operator/decode-v1-20261101T074027Z"
+    },
+    {
+      "Purpose": "Owned launcher/coordinator/worker finished before snapshot",
+      "Status": "PASS",
+      "Actual": []
+    },
+    {
+      "Purpose": "Operator snapshot remained byte/member stable",
+      "Status": "PASS",
+      "Actual": null
+    }
+  ],
+  "failures": [],
+  "blockers": [],
+  "utc": "2026-11-01T08:31:49.245103+00:00",
+  "operator_manifest_excluded": [
+    "/workspaces/mythos-evidence/base_v01/decode_operator/decode-v1-20261101T082021Z/POST_OPERATOR_AUDIT.json"
+  ],
+  "limitations": [
+    "External integrity PASS may coexist with formal FAIL/BLOCKED; the frozen numerical auditor remains separate.",
+    "No model/weight deserialization, probability recalculation or new process signal occurred.",
+    "Git identities are cross-checked from records; Git was not independently queried.",
+    "Historical SIGTERM cause remains UNRESOLVED even when this attempt has no signals."
+  ]
+}

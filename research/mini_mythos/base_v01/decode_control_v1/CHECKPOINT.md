@@ -1,148 +1,106 @@
-# MYTHOS-DECODE-CONTROL-V1 — loading interrupted, BLOCKED
+# MYTHOS-DECODE-CONTROL-V1 — greedy reproduction PASS; sampling guard FAIL
 
-The isolated launcher was repaired and passed six real, standard-library-only
-development checks. The newly recorded formal CPU attempt started, passed D0,
-then stopped at D1 when worker184848 received SIGTERM(15) during the pinned
-official loader's torch.load call. The loader did not return. No forward call,
-logit, sampled token or continuation was produced. No model retry occurred.
+The authorized diagnostic restart completed model loading and all 12 greedy continuations, reproducing the historical logits/tokens/text evidence exactly. No SIGTERM, SIGINT or SIGHUP was recorded in this attempt. The first sampling step stopped at the frozen probability-mass check, before `torch.multinomial` was reached. No sampling continuation exists. The program stopped and all evidence was retained; there was no further model attempt.
 
-This is an incomplete experiment, not a negative result for either decoding
-policy or for Parcae. The sender and trigger of SIGTERM remain unknown.
+The earlier SIGTERM sender/cause remains UNRESOLVED. External observation was added and calibrated, but absence of that signal in this attempt is not proof that its historical cause was repaired. This attempt has a separate, precisely recorded numerical guard failure, not a new language-quality verdict or evidence that the original weights are corrupt.
 
 ## Purpose / Environment / Input / Expected / Actual / Status
 
 | Field | Record |
 |---|---|
-| Purpose | Repair and verify orchestration, then execute the existing frozen CPU decoding control to assess repetition and local language quality. |
-| Environment | Codespace bookish-pancake-vwqx7rr9x5w3wxjr; /workspaces/mythos-base-v01-cpu312/bin/python, Python3.12.3, torch2.11.0+cpu, CPU capability AVX2. D0 verified the complete dependency inventory. Worker runtime/import guards passed; model loading was interrupted. |
-| Input | Unchanged diagnostic implementation e2605841, original140M weights/config/tokenizer, original12 prompts; G12/S36/P36 matrix and5376 planned forwards unchanged. Tested launcher source SHA8083b948eebdf08c2d14a79d940ccead72db5f10c6bac8d9061816b6c9ea05c3. |
-| Expected | Validated launcher; complete D0–D4 engineering evidence, then frozen quality review. No expectation that language quality must pass. |
-| Actual | Launcher development6/6 PASS. Formal attempt D0 PASS, D1 BLOCKED with signal15, D2–D4 NOT TESTED. Official loader called once, returned zero times. Zero forwards/generations. |
-| Status | Engineering BLOCKED; formal_run_started=True; language-quality NOT TESTED; sealed-file integrity PASS within the independently audited scope. |
+| Purpose | Investigate the earlier interruption, repair missing signal provenance, validate observation, and execute one registered CPU decoding restart. |
+| Environment | Designated Codespace bookish-pancake-vwqx7rr9x5w3wxjr; existing CPU312 venv, Python 3.12.3, torch 2.11.0+cpu; deterministic single-thread CPU FP32, MATH attention; installed strace 6.8 observes signals externally. No numerical dependency change. |
+| Input | Frozen implementation A, original weights/config/tokenizer, 12 original development prompts and unchanged G12/S36/P36 plan, seeds and acceptance thresholds. |
+| Expected | Signal provenance and unchanged signal propagation; complete original D0–D4 checks and only then complete quality review. No expected quality success was assumed. |
+| Actual | Development controls 35/35 PASS. D0/D1/D2 PASS; D3 FAIL at S/panel1/prompt1/step0. 12/84 complete continuations, 769 forward calls: 768 greedy steps plus one partial sampling step. Zero sampled tokens. |
+| Status | Formal engineering FAIL; full-matrix coverage BLOCKED/PARTIAL; new sampling quality NOT TESTED. Sealed-file integrity PASS. No automatic retry. |
 
-## Git and source identity
+## Git and frozen sources
 
-- Repository leotree2020/OpenMythos, branch mythos-base-v01-decode-control-v1.
-- Prior checkpoint: df02037580bf6861a8f61ea145a6ab7770e6c055.
-- Diagnostic implementation A remains e2605841d7eb21c7d8ecbc07aa55ebe6c76f05b7.
-- Tested launcher freeze L:2f6ca9f728c79e3dce51d8f459f927e9e823d87e.
-- New execution record R:57d49092b45c855db24b598609f489dcdcf280ea.
-- Result/checkpoint commit: the commit containing this document; the final
-  delivery reports its SHA rather than attempting a self-referential hash.
+- Repository: leotree2020/OpenMythos.
+- Branch: mythos-base-v01-decode-control-v1.
+- Prior result/checkpoint: db3b9e25d90074680f1aeb0da231248430a0861f.
+- Numerical implementation A, unchanged: e2605841d7eb21c7d8ecbc07aa55ebe6c76f05b7.
+- Tested launcher L, unchanged: 2f6ca9f728c79e3dce51d8f459f927e9e823d87e.
+- Observation/protocol freeze O: d495ab0ed10ad46135febbd5bab27ea9f11bc5ee.
+- New execution record R: 5837494b6c153bd818659419755f1b2450f540f5.
+- Result/checkpoint commit: the commit containing this document; final delivery reports its SHA.
 
-Only launch-recovery additions, evidence and checkpoint documentation changed.
-The diagnostic source/protocol/rubric and their frozen11-file inventory retain
-their original bytes. Upstream remains read-only at
-69284c13746e849104f738d6d1a347b1f457df76. B1 checkout remains
-d88be474ebb2529c5b095e3732b1f25509f9b824. No PR was created or modified/merged.
-The previous checkpoint is preserved in Git and in
-launch_recovery_v1/PRIOR_CHECKPOINT_df020375.md.
+Only the new signal_recovery_v1 package, evidence and checkpoint documentation changed. The nine frozen numerical/protocol files remain byte-identical to A. The previous checkpoint is archived at signal_recovery_v1/PRIOR_CHECKPOINT_db3b9e25.md. Upstream remains read-only at 69284c13746e849104f738d6d1a347b1f457df76. B1 checkout remains d88be474ebb2529c5b095e3732b1f25509f9b824. No PR was created, reviewed, commented on, or merged.
 
-## Verified launcher correction
+Dependencies remain the existing /workspaces/mythos-base-v01-cpu312 environment. D0 verified the complete installed inventory against B1. The2881-byte requirements.lock remains SHA256 84440f8945041ed314c29b205c5244e074116ede023d5aae0b11b633b4d6a51e. No packages were installed or changed. The external strace binary is2087432 bytes, SHA256 28f957c227012de0b18d1bd7fff2d396cb693ea60ed8013be68de071e84b5001.
 
-A new directory contains mythos_launch.py and is launched with -I -B using the
-existing CPU312 interpreter. This prevents the earlier operator.py shadowing.
-The old failed directory was not renamed, patched or reused. The actual frozen
-coordinator keeps its original -B arguments and sibling-module imports.
+## What was repaired and validated
 
-Six target checks passed: normal child completion; exact stdout/stderr capture;
-source identity and isolated standard-library origin; refusal of an existing
-claim without overwriting seven existing files; correct exit7 recording; and
-timeout cleanup of a harmless parent with a TERM-resistant child. That child was
-observed absent after cleanup. These fixtures do not load a model or validate
-the coordinator numerically. The external SIGTERM-handler route was statically
-reviewed, not separately exercised by sending SIGTERM to the helper.
+Read-only logs did not identify the old signal sender. The prior frozen launcher timeout-cleanup branch was not supported as its source: recorded CHILD_FAILED/2, no cleanup/exception, and neither timeout reached. Cgroup/host observations do not establish an OOM cause.
 
-The exact source, all25 smoke files, review and execution record were committed
-before the model attempt. A missing or nonzero child result is not called PASS
-merely because the launcher itself ran.
+The repair addresses missing observability. The unchanged coordinator is launched under installed strace with `-D -f -ttt -e trace=none -e signal=SIGTERM,SIGINT,SIGHUP`. A passive stdlib observer records owned PID/starttime/parent/cgroup/resource data. Neither mechanism suppresses signals or changes numerical code. Tracing can change timing; this run is not a performance experiment.
 
-## Formal attempt and observed interruption
+Two unique stdlib-only controls passed 17 and 18 checks respectively. The normal worker ran 90.0001158 seconds and produced exact expected output. The deliberate TERM control recorded sender PID232276/UID1000, receiver PID234384, unchanged handler behavior and exit2. Both verified parent identity, unblocked TERM, frozen interpreter/launcher and real observer records. No weights or numerical libraries were used. Development probe: signal-probe-v1-20261101T081654Z; 44 files retained and committed. Original cause remains unknown despite these controls passing.
 
-- Run-id: decode-v1-20261101T074027Z.
-- Formal root:
-  /workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T074027Z.
-- Operator root:
-  /workspaces/mythos-evidence/base_v01/decode_operator/decode-v1-20261101T074027Z.
-- Launcher PID184596 started2026-11-01T07:41:12.882492Z.
-- Coordinator PID184641; worker PID184848 started07:41:22.460620Z.
-- Worker stopped07:41:48.831309Z with reason `Worker interrupted`, signal15,
-  while reading original weights through official from_pretrained → torch.load.
-- Coordinator sealed summary07:41:57.788225Z; launcher recorded CHILD_FAILED,
-  child returncode2, at07:41:57.870576Z. No helper timeout/cleanup record exists.
+## Formal attempt and exact new stopping point
 
-This roughly45-second interval is not the configured6000-second launcher timeout
-or5400-second worker timeout. Post-stop reads found all three process IDs absent.
-Observed cgroup memory.events and memory.events.local had oom=0/oom_kill=0,
-memory.max was `max`. Kernel dmesg access was denied. These observations neither
-identify the signal sender nor justify claiming that memory pressure caused the
-interruption. Do not equate SIGTERM with an OOM event or model implementation FAIL.
+- Run ID: decode-v1-20261101T082021Z.
+- Run root: /workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z.
+- Operator root: /workspaces/mythos-evidence/base_v01/decode_operator/decode-v1-20261101T082021Z.
+- Launch: 2026-11-01T08:20:34.605920Z, launcher237392, coordinator237416, worker237750.
+- D1 completed: all63 restored state entries match original bytes; tied storage and tokenizer guards PASS.
+- D2 completed: all12 greedy outputs, all768 complete last-vector byte pairs and retained historical full-logit fingerprints match the reference. This is a new-process reproduction of the existing greedy behavior.
+- D3 stopped: 08:25:49.824758Z, S/panel1/prompt1/step0, model seed731001, sampling seed841101.
+- Reported quantity: `probabilities.double().sum()` after FP32 `torch.nn.functional.softmax`, temperature1, no filtering.
+- Actual: 1.0000113072183736; absolute error: 1.1307218373612926e-5.
+- Frozen acceptance: absolute error <=1e-6. This probability guard is separate from original B1 A5, even though both use the numeral1e-6.
+- Failure precedes probability-vector digest and `torch.multinomial`. No sampled token or sampling continuation was produced. The FP32 probability vector was not retained; the recorded sum has not been independently recomputed.
+- Both coordinator and worker exited2 normally according to the trace; launcher CHILD_FAILED/2 has no cleanup or exception. All selected termination-signal records are absent in this attempt. Observer completed with163 resource samples and no identity gaps in its recorded scope.
 
-## Results and evidence acceptance
+The saved partial S last-vector has131072 bytes and SHA256 5e4ca3c5df1abc143a58565ba5cf920a42027936be363e5311efba6db9567506. A separate read-only audit confirmed its actual bytes equal G's first vector, all32768 retained FP32 components are finite, and recorded prefix/full-logit/model-RNG fingerprints agree. The sampling failure therefore follows an identical verified first-step model output. A specific softmax/kernel cause or appropriate correction has not yet been experimentally established.
 
-| Item | Status / actual |
+## Acceptance and independent evidence review
+
+| Item | Actual / status |
 |---|---|
-| Launcher development tests | PASS,6/6 |
-| D0 frozen source/environment/resources | PASS |
-| D1 complete model load/tokenizer | BLOCKED, signal15 during official loading |
-| D2 historical greedy bridge | NOT TESTED |
-| D3 sampling matrix | NOT TESTED |
-| D4 complete formal acceptance/sealing gate | NOT TESTED; post-stop file sealing completed separately |
-| Recorded individual checks |37 PASS /1 BLOCKED; not language-quality votes |
-| Completed continuations |0 of84 planned |
-| New language-quality result | NOT TESTED, not0/12 FAIL |
-| Read-only sealed-file audit | PASS for all49 listed files plus2 excluded manifests,51 actual files |
-| Full experiment audit | BLOCKED / PARTIAL,0 independently detected contradictions |
+| Development observation controls |35 PASS /0 FAIL |
+| D0 source/environment/resources |PASS |
+| D1 restored model/tokenizer |PASS |
+| D2 historical greedy bridge |PASS,12/12 continuations |
+| D3 sampling matrix |FAIL at its first probability-mass guard |
+| D4 complete acceptance |NOT TESTED; partial evidence was sealed |
+| Complete continuation rows |12 G;0 S;0 P |
+| Forward calls |769;768 complete G traces plus1 partial S input |
+| Recorded checks |11632 PASS /2 FAIL records; the two failures propagate the same stopping cause |
+| Independent full-run audit |BLOCKED/PARTIAL;0 contradictions,75 coverage blockers; not a model PASS |
+| Sealed run integrity |PASS,1634 manifest entries plus2 excluded manifests =1636 files |
+| Greedy replay |768 actual historical last-vector byte pairs and1536 raw G RNG blocks verified |
+| Restored state comparison |63 entries before generation; after-generation comparison NOT TESTED because of stop |
+| Protected sources/history |3624 files rehashed;1619 required historical reference entries checked |
+| Partial S input audit |6 PASS; no softmax, sampling, tokenizer or model replay |
+| External observation/preservation audit |27 PASS; no failures/blockers; all previous6/51/17-file directories unchanged |
+| New sampling quality and blind AI review |NOT TESTED; blind exporter was not run |
 
-The independent standard-library auditor made12791 assertions, rehashed3624
-protected files, and verified1619 required historical reference manifest entries.
-It found0 failures and87 incompleteness/coverage blockers. Those87 entries mostly
-reflect outputs that were never produced; they are not87 model errors. Missing
-state checks, logits, RNG trajectories and quality reviews are not imputed.
-Original files and protected directory membership remain unchanged. The prior
-failed operator attempt's six files also match their pre-attempt manifest exactly.
+The read-only numerical auditor made61076 assertions. Its audit-level BLOCKED means incomplete coverage while preserving the runner's formal FAIL. It does not erase that FAIL or turn it into a quality result. The current greedy automatic screen is again0/12, consistent with identical historical output; no new coherence rating was imputed. Previous inference quality FAIL remains authoritative. No S/P quality comparison, training/recovery acceptance, fresh generalization or sampling reload validation was established.
 
-Evidence identifiers:
+## Evidence locations and hashes
+
+All target raw evidence remains in the immutable run/operator directories. Git contains883 copied evidence files totaling11666589 bytes under signal_recovery_v1/evidence/, plus the export manifest and reviews. All781 raw vector/RNG binary files totaling108560384 bytes stay on the target and are covered by FULL_MANIFEST.json; weights are not redistributed. No raw evidence was replaced or discarded.
 
 | File | Bytes | SHA256 |
 |---|---:|---|
-| FULL_MANIFEST.json |9009|d9ac04ea7c41c9465a370adb67e30fdaedd7298144d88b5a8f604e56bf63617c|
-| public/GIT_BUNDLE_MANIFEST.json |8282|d8638bfca46ad76d825edfecfbf2b04b590d90df571b6f6c386260f6ba6bf21a|
-| public/summary.json |2343|883d189d6d2563466f1fc4522dc08e228ccd73fb8c3bddb079baa17dca325781|
-| POST_RUN_AUDIT.json |24789|fe9321dfff9c286345bda99f30b203944d08d9019bf066c43c88781db5bb53a3|
+| FULL_MANIFEST.json |360381|f81af7f33f5f85a2517e0fbc0818a38b61fdfaee8099564a492f977177781fdc|
+| public/summary.json |5963|4a73cb7c864f07740859078f7341441b134514088e81ae97d7d266d18532d17b|
+| POST_RUN_AUDIT.json |26094|235256cd0b2f838df57d0d71d9f1e12a3d133b230d521bea2aa722013412c33d|
+| POST_OPERATOR_AUDIT.json |13106|0aae797b68cb8e91df30ff5fdd9e89472c44c5fe227fd371e63e243e9a658026|
+| PARTIAL_STEP_AUDIT.json |4627|b8ac0af94e3906d4fca017506674a65569af0e5225ebe174775496048930f771|
 
-All51 formal-run files and15 operator evidence files are exported under
-launch_recovery_v1/evidence/. Because no model tensor outputs exist, the private
-run section contains only text logs and protection/claim metadata; those are also
-retained in Git. No original weights or tokenizer binaries are redistributed.
-Transport-only base64 is excluded; its verified transfer metadata is retained.
-The transferred66-file JSON was3740471 bytes with SHA256
-80afe12318d761c934b66525edadc1403da306061967e1042e8d097c0c1edbbc.
-RESULT_REVIEW.md distinguishes local independent checks from target-side reads.
+The13-file review export was1094613 bytes, SHA256 c5f0d8341ffb29a25b15d27c32e153ff5353dd25d7180b1fe2b4b9a9b2b37b7d; its exact file hashes were checked locally with0 mismatches. Audit limitations remain explicit: full logits use retained hashes, probabilities were not replayed, and no missing output was imputed.
 
-## Scientific state and unresolved questions
+## Boundaries and unresolved work
 
-The prior successful CPU-inference checkpoint af796912 remains authoritative:
-engineering PASS, greedy automatic0/12, AI coherence7/12, joint0/12, quality FAIL
-on that viewed development set. This interrupted attempt does not change it and
-provides no new comparison between G/S/P. The repaired launcher's PASS does not
-establish generation quality, model correctness under this attempt, or a usable
-Mythos baseline. Training/recovery and new sampling reload consistency remain
-NOT TESTED. No quality review was performed on nonexistent samples.
+Original B1 A5 remains BLOCKED, its threshold untouched. No upstream, original weight, buffer, tokenizer, seed, prompt, decoding-policy or architecture change; no GPU, B1 rerun, B2, D2-A or PR24 action. Formal Oracle remains BLOCKED/NOT_READY and FORMAL_ACCEPTANCE_READY=False. The first trainable/resumable Mythos research baseline is not yet fully accepted.
 
-Original B1 A5 remains BLOCKED at1e-6. No upstream/weight/buffer/config mutation,
-B1 rerun, GPU, training, B2, D2-A or PR24 merge occurred. Formal Oracle remains
-BLOCKED/NOT_READY; FORMAL_ACCEPTANCE_READY=False.
+Open issues: historical SIGTERM cause; origin of the observed probability-mass error; the correct numerical sampling implementation under an explicit new protocol; incomplete S/P quality data; training and optimizer-resume validation still deferred.
 
 ## Next unique instruction
 
-Investigate the sender/source of the non-protocol SIGTERM and the target execution
-channel's process-management rules. First specify and validate any controlled
-environment probe without loading a model or changing scientific settings.
-Preserve this interrupted attempt; do not immediately retry the numerical matrix,
-relax gates, or guess a weight/architecture fix. A future formal attempt needs its
-own recorded continuation and must retain the same scientific comparisons unless
-a separately reviewed protocol explicitly changes them.
+Design and freeze a CPU-only, no-model controlled diagnostic using the already saved S_panel1_prompt01_step00_last.bin. Compare the frozen FP32 softmax path with a high-precision reference and explicitly normalized alternatives, retaining the1e-6 acceptance threshold and original raw input. First establish the source of the probability-mass discrepancy and test the proposed correction on saved data; do not rerun the model matrix, change upstream, or infer better language quality. Preserve this FAIL permanently. This checkpoint records the next task, not an executed probability experiment.
 
-Stopped after the BLOCKED run, read-only audits and evidence/checkpoint commit.
-No further model computation or automatic retry occurred.
+Stopped after the one registered model attempt, read-only audits, and evidence/checkpoint recording. No model process remains running.

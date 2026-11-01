@@ -1,0 +1,15 @@
+# Result review — evidence accepted; formal sampling stage FAIL
+
+The repaired observation layer passed its two actual stdlib controls (35 checks). The numerical implementation remained frozen at A and the external wrapper/record were committed before the single model attempt. The new attempt completed all12 historical greedy continuations and failed the first sampling probability guard. This is neither a language-quality success nor a new negative sampling-quality result.
+
+Root reviewed the13 transferred manifest/summary/audit/trace files after verifying the1094613-byte transfer SHA c5f0d8341ffb29a25b15d27c32e153ff5353dd25d7180b1fe2b4b9a9b2b37b7d, then checked each individual size/hash against export metadata: zero mismatches. All883 nonbinary evidence copies were also checked against their target originals during export. Binary logit/RNG evidence remains on target with its full manifest; no weights were exported.
+
+The unchanged numerical audit source SHA4c7da8ea1b243f32c0064d12b0a53cef9f5ab03270a628b8465797750f2927eb reports sealed-file integrity PASS,0 independent contradictions, and75 incomplete-coverage blockers. Its overall BLOCKED/PARTIAL does not replace the runner's D3 FAIL. The two recorded FAIL check rows propagate one cause; they are not two independent model defects.
+
+The partial-step audit only compares saved inputs/records. It established actual byte identity of the retained S first-step vector with G, finite components and consistent recorded prefix/full-logit/RNG fingerprints. It did not recompute softmax or replay sampling. The relevant quantity is a FP64 sum of FP32 softmax probabilities. The value1.0000113072183736 is recorded evidence; the probability vector was not saved before failure. The frozen code places the guard before both its probability digest and multinomial draw. No token/continuation is imputed.
+
+The external audit source executed at SHAdc7e638c8034fccdf1efaac12961ea898ac12c7a40bef1272876f301950ce507 was statically reviewed separately from model execution. Its27 checks passed. Trace and observer agree with normal coordinator/worker exit2 and no selected signal; previous6/51/17-file directories match exactly, including membership. There are163 resource rows and observed identities retain the expected PID/starttime/parents. This does not identify the earlier SIGTERM sender or exclude all external/environmental explanations.
+
+Greedy automatic rules were recomputed on12 complete outputs and remain0/12; identical output is consistent with the earlier quality failure. No fresh coherence review or S/P language verdict was manufactured. The metadata-blind exporter was reviewed conditionally but not run, because full engineering acceptance was not achieved.
+
+Original A5, model/source bytes, decoding settings and seeds were not relaxed or changed. No subsequent model run, probability experiment, upstream edit, B1 rerun, B2, D2-A or PR24 operation occurred. Next work should isolate the probability discrepancy using the saved vector under a separately frozen no-model protocol; this result remains FAIL.

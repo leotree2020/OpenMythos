@@ -1,0 +1,511 @@
+{
+  "Purpose": "Independent post-run read-only decoding evidence audit",
+  "Environment": {
+    "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+    "libraries": "standard library only"
+  },
+  "Input": {
+    "run": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z",
+    "history": "/workspaces/mythos-evidence/base_v01/cpu_inference/inference-v1-20261101T062256Z/first/inference"
+  },
+  "Expected": "All immutable evidence complete, hashes/bytes/controls consistent; no model execution",
+  "Actual": {
+    "recorded_engineering_status": "FAIL",
+    "recorded_gates": {
+      "D0": "PASS",
+      "D1": "PASS",
+      "D2": "PASS",
+      "D3": "FAIL",
+      "D4": "NOT TESTED"
+    },
+    "complete": false,
+    "full_acceptance_established": false,
+    "coverage_status": "PARTIAL / BLOCKED",
+    "sealed_run_file_integrity": "PASS",
+    "expected_identity": {
+      "experiment": "MYTHOS-DECODE-CONTROL-V1",
+      "implementation_commit": "e2605841d7eb21c7d8ecbc07aa55ebe6c76f05b7",
+      "execution_head": "5837494b6c153bd818659419755f1b2450f540f5",
+      "branch": "mythos-base-v01-decode-control-v1"
+    },
+    "recorded_stop_reason": {
+      "gate": "D3",
+      "reason": "Worker scientific and execution checks",
+      "actual": {
+        "returncode": 2,
+        "summary": {
+          "status": "FAIL",
+          "gates": {
+            "D1": "PASS",
+            "D2": "PASS",
+            "D3": "FAIL"
+          },
+          "pid": 237750,
+          "ppid": 237416,
+          "process_started": "2026-11-01T08:20:49.452537+00:00",
+          "finished": "2026-11-01T08:25:49.824758+00:00",
+          "reference": null,
+          "official_loader_calls": 1,
+          "official_loader_returned": 1,
+          "inference": null,
+          "stop": {
+            "phase": "D3",
+            "reason": "probability mass normalized before sampling",
+            "actual": {
+              "status": "FAIL",
+              "phase": "D3",
+              "reason": "probability mass normalized before sampling",
+              "actual": {
+                "first_failure": 1.0000113072183736,
+                "cleanup_errors": []
+              },
+              "exception_type": "GenerationStop",
+              "traceback": "Traceback (most recent call last):\n  File \"/workspaces/mythos-base-v01-rope-diag-v11/research/mini_mythos/base_v01/decode_control_v1/generation_checks.py\", line 363, in run_condition\n    token, selection = select_token(logits[:, -1, :], policy, generator, info)\n                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/workspaces/mythos-base-v01-rope-diag-v11/research/mini_mythos/base_v01/decode_control_v1/generation_checks.py\", line 236, in select_token\n    require(abs(probability_sum - 1.0) <= PROBABILITY_SUM_TOLERANCE,\n  File \"/workspaces/mythos-base-v01-rope-diag-v11/research/mini_mythos/base_v01/decode_control_v1/generation_checks.py\", line 187, in require\n    raise GenerationStop(failure, purpose, actual, phase)\ngeneration_checks.GenerationStop: probability mass normalized before sampling\n\nThe above exception was the direct cause of the following exception:\n\nTraceback (most recent call last):\n  File \"/workspaces/mythos-base-v01-rope-diag-v11/research/mini_mythos/base_v01/decode_control_v1/generation_checks.py\", line 474, in run_generation\n    run_condition(prompt, policy, panel)\n  File \"/workspaces/mythos-base-v01-rope-diag-v11/research/mini_mythos/base_v01/decode_control_v1/generation_checks.py\", line 414, in run_condition\n    raise GenerationStop(status, getattr(primary_error, \"reason\", str(primary_error)),\ngeneration_checks.GenerationStop: probability mass normalized before sampling\n"
+            },
+            "type": "GenerationStop"
+          },
+          "implementation_commit": "e2605841d7eb21c7d8ecbc07aa55ebe6c76f05b7"
+        }
+      }
+    },
+    "worker_stop": {
+      "phase": "D3",
+      "reason": "probability mass normalized before sampling",
+      "actual": {
+        "status": "FAIL",
+        "phase": "D3",
+        "reason": "probability mass normalized before sampling",
+        "actual": {
+          "first_failure": 1.0000113072183736,
+          "cleanup_errors": []
+        },
+        "exception_type": "GenerationStop",
+        "traceback": "Traceback (most recent call last):\n  File \"/workspaces/mythos-base-v01-rope-diag-v11/research/mini_mythos/base_v01/decode_control_v1/generation_checks.py\", line 363, in run_condition\n    token, selection = select_token(logits[:, -1, :], policy, generator, info)\n                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/workspaces/mythos-base-v01-rope-diag-v11/research/mini_mythos/base_v01/decode_control_v1/generation_checks.py\", line 236, in select_token\n    require(abs(probability_sum - 1.0) <= PROBABILITY_SUM_TOLERANCE,\n  File \"/workspaces/mythos-base-v01-rope-diag-v11/research/mini_mythos/base_v01/decode_control_v1/generation_checks.py\", line 187, in require\n    raise GenerationStop(failure, purpose, actual, phase)\ngeneration_checks.GenerationStop: probability mass normalized before sampling\n\nThe above exception was the direct cause of the following exception:\n\nTraceback (most recent call last):\n  File \"/workspaces/mythos-base-v01-rope-diag-v11/research/mini_mythos/base_v01/decode_control_v1/generation_checks.py\", line 474, in run_generation\n    run_condition(prompt, policy, panel)\n  File \"/workspaces/mythos-base-v01-rope-diag-v11/research/mini_mythos/base_v01/decode_control_v1/generation_checks.py\", line 414, in run_condition\n    raise GenerationStop(status, getattr(primary_error, \"reason\", str(primary_error)),\ngeneration_checks.GenerationStop: probability mass normalized before sampling\n"
+      },
+      "type": "GenerationStop"
+    },
+    "counts": {
+      "assertions": 61076,
+      "manifest_files_verified": 1634,
+      "actual_run_files": 1636,
+      "historical_reference_manifest_files": 1619,
+      "recorded_checks": 11634,
+      "state_rows_verified": 63,
+      "protected_files_rehashed": 3624,
+      "generation_rows": 12,
+      "automatic_quality_rows_recomputed": 12,
+      "trace_steps": 768,
+      "observation_rows": 768,
+      "last_vectors_verified": 768,
+      "greedy_history_byte_pairs": 768,
+      "G_rng_states_verified": 1536
+    },
+    "check_statuses": {
+      "PASS": 11632,
+      "FAIL": 2
+    },
+    "automatic_panels": {
+      "G": {
+        "0": {
+          "available": 12,
+          "expected": 12,
+          "automatic_passes": 0,
+          "automatic_pass_ids": [],
+          "joint_quality": "NOT ASSESSED"
+        }
+      },
+      "S": {
+        "1": {
+          "available": 0,
+          "expected": 12,
+          "automatic_passes": 0,
+          "automatic_pass_ids": [],
+          "joint_quality": "NOT ASSESSED"
+        },
+        "2": {
+          "available": 0,
+          "expected": 12,
+          "automatic_passes": 0,
+          "automatic_pass_ids": [],
+          "joint_quality": "NOT ASSESSED"
+        },
+        "3": {
+          "available": 0,
+          "expected": 12,
+          "automatic_passes": 0,
+          "automatic_pass_ids": [],
+          "joint_quality": "NOT ASSESSED"
+        }
+      },
+      "P": {
+        "1": {
+          "available": 0,
+          "expected": 12,
+          "automatic_passes": 0,
+          "automatic_pass_ids": [],
+          "joint_quality": "NOT ASSESSED"
+        },
+        "2": {
+          "available": 0,
+          "expected": 12,
+          "automatic_passes": 0,
+          "automatic_pass_ids": [],
+          "joint_quality": "NOT ASSESSED"
+        },
+        "3": {
+          "available": 0,
+          "expected": 12,
+          "automatic_passes": 0,
+          "automatic_pass_ids": [],
+          "joint_quality": "NOT ASSESSED"
+        }
+      }
+    }
+  },
+  "Status": "BLOCKED",
+  "utc": "2026-11-01T08:27:58.079691+00:00",
+  "failures": [],
+  "blockers": [
+    {
+      "reason": "Experiment has not established complete engineering acceptance",
+      "actual": {
+        "status": "FAIL",
+        "gates": {
+          "D0": "PASS",
+          "D1": "PASS",
+          "D2": "PASS",
+          "D3": "FAIL",
+          "D4": "NOT TESTED"
+        }
+      }
+    },
+    {
+      "reason": "Only partial protected-state verification is available"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/S_panel1_prompt01_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/S_panel1_prompt02_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/S_panel1_prompt03_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/S_panel1_prompt04_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/S_panel1_prompt05_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/S_panel1_prompt06_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/S_panel1_prompt07_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/S_panel1_prompt08_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/S_panel1_prompt09_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/S_panel1_prompt10_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/S_panel1_prompt11_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/S_panel1_prompt12_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/S_panel2_prompt01_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/S_panel2_prompt02_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/S_panel2_prompt03_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/S_panel2_prompt04_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/S_panel2_prompt05_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/S_panel2_prompt06_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/S_panel2_prompt07_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/S_panel2_prompt08_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/S_panel2_prompt09_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/S_panel2_prompt10_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/S_panel2_prompt11_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/S_panel2_prompt12_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/S_panel3_prompt01_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/S_panel3_prompt02_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/S_panel3_prompt03_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/S_panel3_prompt04_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/S_panel3_prompt05_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/S_panel3_prompt06_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/S_panel3_prompt07_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/S_panel3_prompt08_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/S_panel3_prompt09_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/S_panel3_prompt10_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/S_panel3_prompt11_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/S_panel3_prompt12_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/P_panel1_prompt01_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/P_panel1_prompt02_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/P_panel1_prompt03_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/P_panel1_prompt04_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/P_panel1_prompt05_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/P_panel1_prompt06_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/P_panel1_prompt07_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/P_panel1_prompt08_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/P_panel1_prompt09_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/P_panel1_prompt10_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/P_panel1_prompt11_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/P_panel1_prompt12_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/P_panel2_prompt01_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/P_panel2_prompt02_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/P_panel2_prompt03_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/P_panel2_prompt04_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/P_panel2_prompt05_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/P_panel2_prompt06_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/P_panel2_prompt07_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/P_panel2_prompt08_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/P_panel2_prompt09_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/P_panel2_prompt10_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/P_panel2_prompt11_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/P_panel2_prompt12_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/P_panel3_prompt01_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/P_panel3_prompt02_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/P_panel3_prompt03_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/P_panel3_prompt04_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/P_panel3_prompt05_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/P_panel3_prompt06_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/P_panel3_prompt07_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/P_panel3_prompt08_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/P_panel3_prompt09_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/P_panel3_prompt10_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/P_panel3_prompt11_generation.json"
+    },
+    {
+      "reason": "Planned generation is incomplete",
+      "path": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation/public/P_panel3_prompt12_generation.json"
+    },
+    {
+      "reason": "Required complete evidence coverage has not been established",
+      "actual": {
+        "generation_rows": 12,
+        "trace_steps": 768,
+        "observation_rows": 768,
+        "last_vectors_verified": 768,
+        "greedy_history_byte_pairs": 768,
+        "sampling_initial_byte_pairs": 0,
+        "G_rng_states_verified": 1536,
+        "automatic_quality_rows_recomputed": 12,
+        "state_rows_verified": 63
+      },
+      "expected": {
+        "generation_rows": 84,
+        "trace_steps": 5376,
+        "observation_rows": 5376,
+        "last_vectors_verified": 5376,
+        "greedy_history_byte_pairs": 768,
+        "sampling_initial_byte_pairs": 72,
+        "G_rng_states_verified": 1536,
+        "automatic_quality_rows_recomputed": 84,
+        "state_rows_verified": 126
+      }
+    }
+  ],
+  "limitations": [
+    "No model, sampling, tokenizer decoding or original weight deserialization is rerun.",
+    "Full logits arrays are not retained: their hashes are checked across trace/observation/history, not independently recomputed.",
+    "All retained last vectors are independently hashed and scanned for nonfinite FP32 values; G and first-step pairs are compared as actual bytes.",
+    "Sampling probabilities and RNG transitions are recorded evidence; multinomial outcomes are not replayed.",
+    "G RNG raw blocks are rehashed; S/P RNG trajectory comparisons use their saved digests because their raw RNG states were not retained.",
+    "Token repetition/EOS rules are recomputed; text rules use stored decoded strings, not a fresh tokenizer decode.",
+    "State rows are checked for internal completeness and before/after hash identity; model tensors are not reloaded.",
+    "Protected file bytes/tree membership are re-read; Git-state equality is audited from saved before/after records, without running Git.",
+    "Check schemas/statuses are enumerated; their exact execution ordering is not independently reconstructed.",
+    "Engineering audit PASS is not language-quality or scientific superiority PASS."
+  ]
+}

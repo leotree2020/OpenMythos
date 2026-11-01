@@ -1,0 +1,125 @@
+{
+  "Purpose": "Verify the saved input and stopping point of the failed sampling step",
+  "Environment": "stdlib only; no torch, tokenizer, model, softmax or RNG replay",
+  "Input": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z",
+  "Expected": "Byte-identical first input and internally consistent frozen guard failure",
+  "Actual": {
+    "retained_fp32_values": 32768,
+    "reported_probability_sum": 1.0000113072183736,
+    "probability_sum_operation": "FP64 sum of FP32 softmax probabilities",
+    "absolute_error": 1.1307218373612926e-05,
+    "probability_vector_retained": false,
+    "probability_sum_recomputed": false,
+    "scientific_run_status_unchanged": "FAIL",
+    "historical_signal_cause": "UNRESOLVED"
+  },
+  "Status": "PASS",
+  "checks": [
+    {
+      "Purpose": "Partial S last-vector actual bytes equal G",
+      "Environment": "stdlib; saved bytes only",
+      "Input": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation",
+      "Expected": "131072 identical bytes",
+      "Actual": {
+        "size": 131072,
+        "sha256": "5e4ca3c5df1abc143a58565ba5cf920a42027936be363e5311efba6db9567506"
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Retained partial S vector finite",
+      "Environment": "stdlib; saved bytes only",
+      "Input": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation",
+      "Expected": "32768 finite FP32 values",
+      "Actual": true,
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Saved full-logit/prefix/model-RNG fingerprints match G",
+      "Environment": "stdlib; saved bytes only",
+      "Input": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation",
+      "Expected": "all match",
+      "Actual": {
+        "full_logits": true,
+        "full_logits_shape": true,
+        "prefix_ids": true,
+        "prefix_ids_sha256": true,
+        "default_rng_before_forward": true,
+        "default_rng_after_forward": true
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Saved sampler RNG unchanged across forward",
+      "Environment": "stdlib; saved bytes only",
+      "Input": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation",
+      "Expected": true,
+      "Actual": true,
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Exactly the frozen probability-mass guard failed",
+      "Environment": "stdlib; saved bytes only",
+      "Input": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation",
+      "Expected": {
+        "value": 1.0000113072183736,
+        "tolerance": 1e-06,
+        "policy": "S",
+        "panel": 1,
+        "prompt_id": 1,
+        "step": 0
+      },
+      "Actual": {
+        "Actual": 1.0000113072183736,
+        "Environment": {
+          "backend": "MATH",
+          "batch_size": 1,
+          "device": "cpu",
+          "dtype": "float32",
+          "grad_enabled": false,
+          "num_steps": 8,
+          "pid": 237750
+        },
+        "Expected": {
+          "absolute_tolerance": 1e-06,
+          "target": 1.0
+        },
+        "Input": {
+          "model_seed": 731001,
+          "panel": 1,
+          "policy": "S",
+          "prompt_id": 1,
+          "sampler_seed": 841101,
+          "step": 0
+        },
+        "Purpose": "probability mass normalized before sampling",
+        "Status": "FAIL",
+        "phase": "D3"
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "No completed sampling selection/continuation evidence",
+      "Environment": "stdlib; saved bytes only",
+      "Input": "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z/first/generation",
+      "Expected": true,
+      "Actual": true,
+      "Status": "PASS"
+    }
+  ],
+  "limitations": [
+    "Full logits and RNG comparisons use recorded fingerprints; only retained last vectors are compared as bytes.",
+    "The probability vector was not saved before the guard failed; the FP64 sum of FP32 softmax probabilities is recorded evidence, not independently recomputed here.",
+    "No sampled token was reached according to the frozen source control flow and recorded failure. No new numerical experiment occurred."
+  ],
+  "evidence_binding": {
+    "FULL_MANIFEST.json": {
+      "size": 360381,
+      "sha256": "f81af7f33f5f85a2517e0fbc0818a38b61fdfaee8099564a492f977177781fdc"
+    },
+    "public/summary.json": {
+      "size": 5963,
+      "sha256": "4a73cb7c864f07740859078f7341441b134514088e81ae97d7d266d18532d17b"
+    }
+  }
+}

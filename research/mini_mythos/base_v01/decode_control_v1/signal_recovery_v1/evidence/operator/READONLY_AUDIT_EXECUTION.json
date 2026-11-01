@@ -1,0 +1,39 @@
+{
+  "utc": "2026-11-01T08:31:49.261534+00:00",
+  "audits": [
+    {
+      "command": [
+        "/workspaces/mythos-base-v01-cpu312/bin/python",
+        "-I",
+        "-B",
+        "/workspaces/mythos-evidence/base_v01/decode_operator/decode-v1-20261101T082021Z/partial_step_audit.py",
+        "--run",
+        "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z",
+        "--output",
+        "/workspaces/mythos-evidence/base_v01/decode_operator/decode-v1-20261101T082021Z/PARTIAL_STEP_AUDIT.json"
+      ],
+      "returncode": 0,
+      "stdout": "{\"Status\": \"PASS\", \"checks\": 6, \"Actual\": {\"retained_fp32_values\": 32768, \"reported_probability_sum\": 1.0000113072183736, \"probability_sum_operation\": \"FP64 sum of FP32 softmax probabilities\", \"absolute_error\": 1.1307218373612926e-05, \"probability_vector_retained\": false, \"probability_sum_recomputed\": false, \"scientific_run_status_unchanged\": \"FAIL\", \"historical_signal_cause\": \"UNRESOLVED\"}}\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/workspaces/mythos-base-v01-cpu312/bin/python",
+        "-I",
+        "-B",
+        "/workspaces/mythos-evidence/base_v01/decode_operator/decode-v1-20261101T082021Z/post_operator_audit.py",
+        "--run",
+        "/workspaces/mythos-evidence/base_v01/decode_control/decode-v1-20261101T082021Z",
+        "--operator",
+        "/workspaces/mythos-evidence/base_v01/decode_operator/decode-v1-20261101T082021Z",
+        "--record",
+        "/workspaces/mythos-base-v01-rope-diag-v11/research/mini_mythos/base_v01/decode_control_v1/signal_recovery_v1/RUN_RECORD.json",
+        "--output",
+        "/workspaces/mythos-evidence/base_v01/decode_operator/decode-v1-20261101T082021Z/POST_OPERATOR_AUDIT.json"
+      ],
+      "returncode": 0,
+      "stdout": "{\"external_integrity_status\": \"PASS\", \"formal_status\": \"FAIL\", \"failures\": 0, \"blockers\": 0, \"output\": \"/workspaces/mythos-evidence/base_v01/decode_operator/decode-v1-20261101T082021Z/POST_OPERATOR_AUDIT.json\"}\n",
+      "stderr": ""
+    }
+  ]
+}
