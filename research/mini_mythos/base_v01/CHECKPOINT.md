@@ -1,80 +1,89 @@
-# Mythos Base v0.1 — B1 checkpoint: implementation complete; target-machine execution NOT TESTED
+# Mythos Base v0.1 — B1 target run BLOCKED at A5
 
-2026-10-31. Experiment MYTHOS-BASELINE-B1. Branch `mythos-base-v01-b1`.
+2026-11-01 (Asia/Tokyo). Experiment MYTHOS-BASELINE-B1. Run b1-20261101T021657Z.
 
 ## Current decision
 
-**The B1 code, tests, configuration and runbook are implemented and committed. The B1 acceptance run on the target machine has NOT been executed: this session has no access to the target machine, and the network policy of this session denies `huggingface.co` (HTTP 403 on the CONNECT tunnel, re-checked 2026-10-31T13:39Z for both pinned URLs) and `download.pytorch.org`.** Nothing in this checkpoint is B1 evidence. Engineering baseline: NOT TESTED. Language quality: NOT TESTED (no generation on the real weights has occurred).
+The authorized target-machine run reached verify-load and stopped at A5. The official RoPE buffer freqs_cis differs from frozen native CPU recomputation: maximum absolute difference 0.00012207025429233909, above the preregistered 1e-6 threshold. Status: BLOCKED, not an implementation FAIL and not a demonstrated scientific cause. No threshold, buffer, model configuration or upstream code was changed.
 
-No training, no backward pass, no optimizer, no GPU, no KV cache, no upstream edit, no PR action was performed. PR #24 was not touched.
+The guard is before load_state_dict(strict=True). The binary was safely deserialized and its tensors accounted for, but strict model loading and post-load shared-weight verification were not completed. Generation and reload were not started. finalize was invoked once only to seal existing evidence. Its exit code 2 reports the existing BLOCKED state.
 
-## 1. Purpose
+Engineering baseline: BLOCKED. Language quality: NOT TESTED. No real-weight continuations exist. This supersedes the implementation-only checkpoint at 0f072a4c5bbbc4f79e0f29732683e4e1db88eaed; that historical record remains in Git.
 
-Controlled load, fixed-prompt text generation and save/reload of the official Parcae-140M weights on CPU, as the first step toward a trainable, resumable, text-generating small research model. B2 (bounded training and resume) and B3 (package acceptance) are not started.
+## Purpose
 
-## 2. Git, code identity and sources
+Controlled loading, fixed-prompt generation and save/reload of official Parcae-140M on CPU, toward a small trainable, resumable, text-generating research baseline. B1 contains no training; B2 and D2-A are not started.
 
-- Repository `leotree2020/OpenMythos`, new branch `mythos-base-v01-b1` created from `4308099bfc90d9398f54a47f9272b6bd4582f7b9`; only `research/mini_mythos/base_v01/` is added.
-- **Frozen execution commit: `d39eabb0f1ec33230bfdd00337877c647dfa42db`** (code, fixtures, runbook, tooling). The commit that adds this file is documentation only.
-- Upstream `sandyresearch/parcae@69284c13746e849104f738d6d1a347b1f457df76` (read-only; `git status --ignored` was empty before and after every local run).
-- Model `SandyResearch/parcae-140m@236739ce93ba1afc1b3f172fb4a509f4500d2852`: `pytorch_model.bin` 578,361,537 B `ed6eb306464dd0d694e9eacd58f7e06ac3e44b43cb7c5c79dbcb1543059c6621` (LFS metadata value, never recomputed here); `config.json` 1,741 B `5c8fc785c2f6dba67d0370ad715034860e3b22bfce850da825c06baa03923c13`.
-- Tokenizer `SandyResearch/parcae-tokenizer@6247b5d0592876b73660f34c2dd16c9db9e9045c`: `tokenizer.json` 2,326,980 B `e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77`.
-- **License: UNCONFIRMED** for weights and tokenizer (no declaration found). Local research use only; no redistribution of weights, tokenizer or derived models; nothing of that kind is committed.
+## Git and frozen inputs
 
-## 3. What was implemented
+- Repository: leotree2020/OpenMythos. Branch: mythos-base-v01-b1.
+- Target checkout: /workspaces/mythos-base-v01-b1.
+- Frozen implementation origin: d39eabb0f1ec33230bfdd00337877c647dfa42db.
+- Previous documentation HEAD: 0f072a4c5bbbc4f79e0f29732683e4e1db88eaed.
+- Actual execution HEAD: f0541330868267af25c4d2d04f549bf3e4d77e2f. This adds only the reviewed requirements.lock to the previous HEAD; execution source is unchanged.
+- This checkpoint belongs to a subsequent result/documentation commit descending from f054133; use the Git commit containing this file for its exact checkpoint identity.
+- Upstream: sandyresearch/parcae@69284c13746e849104f738d6d1a347b1f457df76, /workspaces/mythos-parcae-pinned.
+- Model: SandyResearch/parcae-140m@236739ce93ba1afc1b3f172fb4a509f4500d2852.
+- Tokenizer: SandyResearch/parcae-tokenizer@6247b5d0592876b73660f34c2dd16c9db9e9045c.
 
-|File|Role|
-|---|---|
-|`base_v01.py`|pinned sources and expectations, exclusive JSON records, environment/memory/disk facts, read-only upstream pin check, single-attempt verified download, tokenizer identity and probes, state-dict accounting (prefix rule, missing/unexpected/shape/dtype/finite/shared), config construction without silent field dropping and built-in config diff, RoPE buffer check, backend check, native-vs-generation logits, generation and automatic degeneration checks, package save|
-|`run_base.py`|stages `env-check`, `fetch`, `verify-load`, `generate`, `reload-check`, `finalize`; each writes one record, refuses to rerun, requires the previous stage to be PASS|
-|`prompts_v1.json`, `tokenizer_probes_v1.json`|12 frozen prompts (prompt 7 holds real newlines), 32 frozen tokenizer probes|
-|`build_env.sh`, `make_lock.py`, `requirements.direct.txt`, `constraints.txt`|isolated Python 3.12.3 environment, pip resolution report → hash lock with a 14-day release-age review → install by hash → `pip check` → freeze/lock comparison|
-|`test_base_v01.py`|28 fixture tests including a tiny-model rehearsal of the whole chain (each stage a separate process)|
-|`README_USAGE.md`|runbook, protocol, supported/unsupported scope|
+All three artifacts were actually downloaded and hashed on this target:
 
-Design facts that differ from the earlier plan: `attn_impl=flash` is kept unchanged (`flash`, `sdpa` and `tridao` select the same function; on CPU `HAS_FA3` is false and the SDPA fallback is used; every numerical check runs under `SDPBackend.MATH`); `tokenizers==0.23.2` requires `huggingface-hub>=0.16.4,<2.0`, so `huggingface-hub==1.33.0` is pinned and no `--no-deps` is used before the closure is locked; the cumulative 3-hour limit counts active stage time, not idle gaps between stages.
+| File | Bytes | Actual SHA-256 | Status |
+|---|---:|---|---|
+| pytorch_model.bin | 578361537 | ed6eb306464dd0d694e9eacd58f7e06ac3e44b43cb7c5c79dbcb1543059c6621 | PASS |
+| config.json | 1741 | 5c8fc785c2f6dba67d0370ad715034860e3b22bfce850da825c06baa03923c13 | PASS |
+| tokenizer.json | 2326980 | e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77 | PASS |
 
-## 4. Checks actually run in this session (development only, NOT on the target, NOT B1 evidence)
+The 12 prompts, 32 tokenizer probes, recurrence settings and numerical thresholds remain frozen.
 
-Sandbox: Intel Xeon @2.10GHz, 4 vCPU, 16 GB RAM, ~2.4 GB free disk, Python 3.12.3, torch 2.11.0+cu130 (CPU use), numpy 1.26.4, `tokenizers` 0.23.2 installed to a scratch directory.
+## Environment and environment acceptance
 
-|Check|Result|
-|---|---|
-|`python -m unittest test_base_v01`|28/28 PASS: parsing, exclusive writes, pinned-constant format, floating-revision refusal, prefix mapping, state-dict accounting negatives (missing/unexpected/shape/dtype/non-finite/tied mismatch), degeneration rules (incl. U+FFFD never forgiven), tokenizer identity and 32-probe round trip on a toy tokenizer, local-HTTP download (good, wrong hash, wrong size, missing file, no overwrite), exception-to-status mapping, full chain on a random tiny model, tampered download|
-|Tiny-model rehearsal|env-check NOT TESTED by design (disk/dependency waivers), fetch, verify-load, generate, reload-check all PASS; 12 prompts × 3 passes bit-identical; reload in a separate process|
-|Exposed and fixed during development|stage status could read NOT TESTED after an exception that recorded no check (now mapped to BLOCKED/FAIL, covered by a test); `run_stage` keyword clash|
-|Real-architecture smoke, random weights, in memory (script not committed)|built-in `parcae-small-140m` config constructs on CPU in 10.8 s; 144,323,136 parameters, 61 parameter tensors, 63 state_dict entries, tied head, value-embedding keys {1,3,5} with gates at `prelude.1`, `core_block.1`, `coda.1`; `attn_impl=flash`, `use_fused_head=pytorch`, `n_layer=8`; native forward vs `forward_for_generation` on 24 tokens bitwise equal; 4-token no-cache greedy generation 0.8 s; process RSS 1.44 GiB. These are checks of the source-derived numbers on a constructed model, not of the Hugging Face binary|
-|Lock tooling on the non-torch closure|18 packages resolved, hash lock written, release-age review: 3 packages too new without `constraints.txt` (filelock 4.2.5, hf-xet 1.8.0, certifi 2026.10.23), 0 violations with it. The PyTorch CPU wheel (`torch==2.11.0+cpu`) could not be resolved here|
+Target Codespace: bookish-pancake-vwqx7rr9x5w3wxjr. Linux 6.8.0-1064-azure, AMD EPYC 7763, 2 visible logical CPUs. New isolated environment: /workspaces/mythos-base-v01-cpu312. Python 3.12.3; torch 2.11.0+cpu; numpy 1.26.4; einops 0.8.0; tokenizers 0.23.2; huggingface-hub 1.33.0.
 
-Sandbox timing is not a prediction for the target: about 0.2 s per no-cache generation step at ~26 tokens (single thread) suggests roughly 30 s per 64-token prompt and 5–6 minutes for 12 prompts, unmeasured on the target.
+Formal env-check recorded effective available memory 5534261248 bytes and free disk 7379808256 bytes, exceeding the 4 GiB / 5 GiB gates. CPU only, one thread, deterministic algorithms and FP32 checks passed. No historical D1/M2 environment was modified.
 
-## 5. Acceptance status (A1–A11)
+Expected: exact frozen direct dependencies, a complete hash lock, clean pip check, exact lock/freeze agreement and clean committed source. Actual: 25 packages hash-installed; no missing/extra/mismatched packages; pip check clean; all formal E checks PASS. Environment acceptance: PASS. Lock SHA-256: 84440f8945041ed314c29b205c5244e074116ede023d5aae0b11b633b4d6a51e.
 
-|Item|Status|Reason|
-|---|---|---|
-|Target preflight (CPU, memory ≥4 GiB, disk ≥5 GiB, dependencies, threads)|NOT TESTED|no access to the target machine|
-|A1 pinned files: size and SHA-256|NOT TESTED / BLOCKED here|`huggingface.co` denied (403); no weights downloaded|
-|A2 `weights_only` load into tensor dict|NOT TESTED|needs A1|
-|A3 keys, shapes, dtype, finite, shared weights|NOT TESTED|needs A1|
-|A4 actual config vs built-in config|NOT TESTED|needs A1|
-|A5 RoPE buffer vs native recomputation (≤1e-6)|NOT TESTED|needs A1|
-|A6 tokenizer identity and 32 probes|NOT TESTED|needs A1|
-|A7 CPU/SDPA-fallback backend|NOT TESTED on the real run (backend resolution verified on the fixture and the real architecture)|needs the target run|
-|A8 native vs generation logits (rtol 1e-5, atol 1e-6)|NOT TESTED on the real weights (bitwise equal on a random real-size model)|needs A1|
-|A9 12 prompts: generation and automatic checks|NOT TESTED|needs A1|
-|A10 same-process repeat|NOT TESTED|needs A9|
-|A11 new-process reload (weights, logits, tokens, text)|NOT TESTED|needs A10|
-|Engineering baseline|NOT TESTED||
-|Language quality (≥9/12 prompts passing automatic checks AND AI-assisted coherence review)|NOT TESTED|coherence review is ChatGPT's step and has not happened; it is not a human evaluation|
+Age-review scope must remain explicit: the frozen tool checked 23 PyPI artifacts and used its pre-existing non-PyPI exception for Jinja2 and the CPU PyTorch wheel. Its original uploaded=null entries are preserved. A separate official-metadata supplement matched Jinja2's exact SHA to a 2025-03-05 PyPI upload; PyTorch's exact official index SHA, 2026-03-23 release announcement and 2026-03-24 Last-Modified support the age review. Last-Modified is server metadata, not signed proof of historical first publication. Do not claim 25/25 built-in upload-age checks. See operator/nonpypi_age_metadata.json.
 
-Resource use on the target, evidence directory, run id and manifest: none exist yet.
+## Development helper checks
 
-## 6. Unresolved items
+Purpose: verify the helper implementation using fixtures, including a random tiny-model rehearsal. Input: the committed test_base_v01.py, new target environment and pinned upstream. Expected: all 28 tests execute, with zero skips/errors/failures and no upstream changes. Actual: one invocation, 28/28 PASS, zero skips/errors/failures, 77.742 seconds reported by unittest; upstream status remained empty. This is development evidence, not A1-A11 acceptance.
 
-1. Run on the target machine (below). 2. `requirements.lock` is not committed: it must be generated on the target by `build_env.sh`, reviewed, and committed before the formal run (a dirty tree is refused). 3. License of weights and tokenizer is unconfirmed. 4. `config.json` content beyond the facts in the authorization has not been read by this session. 5. Source-derived counts (144,323,136 / 61 / 63) are confirmed only on a constructed model, not on the shipped binary. 6. The `X-Repo-Commit` header is recorded when the server provides it after redirects; the pinned revision in the URL is the immutability guarantee.
+## Formal acceptance results
 
-## 7. Next single instruction
+Formal env-check, fetch and verify-load were each invoked once. No automatic retries or later model stages were launched.
 
-On the target machine, check out `d39eabb0f1ec33230bfdd00337877c647dfa42db`, follow `README_USAGE.md` steps 1–3 exactly once (build the environment and lock, commit the lock, run the helper tests, then `env-check` → `fetch` → `verify-load` → `generate` → `reload-check` → `finalize`), keep the whole run directory, and stop. Any BLOCKED or FAIL stops the chain with evidence preserved; no automatic retry, no training, no B2.
+| Item | Expected | Actual | Status |
+|---|---|---|---|
+| A1 | All fixed sizes and hashes match | All three actual artifacts match | PASS |
+| A2 | weights_only load returns tensor dict | 63 tensor entries | PASS |
+| A3 | Accounting plus post-load sharing pass | Accounting coverage 1.0; no missing/unexpected/shape/dtype/nonfinite errors; tied values/storage match in file. Post-load shared check not reached | NOT TESTED overall |
+| A4 | Authorized config facts and built-in comparison match | No effective, derived or label-only differences | PASS |
+| A5 | Native RoPE buffer max absolute difference <= 1e-6 | 0.00012207025429233909; shape [1,2048,1,64,2] | BLOCKED |
+| A6 | Tokenizer identity and all probes pass | BPE, 32768 case-sensitive tokens/IDs, special IDs 0/1/2; 32/32 round trips | PASS |
+| A7 | CPU SDPA fallback, no FA3 or override | Frozen flash selector resolves to fallback; MATH acceptance backend | PASS |
+| A8-A10 | Logit equivalence, generation and same-process repeat | generate not run | NOT TESTED |
+| A11 | New-process reload equivalence | reload-check not run | NOT TESTED |
 
-Formal Oracle stays BLOCKED/NOT_READY, `FORMAL_ACCEPTANCE_READY=False`. D2-A stays deferred.
+The frozen verify_load.json U.upstream check remains NOT TESTED because execution stopped before reaching it. A separate post-stop Git audit confirmed upstream HEAD and tracked/untracked/ignored file state unchanged; that supplemental audit does not rewrite the original stage record.
+
+## Evidence and integrity
+
+- Full formal run, including private local artifacts: /workspaces/mythos-evidence/base_v01/b1/b1-20261101T021657Z.
+- Environment build evidence: /workspaces/mythos-evidence/base_v01/env/20261101T021657Z.
+- Operator/preflight/test/sealing records: /workspaces/mythos-evidence/base_v01/access/20261101T021657Z.
+- Portable small reports: evidence_b1/b1-20261101T021657Z/ under this directory, including environment/ and operator/.
+- Original manifest: 8/8 file sizes and SHA-256 values independently rechecked after the stop, zero mismatches. summary.json and manifest.json are excluded from the original manifest by design; both are covered by the portable bundle manifest.
+- Portable bundle: 36 files, 455445 bytes before adding evidence_bundle_manifest.json. Bundle-manifest SHA-256: 7df79cfd5536f47f0effc4c306222ed509cd12f3838c5a35546947ac5bc1427d.
+- No model weights, tokenizer binary/content, virtual environment or package binaries are committed. Weight/tokenizer license status remains UNCONFIRMED; no redistribution.
+
+## Unresolved questions and boundaries
+
+The origin and practical effect of the RoPE difference are unknown. Numerical precision, computation device, implementation version, RoPE parameters and buffer provenance are hypotheses, not established causes. No conclusion about generation quality can be made. Strict loading, post-load shared storage, logits, generation and reload remain untested.
+
+No training, backward pass, optimizer step, GPU, KV cache, seed increase, threshold change, model change or upstream edit occurred. No B2/B3 or D2-A was started. PR #24 was not modified or merged. D1 findings and its frozen execution remain unchanged. Formal Oracle remains BLOCKED/NOT_READY; FORMAL_ACCEPTANCE_READY=False.
+
+## Next single instruction
+
+Draft and cross-review a minimal controlled RoPE buffer provenance/numerical-difference diagnostic protocol using these sealed artifacts and frozen source. Preserve the original binary, configuration, upstream revision and 1e-6 gate. The next task is read-only source audit, experimental design and review only: do not execute diagnostics, replace the buffer, relax the threshold, rerun B1, or start B2/D2-A without a new decision.

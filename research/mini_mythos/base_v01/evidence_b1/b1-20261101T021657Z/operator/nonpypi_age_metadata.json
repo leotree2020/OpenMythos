@@ -1,0 +1,161 @@
+{
+  "record_type": "B1_non_PyPI_age_metadata_supplement",
+  "record_created_at_utc": "2026-11-01T02:23:37Z",
+  "observation_date_in_client_timezone": "2026-11-01",
+  "client_timezone": "Asia/Tokyo",
+  "Purpose": "Review the two non-PyPI artifacts excluded from the frozen lock tool's built-in PyPI artifact-age check, document official metadata, and distinguish automated coverage from supplemental review without changing code, constraints, the environment or the original lock review.",
+  "Environment": {
+    "review_location": "Local Windows workspace; not the target Codespace",
+    "methods": [
+      "Read the frozen local make_lock.py, build_env.sh and README_USAGE.md as text",
+      "HTTPS GET of official PyPI JSON with PowerShell Invoke-RestMethod",
+      "HTTPS GET of the official PyTorch CPU wheel index with PowerShell Invoke-WebRequest; parse the exact filename and href",
+      "HTTP HEAD of the two specified official wheel URLs with PowerShell Invoke-WebRequest -Method Head; no wheel bodies requested",
+      "Read official PyTorch release announcements with the web tool"
+    ],
+    "project_code_executed": false,
+    "model_experiment_executed": false,
+    "large_wheel_downloaded": false,
+    "dependency_changes": false,
+    "code_changes": false,
+    "original_lock_review_modified": false,
+    "retrieval_time_precision": "The exact wall-clock time of each request was not separately recorded. The observation date and the literal HTTP Date response fields are recorded; HTTP Date is not asserted to be a local retrieval timestamp."
+  },
+  "Input": {
+    "repository": "leotree2020/OpenMythos",
+    "frozen_execution_commit": "d39eabb0f1ec33230bfdd00337877c647dfa42db",
+    "checkpoint_commit": "0f072a4c5bbbc4f79e0f29732683e4e1db88eaed",
+    "review_date_for_calendar_comparison": "2026-11-01",
+    "min_age_days": 14,
+    "calendar_cutoff_date": "2026-10-18",
+    "target_build_report": {
+      "source": "Primary agent's report from the target Codespace; this reviewer did not independently read the entire target lock_review.json or recount all 25 entries",
+      "build_exit_code": 0,
+      "resolved_and_hash_installed_packages": 25,
+      "pip_check": "reported clean",
+      "freeze_lock_comparison": "reported equal",
+      "lock_review_status": "reported PASS",
+      "automated_PyPI_age_checked_packages": 23,
+      "preexisting_non_PyPI_age_exceptions": 2,
+      "exception_packages": ["jinja2==3.1.6", "torch==2.11.0+cpu"]
+    },
+    "artifacts": [
+      {
+        "package": "jinja2",
+        "version": "3.1.6",
+        "filename": "jinja2-3.1.6-py3-none-any.whl",
+        "target_download_url": "https://download.pytorch.org/whl/jinja2-3.1.6-py3-none-any.whl",
+        "target_locked_sha256": "85ece4451f492d0c13c5dd7c13a64681a86afae63a5f347908daf103ce6d2f67"
+      },
+      {
+        "package": "torch",
+        "version": "2.11.0+cpu",
+        "filename": "torch-2.11.0+cpu-cp312-cp312-manylinux_2_28_x86_64.whl",
+        "target_download_url": "https://download-r2.pytorch.org/whl/cpu/torch-2.11.0%2Bcpu-cp312-cp312-manylinux_2_28_x86_64.whl",
+        "target_locked_sha256": "f82e2ae20c1545bb03997d1cc3143d94e14b800038669ee1aca45808a9acc338"
+      }
+    ]
+  },
+  "Expected": {
+    "frozen_behavior": "Confirm whether the non-PyPI exclusion was already explicit in frozen source, rather than a new waiver introduced after seeing results.",
+    "jinja2": "Compare the target-locked SHA-256 with official PyPI metadata for the exact wheel; check that its recorded upload date precedes the 14-day cutoff.",
+    "torch": "Compare the target-locked SHA-256 with the official index entry for the exact CPU wheel; record official object date metadata and release date, keeping their evidentiary meanings distinct.",
+    "reporting": "Preserve the original lock review and distinguish 23 automated age checks from two frozen non-PyPI exclusions and their supplemental metadata review. Do not claim authenticated historical first-publication proof where it was not obtained."
+  },
+  "Actual": {
+    "frozen_code_and_runbook": {
+      "tool_source_url": "https://github.com/leotree2020/OpenMythos/blob/d39eabb0f1ec33230bfdd00337877c647dfa42db/research/mini_mythos/base_v01/make_lock.py",
+      "runbook_source_url": "https://github.com/leotree2020/OpenMythos/blob/d39eabb0f1ec33230bfdd00337877c647dfa42db/research/mini_mythos/base_v01/README_USAGE.md",
+      "tool_docstring_excerpt": "records non-PyPI artifacts (e.g. the PyTorch CPU wheel) with their host, without an age check.",
+      "observed_logic": "Only download hosts ending in pythonhosted.org invoke the PyPI filename upload-date lookup. Other hosts set uploaded to null and note to 'non-PyPI artifact; age not checked', without adding an age violation.",
+      "runbook_excerpt": "every release at least 14 days old",
+      "finding": "The non-PyPI exclusion is explicit in frozen code. The runbook wording is broader than actual automated coverage. This supplement records the difference; it does not edit either source.",
+      "Status": "PASS"
+    },
+    "jinja2": {
+      "official_PyPI_metadata": {
+        "source_url": "https://pypi.org/pypi/jinja2/3.1.6/json",
+        "method": "HTTPS GET, parsed urls array",
+        "filename": "jinja2-3.1.6-py3-none-any.whl",
+        "upload_time_iso_8601": "2025-03-05T20:05:00.369721Z",
+        "sha256": "85ece4451f492d0c13c5dd7c13a64681a86afae63a5f347908daf103ce6d2f67",
+        "artifact_url": "https://files.pythonhosted.org/packages/62/a1/3d680cbfd5f4b8f15abc1d571870c5fc3e594bb582bc3b64ea099db13e56/jinja2-3.1.6-py3-none-any.whl",
+        "sha256_matches_target_lock": true,
+        "calendar_date_difference_days": 606,
+        "uploaded_before_cutoff": true
+      },
+      "official_mirror_HEAD": {
+        "source_url": "https://download.pytorch.org/whl/jinja2-3.1.6-py3-none-any.whl",
+        "method": "HTTP HEAD",
+        "status_code": 200,
+        "Last-Modified": "Tue, 14 Oct 2025 18:38:59 GMT",
+        "ETag": "\"845b37cea56edd0f4dbd949244e9d798\"",
+        "Content-Length": "134899",
+        "Date": "Sat, 31 Oct 2026 23:24:25 GMT"
+      },
+      "conclusion": "The exact SHA-256 identity supplied by the target lock matches a wheel with a documented official PyPI upload date well before the cutoff. This reviewer compared metadata hashes, not newly downloaded wheel bytes; target hash-install evidence is supplied by the primary agent.",
+      "Status": "PASS"
+    },
+    "torch": {
+      "official_CPU_index": {
+        "source_url": "https://download.pytorch.org/whl/cpu/torch/",
+        "method": "HTTPS GET, exact wheel filename matched in HTML anchor text",
+        "filename": "torch-2.11.0+cpu-cp312-cp312-manylinux_2_28_x86_64.whl",
+        "href": "https://download-r2.pytorch.org/whl/cpu/torch-2.11.0%2Bcpu-cp312-cp312-manylinux_2_28_x86_64.whl#sha256=f82e2ae20c1545bb03997d1cc3143d94e14b800038669ee1aca45808a9acc338",
+        "sha256": "f82e2ae20c1545bb03997d1cc3143d94e14b800038669ee1aca45808a9acc338",
+        "sha256_matches_target_lock": true
+      },
+      "exact_artifact_HEAD": {
+        "source_url": "https://download-r2.pytorch.org/whl/cpu/torch-2.11.0%2Bcpu-cp312-cp312-manylinux_2_28_x86_64.whl",
+        "method": "HTTP HEAD",
+        "status_code": 200,
+        "Last-Modified": "Tue, 24 Mar 2026 18:33:29 GMT",
+        "last_modified_utc": "2026-03-24T18:33:29Z",
+        "ETag": "\"beb1dd1c2f2c5f6e70e963114f40147e\"",
+        "Content-Length": "190312281",
+        "Date": "Sun, 01 Nov 2026 02:22:06 GMT",
+        "Server": "cloudflare",
+        "calendar_date_difference_days": 222,
+        "last_modified_before_cutoff": true
+      },
+      "official_release_announcement": {
+        "source_url": "https://dev-discuss.pytorch.org/t/pytorch-2-11-0-general-availability/3328",
+        "method": "Read official release announcement page",
+        "displayed_publication_time": "March 23, 2026, 9:15pm",
+        "release_date": "2026-03-23",
+        "excerpt": "All the binaries have been published to PyPI and download.pytorch.org.",
+        "release_before_cutoff": true
+      },
+      "official_release_blog": {
+        "source_url": "https://pytorch.org/blog/pytorch-2-11-release-blog/",
+        "method": "Read official release blog page",
+        "displayed_publication_date": "March 23, 2026",
+        "displayed_update_date": "March 30th, 2026"
+      },
+      "nonmatching_PyPI_artifact_observed_and_not_used_as_CPU_age_proof": {
+        "source_url": "https://pypi.org/pypi/torch/2.11.0/json",
+        "method": "HTTPS GET, parsed urls array",
+        "filename": "torch-2.11.0-cp312-cp312-manylinux_2_28_x86_64.whl",
+        "upload_time_iso_8601": "2026-03-23T18:10:31.481495Z",
+        "sha256": "0f68f4ac6d95d12e896c3b7a912b5871619542ec54d3649cf48cc1edd4dd2756",
+        "artifact_url": "https://files.pythonhosted.org/packages/1a/c9/82638ef24d7877510f83baf821f5619a61b45568ce21c0a87a91576510aa/torch-2.11.0-cp312-cp312-manylinux_2_28_x86_64.whl",
+        "sha256_matches_target_CPU_lock": false,
+        "interpretation": "This is not the +cpu artifact; its upload date is not evidence of the exact target CPU wheel's upload date."
+      },
+      "conclusion": "The official current CPU index maps the exact target filename to the same SHA-256. Official object Last-Modified and the official release announcement both precede the cutoff by months. These are sufficient supplemental official metadata within the already-approved non-PyPI exception; no new exception or threshold relaxation is introduced.",
+      "Status": "PASS",
+      "semantic_limits": [
+        "HTTP Last-Modified is server-supplied object modification metadata, not a cryptographically authenticated first-publication timestamp.",
+        "The current index SHA-256 establishes the present official artifact mapping; it alone does not prove that this same hash appeared in the index on the release date.",
+        "The release announcement establishes release-level publication claims, not an individually signed upload attestation for this exact wheel.",
+        "ETag is recorded verbatim and is not treated as SHA-256.",
+        "No wheel body was downloaded or hashed by this reviewer."
+      ],
+      "cryptographically_authenticated_historical_first_publication": "NOT TESTED"
+    },
+    "coverage_statement": "According to the target report: 25 packages were hash-installed; 23 passed the frozen built-in PyPI age review; 2 used the frozen non-PyPI exclusion. This supplement checks official metadata for those 2. It does not relabel their original uploaded=null entries as automated age checks or claim 25/25 automated artifact-age validation."
+  },
+  "Status": "PASS",
+  "Status_scope": "Supplemental metadata review and interpretation of the frozen non-PyPI policy only. This is not B1 A1-A11 acceptance, a model experiment, independent verification of every target package, or a claim of cryptographically authenticated artifact publication history.",
+  "decision": "Continue the already-authorized B1 sequence without code changes or environment rebuild, preserving the original lock review and adding this supplement to evidence and checkpoint. Stop at any subsequent BLOCKED or FAIL as instructed."
+}

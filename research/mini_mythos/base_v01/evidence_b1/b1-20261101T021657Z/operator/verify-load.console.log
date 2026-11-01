@@ -1,0 +1,16 @@
+{"stage": "verify_load", "status": "BLOCKED", "error": "BLOCKED: freqs_cis max abs diff 0.00012207 > 1e-6"}
+  A2                 PASS       weights_only torch.load into a dict of tensors
+  A3.accounting      PASS       keys/shapes/dtype/finite/shared accounted
+  A3.shared          NOT TESTED not reached
+  A4.facts           PASS       loaded config equals the facts given in the authorization
+  A4.diff            PASS       no unexplained effective difference from the built-in parcae-small-140m config
+  A5                 BLOCKED    freqs_cis differs from native recomputation
+  A6.model_bpe       PASS       tokenizer model is BPE
+  A6.vocab           PASS       case-sensitive unique tokens and ids are exactly 0..32767
+  A6.specials        PASS       special tokens exist at ids (0, 1, 2)
+  A6.components      PASS       normalizer/post_processor null, ByteLevel decoder, no truncation/padding
+  A6.loaded_size     PASS       tokenizers library reports the same vocabulary size
+  A6.eos             PASS       EOS id 1 is a special added token
+  A6.probes          PASS       decode(encode(s)) == s for all 32 probes, ids in range, special tokens not skipped
+  A7                 PASS       CPU, no FA3, no attention override; flash resolves to the SDPA fallback
+  U.upstream         NOT TESTED not reached
