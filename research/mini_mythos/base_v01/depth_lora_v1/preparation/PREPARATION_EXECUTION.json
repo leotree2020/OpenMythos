@@ -1,0 +1,97 @@
+{
+  "Purpose": "Frozen data preparation before any model call",
+  "Environment": "/workspaces/mythos-depth-data-cpu312/bin/python",
+  "Input": {
+    "commit": "916e87ace8aa080529c5d5ce84378b8a52b52fda"
+  },
+  "Expected": "25 fixture tests pass;16 distinct train and16 validation examples;no model imports",
+  "Actual": {
+    "tests": {
+      "errors": 0,
+      "expected_failures": 0,
+      "failures": 0,
+      "planned": 25,
+      "run": 25,
+      "skipped": 0,
+      "test_ids": [
+        "__main__.AuditTests.test_accuracy_guard_blocks_nll_only_win",
+        "__main__.AuditTests.test_all_seeds_required",
+        "__main__.AuditTests.test_article_equal_mean_and_correct_denominator",
+        "__main__.AuditTests.test_duplicate_key_fails",
+        "__main__.AuditTests.test_exact_coverage_missing_row_fails",
+        "__main__.AuditTests.test_nonfinite_logits_rejected",
+        "__main__.AuditTests.test_quality_improvement_and_shared_control_separate",
+        "__main__.AuditTests.test_stable_metric_invariant_to_large_exact_shift",
+        "__main__.AuditTests.test_uniform_logits_known_nll_and_argmax",
+        "__main__.AuditTests.test_wrong_target_alignment_length_rejected",
+        "__main__.AuditTests.test_zero_gain_is_negative_result_not_error",
+        "__main__.DataTests.test_bad_token_ids_fail",
+        "__main__.DataTests.test_collection_hash_order_deterministic",
+        "__main__.DataTests.test_cross_split_exact_ngram_rejected",
+        "__main__.DataTests.test_duplicate_identity_rejected",
+        "__main__.DataTests.test_eligible_title_overlap_excluded_before_selection",
+        "__main__.DataTests.test_formula_candidate_excluded",
+        "__main__.DataTests.test_identity_changes_with_source",
+        "__main__.DataTests.test_insufficient_data_blocks",
+        "__main__.DataTests.test_nested_section_is_not_article",
+        "__main__.DataTests.test_no_skip_over_subheading",
+        "__main__.DataTests.test_prose_excludes_equals",
+        "__main__.DataTests.test_short_first_row_never_concatenates",
+        "__main__.DataTests.test_title_requires_blank_neighbours",
+        "__main__.DataTests.test_valid_intro_is_one_row"
+      ],
+      "unexpected_successes": 0
+    },
+    "data": {
+      "eligible": {
+        "train": 317,
+        "validation": 29
+      },
+      "eval": 16,
+      "excluded_shared_titles": [],
+      "input_file": {
+        "bytes": 81885,
+        "sha256": "b730b54aa1896227a67e25e6f422ea66f7c9d04ac1a17d98cfef5416d44653cc"
+      },
+      "model_imports": [],
+      "rows": {
+        "train": 36718,
+        "validation": 3760
+      },
+      "train": 16
+    }
+  },
+  "Status": "PASS",
+  "commands": [
+    {
+      "label": "tests",
+      "argv": [
+        "/workspaces/mythos-depth-data-cpu312/bin/python",
+        "-I",
+        "-B",
+        "/workspaces/mythos-depth-lora-cpu-v1/research/mini_mythos/base_v01/depth_lora_v1/test_data.py",
+        "--report",
+        "/workspaces/mythos-evidence/base_v01/depth_lora/preparation-v1/TARGET_DATA_TESTS.json"
+      ],
+      "exit": 0
+    },
+    {
+      "label": "data",
+      "argv": [
+        "/workspaces/mythos-depth-data-cpu312/bin/python",
+        "-I",
+        "-B",
+        "/workspaces/mythos-depth-lora-cpu-v1/research/mini_mythos/base_v01/depth_lora_v1/data_lora.py",
+        "--train",
+        "/workspaces/mythos-evidence/base_v01/depth_lora/preparation-v1/train.parquet",
+        "--validation",
+        "/workspaces/mythos-evidence/base_v01/depth_lora/preparation-v1/validation.parquet",
+        "--tokenizer",
+        "/workspaces/mythos-evidence/base_v01/b1/b1-20261101T021657Z/downloads/tokenizer/tokenizer.json",
+        "--out",
+        "/workspaces/mythos-evidence/base_v01/depth_lora/preparation-v1/data"
+      ],
+      "exit": 0
+    }
+  ]
+}
