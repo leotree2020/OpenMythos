@@ -1,0 +1,1305 @@
+{
+  "Purpose": "Tiny CPU mathematical acceptance of frozen OpenMythos MoE source",
+  "Environment": {
+    "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+    "torch": "2.9.0+cpu",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "development_only": true,
+    "device": "cpu",
+    "actual_source": "C:\\Users\\htyx2\\.codex\\.chatgpt-projects\\g-p-6ad1990464e881918f1eaec50065d5a1\\acceptance_review_local\\e2c_stage2_raw_evidence_e79acc6\\open_mythos\\moda.py",
+    "torch_runtime": {
+      "intra": 2,
+      "interop": 1,
+      "dtype": "torch.float32",
+      "device": "cpu",
+      "deterministic": true,
+      "cpu_autocast": false,
+      "cuda_autocast": false,
+      "env": {
+        "OMP_NUM_THREADS": "2",
+        "MKL_NUM_THREADS": "2",
+        "OPENBLAS_NUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "1",
+        "TOKENIZERS_PARALLELISM": "false",
+        "CUDA_VISIBLE_DEVICES": "",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "HF_HUB_OFFLINE": "1",
+        "TRANSFORMERS_OFFLINE": "1"
+      }
+    },
+    "torch_runtime_after_source": {
+      "intra": 2,
+      "interop": 1,
+      "dtype": "torch.float32",
+      "device": "cpu",
+      "deterministic": true,
+      "cpu_autocast": false,
+      "cuda_autocast": false,
+      "env": {
+        "OMP_NUM_THREADS": "2",
+        "MKL_NUM_THREADS": "2",
+        "OPENBLAS_NUM_THREADS": "1",
+        "RAYON_NUM_THREADS": "1",
+        "TOKENIZERS_PARALLELISM": "false",
+        "CUDA_VISIBLE_DEVICES": "",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "HF_HUB_OFFLINE": "1",
+        "TRANSFORMERS_OFFLINE": "1"
+      }
+    }
+  },
+  "Input": {
+    "source_sha256": "335c76d353550cbd3bc409ecfae92141b1ab70265429e0f8e33ccdcb5cd06492",
+    "seed": 7201
+  },
+  "Expected": "All frozen mathematical fixtures PASS; no language-quality claim",
+  "Actual": {
+    "planned": 9,
+    "run": 9,
+    "test_ids": [
+      "__main__.MoETests.test_e01_expert_matches_explicit_swiglu",
+      "__main__.MoETests.test_e02_softmax_and_sigmoid_weight_semantics",
+      "__main__.MoETests.test_e03_sparse_dispatch_matches_dense_all_expert_reference",
+      "__main__.MoETests.test_e04_dispatch_input_router_and_expert_vjp",
+      "__main__.MoETests.test_e05_zero_token_experts_not_called_or_differentiated",
+      "__main__.MoETests.test_e06_balance_formula_and_gradient_direction",
+      "__main__.MoETests.test_e07_alpha_applied_once_at_model_loss_boundary",
+      "__main__.MoETests.test_e08_zero_output_is_external_residual_identity",
+      "__main__.MoETests.test_e09_eval_balance_none_and_state_reload_exact"
+    ],
+    "counts": {
+      "PASS": 9,
+      "FAIL": 0,
+      "BLOCKED": 0,
+      "NOT TESTED": 0
+    },
+    "reason": null,
+    "tests": [
+      {
+        "Purpose": "Each source expert is w2(SiLU(w1(x))*w3(x)).",
+        "Environment": {
+          "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+          "torch": "2.9.0+cpu",
+          "platform": "Windows-11-10.0.26300-SP0",
+          "development_only": true,
+          "device": "cpu",
+          "actual_source": "C:\\Users\\htyx2\\.codex\\.chatgpt-projects\\g-p-6ad1990464e881918f1eaec50065d5a1\\acceptance_review_local\\e2c_stage2_raw_evidence_e79acc6\\open_mythos\\moda.py",
+          "torch_runtime": {
+            "intra": 2,
+            "interop": 1,
+            "dtype": "torch.float32",
+            "device": "cpu",
+            "deterministic": true,
+            "cpu_autocast": false,
+            "cuda_autocast": false,
+            "env": {
+              "OMP_NUM_THREADS": "2",
+              "MKL_NUM_THREADS": "2",
+              "OPENBLAS_NUM_THREADS": "1",
+              "RAYON_NUM_THREADS": "1",
+              "TOKENIZERS_PARALLELISM": "false",
+              "CUDA_VISIBLE_DEVICES": "",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "HF_HUB_OFFLINE": "1",
+              "TRANSFORMERS_OFFLINE": "1"
+            }
+          },
+          "torch_runtime_after_source": {
+            "intra": 2,
+            "interop": 1,
+            "dtype": "torch.float32",
+            "device": "cpu",
+            "deterministic": true,
+            "cpu_autocast": false,
+            "cuda_autocast": false,
+            "env": {
+              "OMP_NUM_THREADS": "2",
+              "MKL_NUM_THREADS": "2",
+              "OPENBLAS_NUM_THREADS": "1",
+              "RAYON_NUM_THREADS": "1",
+              "TOKENIZERS_PARALLELISM": "false",
+              "CUDA_VISIBLE_DEVICES": "",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "HF_HUB_OFFLINE": "1",
+              "TRANSFORMERS_OFFLINE": "1"
+            }
+          }
+        },
+        "Input": {
+          "test_id": "__main__.MoETests.test_e01_expert_matches_explicit_swiglu",
+          "seed": 7201,
+          "source_sha256": "335c76d353550cbd3bc409ecfae92141b1ab70265429e0f8e33ccdcb5cd06492"
+        },
+        "Expected": "Declared exact identities or fixed numerical tolerances; finite gradients where specified",
+        "Actual": {
+          "observations": [
+            {
+              "label": "SwiGLU 0",
+              "shape": [
+                1,
+                5,
+                16
+              ],
+              "actual_dtype": "torch.float32",
+              "expected_dtype": "torch.float32",
+              "max_abs_error": 1.4901161193847656e-08,
+              "atol": 2e-06,
+              "rtol": 2e-05
+            },
+            {
+              "label": "SwiGLU 1",
+              "shape": [
+                1,
+                5,
+                16
+              ],
+              "actual_dtype": "torch.float32",
+              "expected_dtype": "torch.float32",
+              "max_abs_error": 1.4901161193847656e-08,
+              "atol": 2e-06,
+              "rtol": 2e-05
+            },
+            {
+              "label": "SwiGLU 2",
+              "shape": [
+                1,
+                5,
+                16
+              ],
+              "actual_dtype": "torch.float32",
+              "expected_dtype": "torch.float32",
+              "max_abs_error": 1.4901161193847656e-08,
+              "atol": 2e-06,
+              "rtol": 2e-05
+            },
+            {
+              "label": "SwiGLU 3",
+              "shape": [
+                1,
+                5,
+                16
+              ],
+              "actual_dtype": "torch.float32",
+              "expected_dtype": "torch.float32",
+              "max_abs_error": 1.4901161193847656e-08,
+              "atol": 2e-06,
+              "rtol": 2e-05
+            },
+            {
+              "label": "SwiGLU 4",
+              "shape": [
+                1,
+                5,
+                16
+              ],
+              "actual_dtype": "torch.float32",
+              "expected_dtype": "torch.float32",
+              "max_abs_error": 1.4901161193847656e-08,
+              "atol": 2e-06,
+              "rtol": 2e-05
+            }
+          ],
+          "reason": null,
+          "seconds": 0.01742970000123023
+        },
+        "Status": "PASS"
+      },
+      {
+        "Purpose": "Softmax selected weights stay unnormalised; sigmoid weights normalise then scale.",
+        "Environment": {
+          "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+          "torch": "2.9.0+cpu",
+          "platform": "Windows-11-10.0.26300-SP0",
+          "development_only": true,
+          "device": "cpu",
+          "actual_source": "C:\\Users\\htyx2\\.codex\\.chatgpt-projects\\g-p-6ad1990464e881918f1eaec50065d5a1\\acceptance_review_local\\e2c_stage2_raw_evidence_e79acc6\\open_mythos\\moda.py",
+          "torch_runtime": {
+            "intra": 2,
+            "interop": 1,
+            "dtype": "torch.float32",
+            "device": "cpu",
+            "deterministic": true,
+            "cpu_autocast": false,
+            "cuda_autocast": false,
+            "env": {
+              "OMP_NUM_THREADS": "2",
+              "MKL_NUM_THREADS": "2",
+              "OPENBLAS_NUM_THREADS": "1",
+              "RAYON_NUM_THREADS": "1",
+              "TOKENIZERS_PARALLELISM": "false",
+              "CUDA_VISIBLE_DEVICES": "",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "HF_HUB_OFFLINE": "1",
+              "TRANSFORMERS_OFFLINE": "1"
+            }
+          },
+          "torch_runtime_after_source": {
+            "intra": 2,
+            "interop": 1,
+            "dtype": "torch.float32",
+            "device": "cpu",
+            "deterministic": true,
+            "cpu_autocast": false,
+            "cuda_autocast": false,
+            "env": {
+              "OMP_NUM_THREADS": "2",
+              "MKL_NUM_THREADS": "2",
+              "OPENBLAS_NUM_THREADS": "1",
+              "RAYON_NUM_THREADS": "1",
+              "TOKENIZERS_PARALLELISM": "false",
+              "CUDA_VISIBLE_DEVICES": "",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "HF_HUB_OFFLINE": "1",
+              "TRANSFORMERS_OFFLINE": "1"
+            }
+          }
+        },
+        "Input": {
+          "test_id": "__main__.MoETests.test_e02_softmax_and_sigmoid_weight_semantics",
+          "seed": 7201,
+          "source_sha256": "335c76d353550cbd3bc409ecfae92141b1ab70265429e0f8e33ccdcb5cd06492"
+        },
+        "Expected": "Declared exact identities or fixed numerical tolerances; finite gradients where specified",
+        "Actual": {
+          "observations": [
+            {
+              "label": "softmax selected indices",
+              "bitwise_equal": true,
+              "shape": [
+                5,
+                2
+              ]
+            },
+            {
+              "label": "softmax selected weights",
+              "shape": [
+                5,
+                2
+              ],
+              "actual_dtype": "torch.float32",
+              "expected_dtype": "torch.float32",
+              "max_abs_error": 0.0,
+              "atol": 2e-06,
+              "rtol": 2e-05
+            },
+            {
+              "label": "softmax original scores",
+              "shape": [
+                5,
+                4
+              ],
+              "actual_dtype": "torch.float32",
+              "expected_dtype": "torch.float32",
+              "max_abs_error": 0.0,
+              "atol": 2e-06,
+              "rtol": 2e-05
+            },
+            {
+              "label": "softmax top2 boundary margin",
+              "value": 0.11700093746185303
+            },
+            {
+              "label": "sigmoid selected indices",
+              "bitwise_equal": true,
+              "shape": [
+                5,
+                2
+              ]
+            },
+            {
+              "label": "sigmoid selected weights",
+              "shape": [
+                5,
+                2
+              ],
+              "actual_dtype": "torch.float32",
+              "expected_dtype": "torch.float32",
+              "max_abs_error": 0.0,
+              "atol": 2e-06,
+              "rtol": 2e-05
+            },
+            {
+              "label": "sigmoid original scores",
+              "shape": [
+                5,
+                4
+              ],
+              "actual_dtype": "torch.float32",
+              "expected_dtype": "torch.float32",
+              "max_abs_error": 0.0,
+              "atol": 2e-06,
+              "rtol": 2e-05
+            },
+            {
+              "label": "sigmoid top2 boundary margin",
+              "value": 0.12427645921707153
+            },
+            {
+              "label": "sigmoid scale",
+              "shape": [
+                5
+              ],
+              "actual_dtype": "torch.float32",
+              "expected_dtype": "torch.float32",
+              "max_abs_error": 0.0,
+              "atol": 2e-06,
+              "rtol": 2e-05
+            }
+          ],
+          "reason": null,
+          "seconds": 0.02965530000074068
+        },
+        "Status": "PASS"
+      },
+      {
+        "Purpose": "Sparse selected-token dispatch equals dense all-expert masked evaluation.",
+        "Environment": {
+          "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+          "torch": "2.9.0+cpu",
+          "platform": "Windows-11-10.0.26300-SP0",
+          "development_only": true,
+          "device": "cpu",
+          "actual_source": "C:\\Users\\htyx2\\.codex\\.chatgpt-projects\\g-p-6ad1990464e881918f1eaec50065d5a1\\acceptance_review_local\\e2c_stage2_raw_evidence_e79acc6\\open_mythos\\moda.py",
+          "torch_runtime": {
+            "intra": 2,
+            "interop": 1,
+            "dtype": "torch.float32",
+            "device": "cpu",
+            "deterministic": true,
+            "cpu_autocast": false,
+            "cuda_autocast": false,
+            "env": {
+              "OMP_NUM_THREADS": "2",
+              "MKL_NUM_THREADS": "2",
+              "OPENBLAS_NUM_THREADS": "1",
+              "RAYON_NUM_THREADS": "1",
+              "TOKENIZERS_PARALLELISM": "false",
+              "CUDA_VISIBLE_DEVICES": "",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "HF_HUB_OFFLINE": "1",
+              "TRANSFORMERS_OFFLINE": "1"
+            }
+          },
+          "torch_runtime_after_source": {
+            "intra": 2,
+            "interop": 1,
+            "dtype": "torch.float32",
+            "device": "cpu",
+            "deterministic": true,
+            "cpu_autocast": false,
+            "cuda_autocast": false,
+            "env": {
+              "OMP_NUM_THREADS": "2",
+              "MKL_NUM_THREADS": "2",
+              "OPENBLAS_NUM_THREADS": "1",
+              "RAYON_NUM_THREADS": "1",
+              "TOKENIZERS_PARALLELISM": "false",
+              "CUDA_VISIBLE_DEVICES": "",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "HF_HUB_OFFLINE": "1",
+              "TRANSFORMERS_OFFLINE": "1"
+            }
+          }
+        },
+        "Input": {
+          "test_id": "__main__.MoETests.test_e03_sparse_dispatch_matches_dense_all_expert_reference",
+          "seed": 7201,
+          "source_sha256": "335c76d353550cbd3bc409ecfae92141b1ab70265429e0f8e33ccdcb5cd06492"
+        },
+        "Expected": "Declared exact identities or fixed numerical tolerances; finite gradients where specified",
+        "Actual": {
+          "observations": [
+            {
+              "label": "sparse vs dense experts",
+              "shape": [
+                1,
+                5,
+                16
+              ],
+              "actual_dtype": "torch.float32",
+              "expected_dtype": "torch.float32",
+              "max_abs_error": 2.9802322387695312e-08,
+              "atol": 2e-06,
+              "rtol": 2e-05
+            },
+            {
+              "label": "routing token counts",
+              "counts": [
+                5,
+                5,
+                0,
+                0
+              ]
+            }
+          ],
+          "reason": null,
+          "seconds": 0.00831349999862141
+        },
+        "Status": "PASS"
+      },
+      {
+        "Purpose": "Away from routing ties, input/router/shared/selected expert gradients match dense reference.",
+        "Environment": {
+          "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+          "torch": "2.9.0+cpu",
+          "platform": "Windows-11-10.0.26300-SP0",
+          "development_only": true,
+          "device": "cpu",
+          "actual_source": "C:\\Users\\htyx2\\.codex\\.chatgpt-projects\\g-p-6ad1990464e881918f1eaec50065d5a1\\acceptance_review_local\\e2c_stage2_raw_evidence_e79acc6\\open_mythos\\moda.py",
+          "torch_runtime": {
+            "intra": 2,
+            "interop": 1,
+            "dtype": "torch.float32",
+            "device": "cpu",
+            "deterministic": true,
+            "cpu_autocast": false,
+            "cuda_autocast": false,
+            "env": {
+              "OMP_NUM_THREADS": "2",
+              "MKL_NUM_THREADS": "2",
+              "OPENBLAS_NUM_THREADS": "1",
+              "RAYON_NUM_THREADS": "1",
+              "TOKENIZERS_PARALLELISM": "false",
+              "CUDA_VISIBLE_DEVICES": "",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "HF_HUB_OFFLINE": "1",
+              "TRANSFORMERS_OFFLINE": "1"
+            }
+          },
+          "torch_runtime_after_source": {
+            "intra": 2,
+            "interop": 1,
+            "dtype": "torch.float32",
+            "device": "cpu",
+            "deterministic": true,
+            "cpu_autocast": false,
+            "cuda_autocast": false,
+            "env": {
+              "OMP_NUM_THREADS": "2",
+              "MKL_NUM_THREADS": "2",
+              "OPENBLAS_NUM_THREADS": "1",
+              "RAYON_NUM_THREADS": "1",
+              "TOKENIZERS_PARALLELISM": "false",
+              "CUDA_VISIBLE_DEVICES": "",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "HF_HUB_OFFLINE": "1",
+              "TRANSFORMERS_OFFLINE": "1"
+            }
+          }
+        },
+        "Input": {
+          "test_id": "__main__.MoETests.test_e04_dispatch_input_router_and_expert_vjp",
+          "seed": 7201,
+          "source_sha256": "335c76d353550cbd3bc409ecfae92141b1ab70265429e0f8e33ccdcb5cd06492"
+        },
+        "Expected": "Declared exact identities or fixed numerical tolerances; finite gradients where specified",
+        "Actual": {
+          "observations": [
+            {
+              "label": "input VJP",
+              "shape": [
+                1,
+                5,
+                16
+              ],
+              "actual_dtype": "torch.float32",
+              "expected_dtype": "torch.float32",
+              "max_abs_error": 8.940696716308594e-08,
+              "atol": 2e-06,
+              "rtol": 2e-05
+            },
+            {
+              "label": "input path",
+              "finite_nonzero": true,
+              "norm64": 1.842705776266586
+            },
+            {
+              "label": "shared_experts.w1.weight VJP",
+              "shape": [
+                8,
+                16
+              ],
+              "actual_dtype": "torch.float32",
+              "expected_dtype": "torch.float32",
+              "max_abs_error": 3.5762786865234375e-07,
+              "atol": 2e-06,
+              "rtol": 2e-05
+            },
+            {
+              "label": "shared_experts.w1.weight",
+              "finite_nonzero": true,
+              "norm64": 7.524372958581047
+            },
+            {
+              "label": "shared_experts.w3.weight VJP",
+              "shape": [
+                8,
+                16
+              ],
+              "actual_dtype": "torch.float32",
+              "expected_dtype": "torch.float32",
+              "max_abs_error": 2.384185791015625e-07,
+              "atol": 2e-06,
+              "rtol": 2e-05
+            },
+            {
+              "label": "shared_experts.w3.weight",
+              "finite_nonzero": true,
+              "norm64": 6.061777430892757
+            },
+            {
+              "label": "shared_experts.w2.weight VJP",
+              "shape": [
+                16,
+                8
+              ],
+              "actual_dtype": "torch.float32",
+              "expected_dtype": "torch.float32",
+              "max_abs_error": 5.960464477539063e-08,
+              "atol": 2e-06,
+              "rtol": 2e-05
+            },
+            {
+              "label": "shared_experts.w2.weight",
+              "finite_nonzero": true,
+              "norm64": 3.272190346889454
+            },
+            {
+              "label": "gate.weight VJP",
+              "shape": [
+                4,
+                16
+              ],
+              "actual_dtype": "torch.float32",
+              "expected_dtype": "torch.float32",
+              "max_abs_error": 5.960464477539063e-08,
+              "atol": 2e-06,
+              "rtol": 2e-05
+            },
+            {
+              "label": "gate.weight",
+              "finite_nonzero": true,
+              "norm64": 2.9623081036645647
+            },
+            {
+              "label": "experts.0.w1.weight VJP",
+              "shape": [
+                8,
+                16
+              ],
+              "actual_dtype": "torch.float32",
+              "expected_dtype": "torch.float32",
+              "max_abs_error": 2.9802322387695312e-08,
+              "atol": 2e-06,
+              "rtol": 2e-05
+            },
+            {
+              "label": "experts.0.w1.weight",
+              "finite_nonzero": true,
+              "norm64": 4.164837961080371
+            },
+            {
+              "label": "experts.0.w3.weight VJP",
+              "shape": [
+                8,
+                16
+              ],
+              "actual_dtype": "torch.float32",
+              "expected_dtype": "torch.float32",
+              "max_abs_error": 1.1920928955078125e-07,
+              "atol": 2e-06,
+              "rtol": 2e-05
+            },
+            {
+              "label": "experts.0.w3.weight",
+              "finite_nonzero": true,
+              "norm64": 5.256376284454005
+            },
+            {
+              "label": "experts.0.w2.weight VJP",
+              "shape": [
+                16,
+                8
+              ],
+              "actual_dtype": "torch.float32",
+              "expected_dtype": "torch.float32",
+              "max_abs_error": 1.1920928955078125e-07,
+              "atol": 2e-06,
+              "rtol": 2e-05
+            },
+            {
+              "label": "experts.0.w2.weight",
+              "finite_nonzero": true,
+              "norm64": 3.3283130609457627
+            },
+            {
+              "label": "experts.1.w1.weight VJP",
+              "shape": [
+                8,
+                16
+              ],
+              "actual_dtype": "torch.float32",
+              "expected_dtype": "torch.float32",
+              "max_abs_error": 5.960464477539063e-08,
+              "atol": 2e-06,
+              "rtol": 2e-05
+            },
+            {
+              "label": "experts.1.w1.weight",
+              "finite_nonzero": true,
+              "norm64": 2.054550363844205
+            },
+            {
+              "label": "experts.1.w3.weight VJP",
+              "shape": [
+                8,
+                16
+              ],
+              "actual_dtype": "torch.float32",
+              "expected_dtype": "torch.float32",
+              "max_abs_error": 2.9802322387695312e-08,
+              "atol": 2e-06,
+              "rtol": 2e-05
+            },
+            {
+              "label": "experts.1.w3.weight",
+              "finite_nonzero": true,
+              "norm64": 2.861853974660852
+            },
+            {
+              "label": "experts.1.w2.weight VJP",
+              "shape": [
+                16,
+                8
+              ],
+              "actual_dtype": "torch.float32",
+              "expected_dtype": "torch.float32",
+              "max_abs_error": 2.9802322387695312e-08,
+              "atol": 2e-06,
+              "rtol": 2e-05
+            },
+            {
+              "label": "experts.1.w2.weight",
+              "finite_nonzero": true,
+              "norm64": 1.7739546331073899
+            },
+            {
+              "label": "experts.2.w1.weight VJP",
+              "shape": [
+                8,
+                16
+              ],
+              "actual_dtype": "torch.float32",
+              "expected_dtype": "torch.float32",
+              "max_abs_error": 0.0,
+              "atol": 2e-06,
+              "rtol": 2e-05
+            },
+            {
+              "label": "experts.2.w3.weight VJP",
+              "shape": [
+                8,
+                16
+              ],
+              "actual_dtype": "torch.float32",
+              "expected_dtype": "torch.float32",
+              "max_abs_error": 0.0,
+              "atol": 2e-06,
+              "rtol": 2e-05
+            },
+            {
+              "label": "experts.2.w2.weight VJP",
+              "shape": [
+                16,
+                8
+              ],
+              "actual_dtype": "torch.float32",
+              "expected_dtype": "torch.float32",
+              "max_abs_error": 0.0,
+              "atol": 2e-06,
+              "rtol": 2e-05
+            },
+            {
+              "label": "experts.3.w1.weight VJP",
+              "shape": [
+                8,
+                16
+              ],
+              "actual_dtype": "torch.float32",
+              "expected_dtype": "torch.float32",
+              "max_abs_error": 0.0,
+              "atol": 2e-06,
+              "rtol": 2e-05
+            },
+            {
+              "label": "experts.3.w3.weight VJP",
+              "shape": [
+                8,
+                16
+              ],
+              "actual_dtype": "torch.float32",
+              "expected_dtype": "torch.float32",
+              "max_abs_error": 0.0,
+              "atol": 2e-06,
+              "rtol": 2e-05
+            },
+            {
+              "label": "experts.3.w2.weight VJP",
+              "shape": [
+                16,
+                8
+              ],
+              "actual_dtype": "torch.float32",
+              "expected_dtype": "torch.float32",
+              "max_abs_error": 0.0,
+              "atol": 2e-06,
+              "rtol": 2e-05
+            }
+          ],
+          "reason": null,
+          "seconds": 0.018168300000979798
+        },
+        "Status": "PASS"
+      },
+      {
+        "Purpose": "Experts with no assigned tokens are skipped; shared and selected experts execute.",
+        "Environment": {
+          "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+          "torch": "2.9.0+cpu",
+          "platform": "Windows-11-10.0.26300-SP0",
+          "development_only": true,
+          "device": "cpu",
+          "actual_source": "C:\\Users\\htyx2\\.codex\\.chatgpt-projects\\g-p-6ad1990464e881918f1eaec50065d5a1\\acceptance_review_local\\e2c_stage2_raw_evidence_e79acc6\\open_mythos\\moda.py",
+          "torch_runtime": {
+            "intra": 2,
+            "interop": 1,
+            "dtype": "torch.float32",
+            "device": "cpu",
+            "deterministic": true,
+            "cpu_autocast": false,
+            "cuda_autocast": false,
+            "env": {
+              "OMP_NUM_THREADS": "2",
+              "MKL_NUM_THREADS": "2",
+              "OPENBLAS_NUM_THREADS": "1",
+              "RAYON_NUM_THREADS": "1",
+              "TOKENIZERS_PARALLELISM": "false",
+              "CUDA_VISIBLE_DEVICES": "",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "HF_HUB_OFFLINE": "1",
+              "TRANSFORMERS_OFFLINE": "1"
+            }
+          },
+          "torch_runtime_after_source": {
+            "intra": 2,
+            "interop": 1,
+            "dtype": "torch.float32",
+            "device": "cpu",
+            "deterministic": true,
+            "cpu_autocast": false,
+            "cuda_autocast": false,
+            "env": {
+              "OMP_NUM_THREADS": "2",
+              "MKL_NUM_THREADS": "2",
+              "OPENBLAS_NUM_THREADS": "1",
+              "RAYON_NUM_THREADS": "1",
+              "TOKENIZERS_PARALLELISM": "false",
+              "CUDA_VISIBLE_DEVICES": "",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "HF_HUB_OFFLINE": "1",
+              "TRANSFORMERS_OFFLINE": "1"
+            }
+          }
+        },
+        "Input": {
+          "test_id": "__main__.MoETests.test_e05_zero_token_experts_not_called_or_differentiated",
+          "seed": 7201,
+          "source_sha256": "335c76d353550cbd3bc409ecfae92141b1ab70265429e0f8e33ccdcb5cd06492"
+        },
+        "Expected": "Declared exact identities or fixed numerical tolerances; finite gradients where specified",
+        "Actual": {
+          "observations": [
+            {
+              "label": "expert execution counts",
+              "counts": {
+                "shared": 1,
+                "0": 1,
+                "1": 1,
+                "2": 0,
+                "3": 0
+              }
+            }
+          ],
+          "reason": null,
+          "seconds": 0.00424889999703737
+        },
+        "Status": "PASS"
+      },
+      {
+        "Purpose": "Minimising balance loss decreases overloaded expert scores, contrary to source prose.",
+        "Environment": {
+          "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+          "torch": "2.9.0+cpu",
+          "platform": "Windows-11-10.0.26300-SP0",
+          "development_only": true,
+          "device": "cpu",
+          "actual_source": "C:\\Users\\htyx2\\.codex\\.chatgpt-projects\\g-p-6ad1990464e881918f1eaec50065d5a1\\acceptance_review_local\\e2c_stage2_raw_evidence_e79acc6\\open_mythos\\moda.py",
+          "torch_runtime": {
+            "intra": 2,
+            "interop": 1,
+            "dtype": "torch.float32",
+            "device": "cpu",
+            "deterministic": true,
+            "cpu_autocast": false,
+            "cuda_autocast": false,
+            "env": {
+              "OMP_NUM_THREADS": "2",
+              "MKL_NUM_THREADS": "2",
+              "OPENBLAS_NUM_THREADS": "1",
+              "RAYON_NUM_THREADS": "1",
+              "TOKENIZERS_PARALLELISM": "false",
+              "CUDA_VISIBLE_DEVICES": "",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "HF_HUB_OFFLINE": "1",
+              "TRANSFORMERS_OFFLINE": "1"
+            }
+          },
+          "torch_runtime_after_source": {
+            "intra": 2,
+            "interop": 1,
+            "dtype": "torch.float32",
+            "device": "cpu",
+            "deterministic": true,
+            "cpu_autocast": false,
+            "cuda_autocast": false,
+            "env": {
+              "OMP_NUM_THREADS": "2",
+              "MKL_NUM_THREADS": "2",
+              "OPENBLAS_NUM_THREADS": "1",
+              "RAYON_NUM_THREADS": "1",
+              "TOKENIZERS_PARALLELISM": "false",
+              "CUDA_VISIBLE_DEVICES": "",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "HF_HUB_OFFLINE": "1",
+              "TRANSFORMERS_OFFLINE": "1"
+            }
+          }
+        },
+        "Input": {
+          "test_id": "__main__.MoETests.test_e06_balance_formula_and_gradient_direction",
+          "seed": 7201,
+          "source_sha256": "335c76d353550cbd3bc409ecfae92141b1ab70265429e0f8e33ccdcb5cd06492"
+        },
+        "Expected": "Declared exact identities or fixed numerical tolerances; finite gradients where specified",
+        "Actual": {
+          "observations": [
+            {
+              "label": "balance equation",
+              "shape": [],
+              "actual_dtype": "torch.float32",
+              "expected_dtype": "torch.float32",
+              "max_abs_error": 0.0,
+              "atol": 2e-06,
+              "rtol": 2e-05
+            },
+            {
+              "label": "balance softmax derivative",
+              "shape": [
+                5,
+                4
+              ],
+              "actual_dtype": "torch.float32",
+              "expected_dtype": "torch.float32",
+              "max_abs_error": 1.1175870895385742e-08,
+              "atol": 2e-06,
+              "rtol": 2e-05
+            },
+            {
+              "label": "overloaded total score before/after descent",
+              "before": 0.6987473964691162,
+              "after": 0.6985647678375244
+            }
+          ],
+          "reason": null,
+          "seconds": 0.004484199998842087
+        },
+        "Status": "PASS"
+      },
+      {
+        "Purpose": "Tiny full-model loss is CE plus alpha times mean raw block balance, not alpha squared.",
+        "Environment": {
+          "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+          "torch": "2.9.0+cpu",
+          "platform": "Windows-11-10.0.26300-SP0",
+          "development_only": true,
+          "device": "cpu",
+          "actual_source": "C:\\Users\\htyx2\\.codex\\.chatgpt-projects\\g-p-6ad1990464e881918f1eaec50065d5a1\\acceptance_review_local\\e2c_stage2_raw_evidence_e79acc6\\open_mythos\\moda.py",
+          "torch_runtime": {
+            "intra": 2,
+            "interop": 1,
+            "dtype": "torch.float32",
+            "device": "cpu",
+            "deterministic": true,
+            "cpu_autocast": false,
+            "cuda_autocast": false,
+            "env": {
+              "OMP_NUM_THREADS": "2",
+              "MKL_NUM_THREADS": "2",
+              "OPENBLAS_NUM_THREADS": "1",
+              "RAYON_NUM_THREADS": "1",
+              "TOKENIZERS_PARALLELISM": "false",
+              "CUDA_VISIBLE_DEVICES": "",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "HF_HUB_OFFLINE": "1",
+              "TRANSFORMERS_OFFLINE": "1"
+            }
+          },
+          "torch_runtime_after_source": {
+            "intra": 2,
+            "interop": 1,
+            "dtype": "torch.float32",
+            "device": "cpu",
+            "deterministic": true,
+            "cpu_autocast": false,
+            "cuda_autocast": false,
+            "env": {
+              "OMP_NUM_THREADS": "2",
+              "MKL_NUM_THREADS": "2",
+              "OPENBLAS_NUM_THREADS": "1",
+              "RAYON_NUM_THREADS": "1",
+              "TOKENIZERS_PARALLELISM": "false",
+              "CUDA_VISIBLE_DEVICES": "",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "HF_HUB_OFFLINE": "1",
+              "TRANSFORMERS_OFFLINE": "1"
+            }
+          }
+        },
+        "Input": {
+          "test_id": "__main__.MoETests.test_e07_alpha_applied_once_at_model_loss_boundary",
+          "seed": 7201,
+          "source_sha256": "335c76d353550cbd3bc409ecfae92141b1ab70265429e0f8e33ccdcb5cd06492"
+        },
+        "Expected": "Declared exact identities or fixed numerical tolerances; finite gradients where specified",
+        "Actual": {
+          "observations": [
+            {
+              "label": "alpha once",
+              "shape": [],
+              "actual_dtype": "torch.float32",
+              "expected_dtype": "torch.float32",
+              "max_abs_error": 0.0,
+              "atol": 2e-06,
+              "rtol": 2e-05
+            },
+            {
+              "label": "alpha once gradient",
+              "shape": [
+                4,
+                16
+              ],
+              "actual_dtype": "torch.float32",
+              "expected_dtype": "torch.float32",
+              "max_abs_error": 0.0,
+              "atol": 2e-06,
+              "rtol": 2e-05
+            }
+          ],
+          "reason": null,
+          "seconds": 0.025179099997330923
+        },
+        "Status": "PASS"
+      },
+      {
+        "Purpose": "Zero expert output projections give exact x+MoE(x) identity and finite gate-only balance gradient.",
+        "Environment": {
+          "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+          "torch": "2.9.0+cpu",
+          "platform": "Windows-11-10.0.26300-SP0",
+          "development_only": true,
+          "device": "cpu",
+          "actual_source": "C:\\Users\\htyx2\\.codex\\.chatgpt-projects\\g-p-6ad1990464e881918f1eaec50065d5a1\\acceptance_review_local\\e2c_stage2_raw_evidence_e79acc6\\open_mythos\\moda.py",
+          "torch_runtime": {
+            "intra": 2,
+            "interop": 1,
+            "dtype": "torch.float32",
+            "device": "cpu",
+            "deterministic": true,
+            "cpu_autocast": false,
+            "cuda_autocast": false,
+            "env": {
+              "OMP_NUM_THREADS": "2",
+              "MKL_NUM_THREADS": "2",
+              "OPENBLAS_NUM_THREADS": "1",
+              "RAYON_NUM_THREADS": "1",
+              "TOKENIZERS_PARALLELISM": "false",
+              "CUDA_VISIBLE_DEVICES": "",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "HF_HUB_OFFLINE": "1",
+              "TRANSFORMERS_OFFLINE": "1"
+            }
+          },
+          "torch_runtime_after_source": {
+            "intra": 2,
+            "interop": 1,
+            "dtype": "torch.float32",
+            "device": "cpu",
+            "deterministic": true,
+            "cpu_autocast": false,
+            "cuda_autocast": false,
+            "env": {
+              "OMP_NUM_THREADS": "2",
+              "MKL_NUM_THREADS": "2",
+              "OPENBLAS_NUM_THREADS": "1",
+              "RAYON_NUM_THREADS": "1",
+              "TOKENIZERS_PARALLELISM": "false",
+              "CUDA_VISIBLE_DEVICES": "",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "HF_HUB_OFFLINE": "1",
+              "TRANSFORMERS_OFFLINE": "1"
+            }
+          }
+        },
+        "Input": {
+          "test_id": "__main__.MoETests.test_e08_zero_output_is_external_residual_identity",
+          "seed": 7201,
+          "source_sha256": "335c76d353550cbd3bc409ecfae92141b1ab70265429e0f8e33ccdcb5cd06492"
+        },
+        "Expected": "Declared exact identities or fixed numerical tolerances; finite gradients where specified",
+        "Actual": {
+          "observations": [
+            {
+              "label": "external MoE residual identity",
+              "bitwise_equal": true,
+              "shape": [
+                1,
+                5,
+                16
+              ]
+            },
+            {
+              "label": "balance-only router gradient",
+              "finite_nonzero": true,
+              "norm64": 0.7286100150374764
+            }
+          ],
+          "reason": null,
+          "seconds": 0.004099300000234507
+        },
+        "Status": "PASS"
+      },
+      {
+        "Purpose": "Eval omits auxiliary balance; new-instance state reload preserves MoE outputs exactly.",
+        "Environment": {
+          "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+          "torch": "2.9.0+cpu",
+          "platform": "Windows-11-10.0.26300-SP0",
+          "development_only": true,
+          "device": "cpu",
+          "actual_source": "C:\\Users\\htyx2\\.codex\\.chatgpt-projects\\g-p-6ad1990464e881918f1eaec50065d5a1\\acceptance_review_local\\e2c_stage2_raw_evidence_e79acc6\\open_mythos\\moda.py",
+          "torch_runtime": {
+            "intra": 2,
+            "interop": 1,
+            "dtype": "torch.float32",
+            "device": "cpu",
+            "deterministic": true,
+            "cpu_autocast": false,
+            "cuda_autocast": false,
+            "env": {
+              "OMP_NUM_THREADS": "2",
+              "MKL_NUM_THREADS": "2",
+              "OPENBLAS_NUM_THREADS": "1",
+              "RAYON_NUM_THREADS": "1",
+              "TOKENIZERS_PARALLELISM": "false",
+              "CUDA_VISIBLE_DEVICES": "",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "HF_HUB_OFFLINE": "1",
+              "TRANSFORMERS_OFFLINE": "1"
+            }
+          },
+          "torch_runtime_after_source": {
+            "intra": 2,
+            "interop": 1,
+            "dtype": "torch.float32",
+            "device": "cpu",
+            "deterministic": true,
+            "cpu_autocast": false,
+            "cuda_autocast": false,
+            "env": {
+              "OMP_NUM_THREADS": "2",
+              "MKL_NUM_THREADS": "2",
+              "OPENBLAS_NUM_THREADS": "1",
+              "RAYON_NUM_THREADS": "1",
+              "TOKENIZERS_PARALLELISM": "false",
+              "CUDA_VISIBLE_DEVICES": "",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "HF_HUB_OFFLINE": "1",
+              "TRANSFORMERS_OFFLINE": "1"
+            }
+          }
+        },
+        "Input": {
+          "test_id": "__main__.MoETests.test_e09_eval_balance_none_and_state_reload_exact",
+          "seed": 7201,
+          "source_sha256": "335c76d353550cbd3bc409ecfae92141b1ab70265429e0f8e33ccdcb5cd06492"
+        },
+        "Expected": "Declared exact identities or fixed numerical tolerances; finite gradients where specified",
+        "Actual": {
+          "observations": [
+            {
+              "label": "repeat after independent MoE input",
+              "bitwise_equal": true,
+              "shape": [
+                1,
+                5,
+                16
+              ]
+            },
+            {
+              "label": "reloaded MoE state shared_experts.w1.weight",
+              "bitwise_equal": true,
+              "shape": [
+                8,
+                16
+              ]
+            },
+            {
+              "label": "reloaded MoE state shared_experts.w3.weight",
+              "bitwise_equal": true,
+              "shape": [
+                8,
+                16
+              ]
+            },
+            {
+              "label": "reloaded MoE state shared_experts.w2.weight",
+              "bitwise_equal": true,
+              "shape": [
+                16,
+                8
+              ]
+            },
+            {
+              "label": "reloaded MoE state gate.weight",
+              "bitwise_equal": true,
+              "shape": [
+                4,
+                16
+              ]
+            },
+            {
+              "label": "reloaded MoE state experts.0.w1.weight",
+              "bitwise_equal": true,
+              "shape": [
+                8,
+                16
+              ]
+            },
+            {
+              "label": "reloaded MoE state experts.0.w3.weight",
+              "bitwise_equal": true,
+              "shape": [
+                8,
+                16
+              ]
+            },
+            {
+              "label": "reloaded MoE state experts.0.w2.weight",
+              "bitwise_equal": true,
+              "shape": [
+                16,
+                8
+              ]
+            },
+            {
+              "label": "reloaded MoE state experts.1.w1.weight",
+              "bitwise_equal": true,
+              "shape": [
+                8,
+                16
+              ]
+            },
+            {
+              "label": "reloaded MoE state experts.1.w3.weight",
+              "bitwise_equal": true,
+              "shape": [
+                8,
+                16
+              ]
+            },
+            {
+              "label": "reloaded MoE state experts.1.w2.weight",
+              "bitwise_equal": true,
+              "shape": [
+                16,
+                8
+              ]
+            },
+            {
+              "label": "reloaded MoE state experts.2.w1.weight",
+              "bitwise_equal": true,
+              "shape": [
+                8,
+                16
+              ]
+            },
+            {
+              "label": "reloaded MoE state experts.2.w3.weight",
+              "bitwise_equal": true,
+              "shape": [
+                8,
+                16
+              ]
+            },
+            {
+              "label": "reloaded MoE state experts.2.w2.weight",
+              "bitwise_equal": true,
+              "shape": [
+                16,
+                8
+              ]
+            },
+            {
+              "label": "reloaded MoE state experts.3.w1.weight",
+              "bitwise_equal": true,
+              "shape": [
+                8,
+                16
+              ]
+            },
+            {
+              "label": "reloaded MoE state experts.3.w3.weight",
+              "bitwise_equal": true,
+              "shape": [
+                8,
+                16
+              ]
+            },
+            {
+              "label": "reloaded MoE state experts.3.w2.weight",
+              "bitwise_equal": true,
+              "shape": [
+                16,
+                8
+              ]
+            },
+            {
+              "label": "MoE new-instance state reload",
+              "bitwise_equal": true,
+              "shape": [
+                1,
+                5,
+                16
+              ]
+            }
+          ],
+          "reason": null,
+          "seconds": 0.02239019999979064
+        },
+        "Status": "PASS"
+      }
+    ]
+  },
+  "Status": "PASS",
+  "utc": "2026-11-02T07:12:24.369085+00:00"
+}
