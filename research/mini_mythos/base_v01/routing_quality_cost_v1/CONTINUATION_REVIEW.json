@@ -1,0 +1,70 @@
+{
+  "Purpose": "Pre-freeze paired quality/full CPU API cost implementation review",
+  "Environment": "Local stdlib fixture tests and static same-team review; target read-only base/input preflight",
+  "Input": {
+    "base_checkpoint": "a4e9b27ff3c7ca8dbfd5760d5c630f59a9d0a683",
+    "sources": {
+      "audit_quality.py": {
+        "bytes": 29842,
+        "sha256": "9de2940257b9d5040b3f50a8693cb41df9cda65446a9c5d86f20125c6df0283a"
+      },
+      "data_quality.py": {
+        "bytes": 12375,
+        "sha256": "e007dfb703e6ef3c7a185aa72042d63d1e5608f2834b2cf970bd60fc2c36fc90"
+      },
+      "execute_once.py": {
+        "bytes": 39218,
+        "sha256": "203185eb57d7cc0ce08f4a6ba5c90172c2b105c805d6e0c6a2a6c1a3eee6b502"
+      },
+      "run_quality.py": {
+        "bytes": 31665,
+        "sha256": "cb4ab68d8aabcf0b0dce243c386e8ebf82b23ab904fd4643fbe7b08d36f60a7b"
+      },
+      "test_data_audit.py": {
+        "bytes": 16576,
+        "sha256": "5930e217d455dc267d10e6617533a8410b209cfbb8922c4bdb190c62cdc9020a"
+      },
+      "test_startup.py": {
+        "bytes": 19938,
+        "sha256": "0a0f8d55997556286b8ec8e94778303449ef161c189c11c8c6a995d9deff3035"
+      },
+      "test_worker.py": {
+        "bytes": 7564,
+        "sha256": "84163942ca2d4658c6980f8cca154efc8f3febd23da1124064c39febc114a84d"
+      }
+    }
+  },
+  "Expected": "No upstream/controller/threshold change; label-blind model, same h0 pairs, complete guarded timing, independent scalar audit, frozen stop/custody contract",
+  "Actual": {
+    "startup_tests": 17,
+    "worker_tests": 9,
+    "data_audit_tests": 17,
+    "final_test_failures": 0,
+    "development_history": "Startup15-case initial pass retained, expanded final17-case pass. Data/audit attempt1 had one incorrect test expectation: increasing fixed32 time lowers A/F ratio, not raises it. Corrected fixture and added numerical/descriptive checks; attempt2 passes. Both reports retained; no real model or labels used during development.",
+    "root_review": "Read checkpoint and controller, operator gates/CLI/custody, worker observed/timed calls, independent label reconstruction and scalar scoring/aggregation. Final source/report hash binding and AST parsed.",
+    "peer_reviews": [
+      "Worker author reviewed operator startup/count/export contract and independently reviewed data/audit target extraction and32case coverage.",
+      "Operator author checked data/worker/audit CLI and output contracts.",
+      "Data/auditor author checked final protocol and meaningful synthetic raw-evidence audit."
+    ],
+    "target_preflight": {
+      "head": "a4e9b27ff3c7ca8dbfd5760d5c630f59a9d0a683",
+      "clean": true,
+      "prior_inputs_bytes": 58091,
+      "prior_inputs_sha256": "ae5f8ad5fd53d25afaf29487a650dc0300528b0926c9883652475c4ca7db127f",
+      "old_summary_status": "PASS",
+      "new_worktree_and_attempt_absent": true,
+      "free_disk_gib": 3.42
+    },
+    "new_model_calls": 0
+  },
+  "Status": "PASS",
+  "limitations": [
+    "Internal same-team review, no external Claude/Grok approval claimed.",
+    "Startup uses explicit environment/filesystem stubs; synthetic audit mocks target-data/custody setup. Actual numerical and source custody gates must run on target.",
+    "Quality covers one next-token target per16 previously observed source articles; sample margins are exploratory, not statistical noninferiority.",
+    "Timing is the unchanged guarded hot-model public API, excluding tokenization/load/RNG setup/evidence IO; no production-throughput claim."
+  ],
+  "formal_experiment_status": "NOT TESTED",
+  "FORMAL_ACCEPTANCE_READY": false
+}
