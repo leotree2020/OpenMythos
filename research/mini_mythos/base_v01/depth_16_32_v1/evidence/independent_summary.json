@@ -1,0 +1,543 @@
+{
+  "Purpose": "Independently recompute paired article-level summaries from saved rows only",
+  "Environment": {
+    "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+    "dependencies": "standard library only",
+    "model_or_formal_auditor_imported": false
+  },
+  "Input": {
+    "path": "/workspaces/mythos-evidence/base_v01/depth_16_32/attempt-v1/worker/rows.jsonl",
+    "bytes": 3557677,
+    "sha256": "92a32066d2095f92c49eabb0de9b725e9e83760f90a748234940a9259d7b4a40",
+    "formal_audit": {
+      "path": "/workspaces/mythos-evidence/base_v01/depth_16_32/attempt-v1/audit.json",
+      "bytes": 76053,
+      "sha256": "3e1c71b491ee0d1340677ab3833dddbf7fb8bc0a7133dd23d53bc4f4aac879ef"
+    }
+  },
+  "Expected": {
+    "articles": 32,
+    "replicas": 3,
+    "depths": [
+      8,
+      16,
+      32
+    ],
+    "rows": 288,
+    "scored_tokens_per_row": 192,
+    "arithmetic_atol": 1e-10,
+    "arithmetic_rtol": 0
+  },
+  "Actual": {
+    "scientific_results": {
+      "analysis_unit": "article; first average the three initial-state replicas",
+      "nll_unit": "nats per scored next token",
+      "per_depth": {
+        "8": {
+          "mean_nll": 3.3786343250586235,
+          "ppl": 29.330687563950438,
+          "ppl_overflow": false
+        },
+        "16": {
+          "mean_nll": 3.3468407875712405,
+          "ppl": 28.412829541240217,
+          "ppl_overflow": false
+        },
+        "32": {
+          "mean_nll": 3.3373112641773295,
+          "ppl": 28.143354839464585,
+          "ppl_overflow": false
+        }
+      },
+      "paired_contrasts": {
+        "primary_d16_minus_d8": {
+          "mean_delta_nll": -0.031793537487382645,
+          "exploratory_bootstrap_percentile_interval": [
+            -0.05145836797259508,
+            -0.018064834819134443
+          ],
+          "article_sign_counts": {
+            "negative": 28,
+            "zero": 0,
+            "positive": 4
+          },
+          "article_effects": [
+            0.004415241983895868,
+            -0.059823042707175755,
+            -0.03697487965033863,
+            -0.010604949159349175,
+            -0.0033569159058051135,
+            -0.002928415000631013,
+            0.006856788356468968,
+            -0.0017079626423122107,
+            -0.03656404161662685,
+            -0.030080189743999952,
+            -0.040099983216225876,
+            -0.03145617340980511,
+            -0.01172823735663675,
+            0.004957382964772883,
+            -0.060330246511030694,
+            -0.03551262093209351,
+            -0.005131208379721475,
+            -0.26973305401064174,
+            -0.005716278523532292,
+            -0.028273682899407238,
+            -0.08380017137469009,
+            -0.02441709860160657,
+            -0.0727391619687201,
+            -0.02487966831194033,
+            -0.027285348145168697,
+            -0.043154909106103645,
+            -0.036275332621173106,
+            -0.01330540405142866,
+            -0.014588329290356583,
+            -0.0007378692105737272,
+            -0.02925967165517207,
+            0.006842233100884609
+          ],
+          "per_replica_mean_delta_nll": {
+            "3101": -0.028977077777771462,
+            "3202": -0.03672365517294911,
+            "3303": -0.029679879511427087
+          }
+        },
+        "secondary_d32_minus_d8": {
+          "mean_delta_nll": -0.04132306088129359,
+          "exploratory_bootstrap_percentile_interval": [
+            -0.0757099493275748,
+            -0.01969714177866358
+          ],
+          "article_sign_counts": {
+            "negative": 28,
+            "zero": 0,
+            "positive": 4
+          },
+          "article_effects": [
+            -0.0033204893385394563,
+            -0.06253709448567246,
+            -0.03651509687271082,
+            -0.010332123009139771,
+            -0.004338343695977631,
+            -0.0028695332144961228,
+            0.009443402643176224,
+            -0.00044681321980588606,
+            -0.03976455856449501,
+            -0.039435994475448766,
+            -0.04230503547151221,
+            -0.0383434706527952,
+            -0.01456015422044965,
+            0.007748413399662368,
+            -0.08297235925893176,
+            -0.04020886350080488,
+            -0.006772153455212315,
+            -0.4801705168966315,
+            -0.00624403726003564,
+            -0.03276470803476261,
+            -0.1143693315644092,
+            -0.027959780984741833,
+            -0.0776663073829944,
+            -0.02872630350473493,
+            -0.025658710006355445,
+            -0.051838306243850774,
+            -0.03122964932075778,
+            -0.012820358941712406,
+            -0.014812655973253985,
+            0.004014195804314724,
+            -0.028904608349930694,
+            0.01434339785161498
+          ],
+          "per_replica_mean_delta_nll": {
+            "3101": -0.03286474312992184,
+            "3202": -0.04893127031908365,
+            "3303": -0.042173169194874835
+          }
+        }
+      },
+      "article_means": [
+        {
+          "article_index": 0,
+          "article_id": "0833ee317b70248610c320cede552fe4c6e9f10ae8adae7ae7f37b850632333d",
+          "source_article_key": "d762d9d5e8a19ee10501346bf6ad0196aefd47cf603b323b594c45ec177d8dc2",
+          "heading_row": 3825,
+          "mean_nll_by_depth": {
+            "8": 3.6414158321384544,
+            "16": 3.6458310741223503,
+            "32": 3.638095342799915
+          }
+        },
+        {
+          "article_index": 1,
+          "article_id": "09c3df88f1a0627bec6b67dc386a048f7a38db160ec79cc79f0cdba1d7272d70",
+          "source_article_key": "0e6631263e700f9a23ffe4c0ab9f0ff755fc91c3c2c164d0c190b29cf6ef570e",
+          "heading_row": 2249,
+          "mean_nll_by_depth": {
+            "8": 3.005953743429751,
+            "16": 2.946130700722575,
+            "32": 2.9434166489440785
+          }
+        },
+        {
+          "article_index": 2,
+          "article_id": "0f13816ea573204ba1a49c6768ea6121c78fbbc5c880f26829bed3537012e8a4",
+          "source_article_key": "8bbcce5a73a1b0b10a57aebfef6d8c51b15c72c769bc974ddb83ac55ba5cf311",
+          "heading_row": 3614,
+          "mean_nll_by_depth": {
+            "8": 3.5589725645411185,
+            "16": 3.52199768489078,
+            "32": 3.5224574676684077
+          }
+        },
+        {
+          "article_index": 3,
+          "article_id": "0f86b7b3d39f2f3f33b1a46a613b0f769de218f9d2cdbf278f98a11810af5ebb",
+          "source_article_key": "6ad43158df262f00af721f333d34a2e4fac5319c180344a9c6fad7e6919a20c8",
+          "heading_row": 1430,
+          "mean_nll_by_depth": {
+            "8": 3.8191933618474088,
+            "16": 3.8085884126880596,
+            "32": 3.808861238838269
+          }
+        },
+        {
+          "article_index": 4,
+          "article_id": "17c63156a3988baa81a379676bdf1a48570df5e887170b415897de891a09c2ec",
+          "source_article_key": "47fbb03c81ba093be19e580e7fedfca6a9fa59cb1e061d46d6d5ac30662c91f7",
+          "heading_row": 2991,
+          "mean_nll_by_depth": {
+            "8": 2.532690979029623,
+            "16": 2.5293340631238177,
+            "32": 2.528352635333645
+          }
+        },
+        {
+          "article_index": 5,
+          "article_id": "1c57fe2a518363f0cb1a27a7abf877aece54baffa91bf4b392b8fd8106b076fd",
+          "source_article_key": "2eafb15b25a1eb8a9d60476d247e8455351bb515da478dedb060857ce177b91c",
+          "heading_row": 704,
+          "mean_nll_by_depth": {
+            "8": 3.3745135423718664,
+            "16": 3.3715851273712354,
+            "32": 3.3716440091573703
+          }
+        },
+        {
+          "article_index": 6,
+          "article_id": "1c5c2c83824303b33f283f1029294abaa0a2782e8991a843597b94d32fa304b8",
+          "source_article_key": "27de79b4a931812a25581427a397d681bbd55fb18206d7b60fd0b56d6f565f97",
+          "heading_row": 1319,
+          "mean_nll_by_depth": {
+            "8": 3.3755475861550828,
+            "16": 3.3824043745115517,
+            "32": 3.384990988798259
+          }
+        },
+        {
+          "article_index": 7,
+          "article_id": "21df13152f3bce6ff11a7a716c32c088f1fd5b4cce1710246cb253049b250624",
+          "source_article_key": "898b7c95c520f275aaf44059940e7714b36c87c9cb3df435024fb3b6d52333df",
+          "heading_row": 1,
+          "mean_nll_by_depth": {
+            "8": 3.735850448488605,
+            "16": 3.734142485846293,
+            "32": 3.735403635268799
+          }
+        },
+        {
+          "article_index": 8,
+          "article_id": "288c858e27b7c5c8d7cda03e948d9f473c87840a09bbb264b9ac2bc2b58f4b68",
+          "source_article_key": "380894525ce377b3f58650649f7f9db882a698979a8e03b72fea09aefeceb2db",
+          "heading_row": 4011,
+          "mean_nll_by_depth": {
+            "8": 3.229894885645663,
+            "16": 3.193330844029036,
+            "32": 3.190130327081168
+          }
+        },
+        {
+          "article_index": 9,
+          "article_id": "28ef2bf1cbcbd29aee987e27ef380551efbcb3cc1d88cc6656a87550c1fb2ac3",
+          "source_article_key": "8b908faf80931fd846034213ecdf6f2d471c312eddc20e525d9571e4562ec80c",
+          "heading_row": 264,
+          "mean_nll_by_depth": {
+            "8": 3.416095085776719,
+            "16": 3.386014896032719,
+            "32": 3.37665909130127
+          }
+        },
+        {
+          "article_index": 10,
+          "article_id": "3479ea7f0fe9c72156eede3e956b8dcef7a7063107dfdb5188c41fde02e46851",
+          "source_article_key": "ad26a36b5525f5c6fa4cc7687ba0ec18b1bfd8cea90cdb30397a7a9c0431b981",
+          "heading_row": 32,
+          "mean_nll_by_depth": {
+            "8": 3.445816187314825,
+            "16": 3.4057162040985993,
+            "32": 3.403511151843313
+          }
+        },
+        {
+          "article_index": 11,
+          "article_id": "348c65427c2dd320cefb15ae78210ca5139e3688965a330641e4db295dbbaa65",
+          "source_article_key": "4e194ba0e681ffa4055207ca9bae14e1381d21e362001e796f2541ba79fd4df2",
+          "heading_row": 295,
+          "mean_nll_by_depth": {
+            "8": 2.855812466716294,
+            "16": 2.8243562933064887,
+            "32": 2.8174689960634987
+          }
+        },
+        {
+          "article_index": 12,
+          "article_id": "38325e564d4f669a1c7d96d4b1a603886fb57473a6be16ab793dd63170d54fff",
+          "source_article_key": "f7fa14cde5408dc8970ebed21571c181d64d718fab0a6c468de82705a6acad21",
+          "heading_row": 1652,
+          "mean_nll_by_depth": {
+            "8": 3.4564036688869937,
+            "16": 3.444675431530357,
+            "32": 3.441843514666544
+          }
+        },
+        {
+          "article_index": 13,
+          "article_id": "40aef8ae1c41b66ee361f28b8784394ee54bc0dfd3b606688338801a40d8eed8",
+          "source_article_key": "1f35faf861b65bb93917b4fbbd00e08849fe02c881f5f80e1056a3f4fca97096",
+          "heading_row": 2441,
+          "mean_nll_by_depth": {
+            "8": 3.451400544862278,
+            "16": 3.456357927827051,
+            "32": 3.4591489582619404
+          }
+        },
+        {
+          "article_index": 14,
+          "article_id": "40cb64101aa665de3d36a57eb7c12e95b033216632b884c936d7706fbf90696b",
+          "source_article_key": "5f0947a4c86f8420641daabba93b334291c453d2dc5df7865ba27fbf67fa60c0",
+          "heading_row": 4303,
+          "mean_nll_by_depth": {
+            "8": 4.124820568061446,
+            "16": 4.064490321550415,
+            "32": 4.041848208802514
+          }
+        },
+        {
+          "article_index": 15,
+          "article_id": "42bc8db770bc340976feb4cc239fee181303271204e96d98cef96198c0a20514",
+          "source_article_key": "a18d749cc52b5ac7b7fe5a667c11b2271e303863f4bed905d5bec86f4c60e76f",
+          "heading_row": 4024,
+          "mean_nll_by_depth": {
+            "8": 3.1636965386005946,
+            "16": 3.128183917668501,
+            "32": 3.1234876750997898
+          }
+        },
+        {
+          "article_index": 16,
+          "article_id": "452b3bfe2fc32ce580bdd0f37f13cea42f96c7a84b8ab3868f6362fb547fe634",
+          "source_article_key": "6e4571ce32c49e113718aa38efa780dfd0347d1641aabcbf737da95f020f54f0",
+          "heading_row": 930,
+          "mean_nll_by_depth": {
+            "8": 2.888373484036256,
+            "16": 2.8832422756565346,
+            "32": 2.8816013305810437
+          }
+        },
+        {
+          "article_index": 17,
+          "article_id": "4abb8b35a3f18f7d5d7c0b93fc2ad045e06a3c0a540067cfc87e2c2e6ecb2a15",
+          "source_article_key": "64d1a7a1f8c1e4a51318e081a6ad26f33e991f2decaec64e4990a40b6dfdf198",
+          "heading_row": 2594,
+          "mean_nll_by_depth": {
+            "8": 4.644913594292194,
+            "16": 4.375180540281552,
+            "32": 4.1647430773955625
+          }
+        },
+        {
+          "article_index": 18,
+          "article_id": "4dd008d363fc4b31bb283268a2f8f754696a67ab4ce25ad0562211b08f222315",
+          "source_article_key": "04dbc5b45dddd908efe43739c7ccbddf8c84714d320f5da14a748f7c877bff79",
+          "heading_row": 2726,
+          "mean_nll_by_depth": {
+            "8": 2.81527446931538,
+            "16": 2.8095581907918477,
+            "32": 2.8090304320553443
+          }
+        },
+        {
+          "article_index": 19,
+          "article_id": "562c39cd2d415ccc3fbabff95a90c0c085f4714195bd7be45d1e52b30e28c21f",
+          "source_article_key": "2b6582e0152924641ae79544c6a1d71eeb31eed18306a366f9512f8d64796537",
+          "heading_row": 1833,
+          "mean_nll_by_depth": {
+            "8": 3.2763430348675926,
+            "16": 3.2480693519681854,
+            "32": 3.24357832683283
+          }
+        },
+        {
+          "article_index": 20,
+          "article_id": "5664b6cfa87bb05e3c78cda8e86792ea25430dcc356f97df215081a4f7bd23fa",
+          "source_article_key": "dc3b148f3e693e44320f99620a5b58e67dc434bfe7dd6414a4bf4d90b7f36d58",
+          "heading_row": 3218,
+          "mean_nll_by_depth": {
+            "8": 3.22837481258729,
+            "16": 3.1445746412126,
+            "32": 3.1140054810228808
+          }
+        },
+        {
+          "article_index": 21,
+          "article_id": "58634a962b4dd83f9da0a5ba55e4f95fc055f31fbd6b25c1e0c0d816061a7bc0",
+          "source_article_key": "2443060df7bd05541b75235371dfc44aacf865291e620b578cdeac5145015087",
+          "heading_row": 3841,
+          "mean_nll_by_depth": {
+            "8": 3.08816762348968,
+            "16": 3.0637505248880736,
+            "32": 3.0602078425049384
+          }
+        },
+        {
+          "article_index": 22,
+          "article_id": "5b7639a4675e784fa34d3586957db5f4f7ac7f8063920d149aa2f4a2ee12f326",
+          "source_article_key": "322382f9986800f77b75f324078df3c4e9a9587e26eb6310be70ebcb879ac094",
+          "heading_row": 734,
+          "mean_nll_by_depth": {
+            "8": 3.229708528509967,
+            "16": 3.156969366541247,
+            "32": 3.1520422211269725
+          }
+        },
+        {
+          "article_index": 23,
+          "article_id": "5d47b1ac412584a3835d1083e33c9121740ed765f8cbd2576c03fcbcfc5bf936",
+          "source_article_key": "b0fdfb3a1e214feffc8753973ab7451a2d7e264d8e2728053b5a7c4b3c173b75",
+          "heading_row": 4224,
+          "mean_nll_by_depth": {
+            "8": 2.718951525844742,
+            "16": 2.6940718575328018,
+            "32": 2.690225222340007
+          }
+        },
+        {
+          "article_index": 24,
+          "article_id": "6f389dcb1ff09cfd233d50169b6f5e03259be87bd66717c40fa0b15724ec825d",
+          "source_article_key": "254a51ff948209b2ae3a17f043b08fa7e87104554259ab5bffd73b58155f4309",
+          "heading_row": 3722,
+          "mean_nll_by_depth": {
+            "8": 3.1058095611313496,
+            "16": 3.078524212986181,
+            "32": 3.080150851124994
+          }
+        },
+        {
+          "article_index": 25,
+          "article_id": "7863a680a52de04240129cf162f63cd7d1483e5086ab9e97d09d8fb552c314cb",
+          "source_article_key": "d8d8a0002332403af1b8d887b01a5e04d3905534f996b5e38193d55b4f021339",
+          "heading_row": 3863,
+          "mean_nll_by_depth": {
+            "8": 3.1193736991819434,
+            "16": 3.0762187900758398,
+            "32": 3.0675353929380926
+          }
+        },
+        {
+          "article_index": 26,
+          "article_id": "799ca7b5e038a64138e482d732b4b2737d3e30012ba7e6d7d330104176da3259",
+          "source_article_key": "b7922013c620b4e32c878bc3046640c1c3ac2b7ed5bd716d2c49a8506b067598",
+          "heading_row": 1731,
+          "mean_nll_by_depth": {
+            "8": 3.5708184968352463,
+            "16": 3.534543164214073,
+            "32": 3.5395888475144885
+          }
+        },
+        {
+          "article_index": 27,
+          "article_id": "7b5e21a28d8c8850038776dc362b0f6292796d81be75f753c56367dbc7bc8d98",
+          "source_article_key": "06e67262a016ccf4575ad4f6a02acf2cbf3942a2613cb6d45733f1381dabf5c6",
+          "heading_row": 2789,
+          "mean_nll_by_depth": {
+            "8": 3.318839305477501,
+            "16": 3.3055339014260725,
+            "32": 3.3060189465357888
+          }
+        },
+        {
+          "article_index": 28,
+          "article_id": "7ba4942f84fd5243b18c92a78792c58c95ee6417169c8c95e3dd7e02482f2785",
+          "source_article_key": "9880271c59c2160fd733b3fc497f3e880382070f4904ecd83f809e11401c09d2",
+          "heading_row": 1382,
+          "mean_nll_by_depth": {
+            "8": 3.4813776723059093,
+            "16": 3.4667893430155527,
+            "32": 3.4665650163326553
+          }
+        },
+        {
+          "article_index": 29,
+          "article_id": "848250ae1727dacbb8edec3077a95207b8d94414d8c07b050065aaf24394a671",
+          "source_article_key": "87c9d70c17dca37d483b5172140adf075cb5e33b4beaca6472d726dd56ef6bea",
+          "heading_row": 116,
+          "mean_nll_by_depth": {
+            "8": 4.120407628058593,
+            "16": 4.119669758848019,
+            "32": 4.124421823862908
+          }
+        },
+        {
+          "article_index": 30,
+          "article_id": "88931d8778a4904d9714bfd00269a35ded2de41e1ad2d50cc4740604c366251c",
+          "source_article_key": "5192d914c77f6e8a911d3e88eadc240b83671a59a0f2cb95f28cfcb13187422a",
+          "heading_row": 2565,
+          "mean_nll_by_depth": {
+            "8": 3.600027216807586,
+            "16": 3.570767545152414,
+            "32": 3.5711226084576553
+          }
+        },
+        {
+          "article_index": 31,
+          "article_id": "8a9e1ad7a8ea3a2b9400675ecb30b5efb382382b7a19ff30c630242427983784",
+          "source_article_key": "f94c0419b244f2fdea8f65cca0445e03f374e05d8ff912f5eba72511826d9d53",
+          "heading_row": 2315,
+          "mean_nll_by_depth": {
+            "8": 3.7214597452679925,
+            "16": 3.728301978368877,
+            "32": 3.7358031431196075
+          }
+        }
+      ],
+      "bootstrap": {
+        "count": 10000,
+        "seed": 20261101,
+        "same_article_indices_for_both_contrasts": true,
+        "nearest_rank_sorted_indices": [
+          249,
+          9749
+        ]
+      }
+    },
+    "line_count": 288,
+    "unique_rows": 288,
+    "complete_article_replica_triples": 96,
+    "h0_matched_triples": 96,
+    "rng_matched_triples": 96,
+    "distinct_h0_digests_across_matched_triples": 96,
+    "h0_distinct_count_is_descriptive_not_an_acceptance_threshold": true,
+    "max_saved_nll_identity_residual": 0.0,
+    "formal_audit_exact_summary_match": true
+  },
+  "Status": "PASS",
+  "Status_scope": "Saved-row integrity and descriptive arithmetic; no quality or scientific superiority verdict",
+  "errors": [],
+  "blockers": [],
+  "limitations": [
+    "Arithmetic is independently recomputed from rows.jsonl and compared with a bound PASS audit report; selection, tokenization, source pins, runtime, state preservation and control-forward validity are not independently re-established here.",
+    "No logits or model are loaded or regenerated; saved NLL values are checked against saved logsumexp and target logits.",
+    "h0 and RNG pairing compares recorded digests, not newly observed tensors or RNG states.",
+    "The intervals are exploratory, pointwise rather than simultaneous, and conditional on these 32 historical article windows and this fixed model.",
+    "No equivalence, fresh-test generalization, ACT benefit, reasoning improvement or hardware-efficiency claim is established."
+  ],
+  "utc": "2026-11-02T02:20:28.763975+00:00",
+  "review_source_sha256": "7656aeb1a5dc4efebb7bc9666681f6702e693a9831d0490d4d8a9c79ea60cca7"
+}
