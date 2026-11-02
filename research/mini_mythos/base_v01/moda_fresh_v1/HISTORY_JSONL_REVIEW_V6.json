@@ -1,0 +1,66 @@
+{
+  "Purpose": "Author review and actual synthetic acceptance of the preserved malformed-JSONL decoder draft, for a separately frozen future source protocol",
+  "Environment": {
+    "development_only": true,
+    "python": "3.12.14",
+    "platform": "Windows",
+    "launch": "Local interpreter -I -B",
+    "target_operations": 0,
+    "new_source_acquisitions": 0,
+    "original_tokenizer_calls": 0,
+    "model_calls": 0,
+    "review_type": "Author self-review; independent peer review is a separate receipt"
+  },
+  "Input": {
+    "restored_checkpoint": "b3565ae4",
+    "data_prepare.py": "54f3f7cfeae28167dc6bb88f6c11957a7931e04aaf7c5babd2620740e969ac9f",
+    "test_data.py": "ff29c1a38d0a5fe2a428821b86ace6d43aa2227d7d77a3093b37c3c726f28054",
+    "test_history_jsonl_v5.py": "11f6925c4f72468af0345cac3b57c26241429ffea4c6c2edab1e8b91cb464901",
+    "test_history_python_v4.py": "68f3297505fcdd337b9f4a83eb611b28db02c668315a912222bf2d3ab90ff9ee",
+    "fixture_scope": "Synthetic JSONL records; structure-only 7536 complete records plus 2000-character bad tail; existing pinned historical invalid Python fixture"
+  },
+  "Expected": {
+    "new_jsonl_tests": 20,
+    "legacy_data_tests": 28,
+    "unchanged_python_tests": 18,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "source_or_scientific_changes": 0
+  },
+  "Actual": {
+    "reports": [
+      {"path": "DEVELOPMENT_HISTORY_JSONL_V6_ATTEMPT1.json", "sha256": "c7202863da94fc35947423586cf56937f3e361b4468155109f1a00e4574562ed", "run": 20, "failures": 0, "errors": 0, "skipped": 0, "Status": "PASS"},
+      {"path": "DEVELOPMENT_DATA_V6_ATTEMPT1.json", "sha256": "0d139de8bc538b4f20ecd86ce40b8419c8895a9cae82d26bde6fa006e02c6a21", "run": 28, "failures": 0, "errors": 0, "skipped": 0, "Status": "PASS"},
+      {"path": "DEVELOPMENT_HISTORY_PYTHON_V6_ATTEMPT1.json", "sha256": "2b1b5517cbf8f8780b9d72817ec13792874780df0227bd2edaef95095fedaf22", "run": 18, "failures": 0, "errors": 0, "skipped": 0, "Status": "PASS"}
+    ],
+    "checks": [
+      {"name": "Physical LF records, Unicode separators, BOM, CRLF and ASCII blank rules", "Status": "PASS"},
+      {"name": "Complete record leaves retain previous JSON duplicate/nonfinite behavior", "Status": "PASS"},
+      {"name": "Every malformed record raw text retained with exact UTF8 bytes and physical LF", "Status": "PASS"},
+      {"name": "Present JSON escape units and surrogate pairs decode; ambiguous missing units are not fabricated", "Status": "PASS"},
+      {"name": "Later independent literal origins and complete integer arrays remain visible", "Status": "PASS"},
+      {"name": "Recovery never executes source expressions", "Status": "PASS"},
+      {"name": "Shared work bound charges repeated scans, failed bracket searches and emitted content", "Status": "PASS"},
+      {"name": "Parse-only and exclusion scan notes/full rows/projections agree on synthetic inputs", "Status": "PASS"},
+      {"name": "Recovered decoded prefix can produce a historical exclusion witness", "Status": "PASS"},
+      {"name": "Invalid UTF8, ordinary malformed JSON and unknown formats keep prior gates", "Status": "PASS"},
+      {"name": "V4 Python behavior and all source/scientific constants remain unchanged", "Status": "PASS"}
+    ],
+    "implementation_changes_during_v6_completion": 0,
+    "failed_development_attempts_in_this_completion": 0,
+    "old_source_protocol_status": "BLOCKED",
+    "target_history_preflight": "NOT TESTED",
+    "complete_historical_exclusion": "NOT TESTED",
+    "model_comparison": "NOT TESTED"
+  },
+  "Status": "PASS",
+  "limits": [
+    "Development PASS is not target data or model acceptance.",
+    "Recovered raw/prefix/literal coverage is conservative, not complete semantic reconstruction.",
+    "The actual NarrativeQA corpus was not read locally; target coverage remains to be established.",
+    "The original infeasible test-source protocol stays BLOCKED and is not retried or retrospectively accepted.",
+    "Private unrecorded history and base pretraining overlap remain unknown."
+  ],
+  "next_unique_instruction": "Obtain independent review and freeze this decoder within the separate new-source protocol; source feasibility precedes full history exclusion, and all dependent work stops on BLOCKED/FAIL."
+}

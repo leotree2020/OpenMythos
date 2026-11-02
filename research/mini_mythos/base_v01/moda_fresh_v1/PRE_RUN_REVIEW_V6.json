@@ -1,0 +1,107 @@
+{
+  "Purpose": "Freeze source-only train eligibility and expanded prior-history inventory before acquisition",
+  "Environment": "Independent source/synthetic review; designated target runtime remains NOT TESTED",
+  "Input": {
+    "base": "b3565ae427df93991bb7f78e633f3229c5930dd5",
+    "files": {
+      "CONTINUATION_V6.md": {
+        "bytes": 6992,
+        "sha256": "944ecd766859390be1cf018adf3cadc6d20b4c7f067533ba7ada30dfeddadc0b"
+      },
+      "freeze_history_v6.py": {
+        "bytes": 8917,
+        "sha256": "42ffec55432740972d55a787652153520a9b28a47533d090bdfe797f4cfd4dba"
+      },
+      "test_freeze_history_v6.py": {
+        "bytes": 3703,
+        "sha256": "05a6f175f7d985aaf05c983408569c642e0b97ef85060ca08be28b464cc8e7b9"
+      },
+      "DEVELOPMENT_HISTORY_FREEZE_V6_ATTEMPT1.json": {
+        "bytes": 483,
+        "sha256": "ba4660dc8dceee1ef4a1942791b0815175e9db162a96d0956929be8cea746556"
+      },
+      "HISTORY_FREEZE_V6_STATIC_REVIEW.json": {
+        "bytes": 1529,
+        "sha256": "7e01109d43a9a174143a535bc4133344c583d345e6ed3552fee647d4a8fb9679"
+      },
+      "data_prepare.py": {
+        "bytes": 52252,
+        "sha256": "54f3f7cfeae28167dc6bb88f6c11957a7931e04aaf7c5babd2620740e969ac9f"
+      },
+      "test_data.py": {
+        "bytes": 19480,
+        "sha256": "ff29c1a38d0a5fe2a428821b86ace6d43aa2227d7d77a3093b37c3c726f28054"
+      },
+      "test_history_jsonl_v5.py": {
+        "bytes": 10566,
+        "sha256": "11f6925c4f72468af0345cac3b57c26241429ffea4c6c2edab1e8b91cb464901"
+      },
+      "DEVELOPMENT_HISTORY_JSONL_V6_ATTEMPT1.json": {
+        "bytes": 4522,
+        "sha256": "c7202863da94fc35947423586cf56937f3e361b4468155109f1a00e4574562ed"
+      },
+      "DEVELOPMENT_DATA_V6_ATTEMPT1.json": {
+        "bytes": 2739,
+        "sha256": "0d139de8bc538b4f20ecd86ce40b8419c8895a9cae82d26bde6fa006e02c6a21"
+      },
+      "DEVELOPMENT_HISTORY_PYTHON_V6_ATTEMPT1.json": {
+        "bytes": 4235,
+        "sha256": "2b1b5517cbf8f8780b9d72817ec13792874780df0227bd2edaef95095fedaf22"
+      },
+      "HISTORY_JSONL_REVIEW_V6.json": {
+        "bytes": 4249,
+        "sha256": "10a9e023845d0652067f86dc8853760e2ad880edac2078dd19c1e21339c7e4c6"
+      },
+      "CONTINUATION_HISTORY_V6.md": {
+        "bytes": 5903,
+        "sha256": "5bfe74061574cf8e63adb6cb4b9a782c46e2be546c038ef0d1a2fd78d2671040"
+      },
+      "source_feasibility_v6.py": {
+        "bytes": 25179,
+        "sha256": "61590f21bc2f141fbbc9bc38ff17a9aa23cd294efc98aed1370cc06f0e79b262"
+      },
+      "test_source_feasibility_v6.py": {
+        "bytes": 16983,
+        "sha256": "89822d4ebb0351e277fcf4069d2df8aefd03919c03523367a7c6700e2faf7edf"
+      },
+      "SOURCE_PROTOCOL_V6.md": {
+        "bytes": 8777,
+        "sha256": "dfceef3355158cdb8b9ed1a6c2459bb33321d6a8504f4ac565a1f0f7a8e66c5f"
+      },
+      "DEVELOPMENT_SOURCE_V6_ATTEMPT1.json": {
+        "bytes": 2993,
+        "sha256": "ed227acf00050d85604510627731508b2417c3ab2ee9db7511e52b767cb96fb1"
+      },
+      "DEVELOPMENT_SOURCE_V6_ATTEMPT1.log": {
+        "bytes": 3463,
+        "sha256": "a278513fdfad101a8459f19c7b95f58831cc653aa165f1b59fe465342925cb89"
+      },
+      "DEVELOPMENT_SOURCE_V6_ATTEMPT2.json": {
+        "bytes": 2351,
+        "sha256": "3163e932f3596815ff215cbf8d0e088cee426455cfdead432b5daf10c853d3e8"
+      },
+      "DEVELOPMENT_SOURCE_V6_ATTEMPT2.log": {
+        "bytes": 2477,
+        "sha256": "5de5f151055bf5ab4ea5d29c88dd43ce242b36f74a40e830e2f994e68ff6bf91"
+      }
+    }
+  },
+  "Expected": {
+    "target_development_checks": 87,
+    "source_rows": 120000,
+    "minimum_eligible_per_class": 5,
+    "model_calls": 0
+  },
+  "Actual": {
+    "local_development_checks_passed": 87,
+    "independent_OpenAI_reviews": "APPROVE for parser, inventory and source gate; not Grok/Claude",
+    "source_fixture_attempt1": "17/18; one incorrect synthetic alphabetic-ratio expected value, retained; implementation filter unchanged",
+    "source_fixture_attempt2": "18/18 PASS",
+    "formal_target_execution": "NOT TESTED",
+    "history_deduplication": "NOT TESTED",
+    "model_quality_and_timing": "NOT TESTED"
+  },
+  "Status": "PASS",
+  "scope": "Only freeze_history_v6 and source_feasibility_v6 may execute after target helpers pass; source-aware history worker/auditor/model launcher require separate freeze",
+  "FORMAL_ACCEPTANCE_READY": false
+}

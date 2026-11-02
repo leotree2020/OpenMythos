@@ -1,0 +1,28 @@
+{
+  "Purpose": "Static independent review and synthetic scope verification of pre-acquisition history freeze",
+  "Environment": "Local source read and Windows isolated CPU synthetic fixtures; target runtime NOT TESTED",
+  "Input": {
+    "source_sha256": "42ffec55432740972d55a787652153520a9b28a47533d090bdfe797f4cfd4dba",
+    "base": "b3565ae427df93991bb7f78e633f3229c5930dd5"
+  },
+  "Expected": "Original paths retained, whole old test corpus and prior debugging bytes preserved, no source/model calls",
+  "Actual": {
+    "independent_review": "APPROVE by separate OpenAI reviewer; not Grok/Claude",
+    "synthetic_report": "DEVELOPMENT_HISTORY_FREEZE_V6_ATTEMPT1.json",
+    "synthetic_tests_passed": 3,
+    "source_gate_not_executed": true,
+    "checks": [
+      "Original32244 paths unchanged and extra protected inventory preserved",
+      "All old fresh history plus archived V4/V5 pins; exact previous7600-row corpus SHA",
+      "Current isolated-worktree byte snapshots with origins and hash verification",
+      "Every snapshot explicitly listed in mapping even though new specification directory is a root exclusion",
+      "64MiB total output including snapshots/spec/gzip/seal and256MiB reserve"
+    ]
+  },
+  "Status": "PASS",
+  "runtime_validation": "NOT TESTED",
+  "caveats": [
+    "Copying known archive/binary inputs requires source-aware format/member pin aliases in the consumer; unknown copies must BLOCK",
+    "Inventory PASS is not history content exclusion or novelty PASS"
+  ]
+}

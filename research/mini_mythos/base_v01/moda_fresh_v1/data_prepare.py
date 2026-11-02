@@ -51,6 +51,8 @@ TEXT_CACHE_LIMIT = 50000
 RETAINED_CORPUS = "/workspaces/mythos-evidence/base_v01/moda_fresh/preparation-v2/data/corpus.parquet"
 PYTHON_RECOVERY_KEYS = ("files","raw_utf8_bytes","string_fragments","token_arrays","adjacent_string_groups","rejected_origins")
 PYTHON_RECOVERY_CHAR_BUDGET = 256*1024**2
+JSONL_RECOVERY_KEYS = ("files","complete_valid_records","malformed_records","raw_utf8_bytes","string_fragments","decoded_prefixes","token_arrays","truncated_escapes","rejected_origins")
+JSONL_RECOVERY_CHAR_BUDGET = 256*1024**2
 
 
 class Stop(Exception):
@@ -135,6 +137,7 @@ class ExclusionIndex:
         self.matches={};self.string_count=0;self.token_array_count=0;self.text_fingerprints=0;self.text_cache_hits=0;self.text_cache=set()
         self.format_notes={"duplicate_keys":0,"nonfinite_numeric_constants":0}
         self.python_recovery={k:0 for k in PYTHON_RECOVERY_KEYS}
+        self.jsonl_recovery={k:0 for k in JSONL_RECOVERY_KEYS}
         for c in candidates:
             f=c["fingerprint"]
             for kind in self.maps:
@@ -212,6 +215,93 @@ def history_json(text):
         notes["nonfinite_numeric_constants"]+=1
         return None  # The original source bytes/pin retain the numeric spelling.
     return json.loads(text,object_pairs_hook=pairs,parse_constant=nonfinite),notes
+
+
+class JSONLRecoveryWork:
+    def __init__(self):self.used=0
+    def charge(self,count):
+        self.used+=count
+        require(self.used<=JSONL_RECOVERY_CHAR_BUDGET,"Malformed JSONL recovery resource bound","BLOCKED")
+
+
+def json_string_prefix(text,start,work):
+    """Decode only present, valid JSON string units, never repair missing bytes."""
+    at=start+1;parts=[];simple={'"':'"',"\\":"\\","/":"/","b":"\b","f":"\f","n":"\n","r":"\r","t":"\t"}
+    termination="TRUNCATED_STRING"
+    while at<len(text):
+        work.charge(1);c=text[at]
+        if c=='"':termination="COMPLETE";at+=1;break
+        if ord(c)<32:termination="UNESCAPED_CONTROL";break
+        if c!="\\":parts.append(c);at+=1;continue
+        if at+1>=len(text):termination="TRUNCATED_ESCAPE";break
+        work.charge(1);escape=text[at+1]
+        if escape in simple:parts.append(simple[escape]);at+=2;continue
+        if escape!="u":termination="INVALID_ESCAPE";break
+        digits=text[at+2:at+6];work.charge(len(digits))
+        if len(digits)<4:termination="TRUNCATED_UNICODE_ESCAPE";break
+        if any(d not in "0123456789abcdefABCDEF" for d in digits):termination="INVALID_UNICODE_ESCAPE";break
+        code=int(digits,16)
+        if 0xD800<=code<=0xDBFF:
+            suffix=text[at+6:at+12];work.charge(len(suffix))
+            if len(suffix)<6:termination="TRUNCATED_SURROGATE_PAIR";break
+            if not suffix.startswith("\\u") or any(d not in "0123456789abcdefABCDEF" for d in suffix[2:]):termination="UNPAIRED_SURROGATE";break
+            low=int(suffix[2:],16)
+            if not 0xDC00<=low<=0xDFFF:termination="UNPAIRED_SURROGATE";break
+            parts.append(chr(0x10000+((code-0xD800)<<10)+low-0xDC00));at+=12;continue
+        if 0xDC00<=code<=0xDFFF:termination="UNPAIRED_SURROGATE";break
+        parts.append(chr(code));at+=6
+    work.charge(len(parts));return "".join(parts),at,termination
+
+
+def jsonl_leaves(text,name):
+    """Physical LF records; malformed raw bytes and safe prefixes stay covered."""
+    lines=text.split("\n");work=JSONLRecoveryWork();complete=0;records=[]
+    totals={k:0 for k in JSONL_RECOVERY_KEYS}
+    for index,line in enumerate(lines):
+        # Preserve the original BOM in a malformed raw witness while retaining
+        # the previous utf-8-sig behavior for a complete first JSON record.
+        parse_line=line[1:] if index==0 and line.startswith("\ufeff") else line
+        if not parse_line.strip(" \t\r"):continue
+        where="line:"+str(index+1)
+        try:value,notes=history_json(parse_line)
+        except json.JSONDecodeError as error:
+            raw=line+("\n" if index<len(lines)-1 else "");raw_bytes=raw.encode("utf-8")
+            work.charge(len(raw));yield "text",raw,where+"/jsonl_raw_record"
+            record={"record_index":index,"line":index+1,"raw_utf8_bytes":len(raw_bytes),"raw_sha256":sha(raw_bytes),
+                    "json_error":{"type":"JSONDecodeError","position":error.pos,"column":error.colno,"message":error.msg},
+                    "string_fragments":0,"decoded_prefixes":0,"token_arrays":0,"truncated_escapes":0,"rejected_origins":0,
+                    "terminations":{}}
+            # Every origin is considered independently, including later quotes
+            # after invalid escapes. Extra conservative witnesses may exclude.
+            work.charge(len(line))
+            for start,c in enumerate(line):
+                if c=='"':
+                    decoded,end,termination=json_string_prefix(line,start,work)
+                    record["terminations"][termination]=record["terminations"].get(termination,0)+1
+                    if termination in ("TRUNCATED_ESCAPE","TRUNCATED_UNICODE_ESCAPE","TRUNCATED_SURROGATE_PAIR"):record["truncated_escapes"]+=1
+                    if termination=="COMPLETE":record["string_fragments"]+=1
+                    elif decoded:record["decoded_prefixes"]+=1
+                    else:record["rejected_origins"]+=1
+                    if termination=="COMPLETE" or decoded:yield "text",decoded,where+"/jsonl_string:"+str(start)+":"+str(end)+":"+termination
+                elif c=="[":
+                    end=line.find("]",start+1)
+                    work.charge(len(line)-start if end<0 else end-start+1)
+                    if end<0:record["rejected_origins"]+=1;continue
+                    fragment=line[start:end+1];work.charge(len(fragment))
+                    try:array=json.loads(fragment)
+                    except json.JSONDecodeError:record["rejected_origins"]+=1;continue
+                    if isinstance(array,list) and len(array)>=32 and valid_tokens(array):
+                        work.charge(len(array));record["token_arrays"]+=1
+                        yield "tokens",array,where+"/jsonl_tokens:"+str(start)+":"+str(end+1)
+            records.append(record);totals["malformed_records"]+=1;totals["raw_utf8_bytes"]+=len(raw_bytes)
+            for k in ("string_fragments","decoded_prefixes","token_arrays","truncated_escapes","rejected_origins"):totals[k]+=record[k]
+        else:
+            complete+=1
+            if any(notes.values()):yield "format_note",notes,where
+            yield from json_leaves(value,where)
+    if records:
+        totals.update(files=1,complete_valid_records=complete)
+        yield "jsonl_recovery",{**totals,"record_boundary":"LF","malformed_raw_covered":True,"semantic_reconstruction":False,"records":records},"jsonl_recovery_summary"
 
 
 def python_ast_leaves(tree,location=None):
@@ -322,11 +412,7 @@ def byte_leaves(data,kind,name,arrow_reader=None,depth=0,member_policy=None):
             if any(notes.values()):yield "format_note",notes,"$"
             yield from json_leaves(value)
         elif kind=="jsonl":
-            for i,line in enumerate(text.splitlines()):
-                if line.strip():
-                    value,notes=history_json(line);where="line:"+str(i+1)
-                    if any(notes.values()):yield "format_note",notes,where
-                    yield from json_leaves(value,where)
+            yield from jsonl_leaves(data.decode("utf-8",errors="strict"),name)
         elif kind=="python":
             yield from python_leaves(text,name)
         elif kind in ("csv","tsv"):
@@ -490,6 +576,9 @@ def scan_history(entries,index,tokenize,arrow_reader=None,ledger=None,member_pol
                 elif typ=="python_recovery":
                     row.setdefault("python_recovery",[]).append({"location":where,**value})
                     for k in PYTHON_RECOVERY_KEYS:index.python_recovery[k]+=value[k]
+                elif typ=="jsonl_recovery":
+                    row.setdefault("jsonl_recovery",[]).append({"location":where,**value})
+                    for k in JSONL_RECOVERY_KEYS:index.jsonl_recovery[k]+=value[k]
                 else:raise Stop("FAIL","Unknown historical leaf kind: "+typ)
             row.update(Status="PASS",strings=index.string_count-old_s,token_arrays=index.token_array_count-old_t);seen[key]=e["path"]
         except BaseException as exc:
@@ -668,6 +757,7 @@ def main():
         if args.history_preflight_only:
             index=ParseOnlyIndex();scan_history(entries,index,None,arrow_reader,ledger=history_ledger,member_policy=policy_mapping(spec,"member_entries"))
             report["Actual"]={"historical_files":len(entries),"historical_files_completed":len(history_ledger),"parse_completed":True,"historical_strings":index.string_count,"historical_token_arrays":index.token_array_count,"historical_format_notes":index.format_notes,"historical_python_recovery":index.python_recovery,"model_calls":0,"tokenizer_calls":0,"new_source_acquisitions":0}
+            report["Actual"]["historical_jsonl_recovery"]=index.jsonl_recovery
         else:
             from tokenizers import Tokenizer
             tokenizer=Tokenizer.from_file(str(tokenizer_path));tokenize=lambda s:tokenizer.encode(s,add_special_tokens=False).ids
@@ -684,6 +774,7 @@ def main():
             public=[{k:v for k,v in row.items() if k not in ("text","tokens")} for row in payload["eval"]]
             artifacts["public/selection.json"]=writer.json("public/selection.json",{"samples":public,"input_pin":artifacts["inputs.json"],"labels":{i:sum(s["label"]==i for s in chosen) for i in range(4)}})
             report["Actual"]={"source_rows":len(rows),"prose_length_eligible":len(candidates),"historical_files":len(entries),"historical_strings":index.string_count,"historical_token_arrays":index.token_array_count,"historical_text_fingerprints":index.text_fingerprints,"historical_text_cache_hits":index.text_cache_hits,"historical_format_notes":index.format_notes,"historical_python_recovery":index.python_recovery,"excluded_by_history":len(index.matches),"selected":len(chosen),"input_pin":artifacts["inputs.json"],"model_calls":0,"new_source_acquisitions":0 if args.source_file else 1,"copied_corpus_bytes":0 if args.source_file else CORPUS_PIN["bytes"]}
+            report["Actual"]["historical_jsonl_recovery"]=index.jsonl_recovery
         report["Status"]="PASS"
     except BaseException as exc:
         report["Status"]=getattr(exc,"status","BLOCKED" if isinstance(exc,(OSError,MemoryError)) else "FAIL")
@@ -699,7 +790,7 @@ def main():
                 report["source_after_status"]="PASS"
             if args.history_preflight_only:
                 report["Actual"].update(history_ledger_projection=preflight_projection(history_ledger),historical_files=len(entries),historical_files_completed=len(history_ledger),model_calls=0,tokenizer_calls=0,new_source_acquisitions=0)
-                findings=[r for r in history_ledger if r.get("python_recovery") or r.get("format_notes") or r.get("error") or r["Status"] in ("FAIL","BLOCKED")]
+                findings=[r for r in history_ledger if r.get("python_recovery") or r.get("jsonl_recovery") or r.get("format_notes") or r.get("error") or r["Status"] in ("FAIL","BLOCKED")]
                 artifacts["preflight_findings.json.gz"]=writer.compressed("preflight_findings.json.gz",findings)
             else:
                 artifacts["candidates.json.gz"]=writer.compressed("candidates.json.gz",ledger)

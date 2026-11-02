@@ -112,7 +112,11 @@ class DataTests(unittest.TestCase):
 
     def test_duplicate_json_key_and_bad_tail_block(self):
         with self.assertRaises(D.Stop):D.strict_json('{"x":1,"x":2}')
-        with self.assertRaises(json.JSONDecodeError):list(D.byte_leaves(b'{"x":1}\n{"broken":',"jsonl","fixture.jsonl"))
+        # V5 repairs only historical JSONL coverage; strict JSON keeps its gate.
+        leaves=list(D.byte_leaves(b'{"x":1}\n{"broken":',"jsonl","fixture.jsonl"))
+        self.assertIn(("text",'{"broken":',"line:2/jsonl_raw_record"),leaves)
+        note=next(v for typ,v,_ in leaves if typ=="jsonl_recovery")
+        self.assertEqual((note["complete_valid_records"],note["malformed_records"]),(1,1))
 
     def test_history_duplicate_values_and_nonfinite_metadata_preserve_all_text(self):
         raw=b'{"text":"first retained value","text":"second retained value","loss":NaN,"nested":{"a":"third retained value","n":Infinity,"m":-Infinity}}'
