@@ -1,0 +1,11 @@
+# MoDA + MoE CPU V1 final admission checkpoint
+
+Capacity admission: PASS. Third distinct forecast uses complete reviewed sources and actual target packing proof, without changing64MiB total evidence/8MiB raw/256MiB reserve limits. Original over-budget forecast and incomplete-source stop remain preserved. Complete per-adapter/Adam/RNG archive cap is now tighter2.5MiB; target synthetic max2273376B, all16 optimizer states retained and roundtrip verified.
+
+Source implementation a982b962ceb8204bf7b4a4edb5f7789b79827806; branch mythos-moda-moe-combo-cpu-v1; original accepted base d09d54953ff2725b702338d44e663088eeca0e69. Execution freeze is the commit containing this checkpoint and SOURCE_MANIFEST.json. Existing designated CPU Python3.12.3/Torch2.11+cpu unchanged. Actual forecast projected nonraw=64779566B; headroom=2329298B. Forecast is not a mathematical upper bound; all actual scope/copy/runtime/resource caps remain hard gates.
+
+Local development helper results:17 model +18 audit +15 worker/startup =50 PASS; target helpers will run in the one formal operator before model work. All real140M combination calls/128 optimizer steps/648 quality evaluations/9 reloads remain NOT TESTED at this source freeze. Raw data/model weights/upstream are unchanged. The old16Wiki train/16eval and20AG news are exposed development/regression sets; no fresh-test claim.
+
+Purpose: run sourceMoE adapter training on F and frozenH, followed by9 conditions; Expected792 native model calls and two interpreter model instances. All six main per-domain HE/F,H,Esolo performance screens remain NOT TESTED. Route/capacity causal contribution and trained synergy remain NOT ASSESSED; fixed-joint-E inference interaction is descriptive only. Alpha0, source softmax, all187392E parameters train, oldH parameters frozen with autograd through inputs preserved.
+
+Next unique instruction: execute execute_combo.py once with expected-head equal to this final source commit, in existingCPU environment. Engineering BLOCKED/FAIL stops and preserves data; scientific performance FAIL remains a valid result. Then review evidence/checkpoint and proceed to separately frozen mechanism additions per PROGRAM.md without requesting fresh authorization. No upstream/A5/controller changes, B1 rerun, GPU, B2/D2-A or PR24 merge. FormalOracle BLOCKED/NOT_READY; FORMAL_ACCEPTANCE_READY=False.
