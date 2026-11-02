@@ -1,0 +1,72 @@
+{
+  "Purpose": "Implement and locally review the complete train-source-to-history bridge before freezing the new preparation phase",
+  "Environment": {
+    "development_only": true,
+    "python": "3.12.14",
+    "launch": "Local Python -I -B",
+    "target_operations": 0,
+    "new_source_acquisitions": 0,
+    "original_tokenizer_calls": 0,
+    "model_calls": 0,
+    "review_type": "Author self-review with synthetic fixtures; independent peer audit is separate"
+  },
+  "Input": {
+    "restored_checkpoint": "b3565ae427df93991bb7f78e633f3229c5930dd5",
+    "prepare_history_v6.py": "0b65ac16429af51432e4a4ceebdda7aa4f58b0bd6bbe0b9f0d84b5bbb30f5f91",
+    "test_prepare_history_v6.py": "49c85da5a65f1240b4f4e6c0cfbe485609965a999938161b4c883f5c3e1d7c93",
+    "shared_parser": {
+      "path": "data_prepare.py",
+      "sha256": "54f3f7cfeae28167dc6bb88f6c11957a7931e04aaf7c5babd2620740e969ac9f",
+      "legacy_source_constants_modified": false
+    },
+    "source_contract": {
+      "dataset": "fancyzhx/ag_news",
+      "revision": "eb185aade064a813bc0b7f42de02595523103ca4",
+      "split": "train",
+      "rows": 120000,
+      "bytes": 18585438,
+      "sha256": "fc508d6d9868594e3da960a8cfeb63ab5a4746598b93428c224397080c1f52ee"
+    }
+  },
+  "Expected": {
+    "source_gate": "PASS before preparation",
+    "history_scope": "All original32244 physical paths plus whole older fresh namespace, previously sealed external paths and immutable pre-source repository snapshots",
+    "selection": "All120000 rows bridge to source gate; all eligible candidates undergo historical and new-new exclusion; exactly20 texts,5 per label,129 original tokens",
+    "resource_contract": "Independent64MiB preparation output including64KiB final manifest;256MiB unused disk reserve",
+    "failure_contract": "Single exclusive preparation-v6; preserve partial candidate/history ledgers and failure report; no retry/source acquisition",
+    "model_calls": 0
+  },
+  "Actual": {
+    "reports": [
+      {"path": "DEVELOPMENT_PREPARE_HISTORY_V6_ATTEMPT1.json", "sha256": "7e1ce418b06cf126871fd204869cb715a6d0b72589f96165ad318ad985f4bc65", "run": 17, "failures": 0, "errors": 0, "skipped": 0, "Status": "PASS"},
+      {"path": "DEVELOPMENT_PREPARE_HISTORY_V6_ATTEMPT2.json", "sha256": "ff878542da5998fa935f504b913fd41efef863c703a9c1b1b1c65fd1525a1352", "run": 18, "failures": 0, "errors": 0, "skipped": 0, "Status": "PASS"}
+    ],
+    "checks": [
+      {"name": "Source gate PASS, source/acquisition/complete eligibility ledger pins and original tokenizer are mandatory", "Status": "PASS"},
+      {"name": "Every row identity, label, decision, token count and tokenization-started/performed flag is independently rebuilt and exactly compared before any selection", "Status": "PASS"},
+      {"name": "Original data_prepare source constants remain unchanged; no runtime monkeypatch", "Status": "PASS"},
+      {"name": "Original paths, old test corpus, sealed external records and all snapshot paths form one exact union; missing or extra files stop", "Status": "PASS"},
+      {"name": "Snapshot policy aliases require exact registered bytes and suffix plus unambiguous classification; archive member aliases preserve bound origins", "Status": "PASS"},
+      {"name": "Unknown historical formats and changed registered bytes stop instead of being skipped", "Status": "PASS"},
+      {"name": "All eligible candidates are indexed for history exclusion; all physical files and recovery notes remain in full ledger", "Status": "PASS"},
+      {"name": "History or new-new duplicates may still make the fixed quota BLOCKED; witness and full candidate records are retained", "Status": "PASS"},
+      {"name": "Output provenance binds train source while preserving128 input,64 scored positions,129 tokens and zero optimizer steps", "Status": "PASS"},
+      {"name": "Immutable acquisition/history freeze A must match and be ancestor of clean preparation freeze B; acquisition source bytes remain unchanged", "Status": "PASS"},
+      {"name": "Lossless physical/canonical gzip pins, exclusive writes, allocation and reserve gates preserve partial failure evidence", "Status": "PASS"},
+      {"name": "Exact isolated CLI exposes all three frozen bridge arguments and imports no numerical packages in development tests", "Status": "PASS"}
+    ],
+    "runtime_validation": "NOT TESTED",
+    "complete_real_history_exclusion": "NOT TESTED",
+    "real_selected_inputs": "NOT TESTED",
+    "model_comparison": "NOT TESTED"
+  },
+  "Status": "PASS",
+  "limitations": [
+    "This receipt accepts local synthetic development only. Actual source/history/model evidence must pass its own target gates.",
+    "The shared historical parser is reused, including declared conservative malformed Python/JSONL recovery; this is not reconstruction of missing source bytes.",
+    "Historical novelty covers retained registered project inputs and source text. Unrecorded private history and model pretraining overlap remain unknown.",
+    "The worker does not download or copy the train corpus. Its source file remains in source-v6.",
+    "No upstream code, scientific threshold, token position, model weight or earlier failed protocol is modified."
+  ],
+  "next_unique_instruction": "After independent review and a separate preparation freeze B, run prepare_history_v6 once with the exact B/spec/gate hashes. Stop on BLOCKED/FAIL and preserve evidence; only a complete independent data audit may authorize dependent model execution."
+}
