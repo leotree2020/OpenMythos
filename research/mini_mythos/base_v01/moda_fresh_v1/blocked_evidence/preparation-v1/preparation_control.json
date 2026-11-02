@@ -1,0 +1,60 @@
+{
+  "Purpose": "One model-blind target preparation after source/spec freeze",
+  "Environment": {
+    "executable": "/workspaces/mythos-depth-data-cpu312/bin/python",
+    "codespace": "bookish-pancake-vwqx7rr9x5w3wxjr"
+  },
+  "Input": {
+    "freeze": "b8a1d0b6640028f214bb5e4ef55e7f0ae499f8b0",
+    "spec_sha256": "6185f5dee8c9f95e35a967c3f8abd5754221ed02207c68244ce3d2bdc4dcb8e9"
+  },
+  "Expected": {
+    "data_tests": 28,
+    "spec_tests": 10,
+    "source_attempts": 1,
+    "model_calls": 0
+  },
+  "Actual": {
+    "commands": [
+      {
+        "label": "test_data.py",
+        "argv": [
+          "/workspaces/mythos-depth-data-cpu312/bin/python",
+          "-I",
+          "-B",
+          "/workspaces/mythos-moda-fresh-cpu-v1/research/mini_mythos/base_v01/moda_fresh_v1/test_data.py",
+          "--report",
+          "/workspaces/mythos-evidence/base_v01/moda_fresh/preparation-v1/test_data.py.json"
+        ],
+        "started": "2026-11-02T09:41:55.557898+00:00",
+        "pid": 160544,
+        "returncode": 0,
+        "finished": "2026-11-02T09:41:56.278883+00:00",
+        "child_reaped": true
+      },
+      {
+        "label": "test_freeze_data_spec.py",
+        "argv": [
+          "/workspaces/mythos-depth-data-cpu312/bin/python",
+          "-I",
+          "-B",
+          "/workspaces/mythos-moda-fresh-cpu-v1/research/mini_mythos/base_v01/moda_fresh_v1/test_freeze_data_spec.py",
+          "--report",
+          "/workspaces/mythos-evidence/base_v01/moda_fresh/preparation-v1/test_freeze_data_spec.py.json"
+        ],
+        "started": "2026-11-02T09:41:56.279547+00:00",
+        "pid": 160555,
+        "returncode": 1,
+        "finished": "2026-11-02T09:41:56.394854+00:00",
+        "child_reaped": true
+      }
+    ],
+    "model_calls": 0
+  },
+  "Status": "BLOCKED",
+  "error": {
+    "type": "FileNotFoundError",
+    "reason": "[Errno 2] No such file or directory: '/workspaces/mythos-evidence/base_v01/moda_fresh/preparation-v1/test_freeze_data_spec.py.json'",
+    "traceback": "Traceback (most recent call last):\n  File \"/workspaces/mythos-moda-fresh-cpu-v1/research/mini_mythos/base_v01/moda_fresh_v1/prepare_once.py\", line 51, in main\n    v=json.loads(report.read_text());assert code==0 and v['Status']=='PASS'\n                 ^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.12/pathlib.py\", line 1029, in read_text\n    with self.open(mode='r', encoding=encoding, errors=errors) as f:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.12/pathlib.py\", line 1015, in open\n    return io.open(self, mode, buffering, encoding, errors, newline)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nFileNotFoundError: [Errno 2] No such file or directory: '/workspaces/mythos-evidence/base_v01/moda_fresh/preparation-v1/test_freeze_data_spec.py.json'\n"
+  }
+}
