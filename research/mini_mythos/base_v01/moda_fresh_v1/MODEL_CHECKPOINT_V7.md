@@ -1,0 +1,17 @@
+# MYTHOS-MODA-FRESH-TRAIN-CPU-V7 checkpoint
+
+Engineering Status: **PASS**. Base `bc6d267cdd8cf9306c1bf08b369cf2b791723d3d`; execution freeze `6a87446f8a146f62cae30ae75f986d2b30d30f60`; branch `mythos-moda-fresh-cpu-v1`.
+
+Purpose: zero-training fresh-text transfer and complete CPU time comparison for native fixed32, two frozen shared-control adapters and two frozen MoDA history adapters. Environment: designated Codespace, existing Python3.12.3/Torch2.11.0+cpu/NumPy1.26.4,2 intra/1 inter threads. No GPU or dependency change.
+
+Input:20 frozen AG News train-split project-history-excluded texts (120000-source-row eligibility; no training),129 tokens each,64 scored targets;2 h0 seeds;5 configurations;2 measured passes. Five old sentinel bridges are separate warmups. Expected:405 model calls,200 unique quality rows,200 exact repeat rows; zero updates/backward/optimizer. Actual: see evidence_v7/summary.json and audit.json.gz; unreached work remains NOT TESTED.
+
+Scientific screens: {"depth_vs_fixed32": "FAIL", "depth_vs_shared": "PASS", "shared_vs_fixed32": "FAIL"}. Frozen margins unchanged: each adapter training seed deltaNLL<=-0.01 and deltaAccuracy>=-0.01. Negative scientific screens are valid findings, not engineering errors. Timing is descriptive and is not equal-compute superiority.
+
+Evidence: `/workspaces/mythos-evidence/base_v01/moda_fresh/attempt-v7`; full external pins in MODEL_V7_EXTERNAL_EVIDENCE_MANIFEST.json, public copies in evidence_v7/. Planned custody: each of200 unique scored matrices receives full live independent NumPy audit through a bounded pipe; pass2 must reproduce each full matrix hash. Actual completed coverage: {"backward_calls": 0, "bridge_calls": 5, "calls_completed": 405, "calls_started": 405, "model_loads": 1, "optimizer_steps": 0, "quality_rows": 200, "repeat_rows": 200, "train_steps": 0}. Only the last repeat matrix is retained after complete success, and final audit recomputes it; the other199 unique full matrices cannot be reconstructed from compact statistics. Earlier numerical/audit failures retain the current full matrix instead and stop. Unreached audits/repeats remain NOT TESTED. Old raw matrices/weights/adapters remain unchanged.
+
+Custody: PASS; complete protection-map acceptance established: True. The required scope includes original v1/v2 maps, full historical ledger and all prior fresh-phase stop/preparation records; unreached checks are not claimed as passed. Storage uses lossless gzip without dropping physical paths. The explicitly proven never-created V5 log/directory must stay absent; all real old records remain required. Closed V7 measurement receipt/stdout are separately byte-bound before/after and counted in nonraw bytes; they do not enter the premeasured existing inventory. New protocol8MiB raw +12MiB nonraw +256MiB reserve; source/data preparation already consumes disk before admission. No upstream/threshold writes, B1 rerun/B2/D2-A/mechanism stacking/PR24 operation. Formal Oracle BLOCKED/NOT_READY; FORMAL_ACCEPTANCE_READY=False.
+
+Unresolved: limited20-text sample, source/domain specificity, unknown base-pretraining overlap, only frozen output-projection adaptation, non-independent AI review and small timing sample.
+
+Next unique instruction: read this checkpoint and independently review the quality, timing and preservation evidence; do not tune or repeat this attempt. Resolve any BLOCKED/FAIL only in a separately frozen continuation. No next mechanism starts automatically.
