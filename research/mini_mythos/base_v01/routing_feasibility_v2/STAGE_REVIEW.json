@@ -1,0 +1,95 @@
+{
+  "Purpose": "Review mechanism1 continuation; identify engineering failure without scientific reinterpretation",
+  "Environment": "Read-only committed evidence and frozen source; no post-stop model execution",
+  "Input": {
+    "freeze": "1ff8c902cb003ba1010be76f067de2708e0206bd",
+    "result_commit": "126174ca907af5d43514cbd780756bf00265bab1"
+  },
+  "Expected": "32 valid paired CPU calls and independent routing audit",
+  "Actual": {
+    "engineering_status": "FAIL",
+    "target_helper_tests": "21/21 PASS",
+    "data_preparation": {
+      "Status": "PASS",
+      "checks": 26,
+      "counts": {
+        "call_budget": 32,
+        "context_tokens": 128,
+        "corrected_unique_sources": 32,
+        "eligible_sources": 60,
+        "excluded_union_sources": 33,
+        "old_unique_sources": 31,
+        "overlapping_sources": 30,
+        "remaining_eligible_sources": 27,
+        "reviewed_sources": 60,
+        "sample_count": 16
+      },
+      "artifacts": {
+        "private/inputs.json": {
+          "bytes": 58091,
+          "sha256": "ae5f8ad5fd53d25afaf29487a650dc0300528b0926c9883652475c4ca7db127f"
+        },
+        "public/selection.json": {
+          "bytes": 54413,
+          "sha256": "f8ff49e5ebfd534bd8dabe260afd2711130d27e7a20365c50affac9d7f6d3958"
+        }
+      }
+    },
+    "worker": {
+      "Status": "FAIL",
+      "calls_started": 0,
+      "calls_completed": 0,
+      "loader_attempts": 0,
+      "loader_returns": 0,
+      "error": {
+        "phase": "S0",
+        "reason": "designated routing worktree and branch",
+        "type": "Stop",
+        "actual": {
+          "repo": "/workspaces/mythos-routing-feasibility-cpu-v2",
+          "branch": "mythos-routing-feasibility-cpu-v2"
+        },
+        "traceback": "Traceback (most recent call last):\n  File \"/workspaces/mythos-routing-feasibility-cpu-v2/research/mini_mythos/base_v01/routing_feasibility_v1/run_routing.py\", line 348, in main\n    execute(run, smoke)\n  File \"/workspaces/mythos-routing-feasibility-cpu-v2/research/mini_mythos/base_v01/routing_feasibility_v1/run_routing.py\", line 153, in execute\n    run.check(\"designated routing worktree and branch\", str(repo) == EXPECTED_REPO and spec[\"branch\"] == BRANCH,\n  File \"/workspaces/mythos-routing-feasibility-cpu-v2/research/mini_mythos/base_v01/adaptive_140m_smoke_v1/run_smoke.py\", line 149, in check\n    raise Stop(failure, purpose, actual)\nmythos_prior_smoke_observers.Stop: designated routing worktree and branch\n"
+      }
+    },
+    "custody": {
+      "Status": "PASS",
+      "active_workers": [],
+      "baseline_complete": true,
+      "changed_environments": [],
+      "changed_files": [],
+      "changed_git": [],
+      "git_after": {
+        "/workspaces/mythos-adaptive-depth-140m-smoke-v1": {
+          "head": "ac62e6ac1c04c54451beabc1138d651f55e383d9",
+          "status": ""
+        },
+        "/workspaces/mythos-base-v01-b1": {
+          "head": "d88be474ebb2529c5b095e3732b1f25509f9b824",
+          "status": ""
+        },
+        "/workspaces/mythos-parcae-pinned": {
+          "head": "69284c13746e849104f738d6d1a347b1f457df76",
+          "status": ""
+        },
+        "/workspaces/mythos-routing-feasibility-cpu-v1": {
+          "head": "919d2db8c2ee48b1d83fd8732720b587bd8be011",
+          "status": ""
+        },
+        "/workspaces/mythos-routing-feasibility-cpu-v2": {
+          "head": "1ff8c902cb003ba1010be76f067de2708e0206bd",
+          "status": ""
+        }
+      },
+      "unreadable_files": [],
+      "unreaped_or_cleanup_errors": []
+    },
+    "root_cause": "The continuation operator uses a new v2 worktree/branch but unmodified run_routing.py intentionally requires v1 EXPECTED_REPO and BRANCH. Root continuation static review omitted this startup identity contract.",
+    "scientific_conclusion": "NOT TESTED; neither evidence for nor against adaptive routing",
+    "repair_or_retry_after_stop": false,
+    "mechanism_sequence": "Adaptive recursion -> depth-specific LoRA -> iteration encoding -> MoDA and MoE separately; retain negative results and measure controlled combinations",
+    "other_mechanisms": "NOT TESTED"
+  },
+  "Status": "FAIL",
+  "next_unique_instruction": "Resolve only startup identity consistency in a new frozen continuation: retain stopped V1/V2 and sealed16-source inputs; isolate any required worker identity changes, test the actual operator-to-worker startup contract before model execution, and preserve threshold0.01/upstream. Do not modify the frozen V1 worker or falsify V1 identity to bypass its guard."
+}
