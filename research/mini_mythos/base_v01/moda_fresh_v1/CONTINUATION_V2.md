@@ -1,0 +1,13 @@
+# Authorized continuation after 3a7f8b3a
+
+The user requested correction and continuation. The old preparation-v1 remains sealed BLOCKED; its source, logs and checkpoint are preserved in Git and externally. There were no source downloads, selected texts or model calls in that attempt.
+
+The repair adds explicit sibling-module discovery to test_freeze_data_spec.py for the prescribed `python -I -B` invocation. A new prepare_once_v2.py uses the new external preparation-v2 directory and checks the exact helper interfaces, individual test IDs and statuses. Nonzero exit and original stderr take precedence over a missing report; timeout/interruption cleans up the child process group and seals the actual status. New subprocess tests execute the real specification helper in isolated mode. This is an engineering repair, not an experimental threshold change.
+
+data_prepare.py, freeze_data_spec.py and DATA_PROTOCOL.md remain byte-bound to checkpoint3a7f8b3a. Source revision/SHA, 20 texts/5 per class, full historical exclusion, original tokenizer, first129 IDs, scoring offsets, frozen model weights, initial-state seeds, quality margins and CPU settings remain unchanged. No new source or model score was read to make the repair. The previously excluded new experiment namespace contains only bookkeeping and synthetic helper evidence; preparation-v1 had no actual corpus. Novelty remains limited to retained/readable recorded project history, not base pretraining or unrecorded/private inputs.
+
+Preparation-v2 must PASS the full unchanged data protocol. Independent audit_data.py must then PASS its separate source/token/selection/custody checks. Its historical absence claim still relies on the preparer's complete scan; it independently verifies inventory/pins and positive exclusion witnesses, not a second exhaustive historical tokenization. Data-audit fixtures use synthetic inputs only.
+
+Only after those gates, a complete target capacity measurement, static review, source/input/test manifests and a new model-executor freeze may the existing F32/S/H CPU experiment run. Existing source weights, adapters, thresholds and upstream remain protected. The complete fresh namespace, including the old stopped attempt and its seal, joins the protection inventory. No old evidence deletion, automatic retry, mechanism stacking, B1 rerun, A5 change, B2/D2-A, GPU, or PR24 operation.
+
+Every new BLOCKED/FAIL stops dependent work and preserves evidence. All scientific results and CPU comparisons remain NOT TESTED until their respective actual evidence gates pass. Final acceptance and the next unique instruction will be recorded in CHECKPOINT.md; this document is not a claim of runtime success.

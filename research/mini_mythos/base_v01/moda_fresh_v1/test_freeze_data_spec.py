@@ -4,11 +4,13 @@ import gzip
 import io
 import json
 from pathlib import Path
+import sys
 import tempfile
 import tarfile
 import unittest
 from unittest import mock
 import zipfile
+sys.path.insert(0,str(Path(__file__).resolve().parent))
 import freeze_data_spec as f
 
 
