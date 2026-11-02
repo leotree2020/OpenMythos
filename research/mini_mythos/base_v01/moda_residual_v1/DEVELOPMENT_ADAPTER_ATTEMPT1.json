@@ -1,0 +1,48 @@
+{
+  "Purpose": "Developer CPU toy MoDA source adapter/gradient/retention checks only",
+  "Environment": {
+    "torch": "2.9.0+cpu",
+    "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]"
+  },
+  "Input": {
+    "source_sha256": "335c76d353550cbd3bc409ecfae92141b1ab70265429e0f8e33ccdcb5cd06492",
+    "fixtures": "Random tiny fixtures, no real model/weights/data"
+  },
+  "Expected": "All planned checks PASS, no skips; fixed forward/gradient tolerance1e-6+1e-5*abs(reference)",
+  "Actual": {
+    "test_ids": [
+      "__main__.AdapterTests.test_checkpoint_regenerates_features_and_reloads_exact",
+      "__main__.AdapterTests.test_disk_reserve_no_overwrite",
+      "__main__.AdapterTests.test_error_removes_hooks_and_history",
+      "__main__.AdapterTests.test_feature_initialization_paired_and_global_rng_preserved",
+      "__main__.AdapterTests.test_full32_output_contributions_reconstruct_trainable_gradient",
+      "__main__.AdapterTests.test_history_future_positions_do_not_change_prefix",
+      "__main__.AdapterTests.test_history_gradients_initial_zero_then_active_and_final_write_unused",
+      "__main__.AdapterTests.test_hook_matches_manual32_forward_and_gradient",
+      "__main__.AdapterTests.test_invalid_shapes_and_missing_contributions_rejected",
+      "__main__.AdapterTests.test_matched_parameter_budget_and_frozen_features",
+      "__main__.AdapterTests.test_mode_base_grad_checkpoint_and_preexisting_hook_rejected",
+      "__main__.AdapterTests.test_new_reader_uses_history_only_in_depth_arm",
+      "__main__.AdapterTests.test_nonfinite_output_fails_without_hook_leak",
+      "__main__.AdapterTests.test_optimizer_state_and_four_checkpoint_byte_budget",
+      "__main__.AdapterTests.test_repeat_resets_all_history_and_restores_instance_attributes",
+      "__main__.AdapterTests.test_shared_writers_computed_but_have_no_gradient_consumers",
+      "__main__.AdapterTests.test_zero_output_native_bitwise_all_four_initializations"
+    ],
+    "planned": 17,
+    "run": 17,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "expected_failures": 0,
+    "unexpected_successes": 0,
+    "four_adapter_checkpoint_sizes": [
+      402693,
+      402693,
+      402693,
+      402693
+    ]
+  },
+  "Status": "PASS",
+  "failures": []
+}
