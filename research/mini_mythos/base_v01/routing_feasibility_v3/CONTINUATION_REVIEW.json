@@ -1,0 +1,55 @@
+{
+  "Purpose": "Pre-freeze repair of V2 startup identity mismatch",
+  "Environment": "Root static review plus internal peer startup fixtures; target read-only preflight",
+  "Input": {
+    "base_checkpoint": "b470cec1ebc6f9a675ce5b674f2073c14d66c237",
+    "sources": {
+      "execute_once.py": {
+        "bytes": 37183,
+        "sha256": "af7f8afd71d6259f29641aa9b7c10e8c940e5969a5d517fc703f52ce86a1e9a0"
+      },
+      "run_routing.py": {
+        "bytes": 23008,
+        "sha256": "437e06a88603d2da951f1dd2d1d447b8c9af42f2f633335a66c4161e55b50084"
+      },
+      "test_startup.py": {
+        "bytes": 16777,
+        "sha256": "160cd544358e03f821a93ef68545ca6d13283c09abede47e0b2510b53ddf153a"
+      }
+    }
+  },
+  "Expected": "No mathematical changes; actual operator/worker startup contract tested; old records and data retained",
+  "Actual": {
+    "worker_changes": [
+      {
+        "before": "EXPECTED_REPO = \"/workspaces/mythos-routing-feasibility-cpu-v1\"",
+        "after": "EXPECTED_REPO = \"/workspaces/mythos-routing-feasibility-cpu-v3\""
+      },
+      {
+        "before": "BRANCH = \"mythos-routing-feasibility-cpu-v1\"",
+        "after": "BRANCH = \"mythos-routing-feasibility-cpu-v3\""
+      },
+      {
+        "before": "BASE = \"28595eb8b42a431e6f705d648d6a7cc193789b04\"",
+        "after": "BASE = \"b470cec1ebc6f9a675ce5b674f2073c14d66c237\""
+      }
+    ],
+    "all_worker_function_and_class_AST_unchanged": true,
+    "development_tests": "12/12 PASS, first attempt",
+    "test_scope": "Actual execute() pre-Torch startup gates with explicit environment/filesystem/Git/asset stubs; production worker_command() checked; not a model result",
+    "root_review": "Reviewed new operator, worker diff, original CLI absolute/output paths, independent auditor data reuse binding and startup fixture source",
+    "peer_review": "routing_data_impl reviewed operator and original audit compatibility; authored new startup fixtures; same-team review, not independent external approval",
+    "target_preflight": {
+      "checkpoint": "b470cec1ebc6f9a675ce5b674f2073c14d66c237",
+      "clean": true,
+      "sealed_data_files": 7,
+      "all_bytes_match": true,
+      "previous_model_calls": 0,
+      "new_attempt_absent": true,
+      "observation": "Actual Codespace terminal read/hash commands before source freeze"
+    },
+    "formal_new_model_calls": 0
+  },
+  "Status": "PASS",
+  "limitations": "Target runtime/model scientific checks remain NOT TESTED until the one formal attempt. No Claude/Grok external review is claimed."
+}
