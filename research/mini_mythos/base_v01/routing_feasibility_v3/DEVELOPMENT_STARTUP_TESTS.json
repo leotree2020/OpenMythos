@@ -1,0 +1,117 @@
+{
+  "Actual": {
+    "errors": 0,
+    "expected_failures": 0,
+    "failures": 0,
+    "planned": 12,
+    "run": 12,
+    "skipped": 0,
+    "test_ids": [
+      "test_startup.StartupTests.test_changed_data_completion_rejected",
+      "test_startup.StartupTests.test_changed_private_input_rejected",
+      "test_startup.StartupTests.test_changed_source_manifest_rejected",
+      "test_startup.StartupTests.test_data_artifact_binding_rejected",
+      "test_startup.StartupTests.test_dirty_checkout_rejected",
+      "test_startup.StartupTests.test_matching_startup_reaches_pre_torch_boundary",
+      "test_startup.StartupTests.test_nonpassing_data_stage_rejected",
+      "test_startup.StartupTests.test_old_v1_identity_rejected",
+      "test_startup.StartupTests.test_old_v2_identity_rejected",
+      "test_startup.StartupTests.test_operator_command_and_worker_identity_match",
+      "test_startup.StartupTests.test_reused_v2_data_provenance_stays_unchanged",
+      "test_startup.StartupTests.test_wrong_execution_head_rejected"
+    ],
+    "tests": [
+      {
+        "Purpose": "Copied data completion must retain the sealed byte identity.",
+        "Status": "PASS",
+        "id": "test_startup.StartupTests.test_changed_data_completion_rejected"
+      },
+      {
+        "Purpose": "Private prepared input bytes cannot change between operator and worker.",
+        "Status": "PASS",
+        "id": "test_startup.StartupTests.test_changed_private_input_rejected"
+      },
+      {
+        "Purpose": "Source manifest bytes are bound to the operator spec before using its entries.",
+        "Status": "PASS",
+        "id": "test_startup.StartupTests.test_changed_source_manifest_rejected"
+      },
+      {
+        "Purpose": "A self-consistent completion hash cannot hide a stale private-input artifact pin.",
+        "Status": "PASS",
+        "id": "test_startup.StartupTests.test_data_artifact_binding_rejected"
+      },
+      {
+        "Purpose": "Uncommitted checkout changes cannot enter the frozen worker.",
+        "Status": "PASS",
+        "id": "test_startup.StartupTests.test_dirty_checkout_rejected"
+      },
+      {
+        "Purpose": "The real execute path accepts the intended contract before any numerical import.",
+        "Status": "PASS",
+        "id": "test_startup.StartupTests.test_matching_startup_reaches_pre_torch_boundary"
+      },
+      {
+        "Purpose": "A failed data stage stops before model work even if all input hashes match.",
+        "Status": "PASS",
+        "id": "test_startup.StartupTests.test_nonpassing_data_stage_rejected"
+      },
+      {
+        "Purpose": "V1 branch/worktree cannot be mistaken for the new authorized execution identity.",
+        "Status": "PASS",
+        "id": "test_startup.StartupTests.test_old_v1_identity_rejected"
+      },
+      {
+        "Purpose": "V2 branch/worktree cannot pass the V3 worker even with otherwise valid fixtures.",
+        "Status": "PASS",
+        "id": "test_startup.StartupTests.test_old_v2_identity_rejected"
+      },
+      {
+        "Purpose": "Production launcher command uses the V3 worker and matching immutable identity.",
+        "Status": "PASS",
+        "id": "test_startup.StartupTests.test_operator_command_and_worker_identity_match"
+      },
+      {
+        "Purpose": "Copied data keeps its historical V2 provenance while new worker paths bind the copy.",
+        "Status": "PASS",
+        "id": "test_startup.StartupTests.test_reused_v2_data_provenance_stays_unchanged"
+      },
+      {
+        "Purpose": "A clean checkout at the wrong commit fails before helper/model import.",
+        "Status": "PASS",
+        "id": "test_startup.StartupTests.test_wrong_execution_head_rejected"
+      }
+    ],
+    "unexpected_successes": 0,
+    "unittest_output": "test_changed_data_completion_rejected (__main__.StartupTests.test_changed_data_completion_rejected)\nCopied data completion must retain the sealed byte identity. ... ok\ntest_changed_private_input_rejected (__main__.StartupTests.test_changed_private_input_rejected)\nPrivate prepared input bytes cannot change between operator and worker. ... ok\ntest_changed_source_manifest_rejected (__main__.StartupTests.test_changed_source_manifest_rejected)\nSource manifest bytes are bound to the operator spec before using its entries. ... ok\ntest_data_artifact_binding_rejected (__main__.StartupTests.test_data_artifact_binding_rejected)\nA self-consistent completion hash cannot hide a stale private-input artifact pin. ... ok\ntest_dirty_checkout_rejected (__main__.StartupTests.test_dirty_checkout_rejected)\nUncommitted checkout changes cannot enter the frozen worker. ... ok\ntest_matching_startup_reaches_pre_torch_boundary (__main__.StartupTests.test_matching_startup_reaches_pre_torch_boundary)\nThe real execute path accepts the intended contract before any numerical import. ... ok\ntest_nonpassing_data_stage_rejected (__main__.StartupTests.test_nonpassing_data_stage_rejected)\nA failed data stage stops before model work even if all input hashes match. ... ok\ntest_old_v1_identity_rejected (__main__.StartupTests.test_old_v1_identity_rejected)\nV1 branch/worktree cannot be mistaken for the new authorized execution identity. ... ok\ntest_old_v2_identity_rejected (__main__.StartupTests.test_old_v2_identity_rejected)\nV2 branch/worktree cannot pass the V3 worker even with otherwise valid fixtures. ... ok\ntest_operator_command_and_worker_identity_match (__main__.StartupTests.test_operator_command_and_worker_identity_match)\nProduction launcher command uses the V3 worker and matching immutable identity. ... ok\ntest_reused_v2_data_provenance_stays_unchanged (__main__.StartupTests.test_reused_v2_data_provenance_stays_unchanged)\nCopied data keeps its historical V2 provenance while new worker paths bind the copy. ... ok\ntest_wrong_execution_head_rejected (__main__.StartupTests.test_wrong_execution_head_rejected)\nA clean checkout at the wrong commit fails before helper/model import. ... ok\n\n----------------------------------------------------------------------\nRan 12 tests in 0.027s\n\nOK\n"
+  },
+  "Environment": {
+    "executable": "C:\\Users\\htyx2\\.codex\\.chatgpt-projects\\g-p-6ad1990464e881918f1eaec50065d5a1\\.venv\\Scripts\\python.exe",
+    "fixture_target": "Virtual Linux paths and stdlib stubs only",
+    "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]"
+  },
+  "Expected": "All12 tests pass with zero skips, errors or numerical imports; startup accepts V3 and rejects stale identity/tampering",
+  "Input": {
+    "planned_test_ids": [
+      "test_startup.StartupTests.test_changed_data_completion_rejected",
+      "test_startup.StartupTests.test_changed_private_input_rejected",
+      "test_startup.StartupTests.test_changed_source_manifest_rejected",
+      "test_startup.StartupTests.test_data_artifact_binding_rejected",
+      "test_startup.StartupTests.test_dirty_checkout_rejected",
+      "test_startup.StartupTests.test_matching_startup_reaches_pre_torch_boundary",
+      "test_startup.StartupTests.test_nonpassing_data_stage_rejected",
+      "test_startup.StartupTests.test_old_v1_identity_rejected",
+      "test_startup.StartupTests.test_old_v2_identity_rejected",
+      "test_startup.StartupTests.test_operator_command_and_worker_identity_match",
+      "test_startup.StartupTests.test_reused_v2_data_provenance_stays_unchanged",
+      "test_startup.StartupTests.test_wrong_execution_head_rejected"
+    ],
+    "source_sha256": {
+      "execute_once.py": "af7f8afd71d6259f29641aa9b7c10e8c940e5969a5d517fc703f52ce86a1e9a0",
+      "run_routing.py": "437e06a88603d2da951f1dd2d1d447b8c9af42f2f633335a66c4161e55b50084",
+      "test_startup.py": "160cd544358e03f821a93ef68545ca6d13283c09abede47e0b2510b53ddf153a"
+    }
+  },
+  "Purpose": "Real V3 operator/worker startup-contract synthetic fixtures; no model or target data",
+  "Status": "PASS"
+}
