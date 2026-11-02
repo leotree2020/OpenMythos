@@ -1,0 +1,26 @@
+import pathlib,pyarrow.parquet as pq,hashlib,json,sys,importlib.metadata as md,re
+p=pathlib.Path('/workspaces/mythos-evidence/base_v01/depth_budget/preparation-v1-20261101/test.parquet')
+raw=p.read_bytes();assert hashlib.sha256(raw).hexdigest()=='3ee89cd6a2ab912afd5d01e98867b46a67d9ec7a9eca0910e5e4c3cdd4cc1925'
+rows=pq.read_table(p,columns=['text']).column('text').to_pylist();assert len(rows)==4358
+sha=lambda b:hashlib.sha256(b).hexdigest()
+canon=lambda x:json.dumps(x,ensure_ascii=False,sort_keys=True,separators=(',',':')).encode()
+boundary=[];blocks=[]
+for i,t in enumerate(rows):
+ s=t.strip()
+ if s and (s.startswith('=') or s.endswith('=')):
+  toks=s.split();a=0;b=0
+  for tok in toks:
+   if tok!='=':break
+   a+=1
+  for tok in reversed(toks):
+   if tok!='=':break
+   b+=1
+  top=s.startswith('=') and s.endswith('=') and s.count('=')==2
+  nested=a==b and a>=2 and len(toks)>a+b and s.count('=')==a+b
+  after=[{'row':j,'text':rows[j]} for j in range(i+1,min(i+9,len(rows))) if rows[j].strip()][:2]
+  boundary.append({'row':i,'row_sha256':sha(t.encode()),'title':s,'top_candidate':top,'nested_section':nested,'leading_equals':a,'trailing_equals':b,'before_blank':i==0 or not rows[i-1].strip(),'after_blank':i+1==len(rows) or not rows[i+1].strip(),'prev':rows[i-1] if i else None,'next':rows[i+1] if i+1<len(rows) else None,'following_nonempty':after})
+ if s and (i==0 or not rows[i-1].strip()):blocks.append({'row':i,'text':t[:450],'boundaryish':s.startswith('=') or s.endswith('=')})
+assert 'torch' not in sys.modules
+o={'corpus_sha256':sha(raw),'row_count':len(rows),'rows_sha256':sha(canon(rows)),'row_inventory':[{'row':i,'sha256':sha(t.encode()),'utf8_bytes':len(t.encode())} for i,t in enumerate(rows)],'boundary_rows':boundary,'block_starts':blocks,'packages':{n:md.version(n) for n in ['pyarrow','numpy','tokenizers']},'torch_imported':False}
+path=pathlib.Path(sys.argv[1]);path.write_text(json.dumps(o,ensure_ascii=False,indent=2)+'
+');print(json.dumps({'status':'PASS','boundary_rows':len(boundary),'old_top':sum(x['top_candidate'] for x in boundary),'nested':sum(x['nested_section'] for x in boundary),'other':[x for x in boundary if not x['top_candidate'] and not x['nested_section']],'block_starts':len(blocks),'rows_sha256':o['rows_sha256'],'inventory_sha256':sha(path.read_bytes()),'inventory_bytes':path.stat().st_size}))
