@@ -1,0 +1,48 @@
+{
+  "Purpose": "Serialized fresh worker/auditor payload forecast",
+  "Environment": {
+    "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+    "numpy": "2.2.6",
+    "development_only": true
+  },
+  "Input": {
+    "real_model": false,
+    "real_data": false,
+    "synthetic_full_matrices": 20,
+    "rng_seed": 74123,
+    "format": "Current run_fresh/audit_stream schemas;lossless gzip where implemented;bounded long paths and varied numeric values"
+  },
+  "Expected": "Measure all200 first-pass receipts/rows,400 timings,full3,200-check and1,900-final-check logs without pruning fields;combine with target fullscope and explicit remaining allowances beforefreeze",
+  "Actual": {
+    "single_external_copy_bytes": {
+      "individual_rows_gzip": 308671,
+      "row_audits_gzip": 1181541,
+      "audit_process_gzip": 51298,
+      "combined_evaluation_gzip": 180889,
+      "combined_timing_gzip": 15466,
+      "results_json": 36303,
+      "worker_checks_jsonl": 606890,
+      "final_audit_gzip": 19373
+    },
+    "max_per_artifact_bytes": {
+      "individual_rows_gzip": 1572,
+      "row_audits_gzip": 5980,
+      "audit_process_gzip": 257,
+      "combined_evaluation_gzip": 180889,
+      "combined_timing_gzip": 15466,
+      "results_json": 36303,
+      "worker_checks_jsonl": 190,
+      "final_audit_gzip": 19373
+    },
+    "measured_payload_external_bytes": 2400431,
+    "measured_payload_both_copies_bytes": 4800862
+  },
+  "Status": "PASS",
+  "Unmeasured_allowances_required": [
+    "Base63 state+four adapter state reports,environment,bridges,sentinel/completion,worker stdout/stderr and exceptional logs",
+    "Operator reports,tests,source/input manifests and custody/summary/checkpoint/public/export manifests",
+    "Both complete protected-inventory gzip copies,actualtargetmeasurement",
+    "Git/finalization allowance4MiB within12MiB total"
+  ],
+  "Limits": "Forecast from synthetic serialization,notmathematical compression bound. Mustpassactualtargetbudget/runtimecaps. No numerical/scientific evidence."
+}

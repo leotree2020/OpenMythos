@@ -1,0 +1,114 @@
+{
+  "Purpose": "Independent static review of the frozen-weight fresh-text worker and numerical auditor before model execution",
+  "Environment": {
+    "scope": "Local source reading and SHA-256 only",
+    "reviewer": "/root/moda_fresh_data",
+    "date": "2026-11-02",
+    "torch_imports": 0,
+    "model_calls": 0,
+    "new_data_acquisitions": 0,
+    "tests_run_in_this_review": 0
+  },
+  "Input": {
+    "data_stage_freeze": "1f322af67bca976bf3de7b00433c1f5876c74ae3",
+    "files": {
+      "run_fresh.py": "5230b94448aa84b59c585781fd80efd13a6d7c97051e00a8b06406a64e166acd",
+      "audit_stream.py": "adf9c109dc35e331a27bb7b206e49fd991d20e93ef8e7e6640ad39d9402b647e",
+      "PROTOCOL.md": "6825649744ab42b75596ddcff3d6db0b698e8379f5544da029c59e3a441a1672",
+      "../moda_residual_v2_work/moda_model.py": "a52005f273e2ec8f467375e9ee506ae7d622cc97e0570c92863b5087014b3912"
+    },
+    "additional_reading": ["test_fresh.py"],
+    "not_read_or_executed": ["Actual target model tensors", "Actual adapter tensors", "Fresh corpus records", "Target numerical operations", "Runtime PyTorch kernels"]
+  },
+  "Expected": "Same original base state, same frozen adapter states and paired actual h0/context; exactly 5 old bridges and 400 fresh full32 calls; no training; complete declared timing endpoint; independent numerical and aggregation audits",
+  "checks": [
+    {
+      "Purpose": "Original base and adapter identity",
+      "Expected": "No state substitution or update",
+      "Actual": "initialize checks upstream/old/fresh Git state and input pins, original weight/config hashes, native architecture, all 63 state entries against original tensor bytes, tied embedding/head identity, and all four strict-loaded adapter state and feature hashes against sealed prior records. Main finally hashes base and all adapter states again.",
+      "source": ["run_fresh.py:256 initialize", "run_fresh.py:398 main", "moda_model.py:40 state_hashes"],
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Actual paired initial state and recurrence",
+      "Expected": "Identical text and actual initial state across F32/S/H, exactly 32 core iterations",
+      "Actual": "Every condition uses the same sample's tokens[:128] and evaluation seed. Pinned NativeFixed32 resets RNG, hashes actual initialize_state output and RNG before/after, runs num_steps_pair [0,32], checks two core blocks each called 32 times, and removes instrumentation. Worker pairs actual h0/RNG hashes across arms and both passes. Final auditor rechecks all 400 pairings and route traces.",
+      "source": ["run_fresh.py:219 timed_endpoint", "run_fresh.py:328 execute", "moda_model.py:140 NativeFixed32.forward", "audit_stream.py:71 validate_timing"],
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Mechanism isolation and control meaning",
+      "Expected": "Existing F32, shared current-sequence control, and depth-history MoDA only",
+      "Actual": "The exact previously accepted library SHA is rechecked. F32 supplies banks=None; S/H use matching prior 4101/4202 checkpoints. Both S and H execute the same fixed-feature writer path at each depth; S reads no depth history while H reads only earlier depths. This is the existing equal-learned-parameter control, not equal-compute or equal-total-capacity proof. No mechanism stacking is introduced.",
+      "source": ["run_fresh.py:36 ARMS", "run_fresh.py:256 initialize", "moda_model.py:49 MoDAResidual", "moda_model.py:140 NativeFixed32.forward"],
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "No hidden training",
+      "Expected": "Zero optimizer, backward and training steps",
+      "Actual": "Worker contains no optimizer construction, backward call or optimization step. Base and adapters are eval and requires_grad_(False); every forward explicitly passes training=False. The pinned runner uses torch.set_grad_enabled(training), checks base gradients absent, and worker checks no logits graph/adaptor gradients. Final state hashes provide an independent preservation check. Zero-step counters alone are not treated as proof.",
+      "source": ["run_fresh.py:219 timed_endpoint", "run_fresh.py:246 Run.call", "run_fresh.py:256 initialize", "run_fresh.py:328 execute", "moda_model.py:140 NativeFixed32.forward"],
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Exact execution population",
+      "Expected": "405 started/completed forwards, 200 unique quality rows, 200 repeats, one constructed base model",
+      "Actual": "Five old bridges use first old evaluation text/h0 seed 5101 and exact historical output/hash identity. Schedule has two passes of 40 text/h0 cases times five arms = 400 fresh calls. Counters increment before and after each forward, all calls face the 405 budget gate, and exact EXPECTED is checked on successful completion. Final audit verifies all row keys, schedule entries, repeat hashes and checkpoint counters. Raw torch.load used for byte validation is distinct from the single constructed base model.",
+      "source": ["run_fresh.py:42 EXPECTED", "run_fresh.py:126 schedule", "run_fresh.py:312 bridges", "run_fresh.py:328 execute", "audit_stream.py:91 independent_schedule", "audit_stream.py:166 final_audit"],
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Correct input/target alignment",
+      "Expected": "128 input IDs and 64 scored positions matching accepted prior layout",
+      "Actual": "Worker inputs original IDs 0:128, forms targets original IDs 1:129, and pinned score starts at position 64, therefore predicts original IDs 65:129. Stream auditor independently reconstructs targets from sample tokens[65:129], verifies their SHA-256, and requires a [64,32768] complete FP32 scored matrix.",
+      "source": ["run_fresh.py:114 validate_data", "run_fresh.py:219 timed_endpoint", "moda_model.py:264 score", "audit_stream.py:24 compute", "audit_stream.py:166 final_audit"],
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Complete declared CPU timing boundary",
+      "Expected": "Tensor creation through all forward operations and score, not only extra MoDA operators",
+      "Actual": "perf_counter_ns and process_time_ns begin before input/target tensor creation and stop after library.score. Pinned forward includes RNG/h0 setup and hashes, hooks, complete prelude/core32/coda/head, adapter/history work, finite checks and cleanup. Raw output serialization, row audit process and file I/O are outside endpoint and separately accumulated; complete worker duration includes loading/bridges/audits/preservation. Five-condition cyclic ordering and reverse second pass give eight observations per arm/position/pass. No fastest-pass selection occurs.",
+      "source": ["run_fresh.py:126 schedule", "run_fresh.py:219 timed_endpoint", "run_fresh.py:328 execute", "audit_stream.py:71 validate_timing"],
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Independent finite/logit/NLL audit",
+      "Expected": "Every scored component checked independently with frozen 1e-10 NLL tolerance",
+      "Actual": "NumPy-only auditor receives RAW_BYTES+1 bounded framing, requires exactly 8388608 bytes and matching full SHA, checks all 2097152 FP32 components finite, independently recomputes stable FP64 NLL and first-index argmax, verifies exact predictions and 1e-10 NLL agreement, then records token metrics and eight raw chunk hashes/statistics. It imports run_fresh only as a definition/constants contract; no module-level Torch import exists. Main rejects any Torch/model module import.",
+      "source": ["run_fresh.py:328 execute", "audit_stream.py:24 compute", "audit_stream.py:45 compare_worker", "audit_stream.py:main"],
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Quality aggregation and unchanged screens",
+      "Expected": "No pseudoreplication or averaging away a failed training seed",
+      "Actual": "Each train-seed comparison averages paired differences over two h0 seeds within each article, then across 20 articles. Accuracy denominator is 20*2*64=2560. Both training seeds must separately satisfy deltaNLL <= -0.01 and deltaAccuracy >= -0.01; opposite seed outcomes remain MIXED. WORSE and non-qualified results are distinct. Independent auditor separately implements aggregation, labels, timing summaries and ratios rather than calling worker aggregate. Numerical differences are checked at 1e-10; timing fields/identity are also reconciled.",
+      "source": ["run_fresh.py:147 label", "run_fresh.py:153 aggregate", "audit_stream.py:102 independent_aggregate", "audit_stream.py:166 final_audit"],
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Repeatability and evidence limits",
+      "Expected": "Exact repeat hashes and honest retained-raw claims",
+      "Actual": "Each second pass requires exact first-pass full scored hash, observer and metrics. Last fixed schedule entry H4202/text19/h0=5202 is retained as the only success raw sentinel and independently recomputed at final audit. All 200 pass0 matrices are independently audited live; 199 cannot be fully reconstructed later from compact receipts, and this limitation is explicit in worker completion and final audit. A pending failed matrix is preserved within the mutually exclusive 8MiB raw budget when available.",
+      "source": ["run_fresh.py:328 execute", "run_fresh.py:398 main", "audit_stream.py:166 final_audit"],
+      "Status": "PASS"
+    }
+  ],
+  "Actual": {
+    "static_checks": 10,
+    "static_pass": 10,
+    "blocking_findings": [],
+    "runtime_validation": "NOT TESTED",
+    "scientific_conclusion": "NOT TESTED",
+    "model_calls": 0
+  },
+  "limitations": [
+    "Static inspection does not establish target loading, real hashes, numerical agreement, runtime performance or scientific screen results; every runtime gate remains mandatory.",
+    "Measured endpoint is the complete pretokenized instrumented model-and-score call. It excludes tokenization, raw serialization, independent audit and disk I/O; complete worker time is reported separately. It is not uninstrumented deployment latency.",
+    "Pass0 launches a separate live auditor after each timed call while pass1 does not. Ordering is balanced and per-pass timings are retained, but thermal/cache/background effects cannot be eliminated by this small CPU experiment.",
+    "Two initial-state seeds repeat the same article targets and are not independent articles. Twenty news records and two trained adapters support bounded exploratory transfer conclusions, not statistical confirmation or equal-compute superiority.",
+    "Review shares the accepted prior library as a contract; its exact source was read, but this is not an independent reimplementation of Parcae or MoDA.",
+    "Only one full new raw matrix is retained; 199 were designed for live audit only. No retrospective full-matrix re-audit claim is justified for those rows."
+  ],
+  "Status": "PASS",
+  "status_scope": "Static source design review only; model execution remains NOT TESTED"
+}
