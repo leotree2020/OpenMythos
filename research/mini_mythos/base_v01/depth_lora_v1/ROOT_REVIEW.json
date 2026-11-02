@@ -1,0 +1,38 @@
+{
+  "Purpose": "Pre-freeze independent source-selection and controlled-design review",
+  "Environment": "Read-only source/report review by root plus internal worker/operator/data peers",
+  "Input": {
+    "base": "e24d053f482a96bcc2ab207c1be73e4c91fcd721",
+    "preparation_commit": "b879743591c27a40b039609084911cae2e0b8317",
+    "data_pin": {
+      "bytes": 81885,
+      "sha256": "b730b54aa1896227a67e25e6f422ea66f7c9d04ac1a17d98cfef5416d44653cc"
+    }
+  },
+  "Expected": "32 selected true article introductions; no score-based selection; single-mechanism training with fixed32 control and explicit attribution limits",
+  "Actual": {
+    "selected_train_titles_reviewed": 16,
+    "selected_validation_titles_reviewed": 16,
+    "selected_intro_excerpts_reviewed": 32,
+    "selection": "All selected titles and180-character intro prefixes match natural article introductions, not equations/subheadings. No sample change requested.",
+    "source_row_limit": "Review of selected title/intro context and data-selector source; not manual audit of every corpus row or full article.",
+    "data_status": "PASS",
+    "local_fixture_counts": {
+      "startup": 14,
+      "lora": 20,
+      "data_audit": 25
+    },
+    "pairing": "Same frozen article order and per-step h0 seed between shared/depth arms; same evaluationh0 across all arms",
+    "no_future_leakage": "Per-position LoRA on causal native blocks; input0..127, target1..128, evaluated positions64..127 vs tokens65..128",
+    "native_route": "Native fixed [0,32], model.eval with gradients,32-full-BPTT; no controller use or source edits",
+    "cross_review": "Internal agents only; no external Claude/Grok approval",
+    "disagreements_retained": [
+      "Sharedrank2 anddepthrank2 have different parameter counts; neither equal-time nor equal-parameter superiority is tested.",
+      "32 trainingsteps is a screeningbudget, not evidence of convergence; negative results do not ruleoutLoRA.",
+      "Held-out adaptationvalidation has unknown pretraining overlap; nofresh-test/general-language/proprietaryMythos reproductionclaim."
+    ]
+  },
+  "Status": "PASS",
+  "formal_training": "NOT TESTED",
+  "next": "Freeze final source/input/test manifests and run once on designated CPU; stop on first engineering BLOCKED/FAIL."
+}

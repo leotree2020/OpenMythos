@@ -112,6 +112,29 @@ def main():
         spec = read(run / "spec.json")
         data_path = Path(spec["data_path"])
         data = read(data_path)
+        check("Frozen payload hash", info(data_path)["sha256"] == spec["inputs_sha256"])
+        completion = read(worker / "public" / "completion.json")
+        check("Worker engineering complete", completion.get("Status") == "PASS" and completion.get("preservation") == "PASS")
+        check("Worker exact main budget", completion["Actual"] == {
+            "calls_started":293,"calls_completed":293,"train_steps":128,"eval_rows":160,
+            "zero_control_calls":5,"model_loads":1,"adapters_saved":4,"reload_calls":0})
+        check("Base state hashes unchanged", read(worker / "public" / "base_state_before.json") == read(worker / "public" / "base_state_after.json"))
+        reload = read(run / "reload" / "public" / "completion.json")
+        check("Fresh-process reload complete", reload.get("Status") == "PASS" and reload.get("preservation") == "PASS"
+              and reload["Actual"]["reload_calls"] == 4 and reload["Actual"]["model_loads"] == 1)
+        training = [json.loads(line) for line in (worker / "public" / "training.jsonl").read_text().splitlines()]
+        train_by = {(r["arm"],r["train_seed"],r["step"]):r for r in training}
+        required_train = {(arm,seed,step) for arm in ("shared","depth") for seed in (4101,4202) for step in range(32)}
+        check("Exact128 training steps", len(training) == len(train_by) == 128 and set(train_by) == required_train)
+        for arm,seed,step in sorted(required_train):
+            record = train_by[arm,seed,step]
+            check(f"Training budget/data/finite {arm} {seed} {step}", record["article_id"] == data["train"][step%16]["id"]
+                  and record["targets"] == 128 and record["optimizer_step"] == step+1 and record["epoch"] == step//16
+                  and record["h0_seed"] == 1000000+100*seed+step
+                  and math.isfinite(record["loss"]) and math.isfinite(record["gradient_norm_before_clip"])
+                  and record["observer"]["c_proj_calls"] == [32,32])
+            if arm == "depth":
+                check(f"Matched training h0/RNG {seed} {step}", record["observer"] == train_by["shared",seed,step]["observer"])
         samples = {s["id"]: s for s in data["eval"]}
         check("Frozen128 context /64 scored targets", data["context_tokens"] == 128 and data["scored_positions"] == [64,128])
         check("16 distinct held-out sources", len(samples) == 16)
