@@ -1,0 +1,286 @@
+{
+  "Purpose": "Normal-length new-to-routing early-exit feasibility, no quality trial",
+  "Environment": {
+    "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+    "platform": "Linux-6.8.0-1064-azure-x86_64-with-glibc2.39",
+    "torch": "2.11.0+cpu",
+    "torch_file": "/workspaces/mythos-base-v01-cpu312/lib/python3.12/site-packages/torch/__init__.py",
+    "executable": "/workspaces/mythos-base-v01-cpu312/bin/python",
+    "prefix": "/workspaces/mythos-base-v01-cpu312",
+    "runtime": {
+      "python_version": "3.12.3",
+      "torch_version": "2.11.0+cpu",
+      "executable": "/workspaces/mythos-base-v01-cpu312/bin/python",
+      "prefix": "/workspaces/mythos-base-v01-cpu312",
+      "default_device": "cpu",
+      "default_dtype": "torch.float32",
+      "intraop_threads": 2,
+      "interop_threads": 1,
+      "deterministic_algorithms": true,
+      "deterministic_warn_only": false,
+      "autocast_cpu_enabled": false,
+      "autocast_cuda_enabled": false,
+      "cuda_available": false
+    },
+    "environment_before": {
+      "OMP_NUM_THREADS": "2",
+      "MKL_NUM_THREADS": "2",
+      "OPENBLAS_NUM_THREADS": null,
+      "RAYON_NUM_THREADS": null,
+      "TOKENIZERS_PARALLELISM": "false",
+      "CUDA_VISIBLE_DEVICES": "",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "HF_HUB_OFFLINE": "1",
+      "TRANSFORMERS_OFFLINE": "1"
+    },
+    "environment_active": {
+      "OMP_NUM_THREADS": "2",
+      "MKL_NUM_THREADS": "2",
+      "OPENBLAS_NUM_THREADS": "1",
+      "RAYON_NUM_THREADS": "1",
+      "TOKENIZERS_PARALLELISM": "false",
+      "CUDA_VISIBLE_DEVICES": "",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "HF_HUB_OFFLINE": "1",
+      "TRANSFORMERS_OFFLINE": "1"
+    },
+    "freeze_commit": "449b47d5ed8acd7c822b6f815c52ff871802922f",
+    "execution_head": "449b47d5ed8acd7c822b6f815c52ff871802922f",
+    "upstream": "69284c13746e849104f738d6d1a347b1f457df76",
+    "library_sha256": "daa6b5b014f9d5f77cc47e2ba14a7027065c135b2cac7f6bcda58d0e6d6457b8",
+    "helper_sha256": "02fcaae5a7a09ede68a662592668099ad60f08af51aad683c5c7d37926163a68",
+    "smoke_observer_sha256": "f29155eb3af5989a1da1f938dc2b7e7ca894a2dc960a0eefb6e4352517d0a37c",
+    "timing": "Instrumented API including guards/readouts/policy/hooks; no benchmark comparison"
+  },
+  "Input": {
+    "spec": {
+      "branch": "mythos-routing-feasibility-cpu-v3",
+      "data_manifest_path": "/workspaces/mythos-evidence/base_v01/routing_feasibility/attempt-v3/data/public/completion.json",
+      "data_manifest_sha256": "001841616f4139873f9057fb92df86fb366bc4e66d98f6230da59be9d689075d",
+      "expected_head": "449b47d5ed8acd7c822b6f815c52ff871802922f",
+      "freeze_commit": "449b47d5ed8acd7c822b6f815c52ff871802922f",
+      "inputs_path": "/workspaces/mythos-evidence/base_v01/routing_feasibility/attempt-v3/data/private/inputs.json",
+      "inputs_sha256": "ae5f8ad5fd53d25afaf29487a650dc0300528b0926c9883652475c4ca7db127f",
+      "model_dir": "/workspaces/mythos-evidence/base_v01/b1/b1-20261101T021657Z/downloads/model",
+      "repo": "/workspaces/mythos-routing-feasibility-cpu-v3",
+      "run_dir": "/workspaces/mythos-evidence/base_v01/routing_feasibility/attempt-v3/worker",
+      "run_id": "MYTHOS-ROUTING-FEASIBILITY-CPU-V3",
+      "source_manifest_path": "/workspaces/mythos-evidence/base_v01/routing_feasibility/attempt-v3/operator/source_manifest.json",
+      "source_manifest_sha256": "bf512e6b36a9caeeea4ca7564e8f522557b68cde0d83ffcd471f42cc29efc2ee",
+      "tokenizer_path": "/workspaces/mythos-evidence/base_v01/b1/b1-20261101T021657Z/downloads/tokenizer/tokenizer.json",
+      "upstream": "/workspaces/mythos-parcae-pinned"
+    },
+    "weights_sha256": "ed6eb306464dd0d694e9eacd58f7e06ac3e44b43cb7c5c79dbcb1543059c6621",
+    "inputs_sha256": "ae5f8ad5fd53d25afaf29487a650dc0300528b0926c9883652475c4ca7db127f"
+  },
+  "Expected": {
+    "calls": 32,
+    "articles": 16,
+    "tokens": 128,
+    "seeds": [
+      3101,
+      3202
+    ],
+    "threshold": 0.01
+  },
+  "Actual": {
+    "calls_started": 32,
+    "calls_completed": 32,
+    "groups_completed": 16,
+    "loader_attempts": 1,
+    "loader_returns": 1,
+    "checks": {
+      "PASS": 13941,
+      "FAIL": 0,
+      "BLOCKED": 0
+    },
+    "preservation": "PASS",
+    "routing": {
+      "early_exit_observed": "YES",
+      "feasibility": "EARLY_EXIT_OBSERVED",
+      "selected_depth_counts": {
+        "16": 2,
+        "32": 30
+      },
+      "early_exit_fraction": 0.0625,
+      "article_both_seeds_early": 1,
+      "article_any_seed_early": 1,
+      "per_article": [
+        {
+          "article_index": 0,
+          "source_article_key": "432426c798041c8af170024dbe718dc05be3f805509c25feb1b03e4cb2bd54e4",
+          "selected_depths": [
+            32,
+            32
+          ],
+          "both_seeds_early": false,
+          "any_seed_early": false
+        },
+        {
+          "article_index": 1,
+          "source_article_key": "06bba149b6a7a10340c8df0b3dcbf272598c3be98bd568729635b4c9f2d8c44a",
+          "selected_depths": [
+            32,
+            32
+          ],
+          "both_seeds_early": false,
+          "any_seed_early": false
+        },
+        {
+          "article_index": 2,
+          "source_article_key": "0eb0f52cc13e7312d9c02cc579ca67135eba8683a696597e53ac5a870e433d1b",
+          "selected_depths": [
+            32,
+            32
+          ],
+          "both_seeds_early": false,
+          "any_seed_early": false
+        },
+        {
+          "article_index": 3,
+          "source_article_key": "6760cb6dd93c46ece7417ad1347aa7aa5ce3eb71dda58583a915f7045c8e909c",
+          "selected_depths": [
+            32,
+            32
+          ],
+          "both_seeds_early": false,
+          "any_seed_early": false
+        },
+        {
+          "article_index": 4,
+          "source_article_key": "c8611ca5adddd69fa33ffe0093b48dca1a39e54c452928cbf778a814f2276b92",
+          "selected_depths": [
+            16,
+            16
+          ],
+          "both_seeds_early": true,
+          "any_seed_early": true
+        },
+        {
+          "article_index": 5,
+          "source_article_key": "889dac925e60e89c9065a24b6d769ce9c85284164c011e660a20617c784f2ca5",
+          "selected_depths": [
+            32,
+            32
+          ],
+          "both_seeds_early": false,
+          "any_seed_early": false
+        },
+        {
+          "article_index": 6,
+          "source_article_key": "ed474a71d0343312ec999ef487b65ef87f1787e60c7a500bd4a89cb2b746a8be",
+          "selected_depths": [
+            32,
+            32
+          ],
+          "both_seeds_early": false,
+          "any_seed_early": false
+        },
+        {
+          "article_index": 7,
+          "source_article_key": "2faadfd4ce11b9ec6191909afb9e475805a3b8ccdbcc722718cfb65449c8c3a5",
+          "selected_depths": [
+            32,
+            32
+          ],
+          "both_seeds_early": false,
+          "any_seed_early": false
+        },
+        {
+          "article_index": 8,
+          "source_article_key": "d86b31a8c58afdec3e59af0adcd36645fe816126213d2ce9805485356cae58ae",
+          "selected_depths": [
+            32,
+            32
+          ],
+          "both_seeds_early": false,
+          "any_seed_early": false
+        },
+        {
+          "article_index": 9,
+          "source_article_key": "810a569c61adfe60332e700b220bb124d2f604f658a4f3d2ffce3b8ef4e67bde",
+          "selected_depths": [
+            32,
+            32
+          ],
+          "both_seeds_early": false,
+          "any_seed_early": false
+        },
+        {
+          "article_index": 10,
+          "source_article_key": "cf470c42d7547b4f1d3f876cc8eb6b1683d0aeaac4b441154eb0b408bf7d9999",
+          "selected_depths": [
+            32,
+            32
+          ],
+          "both_seeds_early": false,
+          "any_seed_early": false
+        },
+        {
+          "article_index": 11,
+          "source_article_key": "a0b312621efb233e246f6c947c6dbae88c1f089b3351a11c552f37348de2e7c9",
+          "selected_depths": [
+            32,
+            32
+          ],
+          "both_seeds_early": false,
+          "any_seed_early": false
+        },
+        {
+          "article_index": 12,
+          "source_article_key": "4bfdb49e91e881932ea34d7cb22ee93992a157a0139f8e064939eca9ccc96a40",
+          "selected_depths": [
+            32,
+            32
+          ],
+          "both_seeds_early": false,
+          "any_seed_early": false
+        },
+        {
+          "article_index": 13,
+          "source_article_key": "a3e6fbeeb0f729e15ebad2985d32382d606bcca19640c690391ae91bba00f4a3",
+          "selected_depths": [
+            32,
+            32
+          ],
+          "both_seeds_early": false,
+          "any_seed_early": false
+        },
+        {
+          "article_index": 14,
+          "source_article_key": "9b24f47e1cb9b9a386ffe27ab468e4f95c26185e9d537399feb5114171cbcb88",
+          "selected_depths": [
+            32,
+            32
+          ],
+          "both_seeds_early": false,
+          "any_seed_early": false
+        },
+        {
+          "article_index": 15,
+          "source_article_key": "4092e75fb3e0e1389e9ce40be9a907c65927e4d76fa185b0814aaf5c5c7b3ed6",
+          "selected_depths": [
+            32,
+            32
+          ],
+          "both_seeds_early": false,
+          "any_seed_early": false
+        }
+      ],
+      "threshold": 0.01,
+      "quality_improvement": "NOT TESTED",
+      "net_acceleration": "NOT TESTED",
+      "population_generalization": "NOT TESTED"
+    },
+    "error": null,
+    "save_errors": []
+  },
+  "Status": "PASS",
+  "complete_coverage": true,
+  "ended_utc": "2026-11-02T05:03:45.179054+00:00",
+  "elapsed_seconds": 112.50903006600038,
+  "quality": "NOT TESTED",
+  "net_acceleration": "NOT TESTED",
+  "training": "NOT TESTED",
+  "formal_acceptance_ready": false
+}
