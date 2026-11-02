@@ -100,6 +100,7 @@ def main():
     if args.output.exists() or args.output.is_symlink(): raise RuntimeError("Preserve previous forecast; output must be new")
     if not 0 < args.checkpoint_bytes <= 4*MIB: raise ValueError("Checkpoint envelope must be positive and no greater than original4MiB")
     packing_reference = None
+    packing_receipt_bytes = 0
     if args.checkpoint_bytes != 4*MIB:
         if args.checkpoint_receipt is None or not args.checkpoint_receipt.is_file() or args.checkpoint_receipt.is_symlink():
             raise ValueError("Tighter envelope requires preserved actual target packing receipt")
@@ -123,6 +124,7 @@ def main():
             raise ValueError("Packing source pins differ from current exact adapter/source")
         packing_reference=dict(path=str(args.checkpoint_receipt.resolve()),bytes=len(packing_raw),sha256=sha(packing_raw),
             max_archive_bytes=pa["max_archive_bytes"],new_per_checkpoint_cap=args.checkpoint_bytes)
+        packing_receipt_bytes = len(packing_raw)
     measured = {}
     def add(kind, value, compressed):
         raw = encoded(value); physical = gzip.compress(raw, compresslevel=9, mtime=0) if compressed else raw
@@ -169,8 +171,12 @@ def main():
         add("657_audit_process_receipts", dict(returncode=0,timed_out=False,timeout_seconds=60,seconds=number(.1,.8),
             stdout_sha256=random_sha(),stdout_bytes=RNG.randint(13000,19000),stderr_sha256=sha(b""),stderr_bytes=0,
             targets_sha256=actual["targets_sha256"],argument_target_ids_redacted=True),False)
-        reload_rows.append(dict(config=config,train_seed=seed,article_id=random_sha(),eval_seed=5101,
-            logits_sha256=random_sha(),observer=observer(32,config),audit="audits/reload_%d.json.gz"%index,Status="PASS"))
+        reference = next(row for row in rows if row["domain"]=="news" and row["article_index"]==0
+            and row["eval_seed"]==5101 and row["config"]==config and row["train_seed"]==seed)
+        reload_rows.append(dict(config=config,train_seed=seed,article_id=reference["article_id"],eval_seed=5101,
+            logits_sha256=reference["logits_sha256"],observer=reference["observer"],
+            reference_row_index=reference["row_index"], **actual["metrics"],
+            worker_per_token={k:actual["columns"][k] for k in ("nll","predictions")}))
     add("reload_and_sentinel_metadata",dict(Status="PASS",rows=reload_rows,quality_rows_added=0,new_interpreter=True),False)
     add("reload_and_sentinel_metadata",dict(identity=reload_rows[-1],raw=pin_value(),audit="audits/reload_8.json.gz"),False)
     # Model state descriptions exist before/after in main and reload. Their exact
@@ -207,7 +213,12 @@ def main():
         Input=dict(run_dir="/workspaces/mythos-evidence/base_v01/moda_moe_combo/attempt-v1",spec="/workspaces/mythos-evidence/base_v01/moda_moe_combo/attempt-v1/spec.json"),
         Expected=dict(quality_rows=648,paired_cases=72,new_model_calls=0),Actual=dict(domains=domains,total_quality_rows=648,
             independent_stream_rows=648,paired_actual_states=72,balanced_config_slots=81,receipt_pins=receipt_pins,
-            input_pins={"wiki":pin_value(81885),"news":pin_value(32692)},spec_pin=pin_value(10000),evaluation_pin=pin_value(5*MIB),results_pin=pin_value(16000),model_calls=0),Status="PASS"),True)
+            input_pins={"wiki":pin_value(81885),"news":pin_value(32692)},spec_pin=pin_value(10000),evaluation_pin=pin_value(5*MIB),results_pin=pin_value(16000),model_calls=0,
+            completion_pins={"main":pin_value(700000),"reload":pin_value(20000)},
+            reload=dict(exact_rows=9,new_quality_rows=0,reload_pin=pin_value(24000),
+                audit_pins={str(i):pin_value(7500) for i in range(9)},sentinel_pin=pin_value(512),
+                raw=pin_value(RAW),retrospective_full_matrices_recomputed=1),
+            coverage_limit="648 unique quality matrices live-audited; nine separate reloads; one final full raw reconstruction; completion counters do not independently prove training trajectories."),Status="PASS"),True)
     add("worker_aggregate_results",dict(domains={d:{"means":v["means"],"primary_comparisons":{k:{n:r[n] for n in ("delta_nll","delta_accuracy","screen")} for k,r in v["comparisons"].items() if k.startswith("HE_vs_")},"scientific_screens":v["scientific_screens"]} for d,v in domains.items()}),False)
     # Event checks are physically JSONL and completion records contain their full
     # array too. Model the duplication rather than silently counting one copy.
@@ -224,6 +235,7 @@ def main():
         payload_variation_allowance_both_copies=2*margin,
         complete_protection_map_hard_cap_both_copies=2*4*MIB,
         four_private_E_state_Adam_RNG_checkpoint_envelopes=4*args.checkpoint_bytes,
+        actual_target_checkpoint_packing_receipt_external_and_public=2*packing_receipt_bytes,
         git_finalization_allowance=16*MIB,
         source_protocol_tests_operator_stdout_manifest_closure_allowance=MIB)
     total=sum(components.values())
@@ -250,6 +262,7 @@ def main():
             "Four private full E/Adam/RNG checkpoints use the recorded per-checkpoint cap; any reduction requires the exact actual-target all-state packing proof, and formal write-time caps remain mandatory.",
             "Protection maps use the4MiB per-copy hard ceiling; a2MiB alternative is descriptive only and cannot be adopted without frozen target measurement.",
             "OneMiB explicit miscellaneous allowance and16MiB Git/finalization allowance are part of the64MiB total, not extra space.",
+            "The actual complete target packing receipt is separately counted twice; other preparation/operator/source records remain within the explicit1MiB miscellaneous allowance.",
             "Failure/interruption partial artifacts still require actual phase-cap guards and honest preservation; this success-shape forecast cannot guarantee every exception serialization fits."])
     if {"torch","numpy","parcae_lm","receval","transformers"}&set(sys.modules): raise RuntimeError("Forbidden import")
     with args.output.open("x",encoding="utf-8",newline="\n") as stream: json.dump(report,stream,sort_keys=True,indent=2,allow_nan=False);stream.write("\n")
