@@ -1,0 +1,35 @@
+test_adaptive_native_identity_counts_and_immutability (test_adaptive_depth.NativeTinyTests.test_adaptive_native_identity_counts_and_immutability)
+Selected native output is exact; actual hooks verify call counts/state preservation. ... ok
+test_fixed_and_resumed_match_native_bytes_all_depths (test_adaptive_depth.NativeTinyTests.test_fixed_and_resumed_match_native_bytes_all_depths)
+Native random tiny: fixed/resumed logits at 8/16/32 match native bytes. ... ok
+test_native_causal_suffix_control (test_adaptive_depth.NativeTinyTests.test_native_causal_suffix_control)
+Same-length future suffix changes cannot affect earlier checkpoint logits. ... ok
+test_native_fail_closed_configuration_and_autocast (test_adaptive_depth.NativeTinyTests.test_native_fail_closed_configuration_and_autocast)
+Native public guard rejects training, non-FP32, fused/config and autocast paths. ... ok
+test_native_prefix_isolation_and_repeat (test_adaptive_depth.NativeTinyTests.test_native_prefix_isolation_and_repeat)
+Only supplied prefix is scored; separate calls restart h0 and repeat exactly. ... ok
+test_policy_rejects_invalid (test_adaptive_depth.PolicyTests.test_policy_rejects_invalid)
+Invalid shape, dtype, nonfinite values and out-of-domain TV fail closed. ... ok
+test_policy_scalar_reference (test_adaptive_depth.PolicyTests.test_policy_scalar_reference)
+FP64 TV agrees with an independent Python scalar softmax reference. ... ok
+test_zero_shift_threshold_and_no_rng (test_adaptive_depth.PolicyTests.test_zero_shift_threshold_and_no_rng)
+Zero TV, finite additive shift and inclusive frozen boundary are explicit. ... ok
+test_fixed_budgets_and_invalid_budget (test_adaptive_depth.ToyExecutionTests.test_fixed_budgets_and_invalid_budget)
+Fixed controls perform exactly the requested budget and only one readout. ... ok
+test_input_and_no_labels_interface (test_adaptive_depth.ToyExecutionTests.test_input_and_no_labels_interface)
+Batch, context, dtype, token bounds fail; labels/cache/masks are absent. ... ok
+test_readout_inplace_cannot_contaminate_state (test_adaptive_depth.ToyExecutionTests.test_readout_inplace_cannot_contaminate_state)
+Even an in-place toy coda cannot corrupt the resumed recurrence. ... ok
+test_restores_attribute_on_success_exception_and_rng_failure (test_adaptive_depth.ToyExecutionTests.test_restores_attribute_on_success_exception_and_rng_failure)
+Temporary native input IDs restore their original identity on every exit. ... ok
+test_stable_can_be_wrong (test_adaptive_depth.ToyExecutionTests.test_stable_can_be_wrong)
+A synthetic wrong prediction can be stable: early exit is no quality proof. ... ok
+test_stable_true_early_exit_and_counts (test_adaptive_depth.ToyExecutionTests.test_stable_true_early_exit_and_counts)
+Stable fixture executes exactly 16 updates, 2 readouts, and one policy. ... ok
+test_unstable_continues_without_restart (test_adaptive_depth.ToyExecutionTests.test_unstable_continues_without_restart)
+Unstable fixture continues the same state to 32 with 3 readouts. ... ok
+
+----------------------------------------------------------------------
+Ran 15 tests in 2.649s
+
+OK
