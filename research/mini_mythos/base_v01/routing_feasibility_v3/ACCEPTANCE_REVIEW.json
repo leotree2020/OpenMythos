@@ -1,0 +1,136 @@
+{
+  "Purpose": "Post-run acceptance of routing V3; no further model execution",
+  "Environment": "Root read-only GitHub evidence review, target filesystem/hash/Git verification, internal peer review; CPU inference evidence from Python3.12.3/Torch2.11.0+cpu",
+  "Input": {
+    "base_checkpoint": "b470cec1ebc6f9a675ce5b674f2073c14d66c237",
+    "execution_freeze": "449b47d5ed8acd7c822b6f815c52ff871802922f",
+    "result_commit": "0f722dba642797e3efece2a0d723b9aa7410c5c8",
+    "prepared_inputs_sha256": "ae5f8ad5fd53d25afaf29487a650dc0300528b0926c9883652475c4ca7db127f"
+  },
+  "Expected": "Frozen startup repair succeeds; complete32-call sample and independent numerical/data audit; explicit distinction between early-exit occurrence and useful efficiency/quality",
+  "Actual": {
+    "engineering_status": "PASS",
+    "operator_checks": 110,
+    "worker_checks": {
+      "PASS": 13941,
+      "FAIL": 0,
+      "BLOCKED": 0
+    },
+    "startup_tests": 12,
+    "audit_checks": {
+      "PASS": 845,
+      "FAIL": 0
+    },
+    "calls": 32,
+    "different_source_articles": 16,
+    "context_tokens": 128,
+    "evaluation_h0_seeds": [
+      3101,
+      3202
+    ],
+    "model_loads": 1,
+    "threshold": 0.01,
+    "early_exits": 2,
+    "early_exit_fraction": 0.0625,
+    "article_pair_counts": {
+      "both32": 15,
+      "both16": 1
+    },
+    "mean_selected_depth": 31,
+    "tv_max_recompute_error": 4.158999533654395e-15,
+    "scalar_predicate_disagreements": 0,
+    "near_threshold": 0,
+    "finite_saved_fp32_components": 6225920,
+    "state_entries_preserved": 63,
+    "custody": "PASS",
+    "cost": {
+      "observed_totals": {
+        "embedding": 32,
+        "prelude": 64,
+        "prelude_norm": 32,
+        "adapter": 992,
+        "core": 1984,
+        "projection": 94,
+        "coda": 188,
+        "final_norm": 94,
+        "head": 94,
+        "value_embedding": 1118
+      },
+      "analytic_fixed32_totals": {
+        "embedding": 32,
+        "prelude": 64,
+        "prelude_norm": 32,
+        "adapter": 1024,
+        "core": 2048,
+        "projection": 32,
+        "coda": 64,
+        "final_norm": 32,
+        "head": 32,
+        "value_embedding": 1088
+      },
+      "observed_minus_analytic_fixed32": {
+        "embedding": 0,
+        "prelude": 0,
+        "prelude_norm": 0,
+        "adapter": -32,
+        "core": -64,
+        "projection": 62,
+        "coda": 124,
+        "final_norm": 62,
+        "head": 62,
+        "value_embedding": 30
+      },
+      "instrumented_api_seconds": {
+        "min": 1.4668178869997064,
+        "median": 2.792506027500167,
+        "max": 4.4111839849992975
+      },
+      "limit": "Fixed32 counts are analytic, not new measured forwards or FLOPs; times include instrumentation; no acceleration/quality claim"
+    },
+    "derived_core_block_reduction_percent": 3.125,
+    "derived_total_transformer_block_calls": {
+      "observed": 2236,
+      "analytic_fixed32": 2176,
+      "meaning": "Operation counts only, not FLOPs or measured runtime"
+    },
+    "target_seal_verification": {
+      "Status": "PASS",
+      "manifest_files": 281,
+      "public_byte_equal_copies": 88,
+      "head": "0f722dba642797e3efece2a0d723b9aa7410c5c8",
+      "matches_remote": true,
+      "clean": true,
+      "publication_receipt": "PASS",
+      "scope": "Read/hash only after completion; no new model call"
+    },
+    "source_review_scope": "Worker changes only EXPECTED_REPO, BRANCH, BASE constants; model/controller/observer/auditor math unchanged",
+    "peer_review": {
+      "verdict": "PASS for engineering acceptance and occurrence-only screen",
+      "scope": "Same-team peer read the saved public summary/audit/completion and recomputed aggregates; did not reopen private tensors or rerun audit/model",
+      "findings": "2 exits are one paired source; core reduction does not establish total compute savings; saved finite coverage is h0 plus last-position logits only"
+    },
+    "finite_component_scope": {
+      "h0": 3145728,
+      "last_position_logits": 3080192,
+      "total": 6225920,
+      "excluded": "Not all model parameters or intermediate/readout activations"
+    }
+  },
+  "Status": "PASS",
+  "scientific_early_exit_screen": {
+    "Status": "PASS",
+    "Expected": "At least one16-depth exit among32valid calls",
+    "Actual": 2,
+    "meaning": "EARLY_EXIT_OBSERVED_ON_THIS_SAMPLE"
+  },
+  "unresolved": [
+    "Early exits are both seeds on one source, not two independent source successes.",
+    "Quality preservation, 16-vs32 counterfactual on early-exit cases, prediction accuracy and free generation NOT TESTED.",
+    "Net acceleration NOT TESTED. Readout overhead is substantial; core savings alone is not evidence of overall savings.",
+    "Data new to the prior Parcae depth/routing inputs, not guaranteed new to earlier project tests or pretraining.",
+    "No statistical confirmation or population generalization.",
+    "Raw FP32 finite count covers saved tensors inspected by auditor, not every intermediate activation."
+  ],
+  "boundaries": "No upstream/threshold changes; no B1 rerun, A5 relaxation, training, GPU, B2/D2-A or PR24 operation. V1/V2 records retained. Formal Oracle BLOCKED/NOT_READY; FORMAL_ACCEPTANCE_READY=False.",
+  "next_unique_instruction": "Freeze a separate same-prefix/same-h0 adaptive-vs-fixed32 quality and end-to-end CPU cost comparison, including all guard/readout overhead; do not tune0.01 or claim usefulness from this occurrence probe. No new experiment in this stage."
+}
