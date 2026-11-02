@@ -1,0 +1,81 @@
+{
+  "Purpose": "Clarify the missing historical input path after the operator stopped, without repairing code, retrying the attempt or executing data/model stages.",
+  "Environment": {
+    "reviewer": "ChatGPT data implementation subagent",
+    "method": "Read-only inspection of local historical source/evidence copies and SHA-256 calculation",
+    "target_machine_access_by_this_review": false,
+    "independence": "Internal review by the author of data_prepare.py and test_data.py; not external independent validation."
+  },
+  "Input": {
+    "parent_reported_blocked_checkpoint": "0f7b3e2e0723559c360fbb2094944a9cb39d3b60",
+    "parent_reported_state": "Operator stopped before helper tests, data preparation and model calls because OLD_INPUTS pointed to an absent file.",
+    "observed_local_files": [
+      {
+        "path": "acceptance_review_local/depth_budget_work/INPUT_MANIFEST.json",
+        "sha256": "fdff065e83ea24c4c73bda3023a8f0bb77266f31ab813930efe6375fe5d2bdce",
+        "locator": "lines403-405: inputs_path, inputs_sha256, inputs_bytes",
+        "supports": "Historical input path is preparation-v2-20261101/inputs.json with167672 bytes and frozen SHA f38a1618d7904df7c530d9f0f322949a847befcb75e4177de2bc8e65bc53a315."
+      },
+      {
+        "path": "acceptance_review_local/depth_budget_work/PREPARATION_V2_EXECUTION.json",
+        "sha256": "ad579385ff0347d5be4a4ffeffd188f898fa484064c283b88db94ca0b37f29a4",
+        "locator": "command --output and recorded stdout",
+        "supports": "The successful historical preparation command writes inputs.json to preparation-v2-20261101; its recorded output binds the same167672-byte size and frozen SHA. The corpus argument remains under preparation-v1-20261101."
+      },
+      {
+        "path": "acceptance_review_local/depth_budget_work/PREPARATION_BLOCKED.md",
+        "sha256": "6d5f9411cbc9a722c14669f241d783afe0ce3e6286db43623c10e4e095b69a79",
+        "locator": "line5: historical attempt1 actual result",
+        "supports": "The first preparation attempt stopped on PyArrow/NumPy incompatibility and explicitly recorded that inputs.json did not exist."
+      },
+      {
+        "path": "acceptance_review_local/boundary_repair_work/RESTORE.json",
+        "sha256": "264d55e6a16d6e9bd895009d948142a7a1e8de75da65c53ba3affac9e3129614",
+        "locator": "paths entry for preparation-v2-20261101/inputs.json",
+        "supports": "A historical boundary-repair restore recorded the v2 input path as present. This is not a check of its present target-machine state."
+      },
+      {
+        "path": "acceptance_review_local/routing_feasibility_work/execute_once.py",
+        "sha256": "a47fdd726896ca2565897a88e565b794506f2ba0bd03c067655fc8358356a7a4",
+        "locator": "OLD_DATA and OLD_INPUTS constants",
+        "supports": "The new operator incorrectly derives OLD_INPUTS from the corpus preparation-v1 directory."
+      },
+      {
+        "path": "acceptance_review_local/routing_feasibility_work/STATIC_DATA_REVIEW.json",
+        "sha256": "a40d7ed7fa3e28146be2325037069248c6fcbb4260004af98a0afd8d1fa3029c",
+        "locator": "prior internal static-review artifact",
+        "supports": "The earlier review did not identify the operator path transcription error; its PASS must not be treated as proof that target input paths existed."
+      }
+    ],
+    "hash_scope": "Hashes above identify the exact local copies read for this review. They do not assert that these local file bytes equal a particular Git blob or currently accessible target-machine file."
+  },
+  "Expected": "Determine whether historical records support the operator's path, identify the correct historical path and pin, and avoid asserting present data availability without a target-machine read.",
+  "Actual": {
+    "incorrect_operator_input_path": "/workspaces/mythos-evidence/base_v01/depth_budget/preparation-v1-20261101/inputs.json",
+    "historically_recorded_input": {
+      "path": "/workspaces/mythos-evidence/base_v01/depth_budget/preparation-v2-20261101/inputs.json",
+      "bytes": 167672,
+      "sha256": "f38a1618d7904df7c530d9f0f322949a847befcb75e4177de2bc8e65bc53a315"
+    },
+    "historically_recorded_corpus_path": "/workspaces/mythos-evidence/base_v01/depth_budget/preparation-v1-20261101/test.parquet",
+    "cause_classification": "IMPLEMENTATION_PATH_TRANSCRIPTION_ERROR",
+    "cause_explanation": "The corpus remains in preparation-v1, but the successful historical input builder wrote preparation-v2. Reusing the corpus directory for OLD_INPUTS contradicts both the successful execution record and input manifest.",
+    "review_omission": "This data implementation agent initially supplied the old input path under v1 and did not cross-check that location against INPUT_MANIFEST/PREPARATION_V2_EXECUTION. The same mistaken path reached the operator. Earlier static reviews failed to catch it. The target stop correctly exposed this omission before model execution.",
+    "target_v2_current_existence": "NOT TESTED",
+    "target_v2_current_bytes_and_sha": "NOT TESTED",
+    "data_loss": "NOT ESTABLISHED",
+    "formal_attempt_status": "BLOCKED unchanged, as reported by parent",
+    "new_experimental_results": "NOT TESTED",
+    "actions_in_this_review": [
+      "Read historical local files and implementation constants.",
+      "Hash the exact local copies cited.",
+      "Add this review artifact only."
+    ],
+    "execution_code_modified": false,
+    "formal_attempt_retried": false,
+    "data_or_model_executed": false,
+    "recommended_next_read_only_check": "On the designated Codespace, check the recorded v2 path existence and exact167672-byte/SHA identity, then preserve that observation with the stopped attempt. This review does not authorize or perform a rerun."
+  },
+  "Status": "PASS",
+  "status_scope": "Historical static cause reconciliation only; not a successful experiment or target-file availability verdict."
+}
