@@ -1,0 +1,70 @@
+{
+  "Purpose": "CPU fixed32 MoDA residual history reader versus native/sequence-only controls",
+  "Environment": {
+    "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+    "torch": "2.11.0+cpu",
+    "device": "cpu",
+    "dtype": "torch.float32",
+    "intra": 2,
+    "interop": 1,
+    "deterministic": true,
+    "cpu_autocast": false,
+    "cuda_autocast": false,
+    "env": {
+      "OMP_NUM_THREADS": "2",
+      "MKL_NUM_THREADS": "2",
+      "OPENBLAS_NUM_THREADS": "1",
+      "RAYON_NUM_THREADS": "1",
+      "TOKENIZERS_PARALLELISM": "false",
+      "CUDA_VISIBLE_DEVICES": "",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "HF_HUB_OFFLINE": "1",
+      "TRANSFORMERS_OFFLINE": "1"
+    }
+  },
+  "Input": {
+    "baseline_evaluation_path": "/workspaces/mythos-evidence/base_v01/depth_lora/attempt-v1/worker/public/evaluation.json",
+    "baseline_evaluation_pin": {
+      "bytes": 180738,
+      "sha256": "117e6df538077f11d6fac2f0841d5a6126d93aa66bea91e2669da0ff32ddd6dc"
+    },
+    "branch": "mythos-moda-residual-cpu-v2",
+    "data_path": "/workspaces/mythos-evidence/base_v01/depth_lora/preparation-v1/data/inputs.json",
+    "expected_head": "301cb192e8a32768146c9bb9131699ee9aad4da2",
+    "freeze_commit": "301cb192e8a32768146c9bb9131699ee9aad4da2",
+    "inputs_sha256": "b730b54aa1896227a67e25e6f422ea66f7c9d04ac1a17d98cfef5416d44653cc",
+    "moda_source": "/workspaces/mythos-moda-residual-cpu-v2/open_mythos/moda.py",
+    "moda_source_sha256": "335c76d353550cbd3bc409ecfae92141b1ab70265429e0f8e33ccdcb5cd06492",
+    "model_dir": "/workspaces/mythos-evidence/base_v01/b1/b1-20261101T021657Z/downloads/model",
+    "output": "/workspaces/mythos-evidence/base_v01/moda_residual/attempt-v2/worker",
+    "repo": "/workspaces/mythos-moda-residual-cpu-v2",
+    "upstream": "/workspaces/mythos-parcae-pinned",
+    "spec_path": "/workspaces/mythos-evidence/base_v01/moda_residual/attempt-v2/spec.json"
+  },
+  "Expected": "All frozen engineering controls pass; scientific screens separately audited",
+  "Actual": {
+    "calls_started": 293,
+    "calls_completed": 293,
+    "train_steps": 128,
+    "eval_rows": 160,
+    "zero_control_calls": 5,
+    "model_loads": 1,
+    "adapters_saved": 4,
+    "reload_calls": 0
+  },
+  "Status": "PASS",
+  "checks": {
+    "PASS": 2600,
+    "FAIL": 0,
+    "BLOCKED": 0
+  },
+  "error": null,
+  "preservation": "PASS",
+  "seconds": 1134.599941958997,
+  "utc": "2026-11-02T08:47:49.942555+00:00",
+  "peak_rss_bytes": 2055708672,
+  "peak_rss_at_start_bytes": 77922304,
+  "peak_rss_semantics": "Linux process-lifetime ru_maxrss KiB*1024, includes loading and all work, not per-arm memory",
+  "budget_trigger": null,
+  "budget_salvage_mode": false
+}
