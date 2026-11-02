@@ -1,0 +1,138 @@
+{
+  "Purpose": "Independent static peer review of parser-only continuation, full history preflight and retained-corpus reuse before target freeze",
+  "Environment": {
+    "mode": "Read-only local source and developer-report review; no target/corpus/model access",
+    "reviewer": "moda_fresh_executor_design",
+    "independence": "Different implementation agent; same model family; not independent human review"
+  },
+  "Input": {
+    "base": "b13ab1d799cbd5d37e58d7ea7cdf2540d0093493",
+    "files": {
+      "data_prepare.py": {
+        "bytes": 46368,
+        "sha256": "6ef6611406c3add20f67e41d98978f0ed74ae72c1eded634be1a61e66f505520"
+      },
+      "test_history_python_v4.py": {
+        "bytes": 10914,
+        "sha256": "68f3297505fcdd337b9f4a83eb611b28db02c668315a912222bf2d3ab90ff9ee"
+      },
+      "CONTINUATION_V4.md": {
+        "bytes": 7869,
+        "sha256": "3ba5a06f53b88d0af0879f4f5eb8e939412fd5ed652414e7abdef4b3beae391c"
+      },
+      "fixtures/history_invalid_inventory.txt": {
+        "bytes": 2345,
+        "sha256": "403eee09aec392aa00eb24b46633e64c1333377f13b80e503e4ebf3f7a834bb8"
+      },
+      "DEVELOPMENT_HISTORY_PYTHON_V4_ATTEMPT4.json": {
+        "bytes": 4235,
+        "sha256": "2b1b5517cbf8f8780b9d72817ec13792874780df0227bd2edaef95095fedaf22"
+      },
+      "DEVELOPMENT_DATA_ATTEMPT7.json": {
+        "bytes": 2739,
+        "sha256": "0d139de8bc538b4f20ecd86ce40b8419c8895a9cae82d26bde6fa006e02c6a21"
+      }
+    },
+    "prior_static_receipt": {
+      "path": "PARSER_STATIC_REVIEW_V4.json",
+      "pin": {
+        "bytes": 6735,
+        "sha256": "411728625c419957c4bc6db8239ebefd2f1ac39e8cf7ac0f9105aafedd28b306"
+      },
+      "note": "Preserved earlier source review; superseded here after final unmatched-bracket work accounting correction."
+    }
+  },
+  "Expected": "Keep all historical bytes/paths and frozen source selection; malformed Python must remain text-covered, recovery bounded, full preflight precedes selection, corpus reused without network/copy and preparation budget unchanged",
+  "Actual": {
+    "observations": [
+      {
+        "item": "Valid Python",
+        "Status": "PASS",
+        "basis": "The original ast.walk string and >=32 valid integer-list/tuple behavior and line locations are preserved in python_ast_leaves; explicit unchanged-behavior fixture covers it."
+      },
+      {
+        "item": "Malformed Python coverage",
+        "Status": "PASS",
+        "basis": "SyntaxError/invalid-source ValueError emits the entire UTF8-decoded raw source, independently examines all quote origins after unmatched delimiters, safely parses literal fragments/adjacent constants and literal ID arrays, and records the original error and recovery counters. No eval/import/source execution or historical mutation occurs."
+      },
+      {
+        "item": "Resource/stopping bounds",
+        "Status": "PASS",
+        "basis": "Unknown formats and unsupported/invalid other encodings retain stop behavior. Original container512MiB/depth and fixed256Mi-character recovery bound remain. Quote, bracket, adjacency traversal and emitted concatenation lengths now count toward the same work bound; exhaustion is BLOCKED, not skipped."
+      },
+      {
+        "item": "Complete history preflight",
+        "Status": "PASS",
+        "basis": "Independent no-tokenizer ParseOnlyIndex consumes the same full frozen32244 inventory and complete parser stream, preserving duplicate-payload path receipts and full failure/recovery/format findings. Preflight cannot call acquire or load a model; actual main retains full ledger."
+      },
+      {
+        "item": "Compact/full bridge",
+        "Status": "PASS",
+        "basis": "Ordered canonical projection includes each path/bytes/sha256/kind/Status plus optional reason/identical_to; excludes tokenizer/cache counters. Shared parser and fixed order produce comparable projection while audit separately reconstructs it. All malformed/failure/format rows are retained in findings gzip."
+      },
+      {
+        "item": "Retained source custody",
+        "Status": "PASS",
+        "basis": "Exact preparation-v2 corpus path,1,234,829B and originalSHA required; sibling HTTP200/PASS receipt binds originalURL/response pin; both files hashed before/readback/after and included in final custody. New reference/acquisition receipts record zero network and zero copied bytes; no corpus duplicate is written."
+      },
+      {
+        "item": "Unchanged scientific inputs",
+        "Status": "PASS",
+        "basis": "Corpus/revision/hash/tokenizer,7600 source rows,20 samples/five per class,alphabetic eligibility and all dedup thresholds,129-token layout,seeds and zero optimization remain unchanged. Recovery may conservatively exclude extra malformed-source overlaps; it is not semantic reconstruction."
+      },
+      {
+        "item": "Shared preparation budget",
+        "Status": "PASS",
+        "basis": "Normal reused-source writer counts history-preflight sibling files at every write against unchanged4MiB minus64KiB seal;256MiB disk reserve retained. No hidden full success preflight-ledger copy. Controller separately reports whole-parent usage."
+      }
+    ],
+    "resolved_findings": [
+      {
+        "issue": "Initial adjacent-literal recovery emitted quadratic concatenation work without charging the recovery work budget",
+        "resolution": "Traversal and concatenated output now charged to same existing256Mi-character limit; low-budget adjacency fixture stops BLOCKED",
+        "Status": "RESOLVED_BEFORE_TARGET_FREEZE"
+      },
+      {
+        "issue": "Unmatched bracket-tail str.find scan was not charged when no closing bracket existed",
+        "resolution": "Entire scanned tail now charged to unchanged recovery-work bound before continuing; bounded synthetic unmatched-bracket fixture added",
+        "Status": "RESOLVED_BEFORE_TARGET_FREEZE"
+      }
+    ],
+    "developer_reports_read": {
+      "history_parser": {
+        "report": "DEVELOPMENT_HISTORY_PYTHON_V4_ATTEMPT4.json",
+        "planned": 18,
+        "run": 18,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "Status": "PASS"
+      },
+      "legacy_data": {
+        "report": "DEVELOPMENT_DATA_ATTEMPT7.json",
+        "planned": 28,
+        "run": 28,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "Status": "PASS"
+      }
+    },
+    "reviewer_reran_parser_tests": false,
+    "target_history_read": false,
+    "new_source_acquisitions": 0,
+    "model_calls": 0,
+    "final_recovery_fix_review": "Read final bracket-tail work accounting and added fixture; same256Mi-character bound, valid-AST behavior and source schemas unchanged."
+  },
+  "Status": "PASS",
+  "Verdict": "APPROVE_STATIC_ONLY",
+  "Limits": [
+    "Static/developer PASS does not establish target parser preflight, selection, data audit or model PASS.",
+    "Broken Python is not semantically reconstructed: dynamic expressions, runtime substitutions and unrecorded inputs remain outside guarantees.",
+    "Raw source plus conservative recovered literal witnesses may over-exclude; no thresholds or model-based sample selection are changed.",
+    "Work accounting is a specific lexical recovery guard, not a universal proof of every Python parser CPU/memory cost; stage watchdog/container bounds still apply.",
+    "Data-audit absence claim still relies on complete frozen scan; independent audit must reconcile projection, findings, custody and selected source tokens before any model call."
+  ],
+  "Target_status": "NOT TESTED",
+  "Scientific_conclusion": "UNRESOLVED"
+}

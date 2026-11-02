@@ -55,12 +55,29 @@ class Fixture:
         self.candidates,self.ledger=D.collect_candidates(self.source,tokenize);index=D.ExclusionIndex(self.candidates)
         with redirect_stdout(io.StringIO()):self.history_ledger=D.scan_history(D.verify_inventory(self.spec),index,tokenize,member_policy=self.members)
         self.chosen=D.select(self.candidates,self.ledger,index);self.payload=D.selected_payload(self.chosen)
-        self.artifacts={};self.write("corpus.parquet",b"Synthetic parquet fixture bytes",raw=True)
+        self.retained=A.RETAINED_SOURCE;self.retained.parent.mkdir();self.retained.write_bytes(b"Synthetic parquet fixture bytes")
         acquisition={"url":A.URL,"Status":"PASS","http_status":200,"actual_response":A.CORPUS,"pin":A.CORPUS,"response_file":"corpus.parquet"}
-        self.write("acquisition.json",acquisition);self.write("inputs.json",self.payload)
+        self.origin=self.retained.with_name("acquisition.json");self.origin.write_bytes(A.encoded(acquisition))
+        self.reference={"schema":"mythos-local-corpus-reference-v1","mode":"LOCAL_PINNED_REUSE","source_file":str(self.retained),"source_pin":A.CORPUS,"original_acquisition_file":str(self.origin),"original_acquisition_pin":A.pin(self.origin),"network_requests":0,"copied_corpus_bytes":0,"Status":"PASS"}
+        self.artifacts={};self.write("source_reference.json",self.reference)
+        self.reuse={**self.reference,"mode":"LOCAL_PINNED_REUSE","source_reference_pin":self.artifacts["source_reference.json"],"url":A.URL,"expected":A.CORPUS}
+        self.write("acquisition.json",self.reuse);self.write("inputs.json",self.payload)
         self.public={"samples":[{k:v for k,v in row.items() if k not in ("text","tokens")} for row in self.payload["eval"]],"input_pin":self.artifacts["inputs.json"],"labels":{str(i):5 for i in range(4)}}
         self.write("public/selection.json",self.public);self.write("candidates.json.gz",self.ledger);self.write("history_ledger.json.gz",self.history_ledger)
         self.manifest={"Purpose":"Synthetic fixture","Environment":{"development_only":True},"Input":{"spec_sha256":"a"*64,"source":A.URL},"Expected":{"records":20,"per_class":5,"tokens":129,"training_steps":0,"model_imports":[]},"Actual":{"source_rows":7600,"prose_length_eligible":len(self.candidates),"historical_files":len(allpaths),"historical_strings":index.string_count,"historical_token_arrays":index.token_array_count,"historical_format_notes":index.format_notes,"excluded_by_history":len(index.matches),"selected":20,"input_pin":self.artifacts["inputs.json"],"model_calls":0},"Status":"PASS","source_after_status":"PASS","forbidden_imports":[],"artifacts":self.artifacts}
+        self.manifest["Actual"]["historical_python_recovery"]={k:0 for k in A.RECOVERY_KEYS}
+        self.manifest["Actual"].update(new_source_acquisitions=0,copied_corpus_bytes=0)
+        self.manifest["Input"].update(history_preflight_only=False,source_file=str(self.retained))
+        self.preflight=self.root/"history-preflight";self.preflight.mkdir()
+        projection=[]
+        for row in self.history_ledger:
+            value={key:row[key] for key in ("path","bytes","sha256","kind","Status")}
+            value.update({key:row[key] for key in ("reason","identical_to") if key in row});projection.append(value)
+        raw=A.encoded(projection)
+        findings=[row for row in self.history_ledger if row.get("python_recovery") or row.get("format_notes") or row.get("error") or row["Status"] not in ("PASS","PASS_IDENTICAL_PAYLOAD","EXCLUDED_REGISTERED_NONTEXT")]
+        findings_raw=A.encoded(findings);findings_path=self.preflight/"preflight_findings.json.gz";findings_path.write_bytes(gzip.compress(findings_raw,mtime=0))
+        self.preflight_report={"Status":"PASS","source_after_status":"PASS","forbidden_imports":[],"Input":{"spec_sha256":"a"*64,"history_preflight_only":True,"source_file":None},"Expected":{"historical_files":len(allpaths),"parse_completed":True,"tokenizer_calls":0,"new_source_acquisitions":0,"model_calls":0},"Actual":{"historical_files":len(allpaths),"historical_files_completed":len(allpaths),"parse_completed":True,"tokenizer_calls":0,"new_source_acquisitions":0,"model_calls":0,"historical_strings":index.string_count,"historical_token_arrays":index.token_array_count,"historical_format_notes":index.format_notes,"historical_python_recovery":{k:0 for k in A.RECOVERY_KEYS},"history_ledger_projection":{"schema":"mythos-history-format-projection-v1","records":len(allpaths),"canonical":{"bytes":len(raw),"sha256":A.sha(raw)}}},"artifacts":{"preflight_findings.json.gz":{"physical":A.pin(findings_path),"canonical":{"bytes":len(findings_raw),"sha256":A.sha(findings_raw)}}}}
+        (self.preflight/"manifest.json").write_bytes(A.encoded(self.preflight_report))
         self.seal()
     def write(self,name,value,raw=False):
         content=value if raw else A.encoded(value);path=self.prep/name
@@ -78,7 +95,7 @@ class Fixture:
 @contextmanager
 def fixture():
     raw=b"Synthetic parquet fixture bytes";source_pin={"bytes":len(raw),"sha256":A.sha(raw)}
-    with tempfile.TemporaryDirectory() as name,patch.object(A,"CORPUS",source_pin),patch.object(D,"CORPUS_PIN",source_pin):
+    with tempfile.TemporaryDirectory() as name,patch.object(A,"CORPUS",source_pin),patch.object(D,"CORPUS_PIN",source_pin),patch.object(A,"RETAINED_SOURCE",Path(name).resolve()/"prior_v2"/"corpus.parquet"):
         yield Fixture(Path(name).resolve())
 
 
@@ -132,11 +149,36 @@ class AuditDataTests(unittest.TestCase):
 
     def test_source_bytes_and_acquisition_receipt_tamper(self):
         with fixture() as f:
-            f.write("corpus.parquet",b"other source bytes",raw=True);f.seal()
+            f.retained.write_bytes(b"other source bytes")
             with self.assertRaises(A.Stop):f.run()
         with fixture() as f:
-            receipt=A.read(f.prep/"acquisition.json");receipt["http_status"]=206;f.write("acquisition.json",receipt);f.seal()
+            receipt=A.read(f.origin);receipt["http_status"]=206;f.origin.write_bytes(A.encoded(receipt))
+            f.reference["original_acquisition_pin"]=A.pin(f.origin);f.reuse["original_acquisition_pin"]=A.pin(f.origin)
+            f.write("source_reference.json",f.reference);f.write("acquisition.json",f.reuse);f.seal()
             with self.assertRaises(A.Stop):f.run()
+
+    def test_retained_source_exact_path_pin_and_no_local_duplicate(self):
+        with fixture() as f:
+            source,custody=A.retained_source(f.prep);self.assertEqual(source,f.retained)
+            self.assertEqual(custody["network_requests"],0);self.assertEqual(custody["copied_corpus_bytes"],0)
+            alternate=f.root/"same_content.parquet";alternate.write_bytes(f.retained.read_bytes())
+            bad={**f.reference,"source_file":str(alternate)};f.write("source_reference.json",bad)
+            with self.assertRaises(A.Stop):A.retained_source(f.prep)
+            f.write("source_reference.json",f.reference);(f.prep/"corpus.parquet").write_bytes(f.retained.read_bytes())
+            with self.assertRaises(A.Stop):A.retained_source(f.prep)
+
+    def test_retained_reference_reuse_disagreement_and_network_claim_rejected(self):
+        with fixture() as f:
+            for key,value in (("source_pin",{"bytes":1,"sha256":"0"*64}),("original_acquisition_pin",{"bytes":1,"sha256":"0"*64}),("network_requests",1),("copied_corpus_bytes",A.CORPUS["bytes"]),("mode","DOWNLOAD")):
+                bad={**f.reuse,key:value};f.write("acquisition.json",bad)
+                with self.subTest(key=key),self.assertRaises(A.Stop):A.retained_source(f.prep)
+
+    def test_retained_source_unchanged_after_complete_synthetic_audit(self):
+        with fixture() as f:
+            before={str(p):A.pin(p) for p in f.retained.parent.iterdir()};result=f.run()
+            self.assertEqual({str(p):A.pin(p) for p in f.retained.parent.iterdir()},before)
+            self.assertEqual(result["source_custody"]["source_file"],str(f.retained))
+            self.assertEqual(result["source_custody"]["original_acquisition_pin"],A.pin(f.origin))
 
     def test_artifact_physical_canonical_and_unlisted_tamper(self):
         with fixture() as f:
@@ -253,6 +295,57 @@ class AuditDataTests(unittest.TestCase):
         self.assertEqual(A.overlap(left,{**empty,"t32":A.ngrams(list(range(31)),32)}),[])
         left={**empty,"w5":set(range(20))};right={**empty,"w5":set(range(10))|set(range(100,110))}
         self.assertEqual(A.overlap(left,right),["WORD5_CONTAINMENT_GE_HALF"]);self.assertFalse(set(sys.modules)&A.FORBIDDEN)
+
+    def test_malformed_python_raw_literal_token_coverage_and_note_tamper(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory).resolve();path=root/"retained_bad.py"
+            path.write_text("broken = '\ntext = "+repr(prose(9))+"\ntokens = "+repr(list(range(129)))+"\n",encoding="utf-8")
+            spec={"history_roots":[str(root)],"excluded_roots":[],"expected_history_file_count":1,"expected_history_suffixes":{".py":1},"discover_before_acquisition":True}
+            index=D.ExclusionIndex([])
+            with redirect_stdout(io.StringIO()):ledger=D.scan_history(D.verify_inventory(spec),index,tokenize)
+            value=A.audit_history(spec,A.policies(spec),ledger)
+            self.assertEqual(value["python_recovery"]["files"],1);self.assertGreater(value["python_recovery"]["string_fragments"],0);self.assertGreater(value["python_recovery"]["token_arrays"],0)
+            for change in ("missing","raw","semantic","count"):
+                altered=copy.deepcopy(ledger)
+                if change=="missing":del altered[0]["python_recovery"]
+                elif change=="raw":altered[0]["python_recovery"][0]["raw_source_covered"]=False
+                elif change=="semantic":altered[0]["python_recovery"][0]["semantic_reconstruction"]=True
+                else:altered[0]["python_recovery"][0]["token_arrays"]+=1
+                with self.subTest(change=change),self.assertRaises(A.Stop):A.audit_history(spec,A.policies(spec),altered)
+
+    def test_recovery_aggregate_tamper_rejected(self):
+        with fixture() as f:
+            f.manifest["Actual"]["historical_python_recovery"]["files"]=1;f.seal()
+            with self.assertRaises(A.Stop):f.run()
+
+    def test_preflight_projection_count_hash_and_no_tokenizer_contract(self):
+        with fixture() as f:
+            original=copy.deepcopy(f.preflight_report)
+            for change in ("count","hash","tokenizer","source"):
+                report=copy.deepcopy(original)
+                if change=="count":report["Actual"]["history_ledger_projection"]["records"]-=1
+                elif change=="hash":report["Actual"]["history_ledger_projection"]["canonical"]["sha256"]="0"*64
+                elif change=="tokenizer":report["Actual"]["tokenizer_calls"]=1
+                else:report["Input"]["source_file"]=str(f.retained)
+                (f.preflight/"manifest.json").write_bytes(A.encoded(report))
+                with self.subTest(change=change),self.assertRaises(A.Stop):f.run()
+
+    def test_preflight_all_findings_preserved_even_after_receipt_repin(self):
+        with fixture() as f:
+            path=f.preflight/"preflight_findings.json.gz";findings=A.read(path);self.assertTrue(findings)
+            raw=A.encoded([]);path.write_bytes(gzip.compress(raw,mtime=0))
+            f.preflight_report["artifacts"][path.name]={"physical":A.pin(path),"canonical":{"bytes":len(raw),"sha256":A.sha(raw)}}
+            (f.preflight/"manifest.json").write_bytes(A.encoded(f.preflight_report))
+            with self.assertRaises(A.Stop):f.run()
+
+    def test_parse_only_and_candidate_scan_complete_finding_rows_agree(self):
+        with fixture() as f:
+            index=D.ParseOnlyIndex()
+            def forbidden_tokenizer(_):raise AssertionError("Preflight must not tokenize")
+            with redirect_stdout(io.StringIO()):rows=D.scan_history(D.verify_inventory(f.spec),index,forbidden_tokenizer,member_policy=f.members)
+            self.assertEqual(rows,f.history_ledger)
+            self.assertEqual(D.preflight_projection(rows),f.preflight_report["Actual"]["history_ledger_projection"])
+            self.assertEqual(index.format_notes,f.manifest["Actual"]["historical_format_notes"])
 
 
 def main():

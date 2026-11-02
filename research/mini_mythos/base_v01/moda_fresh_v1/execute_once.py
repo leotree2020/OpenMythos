@@ -22,14 +22,16 @@ import storage_codec
 
 BRANCH = "mythos-moda-fresh-cpu-v1"
 BASE = "bc6d267cdd8cf9306c1bf08b369cf2b791723d3d"
-CONTINUATION = "3a7f8b3ac15d4354800360961018de7c66d26be6"
+CONTINUATION = "b13ab1d799cbd5d37e58d7ea7cdf2540d0093493"
 EXPECTED_REPO = Path("/workspaces/mythos-moda-fresh-cpu-v1")
 SPACE = "bookish-pancake-vwqx7rr9x5w3wxjr"
 EXPERIMENT = "MYTHOS-MODA-FRESH-CPU-V1"
 RUN = Path("/workspaces/mythos-evidence/base_v01/moda_fresh/attempt-v1")
-PREPARATION = RUN.parent / "preparation-v2"
+PREPARATION = RUN.parent / "preparation-v4"
+SOURCE_CORPUS = RUN.parent / "preparation-v2/data/corpus.parquet"
 SPECIFICATION = RUN.parent / "specification-v1"
-FRESH_PRIOR_DIRS = (RUN.parent / "preparation-v1", SPECIFICATION, RUN.parent / "stop-v1")
+FRESH_PRIOR_DIRS = (RUN.parent / "preparation-v1", SPECIFICATION, RUN.parent / "stop-v1",
+                    Path("/workspaces/mythos-maintenance/storage-20261102-v1"))
 DATA_AUDIT = PREPARATION / "DATA_AUDIT.json"
 INPUTS = PREPARATION / "data/inputs.json"
 HISTORY_LEDGER = PREPARATION / "data/history_ledger.json.gz"
@@ -84,6 +86,7 @@ OLD_PARENT_FILES = [OLD_RUN.parent / n for n in (
     "launch-v1.json", "acceptance-v1.json", "acceptance-v1.stdout", "acceptance-publication-v1.json",
     "launch-v2.json", "acceptance-v2.json", "acceptance-v2.stdout")]
 OLD_PARENT_FILES += [Path("/workspaces/mythos-moda-residual-v1.log"), Path("/workspaces/mythos-moda-residual-v2.log")]
+OLD_PARENT_FILES += [Path("/workspaces/mythos-maintenance-cleanup-20261102.log")]
 PRIOR_V1 = OLD_RUN.parent / "attempt-v1/protected_before.json"
 PRIOR_V1_PIN = {"bytes": 6460524, "sha256": "79b11ee7b68d0b84e70b14aeb29fa85b9c9f76c145a77caafb0c0b1d2ebb71a3"}
 PRIOR_V1_COUNT = 25367
@@ -124,7 +127,7 @@ def inventory(executable): return json.loads(subprocess.check_output([executable
 def active_workers():
     names={"execute_once.py","run_fresh.py","audit_stream.py","run_moda.py","audit_moda.py","audit_row.py","run_lora.py",
            "audit_lora.py","run_loop.py","run_quality.py","run_routing.py","run_depth_budget.py","acceptance_review.py",
-           "prepare_once.py","prepare_once_v2.py","data_prepare.py","audit_data.py"}
+           "prepare_once.py","prepare_once_v2.py","prepare_once_v4.py","data_prepare.py","audit_data.py"}
     found=[]
     for p in Path("/proc").iterdir():
         if not p.name.isdigit() or int(p.name)==os.getpid():continue
@@ -185,9 +188,13 @@ def validate_data_audit(pins):
     if not checks or any(c.get("Status")!="PASS" for c in checks) or report.get("check_counts")!={"PASS":len(checks),"FAIL":0}:raise Stop("FAIL","Independent data audit check coverage")
     if report.get("Environment",{}).get("development_only")is not False or report["Environment"].get("executable")!=DATA_PYTHON:raise Stop("FAIL","Actual target data audit required")
     if inputs.get("spec")!=str(SPECIFICATION/"DATA_SPEC.json") or inputs.get("spec_sha256")!=pins[str(SPECIFICATION/"DATA_SPEC.json")]["sha256"] or inputs.get("prep")!=str(PREPARATION/"data"):raise Stop("FAIL","Independent audit source/preparation binding")
-    for key,path in (("audit_source_pin",ROOT/"audit_data.py"),("shared_parser_pin",ROOT/"data_prepare.py"),("tokenizer_pin",TOKENIZER),("source_pin",PREPARATION/"data/corpus.parquet")):
+    for key,path in (("audit_source_pin",ROOT/"audit_data.py"),("shared_parser_pin",ROOT/"data_prepare.py"),("tokenizer_pin",TOKENIZER),("source_pin",SOURCE_CORPUS)):
         if inputs.get(key)!=info(path):raise Stop("FAIL","Independent audit code/tokenizer/source pin: "+key)
     if inputs.get("tokenizer_path")!=str(TOKENIZER) or actual.get("source_pin")!=inputs["source_pin"]:raise Stop("FAIL","Independent audit tokenizer/source identity")
+    reuse=actual.get("source_custody",{})
+    if (reuse.get("source_file")!=str(SOURCE_CORPUS) or reuse.get("source_pin")!=info(SOURCE_CORPUS)
+        or reuse.get("network_requests")!=0 or reuse.get("copied_corpus_bytes")!=0):
+        raise Stop("FAIL","Independent audit exact retained-source reuse binding")
     if actual.get("input_pin")!=pins[str(INPUTS)] or actual.get("preparation_manifest")!=pins[str(PREPARATION_MANIFEST)]:raise Stop("FAIL","Independent audit selected bytes binding")
     if actual.get("source_rows")!=7600 or actual.get("selected")!=20 or actual.get("per_class")!={str(i):5 for i in range(4)} or actual.get("history",{}).get("files")!=HISTORY_COUNT:raise Stop("FAIL","Independent audit complete source/history/selection coverage")
     if actual.get("new_model_calls")!=0 or actual.get("new_source_acquisitions")!=0 or actual.get("historical_absence_independently_rescanned")is not False:raise Stop("FAIL","Independent data audit execution/claim boundary")

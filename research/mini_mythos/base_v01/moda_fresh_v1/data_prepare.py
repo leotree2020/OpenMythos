@@ -48,6 +48,9 @@ FORBIDDEN = {"torch","parcae_lm","receval","transformers"}
 MAX_EXPANDED_FILE_BYTES = 512*1024**2
 POLICY_MAX_BYTES = 32*1024**2
 TEXT_CACHE_LIMIT = 50000
+RETAINED_CORPUS = "/workspaces/mythos-evidence/base_v01/moda_fresh/preparation-v2/data/corpus.parquet"
+PYTHON_RECOVERY_KEYS = ("files","raw_utf8_bytes","string_fragments","token_arrays","adjacent_string_groups","rejected_origins")
+PYTHON_RECOVERY_CHAR_BUDGET = 256*1024**2
 
 
 class Stop(Exception):
@@ -131,6 +134,7 @@ class ExclusionIndex:
         self.candidates={c["id"]:c for c in candidates};self.maps={k:{} for k in ("token32","word12","word5","normalized")}
         self.matches={};self.string_count=0;self.token_array_count=0;self.text_fingerprints=0;self.text_cache_hits=0;self.text_cache=set()
         self.format_notes={"duplicate_keys":0,"nonfinite_numeric_constants":0}
+        self.python_recovery={k:0 for k in PYTHON_RECOVERY_KEYS}
         for c in candidates:
             f=c["fingerprint"]
             for kind in self.maps:
@@ -210,6 +214,88 @@ def history_json(text):
     return json.loads(text,object_pairs_hook=pairs,parse_constant=nonfinite),notes
 
 
+def python_ast_leaves(tree,location=None):
+    for node in ast.walk(tree):
+        where=location or "line:"+str(node.lineno) if hasattr(node,"lineno") else location
+        if isinstance(node,ast.Constant) and isinstance(node.value,str):yield "text",node.value,where
+        elif isinstance(node,(ast.List,ast.Tuple)) and len(node.elts)>=32 and all(isinstance(n,ast.Constant) and type(n.value) is int and 0<=n.value<32768 for n in node.elts):yield "tokens",[n.value for n in node.elts],where
+
+
+def python_leaves(text,name):
+    """Keep valid AST behavior; conservatively recover malformed retained source.
+
+    Never execute source or evaluate expressions. Every quote/bracket origin is
+    considered independently, including origins after an unmatched triple quote.
+    Whole raw source remains a text witness; this is not program reconstruction.
+    """
+    try:tree=ast.parse(text,filename=name)
+    except (SyntaxError,ValueError) as syntax:
+        note={k:0 for k in PYTHON_RECOVERY_KEYS};note.update(files=1,raw_utf8_bytes=len(text.encode("utf-8")),
+            raw_source_covered=True,semantic_reconstruction=False,
+            syntax_error={"type":type(syntax).__name__,"line":getattr(syntax,"lineno",None),"offset":getattr(syntax,"offset",None),"message":getattr(syntax,"msg",str(syntax))})
+        yield "text",text,"python_raw_source"
+        origins=set();work=0;decoded={}
+        for q,c in enumerate(text):
+            if c not in "\"'":continue
+            origins.add((q,q))
+            for length in (1,2):
+                start=q-length
+                if start>=0 and text[start:q].casefold() in {"r","u","b","f","br","rb","fr","rf"} and (start==0 or not (text[start-1].isalnum() or text[start-1]=="_")):origins.add((start,q))
+        for start,q in sorted(origins):
+            quote=text[q];delimiter=quote*3 if text.startswith(quote*3,q) else quote
+            at=q+len(delimiter);end=None
+            while at<len(text):
+                work+=1;require(work<=PYTHON_RECOVERY_CHAR_BUDGET,"Malformed Python lexical recovery resource bound","BLOCKED")
+                if text[at]=="\\":at+=2;continue
+                if len(delimiter)==1 and text[at] in "\r\n":break
+                if text.startswith(delimiter,at):end=at+len(delimiter);break
+                at+=1
+            if end is None:note["rejected_origins"]+=1;continue
+            fragment=text[start:end]
+            try:subtree=ast.parse(fragment,mode="eval")
+            except (SyntaxError,ValueError):note["rejected_origins"]+=1;continue
+            leaves=list(python_ast_leaves(subtree,"python_literal:"+str(start)+":"+str(end)))
+            for typ,value,where in leaves:
+                note["string_fragments" if typ=="text" else "token_arrays"]+=1
+                yield typ,value,where
+            if isinstance(subtree.body,ast.Constant) and isinstance(subtree.body.value,str):decoded[start]=(end,subtree.body.value)
+        # Preserve implicit adjacent literal concatenations, including comments
+        # and line breaks. This can over-exclude; no expression is executed.
+        for start,(end,value) in sorted(decoded.items()):
+            parts=[value];cursor=end;seen={start}
+            while True:
+                at=cursor
+                while at<len(text):
+                    if text[at].isspace():at+=1;continue
+                    if text[at]=="#":
+                        newline=text.find("\n",at);at=len(text) if newline<0 else newline+1;continue
+                    break
+                work+=max(1,at-cursor)
+                require(work<=PYTHON_RECOVERY_CHAR_BUDGET,"Malformed Python adjacent recovery resource bound","BLOCKED")
+                if at not in decoded or at in seen:break
+                seen.add(at);cursor,next_value=decoded[at];parts.append(next_value)
+                work+=cursor-at
+                require(work<=PYTHON_RECOVERY_CHAR_BUDGET,"Malformed Python adjacent recovery resource bound","BLOCKED")
+            if len(parts)>1:
+                work+=sum(map(len,parts))
+                require(work<=PYTHON_RECOVERY_CHAR_BUDGET,"Malformed Python adjacent recovery resource bound","BLOCKED")
+                note["adjacent_string_groups"]+=1
+                yield "text","".join(parts),"python_adjacent:"+str(start)+":"+str(cursor)
+        for start,c in enumerate(text):
+            if c not in "[(":continue
+            end=text.find("]" if c=="[" else ")",start+1)
+            work+=(len(text)-start if end<0 else end-start+1)
+            require(work<=PYTHON_RECOVERY_CHAR_BUDGET,"Malformed Python lexical recovery resource bound","BLOCKED")
+            if end<0:continue
+            try:value=ast.literal_eval(text[start:end+1])
+            except (SyntaxError,ValueError,TypeError):continue
+            if isinstance(value,tuple):value=list(value)
+            if isinstance(value,list) and len(value)>=32 and valid_tokens(value):
+                note["token_arrays"]+=1;yield "tokens",value,"python_tokens:"+str(start)+":"+str(end+1)
+        yield "python_recovery",note,"python_recovery_summary"
+    else:yield from python_ast_leaves(tree)
+
+
 def detect_container(data):
     if data.startswith(b"PK\x03\x04"):return "zip"
     if data.startswith(b"\x1f\x8b"):return "gzip"
@@ -242,10 +328,7 @@ def byte_leaves(data,kind,name,arrow_reader=None,depth=0,member_policy=None):
                     if any(notes.values()):yield "format_note",notes,where
                     yield from json_leaves(value,where)
         elif kind=="python":
-            tree=ast.parse(text,filename=name)
-            for node in ast.walk(tree):
-                if isinstance(node,ast.Constant) and isinstance(node.value,str):yield "text",node.value,"line:"+str(node.lineno)
-                elif isinstance(node,(ast.List,ast.Tuple)) and len(node.elts)>=32 and all(isinstance(n,ast.Constant) and type(n.value) is int and 0<=n.value<32768 for n in node.elts):yield "tokens",[n.value for n in node.elts],"line:"+str(node.lineno)
+            yield from python_leaves(text,name)
         elif kind in ("csv","tsv"):
             for i,row in enumerate(csv.reader(io.StringIO(text),delimiter="," if kind=="csv" else "\t")):
                 for j,value in enumerate(row):yield "text",value,f"row:{i}/column:{j}"
@@ -321,6 +404,7 @@ def policy_mapping(spec,key):
 
 def verify_inventory(spec):
     entries=spec.get("history_entries")
+    explicit_entries=entries is not None
     if entries is not None:
         require(isinstance(entries,list) and entries,"Nonempty frozen history inventory")
         require(len({e["path"] for e in entries})==len(entries),"Duplicate historical physical path")
@@ -377,7 +461,8 @@ def verify_inventory(spec):
     else:require(observed=={e["path"] for e in entries},"Frozen history enumeration changed","BLOCKED")
     for e in entries:
         p=Path(e["path"]);require(p.is_absolute() and p.is_file() and not p.is_symlink(),"Historical file missing: "+str(p),"BLOCKED")
-        require(pin(p)=={k:e[k] for k in ("bytes","sha256")},"Historical source pin changed: "+str(p))
+        # Discovery mode already hashed and checked these exact bytes above.
+        if explicit_entries:require(pin(p)=={k:e[k] for k in ("bytes","sha256")},"Historical source pin changed: "+str(p))
         if str(p) in old:require({k:e[k] for k in ("bytes","sha256")}==old[str(p)],"Prior inventory pin retained: "+str(p))
         require(e["kind"] in TEXT_KINDS or (e["kind"]=="nontext" and bool(e.get("reason"))),"Unclassified historical input: "+str(p),"BLOCKED")
     return entries
@@ -402,6 +487,9 @@ def scan_history(entries,index,tokenize,arrow_reader=None,ledger=None,member_pol
                 elif typ=="format_note":
                     row.setdefault("format_notes",[]).append({"location":where,**value})
                     for k,v in value.items():index.format_notes[k]+=v
+                elif typ=="python_recovery":
+                    row.setdefault("python_recovery",[]).append({"location":where,**value})
+                    for k in PYTHON_RECOVERY_KEYS:index.python_recovery[k]+=value[k]
                 else:raise Stop("FAIL","Unknown historical leaf kind: "+typ)
             row.update(Status="PASS",strings=index.string_count-old_s,token_arrays=index.token_array_count-old_t);seen[key]=e["path"]
         except BaseException as exc:
@@ -443,10 +531,13 @@ def selected_payload(selected):
 
 
 class BudgetWriter:
-    def __init__(self,out):self.out=Path(out)
+    def __init__(self,out,shared_paths=()):self.out=Path(out);self.shared_paths=tuple(Path(p) for p in shared_paths)
+    def used(self):
+        paths={p.resolve() for root in (self.out,*self.shared_paths) for p in root.rglob("*") if p.is_file()}
+        return sum(p.stat().st_size for p in paths)
     def write(self,name,data):
         dest=self.out/name;require(dest.resolve().is_relative_to(self.out.resolve()),"Output confinement")
-        used=sum(p.stat().st_size for p in self.out.rglob("*") if p.is_file())
+        used=self.used()
         require(used+len(data)<=PREP_BUDGET-SEAL_ALLOWANCE,"4MiB preparation allocation (including64KiB seal) exceeded","BLOCKED")
         require(shutil.disk_usage(self.out).free>=len(data)+SEAL_ALLOWANCE+DISK_RESERVE,"256MiB disk reserve plus64KiB seal unavailable","BLOCKED")
         dest.parent.mkdir(parents=True,exist_ok=True)
@@ -486,14 +577,61 @@ def acquire(writer):
     return data,receipt
 
 
+def retained_source(writer,source_file):
+    source=Path(source_file);original=source.parent/"acquisition.json"
+    require(source.is_absolute() and str(source)==RETAINED_CORPUS,"Exact retained preparation-v2 corpus path required","BLOCKED")
+    require(source.is_file() and original.is_file() and not any(p.is_symlink() for p in (source,original,*source.parents)),"Retained source/provenance regular paths required","BLOCKED")
+    before={str(source):pin(source),str(original):pin(original)}
+    require(before[str(source)]==CORPUS_PIN,"Retained source exact bytes")
+    require(before[str(original)]["bytes"]<=65536,"Original acquisition receipt bounded","BLOCKED")
+    old=strict_json(original.read_text(encoding="utf-8"))
+    require(old.get("Status")=="PASS" and old.get("url")==URL and old.get("http_status")==200 and old.get("actual_response")==CORPUS_PIN and old.get("pin")==CORPUS_PIN and old.get("response_file")=="corpus.parquet","Original successful pinned acquisition provenance")
+    with source.open("rb") as stream:data=stream.read(CORPUS_PIN["bytes"]+1)
+    require({"bytes":len(data),"sha256":sha(data)}==CORPUS_PIN,"Retained source readback bytes")
+    for path,expected in before.items():require(pin(path)==expected,"Retained source/provenance changed during read")
+    common={"mode":"LOCAL_PINNED_REUSE","Status":"PASS","source_file":str(source),"source_pin":CORPUS_PIN,
+            "original_acquisition_file":str(original),"original_acquisition_pin":before[str(original)],"network_requests":0,"copied_corpus_bytes":0}
+    reference={"schema":"mythos-local-corpus-reference-v1",**common}
+    reference_pin=writer.json("source_reference.json",reference)
+    acquisition={**common,"url":URL,"expected":CORPUS_PIN,"source_reference_pin":reference_pin}
+    writer.json("acquisition.json",acquisition)
+    return data,acquisition,before
+
+
+class ParseOnlyIndex(ExclusionIndex):
+    """Validate complete parsing without loading/calling an original tokenizer."""
+    def __init__(self):super().__init__([])
+    def text(self,text,source,tokenize):
+        require(isinstance(text,str),"Historical preflight text schema")
+        text.encode("utf-8");self.string_count+=1
+    def tokens(self,ids,source):
+        require(valid_tokens(ids),"Historical preflight token-array schema")
+        self.token_array_count+=1
+
+
+def preflight_projection(ledger):
+    required=("path","bytes","sha256","kind","Status");optional=("reason","identical_to")
+    rows=[{**{k:row[k] for k in required},**{k:row[k] for k in optional if k in row}} for row in ledger]
+    raw=canonical(rows)
+    return {"schema":"mythos-history-format-projection-v1","records":len(rows),"canonical":{"bytes":len(raw),"sha256":sha(raw)}}
+
+
 def main():
-    p=argparse.ArgumentParser();p.add_argument("--spec",type=Path,required=True);p.add_argument("--expected-spec-sha",required=True);p.add_argument("--out",type=Path,required=True);args=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument("--spec",type=Path,required=True);p.add_argument("--expected-spec-sha",required=True);p.add_argument("--out",type=Path,required=True)
+    p.add_argument("--source-file",type=Path);p.add_argument("--history-preflight-only",action="store_true");args=p.parse_args()
+    require(not (args.source_file and args.history_preflight_only),"Preflight never reads a source corpus","BLOCKED")
     require(args.out.is_absolute() and not args.out.exists(),"New absolute preparation output required","BLOCKED")
-    args.out.mkdir(parents=True,exist_ok=False);writer=BudgetWriter(args.out)
+    args.out.mkdir(parents=True,exist_ok=False)
+    shared=(args.out.parent/"history-preflight",) if args.source_file else ()
+    writer=BudgetWriter(args.out,shared_paths=shared)
     report={"Purpose":"Freeze project-new AGNews text without model scores, with exhaustive registered historical exclusion",
             "Environment":{"python":sys.version,"executable":sys.executable},"Input":{"spec":str(args.spec),"spec_sha256":args.expected_spec_sha,"source":URL},
             "Expected":{"records":20,"per_class":5,"tokens":129,"training_steps":0,"model_imports":[]},"Actual":{},"Status":"NOT TESTED"}
-    ledger=[];history_ledger=[];index=None;before={};artifacts={}
+    report["Input"].update(history_preflight_only=args.history_preflight_only,source_file=str(args.source_file) if args.source_file else None)
+    if args.history_preflight_only:
+        report["Purpose"]="Complete frozen historical format/parser preflight without source acquisition, tokenization or model";report["Expected"]={"historical_files":32244,"parse_completed":True,"tokenizer_calls":0,"new_source_acquisitions":0,"model_calls":0}
+        report["Actual"]={"historical_files":0,"historical_files_completed":0,"parse_completed":False,"model_calls":0,"tokenizer_calls":0,"new_source_acquisitions":0}
+    entries=[];ledger=[];history_ledger=[];index=None;before={};artifacts={}
     def interrupted(signum,frame):
         report["interruption"]={"signal":signum,"scope":"Stop requested; no acquisition/model retry"}
         signal.signal(signal.SIGTERM,signal.SIG_IGN);signal.signal(signal.SIGINT,signal.SIG_IGN)
@@ -503,7 +641,8 @@ def main():
         require(os.environ.get("CODESPACE_NAME")==SPACE and platform.system()=="Linux" and platform.python_version()=="3.12.3" and sys.executable==PYTHON and sys.flags.isolated and sys.dont_write_bytecode,"Designated isolated data environment","BLOCKED")
         require(pin(args.spec)["sha256"]==args.expected_spec_sha,"Frozen history spec SHA")
         spec=strict_json(args.spec.read_text(encoding="utf-8"));require(spec["schema"]=="mythos-fresh-history-v1","History spec schema")
-        require(shutil.disk_usage(args.out).free>=PREP_BUDGET+DISK_RESERVE,"Full4MiB preparation plus256MiB reserve unavailable","BLOCKED")
+        if args.source_file:require(shared[0].is_dir() and (shared[0]/"manifest.json").is_file(),"Completed sibling history preflight required","BLOCKED")
+        require(shutil.disk_usage(args.out).free>=max(0,PREP_BUDGET-writer.used())+DISK_RESERVE,"Remaining combined4MiB preparation plus256MiB reserve unavailable","BLOCKED")
         entries=verify_inventory(spec);before={e["path"]:{k:e[k] for k in ("bytes","sha256")} for e in entries}
         before[str(args.spec)]=pin(args.spec)
         for name in ("nontext_entries","format_entries","member_entries","extra_history_files","extra_history_inventory"):
@@ -515,8 +654,6 @@ def main():
         import pyarrow as pa
         import pyarrow.parquet as pq
         import numpy as np
-        from tokenizers import Tokenizer
-        tokenizer=Tokenizer.from_file(str(tokenizer_path));tokenize=lambda s:tokenizer.encode(s,add_special_tokens=False).ids
         def arrow_reader(data,kind):
             if kind=="npy":
                 array=np.load(io.BytesIO(data),allow_pickle=False)
@@ -528,14 +665,25 @@ def main():
                 try:table=pa.ipc.open_file(source).read_all()
                 except pa.ArrowInvalid:source.seek(0);table=pa.ipc.open_stream(source).read_all()
             return table.to_pylist()
-        corpus,acquisition=acquire(writer);artifacts["corpus.parquet"]=acquisition["pin"];artifacts["acquisition.json"]=pin(args.out/"acquisition.json")
-        rows=arrow_reader(corpus,"parquet");candidates,ledger=collect_candidates(rows,tokenize)
-        index=ExclusionIndex(candidates);scan_history(entries,index,tokenize,arrow_reader,ledger=history_ledger,member_policy=policy_mapping(spec,"member_entries"))
-        chosen=select(candidates,ledger,index);payload=selected_payload(chosen)
-        artifacts["inputs.json"]=writer.json("inputs.json",payload)
-        public=[{k:v for k,v in row.items() if k not in ("text","tokens")} for row in payload["eval"]]
-        artifacts["public/selection.json"]=writer.json("public/selection.json",{"samples":public,"input_pin":artifacts["inputs.json"],"labels":{i:sum(s["label"]==i for s in chosen) for i in range(4)}})
-        report["Actual"]={"source_rows":len(rows),"prose_length_eligible":len(candidates),"historical_files":len(entries),"historical_strings":index.string_count,"historical_token_arrays":index.token_array_count,"historical_text_fingerprints":index.text_fingerprints,"historical_text_cache_hits":index.text_cache_hits,"historical_format_notes":index.format_notes,"excluded_by_history":len(index.matches),"selected":len(chosen),"input_pin":artifacts["inputs.json"],"model_calls":0}
+        if args.history_preflight_only:
+            index=ParseOnlyIndex();scan_history(entries,index,None,arrow_reader,ledger=history_ledger,member_policy=policy_mapping(spec,"member_entries"))
+            report["Actual"]={"historical_files":len(entries),"historical_files_completed":len(history_ledger),"parse_completed":True,"historical_strings":index.string_count,"historical_token_arrays":index.token_array_count,"historical_format_notes":index.format_notes,"historical_python_recovery":index.python_recovery,"model_calls":0,"tokenizer_calls":0,"new_source_acquisitions":0}
+        else:
+            from tokenizers import Tokenizer
+            tokenizer=Tokenizer.from_file(str(tokenizer_path));tokenize=lambda s:tokenizer.encode(s,add_special_tokens=False).ids
+            if args.source_file:
+                corpus,acquisition,source_pins=retained_source(writer,args.source_file);before.update(source_pins)
+                artifacts["source_reference.json"]=pin(args.out/"source_reference.json")
+            else:
+                corpus,acquisition=acquire(writer);artifacts["corpus.parquet"]=acquisition["pin"]
+            artifacts["acquisition.json"]=pin(args.out/"acquisition.json")
+            rows=arrow_reader(corpus,"parquet");candidates,ledger=collect_candidates(rows,tokenize)
+            index=ExclusionIndex(candidates);scan_history(entries,index,tokenize,arrow_reader,ledger=history_ledger,member_policy=policy_mapping(spec,"member_entries"))
+            chosen=select(candidates,ledger,index);payload=selected_payload(chosen)
+            artifacts["inputs.json"]=writer.json("inputs.json",payload)
+            public=[{k:v for k,v in row.items() if k not in ("text","tokens")} for row in payload["eval"]]
+            artifacts["public/selection.json"]=writer.json("public/selection.json",{"samples":public,"input_pin":artifacts["inputs.json"],"labels":{i:sum(s["label"]==i for s in chosen) for i in range(4)}})
+            report["Actual"]={"source_rows":len(rows),"prose_length_eligible":len(candidates),"historical_files":len(entries),"historical_strings":index.string_count,"historical_token_arrays":index.token_array_count,"historical_text_fingerprints":index.text_fingerprints,"historical_text_cache_hits":index.text_cache_hits,"historical_format_notes":index.format_notes,"historical_python_recovery":index.python_recovery,"excluded_by_history":len(index.matches),"selected":len(chosen),"input_pin":artifacts["inputs.json"],"model_calls":0,"new_source_acquisitions":0 if args.source_file else 1,"copied_corpus_bytes":0 if args.source_file else CORPUS_PIN["bytes"]}
         report["Status"]="PASS"
     except BaseException as exc:
         report["Status"]=getattr(exc,"status","BLOCKED" if isinstance(exc,(OSError,MemoryError)) else "FAIL")
@@ -549,8 +697,13 @@ def main():
             else:
                 for path,expected in before.items():require(pin(path)==expected,"Historical file changed during preparation: "+path)
                 report["source_after_status"]="PASS"
-            artifacts["candidates.json.gz"]=writer.compressed("candidates.json.gz",ledger)
-            artifacts["history_ledger.json.gz"]=writer.compressed("history_ledger.json.gz",history_ledger)
+            if args.history_preflight_only:
+                report["Actual"].update(history_ledger_projection=preflight_projection(history_ledger),historical_files=len(entries),historical_files_completed=len(history_ledger),model_calls=0,tokenizer_calls=0,new_source_acquisitions=0)
+                findings=[r for r in history_ledger if r.get("python_recovery") or r.get("format_notes") or r.get("error") or r["Status"] in ("FAIL","BLOCKED")]
+                artifacts["preflight_findings.json.gz"]=writer.compressed("preflight_findings.json.gz",findings)
+            else:
+                artifacts["candidates.json.gz"]=writer.compressed("candidates.json.gz",ledger)
+                artifacts["history_ledger.json.gz"]=writer.compressed("history_ledger.json.gz",history_ledger)
         except BaseException as exc:report["Status"]=getattr(exc,"status","FAIL");report["sealing_error"]=repr(exc)
         for path in args.out.rglob("*"):
             if path.is_file() and str(path.relative_to(args.out)) not in artifacts:artifacts[str(path.relative_to(args.out))]=pin(path)

@@ -6,6 +6,7 @@ historical tokenizer scan. Every historical byte pin and classification is check
 """
 from __future__ import annotations
 import argparse
+import ast
 from collections import Counter
 import datetime
 import gzip
@@ -30,12 +31,14 @@ SPACE="bookish-pancake-vwqx7rr9x5w3wxjr"
 PYTHON="/workspaces/mythos-depth-data-cpu312/bin/python"
 CORPUS={"bytes":1234829,"sha256":"71de87ec66bc5737752a2502204dfa6d7fe9856ade3ea444dc6317789a4f13fb"}
 TOKENIZER_SHA="e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77"
-PARSER_SHA="6d47fc2dbc5987fa52f597c1ec5a30e862e5b64ca624ff4fdb96f0a7c739cef6"
+PARSER_SHA="6ef6611406c3add20f67e41d98978f0ed74ae72c1eded634be1a61e66f505520"
 REVISION="eb185aade064a813bc0b7f42de02595523103ca4"
 URL="https://huggingface.co/datasets/fancyzhx/ag_news/resolve/"+REVISION+"/data/test-00000-of-00001.parquet"
+RETAINED_SOURCE=Path("/workspaces/mythos-evidence/base_v01/moda_fresh/preparation-v2/data/corpus.parquet")
 LIMIT=32*1024**2
 FORBIDDEN={"torch","parcae_lm","receval","transformers"}
 KINDS={"json","jsonl","text","python","csv","tsv","xml","parquet","arrow","npy","zip","tar","base64","gzip","xz"}
+RECOVERY_KEYS=("files","raw_utf8_bytes","string_fragments","token_arrays","adjacent_string_groups","rejected_origins")
 
 
 class Stop(Exception):
@@ -114,7 +117,7 @@ def audit_history(spec,policy,ledger,rehash=True,arrow_reader=None):
     require(type(ledger)is list and len({r["path"] for r in ledger})==len(ledger),"Unique physical history ledger")
     paths=collect_paths(spec,policy);require(paths=={r["path"] for r in ledger},"Exact ledger and independently enumerated history union")
     require([r["path"] for r in ledger]==sorted(paths),"Frozen lexicographic history order")
-    previous={};seen={};counts=Counter();notes={"duplicate_keys":0,"nonfinite_numeric_constants":0}
+    previous={};seen={};counts=Counter();notes={"duplicate_keys":0,"nonfinite_numeric_constants":0};recovery={k:0 for k in RECOVERY_KEYS}
     overrides=policy["nontext_entries"];formats=policy["format_entries"]
     require(set(overrides)|set(formats)<=paths,"Every classified physical path retained")
     old=policy["extra_history_inventory"]
@@ -144,8 +147,20 @@ def audit_history(spec,policy,ledger,rehash=True,arrow_reader=None):
             require(observed==r["classified_nontext_members"],"Exact frozen container nontext-member receipts")
         for n in r.get("format_notes",[]):
             for key in notes:require(type(n[key])is int and n[key]>=0,"Format-note counters");notes[key]+=n[key]
+        if kind=="python" and r["Status"]=="PASS":
+            try:ast.parse(path.read_bytes().decode("utf-8-sig"),filename=p)
+            except (SyntaxError,ValueError):require(bool(r.get("python_recovery")),"Malformed Python cannot omit recovery receipt")
+        if r.get("python_recovery"):
+            require(r["Status"]=="PASS","Recovery notes only on actually scanned payloads")
+            observed=[{"location":where,**value} for typ,value,where in parser_contract.byte_leaves(path.read_bytes(),kind,p,arrow_reader,member_policy=policy["member_entries"]) if typ=="python_recovery"]
+            require(observed==r["python_recovery"],"Exact malformed-source recovery receipts")
+            for n in observed:
+                require(n["raw_source_covered"] is True and n["semantic_reconstruction"] is False and n["files"]==1,"Conservative raw-source recovery scope")
+                require(type(n["syntax_error"])is dict and n["syntax_error"]["type"] in ("SyntaxError","ValueError"),"Explicit retained syntax failure")
+                for key in RECOVERY_KEYS:
+                    require(type(n[key])is int and n[key]>=0,"Recovery counters");recovery[key]+=n[key]
         counts[r["Status"]]+=1;previous[p]=r
-    return {"files":len(paths),"status_counts":dict(counts),"strings":sum(r["strings"] for r in ledger),"token_arrays":sum(r["token_arrays"] for r in ledger),"format_notes":notes,"old_inventory_paths":len(old)}
+    return {"files":len(paths),"status_counts":dict(counts),"strings":sum(r["strings"] for r in ledger),"token_arrays":sum(r["token_arrays"] for r in ledger),"format_notes":notes,"python_recovery":recovery,"old_inventory_paths":len(old)}
 
 
 def ngrams(values,width):return {tuple(values[i:i+width]) for i in range(max(0,len(values)-width+1))}
@@ -257,7 +272,7 @@ def audit_payload(selected,payload,public,input_pin):
 
 
 def verify_artifacts(prep,manifest):
-    expected={"corpus.parquet","acquisition.json","inputs.json","public/selection.json","candidates.json.gz","history_ledger.json.gz"}
+    expected={"source_reference.json","acquisition.json","inputs.json","public/selection.json","candidates.json.gz","history_ledger.json.gz"}
     require(set(manifest["artifacts"])==expected,"Complete preparation artifact manifest")
     require({p.relative_to(prep).as_posix() for p in prep.rglob("*") if p.is_file()}==expected|{"manifest.json"},"No unlisted preparation artifacts")
     for name,receipt in manifest["artifacts"].items():
@@ -270,18 +285,70 @@ def verify_artifacts(prep,manifest):
         else:require(pin(path)==receipt,"Artifact pin "+name)
 
 
+def retained_source(prep):
+    """Bind unchanged v2 source bytes and HTTP receipt without making a copy."""
+    prep=Path(prep);reference=read(prep/"source_reference.json");reuse=read(prep/"acquisition.json")
+    source=Path(reference["source_file"]);origin=Path(reference["original_acquisition_file"])
+    require(reference["schema"]=="mythos-local-corpus-reference-v1" and reference["Status"]=="PASS" and reference["mode"]=="LOCAL_PINNED_REUSE","Retained-source reference schema/status")
+    require(source==RETAINED_SOURCE and origin==RETAINED_SOURCE.with_name("acquisition.json"),"Exact original v2 source and acquisition paths")
+    require(source.is_absolute() and origin.is_absolute() and source.is_file() and origin.is_file(),"Retained source files available","BLOCKED")
+    require(source.resolve()==source and origin.resolve()==origin and not source.is_symlink() and not origin.is_symlink(),"Retained source paths are not aliases")
+    require(not source.resolve().is_relative_to(prep.resolve()) and not (prep/"corpus.parquet").exists(),"No duplicate corpus in new preparation")
+    require(reference["source_pin"]==CORPUS and pin(source)==CORPUS,"Retained original corpus exact bytes")
+    require(pin(origin)==reference["original_acquisition_pin"],"Retained original acquisition byte pin")
+    require(reference["network_requests"]==0 and reference["copied_corpus_bytes"]==0,"Reference reports zero acquisition/copy")
+    original=read(origin)
+    require(original["Status"]=="PASS" and original["url"]==URL and original["http_status"]==200 and original["actual_response"]==CORPUS and original["pin"]==CORPUS and original["response_file"]=="corpus.parquet","Original successful HTTP acquisition provenance")
+    require(reuse["mode"]=="LOCAL_PINNED_REUSE" and reuse["Status"]=="PASS","Local-only reuse receipt")
+    require(reuse["url"]==URL and reuse["expected"]==CORPUS and reuse["source_reference_pin"]==pin(prep/"source_reference.json"),"Reuse receipt binds exact reference/source")
+    for key in ("source_file","source_pin","original_acquisition_file","original_acquisition_pin","network_requests","copied_corpus_bytes"):
+        require(reuse.get(key)==reference[key],"Source reuse/reference agreement "+key)
+    return source,{"source_file":str(source),"source_pin":pin(source),"original_acquisition_file":str(origin),"original_acquisition_pin":pin(origin),"source_reference_pin":pin(prep/"source_reference.json"),"reuse_receipt_pin":pin(prep/"acquisition.json"),"network_requests":0,"copied_corpus_bytes":0}
+
+
+def audit_preflight(prep,spec_sha,history,historical):
+    """Independently bridge compact parser preflight to the retained full ledger."""
+    directory=Path(prep).parent/"history-preflight";path=directory/"manifest.json";report=read(path)
+    require(report["Status"]=="PASS" and report["source_after_status"]=="PASS" and report["forbidden_imports"]==[],"Successful preserved parser preflight")
+    require(report["Input"]["spec_sha256"]==spec_sha and report["Input"]["history_preflight_only"] is True and report["Input"]["source_file"] is None,"Same spec and source-free parser preflight")
+    expected={"historical_files":len(history),"parse_completed":True,"tokenizer_calls":0,"new_source_acquisitions":0,"model_calls":0}
+    require(report["Expected"]==expected,"Frozen parser preflight acceptance header")
+    actual=report["Actual"]
+    require(actual["historical_files"]==actual["historical_files_completed"]==len(history) and actual["parse_completed"] is True and actual["tokenizer_calls"]==actual["new_source_acquisitions"]==actual["model_calls"]==0,"Complete parser preflight coverage, no tokenizer/source/model calls")
+    projection=[]
+    for row in history:
+        item={key:row[key] for key in ("path","bytes","sha256","kind","Status")}
+        for key in ("reason","identical_to"):
+            if key in row:item[key]=row[key]
+        projection.append(item)
+    raw=encoded(projection);receipt={"schema":"mythos-history-format-projection-v1","records":len(history),"canonical":{"bytes":len(raw),"sha256":sha(raw)}}
+    require(actual["history_ledger_projection"]==receipt,"Independent full-ledger/preflight projection identity")
+    artifacts=report["artifacts"];require(set(artifacts)=={"preflight_findings.json.gz"},"Compact preflight retains findings only")
+    require({p.name for p in directory.iterdir() if p.is_file()}=={"manifest.json","preflight_findings.json.gz"},"No unlisted preflight outputs")
+    findings_path=directory/"preflight_findings.json.gz";binding=artifacts[findings_path.name]
+    require(pin(findings_path)==binding["physical"],"Preflight findings physical pin")
+    with gzip.open(findings_path,"rb") as stream:findings_raw=stream.read(LIMIT+1)
+    require(len(findings_raw)<=LIMIT and {"bytes":len(findings_raw),"sha256":sha(findings_raw)}==binding["canonical"],"Preflight findings canonical pin")
+    findings=loads(findings_raw);require(encoded(findings)==findings_raw,"Canonical preflight findings")
+    expected_findings=[r for r in history if r.get("python_recovery") or r.get("format_notes") or r.get("error") or r["Status"] not in ("PASS","PASS_IDENTICAL_PAYLOAD","EXCLUDED_REGISTERED_NONTEXT")]
+    require(findings==expected_findings,"All parser findings/recovery notes equal full actual ledger")
+    require(actual["historical_strings"]==historical["strings"] and actual["historical_token_arrays"]==historical["token_arrays"] and actual["historical_format_notes"]==historical["format_notes"] and actual["historical_python_recovery"]==historical["python_recovery"],"Parser preflight and full scan counters agree")
+    return {"manifest_path":str(path),"manifest_pin":pin(path),"projection":receipt,"findings_pin":pin(findings_path),"finding_rows":len(findings),"Status":"PASS"}
+
+
 def audit(spec,spec_sha,prep,tokenize,arrow_reader,check):
     prep=Path(prep);manifest=read(prep/"manifest.json")
     check("Preparation completed with zero model calls",manifest["Status"]=="PASS" and manifest["source_after_status"]=="PASS" and manifest["forbidden_imports"]==[] and manifest["Actual"]["model_calls"]==0)
     check("Preparation bound frozen spec and source",manifest["Input"]["spec_sha256"]==spec_sha and manifest["Input"]["source"]==URL)
+    check("V4 preparation reuses original v2 source",manifest["Input"]["history_preflight_only"] is False and manifest["Input"]["source_file"]==str(RETAINED_SOURCE) and manifest["Actual"]["new_source_acquisitions"]==manifest["Actual"]["copied_corpus_bytes"]==0)
     check("Preparation frozen acceptance header",manifest["Expected"]=={"records":20,"per_class":5,"tokens":129,"training_steps":0,"model_imports":[]})
     verify_artifacts(prep,manifest);check("All artifact byte and canonical receipts",True)
-    require(pin(prep/"corpus.parquet")==CORPUS,"Original corpus exact bytes")
-    acquisition=read(prep/"acquisition.json")
-    check("Single successful fixed source acquisition",acquisition["Status"]=="PASS" and acquisition["url"]==URL and acquisition["http_status"]==200 and acquisition["actual_response"]==CORPUS and acquisition["pin"]==CORPUS and acquisition["response_file"]=="corpus.parquet")
+    source_path,source_custody=retained_source(prep)
+    check("Exact original v2 corpus reused without acquisition/copy",True,source_custody)
     policy=policies(spec);history=read(prep/"history_ledger.json.gz");historical=audit_history(spec,policy,history,arrow_reader=arrow_reader)
     check("Full independent inventory/classification/hash reconciliation",True,historical)
-    source=arrow_reader((prep/"corpus.parquet").read_bytes(),"parquet");ledger=read(prep/"candidates.json.gz")
+    preflight=audit_preflight(prep,spec_sha,history,historical);check("Full ledger matches complete compact parser preflight",True,preflight)
+    source=arrow_reader(source_path.read_bytes(),"parquet");ledger=read(prep/"candidates.json.gz")
     eligible=independent_candidates(source,ledger,tokenize);check("All7600 source identities/eligibility independently checked; every prose-eligible row retokenized",True,{"source_rows":len(source),"eligible":len(eligible)})
     witnesses=audit_witnesses(eligible,ledger,history,tokenize,arrow_reader,policy["member_entries"]);check("All positive history-exclusion witnesses",True,witnesses)
     chosen=independent_selection(eligible,ledger);check("Independent first-five-per-class and full-text new-new exclusion",True)
@@ -289,9 +356,11 @@ def audit(spec,spec_sha,prep,tokenize,arrow_reader,check):
     audit_payload(chosen,payload,public,input_pin);check("Selected source text/token targets and public projection",True)
     actual=manifest["Actual"]
     check("Manifest aggregate scan/selection counters reconciled",actual["source_rows"]==7600 and actual["prose_length_eligible"]==len(eligible) and actual["historical_files"]==historical["files"] and actual["historical_strings"]==historical["strings"] and actual["historical_token_arrays"]==historical["token_arrays"] and actual["historical_format_notes"]==historical["format_notes"] and actual["excluded_by_history"]==witnesses["excluded_candidates"] and actual["selected"]==20 and actual["input_pin"]==input_pin)
+    check("Malformed-source recovery counters reconciled",actual.get("historical_python_recovery")==historical["python_recovery"])
+    require(retained_source(prep)[1]==source_custody,"Retained source/reference/acquisition bytes unchanged after audit")
     # No exhaustive old-tokenizer rescan: absence is the preparer's complete-scan
     # claim, backed here by full coverage and byte pins, not independently reproven.
-    return {"source_rows":7600,"eligible":len(eligible),"selected":20,"per_class":{str(k):5 for k in range(4)},"history":historical,"historical_witnesses":witnesses,"input_pin":input_pin,"source_pin":pin(prep/"corpus.parquet"),"preparation_manifest":pin(prep/"manifest.json"),"selected_ids":[x["id"] for x in chosen],"new_model_calls":0,"new_source_acquisitions":0,"historical_absence_independently_rescanned":False,"historical_absence_basis":"Frozen preparer full scan; audit independently verifies complete inventory, bytes/classifications and all claimed positive exclusion witnesses; no second full-history tokenization"}
+    return {"source_rows":7600,"eligible":len(eligible),"selected":20,"per_class":{str(k):5 for k in range(4)},"history":historical,"historical_witnesses":witnesses,"input_pin":input_pin,"source_pin":source_custody["source_pin"],"source_custody":source_custody,"parser_preflight":preflight,"preparation_manifest":pin(prep/"manifest.json"),"selected_ids":[x["id"] for x in chosen],"new_model_calls":0,"new_source_acquisitions":0,"historical_absence_independently_rescanned":False,"historical_absence_basis":"Frozen preparer full scan; audit independently verifies complete inventory, bytes/classifications and all claimed positive exclusion witnesses; no second full-history tokenization"}
 
 
 def main():

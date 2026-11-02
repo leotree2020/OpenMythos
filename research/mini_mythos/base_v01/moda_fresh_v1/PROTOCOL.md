@@ -2,7 +2,14 @@
 
 This is a new, zero-training validation derived from accepted checkpoint `bc6d267cdd8cf9306c1bf08b369cf2b791723d3d`. The previous adaptation experiment and all its evidence remain unchanged. No scientific result is known when this protocol and executor are frozen.
 
-Authorized continuation: checkpoint `3a7f8b3ac15d4354800360961018de7c66d26be6`
+Current continuation from `b13ab1d799cbd5d37e58d7ea7cdf2540d0093493` uses a new
+preparation-v4. Earlier preparation-v1/v2 and the resource-v3 stop remain sealed.
+The malformed-history parser repair, model-blind preflight and exact-byte reuse
+of the already acquired preparation-v2 corpus are specified in CONTINUATION_V4.md.
+The original corpus, selection, models, numerical margins and scientific screens
+stay unchanged. Storage maintenance restored capacity without changing old files.
+
+Earlier authorized continuation: checkpoint `3a7f8b3ac15d4354800360961018de7c66d26be6`
 recorded preparation-v1 BLOCKED at an isolated helper import, before acquisition
 or model execution. The corrected launch interface uses a new preparation-v2;
 preparation-v1, its original traceback, specification-v1, discoveries, stop-v1,
@@ -34,8 +41,9 @@ The separately frozen data-preparation code, source/revision/hash inventory, ded
 The data manifest must PASS and every prepared source/input byte must be pinned in INPUT_MANIFEST before formal source freeze. The new text source, fixed selection rule and exact exclusions are material limitations and must be retained in the final checkpoint. Acquisition/data preparation is a separate stage; formal model validation never downloads a replacement corpus.
 
 Before target storage measurement and model freeze, require the independent
-`preparation-v2/DATA_AUDIT.json` to PASS and pin that report in INPUT_MANIFEST.
-Its input root is preparation-v2/data. The gate binds the exact input, corpus,
+`preparation-v4/DATA_AUDIT.json` to PASS and pin that report in INPUT_MANIFEST.
+Its input root is preparation-v4/data; the exact corpus remains at its original
+preparation-v2/data path, with the original acquisition receipt pinned. The gate binds the exact input, corpus,
 preparation manifest, history specification, tokenizer and audit/parser source
 pins; verifies all checks and actual 7600-source/20-selected/32244-history counts;
 and rejects development-only or incomplete receipts. The auditor independently

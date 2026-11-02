@@ -21,10 +21,11 @@ class StartupTests(unittest.TestCase):
         self.assertEqual(O.EXPECTED_REPO.as_posix(),"/workspaces/mythos-moda-fresh-cpu-v1")
         self.assertEqual(O.RUN.as_posix(),"/workspaces/mythos-evidence/base_v01/moda_fresh/attempt-v1")
         self.assertFalse(O.INPUTS.is_relative_to(O.RUN))
-        self.assertEqual(O.PREPARATION.name,"preparation-v2")
-        self.assertEqual(O.CONTINUATION,"3a7f8b3ac15d4354800360961018de7c66d26be6")
+        self.assertEqual(O.PREPARATION.name,"preparation-v4")
+        self.assertEqual(O.CONTINUATION,"b13ab1d799cbd5d37e58d7ea7cdf2540d0093493")
+        self.assertEqual(O.SOURCE_CORPUS,O.RUN.parent/"preparation-v2/data/corpus.parquet")
         self.assertEqual(O.DATA_AUDIT,O.PREPARATION/"DATA_AUDIT.json")
-        self.assertEqual([p.name for p in O.FRESH_PRIOR_DIRS],["preparation-v1","specification-v1","stop-v1"])
+        self.assertEqual([p.name for p in O.FRESH_PRIOR_DIRS],["preparation-v1","specification-v1","stop-v1","storage-20261102-v1"])
     def test_exact_isolated_entrypoint_imports_before_help(self):
         for name in ("execute_once.py","measure_storage.py","test_startup.py","test_measure_storage.py"):
             result=subprocess.run([sys.executable,"-I","-B",str(ROOT/name),"--help"],capture_output=True,text=True,timeout=30)
@@ -144,15 +145,22 @@ class StartupTests(unittest.TestCase):
             root=Path(directory);prep=root/"preparation-v2";data=prep/"data";spec=root/"specification-v1"
             data.mkdir(parents=True);spec.mkdir()
             ids=[("%064x"%i) for i in range(20)]
-            paths={"DATA_AUDIT":prep/"DATA_AUDIT.json","INPUTS":data/"inputs.json","PREPARATION_MANIFEST":data/"manifest.json","SPECIFICATION":spec,"PREPARATION":prep,"ROOT":root,"TOKENIZER":root/"tokenizer.json"}
+            paths={"DATA_AUDIT":prep/"DATA_AUDIT.json","INPUTS":data/"inputs.json","PREPARATION_MANIFEST":data/"manifest.json","SPECIFICATION":spec,"PREPARATION":prep,"ROOT":root,"TOKENIZER":root/"tokenizer.json","SOURCE_CORPUS":root/"retained-v2-corpus.parquet"}
             O.save(paths["INPUTS"],{"eval":[{"id":i} for i in ids]});O.save(paths["PREPARATION_MANIFEST"],{"Status":"PASS"});O.save(spec/"DATA_SPEC.json",{"schema":"fixture"})
             report={"Status":"PASS","Environment":{"development_only":False,"executable":O.DATA_PYTHON},"Input":{"spec":str(spec/"DATA_SPEC.json"),"spec_sha256":O.info(spec/"DATA_SPEC.json")["sha256"],"prep":str(data)},"Actual":{"input_pin":O.info(paths["INPUTS"]),"preparation_manifest":O.info(paths["PREPARATION_MANIFEST"]),"source_rows":7600,"selected":20,"per_class":{str(i):5 for i in range(4)},"history":{"files":32244},"new_model_calls":0,"new_source_acquisitions":0,"historical_absence_independently_rescanned":False,"selected_ids":ids},"checks":[{"Status":"PASS"}],"check_counts":{"PASS":1,"FAIL":0}}
-            for key,path in (("audit_source_pin",root/"audit_data.py"),("shared_parser_pin",root/"data_prepare.py"),("tokenizer_pin",paths["TOKENIZER"]),("source_pin",data/"corpus.parquet")):
+            for key,path in (("audit_source_pin",root/"audit_data.py"),("shared_parser_pin",root/"data_prepare.py"),("tokenizer_pin",paths["TOKENIZER"]),("source_pin",paths["SOURCE_CORPUS"])):
                 path.write_bytes(b"fixture metadata bytes");report["Input"][key]=O.info(path)
             report["Input"]["tokenizer_path"]=str(paths["TOKENIZER"]);report["Actual"]["source_pin"]=report["Input"]["source_pin"]
+            report["Actual"]["source_custody"]={"source_file":str(paths["SOURCE_CORPUS"]),"source_pin":O.info(paths["SOURCE_CORPUS"]),"network_requests":0,"copied_corpus_bytes":0}
             O.save(paths["DATA_AUDIT"],report);pins={str(p):O.info(p) for p in (paths["DATA_AUDIT"],paths["INPUTS"],paths["PREPARATION_MANIFEST"],spec/"DATA_SPEC.json")}
             with mock.patch.multiple(O,**paths):
                 self.assertEqual(O.validate_data_audit(pins)["selected"],20)
+                original_source=report["Actual"]["source_custody"]["source_file"]
+                report["Actual"]["source_custody"]["source_file"]=str(data/"unapproved-copy.parquet")
+                paths["DATA_AUDIT"].write_text(json.dumps(report));changed={**pins,str(paths["DATA_AUDIT"]):O.info(paths["DATA_AUDIT"])}
+                with self.assertRaisesRegex(O.Stop,"retained-source reuse"):O.validate_data_audit(changed)
+                report["Actual"]["source_custody"]["source_file"]=original_source
+                paths["DATA_AUDIT"].write_text(json.dumps(report));pins[str(paths["DATA_AUDIT"])]=O.info(paths["DATA_AUDIT"])
                 without=dict(pins);without.pop(str(paths["DATA_AUDIT"]))
                 with self.assertRaisesRegex(O.Stop,"missing/changed pin"):O.validate_data_audit(without)
                 for key,value in (("selected",19),("new_model_calls",1),("historical_absence_independently_rescanned",True)):

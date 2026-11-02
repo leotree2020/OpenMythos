@@ -2,7 +2,10 @@
 
 This is a new protocol's artifact budget, not a relaxation of the prior MoDA run's limits. All older raw data, weights, adapters, logs, manifests and checkpoints remain in place and protected. The256MiB free-space reserve is unchanged.
 
-Continuation from `3a7f8b3ac15d4354800360961018de7c66d26be6` uses preparation-v2.
+Continuation from `b13ab1d799cbd5d37e58d7ea7cdf2540d0093493` uses preparation-v4
+and reuses the unchanged, hash-bound preparation-v2 corpus without another copy.
+Earlier preparation-v2, its history-parse stop, resource-v3 and storage-maintenance
+records remain preserved; their existing bytes precede model admission.
 The blocked preparation-v1 and all fresh-phase specification/discovery/stop/restore
 records remain physically present and enter the complete protection map. Existing
 tracked blocked_evidence copies also remain. No new allowance is introduced for
