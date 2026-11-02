@@ -1,0 +1,441 @@
+{
+  "Purpose": "Validate isolated adaptive-depth engineering against pinned native CPU source",
+  "Environment": {
+    "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+    "executable": "C:\\Users\\htyx2\\.codex\\.chatgpt-projects\\g-p-6ad1990464e881918f1eaec50065d5a1\\.venv\\Scripts\\python.exe",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "machine": "AMD64",
+    "isolated": 1,
+    "no_bytecode": true,
+    "test_kind": "development synthetic / untrained native tiny; not 140M",
+    "torch": "2.9.0+cpu",
+    "device": "cpu",
+    "dtype": "torch.float32",
+    "threads": 1,
+    "interop": 1,
+    "deterministic": true,
+    "warn_only": false,
+    "autocast_cpu": false,
+    "autocast_cuda": false
+  },
+  "Input": {
+    "freeze_commit": "93e66ebfd8a1b6d3da07cde57fdfd97b552604af",
+    "source_directory": "C:\\Users\\htyx2\\.codex\\.chatgpt-projects\\g-p-6ad1990464e881918f1eaec50065d5a1\\acceptance_review_local\\adaptive_depth_v1_work",
+    "upstream": "C:\\Users\\htyx2\\.codex\\.chatgpt-projects\\g-p-6ad1990464e881918f1eaec50065d5a1\\mythos_parcae_pinned",
+    "upstream_pin": "69284c13746e849104f738d6d1a347b1f457df76"
+  },
+  "Expected": "All frozen tests and preservation checks pass; native skips are BLOCKED",
+  "Actual": {
+    "planned_tests": 15,
+    "run_tests": 15,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "expected_failures": 0,
+    "unexpected_successes": 0,
+    "not_run": 0,
+    "elapsed_seconds": 6.344000000000051
+  },
+  "Status": "PASS",
+  "checks": [
+    {
+      "Purpose": "isolated interpreter with bytecode disabled",
+      "Environment": "current CPU development process",
+      "Input": "93e66ebfd8a1b6d3da07cde57fdfd97b552604af",
+      "Expected": true,
+      "Actual": {
+        "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+        "executable": "C:\\Users\\htyx2\\.codex\\.chatgpt-projects\\g-p-6ad1990464e881918f1eaec50065d5a1\\.venv\\Scripts\\python.exe",
+        "platform": "Windows-11-10.0.26300-SP0",
+        "machine": "AMD64",
+        "isolated": 1,
+        "no_bytecode": true,
+        "test_kind": "development synthetic / untrained native tiny; not 140M",
+        "torch": "2.9.0+cpu",
+        "device": "cpu",
+        "dtype": "torch.float32",
+        "threads": 1,
+        "interop": 1,
+        "deterministic": true,
+        "warn_only": false,
+        "autocast_cpu": false,
+        "autocast_cuda": false
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "source manifest identity",
+      "Environment": "current CPU development process",
+      "Input": "93e66ebfd8a1b6d3da07cde57fdfd97b552604af",
+      "Expected": "a4d9d11a19eb02ad8b5ca0e67d25647e3d72a4325dfeba00408bcd02ce766d31",
+      "Actual": "a4d9d11a19eb02ad8b5ca0e67d25647e3d72a4325dfeba00408bcd02ce766d31",
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "exact executable source inventory",
+      "Environment": "current CPU development process",
+      "Input": "93e66ebfd8a1b6d3da07cde57fdfd97b552604af",
+      "Expected": true,
+      "Actual": [
+        "adaptive_depth.py",
+        "run_development.py",
+        "test_adaptive_depth.py"
+      ],
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "source identity adaptive_depth.py",
+      "Environment": "current CPU development process",
+      "Input": "93e66ebfd8a1b6d3da07cde57fdfd97b552604af",
+      "Expected": {
+        "bytes": 16059,
+        "sha256": "daa6b5b014f9d5f77cc47e2ba14a7027065c135b2cac7f6bcda58d0e6d6457b8"
+      },
+      "Actual": {
+        "bytes": 16059,
+        "sha256": "daa6b5b014f9d5f77cc47e2ba14a7027065c135b2cac7f6bcda58d0e6d6457b8"
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "source identity test_adaptive_depth.py",
+      "Environment": "current CPU development process",
+      "Input": "93e66ebfd8a1b6d3da07cde57fdfd97b552604af",
+      "Expected": {
+        "bytes": 19656,
+        "sha256": "ed8b956490c8e90cb9461e8905a521fea5a429199b665d970e65958230544a66"
+      },
+      "Actual": {
+        "bytes": 19656,
+        "sha256": "ed8b956490c8e90cb9461e8905a521fea5a429199b665d970e65958230544a66"
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "source identity run_development.py",
+      "Environment": "current CPU development process",
+      "Input": "93e66ebfd8a1b6d3da07cde57fdfd97b552604af",
+      "Expected": {
+        "bytes": 14138,
+        "sha256": "867ef8819f9fd2cfeb807471594f0048cb0594ab67897837cf6cf8db70aa29d7"
+      },
+      "Actual": {
+        "bytes": 14138,
+        "sha256": "867ef8819f9fd2cfeb807471594f0048cb0594ab67897837cf6cf8db70aa29d7"
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "pinned clean upstream",
+      "Environment": "current CPU development process",
+      "Input": "93e66ebfd8a1b6d3da07cde57fdfd97b552604af",
+      "Expected": true,
+      "Actual": {
+        "head": "69284c13746e849104f738d6d1a347b1f457df76",
+        "status": ""
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "CPU deterministic runtime",
+      "Environment": "current CPU development process",
+      "Input": "93e66ebfd8a1b6d3da07cde57fdfd97b552604af",
+      "Expected": true,
+      "Actual": {
+        "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+        "executable": "C:\\Users\\htyx2\\.codex\\.chatgpt-projects\\g-p-6ad1990464e881918f1eaec50065d5a1\\.venv\\Scripts\\python.exe",
+        "platform": "Windows-11-10.0.26300-SP0",
+        "machine": "AMD64",
+        "isolated": 1,
+        "no_bytecode": true,
+        "test_kind": "development synthetic / untrained native tiny; not 140M",
+        "torch": "2.9.0+cpu",
+        "device": "cpu",
+        "dtype": "torch.float32",
+        "threads": 1,
+        "interop": 1,
+        "deterministic": true,
+        "warn_only": false,
+        "autocast_cpu": false,
+        "autocast_cuda": false
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "runtime unchanged after test imports",
+      "Environment": "current CPU development process",
+      "Input": "93e66ebfd8a1b6d3da07cde57fdfd97b552604af",
+      "Expected": {
+        "torch": "2.9.0+cpu",
+        "device": "cpu",
+        "dtype": "torch.float32",
+        "threads": 1,
+        "interop": 1,
+        "deterministic": true,
+        "warn_only": false,
+        "autocast_cpu": false,
+        "autocast_cuda": false
+      },
+      "Actual": {
+        "torch": "2.9.0+cpu",
+        "device": "cpu",
+        "dtype": "torch.float32",
+        "threads": 1,
+        "interop": 1,
+        "deterministic": true,
+        "warn_only": false,
+        "autocast_cpu": false,
+        "autocast_cuda": false
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "exact frozen test discovery",
+      "Environment": "current CPU development process",
+      "Input": "93e66ebfd8a1b6d3da07cde57fdfd97b552604af",
+      "Expected": [
+        "test_adaptive_depth.NativeTinyTests.test_adaptive_native_identity_counts_and_immutability",
+        "test_adaptive_depth.NativeTinyTests.test_fixed_and_resumed_match_native_bytes_all_depths",
+        "test_adaptive_depth.NativeTinyTests.test_native_causal_suffix_control",
+        "test_adaptive_depth.NativeTinyTests.test_native_fail_closed_configuration_and_autocast",
+        "test_adaptive_depth.NativeTinyTests.test_native_prefix_isolation_and_repeat",
+        "test_adaptive_depth.PolicyTests.test_policy_rejects_invalid",
+        "test_adaptive_depth.PolicyTests.test_policy_scalar_reference",
+        "test_adaptive_depth.PolicyTests.test_zero_shift_threshold_and_no_rng",
+        "test_adaptive_depth.ToyExecutionTests.test_fixed_budgets_and_invalid_budget",
+        "test_adaptive_depth.ToyExecutionTests.test_input_and_no_labels_interface",
+        "test_adaptive_depth.ToyExecutionTests.test_readout_inplace_cannot_contaminate_state",
+        "test_adaptive_depth.ToyExecutionTests.test_restores_attribute_on_success_exception_and_rng_failure",
+        "test_adaptive_depth.ToyExecutionTests.test_stable_can_be_wrong",
+        "test_adaptive_depth.ToyExecutionTests.test_stable_true_early_exit_and_counts",
+        "test_adaptive_depth.ToyExecutionTests.test_unstable_continues_without_restart"
+      ],
+      "Actual": [
+        "test_adaptive_depth.NativeTinyTests.test_adaptive_native_identity_counts_and_immutability",
+        "test_adaptive_depth.NativeTinyTests.test_fixed_and_resumed_match_native_bytes_all_depths",
+        "test_adaptive_depth.NativeTinyTests.test_native_causal_suffix_control",
+        "test_adaptive_depth.NativeTinyTests.test_native_fail_closed_configuration_and_autocast",
+        "test_adaptive_depth.NativeTinyTests.test_native_prefix_isolation_and_repeat",
+        "test_adaptive_depth.PolicyTests.test_policy_rejects_invalid",
+        "test_adaptive_depth.PolicyTests.test_policy_scalar_reference",
+        "test_adaptive_depth.PolicyTests.test_zero_shift_threshold_and_no_rng",
+        "test_adaptive_depth.ToyExecutionTests.test_fixed_budgets_and_invalid_budget",
+        "test_adaptive_depth.ToyExecutionTests.test_input_and_no_labels_interface",
+        "test_adaptive_depth.ToyExecutionTests.test_readout_inplace_cannot_contaminate_state",
+        "test_adaptive_depth.ToyExecutionTests.test_restores_attribute_on_success_exception_and_rng_failure",
+        "test_adaptive_depth.ToyExecutionTests.test_stable_can_be_wrong",
+        "test_adaptive_depth.ToyExecutionTests.test_stable_true_early_exit_and_counts",
+        "test_adaptive_depth.ToyExecutionTests.test_unstable_continues_without_restart"
+      ],
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "full suite completion",
+      "Environment": "current CPU development process",
+      "Input": "93e66ebfd8a1b6d3da07cde57fdfd97b552604af",
+      "Expected": 15,
+      "Actual": 15,
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "runtime unchanged after tests",
+      "Environment": "current CPU development process",
+      "Input": "93e66ebfd8a1b6d3da07cde57fdfd97b552604af",
+      "Expected": {
+        "torch": "2.9.0+cpu",
+        "device": "cpu",
+        "dtype": "torch.float32",
+        "threads": 1,
+        "interop": 1,
+        "deterministic": true,
+        "warn_only": false,
+        "autocast_cpu": false,
+        "autocast_cuda": false
+      },
+      "Actual": {
+        "torch": "2.9.0+cpu",
+        "device": "cpu",
+        "dtype": "torch.float32",
+        "threads": 1,
+        "interop": 1,
+        "deterministic": true,
+        "warn_only": false,
+        "autocast_cpu": false,
+        "autocast_cuda": false
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "upstream tracked bytes and Git state unchanged",
+      "Environment": "current CPU development process",
+      "Input": "93e66ebfd8a1b6d3da07cde57fdfd97b552604af",
+      "Expected": true,
+      "Actual": {
+        "equal": true,
+        "sha256": "eb0f998edc0e849b5f08c5dd6e53ea6745b4764591087b5aa658c9a3a879f1b8"
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "dependency inventory unchanged",
+      "Environment": "current CPU development process",
+      "Input": "93e66ebfd8a1b6d3da07cde57fdfd97b552604af",
+      "Expected": true,
+      "Actual": {
+        "equal": true,
+        "sha256": "995229ef9e11b2d0db785675b8cc13468ebc27cb139cf680ab6b72fd66f30150"
+      },
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "source unchanged adaptive_depth.py",
+      "Environment": "current CPU development process",
+      "Input": "93e66ebfd8a1b6d3da07cde57fdfd97b552604af",
+      "Expected": "daa6b5b014f9d5f77cc47e2ba14a7027065c135b2cac7f6bcda58d0e6d6457b8",
+      "Actual": "daa6b5b014f9d5f77cc47e2ba14a7027065c135b2cac7f6bcda58d0e6d6457b8",
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "source unchanged test_adaptive_depth.py",
+      "Environment": "current CPU development process",
+      "Input": "93e66ebfd8a1b6d3da07cde57fdfd97b552604af",
+      "Expected": "ed8b956490c8e90cb9461e8905a521fea5a429199b665d970e65958230544a66",
+      "Actual": "ed8b956490c8e90cb9461e8905a521fea5a429199b665d970e65958230544a66",
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "source unchanged run_development.py",
+      "Environment": "current CPU development process",
+      "Input": "93e66ebfd8a1b6d3da07cde57fdfd97b552604af",
+      "Expected": "867ef8819f9fd2cfeb807471594f0048cb0594ab67897837cf6cf8db70aa29d7",
+      "Actual": "867ef8819f9fd2cfeb807471594f0048cb0594ab67897837cf6cf8db70aa29d7",
+      "Status": "PASS"
+    }
+  ],
+  "tests": [
+    {
+      "Purpose": "Selected native output is exact; actual hooks verify call counts/state preservation.",
+      "Environment": "current CPU development process",
+      "Input": "test_adaptive_depth.NativeTinyTests.test_adaptive_native_identity_counts_and_immutability",
+      "Expected": "All assertions in the frozen test pass",
+      "Actual": "Assertions completed without failure",
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Native random tiny: fixed/resumed logits at 8/16/32 match native bytes.",
+      "Environment": "current CPU development process",
+      "Input": "test_adaptive_depth.NativeTinyTests.test_fixed_and_resumed_match_native_bytes_all_depths",
+      "Expected": "All assertions in the frozen test pass",
+      "Actual": "Assertions completed without failure",
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Same-length future suffix changes cannot affect earlier checkpoint logits.",
+      "Environment": "current CPU development process",
+      "Input": "test_adaptive_depth.NativeTinyTests.test_native_causal_suffix_control",
+      "Expected": "All assertions in the frozen test pass",
+      "Actual": "Assertions completed without failure",
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Native public guard rejects training, non-FP32, fused/config and autocast paths.",
+      "Environment": "current CPU development process",
+      "Input": "test_adaptive_depth.NativeTinyTests.test_native_fail_closed_configuration_and_autocast",
+      "Expected": "All assertions in the frozen test pass",
+      "Actual": "Assertions completed without failure",
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Only supplied prefix is scored; separate calls restart h0 and repeat exactly.",
+      "Environment": "current CPU development process",
+      "Input": "test_adaptive_depth.NativeTinyTests.test_native_prefix_isolation_and_repeat",
+      "Expected": "All assertions in the frozen test pass",
+      "Actual": "Assertions completed without failure",
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Invalid shape, dtype, nonfinite values and out-of-domain TV fail closed.",
+      "Environment": "current CPU development process",
+      "Input": "test_adaptive_depth.PolicyTests.test_policy_rejects_invalid",
+      "Expected": "All assertions in the frozen test pass",
+      "Actual": "Assertions completed without failure",
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "FP64 TV agrees with an independent Python scalar softmax reference.",
+      "Environment": "current CPU development process",
+      "Input": "test_adaptive_depth.PolicyTests.test_policy_scalar_reference",
+      "Expected": "All assertions in the frozen test pass",
+      "Actual": "Assertions completed without failure",
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Zero TV, finite additive shift and inclusive frozen boundary are explicit.",
+      "Environment": "current CPU development process",
+      "Input": "test_adaptive_depth.PolicyTests.test_zero_shift_threshold_and_no_rng",
+      "Expected": "All assertions in the frozen test pass",
+      "Actual": "Assertions completed without failure",
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Fixed controls perform exactly the requested budget and only one readout.",
+      "Environment": "current CPU development process",
+      "Input": "test_adaptive_depth.ToyExecutionTests.test_fixed_budgets_and_invalid_budget",
+      "Expected": "All assertions in the frozen test pass",
+      "Actual": "Assertions completed without failure",
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Batch, context, dtype, token bounds fail; labels/cache/masks are absent.",
+      "Environment": "current CPU development process",
+      "Input": "test_adaptive_depth.ToyExecutionTests.test_input_and_no_labels_interface",
+      "Expected": "All assertions in the frozen test pass",
+      "Actual": "Assertions completed without failure",
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Even an in-place toy coda cannot corrupt the resumed recurrence.",
+      "Environment": "current CPU development process",
+      "Input": "test_adaptive_depth.ToyExecutionTests.test_readout_inplace_cannot_contaminate_state",
+      "Expected": "All assertions in the frozen test pass",
+      "Actual": "Assertions completed without failure",
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Temporary native input IDs restore their original identity on every exit.",
+      "Environment": "current CPU development process",
+      "Input": "test_adaptive_depth.ToyExecutionTests.test_restores_attribute_on_success_exception_and_rng_failure",
+      "Expected": "All assertions in the frozen test pass",
+      "Actual": "Assertions completed without failure",
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "A synthetic wrong prediction can be stable: early exit is no quality proof.",
+      "Environment": "current CPU development process",
+      "Input": "test_adaptive_depth.ToyExecutionTests.test_stable_can_be_wrong",
+      "Expected": "All assertions in the frozen test pass",
+      "Actual": "Assertions completed without failure",
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Stable fixture executes exactly 16 updates, 2 readouts, and one policy.",
+      "Environment": "current CPU development process",
+      "Input": "test_adaptive_depth.ToyExecutionTests.test_stable_true_early_exit_and_counts",
+      "Expected": "All assertions in the frozen test pass",
+      "Actual": "Assertions completed without failure",
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Unstable fixture continues the same state to 32 with 3 readouts.",
+      "Environment": "current CPU development process",
+      "Input": "test_adaptive_depth.ToyExecutionTests.test_unstable_continues_without_restart",
+      "Expected": "All assertions in the frozen test pass",
+      "Actual": "Assertions completed without failure",
+      "Status": "PASS"
+    }
+  ],
+  "formal_140m_started": false,
+  "quality_improvement": "NOT TESTED",
+  "training_recovery": "NOT TESTED",
+  "claude_mythos_parity": "NOT TESTED"
+}
