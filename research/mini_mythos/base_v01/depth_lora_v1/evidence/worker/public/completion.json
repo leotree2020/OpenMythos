@@ -1,0 +1,57 @@
+{
+  "Purpose": "CPU fixed32 depth-specific LoRA versus native/shared controls",
+  "Environment": {
+    "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+    "torch": "2.11.0+cpu",
+    "device": "cpu",
+    "dtype": "torch.float32",
+    "intra": 2,
+    "interop": 1,
+    "deterministic": true,
+    "cpu_autocast": false,
+    "cuda_autocast": false,
+    "env": {
+      "OMP_NUM_THREADS": "2",
+      "MKL_NUM_THREADS": "2",
+      "OPENBLAS_NUM_THREADS": "1",
+      "RAYON_NUM_THREADS": "1",
+      "TOKENIZERS_PARALLELISM": "false",
+      "CUDA_VISIBLE_DEVICES": "",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "HF_HUB_OFFLINE": "1",
+      "TRANSFORMERS_OFFLINE": "1"
+    }
+  },
+  "Input": {
+    "branch": "mythos-depth-lora-cpu-v1",
+    "data_path": "/workspaces/mythos-evidence/base_v01/depth_lora/preparation-v1/data/inputs.json",
+    "expected_head": "083192871d6cc3abff0cd5a01fa6f628c7cf29ec",
+    "freeze_commit": "083192871d6cc3abff0cd5a01fa6f628c7cf29ec",
+    "inputs_sha256": "b730b54aa1896227a67e25e6f422ea66f7c9d04ac1a17d98cfef5416d44653cc",
+    "model_dir": "/workspaces/mythos-evidence/base_v01/b1/b1-20261101T021657Z/downloads/model",
+    "output": "/workspaces/mythos-evidence/base_v01/depth_lora/attempt-v1/worker",
+    "repo": "/workspaces/mythos-depth-lora-cpu-v1",
+    "upstream": "/workspaces/mythos-parcae-pinned"
+  },
+  "Expected": "All frozen engineering controls pass; scientific screens separately audited",
+  "Actual": {
+    "calls_started": 293,
+    "calls_completed": 293,
+    "train_steps": 128,
+    "eval_rows": 160,
+    "zero_control_calls": 5,
+    "model_loads": 1,
+    "adapters_saved": 4,
+    "reload_calls": 0
+  },
+  "Status": "PASS",
+  "checks": {
+    "PASS": 1145,
+    "FAIL": 0,
+    "BLOCKED": 0
+  },
+  "error": null,
+  "preservation": "PASS",
+  "seconds": 1007.9835911440005,
+  "utc": "2026-11-02T06:12:50.328511+00:00"
+}
