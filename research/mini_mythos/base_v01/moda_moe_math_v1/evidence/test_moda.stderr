@@ -1,0 +1,27 @@
+test_m01_single_softmax_matches_enumerated_legal_keys (__main__.MoDATests.test_m01_single_softmax_matches_enumerated_legal_keys)
+L=2 joint sequence/depth softmax equals explicit legal-key enumeration. ... ok
+test_m02_query_key_value_history_vjp_matches_reference (__main__.MoDATests.test_m02_query_key_value_history_vjp_matches_reference)
+Q/K/V/O, input and both history depths receive reference-matching VJPs. ... ok
+test_m03_empty_depth_sdpa_matches_causal_reference (__main__.MoDATests.test_m03_empty_depth_sdpa_matches_causal_reference)
+L=0 native SDPA branch equals the causal attention equation. ... ok
+test_m04_gqa_head_mapping_and_invalid_group_rejection (__main__.MoDATests.test_m04_gqa_head_mapping_and_invalid_group_rejection)
+GQA maps query head h to KV head floor(h/group), including depth axes. ... ok
+test_m05_multilayer_future_tokens_do_not_change_prefix (__main__.MoDATests.test_m05_multilayer_future_tokens_do_not_change_prefix)
+Two source blocks write only prior-layer history and retain causal prefixes. ... ok
+test_m06_writer_from_post_ffn_and_gradients_through_history (__main__.MoDATests.test_m06_writer_from_post_ffn_and_gradients_through_history)
+Writer uses post-FFN block output; later reader gradients reach both writers. ... ok
+test_m07_independent_calls_have_fresh_local_depth_caches (__main__.MoDATests.test_m07_independent_calls_have_fresh_local_depth_caches)
+Source model has new depth lists per call and no stale autograd graph. ... ok
+test_m08_zero_output_projection_is_external_residual_identity (__main__.MoDATests.test_m08_zero_output_projection_is_external_residual_identity)
+Zero attention output leaves x+attention(x) exact; postnorm block is not asserted identical. ... ok
+test_m09_low_width_reader_math_and_gradient (__main__.MoDATests.test_m09_low_width_reader_math_and_gradient)
+D16 with one four-dimensional Q/KV head projects back to D16 correctly. ... ok
+test_m10_new_instance_state_reload_exact (__main__.MoDATests.test_m10_new_instance_state_reload_exact)
+Source tiny model state_dict reload in a new instance preserves logits exactly. ... ok
+test_m11_explicit_history_immutability_causality_and_empty_after_history (__main__.MoDATests.test_m11_explicit_history_immutability_causality_and_empty_after_history)
+Supplied depth caches stay immutable and cannot leak future positions or prior calls. ... ok
+
+----------------------------------------------------------------------
+Ran 11 tests in 0.493s
+
+OK

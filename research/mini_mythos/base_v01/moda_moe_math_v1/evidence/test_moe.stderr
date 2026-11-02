@@ -1,0 +1,26 @@
+test_e01_expert_matches_explicit_swiglu (__main__.MoETests.test_e01_expert_matches_explicit_swiglu)
+Each source expert is w2(SiLU(w1(x))*w3(x)). ... ok
+test_e02_softmax_and_sigmoid_weight_semantics (__main__.MoETests.test_e02_softmax_and_sigmoid_weight_semantics)
+Softmax selected weights stay unnormalised; sigmoid weights normalise then scale. ... /workspaces/mythos-base-v01-cpu312/lib/python3.12/site-packages/torch/utils/_device.py:116: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:836.)
+  return func(*args, **kwargs)
+ok
+test_e03_sparse_dispatch_matches_dense_all_expert_reference (__main__.MoETests.test_e03_sparse_dispatch_matches_dense_all_expert_reference)
+Sparse selected-token dispatch equals dense all-expert masked evaluation. ... ok
+test_e04_dispatch_input_router_and_expert_vjp (__main__.MoETests.test_e04_dispatch_input_router_and_expert_vjp)
+Away from routing ties, input/router/shared/selected expert gradients match dense reference. ... ok
+test_e05_zero_token_experts_not_called_or_differentiated (__main__.MoETests.test_e05_zero_token_experts_not_called_or_differentiated)
+Experts with no assigned tokens are skipped; shared and selected experts execute. ... ok
+test_e06_balance_formula_and_gradient_direction (__main__.MoETests.test_e06_balance_formula_and_gradient_direction)
+Minimising balance loss decreases overloaded expert scores, contrary to source prose. ... ok
+test_e07_alpha_applied_once_at_model_loss_boundary (__main__.MoETests.test_e07_alpha_applied_once_at_model_loss_boundary)
+Tiny full-model loss is CE plus alpha times mean raw block balance, not alpha squared. ... ok
+test_e08_zero_output_is_external_residual_identity (__main__.MoETests.test_e08_zero_output_is_external_residual_identity)
+Zero expert output projections give exact x+MoE(x) identity and finite gate-only balance gradient. ... ok
+test_e09_eval_balance_none_and_state_reload_exact (__main__.MoETests.test_e09_eval_balance_none_and_state_reload_exact)
+Eval omits auxiliary balance; new-instance state reload preserves MoE outputs exactly. ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.111s
+
+OK
