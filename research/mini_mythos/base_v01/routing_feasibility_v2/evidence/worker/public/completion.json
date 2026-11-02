@@ -1,0 +1,74 @@
+{
+  "Purpose": "Normal-length new-to-routing early-exit feasibility, no quality trial",
+  "Environment": {
+    "planned": "CPU FP32; threads2; interop1; no autocast/cache"
+  },
+  "Input": {
+    "spec": {
+      "branch": "mythos-routing-feasibility-cpu-v2",
+      "data_manifest_path": "/workspaces/mythos-evidence/base_v01/routing_feasibility/attempt-v2/data/public/completion.json",
+      "data_manifest_sha256": "001841616f4139873f9057fb92df86fb366bc4e66d98f6230da59be9d689075d",
+      "expected_head": "1ff8c902cb003ba1010be76f067de2708e0206bd",
+      "freeze_commit": "1ff8c902cb003ba1010be76f067de2708e0206bd",
+      "inputs_path": "/workspaces/mythos-evidence/base_v01/routing_feasibility/attempt-v2/data/private/inputs.json",
+      "inputs_sha256": "ae5f8ad5fd53d25afaf29487a650dc0300528b0926c9883652475c4ca7db127f",
+      "model_dir": "/workspaces/mythos-evidence/base_v01/b1/b1-20261101T021657Z/downloads/model",
+      "repo": "/workspaces/mythos-routing-feasibility-cpu-v2",
+      "run_dir": "/workspaces/mythos-evidence/base_v01/routing_feasibility/attempt-v2/worker",
+      "run_id": "MYTHOS-ROUTING-FEASIBILITY-CPU-V2",
+      "source_manifest_path": "/workspaces/mythos-evidence/base_v01/routing_feasibility/attempt-v2/operator/source_manifest.json",
+      "source_manifest_sha256": "745691ab27076e31dbaaaf2ad15c38b2e8b43501317a4a14f995f567019cebca",
+      "tokenizer_path": "/workspaces/mythos-evidence/base_v01/b1/b1-20261101T021657Z/downloads/tokenizer/tokenizer.json",
+      "upstream": "/workspaces/mythos-parcae-pinned"
+    },
+    "weights_sha256": "ed6eb306464dd0d694e9eacd58f7e06ac3e44b43cb7c5c79dbcb1543059c6621",
+    "inputs_sha256": "ae5f8ad5fd53d25afaf29487a650dc0300528b0926c9883652475c4ca7db127f"
+  },
+  "Expected": {
+    "calls": 32,
+    "articles": 16,
+    "tokens": 128,
+    "seeds": [
+      3101,
+      3202
+    ],
+    "threshold": 0.01
+  },
+  "Actual": {
+    "calls_started": 0,
+    "calls_completed": 0,
+    "groups_completed": 0,
+    "loader_attempts": 0,
+    "loader_returns": 0,
+    "checks": {
+      "PASS": 2,
+      "FAIL": 1,
+      "BLOCKED": 0
+    },
+    "preservation": "NOT TESTED",
+    "routing": {
+      "early_exit_observed": "NOT TESTED",
+      "feasibility": "NOT TESTED",
+      "complete_cases": 0
+    },
+    "error": {
+      "phase": "S0",
+      "reason": "designated routing worktree and branch",
+      "type": "Stop",
+      "actual": {
+        "repo": "/workspaces/mythos-routing-feasibility-cpu-v2",
+        "branch": "mythos-routing-feasibility-cpu-v2"
+      },
+      "traceback": "Traceback (most recent call last):\n  File \"/workspaces/mythos-routing-feasibility-cpu-v2/research/mini_mythos/base_v01/routing_feasibility_v1/run_routing.py\", line 348, in main\n    execute(run, smoke)\n  File \"/workspaces/mythos-routing-feasibility-cpu-v2/research/mini_mythos/base_v01/routing_feasibility_v1/run_routing.py\", line 153, in execute\n    run.check(\"designated routing worktree and branch\", str(repo) == EXPECTED_REPO and spec[\"branch\"] == BRANCH,\n  File \"/workspaces/mythos-routing-feasibility-cpu-v2/research/mini_mythos/base_v01/adaptive_140m_smoke_v1/run_smoke.py\", line 149, in check\n    raise Stop(failure, purpose, actual)\nmythos_prior_smoke_observers.Stop: designated routing worktree and branch\n"
+    },
+    "save_errors": []
+  },
+  "Status": "FAIL",
+  "complete_coverage": false,
+  "ended_utc": "2026-11-02T04:43:48.171458+00:00",
+  "elapsed_seconds": 0.022422309000376117,
+  "quality": "NOT TESTED",
+  "net_acceleration": "NOT TESTED",
+  "training": "NOT TESTED",
+  "formal_acceptance_ready": false
+}
