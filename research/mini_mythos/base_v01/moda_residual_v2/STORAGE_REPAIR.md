@@ -1,6 +1,6 @@
 # MoDA v2 evidence-storage repair
 
-Status: implementation and local startup fixtures complete; exact target preflight and final freeze pending. No target/model execution by this implementation agent.
+Status: implementation/local startup fixtures complete; exact designated-target storage preflight PASS; final execution freeze pending. No target/model execution by this implementation agent. The target measurement was performed by the root operator and its original file bytes were independently pinned below.
 
 ## Problem and controlled change
 
@@ -23,3 +23,9 @@ DEVELOPMENT_V2_STARTUP_ATTEMPT1.json:11/11 PASS. Coverage includes the new branc
 ## Freeze dependencies
 
 Root must obtain exact STORAGE_PREFLIGHT.json from the designated Codespace using the preparation source, then include that exact file and update the complete budget proof. Collector/codec/measurement logic must not change after this target measurement. Review and source/test inventories are frozen afterward. Any discrepancy is resolved before freeze; real model data never select storage settings or thresholds.
+
+## Exact target preflight and complete budget
+
+The root-operated preflight measured25,431 protected records, retaining all25,367 original path/pin pairs. Actual gzip1,180,984 bytes; planning forecast with64KiB+4KiB margin1,250,616 bytes, both below the unchanged2MiB bound. The exact32,488-byte STORAGE_PREFLIGHT.json has SHA2569908ed2298b5531006e0e7c6aa9ccd5a7a87ed83acb77f2c3ce8b433d89feef6. Its preparation commit and every size/hash/coverage assertion are in that file. No real model was imported or called.
+
+INHERITED_V1_EVIDENCE_BUDGET.json preserves the prior budget report verbatim. The new budget keeps all prior conservative envelope allocations and total28,995,348 bytes under32MiB; actual measured gzip copies2,361,968 bytes and planning copies2,501,232 bytes remain inside the original4MiB protected-copy allowance. These measurements correct the prior scope forecast without relaxing limits, dropping objects or trimming other evidence. Runtime actual size/copy/reserve guards remain required.
