@@ -1,0 +1,182 @@
+{
+  "Purpose": "Final accepted single-mechanism MoDA CPU pilot after lossless storage repair",
+  "Environment": {
+    "target": "bookish-pancake-vwqx7rr9x5w3wxjr",
+    "device": "CPU",
+    "python": "3.12.3",
+    "torch": "2.11.0+cpu",
+    "numpy": "1.26.4",
+    "intra_op": 2,
+    "interop": 1
+  },
+  "Input": {
+    "base": "d5d6e74888b65b757ecef075f1bd6838f712cc77",
+    "execution_freeze": "301cb192e8a32768146c9bb9131699ee9aad4da2",
+    "result_commit": "8043f5665667b78d956984c1292a335ce4c8e375",
+    "closure_code": "6e9f0b1468b66ad5acfdf5fe32f024df67b7cbf6",
+    "closure_evidence": "fcedb81a2c05cdcbf418df2f0e2c25c75f6a0e8d",
+    "branch": "mythos-moda-residual-cpu-v2",
+    "data": "16 train and16 reused development articles;129 tokens/article; evaluation64 scored positions x2 h0 seeds; train seeds4101/4202;32 steps/arm/seed"
+  },
+  "Expected": "Exact128 updates/293 main calls/160 evaluations/4 new-process reloads; full protection; each training seed NLL delta<=-0.01 and accuracy delta>=-0.01 for each quality screen",
+  "Actual": {
+    "means": {
+      "fixed32": {
+        "mean_nll": 3.287538548167015,
+        "correct": 732,
+        "scored_observations": 2048,
+        "accuracy": 0.357421875
+      },
+      "shared_4101": {
+        "mean_nll": 3.2888098352260404,
+        "correct": 734,
+        "scored_observations": 2048,
+        "accuracy": 0.3583984375
+      },
+      "shared_4202": {
+        "mean_nll": 3.3008355906499545,
+        "correct": 738,
+        "scored_observations": 2048,
+        "accuracy": 0.3603515625
+      },
+      "depth_4101": {
+        "mean_nll": 3.235129174539436,
+        "correct": 775,
+        "scored_observations": 2048,
+        "accuracy": 0.37841796875
+      },
+      "depth_4202": {
+        "mean_nll": 3.2073188765448175,
+        "correct": 764,
+        "scored_observations": 2048,
+        "accuracy": 0.373046875
+      }
+    },
+    "comparisons": {
+      "shared_vs_fixed32_4101": {
+        "delta_nll": 0.0012712870590254471,
+        "delta_accuracy": 0.0009765625,
+        "articles_improved": 6,
+        "worst_article_delta_nll": 0.22528496484318095,
+        "screen": false,
+        "interpretation": "NO_QUALIFIED_IMPROVEMENT"
+      },
+      "depth_vs_fixed32_4101": {
+        "delta_nll": -0.052409373627578915,
+        "delta_accuracy": 0.02099609375,
+        "articles_improved": 9,
+        "worst_article_delta_nll": 0.23858391560771142,
+        "screen": true,
+        "interpretation": "IMPROVEMENT"
+      },
+      "depth_vs_shared_4101": {
+        "delta_nll": -0.05368066068660436,
+        "delta_accuracy": 0.02001953125,
+        "articles_improved": 14,
+        "worst_article_delta_nll": 0.13685915739317855,
+        "screen": true,
+        "interpretation": "IMPROVEMENT"
+      },
+      "shared_vs_fixed32_4202": {
+        "delta_nll": 0.0132970424829396,
+        "delta_accuracy": 0.0029296875,
+        "articles_improved": 6,
+        "worst_article_delta_nll": 0.2359015380954259,
+        "screen": false,
+        "interpretation": "WORSE"
+      },
+      "depth_vs_fixed32_4202": {
+        "delta_nll": -0.08021967162219747,
+        "delta_accuracy": 0.015625,
+        "articles_improved": 10,
+        "worst_article_delta_nll": 0.22674130670963089,
+        "screen": true,
+        "interpretation": "IMPROVEMENT"
+      },
+      "depth_vs_shared_4202": {
+        "delta_nll": -0.09351671410513707,
+        "delta_accuracy": 0.0126953125,
+        "articles_improved": 16,
+        "worst_article_delta_nll": -0.009160231385795026,
+        "screen": true,
+        "interpretation": "IMPROVEMENT"
+      }
+    },
+    "scientific_screens": {
+      "shared_vs_fixed32": "FAIL",
+      "depth_vs_fixed32": "PASS",
+      "depth_vs_shared": "PASS"
+    },
+    "target_tests": {
+      "test_storage_codec.py": 12,
+      "test_startup.py": 11,
+      "test_moda_adapter.py": 24,
+      "test_audit.py": 13
+    },
+    "main_counts": {
+      "calls_started": 293,
+      "calls_completed": 293,
+      "train_steps": 128,
+      "eval_rows": 160,
+      "zero_control_calls": 5,
+      "model_loads": 1,
+      "adapters_saved": 4,
+      "reload_calls": 0
+    },
+    "reload_counts": {
+      "calls_started": 4,
+      "calls_completed": 4,
+      "train_steps": 0,
+      "eval_rows": 0,
+      "zero_control_calls": 0,
+      "model_loads": 1,
+      "adapters_saved": 0,
+      "reload_calls": 4
+    },
+    "root_check_counts": {
+      "PASS": 2640,
+      "FAIL": 0
+    },
+    "final_numpy_audit_counts": {
+      "PASS": 1979,
+      "FAIL": 0
+    },
+    "protected_files": 25436,
+    "protected_receipt": {
+      "canonical": {
+        "bytes": 5992065,
+        "sha256": "0b097a8e39e0a4ebc96f46ed881124f79c9435ea6cfcbe66ad0b03f40932764d"
+      },
+      "compressed": {
+        "bytes": 1181241,
+        "sha256": "6358e3bc273953d4a48f0a233ed2aa32cb118aedb4b3cfc76bf6e89dc9549a02"
+      },
+      "compression": "gzip-single-member-deflate-level9-mtime0-no-filename",
+      "record_count": 25436,
+      "schema": "mythos-protected-path-map-gzip-v1"
+    },
+    "main_seconds": 1134.599941958997,
+    "reload_seconds": 37.04631265900025,
+    "main_peak_rss_bytes": 2055708672,
+    "external_files_verified": 550,
+    "public_copies_verified": 542
+  },
+  "Status": "PASS",
+  "scientific_conclusion": "Exploratory positive development-set signal for this restricted MoDA history-attention adaptation versus both native fixed32 and equal-trainable-parameter current-sequence control in both seeds.",
+  "limits": [
+    "Only12288 output-projection parameters trained per arm; random attention features frozen; no full MoDA training claim.",
+    "16 reused development articles; no fresh project-held-out generalization or statistical confirmation; base pretraining overlap unknown.",
+    "9/16 and10/16 articles improve against native fixed32; text-level regressions remain.",
+    "Equal trainable parameter count is not equal compute or optimization difficulty.",
+    "160 rows received full live NumPy audit.36 full matrices retained/reference-recomputed by final audit;124 full candidate matrices intentionally discarded only after PASS audit and cannot be retrospectively reconstructed.",
+    "Main1134.60s and peak RSS describe the whole process including loading/training/evaluation/audits, not an isolated inference-speed benefit.",
+    "Static peer review used another ChatGPT agent; no independent human or cross-vendor replication."
+  ],
+  "Fresh_test_generalization": "NOT TESTED",
+  "Statistical_confirmation": "NOT TESTED",
+  "Equal_compute_superiority": "NOT TESTED",
+  "Production_language_quality": "NOT TESTED",
+  "Formal_Oracle": "BLOCKED/NOT_READY",
+  "FORMAL_ACCEPTANCE_READY": false,
+  "Next_unique_instruction": "Freeze current F32/S/H weights, thresholds and scoring; preregister a zero-training CPU paired evaluation on new project-unseen texts deduplicated against previous train/dev, reporting quality and actual elapsed compute. This is only the next recommended protocol; no such run or MoE/stacking is started in this stage."
+}
