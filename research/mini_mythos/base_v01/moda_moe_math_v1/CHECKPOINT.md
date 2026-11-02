@@ -16,4 +16,6 @@ Unresolved: Real140M integration, quality gain, capacity/compute controls, and g
 
 No B1 rerun, A5 relaxation, B2/D2-A, GPU, PR24 operation, or automatic mechanism stacking. Formal Oracle BLOCKED/NOT_READY; FORMAL_ACCEPTANCE_READY=False.
 
-Next unique instruction: review this sealed math checkpoint. On PASS design/freeze the separate single-mechanism memory-path quality protocol; on BLOCKED/FAIL resolve only the recorded cause under a new frozen continuation. No retry or quality launch here.
+Root acceptance: PASS; {'checks': 62, 'PASS': 62, 'FAIL': 0, 'MoDA': 11, 'MoE': 9, 'quality': 'NOT TESTED'}. Official target reports: MoDA11/11 and MoE9/9 PASS; startup4/4, operator472 checks PASS. These are mathematical readiness results, not140M language-quality results. Full reference/VJP/routing/cache/reload observations remain in the sealed reports.
+
+Next unique instruction: Freeze and execute one standalone low-width MoDA residual adaptation versus native fixed32 and equal-parameter sequence-only control, with a separately preregistered compact-evidence budget. MoE quality adaptation follows separately; no stacking.
