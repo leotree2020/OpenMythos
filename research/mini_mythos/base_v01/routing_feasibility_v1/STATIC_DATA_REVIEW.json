@@ -1,0 +1,109 @@
+{
+  "Purpose": "Review data lineage, frozen sample selection, evidence interfaces and the paired worker before the formal CPU experiment.",
+  "Environment": {
+    "reviewer": "ChatGPT data implementation subagent with a separate worker peer-review task",
+    "review_mode": "Static source reading plus local standard-library synthetic fixtures only",
+    "development_platform": "Windows AMD64",
+    "fixture_python": "3.12.14",
+    "target_runtime_validation": "NOT TESTED",
+    "independence": "The reviewer authored data_prepare.py and test_data.py. Worker code was authored by another agent in the same ChatGPT session. This is internal cross-review, not external or fully independent validation."
+  },
+  "Input": {
+    "files_sha256": {
+      "data_prepare.py": "4b71e252d1c5f5d698088e40251e54c6b19f2c39d24a83f4eb6daf7acc499654",
+      "test_data.py": "3e360ba867ed286b02baab8bfd8d90989f568e243c79b195465c3831a3126404",
+      "run_routing.py": "a3f463c9f77380513bfb7e1fdb5b1166f927b90c334b24e651decb3c43b3f7f9",
+      "../adaptive_140m_smoke_v1/run_smoke.py": "f29155eb3af5989a1da1f938dc2b7e7ca894a2dc960a0eefb6e4352517d0a37c",
+      "../depth_16_32_v1/run_depth_budget.py": "02fcaae5a7a09ede68a662592668099ad60f08af51aad683c5c7d37926163a68"
+    },
+    "development_report": {
+      "local_path": "acceptance_review_local/routing_data_dev_attempt2.json",
+      "sha256": "6724430d1c4aac8c8863d0882ba1dae44d9bc83f2e79cc5de5968a3d35c44729",
+      "scope": "Synthetic fixtures; not formal target-machine evidence"
+    }
+  },
+  "Expected": {
+    "data": "Rebuild frozen metadata from pinned original inputs, exclude the union of previously used sources, select the first16 remaining article_ids, preserve source bytes, and emit exactly128 body tokens per selected article without special tokens.",
+    "duplicates": "Reject repeated selected prefixes and any selected128-token prefix equal to an old or corrected input prefix even when article identities differ.",
+    "worker_interface": "Require PASS data completion with16 samples and32-call budget, bind the private input bytes by hash, and independently validate prefix hashes, order and source identities.",
+    "runtime_boundary": "No formal model call in this review. The worker is limited to32 adaptive calls under the frozen threshold and saves evidence before stopping on any BLOCKED or FAIL."
+  },
+  "Actual": {
+    "resolved_findings": [
+      {
+        "finding": "Source disjointness and within-cohort uniqueness did not initially exclude a new article with the same128-token prefix as a historical input.",
+        "identified_by": "Root agent static review",
+        "resolution": "Added a pre-emission check against the union of all old and corrected sample tokens[:128] hashes, without substituting a different article or changing the selection rule.",
+        "fixture": "test_data.DataTests.test_historical_prefix_duplicate_rejected_even_for_new_source",
+        "Status": "PASS"
+      }
+    ],
+    "fixture_validation": {
+      "planned": 10,
+      "run": 10,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "expected_failures": 0,
+      "unexpected_successes": 0,
+      "Status": "PASS",
+      "test_ids": [
+        "test_data.DataTests.test_body_tamper_rejected",
+        "test_data.DataTests.test_duplicate_prefix_does_not_pass_distinct_source_gate",
+        "test_data.DataTests.test_exact_body_prefix_and_both_hash_encodings",
+        "test_data.DataTests.test_exclusive_evidence_save_and_no_model_imports",
+        "test_data.DataTests.test_historical_prefix_duplicate_rejected_even_for_new_source",
+        "test_data.DataTests.test_invalid_token_or_token_count_rejected",
+        "test_data.DataTests.test_missing_source_or_changed_historical_counts_rejected",
+        "test_data.DataTests.test_old_mapping_tamper_rejected",
+        "test_data.DataTests.test_old_only_source_and_split_formula_are_excluded",
+        "test_data.DataTests.test_order_is_hash_ranking_not_partition_order"
+      ]
+    },
+    "static_checks": [
+      {
+        "check": "Original parquet/tokenizer/ledger/partition/old and corrected inputs/selection-change and frozen helper pins are checked before reconstruction; original source byte identities are preserved after the data stage.",
+        "Status": "PASS"
+      },
+      {
+        "check": "The old formula-fragment row maps to its canonical parent article. Old31 and corrected32 unique sources form an excluded33-source union. The remaining27 candidates are ordered by article_id, with the first16 selected before model results exist.",
+        "Status": "PASS"
+      },
+      {
+        "check": "The worker binds data/public/completion.json by SHA, requires Status PASS and16/32 counts, verifies the private input artifact hash, and validates128-token length, token types/range, unique source identities, source order and both prefix hash encodings.",
+        "Status": "PASS"
+      },
+      {
+        "check": "The canonical input_ids hash covers the token list without a batch dimension. The worker separately checks runtime batch-shaped JSON and raw int64 tensor bytes, avoiding confusion between these encodings.",
+        "Status": "PASS"
+      },
+      {
+        "check": "Worker loops over16 articles and seeds3101/3202, limits calls to32, invokes only the frozen adaptive API, and checks equal-length same-seed h0/RNG pairing.",
+        "Status": "PASS"
+      },
+      {
+        "check": "Frozen state_snapshot compares all63 state entries byte-for-byte with the original checkpoint; finite-value checks, runtime settings, frozen controller threshold, observed call counts and model/config/source/package preservation remain enforced.",
+        "Status": "PASS"
+      },
+      {
+        "check": "BLOCKED/FAIL paths stop subsequent model calls. Post-stop preservation reads/hashes the existing state only. Final PASS depends on complete32-call coverage and successful preservation.",
+        "Status": "PASS"
+      },
+      {
+        "check": "Public data and worker artifacts expose metadata and hashes; token arrays, original input text and raw numerical tensors remain in private target artifacts.",
+        "Status": "PASS"
+      }
+    ],
+    "open_blocking_findings": [],
+    "limitations": [
+      "Static checks and synthetic fixtures do not establish successful target corpus reconstruction, target dependency compatibility or model execution.",
+      "Novelty is limited to the existing Parcae depth/routing inputs. Earlier project usage and pretraining overlap are not ruled out.",
+      "Observed early exits would establish routing behavior in this sample, not preserved language quality, net acceleration or population generalization.",
+      "The same internal team implemented and reviewed this stage; no external independent audit is claimed."
+    ],
+    "formal_model_calls_performed_by_this_review": 0,
+    "scientific_result": "NOT TESTED"
+  },
+  "Status": "PASS",
+  "status_scope": "Static review and the recorded synthetic development fixtures only"
+}
