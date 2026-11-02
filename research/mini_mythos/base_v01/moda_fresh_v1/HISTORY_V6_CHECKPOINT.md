@@ -1,0 +1,23 @@
+# MoDA V6 complete-history/data-admission checkpoint
+
+**Historical preparation PASS; independent data audit PASS. Model quality/timing NOT TESTED.**
+
+Branch mythos-moda-fresh-cpu-v1. Source freezeA79ff936b7b3868d6431361b37dd80875d4af0fd1; preparation freezeB7a293a2b9ab8b0c667c5c839e152a1423cd93c10; independent audit freezeCd91f5d30675a9d76480cd89503bd7e3cb2ba0d92; reviewed model-launch/capacity code71aabeb116c61e921de2d92dd9502e3dd2cf11e7. This metadata/result commit is the one containing this file; model execution still requires a separately completed target storage proof and final clean source manifest.
+
+Purpose: finish full registered historical exclusion, deterministic20-text selection and independent data admission for frozen native32/S/H comparison. Environment: designated Codespace; unchanged data Python3.12.3, pyarrow19.0.1/tokenizers0.23.2/NumPy1.26.4; CPU only, no install/upstream/weight/threshold changes, no model loads or training.
+
+Input: exact preregistered AGNews train120000 rows at fixed revision eb185aade064a813bc0b7f42de02595523103ca4, corpus SHA fc508d6d9868594e3da960a8cfeb63ab5a4746598b93428c224397080c1f52ee, original tokenizer and32603 historical files. The old failed test-source protocol and all prior records remain unchanged. Train is only the dataset split name, not project model training.
+
+Expected: full source/gate reconstruction and complete history, all original overlap criteria, exactly5 selected records per label,129 IDs each, no network/model/optimizer. Actual: full120000-row source identities/decisions independently reconstructed before scanning;1052 eligible candidates; all32603 historical files completed;5413210 string leaves,4567646 text fingerprints,809289 cache hits and3796 token arrays.736 candidates excluded by history. Original history/new-new selection yields exactly20,5 per label, no quota/filter relaxation.
+
+Actual recovery:2 malformed JSONL records across2 parsed physical/container occurrences,4000 retained raw UTF8 bytes,15072 complete valid records,10 decoded prefixes,14 string fragments; no missing bytes invented. One malformed Python source retained2345 raw bytes,112 string fragments and16 rejected origins. Every physical path, binary classification, duplicate-payload identity and recovery counter remains in the complete ledger. Original source/test corpus, snapshots, source code and protected input after-pins all PASS.
+
+Independent audit:6 aggregate gates PASS/0FAIL. It independently rechecks complete source eligibility/identities, selected rows/order,129-token windows/targets, full physical history inventory/pins/classifications/snapshot aliases, all positive historical exclusion witnesses and recovery accounting. It shares the pinned byte-leaf parser and does not independently rerun all historical tokenization/absence checks; historical_absence_independently_rescanned=False remains explicit. Novelty is bounded to the registered retained history, not all prior conversations or unknown base-model pretraining.
+
+Target helper checks: source/history bootstrap87/87, preparation18/18, independent audit27/27;132 total PASS. Local model-launch20/20 and capacity3/3 are only development evidence. All old failure reports preserved.
+
+Prepared input32692 bytes, SHA256 2b740275785c4920ff59bcf3b76b2a81cce24597e4f5de1f491b8ea3357890db. Preparation manifest4147 bytes, SHA256 90f71856ad785cfaeb873e1c00070d9d2b55cb6880fafb799a40cca3e08dbfb0. Exact audit and selected-public metadata receipts are in history_v6_evidence/ with HISTORY_V6_EXPORT_MANIFEST.json. Raw text/tokens, full120k decision ledgers, all history witnesses and snapshots remain external, unchanged and fully hash-bound. No full-raw-backup claim.
+
+MODEL_INPUT_MANIFEST_V6.json pins the completed source/spec/preparation/audit and operator inputs. MODEL_TEST_INVENTORY_V6.json fixes exact development IDs from the actual current source, without running those tests or importing/loading a model. Model storage2MiB inventory/12MiB nonraw/8MiB raw/256MiB reserve,405 calls, all weights/h0 seeds and scientific margins remain unchanged. Production quality, equal-compute superiority/statistical confirmation NOT TESTED. Formal Oracle BLOCKED/NOT_READY; FORMAL_ACCEPTANCE_READY=False. No B1 rerun, A5 change, GPU, B2/D2-A, mechanism stacking or PR24 merge.
+
+Next unique instruction: execute the reviewed target storage measurement using the unchanged-schema serialized payload forecast, preserve all source/history/old-model scope, and require PASS before freezing the final source manifest and launching exactly one405-call CPU comparison. On BLOCKED/FAIL stop and save evidence.
