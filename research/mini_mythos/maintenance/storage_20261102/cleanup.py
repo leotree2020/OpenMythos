@@ -79,15 +79,31 @@ def main():
         git_before=git_state()
         save('before.json',dict(free_bytes=before_free,cache=cache_before,cache_dir=cache_dir,protected=protected_before,packages=packages_before,git=git_before,cache_device=CACHE.stat().st_dev,workspace_device=REPO.stat().st_dev,cache_free_bytes=shutil.disk_usage(CACHE).free))
         no_installers();assert caches()==cache_before,'Cache changed before purge'
-        purge=run(cmd+['purge']);save('purge.json',purge);assert purge['returncode']==0,purge
-        cache_after=caches();packages_after=package_state();git_after=git_state();protected_after=verify(protected)
+        try:purge=run(cmd+['purge'])
+        except Exception as error:
+            def text(v):return v.decode(errors='replace') if isinstance(v,bytes) else v
+            purge=dict(argv=[str(x) for x in cmd+['purge']],returncode=None,error=repr(error),stdout=text(getattr(error,'stdout',None)),stderr=text(getattr(error,'stderr',None)))
+        save('purge.json',purge)
+        # Even a failed or timed-out purge gets all independent read-only checks.
+        observation_errors={}
+        def observe(name,fn):
+            try:return fn()
+            except Exception:observation_errors[name]=traceback.format_exc();return None
+        cache_after=observe('cache',caches)
+        packages_after=observe('packages',package_state)
+        git_after=observe('git',git_state)
+        protected_after=observe('protected',lambda:verify(protected))
+        after_free=observe('disk',lambda:shutil.disk_usage(REPO).free)
+        if observation_errors:
+            save('after.json',dict(cache=cache_after,packages=packages_after,git=git_after,protected=protected_after,free_bytes=after_free,errors=observation_errors))
+            report['Actual'].update(purge_returncode=purge['returncode'],after_free_bytes=after_free,observation_errors=observation_errors,model_calls=0)
+            raise RuntimeError('Post-cleanup observations incomplete; no retry')
         removed=sorted(cache_before.keys()-cache_after.keys());new=sorted(cache_after.keys()-cache_before.keys())
         same_remaining=all(cache_before[k]==v for k,v in cache_after.items() if k in cache_before)
-        after_free=shutil.disk_usage(REPO).free
         after=dict(free_bytes=after_free,cache=cache_after,removed_entries=removed,new_entries=new,removed_bytes=sum(cache_before[k]['bytes'] for k in removed),protected=protected_after,packages=packages_after,git=git_after)
         save('after.json',after)
-        checks=dict(cache_files_removed=bool(removed),remaining_cache_unchanged=same_remaining and not new,protected_unchanged=protected_after['Status']=='PASS',package_manifests_unchanged=packages_after==packages_before,git_states_unchanged=git_after==git_before,workspace_space_increased=after_free>before_free,admission_floor_available=after_free>=FLOOR,no_numerical_imports=not any(n.split('.')[0] in ('torch','numpy','parcae_lm','tokenizers','pyarrow') for n in sys.modules))
-        report['Actual'].update(after_free_bytes=after_free,net_free_increase_bytes=after_free-before_free,removed_files=len(removed),removed_payload_bytes=after['removed_bytes'],remaining_cache_files=len(cache_after),remaining_cache_bytes=sum(x['bytes'] for x in cache_after.values()),protected_files_verified=len(protected),checks=checks,model_calls=0,compression='NOT NEEDED: cache purge restored sufficient capacity',scientific_experiment='NOT RUN')
+        checks=dict(purge_exit_success=purge['returncode']==0,cache_files_removed=bool(removed),remaining_cache_unchanged=same_remaining and not new,protected_unchanged=protected_after['Status']=='PASS',package_manifests_unchanged=packages_after==packages_before,git_states_unchanged=git_after==git_before,workspace_space_increased=after_free>before_free,admission_floor_available=after_free>=FLOOR,no_numerical_imports=not any(n.split('.')[0] in ('torch','numpy','parcae_lm','tokenizers','pyarrow') for n in sys.modules))
+        report['Actual'].update(after_free_bytes=after_free,net_free_increase_bytes=after_free-before_free,removed_files=len(removed),removed_payload_bytes=after['removed_bytes'],remaining_cache_files=len(cache_after),remaining_cache_bytes=sum(x['bytes'] for x in cache_after.values()),protected_files_verified=len(protected),checks=checks,model_calls=0,compression='NOT NEEDED' if checks['admission_floor_available'] else 'NOT PERFORMED; capacity unresolved',scientific_experiment='NOT RUN')
         report['Status']='PASS' if all(checks.values()) else 'FAIL'
     except Exception:
         report['error']=traceback.format_exc()
