@@ -2,7 +2,9 @@
 import argparse
 import json
 from pathlib import Path
+import sys
 import unittest
+sys.path.insert(0,str(Path(__file__).resolve().parent))
 import measure_storage as m
 
 
@@ -19,6 +21,8 @@ class ForecastTests(unittest.TestCase):
         parts=budget["parts"]
         self.assertEqual(parts["worker_and_auditor_payload_both_copies"],24690)
         self.assertEqual(parts["complete_protected_gzip_both_copies"],2*receipt["compressed"]["bytes"])
+        actual_adapter_schema={r["arm"]+"_"+str(r["train_seed"]):r["state"] for r in args[3]["rows"]}
+        self.assertEqual(parts["frozen_base_and_adapter_before_after_both_copies"],4*(len(m.encoded(args[2]))+len(m.encoded(actual_adapter_schema))))
         self.assertEqual(parts["remaining_operator_environment_tests_logs_both_copies_allowance"],1024*1024)
         self.assertEqual(parts["git_and_finalization_allowance"],4*1024**2)
         self.assertEqual(parts["final_inventory_gzip_growth_both_copies_allowance"],131072)
@@ -38,7 +42,7 @@ class ForecastTests(unittest.TestCase):
 
 if __name__=="__main__":
     cli=argparse.ArgumentParser();cli.add_argument("--report",required=True,type=Path);args=cli.parse_args()
-    suite=unittest.defaultTestLoader.loadTestsFromTestCase(ForecastTests);ids=[x.id() for x in suite]
+    suite=unittest.defaultTestLoader.loadTestsFromTestCase(ForecastTests);ids=sorted(x.id() for x in suite)
     result=unittest.TextTestRunner(verbosity=2).run(suite)
-    report={"Purpose":"Development-only complete evidence capacity accounting","Environment":"Local stdlib; synthetic inventory/base63 plus previously copied adapter metadata; no target/model/new-data execution","Input":{"tests":ids},"Expected":{"run":len(ids),"failures":0,"errors":0},"Actual":{"run":result.testsRun,"failures":[[t.id(),e] for t,e in result.failures],"errors":[[t.id(),e] for t,e in result.errors]},"Status":"PASS" if result.wasSuccessful() and result.testsRun==len(ids) else "FAIL"}
+    report={"Purpose":"Development-only complete evidence capacity accounting","Environment":"Local stdlib; synthetic inventory/base63 plus previously copied adapter metadata; no target/model/new-data execution","Input":{"tests":ids},"Expected":{"run":len(ids),"failures":0,"errors":0},"Actual":{"test_ids":ids,"planned":len(ids),"run":result.testsRun,"failures":len(result.failures),"errors":len(result.errors),"skipped":len(result.skipped),"expected_failures":len(result.expectedFailures),"unexpected_successes":len(result.unexpectedSuccesses)},"Status":"PASS" if result.wasSuccessful() and result.testsRun==len(ids) and not result.skipped else "FAIL"}
     m.write(args.report,report);raise SystemExit(0 if report["Status"]=="PASS" else 1)

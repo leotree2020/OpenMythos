@@ -6,6 +6,7 @@ import importlib.util
 import json
 from pathlib import Path
 import sys
+import subprocess
 import tempfile
 import unittest
 from unittest import mock
@@ -20,6 +21,40 @@ class StartupTests(unittest.TestCase):
         self.assertEqual(O.EXPECTED_REPO.as_posix(),"/workspaces/mythos-moda-fresh-cpu-v1")
         self.assertEqual(O.RUN.as_posix(),"/workspaces/mythos-evidence/base_v01/moda_fresh/attempt-v1")
         self.assertFalse(O.INPUTS.is_relative_to(O.RUN))
+        self.assertEqual(O.PREPARATION.name,"preparation-v2")
+        self.assertEqual(O.CONTINUATION,"3a7f8b3ac15d4354800360961018de7c66d26be6")
+        self.assertEqual(O.DATA_AUDIT,O.PREPARATION/"DATA_AUDIT.json")
+        self.assertEqual([p.name for p in O.FRESH_PRIOR_DIRS],["preparation-v1","specification-v1","stop-v1"])
+    def test_exact_isolated_entrypoint_imports_before_help(self):
+        for name in ("execute_once.py","measure_storage.py","test_startup.py","test_measure_storage.py"):
+            result=subprocess.run([sys.executable,"-I","-B",str(ROOT/name),"--help"],capture_output=True,text=True,timeout=30)
+            self.assertEqual(result.returncode,0,(name,result.stdout,result.stderr))
+            self.assertIn("usage:",result.stdout)
+    def test_publication_uses_new_checkpoint_and_preserves_prior_stop_documents(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);(root/"CHECKPOINT.md").write_text("old blocked checkpoint");(root/"RESULTS_SUMMARY.json").write_text("old blocked summary")
+            with mock.patch.object(O,"ROOT",root):
+                targets=O.publication_targets()
+                self.assertEqual([p.name for p in targets],["evidence","PUBLIC_EXPORT.json","EXTERNAL_EVIDENCE_MANIFEST.json","MODEL_CHECKPOINT.md"])
+                self.assertTrue(all(not p.exists() for p in targets))
+                (root/"MODEL_CHECKPOINT.md").write_text("existing result")
+                self.assertFalse(all(not p.exists() for p in targets))
+            self.assertEqual((root/"CHECKPOINT.md").read_text(),"old blocked checkpoint")
+    def test_postclosure_budget_counts_new_reports_and_exact_limits(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);private=root/"worker/private";private.mkdir(parents=True)
+            (private/"final_sentinel.bin").write_bytes(b"raw"*10)
+            (root/"summary.json").write_bytes(b"s"*20);(root/"custody.json").write_bytes(b"c"*40)
+            budget=O.publication_budget(root)
+            self.assertEqual(budget["run_bytes"],90);self.assertEqual(budget["raw_bytes"],30);self.assertEqual(budget["public_copy_bytes"],60)
+            self.assertEqual(budget["projected_total_nonraw_bytes"],120+O.FINALIZATION_ALLOWANCE)
+            (root/"publication_quiescence.json").write_bytes(b"q"*10)
+            final=O.publication_budget(root);self.assertEqual(final["projected_total_nonraw_bytes"],budget["projected_total_nonraw_bytes"]+20)
+            with mock.patch.object(O,"METADATA_BUDGET",final["projected_total_nonraw_bytes"]):self.assertEqual(O.validate_publication_budget(final),final)
+            with mock.patch.object(O,"METADATA_BUDGET",final["projected_total_nonraw_bytes"]-1):
+                with self.assertRaisesRegex(O.Stop,"exceed12MiB"):O.validate_publication_budget(final)
+            low={**final,"free_bytes":O.DISK_RESERVE+final["public_copy_bytes"]+O.FINALIZATION_ALLOWANCE-1}
+            with self.assertRaisesRegex(O.Stop,"capacity unavailable"):O.validate_publication_budget(low)
     def test_old_checkouts_do_not_inherit_new_base(self):
         self.assertEqual(O.CHECKOUTS["/workspaces/mythos-moda-residual-cpu-v1"],"d5d6e74888b65b757ecef075f1bd6838f712cc77")
         self.assertEqual(O.CHECKOUTS[str(O.OLD_REPO)],O.BASE)
@@ -83,10 +118,50 @@ class StartupTests(unittest.TestCase):
             for p in files:p.write_bytes(b"same")
             preflight=prep/"STORAGE_PREFLIGHT.json";preflight.write_bytes(b"self")
             def fake_git(path,*args):return "untracked.txt\0" if "--others" in args else "tracked.py\0"
-            with mock.patch.object(O,"MAIN_TREE",main),mock.patch.object(O,"OLD_RUNS",[oldrun]),mock.patch.object(O,"PREPARATION",prep),mock.patch.object(O,"SPECIFICATION",prep),mock.patch.object(O,"DISCOVERY_FILES",[]),mock.patch.object(O,"history_inputs",return_value={str(main/"untracked.txt"):O.info(main/"untracked.txt")}),mock.patch.object(O,"STORAGE_PREFLIGHT",preflight),mock.patch.object(O,"OLD_PARENT_FILES",[root/"closure.json"]),mock.patch.object(O,"git",side_effect=fake_git):
+            with mock.patch.object(O,"MAIN_TREE",main),mock.patch.object(O,"OLD_RUNS",[oldrun]),mock.patch.object(O,"PREPARATION",prep),mock.patch.object(O,"FRESH_PRIOR_DIRS",()),mock.patch.object(O,"RUN",root/"unused_namespace"/"attempt-v1"),mock.patch.object(O,"DISCOVERY_FILES",[]),mock.patch.object(O,"history_inputs",return_value={str(main/"untracked.txt"):O.info(main/"untracked.txt")}),mock.patch.object(O,"STORAGE_PREFLIGHT",preflight),mock.patch.object(O,"OLD_PARENT_FILES",[root/"closure.json"]),mock.patch.object(O,"git",side_effect=fake_git):
                 actual=O.collect_protected({str(main):{},str(oldtree):{}})
             self.assertEqual(set(actual),{str(p) for p in files});self.assertEqual(len(actual),6)
             self.assertEqual(len({x["sha256"] for x in actual.values()}),1)
+    def test_full_old_fresh_namespace_retained_and_current_attempt_excluded(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);prep=root/"preparation-v2";oldprep=root/"preparation-v1";spec=root/"specification-v1";stop=root/"stop-v1";run=root/"attempt-v1"
+            for p in (prep,oldprep,spec,stop,run):p.mkdir()
+            retained=[oldprep/"trace.stderr",spec/"policy.json.gz",stop/"custody.json",prep/"DATA_AUDIT.json",root/"continuation-v2-restore.json"]
+            for p in retained:p.write_bytes(b"same old/new metadata")
+            excluded=[run/"live.stdout",prep/"STORAGE_PREFLIGHT.json"]
+            for p in excluded:p.write_bytes(b"self/new output")
+            with mock.patch.object(O,"OLD_RUNS",[]),mock.patch.object(O,"PREPARATION",prep),mock.patch.object(O,"FRESH_PRIOR_DIRS",(oldprep,spec,stop)),mock.patch.object(O,"RUN",run),mock.patch.object(O,"STORAGE_PREFLIGHT",excluded[1]),mock.patch.object(O,"OLD_PARENT_FILES",[]),mock.patch.object(O,"DISCOVERY_FILES",[]),mock.patch.object(O,"history_inputs",return_value={}):
+                actual=O.collect_protected({})
+            self.assertEqual(set(actual),set(map(str,retained)));self.assertEqual(len(actual),5)
+    def test_collector_never_overwrites_conflicting_frozen_pin(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);p=root/"source.txt";p.write_bytes(b"new bytes")
+            with mock.patch.object(O,"MAIN_TREE",root),mock.patch.object(O,"history_inputs",return_value={str(p):{"bytes":1,"sha256":"a"*64}}),mock.patch.object(O,"git",return_value="source.txt\0"):
+                with self.assertRaisesRegex(O.Stop,"changed during collection"):O.collect_protected({str(root):{}})
+
+    def test_independent_data_gate_requires_pinned_actual_complete_pass(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);prep=root/"preparation-v2";data=prep/"data";spec=root/"specification-v1"
+            data.mkdir(parents=True);spec.mkdir()
+            ids=[("%064x"%i) for i in range(20)]
+            paths={"DATA_AUDIT":prep/"DATA_AUDIT.json","INPUTS":data/"inputs.json","PREPARATION_MANIFEST":data/"manifest.json","SPECIFICATION":spec,"PREPARATION":prep,"ROOT":root,"TOKENIZER":root/"tokenizer.json"}
+            O.save(paths["INPUTS"],{"eval":[{"id":i} for i in ids]});O.save(paths["PREPARATION_MANIFEST"],{"Status":"PASS"});O.save(spec/"DATA_SPEC.json",{"schema":"fixture"})
+            report={"Status":"PASS","Environment":{"development_only":False,"executable":O.DATA_PYTHON},"Input":{"spec":str(spec/"DATA_SPEC.json"),"spec_sha256":O.info(spec/"DATA_SPEC.json")["sha256"],"prep":str(data)},"Actual":{"input_pin":O.info(paths["INPUTS"]),"preparation_manifest":O.info(paths["PREPARATION_MANIFEST"]),"source_rows":7600,"selected":20,"per_class":{str(i):5 for i in range(4)},"history":{"files":32244},"new_model_calls":0,"new_source_acquisitions":0,"historical_absence_independently_rescanned":False,"selected_ids":ids},"checks":[{"Status":"PASS"}],"check_counts":{"PASS":1,"FAIL":0}}
+            for key,path in (("audit_source_pin",root/"audit_data.py"),("shared_parser_pin",root/"data_prepare.py"),("tokenizer_pin",paths["TOKENIZER"]),("source_pin",data/"corpus.parquet")):
+                path.write_bytes(b"fixture metadata bytes");report["Input"][key]=O.info(path)
+            report["Input"]["tokenizer_path"]=str(paths["TOKENIZER"]);report["Actual"]["source_pin"]=report["Input"]["source_pin"]
+            O.save(paths["DATA_AUDIT"],report);pins={str(p):O.info(p) for p in (paths["DATA_AUDIT"],paths["INPUTS"],paths["PREPARATION_MANIFEST"],spec/"DATA_SPEC.json")}
+            with mock.patch.multiple(O,**paths):
+                self.assertEqual(O.validate_data_audit(pins)["selected"],20)
+                without=dict(pins);without.pop(str(paths["DATA_AUDIT"]))
+                with self.assertRaisesRegex(O.Stop,"missing/changed pin"):O.validate_data_audit(without)
+                for key,value in (("selected",19),("new_model_calls",1),("historical_absence_independently_rescanned",True)):
+                    original=report["Actual"][key];report["Actual"][key]=value
+                    paths["DATA_AUDIT"].write_text(json.dumps(report));changed={**pins,str(paths["DATA_AUDIT"]):O.info(paths["DATA_AUDIT"])}
+                    with self.assertRaises(O.Stop):O.validate_data_audit(changed)
+                    report["Actual"][key]=original
+                report["Status"]="BLOCKED";paths["DATA_AUDIT"].write_text(json.dumps(report));changed={**pins,str(paths["DATA_AUDIT"]):O.info(paths["DATA_AUDIT"])}
+                with self.assertRaisesRegex(O.Stop,"has not passed"):O.validate_data_audit(changed)
     def test_both_original_manifests_must_be_exact_subsets(self):
         a={"/workspaces/old/a":{"bytes":1,"sha256":"a"*64}}
         b=a|{"/workspaces/old/b":{"bytes":1,"sha256":"a"*64}}

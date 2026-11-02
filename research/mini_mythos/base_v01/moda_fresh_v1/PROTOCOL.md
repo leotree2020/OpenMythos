@@ -2,6 +2,17 @@
 
 This is a new, zero-training validation derived from accepted checkpoint `bc6d267cdd8cf9306c1bf08b369cf2b791723d3d`. The previous adaptation experiment and all its evidence remain unchanged. No scientific result is known when this protocol and executor are frozen.
 
+Authorized continuation: checkpoint `3a7f8b3ac15d4354800360961018de7c66d26be6`
+recorded preparation-v1 BLOCKED at an isolated helper import, before acquisition
+or model execution. The corrected launch interface uses a new preparation-v2;
+preparation-v1, its original traceback, specification-v1, discoveries, stop-v1,
+continuation restore receipts and tracked blocked_evidence copies remain intact.
+The formal model attempt-v1 has never been used and remains the only planned
+model attempt. Source corpus, selection filters, weights, numerical/quality
+thresholds and scientific comparisons are unchanged. New exact `-I -B` startup
+fixtures cover sibling imports and preserve primary subprocess errors instead of
+masking them with a missing-report exception.
+
 ## Purpose and competing explanations
 
 The prior MoDA history branch improved the reused16-article development evaluation relative to native fixed32 and an equal-trainable-parameter current-sequence attention control. The next question is whether those frozen adapters retain the quality signal on project-unseen text, and what complete CPU evaluation cost accompanies it.
@@ -21,6 +32,16 @@ Freeze20 distinct eligible texts before any new-text model inference. Each contr
 The separately frozen data-preparation code, source/revision/hash inventory, deduplication rules and prepared manifest are part of this protocol. They must provide evidence that selected texts were not used in this project's prior training or tuning, with exact-title/text/window and prescribed token-overlap exclusions against the recovered prior project corpus/inputs. All selection decisions are made from source structure, tokenizer lengths and deduplication only, without model scores. No candidate substitution is allowed after model results are visible. Insufficient eligible or confidently excluded texts is BLOCKED. Source collection being new to this project does not establish absence from Parcae pretraining.
 
 The data manifest must PASS and every prepared source/input byte must be pinned in INPUT_MANIFEST before formal source freeze. The new text source, fixed selection rule and exact exclusions are material limitations and must be retained in the final checkpoint. Acquisition/data preparation is a separate stage; formal model validation never downloads a replacement corpus.
+
+Before target storage measurement and model freeze, require the independent
+`preparation-v2/DATA_AUDIT.json` to PASS and pin that report in INPUT_MANIFEST.
+Its input root is preparation-v2/data. The gate binds the exact input, corpus,
+preparation manifest, history specification, tokenizer and audit/parser source
+pins; verifies all checks and actual 7600-source/20-selected/32244-history counts;
+and rejects development-only or incomplete receipts. The auditor independently
+checks selection, all historical bytes/classifications and positive exclusion
+witnesses. It does not repeat all historical tokenization: absence of an overlap
+is the frozen preparer's complete-scan claim, not an independent second proof.
 
 ## Five frozen configurations and exact counts
 
@@ -55,6 +76,13 @@ All200 pass0 audit records and both passes' complete timing/hash/identity record
 Before the final successful sentinel exists, a numerical, audit or repeat-hash failure retains the current full scored matrix as failed_logits.bin and stops. Failed raw and success sentinel are mutually exclusive within8MiB. If no matrix exists for the failure, record that fact rather than inventing evidence. Historical full matrices and adapter checkpoints stay retained. On success199 unique new matrices are not retained: full live auditing and compact hashes do not enable retrospective reconstruction of those matrices. No claim of200 retained full-matrix re-audits is allowed.
 
 ## Storage and preservation gates
+
+The continuation also enumerates every file under the fresh experiment's external
+namespace, including all old preparation/specification/stop/restore records. Only
+the current formal attempt directory and the independently bound self-referential
+storage-preflight receipt are excluded. A repeated physical path with conflicting
+pins is a failure, never an overwrite. Existing-scope receipt matching prevents
+new or changed parent-namespace files between measurement and formal launch.
 
 Use the unchanged full-map storage codec. Every physical path stays in the protection inventory even if two paths have identical pins. The previous v2 inventory's25436 path/pin pairs and original v1 inventory's25367 pairs must all be retained exactly; add all32244 physical paths in the accepted full-history ledger, final v2 checkout/run/preparation/parent receipts, all prior protected roots, main-worktree untracked files, both discovery receipts, frozen specification policies and this new frozen source/data. Check both compressed and canonical history-ledger pins, successful completion/classification of every row, and actual current bytes for every historical path. Registered nontext files remain protected and are not dropped from custody.
 

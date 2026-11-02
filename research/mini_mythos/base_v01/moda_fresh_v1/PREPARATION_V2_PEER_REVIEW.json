@@ -1,0 +1,21 @@
+{
+  "Purpose": "Independent static review of the authorized preparation-v2 launcher after blocked v1",
+  "Environment": "Local source reading only; no target, corpus or model execution by reviewer",
+  "Input": {
+    "base": "3a7f8b3ac15d4354800360961018de7c66d26be6",
+    "prepare_once_v2.py_sha256": "231c7588e01d4aba5f65375809c72663c6f7afb771c8c19b82a475f2a895f7e7",
+    "data_contract": "Unchanged frozen data_prepare.py, freeze_data_spec.py, DATA_PROTOCOL.md and specification-v1",
+    "development_receipt": "DEVELOPMENT_LAUNCH_CONTRACT_ATTEMPT2.json (reviewer read saved receipt; no independent rerun of this suite)"
+  },
+  "Expected": "Correct exact isolated imports, original data rules and historical attempt preservation; one model-blind worker launch; primary failures preserved",
+  "checks": [
+    {"Purpose": "Frozen continuation boundary", "Actual": "Requires full freeze SHA, designated branch/environment, 3a7 ancestor and exact original data source bytes from that checkpoint. Uses new preparation-v2 and refuses its reuse. Old preparation-v1 and specification are pinned before/after.", "Status": "PASS"},
+    {"Purpose": "Actual helper report schemas", "Actual": "Data28 uses integer Actual counts/test_ids; specification10 uses Input.tests and list-valued failures/errors/skipped; launch10 uses exact frozen IDs including zero expected/unexpected failures. All launch as explicit Python -I -B scripts before the data worker.", "Status": "PASS"},
+    {"Purpose": "Primary failure and cleanup", "Actual": "read_result records report existence/pin, command exit and stderr tail before interpretation. A missing report no longer masks nonzero import failure. Subprocess interruptions produce BLOCKED; POSIX process group receives TERM30s then KILL5s if needed, with descendants and child reaping recorded. No retry occurs.", "Status": "PASS"},
+    {"Purpose": "Exact preparation acceptance", "Actual": "One data worker command uses unchanged spec and data/data output. PASS requires 7600 source rows, 20 selected, 32244 historical files, zero model calls, custody PASS, no forbidden imports and input/physical/canonical ledger receipts. Independent selected-data audit remains a later mandatory gate; launcher does not run a model.", "Status": "PASS"}
+  ],
+  "Actual": {"static_pass": 4, "blocking_findings": [], "target_commands": 0, "model_calls": 0},
+  "Status": "PASS",
+  "Verdict": "APPROVE",
+  "limits": ["Static review is not actual target helper/data acceptance.", "The old v1 import defect and its original records remain preserved; this approval applies only to the explicitly authorized new attempt."]
+}

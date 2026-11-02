@@ -30,6 +30,7 @@ SPACE="bookish-pancake-vwqx7rr9x5w3wxjr"
 PYTHON="/workspaces/mythos-depth-data-cpu312/bin/python"
 CORPUS={"bytes":1234829,"sha256":"71de87ec66bc5737752a2502204dfa6d7fe9856ade3ea444dc6317789a4f13fb"}
 TOKENIZER_SHA="e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77"
+PARSER_SHA="6d47fc2dbc5987fa52f597c1ec5a30e862e5b64ca624ff4fdb96f0a7c739cef6"
 REVISION="eb185aade064a813bc0b7f42de02595523103ca4"
 URL="https://huggingface.co/datasets/fancyzhx/ag_news/resolve/"+REVISION+"/data/test-00000-of-00001.parquet"
 LIMIT=32*1024**2
@@ -109,7 +110,7 @@ def suffix_kind(path):
     return next((kind for kind,extensions in groups.items() if ext in extensions),None)
 
 
-def audit_history(spec,policy,ledger,rehash=True):
+def audit_history(spec,policy,ledger,rehash=True,arrow_reader=None):
     require(type(ledger)is list and len({r["path"] for r in ledger})==len(ledger),"Unique physical history ledger")
     paths=collect_paths(spec,policy);require(paths=={r["path"] for r in ledger},"Exact ledger and independently enumerated history union")
     require([r["path"] for r in ledger]==sorted(paths),"Frozen lexicographic history order")
@@ -135,9 +136,12 @@ def audit_history(spec,policy,ledger,rehash=True):
             require(r["Status"]=="PASS_IDENTICAL_PAYLOAD" and r.get("identical_to")==seen[key] and r["strings"]==r["token_arrays"]==0,"Exact duplicate-payload parse reuse")
             require(previous[seen[key]]["Status"]=="PASS","Reuse points to actual complete parse")
         else:require(r["Status"]=="PASS" and "identical_to" not in r,"Full first-payload parse completion");seen[key]=p
-        for m in r.get("classified_nontext_members",[]):
-            candidates=[v for name,v in policy["member_entries"].items() if name.startswith(p+"!") and v.get("kind")=="nontext" and bytepin(v)==bytepin(m) and v.get("reason")==m.get("reason")]
-            require(bool(candidates),"Container nontext member has frozen policy")
+        if r.get("classified_nontext_members"):
+            # gzip/xz remove their suffix before archive policy lookup. Re-extract
+            # these few registered containers to bind exact virtual locations;
+            # checking only a physical-path prefix would reject valid .tar.gz.
+            observed=[{"location":where,**value} for typ,value,where in parser_contract.byte_leaves(path.read_bytes(),kind,p,arrow_reader,member_policy=policy["member_entries"]) if typ=="nontext"]
+            require(observed==r["classified_nontext_members"],"Exact frozen container nontext-member receipts")
         for n in r.get("format_notes",[]):
             for key in notes:require(type(n[key])is int and n[key]>=0,"Format-note counters");notes[key]+=n[key]
         counts[r["Status"]]+=1;previous[p]=r
@@ -184,6 +188,7 @@ def independent_candidates(source,ledger,tokenize,expected_rows=7600):
         if len(ids)<129:require(receipt=={**base,"decision":"EXCLUDE_SHORT"},"Independent short-text exclusion "+str(i));continue
         require(receipt.get("full_token_count")==len(ids),"Complete source token count")
         require(receipt["decision"] in ("EXCLUDE_HISTORY","EXCLUDE_NEW_DUPLICATE","SELECTED","ELIGIBLE_NOT_SELECTED"),"Eligible candidate has final decision")
+        require(set(receipt)==set(base)|{"decision"}|({"witness"} if receipt["decision"].startswith("EXCLUDE_") else set()),"Complete candidate receipt schema")
         eligible[cid]={**base,"text":text,"fingerprint":fingerprint(text,ids)}
     return eligible
 
@@ -197,7 +202,7 @@ def audit_witnesses(eligible,ledger,history,tokenize,arrow_reader,member_policy)
         require(p in h and h[p]["Status"]=="PASS" and source["sha256"]==h[p]["sha256"],"Historical witness actual parsed byte source")
         require(type(w["reasons"])is list and w["reasons"]==sorted(set(w["reasons"])) and bool(w["reasons"]),"Historical witness reason list")
         requested.setdefault(p,{}).setdefault(source["location"],[]).append(r);count+=1
-    checked=0
+    checked=set()
     for p,locations in requested.items():
         found=set()
         for kind,value,where in parser_contract.byte_leaves(Path(p).read_bytes(),h[p]["kind"],p,arrow_reader,member_policy=member_policy):
@@ -208,11 +213,13 @@ def audit_witnesses(eligible,ledger,history,tokenize,arrow_reader,member_policy)
                 require(valid_ids(value),"Witness token-array IDs");fp={"normalized":None,"t32":ngrams(value,32),"w12":set(),"w5":set()}
             for r in locations[where]:
                 actual=sorted(overlap(eligible[r["id"]]["fingerprint"],fp))
-                require(actual==r["witness"]["reasons"],"Historical exclusion witness overlap independently recomputed")
-                checked+=1
+                # Python AST locations may contain multiple constants on one
+                # line. At least one complete leaf at that frozen location must
+                # reproduce the complete claimed reasons; do not double count.
+                if actual==r["witness"]["reasons"]:checked.add(r["id"])
             found.add(where)
         require(found==set(locations),"Every historical exclusion witness location found")
-    require(checked==count,"Historical witness exact count")
+    require(len(checked)==count,"Every historical witness overlap independently reproduced")
     return {"excluded_candidates":count,"distinct_witness_files":len(requested),"parser_reuse":"Frozen data_prepare.byte_leaves only; overlap/tokenization independently recomputed"}
 
 
@@ -252,7 +259,7 @@ def audit_payload(selected,payload,public,input_pin):
 def verify_artifacts(prep,manifest):
     expected={"corpus.parquet","acquisition.json","inputs.json","public/selection.json","candidates.json.gz","history_ledger.json.gz"}
     require(set(manifest["artifacts"])==expected,"Complete preparation artifact manifest")
-    require({str(p.relative_to(prep)) for p in prep.rglob("*") if p.is_file()}==expected|{"manifest.json"},"No unlisted preparation artifacts")
+    require({p.relative_to(prep).as_posix() for p in prep.rglob("*") if p.is_file()}==expected|{"manifest.json"},"No unlisted preparation artifacts")
     for name,receipt in manifest["artifacts"].items():
         path=prep/name;require(not path.is_symlink(),"Artifact no symlink")
         if name.endswith(".gz"):
@@ -267,14 +274,15 @@ def audit(spec,spec_sha,prep,tokenize,arrow_reader,check):
     prep=Path(prep);manifest=read(prep/"manifest.json")
     check("Preparation completed with zero model calls",manifest["Status"]=="PASS" and manifest["source_after_status"]=="PASS" and manifest["forbidden_imports"]==[] and manifest["Actual"]["model_calls"]==0)
     check("Preparation bound frozen spec and source",manifest["Input"]["spec_sha256"]==spec_sha and manifest["Input"]["source"]==URL)
+    check("Preparation frozen acceptance header",manifest["Expected"]=={"records":20,"per_class":5,"tokens":129,"training_steps":0,"model_imports":[]})
     verify_artifacts(prep,manifest);check("All artifact byte and canonical receipts",True)
     require(pin(prep/"corpus.parquet")==CORPUS,"Original corpus exact bytes")
     acquisition=read(prep/"acquisition.json")
     check("Single successful fixed source acquisition",acquisition["Status"]=="PASS" and acquisition["url"]==URL and acquisition["http_status"]==200 and acquisition["actual_response"]==CORPUS and acquisition["pin"]==CORPUS and acquisition["response_file"]=="corpus.parquet")
-    policy=policies(spec);history=read(prep/"history_ledger.json.gz");historical=audit_history(spec,policy,history)
+    policy=policies(spec);history=read(prep/"history_ledger.json.gz");historical=audit_history(spec,policy,history,arrow_reader=arrow_reader)
     check("Full independent inventory/classification/hash reconciliation",True,historical)
     source=arrow_reader((prep/"corpus.parquet").read_bytes(),"parquet");ledger=read(prep/"candidates.json.gz")
-    eligible=independent_candidates(source,ledger,tokenize);check("All7600 source rows independently retokenized/eligibility checked",True,{"source_rows":len(source),"eligible":len(eligible)})
+    eligible=independent_candidates(source,ledger,tokenize);check("All7600 source identities/eligibility independently checked; every prose-eligible row retokenized",True,{"source_rows":len(source),"eligible":len(eligible)})
     witnesses=audit_witnesses(eligible,ledger,history,tokenize,arrow_reader,policy["member_entries"]);check("All positive history-exclusion witnesses",True,witnesses)
     chosen=independent_selection(eligible,ledger);check("Independent first-five-per-class and full-text new-new exclusion",True)
     payload=read(prep/"inputs.json");public=read(prep/"public/selection.json");input_pin=pin(prep/"inputs.json")
@@ -283,7 +291,7 @@ def audit(spec,spec_sha,prep,tokenize,arrow_reader,check):
     check("Manifest aggregate scan/selection counters reconciled",actual["source_rows"]==7600 and actual["prose_length_eligible"]==len(eligible) and actual["historical_files"]==historical["files"] and actual["historical_strings"]==historical["strings"] and actual["historical_token_arrays"]==historical["token_arrays"] and actual["historical_format_notes"]==historical["format_notes"] and actual["excluded_by_history"]==witnesses["excluded_candidates"] and actual["selected"]==20 and actual["input_pin"]==input_pin)
     # No exhaustive old-tokenizer rescan: absence is the preparer's complete-scan
     # claim, backed here by full coverage and byte pins, not independently reproven.
-    return {"source_rows":7600,"eligible":len(eligible),"selected":20,"per_class":{str(k):5 for k in range(4)},"history":historical,"historical_witnesses":witnesses,"input_pin":input_pin,"preparation_manifest":pin(prep/"manifest.json"),"selected_ids":[x["id"] for x in chosen],"new_model_calls":0,"new_source_acquisitions":0,"historical_absence_independently_rescanned":False,"historical_absence_basis":"Frozen preparer full scan; audit independently verifies complete inventory, bytes/classifications and all claimed positive exclusion witnesses; no second full-history tokenization"}
+    return {"source_rows":7600,"eligible":len(eligible),"selected":20,"per_class":{str(k):5 for k in range(4)},"history":historical,"historical_witnesses":witnesses,"input_pin":input_pin,"source_pin":pin(prep/"corpus.parquet"),"preparation_manifest":pin(prep/"manifest.json"),"selected_ids":[x["id"] for x in chosen],"new_model_calls":0,"new_source_acquisitions":0,"historical_absence_independently_rescanned":False,"historical_absence_basis":"Frozen preparer full scan; audit independently verifies complete inventory, bytes/classifications and all claimed positive exclusion witnesses; no second full-history tokenization"}
 
 
 def main():
@@ -291,10 +299,19 @@ def main():
     report={"Purpose":"Independent read-only fresh-source, selection and custody audit","Environment":{},"Input":{"spec":str(args.spec),"spec_sha256":args.expected_spec_sha,"prep":str(args.prep)},"Expected":"All source/token/selection/coverage checks PASS before models; no historical absence overclaim","Actual":{},"Status":"NOT TESTED","checks":[]}
     def check(purpose,okay,actual=None):
         report["checks"].append({"Purpose":purpose,"Expected":True,"Actual":actual,"Status":"PASS" if okay else "FAIL"});require(okay,purpose)
+    # Invalid output must never be used by the failure-report path. The calling
+    # operator preserves this stdout stop record when no safe file is available.
+    safe_output=(all(p.is_absolute() for p in (args.spec,args.prep,args.output))
+        and args.output.parent.is_dir() and not args.output.exists()
+        and not args.output.resolve().is_relative_to(args.prep.resolve())
+        and not any(p.is_symlink() for p in (args.output,*args.output.parents)))
+    if not safe_output:
+        report.update(Status="BLOCKED",error={"type":"UnsafeAuditOutput","reason":"Refused invalid/existing/symlink output or output within preserved preparation; no file written"})
+        print(json.dumps(report,allow_nan=False),flush=True);return 2
     try:
-        require(all(p.is_absolute() for p in (args.spec,args.prep,args.output)) and not args.output.exists() and not args.output.resolve().is_relative_to(args.prep.resolve()),"New absolute audit output outside preserved preparation")
         require(platform.system()=="Linux" and platform.python_version()=="3.12.3" and sys.executable==PYTHON and sys.flags.isolated and sys.dont_write_bytecode and os.environ.get("CODESPACE_NAME")==SPACE,"Frozen isolated data environment","BLOCKED")
         require(pin(args.spec)["sha256"]==args.expected_spec_sha,"Frozen specification bytes")
+        require(pin(parser_contract.__file__)["sha256"]==PARSER_SHA,"Frozen shared historical parser bytes")
         spec=read(args.spec);require(spec["schema"]=="mythos-fresh-history-v1","History schema")
         tokenizer_path=Path(spec["tokenizer_path"]);require(pin(tokenizer_path)["sha256"]==TOKENIZER_SHA,"Original tokenizer bytes")
         versions={name:importlib.metadata.version(name) for name in ("numpy","pyarrow","tokenizers")}
@@ -304,6 +321,7 @@ def main():
         import pyarrow.parquet as pq
         from tokenizers import Tokenizer
         report["Environment"]={"python":sys.version,"executable":sys.executable,"packages":versions,"development_only":False}
+        report["Input"].update(source_pin=CORPUS,tokenizer_path=str(tokenizer_path),tokenizer_pin=pin(tokenizer_path),shared_parser_pin=pin(parser_contract.__file__),audit_source_pin=pin(__file__))
         tokenizer=Tokenizer.from_file(str(tokenizer_path));tokenize=lambda text:tokenizer.encode(text,add_special_tokens=False).ids
         def arrow_reader(raw,kind):
             if kind=="npy":
@@ -316,7 +334,7 @@ def main():
                 except pa.ArrowInvalid:source.seek(0);table=pa.ipc.open_stream(source).read_all()
             return table.to_pylist()
         report["Actual"]=audit(spec,args.expected_spec_sha,args.prep,tokenize,arrow_reader,check)
-        check("Frozen spec/tokenizer preserved after audit",pin(args.spec)["sha256"]==args.expected_spec_sha and pin(tokenizer_path)["sha256"]==TOKENIZER_SHA)
+        check("Frozen spec/tokenizer/parser preserved after audit",pin(args.spec)["sha256"]==args.expected_spec_sha and pin(tokenizer_path)["sha256"]==TOKENIZER_SHA and pin(parser_contract.__file__)["sha256"]==PARSER_SHA)
         check("No forbidden model-library imports",not any(n.split(".")[0] in FORBIDDEN for n in sys.modules));report["Status"]="PASS"
     except BaseException as exc:
         report["Status"]=getattr(exc,"status","BLOCKED" if isinstance(exc,(OSError,MemoryError,KeyboardInterrupt)) else "FAIL")

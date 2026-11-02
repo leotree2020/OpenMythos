@@ -2,6 +2,14 @@
 
 This is a new protocol's artifact budget, not a relaxation of the prior MoDA run's limits. All older raw data, weights, adapters, logs, manifests and checkpoints remain in place and protected. The256MiB free-space reserve is unchanged.
 
+Continuation from `3a7f8b3ac15d4354800360961018de7c66d26be6` uses preparation-v2.
+The blocked preparation-v1 and all fresh-phase specification/discovery/stop/restore
+records remain physically present and enter the complete protection map. Existing
+tracked blocked_evidence copies also remain. No new allowance is introduced for
+these records: their current disk use precedes formal admission. Target capacity
+must be measured again after the new preparation and independent data audit;
+the old free-space observation cannot substitute for that check.
+
 | Allocation | Bytes | Purpose |
 |---|---:|---|
 | New raw logits |8388608|One final success sentinel OR one failed current matrix; mutually exclusive|
@@ -21,3 +29,10 @@ STORAGE_PREFLIGHT.json is generated on the designated target with the same scope
 Preparation/acquisition consumes disk before formal admission. Formal execution requires at least289406976 free bytes after those files and frozen code are present. Runtime guards reserve all remaining allocated bytes plus256MiB before writes/model calls, preventing external disk consumption from silently using the reserve. Final closure computes actual total nonraw(run minus raw, plus public copies and4MiB Git/finalization) and requires<=12MiB before publication. If any check fails, retain evidence, mark BLOCKED and stop; no deletion of historical files, smaller protection scope, threshold relaxation or retry.
 
 Developer checks are synthetic/local only. Target storage proof, source freeze and real model validation remain NOT TESTED until their actual recorded outcomes exist. A successful lossless-codec test is not evidence that this target has enough disk.
+
+Both storage measurement and formal execution require a pinned actual target
+DATA_AUDIT.json PASS first. The collector includes the whole fresh external
+namespace except the unused current model attempt and self-referential preflight,
+so parent records must remain unchanged after measurement. Code tests for
+measure_storage now use the same exact-ID/count/no-skips report schema as the
+formal helper gate, and their prescribed isolated command is itself tested.

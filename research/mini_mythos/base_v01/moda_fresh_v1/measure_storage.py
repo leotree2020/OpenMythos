@@ -31,7 +31,7 @@ def forecast(protected,payload,base_state,adapter_rows):
     packed,receipt=executor.storage_codec.pack(protected)
     states={}
     for row in adapter_rows["rows"]:
-        key=("S" if row["arm"]=="shared" else "H")+str(row["train_seed"])
+        key=row["arm"]+"_"+str(row["train_seed"])
         require(key not in states and row["arm"] in ("shared","depth") and row["train_seed"] in (4101,4202),"Frozen adapter metadata coverage")
         states[key]=row["state"]
     require(len(base_state)==63 and len(states)==4,"Exact63 base states and four adapters")
@@ -73,14 +73,14 @@ def main():
         for p,head in executor.CHECKOUTS.items():
             states[p]=executor.git_state(p);require(states[p]=={"head":head,"status":""},"Original checkout changed: "+p)
         states[str(executor.MAIN_TREE)]=executor.git_state(executor.MAIN_TREE)
-        pins=executor.protected_inputs();protected=executor.collect_protected(states,pins)
+        pins=executor.protected_inputs();data_gate=executor.validate_data_audit(pins);protected=executor.collect_protected(states,pins)
         coverage=executor.prior_scope_preserved(protected)
         payload=json.loads(args.payload_report.read_bytes())
         base_state=json.loads((executor.OLD_RUN/"worker/public/base_state_before.json").read_bytes())
         adapters=json.loads((executor.OLD_RUN/"worker/public/adapters.json").read_bytes())
         budget,receipt=forecast(protected,payload,base_state,adapters)
         current,existing=executor.inventory_parts(protected);_,old_receipt=executor.storage_codec.pack(existing)
-        report["Actual"].update(budget,coverage=coverage,current_repository_entries=current,existing_inventory_receipt=old_receipt,payload_report_pin=executor.info(args.payload_report),disk_free_before_bytes=shutil.disk_usage(executor.REPO).free)
+        report["Actual"].update(budget,coverage=coverage,independent_data_gate=data_gate,current_repository_entries=current,existing_inventory_receipt=old_receipt,payload_report_pin=executor.info(args.payload_report),disk_free_before_bytes=shutil.disk_usage(executor.REPO).free)
         require(budget["projected_total_nonraw_bytes"]<=executor.METADATA_BUDGET,"Full fields/scope exceed12MiB nonraw allocation")
         require(receipt["compressed"]["bytes"]<=executor.storage_codec.COMPRESSED_LIMIT,"Complete lossless inventory exceeds2MiB")
         require(not set(sys.modules)&{"torch","numpy","pyarrow","tokenizers","parcae_lm","receval","transformers"},"Forbidden non-stdlib import")

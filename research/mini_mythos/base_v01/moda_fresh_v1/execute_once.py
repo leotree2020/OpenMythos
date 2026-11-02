@@ -22,12 +22,15 @@ import storage_codec
 
 BRANCH = "mythos-moda-fresh-cpu-v1"
 BASE = "bc6d267cdd8cf9306c1bf08b369cf2b791723d3d"
+CONTINUATION = "3a7f8b3ac15d4354800360961018de7c66d26be6"
 EXPECTED_REPO = Path("/workspaces/mythos-moda-fresh-cpu-v1")
 SPACE = "bookish-pancake-vwqx7rr9x5w3wxjr"
 EXPERIMENT = "MYTHOS-MODA-FRESH-CPU-V1"
 RUN = Path("/workspaces/mythos-evidence/base_v01/moda_fresh/attempt-v1")
-PREPARATION = RUN.parent / "preparation-v1"
+PREPARATION = RUN.parent / "preparation-v2"
 SPECIFICATION = RUN.parent / "specification-v1"
+FRESH_PRIOR_DIRS = (RUN.parent / "preparation-v1", SPECIFICATION, RUN.parent / "stop-v1")
+DATA_AUDIT = PREPARATION / "DATA_AUDIT.json"
 INPUTS = PREPARATION / "data/inputs.json"
 HISTORY_LEDGER = PREPARATION / "data/history_ledger.json.gz"
 HISTORY_COUNT = 32244
@@ -99,7 +102,7 @@ ENV = dict(os.environ, PYTHONDONTWRITEBYTECODE="1", CUDA_VISIBLE_DEVICES="", OMP
            MKL_NUM_THREADS="2", OPENBLAS_NUM_THREADS="1", RAYON_NUM_THREADS="1", HF_HUB_OFFLINE="1",
            TRANSFORMERS_OFFLINE="1", TOKENIZERS_PARALLELISM="false")
 INVENTORY_CODE = 'import importlib.metadata as m,json;print(json.dumps(sorted((d.metadata["Name"],d.version,str(d.locate_file(""))) for d in m.distributions())))'
-TESTS = ("test_storage_codec.py", "test_startup.py", "test_fresh.py", "test_audit_fresh.py")
+TESTS = ("test_storage_codec.py", "test_startup.py", "test_measure_storage.py", "test_fresh.py", "test_audit_fresh.py")
 EXPECTED_COUNTS = dict(model_loads=1,calls_started=405,calls_completed=405,bridge_calls=5,
                        quality_rows=200,repeat_rows=200,train_steps=0,backward_calls=0,optimizer_steps=0)
 
@@ -120,7 +123,8 @@ def git_state(path): return {"head":git(path,"rev-parse","HEAD"),"status":git(pa
 def inventory(executable): return json.loads(subprocess.check_output([executable,"-I","-B","-c",INVENTORY_CODE],text=True,timeout=60))
 def active_workers():
     names={"execute_once.py","run_fresh.py","audit_stream.py","run_moda.py","audit_moda.py","audit_row.py","run_lora.py",
-           "audit_lora.py","run_loop.py","run_quality.py","run_routing.py","run_depth_budget.py","acceptance_review.py"}
+           "audit_lora.py","run_loop.py","run_quality.py","run_routing.py","run_depth_budget.py","acceptance_review.py",
+           "prepare_once.py","prepare_once_v2.py","data_prepare.py","audit_data.py"}
     found=[]
     for p in Path("/proc").iterdir():
         if not p.name.isdigit() or int(p.name)==os.getpid():continue
@@ -141,6 +145,19 @@ def validate_test_report(report,ids):
 def validate_worker_coverage(value): return value.get("Status")=="PASS" and value.get("Actual")==EXPECTED_COUNTS
 def worker_command(spec,out):return [PYTHON,"-I","-B",str(ROOT/"run_fresh.py"),"--spec",str(spec),"--out",str(out)]
 def audit_command(spec,worker,out):return [DATA_PYTHON,"-I","-B",str(ROOT/"audit_stream.py"),"--final","--spec",str(spec),"--worker",str(worker),"--output",str(out)]
+def publication_targets():
+    return [ROOT/"evidence",ROOT/"PUBLIC_EXPORT.json",ROOT/"EXTERNAL_EVIDENCE_MANIFEST.json",ROOT/"MODEL_CHECKPOINT.md"]
+def publication_budget(root):
+    root=Path(root);files=[p for p in root.rglob("*") if p.is_file()]
+    raw=sum(p.stat().st_size for p in (root/"worker/private").glob("*.bin") if p.is_file())
+    total=sum(p.stat().st_size for p in files)
+    public=sum(p.stat().st_size for p in files if public_path(p.relative_to(root)))
+    return {"run_bytes":total,"raw_bytes":raw,"public_copy_bytes":public,"git_finalization_allowance":FINALIZATION_ALLOWANCE,
+            "projected_total_nonraw_bytes":total-raw+public+FINALIZATION_ALLOWANCE,"free_bytes":shutil.disk_usage(root).free}
+def validate_publication_budget(value):
+    if value["projected_total_nonraw_bytes"]>METADATA_BUDGET:raise Stop("BLOCKED","Closure evidence/public copies exceed12MiB nonraw allocation")
+    if value["free_bytes"]-value["public_copy_bytes"]-FINALIZATION_ALLOWANCE<DISK_RESERVE:raise Stop("BLOCKED","Publication capacity unavailable; external evidence retained")
+    return value
 def public_path(relative):
     p=Path(relative)
     if p.is_absolute() or ".." in p.parts:return False
@@ -157,6 +174,26 @@ def protected_inputs():
         if info(p)!=pin:raise Stop("FAIL","Frozen input differs: "+p)
         result[p]=pin
     return result
+def validate_data_audit(pins):
+    """No new model work without a frozen independent prepared-data receipt."""
+    required=(DATA_AUDIT,INPUTS,PREPARATION_MANIFEST,SPECIFICATION/"DATA_SPEC.json")
+    for path in required:
+        if str(path) not in pins or info(path)!=pins[str(path)]:raise Stop("FAIL","Independent data gate missing/changed pin: "+str(path))
+    report=json.loads(DATA_AUDIT.read_bytes());actual=report.get("Actual",{});inputs=report.get("Input",{})
+    if report.get("Status")!="PASS":raise Stop("BLOCKED","Independent data audit has not passed")
+    checks=report.get("checks",[])
+    if not checks or any(c.get("Status")!="PASS" for c in checks) or report.get("check_counts")!={"PASS":len(checks),"FAIL":0}:raise Stop("FAIL","Independent data audit check coverage")
+    if report.get("Environment",{}).get("development_only")is not False or report["Environment"].get("executable")!=DATA_PYTHON:raise Stop("FAIL","Actual target data audit required")
+    if inputs.get("spec")!=str(SPECIFICATION/"DATA_SPEC.json") or inputs.get("spec_sha256")!=pins[str(SPECIFICATION/"DATA_SPEC.json")]["sha256"] or inputs.get("prep")!=str(PREPARATION/"data"):raise Stop("FAIL","Independent audit source/preparation binding")
+    for key,path in (("audit_source_pin",ROOT/"audit_data.py"),("shared_parser_pin",ROOT/"data_prepare.py"),("tokenizer_pin",TOKENIZER),("source_pin",PREPARATION/"data/corpus.parquet")):
+        if inputs.get(key)!=info(path):raise Stop("FAIL","Independent audit code/tokenizer/source pin: "+key)
+    if inputs.get("tokenizer_path")!=str(TOKENIZER) or actual.get("source_pin")!=inputs["source_pin"]:raise Stop("FAIL","Independent audit tokenizer/source identity")
+    if actual.get("input_pin")!=pins[str(INPUTS)] or actual.get("preparation_manifest")!=pins[str(PREPARATION_MANIFEST)]:raise Stop("FAIL","Independent audit selected bytes binding")
+    if actual.get("source_rows")!=7600 or actual.get("selected")!=20 or actual.get("per_class")!={str(i):5 for i in range(4)} or actual.get("history",{}).get("files")!=HISTORY_COUNT:raise Stop("FAIL","Independent audit complete source/history/selection coverage")
+    if actual.get("new_model_calls")!=0 or actual.get("new_source_acquisitions")!=0 or actual.get("historical_absence_independently_rescanned")is not False:raise Stop("FAIL","Independent data audit execution/claim boundary")
+    data=json.loads(INPUTS.read_bytes())
+    if actual.get("selected_ids")!=[r["id"] for r in data["eval"]] or len(set(actual["selected_ids"]))!=20:raise Stop("FAIL","Independent data audit selected ID binding")
+    return {"report_pin":pins[str(DATA_AUDIT)],"input_pin":pins[str(INPUTS)],"history_files":HISTORY_COUNT,"selected":20,"historical_absence_independently_rescanned":False}
 def history_inputs():
     preparation=json.loads(PREPARATION_MANIFEST.read_bytes())
     if preparation.get("Status")!="PASS" or preparation.get("source_after_status")!="PASS":raise Stop("BLOCKED","Fresh data preparation/custody not accepted")
@@ -176,6 +213,11 @@ def history_inputs():
     return result
 def collect_protected(states,initial=None):
     protected=dict(initial or {})
+    def protect(path):
+        if path.is_symlink():raise Stop("BLOCKED","Protected file symlink: "+str(path))
+        key=str(path);actual=info(path)
+        if key in protected and protected[key]!=actual:raise Stop("FAIL","Repeated protected path changed during collection: "+key)
+        protected[key]=actual
     for p,pin in history_inputs().items():
         if p in protected and protected[p]!=pin:raise Stop("FAIL","Historical and input pins disagree: "+p)
         protected[p]=pin
@@ -184,13 +226,20 @@ def collect_protected(states,initial=None):
         if tree==MAIN_TREE:paths+=git(tree,"ls-files","--others","--exclude-standard","-z").split("\0")
         for rel in paths:
             p=tree/rel
-            if rel and p.is_file():protected[str(p)]=info(p)
-    for root in [*OLD_RUNS,PREPARATION,SPECIFICATION]:
+            if rel and p.is_file():protect(p)
+    for root in [*OLD_RUNS,PREPARATION,*FRESH_PRIOR_DIRS]:
         if not root.is_dir():raise Stop("BLOCKED","Required preserved directory unavailable: "+str(root))
         for p in sorted(root.rglob("*")):
             # The preflight cannot include its own receipt; it is separately byte-bound before/after.
-            if p.is_file() and p!=STORAGE_PREFLIGHT:protected[str(p)]=info(p)
-    for p in [*OLD_PARENT_FILES,*DISCOVERY_FILES]:protected[str(p)]=info(p)
+            if p.is_file() and p!=STORAGE_PREFLIGHT:protect(p)
+    # The original attempt had no model run. Preserve every old fresh-phase
+    # receipt/log/policy/stop file as well as the new prepared data/audit. Only
+    # this unused formal attempt and the self-referential preflight are excluded.
+    for p in sorted(RUN.parent.rglob("*")):
+        if p==RUN or p.is_relative_to(RUN) or p==STORAGE_PREFLIGHT:continue
+        if p.is_symlink():raise Stop("BLOCKED","Fresh continuation symlink: "+str(p))
+        if p.is_file():protect(p)
+    for p in [*OLD_PARENT_FILES,*DISCOVERY_FILES]:protect(p)
     return protected
 def prior_scope_preserved(protected):
     if info(PRIOR_PROTECTED)!=PRIOR_PROTECTED_PIN or info(PRIOR_V1)!=PRIOR_V1_PIN:raise Stop("FAIL","Prior inventory bytes differ")
@@ -244,8 +293,10 @@ def main():
     outcome,error,freeze_ok,protection_complete="NOT TESTED",None,False,False
     completion,audit,scientific=None,None,"NOT TESTED"
     save(RUN/"CLAIM.json",{"Purpose":EXPERIMENT,"Environment":PYTHON,"Input":{"base":BASE,"freeze":args.expected_head},"Expected":"Single frozen zero-training CPU validation","Actual":{"pid":os.getpid(),"argv":sys.argv},"Status":"NOT TESTED","utc":utc()})
-    def interrupted(signum,frame):raise Stop("BLOCKED","Operator interrupted by signal "+str(signum))
-    signal.signal(signal.SIGTERM,interrupted)
+    def interrupted(signum,frame):
+        signal.signal(signal.SIGTERM,signal.SIG_IGN);signal.signal(signal.SIGINT,signal.SIG_IGN)
+        raise Stop("BLOCKED","Operator interrupted by signal "+str(signum))
+    signal.signal(signal.SIGTERM,interrupted);signal.signal(signal.SIGINT,interrupted)
     def check(purpose,actual,expected=True,failure="FAIL"):
         record={"Purpose":purpose,"Environment":PYTHON,"Input":{"freeze":args.expected_head},"Expected":expected,"Actual":actual,"Status":"PASS" if actual==expected else failure}
         checks.append(record)
@@ -283,10 +334,12 @@ def main():
         check("isolated no bytecode",bool(sys.flags.isolated) and sys.dont_write_bytecode)
         check("worktree",str(REPO.resolve()),str(EXPECTED_REPO));check("branch",git(REPO,"branch","--show-current"),BRANCH)
         check("frozen clean checkout",git_state(REPO),{"head":args.expected_head,"status":""})
+        check("new model publication paths unused",all(not p.exists() for p in publication_targets()),True,"BLOCKED")
         check("base ancestry",git(REPO,"merge-base",BASE,args.expected_head),BASE)
+        check("blocked continuation ancestry",git(REPO,"merge-base",CONTINUATION,args.expected_head),CONTINUATION)
         check("remote freeze",git(REPO,"ls-remote","origin","refs/heads/"+BRANCH).split()[0],args.expected_head);freeze_ok=True
         manifest=json.loads((ROOT/"SOURCE_MANIFEST.json").read_text())
-        check("required source coverage",{"execute_once.py","run_fresh.py","audit_stream.py","storage_codec.py","PROTOCOL.md","STORAGE_BUDGET.md","STORAGE_PREFLIGHT.json","INPUT_MANIFEST.json","TEST_INVENTORY.json","DEVELOPMENT_EVIDENCE_BUDGET.json",*TESTS}.issubset(manifest))
+        check("required source coverage",{"execute_once.py","run_fresh.py","audit_stream.py","audit_data.py","storage_codec.py","PROTOCOL.md","STORAGE_BUDGET.md","STORAGE_PREFLIGHT.json","INPUT_MANIFEST.json","TEST_INVENTORY.json","DEVELOPMENT_EVIDENCE_BUDGET.json",*TESTS}.issubset(manifest))
         for name,pin in manifest.items():check("source "+name,info(package_path(name)),pin)
         check("exclusive worker",active_workers(),[],"BLOCKED")
         states[str(REPO)]=git_state(REPO)
@@ -300,6 +353,7 @@ def main():
         proof=json.loads((ROOT/"DEVELOPMENT_EVIDENCE_BUDGET.json").read_text())
         check("pre-frozen serialized evidence budget",proof.get("Status")=="PASS" and proof["Actual"]["projected_total_nonraw_bytes"]<=METADATA_BUDGET)
         pins=protected_inputs();check("prepared data pin present",str(INPUTS) in pins)
+        save(RUN/"independent_data_gate.json",validate_data_audit(pins))
         protected=collect_protected(states,pins);coverage=prior_scope_preserved(protected);save(RUN/"protected_scope.json",coverage)
         receipt=storage_codec.write_manifest(RUN/"protected_before.json.gz",protected);save(RUN/"protected_before_receipt.json",receipt)
         check("complete lossless scope roundtrip",storage_codec.read_manifest(RUN/"protected_before.json.gz",receipt)==protected)
@@ -352,7 +406,7 @@ def main():
         except (OSError,ValueError):pass
     report={"Purpose":"Frozen F32/S/H fresh project-unseen text quality and complete CPU cost validation","Environment":{"python":PYTHON,"audit_python":DATA_PYTHON,"device":"CPU"},
         "Input":{"base":BASE,"execution_freeze":args.expected_head,"data":str(INPUTS)},"Expected":EXPECTED_COUNTS,
-        "Actual":{"completion":completion,"commands":commands,"operator_checks":checks,"custody":custody,"scientific_screens":scientific},
+        "Actual":{"completion":completion,"commands":commands,"operator_checks":checks,"custody":custody,"protection_complete":protection_complete,"scientific_screens":scientific},
         "Status":outcome,"error":error,"formal_launch_attempted":any(c["label"]=="validation" for c in commands),"scientific_screens":scientific,
         "FORMAL_ACCEPTANCE_READY":False,"Formal_Oracle":"BLOCKED/NOT_READY","utc":utc()}
     save(RUN/"summary.json",report);print("STATUS: "+outcome,flush=True)
@@ -361,8 +415,10 @@ def main():
         if active or any(not c["child_reaped"] or c["cleanup_errors"] for c in commands):raise RuntimeError("Workers not quiescent; preserve external evidence")
         if not freeze_ok or git_state(REPO)!={"head":args.expected_head,"status":""}:raise RuntimeError("Frozen checkout changed; external evidence retained")
         if git(REPO,"ls-remote","origin","refs/heads/"+BRANCH).split()[0]!=args.expected_head:raise RuntimeError("Remote publication lease changed")
-        public=sum(p.stat().st_size for p in RUN.rglob("*") if p.is_file() and public_path(p.relative_to(RUN)))
-        if shutil.disk_usage(RUN).free<public+FINALIZATION_ALLOWANCE+DISK_RESERVE:raise RuntimeError("Publication capacity unavailable; external evidence retained")
+        # Recompute after custody/environment/summary/quiescence records exist.
+        # The unchanged4MiB allowance covers ensuing small publication receipts,
+        # checkpoint/source manifests and Git finalization.
+        closing_budget=validate_publication_budget(publication_budget(RUN))
         exported=ROOT/"evidence";exported.mkdir(exist_ok=False);copies=[]
         for p in sorted(RUN.rglob("*")):
             if p.is_file() and public_path(p.relative_to(RUN)):
@@ -374,17 +430,17 @@ def main():
             "Input:20 frozen project-unseen texts,129 tokens each,64 scored targets;2 h0 seeds;5 configurations;2 measured passes. Five old sentinel bridges are separate warmups. Expected:405 model calls,200 unique quality rows,200 exact repeat rows; zero updates/backward/optimizer. Actual: see evidence/summary.json and audit.json.gz; unreached work remains NOT TESTED.\n\n"
             "Scientific screens: "+json.dumps(scientific)+". Frozen margins unchanged: each adapter training seed deltaNLL<=-0.01 and deltaAccuracy>=-0.01. Negative scientific screens are valid findings, not engineering errors. Timing is descriptive and is not equal-compute superiority.\n\n"
             "Evidence: `"+str(RUN)+"`; full external pins in EXTERNAL_EVIDENCE_MANIFEST.json, public copies in evidence/. Planned custody: each of200 unique scored matrices receives full live independent NumPy audit through a bounded pipe; pass2 must reproduce each full matrix hash. Actual completed coverage: "+json.dumps(completion.get("Actual",{}) if completion else "NOT TESTED")+". Only the last repeat matrix is retained after complete success, and final audit recomputes it; the other199 unique full matrices cannot be reconstructed from compact statistics. Earlier numerical/audit failures retain the current full matrix instead and stop. Unreached audits/repeats remain NOT TESTED. Old raw matrices/weights/adapters remain unchanged.\n\n"
-            "Custody: "+custody["Status"]+". Complete original v1/v2 protection scope retained through lossless gzip, not path deduplication. New protocol8MiB raw +12MiB nonraw +256MiB reserve; source/data preparation already consumes disk before admission. Upstream, old records, A5 and early-stop thresholds unchanged; no B1 rerun/B2/D2-A/mechanism stacking/PR24 operation. Formal Oracle BLOCKED/NOT_READY; FORMAL_ACCEPTANCE_READY=False.\n\n"
+            "Custody: "+custody["Status"]+"; complete protection-map acceptance established: "+str(protection_complete)+". The required scope includes original v1/v2 maps, full historical ledger and all prior fresh-phase stop/preparation records; unreached checks are not claimed as passed. Storage uses lossless gzip without dropping physical paths. New protocol8MiB raw +12MiB nonraw +256MiB reserve; source/data preparation already consumes disk before admission. No upstream/threshold writes, B1 rerun/B2/D2-A/mechanism stacking/PR24 operation. Formal Oracle BLOCKED/NOT_READY; FORMAL_ACCEPTANCE_READY=False.\n\n"
             "Unresolved: "+(json.dumps(error or custody) if outcome!="PASS" else "limited20-text sample, source/domain specificity, unknown base-pretraining overlap, only frozen output-projection adaptation, non-independent AI review and small timing sample")+".\n\n"
             "Next unique instruction: read this checkpoint and independently review the quality, timing and preservation evidence; do not tune or repeat this attempt. Resolve any BLOCKED/FAIL only in a separately frozen continuation. No next mechanism starts automatically.\n")
-        with (ROOT/"CHECKPOINT.md").open("x",encoding="utf-8",newline="\n") as f:f.write(checkpoint)
-        paths=[exported,ROOT/"PUBLIC_EXPORT.json",ROOT/"EXTERNAL_EVIDENCE_MANIFEST.json",ROOT/"CHECKPOINT.md"]
+        with (ROOT/"MODEL_CHECKPOINT.md").open("x",encoding="utf-8",newline="\n") as f:f.write(checkpoint)
+        paths=publication_targets()
         subprocess.run(["git","-C",str(REPO),"add","-f","--",*map(str,paths)],check=True)
         subprocess.run(["git","-C",str(REPO),"commit","-m","Record frozen fresh-text MoDA CPU validation: "+outcome],check=True)
         subprocess.run(["git","-C",str(REPO),"push","origin",BRANCH],check=True,timeout=120)
         head=git(REPO,"rev-parse","HEAD");remote=git(REPO,"ls-remote","origin","refs/heads/"+BRANCH).split()[0]
         if head!=remote or git_state(REPO)["status"]:raise RuntimeError("Publication remote/clean check failed")
-        save(RUN/"publication.json",{"Status":"PASS","head":head,"remote":remote,"branch":BRANCH});print("CHECKPOINT PUSHED: "+head,flush=True)
+        save(RUN/"publication.json",{"Status":"PASS","head":head,"remote":remote,"branch":BRANCH,"postclosure_budget":closing_budget});print("CHECKPOINT PUSHED: "+head,flush=True)
     except BaseException as exc:
         save(RUN/"publication.json",{"Status":"BLOCKED","error":repr(exc),"experiment_status":outcome});print("PUBLICATION BLOCKED: "+repr(exc),flush=True);return 2
     return 0 if outcome=="PASS" else 2
