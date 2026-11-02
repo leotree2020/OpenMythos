@@ -1,0 +1,42 @@
+{
+  "Purpose": "Post-stop read-only original input path diagnosis; no experiment restart",
+  "Environment": {
+    "executable": "/home/codespace/.python/current/bin/python3",
+    "python": "3.14.2 (main, Sep 10 2026, 12:33:04) [GCC 13.3.0]",
+    "torch_imported": false
+  },
+  "Input": {
+    "stopped_checkpoint": "0f7b3e2e0723559c360fbb2094944a9cb39d3b60",
+    "paths": [
+      "/workspaces/mythos-evidence/base_v01/depth_budget/preparation-v1-20261101/inputs.json",
+      "/workspaces/mythos-evidence/base_v01/depth_budget/preparation-v2-20261101/inputs.json"
+    ]
+  },
+  "Expected": "Identify whether original frozen inputs still exist with unchanged bytes",
+  "Actual": {
+    "paths": {
+      "/workspaces/mythos-evidence/base_v01/depth_budget/preparation-v1-20261101/inputs.json": {
+        "exists": false
+      },
+      "/workspaces/mythos-evidence/base_v01/depth_budget/preparation-v2-20261101/inputs.json": {
+        "exists": true,
+        "bytes": 167672,
+        "sha256": "f38a1618d7904df7c530d9f0f322949a847befcb75e4177de2bc8e65bc53a315"
+      }
+    },
+    "original_v2_hash_match": true,
+    "stopped_status": "BLOCKED",
+    "formal_launch_attempted": false,
+    "data_preparation_attempted": false,
+    "worker_started": false,
+    "model_forward_started": false,
+    "commands": [],
+    "cause": "Operator incorrectly reused the corpus v1 directory for old inputs; historical inputs are in v2",
+    "repair_applied": false,
+    "retry_performed": false
+  },
+  "Status": "PASS",
+  "experiment_status": "BLOCKED",
+  "scientific_result": "NOT TESTED",
+  "utc": "2026-11-02T04:33:03.691913+00:00"
+}
