@@ -1,0 +1,32 @@
+{
+  "Purpose": "Independent static review of model-blind fresh-text preparation before target acquisition and selection",
+  "Environment": "Read-only source review by another ChatGPT agent; no target access, corpus acquisition, tokenizer execution or model calls in this review",
+  "Input": {
+    "base_checkpoint": "bc6d267cdd8cf9306c1bf08b369cf2b791723d3d",
+    "preparation_freeze_reported_by_coordinator": "1f322af67bca976bf3de7b00433c1f5876c74ae3",
+    "reviewed_files": ["data_prepare.py", "DATA_PROTOCOL.md", "freeze_data_spec.py", "DEVELOPMENT_DATA_ATTEMPT4.json"]
+  },
+  "Expected": "No model/score-driven selection; fixed source and original tokenizer; complete frozen historical scope; exact20 records and5/class; conservative overlap exclusion; preserve old data and stop on failure",
+  "Actual": {
+    "source": "AG News pinned revision and exact1,234,829-byte SHA256; no alternative source or retry",
+    "selection": "All7,600 source rows receive ledger entries. Eligibility precedes history exclusion. Within fixed labels0..3, SHA256 identity order and first5 surviving records; all previously selected labels participate in new-new dedup. Labels are sampling strata, not model targets.",
+    "alignment": "Original tokenizer without special tokens; full source text length>=129; first129 IDs; input0:128; scorelogits64:128 against tokens65:129; no padding or concatenation.",
+    "history": "Exact file enumeration/classification/hash before acquisition; all physical paths stay in ledger. Identical payloads of the same format may share parsing work. JSON repeated-key values are all traversed, nonfinite numeric metadata is counted without dropping text/token leaves; spec/policy JSON remains strict.",
+    "overlap": "Normalized equality, any32-token overlap, any12-word overlap, or>=50%5-word-shingle containment with bothsets>=20; full source records used, not only129-token windows.",
+    "stop_and_preservation": "Unknown/unreadable formats, source/pin drift, insufficient per-class samples and capacity failure stop with partial ledgers; forbidden model imports fail; input source pins rechecked after preparation.",
+    "cross_check_pending": "Independent audit_data.py will recheck pinned artifacts, source/tokenization/selection, history ledger coverage and witnesses before any model evaluation. This review does not assert actual novelty or target preparation PASS."
+  },
+  "Status": "PASS",
+  "Verdict": "APPROVE static preparation design within the explicitly retained/readable historical-input scope, conditional on exact frozen scope/classification receipts and runtime preparation+independent data audit PASS",
+  "Limits_and_retained_caveats": [
+    "No independent primary-source corpus-content verification occurred in this static review; acquisition size/hash/schema gates and later data audit must establish it.",
+    "Novelty applies to the enumerated retained/readable project-history scope and frozen matching rules. It does not cover arbitrary serialized checkpoint internals, unrecorded chats/external history, semantic paraphrases or unknown Parcae pretraining overlap.",
+    "The full project tree/evidence/prior-inventory union and explicit nontext/archive-member policies are prerequisite evidence; a count-only inventory is insufficient.",
+    "News-domain transfer and length/stratum filtering differ from earlier WikiText development data; records can cover the same underlying event and are not guaranteed independent.",
+    "This is a ChatGPT peer static review, not a Grok/human/cross-vendor or independent numerical replication."
+  ],
+  "Target_preparation": "NOT TESTED",
+  "Fresh_model_validation": "NOT TESTED",
+  "Formal_Oracle": "BLOCKED/NOT_READY",
+  "FORMAL_ACCEPTANCE_READY": false
+}

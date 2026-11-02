@@ -1,0 +1,56 @@
+{
+  "Purpose": "Static pre-freeze review of the one-shot data-preparation operator",
+  "Environment": "Local read-only source/receipt inspection; no target, corpus, helper test or model execution",
+  "Input": {
+    "prepare_once.py_sha256": "753ef68e8cd2c0d61283a3ac021c3daff57639140a51c50f2f8c2230cf429341",
+    "test_data.py_sha256": "81c797288c0ec5fcdb8b0efea4907db085df6c9aca3b16875c034588e6eefc25e",
+    "test_freeze_data_spec.py_sha256": "88f94eb504aa2eed7c21bea6d027a48dc557d6e3867d36018146faa4e676c255",
+    "frozen_reports_read": ["DEVELOPMENT_DATA_ATTEMPT4.json", "DEVELOPMENT_SPECIFICATION_ATTEMPT1.json"],
+    "declared_spec_sha256": "6185f5dee8c9f95e35a967c3f8abd5754221ed02207c68244ce3d2bdc4dcb8e9"
+  },
+  "Expected": "Exact helper schemas/counts and CLI; one attempt only; child status preserved; interruption stops/reaps child and seals operator evidence",
+  "checks": [
+    {
+      "Purpose": "28-test data helper report contract",
+      "Actual": "test_data.py writes Actual.test_ids/planned/run and integer failures/errors/skipped. Operator checks code zero, Status PASS, exact 28 planned/run, frozen ordered IDs, and all three counts zero. Same direct-script __main__ identity is used on both local and target invocations.",
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "10-test specification helper report contract",
+      "Actual": "test_freeze_data_spec.py writes Input.tests and Actual.tests_run plus list-valued failures/errors/skipped. Operator matches those exact fields, frozen IDs, count 10 and three empty lists. It does not confuse this schema with the data-helper schema.",
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Fixed CLI, isolation and no retry",
+      "Actual": "Uses designated data Python -I -B, frozen repo/head/branch and spec SHA, exclusive preparation directory and logs. Runs each helper once and data_prepare once with --spec, --expected-spec-sha and a new data subdirectory. No source substitution, automatic retry or model invocation is present.",
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Normal child status propagation",
+      "Actual": "Copies data manifest PASS/FAIL/BLOCKED; unknown status becomes BLOCKED; nonzero return with claimed PASS becomes FAIL. Helper failure prevents data execution. A missing receipt or subprocess problem is recorded rather than called PASS. Existing preparation is preserved and returns 2.",
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Operator interruption and child reaping",
+      "Actual": "Revised operator installs SIGTERM/SIGINT handlers, ignores further termination signals and raises KeyboardInterrupt. Active command catches it, terminates the child's process group, waits and escalates to kill only if needed. Finally records child_reaped and actual returncode. Main catches KeyboardInterrupt as BLOCKED and writes preparation_control.json. No retry was added.",
+      "Status": "PASS"
+    }
+  ],
+  "required_changes": [],
+  "revision_history": [
+    {
+      "source_sha256": "bbfbf5f6429a83168f7a36073b930272a6fe4d3c94bf6604a1a8703013b7ccfc",
+      "Verdict": "REQUEST CHANGES",
+      "finding": "No operator SIGTERM handler could bypass cleanup and leave detached child running; final returncode absent on timeout path.",
+      "resolution": "Root added caught signal interruption, ignores repeated signals and records returncode after cleanup; statically re-read revised source."
+    }
+  ],
+  "nonblocking_notes": [
+    "Root also added an explicit non-assert sys.flags.optimize check before assertion guards; optimized execution is rejected and cannot silently disable those gates.",
+    "Independent selected-data auditing is a separate subsequent gate; this operator correctly stops at preparation and does not authorize model execution."
+  ],
+  "Actual": {"model_calls": 0, "target_commands": 0, "tests_run": 0, "static_pass": 5, "blocking_findings": 0},
+  "Status": "PASS",
+  "Verdict": "APPROVE",
+  "status_scope": "Pre-freeze static operator review; no formal acquisition or model result"
+}

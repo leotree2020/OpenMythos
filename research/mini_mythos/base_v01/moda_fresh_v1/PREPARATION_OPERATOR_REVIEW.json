@@ -1,0 +1,51 @@
+{
+  "Purpose": "Static pre-freeze review of the one-shot data-preparation operator",
+  "Environment": "Local read-only source/receipt inspection; no target, corpus, helper test or model execution",
+  "Input": {
+    "prepare_once.py_sha256": "bbfbf5f6429a83168f7a36073b930272a6fe4d3c94bf6604a1a8703013b7ccfc",
+    "test_data.py_sha256": "81c797288c0ec5fcdb8b0efea4907db085df6c9aca3b16875c034588e6eefc25e",
+    "test_freeze_data_spec.py_sha256": "88f94eb504aa2eed7c21bea6d027a48dc557d6e3867d36018146faa4e676c255",
+    "frozen_reports_read": ["DEVELOPMENT_DATA_ATTEMPT4.json", "DEVELOPMENT_SPECIFICATION_ATTEMPT1.json"],
+    "declared_spec_sha256": "6185f5dee8c9f95e35a967c3f8abd5754221ed02207c68244ce3d2bdc4dcb8e9"
+  },
+  "Expected": "Exact helper schemas/counts and CLI; one attempt only; child status preserved; interruption stops/reaps child and seals operator evidence",
+  "checks": [
+    {
+      "Purpose": "28-test data helper report contract",
+      "Actual": "test_data.py writes Actual.test_ids/planned/run and integer failures/errors/skipped. Operator checks code zero, Status PASS, exact 28 planned/run, frozen ordered IDs, and all three counts zero. Same direct-script __main__ identity is used on both local and target invocations.",
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "10-test specification helper report contract",
+      "Actual": "test_freeze_data_spec.py writes Input.tests and Actual.tests_run plus list-valued failures/errors/skipped. Operator matches those exact fields, frozen IDs, count 10 and three empty lists. It does not confuse this schema with the data-helper schema.",
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Fixed CLI, isolation and no retry",
+      "Actual": "Uses designated data Python -I -B, frozen repo/head/branch and spec SHA, exclusive preparation directory and logs. Runs each helper once and data_prepare once with --spec, --expected-spec-sha and a new data subdirectory. No source substitution, automatic retry or model invocation is present.",
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Normal child status propagation",
+      "Actual": "Copies data manifest PASS/FAIL/BLOCKED; unknown status becomes BLOCKED; nonzero return with claimed PASS becomes FAIL. Helper failure prevents data execution. A missing receipt or subprocess problem is recorded rather than called PASS. Existing preparation is preserved and returns 2.",
+      "Status": "PASS"
+    },
+    {
+      "Purpose": "Operator interruption and child reaping",
+      "Actual": "command() has timeout/exception cleanup that terminates the child's process group and waits, but operator has no SIGTERM handler. Default SIGTERM can terminate the operator directly, bypass cleanup/final recording while a start_new_session child continues. Timeout cleanup also does not assign final child returncode to its record.",
+      "Status": "BLOCKED"
+    }
+  ],
+  "required_changes": [
+    "Before source freeze, install SIGTERM/SIGINT handlers that raise a caught interruption. Disable repeated termination signals during cleanup, terminate/reap an active child's process group, and write preparation_control.json with BLOCKED.",
+    "Record final proc.returncode in command finally when a child exists, including timeout/signal termination."
+  ],
+  "nonblocking_notes": [
+    "Runtime guards use assert and the prescribed launch has no -O; adding an explicit optimize==0 requirement or explicit exceptions would make this invariant self-contained.",
+    "Independent selected-data auditing is a separate subsequent gate; this operator correctly stops at preparation and does not authorize model execution."
+  ],
+  "Actual": {"model_calls": 0, "target_commands": 0, "tests_run": 0, "static_pass": 4, "blocking_findings": 1},
+  "Status": "BLOCKED",
+  "Verdict": "REQUEST CHANGES",
+  "status_scope": "Pre-freeze static operator review; no formal acquisition or model result"
+}
