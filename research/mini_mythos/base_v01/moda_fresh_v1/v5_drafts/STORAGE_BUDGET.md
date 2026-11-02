@@ -1,0 +1,41 @@
+# Fresh zero-training evidence storage budget
+
+This is a new protocol's artifact budget, not a relaxation of the prior MoDA run's limits. All older raw data, weights, adapters, logs, manifests and checkpoints remain in place and protected. The256MiB free-space reserve is unchanged.
+
+Continuation from `b32b63e43ca0ad5c35aeb26904979f769e31bfbe` uses preparation-v5
+and reuses the unchanged, hash-bound preparation-v2 corpus without another copy.
+Earlier preparation-v2, its history-parse stop, resource-v3 and storage-maintenance
+records remain preserved; their existing bytes precede model admission.
+The blocked preparation-v1 and all fresh-phase specification/discovery/stop/restore
+records remain physically present and enter the complete protection map. Existing
+tracked blocked_evidence copies also remain. No new allowance is introduced for
+these records: their current disk use precedes formal admission. Target capacity
+must be measured again after the new preparation and independent data audit;
+the old free-space observation cannot substitute for that check.
+
+| Allocation | Bytes | Purpose |
+|---|---:|---|
+| New raw logits |8388608|One final success sentinel OR one failed current matrix; mutually exclusive|
+| New total nonraw |12582912|All run metadata, independent audit receipts, timing/identity records, source-independent public copies, protected manifests and Git/finalization|
+| Unused disk reserve |268435456|Preserved throughout execution/publication|
+| Formal admission floor |289406976|Sum of all three; measured after source/data preparation|
+| Git/finalization within nonraw |4194304|Included above, never added as unaccounted disk use|
+
+The storage codec is copied byte-for-byte from the accepted v2 codec: complete canonical JSON map in a single gzip member, fixed header, CRC, size/hash/count validation, duplicate-key/trailing-member rejection,2MiB compressed limit and32MiB decode limit. No protected physical paths are removed or merged. The existing25436-entry v2 map, its25367-entry v1 subset, all32244 paths in the accepted full-history ledger, final v2 files, both discovery receipts, specification policies and new preparation scope all require exact inclusion. The ledger's physical gzip and canonical decoded pins are checked before every historical path is rehashed.
+
+Each new scored FP32 matrix is8MiB. First-pass full matrices are transferred in memory through a bounded pipe for independent numerical audit, not duplicated into a temporary disk file. Complete compact records use deterministic lossless gzip. Second-pass exact SHA/h0/RNG matching connects repeated timings to independently audited first-pass outputs. The one retained success matrix is produced only on the last measured call; before it exists, failure can instead retain the current matrix in the same8MiB allowance. No simultaneously retained success/failure files are permitted. If the final sentinel exists and a later audit fails, preserve that sentinel and the failed audit record without another model call.
+
+The12MiB nonraw bound must be justified by frozen DEVELOPMENT_EVIDENCE_BUDGET.json using actual synthetic serialization through the implemented schemas, plus the target's complete protected-map measurement. Account for both external and Git-public copies of each retained report. Preserve all row/token/chunk/identity fields. Complete worker checks and the final audit are losslessly compressed; compression does not remove checks. Do not merely estimate JSON lengths or extrapolate the old plain-text reports. Capture report assumptions and pessimistic path/numeric spellings; use actual runtime guards as final authority. measure_storage.py combines the measured worker/auditor payload, both complete gzip inventories, actual frozen63-state/four-adapter metadata serialized before/after and twice,512KiB per-copy remaining operator/environment/test/log allowance,4MiB finalization and128KiB final inventory growth allowance. A negative forecast stops before formal model execution.
+
+STORAGE_PREFLIGHT.json is generated on the designated target with the same scope collector as formal execution, with no model/numerical imports. The external receipt is byte-bound to the package copy. It is intentionally excluded from its own generating inventory and rechecked independently. Existing non-current-repository pins must match exactly at formal launch. The final new source checkout may add/change at most64KiB of serialized inventory metadata after measurement, with no measured path removed. Actual final full gzip must remain<=2MiB; the forecast is not a mathematical compression bound.
+
+Preparation/acquisition consumes disk before formal admission. Formal execution requires at least289406976 free bytes after those files and frozen code are present. Runtime guards reserve all remaining allocated bytes plus256MiB before writes/model calls, preventing external disk consumption from silently using the reserve. Final closure computes actual total nonraw(run minus raw, plus public copies and4MiB Git/finalization) and requires<=12MiB before publication. If any check fails, retain evidence, mark BLOCKED and stop; no deletion of historical files, smaller protection scope, threshold relaxation or retry.
+
+Developer checks are synthetic/local only. Target storage proof, source freeze and real model validation remain NOT TESTED until their actual recorded outcomes exist. A successful lossless-codec test is not evidence that this target has enough disk.
+
+Both storage measurement and formal execution require a pinned actual target
+DATA_AUDIT.json PASS first. The collector includes the whole fresh external
+namespace except the unused current model attempt and self-referential preflight,
+so parent records must remain unchanged after measurement. Code tests for
+measure_storage now use the same exact-ID/count/no-skips report schema as the
+formal helper gate, and their prescribed isolated command is itself tested.
