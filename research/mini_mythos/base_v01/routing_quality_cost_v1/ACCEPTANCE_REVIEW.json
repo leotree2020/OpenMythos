@@ -1,0 +1,168 @@
+{
+  "Purpose": "Accept completed paired next-token quality and complete guarded CPU API timing evidence",
+  "Environment": "Root and internal peer read-only public-evidence review; target file/hash/Git verification after all workers stopped",
+  "Input": {
+    "base": "a4e9b27ff3c7ca8dbfd5760d5c630f59a9d0a683",
+    "execution_freeze": "9b38408d040f467276c68663642a152dbf25a855",
+    "result_commit": "5add7a1b51e23cd0d30dc9056ff561184a7711fa",
+    "target": "bookish-pancake-vwqx7rr9x5w3wxjr"
+  },
+  "Expected": "All engineering gates and custody pass; scientific screens judged separately using the frozen margins, no tuning or repeat",
+  "Actual": {
+    "engineering": "PASS",
+    "calls": 194,
+    "quality_calls": 64,
+    "warmups": 2,
+    "timed_calls": 128,
+    "model_loads": 1,
+    "development_tests": 43,
+    "operator_checks": 691,
+    "worker_checks": 19656,
+    "independent_audit_checks": 1819,
+    "quality": {
+      "mean_nll": {
+        "adaptive": 2.364599576983525,
+        "fixed32": 2.3645435450928223
+      },
+      "mean_delta_nll": 0.00005603189070301374,
+      "max_case_delta_nll": 0.0009452573932757641,
+      "top1_correct": {
+        "adaptive": 18,
+        "fixed32": 18
+      },
+      "prediction_disagreements": 0,
+      "per_seed": {
+        "3101": {
+          "mean_delta_nll": 0.00005298519432629222,
+          "adaptive_correct": 9,
+          "fixed32_correct": 9,
+          "cases": 16,
+          "screen": true
+        },
+        "3202": {
+          "mean_delta_nll": 0.000059078587079735255,
+          "adaptive_correct": 9,
+          "fixed32_correct": 9,
+          "cases": 16,
+          "screen": true
+        }
+      }
+    },
+    "timing": {
+      "rounds": [
+        {
+          "round": 0,
+          "seconds": {
+            "adaptive": 83.71936400400045,
+            "fixed32": 73.04924176500117
+          },
+          "process_cpu_seconds": {
+            "adaptive": 150.24753508600025,
+            "fixed32": 132.8697658040001
+          },
+          "adaptive_over_fixed32": 1.146067528987159
+        },
+        {
+          "round": 1,
+          "seconds": {
+            "adaptive": 82.65260318399942,
+            "fixed32": 73.82486925099965
+          },
+          "process_cpu_seconds": {
+            "adaptive": 149.85281768799985,
+            "fixed32": 133.21802252700024
+          },
+          "adaptive_over_fixed32": 1.1195766958013302
+        }
+      ],
+      "aggregate_seconds": {
+        "adaptive": 166.37196718799987,
+        "fixed32": 146.87411101600082
+      },
+      "adaptive_over_fixed32": 1.1327521646743781,
+      "slower_percent": 13.275216467437811,
+      "aggregate_process_cpu_seconds": {
+        "adaptive": 300.1003527740001,
+        "fixed32": 266.08778833100035
+      },
+      "more_process_cpu_percent": 12.782459749971608,
+      "order_groups": {
+        "adaptive_first": {
+          "pair_count": 32,
+          "seconds": {
+            "adaptive": 83.41675495300206,
+            "fixed32": 72.72831545300232
+          },
+          "adaptive_over_fixed32": 1.1469639360326818
+        },
+        "fixed32_first": {
+          "pair_count": 32,
+          "seconds": {
+            "adaptive": 82.95521223499782,
+            "fixed32": 74.1457955629985
+          },
+          "adaptive_over_fixed32": 1.1188120864454725
+        }
+      }
+    },
+    "descriptive_early_subgroup": {
+      "cases": [
+        8,
+        9
+      ],
+      "source_articles": 1,
+      "timing_pairs": 4,
+      "seconds": {
+        "adaptive": 5.790690823000659,
+        "fixed32": 9.47458673500114
+      },
+      "ratio": 0.6111813617799936,
+      "scope": "Post-run descriptive partition of complete timings by the already recorded early-exit cases; not an acceptance gate or causal cost decomposition"
+    },
+    "finite_saved_fp32_components": {
+      "h0": 6291456,
+      "quality_last_logits": 4128768,
+      "warmup_timed_last_logits": 4259840,
+      "total": 14680064,
+      "scope": "Saved artifacts only, not all parameters/intermediate activations"
+    },
+    "target_seal_verification": {
+      "Status": "PASS",
+      "external_manifest_files": 586,
+      "public_exact_copies": 134,
+      "head": "5add7a1b51e23cd0d30dc9056ff561184a7711fa",
+      "matches_remote": true,
+      "clean": true,
+      "publication_receipt": "PASS"
+    },
+    "custody": "PASS; unchanged protected files,7checkout baselines,3dependency inventories; no live worker",
+    "peer_review": "Worker and data/audit peers independently recomputed public-case/timing aggregates; no extra forward or rerun of private-tensor audit"
+  },
+  "Status": "PASS",
+  "scientific_screens": {
+    "quality": {
+      "Status": "PASS",
+      "Expected": "Both evaluation-seed mean delta NLL<=0.01 and correct count not lower; every case delta NLL<=0.1",
+      "meaning": "Exploratory engineering margin only; not statistical noninferiority or language-quality acceptance"
+    },
+    "cpu_time": {
+      "Status": "FAIL",
+      "Expected": "Adaptive/fixed32 aggregate elapsed<=0.95 in both rounds"
+    },
+    "joint": {
+      "Status": "FAIL",
+      "Expected": "Both quality and CPU time screens PASS"
+    }
+  },
+  "interpretation": "On these16 next-token targets and this CPU/guarded API, adaptive predictions meet exploratory quality tolerance but are slightly worse in NLL and slower overall. Not promoted as an effective acceleration scheme.",
+  "limitations": [
+    "32 scores are16 source targets evaluated with2h0 seeds, not32 independent examples.",
+    "Quality screen is not statistical noninferiority, broad language quality, or improvement.",
+    "Timer includes all current public-API validation/hash/readout/policy overhead; excludes tokenization,model loading,RNG reset,external hooks/evidence IO. No production/server/generation throughput claim.",
+    "Two timing rounds on a shared CPU; no statistical significance or cross-hardware claim.",
+    "Frozen policy/controller retained; this does not disprove all adaptive-recursion mechanisms."
+  ],
+  "next_unique_instruction": "Plan and freeze a separate depth-specific LoRA controlled CPU protocol under the approved mechanism sequence; retain this negative speed result and fixed32 comparator. Do not tune this policy or start the next model experiment in this stage.",
+  "Formal_Oracle": "BLOCKED/NOT_READY",
+  "FORMAL_ACCEPTANCE_READY": false
+}
