@@ -1,0 +1,108 @@
+# Runs Stage 1 (research/mini_mythos/stage1/README.md) on a GitHub-hosted runner.
+# Triggered by changing research/mini_mythos/stage1/RUN_REQUEST on this branch, or manually.
+name: Mythos stage 1 run
+on:
+  push:
+    branches: [mythos-stage1-data-v1]
+    paths: [research/mini_mythos/stage1/RUN_REQUEST]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: mythos-stage1
+  cancel-in-progress: false
+jobs:
+  stage1:
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    env:
+      W: /home/runner/work-mythos
+      PARCAE_COMMIT: 69284c13746e849104f738d6d1a347b1f457df76
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12.3"
+      - name: Optional Hugging Face token
+        env:
+          HF_SECRET: ${{ secrets.HF_TOKEN }}
+        run: if [ -n "$HF_SECRET" ]; then echo "HF_TOKEN=$HF_SECRET" >> "$GITHUB_ENV"; fi
+      - name: Machine facts
+        run: |
+          mkdir -p $W/out
+          { lscpu; free -g; df -h /; python --version; } | tee $W/out/runner_machine.txt
+      - name: Frozen model environment (hash-locked, same as the Codespace)
+        run: |
+          python -m venv $W/frozen
+          $W/frozen/bin/pip install -q --require-hashes --no-deps --only-binary=:all: \
+            -r research/mini_mythos/base_v01/requirements.lock
+          $W/frozen/bin/python -c "import torch,tokenizers,numpy;print(torch.__version__,tokenizers.__version__,numpy.__version__)"
+      - name: Data environment
+        run: |
+          python -m venv $W/data
+          $W/data/bin/pip install -q "tokenizers==0.23.2" "huggingface-hub==1.33.0" numpy pyarrow
+      - name: Pinned upstream Parcae
+        run: |
+          git clone -q https://github.com/sandyresearch/parcae $W/parcae
+          git -C $W/parcae checkout -q $PARCAE_COMMIT
+          test "$(git -C $W/parcae rev-parse HEAD)" = "$PARCAE_COMMIT"
+      - name: Pinned weights and tokenizer
+        run: |
+          $W/data/bin/python - <<'PY'
+          from huggingface_hub import hf_hub_download
+          import os
+          W = os.environ["W"]
+          for f in ("pytorch_model.bin", "config.json"):
+              hf_hub_download("SandyResearch/parcae-140m", f, revision="236739ce93ba1afc1b3f172fb4a509f4500d2852", local_dir=W + "/model")
+          hf_hub_download("SandyResearch/parcae-tokenizer", "tokenizer.json", revision="6247b5d0592876b73660f34c2dd16c9db9e9045c", local_dir=W + "/tok")
+          PY
+          sha256sum $W/model/pytorch_model.bin $W/model/config.json $W/tok/tokenizer.json
+      - name: Tests
+        working-directory: research/mini_mythos/stage1
+        run: STAGE0_UPSTREAM=$W/parcae $W/frozen/bin/python -B -m unittest test_stage1 -v 2>&1 | tee $W/out/tests.log
+      - name: Smoke build
+        working-directory: research/mini_mythos/stage1
+        run: $W/data/bin/python build_data.py --out $W/smoke --tokenizer $W/tok/tokenizer.json --train-tokens 200000 --n-dev 3 --n-test 3 2>&1 | tee $W/out/smoke.log
+      - name: Build (first)
+        working-directory: research/mini_mythos/stage1
+        run: $W/data/bin/python build_data.py --out $W/data_out --tokenizer $W/tok/tokenizer.json 2>&1 | tee $W/out/build1.log
+      - name: Build (second, from the lock) and determinism check
+        working-directory: research/mini_mythos/stage1
+        run: |
+          $W/data/bin/python build_data.py --out $W/data_check --tokenizer $W/tok/tokenizer.json --lock $W/data_out/data_lock.json 2>&1 | tee $W/out/build2.log
+          diff $W/data_out/manifest.json $W/data_check/manifest.json && echo DETERMINISTIC | tee $W/out/determinism.txt
+      - name: Native baseline
+        working-directory: research/mini_mythos/stage1
+        run: |
+          $W/frozen/bin/python -B baseline.py run --sets $W/data_out/eval_sets.jsonl --out $W/baseline \
+            --upstream $W/parcae --model-dir $W/model --tokenizer $W/tok/tokenizer.json --threads 4 --max-hours 4 2>&1 | tee $W/out/baseline.log
+          $W/frozen/bin/python baseline.py report --out $W/baseline
+      - name: Commit results
+        run: |
+          R=research/mini_mythos/stage1/results
+          mkdir -p $R
+          cp $W/data_out/{data_lock.json,contamination.json,manifest.json,eval_sets.jsonl} $R/
+          cp $W/baseline/{baseline.json,baseline.md,config.json} $R/
+          cp $W/out/{runner_machine.txt,tests.log,determinism.txt} $R/
+          echo "run ${{ github.run_id }} on commit ${{ github.sha }}" > $R/RUN_INFO.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add $R
+          git commit -m "stage1: results from Actions run ${{ github.run_id }}"
+          git pull --rebase origin ${{ github.ref_name }}
+          git push origin HEAD:${{ github.ref_name }}
+      - name: Upload full outputs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage1-outputs
+          retention-days: 30
+          path: |
+            /home/runner/work-mythos/out
+            /home/runner/work-mythos/smoke/*.json
+            /home/runner/work-mythos/data_out/*.json
+            /home/runner/work-mythos/data_out/*.jsonl
+            /home/runner/work-mythos/baseline
