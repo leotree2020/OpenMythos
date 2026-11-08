@@ -4,7 +4,8 @@
 Decoding settings
   greedy   argmax (kept for comparison with the earlier 0/12 result)
   sample   temperature 0.8, top-p 0.9, repetition penalty 1.1, two sampler seeds
-Every prompt starts with BOS. Generation stops at EOS or after --max-new tokens. Depth 8
+Prompts are fed WITHOUT BOS by default, matching Parcae pretraining (see STAGE0_REVIEW.md);
+--bos adds BOS for comparison only. Generation stops at EOS or after --max-new tokens. Depth 8
 (the native training depth), no KV cache. Sampling probabilities are computed in FP64 and
 renormalised after filtering. A mass guard (|sum - 1| <= 1e-4) still catches genuinely broken
 distributions; ordinary FP32 rounding (~1e-5 over 32768 tokens) is far below it.
@@ -62,14 +63,15 @@ def next_token(torch, logits, history, setting, generator):
     return int(torch.multinomial(probs, 1, generator=generator))
 
 
-def generate(torch, model, prompt_ids, setting, seed, max_new, depth):
-    ids = [common.BOS_ID] + list(prompt_ids)
+def generate(torch, model, prompt_ids, setting, seed, max_new, depth, bos=False):
+    prefix = [common.BOS_ID] if bos else []
+    ids = prefix + list(prompt_ids)
     generator = torch.Generator().manual_seed(10_000 + seed)
     new = []
     for step in range(max_new):
         torch.manual_seed(20_000 + 1000 * seed + step)   # fixes the random initial recurrent state
         out = model.forward_for_generation(torch.tensor([ids], dtype=torch.long), num_steps=depth)
-        token = next_token(torch, out["logits"][0, -1], ids[1:], setting, generator)
+        token = next_token(torch, out["logits"][0, -1], ids[len(prefix):], setting, generator)
         if token == common.EOS_ID:
             break
         ids.append(token)
@@ -103,6 +105,7 @@ def main():
     p.add_argument("--threads", type=int, default=2)
     p.add_argument("--max-new", type=int, default=64)
     p.add_argument("--depth", type=int, default=8)
+    p.add_argument("--bos", action="store_true", help="prepend BOS (comparison only; training used none)")
     p.add_argument("--no-pin-check", action="store_true")
     args = p.parse_args()
     torch = common.setup_runtime(args.threads)
@@ -113,13 +116,14 @@ def main():
     model, _ = common.load_model(torch, args.upstream, args.model_dir)
     prompts = json.loads(Path(args.prompts).read_text(encoding="utf-8"))["prompts"]
     rows, md = [], ["# Stage 0 generations", "",
-                    "BOS + prompt, depth %d, up to %d new tokens. No automatic quality verdict." % (args.depth, args.max_new), ""]
+                    "%s, depth %d, up to %d new tokens. No automatic quality verdict."
+                    % ("BOS + prompt" if args.bos else "prompt without BOS", args.depth, args.max_new), ""]
     for prompt in prompts:
         md += ["## Prompt %d" % prompt["id"], "", "```text", prompt["text"], "```", ""]
         pids = common.encode(tok, prompt["text"])
         for setting in SETTINGS:
             for seed in setting["seeds"]:
-                new = generate(torch, model, pids, setting, prompt["id"] * 10 + seed, args.max_new, args.depth)
+                new = generate(torch, model, pids, setting, prompt["id"] * 10 + seed, args.max_new, args.depth, args.bos)
                 text = tok.decode(new, skip_special_tokens=False)
                 row = {"prompt_id": prompt["id"], "setting": setting["name"], "seed": seed, "tokens": new,
                        "text": text, **metrics(new)}
@@ -138,7 +142,7 @@ def main():
                                 for k in ("new_tokens", "distinct_2", "max_4gram_count", "repeated_4gram_fraction")}
     md += ["## Averages", "", "```json", json.dumps(agg, indent=1), "```"]
     (out / "generations.md").write_text("\n".join(md) + "\n", encoding="utf-8")
-    common.write_json(out / "generation_summary.json", {"settings": SETTINGS, "averages": agg,
+    common.write_json(out / "generation_summary.json", {"settings": SETTINGS, "averages": agg, "bos": args.bos,
                                                        "depth": args.depth, "max_new": args.max_new})
     print(json.dumps(agg, indent=1))
     return 0

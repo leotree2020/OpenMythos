@@ -274,6 +274,7 @@ class IntegrationTests(unittest.TestCase):
         self.assertEqual(len(rows), 2 * 3)
         self.assertTrue(all(len(x["tokens"]) <= 6 for x in rows))
         self.assertTrue((out / "generations.md").exists())
+        self.assertFalse(json.loads((out / "generation_summary.json").read_text())["bos"])
 
 
 if __name__ == "__main__":

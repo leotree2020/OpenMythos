@@ -1,5 +1,7 @@
 # Stage 0:修正基线(加 BOS、修采样守卫、重测 8/16/32 轮)
 
+> **结果与更正见 `STAGE0_REVIEW.md`:** Parcae 预训练没有加 BOS,正确输入是不加 BOS。本方案中“基线一律加 BOS”的前提是错的;数据中两种条件都已测量,结论按无 BOS 重新陈述。`generate.py` 已改为默认不加 BOS。
+
 一页方案 + 运行手册。规则见仓库根目录 `CLAUDE.md`(宪章 v2.0);背景见 `../PROJECT_BRIEF.md` 和 `../AUDIT_CLAUDE_20261108.md`。
 
 ## 方案(已冻结)
