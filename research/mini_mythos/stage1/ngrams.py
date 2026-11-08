@@ -20,7 +20,7 @@ def hashes(tokens, n=N):
     with np.errstate(over="ignore"):
         for j in range(n):          # in place: keeps peak memory near 3 arrays of m uint64
             h *= _BASE
-            h += t[j:j + m].astype(np.uint64)
+            np.add(h, t[j:j + m], out=h, casting="unsafe")   # no uint64 temporary copy
             h += np.uint64(1)
     return h
 
@@ -34,9 +34,19 @@ def corpus_set(tokens, doc_lengths, n=N):
     h = hashes(tokens, n)
     if len(h) == 0:
         return h
-    doc = np.repeat(np.arange(len(lengths), dtype=np.int32), lengths)
-    inside = doc[:len(h)] == doc[n - 1:n - 1 + len(h)]
-    return np.unique(h[inside])
+    # An n-gram starting at i crosses a boundary if a document starts at s with i < s <= i + n - 1.
+    inside = np.ones(len(h), dtype=bool)
+    for s in np.cumsum(lengths)[:-1]:
+        inside[max(0, s - n + 1):s] = False
+    h = h[inside]
+    del inside
+    h.sort()                                   # in place; same result as np.unique, less memory
+    if len(h) > 1:
+        keep = np.empty(len(h), dtype=bool)
+        keep[0] = True
+        np.not_equal(h[1:], h[:-1], out=keep[1:])
+        h = h[keep]
+    return h
 
 
 def member(query, sorted_set):

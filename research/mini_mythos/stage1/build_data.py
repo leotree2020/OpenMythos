@@ -107,7 +107,10 @@ def resolve(api, name, spec, locked=None):
                                if re.search(regex, f))
             if not files:
                 raise FileNotFoundError("no matching files")
-            info = {i.path: i for i in api.get_paths_info(repo, files, repo_type="dataset", revision=commit)}
+            info = {}
+            for k in range(0, len(files), 100):   # one request for ~1800 paths returns 413
+                info.update({i.path: i for i in api.get_paths_info(repo, files[k:k + 100], repo_type="dataset",
+                                                                    revision=commit)})
             entries = [{"path": f, "size": info[f].size, "sha256": _lfs_sha(info[f])} for f in files]
             result = {"repo": repo, "revision": revision, "commit": commit, "files": entries}
             if locked and [(e["path"], e["size"], e["sha256"]) for e in entries] != \
