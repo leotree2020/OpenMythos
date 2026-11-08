@@ -1,4 +1,4 @@
-# Stage 1:建数据与污染检查(方案草案,待批准)
+# Stage 1:建数据与污染检查(方案已批准,2026-11-08)
 
 规则见根目录 `CLAUDE.md`(宪章 v2.0);基线定义见 `../stage0/STAGE0_REVIEW.md`。本阶段只做数据和原生基线,不训练、不用 GPU。
 
@@ -27,9 +27,9 @@
 | fineweb | FineWeb-Edu 验证分片(作者留出) | 100(即阶段 0 用过的) | 200(新) | 同分布 |
 | c4 | C4 英文 validation | 100(阶段 0) | 200(新) | 网页,近分布 |
 | wikitext | 开发集用阶段 0 的 100 篇;测试集从 WikiText-103 train 取新文章 | 100 | 200 | 百科 |
-| books | PG-19 test(书籍),取书的开头 | 100 | 200 | 远领域 |
+| books | 开发集:PG-19 validation+test(共约 150 本);测试集:PG-19 train | 100 | 200 | 远领域 |
 
-WikiText-2 的 test+validation 合计只有约 120 篇够长的文章,所以测试集改从 WikiText-103 train 里取。WikiText-103 train 我们从不用于训练。
+WikiText-2 的 test+validation 合计只有约 120 篇够长的文章,所以测试集改从 WikiText-103 train 里取;PG-19 的 test 只有 100 本书,所以书籍测试集从 PG-19 train 里取。这两个 train 我们都从不用于训练。
 
 **测试集使用规则**:只有冻结后的最终候选才能在测试集上评测;每次评测都记录在 `TEST_LOG.md`(时间、对象、commit)。调参只用开发集。
 
@@ -65,7 +65,54 @@ WikiText-2 的 test+validation 合计只有约 120 篇够长的文章,所以测�
 
 `data_lock.json`、各集合的文档 id 和 sha256 清单、污染报告、基线汇总、一页 `CHECKPOINT.md`。token 文件留在运行机器上,可以按锁定文件在任何机器上重建,GPU 机器就这样拿数据。
 
-## 需要负责人决定
+## 负责人决定(2026-11-08)
+
+远领域用书籍(PG-19);训练语料 5000 万 token;测试集只给冻结候选用,并记录每一次使用。
+
+## 运行手册(Codespace)
+
+数据构建会单独占用约 4 GB 内存,**不要和评估同时跑**。数据从 Hugging Face 流式读取,只取用到的部分,磁盘占用约 0.3 GB。
+
+```bash
+cd /workspaces/OpenMythos && git fetch origin mythos-stage1-data-v1 && git checkout mythos-stage1-data-v1
+cd research/mini_mythos/stage1
+PY=/workspaces/mythos-base-v01-cpu312/bin/python
+DPY=/workspaces/stage0-data-env/bin/python
+OUT=/workspaces/mythos-evidence/stage1
+
+# 0) 数据环境补装(分词器版本必须与冻结环境一致)
+/workspaces/stage0-data-env/bin/pip install "tokenizers==0.23.2" numpy pyarrow huggingface_hub
+
+# 1) 测试(合成数据 + 随机小模型,约 1 分钟)
+STAGE0_UPSTREAM=/workspaces/mythos-parcae-pinned $PY -B -m unittest test_stage1 -v
+
+# 2) 冒烟:小规模确认所有数据源都能解析和读取(几分钟)
+$DPY build_data.py --out $OUT/smoke --train-tokens 200000 --n-dev 3 --n-test 3
+
+# 3) 正式构建,跑两次验证确定性(两次 manifest.json 必须完全相同)
+$DPY build_data.py --out $OUT/data
+$DPY build_data.py --out $OUT/data_check --lock $OUT/data/data_lock.json
+diff $OUT/data/manifest.json $OUT/data_check/manifest.json && echo DETERMINISTIC && rm -rf $OUT/data_check
+
+# 4) 原生基线(约 1 小时;中断后同一命令续跑)
+nohup $PY -B baseline.py run --sets $OUT/data/eval_sets.jsonl --out $OUT/baseline > $OUT/baseline.log 2>&1 &
+$PY baseline.py report --out $OUT/baseline
+```
+
+如果书籍源 `deepmind/pg19` 无法解析,脚本会自动尝试 `emozilla/pg19`,实际使用的源写入 `data_lock.json`。两个都失败就停止并报告,不要换成别的数据集。
+
+**交付到 `stage1/results/`**:`data_lock.json`、`contamination.json`、`manifest.json`、`eval_sets.jsonl`(约 2 MB,只含 token id,方便 GPU 机器直接使用)、`baseline.json`、`baseline.md`,以及一页 `CHECKPOINT.md`。训练 token 文件(约 100 MB)不进 Git,GPU 机器按 `data_lock.json` 重建。
+
+## 文件
+
+| 文件 | 作用 |
+|---|---|
+| `ngrams.py` | 13-gram 哈希、训练语料集合(不跨文档)、成员查询、重叠统计 |
+| `build_data.py` | 数据源解析与锁定、流式读取、训练语料、开发/测试集选择与去污染、污染报告、manifest |
+| `baseline.py` | 原生基线(8 轮、无 BOS、2 副本),可续跑,带运行锁;报告含噪声下限 |
+| `test_stage1.py` | 7 个测试:哈希正确性、跨文档排除、植入污染被剔除、开发/测试互斥、确定性、缺口如实报告、基线端到端 |
+
+## 原需负责人决定的事项(已决定,见上)
 
 1. **远领域选什么**:书籍(PG-19,推荐,风格与网页差别大)还是代码?
 2. **训练语料规模**:5000 万 token 是否合适?这决定阶段 2 的 GPU 时长。粗估每次训练在单卡上几分钟到半小时。
