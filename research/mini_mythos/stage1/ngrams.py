@@ -13,6 +13,8 @@ _BASE = np.uint64(0x9E3779B97F4A7C15)   # odd 64-bit constant; arithmetic wraps 
 def hashes(tokens, n=N):
     """uint64 hash of every n-gram of a 1-D token array (length len-n+1; empty if too short)."""
     t = np.asarray(tokens)
+    if t.dtype.kind != "u":    # signed + uint64 promotes to float64 under numpy 1.x
+        t = t.astype(np.uint64)
     m = len(t) - n + 1
     if m <= 0:
         return np.zeros(0, dtype=np.uint64)
