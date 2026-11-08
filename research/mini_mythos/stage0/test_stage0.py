@@ -47,6 +47,24 @@ class WindowTests(unittest.TestCase):
             common.build_window(list(range(common.WINDOW)), True)
 
 
+class ResumeTests(unittest.TestCase):
+    def test_incomplete_last_row_is_removed_and_middle_damage_refused(self):
+        import eval_depth
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "rows.jsonl"
+            good = json.dumps({"doc_id": "a", "rep": 0, "bos": 1, "depth": 8, "seconds": 1.0}) + "\n"
+            path.write_text(good + good.replace('"a"', '"b"') + '{"doc_id": "c", "rep"')
+            rows = eval_depth.read_rows_repairing_tail(path)
+            self.assertEqual([r["doc_id"] for r in rows], ["a", "b"])
+            self.assertEqual(path.read_text(), good + good.replace('"a"', '"b"'))
+            with open(path, "a") as f:                       # appending after repair stays valid
+                f.write(good.replace('"a"', '"d"'))
+            self.assertEqual(len(eval_depth.read_rows_repairing_tail(path)), 3)
+            path.write_text(good + "{broken\n" + good)
+            with self.assertRaises(SystemExit):
+                eval_depth.read_rows_repairing_tail(path)
+
+
 class VerdictTests(unittest.TestCase):
     def test_three_way_statement(self):
         import report

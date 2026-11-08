@@ -57,6 +57,30 @@ def load_texts(path, limit):
     return rows
 
 
+def read_rows_repairing_tail(path):
+    """Read rows.jsonl. If the process was killed while writing, the last line may be cut off:
+    that one incomplete line is removed (its forward is simply recomputed). Damage anywhere
+    else is an error."""
+    raw = Path(path).read_bytes()
+    lines = raw.split(b"\n")
+    rows, good_bytes = [], 0
+    for i, line in enumerate(lines):
+        if not line.strip():
+            good_bytes += len(line) + (1 if i < len(lines) - 1 else 0)
+            continue
+        try:
+            rows.append(json.loads(line))
+        except json.JSONDecodeError:
+            if any(x.strip() for x in lines[i + 1:]):
+                raise SystemExit("rows.jsonl is damaged before its last line (line %d)" % (i + 1))
+            print("removing one incomplete trailing row left by an interrupted run", flush=True)
+            with open(path, "r+b") as f:
+                f.truncate(good_bytes)
+            break
+        good_bytes += len(line) + 1
+    return rows
+
+
 def main():
     args = parse()
     torch = common.setup_runtime(args.threads)
@@ -116,11 +140,9 @@ def main():
     rows_path = out / "rows.jsonl"
     done, spent = set(), 0.0
     if rows_path.exists():
-        with open(rows_path, encoding="utf-8") as f:
-            for line in f:
-                r = json.loads(line)
-                done.add((r["doc_id"], r["rep"], r["bos"], r["depth"]))
-                spent += r["seconds"]
+        for r in read_rows_repairing_tail(rows_path):
+            done.add((r["doc_id"], r["rep"], r["bos"], r["depth"]))
+            spent += r["seconds"]
     cap = args.max_hours * 3600.0
     total = len(windows) * args.replicas * 2 * len(depths)
     print("windows=%d skipped=%d forwards=%d already_done=%d" % (len(windows), len(skipped), total, len(done)), flush=True)
