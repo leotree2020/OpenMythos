@@ -65,6 +65,21 @@ class ResumeTests(unittest.TestCase):
                 eval_depth.read_rows_repairing_tail(path)
 
 
+class DuplicateTests(unittest.TestCase):
+    def test_identical_duplicates_ignored_conflicts_refused(self):
+        import report
+        row = {"domain": "c4", "doc_id": "c4-000", "rep": 0, "bos": 1, "depth": 8, "seconds": 1.0, "nll": [1.0, 2.0]}
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "rows.jsonl"
+            path.write_text("".join(json.dumps(r) + "\n" for r in (row, dict(row, rep=1), row)))
+            per, _, dup = report.load(d)
+            self.assertEqual(dup, 1)
+            self.assertEqual(len(per[("c4", "c4-000", 1, 8)]), 2)
+            path.write_text("".join(json.dumps(r) + "\n" for r in (row, dict(row, nll=[1.0, 2.5]))))
+            with self.assertRaises(SystemExit):
+                report.load(d)
+
+
 class VerdictTests(unittest.TestCase):
     def test_three_way_statement(self):
         import report
@@ -229,6 +244,12 @@ class IntegrationTests(unittest.TestCase):
         r2 = run("eval_depth.py", *args)                 # resume: nothing left to do
         self.assertEqual(r2.returncode, 0, r2.stdout + r2.stderr)
         self.assertEqual(len(read_jsonl(out / "rows.jsonl")), len(rows))
+        import fcntl
+        with open(out / "run.lock", "w") as held:             # simulate a run already in progress
+            fcntl.flock(held, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            r_locked = run("eval_depth.py", *args)
+        self.assertNotEqual(r_locked.returncode, 0)
+        self.assertIn("already running", r_locked.stderr)
         r3 = run("eval_depth.py", *[x if x != "2,4" else "2,3" for x in args], "--max-hours", "6")
         self.assertNotEqual(r3.returncode, 0)            # different config refused in same dir
         r4 = run("report.py", "--run", str(out))

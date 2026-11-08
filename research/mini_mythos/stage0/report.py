@@ -30,14 +30,25 @@ def cost(depth):
 
 
 def load(run):
+    """Rows grouped by condition. A row repeated for the same (window, replica, BOS, depth) -
+    e.g. two overlapping runs - is counted once if its NLLs are identical; differing repeats
+    are an error, because the seed fixes the result."""
     per = defaultdict(list)   # (domain, doc, bos, depth) -> list of per-replica nll arrays
     secs = defaultdict(list)
+    seen, duplicates = {}, 0
     with open(Path(run) / "rows.jsonl", encoding="utf-8") as f:
         for line in f:
             r = json.loads(line)
+            key = (r["domain"], r["doc_id"], r["rep"], r["bos"], r["depth"])
+            if key in seen:
+                if seen[key] != r["nll"]:
+                    raise SystemExit("conflicting duplicate rows for %s" % (key,))
+                duplicates += 1
+                continue
+            seen[key] = r["nll"]
             per[(r["domain"], r["doc_id"], r["bos"], r["depth"])].append(np.array(r["nll"], dtype=np.float64))
             secs[(r["bos"], r["depth"])].append(r["seconds"])
-    return per, secs
+    return per, secs, duplicates
 
 
 def contrast(diff, rng):
@@ -58,7 +69,7 @@ def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--run", required=True)
     args = p.parse_args()
-    per, secs = load(args.run)
+    per, secs, duplicates = load(args.run)
     replicas = {len(v) for v in per.values()}
     if len(replicas) != 1:
         raise SystemExit("incomplete run: windows have different replica counts %s" % sorted(replicas))
@@ -73,7 +84,8 @@ def main():
             raise SystemExit("incomplete run: %d windows missing %s bos=%d depth=%d" % (len(missing), domain, bos, depth))
         return docs, np.array([np.mean([a[scope].mean() for a in per[(domain, d, bos, depth)]]) for d in docs])
 
-    summary = {"replicas": replicas.pop(), "depths": depths, "domains": {}, "timing": {}}
+    summary = {"replicas": replicas.pop(), "depths": depths, "domains": {}, "timing": {},
+               "duplicate_rows_ignored": duplicates}
     for domain in domains:
         dom = {"levels": {}, "depth_contrasts": {}, "bos_contrasts": {}, "oracle": {}}
         for bos in (1, 0):
@@ -163,7 +175,8 @@ def write_csv(path, per, depths):
 
 def render(s):
     lines = ["# Stage 0 summary", "", "Replicas per window: %d. NLL in nats/token (lower is better). "
-             "Primary scope t[65..255]; early scope t[1..64]." % s["replicas"], ""]
+             "Primary scope t[65..255]; early scope t[1..64]. Identical duplicate rows ignored: %d."
+             % (s["replicas"], s.get("duplicate_rows_ignored", 0)), ""]
     for domain, dom in s["domains"].items():
         lines += ["## %s" % domain, "", "| condition | windows | mean NLL | ppl | early NLL |", "|---|---:|---:|---:|---:|"]
         for name, v in dom["levels"].items():

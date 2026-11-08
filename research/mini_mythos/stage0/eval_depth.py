@@ -86,6 +86,12 @@ def main():
     torch = common.setup_runtime(args.threads)
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
+    lock = open(out / "run.lock", "w")   # held for the whole process; released when it exits
+    try:
+        import fcntl
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        raise SystemExit("another eval_depth.py is already running on %s; not starting a second one" % out)
     depths = tuple(int(d) for d in args.depths.split(","))
     texts = load_texts(args.texts, args.limit)
     config = {"texts_sha256": common.sha256_file(args.texts), "limit": args.limit, "replicas": args.replicas,
