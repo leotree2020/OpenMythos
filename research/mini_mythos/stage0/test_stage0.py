@@ -47,6 +47,17 @@ class WindowTests(unittest.TestCase):
             common.build_window(list(range(common.WINDOW)), True)
 
 
+class VerdictTests(unittest.TestCase):
+    def test_three_way_statement(self):
+        import report
+        def summ(hi_w, hi_c):
+            dom = lambda hi: {"depth_contrasts": {"bos1_d16_minus_d8": {"ci95": [-1.0, hi]}}}
+            return {"domains": {"wikitext": dom(hi_w), "c4": dom(hi_c)}}
+        self.assertIn("both", report.verdict(summ(-0.01, -0.02), [8, 16])["d16"]["statement"])
+        self.assertIn("only in c4", report.verdict(summ(0.01, -0.02), [8, 16])["d16"]["statement"])
+        self.assertIn("not significantly", report.verdict(summ(0.01, 0.0), [8, 16])["d16"]["statement"])
+
+
 class DataTests(unittest.TestCase):
     def test_wikitext_articles(self):
         lines = ["", " = Alpha = \n", "\n", " Alpha body one .\n", " = = Section = = \n", " more alpha\n",
@@ -55,6 +66,14 @@ class DataTests(unittest.TestCase):
         self.assertEqual([a[0] for a in arts], ["Alpha", "Beta"])
         self.assertIn("= = Section = =", arts[0][1])
         self.assertTrue(arts[0][1].startswith("Alpha body one"))
+
+    def test_read_json_gz_column(self):
+        import gzip
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "x.json.gz"
+            with gzip.open(path, "wt", encoding="utf-8") as f:
+                f.write(json.dumps({"text": "one", "url": "u"}) + "\n" + json.dumps({"text": "two"}) + "\n")
+            self.assertEqual(prepare_data.read_column(path, "text"), ["one", "two"])
 
     def test_select_filters_and_dedupes_in_order(self):
         texts = ["short", "a" * 30, "b" * 30, "a" * 30, "c" * 30]
@@ -83,6 +102,14 @@ class SamplingTests(unittest.TestCase):
         gen = self.torch.Generator().manual_seed(0)
         picks = {self.g.next_token(self.torch, logits, [], s, gen) for _ in range(300)}
         self.assertEqual(picks, {0, 1})
+
+    def test_mass_guard_negative_and_positive(self):
+        good = self.torch.softmax(self.torch.randn(32768).float(), dim=-1)    # FP32 rounding only
+        self.g.check_mass(self.torch, good)
+        for bad in (good * 1.01, self.torch.tensor([0.5, 0.6]), self.torch.tensor([1.2, -0.2]),
+                    self.torch.tensor([float("nan"), 1.0])):
+            with self.assertRaises(ValueError):
+                self.g.check_mass(self.torch, bad)
 
     def test_float32_mass_error_does_not_matter(self):
         logits = self.torch.randn(32768, generator=self.torch.Generator().manual_seed(3)) * 5
@@ -123,7 +150,7 @@ def make_fixture(root):
     torch.save(model.state_dict(), root / "model" / "pytorch_model.bin")
     words = "alpha beta gamma delta river mountain number seven blue green quick brown fox dog cat".split()
     rows = []
-    for domain in ("fineweb", "wikitext"):
+    for domain in ("wikitext", "c4"):
         for i in range(2):
             text = " ".join(words[(j * (i + 3) + len(domain)) % len(words)] for j in range(400))
             rows.append({"domain": domain, "doc_id": "%s-%03d" % (domain, i),
@@ -131,6 +158,8 @@ def make_fixture(root):
     with open(root / "texts.jsonl", "w") as f:
         for r in rows:
             f.write(json.dumps(r) + "\n")
+    old = {"samples": [{"tokens": [int(t) for t in tok.encode(rows[0]["text"]).ids[:257]]}]}
+    (root / "old32.json").write_text(json.dumps(old))
     prompts = {"prompts": [{"id": 1, "text": "the quick brown"}, {"id": 2, "text": "a cat sat"}]}
     (root / "prompts.json").write_text(json.dumps(prompts))
     return root
@@ -162,30 +191,40 @@ class IntegrationTests(unittest.TestCase):
 
     def test_eval_report_and_resume(self):
         out = Path(self.tmp.name) / "run"
-        args = ["--texts", str(self.fx / "texts.jsonl"), "--out", str(out), "--depths", "2,4", *self.common_args]
-        r = run("eval_depth.py", *args)
+        args = ["--texts", str(self.fx / "texts.jsonl"), "--out", str(out), "--depths", "2,4",
+                "--token-windows", str(self.fx / "old32.json"), *self.common_args]
+        r0 = run("eval_depth.py", *args, "--max-hours", "0")   # cap reached at once: clean stop
+        self.assertEqual(r0.returncode, 3, r0.stdout + r0.stderr)
+        self.assertIn("STOPPED", r0.stdout)
+        r = run("eval_depth.py", *args)                        # same config continues and finishes
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
         rows = read_jsonl(out / "rows.jsonl")
-        self.assertEqual(len(rows), 4 * 2 * 2 * 2)   # windows x replicas x BOS x depths
+        self.assertEqual(len(rows), 5 * 2 * 2 * 2)   # (4 texts + 1 token window) x replicas x BOS x depths
+        self.assertEqual(sum(1 for x in rows if x["domain"] == "wikitext_old32"), 8)
         self.assertTrue(all(len(x["nll"]) == common.WINDOW - 1 for x in rows))
         cfg = json.loads((out / "config.json").read_text())
         self.assertTrue(cfg["state_check"]["all_equal"])
         by = {(x["doc_id"], x["rep"], x["bos"], x["depth"]): x for x in rows}
-        a, b = by[("fineweb-000", 0, 1, 2)], by[("fineweb-000", 0, 0, 2)]
+        a, b = by[("wikitext-000", 0, 1, 2)], by[("wikitext-000", 0, 0, 2)]
         self.assertEqual(a["seed"], b["seed"])
         self.assertNotEqual(a["nll"], b["nll"])         # BOS changes the prediction
         r2 = run("eval_depth.py", *args)                 # resume: nothing left to do
         self.assertEqual(r2.returncode, 0, r2.stdout + r2.stderr)
         self.assertEqual(len(read_jsonl(out / "rows.jsonl")), len(rows))
-        r3 = run("eval_depth.py", *[x if x != "2,4" else "2,3" for x in args])
+        r3 = run("eval_depth.py", *[x if x != "2,4" else "2,3" for x in args], "--max-hours", "6")
         self.assertNotEqual(r3.returncode, 0)            # different config refused in same dir
         r4 = run("report.py", "--run", str(out))
         self.assertEqual(r4.returncode, 0, r4.stdout + r4.stderr)
         s = json.loads((out / "summary.json").read_text())
-        self.assertEqual(sorted(s["domains"]), ["fineweb", "wikitext"])
-        c = s["domains"]["fineweb"]["depth_contrasts"]["bos1_d4_minus_d2"]
+        self.assertEqual(sorted(s["domains"]), ["c4", "wikitext", "wikitext_old32"])
+        c = s["domains"]["c4"]["depth_contrasts"]["bos1_d4_minus_d2"]
         self.assertEqual(c["n"], 2)
         self.assertIn("d2_early_bos_minus_nobos", s["domains"]["wikitext"]["bos_contrasts"])
+        self.assertIn("statement", s["verdict"]["d4"])
+        self.assertIn("tokens_per_second", s["timing"]["bos1_d2"])
+        csv_lines = (out / "per_window.csv").read_text().splitlines()
+        self.assertEqual(len(csv_lines), 1 + 5)
+        self.assertTrue(csv_lines[0].startswith("domain,doc_id,bos1_d2"))
 
     def test_generate(self):
         out = Path(self.tmp.name) / "gen"

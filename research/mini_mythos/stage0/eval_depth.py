@@ -8,6 +8,11 @@ rows.jsonl as they finish, so an interrupted run resumes where it stopped (same 
 
   python -B eval_depth.py --texts DATA/texts.jsonl --out RUN_DIR
   python -B eval_depth.py --texts DATA/texts.jsonl --out RUN_DIR --limit 2   # quick smoke
+
+--token-windows adds already-tokenized windows (the old 32 WikiText windows of the earlier
+depth experiment) as domain `wikitext_old32`, so the effect of BOS on them can be measured.
+--max-hours stops cleanly (exit code 3) when the cumulative compute time of this run directory
+exceeds the cap; rerunning the same command later continues from where it stopped.
 """
 import argparse
 import hashlib
@@ -33,6 +38,8 @@ def parse():
     p.add_argument("--replicas", type=int, default=2)
     p.add_argument("--depths", default="8,16,32")
     p.add_argument("--limit", type=int, default=0, help="use only the first N texts per domain (smoke)")
+    p.add_argument("--token-windows", default=None, help="JSON with samples[].tokens (old 32 windows)")
+    p.add_argument("--max-hours", type=float, default=6.0, help="cumulative forward-time cap for this run")
     p.add_argument("--no-pin-check", action="store_true", help="tests only: skip pinned-hash enforcement")
     return p.parse_args()
 
@@ -58,6 +65,7 @@ def main():
     depths = tuple(int(d) for d in args.depths.split(","))
     texts = load_texts(args.texts, args.limit)
     config = {"texts_sha256": common.sha256_file(args.texts), "limit": args.limit, "replicas": args.replicas,
+              "token_windows_sha256": common.sha256_file(args.token_windows) if args.token_windows else None,
               "depths": list(depths), "window": common.WINDOW, "seed_base": SEED_BASE,
               "model_dir": str(args.model_dir), "threads": args.threads}
     config_hash = hashlib.sha256(json.dumps(config, sort_keys=True).encode()).hexdigest()
@@ -78,6 +86,14 @@ def main():
             skipped.append({"doc_id": row["doc_id"], "tokens": len(ids)})
             continue
         windows.append({"domain": row["domain"], "doc_id": row["doc_id"], "tokens": ids[:common.WINDOW + 1]})
+    if args.token_windows:
+        doc = json.loads(Path(args.token_windows).read_text())
+        samples = doc["samples"] if isinstance(doc, dict) else doc
+        for i, sample in enumerate(samples[:args.limit] if args.limit else samples):
+            ids = [int(t) for t in sample["tokens"]]
+            if len(ids) < common.WINDOW + 1:
+                raise SystemExit("token window %d has only %d tokens" % (i, len(ids)))
+            windows.append({"domain": "wikitext_old32", "doc_id": "old32-%02d" % i, "tokens": ids[:common.WINDOW + 1]})
     model, state_report = common.load_model(torch, args.upstream, args.model_dir)
     env = common.environment_facts(torch)
     if not cfg_path.exists():
@@ -85,21 +101,27 @@ def main():
                                      "state_check": state_report, "environment": env,
                                      "windows": len(windows), "skipped_short": skipped})
 
-    # Determinism control: the same forward twice must give identical NLLs.
+    # Controls: the same forward twice must be identical; removing BOS must change the result.
     w0 = windows[0]
     ids, pos, tgt = common.build_window(w0["tokens"], True)
     a, _ = common.token_nll(torch, model, ids, pos, tgt, depths[0], SEED_BASE)
     b, _ = common.token_nll(torch, model, ids, pos, tgt, depths[0], SEED_BASE)
     if a != b:
         raise SystemExit("determinism control failed: repeated forward differs")
+    ids0, pos0, tgt0 = common.build_window(w0["tokens"], False)
+    c, _ = common.token_nll(torch, model, ids0, pos0, tgt0, depths[0], SEED_BASE)
+    if ids[0] != common.BOS_ID or ids0[0] == common.BOS_ID or c == a:
+        raise SystemExit("BOS control failed: removing BOS did not change the scored NLLs")
 
     rows_path = out / "rows.jsonl"
-    done = set()
+    done, spent = set(), 0.0
     if rows_path.exists():
         with open(rows_path, encoding="utf-8") as f:
             for line in f:
                 r = json.loads(line)
                 done.add((r["doc_id"], r["rep"], r["bos"], r["depth"]))
+                spent += r["seconds"]
+    cap = args.max_hours * 3600.0
     total = len(windows) * args.replicas * 2 * len(depths)
     print("windows=%d skipped=%d forwards=%d already_done=%d" % (len(windows), len(skipped), total, len(done)), flush=True)
     start, finished = time.time(), 0
@@ -112,7 +134,12 @@ def main():
                     for depth in depths:
                         if (w["doc_id"], rep, bos, depth) in done:
                             continue
+                        if spent >= cap:
+                            print("STOPPED at the %.1f h cap: %d/%d forwards done; rerun to continue"
+                                  % (args.max_hours, len(done) + finished, total), flush=True)
+                            return 3
                         nll, seconds = common.token_nll(torch, model, ids, pos, tgt, depth, seed)
+                        spent += seconds
                         f.write(json.dumps({"domain": w["domain"], "doc_id": w["doc_id"], "rep": rep, "bos": bos,
                                             "depth": depth, "seed": seed, "seconds": seconds, "nll": nll}) + "\n")
                         f.flush()

@@ -1,6 +1,6 @@
 # Mythos 项目简报(给 Claude Project 策略助手)
 
-更新:2026-11-08。事实来源:仓库 `leotree2020/OpenMythos`,分支 `mythos-claude-audit-v1` 中的 `research/mini_mythos/AUDIT_CLAUDE_20261108.md`。本简报与审计报告冲突时,以审计报告和代码证据为准。
+更新:2026-11-08(v1.1:补充同预算对照定义、数据污染检查、FLOPs 实测)。工作规则以仓库根目录 `CLAUDE.md`(宪章 v2.0)为准。事实来源:仓库 `leotree2020/OpenMythos`,分支 `mythos-claude-audit-v1` 中的 `research/mini_mythos/AUDIT_CLAUDE_20261108.md`。本简报与审计报告冲突时,以审计报告和代码证据为准。
 
 ---
 
@@ -12,7 +12,7 @@
 |---|---|
 | Parcae | 底座:网络结构、预训练权重、原生对照 |
 | OpenMythos | 机制清单与参考实现;是推测性重建,不是 Claude 的真实架构 |
-| Mythos | 我们验证有效后的模型。不宣称复刻 Claude Mythos |
+| Mythos | 我们验证有效后的模型,属于 **Parcae 的派生模型**(Parcae 权重 + 我们的机制),不是独立权重。不宣称复刻 Claude Mythos |
 
 | 参与者 | 职责 |
 |---|---|
@@ -66,6 +66,8 @@
 - 状态如实写:PASS / FAIL / BLOCKED / NOT TESTED。
 - 每次只加一个机制;组合要等单项在新数据上通过。
 - 每个机制都要有:原生对照 + 同预算无机制对照 + 新领域测试集。
+- **同预算**写死为:可训练参数量相同、训练 token 数相同、学习率等超参搜索次数相同。
+- **异领域新集要查污染**:Parcae 预训练语料是网页类文本(FineWeb-Edu),WikiText、C4、AG News 等公开数据可能部分被见过。阶段 1 至少抽样做一次 n-gram 重叠检查。
 
 去掉:
 - 对数万个历史文件逐个哈希保护。
@@ -92,7 +94,7 @@
 
 ## 7. 资源与预算(粗略估计,需实测确认)
 
-- Parcae-140M 在 8 轮下前向约 0.35 GFLOPs/token,训练约 1 GFLOP/token。
+- Parcae-140M 在 8 轮下前向约 0.35 GFLOPs/token,训练约 1 GFLOP/token。**这是源码推算值,需实测**:循环核心每轮都要重复计算,实际可能更高。阶段 0 会记录 CPU 实测 tokens/s,据此校准 GPU 预算。
 - 1000 万 token 的适配训练约 1e16 FLOPs。单张 A100 或 4090 级显卡大约**几分钟到十几分钟**;1 亿 token 约 1 小时量级。32 轮会贵约 4 倍。
 - 按租用价格每小时约 0.5–2 美元估算,单个机制实验大约几美元级。**主要成本在调试时间,不在算力。**
 - 省钱原则:CPU 做数据准备、正确性测试和小评估;GPU 只跑冻结后的正式训练;每次租用前确认代码已在 CPU 上用小数据跑通。

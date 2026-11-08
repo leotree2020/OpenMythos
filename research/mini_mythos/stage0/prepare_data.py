@@ -5,10 +5,10 @@ Needs only `huggingface_hub` and `pyarrow` (no torch). Writes into --out:
   data_lock.json   exact repo / commit / file / size / sha256 of every downloaded file
   texts.jsonl      one selected document per line: domain, doc_id, text_sha256, text
 
-Domains
-  fineweb   FineWeb-Edu validation shard used by the Parcae authors (in-distribution)
-  wikitext  WikiText-2 raw test split, one text per article body (other domain; also
-            comparable with the earlier 32-window depth experiment)
+Domains (each up to 100 texts)
+  fineweb   FineWeb-Edu validation shard used by the Parcae authors (in-distribution reference)
+  wikitext  WikiText-2 raw test + validation splits, one text per article body
+  c4        C4 English validation shard 0 (web text, other domain)
 
 Re-running with an existing data_lock.json re-downloads the locked commit/file and
 fails if any byte differs. Selection is deterministic (file order, length filter, dedupe).
@@ -26,7 +26,10 @@ SOURCES = {
     "fineweb": {"repo": "SandyResearch/fineweb-edu-shuffled", "revision": "main",
                 "file_regex": r"(^|/)val/.*\.parquet$", "column": "text"},
     "wikitext": {"repo": "Salesforce/wikitext", "revision": "6231e49f19a707241d6b84d9cff60a3a86b85a85",
-                 "file": "wikitext-2-raw-v1/test-00000-of-00001.parquet", "column": "text"},
+                 "files": ["wikitext-2-raw-v1/test-00000-of-00001.parquet",
+                           "wikitext-2-raw-v1/validation-00000-of-00001.parquet"], "column": "text"},
+    "c4": {"repo": "allenai/c4", "revision": "main",
+           "files": ["en/c4-validation.00000-of-00008.json.gz"], "column": "text"},
 }
 MIN_CHARS = 2000   # ~400 tokens, comfortably more than the 257 needed per window
 HEADING = re.compile(r"^ = [^=].*[^=] = \s*$")
@@ -75,18 +78,21 @@ def resolve(api, name, spec):
     """Pin a moving revision to its commit and pick the file."""
     info = api.dataset_info(spec["repo"], revision=spec["revision"])
     commit = info.sha
-    if "file" in spec:
-        filename = spec["file"]
-    else:
-        files = sorted(f for f in api.list_repo_files(spec["repo"], repo_type="dataset", revision=commit)
-                       if re.search(spec["file_regex"], f))
-        if not files:
-            raise SystemExit("%s: no file matches %s at %s" % (name, spec["file_regex"], commit))
-        filename = files[0]
-    return commit, filename
+    if "files" in spec:
+        return commit, list(spec["files"])
+    files = sorted(f for f in api.list_repo_files(spec["repo"], repo_type="dataset", revision=commit)
+                   if re.search(spec["file_regex"], f))
+    if not files:
+        raise SystemExit("%s: no file matches %s at %s" % (name, spec["file_regex"], commit))
+    return commit, files[:1]
 
 
 def read_column(path, column):
+    """Rows of one text column from a parquet or json.gz (one JSON object per line) file."""
+    if str(path).endswith(".json.gz"):
+        import gzip
+        with gzip.open(path, "rt", encoding="utf-8") as f:
+            return [json.loads(line)[column] for line in f]
     import pyarrow.parquet as pq
     return pq.read_table(path, columns=[column]).column(column).to_pylist()
 
@@ -94,8 +100,8 @@ def read_column(path, column):
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--out", required=True)
-    p.add_argument("--fineweb-n", type=int, default=100)
-    p.add_argument("--wikitext-n", type=int, default=100)
+    p.add_argument("--n", type=int, default=100, help="texts per domain")
+    p.add_argument("--domains", default=",".join(SOURCES))
     args = p.parse_args()
     from huggingface_hub import HfApi, hf_hub_download
 
@@ -105,31 +111,32 @@ def main():
     lock = json.loads(lock_path.read_text()) if lock_path.exists() else None
     api = HfApi()
     new_lock, selected = {}, []
-    for name, spec in SOURCES.items():
+    for name in args.domains.split(","):
+        spec = SOURCES[name]
         if lock:
-            commit, filename = lock[name]["commit"], lock[name]["file"]
+            commit, filenames = lock[name]["commit"], [e["file"] for e in lock[name]["files"]]
         else:
-            commit, filename = resolve(api, name, spec)
-        local = hf_hub_download(spec["repo"], filename, repo_type="dataset", revision=commit,
-                                local_dir=str(out / "raw" / name))
-        entry = {"repo": spec["repo"], "commit": commit, "file": filename,
-                 "size": Path(local).stat().st_size, "sha256": sha256_file(local)}
-        if lock and (lock[name]["sha256"], lock[name]["size"]) != (entry["sha256"], entry["size"]):
-            raise SystemExit("%s: downloaded bytes differ from data_lock.json" % name)
-        new_lock[name] = entry
-        rows = read_column(local, spec["column"])
+            commit, filenames = resolve(api, name, spec)
+        entries, rows = [], []
+        for filename in filenames:
+            local = hf_hub_download(spec["repo"], filename, repo_type="dataset", revision=commit,
+                                    local_dir=str(out / "raw" / name))
+            entry = {"file": filename, "size": Path(local).stat().st_size, "sha256": sha256_file(local)}
+            if lock and entry not in lock[name]["files"]:
+                raise SystemExit("%s: %s differs from data_lock.json" % (name, filename))
+            entries.append(entry)
+            rows.extend(read_column(local, spec["column"]))
+        new_lock[name] = {"repo": spec["repo"], "commit": commit, "files": entries}
         if name == "wikitext":
             texts = [body for _, body in wikitext_articles(rows)]
-            limit = args.wikitext_n
         else:
             texts = [t for t in rows if isinstance(t, str)]
-            limit = args.fineweb_n
-        chosen = select(texts, limit)
+        chosen = select(texts, args.n)
         print("%s: %d rows -> %d candidate texts -> %d selected" % (name, len(rows), len(texts), len(chosen)))
         for i, (digest, text) in enumerate(chosen):
             selected.append({"domain": name, "doc_id": "%s-%03d" % (name, i), "text_sha256": digest, "text": text})
 
-    new_lock["selection"] = {"min_chars": MIN_CHARS, "fineweb_n": args.fineweb_n, "wikitext_n": args.wikitext_n,
+    new_lock["selection"] = {"min_chars": MIN_CHARS, "n_per_domain": args.n,
                              "rule": "file order, length filter, sha256 dedupe; wikitext = article bodies"}
     if not lock:
         lock_path.write_text(json.dumps(new_lock, indent=1) + "\n")

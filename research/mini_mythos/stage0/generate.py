@@ -6,7 +6,8 @@ Decoding settings
   sample   temperature 0.8, top-p 0.9, repetition penalty 1.1, two sampler seeds
 Every prompt starts with BOS. Generation stops at EOS or after --max-new tokens. Depth 8
 (the native training depth), no KV cache. Sampling probabilities are computed in FP64 and
-renormalised after filtering, so floating-point mass error cannot stop the run.
+renormalised after filtering. A mass guard (|sum - 1| <= 1e-4) still catches genuinely broken
+distributions; ordinary FP32 rounding (~1e-5 over 32768 tokens) is far below it.
 
 There is deliberately no automatic PASS/FAIL on text quality: the metrics are descriptive and
 the texts are written to generations.md for reading.
@@ -28,6 +29,17 @@ SETTINGS = [
 ]
 
 
+MASS_TOLERANCE = 1e-4
+
+
+def check_mass(torch, probs):
+    """Raise if a probability vector is not a distribution (negative, non-finite or mass off by >1e-4)."""
+    total = float(probs.double().sum())
+    if not bool(torch.isfinite(probs).all()) or bool((probs < 0).any()) or abs(total - 1.0) > MASS_TOLERANCE:
+        raise ValueError("invalid probability distribution (sum %.8f)" % total)
+    return total
+
+
 def next_token(torch, logits, history, setting, generator):
     """Choose one token from FP32 last-position logits."""
     logits = logits.double().clone()
@@ -39,6 +51,7 @@ def next_token(torch, logits, history, setting, generator):
         return int(torch.argmax(logits))
     logits = logits / setting["temperature"]
     probs = torch.softmax(logits, dim=-1)
+    check_mass(torch, probs)
     if setting["top_p"] is not None:
         sorted_p, order = torch.sort(probs, descending=True)
         keep = torch.cumsum(sorted_p, dim=-1) - sorted_p < setting["top_p"]   # always keeps the top token

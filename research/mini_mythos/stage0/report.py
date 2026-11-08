@@ -20,6 +20,8 @@ EARLY = slice(0, 64)
 BOOT = 10000
 BOOT_SEED = 20261108
 ORACLE_EPS = 0.01   # nats: "cheapest depth within eps of the best depth for this text"
+VERDICT_DOMAINS = ("wikitext", "c4")   # the two domains named in the frozen Stage 0 acceptance
+TOKENS_PER_FORWARD = 256
 
 
 def cost(depth):
@@ -112,10 +114,51 @@ def main():
         if t8 and t:
             summary["timing"]["bos1_d%d"
                               % depth]["ratio_to_d%d" % depths[0]] = t / t8
+    for depth in depths:
+        t = summary["timing"].get("bos1_d%d" % depth)
+        if t:
+            t["tokens_per_second"] = TOKENS_PER_FORWARD / t["median_seconds"]
+    summary["verdict"] = verdict(summary, depths)
+    write_csv(Path(args.run, "per_window.csv"), per, depths)
     Path(args.run, "summary.json").write_text(json.dumps(summary, indent=1) + "\n")
     Path(args.run, "summary.md").write_text(render(summary) + "\n", encoding="utf-8")
     print(render(summary))
     return 0
+
+
+def verdict(summary, depths):
+    """Frozen three-way statement per deeper depth, BOS on: significant (95% CI entirely below 0)
+    in both verdict domains / in exactly one / in none."""
+    present = [d for d in VERDICT_DOMAINS if d in summary["domains"]]
+    out = {"domains": present}
+    for depth in depths[1:]:
+        key = "bos1_d%d_minus_d%d" % (depth, depths[0])
+        sig = [d for d in present if summary["domains"][d]["depth_contrasts"][key]["ci95"][1] < 0]
+        if len(present) < 2:
+            label = "INCOMPLETE: fewer than two verdict domains"
+        elif len(sig) == len(present):
+            label = "depth %d significantly better than %d in both domains" % (depth, depths[0])
+        elif sig:
+            label = "depth %d significantly better than %d only in %s" % (depth, depths[0], sig[0])
+        else:
+            label = "depth %d not significantly better than %d" % (depth, depths[0])
+        out["d%d" % depth] = {"significant_in": sig, "statement": label}
+    return out
+
+
+def write_csv(path, per, depths):
+    """One row per window: mean primary NLL (replicas averaged) for every BOS x depth condition."""
+    keys = sorted({(k[0], k[1]) for k in per})
+    cols = ["bos%d_d%d" % (b, d) for b in (1, 0) for d in depths]
+    with open(path, "w", encoding="utf-8") as f:
+        f.write("domain,doc_id," + ",".join(cols) + "\n")
+        for domain, doc in keys:
+            vals = []
+            for b in (1, 0):
+                for d in depths:
+                    arrs = per.get((domain, doc, b, d))
+                    vals.append("%.6f" % np.mean([a[PRIMARY].mean() for a in arrs]) if arrs else "")
+            f.write("%s,%s,%s\n" % (domain, doc, ",".join(vals)))
 
 
 def render(s):
@@ -137,9 +180,15 @@ def render(s):
                   "fixed max depth %.4f at %.0f%% of its cost; choices %s." % (
                       o["eps_nats"], o["cheapest_within_eps_mean_nll"], o["fixed_max_depth_mean_nll"],
                       100 * o["cost_relative_to_fixed_max_depth"], o["depth_choice_counts"]), ""]
-    lines += ["## Timing (median seconds per forward)", ""]
+    lines += ["## Verdict (BOS on; frozen three-way statement)", ""]
+    for k, v in s["verdict"].items():
+        if k != "domains":
+            lines.append("- %s" % v["statement"])
+    lines += ["", "## Timing (median seconds per %d-token forward)" % TOKENS_PER_FORWARD, ""]
     for name, t in s["timing"].items():
         extra = "".join(" (%s %.2fx)" % (k, v) for k, v in t.items() if k.startswith("ratio"))
+        if "tokens_per_second" in t:
+            extra += ", %.0f tokens/s" % t["tokens_per_second"]
         lines.append("- %s: %.3f s over %d forwards%s" % (name, t["median_seconds"], t["n"], extra))
     return "\n".join(lines)
 
