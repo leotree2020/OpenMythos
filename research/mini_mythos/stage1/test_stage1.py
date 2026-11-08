@@ -47,6 +47,15 @@ class NgramTests(unittest.TestCase):
             for j in range(0, len(grams), 11):
                 self.assertEqual(h[i] == h[j], grams[i] == grams[j])
 
+    def test_list_int64_and_uint16_inputs_hash_identically(self):
+        ids = [5, 31000, 2, 65535, 7] * 6
+        a = ngrams.hashes(ids)                                 # Python list -> int64
+        b = ngrams.hashes(np.array(ids, dtype=np.uint16))      # training corpus dtype
+        c = ngrams.hashes(np.array(ids, dtype=np.int64))
+        self.assertTrue(np.array_equal(a, b) and np.array_equal(a, c))
+        s = ngrams.corpus_set(np.array(ids, dtype=np.uint16), [len(ids)])
+        self.assertTrue(ngrams.member(ngrams.hashes(ids[3:20]), s).all())
+
     def test_corpus_set_excludes_cross_document_ngrams(self):
         a, b = list(range(100, 120)), list(range(200, 220))
         s = ngrams.corpus_set(np.array(a + b), [20, 20])
