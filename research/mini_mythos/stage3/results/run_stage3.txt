@@ -1,0 +1,153 @@
+== setup Mon Nov  9 08:21:44 UTC 2026
+Mon Nov  9 08:21:50 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 595.91.07              Driver Version: 595.91.07      CUDA Version: 13.2     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA A100-SXM4-80GB          On  |   00000000:C1:00.0 Off |                    0 |
+| N/A   33C    P0             69W /  500W |       0MiB /  81920MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+2.11.0+cu128 True NVIDIA A100-SXM4-80GB
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+== data (Stage 1 r1, sha256-checked) Mon Nov  9 08:23:09 UTC 2026
+rebuilding the training corpus from the locked source
+DATA IDENTICAL TO STAGE 1 (train corpus + eval sets verified by sha256)
+== tests (CPU, tiny model) Mon Nov  9 08:23:41 UTC 2026
+test_batched_cpu_seeded_eval_matches_stage1_single_window_scoring (test_stage2.ModelTests.test_batched_cpu_seeded_eval_matches_stage1_single_window_scoring) ... ok
+test_lora_starts_identical_to_native (test_stage2.ModelTests.test_lora_starts_identical_to_native) ... ok
+test_train_resume_evaluate_and_report (test_stage2.ModelTests.test_train_resume_evaluate_and_report) ... ok
+test_best_fit_rows (test_stage2.PackingTests.test_best_fit_rows) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 21.389s
+
+OK
+test_causal (test_stage3.ModelTests.test_causal) ... ok
+test_end_to_end (test_stage3.ModelTests.test_end_to_end) ... ok
+test_gate_zero_is_bitwise_native_and_count (test_stage3.ModelTests.test_gate_zero_is_bitwise_native_and_count) ... ok
+test_matches_independent_reference (test_stage3.ModelTests.test_matches_independent_reference) ... hooked-vs-reference max |diff| 1.07e-06, vs native 1.34e+00
+ok
+test_writes_from_no_grad_steps_get_gradient (test_stage3.ModelTests.test_writes_from_no_grad_steps_get_gradient) ... ok
+test_rules (test_stage3.VerdictTests.test_rules) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 42.600s
+
+OK
+== native GPU evaluation, agreement with Stage 1, MoDA-P at init == native Mon Nov  9 08:24:49 UTC 2026
+{
+ "all": {
+  "windows": 400,
+  "mean_abs": 2.904503490391841e-07,
+  "max_abs": 9.939719078921883e-07,
+  "mean_signed": -1.2810246922678736e-08
+ },
+ "by_domain": {
+  "fineweb": {
+   "windows": 100,
+   "mean_abs": 2.902831327267208e-07,
+   "max_abs": 9.89585443811336e-07,
+   "mean_signed": 1.607718833174232e-08
+  },
+  "c4": {
+   "windows": 100,
+   "mean_abs": 2.8836651481123356e-07,
+   "max_abs": 7.835145612311578e-07,
+   "mean_signed": -7.4101565750162025e-09
+  },
+  "wikitext": {
+   "windows": 100,
+   "mean_abs": 2.700697030011412e-07,
+   "max_abs": 7.120330218768345e-07,
+   "mean_signed": -7.144135106607053e-08
+  },
+  "books": {
+   "windows": 100,
+   "mean_abs": 3.1308204561764086e-07,
+   "max_abs": 9.939719078921883e-07,
+   "mean_signed": 1.153333161862946e-08
+  }
+ },
+ "bf16_minus_fp32": {
+  "fineweb": {
+   "windows": 100,
+   "mean_abs": 0.0012894942033592892,
+   "max_abs": 0.004152784277668076,
+   "mean_signed": 6.869617564696507e-05
+  },
+  "c4": {
+   "windows": 100,
+   "mean_abs": 0.0011275379356501492,
+   "max_abs": 0.004111100806199808,
+   "mean_signed": 0.0002606876100695321
+  },
+  "wikitext": {
+   "windows": 100,
+   "mean_abs": 0.0013739421068035495,
+   "max_abs": 0.003816682943454719,
+   "mean_signed": 0.0007249551437625845
+  },
+  "books": {
+   "windows": 100,
+   "mean_abs": 0.0012119336895166511,
+   "max_abs": 0.004014141207139499,
+   "mean_signed": 0.00030107530883275666
+  }
+ },
+ "eval_tokens_per_s_fp32": 27633.733949391215,
+ "eval_tokens_per_s_bf16": 56477.44032560709,
+ "device": "NVIDIA A100-SXM4-80GB",
+ "state_check": {
+  "entries": 63,
+  "missing": [],
+  "unexpected": [],
+  "unequal": [],
+  "all_equal": true
+ },
+ "native_dev_domain_mean_nll": {
+  "books": 3.7654876415333316,
+  "c4": 3.323733032589843,
+  "fineweb": 2.879887486077188,
+  "wikitext": 3.2267654535586496
+ },
+ "pass": true
+}
+{
+ "what": "moda at initialisation",
+ "split": "dev",
+ "depth": 8,
+ "windows": 400,
+ "seconds": 8.820516586303711,
+ "domain_mean_nll": {
+  "books": 3.7654876415333316,
+  "c4": 3.323733032589843,
+  "fineweb": 2.879887486077188,
+  "wikitext": 3.2267654535586496
+ },
+ "moda_stats": {
+  "reads": 750,
+  "mean_depth_attention_entropy": 1.3668039896289508,
+  "mean_depth_to_attention_norm_ratio": 0.0,
+  "gate_abs_mean": {
+   "gate.0": 0.0,
+   "gate.1": 0.0
+  }
+ },
+ "compare": {
+  "against": "/workspace/mythos3/native/native_dev.csv",
+  "max_abs_diff": 4.99736318992916e-07,
+  "pass": true
+ }
+}
