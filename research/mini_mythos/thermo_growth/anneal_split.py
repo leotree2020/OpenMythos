@@ -142,7 +142,8 @@ def anneal(torch, X, alpha=0.95, t_min_ratio=1e-3, k_max=64, seed=0, perturb=1e-
             break
         T *= alpha
     return records, {"points": n, "dim": dim, "rms_radius": scale, "lambda_1": lam1, "Tc1_predicted": t_c1,
-                     "first_split_observed_T": next((r["T"] for r in records if r["split_now"]), None)}
+                     "first_split_observed_T": next((r["T"] for r in records if r["split_now"]), None),
+                     "final_assignment": hard.tolist()}
 
 
 def parcae_points(args, torch):
@@ -206,8 +207,14 @@ def main():
     with open(out / "anneal.jsonl", "w", encoding="utf-8") as f:
         for r in records:
             f.write(json.dumps(r) + "\n")
-    if labels is not None:                                   # which texts end up together at the last split levels
+    assign = info.pop("final_assignment")
+    if labels is not None:                                   # which texts end up together in each final centre
         info["labels"] = sorted(set(labels))
+        comp = {}
+        for a, lab in zip(assign, labels):
+            comp.setdefault(int(a), {}).setdefault(lab, 0)
+            comp[int(a)][lab] += 1
+        info["final_composition"] = [comp[c] for c in sorted(comp, key=lambda c: -sum(comp[c].values()))]
     info["source"] = "parcae dev windows (%s level)" % args.level if args.parcae else args.points
     (out / "summary.json").write_text(json.dumps(info, indent=1) + "\n")
     print(json.dumps(info, indent=1))
