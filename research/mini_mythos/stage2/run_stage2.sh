@@ -80,12 +80,9 @@ hf_hub_download("SandyResearch/parcae-tokenizer", "tokenizer.json", revision="62
 PY
 COMMON=(--upstream "$W/parcae" --model-dir "$W/model" --tokenizer "$W/tok/tokenizer.json" --device cuda)
 
-echo "== data (rebuild from the Stage 1 r1 lock) $(date -u)"
-if [ ! -f "$W/data/manifest.json" ]; then
-  (cd "$REPO/$S1" && "$V/python" build_data.py --out "$W/data" --tokenizer "$W/tok/tokenizer.json" \
-      --lock "$REPO/$S1/results/r1/data_lock.json")
-fi
-diff "$W/data/manifest.json" "$REPO/$S1/results/r1/manifest.json" && echo "DATA IDENTICAL TO STAGE 1"
+echo "== data (Stage 1 r1: train corpus from the locked source, eval sets from the repo; sha256-checked) $(date -u)"
+"$V/python" "$REPO/$S2/assemble_data.py" --results "$REPO/$S1/results/r1" --out "$W/data" \
+    --tokenizer "$W/tok/tokenizer.json"
 SETS="$W/data/eval_sets.jsonl"
 
 echo "== tests (CPU, tiny model) $(date -u)"
