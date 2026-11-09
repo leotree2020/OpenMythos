@@ -1,6 +1,6 @@
 # Stage 2 checkpoint(2026-11-09)
 
-状态:**验收 1–4 全部满足**,其中第 4 项按“非逐位一致时的替代条件”满足(见下文)。等待负责人宣布 CLOSED。结果在 `results/`(`summary.md/json`、`agreement.json`、`COST.txt`)。
+状态:**CLOSED**(负责人 2026-11-09 宣布)。验收 1–4 全部满足,其中第 4 项按“非逐位一致时的替代条件”满足(见下文)。结果在 `results/`(`summary.md/json`、`agreement.json`、`COST.txt`)。
 
 ## 做了什么
 
@@ -65,4 +65,4 @@
 
 ## 下一步
 
-负责人宣布阶段 2 CLOSED,然后起草阶段 3 方案:先选一个机制,写一页方案和对照设计。
+阶段 3a(MoDA)方案:`../stage3/README.md`。
