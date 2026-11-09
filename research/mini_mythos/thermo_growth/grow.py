@@ -66,6 +66,9 @@ def parse():
     p.add_argument("--eval-every", type=int, default=5, help="books between held-out checks")
     p.add_argument("--per-domain", type=int, default=25, help="dev windows per domain for the checks")
     p.add_argument("--seed", type=int, default=0)
+    p.add_argument("--unfreeze", action="store_true",
+                   help="Parcae's own weights change too while reading (the native baseline is a frozen copy)")
+    p.add_argument("--base-lr", type=float, default=1e-5, help="learning rate of Parcae's weights with --unfreeze")
     p.add_argument("--no-pin-check", action="store_true")
     args = p.parse_args()
     if args.page < 2 or args.page % 2:
@@ -92,7 +95,7 @@ def pages_of(tokens, rows, args):
             yield b["book"], pg, mbs[pg * args.page:(pg + 1) * args.page]
 
 
-def eval_windows(sets, rows, per_domain):
+def eval_windows(sets, rows, per_domain, heldout=()):
     dev = G.load_windows(sets, "dev")
     by = {}
     for w in dev:
@@ -100,7 +103,9 @@ def eval_windows(sets, rows, per_domain):
             by[w["domain"]].append(w)
     tails = [{"index": 900000 + 10 * r["book"] + j, "domain": "own-book-%d" % r["book"], "split": "tail",
               "doc_id": "book%d-tail%d" % (r["book"], j), "tokens": t} for r in rows for j, t in enumerate(r["tail"])]
-    return [w for d in sorted(by) for w in by[d]] + tails
+    unseen = [{"index": 950000 + 10 * r["book"] + j, "domain": "heldout-books", "split": "heldout",
+               "doc_id": "heldout%d-w%d" % (r["book"], j), "tokens": t} for r in heldout for j, t in enumerate(r["windows"])]
+    return [w for d in sorted(by) for w in by[d]] + tails + unseen
 
 
 def score(torch, model, windows, device):
@@ -116,6 +121,7 @@ def summarize_eval(scores, native, windows, books_read):
         out["domains"][d] = mean([w["doc_id"] for w in windows if w["domain"] == d])
     out["own_books_read"] = mean([w["doc_id"] for w in windows if w["split"] == "tail"
                                   and int(w["domain"].split("-")[-1]) < books_read])
+    out["heldout_books"] = mean([w["doc_id"] for w in windows if w["split"] == "heldout"])
     out["own_books_unread"] = mean([w["doc_id"] for w in windows if w["split"] == "tail"
                                     and int(w["domain"].split("-")[-1]) >= books_read])
     return out
@@ -134,10 +140,21 @@ def main():
                             pin_check=not args.no_pin_check)
     for prm in model.parameters():
         prm.requires_grad_(False)
+    native_model = None
+    if args.unfreeze:                       # a frozen copy keeps scoring the native Parcae
+        import copy
+        native_model = copy.deepcopy(model)
+        base0 = {n: q.detach().clone() for n, q in model.named_parameters()}
+        for prm in model.parameters():
+            prm.requires_grad_(True)
     from tokenizers import Tokenizer
     tok = Tokenizer.from_file(str(args.tokenizer))
     ks = KS.KnowledgeSpace(model, k_max=args.k_max)
-    opt = torch.optim.AdamW(ks.parameters(), lr=args.lr, betas=(0.9, 0.95), eps=1e-8, weight_decay=0.0)
+    groups = [{"params": ks.parameters(), "lr": args.lr, "peak": args.lr}]
+    if args.unfreeze:
+        groups.append({"params": list(model.parameters()), "lr": args.base_lr, "peak": args.base_lr})
+    opt = torch.optim.AdamW(groups, betas=(0.9, 0.95), eps=1e-8, weight_decay=0.0)
+    trainable = [q for g in groups for q in g["params"]]
     gen = torch.Generator().manual_seed(args.seed)
     plan = list(pages_of(tokens, rows, args))
     n_pages = len(plan)
@@ -151,7 +168,7 @@ def main():
                   params_per_direction=ks.count(1), schedule_pages=sorted(grow_at))
     G.s0.write_json(out / "config.json", {"config": config, "environment": G.s0.environment_facts(torch)})
 
-    windows = eval_windows(args.sets, rows, args.per_domain)
+    windows = eval_windows(args.sets, rows, args.per_domain, BK.load_heldout(args.data))
     native = score(torch, model, windows, args.device)        # k = 0 or reads 0: exactly the native model
     evals = open(out / "evals.jsonl", "w", encoding="utf-8")
 
@@ -162,10 +179,10 @@ def main():
                **summarize_eval(s, native, windows, books_read)}
         evals.write(json.dumps(rec) + "\n")
         evals.flush()
-        print("check after %d books: k %d own-read %s unseen-books %s c4 %s wiki %s fineweb %s" % (
+        print("check after %d books: k %d own-read %s heldout-books %s stage1-books %s c4 %s wiki %s fineweb %s" % (
             books_read, ks.k, *("%+.4f" % v if v is not None else "-" for v in (
-                rec["own_books_read"], rec["domains"]["books"], rec["domains"]["c4"], rec["domains"]["wikitext"],
-                rec["domains"]["fineweb"]))), flush=True)
+                rec["own_books_read"], rec["heldout_books"], rec["domains"]["books"], rec["domains"]["c4"],
+                rec["domains"]["wikitext"], rec["domains"]["fineweb"]))), flush=True)
         return rec
 
     check(0, 0)
@@ -193,10 +210,13 @@ def main():
             x, y = batch[:, :-1].contiguous(), batch[:, 1:].contiguous()
             seed = 1_000_000 * (args.seed + 1) + step
             with torch.no_grad(), torch.autocast(device_type=dev_type, dtype=torch.bfloat16, enabled=amp):
-                k_saved, ks.k = ks.k, 0                 # native Parcae on the same chunk, same h0
-                torch.manual_seed(seed)
-                native_loss = float(model(x, labels=y, num_steps_pair=pair)["loss"])
-                ks.k = k_saved
+                torch.manual_seed(seed)                 # native Parcae on the same chunk, same h0
+                if native_model is not None:
+                    native_loss = float(native_model(x, labels=y, num_steps_pair=pair)["loss"])
+                else:
+                    k_saved, ks.k = ks.k, 0
+                    native_loss = float(model(x, labels=y, num_steps_pair=pair)["loss"])
+                    ks.k = k_saved
             torch.manual_seed(seed)
             with torch.autocast(device_type=dev_type, dtype=torch.bfloat16, enabled=amp):
                 loss = model(x, labels=y, num_steps_pair=pair)["loss"]
@@ -205,11 +225,11 @@ def main():
             loss.backward()
             if last and ks.capture:
                 captured_targets = y.clone()
-            lr = args.lr * min(1.0, (step + 1) / max(1, args.warmup))
+            ramp = min(1.0, (step + 1) / max(1, args.warmup))
             for g in opt.param_groups:
-                g["lr"] = lr
-            if ks.k:
-                torch.nn.utils.clip_grad_norm_(ks.parameters(), args.clip)
+                g["lr"] = g["peak"] * ramp
+            if ks.k or args.unfreeze:
+                torch.nn.utils.clip_grad_norm_(trainable, args.clip)
                 opt.step()
             opt.zero_grad(set_to_none=True)
             tokens_read += x.numel()
@@ -252,11 +272,23 @@ def main():
     final = check(len(rows), tokens_read)
     evals.close()
     torch.save(ks.state(), out / "final_space.pt")
+    drift = None
+    if args.unfreeze:                       # how far the foundation itself moved, per part
+        acc = {}
+        for n, q in model.named_parameters():
+            part = n.split(".")[1] if n.startswith("transformer.") else n.split(".")[0]
+            a = acc.setdefault(part, [0.0, 0.0])
+            a[0] += float((q.detach() - base0[n]).double().pow(2).sum())
+            a[1] += float(base0[n].double().pow(2).sum())
+        drift = {part: math.sqrt(d / w) if w else None for part, (d, w) in sorted(acc.items())}
+        torch.save({n: q.detach().cpu() for n, q in model.state_dict().items()}, out / "final_base.pt")
     logs = [json.loads(x) for x in open(out / "read_log.jsonl", encoding="utf-8")]
     per_book = {}
     for r in logs:
         per_book.setdefault(r["book"], []).append(r["native"] - r["loss"])
-    summary = {"mode": args.mode, "k_final": ks.k, "trainable_params_final": ks.count(), "tokens_read": tokens_read,
+    summary = {"mode": args.mode, "unfreeze": bool(args.unfreeze), "base_lr": args.base_lr if args.unfreeze else None,
+               "base_relative_change": drift,
+               "k_final": ks.k, "trainable_params_final": ks.count(), "tokens_read": tokens_read,
                "pages": n_pages, "growth_pages": [e["page"] for e in events] if args.mode == "auto" else sorted(grow_at),
                "orthonormality_error": KS.orthonormality_error(ks.directions().cpu()),
                "prequential_gain_per_book": {b: float(np.mean(v)) for b, v in per_book.items()},

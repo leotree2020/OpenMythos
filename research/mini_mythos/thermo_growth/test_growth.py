@@ -183,16 +183,24 @@ class BookTests(unittest.TestCase):
         bad = enc(texts[2])[1500:1540]                             # an eval window taken from book 2's body
         eval_set = np.unique(ngrams.hashes(np.asarray(bad, dtype=np.uint32)))
         eval_shas = {BK.B.sha256_bytes(texts[4].encode())}         # book 4 is an eval book
-        books, rep = BK.select_books(iter(texts), enc, eval_shas, eval_set, 5, 1000)
+        books, rep = BK.select_books(iter(texts), enc, eval_shas, eval_set, 5, 1000, prepare=BK.unwrap)
         self.assertEqual(rep["eval_book"], 1)
         self.assertEqual(rep["eval_overlap"], 1)
         self.assertEqual(len(books), 5)
         self.assertTrue(all(len(b["read"]) == 1000 and [len(t) for t in b["tail"]] == [257, 257] for b in books))
         with tempfile.TemporaryDirectory() as tmp:
-            BK.write(Path(tmp), books, rep, {"params": {}})
+            BK.write(Path(tmp), books[:3], rep, {"params": {}}, heldout=books[3:])
             tokens, rows = BK.load(tmp)
-            self.assertEqual(len(tokens), 5000)
+            self.assertEqual(len(tokens), 3000)
             self.assertTrue(np.array_equal(tokens[1000:2000], books[1]["read"]))
+            held = BK.load_heldout(tmp)
+            self.assertEqual(len(held), 2)
+            self.assertEqual(held[0]["windows"][1], books[3]["read"][257:514].tolist())
+
+    def test_unwrap(self):
+        text = "Call me Ishmael. Some years\nago, never mind how\n  long precisely.\n\n\nHaving little\nmoney.\n"
+        self.assertEqual(BK.unwrap(text), "Call me Ishmael. Some years ago, never mind how long precisely.\n\n"
+                                          "Having little money.")
 
 
 def read_jsonl(path):
@@ -219,7 +227,7 @@ class ModelTests(unittest.TestCase):
             rng = np.random.default_rng(5)
             books = [{"sha256": str(i), "char_offset": 0, "read": rng.integers(3, 500, 8 * 65).astype(np.uint16),
                       "tail": [rng.integers(3, 500, 257).tolist() for _ in range(2)]} for i in range(3)]
-            BK.write(root / "books", books, {}, {"params": {}})
+            BK.write(root / "books", books, {}, {"params": {}}, heldout=books[:1])
             common = ["--data", str(root / "books"), "--sets", str(root / "sets.jsonl"), "--upstream", UPSTREAM,
                       "--model-dir", str(fx / "model"), "--tokenizer", str(fx / "tokenizer.json"), "--threads", "1",
                       "--no-pin-check", "--precision", "fp32", "--seq-len", "64", "--micro-batch", "2", "--page", "2",
@@ -227,14 +235,17 @@ class ModelTests(unittest.TestCase):
                       "--t0", "0.0", "--t-min", "0.0"]
             env = dict(os.environ, PYTHONDONTWRITEBYTECODE="1")
             runs = {}
-            for mode, extra in (("auto", []), ("schedule", ["--k-target", "3"]), ("static", ["--k-target", "3"])):
+            for mode, extra in (("auto", []), ("schedule", ["--k-target", "3"]), ("static", ["--k-target", "3"]),
+                                ("unfrozen", ["--unfreeze", "--base-lr", "1e-3"])):
                 outd = root / mode
-                r = subprocess.run([sys.executable, "-B", str(HERE / "grow.py"), "--mode", mode, "--out", str(outd),
+                r = subprocess.run([sys.executable, "-B", str(HERE / "grow.py"), "--mode",
+                                    "auto" if mode == "unfrozen" else mode, "--out", str(outd),
                                     *common, *extra], capture_output=True, text=True, env=env)
                 self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
                 runs[mode] = json.loads((outd / "summary.json").read_text())
                 ev = read_jsonl(outd / "evals.jsonl")
                 self.assertEqual(ev[0]["own_books_unread"], 0.0)            # start == native, exactly
+                self.assertEqual(ev[0]["heldout_books"], 0.0)
                 self.assertEqual([e["books_read"] for e in ev], [0, 1, 2, 3])
                 log = read_jsonl(outd / "read_log.jsonl")
                 self.assertEqual(len(log), 3 * 4)                         # 3 books x 4 micro-batches
@@ -242,6 +253,13 @@ class ModelTests(unittest.TestCase):
             self.assertGreaterEqual(runs["auto"]["k_final"], 1)           # T = 0: grows on any structure
             self.assertEqual(runs["schedule"]["k_final"], 3)
             self.assertEqual(runs["static"]["k_final"], 3)
+            # unfrozen: the native baseline (frozen copy) is the same as in the frozen run; Parcae moved
+            na = [r["native"] for r in read_jsonl(root / "auto" / "read_log.jsonl")]
+            nu = [r["native"] for r in read_jsonl(root / "unfrozen" / "read_log.jsonl")]
+            self.assertEqual(na, nu)
+            self.assertTrue(runs["unfrozen"]["unfreeze"])
+            self.assertGreater(max(runs["unfrozen"]["base_relative_change"].values()), 0.0)
+            self.assertTrue((root / "unfrozen" / "final_base.pt").exists())
             g = read_jsonl(root / "auto" / "growth.jsonl")
             grown = [e for e in g if e["grew"]]
             self.assertTrue(all("tokens_behind" in e for e in grown))
