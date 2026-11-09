@@ -36,7 +36,18 @@ def render(runs):
             f(s["prequential_gain_second_half"]), f(fc["own_books_read"]), f(fc.get("heldout_books")), f(fc["domains"]["books"]),
             f(fc["domains"]["c4"]), f(fc["domains"]["wikitext"]), f(fc["domains"]["fineweb"])))
     L += ["", "Prequential gain = native loss minus the model's loss on each chunk BEFORE it learned from it",
-          "(positive = it predicts new text better than native).", ""]
+          "(positive = it predicts new text better than native).", "",
+          "Forgetting:", "", "| run | anchor | crystallize | general text (c4/wiki/fineweb) | books: gain right after | at the end | lost | kept |",
+          "|---|---:|---:|---:|---:|---:|---:|---:|"]
+    for name, (s, ev, gr) in runs.items():
+        kept = s.get("book_gain_kept_fraction")
+        L.append("| %s | %s | %s | %s (%s%% ppl) | %s | %s | %s | %s |" % (
+            name, s.get("anchor", 0), s.get("crystallize", 0), f(s.get("forgetting_nats")),
+            "%+.1f" % s["forgetting_ppl_pct"] if s.get("forgetting_ppl_pct") is not None else "-",
+            f(-s["book_gain_right_after"]) if s.get("book_gain_right_after") is not None else "-",
+            f(-s["book_gain_at_end"]) if s.get("book_gain_at_end") is not None else "-",
+            f(s.get("book_gain_lost")), "%.0f%%" % (100 * kept) if kept is not None else "-"))
+    L.append("")
     for name, (s, ev, gr) in runs.items():
         L.append("## %s: checks while reading" % name)
         L.append("")

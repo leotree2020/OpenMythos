@@ -69,6 +69,12 @@ def parse():
     p.add_argument("--unfreeze", action="store_true",
                    help="Parcae's own weights change too while reading (the native baseline is a frozen copy)")
     p.add_argument("--base-lr", type=float, default=1e-5, help="learning rate of Parcae's weights with --unfreeze")
+    p.add_argument("--crystallize", type=int, default=0,
+                   help="pages after its birth over which a direction cools: its updates shrink linearly to 0, "
+                        "then it is frozen as part of the foundation (0 = never)")
+    p.add_argument("--anchor", type=float, default=0.0,
+                   help="weight of KL(native || model) on the text being read: stay close to what Parcae already "
+                        "predicts, change only where reality disagrees (0 = off)")
     p.add_argument("--no-pin-check", action="store_true")
     args = p.parse_args()
     if args.page < 2 or args.page % 2:
@@ -127,6 +133,35 @@ def summarize_eval(scores, native, windows, books_read):
     return out
 
 
+def cool_factor(page, born, crystallize):
+    """Step-size factor of a direction: 1 at birth, falling linearly to 0 over `crystallize` pages
+    (frozen afterwards); 1 forever when crystallize is 0."""
+    if crystallize <= 0:
+        return 1.0
+    return max(0.0, 1.0 - (page - born) / crystallize)
+
+
+def retention(path):
+    """Book by book: the gain on its held-out tail right after reading it, and after all books.
+    Books forgotten = gain lost; 'kept' = end gain / gain right after (books with a gain > 0.01)."""
+    rows = [json.loads(x) for x in open(path, encoding="utf-8") if x.strip()]
+    if not rows:
+        return {}
+    end = {int(b): -v for b, v in rows[-1]["per_book"].items()}
+    after = {}
+    for r in rows:
+        for b, v in r["per_book"].items():
+            if int(b) == r["books_read"] - 1:
+                after[int(b)] = -v
+    books = sorted(b for b in after if b in end)
+    lost = [after[b] - end[b] for b in books]
+    learned = [b for b in books if after[b] > 0.01]
+    return {"book_gain_right_after": float(np.mean([after[b] for b in books])) if books else None,
+            "book_gain_at_end": float(np.mean([end[b] for b in books])) if books else None,
+            "book_gain_lost": float(np.mean(lost)) if lost else None,
+            "book_gain_kept_fraction": float(np.mean([end[b] / after[b] for b in learned])) if learned else None}
+
+
 def main():
     args = parse()
     torch = G.setup(args.device, args.threads)
@@ -161,9 +196,11 @@ def main():
     grow_at = set()
     if args.mode == "schedule":
         grow_at = {int((i + 1) * n_pages / (args.k_target + 1)) for i in range(args.k_target)}
+    born = []                                       # page at which each direction appeared
     if args.mode == "static":
         for _ in range(args.k_target):
             ks.grow(ks.random_direction(gen))
+            born.append(0)
     config = dict(vars(args), pages=n_pages, books_read=len(rows), tokens_per_page=args.page * args.micro_batch * args.seq_len,
                   params_per_direction=ks.count(1), schedule_pages=sorted(grow_at))
     G.s0.write_json(out / "config.json", {"config": config, "environment": G.s0.environment_facts(torch)})
@@ -185,6 +222,28 @@ def main():
                 rec["domains"]["wikitext"], rec["domains"]["fineweb"]))), flush=True)
         return rec
 
+    tail_windows = [w for w in windows if w["split"] == "tail"]
+    tails_log = open(out / "tails.jsonl", "w", encoding="utf-8")
+
+    def tails_check(books_read):
+        """Every read book's held-out tail, after each book: did earlier books stay learned?"""
+        s = score(torch, model, tail_windows, args.device)
+        per = {}
+        for w in tail_windows:
+            per.setdefault(int(w["domain"].split("-")[-1]), []).append(s[w["doc_id"]] - native[w["doc_id"]])
+        tails_log.write(json.dumps({"books_read": books_read, "k": ks.k,
+                                    "per_book": {b: float(np.mean(v)) for b, v in per.items()}}) + "\n")
+        tails_log.flush()
+
+    def cool_directions(before, page_idx):
+        """Per-direction step size: 1 at birth, falling linearly to 0 after `crystallize` pages."""
+        with torch.no_grad():
+            for name, prm in ks.R.items():
+                for j in range(ks.k):
+                    m = cool_factor(page_idx, born[j], args.crystallize)
+                    if m < 1.0:
+                        prm[:, j] = before[name][:, j] + m * (prm[:, j] - before[name][:, j])
+
     check(0, 0)
     pair = torch.tensor([int(x) for x in args.steps_pair.split(",")], dtype=torch.long)
     dev_type = args.device.split(":")[0]
@@ -195,6 +254,7 @@ def main():
     step, tokens_read, last_book, t0 = 0, 0, rows[0]["book"], time.time()
     for page_idx, (book, pg, mbs) in enumerate(plan):
         if book != last_book:
+            tails_check(book - rows[0]["book"])
             if (book - rows[0]["book"]) % args.eval_every == 0:
                 check(book - rows[0]["book"], tokens_read)
             last_book = book
@@ -211,18 +271,30 @@ def main():
             seed = 1_000_000 * (args.seed + 1) + step
             with torch.no_grad(), torch.autocast(device_type=dev_type, dtype=torch.bfloat16, enabled=amp):
                 torch.manual_seed(seed)                 # native Parcae on the same chunk, same h0
+                want = args.anchor > 0
                 if native_model is not None:
-                    native_loss = float(native_model(x, labels=y, num_steps_pair=pair)["loss"])
+                    nat = native_model(x, labels=y, num_steps_pair=pair, return_logits=want)
                 else:
                     k_saved, ks.k = ks.k, 0
-                    native_loss = float(model(x, labels=y, num_steps_pair=pair)["loss"])
+                    nat = model(x, labels=y, num_steps_pair=pair, return_logits=want)
                     ks.k = k_saved
+                native_loss = float(nat["loss"])
+                native_logp = torch.log_softmax(nat["logits"].float(), -1) if want else None
+                del nat
             torch.manual_seed(seed)
             with torch.autocast(device_type=dev_type, dtype=torch.bfloat16, enabled=amp):
-                loss = model(x, labels=y, num_steps_pair=pair)["loss"]
+                res = model(x, labels=y, num_steps_pair=pair, return_logits=args.anchor > 0)
+            loss = res["loss"]
             if not bool(torch.isfinite(loss)):
                 raise SystemExit("non-finite loss at step %d" % step)
-            loss.backward()
+            kl = None
+            total = loss
+            if args.anchor > 0:                         # free energy: fit reality + stay near what is known
+                logp = torch.log_softmax(res["logits"].float(), -1)
+                kl = (native_logp.exp() * (native_logp - logp)).sum(-1).mean()
+                total = loss + args.anchor * kl
+            del res
+            total.backward()
             if last and ks.capture:
                 captured_targets = y.clone()
             ramp = min(1.0, (step + 1) / max(1, args.warmup))
@@ -230,11 +302,17 @@ def main():
                 g["lr"] = g["peak"] * ramp
             if ks.k or args.unfreeze:
                 torch.nn.utils.clip_grad_norm_(trainable, args.clip)
+                before = ({n: q[:, :ks.k].detach().clone() for n, q in ks.R.items()}
+                          if args.crystallize and ks.k else None)
                 opt.step()
+                if before is not None:
+                    cool_directions(before, page_idx)
             opt.zero_grad(set_to_none=True)
             tokens_read += x.numel()
             read_log.write(json.dumps({"step": step, "book": book, "page": page_idx, "k": ks.k,
-                                       "loss": float(loss), "native": native_loss, "tokens_read": tokens_read}) + "\n")
+                                       "loss": float(loss), "native": native_loss,
+                                       "kl_to_native": float(kl) if kl is not None else None,
+                                       "tokens_read": tokens_read}) + "\n")
             step += 1
         ks.collect, ks.capture = False, None
         T = temperature(args, page_idx)
@@ -248,6 +326,7 @@ def main():
                 want = (lam_c > T * lam_n) if args.mode == "auto" else (page_idx in grow_at)
                 if want and ks.k < args.k_max:
                     u = ks.grow(top)
+                    born.append(page_idx + 1)           # it starts learning on the next page
         rec["grew"] = u is not None
         rec["k"] = ks.k
         if u is not None and CAPTURE in ks.captured and captured_targets is not None:
@@ -269,6 +348,8 @@ def main():
                 tokens_read / (time.time() - t0)), flush=True)
     read_log.close()
     growth_log.close()
+    tails_check(len(rows))
+    tails_log.close()
     final = check(len(rows), tokens_read)
     evals.close()
     torch.save(ks.state(), out / "final_space.pt")
@@ -286,7 +367,11 @@ def main():
     per_book = {}
     for r in logs:
         per_book.setdefault(r["book"], []).append(r["native"] - r["loss"])
+    general = [final["domains"][d] for d in ("c4", "wikitext", "fineweb")]
     summary = {"mode": args.mode, "unfreeze": bool(args.unfreeze), "base_lr": args.base_lr if args.unfreeze else None,
+               "anchor": args.anchor,
+               "forgetting_nats": float(np.mean(general)),
+               "forgetting_ppl_pct": 100.0 * (math.exp(float(np.mean(general))) - 1.0),
                "base_relative_change": drift,
                "k_final": ks.k, "trainable_params_final": ks.count(), "tokens_read": tokens_read,
                "pages": n_pages, "growth_pages": [e["page"] for e in events] if args.mode == "auto" else sorted(grow_at),
@@ -294,7 +379,8 @@ def main():
                "prequential_gain_per_book": {b: float(np.mean(v)) for b, v in per_book.items()},
                "prequential_gain_all": float(np.mean([r["native"] - r["loss"] for r in logs])),
                "prequential_gain_second_half": float(np.mean([r["native"] - r["loss"] for r in logs[len(logs) // 2:]])),
-               "final_check": final, "seconds": time.time() - t0}
+               "final_check": final, "seconds": time.time() - t0,
+               "crystallize": args.crystallize, **retention(out / "tails.jsonl")}
     G.s0.write_json(out / "summary.json", summary)
     print(json.dumps({k: v for k, v in summary.items() if k != "prequential_gain_per_book"}, indent=1))
     return 0

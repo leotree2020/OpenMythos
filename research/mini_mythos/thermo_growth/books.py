@@ -64,13 +64,15 @@ def select_books(texts, encode, eval_shas, eval_set, n_books, book_tokens, chars
             continue
         body = text[start:start + need * chars_per_token]
         ids = encode(prepare(body) if prepare else body)
+        raw = np.asarray(encode(body), dtype=np.uint32) if prepare else None   # the eval windows are not unwrapped
         if len(ids) < need:
             rep["too_short"] += 1
             continue
         ids = np.asarray(ids[:need], dtype=np.uint32)
         if ids.max() >= 2 ** 16:
             raise SystemExit("token id does not fit uint16")
-        if eval_set.size and ngrams.member(ngrams.hashes(ids), eval_set).any():
+        if eval_set.size and (ngrams.member(ngrams.hashes(ids), eval_set).any() or
+                              (raw is not None and ngrams.member(ngrams.hashes(raw), eval_set).any())):
             rep["eval_overlap"] += 1
             continue
         books.append({"sha256": sha, "char_offset": int(start), "read": ids[:book_tokens].astype(np.uint16),
@@ -140,7 +142,7 @@ def main():
     args = p.parse_args()
     out, res = Path(args.out), Path(args.results)
     params = {"books": args.books, "book_tokens": args.book_tokens, "shard": args.shard, "tail_windows": TAIL,
-              "heldout": args.heldout, "unwrap": not args.no_unwrap}
+              "heldout": args.heldout, "unwrap": not args.no_unwrap, "overlap_check": "raw and unwrapped"}
     if matches(out, params):
         print("BOOKS PRESENT AND MATCH THEIR MANIFEST")
         return 0

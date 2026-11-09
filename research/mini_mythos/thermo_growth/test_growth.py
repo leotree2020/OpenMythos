@@ -203,6 +203,30 @@ class BookTests(unittest.TestCase):
                                           "Having little money.")
 
 
+class RuleTests(unittest.TestCase):
+    def test_cool_factor_and_retention(self):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("grow_mod", HERE / "grow.py")
+        GR = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(GR)
+        self.assertEqual(GR.cool_factor(5, 5, 4), 1.0)
+        self.assertEqual(GR.cool_factor(7, 5, 4), 0.5)
+        self.assertEqual(GR.cool_factor(9, 5, 4), 0.0)
+        self.assertEqual(GR.cool_factor(30, 5, 4), 0.0)                 # frozen for good
+        self.assertEqual(GR.cool_factor(30, 5, 0), 1.0)                 # never cools
+        with tempfile.TemporaryDirectory() as tmp:
+            p = Path(tmp) / "tails.jsonl"
+            rows = [{"books_read": 1, "per_book": {"0": -0.10, "1": 0.0, "2": 0.0}},
+                    {"books_read": 2, "per_book": {"0": -0.08, "1": -0.20, "2": 0.0}},
+                    {"books_read": 3, "per_book": {"0": -0.05, "1": -0.10, "2": -0.30}}]
+            p.write_text("".join(json.dumps(r) + "\n" for r in rows))
+            r = GR.retention(p)
+            self.assertAlmostEqual(r["book_gain_right_after"], 0.2)          # mean of 0.10, 0.20, 0.30
+            self.assertAlmostEqual(r["book_gain_at_end"], 0.15)              # mean of 0.05, 0.10, 0.30
+            self.assertAlmostEqual(r["book_gain_lost"], 0.05)
+            self.assertAlmostEqual(r["book_gain_kept_fraction"], (0.5 + 0.5 + 1.0) / 3)
+
+
 def read_jsonl(path):
     with open(path, encoding="utf-8") as f:
         return [json.loads(x) for x in f if x.strip()]
@@ -236,10 +260,11 @@ class ModelTests(unittest.TestCase):
             env = dict(os.environ, PYTHONDONTWRITEBYTECODE="1")
             runs = {}
             for mode, extra in (("auto", []), ("schedule", ["--k-target", "3"]), ("static", ["--k-target", "3"]),
-                                ("unfrozen", ["--unfreeze", "--base-lr", "1e-3"])):
+                                ("unfrozen", ["--unfreeze", "--base-lr", "1e-3"]),
+                                ("protected", ["--unfreeze", "--base-lr", "1e-3", "--anchor", "1.0", "--crystallize", "1"])):
                 outd = root / mode
                 r = subprocess.run([sys.executable, "-B", str(HERE / "grow.py"), "--mode",
-                                    "auto" if mode == "unfrozen" else mode, "--out", str(outd),
+                                    "auto" if mode in ("unfrozen", "protected") else mode, "--out", str(outd),
                                     *common, *extra], capture_output=True, text=True, env=env)
                 self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
                 runs[mode] = json.loads((outd / "summary.json").read_text())
@@ -260,6 +285,15 @@ class ModelTests(unittest.TestCase):
             self.assertTrue(runs["unfrozen"]["unfreeze"])
             self.assertGreater(max(runs["unfrozen"]["base_relative_change"].values()), 0.0)
             self.assertTrue((root / "unfrozen" / "final_base.pt").exists())
+            # protected: the anchor is exactly 0 at the start (the model is the native one), every read book
+            # is re-scored after each book, and the retention summary is there
+            plog = read_jsonl(root / "protected" / "read_log.jsonl")
+            self.assertLess(plog[0]["kl_to_native"], 1e-9)
+            self.assertGreater(max(r["kl_to_native"] for r in plog), 0.0)
+            tails = read_jsonl(root / "protected" / "tails.jsonl")
+            self.assertEqual([t["books_read"] for t in tails], [1, 2, 3])
+            self.assertIn("book_gain_kept_fraction", runs["protected"])
+            self.assertIn("forgetting_ppl_pct", runs["protected"])
             g = read_jsonl(root / "auto" / "growth.jsonl")
             grown = [e for e in g if e["grew"]]
             self.assertTrue(all("tokens_behind" in e for e in grown))
