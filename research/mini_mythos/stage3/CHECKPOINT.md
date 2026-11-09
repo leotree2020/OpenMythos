@@ -1,6 +1,6 @@
 # Stage 3a checkpoint(MoDA-P,2026-11-09)
 
-**状态:FAIL**(按冻结标准)。开发集关口通过,测试集上条件 1、2 不满足。结果在 `results/summary.md` / `summary.json`。
+**状态:FAIL**(按冻结标准);负责人 2026-11-09 宣布 **CLOSED**,选方案 A。开发集关口通过,测试集上条件 1、2 不满足。结果在 `results/summary.md` / `summary.json`。
 
 ## 做了什么
 
