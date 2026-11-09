@@ -65,7 +65,7 @@ python3 -m venv "$W/venv"
 V="$W/venv/bin"
 "$V/pip" install -q --upgrade pip
 "$V/pip" install -q "torch==2.11.0" --index-url https://download.pytorch.org/whl/cu128
-"$V/pip" install -q "numpy==1.26.4" "einops==0.8.0" "tokenizers==0.23.2" "huggingface-hub==1.33.0" pyarrow
+"$V/pip" install -q "numpy==1.26.4" "einops==0.8.0" "tokenizers==0.23.2" "huggingface-hub==1.33.0" "pyarrow==19.0.1"
 "$V/pip" freeze > "$W/pip_freeze.txt"
 "$V/python" -c "import torch;print(torch.__version__, torch.cuda.is_available(), torch.cuda.get_device_name())"
 [ -d "$W/parcae" ] || git clone -q https://github.com/sandyresearch/parcae "$W/parcae"
