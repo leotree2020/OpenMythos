@@ -78,7 +78,10 @@ def encode_items(tok, items):
     for k, it in enumerate(items):
         p = tok.encode(it["prompt"], add_special_tokens=False).ids
         c = [tok.encode(x, add_special_tokens=False).ids for x in it["candidates"]]
-        enc.append({"k": k, "prompt": p, "cands": c, "single": all(len(x) == 1 for x in c)})
+        # fast path: all candidates have the same tokens except the last one (e.g. " 7" = [space, 7]);
+        # then one forward over prompt + shared prefix scores every candidate exactly
+        fast = len({len(x) for x in c}) == 1 and len({tuple(x[:-1]) for x in c}) == 1
+        enc.append({"k": k, "prompt": p, "cands": c, "single": fast})
     return enc
 
 
@@ -89,7 +92,7 @@ def score_items(torch, model, enc, device, depth, replicas=2, batch_tokens=16384
     rows = []                               # (item index, candidate index or -1 for fast path, tokens)
     for i, e in enumerate(enc):
         if e["single"]:
-            rows.append((i, -1, e["prompt"]))
+            rows.append((i, -1, e["prompt"] + e["cands"][0][:-1]))
         else:
             for j, c in enumerate(e["cands"]):
                 rows.append((i, j, e["prompt"] + c))
@@ -115,17 +118,20 @@ def score_items(torch, model, enc, device, depth, replicas=2, batch_tokens=16384
             specs = [(seed_base + 10 * enc[r[0]]["k"] + rep, item_len(enc[r[0]]), len(r[2])) for r in chunk]
             with torch.no_grad(), item_seeded_h0(model, specs):
                 logits = model(x.to(device), return_logits=True, num_steps_pair=steps)["logits"]
-            logp = torch.log_softmax(logits.double(), dim=-1).cpu()
             for b, (i, j, toks) in enumerate(chunk):
                 e = enc[i]
+                P = len(e["prompt"])
+                n = len(e["cands"][0]) if j < 0 else len(e["cands"][j])
+                # log-softmax only at the answer positions (FP64), not over the whole sequence
+                lp = torch.log_softmax(logits[b, P - 1:P - 1 + n].double(), dim=-1).cpu()
                 if j < 0:
-                    last = logp[b, len(e["prompt"]) - 1]
+                    pre = e["cands"][0][:-1]
+                    shared = float(sum(lp[t, pre[t]] for t in range(len(pre))))
                     for jj, c in enumerate(e["cands"]):
-                        acc[i, jj] += float(last[c[0]])
+                        acc[i, jj] += shared + float(lp[len(pre), c[-1]])
                 else:
-                    P = len(e["prompt"])
                     c = e["cands"][j]
-                    acc[i, j] += float(sum(logp[b, P - 1 + t, c[t]] for t in range(len(c))))
+                    acc[i, j] += float(sum(lp[t, c[t]] for t in range(len(c))))
     for i, e in enumerate(enc):
         out[i, :len(e["cands"])] = acc[i, :len(e["cands"])] / replicas
     return out
@@ -144,7 +150,7 @@ def main():
     p.add_argument("--tokenizer", default=G.s0.DEFAULTS["tokenizer"])
     p.add_argument("--device", default="cuda")
     p.add_argument("--threads", type=int, default=4)
-    p.add_argument("--batch-tokens", type=int, default=16384)
+    p.add_argument("--batch-tokens", type=int, default=8192)
     p.add_argument("--max-per-cell", type=int, default=0, help="testing only")
     p.add_argument("--no-pin-check", action="store_true")
     args = p.parse_args()

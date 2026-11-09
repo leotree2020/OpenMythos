@@ -15,8 +15,8 @@ import re
 LEVELS = {"chain": (1, 2, 3, 4, 6), "order": (2, 3, 4, 5), "lookup": (4, 8, 16), "add": (2, 3, 4)}
 SHOTS = 3
 DIGITS = [" %d" % d for d in range(10)]
-NAMES = ["Anna", "Ben", "Cara", "Dan", "Eva", "Finn", "Gina", "Hugo", "Ivy", "Jack", "Kate", "Leo", "Mia",
-         "Nick", "Olga", "Paul"]
+NAMES = ["Anna", "Ben", "Dan", "Jack", "Kate", "Leo", "Nick", "Paul", "Tom", "Amy", "Lisa", "John", "Mary",
+         "Emma", "Lucy", "Jane"]   # each " Name" is a single token in the Parcae tokenizer
 RELATIONS = [("taller", "tallest", "shortest"), ("older", "oldest", "youngest"), ("faster", "fastest", "slowest")]
 KEYS = ["red", "blue", "green", "black", "white", "gold", "pink", "gray", "brown", "lime", "navy", "teal", "plum",
         "rose", "sand", "mint", "coal", "snow", "rust", "jade"]
