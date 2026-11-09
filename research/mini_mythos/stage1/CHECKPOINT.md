@@ -1,53 +1,51 @@
-# Stage 1 checkpoint(2026-11-08)
+# Stage 1 checkpoint(2026-11-09,修订 1 补跑后)
 
-状态:**验收 1–4 全部 PASS**,等待负责人宣布 CLOSED。方案见 `README.md`(未改)。另有一个书籍领域的问题需要策略侧决定(见“未解决 1”)。
+状态:**修订 1 补跑完成,验收全部 PASS**,等待负责人宣布 CLOSED。方案见 `README.md`(含“修订 1”)。第一次运行(`f3278265`)的结果保留在 `results/`,本次结果在 `results/r1/`。**以 `results/r1/` 为阶段 1 的正式数据和基线。**
 
 ## 做了什么
 
-- 在 Codespace 上运行(2 核 CPU,未用 GPU)。数据构建两次:12:03:42 和 12:08:24 开始,用时 257 s / 244 s。两次都基于代码 `a3ac387e`,已核对 reflog。第二次输出与第一次比对一致后删除,比对方法见 `README.md` 运行手册。
-- 原生基线:12:13–13:14,3685 s,2400 次前向,代码 `a3ac387e`。之后的 `7b29fef3` 只加了测试。
-- 测试:`test_stage1` 8 个,在 `7b29fef3` 上全部通过。
-- 独立验收脚本 `verify_stage1.py` 从输出文件重新核对,结果在 `results/acceptance_check.json`。它复用 `ngrams.py` 的哈希函数,该函数已有单独测试。
-- CPU 合计约 1.2 h(上限 3 h);不含此前被 SIGTERM 中断的一次构建和 smoke 构建,两者各几分钟。
+- Codespace(2 核 CPU,未用 GPU),代码 `d22dd165`。按 README 末尾的补跑步骤执行。
+- 测试:`test_stage1` 9 个全部通过。
+- 数据构建两次:02:24:08–02:26:48 和 02:26:56–02:28:59。
+- 原生基线:02:29:35–约 03:28,共 3490 s,2400 次前向。
+- 验收脚本 `verify_stage1.py` 在 `data_r1` 上重新核对,结果在 `results/r1/acceptance_check.json`。
+- CPU 合计约 1.1 h(上限 3 h)。
 
 ## 结果
 
-**验收 1 确定性**:两次构建的 5 个输出文件 sha256 全部相同;`data_lock.json` 固定了全部来源的 commit、文件 sha256 和大小。书籍源实际用的是 `emozilla/pg19`。
+**确定性**:两次构建的 `manifest.json` 相同;5 个输出文件(训练 token、文档长度、`eval_sets.jsonl`、`examined.jsonl`、`contamination.json`)逐字节相同。`data_lock.json` 只有 `revision` 字段不同:第二次用 `--lock`,把 `"main"` 记成了解析后的 commit;各来源的 `commit`、文件 sha256 和大小全部一致。第二次的 lock 保留在运行机器上(`data_r1_check_lock.json`)。
 
-**验收 2 去污染**:
-- 训练语料 50,000,362 token,48,505 篇,不含 token 0。
-- 评测窗口与训练语料的 13-gram 重叠为 0;开发集与测试集共享的 13-gram 为 0。
-- 文档 sha256 和 id 都无重复。
-- 每个领域开发集 100、测试集 200,无缺口;窗口长 257 个 id,与阶段 0 一致。
+**只有 books 变化**:`compare_sets.py` 的输出是 books CHANGED,c4/fineweb/wikitext identical,退出码 0。基线也印证了这一点:这三个领域 900 个窗口的逐窗口 NLL 与第一次完全相同,两个副本的最大差都是 0。
 
-**验收 3 污染报告**(`results/contamination.json`):有训练语料命中的候选窗口,fineweb 7/307(2.3%),c4 2/302(0.7%),都已剔除。阶段 0 用过的开发窗口里有 3 个被剔除:fineweb-044(21% 的 token 被覆盖)、c4-040、c4-073。
+**训练语料不变**:`train_tokens.u16` 和 `train_doc_lengths.i32` 与第一次逐字节相同。
 
-**验收 4 原生基线**(深度 8、无 BOS、t[65..255],nats/token):
+**去污染**:评测窗口与训练语料的 13-gram 重叠为 0;开发集与测试集共享的 13-gram 为 0;没有重复的 sha256 或 id;每个领域开发集 100、测试集 200,无缺口。
 
-| 领域 | 开发集 NLL [95% CI] | 测试集 NLL [95% CI] | 副本噪声 SD | 均值的 h0 噪声 SE |
-|---|---|---|---:|---:|
-| fineweb | 2.8799 [2.787, 2.969] | 2.9988 [2.937, 3.063] | 0.0007 | 0.00003–0.00005 |
-| c4 | 3.3237 [3.201, 3.450] | 3.3519 [3.268, 3.433] | 0.0007 | 0.00004–0.00005 |
-| wikitext | 3.2268 [3.152, 3.303] | 3.2621 [3.205, 3.321] | 0.0006–0.0007 | 0.00004 |
-| books | 3.1375 [2.967, 3.308] | 3.7103 [3.627, 3.789] | **0.025–0.026** | 0.0013–0.0018 |
+**书籍候选**:共检查 312 个(第一次是 584)。其中 4 个(1.3%)与训练语料有 13-gram 重叠,已剔除;因与开发集重叠剔除 8 个(第一次是 283)。抽查解码的窗口都是正文(经文、小说对话、散文),不再是前言。
 
-- **与阶段 0 核对**:两阶段共有的 297 个开发窗口,逐窗口 NLL 差最大 0.0028,在副本噪声范围内。fineweb 和 c4 的开发集均值比阶段 0 高约 0.007,原因是上面 3 个被剔除的窗口 NLL 偏低(其中 fineweb-044 为 2.52)。wikitext 无剔除,均值相差 0.0001。
-- **噪声下限**:网页和百科领域,h0 随机状态对领域均值的影响约 5e-5,远小于窗口之间的差异(CI 半宽约 0.06–0.12)。所以后续比较的瓶颈是窗口数,不是 h0。
+**原生基线**(深度 8,无 BOS,t[65..255],单位 nats/token;其他三个领域的数字与第一次相同,见 `results/r1/baseline.md`):
+
+| 书籍 | 开发集 NLL [95% CI] | 测试集 NLL [95% CI] | 开发/测试差 | 副本噪声 SD | 均值的 h0 噪声 SE |
+|---|---|---|---:|---:|---:|
+| 修订前 | 3.1375 [2.967, 3.308] | 3.7103 [3.627, 3.789] | 0.573 | 0.025–0.026 | 0.0013–0.0018 |
+| **修订 1** | 3.7655 [3.670, 3.864] | 3.6994 [3.638, 3.762] | **0.066** | **0.0021–0.0025** | 0.00012–0.00015 |
+
+其他领域作对照:开发/测试差为 0.028(c4)、0.119(fineweb)、0.035(wikitext);副本噪声 SD 为 0.0006–0.0007。
+
+- 书籍开发/测试差 0.066,落在其他领域的范围内,且小于两边 CI 的半宽(约 0.06–0.10)。
+- 书籍副本噪声 SD 仍约是其他领域的 3–4 倍(修订前约 35 倍)。逐窗口 |副本差| 的中位数:书籍 0.0007–0.0008,其他领域 0.0005–0.0006,差距在 1.5 倍以内,说明 SD 偏大主要来自少数窗口。对领域均值的影响约 1e-4,仍远小于窗口之间的差异。修订 1 对此只要求报告,不设门槛。
 
 ## 证据
 
-- 仓库 `results/`:`data_lock.json`、`manifest.json`、`contamination.json`、`eval_sets.jsonl`、`baseline.json/.md`、`baseline_config.json`(权重/配置/分词器 sha256 无不匹配,state_check 63/63 相同)、`per_window.csv`、`acceptance_check.json`。
+- 仓库 `results/r1/`:`data_lock.json`、`manifest.json`、`contamination.json`、`eval_sets.jsonl`(sha256 `8816fe5a…`)、`baseline.json/.md`、`baseline_config.json`(权重/配置/分词器无不匹配,state_check 63/63 相同)、`per_window.csv`、`acceptance_check.json`。
 - 测试集使用已记入 `TEST_LOG.md`。
-- 运行机器 `/workspaces/mythos-evidence/stage1/`:`data/`(含 `train_tokens.u16` 约 100 MB)、`baseline/rows.jsonl`(sha256 `59a75e08…`)、build1/2 和 baseline 的日志。
+- 运行机器 `/workspaces/mythos-evidence/stage1/`:`data_r1/`(含训练 token)、`baseline_r1/rows.jsonl`(sha256 `6bd61b6a…`)、`build_r1_1.log`、`build_r1_2.log`、`baseline_r1.log`、`data_r1_check_lock.json`。第一次运行的 `data/`、`baseline/` 未改动。
 
 ## 未解决
 
-1. **书籍窗口几乎全是古登堡前言**,包括制作者署名、书名页、目录、大量换行和缩进,正文很少。这是“从文档开头取窗口”这条规则用在书上的结果,书籍的数据都受影响:
-   - 副本噪声是其他领域的约 35 倍(逐窗口中位数约 15–20 倍),不是少数离群窗口造成的;
-   - 开发集和测试集差 0.57 nats(开发集来自 PG-19 validation/test,测试集来自 PG-19 train,前言格式可能不同)。
-   书籍作为“远领域”目前测到的主要是排版和元数据,不是文学正文。可选做法:(a) 维持现状,如实标注;(b) 修改方案,跳过前言或从正文取窗口。后者是改方案,需要策略侧和负责人决定,而且要在任何机制结果出来之前定。
-2. GitHub Actions 的 stage 1 workflow 没有被触发(分支上 0 次运行;手动触发需要 workflow 在默认分支上)。这次本机已跑完,暂不影响;以后要用 CI 跑,需要先查 fork 的 Actions 设置。
+1. 书籍副本噪声 SD 仍约是其他领域的 3–4 倍(见上),只报告。
+2. (沿用)GitHub Actions 的 stage 1 workflow 未触发,要触发需要 workflow 在默认分支上。不影响本次运行。
 
 ## 下一步
 
-负责人宣布阶段 1 CLOSED,并决定书籍窗口的处理;然后准备阶段 2 GPU 试点方案(需批准 GPU 预算)。
+负责人宣布阶段 1 CLOSED;然后准备阶段 2 GPU 试点方案,需要批准 GPU 预算。阶段 2 使用 `results/r1/eval_sets.jsonl`。
