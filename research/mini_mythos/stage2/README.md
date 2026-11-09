@@ -58,3 +58,37 @@
 1. **GPU 平台和卡型**:推荐 RunPod 或 Vast 上的 A100 40GB(按小时计费,单价约 1–1.5 美元)。预算更紧的话,用 RTX 4090(单价约 0.4–0.7 美元)也够。
 2. **预算上限**:是否同意 20 美元?
 3. **是否保留 C-Full**:它让总时长增加约三分之一,但能告诉我们“全量微调能做到什么程度”,我建议保留。
+
+## 负责人决定(2026-11-09)
+
+RunPod;卡型按 `GPU 预算估算` 选(首选 RTX 4090);预算上限 20 美元;保留 C-Full。
+
+## 实现(已在 CPU 上用随机小模型测试,未在 GPU 上运行过)
+
+| 文件 | 作用 |
+|---|---|
+| `gpu_common.py` | 设备设置(确定性、关 TF32)、加载并核对权重、按阶段 1 种子在 CPU 生成初始状态的分批评估、LoRA(钩子实现,不改上游)、best-fit 打包 |
+| `evaluate.py` | GPU 原生评估(FP32 和 bf16),与阶段 1 CPU 逐窗口比较,验收 1 |
+| `train.py` | C-LoRA / C-Full 训练、检查点、`--stop-after-step` 与 `--resume`、训练后开发集评估 |
+| `report.py` | 学习率选择(seed 0 开发集均值最低)、相对原生的成对差异与置信区间、训练噪声下限、续训比较、成本 |
+| `run_stage2.sh` | 一条命令跑完全部步骤;每个阶段结束都提交推送结果;超预算不再开始新训练 |
+| `test_stage2.py` | 4 个测试:打包、LoRA 初始等于原模型、分批评估与阶段 1 逐窗口打分一致、训练-续训逐位一致-评估-汇总端到端 |
+
+评估时的初始状态在 CPU 上按阶段 1 的种子生成,再搬到 GPU 上,所以 GPU 与 CPU 只差在计算内核,比较是干净的。
+
+## 运行手册(RunPod)
+
+前提:阶段 1 修订 1 的结果(`stage1/results/r1/` 下的 `data_lock.json`、`manifest.json`、`per_window.csv`)已合并进本分支。
+
+1. 在 GitHub 创建 fine-grained token:Settings → Developer settings → Fine-grained tokens,仓库只选 `leotree2020/OpenMythos`,权限 Contents: Read and write。
+2. RunPod 开一台 Pod:官方 PyTorch 模板(CUDA 12.x),Container disk 50 GB。
+3. 在 Pod 的终端粘贴(换成你的 token 和实际单价):
+
+```bash
+export GH_TOKEN=github_pat_xxx
+export PRICE_PER_HOUR=0.69
+export MAX_USD=20
+curl -fsSL https://raw.githubusercontent.com/leotree2020/OpenMythos/mythos-stage2-gpu-v1/research/mini_mythos/stage2/run_stage2.sh | bash
+```
+
+4. 脚本结束时会显示 `DONE: spent about $…`,**这时立刻停止并删除 Pod**。中途断线的话,结果已经推到 GitHub,重新开机再跑同一命令,已完成的训练会自动跳过。
