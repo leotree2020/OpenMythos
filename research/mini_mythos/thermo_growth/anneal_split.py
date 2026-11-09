@@ -27,16 +27,28 @@ import numpy as np
 HERE = Path(__file__).resolve().parent
 
 
-def covariance_top(torch, X, w=None):
-    """Largest eigenvalue and its eigenvector of the (weighted) covariance of rows of X."""
+def covariance_top(torch, X, w=None, iters=200, tol=1e-10):
+    """Largest eigenvalue and its eigenvector of the (weighted) covariance of rows of X (power
+    iteration on the weighted, centred data; deterministic start)."""
     if w is None:
         w = torch.full((X.shape[0],), 1.0 / X.shape[0], dtype=X.dtype)
     w = w / w.sum()
     mu = (w[:, None] * X).sum(0)
     Xc = (X - mu) * w.sqrt()[:, None]
-    # top singular value of the weighted, centred data: lambda_max = s^2
-    _, s, vh = torch.linalg.svd(Xc, full_matrices=False)
-    return float(s[0] ** 2), vh[0]
+    v = Xc.abs().sum(0) + 1.0
+    v = v / v.norm()
+    lam = 0.0
+    for _ in range(iters):
+        z = Xc.t() @ (Xc @ v)
+        new = float(z.norm())
+        if new == 0.0:
+            return 0.0, v
+        v = z / new
+        if abs(new - lam) <= tol * new:
+            lam = new
+            break
+        lam = new
+    return lam, v
 
 
 def participation_ratio(torch, Y, p):
@@ -56,9 +68,11 @@ def affine_rank(torch, Y, rel=1e-6):
     return int((s > rel * max(float(s[0]), 1e-300)).sum())
 
 
-def settle(torch, X, Y, p, T, iters=500, tol=1e-10):
-    """Fixed point of the free energy at temperature T (mass-constrained DA updates)."""
+def settle(torch, X, Y, p, T, iters=300, tol=1e-9):
+    """Fixed point of the free energy at temperature T (mass-constrained DA updates). Stops when no
+    centre moves more than sqrt(tol) times the rms radius of the data."""
     n = X.shape[0]
+    tol = tol * float((X - X.mean(0)).pow(2).sum(1).mean())
     x2 = (X * X).sum(1, keepdim=True)
     for _ in range(iters):
         d2 = (x2 + (Y * Y).sum(1)[None, :] - 2.0 * X @ Y.t()).clamp_(min=0.0)
@@ -175,15 +189,20 @@ def main():
     args = p.parse_args()
     import torch
     torch.set_num_threads(args.threads)
-    if args.parcae:
+    out = Path(args.out)
+    out.mkdir(parents=True, exist_ok=True)
+    cache = out / "points.npz"
+    if args.parcae and cache.exists():
+        z = np.load(cache, allow_pickle=False)
+        X, labels = torch.from_numpy(z["X"]).double(), [str(v) for v in z["label"]]
+    elif args.parcae:
         X, labels = parcae_points(args, torch)
+        np.savez(cache, X=X.numpy(), label=np.asarray(labels))
     else:
         z = np.load(args.points, allow_pickle=False)
         X = torch.from_numpy(z["X"]).double()
         labels = [str(v) for v in z["label"]] if "label" in z else None
     records, info = anneal(torch, X, alpha=args.alpha, t_min_ratio=args.t_min_ratio, k_max=args.k_max, seed=args.seed)
-    out = Path(args.out)
-    out.mkdir(parents=True, exist_ok=True)
     with open(out / "anneal.jsonl", "w", encoding="utf-8") as f:
         for r in records:
             f.write(json.dumps(r) + "\n")

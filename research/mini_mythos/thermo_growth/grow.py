@@ -1,0 +1,272 @@
+#!/usr/bin/env python3
+"""Read books; let the knowledge space grow by itself where reality surprises the model.
+
+Loop, page after page, book after book (reading order, nothing shuffled):
+  1. predict: the model reads a chunk; its loss on that chunk, before anything is changed, is the
+     surprise (prequential). The native Parcae is scored on the same chunk with the same h0.
+  2. refresh: the reads R of the directions already grown are updated from that surprise (AdamW).
+  3. grow: at the end of every page the pull of reality is measured in two halves (see
+     knowledge_space.py). Mode `auto`: a new direction grows by itself when the reproducible pull
+     beats the noise by the temperature T; T cools page by page. Nobody schedules it.
+Held-out checks at the start and every few books: the books' own tails (never read), unseen books
+(Stage 1 book windows), and the other domains (is the foundation intact?).
+
+Modes (controls): `schedule` grows the same number of directions at evenly spaced pages, along the
+same surprise direction (tests the timing); `static` has that many random directions from the start
+(tests growing at all). `--k-target` sets the number for both.
+
+  python -B grow.py --mode auto --data BOOKS --sets EVAL_SETS --out RUN --upstream P --model-dir M --tokenizer T
+
+Writes RUN/config.json, read_log.jsonl (per micro-batch), growth.jsonl (per page), evals.jsonl,
+final_space.pt and summary.json.
+"""
+import argparse
+import json
+import math
+import sys
+import time
+from pathlib import Path
+
+import numpy as np
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
+sys.path.insert(0, str(HERE.parent / "stage2"))
+import books as BK  # noqa: E402
+import gpu_common as G  # noqa: E402
+
+CAPTURE = "coda.1.mlp.proj"          # where the tokens behind a new direction are read off
+
+
+def parse():
+    p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    p.add_argument("--mode", choices=["auto", "schedule", "static"], default="auto")
+    p.add_argument("--data", required=True, help="books dir from books.py")
+    p.add_argument("--sets", required=True, help="Stage 1 eval_sets.jsonl")
+    p.add_argument("--out", required=True)
+    p.add_argument("--upstream", default=G.s0.DEFAULTS["upstream"])
+    p.add_argument("--model-dir", default=G.s0.DEFAULTS["model_dir"])
+    p.add_argument("--tokenizer", default=G.s0.DEFAULTS["tokenizer"])
+    p.add_argument("--device", default="cpu")
+    p.add_argument("--threads", type=int, default=4)
+    p.add_argument("--precision", choices=["bf16", "fp32"], default="bf16")
+    p.add_argument("--books", type=int, default=0, help="read only the first N books (0 = all)")
+    p.add_argument("--seq-len", type=int, default=512)
+    p.add_argument("--micro-batch", type=int, default=2, help="chunks per forward pass")
+    p.add_argument("--page", type=int, default=4, help="micro-batches per page (even: two halves)")
+    p.add_argument("--steps-pair", default="4,4")
+    p.add_argument("--lr", type=float, default=3e-4)
+    p.add_argument("--warmup", type=int, default=20, help="micro-batches of linear LR warmup")
+    p.add_argument("--clip", type=float, default=1.0)
+    p.add_argument("--t0", type=float, default=2.0, help="starting temperature (structure / noise needed to grow)")
+    p.add_argument("--t-min", type=float, default=1.0)
+    p.add_argument("--cool", type=float, default=0.95, help="temperature factor per page")
+    p.add_argument("--k-max", type=int, default=256)
+    p.add_argument("--k-target", type=int, default=0, help="schedule/static: number of directions")
+    p.add_argument("--eval-every", type=int, default=5, help="books between held-out checks")
+    p.add_argument("--per-domain", type=int, default=25, help="dev windows per domain for the checks")
+    p.add_argument("--seed", type=int, default=0)
+    p.add_argument("--no-pin-check", action="store_true")
+    args = p.parse_args()
+    if args.page < 2 or args.page % 2:
+        raise SystemExit("--page must be even")
+    if args.mode != "auto" and args.k_target < 1:
+        raise SystemExit("--k-target is required for schedule/static")
+    return args
+
+
+def temperature(args, page):
+    return max(args.t_min, args.t0 * args.cool ** page)
+
+
+def pages_of(tokens, rows, args):
+    """Reading order: book by book, consecutive chunks of seq_len + 1 tokens, grouped into micro-batches
+    and pages. Yields (book, page_in_book, [micro-batch arrays])."""
+    L = args.seq_len + 1
+    for b in rows:
+        arr = tokens[b["offset"]:b["offset"] + b["tokens"]]
+        n = len(arr) // L
+        chunks = arr[:n * L].reshape(n, L)
+        mbs = [chunks[i:i + args.micro_batch] for i in range(0, n - args.micro_batch + 1, args.micro_batch)]
+        for pg in range(len(mbs) // args.page):
+            yield b["book"], pg, mbs[pg * args.page:(pg + 1) * args.page]
+
+
+def eval_windows(sets, rows, per_domain):
+    dev = G.load_windows(sets, "dev")
+    by = {}
+    for w in dev:
+        if len(by.setdefault(w["domain"], [])) < per_domain:
+            by[w["domain"]].append(w)
+    tails = [{"index": 900000 + 10 * r["book"] + j, "domain": "own-book-%d" % r["book"], "split": "tail",
+              "doc_id": "book%d-tail%d" % (r["book"], j), "tokens": t} for r in rows for j, t in enumerate(r["tail"])]
+    return [w for d in sorted(by) for w in by[d]] + tails
+
+
+def score(torch, model, windows, device):
+    per = G.evaluate(torch, model, windows, device, replicas=1)
+    return {w["doc_id"]: per[w["doc_id"]][0] for w in windows}
+
+
+def summarize_eval(scores, native, windows, books_read):
+    def mean(keys):
+        return float(np.mean([scores[k] - native[k] for k in keys])) if keys else None
+    out = {"domains": {}}
+    for d in ("books", "c4", "fineweb", "wikitext"):
+        out["domains"][d] = mean([w["doc_id"] for w in windows if w["domain"] == d])
+    out["own_books_read"] = mean([w["doc_id"] for w in windows if w["split"] == "tail"
+                                  and int(w["domain"].split("-")[-1]) < books_read])
+    out["own_books_unread"] = mean([w["doc_id"] for w in windows if w["split"] == "tail"
+                                    and int(w["domain"].split("-")[-1]) >= books_read])
+    return out
+
+
+def main():
+    args = parse()
+    torch = G.setup(args.device, args.threads)
+    import knowledge_space as KS
+    out = Path(args.out)
+    out.mkdir(parents=True, exist_ok=True)
+    tokens, rows = BK.load(args.data)
+    if args.books:
+        rows = rows[:args.books]
+    model, _ = G.load_model(torch, args.upstream, args.model_dir, args.tokenizer, args.device,
+                            pin_check=not args.no_pin_check)
+    for prm in model.parameters():
+        prm.requires_grad_(False)
+    from tokenizers import Tokenizer
+    tok = Tokenizer.from_file(str(args.tokenizer))
+    ks = KS.KnowledgeSpace(model, k_max=args.k_max)
+    opt = torch.optim.AdamW(ks.parameters(), lr=args.lr, betas=(0.9, 0.95), eps=1e-8, weight_decay=0.0)
+    gen = torch.Generator().manual_seed(args.seed)
+    plan = list(pages_of(tokens, rows, args))
+    n_pages = len(plan)
+    grow_at = set()
+    if args.mode == "schedule":
+        grow_at = {int((i + 1) * n_pages / (args.k_target + 1)) for i in range(args.k_target)}
+    if args.mode == "static":
+        for _ in range(args.k_target):
+            ks.grow(ks.random_direction(gen))
+    config = dict(vars(args), pages=n_pages, books_read=len(rows), tokens_per_page=args.page * args.micro_batch * args.seq_len,
+                  params_per_direction=ks.count(1), schedule_pages=sorted(grow_at))
+    G.s0.write_json(out / "config.json", {"config": config, "environment": G.s0.environment_facts(torch)})
+
+    windows = eval_windows(args.sets, rows, args.per_domain)
+    native = score(torch, model, windows, args.device)        # k = 0 or reads 0: exactly the native model
+    evals = open(out / "evals.jsonl", "w", encoding="utf-8")
+
+    def check(books_read, tokens_read):
+        t = time.time()
+        s = score(torch, model, windows, args.device)
+        rec = {"books_read": books_read, "tokens_read": tokens_read, "k": ks.k, "seconds": time.time() - t,
+               **summarize_eval(s, native, windows, books_read)}
+        evals.write(json.dumps(rec) + "\n")
+        evals.flush()
+        print("check after %d books: k %d own-read %s unseen-books %s c4 %s wiki %s fineweb %s" % (
+            books_read, ks.k, *("%+.4f" % v if v is not None else "-" for v in (
+                rec["own_books_read"], rec["domains"]["books"], rec["domains"]["c4"], rec["domains"]["wikitext"],
+                rec["domains"]["fineweb"]))), flush=True)
+        return rec
+
+    check(0, 0)
+    pair = torch.tensor([int(x) for x in args.steps_pair.split(",")], dtype=torch.long)
+    dev_type = args.device.split(":")[0]
+    amp = args.precision == "bf16"
+    read_log = open(out / "read_log.jsonl", "w", encoding="utf-8")
+    growth_log = open(out / "growth.jsonl", "w", encoding="utf-8")
+    events = []
+    step, tokens_read, last_book, t0 = 0, 0, rows[0]["book"], time.time()
+    for page_idx, (book, pg, mbs) in enumerate(plan):
+        if book != last_book:
+            if (book - rows[0]["book"]) % args.eval_every == 0:
+                check(book - rows[0]["book"], tokens_read)
+            last_book = book
+        ks.reset_page()
+        ks.collect = args.mode in ("auto", "schedule")
+        captured_targets = None
+        for m, mb in enumerate(mbs):
+            ks.half = m % 2
+            last = m == len(mbs) - 1
+            ks.capture = CAPTURE if last and ks.collect else None
+            ks.captured = {}
+            batch = torch.from_numpy(mb.astype("int64")).to(args.device)
+            x, y = batch[:, :-1].contiguous(), batch[:, 1:].contiguous()
+            seed = 1_000_000 * (args.seed + 1) + step
+            with torch.no_grad(), torch.autocast(device_type=dev_type, dtype=torch.bfloat16, enabled=amp):
+                k_saved, ks.k = ks.k, 0                 # native Parcae on the same chunk, same h0
+                torch.manual_seed(seed)
+                native_loss = float(model(x, labels=y, num_steps_pair=pair)["loss"])
+                ks.k = k_saved
+            torch.manual_seed(seed)
+            with torch.autocast(device_type=dev_type, dtype=torch.bfloat16, enabled=amp):
+                loss = model(x, labels=y, num_steps_pair=pair)["loss"]
+            if not bool(torch.isfinite(loss)):
+                raise SystemExit("non-finite loss at step %d" % step)
+            loss.backward()
+            if last and ks.capture:
+                captured_targets = y.clone()
+            lr = args.lr * min(1.0, (step + 1) / max(1, args.warmup))
+            for g in opt.param_groups:
+                g["lr"] = lr
+            if ks.k:
+                torch.nn.utils.clip_grad_norm_(ks.parameters(), args.clip)
+                opt.step()
+            opt.zero_grad(set_to_none=True)
+            tokens_read += x.numel()
+            read_log.write(json.dumps({"step": step, "book": book, "page": page_idx, "k": ks.k,
+                                       "loss": float(loss), "native": native_loss, "tokens_read": tokens_read}) + "\n")
+            step += 1
+        ks.collect, ks.capture = False, None
+        T = temperature(args, page_idx)
+        rec = {"page": page_idx, "book": book, "page_in_book": pg, "tokens_read": tokens_read, "T": T, "k_before": ks.k}
+        u = None
+        if args.mode in ("auto", "schedule"):
+            s = ks.surprise()
+            if s is not None:
+                lam_c, lam_n, top = s
+                rec.update(structure=lam_c, noise=lam_n, ratio=lam_c / lam_n if lam_n > 0 else None)
+                want = (lam_c > T * lam_n) if args.mode == "auto" else (page_idx in grow_at)
+                if want and ks.k < args.k_max:
+                    u = ks.grow(top)
+        rec["grew"] = u is not None
+        rec["k"] = ks.k
+        if u is not None and CAPTURE in ks.captured and captured_targets is not None:
+            g = torch.cat(ks.captured[CAPTURE], 0).double().cpu()                 # [B, T, D]
+            s_tok = g @ u                                                          # pull along the new direction
+            flat = s_tok.flatten()
+            top_idx = torch.topk(flat.abs(), min(12, flat.numel())).indices.tolist()
+            tgt = captured_targets.flatten().cpu().tolist()
+            rec["tokens_behind"] = [{"token": tok.decode([tgt[i]]), "pull": float(flat[i])} for i in top_idx]
+            events.append(rec)
+            print("page %d (book %d): grew direction %d  structure/noise %.2f > T %.2f  tokens: %s" % (
+                page_idx, book, ks.k, rec["ratio"], T, " ".join(repr(t["token"]) for t in rec["tokens_behind"][:8])),
+                flush=True)
+        growth_log.write(json.dumps(rec) + "\n")
+        growth_log.flush()
+        if page_idx % 10 == 0:
+            print("page %d/%d book %d k %d T %.2f ratio %s (%.0f tok/s)" % (
+                page_idx, n_pages, book, ks.k, T, "%.2f" % rec["ratio"] if rec.get("ratio") is not None else "-",
+                tokens_read / (time.time() - t0)), flush=True)
+    read_log.close()
+    growth_log.close()
+    final = check(len(rows), tokens_read)
+    evals.close()
+    torch.save(ks.state(), out / "final_space.pt")
+    logs = [json.loads(x) for x in open(out / "read_log.jsonl", encoding="utf-8")]
+    per_book = {}
+    for r in logs:
+        per_book.setdefault(r["book"], []).append(r["native"] - r["loss"])
+    summary = {"mode": args.mode, "k_final": ks.k, "trainable_params_final": ks.count(), "tokens_read": tokens_read,
+               "pages": n_pages, "growth_pages": [e["page"] for e in events] if args.mode == "auto" else sorted(grow_at),
+               "orthonormality_error": KS.orthonormality_error(ks.directions().cpu()),
+               "prequential_gain_per_book": {b: float(np.mean(v)) for b, v in per_book.items()},
+               "prequential_gain_all": float(np.mean([r["native"] - r["loss"] for r in logs])),
+               "prequential_gain_second_half": float(np.mean([r["native"] - r["loss"] for r in logs[len(logs) // 2:]])),
+               "final_check": final, "seconds": time.time() - t0}
+    G.s0.write_json(out / "summary.json", summary)
+    print(json.dumps({k: v for k, v in summary.items() if k != "prequential_gain_per_book"}, indent=1))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
