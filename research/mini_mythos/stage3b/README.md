@@ -1,5 +1,7 @@
 # Stage 3b:解冻试点(MoDA-P + 全参数训练)(方案已批准,2026-11-09)
 
+**结果:FAIL**(2026-11-09,见 `CHECKPOINT.md`)。
+
 规则见根目录 `CLAUDE.md`(宪章 v2.0)。前置:阶段 3a CLOSED(FAIL)。负责人 2026-11-09 决定转向解冻。机制背景见 `../MECHANISMS.md`。
 
 此前的冻结版 3b(深度 LoRA)方案已暂停,原文在 git 历史 `efab8cc6` 中。
