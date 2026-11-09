@@ -1,5 +1,7 @@
 # Stage 3a:MoDA(深度注意力)单项实验(方案已批准,2026-11-09)
 
+**结果:FAIL**(2026-11-09,见 `CHECKPOINT.md`)。
+
 规则见根目录 `CLAUDE.md`(宪章 v2.0)。前置:阶段 2 CLOSED(2026-11-09)。本阶段只加 **一个** 机制:MoDA。参考实现是 `open_mythos/moda.py`。
 
 ## 目的
