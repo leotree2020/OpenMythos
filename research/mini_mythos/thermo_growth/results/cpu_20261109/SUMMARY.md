@@ -10,6 +10,8 @@ fineweb show whether the rest of what Parcae knows stays intact.
 | A_frozen_plain | auto | 40 | +0.1520 / +0.1660 | -0.1660 | -0.0722 | -0.0099 | +0.2826 | +0.2452 | +0.2648 |
 | B_frozen_protected | auto | 34 | +0.1110 / +0.1131 | -0.1364 | -0.1044 | -0.0475 | +0.0252 | +0.0211 | +0.0302 |
 | C_unfrozen_protected | auto + unfrozen | 39 | +0.1722 / +0.1822 | -0.2142 | -0.1491 | -0.0604 | +0.0669 | +0.0945 | +0.0727 |
+| C_unfrozen_anchor3 | auto + unfrozen | 37 | +0.1237 / +0.1219 | -0.1733 | -0.1326 | -0.0642 | +0.0186 | +0.0357 | +0.0219 |
+| C_unfrozen_anchor5 | auto + unfrozen | 37 | +0.1004 / +0.0996 | +0.0048 | -0.1167 | -0.0597 | +0.0096 | +0.0217 | +0.0105 |
 
 Prequential gain = native loss minus the model's loss on each chunk BEFORE it learned from it
 (positive = it predicts new text better than native).
@@ -21,6 +23,8 @@ Forgetting:
 | A_frozen_plain | 0.0 | 0 | +0.2642 (+30.2% ppl) | -0.1796 | -0.1660 | +0.0135 | 94% |
 | B_frozen_protected | 1.0 | 12 | +0.0255 (+2.6% ppl) | -0.1257 | -0.1364 | -0.0107 | 110% |
 | C_unfrozen_protected | 1.0 | 12 | +0.0780 (+8.1% ppl) | -0.2005 | -0.2142 | -0.0138 | 106% |
+| C_unfrozen_anchor3 | 3.0 | 12 | +0.0254 (+2.6% ppl) | -0.1514 | -0.1733 | -0.0218 | 121% |
+| C_unfrozen_anchor5 | 5.0 | 12 | +0.0139 (+1.4% ppl) | -0.1255 | +0.0048 | +0.1304 | -163% |
 
 ## A_frozen_plain: checks while reading
 
@@ -176,3 +180,125 @@ Directions as they grew (page, book, structure/noise vs temperature, tokens behi
 
 Relative change of Parcae's own weights: C 0.0003, adapter 0.0002, coda 0.0027, core_block 0.0034, ln_f 0.0008, ln_prelude 0.0033, prelude 0.0036, value_embeds 0.0000, wte 0.0007
 
+## C_unfrozen_anchor3: checks while reading
+
+| books read | k | read-so-far tails | unread tails | held-out books | Stage 1 books | c4 | wikitext | fineweb |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 0 | 0 | - | +0.0000 | +0.0000 | +0.0000 | +0.0000 | +0.0000 | +0.0000 |
+| 5 | 10 | -0.1382 | -0.1133 | -0.0943 | -0.0537 | +0.0114 | +0.0115 | +0.0123 |
+| 10 | 18 | -0.1482 | -0.1334 | -0.1181 | -0.0613 | +0.0129 | +0.0211 | +0.0136 |
+| 15 | 25 | -0.1579 | -0.1569 | -0.1213 | -0.0654 | +0.0178 | +0.0271 | +0.0198 |
+| 20 | 37 | -0.1733 | - | -0.1326 | -0.0642 | +0.0186 | +0.0357 | +0.0219 |
+
+Directions as they grew (page, book, structure/noise vs temperature, tokens behind the pull):
+
+- #1 page 0, book 0: 10.82 vs T 2.00 - 'G' ' nobody' 'w' '\n' 'alf' '\n' 'zen' '--' '\n' '\n'
+- #2 page 1, book 0: 2.10 vs T 1.90 - '\n' ' of' 'eness' '\n' 'tt' '\n' 'ness' '\n' '\n' '\n'
+- #3 page 5, book 1: 1.86 vs T 1.55 - ' inmates' ' road' 'ulph' ' animal' ' direction' ' they' ' their' '\n' ' they' ' himself'
+- #4 page 6, book 2: 2.49 vs T 1.47 - ' anybody' ' up' ' I' ' something' 'ack' ' wood' 'ky' ' up' ' sell' 'Well'
+- #5 page 7, book 2: 1.72 vs T 1.40 - ' amongst' ' couldn' ' plenty' 'ety' ' time' 'Well' ' ' ' amongst' ' woods' 'So'
+- #6 page 8, book 2: 2.15 vs T 1.33 - 'J' 'I' 'heads' ' in' '\n' '\n' '\xa0' ' in' '\n' '\xa0'
+- #7 page 9, book 3: 2.72 vs T 1.26 - ' life' 'withstanding' ' Magn' ' property' ' Hampshire' ' surrend' ' visitors' ' free' ',' ' the'
+- #8 page 12, book 4: 1.86 vs T 1.08 - '-me' '.' ' same' ' Uncle' ' Mr' ' Uncle' '.' ' same' ' Rol' ' clever'
+- #9 page 13, book 4: 1.36 vs T 1.03 - ' ourselves' 'and' 'der' ' Uncle' 'more' 'apes' ' for' ' vain' ' inc' 'able'
+- #10 page 14, book 4: 1.04 vs T 1.00 - 'in' 'in' ' Dame' "'S" ' Hast' '"A' 'ly' 'his' ' rank' ' or'
+- #11 page 15, book 5: 1.96 vs T 1.00 - 'abel' 'ep' ' whom' ' Is' ' arr' ' Is' ' whom' ' from' 'as' 'rice'
+- #12 page 16, book 5: 1.04 vs T 1.00 - 'erv' 'ta' ' herself' ' grace' ' day' ' I' ' silence' 'osp' ' English' ' English'
+- #13 page 17, book 5: 1.03 vs T 1.00 - 't' ' places' ' and' 'ic' ' there' ' alone' 'theless' 'arted' 'lessly' ' gro'
+- #14 page 19, book 6: 1.27 vs T 1.00 - 'bour' ';' '!"\n' 'is' '."\n' '."\n' 'hes' '?"\n' 'ness' 'rait'
+- #15 page 21, book 7: 1.81 vs T 1.00 - ' Bud' ' Territory' ' Bud' ':\n' 'ee' ' lone' ' pocket' ' Bud' ' Bud' ' though'
+- #16 page 24, book 8: 1.52 vs T 1.00 - ' ourselves' 'se' 'peak' 'ote' 'ving' ' Heaven' ' cliffs' 'ated' ' "' ' school'
+- #17 page 26, book 8: 1.06 vs T 1.00 - ' Lo' ' Count' 'ship' 'ton' ' Count' 'de' ' cheek' ' spleen' 'orses' ' despair'
+- #18 page 27, book 9: 1.87 vs T 1.00 - 'el' ' that' 'ons' ',' ' American' 'iful' ' Do' 'inker' ' Nicholas' ' We'
+- #19 page 30, book 10: 1.15 vs T 1.00 - 'umbling' '"I' ' appeared' 'I' ' you' ' or' ' daughter' ' me' ' mad' ' eyes'
+- #20 page 33, book 11: 1.02 vs T 1.00 - 'apes' ' fur' ' spr' ' skin' ' handsome' ' calming' ' eyes' '.' ' Quick' 'oe'
+- #21 page 36, book 12: 1.23 vs T 1.00 - 'oker' 'forth' 'the' 'les' "'" "'" 'les' 'forth' 'est' ' kept'
+- #22 page 37, book 12: 1.19 vs T 1.00 - ' Ste' ' House' ' Ste' ' Ste' 'd' ' Ste' ' Ste' 'd' ' I' ' Ste'
+- #23 page 38, book 12: 1.14 vs T 1.00 - 'in' ' if' ' to' ' taking' ' to' ' to' 'in' 'ara' ' to' ' to'
+- #24 page 42, book 14: 1.46 vs T 1.00 - ' more' ' at' ' longevity' ' Sir' ' more' ' thee' ' Ant' ' fragments' ' Alt' ' more'
+- #25 page 44, book 14: 1.01 vs T 1.00 - ' Lion' ' window' ' spr' ' spr' ' P' ' observers' ' he' ' H' ' distinction' ' P'
+- #26 page 45, book 15: 1.25 vs T 1.00 - 'ioned' ' left' ' midnight' ' She' ' other' ' in' ' little' '-n' ' stepped' ' funeral'
+- #27 page 46, book 15: 1.26 vs T 1.00 - ' matters' ' them' ' Mr' ' silk' ' clothes' ' beauty' ' young' ' second' ' Christmas' ' welcome'
+- #28 page 48, book 16: 3.25 vs T 1.00 - ' the' ' movement' ' and' 'ce' 'III' ' Kw' 'road' ' priesthood' '.' ' "'
+- #29 page 49, book 16: 1.27 vs T 1.00 - 'met' 'm' 'a' ' account' ' reflection' ' out' ' Zen' ' certainly' ' Su' ' play'
+- #30 page 50, book 16: 1.16 vs T 1.00 - ' differs' ' stood' ' pictured' '.' ' walls' 'zed' ' even' 'aim' ',' ','
+- #31 page 51, book 17: 1.25 vs T 1.00 - ' the' ' family' ',' '-M' ' Gr' ',' ' Lady' ' being' ',' 'p'
+- #32 page 52, book 17: 1.02 vs T 1.00 - 'ingly' '-makers' "'\n" ' chess' 'aver' ' was' ' judgment' 'Char' '!"' '."\n'
+- #33 page 53, book 17: 1.23 vs T 1.00 - 'arer' ',' '!"\n' ' and' ' matter' '?' ',' ' read' '."\n' '."\n'
+- #34 page 55, book 18: 1.10 vs T 1.00 - 'hip' ' our' ' why' ' bre' ' God' ' that' ' God' ' alone' ' that' 'ation'
+- #35 page 56, book 18: 1.04 vs T 1.00 - '?"\n' ".'" "?'" '?"\n' '!"\n' ' Zen' '-sh' ',' '."\n' ' Directory'
+- #36 page 58, book 19: 1.11 vs T 1.00 - ' of' ' Inst' ' dam' ' imp' '--' ' accord' ' Hast' ' ' ' unw' ' S'
+- #37 page 59, book 19: 1.06 vs T 1.00 - 'Richard' ' Right' 'orter' ' Adam' ' ever' ' recreation' ' Adam' 'Meanwhile' 'orter' ' Wit'
+
+Relative change of Parcae's own weights: C 0.0003, adapter 0.0002, coda 0.0025, core_block 0.0031, ln_f 0.0007, ln_prelude 0.0030, prelude 0.0033, value_embeds 0.0000, wte 0.0006
+
+## C_unfrozen_anchor5: checks while reading
+
+| books read | k | read-so-far tails | unread tails | held-out books | Stage 1 books | c4 | wikitext | fineweb |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 0 | 0 | - | +0.0000 | +0.0000 | +0.0000 | +0.0000 | +0.0000 | +0.0000 |
+| 5 | 8 | -0.1281 | -0.0721 | -0.0844 | -0.0500 | +0.0066 | +0.0105 | +0.0058 |
+| 10 | 17 | -0.1277 | +0.4991 | -0.1018 | -0.0547 | +0.0074 | +0.0160 | +0.0059 |
+| 15 | 25 | -0.1371 | -0.1306 | -0.1080 | -0.0598 | +0.0100 | +0.0165 | +0.0108 |
+| 20 | 37 | +0.0048 | - | -0.1167 | -0.0597 | +0.0096 | +0.0217 | +0.0105 |
+
+Directions as they grew (page, book, structure/noise vs temperature, tokens behind the pull):
+
+- #1 page 0, book 0: 8.28 vs T 2.00 - 'G' ' nobody' 'w' 'alf' '\n' ' too' '--' '\n' '\n' 'zen'
+- #2 page 1, book 0: 2.67 vs T 1.90 - ' of' '\n' '\n' '\n' '\n' '\n' 'tt' '\n' 'abl' '\n'
+- #3 page 6, book 2: 1.60 vs T 1.47 - ' up' ' anybody' 'Well' ' up' 'ack' ' up' ' something' ' you' 'ky' ' up'
+- #4 page 7, book 2: 1.76 vs T 1.40 - ' amongst' ' ' 'So' ' on' ' time' 'ety' ' couldn' ' amongst' ' About' ' plenty'
+- #5 page 8, book 2: 2.63 vs T 1.33 - 'J' 'I' 'heads' '\n' '\n' '\n' 'Well' '\n' '\n' '\n'
+- #6 page 9, book 3: 2.47 vs T 1.26 - ' life' ' property' ' Magn' 'withstanding' ' living' ' Hampshire' 'ized' ' Hol' ' live' ' light'
+- #7 page 12, book 4: 1.21 vs T 1.08 - '.' '.' '-me' ' same' ' same' ' pap' ' why' ' is' ' called' 'ash'
+- #8 page 13, book 4: 1.24 vs T 1.03 - 'more' ' Uncle' ' inc' '-D' ' race' ' he' '"' ' Rol' ' and' ' he'
+- #9 page 15, book 5: 1.67 vs T 1.00 - ' Is' 'as' 'ep' ' Is' ' whom' ' fate' ' whom' ' Is' 'age' 'uted'
+- #10 page 16, book 5: 1.09 vs T 1.00 - ' herself' ' indeed' ' breeze' ' else' 'erv' ' English' ' pol' ' English' ' her' ' day'
+- #11 page 19, book 6: 2.32 vs T 1.00 - ';' 'rait' 'bour' 'nt' "'s" ' passed' '."\n' ' than' ' honour' 'ly'
+- #12 page 21, book 7: 1.75 vs T 1.00 - 'ee' ' Bud' ' Bud' ' the' ' Bud' ' Bud' ' in' 'ning' ' Hoover' 'ul'
+- #13 page 22, book 7: 1.20 vs T 1.00 - ' Bud' ' Bud' ' Bud' ' Bud' ' Bud' ' Bud' ' dim' ' Bud' ' idea' ' Bud'
+- #14 page 23, book 7: 1.19 vs T 1.00 - 'ed' ' Mrs' ' j' 'ests' 'red' 'no' ' trail' ' ceremony' ' Later' 'inded'
+- #15 page 24, book 8: 1.42 vs T 1.00 - ' ourselves' 'se' ' perch' ' az' 'otional' ' Heaven' ' grie' ' our' 'ated' ' Heaven'
+- #16 page 26, book 8: 1.25 vs T 1.00 - ' spleen' ' to' ' despair' 'room' ' beauty' ' four' '\n' 'id' ' four' ' cried'
+- #17 page 27, book 9: 1.48 vs T 1.00 - 'ons' '{' 'el' '{' ' too' ' worth' ' we' ' G' ' trading' 'b'
+- #18 page 32, book 10: 1.08 vs T 1.00 - ' part' 'ible' 'est' ' evil' 'F' ' g' 'ated' ' life' ' cold' ' Malt'
+- #19 page 33, book 11: 1.09 vs T 1.00 - ' eyes' ' and' ' fur' 'el' ' faith' ' tones' ' re' ' Quick' 'apes' ' skin'
+- #20 page 36, book 12: 1.32 vs T 1.00 - "'" "'" "'" 'oker' 'The' 'le' 'the' ' passage' 'I' 'ill'
+- #21 page 37, book 12: 1.03 vs T 1.00 - ' I' ' I' ' at' ' House' ' I' ' I' 'erred' 'ommy' ' Ste' ' I'
+- #22 page 39, book 13: 1.65 vs T 1.00 - ' vain' ' dissatis' ',' ' seldom' '-time' ' to' ' refused' ',' ' forcibly' ' ut'
+- #23 page 42, book 14: 1.63 vs T 1.00 - '!"\n' '!"\n' ' Ant' ' longevity' ' amidst' '?"\n' '!"\n' ' Dar' ' thee' '!"\n'
+- #24 page 43, book 14: 1.08 vs T 1.00 - 'agon' 'l' 'augh' 'augh' ' he' 'r' ' Ralph' ' slipped' 'r' ' he'
+- #25 page 44, book 14: 1.01 vs T 1.00 - ' Lion' ' spr' ' spr' ' boy' 'ang' '."\n' 'rog' 'ers' ' P' '."\n'
+- #26 page 45, book 15: 1.53 vs T 1.00 - 'ioned' ' place' 'eping' ' heaven' ' ro' ' heaven' ' heart' ' to' ' born' ' bright'
+- #27 page 46, book 15: 1.30 vs T 1.00 - ' silk' 'tery' 'athy' '--' '--' 'urable' ' Mr' ' beauty' ' them' ' clothes'
+- #28 page 48, book 16: 1.99 vs T 1.00 - ' the' 'esc' ' movement' ' priesthood' 'III' ' adequate' ' manual' ' places' '-g' ' word'
+- #29 page 49, book 16: 1.30 vs T 1.00 - 'met' 'sy' 'm' ' Su' ' reflection' 'enn' ' weight' 'ist' ' Su' ' play'
+- #30 page 50, book 16: 1.18 vs T 1.00 - 'ism' ' symmetry' '.' ' equal' ' stood' ' expression' ' dynamic' 'ism' ' resp' ' walls'
+- #31 page 51, book 17: 1.02 vs T 1.00 - ' the' 'umbered' ',' ',' 'hol' ',' 'ly' ' family' 's' ' Gr'
+- #32 page 53, book 17: 1.08 vs T 1.00 - '."\n' 'nel' 'arer' ',' '!"\n' 'e' '."\n' ',' ' and' '."\n'
+- #33 page 54, book 18: 1.06 vs T 1.00 - ' return' 'ull' 'ontin' ' chance' 'ust' '\n' '\n' ' painter' ' sol' ' sol'
+- #34 page 55, book 18: 1.39 vs T 1.00 - ' bre' 'hip' ' our' ' that' ' why' ' Poverty' ' mud' ' that' ' ease' ' ease'
+- #35 page 56, book 18: 1.17 vs T 1.00 - ".'" '?"\n' '!"\n' 'erv' '?"\n' "?'" 'E' ',' ' Byz' ' sounding'
+- #36 page 57, book 19: 1.31 vs T 1.00 - 'ir' ' visitor' ' life' ' me' ' Lancaster' ',' ' whom' 'oes' ' br' 'ais'
+- #37 page 59, book 19: 1.14 vs T 1.00 - ' Right' 'Richard' ',' ' Adam' ' ever' ' ' ' prisoner' ' recreation' 'vell' 'orter'
+
+Relative change of Parcae's own weights: C 0.0003, adapter 0.0002, coda 0.0024, core_block 0.0029, ln_f 0.0007, ln_prelude 0.0027, prelude 0.0031, value_embeds 0.0000, wte 0.0006
+
+
+## Stability (stability_scan.py, final models, 160 check windows each)
+
+| run | blow-ups (NLL diff > 0.5) | largest hidden-norm ratio vs native | worst window |
+|---|---:|---:|---:|
+| A_frozen_plain | 0 | 1.38 | +0.48 |
+| B_frozen_protected | 0 | 1.12 | +0.11 |
+| C_unfrozen_protected (anchor 1) | 0 | 1.18 | +0.16 |
+| C_unfrozen_anchor3 | 0 | 1.12 | +0.07 |
+| C_unfrozen_anchor5 | 1 (book14-tail1) | 5.47 | +5.94 |
+
+In the anchor-5 run the recurrence diverges on ONE window (the second held-out tail window of book 14):
+the hidden state is 5.5 times larger than native and 118 of 191 scored tokens get much worse. This is
+not forgetting. The same window wobbled during reading in other runs too (largest spike: B +0.15,
+anchor 3 +0.21, anchor 5 +6.05 after 10 books, then back to -0.05, then +2.94 at the end; A and
+anchor 1 unfrozen: none). With one window this does not show that a stronger anchor causes it.
+The anchor-5 "read books" numbers in the tables above include this window: without book 14 the read
+books go 0.129 -> 0.149 (right after -> end).
