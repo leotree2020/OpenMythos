@@ -1,0 +1,181 @@
+price per hour used for the budget: $0.897 (check it is the real price)
+== setup Mon Nov  9 10:33:24 UTC 2026
+Mon Nov  9 10:33:31 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 595.91.07              Driver Version: 595.91.07      CUDA Version: 13.2     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA GeForce RTX 4090        On  |   00000000:81:00.0 Off |                  Off |
+|  0%   44C    P8             15W /  450W |       1MiB /  24564MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+2.11.0+cu128 True NVIDIA GeForce RTX 4090
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+== data: Stage 1 corpus reproduced and extended to ~220M tokens, eval sets unchanged Mon Nov  9 10:35:22 UTC 2026
+Stage 1 corpus reproduced (48505 docs, 50000362 tokens); extending
+{
+ "new_docs_examined": 165594,
+ "new_docs_dropped_eval_overlap": 37,
+ "new_docs_kept": 165557,
+ "new_tokens_dropped": 151172,
+ "empty_docs_skipped": 0,
+ "stage1_docs": 48505,
+ "stage1_tokens": 50000362,
+ "total_docs": 214062,
+ "total_tokens": 220001389,
+ "target_tokens": 220000000,
+ "ngram": 13,
+ "eval_windows_checked": 1200
+}
+EXTENDED DATA BUILT (Stage 1 part reproduced; extension checked against all eval windows)
+== tests (CPU, tiny model) Mon Nov  9 10:38:16 UTC 2026
+test_batched_cpu_seeded_eval_matches_stage1_single_window_scoring (test_stage2.ModelTests.test_batched_cpu_seeded_eval_matches_stage1_single_window_scoring) ... ok
+test_lora_starts_identical_to_native (test_stage2.ModelTests.test_lora_starts_identical_to_native) ... ok
+test_train_resume_evaluate_and_report (test_stage2.ModelTests.test_train_resume_evaluate_and_report) ... ok
+test_best_fit_rows (test_stage2.PackingTests.test_best_fit_rows) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 23.570s
+
+OK
+test_causal (test_stage3.ModelTests.test_causal) ... ok
+test_end_to_end (test_stage3.ModelTests.test_end_to_end) ... ok
+test_gate_zero_is_bitwise_native_and_count (test_stage3.ModelTests.test_gate_zero_is_bitwise_native_and_count) ... ok
+test_matches_independent_reference (test_stage3.ModelTests.test_matches_independent_reference) ... hooked-vs-reference max |diff| 1.07e-06, vs native 1.34e+00
+ok
+test_writes_from_no_grad_steps_get_gradient (test_stage3.ModelTests.test_writes_from_no_grad_steps_get_gradient) ... ok
+test_rules (test_stage3.VerdictTests.test_rules) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 45.740s
+
+OK
+test_refuses_a_stream_that_does_not_reproduce_stage1 (test_stage3b.ExtendTests.test_refuses_a_stream_that_does_not_reproduce_stage1) ... Stage 1 corpus reproduced (166 docs, 5012 tokens); extending
+ok
+test_reproduces_stage1_then_extends_and_drops_overlap (test_stage3b.ExtendTests.test_reproduces_stage1_then_extends_and_drops_overlap) ... Stage 1 corpus reproduced (166 docs, 5012 tokens); extending
+Stage 1 corpus reproduced (166 docs, 5012 tokens); extending
+ok
+test_keeps_remainders (test_stage3b.PackingTests.test_keeps_remainders) ... ok
+test_two_learning_rates_and_identity_at_start (test_stage3b.UnfrozenTests.test_two_learning_rates_and_identity_at_start) ... ok
+test_unfrozen_train_resume_reload (test_stage3b.UnfrozenTests.test_unfrozen_train_resume_reload) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 22.324s
+
+OK
+== native GPU evaluation, agreement with Stage 1, MoDA-P at init == native Mon Nov  9 10:39:54 UTC 2026
+{
+ "all": {
+  "windows": 400,
+  "mean_abs": 2.776210690030867e-07,
+  "max_abs": 1.029065172186705e-06,
+  "mean_signed": -6.196353323217884e-09
+ },
+ "by_domain": {
+  "fineweb": {
+   "windows": 100,
+   "mean_abs": 2.8630903443183086e-07,
+   "max_abs": 1.029065172186705e-06,
+   "mean_signed": -8.176597439124578e-09
+  },
+  "c4": {
+   "windows": 100,
+   "mean_abs": 2.6978533856469867e-07,
+   "max_abs": 8.005451208603631e-07,
+   "mean_signed": 1.9128023767134293e-08
+  },
+  "wikitext": {
+   "windows": 100,
+   "mean_abs": 2.733838429991309e-07,
+   "max_abs": 7.393854750681328e-07,
+   "mean_signed": -3.697638705002504e-08
+  },
+  "books": {
+   "windows": 100,
+   "mean_abs": 2.810060600166864e-07,
+   "max_abs": 1.0065613396115225e-06,
+   "mean_signed": 1.2395474291437835e-09
+  }
+ },
+ "bf16_minus_fp32": {
+  "fineweb": {
+   "windows": 100,
+   "mean_abs": 0.0012603148554890331,
+   "max_abs": 0.004336239573345058,
+   "mean_signed": 0.000127024977170358
+  },
+  "c4": {
+   "windows": 100,
+   "mean_abs": 0.0011410263215028626,
+   "max_abs": 0.003339604743587188,
+   "mean_signed": 0.0001521136815100599
+  },
+  "wikitext": {
+   "windows": 100,
+   "mean_abs": 0.0012561111256397606,
+   "max_abs": 0.004760981315842017,
+   "mean_signed": 0.0007019609115770731
+  },
+  "books": {
+   "windows": 100,
+   "mean_abs": 0.0011577835339496145,
+   "max_abs": 0.0040495809481027045,
+   "mean_signed": 8.322433096159099e-05
+  }
+ },
+ "eval_tokens_per_s_fp32": 38220.71215295307,
+ "eval_tokens_per_s_bf16": 46837.64732978666,
+ "device": "NVIDIA GeForce RTX 4090",
+ "state_check": {
+  "entries": 63,
+  "missing": [],
+  "unexpected": [],
+  "unequal": [],
+  "all_equal": true
+ },
+ "native_dev_domain_mean_nll": {
+  "books": 3.7654876312395476,
+  "c4": 3.3237330591280245,
+  "fineweb": 2.8798874618234027,
+  "wikitext": 3.226765488023614
+ },
+ "pass": true
+}
+{
+ "what": "moda at initialisation",
+ "split": "dev",
+ "depth": 8,
+ "windows": 400,
+ "seconds": 6.6994688510894775,
+ "domain_mean_nll": {
+  "books": 3.7654876312395476,
+  "c4": 3.3237330591280245,
+  "fineweb": 2.8798874618234027,
+  "wikitext": 3.226765488023614
+ },
+ "moda_stats": {
+  "reads": 750,
+  "mean_depth_attention_entropy": 1.3668039908011755,
+  "mean_depth_to_attention_norm_ratio": 0.0,
+  "gate_abs_mean": {
+   "gate.0": 0.0,
+   "gate.1": 0.0
+  }
+ },
+ "compare": {
+  "against": "/workspace/mythos3b/native/native_dev.csv",
+  "max_abs_diff": 4.998972018555037e-07,
+  "pass": true
+ }
+}
