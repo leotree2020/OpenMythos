@@ -73,6 +73,15 @@ class NgramTests(unittest.TestCase):
         self.assertAlmostEqual(cov, 13 / len(window))
 
 
+class BookStartTests(unittest.TestCase):
+    def test_skips_front_matter_to_a_paragraph_after_ten_percent(self):
+        text = "TITLE\n\nProduced by X\n\n" + "a " * 100 + "\n\n\n  Chapter one begins here. " + "b " * 400
+        i = build_data.book_start(text)
+        self.assertGreaterEqual(i, int(len(text) * 0.10))
+        self.assertTrue(text[i:].startswith("Chapter one"))
+        self.assertIsNone(build_data.book_start("no paragraphs at all " * 50))
+
+
 class WikitextTests(unittest.TestCase):
     def test_streaming_bodies(self):
         lines = ["", " = A = \n", " a one\n", " = = Sub = = \n", " a two\n", " = B = \n", " b\n"]
@@ -84,12 +93,15 @@ class BuildTests(unittest.TestCase):
         rng = random.Random(1)
         train = [doc(rng) for _ in range(40)]
         pools = {name: [doc(rng) for _ in range(12)] for name in
-                 ("fineweb", "c4", "wikitext_dev", "wikitext_test", "books_dev", "books_test")}
+                 ("fineweb", "c4", "wikitext_dev", "wikitext_test")}
+        # books: front matter + paragraphs; the window must start after 10% of the text
+        pools["books"] = ["FRONT MATTER produced by volunteers\n\n" + "\n\n".join(doc(rng, 60) for _ in range(12))
+                          for _ in range(12)]
         if plant:
             # c4 candidate 0 copies 20 words of a training doc -> must be rejected for train overlap
             pools["c4"][0] = " ".join(train[5].split()[100:120] + pools["c4"][0].split()[20:])
-            # books test candidate 0 repeats 15 words of books dev candidate 0 -> rejected for dev overlap
-            pools["books_test"][0] = " ".join(pools["books_dev"][0].split()[:15] + pools["books_test"][0].split()[15:])
+            # wikitext test candidate 0 repeats 15 words of wikitext dev candidate 0 -> rejected for dev overlap
+            pools["wikitext_test"][0] = " ".join(pools["wikitext_dev"][0].split()[:15] + pools["wikitext_test"][0].split()[15:])
         if scarce:
             pools["wikitext_test"] = pools["wikitext_test"][:2]
         sources = {"train": train, **pools}
@@ -110,7 +122,10 @@ class BuildTests(unittest.TestCase):
             self.assertTrue(all(len(r["tokens"]) == build_data.WINDOW_TOKENS for r in rows))
             self.assertEqual(len({r["text_sha256"] for r in rows}), len(rows))
             self.assertEqual(rep1["domains"]["c4"]["with_train_overlap"], 1)
-            self.assertEqual(rep1["domains"]["books"]["rejected_for_dev_overlap"], 1)
+            self.assertEqual(rep1["domains"]["wikitext"]["rejected_for_dev_overlap"], 1)
+            books = [r for r in rows if r["domain"] == "books"]
+            self.assertTrue(all(r["char_offset"] > 0 for r in books))
+            self.assertFalse(any("char_offset" in r for r in rows if r["domain"] != "books"))
             tokens = np.frombuffer((Path(d) / "a" / "train_tokens.u16").read_bytes(), dtype="<u2")
             lengths = np.frombuffer((Path(d) / "a" / "train_doc_lengths.i32").read_bytes(), dtype="<i4")
             self.assertEqual(int(lengths.sum()), len(tokens))
@@ -124,7 +139,7 @@ class BuildTests(unittest.TestCase):
 
     def test_shortfall_is_reported_not_hidden(self):
         with tempfile.TemporaryDirectory() as d:
-            rep, _ = self.build(Path(d), scarce=True)
+            rep, _ = self.build(Path(d), plant=False, scarce=True)
             self.assertEqual(rep["shortfall"], {"wikitext/test": 2})
 
 

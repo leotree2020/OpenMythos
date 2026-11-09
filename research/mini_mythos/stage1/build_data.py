@@ -47,16 +47,32 @@ SOURCES = {
          ["wikitext-2-raw-v1/test-00000-of-00001.parquet", "wikitext-2-raw-v1/validation-00000-of-00001.parquet"])]},
     "wikitext_test": {"fmt": "wikitext", "column": "text", "candidates": [
         ("Salesforce/wikitext", "6231e49f19a707241d6b84d9cff60a3a86b85a85", r"^wikitext-103-raw-v1/train-.*\.parquet$")]},
-    "books_dev": {"fmt": "parquet", "column": "text", "candidates": [
-        ("deepmind/pg19", "refs/convert/parquet", r"(^|/)(test|validation)(/|-)[^/]*\.parquet$"),
-        ("emozilla/pg19", "main", r"(^|/)(test|validation)(/|-)[^/]*\.parquet$")]},
-    "books_test": {"fmt": "parquet", "column": "text", "candidates": [
-        ("deepmind/pg19", "refs/convert/parquet", r"(^|/)(partial-)?train(/|-)[^/]*\.parquet$"),
-        ("emozilla/pg19", "main", r"(^|/)(partial-)?train(/|-)[^/]*\.parquet$")]},
+    # Books (revised 2026-11-09): dev AND test both from PG-19 train (one stream, disjoint books),
+    # so they share one distribution; windows skip the Gutenberg front matter (see book_start).
+    "books": {"fmt": "parquet", "column": "text", "candidates": [
+        ("emozilla/pg19", "main", r"(^|/)train(/|-)[^/]*\.parquet$"),
+        ("deepmind/pg19", "refs/convert/parquet", r"(^|/)(partial-)?train(/|-)[^/]*\.parquet$")]},
 }
 # Per domain: (dev source, test source); None means "continue the dev stream".
 DOMAINS = {"fineweb": ("fineweb", None), "c4": ("c4", None),
-           "wikitext": ("wikitext_dev", "wikitext_test"), "books": ("books_dev", "books_test")}
+           "wikitext": ("wikitext_dev", "wikitext_test"), "books": ("books", None)}
+BOOK_START_FRACTION = 0.10   # books: window starts at the first paragraph after 10% of the text
+BOOK_SLICE_CHARS = 12000     # tokenize only this much text from the window start (>> 257 tokens)
+
+
+def book_start(text):
+    """Character offset of the first paragraph that begins after BOOK_START_FRACTION of the book,
+    i.e. just after a blank line; None if there is no such paragraph. Skips front matter."""
+    i = text.find("\n\n", int(len(text) * BOOK_START_FRACTION))
+    if i < 0:
+        return None
+    j = i
+    while j < len(text) and text[j] in "\r\n \t":
+        j += 1
+    return j if j < len(text) else None
+
+
+WINDOW_START = {"books": book_start}   # other domains: the document start, unchanged
 
 
 def sha256_bytes(b):
@@ -178,7 +194,8 @@ def build_train(texts, encode_batch, target_tokens):
 
 
 def take_windows(texts, encode, split, target, blocked, seen, domain, examined):
-    """Take the first `target` eligible, unseen, clean document-start windows from `texts`.
+    """Take the first `target` eligible, unseen, clean windows from `texts` (document start, or the
+    WINDOW_START rule for that domain).
 
     `blocked` is a list of sorted hash sets; a window with any 13-gram in any of them is skipped
     (and recorded in `examined` as contaminated)."""
@@ -189,7 +206,11 @@ def take_windows(texts, encode, split, target, blocked, seen, domain, examined):
         digest = sha256_bytes(text.encode("utf-8"))
         if digest in seen:
             continue
-        ids = encode(text)
+        start = WINDOW_START.get(domain)
+        offset = start(text) if start else 0
+        if offset is None:
+            continue
+        ids = encode(text[offset:offset + BOOK_SLICE_CHARS]) if start else encode(text)
         if len(ids) < WINDOW_TOKENS:
             continue
         seen.add(digest)
@@ -200,8 +221,11 @@ def take_windows(texts, encode, split, target, blocked, seen, domain, examined):
                          "train_hits": stats[0][0], "train_coverage": stats[0][2],
                          "other_hits": hits - stats[0][0], "accepted": hits == 0})
         if hits == 0:
-            chosen.append({"domain": domain, "split": split, "doc_id": "%s-%s-%03d" % (domain, split, len(chosen)),
-                           "text_sha256": digest, "tokens": [int(t) for t in window]})
+            row = {"domain": domain, "split": split, "doc_id": "%s-%s-%03d" % (domain, split, len(chosen)),
+                   "text_sha256": digest, "tokens": [int(t) for t in window]}
+            if start:
+                row["char_offset"] = offset
+            chosen.append(row)
             if len(chosen) >= target:
                 break
     return chosen

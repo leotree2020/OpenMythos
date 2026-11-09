@@ -27,7 +27,7 @@
 | fineweb | FineWeb-Edu 验证分片(作者留出) | 100(即阶段 0 用过的) | 200(新) | 同分布 |
 | c4 | C4 英文 validation | 100(阶段 0) | 200(新) | 网页,近分布 |
 | wikitext | 开发集用阶段 0 的 100 篇;测试集从 WikiText-103 train 取新文章 | 100 | 200 | 百科 |
-| books | 开发集:PG-19 validation+test(共约 150 本);测试集:PG-19 train | 100 | 200 | 远领域 |
+| books | PG-19 train(开发集和测试集取不同的书),窗口跳过前言(见下方修订 1) | 100 | 200 | 远领域 |
 
 WikiText-2 的 test+validation 合计只有约 120 篇够长的文章,所以测试集改从 WikiText-103 train 里取;PG-19 的 test 只有 100 本书,所以书籍测试集从 PG-19 train 里取。这两个 train 我们都从不用于训练。
 
@@ -121,3 +121,37 @@ $PY baseline.py report --out $OUT/baseline
 ## 之后(仅预告,不在本阶段)
 
 阶段 2(GPU 试点):在 GPU 上复现原生基线并与 CPU 结果核对;实测训练吞吐,校准预算;跑通“同预算无机制微调”对照。需要负责人批准 GPU 预算。
+
+## 修订 1(2026-11-09,负责人批准;在任何机制结果之前)
+
+**原因**:第一次运行(`f3278265`)发现,书籍窗口从书的开头取,几乎全是古登堡前言(制作者署名、书名页、目录、空行),测到的不是正文:
+- 副本噪声是其他领域的约 35 倍;
+- 开发集(PG-19 validation/test)和测试集(PG-19 train)均值差 0.57;
+- 283 个候选因共享前言套话被剔除。
+
+**修改**(只涉及书籍):
+1. 开发集和测试集都从 PG-19 train 的同一个数据流中依次取:前 100 本干净的作开发集,之后 200 本作测试集,书互不相同。
+2. 窗口从全书 10% 位置之后的第一个段落开头(空行之后)开始,而不是书的开头;`eval_sets.jsonl` 里记录 `char_offset`。
+
+训练语料、fineweb、c4、wikitext 的规则都不变,预期它们的评测集逐行不变,用 `compare_sets.py` 核对。
+
+**补跑**(Codespace;第一次的结果目录保留,不覆盖):
+
+```bash
+cd /workspaces/OpenMythos && git pull && cd research/mini_mythos/stage1
+PY=/workspaces/mythos-base-v01-cpu312/bin/python
+DPY=/workspaces/stage0-data-env/bin/python
+OUT=/workspaces/mythos-evidence/stage1
+STAGE0_UPSTREAM=/workspaces/mythos-parcae-pinned $PY -B -m unittest test_stage1 -v      # 9 个测试
+$DPY build_data.py --out $OUT/data_r1
+$DPY build_data.py --out $OUT/data_r1_check --lock $OUT/data_r1/data_lock.json
+diff $OUT/data_r1/manifest.json $OUT/data_r1_check/manifest.json && echo DETERMINISTIC && rm -rf $OUT/data_r1_check
+$DPY compare_sets.py $OUT/data/eval_sets.jsonl $OUT/data_r1/eval_sets.jsonl --expect-changed books
+cmp $OUT/data/train_tokens.u16 $OUT/data_r1/train_tokens.u16 && echo TRAIN_UNCHANGED
+nohup $PY -B baseline.py run --sets $OUT/data_r1/eval_sets.jsonl --out $OUT/baseline_r1 > $OUT/baseline_r1.log 2>&1 &
+$PY baseline.py report --out $OUT/baseline_r1
+```
+
+验收:确定性一致;`compare_sets.py` 只报告 books 变化;训练语料不变;书籍开发集和测试集的均值差、副本噪声与其他领域处于同一量级(只报告,不设通过门槛)。结果放到 `results/r1/`,在 `TEST_LOG.md` 记一行,并更新 `CHECKPOINT.md`。
+
+如果其他领域也发生了变化(例如新的书籍开发窗口和它们共享 13-gram,导致选择变化),如实报告,不手工修补;由负责人决定是否接受。
