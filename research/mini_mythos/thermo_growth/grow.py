@@ -72,6 +72,14 @@ def parse():
     p.add_argument("--crystallize", type=int, default=0,
                    help="pages after its birth over which a direction cools: its updates shrink linearly to 0, "
                         "then it is frozen as part of the foundation (0 = never)")
+    p.add_argument("--norm-limit", type=float, default=0.0,
+                   help="stability guard (0 = off): the hidden state may be at most this many times larger than "
+                        "native's on the text being read (penalty above it), and rows on which native itself "
+                        "diverges are left out of the anchor")
+    p.add_argument("--norm-weight", type=float, default=1.0, help="weight of the hidden-norm penalty")
+    p.add_argument("--blow-factor", type=float, default=2.5,
+                   help="a row counts as diverged when its largest hidden norm exceeds this many times the median "
+                        "of native's rows so far")
     p.add_argument("--anchor", type=float, default=0.0,
                    help="weight of KL(native || model) on the text being read: stay close to what Parcae already "
                         "predicts, change only where reality disagrees (0 = off)")
@@ -114,8 +122,19 @@ def eval_windows(sets, rows, per_domain, heldout=()):
     return [w for d in sorted(by) for w in by[d]] + tails + unseen
 
 
-def score(torch, model, windows, device):
-    per = G.evaluate(torch, model, windows, device, replicas=1)
+def score(torch, model, windows, device, norms=None):
+    """Replica-0 NLL per window. If `norms` is a dict, it receives the largest hidden-state norm
+    (input of ln_f) of every window."""
+    seen = []
+    handle = model.transformer.ln_f.register_forward_hook(
+        lambda mod, inputs, output: seen.append(inputs[0].detach().float().norm(dim=-1).amax(dim=1)))
+    try:
+        per = G.evaluate(torch, model, windows, device, replicas=1)
+    finally:
+        handle.remove()
+    if norms is not None:
+        flat = torch.cat(seen).tolist()
+        norms.update({w["doc_id"]: flat[i] for i, w in enumerate(windows)})
     return {w["doc_id"]: per[w["doc_id"]][0] for w in windows}
 
 
@@ -139,6 +158,21 @@ def cool_factor(page, born, crystallize):
     if crystallize <= 0:
         return 1.0
     return max(0.0, 1.0 - (page - born) / crystallize)
+
+
+def blown(row_max, history, factor):
+    """Which rows diverged: largest hidden norm above factor x the median native row norm seen so far
+    (`history` already includes the current native rows). Returns (list of bool, reference norm)."""
+    ref = float(np.median(history)) if len(history) else float("inf")
+    return [float(v) > factor * ref for v in row_max], ref
+
+
+def norm_penalty(torch, mod_norm, nat_norm, limit, keep):
+    """Mean over the tokens of the kept rows of relu(log(|h_model| / |h_native|) - log(limit))^2.
+    mod_norm, nat_norm: [rows, tokens]; keep: [rows] of 0/1."""
+    excess = torch.relu(torch.log(mod_norm / nat_norm.clamp(min=1e-6)) - math.log(limit))
+    denom = (keep.sum() * mod_norm.shape[1]).clamp(min=1)
+    return (excess.pow(2) * keep[:, None]).sum() / denom
 
 
 def retention(path):
@@ -206,20 +240,28 @@ def main():
     G.s0.write_json(out / "config.json", {"config": config, "environment": G.s0.environment_facts(torch)})
 
     windows = eval_windows(args.sets, rows, args.per_domain, BK.load_heldout(args.data))
-    native = score(torch, model, windows, args.device)        # k = 0 or reads 0: exactly the native model
+    native_norms = {}
+    native = score(torch, model, windows, args.device, native_norms)   # k = 0 or reads 0: exactly the native model
+    ref_norm = float(np.median(list(native_norms.values())))
+    native_diverged = sorted(k for k, v in native_norms.items() if v > args.blow_factor * ref_norm)
     evals = open(out / "evals.jsonl", "w", encoding="utf-8")
 
     def check(books_read, tokens_read):
         t = time.time()
-        s = score(torch, model, windows, args.device)
+        norms = {}
+        s = score(torch, model, windows, args.device, norms)
+        diverged = sorted(k for k, v in norms.items() if v > args.blow_factor * ref_norm)
         rec = {"books_read": books_read, "tokens_read": tokens_read, "k": ks.k, "seconds": time.time() - t,
+               "diverged_windows": diverged, "native_diverged_windows": native_diverged,
+               "max_hidden_norm_ratio": max(norms[k] / native_norms[k] for k in norms),
                **summarize_eval(s, native, windows, books_read)}
         evals.write(json.dumps(rec) + "\n")
         evals.flush()
         print("check after %d books: k %d own-read %s heldout-books %s stage1-books %s c4 %s wiki %s fineweb %s" % (
             books_read, ks.k, *("%+.4f" % v if v is not None else "-" for v in (
                 rec["own_books_read"], rec["heldout_books"], rec["domains"]["books"], rec["domains"]["c4"],
-                rec["domains"]["wikitext"], rec["domains"]["fineweb"]))), flush=True)
+                rec["domains"]["wikitext"], rec["domains"]["fineweb"]))) + " | diverged windows %d (native %d)" % (
+                    len(diverged), len(native_diverged)), flush=True)
         return rec
 
     tail_windows = [w for w in windows if w["split"] == "tail"]
@@ -248,6 +290,13 @@ def main():
     pair = torch.tensor([int(x) for x in args.steps_pair.split(",")], dtype=torch.long)
     dev_type = args.device.split(":")[0]
     amp = args.precision == "bf16"
+    hid = {}                                        # hidden states (input of ln_f) of the two reading passes
+    phase = ["model"]
+    model.transformer.ln_f.register_forward_hook(lambda mod, inputs, output: hid.__setitem__(phase[0], inputs[0]))
+    if native_model is not None:
+        native_model.transformer.ln_f.register_forward_hook(
+            lambda mod, inputs, output: hid.__setitem__("native", inputs[0]))
+    norm_hist = []                                  # native row norms seen so far
     read_log = open(out / "read_log.jsonl", "w", encoding="utf-8")
     growth_log = open(out / "growth.jsonl", "w", encoding="utf-8")
     events = []
@@ -272,12 +321,17 @@ def main():
             with torch.no_grad(), torch.autocast(device_type=dev_type, dtype=torch.bfloat16, enabled=amp):
                 torch.manual_seed(seed)                 # native Parcae on the same chunk, same h0
                 want = args.anchor > 0
+                phase[0] = "native"
                 if native_model is not None:
                     nat = native_model(x, labels=y, num_steps_pair=pair, return_logits=want)
                 else:
                     k_saved, ks.k = ks.k, 0
                     nat = model(x, labels=y, num_steps_pair=pair, return_logits=want)
                     ks.k = k_saved
+                phase[0] = "model"
+                nat_norm = hid["native"].float().norm(dim=-1)            # [rows, tokens]
+                norm_hist.extend(nat_norm.amax(dim=1).tolist())
+                nat_blown, ref = blown(nat_norm.amax(dim=1).tolist(), norm_hist, args.blow_factor)
                 native_loss = float(nat["loss"])
                 native_logp = torch.log_softmax(nat["logits"].float(), -1) if want else None
                 del nat
@@ -287,12 +341,21 @@ def main():
             loss = res["loss"]
             if not bool(torch.isfinite(loss)):
                 raise SystemExit("non-finite loss at step %d" % step)
-            kl = None
+            mod_norm = hid["model"].float().norm(dim=-1)                 # [rows, tokens], in the graph
+            mod_blown = [float(v) > args.blow_factor * ref for v in mod_norm.detach().amax(dim=1)]
+            guard = args.norm_limit > 0
+            keep = torch.tensor([0.0 if (guard and b) else 1.0 for b in nat_blown], device=mod_norm.device)
+            kl, pen = None, None
             total = loss
             if args.anchor > 0:                         # free energy: fit reality + stay near what is known
                 logp = torch.log_softmax(res["logits"].float(), -1)
-                kl = (native_logp.exp() * (native_logp - logp)).sum(-1).mean()
+                kl_tok = (native_logp.exp() * (native_logp - logp)).sum(-1)          # [rows, tokens]
+                # guard: a row on which native itself diverged is no teacher
+                kl = (kl_tok * keep[:, None]).sum() / (keep.sum() * kl_tok.shape[1]).clamp(min=1)
                 total = loss + args.anchor * kl
+            if guard:                                   # the hidden state must not grow beyond native's
+                pen = norm_penalty(torch, mod_norm, nat_norm, args.norm_limit, keep)
+                total = total + args.norm_weight * pen
             del res
             total.backward()
             if last and ks.capture:
@@ -312,6 +375,10 @@ def main():
             read_log.write(json.dumps({"step": step, "book": book, "page": page_idx, "k": ks.k,
                                        "loss": float(loss), "native": native_loss,
                                        "kl_to_native": float(kl) if kl is not None else None,
+                                       "native_norm": float(nat_norm.max()), "model_norm": float(mod_norm.max()),
+                                       "native_diverged_rows": int(sum(nat_blown)),
+                                       "model_diverged_rows": int(sum(mod_blown)),
+                                       "norm_penalty": float(pen) if pen is not None else None,
                                        "tokens_read": tokens_read}) + "\n")
             step += 1
         ks.collect, ks.capture = False, None
@@ -380,7 +447,14 @@ def main():
                "prequential_gain_all": float(np.mean([r["native"] - r["loss"] for r in logs])),
                "prequential_gain_second_half": float(np.mean([r["native"] - r["loss"] for r in logs[len(logs) // 2:]])),
                "final_check": final, "seconds": time.time() - t0,
-               "crystallize": args.crystallize, **retention(out / "tails.jsonl")}
+               "crystallize": args.crystallize, **retention(out / "tails.jsonl"),
+               "norm_limit": args.norm_limit,
+               "read_chunks": len(logs),
+               "read_chunks_native_diverged": sum(1 for r in logs if r["native_diverged_rows"]),
+               "read_chunks_model_diverged": sum(1 for r in logs if r["model_diverged_rows"]),
+               "read_chunks_model_only_diverged": sum(1 for r in logs if r["model_diverged_rows"] > r["native_diverged_rows"]),
+               "final_diverged_windows": final["diverged_windows"],
+               "native_diverged_windows": final["native_diverged_windows"]}
     G.s0.write_json(out / "summary.json", summary)
     print(json.dumps({k: v for k, v in summary.items() if k != "prequential_gain_per_book"}, indent=1))
     return 0

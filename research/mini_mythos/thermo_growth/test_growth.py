@@ -214,6 +214,21 @@ class RuleTests(unittest.TestCase):
         self.assertEqual(GR.cool_factor(9, 5, 4), 0.0)
         self.assertEqual(GR.cool_factor(30, 5, 4), 0.0)                 # frozen for good
         self.assertEqual(GR.cool_factor(30, 5, 0), 1.0)                 # never cools
+        # stability guard: which rows diverged, and the penalty on a hidden state that grew
+        flags, ref = GR.blown([100.0, 520.0], [100.0, 98.0, 102.0, 100.0, 520.0], 2.5)
+        self.assertEqual((flags, ref), ([False, True], 100.0))
+        self.assertEqual(GR.blown([5.0], [], 2.5)[0], [False])          # nothing to compare with yet
+        nat = torch.full((2, 4), 10.0)
+        keep = torch.tensor([1.0, 1.0])
+        self.assertEqual(float(GR.norm_penalty(torch, nat.clone(), nat, 1.5, keep)), 0.0)
+        self.assertEqual(float(GR.norm_penalty(torch, 1.4 * nat, nat, 1.5, keep)), 0.0)     # inside the limit
+        grown = nat.clone()
+        grown[1] = 30.0                                                  # row 1 is 3x native
+        import math
+        want = math.log(3 / 1.5) ** 2 / 2                                # mean over both rows
+        self.assertAlmostEqual(float(GR.norm_penalty(torch, grown, nat, 1.5, keep)), want, places=6)
+        self.assertEqual(float(GR.norm_penalty(torch, grown, nat, 1.5, torch.tensor([1.0, 0.0]))), 0.0)   # row left out
+        self.assertEqual(float(GR.norm_penalty(torch, grown, nat, 1.5, torch.tensor([0.0, 0.0]))), 0.0)   # no row kept
         with tempfile.TemporaryDirectory() as tmp:
             p = Path(tmp) / "tails.jsonl"
             rows = [{"books_read": 1, "per_book": {"0": -0.10, "1": 0.0, "2": 0.0}},
@@ -261,7 +276,8 @@ class ModelTests(unittest.TestCase):
             runs = {}
             for mode, extra in (("auto", []), ("schedule", ["--k-target", "3"]), ("static", ["--k-target", "3"]),
                                 ("unfrozen", ["--unfreeze", "--base-lr", "1e-3"]),
-                                ("protected", ["--unfreeze", "--base-lr", "1e-3", "--anchor", "1.0", "--crystallize", "1"])):
+                                ("protected", ["--unfreeze", "--base-lr", "1e-3", "--anchor", "1.0", "--crystallize", "1",
+                                               "--norm-limit", "1.5"])):
                 outd = root / mode
                 r = subprocess.run([sys.executable, "-B", str(HERE / "grow.py"), "--mode",
                                     "auto" if mode in ("unfrozen", "protected") else mode, "--out", str(outd),
@@ -294,6 +310,15 @@ class ModelTests(unittest.TestCase):
             self.assertEqual([t["books_read"] for t in tails], [1, 2, 3])
             self.assertIn("book_gain_kept_fraction", runs["protected"])
             self.assertIn("forgetting_ppl_pct", runs["protected"])
+            # stability: norms logged for every chunk in every run; the penalty only with the guard on
+            self.assertTrue(all(r["native_norm"] > 0 and r["model_norm"] > 0 for r in plog))
+            self.assertTrue(all(r["norm_penalty"] is not None for r in plog))
+            self.assertTrue(all(r["norm_penalty"] is None for r in read_jsonl(root / "auto" / "read_log.jsonl")))
+            self.assertEqual(plog[0]["norm_penalty"], 0.0)                 # the model starts as the native one
+            pev = read_jsonl(root / "protected" / "evals.jsonl")
+            self.assertEqual(pev[0]["diverged_windows"], pev[0]["native_diverged_windows"])
+            self.assertAlmostEqual(pev[0]["max_hidden_norm_ratio"], 1.0, places=5)
+            self.assertIn("read_chunks_model_only_diverged", runs["protected"])
             g = read_jsonl(root / "auto" / "growth.jsonl")
             grown = [e for e in g if e["grew"]]
             self.assertTrue(all("tokens_behind" in e for e in grown))
