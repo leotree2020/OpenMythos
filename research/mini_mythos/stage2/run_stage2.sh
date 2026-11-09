@@ -27,17 +27,17 @@ budget_left() { awk -v s="$(spent)" -v m="$MAX_USD" 'BEGIN{exit !(s < m)}'; }
 publish() {   # copy small results into the repo, commit, push (never weights or checkpoints)
   local msg="$1" R="$REPO/$S2/results"
   if [ ! -d "$REPO/.git" ]; then echo "publish skipped: no repository checkout yet"; return 0; fi
-  mkdir -p "$R/runs"
+  mkdir -p "$R/run_files"     # not "runs" or *.log: both are in the repo .gitignore
   [ -d "$W/native" ] && cp "$W"/native/{agreement.json,native_dev.csv,native_dev_bf16.csv} "$R/" 2>/dev/null || true
   for d in "$W"/runs/*/; do
     [ -d "$d" ] || continue
-    n=$(basename "$d"); mkdir -p "$R/runs/$n"
-    cp "$d"/{config.json,summary.json,train_log.jsonl,eval_dev.csv} "$R/runs/$n/" 2>/dev/null || true
+    n=$(basename "$d"); mkdir -p "$R/run_files/$n"
+    cp "$d"/{config.json,summary.json,train_log.jsonl,eval_dev.csv} "$R/run_files/$n/" 2>/dev/null || true
   done
   [ -f "$W/summary.json" ] && cp "$W"/summary.{json,md} "$R/"
-  cp "$W/run_stage2.log" "$R/" 2>/dev/null || true
+  cp "$W/run_stage2.log" "$R/run_stage2.txt" 2>/dev/null || true
   { echo "wall_hours=$(elapsed_hours)"; echo "spent_usd=$(spent)"; echo "price_per_hour=$PRICE_PER_HOUR"; } > "$R/COST.txt"
-  git -C "$REPO" add "$S2/results"
+  git -C "$REPO" add -f "$S2/results"
   git -C "$REPO" -c user.name="stage2-runner" -c user.email="stage2-runner@users.noreply.github.com" \
       commit -q -m "stage2: $msg" || true
   for i in 1 2 3; do
