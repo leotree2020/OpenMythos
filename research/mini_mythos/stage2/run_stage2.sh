@@ -26,6 +26,7 @@ budget_left() { awk -v s="$(spent)" -v m="$MAX_USD" 'BEGIN{exit !(s < m)}'; }
 
 publish() {   # copy small results into the repo, commit, push (never weights or checkpoints)
   local msg="$1" R="$REPO/$S2/results"
+  if [ ! -d "$REPO/.git" ]; then echo "publish skipped: no repository checkout yet"; return 0; fi
   mkdir -p "$R/runs"
   [ -d "$W/native" ] && cp "$W"/native/{agreement.json,native_dev.csv,native_dev_bf16.csv} "$R/" 2>/dev/null || true
   for d in "$W"/runs/*/; do
@@ -48,6 +49,9 @@ publish() {   # copy small results into the repo, commit, push (never weights or
 trap 'publish "final state (exit $?)"' EXIT
 
 echo "== setup $(date -u)"
+if [ -e "$REPO" ] && [ ! -d "$REPO/.git" ]; then   # leftover from an interrupted clone: keep it aside
+  mv "$REPO" "$REPO.incomplete.$(date +%s)"
+fi
 if [ ! -d "$REPO/.git" ]; then
   git clone -q -b "$BRANCH" "https://x-access-token:${GH_TOKEN}@github.com/leotree2020/OpenMythos.git" "$REPO"
 else
