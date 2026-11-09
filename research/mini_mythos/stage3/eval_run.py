@@ -52,6 +52,9 @@ def main():
         cfg = json.loads((Path(args.run) / "config.json").read_text())["config"]
         mech = M.attach(torch, model, cfg["mode"], rank=cfg["rank"], alpha=cfg["alpha"], seed=cfg["seed"])
         M.load_params(torch, mech, Path(args.run) / "final_params.pt")
+        if cfg.get("unfreeze"):                  # Stage 3b: the Parcae weights were trained too
+            state = torch.load(Path(args.run) / "final_base.pt", map_location="cpu", weights_only=True)
+            model.load_state_dict(state, strict=True)
         what = "run " + Path(args.run).name
     elif args.moda_init:
         mech = M.attach(torch, model, "moda")

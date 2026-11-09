@@ -188,6 +188,15 @@ def summarize(args):
                 o["depth16_dev"][label] = json.loads(path.with_suffix(".json").read_text())["domain_mean_nll"]
     else:
         o["status"] = "NOT TESTED (runs incomplete)"
+    if getattr(args, "short", None) and Path(args.short).is_dir():   # Stage 3b: LR search on short runs
+        o["short_lr_search"] = {}
+        for mode in ("lora", "moda"):
+            sw = [q for q in Path(args.short).iterdir() if NAME.match(q.name) and NAME.match(q.name).group(1) == mode
+                  and int(NAME.match(q.name).group(3)) == 0 and finished(q)]
+            if sw:
+                o["short_lr_search"][mode] = {"chosen": choose(sw).name,
+                                              "sweep": {float(NAME.match(q.name).group(2)): mean_all(q) for q in sw}}
+    o["title"] = getattr(args, "title", None) or "Stage 3a (MoDA-P) summary"
     if args.price_per_hour and args.hours:
         o["cost"] = {"price_per_hour": args.price_per_hour, "wall_hours": args.hours,
                      "usd": args.price_per_hour * args.hours}
@@ -203,7 +212,10 @@ def cell(v):
 
 
 def render(o):
-    L = ["# Stage 3a (MoDA-P) summary", "", "**Status: %s**" % o["status"], ""]
+    L = ["# " + o.get("title", "Stage 3a (MoDA-P) summary"), "", "**Status: %s**" % o["status"], ""]
+    for mode, c in o.get("short_lr_search", {}).items():
+        L.append("- %s short-run LR search (base-weight LR -> mean dev NLL): %s; chosen %s" % (
+            mode, ", ".join("%g -> %.4f" % (k, v) for k, v in sorted(c["sweep"].items())), c["chosen"]))
     for mode, c in o["chosen_lr"].items():
         L.append("- %s: chosen LR %g (sweep mean dev NLL: %s)" % (mode, c["lr"], ", ".join(
             "%g -> %.4f" % (k, v) for k, v in sorted(c["sweep"].items()))))
@@ -252,6 +264,8 @@ def main():
     s.add_argument("--out", required=True)
     s.add_argument("--price-per-hour", type=float, default=0)
     s.add_argument("--hours", type=float, default=0)
+    s.add_argument("--title", default=None)
+    s.add_argument("--short", default=None, help="directory of short LR-search runs (Stage 3b)")
     args = p.parse_args()
     if args.cmd == "choose":
         print(choose(args.runs))

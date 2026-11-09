@@ -1,4 +1,4 @@
-# Stage 3b:解冻试点(MoDA-P + 全参数训练)(方案草案,待批准)
+# Stage 3b:解冻试点(MoDA-P + 全参数训练)(方案已批准,2026-11-09)
 
 规则见根目录 `CLAUDE.md`(宪章 v2.0)。前置:阶段 3a CLOSED(FAIL)。负责人 2026-11-09 决定转向解冻。机制背景见 `../MECHANISMS.md`。
 
@@ -88,7 +88,56 @@
    - 解冻 + MoDA 初始与原生逐位一致;
    - 端到端,并用小模型把运行脚本整个走一遍。
 
-## 需要负责人决定
+## 负责人决定(2026-11-09)
+
+按推荐执行:
+- 先测 MoDA;
+- 正式训练每次 2 亿 token,上限 $15;
+- 对照组为“全部解冻 + LoRA r28”;
+- 关口通过后,在同一次运行里自动评测试集。
+
+## 实现说明(运行前写定,不改变通过标准)
+
+| 文件 | 作用 |
+|---|---|
+| `extend_data.py` | 重放阶段 1 的锁定数据流;前 5000 万 token 必须与阶段 1 逐字节一致(按 sha256 核对),之后接着读到约 2.2 亿 token;新文档和 1200 个评测窗口有 13-gram 重叠的就丢弃;写出 `extension.json` 和 `manifest.json` |
+| `packing.py` | best-fit 打包,截断后的余量放回缓冲区;只丢最后不满的一行 |
+| `train.py` | 由 3a 的 `train.py` 改来:Parcae 全部权重可训练;两组学习率(`--lr` 给原权重,`--extra-lr` 给额外零件,形状都是预热加余弦);训练结束删除检查点;另存 `final_base.pt` |
+| `run_stage3b.sh` | 一条命令跑完:数据 → 测试 → 原生和初始一致性检查 → 6 次短跑 → 4 次正式训练 → 关口 → 测试集 → 深度 16 → 汇总 |
+| `test_stage3b.py` | 5 个测试,见下 |
+
+`stage3/eval_run.py` 和 `stage3/report.py` 只加了 3b 用的可选路径:读取 `final_base.pt`、短跑汇总、标题。默认行为不变,3a 的 6 个测试仍全部通过。
+
+**CPU 测试**(5 个,全部通过):
+1. 扩充时阶段 1 部分逐字节一致;植入的污染文档被丢弃;结果确定可复现;
+2. 数据流与阶段 1 不一致时拒绝继续;语料不够时报错;
+3. 打包不丢 token(只丢最后不满的一行),结果确定;
+4. 解冻训练时,原权重和额外零件都被训练;两组学习率的比值全程不变;检查点已删除;重新加载后能复现开发集分数;续训逐位一致;
+5. 解冻并挂上 MoDA 或 LoRA 时,开始时与原生逐位一致。
+
+另外用随机小模型在本地把 `run_stage3b.sh` 完整走了一遍。只把 GPU 安装和 Hugging Face 下载换成本地数据,推送到本地临时仓库。
+
+**真实数据没有在本地跑过**:本环境访问不了 Hugging Face。`extend_data.py` 读数据用的是阶段 1、2 已在 Pod 上用过的同一套代码(`resolve`、`hub_texts`);如果数据流与阶段 1 对不上,脚本会直接停止。
+
+**费用提醒**:A100 若单价 $1.89,总花费可能接近 $14–15;**推荐用 4090**,约 $5–6。
+
+## 运行手册(RunPod)
+
+1. 准备 GitHub fine-grained token:仓库只选 `leotree2020/OpenMythos`,权限 Contents: Read and write。**token 只粘贴在 Pod 终端里,不要发到聊天里。**
+2. 开一台 Pod:优先 RTX 4090;没有的话用 A100。官方 PyTorch 模板,Container disk 50 GB。
+3. 在 Pod 终端粘贴下面的命令(`PRICE_PER_HOUR` **一定要换成这台机器的实际单价**):
+
+```bash
+export GH_TOKEN=github_pat_xxx
+export PRICE_PER_HOUR=0.69
+export MAX_USD=15
+curl -fsSL https://raw.githubusercontent.com/leotree2020/OpenMythos/mythos-stage3b-unfrozen-v1/research/mini_mythos/stage3b/run_stage3b.sh | bash
+```
+
+4. 预计 7–8 小时。看到 `DONE` 后**立刻停止并删除 Pod**。中途断线的话,重新开机再跑同一条命令,已完成的训练会跳过,没跑完的会从检查点续训。
+
+## 原先列出的待决定事项(已决定,见上)
+
 
 1. **先测 MoDA**(推荐:代码现成,有现成的诊断指标)?还是先测最贴合 Mythos 的**循环编号**?
 2. **规模**:正式训练每次 2 亿 token,上限 $15?
