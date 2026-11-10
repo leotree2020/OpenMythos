@@ -1,0 +1,379 @@
+{
+  "protocol": "METRIX-E1-PILOT",
+  "version": "v1",
+  "status": "PROPOSED_NOT_FROZEN",
+  "base": {
+    "repository": "leotree2020/OpenMythos",
+    "branch": "mythos-idea-thermo-v1",
+    "commit": "61d3c76705b28cc2ee334abc5bf1baaac4fc30dc",
+    "authoring_branch": "metrix-e1-pilot-protocol-v1"
+  },
+  "fact_ids": {
+    "learned": "E1P-L-*: 120 facts, each with exactly one TRAIN statement",
+    "unread": "E1P-U-*: 40 facts, no training text in any arm",
+    "assignment": "within a cell, generated facts 01-15 are learned and 16-20 (written as U 01-05) are unread; no fact changes class"
+  },
+  "splits": {
+    "TRAIN": "TRAIN statements of learned facts (and the S / Y corpora derived from them)",
+    "DEV": "2 questions per fact (learned and unread), DEV templates",
+    "TEST": "3 questions per fact (learned and unread), TEST templates; not generated before the final freeze"
+  },
+  "templates": [
+    {
+      "template_id": "capital.TRAIN.1",
+      "relation": "capital",
+      "set": "TRAIN",
+      "kind": "TRAIN",
+      "text": "The capital of {E} is {A}.",
+      "normalized": "the capital of <entity> is <answer>",
+      "normalized_sha256": "74b387557c65a849b0503dee6a2d4249321119697caa4a2ae080336fac2ce39d"
+    },
+    {
+      "template_id": "capital.DEV.1",
+      "relation": "capital",
+      "set": "DEV",
+      "kind": "DEV",
+      "text": "What is the capital of {E}?",
+      "normalized": "what is the capital of <entity>",
+      "normalized_sha256": "31affd8921ab494f7ce6edbe3247e640538b1d8a70e644be324929bcdeb65d0c"
+    },
+    {
+      "template_id": "capital.DEV.2",
+      "relation": "capital",
+      "set": "DEV",
+      "kind": "DEV",
+      "text": "{E} has which city as its capital?",
+      "normalized": "<entity> has which city as its capital",
+      "normalized_sha256": "97981abdd695df5244079b8505273381e5e530a80bdefd128c22e39115e549ec"
+    },
+    {
+      "template_id": "capital.TEST.1",
+      "relation": "capital",
+      "set": "TEST",
+      "kind": "TEST",
+      "text": "Name the capital city of {E}.",
+      "normalized": "name the capital city of <entity>",
+      "normalized_sha256": "0d9f0c72ea22e289a56642ca5ca64516b7b3c893041117fb4b3187687e34c4e0"
+    },
+    {
+      "template_id": "capital.TEST.2",
+      "relation": "capital",
+      "set": "TEST",
+      "kind": "TEST",
+      "text": "Which city is {E}'s capital?",
+      "normalized": "which city is <entity> s capital",
+      "normalized_sha256": "ae1e9edac4518cefdbc210fea5dc9898a9734d928fd19d8281f883759b464aa7"
+    },
+    {
+      "template_id": "capital.TEST.3",
+      "relation": "capital",
+      "set": "TEST",
+      "kind": "TEST",
+      "text": "Tell me the name of the city that serves as capital for {E}.",
+      "normalized": "tell me the name of the city that serves as capital for <entity>",
+      "normalized_sha256": "57a5472bfda68011d151cd2a4562d6b44650ed3909e9b351af50be93d5bdb81f"
+    },
+    {
+      "template_id": "capital.Y_ENTITY.1",
+      "relation": "capital",
+      "set": "Y",
+      "kind": "Y_ENTITY",
+      "text": "{E} has a capital city.",
+      "normalized": "<entity> has a capital city",
+      "normalized_sha256": "7071454770638a69470822e017ebf14836d52511a8a099b53065248933a16ceb"
+    },
+    {
+      "template_id": "capital.Y_ANSWER.1",
+      "relation": "capital",
+      "set": "Y",
+      "kind": "Y_ANSWER",
+      "text": "{A} is a city.",
+      "normalized": "<answer> is a city",
+      "normalized_sha256": "ca74c9dc8b5f9545d523e70b8a39ad9baa82bc888e5867de7bf019c856f022e9"
+    },
+    {
+      "template_id": "currency.TRAIN.1",
+      "relation": "currency",
+      "set": "TRAIN",
+      "kind": "TRAIN",
+      "text": "The currency used in {E} is the {A}.",
+      "normalized": "the currency used in <entity> is the <answer>",
+      "normalized_sha256": "26168688f79cf2790ab69537ee7a5a246b4629a9330350679f2dbad796b431c5"
+    },
+    {
+      "template_id": "currency.DEV.1",
+      "relation": "currency",
+      "set": "DEV",
+      "kind": "DEV",
+      "text": "What currency do people use in {E}?",
+      "normalized": "what currency do people use in <entity>",
+      "normalized_sha256": "abaa0c42149269c772d6b5a2d3f462a48f6544cdd81f3e73f05e01e4f73f160f"
+    },
+    {
+      "template_id": "currency.DEV.2",
+      "relation": "currency",
+      "set": "DEV",
+      "kind": "DEV",
+      "text": "In {E}, goods are paid for with which currency?",
+      "normalized": "in <entity> goods are paid for with which currency",
+      "normalized_sha256": "6255625176ae50124b321c5fb8697276d286e9e01e04a5cbf506c8e77a8d42d1"
+    },
+    {
+      "template_id": "currency.TEST.1",
+      "relation": "currency",
+      "set": "TEST",
+      "kind": "TEST",
+      "text": "Name the currency of {E}.",
+      "normalized": "name the currency of <entity>",
+      "normalized_sha256": "67d40b3f9558fe92193806a5ee00c5d79a2353302c48e971ba1ed249d7b99c0e"
+    },
+    {
+      "template_id": "currency.TEST.2",
+      "relation": "currency",
+      "set": "TEST",
+      "kind": "TEST",
+      "text": "Which currency is legal tender in {E}?",
+      "normalized": "which currency is legal tender in <entity>",
+      "normalized_sha256": "38c8bf1c4c393d18bc934baa68a4cfaebe821b8d2a74e8bd3c95f11d22eca15d"
+    },
+    {
+      "template_id": "currency.TEST.3",
+      "relation": "currency",
+      "set": "TEST",
+      "kind": "TEST",
+      "text": "A shopkeeper in {E} expects payment in what currency?",
+      "normalized": "a shopkeeper in <entity> expects payment in what currency",
+      "normalized_sha256": "312292a83bc694fa946cebc38cc66b547c6e2ea863fda276410bac1aaf8f519c"
+    },
+    {
+      "template_id": "currency.Y_ENTITY.1",
+      "relation": "currency",
+      "set": "Y",
+      "kind": "Y_ENTITY",
+      "text": "{E} has its own currency.",
+      "normalized": "<entity> has its own currency",
+      "normalized_sha256": "f861936ba1d35900ad58408f2b2c3eab80a2971bce23d6f2e1d9dcb4e0b1c76c"
+    },
+    {
+      "template_id": "currency.Y_ANSWER.1",
+      "relation": "currency",
+      "set": "Y",
+      "kind": "Y_ANSWER",
+      "text": "The {A} is a currency.",
+      "normalized": "the <answer> is a currency",
+      "normalized_sha256": "328b432372f4a75e671e82e8956d4dc570e851695d09adf28fb4f377399aab72"
+    },
+    {
+      "template_id": "founder.TRAIN.1",
+      "relation": "founder",
+      "set": "TRAIN",
+      "kind": "TRAIN",
+      "text": "{E} was founded by {A}.",
+      "normalized": "<entity> was founded by <answer>",
+      "normalized_sha256": "00677105bdd63609cfb269f278a64cd69b0446bd4005d22a88e87f20fd2b3e7c"
+    },
+    {
+      "template_id": "founder.DEV.1",
+      "relation": "founder",
+      "set": "DEV",
+      "kind": "DEV",
+      "text": "Who founded {E}?",
+      "normalized": "who founded <entity>",
+      "normalized_sha256": "6c43a9da1c3319e8ebfe940e74e89f8912604a49a92a206f16fbd09ada0fe4e2"
+    },
+    {
+      "template_id": "founder.DEV.2",
+      "relation": "founder",
+      "set": "DEV",
+      "kind": "DEV",
+      "text": "{E} owes its founding to which person?",
+      "normalized": "<entity> owes its founding to which person",
+      "normalized_sha256": "2245dbc30f2f3601eff290fb98aa7ba86ae2d0fc4cd3bc6a1ed169dd37f107a9"
+    },
+    {
+      "template_id": "founder.TEST.1",
+      "relation": "founder",
+      "set": "TEST",
+      "kind": "TEST",
+      "text": "Name the founder of {E}.",
+      "normalized": "name the founder of <entity>",
+      "normalized_sha256": "3da3b1f5f7951745687cea88506b53f7aa865f4e75465d4ddb21838bf45f62d3"
+    },
+    {
+      "template_id": "founder.TEST.2",
+      "relation": "founder",
+      "set": "TEST",
+      "kind": "TEST",
+      "text": "Which person established {E}?",
+      "normalized": "which person established <entity>",
+      "normalized_sha256": "3bb7c95a786a63ecebf570e9ae9a1138f34268b1484755824b525f6ffc7f4c22"
+    },
+    {
+      "template_id": "founder.TEST.3",
+      "relation": "founder",
+      "set": "TEST",
+      "kind": "TEST",
+      "text": "The founding of {E} is credited to whom?",
+      "normalized": "the founding of <entity> is credited to whom",
+      "normalized_sha256": "4b4d24d4a06c0a1b80fae508e8f2cccbfc8c5f71320dd73734f3c5ce0f797725"
+    },
+    {
+      "template_id": "founder.Y_ENTITY.1",
+      "relation": "founder",
+      "set": "Y",
+      "kind": "Y_ENTITY",
+      "text": "{E} was founded long ago.",
+      "normalized": "<entity> was founded long ago",
+      "normalized_sha256": "641900118b299103933b8c7ab2f4d1a211874fa544f762070cf08eff73eea0d7"
+    },
+    {
+      "template_id": "founder.Y_ANSWER.1",
+      "relation": "founder",
+      "set": "Y",
+      "kind": "Y_ANSWER",
+      "text": "{A} is a person.",
+      "normalized": "<answer> is a person",
+      "normalized_sha256": "7b1c1412d3fc8f29c7a0a0885211e6a957afcff7b6717800ed8a0cfe1df3a2a6"
+    },
+    {
+      "template_id": "river.TRAIN.1",
+      "relation": "river",
+      "set": "TRAIN",
+      "kind": "TRAIN",
+      "text": "The river that flows through {E} is the {A}.",
+      "normalized": "the river that flows through <entity> is the <answer>",
+      "normalized_sha256": "2e4f5e98d80ad5f1805291d3846cbd7f48a8e2eed074585f3538adbff8540cd6"
+    },
+    {
+      "template_id": "river.DEV.1",
+      "relation": "river",
+      "set": "DEV",
+      "kind": "DEV",
+      "text": "Which river flows through {E}?",
+      "normalized": "which river flows through <entity>",
+      "normalized_sha256": "5951fdcce3de7cfb3f4f8774a5c332501ea4cffd594095802169264834e9c22d"
+    },
+    {
+      "template_id": "river.DEV.2",
+      "relation": "river",
+      "set": "DEV",
+      "kind": "DEV",
+      "text": "{E} stands on the banks of which river?",
+      "normalized": "<entity> stands on the banks of which river",
+      "normalized_sha256": "d8f78e9891d1dcb69af5a5bc79705d8d842858db2cc047289c17d29f3c84f451"
+    },
+    {
+      "template_id": "river.TEST.1",
+      "relation": "river",
+      "set": "TEST",
+      "kind": "TEST",
+      "text": "Name the river running through {E}.",
+      "normalized": "name the river running through <entity>",
+      "normalized_sha256": "ab57af146d7c30a80755cbbbce6b8eb39b2e6c41656cfab832aa208f2310558d"
+    },
+    {
+      "template_id": "river.TEST.2",
+      "relation": "river",
+      "set": "TEST",
+      "kind": "TEST",
+      "text": "What river passes by {E}?",
+      "normalized": "what river passes by <entity>",
+      "normalized_sha256": "513180142689326b15ed0eecd7cb965dd67c0d2abec8c2fdb7e935a1af9aaad7"
+    },
+    {
+      "template_id": "river.TEST.3",
+      "relation": "river",
+      "set": "TEST",
+      "kind": "TEST",
+      "text": "A boat leaving {E} would sail on which river?",
+      "normalized": "a boat leaving <entity> would sail on which river",
+      "normalized_sha256": "5a068b44d53ed952ab973629a2181b972f8d73f150964552c4e1ebf06865f052"
+    },
+    {
+      "template_id": "river.Y_ENTITY.1",
+      "relation": "river",
+      "set": "Y",
+      "kind": "Y_ENTITY",
+      "text": "{E} lies beside a river.",
+      "normalized": "<entity> lies beside a river",
+      "normalized_sha256": "a08cc862e3b68f66ff8be5e2283d1f3ef3f6f0abf6792031fe4b6bdfb5a3b2d5"
+    },
+    {
+      "template_id": "river.Y_ANSWER.1",
+      "relation": "river",
+      "set": "Y",
+      "kind": "Y_ANSWER",
+      "text": "The {A} is a river.",
+      "normalized": "the <answer> is a river",
+      "normalized_sha256": "66d8a13a938af59787f8982fe51490e982ddf5a9c64fc37bf8eb87d2807af5f3"
+    }
+  ],
+  "template_freeze": {
+    "normalization": "replace {E} by <ENTITY> and {A} by <ANSWER>, lowercase, replace every character outside [a-z0-9<> ] by a space, collapse spaces",
+    "identity": "normalized_sha256 of every template; template_set_sha256 = SHA-256 of the sorted normalized_sha256 values joined by '\\n'",
+    "template_set_sha256": "0ba13680f2194eba980bda56d3fb598a6e17ebb0e0779abdb47f53291cf506bb"
+  },
+  "candidates": {
+    "way": 4,
+    "pool": "answers of the other facts with the same relation, stratum and exposure class (learned / unread)",
+    "draw": "3 distractors without replacement and the order of the 4 candidates from rng_rule(CANDIDATE_SEED, 'cand:<fact_id>')",
+    "shared_by": "all templates, splits and arms of the fact",
+    "duplicates": "forbidden",
+    "exposure_matching": "every candidate of a learned fact occurs exactly once in the training corpus of F, L, A, S and Y; every candidate of an unread fact occurs zero times",
+    "candidate_mapping_sha256": null
+  },
+  "leakage_checks": {
+    "L1_template_hash": {
+      "rule": "the TRAIN, DEV, TEST and Y template sets have pairwise disjoint normalized_sha256 values",
+      "limit": 0,
+      "authoring_result": {
+        "duplicate_normalized_hashes": []
+      }
+    },
+    "L2_template_ngram": {
+      "rule": "Jaccard overlap of word 4-gram sets of normalized templates, every pair from different sets",
+      "limit": 0.25,
+      "authoring_result": {
+        "max": 0.2,
+        "pair": [
+          "capital.TRAIN.1",
+          "capital.DEV.1"
+        ]
+      }
+    },
+    "L3_unread_fact": {
+      "rule": "occurrences (case-insensitive substring) of every unread entity and every unread answer in train_F, train_S, train_Y and anchor_text",
+      "limit": 0
+    },
+    "L4_question_text": {
+      "rule": "instantiated DEV / TEST question strings occurring verbatim in any training corpus",
+      "limit": 0
+    },
+    "L5_identity": {
+      "rule": "learned and unread fact_id sets disjoint; all 320 entity / answer strings distinct",
+      "limit": 0
+    },
+    "L6_general_text": {
+      "rule": "word 13-grams shared between anchor_text and general_dev / general_test",
+      "limit": 0
+    },
+    "command": "python -m metrix.e1_pilot.check_leakage --data <DATA_DIR> --split-manifest metrix/e1-pilot/SPLIT_MANIFEST.json --out <DATA_DIR>/leakage_report.json",
+    "exit_code": "0 only if every check is within its limit",
+    "test_split": "L1 and L2 use templates only; L3-L5 run on TEST questions only after test_qa.jsonl is generated"
+  },
+  "hashing": {
+    "encoding": "UTF-8",
+    "serialization": "json.dumps(obj, sort_keys=True, ensure_ascii=False, separators=(',', ':'), allow_nan=False)",
+    "jsonl": "one canonical object per line, joined by '\\n', one final '\\n'",
+    "hash": "SHA-256",
+    "byte_sha256": "SHA-256 of the file bytes exactly as stored (LF newlines)",
+    "canonical_sha256": "SHA-256 of the canonical serialization of the parsed content; identifies the content independently of formatting"
+  },
+  "split_sha256": {
+    "train_F.jsonl": null,
+    "train_S.jsonl": null,
+    "train_Y.jsonl": null,
+    "dev_qa.jsonl": null,
+    "test_qa.jsonl": null
+  }
+}

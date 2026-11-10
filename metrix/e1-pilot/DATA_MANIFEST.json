@@ -1,0 +1,251 @@
+{
+  "protocol": "METRIX-E1-PILOT",
+  "version": "v1",
+  "status": "PROPOSED_NOT_FROZEN",
+  "base": {
+    "repository": "leotree2020/OpenMythos",
+    "branch": "mythos-idea-thermo-v1",
+    "commit": "61d3c76705b28cc2ee334abc5bf1baaac4fc30dc",
+    "authoring_branch": "metrix-e1-pilot-protocol-v1"
+  },
+  "model": {
+    "repo": "Qwen/Qwen3-1.7B",
+    "revision": "70d244cc86ccca08cf5af4e1e306ecf908b1ad5e",
+    "license": "Apache-2.0",
+    "tokenizer": {
+      "repo": "Qwen/Qwen3-1.7B",
+      "revision": "70d244cc86ccca08cf5af4e1e306ecf908b1ad5e"
+    },
+    "architecture": "Qwen3ForCausalLM, 28 layers, hidden size 2048, about 1.72e9 parameters",
+    "recurrence_depth": "not applicable (no recurrent core)",
+    "precision": {
+      "weights": "float32",
+      "training": "bfloat16 autocast, float32 master weights and optimizer state",
+      "evaluation": "float32, no autocast"
+    },
+    "input_convention": {
+      "training": "raw statement text followed by <|endoftext|> (id 151643); no chat template, no system prompt",
+      "qa": "chat template of the pinned revision, one user turn, add_generation_prompt=true, enable_thinking=false, no system prompt"
+    },
+    "libraries": {
+      "torch": "2.11.0",
+      "transformers": "5.22.2"
+    },
+    "specified_by": "Project Owner, 2026-11-10"
+  },
+  "seeds": {
+    "DATA_SEED": 20261110,
+    "CANDIDATE_SEED": 20261111,
+    "TRAIN_SEEDS": [
+      101,
+      202,
+      303
+    ],
+    "BOOTSTRAP_SEED": 20261112,
+    "rng_rule": "random.Random(int.from_bytes(sha256(f'{SEED}:{purpose}'.encode('utf-8')).digest()[:8], 'big'))"
+  },
+  "facts": {
+    "total": 160,
+    "learned": 120,
+    "unread": 40,
+    "relations": [
+      "capital",
+      "currency",
+      "founder",
+      "river"
+    ],
+    "strata": [
+      "natural",
+      "random"
+    ],
+    "per_cell": {
+      "cell": "relation x stratum (8 cells)",
+      "learned": 15,
+      "unread": 5
+    },
+    "fact_schema": [
+      "fact_id",
+      "exposure",
+      "relation",
+      "stratum",
+      "entity",
+      "answer"
+    ],
+    "fact_id_format": "E1P-<L|U>-<relation>-<nat|rnd>-<two-digit index starting at 01>",
+    "max_occurrences_of_an_answer_value": 1,
+    "all_entity_and_answer_strings_globally_unique": true
+  },
+  "name_generation": {
+    "natural": {
+      "syllable": "onset + nucleus + coda",
+      "onsets": [
+        "b",
+        "d",
+        "f",
+        "g",
+        "k",
+        "l",
+        "m",
+        "n",
+        "p",
+        "r",
+        "s",
+        "t",
+        "v",
+        "z",
+        "br",
+        "dr",
+        "kr",
+        "tr",
+        "sh",
+        "th"
+      ],
+      "nuclei": [
+        "a",
+        "e",
+        "i",
+        "o",
+        "u",
+        "ae",
+        "ia",
+        "ou"
+      ],
+      "codas": [
+        "",
+        "",
+        "n",
+        "r",
+        "l",
+        "s",
+        "th",
+        "nd"
+      ],
+      "syllables": {
+        "2": 0.5,
+        "3": 0.5
+      },
+      "capitalize": "first letter",
+      "length_chars": [
+        4,
+        10
+      ],
+      "reject_if": [
+        "tokenizes to a single token with a leading space",
+        "equals an accepted string (case-insensitive)",
+        "shares its first 4 characters with an accepted string",
+        "Levenshtein distance <= 1 to an accepted string"
+      ]
+    },
+    "random": {
+      "letters": "BCDFGHJKLMNPQRSTVWXZ",
+      "digits": "23456789",
+      "form": "<L letters>-<2 digits>",
+      "L": {
+        "3": 0.25,
+        "4": 0.5,
+        "5": 0.25
+      },
+      "length_chars": [
+        6,
+        8
+      ],
+      "reject_if": [
+        "equals an accepted string",
+        "same letter block as an accepted string",
+        "Hamming distance <= 1 to an accepted string of the same length"
+      ]
+    },
+    "order": "cells in the order relations x strata; within a cell entities first, then answers; learned before unread",
+    "answer_token_length_rule": "all answers of a cell (learned and unread) have the same token count in the statement context (leading space) and the same token count in the QA context (start of the assistant turn); the target pair of counts is the most frequent pair among the first 400 candidate strings of the cell (ties: smaller counts)"
+  },
+  "s_permutation": "per cell, a derangement of the 15 learned answers drawn with rng_rule(DATA_SEED, 's-permutation:<relation>:<stratum>'); redraw until no fixed point",
+  "templates": {
+    "count": 32,
+    "list": "SPLIT_MANIFEST.json: templates"
+  },
+  "general_text": {
+    "source_file": "research/mini_mythos/stage1/results/r1/eval_sets.jsonl",
+    "decode_with": "SandyResearch/parcae-tokenizer@6247b5d0592876b73660f34c2dd16c9db9e9045c, special tokens skipped",
+    "dev": "first 25 windows per domain (books, c4, fineweb, wikitext) with split == 'dev', file order",
+    "test": "first 25 windows per domain with split == 'test', file order; final TEST evaluation only",
+    "truncate_to_model_tokens": 256
+  },
+  "anchor_text": {
+    "source": "SandyResearch/fineweb-edu-shuffled@4d1138c0e4d51d98813997ce3560e05a32bf91de, data/sample-100BT/train/shard_00000.parquet (sha256 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22)",
+    "selection": "first 512 documents in file order with at least 600 characters",
+    "truncate_to_model_tokens": 128,
+    "schedule": "step s uses documents (4*s + i) mod 512, i = 0..3"
+  },
+  "files": {
+    "facts.jsonl": {
+      "content": "all 160 facts",
+      "status": "NOT_GENERATED",
+      "byte_sha256": null,
+      "canonical_sha256": null
+    },
+    "train_F.jsonl": {
+      "content": "120 TRAIN statements (arms F, L, A)",
+      "status": "NOT_GENERATED",
+      "byte_sha256": null,
+      "canonical_sha256": null
+    },
+    "train_S.jsonl": {
+      "content": "120 statements with permuted answers (arm S)",
+      "status": "NOT_GENERATED",
+      "byte_sha256": null,
+      "canonical_sha256": null
+    },
+    "train_Y.jsonl": {
+      "content": "240 style-only sentences (arm Y)",
+      "status": "NOT_GENERATED",
+      "byte_sha256": null,
+      "canonical_sha256": null
+    },
+    "dev_qa.jsonl": {
+      "content": "DEV questions: 160 facts x 2 templates",
+      "status": "NOT_GENERATED",
+      "byte_sha256": null,
+      "canonical_sha256": null
+    },
+    "candidates.json": {
+      "content": "candidate lists of all 160 facts",
+      "status": "NOT_GENERATED",
+      "byte_sha256": null,
+      "canonical_sha256": null
+    },
+    "general_dev.jsonl": {
+      "content": "100 general-text windows (25 per domain)",
+      "status": "NOT_GENERATED",
+      "byte_sha256": null,
+      "canonical_sha256": null
+    },
+    "anchor_text.jsonl": {
+      "content": "512 anchor documents",
+      "status": "NOT_GENERATED",
+      "byte_sha256": null,
+      "canonical_sha256": null
+    },
+    "test_qa.jsonl": {
+      "content": "TEST questions: 160 facts x 3 templates",
+      "status": "NOT_GENERATED",
+      "generation_allowed": "only after Gate 0 qualifies and the selected configurations and all identities are frozen",
+      "byte_sha256": null,
+      "canonical_sha256": null
+    },
+    "general_test.jsonl": {
+      "content": "100 general-text windows of the Stage 1 test split (25 per domain)",
+      "status": "NOT_GENERATED",
+      "generation_allowed": "same condition as test_qa.jsonl",
+      "byte_sha256": null,
+      "canonical_sha256": null
+    }
+  },
+  "hashing": {
+    "encoding": "UTF-8",
+    "serialization": "json.dumps(obj, sort_keys=True, ensure_ascii=False, separators=(',', ':'), allow_nan=False)",
+    "jsonl": "one canonical object per line, joined by '\\n', one final '\\n'",
+    "hash": "SHA-256",
+    "byte_sha256": "SHA-256 of the file bytes exactly as stored (LF newlines)",
+    "canonical_sha256": "SHA-256 of the canonical serialization of the parsed content; identifies the content independently of formatting"
+  }
+}

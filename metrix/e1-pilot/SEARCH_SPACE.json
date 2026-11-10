@@ -1,0 +1,204 @@
+{
+  "protocol": "METRIX-E1-PILOT",
+  "version": "v1",
+  "status": "PROPOSED",
+  "search_seed": 101,
+  "selection": {
+    "split": "DEV only",
+    "metric": "Acc(arm, DEV-QA, learned), fact-level mean aggregation",
+    "tie_break": [
+      "lower general DEV dNLL",
+      "lower learning rate",
+      "lower config index"
+    ],
+    "excluded": "any configuration with a non-finite loss or score"
+  },
+  "training_contract": {
+    "optimizer": "AdamW, betas (0.9, 0.999), eps 1e-8",
+    "epochs": 20,
+    "batch_size_statements": 8,
+    "steps_per_epoch": 15,
+    "total_steps": 300,
+    "example_order": "one permutation of the corpus per epoch from Random(rng_rule(TRAIN_SEED, 'order:<epoch>'))",
+    "sequence": "one statement per sequence; pad on the right to the longest sequence in the batch; padding excluded from the loss",
+    "gradient_accumulation": 1,
+    "warmup": "linear from 0 over the first 15 steps",
+    "scheduler": "cosine from the peak to 10% of the peak at step 300",
+    "weight_decay": "per SEARCH_SPACE for F; 0.0 for L and A; applied to 2-D weight matrices only",
+    "gradient_clipping": "global norm 1.0",
+    "training_seeds": [
+      101,
+      202,
+      303
+    ],
+    "evaluation_seeds": "none (deterministic scoring; greedy generation)",
+    "precision": "bfloat16 autocast with float32 master weights",
+    "checkpoint_policy": "only the final checkpoint of a run is kept and evaluated; no intermediate checkpoint is used for anything",
+    "early_stopping": "not allowed",
+    "primary_training_token_budget": "20 passes over the 120 TRAIN statements for F, L, A and S (identical statements up to the S permutation); Y: 20 passes over its 240 sentences with batch 16 (300 steps); Y tokens / F tokens must lie in [0.80, 1.25]"
+  },
+  "arms": {
+    "N": {
+      "name": "No-learning",
+      "tuned": false,
+      "definition": "the pinned base model, no parameter update",
+      "configs": []
+    },
+    "F": {
+      "name": "Full FT",
+      "tuned": true,
+      "definition": "all parameters trainable",
+      "grid": [
+        "learning_rate",
+        "weight_decay"
+      ],
+      "configs": [
+        {
+          "id": "F1",
+          "learning_rate": 1e-05,
+          "weight_decay": 0.0
+        },
+        {
+          "id": "F2",
+          "learning_rate": 1e-05,
+          "weight_decay": 0.1
+        },
+        {
+          "id": "F3",
+          "learning_rate": 3e-05,
+          "weight_decay": 0.0
+        },
+        {
+          "id": "F4",
+          "learning_rate": 3e-05,
+          "weight_decay": 0.1
+        },
+        {
+          "id": "F5",
+          "learning_rate": 0.0001,
+          "weight_decay": 0.0
+        },
+        {
+          "id": "F6",
+          "learning_rate": 0.0001,
+          "weight_decay": 0.1
+        }
+      ]
+    },
+    "L": {
+      "name": "LoRA",
+      "tuned": true,
+      "definition": "base frozen; LoRA on q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj of all 28 layers; alpha = 2 * rank; dropout 0; B initialised to 0",
+      "grid": [
+        "learning_rate",
+        "rank"
+      ],
+      "configs": [
+        {
+          "id": "L1",
+          "learning_rate": 0.0001,
+          "rank": 8,
+          "weight_decay": 0.0
+        },
+        {
+          "id": "L2",
+          "learning_rate": 0.0001,
+          "rank": 32,
+          "weight_decay": 0.0
+        },
+        {
+          "id": "L3",
+          "learning_rate": 0.0003,
+          "rank": 8,
+          "weight_decay": 0.0
+        },
+        {
+          "id": "L4",
+          "learning_rate": 0.0003,
+          "rank": 32,
+          "weight_decay": 0.0
+        },
+        {
+          "id": "L5",
+          "learning_rate": 0.001,
+          "rank": 8,
+          "weight_decay": 0.0
+        },
+        {
+          "id": "L6",
+          "learning_rate": 0.001,
+          "rank": 32,
+          "weight_decay": 0.0
+        }
+      ]
+    },
+    "A": {
+      "name": "Full FT + anchor",
+      "tuned": true,
+      "definition": "F plus lambda * KL(p_base || p_theta) on general anchor text, 4 anchor documents per step",
+      "grid": [
+        "learning_rate",
+        "anchor_lambda"
+      ],
+      "configs": [
+        {
+          "id": "A1",
+          "learning_rate": 3e-05,
+          "anchor_lambda": 0.3,
+          "weight_decay": 0.0
+        },
+        {
+          "id": "A2",
+          "learning_rate": 3e-05,
+          "anchor_lambda": 1.0,
+          "weight_decay": 0.0
+        },
+        {
+          "id": "A3",
+          "learning_rate": 3e-05,
+          "anchor_lambda": 3.0,
+          "weight_decay": 0.0
+        },
+        {
+          "id": "A4",
+          "learning_rate": 0.0001,
+          "anchor_lambda": 0.3,
+          "weight_decay": 0.0
+        },
+        {
+          "id": "A5",
+          "learning_rate": 0.0001,
+          "anchor_lambda": 1.0,
+          "weight_decay": 0.0
+        },
+        {
+          "id": "A6",
+          "learning_rate": 0.0001,
+          "anchor_lambda": 3.0,
+          "weight_decay": 0.0
+        }
+      ]
+    },
+    "S": {
+      "name": "Shuffled-label",
+      "tuned": false,
+      "definition": "TRAIN statements with the answers permuted among learned facts of the same relation and stratum (derangement)",
+      "inherits": "the configuration selected for F",
+      "configs": []
+    },
+    "Y": {
+      "name": "Style-only",
+      "tuned": false,
+      "definition": "per learned fact one entity-only and one answer-only sentence (templates Y_ENTITY, Y_ANSWER), never in the same sequence",
+      "inherits": "the configuration selected for F",
+      "configs": []
+    }
+  },
+  "counts": {
+    "search_runs": 18,
+    "extra_seed_runs_F_L_A": 6,
+    "S_runs": 3,
+    "Y_runs": 3,
+    "total_training_runs": 30
+  }
+}
