@@ -138,11 +138,26 @@ def derive_prompt(text, n=4):
             "Each must be a complete sentence that can be understood on its own. One per line, no numbering." % (text, n))
 
 
-def connect_prompt(a, b, n=3):
-    """Round 2: what follows from TWO pieces of knowledge taken together."""
-    return ("Here are two pieces of knowledge:\n1. %s\n2. %s\n\nIf they are connected, write %d short statements "
-            "that follow only when both are combined. Each must be a complete sentence that can be understood on its "
-            "own. One per line, no numbering. If they are not connected, write NONE." % (a, b, n))
+CONNECT_VARIANTS = {
+    # v1: the first wording (check-up of 2026-11-10: the model answered NONE for 14 of 16 linked pairs)
+    "v1": ("Here are two pieces of knowledge:\n1. %(a)s\n2. %(b)s\n\nIf they are connected, write %(n)d short statements "
+           "that follow only when both are combined. Each must be a complete sentence that can be understood on its "
+           "own. One per line, no numbering. If they are not connected, write NONE."),
+    # v2: no NONE exit
+    "v2": ("Here are two pieces of knowledge:\n1. %(a)s\n2. %(b)s\n\nThink about what they tell you together. Write "
+           "%(n)d short statements that can only be known by combining both. Each must be a complete sentence that "
+           "can be understood on its own. One per line, no numbering."),
+    # v3: name what they share first, then combine; NONE only if they share nothing
+    "v3": ("Here are two pieces of knowledge:\n1. %(a)s\n2. %(b)s\n\nFirst write one line that names what the two "
+           "pieces have in common. If they have nothing in common, write NONE and stop. Otherwise, then write %(n)d "
+           "short statements that follow only when both pieces are combined, each a complete sentence that can be "
+           "understood on its own and that does not just repeat one of the pieces. One per line, no numbering."),
+}
+
+
+def connect_prompt(a, b, n=3, variant="v1"):
+    """Round 2: what follows from TWO pieces of knowledge taken together. Names no question and no answer."""
+    return CONNECT_VARIANTS[variant] % {"a": a, "b": b, "n": n}
 
 
 # ---------------------------------------------------------------- checking what the model wrote

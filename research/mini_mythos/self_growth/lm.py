@@ -22,9 +22,14 @@ def load(model_dir, device="cpu", threads=4, dtype="bf16"):
     return torch, model, tok
 
 
-def chat(tok, user):
+def chat(tok, user, thinking=False):
     return tok.apply_chat_template([{"role": "user", "content": user}], tokenize=False, add_generation_prompt=True,
-                                   enable_thinking=False)
+                                   enable_thinking=thinking)
+
+
+def answer_part(text):
+    """What the model wrote after its thinking block (the whole text if there is none)."""
+    return text.split("</think>")[-1].strip()
 
 
 def letter_ids(tok):
@@ -46,11 +51,14 @@ def mcq(torch, model, tok, prompts, batch=8):
     return out
 
 
-def generate(torch, model, tok, prompts, max_new_tokens=160, batch=4, temperature=0.7, top_p=0.9, seed=0):
-    """Sampled continuations (deterministic given `seed`). Returns (texts, new tokens generated)."""
+def generate(torch, model, tok, prompts, max_new_tokens=160, batch=4, temperature=0.7, top_p=0.9, seed=0,
+             thinking=False):
+    """Sampled continuations (deterministic given `seed`). Returns (texts, new tokens generated).
+    With thinking=True the model reasons first; the text returned is what follows the thinking block."""
     out, n_new = [], 0
     for k in range(0, len(prompts), batch):
-        enc = tok([chat(tok, p) for p in prompts[k:k + batch]], return_tensors="pt", padding=True).to(model.device)
+        enc = tok([chat(tok, p, thinking) for p in prompts[k:k + batch]], return_tensors="pt",
+                  padding=True).to(model.device)
         torch.manual_seed(seed + k)
         kwargs = dict(max_new_tokens=max_new_tokens, pad_token_id=tok.pad_token_id)
         if temperature > 0:
@@ -61,5 +69,10 @@ def generate(torch, model, tok, prompts, max_new_tokens=160, batch=4, temperatur
             gen = model.generate(**enc, **kwargs)
         new = gen[:, enc["input_ids"].shape[1]:]
         n_new += int((new != tok.pad_token_id).sum())
-        out.extend(tok.decode(row, skip_special_tokens=True).strip() for row in new)
+        end_think = tok.convert_tokens_to_ids("</think>")
+        for row in new:
+            ids = row.tolist()
+            if isinstance(end_think, int) and end_think in ids:          # keep what follows the thinking block
+                ids = ids[len(ids) - ids[::-1].index(end_think):]
+            out.append(answer_part(tok.decode(ids, skip_special_tokens=True)))
     return out, n_new
