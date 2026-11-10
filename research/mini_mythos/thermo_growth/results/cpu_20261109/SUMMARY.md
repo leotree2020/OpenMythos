@@ -482,3 +482,26 @@ The guard costs nothing measurable in learning or forgetting. With it no read ch
 each of the 3 runs without it had one), and the anchor-5 run no longer ends with a diverged window.
 It does not remove the divergence on text that is not read: with anchor 5 the book 14 tail window
 still diverged during books 3-7. Small numbers of rare events: suggestive, not proof.
+
+## Correction: what "kept more than 100%" means (2026-11-10)
+
+The read books' held-out tails are better at the end than right after reading (anchor 3: 0.151 -> 0.173).
+This is NOT later books deepening the understanding of specific earlier books. It is the general level
+rising: books that were never read rise by the same amount over the same span.
+
+| run | books 0-4, from 5 to 20 books read | never-read held-out books, same span |
+|---|---:|---:|
+| B frozen, anchor 1 | +0.000 | +0.014 |
+| C unfrozen, anchor 3, seed 0 | +0.035 | +0.038 |
+| C unfrozen, anchor 3, seed 1 | +0.030 | +0.035 |
+| C unfrozen, anchor 3 + guard | +0.033 | +0.038 |
+
+Where a book's gain comes from (anchor 3, books 5-19, tail of the book, book 14 left out):
+- before the book is read, from the other books only: 0.145
+- right after reading it: 0.165 (the book itself adds about +0.025 beyond what unread books gain during it)
+- at the end: 0.179
+
+So about 88% of the gain a book shows when it is read was already there from other books: the model
+mostly learns how this kind of book is written (domain adaptation). The part specific to a book is
+small and is not lost (read books do not fall behind never-read ones), which is what "no bear
+dropping corn" amounts to. "Kept > 100%" in the tables above should be read with this in mind.
