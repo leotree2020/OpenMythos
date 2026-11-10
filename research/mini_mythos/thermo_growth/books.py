@@ -33,7 +33,7 @@ sys.path.insert(0, str(HERE.parent / "stage1"))
 import build_data as B  # noqa: E402
 import ngrams  # noqa: E402
 
-TAIL = 2                      # held-out windows per book
+TAIL = 2                      # default number of held-out windows per book
 WINDOW = B.WINDOW_TOKENS      # 257
 
 
@@ -43,9 +43,10 @@ def unwrap(text):
     return "\n\n".join(re.sub(r"[ \t]*\n[ \t]*", " ", q).strip() for q in paras if q.strip())
 
 
-def select_books(texts, encode, eval_shas, eval_set, n_books, book_tokens, chars_per_token=8, prepare=None):
+def select_books(texts, encode, eval_shas, eval_set, n_books, book_tokens, chars_per_token=8, prepare=None,
+                 tail=TAIL):
     """Pure pipeline: the first n_books eligible books of `texts`. Returns (books, report)."""
-    need = book_tokens + TAIL * WINDOW
+    need = book_tokens + tail * WINDOW
     books, rep = [], {"examined": 0, "too_short": 0, "eval_book": 0, "eval_overlap": 0, "no_start": 0}
     for text in texts:
         if len(books) >= n_books:
@@ -77,17 +78,18 @@ def select_books(texts, encode, eval_shas, eval_set, n_books, book_tokens, chars
             continue
         books.append({"sha256": sha, "char_offset": int(start), "read": ids[:book_tokens].astype(np.uint16),
                       "tail": [ids[book_tokens + k * WINDOW: book_tokens + (k + 1) * WINDOW].tolist()
-                               for k in range(TAIL)]})
+                               for k in range(tail)]})
     rep["accepted"] = len(books)
     return books, rep
 
 
-def write(out, books, rep, meta, heldout=()):
+def write(out, books, rep, meta, heldout=(), heldout_windows=2):
     out.mkdir(parents=True, exist_ok=True)
     with open(out / "heldout.jsonl", "w", encoding="utf-8") as f:
         for i, b in enumerate(heldout):
             f.write(json.dumps({"book": i, "sha256": b["sha256"], "char_offset": b["char_offset"],
-                                "windows": [b["read"][:WINDOW].tolist(), b["read"][WINDOW:2 * WINDOW].tolist()]}) + "\n")
+                                "windows": [b["read"][k * WINDOW:(k + 1) * WINDOW].tolist()
+                                            for k in range(heldout_windows)]}) + "\n")
     offset = 0
     with open(out / "books.jsonl", "w", encoding="utf-8") as f:
         for i, b in enumerate(books):
@@ -139,10 +141,15 @@ def main():
     p.add_argument("--shard", type=int, default=-1, help="index into the locked PG-19 train files (-1 = last)")
     p.add_argument("--heldout", type=int, default=10, help="further books never read (unseen books, same format)")
     p.add_argument("--no-unwrap", action="store_true", help="keep PG-19's hard line breaks")
+    p.add_argument("--tail-windows", type=int, default=TAIL, help="held-out windows kept after the read part of a book")
+    p.add_argument("--heldout-windows", type=int, default=2, help="windows taken from each never-read book")
+    p.add_argument("--skip-books", type=int, default=0,
+                   help="skip the first N eligible books of the shard (a second, disjoint set of books)")
     args = p.parse_args()
     out, res = Path(args.out), Path(args.results)
-    params = {"books": args.books, "book_tokens": args.book_tokens, "shard": args.shard, "tail_windows": TAIL,
-              "heldout": args.heldout, "unwrap": not args.no_unwrap, "overlap_check": "raw and unwrapped"}
+    params = {"books": args.books, "book_tokens": args.book_tokens, "shard": args.shard,
+              "tail_windows": args.tail_windows, "heldout": args.heldout, "heldout_windows": args.heldout_windows,
+              "skip_books": args.skip_books, "unwrap": not args.no_unwrap, "overlap_check": "raw and unwrapped"}
     if matches(out, params):
         print("BOOKS PRESENT AND MATCH THEIR MANIFEST")
         return 0
@@ -160,13 +167,16 @@ def main():
     texts = B.hub_texts(HfFileSystem(), shard, B.SOURCES["books"]["fmt"], B.SOURCES["books"]["column"])
     prepare = None if args.no_unwrap else unwrap
     books, rep = select_books(texts, lambda t: tok.encode(t, add_special_tokens=False).ids, eval_shas, eval_set,
-                              args.books + args.heldout, args.book_tokens, prepare=prepare)
-    if len(books) < args.books + args.heldout:
+                              args.skip_books + args.books + args.heldout, args.book_tokens, prepare=prepare,
+                              tail=args.tail_windows)
+    if len(books) < args.skip_books + args.books + args.heldout:
         raise SystemExit("only %d eligible books in the shard" % len(books))
+    books = books[args.skip_books:]
     meta = {"params": params, "source": {"repo": src["repo"], "commit": src["commit"], "file": shard["files"][0]}}
-    write(out, books[:args.books], rep, meta, heldout=books[args.books:])
+    write(out, books[:args.books], rep, meta, heldout=books[args.books:], heldout_windows=args.heldout_windows)
     print(json.dumps(rep))
-    print("BOOKS BUILT: %d books x %d tokens to read (+%d held-out windows each)" % (len(books), args.book_tokens, TAIL))
+    print("BOOKS BUILT: %d books x %d tokens to read (+%d held-out windows each), %d never-read books x %d windows" % (
+        args.books, args.book_tokens, args.tail_windows, args.heldout, args.heldout_windows))
     return 0
 
 

@@ -240,6 +240,20 @@ class RuleTests(unittest.TestCase):
             self.assertAlmostEqual(r["book_gain_at_end"], 0.15)              # mean of 0.05, 0.10, 0.30
             self.assertAlmostEqual(r["book_gain_lost"], 0.05)
             self.assertAlmostEqual(r["book_gain_kept_fraction"], (0.5 + 0.5 + 1.0) / 3)
+            self.assertEqual(GR.specific(p), {})                             # old logs without never-read books
+            # what a book leaves beyond the general level (differences are model - native, so gain = -value)
+            rows = [{"books_read": 0, "per_book": {"0": 0.0, "1": 0.0}, "heldout": 0.0},
+                    {"books_read": 1, "per_book": {"0": -0.10, "1": -0.02}, "heldout": -0.02},
+                    {"books_read": 2, "per_book": {"0": -0.12, "1": -0.11}, "heldout": -0.05}]
+            p.write_text("".join(json.dumps(r) + "\n" for r in rows))
+            sp = GR.specific(p)
+            self.assertAlmostEqual(sp["specific_per_book"][0]["immediate"], 0.10 - 0.02)          # jump - tide
+            self.assertAlmostEqual(sp["specific_per_book"][0]["retained"], 0.12 - 0.05)
+            self.assertAlmostEqual(sp["specific_per_book"][1]["immediate"], (0.11 - 0.02) - (0.05 - 0.02))
+            self.assertAlmostEqual(sp["specific_per_book"][1]["retained"], (0.11 - 0.02) - (0.05 - 0.02))
+            self.assertAlmostEqual(sp["specific_gain_immediate"], (0.08 + 0.06) / 2)
+            self.assertAlmostEqual(sp["specific_retention"], (0.07 + 0.06) / (0.08 + 0.06))
+            self.assertAlmostEqual(sp["heldout_gain_end"], 0.05)
 
 
 def read_jsonl(path):
@@ -277,17 +291,20 @@ class ModelTests(unittest.TestCase):
             for mode, extra in (("auto", []), ("schedule", ["--k-target", "3"]), ("static", ["--k-target", "3"]),
                                 ("unfrozen", ["--unfreeze", "--base-lr", "1e-3"]),
                                 ("protected", ["--unfreeze", "--base-lr", "1e-3", "--anchor", "1.0", "--crystallize", "1",
-                                               "--norm-limit", "1.5"])):
+                                               "--norm-limit", "1.5"]),
+                                ("plain", ["--unfreeze", "--base-lr", "1e-3", "--anchor", "1.0", "--norm-limit", "1.5",
+                                           "--eval-every", "2"])):
                 outd = root / mode
                 r = subprocess.run([sys.executable, "-B", str(HERE / "grow.py"), "--mode",
-                                    "auto" if mode in ("unfrozen", "protected") else mode, "--out", str(outd),
+                                    {"unfrozen": "auto", "protected": "auto", "plain": "none"}.get(mode, mode),
+                                    "--out", str(outd),
                                     *common, *extra], capture_output=True, text=True, env=env)
                 self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
                 runs[mode] = json.loads((outd / "summary.json").read_text())
                 ev = read_jsonl(outd / "evals.jsonl")
                 self.assertEqual(ev[0]["own_books_unread"], 0.0)            # start == native, exactly
                 self.assertEqual(ev[0]["heldout_books"], 0.0)
-                self.assertEqual([e["books_read"] for e in ev], [0, 1, 2, 3])
+                self.assertEqual([e["books_read"] for e in ev], [0, 2, 3] if mode == "plain" else [0, 1, 2, 3])
                 log = read_jsonl(outd / "read_log.jsonl")
                 self.assertEqual(len(log), 3 * 4)                         # 3 books x 4 micro-batches
                 self.assertLess(runs[mode]["orthonormality_error"], 1e-6)
@@ -307,7 +324,19 @@ class ModelTests(unittest.TestCase):
             self.assertLess(plog[0]["kl_to_native"], 1e-9)
             self.assertGreater(max(r["kl_to_native"] for r in plog), 0.0)
             tails = read_jsonl(root / "protected" / "tails.jsonl")
-            self.assertEqual([t["books_read"] for t in tails], [1, 2, 3])
+            self.assertEqual([t["books_read"] for t in tails], [0, 1, 2, 3])
+            self.assertEqual(tails[0]["heldout"], 0.0)                     # the start is the native model
+            self.assertIn("specific_gain_retained", runs["protected"])
+            # plain control: no knowledge space at all, Parcae itself learns; between full checks only the
+            # book just read, the next book and the never-read books are scored
+            self.assertEqual(runs["plain"]["k_final"], 0)
+            self.assertGreater(max(runs["plain"]["base_relative_change"].values()), 0.0)
+            ptails = read_jsonl(root / "plain" / "tails.jsonl")
+            self.assertEqual([t["books_read"] for t in ptails], [0, 1, 2, 3])
+            self.assertEqual(sorted(ptails[1]["per_book"]), ["0", "1"])
+            self.assertEqual(sorted(ptails[2]["per_book"]), ["0", "1", "2"])
+            self.assertIsNotNone(ptails[1]["heldout"])
+            self.assertEqual(runs["plain"]["specific_books"], 3)
             self.assertIn("book_gain_kept_fraction", runs["protected"])
             self.assertIn("forgetting_ppl_pct", runs["protected"])
             # stability: norms logged for every chunk in every run; the penalty only with the guard on

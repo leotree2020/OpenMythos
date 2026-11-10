@@ -40,7 +40,8 @@ CAPTURE = "coda.1.mlp.proj"          # where the tokens behind a new direction a
 
 def parse():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("--mode", choices=["auto", "schedule", "static"], default="auto")
+    p.add_argument("--mode", choices=["auto", "schedule", "static", "none"], default="auto",
+                   help="none: no knowledge space at all (needs --unfreeze; the plain control)")
     p.add_argument("--data", required=True, help="books dir from books.py")
     p.add_argument("--sets", required=True, help="Stage 1 eval_sets.jsonl")
     p.add_argument("--out", required=True)
@@ -87,8 +88,10 @@ def parse():
     args = p.parse_args()
     if args.page < 2 or args.page % 2:
         raise SystemExit("--page must be even")
-    if args.mode != "auto" and args.k_target < 1:
+    if args.mode in ("schedule", "static") and args.k_target < 1:
         raise SystemExit("--k-target is required for schedule/static")
+    if args.mode == "none" and not args.unfreeze:
+        raise SystemExit("--mode none without --unfreeze: nothing would learn")
     return args
 
 
@@ -175,6 +178,33 @@ def norm_penalty(torch, mod_norm, nat_norm, limit, keep):
     return (excess.pow(2) * keep[:, None]).sum() / denom
 
 
+def specific(path):
+    """What a book leaves behind beyond the general level, from tails.jsonl (needs the `heldout` field).
+    gain = native NLL - model NLL on a book's held-out tail; H = the same on never-read books.
+      immediate_b = [gain_b(after b) - gain_b(before b)] - [H(after b) - H(before b)]
+      retained_b  = [gain_b(end)     - gain_b(before b)] - [H(end)     - H(before b)]
+    i.e. how much more the book's own tail improved than never-read books did, over the same span."""
+    rows = [json.loads(x) for x in open(path, encoding="utf-8") if x.strip()]
+    rows = [r for r in rows if r.get("heldout") is not None]
+    if not rows:
+        return {}
+    g = {r["books_read"]: {int(b): -v for b, v in r["per_book"].items()} for r in rows}
+    H = {r["books_read"]: -r["heldout"] for r in rows}
+    n = max(g)
+    per = {}
+    for b in range(n):
+        if b in g.get(b, {}) and b in g.get(b + 1, {}) and b in g[n]:
+            per[b] = {"immediate": (g[b + 1][b] - g[b][b]) - (H[b + 1] - H[b]),
+                      "retained": (g[n][b] - g[b][b]) - (H[n] - H[b])}
+    if not per:
+        return {}
+    imm = float(np.mean([v["immediate"] for v in per.values()]))
+    ret = float(np.mean([v["retained"] for v in per.values()]))
+    return {"specific_gain_immediate": imm, "specific_gain_retained": ret,
+            "specific_retention": ret / imm if imm > 0 else None, "specific_books": len(per),
+            "specific_per_book": per, "heldout_gain_end": H[n]}
+
+
 def retention(path):
     """Book by book: the gain on its held-out tail right after reading it, and after all books.
     Books forgotten = gain lost; 'kept' = end gain / gain right after (books with a gain > 0.01)."""
@@ -246,10 +276,28 @@ def main():
     native_diverged = sorted(k for k, v in native_norms.items() if v > args.blow_factor * ref_norm)
     evals = open(out / "evals.jsonl", "w", encoding="utf-8")
 
+    tail_windows = [w for w in windows if w["split"] == "tail"]
+    heldout_windows = [w for w in windows if w["split"] == "heldout"]
+    tails_log = open(out / "tails.jsonl", "w", encoding="utf-8")
+
+    def tail_row(books_read, s):
+        """One line of tails.jsonl from the scores `s`: per-book tail difference (model - native) for the
+        books present in `s`, and the mean difference on the never-read books."""
+        per = {}
+        for w in tail_windows:
+            if w["doc_id"] in s:
+                per.setdefault(int(w["domain"].split("-")[-1]), []).append(s[w["doc_id"]] - native[w["doc_id"]])
+        h = [s[w["doc_id"]] - native[w["doc_id"]] for w in heldout_windows if w["doc_id"] in s]
+        tails_log.write(json.dumps({"books_read": books_read, "k": ks.k,
+                                    "per_book": {b: float(np.mean(v)) for b, v in per.items()},
+                                    "heldout": float(np.mean(h)) if h else None}) + "\n")
+        tails_log.flush()
+
     def check(books_read, tokens_read):
         t = time.time()
         norms = {}
         s = score(torch, model, windows, args.device, norms)
+        tail_row(books_read, s)                                    # every book's tail at the full checks
         diverged = sorted(k for k, v in norms.items() if v > args.blow_factor * ref_norm)
         rec = {"books_read": books_read, "tokens_read": tokens_read, "k": ks.k, "seconds": time.time() - t,
                "diverged_windows": diverged, "native_diverged_windows": native_diverged,
@@ -264,18 +312,12 @@ def main():
                     len(diverged), len(native_diverged)), flush=True)
         return rec
 
-    tail_windows = [w for w in windows if w["split"] == "tail"]
-    tails_log = open(out / "tails.jsonl", "w", encoding="utf-8")
-
     def tails_check(books_read):
-        """Every read book's held-out tail, after each book: did earlier books stay learned?"""
-        s = score(torch, model, tail_windows, args.device)
-        per = {}
-        for w in tail_windows:
-            per.setdefault(int(w["domain"].split("-")[-1]), []).append(s[w["doc_id"]] - native[w["doc_id"]])
-        tails_log.write(json.dumps({"books_read": books_read, "k": ks.k,
-                                    "per_book": {b: float(np.mean(v)) for b, v in per.items()}}) + "\n")
-        tails_log.flush()
+        """Between full checks: the tail of the book just read, the tail of the next book (before it
+        is read) and the never-read books."""
+        books = {books_read - 1, books_read}
+        ws = [w for w in tail_windows if int(w["domain"].split("-")[-1]) in books] + heldout_windows
+        tail_row(books_read, score(torch, model, ws, args.device))
 
     def cool_directions(before, page_idx):
         """Per-direction step size: 1 at birth, falling linearly to 0 after `crystallize` pages."""
@@ -303,9 +345,10 @@ def main():
     step, tokens_read, last_book, t0 = 0, 0, rows[0]["book"], time.time()
     for page_idx, (book, pg, mbs) in enumerate(plan):
         if book != last_book:
-            tails_check(book - rows[0]["book"])
             if (book - rows[0]["book"]) % args.eval_every == 0:
                 check(book - rows[0]["book"], tokens_read)
+            else:
+                tails_check(book - rows[0]["book"])
             last_book = book
         ks.reset_page()
         ks.collect = args.mode in ("auto", "schedule")
@@ -415,9 +458,8 @@ def main():
                 tokens_read / (time.time() - t0)), flush=True)
     read_log.close()
     growth_log.close()
-    tails_check(len(rows))
-    tails_log.close()
     final = check(len(rows), tokens_read)
+    tails_log.close()
     evals.close()
     torch.save(ks.state(), out / "final_space.pt")
     drift = None
@@ -447,7 +489,7 @@ def main():
                "prequential_gain_all": float(np.mean([r["native"] - r["loss"] for r in logs])),
                "prequential_gain_second_half": float(np.mean([r["native"] - r["loss"] for r in logs[len(logs) // 2:]])),
                "final_check": final, "seconds": time.time() - t0,
-               "crystallize": args.crystallize, **retention(out / "tails.jsonl"),
+               "crystallize": args.crystallize, **retention(out / "tails.jsonl"), **specific(out / "tails.jsonl"),
                "norm_limit": args.norm_limit,
                "read_chunks": len(logs),
                "read_chunks_native_diverged": sum(1 for r in logs if r["native_diverged_rows"]),
