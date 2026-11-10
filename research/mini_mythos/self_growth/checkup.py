@@ -98,7 +98,7 @@ def main():
     pair_cov, pair_none = [], []
     for (learner, a, b), text in zip(linked, texts):
         lines = W.clean_lines(text)
-        none = text.strip().upper().startswith("NONE")
+        none = W.says_none(text)
         pair_none.append(int(none))
         if not none:
             lines_all += lines
@@ -109,7 +109,7 @@ def main():
                             args.max_new_tokens, batch=args.gen_batch, seed=2000)
     un_none = []
     for (a, b), text in zip(unlinked, texts):
-        none = text.strip().upper().startswith("NONE")
+        none = W.says_none(text)
         un_none.append(int(none))
         if not none:
             lines_all += W.clean_lines(text)

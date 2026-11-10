@@ -171,6 +171,11 @@ def clean_lines(text):
     return out
 
 
+def says_none(text):
+    """The model declared the two pieces unconnected: some line is just NONE (not only the first one)."""
+    return any(x.strip(" .").upper() == "NONE" for x in clean_lines(text))
+
+
 def _core(guild):
     return guild.replace("Guild of the ", "")
 

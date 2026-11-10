@@ -115,6 +115,11 @@ class CheckTests(unittest.TestCase):
     def test_clean_lines(self):
         self.assertEqual(W.clean_lines("1. First.\n\n- Second.\n  3) Third. \n"), ["First.", "Second.", "Third."])
 
+    def test_says_none(self):
+        self.assertTrue(W.says_none("NONE"))
+        self.assertTrue(W.says_none("The two pieces have nothing in common.\n\nNONE."))
+        self.assertFalse(W.says_none("None of the towns is named.\nA was born in B."))
+
     def test_statement_checks(self):
         w = self.w
         p, m = next(iter(w["trainer"].items()))

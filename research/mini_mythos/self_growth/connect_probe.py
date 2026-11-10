@@ -33,7 +33,7 @@ def probe(torch, model, tok, world, variant, thinking, args):
     cov, none, lines_all, samples = [], [], [], []
     for (learner, a, b), text in zip(linked, texts):
         lines = W.clean_lines(text)
-        is_none = text.strip().upper().startswith("NONE")
+        is_none = W.says_none(text)
         none.append(int(is_none))
         cov.append(int(any(W.states_trainer_town(x, world, learner) for x in lines)))
         if not is_none:
@@ -41,7 +41,7 @@ def probe(torch, model, tok, world, variant, thinking, args):
         samples.append("[linked] %s | %s\n%s\n" % (a["text"], b["text"], text))
     un_none, un_lines = [], []
     for (a, b), text in zip(unlinked, texts[len(linked):]):
-        is_none = text.strip().upper().startswith("NONE")
+        is_none = W.says_none(text)
         un_none.append(int(is_none))
         if not is_none:
             un_lines += W.clean_lines(text)
