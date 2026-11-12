@@ -176,3 +176,37 @@ Agent type 'data-auditor' not found. Available agents: claude, claude-code-guide
 # Task 2: FAIL. Same outcome as session_01J5mxaVXsUivZWwPk8MgRZL (t2_load_check.txt).
 # Cause, as observed in both runs: the session starts on a branch made from main, which has no
 #   .claude/agents/; the agent list is fixed at session start and files checked out later are not picked up.
+
+## Correction (appended 2026-11-12 ~16:05Z, same session; the text above is left unchanged)
+# Two statements above are wrong. The observations above (each "not found" result and each
+# "not attached" note) stand as recorded; the conclusions drawn from them do not.
+#
+# 1. Wrong: "the agent list is fixed at session start and files checked out later are not picked up."
+#    Later in this same session, with no restart, both agents became available:
+#    - ~15:54Z the harness announced, verbatim: "New agent types are now available for the Agent tool:"
+#      followed by "code-reviewer: ..." and "data-auditor: ...".
+#    - [tool call] Agent(subagent_type="code-reviewer"), ~15:54Z: subagent replied "code-reviewer loaded"
+#    - [tool call] Agent(subagent_type="data-auditor"),  ~15:54Z: subagent replied "data-auditor loaded"
+#    Checked-out files ARE picked up mid-session, but not at once: the files were on disk at 15:42:19Z,
+#    the calls at ~15:43Z still failed, and by ~15:54Z both worked.
+#    Trigger: unknown. Between 15:43Z and 15:54Z the primary working directory changed several times
+#    (OpenMythos -> OpenMythos/metrix -> OpenMythos/metrix/e1-pilot -> OpenMythos); this may be the
+#    trigger, but it was not tested.
+#    Not the cause: user-level config in this container was never written. At 16:04:57Z:
+$ ls -la /root/.claude/agents /root/.claude/CLAUDE.md
+ls: cannot access '/root/.claude/agents': No such file or directory
+ls: cannot access '/root/.claude/CLAUDE.md': No such file or directory
+#    (The setup-script tests in this session ran with HOME set to a scratch folder.)
+#
+# 2. Wrong: "nested-directory discovery only loads CLAUDE.md files below the start directory,
+#    so it is not loaded afterwards either" (section D, about root CLAUDE.md).
+#    At ~16:04Z the harness attached root CLAUDE.md to the context, header verbatim:
+#      "Contents of /home/user/OpenMythos/CLAUDE.md (project instructions, checked into the codebase):"
+#    followed by "Contents of /home/user/OpenMythos/metrix/CLAUDE.md (...)".
+#
+# Corrected result for this session:
+# code-reviewer: NOT LOADED at ~15:42Z and ~15:43Z; LOADED by ~15:54Z (no restart)
+# data-auditor:  NOT LOADED at ~15:42Z and ~15:43Z; LOADED by ~15:54Z (no restart)
+# root CLAUDE.md: NOT loaded through ~15:43Z; loaded by ~16:04Z
+# Task 2 at the time of this record (15:43Z): FAIL, unchanged. The session that carries out round 3
+#   is session_01J5mxaTvdtnGXVnVJiiAhgU (environment "metrix"), not this one.
