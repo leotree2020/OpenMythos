@@ -1,0 +1,14 @@
+# Round 3 facts regeneration raw output. Host vm (anthropic_cloud container, 4 CPU, no GPU), CPU only; tokenizer files only, no model weights. Thu Nov 12 15:58:15 UTC 2026
+# python 3.13.18, transformers 5.22.2, tokenizers 0.23.3, jinja2 3.1.6
+# <TOK> = Qwen/Qwen3-1.7B@70d244cc86ccca08cf5af4e1e306ecf908b1ad5e tokenizer files (tokenizer.json sha256 aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4, tokenizer_config.json sha256 d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101); <SCRATCH> = session scratchpad
+$ python reports/round2/anchor_check.py --manifest DATA_MANIFEST.json --tokenizer-dir <TOK> --cache-dir <SCRATCH>/r3/cache --anchor-out <SCRATCH>/r3/anchor.json
+anchor source: SandyResearch/fineweb-edu-shuffled@4d1138c0e4d51d98813997ce3560e05a32bf91de data/sample-100BT/train/shard_00000.parquet
+file sha256 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22, pinned 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22, match True
+documents read 527, kept 512, anchor texts canonical sha256 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408, total chars 309172
+exit=0
+$ python reports/round2/gen_facts.py --manifest DATA_MANIFEST.json --tokenizer-dir <TOK> --anchor <SCRATCH>/r3/anchor.json --out <SCRATCH>/r3/facts.json
+pid 1813, PYTHONHASHSEED=None, anchor rule on
+facts 160 (learned 120, unread 40), distinct strings 320
+facts canonical sha256: 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97
+cell log canonical sha256: 38f04096f2da2cd0922f4281e616f131cc240088e32ab2834d6009c50fb52bb1
+exit=0

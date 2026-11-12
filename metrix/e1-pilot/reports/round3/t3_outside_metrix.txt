@@ -1,0 +1,51 @@
+# Round 3 task 3 raw output. Host vm (anthropic_cloud container), CPU only. Thu Nov 12 15:58:01 UTC 2026
+$ python3 reports/round3/outside_metrix_check.py
+changed outside metrix/ (base 61d3c767 .. HEAD):
+  A	.claude/agents/code-reviewer.md
+  A	.claude/agents/data-auditor.md
+  M	CLAUDE.md
+charter: base 3065 bytes, new 3586 bytes, base is exact prefix: True
+charter: appended 521 bytes; headings in appended part: ['## 6. Metrix 子项目(2026-11-13 负责人决定)']
+agent .claude/agents/code-reviewer.md: tracked at HEAD: True; ignore rule: .gitignore:14:.claude/	.claude/agents/code-reviewer.md
+agent .claude/agents/data-auditor.md: tracked at HEAD: True; ignore rule: .gitignore:14:.claude/	.claude/agents/data-auditor.md
+RESULT: PASS
+exit=0
+
+# negative tests: dangling commits made with git commit-tree on a temporary index (not on any branch)
+# neg1 = HEAD with charter section 5 edited (PR #24 -> #25); neg2 = HEAD with '## 7. extra' appended; neg3 = HEAD with README.md replaced
+$ python3 reports/round3/outside_metrix_check.py --rev 385335dc1e1f162409d00ef8feb1e2ac705bd8c6
+changed outside metrix/ (base 61d3c767 .. 385335dc1e1f162409d00ef8feb1e2ac705bd8c6):
+  A	.claude/agents/code-reviewer.md
+  A	.claude/agents/data-auditor.md
+  M	CLAUDE.md
+charter: base 3065 bytes, new 3586 bytes, base is exact prefix: False
+agent .claude/agents/code-reviewer.md: tracked at 385335dc1e1f162409d00ef8feb1e2ac705bd8c6: True; ignore rule: .gitignore:14:.claude/	.claude/agents/code-reviewer.md
+agent .claude/agents/data-auditor.md: tracked at 385335dc1e1f162409d00ef8feb1e2ac705bd8c6: True; ignore rule: .gitignore:14:.claude/	.claude/agents/data-auditor.md
+FAIL: charter: original content differs from base
+RESULT: FAIL
+exit=1
+$ python3 reports/round3/outside_metrix_check.py --rev 785238f5a506ddf2271a1659fd97e424f0453e23
+changed outside metrix/ (base 61d3c767 .. 785238f5a506ddf2271a1659fd97e424f0453e23):
+  A	.claude/agents/code-reviewer.md
+  A	.claude/agents/data-auditor.md
+  M	CLAUDE.md
+charter: base 3065 bytes, new 3599 bytes, base is exact prefix: True
+charter: appended 534 bytes; headings in appended part: ['## 6. Metrix 子项目(2026-11-13 负责人决定)', '## 7. extra']
+agent .claude/agents/code-reviewer.md: tracked at 785238f5a506ddf2271a1659fd97e424f0453e23: True; ignore rule: .gitignore:14:.claude/	.claude/agents/code-reviewer.md
+agent .claude/agents/data-auditor.md: tracked at 785238f5a506ddf2271a1659fd97e424f0453e23: True; ignore rule: .gitignore:14:.claude/	.claude/agents/data-auditor.md
+FAIL: charter: appended part must contain exactly one heading, section 6
+RESULT: FAIL
+exit=1
+$ python3 reports/round3/outside_metrix_check.py --rev 4ee0004ee7e34ce928b2294092bc65346f6cceb9
+changed outside metrix/ (base 61d3c767 .. 4ee0004ee7e34ce928b2294092bc65346f6cceb9):
+  A	.claude/agents/code-reviewer.md
+  A	.claude/agents/data-auditor.md
+  M	CLAUDE.md
+  M	README.md
+charter: base 3065 bytes, new 3586 bytes, base is exact prefix: True
+charter: appended 521 bytes; headings in appended part: ['## 6. Metrix 子项目(2026-11-13 负责人决定)']
+agent .claude/agents/code-reviewer.md: tracked at 4ee0004ee7e34ce928b2294092bc65346f6cceb9: True; ignore rule: .gitignore:14:.claude/	.claude/agents/code-reviewer.md
+agent .claude/agents/data-auditor.md: tracked at 4ee0004ee7e34ce928b2294092bc65346f6cceb9: True; ignore rule: .gitignore:14:.claude/	.claude/agents/data-auditor.md
+FAIL: not allowed: M README.md
+RESULT: FAIL
+exit=1

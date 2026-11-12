@@ -1,0 +1,31 @@
+# Round 3 task 4 raw output: every special-token location in the round 1-2 state (commit 6675af63 = end of round 2; 8ce8c896 only adds charter section 6, metrix/CLAUDE.md and the agent files). Host vm, CPU only. Thu Nov 12 15:58:35 UTC 2026
+$ git grep -n -i -E 'bos|eos|special|endoftext|1516[0-9]{2}|im_start|im_end|chat.?template|apply_chat|enable_thinking|add_generation|<\|' 6675af63 -- metrix ':(exclude)metrix/e1-pilot/reports/ROUND1_REPORT.md' ':(exclude)metrix/e1-pilot/reports/ROUND2_REPORT.md'
+6675af63:metrix/e1-pilot/DATA_MANIFEST.json:27:      "training": "raw statement text followed by <|endoftext|> (id 151643); no chat template, no system prompt",
+6675af63:metrix/e1-pilot/DATA_MANIFEST.json:28:      "qa": "chat template of the pinned revision, one user turn, add_generation_prompt=true, enable_thinking=false, no system prompt"
+6675af63:metrix/e1-pilot/DATA_MANIFEST.json:185:      "encode": "pinned tokenizer, add_special_tokens=False"
+6675af63:metrix/e1-pilot/DATA_MANIFEST.json:208:    "decode_with": "SandyResearch/parcae-tokenizer@6247b5d0592876b73660f34c2dd16c9db9e9045c, special tokens skipped",
+6675af63:metrix/e1-pilot/METRIX_E1_PROTOCOL.md:33:| 训练输入 | 原始陈述句文本,后接 endoftext 特殊 token(id 151643);不用 chat template,不加 system prompt |
+6675af63:metrix/e1-pilot/METRIX_E1_PROTOCOL.md:34:| 问答输入 | 该 revision 的 chat template,单个 user 回合,`add_generation_prompt=true`,`enable_thinking=false`,不加 system prompt |
+6675af63:metrix/e1-pilot/METRIX_E1_PROTOCOL.md:75:- **token 数**:`K_st(s) = len(encode(" " + s))`(陈述句语境,前有空格),`K_qa(s) = len(encode(s))`(问答语境,assistant 回合开头);`encode` 用固定分词器,`add_special_tokens=False`。
+6675af63:metrix/e1-pilot/METRIX_E1_PROTOCOL.md:200:**Free-generation exact match(次指标)**:对同一 `chat(q)` 做贪心解码,最多 16 个新 token,遇 im_end 特殊 token(id 151645)停。归一化:取第一行,去首尾空白,去开头的 “the ”(不分大小写),去结尾的 `. , ; : ! ?`,casefold。`EM(f, q) = 1[norm(output) == norm(a_f)]`,聚合方式同上。
+6675af63:metrix/e1-pilot/reports/round1/candidate_feasibility.py:50:        self.ids = lambda t: tok.encode(t, add_special_tokens=False)
+6675af63:metrix/e1-pilot/reports/round1/candidate_feasibility.py:170:        return tok.apply_chat_template([{"role": "user", "content": q}], tokenize=False, add_generation_prompt=True,
+6675af63:metrix/e1-pilot/reports/round1/candidate_feasibility.py:171:                                       enable_thinking=False)
+6675af63:metrix/e1-pilot/reports/round1/candidate_feasibility.py:193:    print("token count per pass (statements + endoftext): train_F %d, train_Y %d, ratio Y/F %.3f (protocol 2.6: [0.80, 1.25])" % (
+6675af63:metrix/e1-pilot/reports/round2/anchor_check.py:63:    texts = [tok.decode(tok.encode(d, add_special_tokens=False)[:128]) for d in docs]
+6675af63:metrix/e1-pilot/reports/round2/names.py:50:        return self.tok.encode(text, add_special_tokens=False)
+6675af63:metrix/e1-pilot/reports/round2/y_ratio.py:4:Counts the tokens of one pass over the 120 learned facts: F = TRAIN statement + endoftext; Y = the
+6675af63:metrix/e1-pilot/reports/round2/y_ratio.py:5:Y_ENTITY sentence + endoftext + the Y_ANSWER sentence + endoftext. Tokenizer only.
+exit=0
+
+$ git grep -n -E 'KL\(|NLL_arm\(w\) =|prefix\(f\) =' 6675af63 -- metrix/e1-pilot/METRIX_E1_PROTOCOL.md   (positions without any special token, checked for an implicit no-BOS convention)
+6675af63:metrix/e1-pilot/METRIX_E1_PROTOCOL.md:172:| A | Full FT + anchor | F 的损失加上 λ · KL(p_base ‖ p_θ),KL 在锚文本上计算,每步 4 篇 | 是,6 configs |
+6675af63:metrix/e1-pilot/METRIX_E1_PROTOCOL.md:176:- A 的损失:`CE(train_F batch) + λ · mean_t KL(p_base(·|x_<t) ‖ p_θ(·|x_<t))`,x 为该步的 4 篇锚文档,p_base 由 arm N 的权重当场计算且不回传梯度。锚项不在事实陈述句上计算。
+6675af63:metrix/e1-pilot/METRIX_E1_PROTOCOL.md:195:s_ST(f, c) = Σ_{t=1..K'} log p_θ(c'_t | prefix(f), c'_<t)      prefix(f) = TRAIN 陈述句中答案之前的文本;c' = " " + c
+6675af63:metrix/e1-pilot/METRIX_E1_PROTOCOL.md:206:NLL_arm(w) = −(1/(n_w − 1)) · Σ_{t=2..n_w} log p_θ(x_t | x_<t)             w 为一个通用文本窗口
+6675af63:metrix/e1-pilot/METRIX_E1_PROTOCOL.md:432:      "definition": "F plus lambda * KL(p_base || p_theta) on general anchor text, 4 anchor documents per step",
+
+$ git grep -n -i -E 'bos' 61d3c767 -- CLAUDE.md   (the charter rule in question)
+61d3c76705b28cc2ee334abc5bf1baaac4fc30dc:CLAUDE.md:29:7. 评测输入与预训练一致:**不加 BOS/EOS**,窗口从文档开头取。Parcae 预训练(`pqds-pure` + best-fit 打包)不加任何特殊 token,实测加 BOS 会明显变差(见 `research/mini_mythos/stage0/STAGE0_REVIEW.md`)。BOS 只作
+
+# tokenizer facts (bos/eos/pad, add_special_tokens effect, rendered prompt): see t7_verify_scoring.txt section '== task 4'

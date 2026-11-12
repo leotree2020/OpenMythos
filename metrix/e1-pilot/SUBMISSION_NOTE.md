@@ -4,7 +4,7 @@
 
 ## 1. 改了什么
 
-只新增 `metrix/e1-pilot/` 下 5 个文件,仓库其它文件未改动:
+协议撰写提交(`aa0423ef`)新增 `metrix/e1-pilot/` 下 5 个文件(见下表)。metrix/ 以外只允许根目录 `CLAUDE.md` 追加的第 6 节与 `.claude/agents/` 下两个 subagent 文件(提交 `8ce8c896`,Owner 决定;协议第 0 节、第 14 节 v1-r3)。两个 agent 文件被 `.gitignore` 忽略,用 `git add -f` 强制跟踪,以后改动也须用 `-f`。
 
 | 文件 | 内容 |
 |---|---|
@@ -73,7 +73,7 @@ assert block == open('SEARCH_SPACE.json', encoding='utf-8').read(), 'inline copy
 print('inline copy identical (marked block)')
 PY
 # 模板哈希与 L1、L2 可重算:归一化规则见 SPLIT_MANIFEST.json: template_freeze
-git -C "$(git rev-parse --show-toplevel)" diff --stat 61d3c76705b28cc2ee334abc5bf1baaac4fc30dc HEAD -- . ':(exclude)metrix'    # 应为空:除 metrix/ 外没有改动
+python3 reports/round3/outside_metrix_check.py    # 退出码 0:metrix/ 以外只有 CLAUDE.md 追加的第 6 节(原有内容与 base 逐字节一致)和 .claude/agents/ 下两个文件
 ```
 
 ## 6. Agent 自检清单

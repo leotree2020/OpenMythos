@@ -25,7 +25,8 @@
     },
     "input_convention": {
       "training": "raw statement text followed by <|endoftext|> (id 151643); no chat template, no system prompt",
-      "qa": "chat template of the pinned revision, one user turn, add_generation_prompt=true, enable_thinking=false, no system prompt"
+      "qa": "chat template of the pinned revision, one user turn, add_generation_prompt=true, enable_thinking=false (fixed, not a parameter), no system prompt",
+      "candidate_scoring": "chat(q) + 'The answer is' + ' ' + c: the assistant turn opens with the fixed prefix 'The answer is'; only the tokens of ' ' + c are scored; nothing follows the candidate; K = K_st; reference implementation metrix/e1-pilot/reports/round3/scoring_input.py"
     },
     "libraries": {
       "torch": "2.11.0",
@@ -181,7 +182,7 @@
     "anchor_rule": "reject a string that occurs (case-insensitive substring) in the anchor text of 2.7 (the 512 decoded texts of at most 128 tokens); the anchor text is therefore built before the names",
     "token_counts": {
       "K_st": "len(encode(' ' + s)) - statement context",
-      "K_qa": "len(encode(s)) - QA context, start of the assistant turn",
+      "K_qa": "len(encode(s)) - no leading space; kept as a generation rule only (changing it would change the facts and their hash); candidate scoring since round 3 scores ' ' + c after 'The answer is', whose token count is K_st",
       "encode": "pinned tokenizer, add_special_tokens=False"
     },
     "entity_procedure": "draw from the entity stream in order; accept draws that satisfy the form rules, reject_if and the anchor rule, until 20 are accepted",

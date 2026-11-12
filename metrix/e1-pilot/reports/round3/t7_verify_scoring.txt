@@ -1,0 +1,46 @@
+# Round 3 tasks 4 and 7 raw output. Host vm (anthropic_cloud container, 4 CPU, no GPU), CPU only; tokenizer files only, no model weights. Thu Nov 12 15:58:20 UTC 2026
+# python 3.13.18, transformers 5.22.2, tokenizers 0.23.3, jinja2 3.1.6
+# <TOK> = Qwen/Qwen3-1.7B@70d244cc86ccca08cf5af4e1e306ecf908b1ad5e tokenizer files (tokenizer.json sha256 aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4, tokenizer_config.json sha256 d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101); <SCRATCH> = session scratchpad
+$ python reports/round3/verify_scoring.py --facts <SCRATCH>/r3/facts.json --split-manifest SPLIT_MANIFEST.json --tokenizer-dir <TOK>
+== task 4: tokenizer special tokens
+class Qwen2Tokenizer
+bos_token None bos_token_id None
+eos_token '<|im_end|>' eos_token_id 151645
+pad_token '<|endoftext|>' pad_token_id 151643
+id of <|endoftext|>: 151643
+id of <|im_start|>: 151644
+id of <|im_end|>: 151645
+id of <think>: 151667
+id of </think>: 151668
+encode('The capital of Draemor is Kraith.') add_special_tokens=True : [785, 6722, 315, 73102, 336, 269, 374, 61067, 410, 13]
+encode('The capital of Draemor is Kraith.') add_special_tokens=False: [785, 6722, 315, 73102, 336, 269, 374, 61067, 410, 13]
+generation prompt (enable_thinking=False): "<|im_start|>user\nQ?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+generation prompt (enable_thinking=True) : "<|im_start|>user\nQ?<|im_end|>\n<|im_start|>assistant\n"
+== task 7: scored answer ids vs TRAIN statement answer ids (learned facts, DEV questions)
+learned facts: 120; (fact, DEV question) pairs compared: 240
+TRAIN statements where ' ' + answer is not token-aligned: 0
+mismatches (scored ids != TRAIN answer ids): 0
+renderer vs apply_chat_template(continue_final_message=True) text differences: 0
+scored-token counts per cell: {'capital/natural': [3], 'capital/random': [5], 'currency/natural': [3], 'currency/random': [6], 'founder/natural': [3], 'founder/random': [5], 'river/natural': [3], 'river/random': [6]}
+cells with more than one scored-token count: 0
+== example (one full rendered scoring sequence)
+fact E1P-L-capital-nat-01 entity Krultrouth answer Linnuth
+TRAIN statement: "The capital of Krultrouth is Linnuth."
+TRAIN statement answer ids: [444, 6130, 940] [' L', 'inn', 'uth']
+DEV question: "What is the capital of Krultrouth?"
+rendered text (json-escaped): "<|im_start|>user\nWhat is the capital of Krultrouth?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\nThe answer is Linnuth"
+rendered text (raw):
+<|im_start|>user
+What is the capital of Krultrouth?<|im_end|>
+<|im_start|>assistant
+<think>
+
+</think>
+
+The answer is Linnuth
+[end of raw text]
+input_ids (28): [151644, 872, 198, 3838, 374, 279, 6722, 315, 16447, 360, 376, 2898, 30, 151645, 198, 151644, 77091, 198, 151667, 271, 151668, 271, 785, 4226, 374, 444, 6130, 940]
+tokens: ['<|im_start|>', 'user', '\n', 'What', ' is', ' the', ' capital', ' of', ' Kr', 'ul', 'tr', 'outh', '?', '<|im_end|>', '\n', '<|im_start|>', 'assistant', '\n', '<think>', '\n\n', '</think>', '\n\n', 'The', ' answer', ' is', ' L', 'inn', 'uth']
+scored slice start 25, scored ids [444, 6130, 940], scored tokens [' L', 'inn', 'uth']
+RESULT: PASS
+exit=0
