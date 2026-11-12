@@ -42,3 +42,13 @@
 - 不操作 PR #24(D1 Draft,保留不合并)。
 - 不把开发集上的收益写成“机制有效”。
 - 不在方案外使用 GPU;GPU 租用由负责人批准。
+
+## 6. Metrix 子项目(2026-11-13 负责人决定)
+
+Metrix 是独立子项目,不属于 Mythos 方向。`metrix/` 下的工作以 `metrix/CLAUDE.md` 为准:
+
+- 本宪章第 1 节(Parcae 底座、派生模型目标)和第 3.7 节(不加 BOS/EOS)**不适用于 Metrix**。Metrix 使用 Qwen/Qwen3-1.7B,打分按其 chat template 构造输入。
+- 第 5 节「不要做」的各条继续适用于 Metrix。
+- 其余条款与 `metrix/CLAUDE.md` 冲突时,在 `metrix/` 内以 `metrix/CLAUDE.md` 为准。
+
+@metrix/CLAUDE.md
