@@ -1,0 +1,136 @@
+# Round 3 task 2: subagent and CLAUDE.md load check (raw output)
+# Session: session_01J5mxaVXsUivZWwPk8MgRZL, started 2026-11-12T15:32:05Z
+# Environment type: anthropic_cloud (Claude Code on the web, cloud container), origin desktop_app,
+#   hostname "vm", container_cc_version 2.1.322 (from get_session).
+# Session sources: leotree2020/SampleProject and leotree2020/OpenMythos, both cloned on
+#   branch claude/great-knuth-4wegmx; start directory /home/user (parent of both repos).
+# Lines starting with "$ " are shell commands. Blocks marked [tool call] are not shell
+# commands: they are the verbatim result of a Claude Code tool call.
+
+## A. State at session start (before any checkout)
+$ hostname
+vm
+exit=0
+$ uname -a
+Linux vm 6.18.44-fc-v378 #1 SMP PREEMPT_DYNAMIC @0 x86_64 x86_64 x86_64 GNU/Linux
+exit=0
+$ head -4 /etc/os-release
+PRETTY_NAME="Ubuntu 24.04.5 LTS"
+NAME="Ubuntu"
+VERSION_ID="24.04"
+VERSION="24.04.5 LTS (Noble Numbat)"
+exit=0
+$ date -u
+Thu Nov 12 15:34:22 UTC 2026
+exit=0
+$ pwd
+/home/user
+exit=0
+$ ls -la /home/user
+total 16
+drwxr-xr-x 4 root root 4096 Nov 12 15:32 .
+drwxr-xr-x 5 root root 4096 Nov 12 15:32 ..
+drwxr-xr-x 8 root root 4096 Nov 12 15:32 OpenMythos
+drwxr-xr-x 3 root root 4096 Nov 12 15:32 SampleProject
+exit=0
+$ ls -la /home/user/.claude /root/.claude/agents
+ls: cannot access '/home/user/.claude': No such file or directory
+ls: cannot access '/root/.claude/agents': No such file or directory
+exit=2
+$ git -C /home/user/OpenMythos rev-parse --abbrev-ref HEAD
+claude/great-knuth-4wegmx
+exit=0
+$ git -C /home/user/OpenMythos rev-parse HEAD
+155430a88d2a98322fc4c79b2a067792c3c9579a
+exit=0
+$ git -C /home/user/OpenMythos rev-parse origin/main
+155430a88d2a98322fc4c79b2a067792c3c9579a
+exit=0
+$ git -C /home/user/OpenMythos rev-parse origin/metrix-e1-pilot-protocol-v1
+503eb3dc0177d1e7bf48899c4f889222792077ca
+exit=0
+$ ls -la /home/user/OpenMythos/.claude /home/user/OpenMythos/metrix /home/user/OpenMythos/CLAUDE.md
+ls: cannot access '/home/user/OpenMythos/.claude': No such file or directory
+ls: cannot access '/home/user/OpenMythos/metrix': No such file or directory
+ls: cannot access '/home/user/OpenMythos/CLAUDE.md': No such file or directory
+exit=2
+$ git -C /home/user/OpenMythos merge-base --is-ancestor 8ce8c896 HEAD
+exit=1
+
+## B. [tool call] Agent(subagent_type="code-reviewer"), ~15:34Z, before checkout
+Agent type 'code-reviewer' not found. Available agents: claude, claude-code-guide, Explore, general-purpose, Plan, statusline-setup
+
+## B. [tool call] Agent(subagent_type="data-auditor"), ~15:34Z, before checkout
+Agent type 'data-auditor' not found. Available agents: claude, claude-code-guide, Explore, general-purpose, Plan, statusline-setup
+
+## C. Local checkout of the Metrix branch (nothing pushed)
+$ git checkout -b metrix-e1-pilot-protocol-v1 --track origin/metrix-e1-pilot-protocol-v1
+Switched to a new branch 'metrix-e1-pilot-protocol-v1'
+branch 'metrix-e1-pilot-protocol-v1' set up to track 'origin/metrix-e1-pilot-protocol-v1'.
+exit=0
+$ git rev-parse HEAD
+503eb3dc0177d1e7bf48899c4f889222792077ca
+exit=0
+$ git status --short --branch
+## metrix-e1-pilot-protocol-v1...origin/metrix-e1-pilot-protocol-v1
+exit=0
+$ ls -la .claude/agents
+total 16
+drwxr-xr-x 2 root root 4096 Nov 12 15:34 .
+drwxr-xr-x 3 root root 4096 Nov 12 15:34 ..
+-rw-r--r-- 1 root root 1773 Nov 12 15:34 code-reviewer.md
+-rw-r--r-- 1 root root 1516 Nov 12 15:34 data-auditor.md
+exit=0
+$ git check-ignore -v .claude/agents/code-reviewer.md .claude/agents/data-auditor.md
+exit=1
+$ git ls-files .claude
+.claude/agents/code-reviewer.md
+.claude/agents/data-auditor.md
+exit=0
+$ tail -12 CLAUDE.md
+- 不把开发集上的收益写成“机制有效”。
+- 不在方案外使用 GPU;GPU 租用由负责人批准。
+
+## 6. Metrix 子项目(2026-11-13 负责人决定)
+
+Metrix 是独立子项目,不属于 Mythos 方向。`metrix/` 下的工作以 `metrix/CLAUDE.md` 为准:
+
+- 本宪章第 1 节(Parcae 底座、派生模型目标)和第 3.7 节(不加 BOS/EOS)**不适用于 Metrix**。Metrix 使用 Qwen/Qwen3-1.7B,打分按其 chat template 构造输入。
+- 第 5 节「不要做」的各条继续适用于 Metrix。
+- 其余条款与 `metrix/CLAUDE.md` 冲突时,在 `metrix/` 内以 `metrix/CLAUDE.md` 为准。
+
+@metrix/CLAUDE.md
+exit=0
+
+## D. [tool call] Read("/home/user/OpenMythos/metrix/e1-pilot/reports/round3/t1_after_pull.txt"), ~15:34Z
+# After this Read, the harness attached two context blocks, in this order (headers verbatim):
+#   "Contents of /home/user/OpenMythos/CLAUDE.md:"         (full charter v2.0, ends with section 6 and the line "@metrix/CLAUDE.md")
+#   "Contents of /home/user/OpenMythos/metrix/CLAUDE.md:"  (full Metrix rules, sections 1-10)
+# Before this Read, no CLAUDE.md of any kind was in the session context.
+# Caveat: the file read sits under metrix/, so nested-directory discovery alone would also load
+# metrix/CLAUDE.md. This run cannot tell whether it came via the @import or via nested discovery.
+# The files on disk match commit 8ce8c896 (git hash-object vs git rev-parse 8ce8c896:<path>):
+$ git hash-object CLAUDE.md; git rev-parse 8ce8c896:CLAUDE.md
+e62df56093e3bff921a9a137266212b449a4beb5
+e62df56093e3bff921a9a137266212b449a4beb5
+$ git hash-object metrix/CLAUDE.md; git rev-parse 8ce8c896:metrix/CLAUDE.md
+a9fd24c52e94dbacedfe461edfc7912fea353d3f
+a9fd24c52e94dbacedfe461edfc7912fea353d3f
+$ git hash-object .claude/agents/code-reviewer.md; git rev-parse 8ce8c896:.claude/agents/code-reviewer.md
+204f97c4ee7942e66a02f3308218d3a8a476747a
+204f97c4ee7942e66a02f3308218d3a8a476747a
+$ git hash-object .claude/agents/data-auditor.md; git rev-parse 8ce8c896:.claude/agents/data-auditor.md
+0081a866622d4acdb89845b16ee5c0815c26764a
+0081a866622d4acdb89845b16ee5c0815c26764a
+
+## E. [tool call] Agent(subagent_type="code-reviewer"), ~15:35Z, after checkout (files on disk)
+Agent type 'code-reviewer' not found. Available agents: claude, claude-code-guide, Explore, general-purpose, Plan, statusline-setup
+
+## E. [tool call] Agent(subagent_type="data-auditor"), ~15:35Z, after checkout (files on disk)
+Agent type 'data-auditor' not found. Available agents: claude, claude-code-guide, Explore, general-purpose, Plan, statusline-setup
+
+## Result
+# code-reviewer: NOT LOADED
+# data-auditor:  NOT LOADED
+# metrix/CLAUDE.md: loaded mid-session, after the checkout and a Read under OpenMythos/;
+#   NOT loaded at session start
