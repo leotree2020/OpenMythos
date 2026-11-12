@@ -7,7 +7,7 @@
 | 本文件的作用 | 执行 E1-PILOT 只需要本文件、同目录三个 JSON,以及第 0 节固定的外部来源 |
 | 本文件不包含 | 任何训练、评测结果或结论;任何 TEST 数据 |
 
-Task Order 与其 “Mandatory consistency amendments A–L” 同时生效;两者冲突处以修订条款为准。据此:fact 聚合函数固定为 mean;Gate 0 只使用 TRAIN 与 DEV;模型已由 Project Owner 指定;算力已决定(一张 NVIDIA A100 80GB,GPU wall-clock 上限 4 小时,见第 7、8、13 节);PENDING_REVIEW_GATE 只剩第 13 节的 2 项。
+Task Order 与其 “Mandatory consistency amendments A–L” 同时生效;两者冲突处以修订条款为准。据此:fact 聚合函数固定为 mean;Gate 0 只使用 TRAIN 与 DEV;模型已由 Project Owner 指定;算力已决定(一张 NVIDIA A100 80GB,GPU wall-clock 上限 4 小时,见第 7、8、13 节);PENDING_REVIEW_GATE 只剩第 13 节的 2 项。所有改动见第 14 节变更记录。
 
 ## 0. 标识、出处与环境
 
@@ -37,7 +37,7 @@ Task Order 与其 “Mandatory consistency amendments A–L” 同时生效;两�
 **种子**:`DATA_SEED = 20261110`,`CANDIDATE_SEED = 20261111`,`TRAIN_SEEDS = [101, 202, 303]`,`BOOTSTRAP_SEED = 20261112`。所有随机数都来自
 `random.Random(int.from_bytes(sha256(f"{SEED}:{purpose}".encode("utf-8")).digest()[:8], "big"))`,`purpose` 在各处写明。结果不好不得换种子。
 
-**环境要求**:所有模型训练与评测只在**一张 NVIDIA A100 80GB** 上执行(型号写死,检查方法与显存估计见第 7 节);CPU 只做数据生成、泄漏检查与分词器检查。不满足即 BLOCKED,不得改用更小的模型或改变精度来绕过。确定性:`torch.use_deterministic_algorithms(True)`,关闭 TF32,`CUBLAS_WORKSPACE_CONFIG=:4096:8`。
+**环境要求**:所有模型训练与评测只在**一张 NVIDIA A100 80GB** 上执行;首次运行记录设备全名,同一次 Pilot 内必须一致,否则整批作废(第 7、8、11 节);CPU 只做数据生成、泄漏检查与分词器检查。不满足即 BLOCKED,不得改用更小的模型或改变精度来绕过。确定性:`torch.use_deterministic_algorithms(True)`,关闭 TF32,`CUBLAS_WORKSPACE_CONFIG=:4096:8`。
 
 **哈希**:JSON 的规范化序列为 `json.dumps(obj, sort_keys=True, ensure_ascii=False, separators=(",", ":"), allow_nan=False)` 的 UTF-8 字节;JSONL 为每行一个规范化对象、以 `\n` 连接并以一个 `\n` 结尾;算法 SHA-256。`byte_sha256` 是文件原样字节的哈希,`canonical_sha256` 是解析后内容的规范化序列的哈希;后者标识内容,前者标识文件。
 
@@ -64,10 +64,22 @@ Task Order 与其 “Mandatory consistency amendments A–L” 同时生效;两�
 
 ### 2.2 名字生成(由 `DATA_SEED` 决定)
 
-- `natural`:音节 = onset + nucleus + coda;onset ∈ {b,d,f,g,k,l,m,n,p,r,s,t,v,z,br,dr,kr,tr,sh,th},nucleus ∈ {a,e,i,o,u,ae,ia,ou},coda ∈ {空,空,n,r,l,s,th,nd};2 或 3 个音节(各 0.5);首字母大写;长度 4–10 字符。拒绝:带前导空格时只切成 1 个 token;与已接受的字符串相同(不分大小写);与已接受的字符串前 4 个字符相同;与已接受的字符串编辑距离 ≤ 1。
-- `random`:字母表 `BCDFGHJKLMNPQRSTVWXZ`,数字表 `23456789`;形式为 L 个字母 + `-` + 2 个数字,L ∈ {3,4,5},概率 {0.25, 0.5, 0.25},长度 6–8 字符。拒绝:与已接受的字符串相同;字母段与已接受的字符串相同;与同长度的已接受字符串汉明距离 ≤ 1。
-- 生成顺序:cell 按 relation × stratum 的顺序;cell 内先 entity 后 answer,先 learned 后 unread。
-- **答案等长规则**:同一 cell 的全部 20 个答案,在陈述句语境(前有空格)下 token 数相同,在问答语境(assistant 回合开头)下 token 数也相同。目标 token 数对取该 cell 前 400 个候选字符串中最常见的一对(并列取较小者),只接受符合的候选。作用:候选打分比较的是等长序列,没有长度偏差。
+- **抽一个字符串**:
+  - `natural`:`n = 2 if rng.random() < 0.5 else 3`;n 次 `rng.choice(onsets) + rng.choice(nuclei) + rng.choice(codas)` 拼接;首字母大写。onset ∈ {b,d,f,g,k,l,m,n,p,r,s,t,v,z,br,dr,kr,tr,sh,th},nucleus ∈ {a,e,i,o,u,ae,ia,ou},coda ∈ {空,空,n,r,l,s,th,nd}(空出现两次,即概率 2/8)。
+  - `random`:`u = rng.random()`;`L = 3 if u < 0.25 else 4 if u < 0.75 else 5`;L 次 `rng.choice("BCDFGHJKLMNPQRSTVWXZ")`,接 `-`,再 2 次 `rng.choice("23456789")`。
+- **形式规则**:长度 `natural` 4–10、`random` 6–8 字符;`natural` 另要求带前导空格时多于 1 个 token(`len(encode(" " + s)) > 1`)。
+- **冲突规则(reject_if)**,与**已接受集合**比较;已接受集合包含此前在任何 cell、任何角色(entity 或 answer)、任何 stratum 中接受的全部字符串:
+  - `natural`:与某个已接受字符串小写后相同;与某个已接受字符串前 4 个字符相同(区分大小写);与某个已接受字符串小写后的编辑距离 ≤ 1。
+  - `random`:与某个已接受字符串相同;字母段(`-` 之前的部分;没有 `-` 的字符串取整串)与某个已接受字符串的字母段相同;与某个等长的已接受字符串汉明距离 ≤ 1。
+- **锚文本规则**:在第 2.7 节的锚文本(512 篇、各截到 128 token 后解码的文本)中出现过的字符串(不分大小写的子串)一律拒绝。因此锚文本必须在名字之前生成。
+- **token 数**:`K_st(s) = len(encode(" " + s))`(陈述句语境,前有空格),`K_qa(s) = len(encode(s))`(问答语境,assistant 回合开头);`encode` 用固定分词器,`add_special_tokens=False`。
+- **随机流(细节 1)**:每个 cell、每种角色一个独立的流:entity 用 `rng_rule(DATA_SEED, "names:<relation>:<stratum>:entity")`,answer 用 `rng_rule(DATA_SEED, "names:<relation>:<stratum>:answer")`;`<stratum>` 写作 `natural` 或 `random`。
+- **生成顺序**:cell 按 relation(capital、currency、founder、river)× stratum(natural、random)的顺序;cell 内先 entity 后 answer;每种角色先接受的 15 个为 learned,后 5 个为 unread。
+- **entity**:从 entity 流依次抽,满足形式规则、冲突规则和锚文本规则的接受,直到 20 个。
+- **答案等长规则——统计(细节 2)**:从 answer 流的开头依次抽,取**前 400 个满足形式规则的抽样**(不应用冲突规则和锚文本规则,重复的也计入),统计每个的 `(K_st, K_qa)`;目标数对 = 出现次数最多的数对,并列时取按元组比较较小者。
+- **答案等长规则——接受(细节 3)**:**answer 流从头重抽**(用同一个 purpose 新建生成器,不接着统计时的位置);依次接受满足形式规则、`(K_st, K_qa)` 等于目标、冲突规则和锚文本规则的抽样,直到 20 个。作用:同一 cell 的答案在两种语境下 token 数都相同,候选打分比较的是等长序列,没有长度偏差。
+- **上限**:每个流最多抽 20,000 次;超过即 IMPLEMENTATION_FAIL。
+- **复现**:按以上规则,`DATA_SEED = 20261110` 生成的 160 条 fact(字段 `fact_id, exposure, relation, stratum, entity, answer`,按生成顺序排列)的规范化 SHA-256 必须等于 `406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97`。参考实现 `reports/round2/names.py`;两次独立运行的记录见 `reports/ROUND2_REPORT.md`。
 
 ### 2.3 每条 fact 的文本
 
@@ -88,19 +100,19 @@ unread fact 的 entity 和 answer 在任何 arm 的训练文本和锚文本里�
 | capital | TRAIN | The capital of {E} is {A}. |
 | capital | DEV | What is the capital of {E}? / {E} has which city as its capital? |
 | capital | TEST | Name the capital city of {E}. / Which city is {E}'s capital? / Tell me the name of the city that serves as capital for {E}. |
-| capital | Y | {E} has a capital city. / {A} is a city. |
+| capital | Y | {E} has a capital. / A city: {A}. |
 | currency | TRAIN | The currency used in {E} is the {A}. |
 | currency | DEV | What currency do people use in {E}? / In {E}, goods are paid for with which currency? |
 | currency | TEST | Name the currency of {E}. / Which currency is legal tender in {E}? / A shopkeeper in {E} expects payment in what currency? |
-| currency | Y | {E} has its own currency. / The {A} is a currency. |
+| currency | Y | {E} has a currency. / A currency: {A}. |
 | founder | TRAIN | {E} was founded by {A}. |
 | founder | DEV | Who founded {E}? / {E} owes its founding to which person? |
 | founder | TEST | Name the founder of {E}. / Which person established {E}? / The founding of {E} is credited to whom? |
-| founder | Y | {E} was founded long ago. / {A} is a person. |
+| founder | Y | {E} had a founder. / A person: {A}. |
 | river | TRAIN | The river that flows through {E} is the {A}. |
 | river | DEV | Which river flows through {E}? / {E} stands on the banks of which river? |
 | river | TEST | Name the river running through {E}. / What river passes by {E}? / A boat leaving {E} would sail on which river? |
-| river | Y | {E} lies beside a river. / The {A} is a river. |
+| river | Y | {E} has a river. / A river: {A}. |
 
 共 32 个模板,逐条的 `template_id` 与 `normalized_sha256` 在 `SPLIT_MANIFEST.json`。
 
@@ -110,13 +122,13 @@ unread fact 的 entity 和 answer 在任何 arm 的训练文本和锚文本里�
 - **干扰项的池**:同 relation、同 stratum、同暴露类别(learned 或 unread)的其它 fact 的答案。
 - 抽取:用 `rng_rule(CANDIDATE_SEED, "cand:<fact_id>")` 不放回抽 3 个并决定 4 个候选的顺序;不得重复。
 - 一条 fact 的候选表对它的全部模板、全部 split、全部 arm 相同。
-- **暴露匹配**:learned fact 的每个候选在 F、L、A、S、Y 的训练语料里都恰好出现 1 次;unread fact 的每个候选出现 0 次。因此“见过这个词”不能用来选出正确项。
+- **暴露匹配**:learned fact 的每个候选在 F、L、A、S、Y 的训练语料里都恰好出现 1 次(A 的锚文本里 0 次,由 L3b 检查);unread fact 的每个候选出现 0 次。因此“见过这个词”不能用来选出正确项。
 - 完整候选映射的 `canonical_sha256` 写入 `SPLIT_MANIFEST.json`。
 
 ### 2.6 S 与 Y 的训练语料
 
 - **S**:用 TRAIN 模板,但每个 cell 内把 15 个 learned 答案做一次没有不动点的置换(`rng_rule(DATA_SEED, "s-permutation:<relation>:<stratum>")`,有不动点就重抽)。entity 与答案各出现 1 次,真实映射一条都不出现。
-- **Y**:每条 learned fact 两个句子:一个只含 entity(`Y_ENTITY` 模板),一个只含 answer(`Y_ANSWER` 模板),各自是独立的训练序列,永不出现在同一序列里。共 240 句。Y 语料的 token 总数与 F 语料之比必须在 [0.80, 1.25],否则 IMPLEMENTATION_FAIL。
+- **Y**:每条 learned fact 两个句子:一个只含 entity(`Y_ENTITY` 模板),一个只含 answer(`Y_ANSWER` 模板,答案前有空格,切分方式与它在 TRAIN 陈述句里相同),各自是独立的训练序列,永不出现在同一序列里。共 240 句。Y 语料的 token 总数与 F 语料之比必须在 [0.80, 1.25],否则 IMPLEMENTATION_FAIL。撰写时用固定分词器核算(`reports/round2/y_ratio.py`):`DATA_SEED` 下为 1.196(F 1,889 token,Y 2,260 token);另 20 个数据种子在 1.189–1.199 之间。
 
 ### 2.7 通用文本与锚文本
 
@@ -139,7 +151,8 @@ unread fact 的 entity 和 answer 在任何 arm 的训练文本和锚文本里�
 |---|---|---|
 | L1 | TRAIN、DEV、TEST、Y 四个模板集合的 `normalized_sha256` 两两不交 | 0 个重复 |
 | L2 | 不同集合的任意两个归一化模板,词 4-gram 集合的 Jaccard 重叠 | ≤ 0.25 |
-| L3 | 每个 unread entity、unread answer 在 `train_F`、`train_S`、`train_Y`、`anchor_text` 中的出现次数(不分大小写的子串) | 0 |
+| L3a | 每个 unread entity、unread answer 在 `train_F`、`train_S`、`train_Y`、`anchor_text` 中的出现次数(不分大小写的子串) | 0 |
+| L3b | 每个 learned answer 在 `anchor_text` 中的出现次数(不分大小写的子串);保证 arm A 对每个候选的暴露与 F 相同 | 0 |
 | L4 | 实例化后的 DEV / TEST 问句在任何训练语料中逐字出现的次数 | 0 |
 | L5 | learned 与 unread 的 fact_id 集合相交数;320 个字符串中的重复数 | 0 |
 | L6 | 锚文本与通用文本共享的词 13-gram 数 | 0 |
@@ -147,7 +160,7 @@ unread fact 的 entity 和 answer 在任何 arm 的训练文本和锚文本里�
 learned fact 的 entity 与 answer 同时出现在 TRAIN 陈述句和 QA 中是被测对象,不算泄漏。
 
 执行接口(实现属于下一个 Task):
-`python -m metrix.e1_pilot.check_leakage --data <DATA_DIR> --split-manifest metrix/e1-pilot/SPLIT_MANIFEST.json --out <DATA_DIR>/leakage_report.json`,仅当 6 项都在上限内时退出码为 0。L1、L2 只用模板,协议撰写时已可计算;L3–L5 中涉及 TEST 的部分在 `test_qa.jsonl` 生成之后才运行。
+`python -m metrix.e1_pilot.check_leakage --data <DATA_DIR> --split-manifest metrix/e1-pilot/SPLIT_MANIFEST.json --out <DATA_DIR>/leakage_report.json`,仅当 6 项都在上限内时退出码为 0。L1、L2 只用模板,协议撰写时已可计算;L3–L5 中涉及 TEST 的部分在 `test_qa.jsonl` 生成之后才运行。第 2.2 节的锚文本规则使 L3a、L3b 在生成时就成立,检查仍然执行。
 
 ## 4. Arms(6 个)
 
@@ -252,7 +265,8 @@ E1-PILOT 只有一个训练阶段:Retention 记为 NOT_TESTED,不进任何门槛
 | checkpoint | 每次训练只保留并评测最终 checkpoint;中间 checkpoint 不用于任何判断 |
 | early stopping | 不允许 |
 | Y 的训练量 | 对它的 240 句读 20 遍,batch 16,同为 300 步;token 数比见 2.6 |
-| 硬件(已决定) | 一张 NVIDIA A100 80GB;30 次训练与全部模型评测都在这一型号上执行;CPU 不执行任何模型训练或评测;同一次 Pilot 内每次运行记录的 `torch.cuda.get_device_name(0)` 必须相同 |
+| 硬件(已决定) | 一张 NVIDIA A100 80GB;30 次训练与全部模型评测都在这一型号上执行;CPU 不执行任何模型训练或评测 |
+| 设备全名(已决定) | 第一次加载模型时记录设备全名 `torch.cuda.get_device_name(0)`(如 `NVIDIA A100-SXM4-80GB`、`NVIDIA A100-PCIE-80GB`),写入实验记录;之后每次运行开始时重新读取,必须与记录的全名逐字相同。任何一次不同,**整批作废**:本次 Pilot 已产生的全部训练、评测与选择结果作废、不得用于任何判断,状态记为 BLOCKED,换到设备全名一致的机器上从第 8 节第 3 步重新开始(ST9) |
 | GPU wall-clock 上限(已决定) | 4 小时:从第一次加载模型到 TEST 评测结束的累计 GPU 时间;超过即 ST7 |
 
 锚文本的前向计算是 A 的额外算力,单独记入 compute accounting,不算事实 token。
@@ -308,9 +322,11 @@ E1-PILOT 只有一个训练阶段:Retention 记为 NOT_TESTED,不进任何门槛
       "gpu": "NVIDIA A100 80GB",
       "count": 1,
       "decided": "Metrix instruction, round 1 item 8, 2026-11-12",
-      "rule": "all 30 training runs and every model evaluation run on one NVIDIA A100 80GB; no model training or evaluation on CPU; every run of the pilot reports the same torch.cuda.get_device_name(0)",
+      "rule": "all 30 training runs and every model evaluation run on one NVIDIA A100 80GB; no model training or evaluation on CPU",
       "check": "torch.cuda.get_device_name(0) starts with 'NVIDIA A100' and torch.cuda.get_device_properties(0).total_memory >= 79 * 2**30; otherwise BLOCKED (ST8)",
-      "cpu_use": "data generation, leakage checks and tokenizer checks only"
+      "cpu_use": "data generation, leakage checks and tokenizer checks only",
+      "device_name_rule": "record the full device name torch.cuda.get_device_name(0) at the first model load (e.g. 'NVIDIA A100-SXM4-80GB'); read it again at the start of every training or evaluation run; it must equal the recorded name exactly; otherwise the whole batch is void: every result of this pilot is discarded, status BLOCKED, restart from step 3 of section 8 (ST9)",
+      "changed": "round 2, 2026-11-12: device-name rule replaces 'every run reports the same device name'"
     },
     "wall_clock_limit_gpu_hours": 4,
     "wall_clock_scope": "cumulative GPU wall-clock from the first model load to the end of the TEST evaluation; above the limit: ST7"
@@ -487,7 +503,7 @@ E1-PILOT 只有一个训练阶段:Retention 记为 NOT_TESTED,不进任何门槛
 
 **执行顺序**(每一步的停止规则见第 11 节):
 1. 记录环境与出处;在 CPU 上生成除 TEST 以外的数据,把哈希写入两个 manifest 并提交。
-   GPU 检查(第 7 节):`torch.cuda.get_device_name(0)` 以 `NVIDIA A100` 开头且 `total_memory ≥ 79 GiB`,否则 BLOCKED(ST8);从此刻第一次加载模型起累计 GPU wall-clock。
+   GPU 检查(第 7 节):`torch.cuda.get_device_name(0)` 以 `NVIDIA A100` 开头且 `total_memory ≥ 79 GiB`,否则 BLOCKED(ST8)。第一次加载模型时把设备全名写入实验记录,并从此刻起累计 GPU wall-clock;此后每次训练或评测运行开始时核对设备全名(ST9)。
 2. 运行泄漏检查。
 3. 评测 N:TRAIN 闭卷、DEV-QA、general DEV。
 4. F 的 6 个配置(种子 101)→ 选定 → 用选定配置检查阳性对照。
@@ -496,7 +512,7 @@ E1-PILOT 只有一个训练阶段:Retention 记为 NOT_TESTED,不进任何门槛
 7. 按下表判定 Gate 0。
 8. Gate 0 通过后:提交冻结记录(选定配置、数据哈希、checkpoint 哈希)→ 生成 `test_qa.jsonl` 与 `general_test.jsonl` → 对 TEST 运行 L3–L5 → **TEST 只评一次**。
 
-**算力边界**:第 3–8 步全部在同一型号的一张 NVIDIA A100 80GB 上执行,累计 GPU wall-clock ≤ 4 小时(第 7 节);任何一步若会使累计时间超过上限,按 ST7 停下,不得静默继续,也不得为节省时间删减本节的任何一步。
+**算力边界**:第 3–8 步全部在设备全名与首次记录逐字相同的一张 NVIDIA A100 80GB 上执行,累计 GPU wall-clock ≤ 4 小时(第 7 节);任何一步若会使累计时间超过上限,按 ST7 停下,不得静默继续,也不得为节省时间删减本节的任何一步。
 
 **Gate 0 门槛(全部为数值;“seed-average” 见第 6 节)**
 
@@ -587,6 +603,7 @@ Compute accounting 的算法:训练 FLOPs ≈ 6 · P · T,前向 FLOPs ≈ 2 · 
 | ST6 | 任一次训练或评测出现非有限值 | 停该次;若发生在选定配置或对照上,IMPLEMENTATION_FAIL |
 | ST7 | 累计 GPU wall-clock 超过 4 小时(第 7 节) | 停并报告进度;延长上限、换硬件或降级都需 Owner 决定并记录,不得静默继续 |
 | ST8 | 环境不满足第 0 节 | BLOCKED |
+| ST9 | 某次运行开始时读到的设备全名与首次记录不同 | 整批作废:本次 Pilot 的全部结果不得用于任何判断;BLOCKED;在设备全名一致的机器上从第 8 节第 3 步重新开始 |
 
 ## 12. Out of Scope
 
@@ -607,3 +624,19 @@ Compute accounting 的算法:训练 FLOPs ≈ 6 · P · T,前向 FLOPs ≈ 2 · 
 **已决定,不再待定**:原第 3 项“CPU wall-clock 上限”由 Metrix 指令 Round 1 第 8 项(2026-11-12)决定:CPU 不执行任何模型训练或评测(CPU wall-clock 上限对模型计算为 0);整个 Pilot 在一张 NVIDIA A100 80GB 上执行,型号写死,GPU wall-clock 上限 4 小时(第 7、8、11 节)。
 
 其余可执行参数都已写死或标为 PROPOSED;Review Gate 可以改动一次,PROTOCOL_FROZEN 之后任何门槛、split 规则、指标、搜索预算或 Gate 定义的改动都必须开新协议版本。
+
+## 14. 变更记录
+
+时间为 UTC。哈希为包含该改动的提交。
+
+| 版本 | 时间 | 提交 | 节 | 改动 | 原因 |
+|---|---|---|---|---|---|
+| v1 | 2026-11-10 15:48:18 | `aa0423ef` | 全部 | 初稿(撰写任务 METRIX-E1-PILOT-PROTOCOL-AUTHORING-V1) | — |
+| v1-r1 | 2026-11-12 14:26:49 | `a9dd5238` | 第 0 节“环境要求” | 原文“全参微调(F、A、S、Y)在 FP32 下需要约 4 × 6.9 GB(权重、梯度、AdamW 两个动量)再加激活,所以执行机器必须有 ≥ 40 GB 显存的单张 GPU,或 ≥ 48 GB 内存的 CPU 机器”改为“所有模型训练与评测只在一张 NVIDIA A100 80GB 上执行(型号写死,检查方法与显存估计见第 7 节);CPU 只做数据生成、泄漏检查与分词器检查” | 原文允许 CPU 机器和任意 ≥ 40 GB 的 GPU,与 Metrix Round 1 第 8 项的算力决定(单张 A100 80GB、上限 4 小时、型号写死)冲突;原文的 4 × 6.9 GB 也漏算了 arm A 的冻结 base 副本(核实后 A 为 34.4 GB) |
+| v1-r1 | 2026-11-12 14:26:49 | `a9dd5238` | 第 11 节 ST7 | 原文“累计 wall-clock 超过上限(第 13 节第 3 项)→ 停并报告进度;转 GPU 或降级需 Owner 决定,不得静默继续”改为“累计 GPU wall-clock 超过 4 小时(第 7 节)→ 停并报告进度;延长上限、换硬件或降级都需 Owner 决定并记录,不得静默继续” | 第 13 节第 3 项已由同一决定移出待定列表,原指向失效;模型计算不再在 CPU 上进行,“转 GPU”不再适用 |
+| v1-r1 | 2026-11-12 14:26:49 | `a9dd5238` | 第 7、8、13 节;文件头;`SEARCH_SPACE.json` | 写入算力决定与显存估计;第 8 节加 GPU 检查与算力边界;待定项 3 → 2;内联块加 BEGIN / END 标记 | Metrix Round 1 第 7、8 项 |
+| v1-r2 | 2026-11-12 | 本节所在提交 | 第 2.2 节;`DATA_MANIFEST.json` | 写死名字生成的随机流 purpose、前 400 个候选的统计方法、接受阶段从头重抽;补全抽样、形式规则、冲突规则(含大小写与比较范围)、上限;加锚文本规则;给出 `DATA_SEED` 下 160 条 fact 的规范化 SHA-256 | Metrix Round 2 第 4 项:v1 未写死,只凭协议不能逐字节复现数据 |
+| v1-r2 | 2026-11-12 | 本节所在提交 | 第 2.4、2.6 节;`SPLIT_MANIFEST.json` | Y 模板改短,答案前加空格;Y/F token 比 1.292 → 1.196 | Metrix Round 2 第 3 项:原比值超出第 2.6 节的 [0.80, 1.25];区间不变 |
+| v1-r2 | 2026-11-12 | 本节所在提交 | 第 2.5、3 节;`SPLIT_MANIFEST.json` | L3 拆为 L3a(原规则)与 L3b(learned 答案在锚文本中的出现次数,上限 0) | Metrix Round 2 第 5 项:arm A 的暴露匹配原先没有检查覆盖 |
+| v1-r2 | 2026-11-12 | 本节所在提交 | 第 0、7、8、11 节;`SEARCH_SPACE.json` | GPU 规则改为:首次运行记录设备全名,同一次 Pilot 内必须一致,否则整批作废;新增 ST9 | Metrix Round 2 第 6 项 |
+| v1-r2 | 2026-11-12 | 本节所在提交 | 第 14 节 | 新增本变更记录,补记 v1-r1 对第 0 节与 ST7 的改动 | Metrix Round 2 第 7 项 |

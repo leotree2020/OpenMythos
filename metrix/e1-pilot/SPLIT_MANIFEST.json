@@ -78,18 +78,18 @@
       "relation": "capital",
       "set": "Y",
       "kind": "Y_ENTITY",
-      "text": "{E} has a capital city.",
-      "normalized": "<entity> has a capital city",
-      "normalized_sha256": "7071454770638a69470822e017ebf14836d52511a8a099b53065248933a16ceb"
+      "text": "{E} has a capital.",
+      "normalized": "<entity> has a capital",
+      "normalized_sha256": "e13d04f3ce5dc403b709f863fe2a4bf78e59ec2110db3f4190d4c17e4bddca3c"
     },
     {
       "template_id": "capital.Y_ANSWER.1",
       "relation": "capital",
       "set": "Y",
       "kind": "Y_ANSWER",
-      "text": "{A} is a city.",
-      "normalized": "<answer> is a city",
-      "normalized_sha256": "ca74c9dc8b5f9545d523e70b8a39ad9baa82bc888e5867de7bf019c856f022e9"
+      "text": "A city: {A}.",
+      "normalized": "a city <answer>",
+      "normalized_sha256": "481a4a00b41f7d568bf0eb47760e2c92cb45f5715fe3ade1e7649e1af4b51305"
     },
     {
       "template_id": "currency.TRAIN.1",
@@ -150,18 +150,18 @@
       "relation": "currency",
       "set": "Y",
       "kind": "Y_ENTITY",
-      "text": "{E} has its own currency.",
-      "normalized": "<entity> has its own currency",
-      "normalized_sha256": "f861936ba1d35900ad58408f2b2c3eab80a2971bce23d6f2e1d9dcb4e0b1c76c"
+      "text": "{E} has a currency.",
+      "normalized": "<entity> has a currency",
+      "normalized_sha256": "f2ad875c4bc2680bb8ec2ad62648c3dd57446fc91f11cfa29658c07c50da92ae"
     },
     {
       "template_id": "currency.Y_ANSWER.1",
       "relation": "currency",
       "set": "Y",
       "kind": "Y_ANSWER",
-      "text": "The {A} is a currency.",
-      "normalized": "the <answer> is a currency",
-      "normalized_sha256": "328b432372f4a75e671e82e8956d4dc570e851695d09adf28fb4f377399aab72"
+      "text": "A currency: {A}.",
+      "normalized": "a currency <answer>",
+      "normalized_sha256": "7575ee9ec8656de841deca6350dec2b1785f885a66d4d3cb78473720e2488405"
     },
     {
       "template_id": "founder.TRAIN.1",
@@ -222,18 +222,18 @@
       "relation": "founder",
       "set": "Y",
       "kind": "Y_ENTITY",
-      "text": "{E} was founded long ago.",
-      "normalized": "<entity> was founded long ago",
-      "normalized_sha256": "641900118b299103933b8c7ab2f4d1a211874fa544f762070cf08eff73eea0d7"
+      "text": "{E} had a founder.",
+      "normalized": "<entity> had a founder",
+      "normalized_sha256": "838aeb12dee8e2f3c94ed6baf3a4b58f76890dbf7e21f95c3ec17eaba59499f2"
     },
     {
       "template_id": "founder.Y_ANSWER.1",
       "relation": "founder",
       "set": "Y",
       "kind": "Y_ANSWER",
-      "text": "{A} is a person.",
-      "normalized": "<answer> is a person",
-      "normalized_sha256": "7b1c1412d3fc8f29c7a0a0885211e6a957afcff7b6717800ed8a0cfe1df3a2a6"
+      "text": "A person: {A}.",
+      "normalized": "a person <answer>",
+      "normalized_sha256": "275c8caf2ab8bda4247259781a4a0a302ffb24a0080445bcf6046c30a5fbf5b8"
     },
     {
       "template_id": "river.TRAIN.1",
@@ -294,24 +294,24 @@
       "relation": "river",
       "set": "Y",
       "kind": "Y_ENTITY",
-      "text": "{E} lies beside a river.",
-      "normalized": "<entity> lies beside a river",
-      "normalized_sha256": "a08cc862e3b68f66ff8be5e2283d1f3ef3f6f0abf6792031fe4b6bdfb5a3b2d5"
+      "text": "{E} has a river.",
+      "normalized": "<entity> has a river",
+      "normalized_sha256": "1b7a623826e7d5e8e187b78e750deb02d12f66032635a9c5de5d252fbd05efa8"
     },
     {
       "template_id": "river.Y_ANSWER.1",
       "relation": "river",
       "set": "Y",
       "kind": "Y_ANSWER",
-      "text": "The {A} is a river.",
-      "normalized": "the <answer> is a river",
-      "normalized_sha256": "66d8a13a938af59787f8982fe51490e982ddf5a9c64fc37bf8eb87d2807af5f3"
+      "text": "A river: {A}.",
+      "normalized": "a river <answer>",
+      "normalized_sha256": "92a3dcce81042daf25570fb26f361e760c0165b57f5e43f0c8f601ddd07858d2"
     }
   ],
   "template_freeze": {
     "normalization": "replace {E} by <ENTITY> and {A} by <ANSWER>, lowercase, replace every character outside [a-z0-9<> ] by a space, collapse spaces",
     "identity": "normalized_sha256 of every template; template_set_sha256 = SHA-256 of the sorted normalized_sha256 values joined by '\\n'",
-    "template_set_sha256": "0ba13680f2194eba980bda56d3fb598a6e17ebb0e0779abdb47f53291cf506bb"
+    "template_set_sha256": "2b52411326c218e9c51d947b2f4e0d77b0cdd5d6237f9ce25b57a872c48ce28f"
   },
   "candidates": {
     "way": 4,
@@ -341,9 +341,14 @@
         ]
       }
     },
-    "L3_unread_fact": {
+    "L3a_unread_fact": {
       "rule": "occurrences (case-insensitive substring) of every unread entity and every unread answer in train_F, train_S, train_Y and anchor_text",
       "limit": 0
+    },
+    "L3b_learned_answer_in_anchor": {
+      "rule": "occurrences (case-insensitive substring) of every learned answer in anchor_text; keeps the exposure of arm A to every candidate equal to that of F",
+      "limit": 0,
+      "added": "round 2, 2026-11-12"
     },
     "L4_question_text": {
       "rule": "instantiated DEV / TEST question strings occurring verbatim in any training corpus",
@@ -359,7 +364,8 @@
     },
     "command": "python -m metrix.e1_pilot.check_leakage --data <DATA_DIR> --split-manifest metrix/e1-pilot/SPLIT_MANIFEST.json --out <DATA_DIR>/leakage_report.json",
     "exit_code": "0 only if every check is within its limit",
-    "test_split": "L1 and L2 use templates only; L3-L5 run on TEST questions only after test_qa.jsonl is generated"
+    "test_split": "L1 and L2 use templates only; L3a, L3b, L4, L5 run on TEST questions only after test_qa.jsonl is generated",
+    "generation_rule": "names occurring in anchor_text are rejected when they are generated (DATA_MANIFEST.json: name_generation.anchor_rule), so L3a and L3b hold by construction; the checks still run"
   },
   "hashing": {
     "encoding": "UTF-8",

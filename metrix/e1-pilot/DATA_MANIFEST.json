@@ -130,10 +130,13 @@
         10
       ],
       "reject_if": [
-        "tokenizes to a single token with a leading space",
-        "equals an accepted string (case-insensitive)",
-        "shares its first 4 characters with an accepted string",
-        "Levenshtein distance <= 1 to an accepted string"
+        "equals an accepted string after lowercasing both",
+        "same first 4 characters as an accepted string (case-sensitive)",
+        "Levenshtein distance <= 1 to an accepted string after lowercasing both"
+      ],
+      "form_rules": [
+        "length_chars",
+        "len(encode(' ' + s)) > 1 (not a single token with a leading space)"
       ]
     },
     "random": {
@@ -151,12 +154,49 @@
       ],
       "reject_if": [
         "equals an accepted string",
-        "same letter block as an accepted string",
+        "same letter block as an accepted string (letter block = the part before '-'; the whole string if it has no '-')",
         "Hamming distance <= 1 to an accepted string of the same length"
+      ],
+      "form_rules": [
+        "length_chars"
       ]
     },
-    "order": "cells in the order relations x strata; within a cell entities first, then answers; learned before unread",
-    "answer_token_length_rule": "all answers of a cell (learned and unread) have the same token count in the statement context (leading space) and the same token count in the QA context (start of the assistant turn); the target pair of counts is the most frequent pair among the first 400 candidate strings of the cell (ties: smaller counts)"
+    "order": "cells in the order relation (capital, currency, founder, river) x stratum (natural, random); within a cell entities first, then answers; within a role the first 15 accepted strings are learned, the next 5 unread",
+    "answer_token_length_rule": {
+      "survey": "from the start of the answer stream, the first 400 draws that satisfy the form rules (reject_if and the anchor rule are NOT applied; repeats count); count (K_st, K_qa); target = the most frequent pair, ties broken by the smaller pair compared as a tuple",
+      "accept": "RESTART the answer stream (a new generator with the same purpose, not continuing after the survey); accept in order the draws that satisfy the form rules, have (K_st, K_qa) == target and satisfy reject_if and the anchor rule, until 20 are accepted",
+      "purpose": "all 20 answers of a cell have the same token counts in both contexts, so candidate scoring compares sequences of equal length"
+    },
+    "draw": {
+      "natural": "n = 2 if rng.random() < 0.5 else 3; concatenate n times rng.choice(onsets) + rng.choice(nuclei) + rng.choice(codas); capitalize the first letter",
+      "random": "u = rng.random(); L = 3 if u < 0.25 else 4 if u < 0.75 else 5; L times rng.choice(letters); '-'; 2 times rng.choice(digits)"
+    },
+    "streams": {
+      "entity": "rng_rule(DATA_SEED, 'names:<relation>:<stratum>:entity')",
+      "answer": "rng_rule(DATA_SEED, 'names:<relation>:<stratum>:answer')",
+      "stratum_spelling": "natural | random",
+      "note": "one independent stream per cell and role"
+    },
+    "accepted_strings_scope": "every string accepted so far, in any cell, either role and either stratum",
+    "anchor_rule": "reject a string that occurs (case-insensitive substring) in the anchor text of 2.7 (the 512 decoded texts of at most 128 tokens); the anchor text is therefore built before the names",
+    "token_counts": {
+      "K_st": "len(encode(' ' + s)) - statement context",
+      "K_qa": "len(encode(s)) - QA context, start of the assistant turn",
+      "encode": "pinned tokenizer, add_special_tokens=False"
+    },
+    "entity_procedure": "draw from the entity stream in order; accept draws that satisfy the form rules, reject_if and the anchor rule, until 20 are accepted",
+    "max_draws_per_stream": 20000,
+    "on_exhaustion": "IMPLEMENTATION_FAIL",
+    "reference_implementation": "metrix/e1-pilot/reports/round2/names.py",
+    "expected_facts_canonical_sha256": "406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97",
+    "expected_facts_fields": [
+      "fact_id",
+      "exposure",
+      "relation",
+      "stratum",
+      "entity",
+      "answer"
+    ]
   },
   "s_permutation": "per cell, a derangement of the 15 learned answers drawn with rng_rule(DATA_SEED, 's-permutation:<relation>:<stratum>'); redraw until no fixed point",
   "templates": {

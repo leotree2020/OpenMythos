@@ -40,9 +40,11 @@
       "gpu": "NVIDIA A100 80GB",
       "count": 1,
       "decided": "Metrix instruction, round 1 item 8, 2026-11-12",
-      "rule": "all 30 training runs and every model evaluation run on one NVIDIA A100 80GB; no model training or evaluation on CPU; every run of the pilot reports the same torch.cuda.get_device_name(0)",
+      "rule": "all 30 training runs and every model evaluation run on one NVIDIA A100 80GB; no model training or evaluation on CPU",
       "check": "torch.cuda.get_device_name(0) starts with 'NVIDIA A100' and torch.cuda.get_device_properties(0).total_memory >= 79 * 2**30; otherwise BLOCKED (ST8)",
-      "cpu_use": "data generation, leakage checks and tokenizer checks only"
+      "cpu_use": "data generation, leakage checks and tokenizer checks only",
+      "device_name_rule": "record the full device name torch.cuda.get_device_name(0) at the first model load (e.g. 'NVIDIA A100-SXM4-80GB'); read it again at the start of every training or evaluation run; it must equal the recorded name exactly; otherwise the whole batch is void: every result of this pilot is discarded, status BLOCKED, restart from step 3 of section 8 (ST9)",
+      "changed": "round 2, 2026-11-12: device-name rule replaces 'every run reports the same device name'"
     },
     "wall_clock_limit_gpu_hours": 4,
     "wall_clock_scope": "cumulative GPU wall-clock from the first model load to the end of the TEST evaluation; above the limit: ST7"
