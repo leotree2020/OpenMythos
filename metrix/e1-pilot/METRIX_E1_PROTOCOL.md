@@ -7,7 +7,7 @@
 | 本文件的作用 | 执行 E1-PILOT 只需要本文件、同目录三个 JSON,以及第 0 节固定的外部来源 |
 | 本文件不包含 | 任何训练、评测结果或结论;任何 TEST 数据 |
 
-Task Order 与其 “Mandatory consistency amendments A–L” 同时生效;两者冲突处以修订条款为准。据此:fact 聚合函数固定为 mean;Gate 0 只使用 TRAIN 与 DEV;模型已由 Project Owner 指定;PENDING_REVIEW_GATE 只剩第 13 节的 3 项。
+Task Order 与其 “Mandatory consistency amendments A–L” 同时生效;两者冲突处以修订条款为准。据此:fact 聚合函数固定为 mean;Gate 0 只使用 TRAIN 与 DEV;模型已由 Project Owner 指定;算力已决定(一张 NVIDIA A100 80GB,GPU wall-clock 上限 4 小时,见第 7、8、13 节);PENDING_REVIEW_GATE 只剩第 13 节的 2 项。
 
 ## 0. 标识、出处与环境
 
@@ -37,7 +37,7 @@ Task Order 与其 “Mandatory consistency amendments A–L” 同时生效;两�
 **种子**:`DATA_SEED = 20261110`,`CANDIDATE_SEED = 20261111`,`TRAIN_SEEDS = [101, 202, 303]`,`BOOTSTRAP_SEED = 20261112`。所有随机数都来自
 `random.Random(int.from_bytes(sha256(f"{SEED}:{purpose}".encode("utf-8")).digest()[:8], "big"))`,`purpose` 在各处写明。结果不好不得换种子。
 
-**环境要求**:全参微调(F、A、S、Y)在 FP32 下需要约 4 × 6.9 GB(权重、梯度、AdamW 两个动量)再加激活,所以执行机器必须有 ≥ 40 GB 显存的单张 GPU,或 ≥ 48 GB 内存的 CPU 机器。不满足即 BLOCKED,不得改用更小的模型或改变精度来绕过。确定性:`torch.use_deterministic_algorithms(True)`,关闭 TF32,`CUBLAS_WORKSPACE_CONFIG=:4096:8`。
+**环境要求**:所有模型训练与评测只在**一张 NVIDIA A100 80GB** 上执行(型号写死,检查方法与显存估计见第 7 节);CPU 只做数据生成、泄漏检查与分词器检查。不满足即 BLOCKED,不得改用更小的模型或改变精度来绕过。确定性:`torch.use_deterministic_algorithms(True)`,关闭 TF32,`CUBLAS_WORKSPACE_CONFIG=:4096:8`。
 
 **哈希**:JSON 的规范化序列为 `json.dumps(obj, sort_keys=True, ensure_ascii=False, separators=(",", ":"), allow_nan=False)` 的 UTF-8 字节;JSONL 为每行一个规范化对象、以 `\n` 连接并以一个 `\n` 结尾;算法 SHA-256。`byte_sha256` 是文件原样字节的哈希,`canonical_sha256` 是解析后内容的规范化序列的哈希;后者标识内容,前者标识文件。
 
@@ -252,11 +252,19 @@ E1-PILOT 只有一个训练阶段:Retention 记为 NOT_TESTED,不进任何门槛
 | checkpoint | 每次训练只保留并评测最终 checkpoint;中间 checkpoint 不用于任何判断 |
 | early stopping | 不允许 |
 | Y 的训练量 | 对它的 240 句读 20 遍,batch 16,同为 300 步;token 数比见 2.6 |
+| 硬件(已决定) | 一张 NVIDIA A100 80GB;30 次训练与全部模型评测都在这一型号上执行;CPU 不执行任何模型训练或评测;同一次 Pilot 内每次运行记录的 `torch.cuda.get_device_name(0)` 必须相同 |
+| GPU wall-clock 上限(已决定) | 4 小时:从第一次加载模型到 TEST 评测结束的累计 GPU 时间;超过即 ST7 |
 
 锚文本的前向计算是 A 的额外算力,单独记入 compute accounting,不算事实 token。
 
-**搜索空间(与 `SEARCH_SPACE.json` 逐字一致)**
+**算力决定与显存估计**(决定来源:Metrix 指令 Round 1 第 8 项,2026-11-12;参数量由 `config.json` 与 safetensors 头信息核实,见 `reports/ROUND1_REPORT.md` 任务 3):
+- 唯一参数 1,720,574,976(词嵌入与输出层共享;文件里另存的 `lm_head.weight` 在加载时与词嵌入绑定)。FP32 一份 = 6.88 GB。
+- F、S、Y:权重 + 梯度 + AdamW 两个动量 = 4 份 = 27.5 GB。A:再加冻结的 base 副本 = 5 份 = 34.4 GB。L:冻结权重 6.88 GB + 适配器(秩 32 时 3,486 万参数 × 4 份)0.56 GB。N:6.88 GB。
+- 另加 bf16 autocast 的权重副本 ≤ 3.4 GB,A 的锚文本 logits(4 × 128 token、两个模型)约 1.2 GB;批次 8 × ≤ 32 token 的激活 < 1 GB。最大的 arm A 合计约 39 GB,在 80 GB 上余量约 41 GB。
 
+**搜索空间(与 `SEARCH_SPACE.json` 逐字一致;校验只比较两个标记之间的那一个 json 块)**
+
+<!-- BEGIN INLINE COPY: SEARCH_SPACE.json -->
 ```json
 {
   "protocol": "METRIX-E1-PILOT",
@@ -295,7 +303,17 @@ E1-PILOT 只有一个训练阶段:Retention 记为 NOT_TESTED,不进任何门槛
     "precision": "bfloat16 autocast with float32 master weights",
     "checkpoint_policy": "only the final checkpoint of a run is kept and evaluated; no intermediate checkpoint is used for anything",
     "early_stopping": "not allowed",
-    "primary_training_token_budget": "20 passes over the 120 TRAIN statements for F, L, A and S (identical statements up to the S permutation); Y: 20 passes over its 240 sentences with batch 16 (300 steps); Y tokens / F tokens must lie in [0.80, 1.25]"
+    "primary_training_token_budget": "20 passes over the 120 TRAIN statements for F, L, A and S (identical statements up to the S permutation); Y: 20 passes over its 240 sentences with batch 16 (300 steps); Y tokens / F tokens must lie in [0.80, 1.25]",
+    "hardware": {
+      "gpu": "NVIDIA A100 80GB",
+      "count": 1,
+      "decided": "Metrix instruction, round 1 item 8, 2026-11-12",
+      "rule": "all 30 training runs and every model evaluation run on one NVIDIA A100 80GB; no model training or evaluation on CPU; every run of the pilot reports the same torch.cuda.get_device_name(0)",
+      "check": "torch.cuda.get_device_name(0) starts with 'NVIDIA A100' and torch.cuda.get_device_properties(0).total_memory >= 79 * 2**30; otherwise BLOCKED (ST8)",
+      "cpu_use": "data generation, leakage checks and tokenizer checks only"
+    },
+    "wall_clock_limit_gpu_hours": 4,
+    "wall_clock_scope": "cumulative GPU wall-clock from the first model load to the end of the TEST evaluation; above the limit: ST7"
   },
   "arms": {
     "N": {
@@ -463,11 +481,13 @@ E1-PILOT 只有一个训练阶段:Retention 记为 NOT_TESTED,不进任何门槛
   }
 }
 ```
+<!-- END INLINE COPY: SEARCH_SPACE.json -->
 
 ## 8. Gate 0 — Pipeline Qualification(只用 TRAIN 与 DEV)
 
 **执行顺序**(每一步的停止规则见第 11 节):
-1. 记录环境与出处;生成除 TEST 以外的数据,把哈希写入两个 manifest 并提交。
+1. 记录环境与出处;在 CPU 上生成除 TEST 以外的数据,把哈希写入两个 manifest 并提交。
+   GPU 检查(第 7 节):`torch.cuda.get_device_name(0)` 以 `NVIDIA A100` 开头且 `total_memory ≥ 79 GiB`,否则 BLOCKED(ST8);从此刻第一次加载模型起累计 GPU wall-clock。
 2. 运行泄漏检查。
 3. 评测 N:TRAIN 闭卷、DEV-QA、general DEV。
 4. F 的 6 个配置(种子 101)→ 选定 → 用选定配置检查阳性对照。
@@ -475,6 +495,8 @@ E1-PILOT 只有一个训练阶段:Retention 记为 NOT_TESTED,不进任何门槛
 6. F、L、A 的另外两个种子;S、Y 各三个种子。
 7. 按下表判定 Gate 0。
 8. Gate 0 通过后:提交冻结记录(选定配置、数据哈希、checkpoint 哈希)→ 生成 `test_qa.jsonl` 与 `general_test.jsonl` → 对 TEST 运行 L3–L5 → **TEST 只评一次**。
+
+**算力边界**:第 3–8 步全部在同一型号的一张 NVIDIA A100 80GB 上执行,累计 GPU wall-clock ≤ 4 小时(第 7 节);任何一步若会使累计时间超过上限,按 ST7 停下,不得静默继续,也不得为节省时间删减本节的任何一步。
 
 **Gate 0 门槛(全部为数值;“seed-average” 见第 6 节)**
 
@@ -563,7 +585,7 @@ Compute accounting 的算法:训练 FLOPs ≈ 6 · P · T,前向 FLOPs ≈ 2 · 
 | ST4 | Y 不满足 G0.7 | Style-only 泄漏:停;不生成 TEST |
 | ST5 | S 不满足 G0.6 | Shuffled control 出现真实映射提升:停;不生成 TEST |
 | ST6 | 任一次训练或评测出现非有限值 | 停该次;若发生在选定配置或对照上,IMPLEMENTATION_FAIL |
-| ST7 | 累计 wall-clock 超过上限(第 13 节第 3 项) | 停并报告进度;转 GPU 或降级需 Owner 决定,不得静默继续 |
+| ST7 | 累计 GPU wall-clock 超过 4 小时(第 7 节) | 停并报告进度;延长上限、换硬件或降级都需 Owner 决定并记录,不得静默继续 |
 | ST8 | 环境不满足第 0 节 | BLOCKED |
 
 ## 12. Out of Scope
@@ -575,12 +597,13 @@ Compute accounting 的算法:训练 FLOPs ≈ 6 · P · T,前向 FLOPs ≈ 2 · 
 - NONE / 拒答校准。
 - 探索沙盒(SANDBOX)。
 
-## 13. Open Questions for Review Gate(PENDING_REVIEW_GATE 仅此 3 项)
+## 13. Open Questions for Review Gate(PENDING_REVIEW_GATE 仅此 2 项)
 
 | # | 字段 | PROPOSED | 理由 |
 |---|---|---|---|
 | 1 | E1-V1 目标 fact 数 | 320(240 learned + 80 unread),并在 Pilot 后按 G0.10 的公式重算 | 若配对差的标准差为 0.5,检出 0.10 的差需要约 196 条 learned fact;取 240 留余量 |
 | 2 | general-damage non-inferiority margin | dNLL ≤ +0.03(约 +3% PPL) | 与本仓库此前实验使用的容忍幅度一致;Pilot 里 general damage 只报告,不进门槛 |
-| 3 | CPU wall-clock 上限 | 内存 < 48 GB 的 CPU 机器上限为 0(不执行全参微调的 arm);整个 Pilot 在 ≥ 40 GB 显存的单张 GPU 上执行,GPU wall-clock 上限 4 小时 | FP32 全参微调需要约 27.5 GB 加激活(第 0 节的算术);超过上限按 ST7 处理 |
+
+**已决定,不再待定**:原第 3 项“CPU wall-clock 上限”由 Metrix 指令 Round 1 第 8 项(2026-11-12)决定:CPU 不执行任何模型训练或评测(CPU wall-clock 上限对模型计算为 0);整个 Pilot 在一张 NVIDIA A100 80GB 上执行,型号写死,GPU wall-clock 上限 4 小时(第 7、8、11 节)。
 
 其余可执行参数都已写死或标为 PROPOSED;Review Gate 可以改动一次,PROTOCOL_FROZEN 之后任何门槛、split 规则、指标、搜索预算或 Gate 定义的改动都必须开新协议版本。

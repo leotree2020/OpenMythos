@@ -35,7 +35,17 @@
     "precision": "bfloat16 autocast with float32 master weights",
     "checkpoint_policy": "only the final checkpoint of a run is kept and evaluated; no intermediate checkpoint is used for anything",
     "early_stopping": "not allowed",
-    "primary_training_token_budget": "20 passes over the 120 TRAIN statements for F, L, A and S (identical statements up to the S permutation); Y: 20 passes over its 240 sentences with batch 16 (300 steps); Y tokens / F tokens must lie in [0.80, 1.25]"
+    "primary_training_token_budget": "20 passes over the 120 TRAIN statements for F, L, A and S (identical statements up to the S permutation); Y: 20 passes over its 240 sentences with batch 16 (300 steps); Y tokens / F tokens must lie in [0.80, 1.25]",
+    "hardware": {
+      "gpu": "NVIDIA A100 80GB",
+      "count": 1,
+      "decided": "Metrix instruction, round 1 item 8, 2026-11-12",
+      "rule": "all 30 training runs and every model evaluation run on one NVIDIA A100 80GB; no model training or evaluation on CPU; every run of the pilot reports the same torch.cuda.get_device_name(0)",
+      "check": "torch.cuda.get_device_name(0) starts with 'NVIDIA A100' and torch.cuda.get_device_properties(0).total_memory >= 79 * 2**30; otherwise BLOCKED (ST8)",
+      "cpu_use": "data generation, leakage checks and tokenizer checks only"
+    },
+    "wall_clock_limit_gpu_hours": 4,
+    "wall_clock_scope": "cumulative GPU wall-clock from the first model load to the end of the TEST evaluation; above the limit: ST7"
   },
   "arms": {
     "N": {

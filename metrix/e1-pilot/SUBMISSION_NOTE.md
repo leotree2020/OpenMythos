@@ -33,15 +33,15 @@
 | I 复现容差数值化 | 第 8 节 G0.8 |
 | J Git 出处 | 第 0 节 |
 | K 规范化哈希 | 第 0 节;两个 manifest 的 `hashing` |
-| L PENDING 只剩 3 项 | 第 13 节 |
+| L PENDING 只剩 2 项(算力已于 2026-11-12 决定) | 第 7、8、13 节 |
 
 模型:Project Owner 于 2026-11-10 指定 `Qwen/Qwen3-1.7B`(revision 见协议第 0 节),因此不是待定项。
 
-## 3. 需要 Review Gate 拍板的字段(PENDING_REVIEW_GATE,共 3 项)
+## 3. 需要 Review Gate 拍板的字段(PENDING_REVIEW_GATE,共 2 项)
 
 1. **E1-V1 目标 fact 数** — PROPOSED:320(240 learned + 80 unread),Pilot 后按 G0.10 的公式重算。理由:配对差标准差取 0.5 时,检出 0.10 的差约需 196 条 learned fact。
 2. **general-damage non-inferiority margin** — PROPOSED:dNLL ≤ +0.03(约 +3% PPL)。理由:与本仓库此前使用的容忍幅度一致;Pilot 中只报告。
-3. **CPU wall-clock 上限** — PROPOSED:内存 < 48 GB 的 CPU 机器上限为 0;整个 Pilot 在 ≥ 40 GB 显存的单张 GPU 上执行,上限 4 小时。理由:FP32 全参微调需要约 27.5 GB 加激活。
+(原第 3 项“CPU wall-clock 上限”已由 Metrix 指令 2026-11-12 决定:一张 NVIDIA A100 80GB,GPU wall-clock 上限 4 小时,CPU 不做模型计算;不再待定。)
 
 ## 4. Reviewer 应重点看的三处
 
@@ -54,13 +54,23 @@
 ```bash
 cd metrix/e1-pilot
 python3 -c "import json;[json.load(open(f)) for f in ('DATA_MANIFEST.json','SPLIT_MANIFEST.json','SEARCH_SPACE.json')];print('json ok')"
-# 内联副本与 SEARCH_SPACE.json 一致
+# 内联副本与 SEARCH_SPACE.json 一致:只认两个标记之间的那一个 json 块,不抓文档里第一个 json 块
 python3 - <<'PY'
-import re
+import json
+BEGIN = '<!-- BEGIN INLINE COPY: SEARCH_SPACE.json -->'
+END = '<!-- END INLINE COPY: SEARCH_SPACE.json -->'
 doc = open('METRIX_E1_PROTOCOL.md', encoding='utf-8').read()
-block = re.search(r"```json\n(.*?)```", doc, re.S).group(1)
-assert block == open('SEARCH_SPACE.json', encoding='utf-8').read(), 'inline copy differs'
-print('inline copy identical')
+assert doc.count(BEGIN) == 1 and doc.count(END) == 1, 'need exactly one BEGIN and one END marker'
+i, j = doc.index(BEGIN) + len(BEGIN), doc.index(END)
+assert i < j, 'END marker before BEGIN marker'
+inner = doc[i:j]
+head, tail = '\n```json\n', '```\n'
+assert inner.startswith(head) and inner.endswith(tail), 'the marked region must be exactly one fenced json block'
+block = inner[len(head):-len(tail)]
+assert '```' not in block, 'more than one fenced block between the markers'
+json.loads(block)
+assert block == open('SEARCH_SPACE.json', encoding='utf-8').read(), 'inline copy differs from SEARCH_SPACE.json'
+print('inline copy identical (marked block)')
 PY
 # 模板哈希与 L1、L2 可重算:归一化规则见 SPLIT_MANIFEST.json: template_freeze
 git -C "$(git rev-parse --show-toplevel)" diff --stat 61d3c76705b28cc2ee334abc5bf1baaac4fc30dc HEAD -- . ':(exclude)metrix'    # 应为空:除 metrix/ 外没有改动
@@ -77,5 +87,5 @@ git -C "$(git rev-parse --show-toplevel)" diff --stat 61d3c76705b28cc2ee334abc5b
 - [x] Gate 0 全部门槛为数字,非描述。
 - [x] Failure taxonomy 为固定集合,含升级规则。
 - [x] `SEARCH_SPACE.json` 与文档内联副本一致。
-- [x] PENDING_REVIEW_GATE 项为 3,全部落在允许列表内。
+- [x] PENDING_REVIEW_GATE 项为 2,全部落在允许列表内。
 - [x] 本文件列出:改了哪些文件、哪些字段需要 Review Gate 拍板、Reviewer 应重点看哪三处。
