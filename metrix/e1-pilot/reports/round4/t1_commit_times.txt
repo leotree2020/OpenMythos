@@ -1,0 +1,20 @@
+# Round 4 task 1 raw output: commit times for protocol section 14 (committer time, git %cI). Host vm, CPU only. Sat Nov 21 05:05:32 UTC 2026
+$ git log -1 --format='%H %aI %cI %s' 6675af63
+6675af63d770594704ff1f0b9a8cd358dd6e5cc6 2026-11-12T14:43:19+00:00 2026-11-12T14:43:19+00:00 metrix: E1-PILOT round 2 (Y ratio, name rules, L3b, device-name rule, change log)
+$ git log -1 --format='%H %aI %cI %s' 596fcfad
+596fcfad4b73fdddad607ab6bc28d4c128f3744b 2026-11-12T15:58:48+00:00 2026-11-12T15:58:48+00:00 metrix: E1-PILOT round 3 tasks 3-8 (outside-metrix check, special tokens, scoring prefix, checks)
+$ git log -1 --format='%H %aI %cI %s' 8ce8c896
+8ce8c896e07cc8c8f37ea3551bfa0034e979d2f7 2026-11-12T15:25:19+00:00 2026-11-12T15:25:19+00:00 metrix: declare Metrix as independent sub-project in charter; add metrix/CLAUDE.md and reviewer/auditor subagents
+$ git log -1 --format='%H %aI %cI %s' b1f5889cc51e3fee5aeeebe77515dfd17c312084
+b1f5889cc51e3fee5aeeebe77515dfd17c312084 2026-11-21T05:05:03+00:00 2026-11-21T05:05:03+00:00 metrix: E1-PILOT round 4 tasks 1-3 (Review Gate rulings, MINOR fixes, CLAUDE.md section 9)
+$ TZ=Asia/Tokyo git log -1 --date=iso-local --format="%cd" 8ce8c896   (JST view of the charter section 6 commit)
+2026-11-13 00:25:19 +0900
+$ git show 8ce8c896:CLAUDE.md | grep -n "^## 6"
+46:## 6. Metrix 子项目(2026-11-13 负责人决定)
+# which commits changed the protocol body cited by the v1-r2 and v1-r3 rows:
+$ git log --format="%h %cI %s" 61d3c767..b1f5889cc51e3fee5aeeebe77515dfd17c312084 -- metrix/e1-pilot/METRIX_E1_PROTOCOL.md
+b1f5889 2026-11-21T05:05:03+00:00 metrix: E1-PILOT round 4 tasks 1-3 (Review Gate rulings, MINOR fixes, CLAUDE.md section 9)
+596fcfa 2026-11-12T15:58:48+00:00 metrix: E1-PILOT round 3 tasks 3-8 (outside-metrix check, special tokens, scoring prefix, checks)
+6675af6 2026-11-12T14:43:19+00:00 metrix: E1-PILOT round 2 (Y ratio, name rules, L3b, device-name rule, change log)
+a9dd523 2026-11-12T14:26:49+00:00 metrix: E1-PILOT round 1 checks (CPU only) and report
+aa0423e 2026-11-10T15:48:18+00:00 metrix: E1-PILOT protocol for review (authoring only)
