@@ -1,0 +1,66 @@
+# Round 4 task 6 raw output: timeline of the blind test and of the task-5 reviews, and sha256 commitments of the local-only blind-test records (their content is not in the repository). Host vm. Sat Nov 21 05:40:21 UTC 2026
+$ TZ=UTC git reflog --date=iso-strict HEAD | head -n 20
+2253be9 HEAD@{2026-11-21T05:24:43+00:00}: checkout: moving from wip-e to metrix-e1-pilot-protocol-v1
+4d0f247 HEAD@{2026-11-21T05:23:34+00:00}: checkout: moving from wip-d to wip-e
+26b4e74 HEAD@{2026-11-21T05:21:59+00:00}: checkout: moving from wip-c to wip-d
+ac92fbf HEAD@{2026-11-21T05:20:20+00:00}: checkout: moving from wip-b to wip-c
+8e7e124 HEAD@{2026-11-21T05:19:09+00:00}: checkout: moving from wip-a to wip-b
+7716bac HEAD@{2026-11-21T05:17:48+00:00}: checkout: moving from metrix-e1-pilot-protocol-v1 to wip-a
+2253be9 HEAD@{2026-11-21T05:05:39+00:00}: commit: metrix: E1-PILOT round 4, fill section 14 v1-r4 commit and time (b1f5889c)
+b1f5889 HEAD@{2026-11-21T05:05:03+00:00}: commit: metrix: E1-PILOT round 4 tasks 1-3 (Review Gate rulings, MINOR fixes, CLAUDE.md section 9)
+2985049 HEAD@{2026-11-21T05:00:48+00:00}: cherry-pick: metrix: E1-PILOT round 3 task 2 redo, append correction (agents and root CLAUDE.md load later)
+7e5dd9c HEAD@{2026-11-21T04:56:52+00:00}: checkout: moving from claude/metrix-e1-pilot-round4-minluk to metrix-e1-pilot-protocol-v1
+155430a HEAD@{2026-11-21T04:56:33+00:00}: checkout: moving from main to claude/metrix-e1-pilot-round4-minluk
+155430a HEAD@{2026-11-21T04:56:33+00:00}: checkout: moving from 155430a88d2a98322fc4c79b2a067792c3c9579a to main
+155430a HEAD@{2026-11-21T04:56:33+00:00}: 
+exit=0
+$ git for-each-ref --format="%(refname:short) %(objectname)" refs/heads/wip-a refs/heads/wip-b refs/heads/wip-c refs/heads/wip-d refs/heads/wip-e
+wip-a 7716bacfe6512698f0eb7eccf32480973d28497b
+wip-b 8e7e124a5e9285c0e6a0936c78d643ba5aeca69d
+wip-c ac92fbf56313ae74e24b483c3b72315ac0f750ee
+wip-d 26b4e74559dd868abe5e799b291219e0430688e6
+wip-e 4d0f247a8109f9afdbf53e0742d07fe6c72ced1c
+exit=0
+$ for b in a b c d e; do git log -1 --format="wip-$b %H parent=%P %s" wip-$b; done
+wip-a 7716bacfe6512698f0eb7eccf32480973d28497b parent=2253be94d77d41c5106d8074da578987d5b0a238 wip
+wip-b 8e7e124a5e9285c0e6a0936c78d643ba5aeca69d parent=2253be94d77d41c5106d8074da578987d5b0a238 wip
+wip-c ac92fbf56313ae74e24b483c3b72315ac0f750ee parent=2253be94d77d41c5106d8074da578987d5b0a238 wip
+wip-d 26b4e74559dd868abe5e799b291219e0430688e6 parent=2253be94d77d41c5106d8074da578987d5b0a238 wip
+wip-e 4d0f247a8109f9afdbf53e0742d07fe6c72ced1c parent=2253be94d77d41c5106d8074da578987d5b0a238 wip
+exit=0
+$ TZ=UTC ls -l --time-style=+%Y-%m-%dT%H:%M:%SZ /root/.blind_r4
+total 52
+-rw-r--r-- 1 root root 1071 2026-11-21T05:17:48Z prompt_wip-a.txt
+-rw-r--r-- 1 root root 1112 2026-11-21T05:17:48Z prompt_wip-b.txt
+-rw-r--r-- 1 root root 1334 2026-11-21T05:17:48Z prompt_wip-c.txt
+-rw-r--r-- 1 root root 1122 2026-11-21T05:17:48Z prompt_wip-d.txt
+-rw-r--r-- 1 root root 1345 2026-11-21T05:17:48Z prompt_wip-e.txt
+-rw-r--r-- 1 root root 4342 2026-11-21T05:19:08Z review_wip-a.md
+-rw-r--r-- 1 root root 4829 2026-11-21T05:20:19Z review_wip-b.md
+-rw-r--r-- 1 root root 3295 2026-11-21T05:21:58Z review_wip-c.md
+-rw-r--r-- 1 root root 4765 2026-11-21T05:23:33Z review_wip-d.md
+-rw-r--r-- 1 root root 2915 2026-11-21T05:24:41Z review_wip-e.md
+exit=0
+$ sha256sum /root/.blind_r4/*
+045481dd3fce09e4b8930114c52f4e23585a6d6e3ca871efeb42abf5c9826743  /root/.blind_r4/prompt_wip-a.txt
+cccad8a0b926534979f768352a8540534161de7e85c83578b25ed5131d1156d1  /root/.blind_r4/prompt_wip-b.txt
+039d61c4d7203c645cd8845ca6f42fa3f24de7e077ec3f707b63642086a7caa2  /root/.blind_r4/prompt_wip-c.txt
+801a9dab37be586b1949f7132d982c4ee434488941b5f082fcc5924ded7231ff  /root/.blind_r4/prompt_wip-d.txt
+342f3a06306a6540f892c536e452526afc338cfb1d088e3c9ee066fcec307c56  /root/.blind_r4/prompt_wip-e.txt
+26431712ab0d376fb52673b05eb7aa6a8da9806d7ae3dd1f0614eec38e03b1a9  /root/.blind_r4/review_wip-a.md
+22ce2274d35c21fc0d9a71544da6332eb862bdb4e44bbb8e0967ec49374493b1  /root/.blind_r4/review_wip-b.md
+1bb52004c874a86411632b385cbbfa95c06999f099238956d2ab5f3a72f9e6f5  /root/.blind_r4/review_wip-c.md
+94eb4679ed39b8155ca207c85a01d9b6aa6cc8d622ebe4ef5f6d7409c49cc84c  /root/.blind_r4/review_wip-d.md
+8c726d39bae331950e207a84457cac831afa9e70dfb1fd28ca9f9f90f49166c3  /root/.blind_r4/review_wip-e.md
+exit=0
+# Subagent runs: first and last event timestamp (UTC) in each subagent transcript of this session (Claude Code harness JSONL under ~/.claude/projects/.../subagents/, read with grep -o '"timestamp":...' | head -1 / tail -1). Labelled by role; internal agent ids omitted.
+task5-code-reviewer first=2026-11-21T05:07:03.722Z last=2026-11-21T05:14:23.032Z
+task5-data-auditor first=2026-11-21T05:07:03.736Z last=2026-11-21T05:16:32.946Z
+blind-wip-a first=2026-11-21T05:17:54.788Z last=2026-11-21T05:18:52.244Z
+blind-wip-b first=2026-11-21T05:19:14.599Z last=2026-11-21T05:20:04.129Z
+blind-wip-c first=2026-11-21T05:20:26.290Z last=2026-11-21T05:21:47.446Z
+blind-wip-d first=2026-11-21T05:22:05.061Z last=2026-11-21T05:23:17.430Z
+blind-wip-e first=2026-11-21T05:23:40.166Z last=2026-11-21T05:24:25.202Z
+report-commit-code-reviewer first=2026-11-21T05:27:42.188Z last=2026-11-21T05:37:41.554Z
+$ TZ=UTC ls -lt --time-style=+%Y-%m-%dT%H:%M:%SZ metrix/e1-pilot/audit/stdout/2253be94d77d41c5106d8074da578987d5b0a238/ | sed -n 2p   (newest auditor stdout file)
+-rw-r--r-- 1 root root  796 2026-11-21T05:14:44Z 12_diff_executor_verify_r3_r4.txt

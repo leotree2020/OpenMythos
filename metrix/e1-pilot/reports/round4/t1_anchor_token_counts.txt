@@ -1,0 +1,16 @@
+# Round 4: token counts of the 512 anchor texts (protocol 2.7: each document cut to its first 128 tokens and decoded; here the decoded text is re-encoded). Host vm, CPU only, tokenizer only. Sat Nov 21 05:10:10 UTC 2026
+$ ./venv/bin/python - (run from <SCRATCH>; inline script; reads <SCRATCH>/r4/anchor.json written by reports/round2/anchor_check.py)
+documents: 512
+re-encoded token counts: min 123 max 128
+histogram: [(123, 1), (128, 511)]
+documents with exactly 128 tokens: 511
+# Added Sat Nov 21 05:41:59 UTC 2026 when committing: the inline script was not written to the file at run time. Its text, transcribed from the session transcript (grep -v PyTorch was applied to the output):
+#     import json, collections
+#     from transformers import AutoTokenizer
+#     tok = AutoTokenizer.from_pretrained("qwen_tok")
+#     texts = json.load(open("r4/anchor.json", encoding="utf-8"))["texts"]
+#     n = [len(tok.encode(t, add_special_tokens=False)) for t in texts]
+#     print("documents:", len(n))
+#     print("re-encoded token counts: min %d max %d" % (min(n), max(n)))
+#     print("histogram:", sorted(collections.Counter(n).items()))
+#     print("documents with exactly 128 tokens:", sum(x == 128 for x in n))

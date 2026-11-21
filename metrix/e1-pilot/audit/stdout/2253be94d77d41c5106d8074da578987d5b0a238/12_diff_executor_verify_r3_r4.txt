@@ -1,0 +1,7 @@
+# Data Auditor run. host vm, CPU only (no GPU, no torch, tokenizer files only); 2026-11-21 05:14:44 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit
+# stdout and stderr merged, complete, unedited
+$ bash -c diff\ \<\(tail\ -n\ +5\ ../reports/round3/t7_verify_scoring.txt\)\ \<\(tail\ -n\ +5\ ../reports/round4/t2_verify_scoring.txt\)\ \&\&\ echo\ \"bodies\ identical\"\;\ head\ -4\ ../reports/round3/t7_verify_scoring.txt\ \|\ tail\ -1\;\ head\ -4\ ../reports/round4/t2_verify_scoring.txt\ \|\ tail\ -1
+bodies identical
+$ python reports/round3/verify_scoring.py --facts <SCRATCH>/r3/facts.json --split-manifest SPLIT_MANIFEST.json --tokenizer-dir <TOK>
+$ python reports/round3/verify_scoring.py --facts <SCRATCH>/r4/facts.json --split-manifest SPLIT_MANIFEST.json --tokenizer-dir <TOK>
+exit=0

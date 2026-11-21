@@ -1,0 +1,46 @@
+# Data Auditor run. host vm, CPU only (no GPU, no torch, tokenizer files only); 2026-11-21 05:13:06 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/157f690a-eee2-5858-8b75-b3efebc1267b/scratchpad/venv/bin/python -I -B r4_scoring_em.py /tmp/claude-0/-home-user/157f690a-eee2-5858-8b75-b3efebc1267b/scratchpad/qwen_tok /tmp/claude-0/-home-user/157f690a-eee2-5858-8b75-b3efebc1267b/scratchpad/audit_r4/facts.json ../SPLIT_MANIFEST.json
+[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
+DEV templates: {"capital": ["What is the capital of {E}?", "{E} has which city as its capital?"], "currency": ["What currency do people use in {E}?", "In {E}, goods are paid for with which currency?"], "founder": ["Who founded {E}?", "{E} owes its founding to which person?"], "river": ["Which river flows through {E}?", "{E} stands on the banks of which river?"]}
+== tokenizer special tokens
+bos None None | eos '<|im_end|>' 151645 | pad '<|endoftext|>' 151643
+  id of <|endoftext|>: 151643
+  id of <|im_start|>: 151644
+  id of <|im_end|>: 151645
+  id of <think>: 151667
+  id of </think>: 151668
+encode with/without add_special_tokens equal: True
+generation_config.json of the pinned revision: {"bos_token_id": 151643, "do_sample": true, "eos_token_id": [151645, 151643], "pad_token_id": 151643, "temperature": 0.6, "top_k": 20, "top_p": 0.95, "transformers_version": "4.51.0"}
+chat('Q?') = "<|im_start|>user\nQ?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+encode('The answer is') = [785, 4226, 374] ['The', 'Ġanswer', 'Ġis']
+== EM context vs scoring context (all DEV questions x pool candidates)
+DEV questions: 320 | (question, pool candidate) scoring sequences: 4000
+questions where encode(chat(q)) != apply_chat_template(tokenize=True) ids: 0
+questions where encode(chat(q)) is not a token prefix of encode(EM context): 0
+questions where the tokens after chat(q) in the EM context != encode('The answer is'): 0
+SCORING SEQUENCES whose context tokens != EM-context tokens: 0
+scoring sequences whose scored tokens != encode(' '+c): 0
+questions where apply_chat_template(..., assistant 'The answer is', continue_final_message=True) text != EM context text: 0
+questions where the same with assistant 'The answer is ' + a_f != scoring text: 0
+== 240 pairs: scored ids of the true answer vs TRAIN-statement answer span
+pairs: 240 | TRAIN statements not token-aligned around ' '+answer: 0 | MISMATCHES: 0
+scored-token counts per cell: {'capital/natural': [3], 'capital/random': [5], 'currency/natural': [3], 'currency/random': [6], 'founder/natural': [3], 'founder/random': [5], 'river/natural': [3], 'river/random': [6]}
+example E1P-L-capital-nat-01 "The capital of Krultrouth is Linnuth." TRAIN answer ids [444, 6130, 940] | DEV q "What is the capital of Krultrouth?"
+  input_ids (28): [151644, 872, 198, 3838, 374, 279, 6722, 315, 16447, 360, 376, 2898, 30, 151645, 198, 151644, 77091, 198, 151667, 271, 151668, 271, 785, 4226, 374, 444, 6130, 940]
+  scored slice start 25 ids [444, 6130, 940] ['ĠL', 'inn', 'uth']
+== EM normalisation (section 5) on simulated greedy outputs
+answers whose norm != casefold: []
+distinct norm(answer) over 160 answers: 160
+answers with decode(encode(' '+a)) != ' '+a: []
+max K_st over answers: 6 (EM budget 16 new tokens)
+  output = decode(c', skip_special_tokens=False): (fact, candidate) 2000, EM != [c == a_f]: 0; outputs where removing leading spaces changes norm(): 0
+  output = decode(c', skip_special_tokens=True): (fact, candidate) 2000, EM != [c == a_f]: 0; outputs where removing leading spaces changes norm(): 0
+  output = decode(c' + '.', skip_special_tokens=False): (fact, candidate) 2000, EM != [c == a_f]: 0; outputs where removing leading spaces changes norm(): 0
+  output = decode(c' + '.', skip_special_tokens=True): (fact, candidate) 2000, EM != [c == a_f]: 0; outputs where removing leading spaces changes norm(): 0
+  output = decode(c' + '.' + '\n' + more text, skip_special_tokens=False): (fact, candidate) 2000, EM != [c == a_f]: 0; outputs where removing leading spaces changes norm(): 0
+  output = decode(c' + '.' + '\n' + more text, skip_special_tokens=True): (fact, candidate) 2000, EM != [c == a_f]: 0; outputs where removing leading spaces changes norm(): 0
+  output = decode(c' + '.' + im_end, skip_special_tokens=False): (fact, candidate) 2000, EM != [c == a_f]: 160; outputs where removing leading spaces changes norm(): 0
+  output = decode(c' + '.' + im_end, skip_special_tokens=True): (fact, candidate) 2000, EM != [c == a_f]: 0; outputs where removing leading spaces changes norm(): 0
+  example: " Linnuth.<|im_end|>" -> norm "linnuth.<|im_end|>" vs norm(a_f) "linnuth"
+exit=0

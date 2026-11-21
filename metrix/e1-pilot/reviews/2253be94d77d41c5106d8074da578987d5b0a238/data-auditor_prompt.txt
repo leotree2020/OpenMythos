@@ -1,0 +1,20 @@
+请对 Metrix E1-PILOT 第 4 轮的提交做独立数据审计,范围 7e5dd9c03f5bb9108ea640f2591015497fa70d5c..2253be94d77d41c5106d8074da578987d5b0a238(3 个提交,HEAD = 2253be94d77d41c5106d8074da578987d5b0a238)。完整 diff:/home/user/OpenMythos/metrix/e1-pilot/reviews/2253be94d77d41c5106d8074da578987d5b0a238/review_input.diff。Executor 的原始输出在 metrix/e1-pilot/reports/round4/。
+
+本轮改动涉及打分与评测定义:协议第 5 节 EM 改为从 chat(q) + "The answer is" 贪心解码、输出去掉开头空格后归一化;第 4 节 arm A 的 KL 与第 5 节 general damage 写明不前置特殊 token、t 从 2 起;第 5 节 s_ST 补定义 K' = K_st(c);DATA_MANIFEST.json 改了 3 个键(model.input_convention.em_generation、model.input_convention.general_text_and_anchor、name_generation.answer_token_length_rule.purpose);reports/round3/verify_scoring.py 与 outside_metrix_check.py 有小改动。SPLIT_MANIFEST.json 与 SEARCH_SPACE.json 未改。
+
+请用你自己在 metrix/e1-pilot/audit/ 下写的脚本(可以沿用你此前写在那里的脚本)独立复算,至少包括:
+A. 按协议第 2.2 节文字重新生成 160 条 fact,规范化 SHA-256 应为 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97;并确认 DATA_MANIFEST.json 在该范围内只改了上述 3 个键、生成规则没有变。锚文本哈希(此前为 8828bc4f…)。
+B. K'(第 5 节 s_ST):对 120 条 learned fact × 同 cell 的 15 个 learned 答案(1,800 对),prefix(f) 的 token 是否为 prefix(f) + " " + c 整串 token 的前缀、其后的 token 是否等于 encode(" " + c)、每个 cell 的 K' 是否唯一;与 reports/round4/t2_st_prefix_check.txt 比对。
+C. 打分与 EM 输入:EM 的上下文 chat(q) + "The answer is" 的 token 与候选打分上下文的 token 相同(全部 DEV 问句);240 对打分 token id 与 TRAIN 陈述句答案片段一致(与 reports/round4/t2_verify_scoring.txt 比对)。
+D. 候选可行性、模板哈希、L1–L5、split 计数是否与上一轮一致;SEARCH_SPACE.json 内联副本是否一致。L6 仍需 general_dev 与 parcae 分词器,若不在范围内请注明。
+
+环境(Executor 已准备,只含分词器,无模型权重,无 torch;请自己核对哈希):
+- Python:/tmp/claude-0/-home-user/157f690a-eee2-5858-8b75-b3efebc1267b/scratchpad/venv/bin/python(transformers 5.22.2、tokenizers、jinja2、pyarrow、huggingface_hub)
+- 分词器:/tmp/claude-0/-home-user/157f690a-eee2-5858-8b75-b3efebc1267b/scratchpad/qwen_tok(Qwen/Qwen3-1.7B@70d244cc86ccca08cf5af4e1e306ecf908b1ad5e 的 tokenizer 文件)
+- 锚文本源:/tmp/claude-0/-home-user/157f690a-eee2-5858-8b75-b3efebc1267b/scratchpad/r4/cache/data/sample-100BT/train/shard_00000.parquet
+- Executor 生成的 fact 在 /tmp/claude-0/-home-user/157f690a-eee2-5858-8b75-b3efebc1267b/scratchpad/r4/facts.json,只可用于最后的比对,不要作为你复算的输入。
+- 中间数据(你生成的 fact、锚文本等)可放在 /tmp/claude-0/-home-user/157f690a-eee2-5858-8b75-b3efebc1267b/scratchpad/audit_r4/,不要写进仓库。
+
+按 metrix/CLAUDE.md 第 9 节新增的规则:每次运行 audit 脚本的完整 stdout(开头写明命令行)都写入 metrix/e1-pilot/audit/stdout/2253be94d77d41c5106d8074da578987d5b0a238/,每次运行一个文件,不要只摘录。仓库中没有 PROTOCOL_FROZEN 文件:不要生成、读取或实例化任何 TEST 问句。
+
+请按你的输出格式给出每一项的命令、原始输出(可指向 stdout 文件)、与 Executor 是否一致,最后附 git status --short 原始输出与结论。

@@ -1,0 +1,708 @@
+# Review input for Round 4 task 5. Range 7e5dd9c03f5bb9108ea640f2591015497fa70d5c (origin/metrix-e1-pilot-protocol-v1 before round 4) .. 2253be94d77d41c5106d8074da578987d5b0a238. Generated Sat Nov 21 05:06:03 UTC 2026
+$ git log --format="%H %cI %s" 7e5dd9c..2253be94d77d41c5106d8074da578987d5b0a238
+2253be94d77d41c5106d8074da578987d5b0a238 2026-11-21T05:05:39+00:00 metrix: E1-PILOT round 4, fill section 14 v1-r4 commit and time (b1f5889c)
+b1f5889cc51e3fee5aeeebe77515dfd17c312084 2026-11-21T05:05:03+00:00 metrix: E1-PILOT round 4 tasks 1-3 (Review Gate rulings, MINOR fixes, CLAUDE.md section 9)
+29850491cc8dd82256521064cdf93866a8c8eb10 2026-11-21T05:00:48+00:00 metrix: E1-PILOT round 3 task 2 redo, append correction (agents and root CLAUDE.md load later)
+$ git diff --stat 7e5dd9c 2253be94d77d41c5106d8074da578987d5b0a238
+ metrix/CLAUDE.md                                   |   1 +
+ metrix/e1-pilot/DATA_MANIFEST.json                 |   6 +-
+ metrix/e1-pilot/METRIX_E1_PROTOCOL.md              |  32 +++--
+ .../reports/round3/outside_metrix_check.py         |  38 +++++-
+ .../e1-pilot/reports/round3/t2_load_check_redo.txt |  34 +++++
+ metrix/e1-pilot/reports/round3/verify_scoring.py   |  10 +-
+ metrix/e1-pilot/reports/round4/st_prefix_check.py  |  86 +++++++++++++
+ metrix/e1-pilot/reports/round4/t0_facts_regen.txt  |  17 +++
+ metrix/e1-pilot/reports/round4/t1_commit_times.txt |  20 +++
+ .../reports/round4/t1_json_inline_check.txt        |   8 ++
+ .../e1-pilot/reports/round4/t2_outside_metrix.txt  | 138 +++++++++++++++++++++
+ .../e1-pilot/reports/round4/t2_st_prefix_check.txt |  17 +++
+ .../e1-pilot/reports/round4/t2_verify_scoring.txt  |  46 +++++++
+ .../round4/t2_verify_scoring_diff_vs_r3.txt        |   3 +
+ metrix/e1-pilot/reports/round4/t4_cherry_pick.txt  |  22 ++++
+ 15 files changed, 456 insertions(+), 22 deletions(-)
+$ git diff 7e5dd9c 2253be94d77d41c5106d8074da578987d5b0a238
+diff --git a/metrix/CLAUDE.md b/metrix/CLAUDE.md
+index a9fd24c..ffd19bb 100644
+--- a/metrix/CLAUDE.md
++++ b/metrix/CLAUDE.md
+@@ -63,6 +63,7 @@ PROTOCOL_FROZEN 的发出与修改、租用 GPU、生成或评测 TEST、删除
+ - commit hash 与报告路径。
+ - 两份审查的原始输出路径与结论。
+ - 所有结论附原始命令输出。自检勾选不算证据。
++- 原始输出一律写入仓库并推送，不留在临时目录；data-auditor 须提交 audit 脚本的完整 stdout。
+ 
+ ## 10. 信任状态
+ 
+diff --git a/metrix/e1-pilot/DATA_MANIFEST.json b/metrix/e1-pilot/DATA_MANIFEST.json
+index ab4ce87..b2ee561 100644
+--- a/metrix/e1-pilot/DATA_MANIFEST.json
++++ b/metrix/e1-pilot/DATA_MANIFEST.json
+@@ -26,7 +26,9 @@
+     "input_convention": {
+       "training": "raw statement text followed by <|endoftext|> (id 151643); no chat template, no system prompt",
+       "qa": "chat template of the pinned revision, one user turn, add_generation_prompt=true, enable_thinking=false (fixed, not a parameter), no system prompt",
+-      "candidate_scoring": "chat(q) + 'The answer is' + ' ' + c: the assistant turn opens with the fixed prefix 'The answer is'; only the tokens of ' ' + c are scored; nothing follows the candidate; K = K_st; reference implementation metrix/e1-pilot/reports/round3/scoring_input.py"
++      "candidate_scoring": "chat(q) + 'The answer is' + ' ' + c: the assistant turn opens with the fixed prefix 'The answer is'; only the tokens of ' ' + c are scored; nothing follows the candidate; K = K_st; reference implementation metrix/e1-pilot/reports/round3/scoring_input.py",
++      "em_generation": "greedy decoding continues chat(q) + 'The answer is', the same context as candidate scoring; leading spaces of the output are removed before normalization (protocol section 5)",
++      "general_text_and_anchor": "general-damage windows and arm A anchor documents: no special token is prepended (no <|endoftext|>); the first token has no context and is not scored and gets no KL term; t starts at 2 (protocol sections 4 and 5)"
+     },
+     "libraries": {
+       "torch": "2.11.0",
+@@ -166,7 +168,7 @@
+     "answer_token_length_rule": {
+       "survey": "from the start of the answer stream, the first 400 draws that satisfy the form rules (reject_if and the anchor rule are NOT applied; repeats count); count (K_st, K_qa); target = the most frequent pair, ties broken by the smaller pair compared as a tuple",
+       "accept": "RESTART the answer stream (a new generator with the same purpose, not continuing after the survey); accept in order the draws that satisfy the form rules, have (K_st, K_qa) == target and satisfy reject_if and the anchor rule, until 20 are accepted",
+-      "purpose": "all 20 answers of a cell have the same token counts in both contexts, so candidate scoring compares sequences of equal length"
++      "purpose": "all 20 answers of a cell have the same token counts in both contexts, so candidate scoring compares sequences of equal length; since round 3 candidate scoring uses K_st only (equal K_st gives equal length); equal K_qa no longer matters for scoring and is kept so that the facts and their hash do not change"
+     },
+     "draw": {
+       "natural": "n = 2 if rng.random() < 0.5 else 3; concatenate n times rng.choice(onsets) + rng.choice(nuclei) + rng.choice(codas); capitalize the first letter",
+diff --git a/metrix/e1-pilot/METRIX_E1_PROTOCOL.md b/metrix/e1-pilot/METRIX_E1_PROTOCOL.md
+index 67dd64a..1f491a5 100644
+--- a/metrix/e1-pilot/METRIX_E1_PROTOCOL.md
++++ b/metrix/e1-pilot/METRIX_E1_PROTOCOL.md
+@@ -33,6 +33,8 @@ Task Order 与其 “Mandatory consistency amendments A–L” 同时生效;两
+ | 训练输入 | 原始陈述句文本,后接 endoftext 特殊 token(id 151643);不用 chat template,不加 system prompt |
+ | 问答输入 | 该 revision 的 chat template,单个 user 回合,`add_generation_prompt=true`,`enable_thinking=false`(写死,不作参数),不加 system prompt |
+ | 候选打分输入 | 问答输入之后,assistant 回合以固定前缀 `The answer is` 开头,其后接一个空格和候选:`chat(q) + "The answer is" + " " + c`;只对 `" " + c` 的 token 打分,候选之后不接任何文本或特殊 token。参考实现 `reports/round3/scoring_input.py` |
++| 生成输入(EM) | 与候选打分的上下文相同:`chat(q) + "The answer is"`,从其后贪心解码(第 5 节) |
++| 通用文本与锚文本输入 | general damage 的通用文本窗口与 arm A 的锚文档,前面都不加任何特殊 token(不前置 `<|endoftext|>`);第一个 token 没有条件,不计分、不计 KL,t 从 2 起(第 4、5 节) |
+ | 库版本 | torch 2.11.0,transformers 5.22.2;实际版本写入实验记录,不一致即 BLOCKED |
+ 
+ **种子**:`DATA_SEED = 20261110`,`CANDIDATE_SEED = 20261111`,`TRAIN_SEEDS = [101, 202, 303]`,`BOOTSTRAP_SEED = 20261112`。所有随机数都来自
+@@ -78,7 +80,7 @@ Task Order 与其 “Mandatory consistency amendments A–L” 同时生效;两
+ - **生成顺序**:cell 按 relation(capital、currency、founder、river)× stratum(natural、random)的顺序;cell 内先 entity 后 answer;每种角色先接受的 15 个为 learned,后 5 个为 unread。
+ - **entity**:从 entity 流依次抽,满足形式规则、冲突规则和锚文本规则的接受,直到 20 个。
+ - **答案等长规则——统计(细节 2)**:从 answer 流的开头依次抽,取**前 400 个满足形式规则的抽样**(不应用冲突规则和锚文本规则,重复的也计入),统计每个的 `(K_st, K_qa)`;目标数对 = 出现次数最多的数对,并列时取按元组比较较小者。
+-- **答案等长规则——接受(细节 3)**:**answer 流从头重抽**(用同一个 purpose 新建生成器,不接着统计时的位置);依次接受满足形式规则、`(K_st, K_qa)` 等于目标、冲突规则和锚文本规则的抽样,直到 20 个。作用:同一 cell 的答案在两种语境下 token 数都相同,候选打分比较的是等长序列,没有长度偏差。
++- **答案等长规则——接受(细节 3)**:**answer 流从头重抽**(用同一个 purpose 新建生成器,不接着统计时的位置);依次接受满足形式规则、`(K_st, K_qa)` 等于目标、冲突规则和锚文本规则的抽样,直到 20 个。作用:同一 cell 的答案在两种语境下 token 数都相同,候选打分比较的是等长序列,没有长度偏差。Round 3 起候选打分只用 `K_st`(第 5 节),`K_st` 相同即保证等长;`K_qa` 相同已不影响打分,保留它是为了不改变 fact 及其哈希。
+ - **上限**:每个流最多抽 20,000 次;超过即 IMPLEMENTATION_FAIL。
+ - **复现**:按以上规则,`DATA_SEED = 20261110` 生成的 160 条 fact(字段 `fact_id, exposure, relation, stratum, entity, answer`,按生成顺序排列)的规范化 SHA-256 必须等于 `406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97`。参考实现 `reports/round2/names.py`;两次独立运行的记录见 `reports/ROUND2_REPORT.md`。
+ 
+@@ -174,7 +176,7 @@ learned fact 的 entity 与 answer 同时出现在 TRAIN 陈述句和 QA 中是
+ | S | Shuffled-label | 在 `train_S` 上训练;沿用 F 最终选中的配置 | 否 |
+ | Y | Style-only | 在 `train_Y` 上训练;沿用 F 最终选中的配置 | 否 |
+ 
+-- A 的损失:`CE(train_F batch) + λ · mean_t KL(p_base(·|x_<t) ‖ p_θ(·|x_<t))`,x 为该步的 4 篇锚文档,p_base 由 arm N 的权重当场计算且不回传梯度。锚项不在事实陈述句上计算。
++- A 的损失:`CE(train_F batch) + λ · mean_{t=2..n_x} KL(p_base(·|x_<t) ‖ p_θ(·|x_<t))`,x 为该步的 4 篇锚文档,n_x 为锚文档的 token 数,p_base 由 arm N 的权重当场计算且不回传梯度。锚项不在事实陈述句上计算。锚文档前面不加任何特殊 token(不前置 `<|endoftext|>`);t = 1 没有条件,不计 KL,t 从 2 起。
+ - S、Y 不单独调参;它们使用 F 选中配置的全部数值与第 7 节的训练契约。
+ - 不得新增 arm、机制或阶段。
+ 
+@@ -193,12 +195,12 @@ Acc(arm, split, G) = (1 / |G|) · Σ_{f ∈ G} Score_split(f)
+ 
+ **TRAIN 闭卷检查**
+ ```
+-s_ST(f, c) = Σ_{t=1..K'} log p_θ(c'_t | prefix(f), c'_<t)      prefix(f) = TRAIN 陈述句中答案之前的文本;c' = " " + c
++s_ST(f, c) = Σ_{t=1..K'} log p_θ(c'_t | prefix(f), c'_<t)      prefix(f) = TRAIN 陈述句中答案之前的文本;c' = " " + c;K' = K_st(c)(与 s_QA 的 K 相同,cell 内相同)
+ CB(f) = 1[ s_ST(f, a_f) > max_{c ≠ a_f} s_ST(f, c) ]
+ Acc_CB(arm) = (1/120) · Σ_{f ∈ learned} CB(f)
+ ```
+ 
+-**Free-generation exact match(次指标)**:对同一 `chat(q)` 做贪心解码,最多 16 个新 token,遇 im_end 特殊 token(id 151645)停。归一化:取第一行,去首尾空白,去开头的 “the ”(不分大小写),去结尾的 `. , ; : ! ?`,casefold。`EM(f, q) = 1[norm(output) == norm(a_f)]`,聚合方式同上。
++**Free-generation exact match(次指标)**:对 `chat(q) + "The answer is"`(与 `s_QA` 的上下文相同)做贪心解码,最多 16 个新 token,遇 im_end 特殊 token(id 151645)停。输出先去掉开头的空格,再归一化。归一化:取第一行,去首尾空白,去开头的 “the ”(不分大小写),去结尾的 `. , ; : ! ?`,casefold。`EM(f, q) = 1[norm(output') == norm(a_f)]`,output' = 去掉开头空格后的输出;聚合方式同上。
+ 
+ **全对率(次指标,只报告)**:`AllCorrect(f) = Π_{q} correct(f, q)`。
+ 
+@@ -208,6 +210,7 @@ NLL_arm(w) = −(1/(n_w − 1)) · Σ_{t=2..n_w} log p_θ(x_t | x_<t)
+ dNLL(arm) = mean_{domain} mean_{w ∈ domain} [ NLL_arm(w) − NLL_N(w) ]         主
+ PPL_degradation%(arm) = 100 · (exp(dNLL(arm)) − 1)                           展示
+ ```
++窗口前面不加任何特殊 token(不前置 `<|endoftext|>`);x_1 没有条件,不计分,t 从 2 起;n_w 为窗口的 token 数。
+ 
+ **Unread controls**(问的是真实答案;不使用 NONE 选项)
+ ```
+@@ -636,11 +639,18 @@ Compute accounting 的算法:训练 FLOPs ≈ 6 · P · T,前向 FLOPs ≈ 2 ·
+ | v1-r1 | 2026-11-12 14:26:49 | `a9dd5238` | 第 0 节“环境要求” | 原文“全参微调(F、A、S、Y)在 FP32 下需要约 4 × 6.9 GB(权重、梯度、AdamW 两个动量)再加激活,所以执行机器必须有 ≥ 40 GB 显存的单张 GPU,或 ≥ 48 GB 内存的 CPU 机器”改为“所有模型训练与评测只在一张 NVIDIA A100 80GB 上执行(型号写死,检查方法与显存估计见第 7 节);CPU 只做数据生成、泄漏检查与分词器检查” | 原文允许 CPU 机器和任意 ≥ 40 GB 的 GPU,与 Metrix Round 1 第 8 项的算力决定(单张 A100 80GB、上限 4 小时、型号写死)冲突;原文的 4 × 6.9 GB 也漏算了 arm A 的冻结 base 副本(核实后 A 为 34.4 GB) |
+ | v1-r1 | 2026-11-12 14:26:49 | `a9dd5238` | 第 11 节 ST7 | 原文“累计 wall-clock 超过上限(第 13 节第 3 项)→ 停并报告进度;转 GPU 或降级需 Owner 决定,不得静默继续”改为“累计 GPU wall-clock 超过 4 小时(第 7 节)→ 停并报告进度;延长上限、换硬件或降级都需 Owner 决定并记录,不得静默继续” | 第 13 节第 3 项已由同一决定移出待定列表,原指向失效;模型计算不再在 CPU 上进行,“转 GPU”不再适用 |
+ | v1-r1 | 2026-11-12 14:26:49 | `a9dd5238` | 第 7、8、13 节;文件头;`SEARCH_SPACE.json` | 写入算力决定与显存估计;第 8 节加 GPU 检查与算力边界;待定项 3 → 2;内联块加 BEGIN / END 标记 | Metrix Round 1 第 7、8 项 |
+-| v1-r2 | 2026-11-12 | 本节所在提交 | 第 2.2 节;`DATA_MANIFEST.json` | 写死名字生成的随机流 purpose、前 400 个候选的统计方法、接受阶段从头重抽;补全抽样、形式规则、冲突规则(含大小写与比较范围)、上限;加锚文本规则;给出 `DATA_SEED` 下 160 条 fact 的规范化 SHA-256 | Metrix Round 2 第 4 项:v1 未写死,只凭协议不能逐字节复现数据 |
+-| v1-r2 | 2026-11-12 | 本节所在提交 | 第 2.4、2.6 节;`SPLIT_MANIFEST.json` | Y 模板改短,答案前加空格;Y/F token 比 1.292 → 1.196 | Metrix Round 2 第 3 项:原比值超出第 2.6 节的 [0.80, 1.25];区间不变 |
+-| v1-r2 | 2026-11-12 | 本节所在提交 | 第 2.5、3 节;`SPLIT_MANIFEST.json` | L3 拆为 L3a(原规则)与 L3b(learned 答案在锚文本中的出现次数,上限 0) | Metrix Round 2 第 5 项:arm A 的暴露匹配原先没有检查覆盖 |
++| v1-r2 | 2026-11-12 14:43:19 | `6675af63` | 第 2.2 节;`DATA_MANIFEST.json` | 写死名字生成的随机流 purpose、前 400 个候选的统计方法、接受阶段从头重抽;补全抽样、形式规则、冲突规则(含大小写与比较范围)、上限;加锚文本规则;给出 `DATA_SEED` 下 160 条 fact 的规范化 SHA-256 | Metrix Round 2 第 4 项:v1 未写死,只凭协议不能逐字节复现数据 |
++| v1-r2 | 2026-11-12 14:43:19 | `6675af63` | 第 2.4、2.6 节;`SPLIT_MANIFEST.json` | Y 模板改短,答案前加空格;Y/F token 比 1.292 → 1.196 | Metrix Round 2 第 3 项:原比值超出第 2.6 节的 [0.80, 1.25];区间不变 |
++| v1-r2 | 2026-11-12 14:43:19 | `6675af63` | 第 2.5、3 节;`SPLIT_MANIFEST.json` | L3 拆为 L3a(原规则)与 L3b(learned 答案在锚文本中的出现次数,上限 0) | Metrix Round 2 第 5 项:arm A 的暴露匹配原先没有检查覆盖 |
+ | v1-r2(Round 3 补记) | 2026-11-12 14:43:19 | `6675af63` | 第 2.2 节;`DATA_MANIFEST.json: name_generation.anchor_rule` | 新增锚文本规则:生成名字时,拒绝在第 2.7 节锚文本(512 篇、各截到 128 token 后解码)中出现过的字符串(不分大小写的子串);因此锚文本须在名字之前生成 | Metrix Round 2 第 5 项把 arm A 纳入暴露匹配(L3b):若某个名字出现在锚文本里,arm A 对该候选的暴露会多于 F,unread 名字也会违反 L3a。在生成时拒绝,使 L3a、L3b 在构造上成立(检查仍执行)。`DATA_SEED` 下这条规则没有拒绝任何名字,160 条 fact 的哈希不变(`ROUND2_REPORT.md` 对照运行 3)。上表 v1-r2 第 2.2 节一行只写了“加锚文本规则”,未写原因,Round 3 第 5 项要求补记 |
+-| v1-r2 | 2026-11-12 | 本节所在提交 | 第 0、7、8、11 节;`SEARCH_SPACE.json` | GPU 规则改为:首次运行记录设备全名,同一次 Pilot 内必须一致,否则整批作废;新增 ST9 | Metrix Round 2 第 6 项 |
+-| v1-r2 | 2026-11-12 | 本节所在提交 | 第 14 节 | 新增本变更记录,补记 v1-r1 对第 0 节与 ST7 的改动 | Metrix Round 2 第 7 项 |
+-| v1-r3 | 2026-11-12 | Round 3 提交(hash 见 `reports/ROUND3_REPORT.md`) | 第 0 节;`SUBMISSION_NOTE.md` 第 1、5 节 | 原文“协议提交只新增 `metrix/e1-pilot/` 下 5 个文件”及验证命令“`git diff --stat 61d3c767 HEAD -- . ':(exclude)metrix'` 应为空”改为:metrix/ 以外只放行根目录 `CLAUDE.md` 追加的第 6 节(宪章原有内容须与 base 逐字节一致)和 `.claude/agents/` 下两个文件;注明两个 agent 文件被 `.gitignore` 忽略、用 `git add -f` 强制跟踪,以后改动也须用 `-f`;检查脚本 `reports/round3/outside_metrix_check.py` | Metrix Round 3 第 3 项:提交 `8ce8c896` 按 Owner 决定在宪章追加第 6 节并新增两个 subagent 文件,原检查“应为空”从此必然失败 |
+-| v1-r3 | 2026-11-12 | Round 3 提交(hash 见 `reports/ROUND3_REPORT.md`) | 第 0 节(新增“候选打分输入”行;“问答输入”注明 `enable_thinking=false` 写死)、第 2.2 节 `K_qa` 说明、第 5 节 `s_QA`;`DATA_MANIFEST.json: model.input_convention`、`name_generation.token_counts` | 原文 `s_QA(f, q, c) = Σ log p_θ(c_t \| chat(q), c_<t)`,K = 问答语境(assistant 回合开头、无前导空格)的 token 数,改为:assistant 回合以固定前缀 `The answer is` 开头,对 `" " + c` 打分,K = `K_st`。`K_qa` 保留为生成规则,fact 及其哈希不变 | Metrix Round 3 第 6 项。验证(第 7 项):120 个 learned 答案 × 2 个 DEV 问句,打分 token id 与 TRAIN 陈述句中答案片段的 token id 不一致数为 0;第 8 项候选可行性:最小池 5,不足 4 的 cell 0 |
++| v1-r2 | 2026-11-12 14:43:19 | `6675af63` | 第 0、7、8、11 节;`SEARCH_SPACE.json` | GPU 规则改为:首次运行记录设备全名,同一次 Pilot 内必须一致,否则整批作废;新增 ST9 | Metrix Round 2 第 6 项 |
++| v1-r2 | 2026-11-12 14:43:19 | `6675af63` | 第 14 节 | 新增本变更记录,补记 v1-r1 对第 0 节与 ST7 的改动 | Metrix Round 2 第 7 项 |
++| v1-r3 | 2026-11-12 15:58:48 | `596fcfad` | 第 0 节;`SUBMISSION_NOTE.md` 第 1、5 节 | 原文“协议提交只新增 `metrix/e1-pilot/` 下 5 个文件”及验证命令“`git diff --stat 61d3c767 HEAD -- . ':(exclude)metrix'` 应为空”改为:metrix/ 以外只放行根目录 `CLAUDE.md` 追加的第 6 节(宪章原有内容须与 base 逐字节一致)和 `.claude/agents/` 下两个文件;注明两个 agent 文件被 `.gitignore` 忽略、用 `git add -f` 强制跟踪,以后改动也须用 `-f`;检查脚本 `reports/round3/outside_metrix_check.py` | Metrix Round 3 第 3 项:提交 `8ce8c896` 按 Owner 决定在宪章追加第 6 节并新增两个 subagent 文件,原检查“应为空”从此必然失败 |
++| v1-r3 | 2026-11-12 15:58:48 | `596fcfad` | 第 0 节(新增“候选打分输入”行;“问答输入”注明 `enable_thinking=false` 写死)、第 2.2 节 `K_qa` 说明、第 5 节 `s_QA`;`DATA_MANIFEST.json: model.input_convention`、`name_generation.token_counts` | 原文 `s_QA(f, q, c) = Σ log p_θ(c_t \| chat(q), c_<t)`,K = 问答语境(assistant 回合开头、无前导空格)的 token 数,改为:assistant 回合以固定前缀 `The answer is` 开头,对 `" " + c` 打分,K = `K_st`。`K_qa` 保留为生成规则,fact 及其哈希不变 | Metrix Round 3 第 6 项。验证(第 7 项):120 个 learned 答案 × 2 个 DEV 问句,打分 token id 与 TRAIN 陈述句中答案片段的 token id 不一致数为 0;第 8 项候选可行性:最小池 5,不足 4 的 cell 0 |
++| v1-r4 | 2026-11-21 05:05:03 | `b1f5889c` | 第 5 节 EM;第 0 节(新增“生成输入(EM)”行);`DATA_MANIFEST.json: model.input_convention.em_generation` | 原文“对同一 `chat(q)` 做贪心解码……归一化:取第一行……`EM(f, q) = 1[norm(output) == norm(a_f)]`”改为:对 `chat(q) + "The answer is"`(与 `s_QA` 的上下文相同)做贪心解码,输出先去掉开头的空格再归一化,`EM(f, q) = 1[norm(output') == norm(a_f)]`;最多 16 个新 token、遇 im_end 停、归一化各步与聚合不变 | Review Gate 裁决(`ROUND3_REPORT.md`“待 Review Gate 决定”第 1 项;Round 3 code-reviewer MAJOR 1、data-auditor Observation 2):候选打分已改为在 `The answer is` 之后打分,EM 仍从裸 `chat(q)` 解码,两者输入不一致;模型若回答整句,归一化后不可能等于答案 |
++| v1-r4 | 2026-11-21 05:05:03 | `b1f5889c` | 第 4 节 arm A 损失;第 5 节 general damage;第 0 节(新增“通用文本与锚文本输入”行);`DATA_MANIFEST.json: model.input_convention.general_text_and_anchor` | 写明通用文本窗口与锚文档前面都不加任何特殊 token(不前置 `<|endoftext|>`),第一个 token 不计分、不计 KL,t 从 2 起。arm A 原文 `mean_t KL(...)` 改为 `mean_{t=2..n_x} KL(...)`;general damage 的公式(原已是 `t=2..n_w`)不变,补文字说明 | Review Gate 裁决(待决第 2 项;Round 3 任务 4 #6、#7):原文没有写明是否前置特殊 token,KL 的 t 范围也没有写明;Qwen3 没有 BOS(`bos_token None`),不前置 token 时第一个位置没有条件 |
++| v1-r4 | 2026-11-21 05:05:03 | `b1f5889c` | 第 14 节 | v1-r2 各行“2026-11-12 / 本节所在提交”改为“2026-11-12 14:43:19 / `6675af63`”;v1-r3 各行“2026-11-12 / Round 3 提交(hash 见 `reports/ROUND3_REPORT.md`)”改为“2026-11-12 15:58:48 / `596fcfad`”;表后加注:宪章第 6 节标题中的日期是 JST | Review Gate 裁决(待决第 3、4 项;Round 3 code-reviewer MAJOR 2):“本节所在提交”在 Round 2 之后的每个提交上都成立,有歧义;v1-r3 只写了日期,提交要到报告里查。时间是提交时间(`git log --format=%cI`),原始输出 `reports/round4/t1_commit_times.txt` |
++| v1-r4 | 2026-11-21 05:05:03 | `b1f5889c` | 第 2.2 节答案等长规则的“作用”;`DATA_MANIFEST.json: name_generation.answer_token_length_rule.purpose` | 补一句:Round 3 起候选打分只用 `K_st`,`K_qa` 相同已不影响打分,保留它是为了不改变 fact 及其哈希。规则本身不变,fact 哈希不变 | Round 3 code-reviewer MINOR:原“作用”仍按 Round 3 之前的问答语境(assistant 回合开头、无前导空格)描述 |
++| v1-r4 | 2026-11-21 05:05:03 | `b1f5889c` | 第 5 节 `s_ST` | 补定义 `K' = K_st(c)` | Round 3 data-auditor Observation 1:`K'` 没有定义。验证:120 条 learned fact × 同 cell 的 15 个 learned 答案(1,800 对),`prefix(f) + " " + c` 中 `prefix(f)` 的 token 都是整串 token 的前缀,其后的 token 都等于 `encode(" " + c)`,数目都等于 `K_st(c)`;不一致数 0(`reports/round4/t2_st_prefix_check.txt`) |
++
++注:根目录 `CLAUDE.md`(宪章)第 6 节标题中的日期 “2026-11-13” 是 JST(日本标准时间,UTC+9)。该节由提交 `8ce8c896` 加入,提交时间 2026-11-12 15:25:19 UTC,即 2026-11-13 00:25:19 JST。本表的时间都是 UTC。
+diff --git a/metrix/e1-pilot/reports/round3/outside_metrix_check.py b/metrix/e1-pilot/reports/round3/outside_metrix_check.py
+index 8806841..911c6ef 100644
+--- a/metrix/e1-pilot/reports/round3/outside_metrix_check.py
++++ b/metrix/e1-pilot/reports/round3/outside_metrix_check.py
+@@ -3,17 +3,21 @@
+ 
+ Compared with the base commit of protocol section 0, a revision may change nothing outside metrix/ except:
+   1. CLAUDE.md (charter v2.0): the base file must be an exact byte prefix of the new file, and the appended
+-     bytes must be exactly one new level-2 section that starts with "\\n## 6. Metrix" (charter section 6);
++     bytes must start with "\\n## 6. Metrix" and contain exactly one level-1 or level-2 heading, the section 6
++     heading (charter section 6). Lower-level headings (### ...) inside section 6 are allowed; lines inside
++     fenced code blocks are not headings;
+   2. .claude/agents/code-reviewer.md and .claude/agents/data-auditor.md (added).
+ The two agent files are ignored by .gitignore (".claude/") and are tracked only because they were added with
+ `git add -f`; any later change to them must also be staged with `git add -f`. The check prints the ignore rule
+-and the tracked state so that this stays visible.
++and the tracked state so that this stays visible. `git check-ignore` reads the working-tree .gitignore, not the
++one at --rev; the check prints whether the two files are identical (informational, not part of the result).
+ 
+   python outside_metrix_check.py [--rev HEAD]
+-Exit code 0 only if every check passes. Reads git objects only; writes nothing.
++Exit code 0 only if every check passes. Reads git objects and the working-tree .gitignore; writes nothing.
+ """
+ import argparse
+ import os
++import re
+ import subprocess
+ import sys
+ 
+@@ -21,6 +25,8 @@ BASE = "61d3c76705b28cc2ee334abc5bf1baaac4fc30dc"
+ CHARTER = "CLAUDE.md"
+ AGENTS = (".claude/agents/code-reviewer.md", ".claude/agents/data-auditor.md")
+ SECTION6_HEAD = b"\n## 6. Metrix"
++HEADING_1_2 = re.compile(rb" {0,3}#{1,2}(?:[ \t]|$)")      # ATX heading of level 1 or 2
++FENCE = re.compile(rb" {0,3}(```|~~~)")
+ 
+ 
+ def git(*args, check=True):
+@@ -30,6 +36,22 @@ def git(*args, check=True):
+     return r
+ 
+ 
++def top_headings(md):
++    """Level-1 and level-2 heading lines of Markdown bytes, skipping fenced code blocks."""
++    heads, fence = [], None
++    for ln in md.split(b"\n"):
++        m = FENCE.match(ln)
++        if m:
++            if fence is None:
++                fence = m.group(1)
++            elif m.group(1) == fence:
++                fence = None
++            continue
++        if fence is None and HEADING_1_2.match(ln):
++            heads.append(ln)
++    return heads
++
++
+ def main():
+     p = argparse.ArgumentParser()
+     p.add_argument("--rev", default="HEAD")
+@@ -61,16 +83,20 @@ def main():
+     if not prefix_ok:
+         failures.append("charter: original content differs from base")
+     elif added:
+-        heads = [ln for ln in added.split(b"\n") if ln.startswith(b"#")]
+-        print("charter: appended %d bytes; headings in appended part: %s" % (
++        heads = top_headings(added)
++        print("charter: appended %d bytes; level-1/2 headings in appended part: %s" % (
+             len(added), [h.decode("utf-8") for h in heads]))
+         if not added.startswith(SECTION6_HEAD):
+             failures.append("charter: appended part does not start with section 6 heading")
+         if len(heads) != 1 or not heads[0].startswith(b"## 6. "):
+-            failures.append("charter: appended part must contain exactly one heading, section 6")
++            failures.append("charter: appended part must contain exactly one level-1/2 heading, section 6")
+ 
+     # 3. Agent files: tracked, and ignored by .gitignore (so changes need `git add -f`).
+     tracked = set(git("ls-tree", "-r", "--name-only", rev, "--", ".claude").stdout.decode().split())
++    rev_gi = git("show", "%s:.gitignore" % rev, check=False)
++    wt_gi = open(".gitignore", "rb").read() if os.path.exists(".gitignore") else None
++    same = rev_gi.returncode == 0 and wt_gi == rev_gi.stdout
++    print("ignore rules below come from the working-tree .gitignore; identical to .gitignore at %s: %s" % (rev, same))
+     for path in AGENTS:
+         ign = git("check-ignore", "-v", "--no-index", path, check=False).stdout.decode().strip()
+         print("agent %s: tracked at %s: %s; ignore rule: %s" % (path, rev, path in tracked, ign or "none"))
+diff --git a/metrix/e1-pilot/reports/round3/t2_load_check_redo.txt b/metrix/e1-pilot/reports/round3/t2_load_check_redo.txt
+index 08dc32b..6a3aaf8 100644
+--- a/metrix/e1-pilot/reports/round3/t2_load_check_redo.txt
++++ b/metrix/e1-pilot/reports/round3/t2_load_check_redo.txt
+@@ -176,3 +176,37 @@ Agent type 'data-auditor' not found. Available agents: claude, claude-code-guide
+ # Task 2: FAIL. Same outcome as session_01J5mxaVXsUivZWwPk8MgRZL (t2_load_check.txt).
+ # Cause, as observed in both runs: the session starts on a branch made from main, which has no
+ #   .claude/agents/; the agent list is fixed at session start and files checked out later are not picked up.
++
++## Correction (appended 2026-11-12 ~16:05Z, same session; the text above is left unchanged)
++# Two statements above are wrong. The observations above (each "not found" result and each
++# "not attached" note) stand as recorded; the conclusions drawn from them do not.
++#
++# 1. Wrong: "the agent list is fixed at session start and files checked out later are not picked up."
++#    Later in this same session, with no restart, both agents became available:
++#    - ~15:54Z the harness announced, verbatim: "New agent types are now available for the Agent tool:"
++#      followed by "code-reviewer: ..." and "data-auditor: ...".
++#    - [tool call] Agent(subagent_type="code-reviewer"), ~15:54Z: subagent replied "code-reviewer loaded"
++#    - [tool call] Agent(subagent_type="data-auditor"),  ~15:54Z: subagent replied "data-auditor loaded"
++#    Checked-out files ARE picked up mid-session, but not at once: the files were on disk at 15:42:19Z,
++#    the calls at ~15:43Z still failed, and by ~15:54Z both worked.
++#    Trigger: unknown. Between 15:43Z and 15:54Z the primary working directory changed several times
++#    (OpenMythos -> OpenMythos/metrix -> OpenMythos/metrix/e1-pilot -> OpenMythos); this may be the
++#    trigger, but it was not tested.
++#    Not the cause: user-level config in this container was never written. At 16:04:57Z:
++$ ls -la /root/.claude/agents /root/.claude/CLAUDE.md
++ls: cannot access '/root/.claude/agents': No such file or directory
++ls: cannot access '/root/.claude/CLAUDE.md': No such file or directory
++#    (The setup-script tests in this session ran with HOME set to a scratch folder.)
++#
++# 2. Wrong: "nested-directory discovery only loads CLAUDE.md files below the start directory,
++#    so it is not loaded afterwards either" (section D, about root CLAUDE.md).
++#    At ~16:04Z the harness attached root CLAUDE.md to the context, header verbatim:
++#      "Contents of /home/user/OpenMythos/CLAUDE.md (project instructions, checked into the codebase):"
++#    followed by "Contents of /home/user/OpenMythos/metrix/CLAUDE.md (...)".
++#
++# Corrected result for this session:
++# code-reviewer: NOT LOADED at ~15:42Z and ~15:43Z; LOADED by ~15:54Z (no restart)
++# data-auditor:  NOT LOADED at ~15:42Z and ~15:43Z; LOADED by ~15:54Z (no restart)
++# root CLAUDE.md: NOT loaded through ~15:43Z; loaded by ~16:04Z
++# Task 2 at the time of this record (15:43Z): FAIL, unchanged. The session that carries out round 3
++#   is session_01J5mxaTvdtnGXVnVJiiAhgU (environment "metrix"), not this one.
+diff --git a/metrix/e1-pilot/reports/round3/verify_scoring.py b/metrix/e1-pilot/reports/round3/verify_scoring.py
+index 6127625..26f9422 100644
+--- a/metrix/e1-pilot/reports/round3/verify_scoring.py
++++ b/metrix/e1-pilot/reports/round3/verify_scoring.py
+@@ -25,11 +25,15 @@ import scoring_input as SI  # noqa: E402
+ 
+ 
+ def train_answer_ids(tok, statement, answer):
+-    """Token ids of ' ' + answer in the tokenized statement, found by offsets; None if not token-aligned."""
++    """Token ids of ' ' + answer in the tokenized statement, found by offsets.
++
++    None if the answer is not preceded by a space or the span is not token-aligned (counted as unaligned).
++    """
+     enc = tok(statement, add_special_tokens=False, return_offsets_mapping=True)
+     cut = statement.rindex(answer)
+     lo, hi = cut - 1, cut + len(answer)                       # include the leading space
+-    assert statement[lo] == " "
++    if lo < 0 or statement[lo] != " ":
++        return None
+     idx = [i for i, (s, e) in enumerate(enc["offset_mapping"]) if s < hi and e > lo]
+     spans = [enc["offset_mapping"][i] for i in idx]
+     if not idx or spans[0][0] != lo or spans[-1][1] != hi:
+@@ -91,7 +95,7 @@ def main():
+                 print("MISMATCH", f["fact_id"], json.dumps(q), got, want)
+             ref = tok.apply_chat_template(
+                 [{"role": "user", "content": q}, {"role": "assistant", "content": SI.ANSWER_PREFIX + " " + f["answer"]}],
+-                tokenize=False, continue_final_message=True, enable_thinking=False)
++                tokenize=False, continue_final_message=True, enable_thinking=SI.ENABLE_THINKING)
+             if ref != text:
+                 renderer_diff += 1
+                 if renderer_diff <= 3:
+diff --git a/metrix/e1-pilot/reports/round4/st_prefix_check.py b/metrix/e1-pilot/reports/round4/st_prefix_check.py
+new file mode 100644
+index 0000000..00d8d86
+--- /dev/null
++++ b/metrix/e1-pilot/reports/round4/st_prefix_check.py
+@@ -0,0 +1,86 @@
++#!/usr/bin/env python3
++"""Round 4, task 2: the token count K' of s_ST (protocol section 5, TRAIN closed-book check).
++
++s_ST(f, c) scores c' = " " + c after prefix(f), the text of the TRAIN statement before the answer. The protocol
++now defines K' = K_st(c) = len(encode(" " + c)). This holds only if prefix(f) and c' do not merge at the
++boundary. For every learned fact f and every learned answer c of the same cell (the distractor pool of section
++2.5, which contains C_f), tokenize prefix(f) + " " + c in one call and check that
++  (1) the tokens of prefix(f) are a prefix of the whole sequence,
++  (2) the remaining (scored) tokens equal encode(" " + c), so their number is K_st(c),
++  (3) that number is the same for every c of the cell.
++No TEST template is read; DEV templates are not needed. Tokenizer only; no model weights.
++
++  python st_prefix_check.py --facts FACTS.json --split-manifest SPLIT_MANIFEST.json --tokenizer-dir DIR
++"""
++import argparse
++import collections
++import json
++import sys
++
++
++def encode(tok, text):
++    return tok.encode(text, add_special_tokens=False)
++
++
++def main():
++    p = argparse.ArgumentParser()
++    p.add_argument("--facts", required=True)
++    p.add_argument("--split-manifest", required=True)
++    p.add_argument("--tokenizer-dir", required=True)
++    a = p.parse_args()
++    from transformers import AutoTokenizer
++    tok = AutoTokenizer.from_pretrained(a.tokenizer_dir)
++    facts = json.load(open(a.facts, encoding="utf-8"))
++    sm = json.load(open(a.split_manifest, encoding="utf-8"))
++    train_tpl = {}
++    for t in sm["templates"]:
++        if t["kind"] == "TRAIN":                              # only TRAIN templates are read
++            if t["relation"] in train_tpl:
++                sys.exit("more than one TRAIN template for %s" % t["relation"])
++            train_tpl[t["relation"]] = t["text"]
++    for rel, text in sorted(train_tpl.items()):
++        if text.count("{A}") != 1 or not text.endswith(" {A}."):
++            sys.exit("TRAIN template of %s does not end with ' {A}.': %r" % (rel, text))
++        print("TRAIN template %-8s %s" % (rel, json.dumps(text)))
++
++    learned = [f for f in facts if f["exposure"] == "learned"]
++    pool = collections.defaultdict(list)
++    for f in learned:
++        pool[(f["relation"], f["stratum"])].append(f["answer"])
++
++    pairs = merged = differs = 0
++    k_by_cell = collections.defaultdict(set)
++    example = None
++    for f in learned:
++        prefix = train_tpl[f["relation"]][:-len(" {A}.")].replace("{E}", f["entity"])
++        p_ids = encode(tok, prefix)
++        for c in pool[(f["relation"], f["stratum"])]:
++            ids = encode(tok, prefix + " " + c)
++            scored = ids[len(p_ids):]
++            want = encode(tok, " " + c)
++            pairs += 1
++            if ids[:len(p_ids)] != p_ids:
++                merged += 1
++                print("MERGED", f["fact_id"], json.dumps(prefix), json.dumps(c))
++                continue
++            if scored != want:
++                differs += 1
++                print("DIFFERS", f["fact_id"], json.dumps(c), scored, want)
++            k_by_cell[(f["relation"], f["stratum"])].add(len(scored))
++            if example is None and c == f["answer"]:
++                example = (f, prefix, ids, len(p_ids))
++    print("learned facts: %d; (fact, same-cell learned answer) pairs: %d" % (len(learned), pairs))
++    print("pairs where the tokens of prefix(f) are not a prefix of the whole sequence: %d" % merged)
++    print("pairs where the scored tokens != encode(' ' + c): %d" % differs)
++    print("K' per cell:", {"%s/%s" % k: sorted(v) for k, v in sorted(k_by_cell.items())})
++    print("cells with more than one K': %d" % sum(len(v) > 1 for v in k_by_cell.values()))
++    f, prefix, ids, start = example
++    print("example", f["fact_id"], "prefix(f)", json.dumps(prefix), "c", json.dumps(f["answer"]))
++    print("  ids", ids, "scored", ids[start:], [tok.decode([i]) for i in ids[start:]])
++    ok = merged == 0 and differs == 0 and all(len(v) == 1 for v in k_by_cell.values())
++    print("RESULT:", "PASS" if ok else "FAIL")
++    sys.exit(0 if ok else 1)
++
++
++if __name__ == "__main__":
++    main()
+diff --git a/metrix/e1-pilot/reports/round4/t0_facts_regen.txt b/metrix/e1-pilot/reports/round4/t0_facts_regen.txt
+new file mode 100644
+index 0000000..9690e98
+--- /dev/null
++++ b/metrix/e1-pilot/reports/round4/t0_facts_regen.txt
+@@ -0,0 +1,17 @@
++# Round 4 facts regeneration raw output. Host vm (Claude Code on the web cloud container, 4 CPU, no GPU: nvidia-smi not found), CPU only; tokenizer files only, no model weights. Sat Nov 21 05:04:09 UTC 2026
++# python 3.13.18, transformers 5.22.2, tokenizers 0.23.3, jinja2 3.1.6
++# <TOK> = Qwen/Qwen3-1.7B@70d244cc86ccca08cf5af4e1e306ecf908b1ad5e tokenizer files (tokenizer.json sha256 aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4, tokenizer_config.json sha256 d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101); <SCRATCH> = session scratchpad
++$ python reports/round2/anchor_check.py --manifest DATA_MANIFEST.json --tokenizer-dir <TOK> --cache-dir <SCRATCH>/r4/cache --anchor-out <SCRATCH>/r4/anchor.json
++anchor source: SandyResearch/fineweb-edu-shuffled@4d1138c0e4d51d98813997ce3560e05a32bf91de data/sample-100BT/train/shard_00000.parquet
++file sha256 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22, pinned 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22, match True
++documents read 527, kept 512, anchor texts canonical sha256 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408, total chars 309172
++exit=0
++$ python reports/round2/gen_facts.py --manifest DATA_MANIFEST.json --tokenizer-dir <TOK> --anchor <SCRATCH>/r4/anchor.json --out <SCRATCH>/r4/facts.json
++pid 851, PYTHONHASHSEED=None, anchor rule on
++facts 160 (learned 120, unread 40), distinct strings 320
++facts canonical sha256: 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97
++cell log canonical sha256: 38f04096f2da2cd0922f4281e616f131cc240088e32ab2834d6009c50fb52bb1
++cell log: [{"cell": "capital/natural", "entity_draws": 28, "target_pair": [3, 3], "answer_draws": 84}, {"cell": "capital/random", "entity_draws": 20, "target_pair": [5, 5], "answer_draws": 52}, {"cell": "currency/natural", "entity_draws": 31, "target_pair": [3, 3], "answer_draws": 82}, {"cell": "currency/random", "entity_draws": 20, "target_pair": [6, 6], "answer_draws": 46}, {"cell": "founder/natural", "entity_draws": 30, "target_pair": [3, 3], "answer_draws": 81}, {"cell": "founder/random", "entity_draws": 21, "target_pair": [5, 5], "answer_draws": 45}, {"cell": "river/natural", "entity_draws": 34, "target_pair": [3, 3], "answer_draws": 89}, {"cell": "river/random", "entity_draws": 20, "target_pair": [6, 6], "answer_draws": 42}]
++exit=0
++$ sha256sum <SCRATCH>/r4/facts.json
++406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97  <SCRATCH>/r4/facts.json
+diff --git a/metrix/e1-pilot/reports/round4/t1_commit_times.txt b/metrix/e1-pilot/reports/round4/t1_commit_times.txt
+new file mode 100644
+index 0000000..77ca3a0
+--- /dev/null
++++ b/metrix/e1-pilot/reports/round4/t1_commit_times.txt
+@@ -0,0 +1,20 @@
++# Round 4 task 1 raw output: commit times for protocol section 14 (committer time, git %cI). Host vm, CPU only. Sat Nov 21 05:05:32 UTC 2026
++$ git log -1 --format='%H %aI %cI %s' 6675af63
++6675af63d770594704ff1f0b9a8cd358dd6e5cc6 2026-11-12T14:43:19+00:00 2026-11-12T14:43:19+00:00 metrix: E1-PILOT round 2 (Y ratio, name rules, L3b, device-name rule, change log)
++$ git log -1 --format='%H %aI %cI %s' 596fcfad
++596fcfad4b73fdddad607ab6bc28d4c128f3744b 2026-11-12T15:58:48+00:00 2026-11-12T15:58:48+00:00 metrix: E1-PILOT round 3 tasks 3-8 (outside-metrix check, special tokens, scoring prefix, checks)
++$ git log -1 --format='%H %aI %cI %s' 8ce8c896
++8ce8c896e07cc8c8f37ea3551bfa0034e979d2f7 2026-11-12T15:25:19+00:00 2026-11-12T15:25:19+00:00 metrix: declare Metrix as independent sub-project in charter; add metrix/CLAUDE.md and reviewer/auditor subagents
++$ git log -1 --format='%H %aI %cI %s' b1f5889cc51e3fee5aeeebe77515dfd17c312084
++b1f5889cc51e3fee5aeeebe77515dfd17c312084 2026-11-21T05:05:03+00:00 2026-11-21T05:05:03+00:00 metrix: E1-PILOT round 4 tasks 1-3 (Review Gate rulings, MINOR fixes, CLAUDE.md section 9)
++$ TZ=Asia/Tokyo git log -1 --date=iso-local --format="%cd" 8ce8c896   (JST view of the charter section 6 commit)
++2026-11-13 00:25:19 +0900
++$ git show 8ce8c896:CLAUDE.md | grep -n "^## 6"
++46:## 6. Metrix 子项目(2026-11-13 负责人决定)
++# which commits changed the protocol body cited by the v1-r2 and v1-r3 rows:
++$ git log --format="%h %cI %s" 61d3c767..b1f5889cc51e3fee5aeeebe77515dfd17c312084 -- metrix/e1-pilot/METRIX_E1_PROTOCOL.md
++b1f5889 2026-11-21T05:05:03+00:00 metrix: E1-PILOT round 4 tasks 1-3 (Review Gate rulings, MINOR fixes, CLAUDE.md section 9)
++596fcfa 2026-11-12T15:58:48+00:00 metrix: E1-PILOT round 3 tasks 3-8 (outside-metrix check, special tokens, scoring prefix, checks)
++6675af6 2026-11-12T14:43:19+00:00 metrix: E1-PILOT round 2 (Y ratio, name rules, L3b, device-name rule, change log)
++a9dd523 2026-11-12T14:26:49+00:00 metrix: E1-PILOT round 1 checks (CPU only) and report
++aa0423e 2026-11-10T15:48:18+00:00 metrix: E1-PILOT protocol for review (authoring only)
+diff --git a/metrix/e1-pilot/reports/round4/t1_json_inline_check.txt b/metrix/e1-pilot/reports/round4/t1_json_inline_check.txt
+new file mode 100644
+index 0000000..cf509a9
+--- /dev/null
++++ b/metrix/e1-pilot/reports/round4/t1_json_inline_check.txt
+@@ -0,0 +1,8 @@
++# Round 4: JSON validity and SEARCH_SPACE inline copy (SUBMISSION_NOTE.md section 5 commands, run verbatim from metrix/e1-pilot). Host vm, CPU only, system python3 3.13.18. Sat Nov 21 05:04:44 UTC 2026
++$ python3 -c "import json;[json.load(open(f)) for f in (...)];print(\"json ok\")"
++json ok
++exit=0
++$ python3 - <<PY  (inline-copy check from SUBMISSION_NOTE.md section 5)
++inline copy identical (marked block)
++exit=0
++$ git diff --stat HEAD -- SEARCH_SPACE.json SPLIT_MANIFEST.json   (empty = unchanged in round 4)
+diff --git a/metrix/e1-pilot/reports/round4/t2_outside_metrix.txt b/metrix/e1-pilot/reports/round4/t2_outside_metrix.txt
+new file mode 100644
+index 0000000..217efcd
+--- /dev/null
++++ b/metrix/e1-pilot/reports/round4/t2_outside_metrix.txt
+@@ -0,0 +1,138 @@
++# Round 4 task 2 raw output: outside_metrix_check.py after the two MINOR fixes. Host vm (cloud container), CPU only, system python3 3.13.18. Sat Nov 21 05:05:19 UTC 2026
++# Run from metrix/e1-pilot; HEAD = b1f5889cc51e3fee5aeeebe77515dfd17c312084 (round 4 work commit). Apart from this output file, the working tree equals HEAD.
++$ git status --short
++?? metrix/e1-pilot/reports/round4/t2_outside_metrix.txt
++(the only entry is this output file, being written)
++$ python3 reports/round3/outside_metrix_check.py
++changed outside metrix/ (base 61d3c767 .. HEAD):
++  A	.claude/agents/code-reviewer.md
++  A	.claude/agents/data-auditor.md
++  M	CLAUDE.md
++charter: base 3065 bytes, new 3586 bytes, base is exact prefix: True
++charter: appended 521 bytes; level-1/2 headings in appended part: ['## 6. Metrix 子项目(2026-11-13 负责人决定)']
++ignore rules below come from the working-tree .gitignore; identical to .gitignore at HEAD: True
++agent .claude/agents/code-reviewer.md: tracked at HEAD: True; ignore rule: .gitignore:14:.claude/	.claude/agents/code-reviewer.md
++agent .claude/agents/data-auditor.md: tracked at HEAD: True; ignore rule: .gitignore:14:.claude/	.claude/agents/data-auditor.md
++RESULT: PASS
++exit=0
++
++# Negative and boundary cases: dangling commits made with git commit-tree on a temporary index, parent b1f5889cc51e3fee5aeeebe77515dfd17c312084 (not on any branch).
++# n1 charter section 5 edited (PR #24 -> #25)        expect FAIL
++# n2 '## 7. extra' appended after section 6           expect FAIL
++# n3 README.md changed                                  expect FAIL
++# n4 '### 6.1 subsection' appended inside section 6    expect PASS (new: lower-level headings allowed)
++# n5 fenced code block with '# ...' and '## ...' lines appended   expect PASS (new: code fences skipped)
++# n6 '  ## 7.' (level-2 heading indented 2 spaces) appended   expect FAIL
++# n7 '# 7. level-1 heading' appended                   expect FAIL
++# n8 .gitignore changed at rev                           expect FAIL (not allowed) and 'identical ... False'
++## n1
++$ python3 reports/round3/outside_metrix_check.py --rev fc83f891a06826e5d49a52231d7cbffbfd34d809
++changed outside metrix/ (base 61d3c767 .. fc83f891a06826e5d49a52231d7cbffbfd34d809):
++  A	.claude/agents/code-reviewer.md
++  A	.claude/agents/data-auditor.md
++  M	CLAUDE.md
++charter: base 3065 bytes, new 3586 bytes, base is exact prefix: False
++ignore rules below come from the working-tree .gitignore; identical to .gitignore at fc83f891a06826e5d49a52231d7cbffbfd34d809: True
++agent .claude/agents/code-reviewer.md: tracked at fc83f891a06826e5d49a52231d7cbffbfd34d809: True; ignore rule: .gitignore:14:.claude/	.claude/agents/code-reviewer.md
++agent .claude/agents/data-auditor.md: tracked at fc83f891a06826e5d49a52231d7cbffbfd34d809: True; ignore rule: .gitignore:14:.claude/	.claude/agents/data-auditor.md
++FAIL: charter: original content differs from base
++RESULT: FAIL
++exit=1
++## n2
++$ python3 reports/round3/outside_metrix_check.py --rev aa1e3ba9b2b8c80ab909b26f2ea1ecfa7caf7517
++changed outside metrix/ (base 61d3c767 .. aa1e3ba9b2b8c80ab909b26f2ea1ecfa7caf7517):
++  A	.claude/agents/code-reviewer.md
++  A	.claude/agents/data-auditor.md
++  M	CLAUDE.md
++charter: base 3065 bytes, new 3599 bytes, base is exact prefix: True
++charter: appended 534 bytes; level-1/2 headings in appended part: ['## 6. Metrix 子项目(2026-11-13 负责人决定)', '## 7. extra']
++ignore rules below come from the working-tree .gitignore; identical to .gitignore at aa1e3ba9b2b8c80ab909b26f2ea1ecfa7caf7517: True
++agent .claude/agents/code-reviewer.md: tracked at aa1e3ba9b2b8c80ab909b26f2ea1ecfa7caf7517: True; ignore rule: .gitignore:14:.claude/	.claude/agents/code-reviewer.md
++agent .claude/agents/data-auditor.md: tracked at aa1e3ba9b2b8c80ab909b26f2ea1ecfa7caf7517: True; ignore rule: .gitignore:14:.claude/	.claude/agents/data-auditor.md
++FAIL: charter: appended part must contain exactly one level-1/2 heading, section 6
++RESULT: FAIL
++exit=1
++## n3
++$ python3 reports/round3/outside_metrix_check.py --rev a149ab3409139ac76b08a3fbf6382a2e3975ea31
++changed outside metrix/ (base 61d3c767 .. a149ab3409139ac76b08a3fbf6382a2e3975ea31):
++  A	.claude/agents/code-reviewer.md
++  A	.claude/agents/data-auditor.md
++  M	CLAUDE.md
++  M	README.md
++charter: base 3065 bytes, new 3586 bytes, base is exact prefix: True
++charter: appended 521 bytes; level-1/2 headings in appended part: ['## 6. Metrix 子项目(2026-11-13 负责人决定)']
++ignore rules below come from the working-tree .gitignore; identical to .gitignore at a149ab3409139ac76b08a3fbf6382a2e3975ea31: True
++agent .claude/agents/code-reviewer.md: tracked at a149ab3409139ac76b08a3fbf6382a2e3975ea31: True; ignore rule: .gitignore:14:.claude/	.claude/agents/code-reviewer.md
++agent .claude/agents/data-auditor.md: tracked at a149ab3409139ac76b08a3fbf6382a2e3975ea31: True; ignore rule: .gitignore:14:.claude/	.claude/agents/data-auditor.md
++FAIL: not allowed: M README.md
++RESULT: FAIL
++exit=1
++## n4
++$ python3 reports/round3/outside_metrix_check.py --rev 5124ad7990a924221cf7b7788a69424a01e4991a
++changed outside metrix/ (base 61d3c767 .. 5124ad7990a924221cf7b7788a69424a01e4991a):
++  A	.claude/agents/code-reviewer.md
++  A	.claude/agents/data-auditor.md
++  M	CLAUDE.md
++charter: base 3065 bytes, new 3612 bytes, base is exact prefix: True
++charter: appended 547 bytes; level-1/2 headings in appended part: ['## 6. Metrix 子项目(2026-11-13 负责人决定)']
++ignore rules below come from the working-tree .gitignore; identical to .gitignore at 5124ad7990a924221cf7b7788a69424a01e4991a: True
++agent .claude/agents/code-reviewer.md: tracked at 5124ad7990a924221cf7b7788a69424a01e4991a: True; ignore rule: .gitignore:14:.claude/	.claude/agents/code-reviewer.md
++agent .claude/agents/data-auditor.md: tracked at 5124ad7990a924221cf7b7788a69424a01e4991a: True; ignore rule: .gitignore:14:.claude/	.claude/agents/data-auditor.md
++RESULT: PASS
++exit=0
++## n5
++$ python3 reports/round3/outside_metrix_check.py --rev 9a4f03884ed797286bf60d4c51ea83a49834cdf9
++changed outside metrix/ (base 61d3c767 .. 9a4f03884ed797286bf60d4c51ea83a49834cdf9):
++  A	.claude/agents/code-reviewer.md
++  A	.claude/agents/data-auditor.md
++  M	CLAUDE.md
++charter: base 3065 bytes, new 3647 bytes, base is exact prefix: True
++charter: appended 582 bytes; level-1/2 headings in appended part: ['## 6. Metrix 子项目(2026-11-13 负责人决定)']
++ignore rules below come from the working-tree .gitignore; identical to .gitignore at 9a4f03884ed797286bf60d4c51ea83a49834cdf9: True
++agent .claude/agents/code-reviewer.md: tracked at 9a4f03884ed797286bf60d4c51ea83a49834cdf9: True; ignore rule: .gitignore:14:.claude/	.claude/agents/code-reviewer.md
++agent .claude/agents/data-auditor.md: tracked at 9a4f03884ed797286bf60d4c51ea83a49834cdf9: True; ignore rule: .gitignore:14:.claude/	.claude/agents/data-auditor.md
++RESULT: PASS
++exit=0
++## n6
++$ python3 reports/round3/outside_metrix_check.py --rev 1bb9354fa9093172b0e122089dd442c62f0fc4cb
++changed outside metrix/ (base 61d3c767 .. 1bb9354fa9093172b0e122089dd442c62f0fc4cb):
++  A	.claude/agents/code-reviewer.md
++  A	.claude/agents/data-auditor.md
++  M	CLAUDE.md
++charter: base 3065 bytes, new 3620 bytes, base is exact prefix: True
++charter: appended 555 bytes; level-1/2 headings in appended part: ['## 6. Metrix 子项目(2026-11-13 负责人决定)', '  ## 7. indented level-2 heading']
++ignore rules below come from the working-tree .gitignore; identical to .gitignore at 1bb9354fa9093172b0e122089dd442c62f0fc4cb: True
++agent .claude/agents/code-reviewer.md: tracked at 1bb9354fa9093172b0e122089dd442c62f0fc4cb: True; ignore rule: .gitignore:14:.claude/	.claude/agents/code-reviewer.md
++agent .claude/agents/data-auditor.md: tracked at 1bb9354fa9093172b0e122089dd442c62f0fc4cb: True; ignore rule: .gitignore:14:.claude/	.claude/agents/data-auditor.md
++FAIL: charter: appended part must contain exactly one level-1/2 heading, section 6
++RESULT: FAIL
++exit=1
++## n7
++$ python3 reports/round3/outside_metrix_check.py --rev 5d0bc445ff05bc19a989365d1e95a18886aaa844
++changed outside metrix/ (base 61d3c767 .. 5d0bc445ff05bc19a989365d1e95a18886aaa844):
++  A	.claude/agents/code-reviewer.md
++  A	.claude/agents/data-auditor.md
++  M	CLAUDE.md
++charter: base 3065 bytes, new 3608 bytes, base is exact prefix: True
++charter: appended 543 bytes; level-1/2 headings in appended part: ['## 6. Metrix 子项目(2026-11-13 负责人决定)', '# 7. level-1 heading']
++ignore rules below come from the working-tree .gitignore; identical to .gitignore at 5d0bc445ff05bc19a989365d1e95a18886aaa844: True
++agent .claude/agents/code-reviewer.md: tracked at 5d0bc445ff05bc19a989365d1e95a18886aaa844: True; ignore rule: .gitignore:14:.claude/	.claude/agents/code-reviewer.md
++agent .claude/agents/data-auditor.md: tracked at 5d0bc445ff05bc19a989365d1e95a18886aaa844: True; ignore rule: .gitignore:14:.claude/	.claude/agents/data-auditor.md
++FAIL: charter: appended part must contain exactly one level-1/2 heading, section 6
++RESULT: FAIL
++exit=1
++## n8
++$ python3 reports/round3/outside_metrix_check.py --rev 3ac7871e0646d3cb08274d7b825785c7b962a8b2
++changed outside metrix/ (base 61d3c767 .. 3ac7871e0646d3cb08274d7b825785c7b962a8b2):
++  A	.claude/agents/code-reviewer.md
++  A	.claude/agents/data-auditor.md
++  M	.gitignore
++  M	CLAUDE.md
++charter: base 3065 bytes, new 3586 bytes, base is exact prefix: True
++charter: appended 521 bytes; level-1/2 headings in appended part: ['## 6. Metrix 子项目(2026-11-13 负责人决定)']
++ignore rules below come from the working-tree .gitignore; identical to .gitignore at 3ac7871e0646d3cb08274d7b825785c7b962a8b2: False
++agent .claude/agents/code-reviewer.md: tracked at 3ac7871e0646d3cb08274d7b825785c7b962a8b2: True; ignore rule: .gitignore:14:.claude/	.claude/agents/code-reviewer.md
++agent .claude/agents/data-auditor.md: tracked at 3ac7871e0646d3cb08274d7b825785c7b962a8b2: True; ignore rule: .gitignore:14:.claude/	.claude/agents/data-auditor.md
++FAIL: not allowed: M .gitignore
++RESULT: FAIL
++exit=1
+diff --git a/metrix/e1-pilot/reports/round4/t2_st_prefix_check.txt b/metrix/e1-pilot/reports/round4/t2_st_prefix_check.txt
+new file mode 100644
+index 0000000..d1e377f
+--- /dev/null
++++ b/metrix/e1-pilot/reports/round4/t2_st_prefix_check.txt
+@@ -0,0 +1,17 @@
++# Round 4 task 2 raw output: K' of s_ST. Host vm (Claude Code on the web cloud container, 4 CPU, no GPU: nvidia-smi not found), CPU only; tokenizer files only, no model weights. Sat Nov 21 05:04:09 UTC 2026
++# python 3.13.18, transformers 5.22.2, tokenizers 0.23.3, jinja2 3.1.6
++# <TOK> = Qwen/Qwen3-1.7B@70d244cc86ccca08cf5af4e1e306ecf908b1ad5e tokenizer files (tokenizer.json sha256 aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4, tokenizer_config.json sha256 d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101); <SCRATCH> = session scratchpad
++$ python reports/round4/st_prefix_check.py --facts <SCRATCH>/r4/facts.json --split-manifest SPLIT_MANIFEST.json --tokenizer-dir <TOK>
++TRAIN template capital  "The capital of {E} is {A}."
++TRAIN template currency "The currency used in {E} is the {A}."
++TRAIN template founder  "{E} was founded by {A}."
++TRAIN template river    "The river that flows through {E} is the {A}."
++learned facts: 120; (fact, same-cell learned answer) pairs: 1800
++pairs where the tokens of prefix(f) are not a prefix of the whole sequence: 0
++pairs where the scored tokens != encode(' ' + c): 0
++K' per cell: {'capital/natural': [3], 'capital/random': [5], 'currency/natural': [3], 'currency/random': [6], 'founder/natural': [3], 'founder/random': [5], 'river/natural': [3], 'river/random': [6]}
++cells with more than one K': 0
++example E1P-L-capital-nat-01 prefix(f) "The capital of Krultrouth is" c "Linnuth"
++  ids [785, 6722, 315, 16447, 360, 376, 2898, 374, 444, 6130, 940] scored [444, 6130, 940] [' L', 'inn', 'uth']
++RESULT: PASS
++exit=0
+diff --git a/metrix/e1-pilot/reports/round4/t2_verify_scoring.txt b/metrix/e1-pilot/reports/round4/t2_verify_scoring.txt
+new file mode 100644
+index 0000000..b315014
+--- /dev/null
++++ b/metrix/e1-pilot/reports/round4/t2_verify_scoring.txt
+@@ -0,0 +1,46 @@
++# Round 4 task 2 raw output: verify_scoring.py after the two MINOR fixes (assert -> unaligned; SI.ENABLE_THINKING). Host vm (Claude Code on the web cloud container, 4 CPU, no GPU: nvidia-smi not found), CPU only; tokenizer files only, no model weights. Sat Nov 21 05:04:09 UTC 2026
++# python 3.13.18, transformers 5.22.2, tokenizers 0.23.3, jinja2 3.1.6
++# <TOK> = Qwen/Qwen3-1.7B@70d244cc86ccca08cf5af4e1e306ecf908b1ad5e tokenizer files (tokenizer.json sha256 aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4, tokenizer_config.json sha256 d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101); <SCRATCH> = session scratchpad
++$ python reports/round3/verify_scoring.py --facts <SCRATCH>/r4/facts.json --split-manifest SPLIT_MANIFEST.json --tokenizer-dir <TOK>
++== task 4: tokenizer special tokens
++class Qwen2Tokenizer
++bos_token None bos_token_id None
++eos_token '<|im_end|>' eos_token_id 151645
++pad_token '<|endoftext|>' pad_token_id 151643
++id of <|endoftext|>: 151643
++id of <|im_start|>: 151644
++id of <|im_end|>: 151645
++id of <think>: 151667
++id of </think>: 151668
++encode('The capital of Draemor is Kraith.') add_special_tokens=True : [785, 6722, 315, 73102, 336, 269, 374, 61067, 410, 13]
++encode('The capital of Draemor is Kraith.') add_special_tokens=False: [785, 6722, 315, 73102, 336, 269, 374, 61067, 410, 13]
++generation prompt (enable_thinking=False): "<|im_start|>user\nQ?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
++generation prompt (enable_thinking=True) : "<|im_start|>user\nQ?<|im_end|>\n<|im_start|>assistant\n"
++== task 7: scored answer ids vs TRAIN statement answer ids (learned facts, DEV questions)
++learned facts: 120; (fact, DEV question) pairs compared: 240
++TRAIN statements where ' ' + answer is not token-aligned: 0
++mismatches (scored ids != TRAIN answer ids): 0
++renderer vs apply_chat_template(continue_final_message=True) text differences: 0
++scored-token counts per cell: {'capital/natural': [3], 'capital/random': [5], 'currency/natural': [3], 'currency/random': [6], 'founder/natural': [3], 'founder/random': [5], 'river/natural': [3], 'river/random': [6]}
++cells with more than one scored-token count: 0
++== example (one full rendered scoring sequence)
++fact E1P-L-capital-nat-01 entity Krultrouth answer Linnuth
++TRAIN statement: "The capital of Krultrouth is Linnuth."
++TRAIN statement answer ids: [444, 6130, 940] [' L', 'inn', 'uth']
++DEV question: "What is the capital of Krultrouth?"
++rendered text (json-escaped): "<|im_start|>user\nWhat is the capital of Krultrouth?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\nThe answer is Linnuth"
++rendered text (raw):
++<|im_start|>user
++What is the capital of Krultrouth?<|im_end|>
++<|im_start|>assistant
++<think>
++
++</think>
++
++The answer is Linnuth
++[end of raw text]
++input_ids (28): [151644, 872, 198, 3838, 374, 279, 6722, 315, 16447, 360, 376, 2898, 30, 151645, 198, 151644, 77091, 198, 151667, 271, 151668, 271, 785, 4226, 374, 444, 6130, 940]
++tokens: ['<|im_start|>', 'user', '\n', 'What', ' is', ' the', ' capital', ' of', ' Kr', 'ul', 'tr', 'outh', '?', '<|im_end|>', '\n', '<|im_start|>', 'assistant', '\n', '<think>', '\n\n', '</think>', '\n\n', 'The', ' answer', ' is', ' L', 'inn', 'uth']
++scored slice start 25, scored ids [444, 6130, 940], scored tokens [' L', 'inn', 'uth']
++RESULT: PASS
++exit=0
+diff --git a/metrix/e1-pilot/reports/round4/t2_verify_scoring_diff_vs_r3.txt b/metrix/e1-pilot/reports/round4/t2_verify_scoring_diff_vs_r3.txt
+new file mode 100644
+index 0000000..8ea8e9a
+--- /dev/null
++++ b/metrix/e1-pilot/reports/round4/t2_verify_scoring_diff_vs_r3.txt
+@@ -0,0 +1,3 @@
++# Round 4: body of round-3 t7_verify_scoring.txt vs body of round-4 t2_verify_scoring.txt (first 4 lines = headers and the command line, dropped from both; facts path differs only by r3/r4 in the command line). Sat Nov 21 05:04:21 UTC 2026
++$ diff <(tail -n +5 reports/round3/t7_verify_scoring.txt) <(tail -n +5 reports/round4/t2_verify_scoring.txt)
++exit=0
+diff --git a/metrix/e1-pilot/reports/round4/t4_cherry_pick.txt b/metrix/e1-pilot/reports/round4/t4_cherry_pick.txt
+new file mode 100644
+index 0000000..ade3f04
+--- /dev/null
++++ b/metrix/e1-pilot/reports/round4/t4_cherry_pick.txt
+@@ -0,0 +1,22 @@
++# Round 4 task 4 raw output: cherry-pick of ea9ce1d onto metrix-e1-pilot-protocol-v1. Host vm, CPU only. Sat Nov 21 05:04:44 UTC 2026
++$ git cherry-pick -x ea9ce1d   (run at 2026-11-21T05:00:48Z on top of origin/metrix-e1-pilot-protocol-v1 = 7e5dd9c; the 3 output lines below are copied from that terminal output)
++[metrix-e1-pilot-protocol-v1 2985049] metrix: E1-PILOT round 3 task 2 redo, append correction (agents and root CLAUDE.md load later)
++ Date: Thu Nov 12 16:05:19 2026 +0000
++ 1 file changed, 34 insertions(+)
++$ git log -1 --format="%H parent=%P author_date=%aI committer_date=%cI" 2985049
++29850491cc8dd82256521064cdf93866a8c8eb10 parent=7e5dd9c03f5bb9108ea640f2591015497fa70d5c author_date=2026-11-12T16:05:19+00:00 committer_date=2026-11-21T05:00:48+00:00
++$ git log -1 --format="%H parent=%P author_date=%aI committer_date=%cI" ea9ce1d
++ea9ce1dada2ffb25025eea5b2eb2eb2d0423fdd9 parent=ca60f7498e91d6337267372381ed75e4ab661567 author_date=2026-11-12T16:05:19+00:00 committer_date=2026-11-12T16:05:19+00:00
++$ git rev-parse 2985049:metrix/e1-pilot/reports/round3/t2_load_check_redo.txt ea9ce1d:metrix/e1-pilot/reports/round3/t2_load_check_redo.txt
++6a3aaf83c7aff7e8a2abba46790150637aa67092
++6a3aaf83c7aff7e8a2abba46790150637aa67092
++$ diff <(git diff ea9ce1d^ ea9ce1d) <(git diff 2985049^ 2985049)
++exit=0
++$ git diff --stat 2985049^ 2985049
++ .../e1-pilot/reports/round3/t2_load_check_redo.txt | 34 ++++++++++++++++++++++
++ 1 file changed, 34 insertions(+)
++$ git rev-parse ea9ce1d^ 2985049^   (ea9ce1d parent ca60f74; cherry-pick parent = round 3 report commit 7e5dd9c)
++ca60f7498e91d6337267372381ed75e4ab661567
++7e5dd9c03f5bb9108ea640f2591015497fa70d5c
++$ git diff --stat ca60f74 7e5dd9c -- metrix/e1-pilot/reports/round3/t2_load_check_redo.txt   (file not touched between the two parents)
++(empty = unchanged)

@@ -1,0 +1,64 @@
+# Data Auditor run. host vm, CPU only (no GPU, no torch, tokenizer files only); 2026-11-21 05:12:07 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/157f690a-eee2-5858-8b75-b3efebc1267b/scratchpad/venv/bin/python -I -B r4_manifests.py /home/user/OpenMythos 7e5dd9c03f5bb9108ea640f2591015497fa70d5c 2253be94d77d41c5106d8074da578987d5b0a238
+commits in range: ['29850491cc8dd82256521064cdf93866a8c8eb10', 'b1f5889cc51e3fee5aeeebe77515dfd17c312084', '2253be94d77d41c5106d8074da578987d5b0a238']
+== DATA_MANIFEST.json leaf diff per commit
+  7e5dd9c0..29850491: []
+  29850491..b1f5889c: [('added', 'model.input_convention.em_generation'), ('added', 'model.input_convention.general_text_and_anchor'), ('changed', 'name_generation.answer_token_length_rule.purpose')]
+  b1f5889c..2253be94: []
+  whole range 7e5dd9c0..2253be94: [('added', 'model.input_convention.em_generation'), ('added', 'model.input_convention.general_text_and_anchor'), ('changed', 'name_generation.answer_token_length_rule.purpose')]
+  exactly the 3 keys named by the Executor: True
+  added model.input_convention.em_generation
+     old: null
+     new: "greedy decoding continues chat(q) + 'The answer is', the same context as candidate scoring; leading spaces of the output are removed before normalization (protocol section 5)"
+  added model.input_convention.general_text_and_anchor
+     old: null
+     new: "general-damage windows and arm A anchor documents: no special token is prepended (no <|endoftext|>); the first token has no context and is not scored and gets no KL term; t starts at 2 (protocol sections 4 and 5)"
+  changed name_generation.answer_token_length_rule.purpose
+     old: "all 20 answers of a cell have the same token counts in both contexts, so candidate scoring compares sequences of equal length"
+     new: "all 20 answers of a cell have the same token counts in both contexts, so candidate scoring compares sequences of equal length; since round 3 candidate scoring uses K_st only (equal K_st gives equal length); equal K_qa no longer matters for scoring and is kept so that the facts and their hash do not change"
+  name_generation leaves other than .purpose: 39 identical: True
+  seeds.         leaves identical: True
+  facts.         leaves identical: True
+  anchor_text.   leaves identical: True
+  general_text.  leaves identical: True
+  files.         leaves identical: True
+  hashing.       leaves identical: True
+  s_permutation  leaves identical: True
+  templates.     leaves identical: True
+  working-tree DATA_MANIFEST.json == head: True
+== DATA_MANIFEST name_generation vs constants transcribed from protocol 2.2
+  onsets                       True
+  nuclei                       True
+  codas                        True
+  natural length [4,10]        True
+  letters                      True
+  digits                       True
+  random length [6,8]          True
+  L probs 0.25/0.5/0.25        True
+  max draws 20000              True
+  DATA_SEED 20261110           True
+  expected hash 406c8801...    True
+  entity stream purpose        True
+  answer stream purpose        True
+== SPLIT_MANIFEST.json / SEARCH_SPACE.json across the range
+  SPLIT_MANIFEST.json: sha256 base b5090f3cc432332061ad9ecfaabc544ab8453b05951fc938fdf9e045f81a2a9e head b5090f3cc432332061ad9ecfaabc544ab8453b05951fc938fdf9e045f81a2a9e working b5090f3cc432332061ad9ecfaabc544ab8453b05951fc938fdf9e045f81a2a9e | base==head True | head==working True
+  SEARCH_SPACE.json: sha256 base 307dde04b5a9dd56e8ca1232fd3686641a7850c5d0442e90b347237989343a33 head 307dde04b5a9dd56e8ca1232fd3686641a7850c5d0442e90b347237989343a33 working 307dde04b5a9dd56e8ca1232fd3686641a7850c5d0442e90b347237989343a33 | base==head True | head==working True
+  git diff --stat base..head on the two files: ''
+  SPLIT_MANIFEST split_sha256: {'train_F.jsonl': None, 'train_S.jsonl': None, 'train_Y.jsonl': None, 'dev_qa.jsonl': None, 'test_qa.jsonl': None} | candidate_mapping_sha256: None
+  DATA_MANIFEST files: {'facts.jsonl': ('NOT_GENERATED', None, None), 'train_F.jsonl': ('NOT_GENERATED', None, None), 'train_S.jsonl': ('NOT_GENERATED', None, None), 'train_Y.jsonl': ('NOT_GENERATED', None, None), 'dev_qa.jsonl': ('NOT_GENERATED', None, None), 'candidates.json': ('NOT_GENERATED', None, None), 'general_dev.jsonl': ('NOT_GENERATED', None, None), 'anchor_text.jsonl': ('NOT_GENERATED', None, None), 'test_qa.jsonl': ('NOT_GENERATED', None, None), 'general_test.jsonl': ('NOT_GENERATED', None, None)}
+== protocol section 2.2: changed lines base..head
+  -- **答案等长规则——接受(细节 3)**:**answer 流从头重抽**(用同一个 purpose 新建生成器,不接着统计时的位置);依次接受满足形式规则、`(K_st, K_qa)` 等于目标、冲突规则和锚文本规则的抽样,直到 20 个。作用:同一 cell 的答案在两种语境下 token 数都相同,候选打分比较的是等长序列,没有长度偏差。
+  +- **答案等长规则——接受(细节 3)**:**answer 流从头重抽**(用同一个 purpose 新建生成器,不接着统计时的位置);依次接受满足形式规则、`(K_st, K_qa)` 等于目标、冲突规则和锚文本规则的抽样,直到 20 个。作用:同一 cell 的答案在两种语境下 token 数都相同,候选打分比较的是等长序列,没有长度偏差。Round 3 起候选打分只用 `K_st`(第 5 节),`K_st` 相同即保证等长;`K_qa` 相同已不影响打分,保留它是为了不改变 fact 及其哈希。
+  the new line starts with the whole old line (pure append): True | appended text: "Round 3 起候选打分只用 `K_st`(第 5 节),`K_st` 相同即保证等长;`K_qa` 相同已不影响打分,保留它是为了不改变 fact 及其哈希。"
+== SEARCH_SPACE.json inline copy (head protocol vs head SEARCH_SPACE.json)
+  marked blocks found: 1
+  inline text == file text: True | == file text without final newline: True
+  parsed JSON equal: True
+== files changed outside metrix/ since the project base 61d3c76705b28cc2ee334abc5bf1baaac4fc30dc
+A	.claude/agents/code-reviewer.md
+A	.claude/agents/data-auditor.md
+M	CLAUDE.md
+  root CLAUDE.md: base is a byte prefix of head: True | appended headings: ['## 6. Metrix 子项目(2026-11-13 负责人决定)']
+  outside-metrix changes inside the audited range: (none)
+exit=0

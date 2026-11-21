@@ -1,0 +1,25 @@
+# Round 4 supplement to t1_json_inline_check.txt: the first two checks re-run with the full command text recorded (t1_json_inline_check.txt abbreviated the commands). The third command differs from the original one (git diff --stat HEAD, working tree vs the HEAD of that time, 29850491): here it compares commits 7e5dd9c..HEAD, i.e. all of round 4, because HEAD has moved on since. Run from metrix/e1-pilot at HEAD 2253be94d77d41c5106d8074da578987d5b0a238. Host vm, CPU only, system python3 3.13.18. Sat Nov 21 05:25:17 UTC 2026
+$ python3 -c "import json;[json.load(open(f)) for f in ('DATA_MANIFEST.json','SPLIT_MANIFEST.json','SEARCH_SPACE.json')];print('json ok')"
+json ok
+exit=0
+$ python3 - <<'PY'
+import json
+BEGIN = '<!-- BEGIN INLINE COPY: SEARCH_SPACE.json -->'
+END = '<!-- END INLINE COPY: SEARCH_SPACE.json -->'
+doc = open('METRIX_E1_PROTOCOL.md', encoding='utf-8').read()
+assert doc.count(BEGIN) == 1 and doc.count(END) == 1, 'need exactly one BEGIN and one END marker'
+i, j = doc.index(BEGIN) + len(BEGIN), doc.index(END)
+assert i < j, 'END marker before BEGIN marker'
+inner = doc[i:j]
+head, tail = '\n```json\n', '```\n'
+assert inner.startswith(head) and inner.endswith(tail), 'the marked region must be exactly one fenced json block'
+block = inner[len(head):-len(tail)]
+assert '```' not in block, 'more than one fenced block between the markers'
+json.loads(block)
+assert block == open('SEARCH_SPACE.json', encoding='utf-8').read(), 'inline copy differs from SEARCH_SPACE.json'
+print('inline copy identical (marked block)')
+PY
+inline copy identical (marked block)
+exit=0
+$ git diff --stat 7e5dd9c03f5bb9108ea640f2591015497fa70d5c HEAD -- SEARCH_SPACE.json SPLIT_MANIFEST.json
+exit=0 (no output above = both files unchanged in round 4)

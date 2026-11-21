@@ -1,0 +1,32 @@
+# Round 4 task 3 raw output: metrix/CLAUDE.md before/after, and the user-level copy loaded by this session. Host vm, CPU only. Sat Nov 21 05:25:51 UTC 2026
+$ git log -1 --format="%H %cI" b1f5889c -- metrix/CLAUDE.md
+b1f5889cc51e3fee5aeeebe77515dfd17c312084 2026-11-21T05:05:03+00:00
+$ git diff 7e5dd9c b1f5889c -- metrix/CLAUDE.md
+diff --git a/metrix/CLAUDE.md b/metrix/CLAUDE.md
+index a9fd24c..ffd19bb 100644
+--- a/metrix/CLAUDE.md
++++ b/metrix/CLAUDE.md
+@@ -63,6 +63,7 @@ PROTOCOL_FROZEN 的发出与修改、租用 GPU、生成或评测 TEST、删除
+ - commit hash 与报告路径。
+ - 两份审查的原始输出路径与结论。
+ - 所有结论附原始命令输出。自检勾选不算证据。
++- 原始输出一律写入仓库并推送，不留在临时目录；data-auditor 须提交 audit 脚本的完整 stdout。
+ 
+ ## 10. 信任状态
+ 
+$ git rev-parse 7e5dd9c:metrix/CLAUDE.md HEAD:metrix/CLAUDE.md
+a9fd24c52e94dbacedfe461edfc7912fea353d3f
+ffd19bb3aac36d4ff899f83d20dd49ca11748a6f
+$ git hash-object /root/.claude/CLAUDE.md   (user-level copy in this container, loaded at session start)
+a9fd24c52e94dbacedfe461edfc7912fea353d3f
+$ cmp /root/.claude/CLAUDE.md <(git show 7e5dd9c:metrix/CLAUDE.md) && echo identical-to-pre-round-4
+identical-to-pre-round-4
+$ cmp /root/.claude/CLAUDE.md <(git show HEAD:metrix/CLAUDE.md)
+/root/.claude/CLAUDE.md /dev/fd/63 differ: char 3835, line 66
+exit=1
+$ ls -la --time-style=full-iso /root/.claude/CLAUDE.md
+-rw-r--r-- 1 root root 3975 2026-11-21 04:56:35.158793759 +0000 /root/.claude/CLAUDE.md
+# Appended Sat Nov 21 05:39:56 UTC 2026: the last command above has no exit line; re-run with exit status.
+$ ls -la --time-style=full-iso /root/.claude/CLAUDE.md
+-rw-r--r-- 1 root root 3975 2026-11-21 04:56:35.158793759 +0000 /root/.claude/CLAUDE.md
+exit=0
