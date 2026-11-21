@@ -3,17 +3,21 @@
 
 Compared with the base commit of protocol section 0, a revision may change nothing outside metrix/ except:
   1. CLAUDE.md (charter v2.0): the base file must be an exact byte prefix of the new file, and the appended
-     bytes must be exactly one new level-2 section that starts with "\\n## 6. Metrix" (charter section 6);
+     bytes must start with "\\n## 6. Metrix" and contain exactly one level-1 or level-2 heading, the section 6
+     heading (charter section 6). Lower-level headings (### ...) inside section 6 are allowed; lines inside
+     fenced code blocks are not headings;
   2. .claude/agents/code-reviewer.md and .claude/agents/data-auditor.md (added).
 The two agent files are ignored by .gitignore (".claude/") and are tracked only because they were added with
 `git add -f`; any later change to them must also be staged with `git add -f`. The check prints the ignore rule
-and the tracked state so that this stays visible.
+and the tracked state so that this stays visible. `git check-ignore` reads the working-tree .gitignore, not the
+one at --rev; the check prints whether the two files are identical (informational, not part of the result).
 
   python outside_metrix_check.py [--rev HEAD]
-Exit code 0 only if every check passes. Reads git objects only; writes nothing.
+Exit code 0 only if every check passes. Reads git objects and the working-tree .gitignore; writes nothing.
 """
 import argparse
 import os
+import re
 import subprocess
 import sys
 
@@ -21,6 +25,8 @@ BASE = "61d3c76705b28cc2ee334abc5bf1baaac4fc30dc"
 CHARTER = "CLAUDE.md"
 AGENTS = (".claude/agents/code-reviewer.md", ".claude/agents/data-auditor.md")
 SECTION6_HEAD = b"\n## 6. Metrix"
+HEADING_1_2 = re.compile(rb" {0,3}#{1,2}(?:[ \t]|$)")      # ATX heading of level 1 or 2
+FENCE = re.compile(rb" {0,3}(```|~~~)")
 
 
 def git(*args, check=True):
@@ -28,6 +34,22 @@ def git(*args, check=True):
     if check and r.returncode != 0:
         sys.exit("git %s failed: %s" % (" ".join(args), r.stderr.decode("utf-8", "replace").strip()))
     return r
+
+
+def top_headings(md):
+    """Level-1 and level-2 heading lines of Markdown bytes, skipping fenced code blocks."""
+    heads, fence = [], None
+    for ln in md.split(b"\n"):
+        m = FENCE.match(ln)
+        if m:
+            if fence is None:
+                fence = m.group(1)
+            elif m.group(1) == fence:
+                fence = None
+            continue
+        if fence is None and HEADING_1_2.match(ln):
+            heads.append(ln)
+    return heads
 
 
 def main():
@@ -61,16 +83,20 @@ def main():
     if not prefix_ok:
         failures.append("charter: original content differs from base")
     elif added:
-        heads = [ln for ln in added.split(b"\n") if ln.startswith(b"#")]
-        print("charter: appended %d bytes; headings in appended part: %s" % (
+        heads = top_headings(added)
+        print("charter: appended %d bytes; level-1/2 headings in appended part: %s" % (
             len(added), [h.decode("utf-8") for h in heads]))
         if not added.startswith(SECTION6_HEAD):
             failures.append("charter: appended part does not start with section 6 heading")
         if len(heads) != 1 or not heads[0].startswith(b"## 6. "):
-            failures.append("charter: appended part must contain exactly one heading, section 6")
+            failures.append("charter: appended part must contain exactly one level-1/2 heading, section 6")
 
     # 3. Agent files: tracked, and ignored by .gitignore (so changes need `git add -f`).
     tracked = set(git("ls-tree", "-r", "--name-only", rev, "--", ".claude").stdout.decode().split())
+    rev_gi = git("show", "%s:.gitignore" % rev, check=False)
+    wt_gi = open(".gitignore", "rb").read() if os.path.exists(".gitignore") else None
+    same = rev_gi.returncode == 0 and wt_gi == rev_gi.stdout
+    print("ignore rules below come from the working-tree .gitignore; identical to .gitignore at %s: %s" % (rev, same))
     for path in AGENTS:
         ign = git("check-ignore", "-v", "--no-index", path, check=False).stdout.decode().strip()
         print("agent %s: tracked at %s: %s; ignore rule: %s" % (path, rev, path in tracked, ign or "none"))

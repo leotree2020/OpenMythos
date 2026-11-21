@@ -63,6 +63,7 @@ PROTOCOL_FROZEN 的发出与修改、租用 GPU、生成或评测 TEST、删除�
 - commit hash 与报告路径。
 - 两份审查的原始输出路径与结论。
 - 所有结论附原始命令输出。自检勾选不算证据。
+- 原始输出一律写入仓库并推送，不留在临时目录；data-auditor 须提交 audit 脚本的完整 stdout。
 
 ## 10. 信任状态
 

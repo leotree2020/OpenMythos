@@ -25,11 +25,15 @@ import scoring_input as SI  # noqa: E402
 
 
 def train_answer_ids(tok, statement, answer):
-    """Token ids of ' ' + answer in the tokenized statement, found by offsets; None if not token-aligned."""
+    """Token ids of ' ' + answer in the tokenized statement, found by offsets.
+
+    None if the answer is not preceded by a space or the span is not token-aligned (counted as unaligned).
+    """
     enc = tok(statement, add_special_tokens=False, return_offsets_mapping=True)
     cut = statement.rindex(answer)
     lo, hi = cut - 1, cut + len(answer)                       # include the leading space
-    assert statement[lo] == " "
+    if lo < 0 or statement[lo] != " ":
+        return None
     idx = [i for i, (s, e) in enumerate(enc["offset_mapping"]) if s < hi and e > lo]
     spans = [enc["offset_mapping"][i] for i in idx]
     if not idx or spans[0][0] != lo or spans[-1][1] != hi:
@@ -91,7 +95,7 @@ def main():
                 print("MISMATCH", f["fact_id"], json.dumps(q), got, want)
             ref = tok.apply_chat_template(
                 [{"role": "user", "content": q}, {"role": "assistant", "content": SI.ANSWER_PREFIX + " " + f["answer"]}],
-                tokenize=False, continue_final_message=True, enable_thinking=False)
+                tokenize=False, continue_final_message=True, enable_thinking=SI.ENABLE_THINKING)
             if ref != text:
                 renderer_diff += 1
                 if renderer_diff <= 3:

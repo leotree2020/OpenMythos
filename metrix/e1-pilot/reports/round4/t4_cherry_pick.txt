@@ -1,0 +1,22 @@
+# Round 4 task 4 raw output: cherry-pick of ea9ce1d onto metrix-e1-pilot-protocol-v1. Host vm, CPU only. Sat Nov 21 05:04:44 UTC 2026
+$ git cherry-pick -x ea9ce1d   (run at 2026-11-21T05:00:48Z on top of origin/metrix-e1-pilot-protocol-v1 = 7e5dd9c; the 3 output lines below are copied from that terminal output)
+[metrix-e1-pilot-protocol-v1 2985049] metrix: E1-PILOT round 3 task 2 redo, append correction (agents and root CLAUDE.md load later)
+ Date: Thu Nov 12 16:05:19 2026 +0000
+ 1 file changed, 34 insertions(+)
+$ git log -1 --format="%H parent=%P author_date=%aI committer_date=%cI" 2985049
+29850491cc8dd82256521064cdf93866a8c8eb10 parent=7e5dd9c03f5bb9108ea640f2591015497fa70d5c author_date=2026-11-12T16:05:19+00:00 committer_date=2026-11-21T05:00:48+00:00
+$ git log -1 --format="%H parent=%P author_date=%aI committer_date=%cI" ea9ce1d
+ea9ce1dada2ffb25025eea5b2eb2eb2d0423fdd9 parent=ca60f7498e91d6337267372381ed75e4ab661567 author_date=2026-11-12T16:05:19+00:00 committer_date=2026-11-12T16:05:19+00:00
+$ git rev-parse 2985049:metrix/e1-pilot/reports/round3/t2_load_check_redo.txt ea9ce1d:metrix/e1-pilot/reports/round3/t2_load_check_redo.txt
+6a3aaf83c7aff7e8a2abba46790150637aa67092
+6a3aaf83c7aff7e8a2abba46790150637aa67092
+$ diff <(git diff ea9ce1d^ ea9ce1d) <(git diff 2985049^ 2985049)
+exit=0
+$ git diff --stat 2985049^ 2985049
+ .../e1-pilot/reports/round3/t2_load_check_redo.txt | 34 ++++++++++++++++++++++
+ 1 file changed, 34 insertions(+)
+$ git rev-parse ea9ce1d^ 2985049^   (ea9ce1d parent ca60f74; cherry-pick parent = round 3 report commit 7e5dd9c)
+ca60f7498e91d6337267372381ed75e4ab661567
+7e5dd9c03f5bb9108ea640f2591015497fa70d5c
+$ git diff --stat ca60f74 7e5dd9c -- metrix/e1-pilot/reports/round3/t2_load_check_redo.txt   (file not touched between the two parents)
+(empty = unchanged)

@@ -26,7 +26,9 @@
     "input_convention": {
       "training": "raw statement text followed by <|endoftext|> (id 151643); no chat template, no system prompt",
       "qa": "chat template of the pinned revision, one user turn, add_generation_prompt=true, enable_thinking=false (fixed, not a parameter), no system prompt",
-      "candidate_scoring": "chat(q) + 'The answer is' + ' ' + c: the assistant turn opens with the fixed prefix 'The answer is'; only the tokens of ' ' + c are scored; nothing follows the candidate; K = K_st; reference implementation metrix/e1-pilot/reports/round3/scoring_input.py"
+      "candidate_scoring": "chat(q) + 'The answer is' + ' ' + c: the assistant turn opens with the fixed prefix 'The answer is'; only the tokens of ' ' + c are scored; nothing follows the candidate; K = K_st; reference implementation metrix/e1-pilot/reports/round3/scoring_input.py",
+      "em_generation": "greedy decoding continues chat(q) + 'The answer is', the same context as candidate scoring; leading spaces of the output are removed before normalization (protocol section 5)",
+      "general_text_and_anchor": "general-damage windows and arm A anchor documents: no special token is prepended (no <|endoftext|>); the first token has no context and is not scored and gets no KL term; t starts at 2 (protocol sections 4 and 5)"
     },
     "libraries": {
       "torch": "2.11.0",
@@ -166,7 +168,7 @@
     "answer_token_length_rule": {
       "survey": "from the start of the answer stream, the first 400 draws that satisfy the form rules (reject_if and the anchor rule are NOT applied; repeats count); count (K_st, K_qa); target = the most frequent pair, ties broken by the smaller pair compared as a tuple",
       "accept": "RESTART the answer stream (a new generator with the same purpose, not continuing after the survey); accept in order the draws that satisfy the form rules, have (K_st, K_qa) == target and satisfy reject_if and the anchor rule, until 20 are accepted",
-      "purpose": "all 20 answers of a cell have the same token counts in both contexts, so candidate scoring compares sequences of equal length"
+      "purpose": "all 20 answers of a cell have the same token counts in both contexts, so candidate scoring compares sequences of equal length; since round 3 candidate scoring uses K_st only (equal K_st gives equal length); equal K_qa no longer matters for scoring and is kept so that the facts and their hash do not change"
     },
     "draw": {
       "natural": "n = 2 if rng.random() < 0.5 else 3; concatenate n times rng.choice(onsets) + rng.choice(nuclei) + rng.choice(codas); capitalize the first letter",

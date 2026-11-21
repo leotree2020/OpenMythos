@@ -33,6 +33,8 @@ Task Order 与其 “Mandatory consistency amendments A–L” 同时生效;两�
 | 训练输入 | 原始陈述句文本,后接 endoftext 特殊 token(id 151643);不用 chat template,不加 system prompt |
 | 问答输入 | 该 revision 的 chat template,单个 user 回合,`add_generation_prompt=true`,`enable_thinking=false`(写死,不作参数),不加 system prompt |
 | 候选打分输入 | 问答输入之后,assistant 回合以固定前缀 `The answer is` 开头,其后接一个空格和候选:`chat(q) + "The answer is" + " " + c`;只对 `" " + c` 的 token 打分,候选之后不接任何文本或特殊 token。参考实现 `reports/round3/scoring_input.py` |
+| 生成输入(EM) | 与候选打分的上下文相同:`chat(q) + "The answer is"`,从其后贪心解码(第 5 节) |
+| 通用文本与锚文本输入 | general damage 的通用文本窗口与 arm A 的锚文档,前面都不加任何特殊 token(不前置 `<|endoftext|>`);第一个 token 没有条件,不计分、不计 KL,t 从 2 起(第 4、5 节) |
 | 库版本 | torch 2.11.0,transformers 5.22.2;实际版本写入实验记录,不一致即 BLOCKED |
 
 **种子**:`DATA_SEED = 20261110`,`CANDIDATE_SEED = 20261111`,`TRAIN_SEEDS = [101, 202, 303]`,`BOOTSTRAP_SEED = 20261112`。所有随机数都来自
@@ -78,7 +80,7 @@ Task Order 与其 “Mandatory consistency amendments A–L” 同时生效;两�
 - **生成顺序**:cell 按 relation(capital、currency、founder、river)× stratum(natural、random)的顺序;cell 内先 entity 后 answer;每种角色先接受的 15 个为 learned,后 5 个为 unread。
 - **entity**:从 entity 流依次抽,满足形式规则、冲突规则和锚文本规则的接受,直到 20 个。
 - **答案等长规则——统计(细节 2)**:从 answer 流的开头依次抽,取**前 400 个满足形式规则的抽样**(不应用冲突规则和锚文本规则,重复的也计入),统计每个的 `(K_st, K_qa)`;目标数对 = 出现次数最多的数对,并列时取按元组比较较小者。
-- **答案等长规则——接受(细节 3)**:**answer 流从头重抽**(用同一个 purpose 新建生成器,不接着统计时的位置);依次接受满足形式规则、`(K_st, K_qa)` 等于目标、冲突规则和锚文本规则的抽样,直到 20 个。作用:同一 cell 的答案在两种语境下 token 数都相同,候选打分比较的是等长序列,没有长度偏差。
+- **答案等长规则——接受(细节 3)**:**answer 流从头重抽**(用同一个 purpose 新建生成器,不接着统计时的位置);依次接受满足形式规则、`(K_st, K_qa)` 等于目标、冲突规则和锚文本规则的抽样,直到 20 个。作用:同一 cell 的答案在两种语境下 token 数都相同,候选打分比较的是等长序列,没有长度偏差。Round 3 起候选打分只用 `K_st`(第 5 节),`K_st` 相同即保证等长;`K_qa` 相同已不影响打分,保留它是为了不改变 fact 及其哈希。
 - **上限**:每个流最多抽 20,000 次;超过即 IMPLEMENTATION_FAIL。
 - **复现**:按以上规则,`DATA_SEED = 20261110` 生成的 160 条 fact(字段 `fact_id, exposure, relation, stratum, entity, answer`,按生成顺序排列)的规范化 SHA-256 必须等于 `406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97`。参考实现 `reports/round2/names.py`;两次独立运行的记录见 `reports/ROUND2_REPORT.md`。
 
@@ -174,7 +176,7 @@ learned fact 的 entity 与 answer 同时出现在 TRAIN 陈述句和 QA 中是�
 | S | Shuffled-label | 在 `train_S` 上训练;沿用 F 最终选中的配置 | 否 |
 | Y | Style-only | 在 `train_Y` 上训练;沿用 F 最终选中的配置 | 否 |
 
-- A 的损失:`CE(train_F batch) + λ · mean_t KL(p_base(·|x_<t) ‖ p_θ(·|x_<t))`,x 为该步的 4 篇锚文档,p_base 由 arm N 的权重当场计算且不回传梯度。锚项不在事实陈述句上计算。
+- A 的损失:`CE(train_F batch) + λ · mean_{t=2..n_x} KL(p_base(·|x_<t) ‖ p_θ(·|x_<t))`,x 为该步的 4 篇锚文档,n_x 为锚文档的 token 数,p_base 由 arm N 的权重当场计算且不回传梯度。锚项不在事实陈述句上计算。锚文档前面不加任何特殊 token(不前置 `<|endoftext|>`);t = 1 没有条件,不计 KL,t 从 2 起。
 - S、Y 不单独调参;它们使用 F 选中配置的全部数值与第 7 节的训练契约。
 - 不得新增 arm、机制或阶段。
 
@@ -193,12 +195,12 @@ Acc(arm, split, G) = (1 / |G|) · Σ_{f ∈ G} Score_split(f)                   
 
 **TRAIN 闭卷检查**
 ```
-s_ST(f, c) = Σ_{t=1..K'} log p_θ(c'_t | prefix(f), c'_<t)      prefix(f) = TRAIN 陈述句中答案之前的文本;c' = " " + c
+s_ST(f, c) = Σ_{t=1..K'} log p_θ(c'_t | prefix(f), c'_<t)      prefix(f) = TRAIN 陈述句中答案之前的文本;c' = " " + c;K' = K_st(c)(与 s_QA 的 K 相同,cell 内相同)
 CB(f) = 1[ s_ST(f, a_f) > max_{c ≠ a_f} s_ST(f, c) ]
 Acc_CB(arm) = (1/120) · Σ_{f ∈ learned} CB(f)
 ```
 
-**Free-generation exact match(次指标)**:对同一 `chat(q)` 做贪心解码,最多 16 个新 token,遇 im_end 特殊 token(id 151645)停。归一化:取第一行,去首尾空白,去开头的 “the ”(不分大小写),去结尾的 `. , ; : ! ?`,casefold。`EM(f, q) = 1[norm(output) == norm(a_f)]`,聚合方式同上。
+**Free-generation exact match(次指标)**:对 `chat(q) + "The answer is"`(与 `s_QA` 的上下文相同)做贪心解码,最多 16 个新 token,遇 im_end 特殊 token(id 151645)停。输出先去掉开头的空格,再归一化。归一化:取第一行,去首尾空白,去开头的 “the ”(不分大小写),去结尾的 `. , ; : ! ?`,casefold。`EM(f, q) = 1[norm(output') == norm(a_f)]`,output' = 去掉开头空格后的输出;聚合方式同上。
 
 **全对率(次指标,只报告)**:`AllCorrect(f) = Π_{q} correct(f, q)`。
 
@@ -208,6 +210,7 @@ NLL_arm(w) = −(1/(n_w − 1)) · Σ_{t=2..n_w} log p_θ(x_t | x_<t)           
 dNLL(arm) = mean_{domain} mean_{w ∈ domain} [ NLL_arm(w) − NLL_N(w) ]         主
 PPL_degradation%(arm) = 100 · (exp(dNLL(arm)) − 1)                           展示
 ```
+窗口前面不加任何特殊 token(不前置 `<|endoftext|>`);x_1 没有条件,不计分,t 从 2 起;n_w 为窗口的 token 数。
 
 **Unread controls**(问的是真实答案;不使用 NONE 选项)
 ```
@@ -636,11 +639,18 @@ Compute accounting 的算法:训练 FLOPs ≈ 6 · P · T,前向 FLOPs ≈ 2 · 
 | v1-r1 | 2026-11-12 14:26:49 | `a9dd5238` | 第 0 节“环境要求” | 原文“全参微调(F、A、S、Y)在 FP32 下需要约 4 × 6.9 GB(权重、梯度、AdamW 两个动量)再加激活,所以执行机器必须有 ≥ 40 GB 显存的单张 GPU,或 ≥ 48 GB 内存的 CPU 机器”改为“所有模型训练与评测只在一张 NVIDIA A100 80GB 上执行(型号写死,检查方法与显存估计见第 7 节);CPU 只做数据生成、泄漏检查与分词器检查” | 原文允许 CPU 机器和任意 ≥ 40 GB 的 GPU,与 Metrix Round 1 第 8 项的算力决定(单张 A100 80GB、上限 4 小时、型号写死)冲突;原文的 4 × 6.9 GB 也漏算了 arm A 的冻结 base 副本(核实后 A 为 34.4 GB) |
 | v1-r1 | 2026-11-12 14:26:49 | `a9dd5238` | 第 11 节 ST7 | 原文“累计 wall-clock 超过上限(第 13 节第 3 项)→ 停并报告进度;转 GPU 或降级需 Owner 决定,不得静默继续”改为“累计 GPU wall-clock 超过 4 小时(第 7 节)→ 停并报告进度;延长上限、换硬件或降级都需 Owner 决定并记录,不得静默继续” | 第 13 节第 3 项已由同一决定移出待定列表,原指向失效;模型计算不再在 CPU 上进行,“转 GPU”不再适用 |
 | v1-r1 | 2026-11-12 14:26:49 | `a9dd5238` | 第 7、8、13 节;文件头;`SEARCH_SPACE.json` | 写入算力决定与显存估计;第 8 节加 GPU 检查与算力边界;待定项 3 → 2;内联块加 BEGIN / END 标记 | Metrix Round 1 第 7、8 项 |
-| v1-r2 | 2026-11-12 | 本节所在提交 | 第 2.2 节;`DATA_MANIFEST.json` | 写死名字生成的随机流 purpose、前 400 个候选的统计方法、接受阶段从头重抽;补全抽样、形式规则、冲突规则(含大小写与比较范围)、上限;加锚文本规则;给出 `DATA_SEED` 下 160 条 fact 的规范化 SHA-256 | Metrix Round 2 第 4 项:v1 未写死,只凭协议不能逐字节复现数据 |
-| v1-r2 | 2026-11-12 | 本节所在提交 | 第 2.4、2.6 节;`SPLIT_MANIFEST.json` | Y 模板改短,答案前加空格;Y/F token 比 1.292 → 1.196 | Metrix Round 2 第 3 项:原比值超出第 2.6 节的 [0.80, 1.25];区间不变 |
-| v1-r2 | 2026-11-12 | 本节所在提交 | 第 2.5、3 节;`SPLIT_MANIFEST.json` | L3 拆为 L3a(原规则)与 L3b(learned 答案在锚文本中的出现次数,上限 0) | Metrix Round 2 第 5 项:arm A 的暴露匹配原先没有检查覆盖 |
+| v1-r2 | 2026-11-12 14:43:19 | `6675af63` | 第 2.2 节;`DATA_MANIFEST.json` | 写死名字生成的随机流 purpose、前 400 个候选的统计方法、接受阶段从头重抽;补全抽样、形式规则、冲突规则(含大小写与比较范围)、上限;加锚文本规则;给出 `DATA_SEED` 下 160 条 fact 的规范化 SHA-256 | Metrix Round 2 第 4 项:v1 未写死,只凭协议不能逐字节复现数据 |
+| v1-r2 | 2026-11-12 14:43:19 | `6675af63` | 第 2.4、2.6 节;`SPLIT_MANIFEST.json` | Y 模板改短,答案前加空格;Y/F token 比 1.292 → 1.196 | Metrix Round 2 第 3 项:原比值超出第 2.6 节的 [0.80, 1.25];区间不变 |
+| v1-r2 | 2026-11-12 14:43:19 | `6675af63` | 第 2.5、3 节;`SPLIT_MANIFEST.json` | L3 拆为 L3a(原规则)与 L3b(learned 答案在锚文本中的出现次数,上限 0) | Metrix Round 2 第 5 项:arm A 的暴露匹配原先没有检查覆盖 |
 | v1-r2(Round 3 补记) | 2026-11-12 14:43:19 | `6675af63` | 第 2.2 节;`DATA_MANIFEST.json: name_generation.anchor_rule` | 新增锚文本规则:生成名字时,拒绝在第 2.7 节锚文本(512 篇、各截到 128 token 后解码)中出现过的字符串(不分大小写的子串);因此锚文本须在名字之前生成 | Metrix Round 2 第 5 项把 arm A 纳入暴露匹配(L3b):若某个名字出现在锚文本里,arm A 对该候选的暴露会多于 F,unread 名字也会违反 L3a。在生成时拒绝,使 L3a、L3b 在构造上成立(检查仍执行)。`DATA_SEED` 下这条规则没有拒绝任何名字,160 条 fact 的哈希不变(`ROUND2_REPORT.md` 对照运行 3)。上表 v1-r2 第 2.2 节一行只写了“加锚文本规则”,未写原因,Round 3 第 5 项要求补记 |
-| v1-r2 | 2026-11-12 | 本节所在提交 | 第 0、7、8、11 节;`SEARCH_SPACE.json` | GPU 规则改为:首次运行记录设备全名,同一次 Pilot 内必须一致,否则整批作废;新增 ST9 | Metrix Round 2 第 6 项 |
-| v1-r2 | 2026-11-12 | 本节所在提交 | 第 14 节 | 新增本变更记录,补记 v1-r1 对第 0 节与 ST7 的改动 | Metrix Round 2 第 7 项 |
-| v1-r3 | 2026-11-12 | Round 3 提交(hash 见 `reports/ROUND3_REPORT.md`) | 第 0 节;`SUBMISSION_NOTE.md` 第 1、5 节 | 原文“协议提交只新增 `metrix/e1-pilot/` 下 5 个文件”及验证命令“`git diff --stat 61d3c767 HEAD -- . ':(exclude)metrix'` 应为空”改为:metrix/ 以外只放行根目录 `CLAUDE.md` 追加的第 6 节(宪章原有内容须与 base 逐字节一致)和 `.claude/agents/` 下两个文件;注明两个 agent 文件被 `.gitignore` 忽略、用 `git add -f` 强制跟踪,以后改动也须用 `-f`;检查脚本 `reports/round3/outside_metrix_check.py` | Metrix Round 3 第 3 项:提交 `8ce8c896` 按 Owner 决定在宪章追加第 6 节并新增两个 subagent 文件,原检查“应为空”从此必然失败 |
-| v1-r3 | 2026-11-12 | Round 3 提交(hash 见 `reports/ROUND3_REPORT.md`) | 第 0 节(新增“候选打分输入”行;“问答输入”注明 `enable_thinking=false` 写死)、第 2.2 节 `K_qa` 说明、第 5 节 `s_QA`;`DATA_MANIFEST.json: model.input_convention`、`name_generation.token_counts` | 原文 `s_QA(f, q, c) = Σ log p_θ(c_t \| chat(q), c_<t)`,K = 问答语境(assistant 回合开头、无前导空格)的 token 数,改为:assistant 回合以固定前缀 `The answer is` 开头,对 `" " + c` 打分,K = `K_st`。`K_qa` 保留为生成规则,fact 及其哈希不变 | Metrix Round 3 第 6 项。验证(第 7 项):120 个 learned 答案 × 2 个 DEV 问句,打分 token id 与 TRAIN 陈述句中答案片段的 token id 不一致数为 0;第 8 项候选可行性:最小池 5,不足 4 的 cell 0 |
+| v1-r2 | 2026-11-12 14:43:19 | `6675af63` | 第 0、7、8、11 节;`SEARCH_SPACE.json` | GPU 规则改为:首次运行记录设备全名,同一次 Pilot 内必须一致,否则整批作废;新增 ST9 | Metrix Round 2 第 6 项 |
+| v1-r2 | 2026-11-12 14:43:19 | `6675af63` | 第 14 节 | 新增本变更记录,补记 v1-r1 对第 0 节与 ST7 的改动 | Metrix Round 2 第 7 项 |
+| v1-r3 | 2026-11-12 15:58:48 | `596fcfad` | 第 0 节;`SUBMISSION_NOTE.md` 第 1、5 节 | 原文“协议提交只新增 `metrix/e1-pilot/` 下 5 个文件”及验证命令“`git diff --stat 61d3c767 HEAD -- . ':(exclude)metrix'` 应为空”改为:metrix/ 以外只放行根目录 `CLAUDE.md` 追加的第 6 节(宪章原有内容须与 base 逐字节一致)和 `.claude/agents/` 下两个文件;注明两个 agent 文件被 `.gitignore` 忽略、用 `git add -f` 强制跟踪,以后改动也须用 `-f`;检查脚本 `reports/round3/outside_metrix_check.py` | Metrix Round 3 第 3 项:提交 `8ce8c896` 按 Owner 决定在宪章追加第 6 节并新增两个 subagent 文件,原检查“应为空”从此必然失败 |
+| v1-r3 | 2026-11-12 15:58:48 | `596fcfad` | 第 0 节(新增“候选打分输入”行;“问答输入”注明 `enable_thinking=false` 写死)、第 2.2 节 `K_qa` 说明、第 5 节 `s_QA`;`DATA_MANIFEST.json: model.input_convention`、`name_generation.token_counts` | 原文 `s_QA(f, q, c) = Σ log p_θ(c_t \| chat(q), c_<t)`,K = 问答语境(assistant 回合开头、无前导空格)的 token 数,改为:assistant 回合以固定前缀 `The answer is` 开头,对 `" " + c` 打分,K = `K_st`。`K_qa` 保留为生成规则,fact 及其哈希不变 | Metrix Round 3 第 6 项。验证(第 7 项):120 个 learned 答案 × 2 个 DEV 问句,打分 token id 与 TRAIN 陈述句中答案片段的 token id 不一致数为 0;第 8 项候选可行性:最小池 5,不足 4 的 cell 0 |
+| v1-r4 | ROUND4_TIME | `ROUND4_COMMIT` | 第 5 节 EM;第 0 节(新增“生成输入(EM)”行);`DATA_MANIFEST.json: model.input_convention.em_generation` | 原文“对同一 `chat(q)` 做贪心解码……归一化:取第一行……`EM(f, q) = 1[norm(output) == norm(a_f)]`”改为:对 `chat(q) + "The answer is"`(与 `s_QA` 的上下文相同)做贪心解码,输出先去掉开头的空格再归一化,`EM(f, q) = 1[norm(output') == norm(a_f)]`;最多 16 个新 token、遇 im_end 停、归一化各步与聚合不变 | Review Gate 裁决(`ROUND3_REPORT.md`“待 Review Gate 决定”第 1 项;Round 3 code-reviewer MAJOR 1、data-auditor Observation 2):候选打分已改为在 `The answer is` 之后打分,EM 仍从裸 `chat(q)` 解码,两者输入不一致;模型若回答整句,归一化后不可能等于答案 |
+| v1-r4 | ROUND4_TIME | `ROUND4_COMMIT` | 第 4 节 arm A 损失;第 5 节 general damage;第 0 节(新增“通用文本与锚文本输入”行);`DATA_MANIFEST.json: model.input_convention.general_text_and_anchor` | 写明通用文本窗口与锚文档前面都不加任何特殊 token(不前置 `<|endoftext|>`),第一个 token 不计分、不计 KL,t 从 2 起。arm A 原文 `mean_t KL(...)` 改为 `mean_{t=2..n_x} KL(...)`;general damage 的公式(原已是 `t=2..n_w`)不变,补文字说明 | Review Gate 裁决(待决第 2 项;Round 3 任务 4 #6、#7):原文没有写明是否前置特殊 token,KL 的 t 范围也没有写明;Qwen3 没有 BOS(`bos_token None`),不前置 token 时第一个位置没有条件 |
+| v1-r4 | ROUND4_TIME | `ROUND4_COMMIT` | 第 14 节 | v1-r2 各行“2026-11-12 / 本节所在提交”改为“2026-11-12 14:43:19 / `6675af63`”;v1-r3 各行“2026-11-12 / Round 3 提交(hash 见 `reports/ROUND3_REPORT.md`)”改为“2026-11-12 15:58:48 / `596fcfad`”;表后加注:宪章第 6 节标题中的日期是 JST | Review Gate 裁决(待决第 3、4 项;Round 3 code-reviewer MAJOR 2):“本节所在提交”在 Round 2 之后的每个提交上都成立,有歧义;v1-r3 只写了日期,提交要到报告里查。时间是提交时间(`git log --format=%cI`),原始输出 `reports/round4/t1_commit_times.txt` |
+| v1-r4 | ROUND4_TIME | `ROUND4_COMMIT` | 第 2.2 节答案等长规则的“作用”;`DATA_MANIFEST.json: name_generation.answer_token_length_rule.purpose` | 补一句:Round 3 起候选打分只用 `K_st`,`K_qa` 相同已不影响打分,保留它是为了不改变 fact 及其哈希。规则本身不变,fact 哈希不变 | Round 3 code-reviewer MINOR:原“作用”仍按 Round 3 之前的问答语境(assistant 回合开头、无前导空格)描述 |
+| v1-r4 | ROUND4_TIME | `ROUND4_COMMIT` | 第 5 节 `s_ST` | 补定义 `K' = K_st(c)` | Round 3 data-auditor Observation 1:`K'` 没有定义。验证:120 条 learned fact × 同 cell 的 15 个 learned 答案(1,800 对),`prefix(f) + " " + c` 中 `prefix(f)` 的 token 都是整串 token 的前缀,其后的 token 都等于 `encode(" " + c)`,数目都等于 `K_st(c)`;不一致数 0(`reports/round4/t2_st_prefix_check.txt`) |
+
+注:根目录 `CLAUDE.md`(宪章)第 6 节标题中的日期 “2026-11-13” 是 JST(日本标准时间,UTC+9)。该节由提交 `8ce8c896` 加入,提交时间 2026-11-12 15:25:19 UTC,即 2026-11-13 00:25:19 JST。本表的时间都是 UTC。
