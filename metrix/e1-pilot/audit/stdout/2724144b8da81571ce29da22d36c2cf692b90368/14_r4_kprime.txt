@@ -1,0 +1,16 @@
+# Data Auditor run. host vm, CPU only (no GPU, no torch, tokenizer files only); 2026-11-21 10:44:55 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/venv/bin/python -I -B r4_kprime.py /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/dl/qwen_tok /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/audit_r5/facts.json ../SPLIT_MANIFEST.json
+[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
+TRAIN templates (SPLIT_MANIFEST): {"capital": "The capital of {E} is {A}.", "currency": "The currency used in {E} is the {A}.", "founder": "{E} was founded by {A}.", "river": "The river that flows through {E} is the {A}."}
+equal to protocol 2.4 transcription: True
+learned facts: 120 | (fact, same-cell learned answer) pairs: 1800
+pairs where tokens of prefix(f) are NOT a prefix of tokens of prefix(f)+' '+c: 0
+pairs where the following tokens != encode(' '+c): 0
+pairs where the number of following tokens != K_st(c): 0
+K' per cell: {'capital/natural': [3], 'capital/random': [5], 'currency/natural': [3], 'currency/random': [6], 'founder/natural': [3], 'founder/random': [5], 'river/natural': [3], 'river/random': [6]}
+cells with more than one K': 0
+with the final '.': prefix not a token prefix: 0 | answer span != encode(' '+c): 0 | last token != encode('.'): 0
+example E1P-L-capital-nat-01 prefix(f) "The capital of Krultrouth is" c "Linnuth"
+  ids [785, 6722, 315, 16447, 360, 376, 2898, 374, 444, 6130, 940] scored [444, 6130, 940] ['ĠL', 'inn', 'uth']
+exit=0

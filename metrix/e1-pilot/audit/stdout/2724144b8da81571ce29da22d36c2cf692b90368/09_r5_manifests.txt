@@ -1,0 +1,75 @@
+# Data Auditor run. host vm, CPU only (no GPU, no torch, tokenizer files only); 2026-11-21 10:44:31 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/venv/bin/python -I -B r5_manifests.py /home/user/OpenMythos 06fd33575c6fcb82e5cd6203ad6193ce6ffe781a 2724144b8da81571ce29da22d36c2cf692b90368
+commits in range: [('c73f41a35b1dd705bd5e6974f8416c404e82bbec', '2026-11-21T06:37:20+00:00 metrix: E1-PILOT round 5 tasks 1-5 (KL averaging, EM stop tokens, prefix(f), pinned scoring check, blind records, CLAUDE.md, L6)'), ('2724144b8da81571ce29da22d36c2cf692b90368', '2026-11-21T06:37:32+00:00 metrix: E1-PILOT round 5, fill section 14 v1-r5 commit and time (c73f41a3)')]
+== files changed in the range
+M	metrix/CLAUDE.md
+M	metrix/e1-pilot/DATA_MANIFEST.json
+M	metrix/e1-pilot/METRIX_E1_PROTOCOL.md
+M	metrix/e1-pilot/reports/round3/verify_scoring.py
+A	metrix/e1-pilot/reports/round4/blind/prompt_wip-a.txt
+A	metrix/e1-pilot/reports/round4/blind/prompt_wip-b.txt
+A	metrix/e1-pilot/reports/round4/blind/prompt_wip-c.txt
+A	metrix/e1-pilot/reports/round4/blind/prompt_wip-d.txt
+A	metrix/e1-pilot/reports/round4/blind/prompt_wip-e.txt
+A	metrix/e1-pilot/reports/round4/blind/review_wip-a.md
+A	metrix/e1-pilot/reports/round4/blind/review_wip-b.md
+A	metrix/e1-pilot/reports/round4/blind/review_wip-c.md
+A	metrix/e1-pilot/reports/round4/blind/review_wip-d.md
+A	metrix/e1-pilot/reports/round4/blind/review_wip-e.md
+A	metrix/e1-pilot/reports/round4/blind/source_events.jsonl
+A	metrix/e1-pilot/reports/round5/em_special_tokens.py
+A	metrix/e1-pilot/reports/round5/l6_check.py
+A	metrix/e1-pilot/reports/round5/logrun.sh
+A	metrix/e1-pilot/reports/round5/recover_blind.py
+A	metrix/e1-pilot/reports/round5/t0_env.txt
+A	metrix/e1-pilot/reports/round5/t0_facts_regen.txt
+A	metrix/e1-pilot/reports/round5/t1_commit_times.txt
+A	metrix/e1-pilot/reports/round5/t1_em_special_tokens.txt
+A	metrix/e1-pilot/reports/round5/t1_st_prefix_check.txt
+A	metrix/e1-pilot/reports/round5/t2_enable_thinking_true_demo.txt
+A	metrix/e1-pilot/reports/round5/t2_verify_scoring.txt
+A	metrix/e1-pilot/reports/round5/t3_blind_recovery.txt
+A	metrix/e1-pilot/reports/round5/t5_l6_check.txt
+A	metrix/e1-pilot/tasks/ROUND5_TASKS.md
+outside metrix/: (none)
+== DATA_MANIFEST.json leaf diff
+  06fd3357..c73f41a3: [('changed', 'model.input_convention.em_generation')]
+  c73f41a3..2724144b: []
+  whole range 06fd3357..2724144b: [('changed', 'model.input_convention.em_generation')]
+  only model.input_convention.em_generation changed: True
+  changed model.input_convention.em_generation
+     old: "greedy decoding continues chat(q) + 'The answer is', the same context as candidate scoring; leading spaces of the output are removed before normalization (protocol section 5)"
+     new: "greedy decoding continues chat(q) + 'The answer is', the same context as candidate scoring; at most 16 new tokens; stops when <|im_end|> (151645) or <|endoftext|> (151643) is generated; the new tokens are decoded with special tokens skipped (skip_special_tokens=True), so neither stop token is in the output; leading spaces of the output are removed before normalization (protocol section 5)"
+  leaves: 142 | leaves other than em_generation identical: True
+  working tree == head: True
+  data files: {'facts.jsonl': ('NOT_GENERATED', None, None), 'train_F.jsonl': ('NOT_GENERATED', None, None), 'train_S.jsonl': ('NOT_GENERATED', None, None), 'train_Y.jsonl': ('NOT_GENERATED', None, None), 'dev_qa.jsonl': ('NOT_GENERATED', None, None), 'candidates.json': ('NOT_GENERATED', None, None), 'general_dev.jsonl': ('NOT_GENERATED', None, None), 'anchor_text.jsonl': ('NOT_GENERATED', None, None), 'test_qa.jsonl': ('NOT_GENERATED', None, None), 'general_test.jsonl': ('NOT_GENERATED', None, None)}
+  expected_facts_canonical_sha256: 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97
+== em_generation (head) vs protocol section 5 EM paragraph (head)
+  stop id 151645             in manifest: True | in protocol: True
+  stop id 151643             in manifest: True | in protocol: True
+  skip_special_tokens=True   in manifest: True | in protocol: True
+  16 new tokens              in manifest: True | in protocol: True
+  context 'The answer is'    in manifest: True | in protocol: True
+  greedy                     in manifest: True | in protocol: True
+  protocol section 0 row: | 生成输入(EM) | 与候选打分的上下文相同:`chat(q) + "The answer is"`,从其后贪心解码(第 5 节) |
+== SPLIT_MANIFEST.json / SEARCH_SPACE.json
+  SPLIT_MANIFEST.json: sha256 base b5090f3cc432332061ad9ecfaabc544ab8453b05951fc938fdf9e045f81a2a9e head b5090f3cc432332061ad9ecfaabc544ab8453b05951fc938fdf9e045f81a2a9e working b5090f3cc432332061ad9ecfaabc544ab8453b05951fc938fdf9e045f81a2a9e | base==head True | head==working True
+  SEARCH_SPACE.json: sha256 base 307dde04b5a9dd56e8ca1232fd3686641a7850c5d0442e90b347237989343a33 head 307dde04b5a9dd56e8ca1232fd3686641a7850c5d0442e90b347237989343a33 working 307dde04b5a9dd56e8ca1232fd3686641a7850c5d0442e90b347237989343a33 | base==head True | head==working True
+  split_sha256: {'train_F.jsonl': None, 'train_S.jsonl': None, 'train_Y.jsonl': None, 'dev_qa.jsonl': None, 'test_qa.jsonl': None} | candidate_mapping_sha256: None | template_set_sha256: 2b52411326c218e9c51d947b2f4e0d77b0cdd5d6237f9ce25b57a872c48ce28f
+  L6 entry: {"rule": "word 13-grams shared between anchor_text and general_dev / general_test", "limit": 0}
+  SEARCH_SPACE inline copy: blocks 1 | text == file: True
+== protocol: changed lines base..head, with the section they are in
+  - [## 4. Arms(6 个)] - A 的损失:`CE(train_F batch) + λ · mean_{t=2..n_x} KL(p_base(·|x_<t) ‖ p_θ(·|x_<t))`,x 为该步的 4 篇锚文档,n_x 为锚文档的 token 数,p_base 由 arm N 的权重当场计算且不回传梯度。锚项不在事实陈述句上计算。锚文档前面不加任何特殊 token(不前置 `<|endoftext|>`);t = 1 没有条件,不计 KL,t 从 2 起 ...
+  + [## 4. Arms(6 个)] - A 的损失:`CE(train_F batch) + λ · [Σ_{x ∈ X_s} Σ_{t=2..n_x} KL(p_base(·|x_<t) ‖ p_θ(·|x_<t))] / [Σ_{x ∈ X_s} (n_x − 1)]`,X_s 为第 s 步的 4 篇锚文档,n_x 为锚文档 x 的 token 数,p_base 由 arm N 的权重当场计算且不回传梯度。KL 项对 4 篇锚文档中全部计 KL 的 token(每篇  ...
+  - [## 5. Metrics] s_ST(f, c) = Σ_{t=1..K'} log p_θ(c'_t | prefix(f), c'_<t)      prefix(f) = TRAIN 陈述句中答案之前的文本;c' = " " + c;K' = K_st(c)(与 s_QA 的 K 相同,cell 内相同)
+  + [## 5. Metrics] s_ST(f, c) = Σ_{t=1..K'} log p_θ(c'_t | prefix(f), c'_<t)      prefix(f) = TRAIN 陈述句中答案之前的文本,不含答案前的空格(该空格属于 c');c' = " " + c;K' = K_st(c)(与 s_QA 的 K 相同,cell 内相同)
+  - [## 5. Metrics] **Free-generation exact match(次指标)**:对 `chat(q) + "The answer is"`(与 `s_QA` 的上下文相同)做贪心解码,最多 16 个新 token,遇 im_end 特殊 token(id 151645)停。输出先去掉开头的空格,再归一化。归一化:取第一行,去首尾空白,去开头的 “the ”(不分大小写),去结尾的 `. , ; : ! ?`,casefold。`EM(f, q ...
+  + [## 5. Metrics] **Free-generation exact match(次指标)**:对 `chat(q) + "The answer is"`(与 `s_QA` 的上下文相同)做贪心解码,最多 16 个新 token,生成出 `<|im_end|>`(id 151645)或 `<|endoftext|>`(id 151643)即停。新 token 解码成文本时跳过特殊 token(`skip_special_tokens=True`;这两个停止  ...
+  + [## 14. 变更记录] | v1-r5 | 2026-11-21 06:37:20 | `c73f41a3` | 第 4 节 arm A 损失 | 原文 `λ · mean_{t=2..n_x} KL(...)`、“x 为该步的 4 篇锚文档,n_x 为锚文档的 token 数”改为 `λ · [Σ_{x ∈ X_s} Σ_{t=2..n_x} KL(...)] / [Σ_{x ∈ X_s} (n_x − 1)]`、“X_s 为第 s 步的 4 篇锚文档,n_ ...
+  + [## 14. 变更记录] | v1-r5 | 2026-11-21 06:37:20 | `c73f41a3` | 第 5 节 EM;`DATA_MANIFEST.json: model.input_convention.em_generation` | 原文“遇 im_end 特殊 token(id 151645)停”改为遇 im_end(id 151645)或 endoftext(id 151643)即停;新增“新 token 解码成文本时跳过特殊 toke ...
+  + [## 14. 变更记录] | v1-r5 | 2026-11-21 06:37:20 | `c73f41a3` | 第 5 节 `s_ST` | `prefix(f)` 的定义补“不含答案前的空格(该空格属于 c')” | Review Gate 第 4 轮裁决(待决第 4 项前半;Round 4 code-reviewer MAJOR 3):“答案之前的文本”是否含答案前的空格有歧义。Round 4 的 K' 检查已按不含空格计算,本轮重跑结果不变(`repo ...
+  sections touched: ['## 14. 变更记录', '## 4. Arms(6 个)', '## 5. Metrics']
+  head arm A loss line: - A 的损失:`CE(train_F batch) + λ · [Σ_{x ∈ X_s} Σ_{t=2..n_x} KL(p_base(·|x_<t) ‖ p_θ(·|x_<t))] / [Σ_{x ∈ X_s} (n_x − 1)]`,X_s 为第 s 步的 4 篇锚文档,n_x 为锚文档 x 的 token 数,p_base 由 arm N 的权重当场计算且不回传梯度。KL 项对 4 篇锚文档中全部计 KL 的 token(每篇 t = 2..n_x)按 token 加权平均:分母是这些 token 的总数,不先对每篇求均值再平均。锚项不在事实陈述句上计算。锚文档前面不加任何特殊 token(不前置 `<|endoftext|>`);t = 1 没有条件,不计 KL,t 从 2 起。
+  head s_ST line: s_ST(f, c) = Σ_{t=1..K'} log p_θ(c'_t | prefix(f), c'_<t)      prefix(f) = TRAIN 陈述句中答案之前的文本,不含答案前的空格(该空格属于 c');c' = " " + c;K' = K_st(c)(与 s_QA 的 K 相同,cell 内相同)
+exit=0

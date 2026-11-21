@@ -1,0 +1,24 @@
+# Data Auditor run. host vm, CPU only (no GPU, no torch, tokenizer files only); 2026-11-21 10:45:20 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/venv/bin/python -I -B r5_compare_prev.py stdout/2253be94d77d41c5106d8074da578987d5b0a238 stdout/2724144b8da81571ce29da22d36c2cf692b90368 01_r4_env.txt=01_r4_env.txt 02_r4_anchor.txt=02_r4_anchor.txt 03_r4_regen_facts.txt=06_r4_regen_facts.txt 05_r4_kprime.txt=14_r4_kprime.txt 06_r4_scoring_em.txt=15_r4_scoring_em.txt 07_a4_cands_templates.txt=11_a4_cands_templates.txt 08_a1_facts.txt=12_a1_facts.txt 09_r4_leak_supp.txt=13_r4_leak_supp.txt 10_a3_scoring.txt=16_a3_scoring.txt
+01_r4_env.txt (30 lines) vs 01_r4_env.txt (30 lines): identical after path normalisation: False | differing lines: 4
+    -git HEAD: 2253be94d77d41c5106d8074da578987d5b0a238
+    -== tokenizer dir <S>/qwen_tok
+    +git HEAD: 2724144b8da81571ce29da22d36c2cf692b90368
+    +== tokenizer dir <S>/dl/qwen_tok
+02_r4_anchor.txt (16 lines) vs 02_r4_anchor.txt (16 lines): identical after path normalisation: False | differing lines: 2
+    -wrote <S>/audit_r4/anchor.json
+    +wrote <S>/audit_r5/anchor.json
+03_r4_regen_facts.txt (19 lines) vs 06_r4_regen_facts.txt (19 lines): identical after path normalisation: False | differing lines: 2
+    -wrote <S>/audit_r4/facts.json (canonical bytes; byte sha256 = canonical sha256)
+    +wrote <S>/audit_r5/facts.json (canonical bytes; byte sha256 = canonical sha256)
+05_r4_kprime.txt (14 lines) vs 14_r4_kprime.txt (14 lines): identical after path normalisation: True | differing lines: 0
+06_r4_scoring_em.txt (44 lines) vs 15_r4_scoring_em.txt (44 lines): identical after path normalisation: True | differing lines: 0
+07_a4_cands_templates.txt (30 lines) vs 11_a4_cands_templates.txt (30 lines): identical after path normalisation: True | differing lines: 0
+08_a1_facts.txt (40 lines) vs 12_a1_facts.txt (40 lines): identical after path normalisation: True | differing lines: 0
+09_r4_leak_supp.txt (13 lines) vs 13_r4_leak_supp.txt (13 lines): identical after path normalisation: True | differing lines: 0
+10_a3_scoring.txt (29 lines) vs 16_a3_scoring.txt (29 lines): identical after path normalisation: False | differing lines: 2
+    +[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
+    -[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
+differing lines in total: 10
+exit=0

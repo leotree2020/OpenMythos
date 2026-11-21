@@ -1,0 +1,17 @@
+请审查 Metrix E1-PILOT 第 5 轮的提交,范围 06fd33575c6fcb82e5cd6203ad6193ce6ffe781a..2724144b8da81571ce29da22d36c2cf692b90368(2 个提交)。
+
+你不能运行 git。完整 diff(含 git log 与 --stat)已写入:
+  /home/user/OpenMythos/metrix/e1-pilot/reviews/2724144b8da81571ce29da22d36c2cf692b90368/review_input.diff
+工作区当前就是 2724144b8da81571ce29da22d36c2cf692b90368 的内容;另有未跟踪的 metrix/e1-pilot/reviews/ 与 metrix/e1-pilot/audit/ 下的新文件,不在审查范围内。
+本轮运行的原始输出在 /home/user/OpenMythos/metrix/e1-pilot/reports/round5/;本轮指令原文在 /home/user/OpenMythos/metrix/e1-pilot/tasks/ROUND5_TASKS.md。
+
+本轮指令(Project Owner 转达,第 1–5 项原文):
+1. 按 Review Gate 第 4 轮裁决修改协议：arm A 的 KL 对 4 篇锚文档的全部 token 按 token 加权平均；EM 遇 151645 或 151643 停止，解码跳过特殊 token；写明 prefix(f) 不含答案前的空格。记入第 14 节。
+2. verify_scoring.py 加写死的期望结果：用第 3 轮记录的那条 28 个 token 的打分序列做比对，并演示把 enable_thinking 改为 True 时检查会失败。
+3. 把盲测的 5 次调用全文与审查原文提交到 reports/round4/blind/，核对 sha256 与仓库中已记录的一致。
+4. metrix/CLAUDE.md：第 9 节追加的规则注明出处「Review Gate 第 4 轮裁决，Owner 批准，永久」；第 10 节信任状态改为「已验证（2026-11-21 盲测 3/3 检出、0 误报；每类仅 1 个样本，PASS 仍须附原始输出）」；第 7 节注明「删除文件」不含会话临时目录，但支撑结论的输出须先提交。
+5. 完成 L6 泄漏检查（需要 general_dev 与 parcae 分词器，只下载分词器，不下载权重），由 data-auditor 独立复算。
+
+第 1 项所指的裁决对应 metrix/e1-pilot/reports/ROUND4_REPORT.md「待 Review Gate 决定」第 1、2、4 项,以及 metrix/e1-pilot/reviews/2253be94d77d41c5106d8074da578987d5b0a238/ 下的审查原文。第 2 项所指的序列见 metrix/e1-pilot/reports/round3/t7_verify_scoring.txt。第 3 项所指的 sha256 记录见 metrix/e1-pilot/reports/round4/t6_blind_timeline.txt。
+
+请按你的定义审查这个 diff(bug、死代码、可读性、合理性、与协议的一致性、与指令的一致性),按你的输出格式逐条列出问题并给出结论。

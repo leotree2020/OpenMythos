@@ -1,0 +1,11 @@
+# Data Auditor run. host vm, CPU only (no GPU, no torch, tokenizer files only); 2026-11-21 10:46:29 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/venv/bin/python -I -B r5_kl_denoms.py /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/dl/qwen_tok /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/audit_r5/anchor.json
+[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
+anchor documents: 512 | re-encoded n_x {n: count}: {128: 511, 123: 1} | documents with n_x != 128: [(340, 123)]
+  s = 0..299, re-encoded n_x: denominators {508: 298, 503: 2} | steps with denominator != 508: {85: 503, 213: 503}
+  s = 0..299, n_x = 128 (truncated ids): denominators {508: 300} | steps with denominator != 508: {}
+  s = 1..300, re-encoded n_x: denominators {508: 298, 503: 2} | steps with denominator != 508: {85: 503, 213: 503}
+  s = 1..300, n_x = 128 (truncated ids): denominators {508: 300} | steps with denominator != 508: {}
+step 85 documents [340, 341, 342, 343]: per-token weight 1/503; document share of the KL term (token-weighted) [0.2425, 0.2525, 0.2525, 0.2525] vs per-document mean [0.25, 0.25, 0.25, 0.25]
+exit=0

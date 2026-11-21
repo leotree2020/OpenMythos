@@ -1,0 +1,28 @@
+# Data Auditor run. host vm, CPU only (no GPU, no torch, tokenizer files only); 2026-11-21 10:42:58 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/venv/bin/python -I -B r5_pinned.py /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/dl/qwen_tok /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/audit_r5/facts.json ../SPLIT_MANIFEST.json ../METRIX_E1_PROTOCOL.md ../reports/round3/verify_scoring.py ../reports/round3/t7_verify_scoring.txt /home/user/OpenMythos 596fcfad4b73fdddad607ab6bc28d4c128f3744b
+[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
+my fact E1P-L-capital-nat-01: {"answer": "Linnuth", "entity": "Krultrouth", "exposure": "learned", "fact_id": "E1P-L-capital-nat-01", "relation": "capital", "stratum": "natural"}
+capital DEV templates in SPLIT_MANIFEST order: [('capital.DEV.1', 'What is the capital of {E}?'), ('capital.DEV.2', '{E} has which city as its capital?')]
+protocol 2.4 capital DEV row: "What is the capital of {E}? / {E} has which city as its capital?" | first listed == manifest first: True
+question: "What is the capital of Krultrouth?"
+rendered text (enable_thinking=False): "<|im_start|>user\nWhat is the capital of Krultrouth?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\nThe answer is Linnuth"
+my ids (28): [151644, 872, 198, 3838, 374, 279, 6722, 315, 16447, 360, 376, 2898, 30, 151645, 198, 151644, 77091, 198, 151667, 271, 151668, 271, 785, 4226, 374, 444, 6130, 940]
+my tokens: ['<|im_start|>', 'user', 'Ċ', 'What', 'Ġis', 'Ġthe', 'Ġcapital', 'Ġof', 'ĠKr', 'ul', 'tr', 'outh', '?', '<|im_end|>', 'Ċ', '<|im_start|>', 'assistant', 'Ċ', '<think>', 'ĊĊ', '</think>', 'ĊĊ', 'The', 'Ġanswer', 'Ġis', 'ĠL', 'inn', 'uth']
+my scored start: 25 | scored ids: [444, 6130, 940] | == encode(' '+a_f): True
+piecewise encode(chat(q)) + encode('The answer is') + encode(' '+a_f) == my ids: True
+apply_chat_template(tokenize=True) ids == my chat(q) ids: True
+PINNED (verify_scoring.py, read as a literal): {"fact_id": "E1P-L-capital-nat-01", "entity": "Krultrouth", "answer": "Linnuth", "question": "What is the capital of Krultrouth?", "input_ids": [151644, 872, 198, 3838, 374, 279, 6722, 315, 16447, 360, 376, 2898, 30, 151645, 198, 151644, 77091, 198, 151667, 271, 151668, 271, 785, 4226, 374, 444, 6130, 940], "start": 25}
+PINNED input_ids count: 28 | start: 25
+my ids == PINNED input_ids: True | my start == PINNED start: True | fact/entity/answer/question equal: True
+t7 path metrix/e1-pilot/reports/round3/t7_verify_scoring.txt | working tree == round-3 commit object 596fcfad : True
+t7 last commit touching it: 596fcfad4b73fdddad607ab6bc28d4c128f3744b 2026-11-12T15:58:48+00:00 metrix: E1-PILOT round 3 tasks 3-8 (outside-metrix check, special tokens, scoring prefix, checks)
+t7 (working tree) line 42: input_ids (28): [151644, 872, 198, 3838, 374, 279, 6722, 315, 16447, 360, 376, 2898, 30, 151645, 198, 151644, 77091, 198, 151667, 271, 151668, 271, 785, 4226, 374, 444, 6130, 940]
+t7 (working tree) line 44: scored slice start 25, scored ids [444, 6130, 940], scored tokens [' L', 'inn', 'uth']
+  recorded count 28 ids == mine: True | recorded start 25 == mine: True | recorded scored ids == mine: True | == PINNED: True
+t7 (commit 596fcfad) line 42: input_ids (28): [151644, 872, 198, 3838, 374, 279, 6722, 315, 16447, 360, 376, 2898, 30, 151645, 198, 151644, 77091, 198, 151667, 271, 151668, 271, 785, 4226, 374, 444, 6130, 940]
+t7 (commit 596fcfad) line 44: scored slice start 25, scored ids [444, 6130, 940], scored tokens [' L', 'inn', 'uth']
+  recorded count 28 ids == mine: True | recorded start 25 == mine: True | recorded scored ids == mine: True | == PINNED: True
+enable_thinking=True: ids (24) [151644, 872, 198, 3838, 374, 279, 6722, 315, 16447, 360, 376, 2898, 30, 151645, 198, 151644, 77091, 198, 785, 4226, 374, 444, 6130, 940] | start 21 | equal to PINNED: False | first difference at position 18 | scored ids [444, 6130, 940]
+enable_thinking not passed (template default): ids (24) [151644, 872, 198, 3838, 374, 279, 6722, 315, 16447, 360, 376, 2898, 30, 151645, 198, 151644, 77091, 198, 785, 4226, 374, 444, 6130, 940] | start 21 | equal to PINNED: False | first difference at position 18 | scored ids [444, 6130, 940]
+exit=0

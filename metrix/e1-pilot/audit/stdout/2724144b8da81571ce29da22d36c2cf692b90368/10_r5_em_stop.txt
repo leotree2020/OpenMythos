@@ -1,0 +1,17 @@
+# Data Auditor run. host vm, CPU only (no GPU, no torch, tokenizer files only); 2026-11-21 10:44:37 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/venv/bin/python -I -B r5_em_stop.py /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/dl/qwen_tok /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/audit_r5/facts.json
+[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
+id 151645: token '<|im_end|>' | in tok.all_special_ids True | tokenizer.json added_tokens content '<|im_end|>' special True | tokenizer_config added_tokens_decoder special True | decode([id], skip_special_tokens=True) ''
+id 151643: token '<|endoftext|>' | in tok.all_special_ids True | tokenizer.json added_tokens content '<|endoftext|>' special True | tokenizer_config added_tokens_decoder special True | decode([id], skip_special_tokens=True) ''
+generation_config.json eos_token_id: [151645, 151643] | == {151645, 151643} as a set: True
+tokenizer eos_token / pad_token: <|im_end|> 151645 / <|endoftext|> 151643
+special ids in the tokenizer: [151643, 151644, 151645, 151646, 151647, 151648, 151649, 151650, 151651, 151652, 151653, 151654, 151655, 151656]
+added tokens with special == False (decoded even with skip_special_tokens=True): [(151657, '<tool_call>'), (151658, '</tool_call>'), (151659, '<|fim_prefix|>'), (151660, '<|fim_middle|>'), (151661, '<|fim_suffix|>'), (151662, '<|fim_pad|>'), (151663, '<|repo_name|>'), (151664, '<|file_sep|>'), (151665, '<tool_response>'), (151666, '</tool_response>'), (151667, '<think>'), (151668, '</think>')]
+  simulated output ' a.' + im_end              : EM == 1 for 160/160 with the section-5 rule | 0/160 if decoded without stopping and without skipping
+  simulated output ' a.' + endoftext           : EM == 1 for 160/160 with the section-5 rule | 0/160 if decoded without stopping and without skipping
+  simulated output ' a' + im_end + more        : EM == 1 for 160/160 with the section-5 rule | 0/160 if decoded without stopping and without skipping
+  simulated output ' a.' + endoftext + im_end  : EM == 1 for 160/160 with the section-5 rule | 0/160 if decoded without stopping and without skipping
+  simulated output ' The a.' + im_end          : EM == 1 for 160/160 with the section-5 rule | 0/160 if decoded without stopping and without skipping
+example: " Linnuth." -> "linnuth"
+exit=0

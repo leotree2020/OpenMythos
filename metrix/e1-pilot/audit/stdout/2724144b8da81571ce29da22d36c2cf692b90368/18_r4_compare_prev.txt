@@ -1,0 +1,66 @@
+# Data Auditor run. host vm, CPU only (no GPU, no torch, tokenizer files only); 2026-11-21 10:45:28 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/venv/bin/python -I -B r4_compare_prev.py ../reviews/2253be94d77d41c5106d8074da578987d5b0a238/data-auditor.md ../reports/round3/t8_candidate_feasibility.txt ../SPLIT_MANIFEST.json stdout/2724144b8da81571ce29da22d36c2cf692b90368/02_r4_anchor.txt stdout/2724144b8da81571ce29da22d36c2cf692b90368/06_r4_regen_facts.txt stdout/2724144b8da81571ce29da22d36c2cf692b90368/09_r5_manifests.txt stdout/2724144b8da81571ce29da22d36c2cf692b90368/11_a4_cands_templates.txt stdout/2724144b8da81571ce29da22d36c2cf692b90368/12_a1_facts.txt stdout/2724144b8da81571ce29da22d36c2cf692b90368/13_r4_leak_supp.txt stdout/2724144b8da81571ce29da22d36c2cf692b90368/14_r4_kprime.txt stdout/2724144b8da81571ce29da22d36c2cf692b90368/15_r4_scoring_em.txt stdout/2724144b8da81571ce29da22d36c2cf692b90368/16_a3_scoring.txt
+round-3 report: output lines in code blocks: 88 | found verbatim this round: 33 | not found: 55
+  NOT VERBATIM: parquet sha256: 6a3450ea…3092c22 | pinned: 6a3450ea…3092c22 | match: True
+  NOT VERBATIM: FINAL COMPARISON with Executor anchor file: equal = True
+  NOT VERBATIM: --- 03
+  NOT VERBATIM: cell capital/natural: entity_draws 28, ... target (K_st,K_qa) (3, 3), ... answer_draws 84
+  NOT VERBATIM: cell capital/random: entity_draws 20, ... (5, 5) ... answer_draws 52
+  NOT VERBATIM: cell currency/natural: 31 ... (3, 3) ... 82 | currency/random: 20 ... (6, 6) ... 46
+  NOT VERBATIM: cell founder/natural: 30 ... (3, 3) ... 81 | founder/random: 21 ... (5, 5) ... 45
+  NOT VERBATIM: cell river/natural: 34 ... (3, 3) ... 89 | river/random: 20 ... (6, 6) ... 42
+  NOT VERBATIM: FINAL COMPARISON with Executor facts file: equal content = True
+  NOT VERBATIM: --- 04
+  NOT VERBATIM: 29850491..b1f5889c: [('added','model.input_convention.em_generation'), ('added','model.input_convention.general_text_and_anchor'), ('changed','name_generation.answer_token_length_rule.purpose')]
+  NOT VERBATIM: 7e5dd9c0..29850491: []   b1f5889c..2253be94: []
+  NOT VERBATIM: exactly the 3 keys named by the Executor: True
+  NOT VERBATIM: name_generation leaves other than .purpose: 39 identical: True
+  NOT VERBATIM: seeds./facts./anchor_text./general_text./files./hashing./s_permutation/templates. leaves identical: True
+  NOT VERBATIM: DATA_MANIFEST name_generation vs constants transcribed from protocol 2.2: 13 项全部 True
+  NOT VERBATIM: protocol section 2.2 changed lines: 只有细节 3 一行;the new line starts with the whole old line (pure append): True
+  NOT VERBATIM: ids [785, 6722, 315, 16447, 360, 376, 2898, 374, 444, 6130, 940] scored [444, 6130, 940]
+  NOT VERBATIM: bash -c 'diff <(tail -n +5 ../reports/round3/t7_verify_scoring.txt) <(tail -n +5 ../reports/round4/t2_verify_scoring.txt) && echo "bodies identical"; ...'   -> 12_diff_executor_verify_r3_r4.txt
+  NOT VERBATIM: bos None None | eos '<|im_end|>' 151645 | pad '<|endoftext|>' 151643 ; ids 151643/151644/151645/151667/151668
+  NOT VERBATIM: encode('The answer is') = [785, 4226, 374]
+  NOT VERBATIM: ... continue_final_message=True text != EM context text: 0 ; ... != scoring text: 0
+  NOT VERBATIM: scored-token counts per cell: {capital/natural [3], capital/random [5], currency/natural [3], currency/random [6], founder/natural [3], founder/random [5], river/natural [3], river/random [6]}
+  NOT VERBATIM: input_ids (28): [151644, 872, 198, 3838, ..., 785, 4226, 374, 444, 6130, 940]  scored slice start 25 ids [444, 6130, 940]
+  NOT VERBATIM: (内联副本、manifest 未改:04_r4_manifests.txt)
+  NOT VERBATIM: pools: 16 ; 每个 (relation, stratum) 的 learned 池 15、unread 池 5;K = 3/5/3/6/3/5/3/6
+  NOT VERBATIM: pools with < 4 answers: []      facts with < 3 distractors: []
+  NOT VERBATIM: template_set_sha256 recomputed: 2b52411326c218e9c51d947b2f4e0d77b0cdd5d6237f9ce25b57a872c48ce28f manifest: 同 match: True
+  NOT VERBATIM: --- 08
+  NOT VERBATIM: L3a (anchor part) unread entity/answer hits: 0 []   L3b learned answer hits in anchor: 0 []
+  NOT VERBATIM: L4 (DEV) verbatim DEV questions in F/Y/S-superset: 0
+  NOT VERBATIM: --- 09
+  NOT VERBATIM: sizes: TRAIN 120 | S 120 | S-superset 1800 | Y 240 | DEV 320 (learned 240 unread 80)
+  NOT VERBATIM: S exposure: (learned answer, S line) with count != [line uses that answer]: 0
+  NOT VERBATIM: L4 (DEV, case-insensitive) in train_F / S-superset / train_Y / anchor: 0 / 0 / 0 / 0
+  NOT VERBATIM: tokens ... with one EOS per sequence: F 1889, Y 2260, Y/F 1.196
+  NOT VERBATIM: --- 11
+  NOT VERBATIM: Executor round-3 t8 pools: 16 | this round a4 pools: 16 | identical (keys incl. K, and sizes): True
+  NOT VERBATIM: L1 consistent: True   L2 consistent: True
+  NOT VERBATIM: --- 04
+  NOT VERBATIM: SPLIT_MANIFEST.json / SEARCH_SPACE.json: base==head True (sha256 b5090f3c… / 307dde04…)
+  NOT VERBATIM: inline text == file text: True | parsed JSON equal: True
+  NOT VERBATIM: DATA_MANIFEST files: 全部 NOT_GENERATED / null;split_sha256 与 candidate_mapping_sha256 全部 null
+  NOT VERBATIM: outside-metrix changes inside the audited range: (none)
+  NOT VERBATIM: ?? metrix/e1-pilot/audit/r4_anchor.py
+  NOT VERBATIM: ?? metrix/e1-pilot/audit/r4_compare_prev.py
+  NOT VERBATIM: ?? metrix/e1-pilot/audit/r4_env.py
+  NOT VERBATIM: ?? metrix/e1-pilot/audit/r4_kprime.py
+  NOT VERBATIM: ?? metrix/e1-pilot/audit/r4_leak_supp.py
+  NOT VERBATIM: ?? metrix/e1-pilot/audit/r4_manifests.py
+  NOT VERBATIM: ?? metrix/e1-pilot/audit/r4_regen_facts.py
+  NOT VERBATIM: ?? metrix/e1-pilot/audit/r4_scoring_em.py
+  NOT VERBATIM: ?? metrix/e1-pilot/audit/run_logged.sh
+  NOT VERBATIM: ?? metrix/e1-pilot/audit/stdout/
+  NOT VERBATIM: ?? metrix/e1-pilot/reviews/2253be94d77d41c5106d8074da578987d5b0a238/
+Executor round-3 t8 pools: 16 | this round a4 pools: 16 | identical (keys incl. K, and sizes): True
+  min pool size this round: 5 | pools < 4: []
+SPLIT_MANIFEST L1 authoring_result: {'duplicate_normalized_hashes': []} | L2 authoring_result: {'max': 0.2, 'pair': ['capital.TRAIN.1', 'capital.DEV.1']}
+this round: ['L1 cross-set duplicate normalized hashes: []'] ["L2 max Jaccard word-4gram across sets: (0.2, ('capital.TRAIN.1', 'capital.DEV.1')) limit 0.25, within: True"]
+L1 consistent: True
+L2 consistent: True
+exit=0

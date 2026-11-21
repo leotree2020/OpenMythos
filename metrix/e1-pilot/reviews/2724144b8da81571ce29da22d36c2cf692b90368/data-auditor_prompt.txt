@@ -1,0 +1,24 @@
+请对 Metrix E1-PILOT 第 5 轮的提交做独立数据审计,范围 06fd33575c6fcb82e5cd6203ad6193ce6ffe781a..2724144b8da81571ce29da22d36c2cf692b90368(2 个提交,HEAD = 2724144b8da81571ce29da22d36c2cf692b90368)。完整 diff:/home/user/OpenMythos/metrix/e1-pilot/reviews/2724144b8da81571ce29da22d36c2cf692b90368/review_input.diff。Executor 的原始输出在 metrix/e1-pilot/reports/round5/;本轮指令原文在 metrix/e1-pilot/tasks/ROUND5_TASKS.md。
+
+本轮改动涉及打分、评测定义与泄漏检查:协议第 4 节 arm A 的 KL 改为对 4 篇锚文档全部计 KL 的 token 按 token 加权平均;第 5 节 EM 遇 151645 或 151643 停止、解码跳过特殊 token;第 5 节写明 prefix(f) 不含答案前的空格;DATA_MANIFEST.json 只改了 model.input_convention.em_generation 一个键;reports/round3/verify_scoring.py 加了写死的 28 个 token 的期望序列;reports/round4/blind/ 新增第 4 轮盲测的 10 个记录文件;新增 L6 检查(reports/round5/l6_check.py)。SPLIT_MANIFEST.json 与 SEARCH_SPACE.json 未改。
+
+Project Owner 第 5 轮指令第 5 项要求:完成 L6 泄漏检查,由 data-auditor 独立复算。L6 需要 parcae 分词器,因此本轮指令允许你另外加载 SandyResearch/parcae-tokenizer@6247b5d0592876b73660f34c2dd16c9db9e9045c 的 tokenizer.json(只是分词器,没有权重)。
+
+请用你自己在 metrix/e1-pilot/audit/ 下写的脚本(可以沿用你此前写在那里的脚本)独立复算,至少包括:
+A. L6(DEV 部分):按协议第 2.7 节与 DATA_MANIFEST.json 的 general_text、anchor_text 自己构造 general DEV 的 100 个窗口与 512 篇锚文本,计算两者共享的词 13-gram 数(上限 0)。协议没有定义“词”,请写明你用的定义;与 reports/round5/t5_l6_check.txt 比对(窗口数、各窗口长度分布、两个规范化哈希、各定义下的共享数)。eval_sets.jsonl 中 split == "test" 的行是 general_test 的来源,只能在 PROTOCOL_FROZEN 之后生成:不要解码或统计其内容。
+B. 写死的期望序列:用你自己的代码按协议第 0 节与第 5 节构造 E1P-L-capital-nat-01 第一个 DEV 问句的打分序列,确认 token id 等于 verify_scoring.py 中 PINNED 的 28 个 id、打分起点 25,并且等于 reports/round3/t7_verify_scoring.txt 第 42、44 行记录的序列;再确认 enable_thinking=True 时序列不同。
+C. 盲测记录:reports/round4/blind/ 下 10 个文件的 sha256 与字节数,是否与 reports/round4/t6_blind_timeline.txt 中第 4 轮提交的记录一致;prompt 文件中的提交哈希是否与该文件记录的 wip-a…wip-e 一致。
+D. fact 规范化哈希(406c8801…)、锚文本哈希(8828bc4f…)、DATA_MANIFEST.json 在该范围内只改了 em_generation、EM 两个停止 id 在固定分词器中都是特殊 token;候选可行性、模板哈希、L1–L5(L4 只查 DEV)、split 计数与上一轮一致。
+
+环境(Executor 已准备,只含分词器与配置文件,无模型权重,无 torch;请自己核对哈希):
+- Python:/tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/venv/bin/python(transformers 5.22.2、tokenizers 0.23.3、jinja2、pyarrow、huggingface_hub)
+- Qwen 分词器:/tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/dl/qwen_tok(Qwen/Qwen3-1.7B@70d244cc86ccca08cf5af4e1e306ecf908b1ad5e)
+- parcae 分词器:/tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/dl/parcae_tok/tokenizer.json(SandyResearch/parcae-tokenizer@6247b5d0592876b73660f34c2dd16c9db9e9045c;Stage 1 的 research/mini_mythos/stage1/results/r1/data_lock.json 记录了它的 tokenizer_sha256)
+- 锚文本源:/tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/dl/parquet/data/sample-100BT/train/shard_00000.parquet
+- general text 源:/home/user/OpenMythos/research/mini_mythos/stage1/results/r1/eval_sets.jsonl
+- Executor 生成的文件只可用于最后的比对,不要作为你复算的输入:/tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/r5/facts.json、/tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/r5/anchor.json、/tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/r5/general_dev.json。
+- 中间数据可放在 /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/audit_r5/,不要写进仓库。
+
+按 metrix/CLAUDE.md 第 9 节:每次运行 audit 脚本的完整 stdout(开头写明命令行)都写入 metrix/e1-pilot/audit/stdout/2724144b8da81571ce29da22d36c2cf692b90368/,每次运行一个文件,不要只摘录。仓库中没有 PROTOCOL_FROZEN 文件:不要生成、读取或实例化任何 TEST 问句或 general_test 窗口。
+
+请按你的输出格式给出每一项的命令、原始输出(可指向 stdout 文件)、与 Executor 是否一致,最后附 git status --short 原始输出与结论。

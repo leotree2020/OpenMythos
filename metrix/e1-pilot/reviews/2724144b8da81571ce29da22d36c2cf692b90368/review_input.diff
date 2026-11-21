@@ -1,0 +1,1183 @@
+# Review input for Round 5 task 6. Range 06fd33575c6fcb82e5cd6203ad6193ce6ffe781a (origin/metrix-e1-pilot-protocol-v1 before round 5) .. 2724144b8da81571ce29da22d36c2cf692b90368. Generated Sat Nov 21 06:37:49 UTC 2026
+$ git log --format=%H\ %cI\ %s 06fd33575c6fcb82e5cd6203ad6193ce6ffe781a..2724144b8da81571ce29da22d36c2cf692b90368
+2724144b8da81571ce29da22d36c2cf692b90368 2026-11-21T06:37:32+00:00 metrix: E1-PILOT round 5, fill section 14 v1-r5 commit and time (c73f41a3)
+c73f41a35b1dd705bd5e6974f8416c404e82bbec 2026-11-21T06:37:20+00:00 metrix: E1-PILOT round 5 tasks 1-5 (KL averaging, EM stop tokens, prefix(f), pinned scoring check, blind records, CLAUDE.md, L6)
+$ git diff --stat 06fd33575c6fcb82e5cd6203ad6193ce6ffe781a 2724144b8da81571ce29da22d36c2cf692b90368
+ metrix/CLAUDE.md                                   |   7 +-
+ metrix/e1-pilot/DATA_MANIFEST.json                 |   2 +-
+ metrix/e1-pilot/METRIX_E1_PROTOCOL.md              |   9 +-
+ metrix/e1-pilot/reports/round3/verify_scoring.py   |  52 +++++++-
+ .../e1-pilot/reports/round4/blind/prompt_wip-a.txt |  21 ++++
+ .../e1-pilot/reports/round4/blind/prompt_wip-b.txt |  21 ++++
+ .../e1-pilot/reports/round4/blind/prompt_wip-c.txt |  23 ++++
+ .../e1-pilot/reports/round4/blind/prompt_wip-d.txt |  18 +++
+ .../e1-pilot/reports/round4/blind/prompt_wip-e.txt |  21 ++++
+ .../e1-pilot/reports/round4/blind/review_wip-a.md  |  15 +++
+ .../e1-pilot/reports/round4/blind/review_wip-b.md  |  17 +++
+ .../e1-pilot/reports/round4/blind/review_wip-c.md  |  24 ++++
+ .../e1-pilot/reports/round4/blind/review_wip-d.md  |  14 +++
+ .../e1-pilot/reports/round4/blind/review_wip-e.md  |  19 +++
+ .../reports/round4/blind/source_events.jsonl       |  10 ++
+ .../e1-pilot/reports/round5/em_special_tokens.py   |  38 ++++++
+ metrix/e1-pilot/reports/round5/l6_check.py         | 134 +++++++++++++++++++++
+ metrix/e1-pilot/reports/round5/logrun.sh           |  12 ++
+ metrix/e1-pilot/reports/round5/recover_blind.py    | 102 ++++++++++++++++
+ metrix/e1-pilot/reports/round5/t0_env.txt          |  70 +++++++++++
+ metrix/e1-pilot/reports/round5/t0_facts_regen.txt  |  18 +++
+ metrix/e1-pilot/reports/round5/t1_commit_times.txt |  19 +++
+ .../reports/round5/t1_em_special_tokens.txt        |  13 ++
+ .../e1-pilot/reports/round5/t1_st_prefix_check.txt |  16 +++
+ .../round5/t2_enable_thinking_true_demo.txt        |  67 +++++++++++
+ .../e1-pilot/reports/round5/t2_verify_scoring.txt  |  55 +++++++++
+ .../e1-pilot/reports/round5/t3_blind_recovery.txt  |  57 +++++++++
+ metrix/e1-pilot/reports/round5/t5_l6_check.txt     |  25 ++++
+ metrix/e1-pilot/tasks/ROUND5_TASKS.md              |  16 +++
+ 29 files changed, 908 insertions(+), 7 deletions(-)
+$ git diff 06fd33575c6fcb82e5cd6203ad6193ce6ffe781a 2724144b8da81571ce29da22d36c2cf692b90368
+diff --git a/metrix/CLAUDE.md b/metrix/CLAUDE.md
+index ffd19bb..1c97de1 100644
+--- a/metrix/CLAUDE.md
++++ b/metrix/CLAUDE.md
+@@ -52,6 +52,8 @@ Metrix 是独立子项目。根目录 `CLAUDE.md`(Mythos 宪章 v2.0)第 1 节
+ 
+ PROTOCOL_FROZEN 的发出与修改、租用 GPU、生成或评测 TEST、删除任何文件、改写 Git 历史、force push。
+ 
++注：「删除任何文件」不含会话临时目录；但支撑结论的输出须先提交。
++
+ ## 8. 冲突处理
+ 
+ - Reviewer / Auditor 与 Executor 意见不同:由 Review Gate 裁决。
+@@ -63,8 +65,9 @@ PROTOCOL_FROZEN 的发出与修改、租用 GPU、生成或评测 TEST、删除
+ - commit hash 与报告路径。
+ - 两份审查的原始输出路径与结论。
+ - 所有结论附原始命令输出。自检勾选不算证据。
+-- 原始输出一律写入仓库并推送，不留在临时目录；data-auditor 须提交 audit 脚本的完整 stdout。
++- 原始输出一律写入仓库并推送，不留在临时目录；data-auditor 须提交 audit 脚本的完整 stdout。（出处：Review Gate 第 4 轮裁决，Owner 批准，永久）
+ 
+ ## 10. 信任状态
+ 
+-两个审查 subagent 当前为「待验证」。埋入已知 bug 的检出率测试通过前,其 PASS 仅作参考。
++- `code-reviewer`:已验证（2026-11-21 盲测 3/3 检出、0 误报；每类仅 1 个样本，PASS 仍须附原始输出）。
++- `data-auditor`:「待验证」。2026-11-21 的盲测只测了 code-reviewer;埋入已知 bug 的检出率测试通过前,其 PASS 仅作参考。
+diff --git a/metrix/e1-pilot/DATA_MANIFEST.json b/metrix/e1-pilot/DATA_MANIFEST.json
+index b2ee561..a6d5755 100644
+--- a/metrix/e1-pilot/DATA_MANIFEST.json
++++ b/metrix/e1-pilot/DATA_MANIFEST.json
+@@ -27,7 +27,7 @@
+       "training": "raw statement text followed by <|endoftext|> (id 151643); no chat template, no system prompt",
+       "qa": "chat template of the pinned revision, one user turn, add_generation_prompt=true, enable_thinking=false (fixed, not a parameter), no system prompt",
+       "candidate_scoring": "chat(q) + 'The answer is' + ' ' + c: the assistant turn opens with the fixed prefix 'The answer is'; only the tokens of ' ' + c are scored; nothing follows the candidate; K = K_st; reference implementation metrix/e1-pilot/reports/round3/scoring_input.py",
+-      "em_generation": "greedy decoding continues chat(q) + 'The answer is', the same context as candidate scoring; leading spaces of the output are removed before normalization (protocol section 5)",
++      "em_generation": "greedy decoding continues chat(q) + 'The answer is', the same context as candidate scoring; at most 16 new tokens; stops when <|im_end|> (151645) or <|endoftext|> (151643) is generated; the new tokens are decoded with special tokens skipped (skip_special_tokens=True), so neither stop token is in the output; leading spaces of the output are removed before normalization (protocol section 5)",
+       "general_text_and_anchor": "general-damage windows and arm A anchor documents: no special token is prepended (no <|endoftext|>); the first token has no context and is not scored and gets no KL term; t starts at 2 (protocol sections 4 and 5)"
+     },
+     "libraries": {
+diff --git a/metrix/e1-pilot/METRIX_E1_PROTOCOL.md b/metrix/e1-pilot/METRIX_E1_PROTOCOL.md
+index 1f491a5..12d16fa 100644
+--- a/metrix/e1-pilot/METRIX_E1_PROTOCOL.md
++++ b/metrix/e1-pilot/METRIX_E1_PROTOCOL.md
+@@ -176,7 +176,7 @@ learned fact 的 entity 与 answer 同时出现在 TRAIN 陈述句和 QA 中是
+ | S | Shuffled-label | 在 `train_S` 上训练;沿用 F 最终选中的配置 | 否 |
+ | Y | Style-only | 在 `train_Y` 上训练;沿用 F 最终选中的配置 | 否 |
+ 
+-- A 的损失:`CE(train_F batch) + λ · mean_{t=2..n_x} KL(p_base(·|x_<t) ‖ p_θ(·|x_<t))`,x 为该步的 4 篇锚文档,n_x 为锚文档的 token 数,p_base 由 arm N 的权重当场计算且不回传梯度。锚项不在事实陈述句上计算。锚文档前面不加任何特殊 token(不前置 `<|endoftext|>`);t = 1 没有条件,不计 KL,t 从 2 起。
++- A 的损失:`CE(train_F batch) + λ · [Σ_{x ∈ X_s} Σ_{t=2..n_x} KL(p_base(·|x_<t) ‖ p_θ(·|x_<t))] / [Σ_{x ∈ X_s} (n_x − 1)]`,X_s 为第 s 步的 4 篇锚文档,n_x 为锚文档 x 的 token 数,p_base 由 arm N 的权重当场计算且不回传梯度。KL 项对 4 篇锚文档中全部计 KL 的 token(每篇 t = 2..n_x)按 token 加权平均:分母是这些 token 的总数,不先对每篇求均值再平均。锚项不在事实陈述句上计算。锚文档前面不加任何特殊 token(不前置 `<|endoftext|>`);t = 1 没有条件,不计 KL,t 从 2 起。
+ - S、Y 不单独调参;它们使用 F 选中配置的全部数值与第 7 节的训练契约。
+ - 不得新增 arm、机制或阶段。
+ 
+@@ -195,12 +195,12 @@ Acc(arm, split, G) = (1 / |G|) · Σ_{f ∈ G} Score_split(f)
+ 
+ **TRAIN 闭卷检查**
+ ```
+-s_ST(f, c) = Σ_{t=1..K'} log p_θ(c'_t | prefix(f), c'_<t)      prefix(f) = TRAIN 陈述句中答案之前的文本;c' = " " + c;K' = K_st(c)(与 s_QA 的 K 相同,cell 内相同)
++s_ST(f, c) = Σ_{t=1..K'} log p_θ(c'_t | prefix(f), c'_<t)      prefix(f) = TRAIN 陈述句中答案之前的文本,不含答案前的空格(该空格属于 c');c' = " " + c;K' = K_st(c)(与 s_QA 的 K 相同,cell 内相同)
+ CB(f) = 1[ s_ST(f, a_f) > max_{c ≠ a_f} s_ST(f, c) ]
+ Acc_CB(arm) = (1/120) · Σ_{f ∈ learned} CB(f)
+ ```
+ 
+-**Free-generation exact match(次指标)**:对 `chat(q) + "The answer is"`(与 `s_QA` 的上下文相同)做贪心解码,最多 16 个新 token,遇 im_end 特殊 token(id 151645)停。输出先去掉开头的空格,再归一化。归一化:取第一行,去首尾空白,去开头的 “the ”(不分大小写),去结尾的 `. , ; : ! ?`,casefold。`EM(f, q) = 1[norm(output') == norm(a_f)]`,output' = 去掉开头空格后的输出;聚合方式同上。
++**Free-generation exact match(次指标)**:对 `chat(q) + "The answer is"`(与 `s_QA` 的上下文相同)做贪心解码,最多 16 个新 token,生成出 `<|im_end|>`(id 151645)或 `<|endoftext|>`(id 151643)即停。新 token 解码成文本时跳过特殊 token(`skip_special_tokens=True`;这两个停止 token 都是特殊 token,不进入输出)。输出先去掉开头的空格,再归一化。归一化:取第一行,去首尾空白,去开头的 “the ”(不分大小写),去结尾的 `. , ; : ! ?`,casefold。`EM(f, q) = 1[norm(output') == norm(a_f)]`,output' = 去掉开头空格后的输出;聚合方式同上。
+ 
+ **全对率(次指标,只报告)**:`AllCorrect(f) = Π_{q} correct(f, q)`。
+ 
+@@ -652,5 +652,8 @@ Compute accounting 的算法:训练 FLOPs ≈ 6 · P · T,前向 FLOPs ≈ 2 ·
+ | v1-r4 | 2026-11-21 05:05:03 | `b1f5889c` | 第 14 节 | v1-r2 各行“2026-11-12 / 本节所在提交”改为“2026-11-12 14:43:19 / `6675af63`”;v1-r3 各行“2026-11-12 / Round 3 提交(hash 见 `reports/ROUND3_REPORT.md`)”改为“2026-11-12 15:58:48 / `596fcfad`”;表后加注:宪章第 6 节标题中的日期是 JST | Review Gate 裁决(待决第 3、4 项;Round 3 code-reviewer MAJOR 2):“本节所在提交”在 Round 2 之后的每个提交上都成立,有歧义;v1-r3 只写了日期,提交要到报告里查。时间是提交时间(`git log --format=%cI`),原始输出 `reports/round4/t1_commit_times.txt` |
+ | v1-r4 | 2026-11-21 05:05:03 | `b1f5889c` | 第 2.2 节答案等长规则的“作用”;`DATA_MANIFEST.json: name_generation.answer_token_length_rule.purpose` | 补一句:Round 3 起候选打分只用 `K_st`,`K_qa` 相同已不影响打分,保留它是为了不改变 fact 及其哈希。规则本身不变,fact 哈希不变 | Round 3 code-reviewer MINOR:原“作用”仍按 Round 3 之前的问答语境(assistant 回合开头、无前导空格)描述 |
+ | v1-r4 | 2026-11-21 05:05:03 | `b1f5889c` | 第 5 节 `s_ST` | 补定义 `K' = K_st(c)` | Round 3 data-auditor Observation 1:`K'` 没有定义。验证:120 条 learned fact × 同 cell 的 15 个 learned 答案(1,800 对),`prefix(f) + " " + c` 中 `prefix(f)` 的 token 都是整串 token 的前缀,其后的 token 都等于 `encode(" " + c)`,数目都等于 `K_st(c)`;不一致数 0(`reports/round4/t2_st_prefix_check.txt`) |
++| v1-r5 | 2026-11-21 06:37:20 | `c73f41a3` | 第 4 节 arm A 损失 | 原文 `λ · mean_{t=2..n_x} KL(...)`、“x 为该步的 4 篇锚文档,n_x 为锚文档的 token 数”改为 `λ · [Σ_{x ∈ X_s} Σ_{t=2..n_x} KL(...)] / [Σ_{x ∈ X_s} (n_x − 1)]`、“X_s 为第 s 步的 4 篇锚文档,n_x 为锚文档 x 的 token 数”,并写明 KL 项对 4 篇锚文档中全部计 KL 的 token 按 token 加权平均,不先对每篇求均值 | Review Gate 第 4 轮裁决(`ROUND4_REPORT.md`“待 Review Gate 决定”第 1 项;Round 4 code-reviewer MAJOR 1):原文没有写明 4 篇之间怎么平均,而锚文档长度不全相同(512 篇中 1 篇为 123 token,`reports/round4/t1_anchor_short_docs.txt`) |
++| v1-r5 | 2026-11-21 06:37:20 | `c73f41a3` | 第 5 节 EM;`DATA_MANIFEST.json: model.input_convention.em_generation` | 原文“遇 im_end 特殊 token(id 151645)停”改为遇 im_end(id 151645)或 endoftext(id 151643)即停;新增“新 token 解码成文本时跳过特殊 token(`skip_special_tokens=True`;这两个停止 token 都是特殊 token,不进入输出)”。`em_generation` 补写停止 token 与跳过特殊 token | Review Gate 第 4 轮裁决(待决第 2 项;Round 4 code-reviewer MAJOR 2、data-auditor 观察 1、2):原文停止 token 只有 151645,训练输入每句后接 151643;没有写解码时是否跳过特殊 token,输出若保留 im_end,以它结束的输出 EM 都为 0。两个 id 都是特殊 token,与固定 revision 的 `generation_config.json` 的 eos 列表相同(`reports/round5/t1_em_special_tokens.txt`) |
++| v1-r5 | 2026-11-21 06:37:20 | `c73f41a3` | 第 5 节 `s_ST` | `prefix(f)` 的定义补“不含答案前的空格(该空格属于 c')” | Review Gate 第 4 轮裁决(待决第 4 项前半;Round 4 code-reviewer MAJOR 3):“答案之前的文本”是否含答案前的空格有歧义。Round 4 的 K' 检查已按不含空格计算,本轮重跑结果不变(`reports/round5/t1_st_prefix_check.txt`) |
+ 
+ 注:根目录 `CLAUDE.md`(宪章)第 6 节标题中的日期 “2026-11-13” 是 JST(日本标准时间,UTC+9)。该节由提交 `8ce8c896` 加入,提交时间 2026-11-12 15:25:19 UTC,即 2026-11-13 00:25:19 JST。本表的时间都是 UTC。
+diff --git a/metrix/e1-pilot/reports/round3/verify_scoring.py b/metrix/e1-pilot/reports/round3/verify_scoring.py
+index 26f9422..be55f4e 100644
+--- a/metrix/e1-pilot/reports/round3/verify_scoring.py
++++ b/metrix/e1-pilot/reports/round3/verify_scoring.py
+@@ -12,6 +12,14 @@ Reports the number of mismatches (required: 0), the scored-token count per cell
+ cell), a cross-check of the renderer against apply_chat_template(..., continue_final_message=True), and one
+ fully rendered scoring sequence.
+ 
++Round 5, task 2: PINNED is the 28-token scoring sequence recorded in round 3
++(reports/round3/t7_verify_scoring.txt, lines 27-44), written out by hand; scoring_input() must reproduce it
++exactly (ids and scored-slice start), and the facts file and the DEV template must still give the same
++question and answer. Any difference makes RESULT FAIL. Unlike the renderer cross-check, which passes
++enable_thinking=SI.ENABLE_THINKING to both sides and fails for ENABLE_THINKING = True only because the pinned
++template puts an empty think block into the final assistant turn, this check compares with fixed ids
++(reports/round5/t2_enable_thinking_true_demo.txt).
++
+   python verify_scoring.py --facts FACTS.json --split-manifest SPLIT_MANIFEST.json --tokenizer-dir DIR
+ """
+ import argparse
+@@ -23,6 +31,39 @@ import sys
+ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+ import scoring_input as SI  # noqa: E402
+ 
++# Recorded in round 3 (reports/round3/t7_verify_scoring.txt): fact E1P-L-capital-nat-01, first DEV template.
++PINNED = {
++    "fact_id": "E1P-L-capital-nat-01",
++    "entity": "Krultrouth",
++    "answer": "Linnuth",
++    "question": "What is the capital of Krultrouth?",
++    "input_ids": [151644, 872, 198, 3838, 374, 279, 6722, 315, 16447, 360, 376, 2898, 30, 151645, 198,
++                  151644, 77091, 198, 151667, 271, 151668, 271, 785, 4226, 374, 444, 6130, 940],
++    "start": 25,
++}
++
++
++def pinned_check(tok, facts, dev_templates):
++    """Compare the pinned sequence with what the current code renders; return a list of differences."""
++    diffs = []
++    f = next((x for x in facts if x["fact_id"] == PINNED["fact_id"]), None)
++    if f is None or (f["entity"], f["answer"]) != (PINNED["entity"], PINNED["answer"]):
++        diffs.append("facts file: %s gives %r, recorded (%r, %r)" % (
++            PINNED["fact_id"], None if f is None else (f["entity"], f["answer"]), PINNED["entity"], PINNED["answer"]))
++    q = dev_templates[0].replace("{E}", PINNED["entity"])
++    if q != PINNED["question"]:
++        diffs.append("first capital DEV template gives %r, recorded %r" % (q, PINNED["question"]))
++    _, ids, start = SI.scoring_input(tok, PINNED["question"], PINNED["answer"])
++    want = PINNED["input_ids"]
++    if ids != want:
++        pos = next((i for i, (g, w) in enumerate(zip(ids, want)) if g != w), min(len(ids), len(want)))
++        diffs.append("input_ids differ: %d ids rendered, %d recorded; first difference at position %d" % (
++            len(ids), len(want), pos))
++        diffs.append("rendered ids: %s" % ids)
++    if start != PINNED["start"]:
++        diffs.append("scored slice start %d, recorded %d" % (start, PINNED["start"]))
++    return diffs
++
+ 
+ def train_answer_ids(tok, statement, answer):
+     """Token ids of ' ' + answer in the tokenized statement, found by offsets.
+@@ -123,7 +164,16 @@ def main():
+     print("input_ids (%d):" % len(ids), ids)
+     print("tokens:", [tok.decode([i]) for i in ids])
+     print("scored slice start %d, scored ids %s, scored tokens %s" % (start, ids[start:], [tok.decode([i]) for i in ids[start:]]))
+-    ok = mismatch == 0 and unaligned == 0 and renderer_diff == 0 and all(len(v) == 1 for v in k_by_cell.values())
++
++    print("== round 5: pinned scoring sequence (recorded in round 3)")
++    print("SI.ENABLE_THINKING = %r" % SI.ENABLE_THINKING)
++    pinned_diffs = pinned_check(tok, facts, tpl[("capital", "DEV")])
++    for d in pinned_diffs:
++        print("PINNED DIFF", d)
++    print("pinned %s: %d recorded ids, start %d; differences: %d" % (
++        PINNED["fact_id"], len(PINNED["input_ids"]), PINNED["start"], len(pinned_diffs)))
++    ok = (mismatch == 0 and unaligned == 0 and renderer_diff == 0 and all(len(v) == 1 for v in k_by_cell.values())
++          and not pinned_diffs)
+     print("RESULT:", "PASS" if ok else "FAIL")
+     sys.exit(0 if ok else 1)
+ 
+diff --git a/metrix/e1-pilot/reports/round4/blind/prompt_wip-a.txt b/metrix/e1-pilot/reports/round4/blind/prompt_wip-a.txt
+new file mode 100644
+index 0000000..4218fe1
+--- /dev/null
++++ b/metrix/e1-pilot/reports/round4/blind/prompt_wip-a.txt
+@@ -0,0 +1,21 @@
++请审查本地分支 wip-a(提交 7716bacfe6512698f0eb7eccf32480973d28497b)相对 2253be94d77d41c5106d8074da578987d5b0a238 的改动。
++
++你不能运行 git。工作区当前已检出 wip-a;下面是 `git diff 2253be94d77d41c5106d8074da578987d5b0a238 wip-a` 的完整输出。工作区中未跟踪的 metrix/e1-pilot/reviews/ 与 metrix/e1-pilot/audit/ 下的文件不在审查范围内。
++
++请按你的定义审查这个 diff(bug、死代码、可读性、合理性、与协议的一致性),按你的输出格式逐条列出问题并给出结论。
++
++```diff
++diff --git a/metrix/e1-pilot/SEARCH_SPACE.json b/metrix/e1-pilot/SEARCH_SPACE.json
++index 7964761..0dcb919 100644
++--- a/metrix/e1-pilot/SEARCH_SPACE.json
+++++ b/metrix/e1-pilot/SEARCH_SPACE.json
++@@ -5,7 +5,7 @@
++   "search_seed": 101,
++   "selection": {
++     "split": "DEV only",
++-    "metric": "Acc(arm, DEV-QA, learned), fact-level mean aggregation",
+++    "metric": "Acc(arm, DEV-QA, learned), fact-level median aggregation",
++     "tie_break": [
++       "lower general DEV dNLL",
++       "lower learning rate",
++```
+diff --git a/metrix/e1-pilot/reports/round4/blind/prompt_wip-b.txt b/metrix/e1-pilot/reports/round4/blind/prompt_wip-b.txt
+new file mode 100644
+index 0000000..e6360e5
+--- /dev/null
++++ b/metrix/e1-pilot/reports/round4/blind/prompt_wip-b.txt
+@@ -0,0 +1,21 @@
++请审查本地分支 wip-b(提交 8e7e124a5e9285c0e6a0936c78d643ba5aeca69d)相对 2253be94d77d41c5106d8074da578987d5b0a238 的改动。
++
++你不能运行 git。工作区当前已检出 wip-b;下面是 `git diff 2253be94d77d41c5106d8074da578987d5b0a238 wip-b` 的完整输出。工作区中未跟踪的 metrix/e1-pilot/reviews/ 与 metrix/e1-pilot/audit/ 下的文件不在审查范围内。
++
++请按你的定义审查这个 diff(bug、死代码、可读性、合理性、与协议的一致性),按你的输出格式逐条列出问题并给出结论。
++
++```diff
++diff --git a/metrix/e1-pilot/reports/round3/scoring_input.py b/metrix/e1-pilot/reports/round3/scoring_input.py
++index 1cf461a..41d96cd 100644
++--- a/metrix/e1-pilot/reports/round3/scoring_input.py
+++++ b/metrix/e1-pilot/reports/round3/scoring_input.py
++@@ -12,7 +12,7 @@ The scored sequence for question q and candidate c is
++ The candidate is not followed by any further text or special token. Tokenizer only; no model weights.
++ """
++ ANSWER_PREFIX = "The answer is"
++-ENABLE_THINKING = False
+++ENABLE_THINKING = True
++ 
++ 
++ def chat_prompt(tok, question):
++```
+diff --git a/metrix/e1-pilot/reports/round4/blind/prompt_wip-c.txt b/metrix/e1-pilot/reports/round4/blind/prompt_wip-c.txt
+new file mode 100644
+index 0000000..f87c9b5
+--- /dev/null
++++ b/metrix/e1-pilot/reports/round4/blind/prompt_wip-c.txt
+@@ -0,0 +1,23 @@
++请审查本地分支 wip-c(提交 ac92fbf56313ae74e24b483c3b72315ac0f750ee)相对 2253be94d77d41c5106d8074da578987d5b0a238 的改动。
++
++你不能运行 git。工作区当前已检出 wip-c;下面是 `git diff 2253be94d77d41c5106d8074da578987d5b0a238 wip-c` 的完整输出。工作区中未跟踪的 metrix/e1-pilot/reviews/ 与 metrix/e1-pilot/audit/ 下的文件不在审查范围内。
++
++请按你的定义审查这个 diff(bug、死代码、可读性、合理性、与协议的一致性),按你的输出格式逐条列出问题并给出结论。
++
++```diff
++diff --git a/metrix/e1-pilot/reports/round3/scoring_input.py b/metrix/e1-pilot/reports/round3/scoring_input.py
++index 1cf461a..0579443 100644
++--- a/metrix/e1-pilot/reports/round3/scoring_input.py
+++++ b/metrix/e1-pilot/reports/round3/scoring_input.py
++@@ -34,7 +34,7 @@ def scoring_input(tok, question, candidate):
++     context = chat_prompt(tok, question) + ANSWER_PREFIX
++     text = context + " " + candidate
++     ids = encode(tok, text)
++-    ctx_ids = encode(tok, context)
++-    if ids[:len(ctx_ids)] != ctx_ids:
+++    context_ids = encode(tok, context)
+++    if ids[:len(context_ids)] != context_ids:
++         raise ValueError("candidate merges with the context at the boundary: %r" % candidate)
++-    return text, ids, len(ctx_ids)
+++    return text, ids, len(context_ids)
++```
+diff --git a/metrix/e1-pilot/reports/round4/blind/prompt_wip-d.txt b/metrix/e1-pilot/reports/round4/blind/prompt_wip-d.txt
+new file mode 100644
+index 0000000..05e205d
+--- /dev/null
++++ b/metrix/e1-pilot/reports/round4/blind/prompt_wip-d.txt
+@@ -0,0 +1,18 @@
++请审查本地分支 wip-d(提交 26b4e74559dd868abe5e799b291219e0430688e6)相对 2253be94d77d41c5106d8074da578987d5b0a238 的改动。
++
++你不能运行 git。工作区当前已检出 wip-d;下面是 `git diff 2253be94d77d41c5106d8074da578987d5b0a238 wip-d` 的完整输出。工作区中未跟踪的 metrix/e1-pilot/reviews/ 与 metrix/e1-pilot/audit/ 下的文件不在审查范围内。
++
++请按你的定义审查这个 diff(bug、死代码、可读性、合理性、与协议的一致性),按你的输出格式逐条列出问题并给出结论。
++
++```diff
++diff --git a/metrix/e1-pilot/reports/round3/scoring_input.py b/metrix/e1-pilot/reports/round3/scoring_input.py
++index 1cf461a..bc4ec72 100644
++--- a/metrix/e1-pilot/reports/round3/scoring_input.py
+++++ b/metrix/e1-pilot/reports/round3/scoring_input.py
++@@ -37,4 +37,4 @@ def scoring_input(tok, question, candidate):
++     ctx_ids = encode(tok, context)
++     if ids[:len(ctx_ids)] != ctx_ids:
++         raise ValueError("candidate merges with the context at the boundary: %r" % candidate)
++-    return text, ids, len(ctx_ids)
+++    return text, ids, len(ctx_ids) - 1
++```
+diff --git a/metrix/e1-pilot/reports/round4/blind/prompt_wip-e.txt b/metrix/e1-pilot/reports/round4/blind/prompt_wip-e.txt
+new file mode 100644
+index 0000000..f2ed407
+--- /dev/null
++++ b/metrix/e1-pilot/reports/round4/blind/prompt_wip-e.txt
+@@ -0,0 +1,21 @@
++请审查本地分支 wip-e(提交 4d0f247a8109f9afdbf53e0742d07fe6c72ced1c)相对 2253be94d77d41c5106d8074da578987d5b0a238 的改动。
++
++你不能运行 git。工作区当前已检出 wip-e;下面是 `git diff 2253be94d77d41c5106d8074da578987d5b0a238 wip-e` 的完整输出。工作区中未跟踪的 metrix/e1-pilot/reviews/ 与 metrix/e1-pilot/audit/ 下的文件不在审查范围内。
++
++请按你的定义审查这个 diff(bug、死代码、可读性、合理性、与协议的一致性),按你的输出格式逐条列出问题并给出结论。
++
++```diff
++diff --git a/metrix/e1-pilot/reports/round3/scoring_input.py b/metrix/e1-pilot/reports/round3/scoring_input.py
++index 1cf461a..62d2c87 100644
++--- a/metrix/e1-pilot/reports/round3/scoring_input.py
+++++ b/metrix/e1-pilot/reports/round3/scoring_input.py
++@@ -9,7 +9,7 @@ The scored sequence for question q and candidate c is
++   "The answer is" = fixed opening of the assistant turn (ANSWER_PREFIX);
++   " " + c  = the candidate with one leading space, as in the TRAIN statement; these are the scored tokens.
++ 
++-The candidate is not followed by any further text or special token. Tokenizer only; no model weights.
+++Nothing is appended after the candidate (no further text, no special token). Tokenizer only; no model weights.
++ """
++ ANSWER_PREFIX = "The answer is"
++ ENABLE_THINKING = False
++```
+diff --git a/metrix/e1-pilot/reports/round4/blind/review_wip-a.md b/metrix/e1-pilot/reports/round4/blind/review_wip-a.md
+new file mode 100644
+index 0000000..b39fc21
+--- /dev/null
++++ b/metrix/e1-pilot/reports/round4/blind/review_wip-a.md
+@@ -0,0 +1,15 @@
++  审查对象：wip-a @ 7716bacfe6512698f0eb7eccf32480973d28497b,对比基准 2253be94d77d41c5106d8074da578987d5b0a238。diff 只改了一行，即 /home/user/OpenMythos/metrix/e1-pilot/SEARCH_SPACE.json 第 8 行。核对依据：协议 /home/user/OpenMythos/metrix/e1-pilot/METRIX_E1_PROTOCOL.md、/home/user/OpenMythos/metrix/e1-pilot/SPLIT_MANIFEST.json、/home/user/OpenMythos/metrix/e1-pilot/SUBMISSION_NOTE.md。运行环境：本 subagent 会话(Linux 容器，只读，没有运行 git,也没有运行任何脚本)。
++  
++  BLOCKER | metrix/e1-pilot/SEARCH_SPACE.json:8 | 选型指标的 fact 聚合函数从 mean 改成了 median。协议把聚合函数写死为 mean,审查要求也规定聚合函数必须是 mean。 | 新值 `"metric": "Acc(arm, DEV-QA, learned), fact-level median aggregation"`;协议:10 写「fact 聚合函数固定为 mean」;协议:191 写 `Score_split(f) = (1 / |Q_split(f)|) · Σ ... correct(f, q)             聚合函数 = mean(已固定)`;协议:194 写「选 mean 的理由：保留多个问法之间的部分一致程度」 | 恢复为 `fact-level mean aggregation`。
++  
++  BLOCKER | metrix/e1-pilot/SEARCH_SPACE.json:8 对 metrix/e1-pilot/METRIX_E1_PROTOCOL.md:294 | SEARCH_SPACE.json 与协议第 7 节的内联副本不再逐字一致。SUBMISSION_NOTE 第 5 节的校验必然失败。 | 协议:283 写「与 `SEARCH_SPACE.json` 逐字一致」;协议:294 仍是 `"metric": "Acc(arm, DEV-QA, learned), fact-level mean aggregation",`;SUBMISSION_NOTE.md:72 为 `assert block == open('SEARCH_SPACE.json', encoding='utf-8').read(), 'inline copy differs from SEARCH_SPACE.json'` | 恢复 SEARCH_SPACE.json,不要单边改动其中一处。
++  
++  MAJOR | metrix/e1-pilot/METRIX_E1_PROTOCOL.md:632-654 | SEARCH_SPACE.json 属于协议内容，但这次改动没有第 14 节的变更记录行，也没有 Review Gate 裁决或 Owner 批准的依据。以往修改 SEARCH_SPACE.json 都记录在案。按 metrix/CLAUDE.md,Executor 不能改协议。按协议:10,聚合函数由 Task Order 的修订条款固定，不在 Executor 的决定范围内。 | 协议:641 和 :646 的 v1-r1、v1-r2 行都列出了 `SEARCH_SPACE.json`;第 14 节的最后一行是 v1-r4 `b1f5889c`,没有任何行涉及 median。 | 如果确实想改聚合函数，必须先经 Review Gate 裁决和 Owner 批准，再按流程改协议正文、内联副本和变更记录;否则直接回退。
++  
++  MAJOR | metrix/e1-pilot/SUBMISSION_NOTE.md:86, :89 | 自检清单与改动后的状态矛盾：两项仍然打勾，实际都已不成立。 | `- [x] 聚合函数已选定并写死(mean)。`、`- [x] \`SEARCH_SPACE.json\` 与文档内联副本一致。` | 回退 SEARCH_SPACE.json 后，重新运行 SUBMISSION_NOTE 第 5 节的命令，用实际输出作为证据，不要只靠勾选。
++  
++  MAJOR(不确定) | metrix/e1-pilot/SEARCH_SPACE.json:8 | 「fact-level median aggregation」有歧义，数值影响取决于解读和 split。(a) 如果指每个 fact 内对问句取中位数:DEV 每个 fact 有 2 个问句(SPLIT_MANIFEST.json:18),两个值的中位数等于均值，所以 DEV 选型在数值上可能不变;但 TEST 每个 fact 有 3 个问句(SPLIT_MANIFEST.json:19),中位数相当于多数票，Score(f) 只能取 {0,1},不再是 mean 的 {0,1/3,2/3,1}。协议:203 对 EM 规定「聚合方式同上」,所以影响可能扩散到次指标和 bootstrap。(b) 如果指 Acc 在 fact 之间取中位数，选型指标会变得很粗，大量配置会打平，tie_break 的触发频率和选出的 F 配置都会改变，S 和 Y 继承的配置也会跟着变。我无法确认后续代码会采用哪种解读。 | `"fact-level median aggregation"`;SPLIT_MANIFEST.json:18 `"DEV": "2 questions per fact ..."`;:19 `"TEST": "3 questions per fact ..."` | 回退到 mean。DEV 上数值碰巧相同，不能作为保留 median 的理由。
++  
++  其他检查项：这个 diff 不含任何代码，所以梯度回传、参数冻结(含 arm A 的 base 模型)、随机种子、chat template / enable_thinking、答案 token id、TEST 生成或读取路径、DEV/TEST 混用、死代码都没有可检查的改动，也没有发现新问题。selection.split 仍为 "DEV only"。S 和 Y 的 "inherits" 字段没有改动，但它们实际继承的配置会受上面聚合函数变更的间接影响。
++  
++  结论：BLOCK
+diff --git a/metrix/e1-pilot/reports/round4/blind/review_wip-b.md b/metrix/e1-pilot/reports/round4/blind/review_wip-b.md
+new file mode 100644
+index 0000000..ef735e8
+--- /dev/null
++++ b/metrix/e1-pilot/reports/round4/blind/review_wip-b.md
+@@ -0,0 +1,17 @@
++  审查范围：wip-b @ 8e7e124a5e9285c0e6a0936c78d643ba5aeca69d 相对 2253be94d77d41c5106d8074da578987d5b0a238 的 diff。diff 只改了一行：`/home/user/OpenMythos/metrix/e1-pilot/reports/round3/scoring_input.py:15`，把 `ENABLE_THINKING = False` 改成了 `ENABLE_THINKING = True`。
++  审查方式：只用 Read/Grep 读文件，没有执行任何代码，没有运行 git，没有加载 tokenizer 或模型。运行环境是 Claude Code subagent 容器（Linux，工作目录 /home/user/OpenMythos）。
++  
++  BLOCKER | metrix/e1-pilot/reports/round3/scoring_input.py:15 | 打分输入的 `enable_thinking` 被改成 True，违反协议第 0 节“问答输入”中写死的 `enable_thinking=false`，也不符合审查规则第 3 条（打分必须用 Qwen3 chat template 且 enable_thinking=False）。这个文件是协议第 35 行和 DATA_MANIFEST.json:29 指定的参考实现。verify_scoring.py:89 和 candidate_feasibility_r3.py:44 都通过 `SI.scoring_input` / `SI.chat_prompt` 用它构造打分上下文和 EM 生成上下文（协议第 36 行），所以这个改动会传到所有打分和评测路径。仓库里已有的 tokenizer 原始输出 reports/round3/t7_verify_scoring.txt:17-18 表明，改为 True 后，生成提示末尾不再有 `<think>\n\n</think>\n\n`，上下文与协议规定的不同。修改这个值等于修改协议定义的打分输入，需要 Review Gate 裁决并由 Owner 批准；diff 里没有协议修订记录（协议修订表最后一条 v1-r3 的定义仍是 `enable_thinking=false`），Executor 也无权做这项改动。 | 改动前 `ENABLE_THINKING = False`，改动后 `ENABLE_THINKING = True`；对照协议 METRIX_E1_PROTOCOL.md:34 原文：`` `enable_thinking=false`(写死,不作参数) `` | 恢复为 `ENABLE_THINKING = False`。如果确实要改，先停下，交给 Review Gate 和 Owner 走协议修订流程，不能直接提交代码。
++  
++  MINOR | metrix/e1-pilot/reports/round3/scoring_input.py:7-8 对比 :15 | 模块 docstring 与代码矛盾：docstring 说 enable_thinking 写死为 False，代码却是 True。 | docstring `enable_thinking=False (written here as a constant; there is no argument to change it);`，代码 `ENABLE_THINKING = True` | 按上一条恢复为 False 后，这个矛盾自然消失。
++  
++  MAJOR | metrix/e1-pilot/reports/round3/verify_scoring.py:69, 96-98 | 验证脚本检测不出这次回归。这是已有代码的缺陷，由本次 diff 暴露出来。(a) 渲染一致性检查的两边都用 `SI.ENABLE_THINKING`，常量取任何值 renderer_diff 都是 0，是同义反复。(b) 答案 token 检查只比较 `ids[start:]`，即候选部分；按代码推断，这一段不受 assistant 回合开头有没有 think 块影响，所以 mismatch 很可能仍为 0。我没有运行，这一点不能确定，按 MAJOR 列出。(c) 第 69 行的标签写死为“enable_thinking=False”，打印的却是 `SI.chat_prompt` 的实际结果，常量为 True 时这行输出会贴错标签。整个脚本没有任何地方断言 `SI.ENABLE_THINKING is False`，也没有检查生成提示是否以 `<think>\n\n</think>\n\n` 结尾。因此常量为 True 时，脚本很可能仍会输出 `RESULT: PASS`。 | `print("generation prompt (enable_thinking=False):", json.dumps(SI.chat_prompt(tok, "Q?")))`；`tokenize=False, continue_final_message=True, enable_thinking=SI.ENABLE_THINKING)` | 增加一项与 SI 无关的协议检查：直接断言 `SI.ENABLE_THINKING is False`，或断言 `SI.chat_prompt(tok, q)` 与独立调用 `apply_chat_template(..., enable_thinking=False)` 得到的文本相同，或断言它以 `<think>\n\n</think>\n\n` 结尾；任一项不满足即判 FAIL。第 69 行的标签改为打印实际的常量值。
++  
++  MAJOR | metrix/e1-pilot/reports/round3/t7_verify_scoring.txt:17；metrix/e1-pilot/reports/round4/t2_verify_scoring.txt:17 | 仓库里的原始输出是用 enable_thinking=False 生成的，与 8e7e124 的代码不再对应。在这个提交上引用它们作为打分输入的证据就是过期证据，违反 metrix/CLAUDE.md 第 9 节“所有结论附原始命令输出”。 | `generation prompt (enable_thinking=False): "<|im_start|>user\nQ?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"` | 恢复为 False 后这些输出依然有效。如果改动保留，所有依赖 scoring_input.py 的输出都要重跑，并重新调用 data-auditor（改动涉及打分代码，metrix/CLAUDE.md 第 5.2 节）。
++  
++  其他检查项：
++  - 数据隔离：diff 没有新增读取 TEST 的路径，verify_scoring.py:56 和 candidate_feasibility_r3.py:36 仍只读 TRAIN/DEV 模板。
++  - 死代码：diff 没有引入未使用的 import 或配置项。
++  - 梯度、冻结、种子、聚合函数、arm 定义：diff 未涉及，不适用。
++  
++  结论：BLOCK
+diff --git a/metrix/e1-pilot/reports/round4/blind/review_wip-c.md b/metrix/e1-pilot/reports/round4/blind/review_wip-c.md
+new file mode 100644
+index 0000000..5e8ecdb
+--- /dev/null
++++ b/metrix/e1-pilot/reports/round4/blind/review_wip-c.md
+@@ -0,0 +1,24 @@
++  结论是 PASS：没有 BLOCKER，没有 MAJOR，只有 1 条 MINOR。这个 diff 只是把 `ctx_ids` 改名为 `context_ids`，三处都改了，行为不变。
++  
++  **问题清单**
++  
++  MINOR | /home/user/OpenMythos/metrix/e1-pilot/reports/round3/scoring_input.py:37-40 | 这个文件是协议第 0 节和 `DATA_MANIFEST.json` 第 29 行指定的打分参考实现。现有的验证输出都是用改名前的文本跑出来的，包括 `reports/round3/t7_verify_scoring.txt`、`reports/round3/t8_candidate_feasibility.txt`、`reports/round4/t2_verify_scoring.txt`；`reviews/596fcfad.../code-reviewer.md` 审查的也是旧文本。diff 里没有重跑这些脚本的输出，也没有一句话说明这次改动不影响行为。我读代码能确认它确实不影响行为，所以旧输出依然成立，但「这些输出由哪份文件产生」这条线索断了。另外，我看到的第 4 轮指令（`reviews/2253be94.../code-reviewer_prompt.txt`）里没有这一项，无法确认这次改动有指令依据（不确定之处，因为我看不到 wip-c 的提交说明）。 | `-    ctx_ids = encode(tok, context)` / `+    context_ids = encode(tok, context)` | 二选一：在 `verify_scoring.py` 和 `candidate_feasibility_r3.py` 这两处调用方中至少重跑 `verify_scoring.py`，把完整 stdout 提交到仓库（metrix/CLAUDE.md 第 9 节要求原始输出入库）；或者在提交说明里写明这是不改变行为的局部改名，旧输出仍然有效。
++  
++  **已核对、没有问题的项目**
++  
++  1. **正确性**：`context_ids` 在第 37、38、40 行共出现 4 次，命名一致。文件里没有非 ASCII 字符，排除了同形字符造成两个不同变量的可能。仓库里没有任何地方还在用旧名 `ctx_ids`。返回值仍是 `(text, ids, len(context))`，两个调用方 `verify_scoring.py:89` 和 `candidate_feasibility_r3.py:44` 的接口不受影响。
++  2. **协议一致性**（协议第 0 节第 34–35 行、第 5 节第 189 行），全部符合：
++     - 使用 chat template，单个 user 回合，不加 system prompt；
++     - `add_generation_prompt=True`；
++     - `enable_thinking=False` 写成常量，不作参数；
++     - 固定前缀 `"The answer is"`，只对 `" " + c` 打分，候选后面不接任何文本或特殊 token；
++     - `add_special_tokens=False`；
++     - 没有套用宪章「不加 BOS/EOS」那条规则。
++  3. **答案 token 与 TRAIN 陈述句一致**：`scoring_input` 函数本身只检查上下文是不是整串的前缀，打分 token 与 TRAIN 答案片段是否一致由 `verify_scoring.py:81-95` 用字符偏移对照检查。这一点不是本次 diff 引入的，本次也没有改动它。
++  4. **数据隔离**：diff 不涉及 TEST、DEV 或 split。
++  5. **死代码**：没有新增函数、import 或配置项。工作区里的 `reports/round3/__pycache__/` 已被根目录 `.gitignore` 第 1 行和第 76 行的 `__pycache__/` 忽略。
++  6. **可读性**：`context_ids` 与同一函数里的变量 `context` 对应，比原来的 `ctx_ids` 更清楚。
++  
++  审查方式：只在会话容器的 /home/user/OpenMythos 下静态阅读代码，用 Read、Grep、Glob 三个工具，没有运行任何代码，也没有加载模型权重或 tokenizer。
++  
++  结论：PASS
+diff --git a/metrix/e1-pilot/reports/round4/blind/review_wip-d.md b/metrix/e1-pilot/reports/round4/blind/review_wip-d.md
+new file mode 100644
+index 0000000..aed0d3d
+--- /dev/null
++++ b/metrix/e1-pilot/reports/round4/blind/review_wip-d.md
+@@ -0,0 +1,14 @@
++  审查范围：wip-d @ 26b4e74559dd868abe5e799b291219e0430688e6 相对 2253be94d77d41c5106d8074da578987d5b0a238 的改动，只有一处：/home/user/OpenMythos/metrix/e1-pilot/reports/round3/scoring_input.py 第 40 行。
++  方法：只读代码，没有运行任何代码，也没有运行 git。下面的结论来自阅读改动文件、它的三个调用方、协议（/home/user/OpenMythos/metrix/e1-pilot/METRIX_E1_PROTOCOL.md）、DATA_MANIFEST.json，以及仓库里已记录的输出 reports/round3/t7_verify_scoring.txt。
++  
++  BLOCKER | metrix/e1-pilot/reports/round3/scoring_input.py:40 | 返回的 start 少了 1。打分区间 input_ids[start:] 因此多了上下文的最后一个 token " is"，不再只是 " " + c 的 token。打分 token 数变成 K_st+1，打分 token id 也和 TRAIN 陈述句里的答案片段对不上 | 改动：`return text, ids, len(ctx_ids) - 1`（原为 `len(ctx_ids)`）。协议第 0 节第 35 行：「只对 `" " + c` 的 token 打分」；第 5 节第 189 行：`s_QA = Σ_{t=1..K} log p_θ(c'_t | chat(q) + "The answer is", c'_<t)，c' = " " + c；K = K_st(c)`；DATA_MANIFEST.json 第 29 行：「only the tokens of ' ' + c are scored ... K = K_st」。用已记录的例子 reports/round3/t7_verify_scoring.txt 第 42–44 行推算：原 start=25，ids[25:]=[444, 6130, 940]，即 [' L','inn','uth']，与 TRAIN 答案 id [444, 6130, 940] 相同；改后 start=24，ids[24:]=[374, 444, 6130, 940]，即 [' is',' L','inn','uth']，与 TRAIN 答案 id 不一致。补充：按纯求和打分，多出的 log p(" is" | ...) 对同一问句的 4 个候选是同一个常数，排序在理论上不变。但 s_QA 的定义、K、"打分 token id 与 TRAIN 答案片段一致"这三项都被违反，所以仍是 BLOCKER | 改回 `return text, ids, len(ctx_ids)`。如果作者其实想要 logits 的位置（logits[t] 预测 ids[t+1]），应由打分代码在取 logits 时自己做 `start - 1` 的偏移，不要改这个函数"input_ids[start:] 即打分 token"的约定
++  
++  MAJOR | metrix/e1-pilot/reports/round3/verify_scoring.py:89-95, 108, 126；metrix/e1-pilot/reports/round3/candidate_feasibility_r3.py:44-51, 67 | 两个调用方都按 `ids[start:]` / `len(ids) - start` 理解打分 token。按改后的代码推算：verify_scoring 的 240 个 (learned fact, DEV 问句) 对会全部 MISMATCH，每个 cell 的打分 token 数变成 K_st+1，结果 FAIL；candidate_feasibility_r3 的 not_k_st 会是 160，结果 FAIL，池子也会按 K+1 分组。已提交的证据（round3/t7_verify_scoring.txt、round3/t8_candidate_feasibility.txt、round4/t2_verify_scoring.txt，以及协议第 14 节 v1-r3 一行引用的「不一致数为 0」）因此无法用现在提交的代码复现。diff 里也没有附带重跑的输出 | verify_scoring.py:90 `got = ids[start:]`，:93 `if got != want: mismatch += 1`；candidate_feasibility_r3.py:45 `ks.add(len(ids) - start)`，:49 `if ks != {len(SI.encode(tok, " " + f["answer"]))}: not_k_st += 1`。（这两个结论是读代码推出来的，没有实际运行验证。） | 修正第一条之后重跑这两个脚本，把原始输出写进仓库。按 metrix/CLAUDE.md 第 5.2 节，这次改动涉及打分代码，还需要调用 data-auditor
++  
++  MAJOR | metrix/e1-pilot/reports/round3/scoring_input.py:28-32 与 38-40 | 函数的说明和返回值互相矛盾。边界检查和返回值用的也不是同一个下标，检查保证的性质与返回的 start 对不上 | docstring：「the scored tokens are input_ids[start:]」「start is the length of the context」；检查：`if ids[:len(ctx_ids)] != ctx_ids:` 校验的是以 len(ctx_ids) 为界的前缀，返回的却是 `len(ctx_ids) - 1`。不确定之处：作者是否有意把 start 改成"logits 位置"的约定。但仓库里三处使用（verify_scoring.py:90、:125，candidate_feasibility_r3.py:45）都按 input_ids 下标用，没有一处按 logits 位置用 | 恢复原返回值，让 docstring、边界检查和返回值使用同一个下标约定
++  
++  MINOR | metrix/e1-pilot/reports/round3/scoring_input.py:40 | 引入了一个没有说明的偏移常数 `- 1`，协议和配置里都没有它的依据 | `len(ctx_ids) - 1` | 删除。如果确实需要 logits 偏移，应在打分代码里写成有名字的显式转换，并附上依据
++  
++  其他检查项（这次 diff 没有涉及，没有发现问题）：chat template 仍是写死的 `ENABLE_THINKING = False`，没有套用"不加 BOS/EOS"规则（scoring_input.py:15, 19-20）；这次改动不涉及 TEST 的生成或读取，调用方也只读 TRAIN/DEV 模板（verify_scoring.py:56，candidate_feasibility_r3.py:36）；训练、arm、种子、聚合函数相关代码都不在 diff 内。
++  
++  结论：BLOCK
+diff --git a/metrix/e1-pilot/reports/round4/blind/review_wip-e.md b/metrix/e1-pilot/reports/round4/blind/review_wip-e.md
+new file mode 100644
+index 0000000..4224250
+--- /dev/null
++++ b/metrix/e1-pilot/reports/round4/blind/review_wip-e.md
+@@ -0,0 +1,19 @@
++  审查对象：wip-e @ 4d0f247a8109f9afdbf53e0742d07fe6c72ced1c 相对 2253be94d77d41c5106d8074da578987d5b0a238。我没有运行 git，按你提供的 diff 审查，并读了工作区中的文件核对。
++  
++  这个 diff 只改了 /home/user/OpenMythos/metrix/e1-pilot/reports/round3/scoring_input.py 第 12 行的文档字符串。代码、常量和函数都没有改。
++  
++  按检查顺序逐项核对：
++  1. 正确性：本次没有改动执行代码，所以不涉及梯度、冻结、种子、划分或聚合。
++  2. 协议一致性：新句子是 "Nothing is appended after the candidate (no further text, no special token)."，与协议第 35 行一致（"候选之后不接任何文本或特殊 token"），也与 DATA_MANIFEST.json 第 29 行一致（"nothing follows the candidate"）。这句话与代码相符：第 35 行是 `text = context + " " + candidate`，后面没有拼接任何内容；`encode` 用的是 `add_special_tokens=False`（第 24 行）。改动前后意思相同，只是换了措辞。
++  3. 打分输入：chat template 和 `enable_thinking=False`（第 15、20 行）没有变。没有套用宪章中"不加 BOS/EOS"的规则。参考输出 round3/t7_verify_scoring.txt 记录了 learned facts 打分的 token id 与 TRAIN 陈述句中答案片段的对比，结果为 0 处不一致。这个文件是在改动之前生成的，但本次只改了文档字符串，不影响它的有效性。
++  4. 数据隔离：diff 不涉及 TEST 或 DEV 的读取路径。
++  5. 死代码：本次没有新增或残留代码，也没有改动 import。
++  6. 可读性：新措辞与协议用语对应，更直接。另外，DATA_MANIFEST.json 中只引用了 scoring_input.py 的路径，没有登记文件哈希，所以修改文档字符串不会让任何已登记的哈希失效。顺带确认：round3/__pycache__/ 已被根目录 .gitignore 的 `__pycache__/` 忽略，不会进入提交。
++  
++  问题列表：
++  
++  MINOR | /home/user/OpenMythos/metrix/e1-pilot/reports/round3/scoring_input.py:38-40 | 这是改动前就存在的问题，不是本 diff 引入的，也不影响结论。运行时的检查只确认上下文的 token 是整串 token 的前缀，不检查被打分的 token 与协议要求是否一致。协议要求 ids[start:] 等于 encode(" " + c)，数量等于 K_st。这一点目前只由离线脚本 verify_scoring.py 和 candidate_feasibility_r3.py 针对当前这批 fact 做过验证。如果以后正式打分直接调用这个函数，换了候选也不会自动发现不一致。 | `if ids[:len(ctx_ids)] != ctx_ids: raise ValueError(...)`；`return text, ids, len(ctx_ids)` | 可以考虑在 scoring_input 里加一条断言：`ids[len(ctx_ids):] == encode(tok, " " + candidate)`，把协议第 2.2 节和第 5 节的 K = K_st 要求放到运行时检查。是否要改由 Review Gate 决定。
++  
++  本 diff 引入的问题：无。
++  
++  结论：PASS
+diff --git a/metrix/e1-pilot/reports/round4/blind/source_events.jsonl b/metrix/e1-pilot/reports/round4/blind/source_events.jsonl
+new file mode 100644
+index 0000000..ca1d1b6
+--- /dev/null
++++ b/metrix/e1-pilot/reports/round4/blind/source_events.jsonl
+@@ -0,0 +1,10 @@
++{"created_at": "2026-11-21T05:17:54.719108Z", "event_uuid": "b646a896-3138-4ee8-ae7c-7c0da22cfbe7", "file": "prompt_wip-a.txt", "input": {"description": "Review branch wip-a diff", "prompt": "请审查本地分支 wip-a(提交 7716bacfe6512698f0eb7eccf32480973d28497b)相对 2253be94d77d41c5106d8074da578987d5b0a238 的改动。\n\n你不能运行 git。工作区当前已检出 wip-a;下面是 `git diff 2253be94d77d41c5106d8074da578987d5b0a238 wip-a` 的完整输出。工作区中未跟踪的 metrix/e1-pilot/reviews/ 与 metrix/e1-pilot/audit/ 下的文件不在审查范围内。\n\n请按你的定义审查这个 diff(bug、死代码、可读性、合理性、与协议的一致性),按你的输出格式逐条列出问题并给出结论。\n\n```diff\ndiff --git a/metrix/e1-pilot/SEARCH_SPACE.json b/metrix/e1-pilot/SEARCH_SPACE.json\nindex 7964761..0dcb919 100644\n--- a/metrix/e1-pilot/SEARCH_SPACE.json\n+++ b/metrix/e1-pilot/SEARCH_SPACE.json\n@@ -5,7 +5,7 @@\n   \"search_seed\": 101,\n   \"selection\": {\n     \"split\": \"DEV only\",\n-    \"metric\": \"Acc(arm, DEV-QA, learned), fact-level mean aggregation\",\n+    \"metric\": \"Acc(arm, DEV-QA, learned), fact-level median aggregation\",\n     \"tie_break\": [\n       \"lower general DEV dNLL\",\n       \"lower learning rate\",\n```", "run_in_background": false, "subagent_type": "code-reviewer"}, "tool": "Agent", "tool_use_id": "toolu_01DjSkjwpW6Q43uvQLzkbeNw"}
++{"created_at": "2026-11-21T05:19:08.195154Z", "event_uuid": "b2a24f8a-49a3-4a53-8118-7a1e52958a51", "file": "review_wip-a.md", "input": {"content": "  审查对象：wip-a @ 7716bacfe6512698f0eb7eccf32480973d28497b,对比基准 2253be94d77d41c5106d8074da578987d5b0a238。diff 只改了一行，即 /home/user/OpenMythos/metrix/e1-pilot/SEARCH_SPACE.json 第 8 行。核对依据：协议 /home/user/OpenMythos/metrix/e1-pilot/METRIX_E1_PROTOCOL.md、/home/user/OpenMythos/metrix/e1-pilot/SPLIT_MANIFEST.json、/home/user/OpenMythos/metrix/e1-pilot/SUBMISSION_NOTE.md。运行环境：本 subagent 会话(Linux 容器，只读，没有运行 git,也没有运行任何脚本)。\n  \n  BLOCKER | metrix/e1-pilot/SEARCH_SPACE.json:8 | 选型指标的 fact 聚合函数从 mean 改成了 median。协议把聚合函数写死为 mean,审查要求也规定聚合函数必须是 mean。 | 新值 `\"metric\": \"Acc(arm, DEV-QA, learned), fact-level median aggregation\"`;协议:10 写「fact 聚合函数固定为 mean」;协议:191 写 `Score_split(f) = (1 / |Q_split(f)|) · Σ ... correct(f, q)             聚合函数 = mean(已固定)`;协议:194 写「选 mean 的理由：保留多个问法之间的部分一致程度」 | 恢复为 `fact-level mean aggregation`。\n  \n  BLOCKER | metrix/e1-pilot/SEARCH_SPACE.json:8 对 metrix/e1-pilot/METRIX_E1_PROTOCOL.md:294 | SEARCH_SPACE.json 与协议第 7 节的内联副本不再逐字一致。SUBMISSION_NOTE 第 5 节的校验必然失败。 | 协议:283 写「与 `SEARCH_SPACE.json` 逐字一致」;协议:294 仍是 `\"metric\": \"Acc(arm, DEV-QA, learned), fact-level mean aggregation\",`;SUBMISSION_NOTE.md:72 为 `assert block == open('SEARCH_SPACE.json', encoding='utf-8').read(), 'inline copy differs from SEARCH_SPACE.json'` | 恢复 SEARCH_SPACE.json,不要单边改动其中一处。\n  \n  MAJOR | metrix/e1-pilot/METRIX_E1_PROTOCOL.md:632-654 | SEARCH_SPACE.json 属于协议内容，但这次改动没有第 14 节的变更记录行，也没有 Review Gate 裁决或 Owner 批准的依据。以往修改 SEARCH_SPACE.json 都记录在案。按 metrix/CLAUDE.md,Executor 不能改协议。按协议:10,聚合函数由 Task Order 的修订条款固定，不在 Executor 的决定范围内。 | 协议:641 和 :646 的 v1-r1、v1-r2 行都列出了 `SEARCH_SPACE.json`;第 14 节的最后一行是 v1-r4 `b1f5889c`,没有任何行涉及 median。 | 如果确实想改聚合函数，必须先经 Review Gate 裁决和 Owner 批准，再按流程改协议正文、内联副本和变更记录;否则直接回退。\n  \n  MAJOR | metrix/e1-pilot/SUBMISSION_NOTE.md:86, :89 | 自检清单与改动后的状态矛盾：两项仍然打勾，实际都已不成立。 | `- [x] 聚合函数已选定并写死(mean)。`、`- [x] \\`SEARCH_SPACE.json\\` 与文档内联副本一致。` | 回退 SEARCH_SPACE.json 后，重新运行 SUBMISSION_NOTE 第 5 节的命令，用实际输出作为证据，不要只靠勾选。\n  \n  MAJOR(不确定) | metrix/e1-pilot/SEARCH_SPACE.json:8 | 「fact-level median aggregation」有歧义，数值影响取决于解读和 split。(a) 如果指每个 fact 内对问句取中位数:DEV 每个 fact 有 2 个问句(SPLIT_MANIFEST.json:18),两个值的中位数等于均值，所以 DEV 选型在数值上可能不变;但 TEST 每个 fact 有 3 个问句(SPLIT_MANIFEST.json:19),中位数相当于多数票，Score(f) 只能取 {0,1},不再是 mean 的 {0,1/3,2/3,1}。协议:203 对 EM 规定「聚合方式同上」,所以影响可能扩散到次指标和 bootstrap。(b) 如果指 Acc 在 fact 之间取中位数，选型指标会变得很粗，大量配置会打平，tie_break 的触发频率和选出的 F 配置都会改变，S 和 Y 继承的配置也会跟着变。我无法确认后续代码会采用哪种解读。 | `\"fact-level median aggregation\"`;SPLIT_MANIFEST.json:18 `\"DEV\": \"2 questions per fact ...\"`;:19 `\"TEST\": \"3 questions per fact ...\"` | 回退到 mean。DEV 上数值碰巧相同，不能作为保留 median 的理由。\n  \n  其他检查项：这个 diff 不含任何代码，所以梯度回传、参数冻结(含 arm A 的 base 模型)、随机种子、chat template / enable_thinking、答案 token id、TEST 生成或读取路径、DEV/TEST 混用、死代码都没有可检查的改动，也没有发现新问题。selection.split 仍为 \"DEV only\"。S 和 Y 的 \"inherits\" 字段没有改动，但它们实际继承的配置会受上面聚合函数变更的间接影响。\n  \n  结论：BLOCK\n", "file_path": "/root/.blind_r4/review_wip-a.md"}, "tool": "Write", "tool_use_id": "toolu_01HQkE3bT8tVD2GTWrDT4V72"}
++{"created_at": "2026-11-21T05:19:14.552113Z", "event_uuid": "7045f026-9c8c-44d6-b605-72a6bcbf5224", "file": "prompt_wip-b.txt", "input": {"description": "Review branch wip-b diff", "prompt": "请审查本地分支 wip-b(提交 8e7e124a5e9285c0e6a0936c78d643ba5aeca69d)相对 2253be94d77d41c5106d8074da578987d5b0a238 的改动。\n\n你不能运行 git。工作区当前已检出 wip-b;下面是 `git diff 2253be94d77d41c5106d8074da578987d5b0a238 wip-b` 的完整输出。工作区中未跟踪的 metrix/e1-pilot/reviews/ 与 metrix/e1-pilot/audit/ 下的文件不在审查范围内。\n\n请按你的定义审查这个 diff(bug、死代码、可读性、合理性、与协议的一致性),按你的输出格式逐条列出问题并给出结论。\n\n```diff\ndiff --git a/metrix/e1-pilot/reports/round3/scoring_input.py b/metrix/e1-pilot/reports/round3/scoring_input.py\nindex 1cf461a..41d96cd 100644\n--- a/metrix/e1-pilot/reports/round3/scoring_input.py\n+++ b/metrix/e1-pilot/reports/round3/scoring_input.py\n@@ -12,7 +12,7 @@ The scored sequence for question q and candidate c is\n The candidate is not followed by any further text or special token. Tokenizer only; no model weights.\n \"\"\"\n ANSWER_PREFIX = \"The answer is\"\n-ENABLE_THINKING = False\n+ENABLE_THINKING = True\n \n \n def chat_prompt(tok, question):\n```", "run_in_background": false, "subagent_type": "code-reviewer"}, "tool": "Agent", "tool_use_id": "toolu_01DYBx9XtxSrCwAHRHUYpyRp"}
++{"created_at": "2026-11-21T05:20:19.576329Z", "event_uuid": "1c21b00f-9e20-44ac-83ba-aa48c3432c84", "file": "review_wip-b.md", "input": {"content": "  审查范围：wip-b @ 8e7e124a5e9285c0e6a0936c78d643ba5aeca69d 相对 2253be94d77d41c5106d8074da578987d5b0a238 的 diff。diff 只改了一行：`/home/user/OpenMythos/metrix/e1-pilot/reports/round3/scoring_input.py:15`，把 `ENABLE_THINKING = False` 改成了 `ENABLE_THINKING = True`。\n  审查方式：只用 Read/Grep 读文件，没有执行任何代码，没有运行 git，没有加载 tokenizer 或模型。运行环境是 Claude Code subagent 容器（Linux，工作目录 /home/user/OpenMythos）。\n  \n  BLOCKER | metrix/e1-pilot/reports/round3/scoring_input.py:15 | 打分输入的 `enable_thinking` 被改成 True，违反协议第 0 节“问答输入”中写死的 `enable_thinking=false`，也不符合审查规则第 3 条（打分必须用 Qwen3 chat template 且 enable_thinking=False）。这个文件是协议第 35 行和 DATA_MANIFEST.json:29 指定的参考实现。verify_scoring.py:89 和 candidate_feasibility_r3.py:44 都通过 `SI.scoring_input` / `SI.chat_prompt` 用它构造打分上下文和 EM 生成上下文（协议第 36 行），所以这个改动会传到所有打分和评测路径。仓库里已有的 tokenizer 原始输出 reports/round3/t7_verify_scoring.txt:17-18 表明，改为 True 后，生成提示末尾不再有 `<think>\\n\\n</think>\\n\\n`，上下文与协议规定的不同。修改这个值等于修改协议定义的打分输入，需要 Review Gate 裁决并由 Owner 批准；diff 里没有协议修订记录（协议修订表最后一条 v1-r3 的定义仍是 `enable_thinking=false`），Executor 也无权做这项改动。 | 改动前 `ENABLE_THINKING = False`，改动后 `ENABLE_THINKING = True`；对照协议 METRIX_E1_PROTOCOL.md:34 原文：`` `enable_thinking=false`(写死,不作参数) `` | 恢复为 `ENABLE_THINKING = False`。如果确实要改，先停下，交给 Review Gate 和 Owner 走协议修订流程，不能直接提交代码。\n  \n  MINOR | metrix/e1-pilot/reports/round3/scoring_input.py:7-8 对比 :15 | 模块 docstring 与代码矛盾：docstring 说 enable_thinking 写死为 False，代码却是 True。 | docstring `enable_thinking=False (written here as a constant; there is no argument to change it);`，代码 `ENABLE_THINKING = True` | 按上一条恢复为 False 后，这个矛盾自然消失。\n  \n  MAJOR | metrix/e1-pilot/reports/round3/verify_scoring.py:69, 96-98 | 验证脚本检测不出这次回归。这是已有代码的缺陷，由本次 diff 暴露出来。(a) 渲染一致性检查的两边都用 `SI.ENABLE_THINKING`，常量取任何值 renderer_diff 都是 0，是同义反复。(b) 答案 token 检查只比较 `ids[start:]`，即候选部分；按代码推断，这一段不受 assistant 回合开头有没有 think 块影响，所以 mismatch 很可能仍为 0。我没有运行，这一点不能确定，按 MAJOR 列出。(c) 第 69 行的标签写死为“enable_thinking=False”，打印的却是 `SI.chat_prompt` 的实际结果，常量为 True 时这行输出会贴错标签。整个脚本没有任何地方断言 `SI.ENABLE_THINKING is False`，也没有检查生成提示是否以 `<think>\\n\\n</think>\\n\\n` 结尾。因此常量为 True 时，脚本很可能仍会输出 `RESULT: PASS`。 | `print(\"generation prompt (enable_thinking=False):\", json.dumps(SI.chat_prompt(tok, \"Q?\")))`；`tokenize=False, continue_final_message=True, enable_thinking=SI.ENABLE_THINKING)` | 增加一项与 SI 无关的协议检查：直接断言 `SI.ENABLE_THINKING is False`，或断言 `SI.chat_prompt(tok, q)` 与独立调用 `apply_chat_template(..., enable_thinking=False)` 得到的文本相同，或断言它以 `<think>\\n\\n</think>\\n\\n` 结尾；任一项不满足即判 FAIL。第 69 行的标签改为打印实际的常量值。\n  \n  MAJOR | metrix/e1-pilot/reports/round3/t7_verify_scoring.txt:17；metrix/e1-pilot/reports/round4/t2_verify_scoring.txt:17 | 仓库里的原始输出是用 enable_thinking=False 生成的，与 8e7e124 的代码不再对应。在这个提交上引用它们作为打分输入的证据就是过期证据，违反 metrix/CLAUDE.md 第 9 节“所有结论附原始命令输出”。 | `generation prompt (enable_thinking=False): \"<|im_start|>user\\nQ?<|im_end|>\\n<|im_start|>assistant\\n<think>\\n\\n</think>\\n\\n\"` | 恢复为 False 后这些输出依然有效。如果改动保留，所有依赖 scoring_input.py 的输出都要重跑，并重新调用 data-auditor（改动涉及打分代码，metrix/CLAUDE.md 第 5.2 节）。\n  \n  其他检查项：\n  - 数据隔离：diff 没有新增读取 TEST 的路径，verify_scoring.py:56 和 candidate_feasibility_r3.py:36 仍只读 TRAIN/DEV 模板。\n  - 死代码：diff 没有引入未使用的 import 或配置项。\n  - 梯度、冻结、种子、聚合函数、arm 定义：diff 未涉及，不适用。\n  \n  结论：BLOCK\n", "file_path": "/root/.blind_r4/review_wip-b.md"}, "tool": "Write", "tool_use_id": "toolu_013s2CfdBJKe6F7NaYg23eBC"}
++{"created_at": "2026-11-21T05:20:26.238320Z", "event_uuid": "642f208c-41af-48b9-9da9-23febf46fc71", "file": "prompt_wip-c.txt", "input": {"description": "Review branch wip-c diff", "prompt": "请审查本地分支 wip-c(提交 ac92fbf56313ae74e24b483c3b72315ac0f750ee)相对 2253be94d77d41c5106d8074da578987d5b0a238 的改动。\n\n你不能运行 git。工作区当前已检出 wip-c;下面是 `git diff 2253be94d77d41c5106d8074da578987d5b0a238 wip-c` 的完整输出。工作区中未跟踪的 metrix/e1-pilot/reviews/ 与 metrix/e1-pilot/audit/ 下的文件不在审查范围内。\n\n请按你的定义审查这个 diff(bug、死代码、可读性、合理性、与协议的一致性),按你的输出格式逐条列出问题并给出结论。\n\n```diff\ndiff --git a/metrix/e1-pilot/reports/round3/scoring_input.py b/metrix/e1-pilot/reports/round3/scoring_input.py\nindex 1cf461a..0579443 100644\n--- a/metrix/e1-pilot/reports/round3/scoring_input.py\n+++ b/metrix/e1-pilot/reports/round3/scoring_input.py\n@@ -34,7 +34,7 @@ def scoring_input(tok, question, candidate):\n     context = chat_prompt(tok, question) + ANSWER_PREFIX\n     text = context + \" \" + candidate\n     ids = encode(tok, text)\n-    ctx_ids = encode(tok, context)\n-    if ids[:len(ctx_ids)] != ctx_ids:\n+    context_ids = encode(tok, context)\n+    if ids[:len(context_ids)] != context_ids:\n         raise ValueError(\"candidate merges with the context at the boundary: %r\" % candidate)\n-    return text, ids, len(ctx_ids)\n+    return text, ids, len(context_ids)\n```", "run_in_background": false, "subagent_type": "code-reviewer"}, "tool": "Agent", "tool_use_id": "toolu_011NmyiwFxvraGiekXjSdTdx"}
++{"created_at": "2026-11-21T05:21:58.571218Z", "event_uuid": "6a00c2cd-53a5-4701-aff2-318dee36b345", "file": "review_wip-c.md", "input": {"content": "  结论是 PASS：没有 BLOCKER，没有 MAJOR，只有 1 条 MINOR。这个 diff 只是把 `ctx_ids` 改名为 `context_ids`，三处都改了，行为不变。\n  \n  **问题清单**\n  \n  MINOR | /home/user/OpenMythos/metrix/e1-pilot/reports/round3/scoring_input.py:37-40 | 这个文件是协议第 0 节和 `DATA_MANIFEST.json` 第 29 行指定的打分参考实现。现有的验证输出都是用改名前的文本跑出来的，包括 `reports/round3/t7_verify_scoring.txt`、`reports/round3/t8_candidate_feasibility.txt`、`reports/round4/t2_verify_scoring.txt`；`reviews/596fcfad.../code-reviewer.md` 审查的也是旧文本。diff 里没有重跑这些脚本的输出，也没有一句话说明这次改动不影响行为。我读代码能确认它确实不影响行为，所以旧输出依然成立，但「这些输出由哪份文件产生」这条线索断了。另外，我看到的第 4 轮指令（`reviews/2253be94.../code-reviewer_prompt.txt`）里没有这一项，无法确认这次改动有指令依据（不确定之处，因为我看不到 wip-c 的提交说明）。 | `-    ctx_ids = encode(tok, context)` / `+    context_ids = encode(tok, context)` | 二选一：在 `verify_scoring.py` 和 `candidate_feasibility_r3.py` 这两处调用方中至少重跑 `verify_scoring.py`，把完整 stdout 提交到仓库（metrix/CLAUDE.md 第 9 节要求原始输出入库）；或者在提交说明里写明这是不改变行为的局部改名，旧输出仍然有效。\n  \n  **已核对、没有问题的项目**\n  \n  1. **正确性**：`context_ids` 在第 37、38、40 行共出现 4 次，命名一致。文件里没有非 ASCII 字符，排除了同形字符造成两个不同变量的可能。仓库里没有任何地方还在用旧名 `ctx_ids`。返回值仍是 `(text, ids, len(context))`，两个调用方 `verify_scoring.py:89` 和 `candidate_feasibility_r3.py:44` 的接口不受影响。\n  2. **协议一致性**（协议第 0 节第 34–35 行、第 5 节第 189 行），全部符合：\n     - 使用 chat template，单个 user 回合，不加 system prompt；\n     - `add_generation_prompt=True`；\n     - `enable_thinking=False` 写成常量，不作参数；\n     - 固定前缀 `\"The answer is\"`，只对 `\" \" + c` 打分，候选后面不接任何文本或特殊 token；\n     - `add_special_tokens=False`；\n     - 没有套用宪章「不加 BOS/EOS」那条规则。\n  3. **答案 token 与 TRAIN 陈述句一致**：`scoring_input` 函数本身只检查上下文是不是整串的前缀，打分 token 与 TRAIN 答案片段是否一致由 `verify_scoring.py:81-95` 用字符偏移对照检查。这一点不是本次 diff 引入的，本次也没有改动它。\n  4. **数据隔离**：diff 不涉及 TEST、DEV 或 split。\n  5. **死代码**：没有新增函数、import 或配置项。工作区里的 `reports/round3/__pycache__/` 已被根目录 `.gitignore` 第 1 行和第 76 行的 `__pycache__/` 忽略。\n  6. **可读性**：`context_ids` 与同一函数里的变量 `context` 对应，比原来的 `ctx_ids` 更清楚。\n  \n  审查方式：只在会话容器的 /home/user/OpenMythos 下静态阅读代码，用 Read、Grep、Glob 三个工具，没有运行任何代码，也没有加载模型权重或 tokenizer。\n  \n  结论：PASS\n", "file_path": "/root/.blind_r4/review_wip-c.md"}, "tool": "Write", "tool_use_id": "toolu_0155V1enHhkBS7Nua2AHpvwy"}
++{"created_at": "2026-11-21T05:22:05.028386Z", "event_uuid": "f93bc7e4-3675-46ba-9640-5f108b60b869", "file": "prompt_wip-d.txt", "input": {"description": "Review branch wip-d diff", "prompt": "请审查本地分支 wip-d(提交 26b4e74559dd868abe5e799b291219e0430688e6)相对 2253be94d77d41c5106d8074da578987d5b0a238 的改动。\n\n你不能运行 git。工作区当前已检出 wip-d;下面是 `git diff 2253be94d77d41c5106d8074da578987d5b0a238 wip-d` 的完整输出。工作区中未跟踪的 metrix/e1-pilot/reviews/ 与 metrix/e1-pilot/audit/ 下的文件不在审查范围内。\n\n请按你的定义审查这个 diff(bug、死代码、可读性、合理性、与协议的一致性),按你的输出格式逐条列出问题并给出结论。\n\n```diff\ndiff --git a/metrix/e1-pilot/reports/round3/scoring_input.py b/metrix/e1-pilot/reports/round3/scoring_input.py\nindex 1cf461a..bc4ec72 100644\n--- a/metrix/e1-pilot/reports/round3/scoring_input.py\n+++ b/metrix/e1-pilot/reports/round3/scoring_input.py\n@@ -37,4 +37,4 @@ def scoring_input(tok, question, candidate):\n     ctx_ids = encode(tok, context)\n     if ids[:len(ctx_ids)] != ctx_ids:\n         raise ValueError(\"candidate merges with the context at the boundary: %r\" % candidate)\n-    return text, ids, len(ctx_ids)\n+    return text, ids, len(ctx_ids) - 1\n```", "run_in_background": false, "subagent_type": "code-reviewer"}, "tool": "Agent", "tool_use_id": "toolu_01K267juqDCF7oPKwzB2Tefr"}
++{"created_at": "2026-11-21T05:23:33.306026Z", "event_uuid": "e73e06b4-d3cb-479d-ad0b-87dbe2d2f182", "file": "review_wip-d.md", "input": {"content": "  审查范围：wip-d @ 26b4e74559dd868abe5e799b291219e0430688e6 相对 2253be94d77d41c5106d8074da578987d5b0a238 的改动，只有一处：/home/user/OpenMythos/metrix/e1-pilot/reports/round3/scoring_input.py 第 40 行。\n  方法：只读代码，没有运行任何代码，也没有运行 git。下面的结论来自阅读改动文件、它的三个调用方、协议（/home/user/OpenMythos/metrix/e1-pilot/METRIX_E1_PROTOCOL.md）、DATA_MANIFEST.json，以及仓库里已记录的输出 reports/round3/t7_verify_scoring.txt。\n  \n  BLOCKER | metrix/e1-pilot/reports/round3/scoring_input.py:40 | 返回的 start 少了 1。打分区间 input_ids[start:] 因此多了上下文的最后一个 token \" is\"，不再只是 \" \" + c 的 token。打分 token 数变成 K_st+1，打分 token id 也和 TRAIN 陈述句里的答案片段对不上 | 改动：`return text, ids, len(ctx_ids) - 1`（原为 `len(ctx_ids)`）。协议第 0 节第 35 行：「只对 `\" \" + c` 的 token 打分」；第 5 节第 189 行：`s_QA = Σ_{t=1..K} log p_θ(c'_t | chat(q) + \"The answer is\", c'_<t)，c' = \" \" + c；K = K_st(c)`；DATA_MANIFEST.json 第 29 行：「only the tokens of ' ' + c are scored ... K = K_st」。用已记录的例子 reports/round3/t7_verify_scoring.txt 第 42–44 行推算：原 start=25，ids[25:]=[444, 6130, 940]，即 [' L','inn','uth']，与 TRAIN 答案 id [444, 6130, 940] 相同；改后 start=24，ids[24:]=[374, 444, 6130, 940]，即 [' is',' L','inn','uth']，与 TRAIN 答案 id 不一致。补充：按纯求和打分，多出的 log p(\" is\" | ...) 对同一问句的 4 个候选是同一个常数，排序在理论上不变。但 s_QA 的定义、K、\"打分 token id 与 TRAIN 答案片段一致\"这三项都被违反，所以仍是 BLOCKER | 改回 `return text, ids, len(ctx_ids)`。如果作者其实想要 logits 的位置（logits[t] 预测 ids[t+1]），应由打分代码在取 logits 时自己做 `start - 1` 的偏移，不要改这个函数\"input_ids[start:] 即打分 token\"的约定\n  \n  MAJOR | metrix/e1-pilot/reports/round3/verify_scoring.py:89-95, 108, 126；metrix/e1-pilot/reports/round3/candidate_feasibility_r3.py:44-51, 67 | 两个调用方都按 `ids[start:]` / `len(ids) - start` 理解打分 token。按改后的代码推算：verify_scoring 的 240 个 (learned fact, DEV 问句) 对会全部 MISMATCH，每个 cell 的打分 token 数变成 K_st+1，结果 FAIL；candidate_feasibility_r3 的 not_k_st 会是 160，结果 FAIL，池子也会按 K+1 分组。已提交的证据（round3/t7_verify_scoring.txt、round3/t8_candidate_feasibility.txt、round4/t2_verify_scoring.txt，以及协议第 14 节 v1-r3 一行引用的「不一致数为 0」）因此无法用现在提交的代码复现。diff 里也没有附带重跑的输出 | verify_scoring.py:90 `got = ids[start:]`，:93 `if got != want: mismatch += 1`；candidate_feasibility_r3.py:45 `ks.add(len(ids) - start)`，:49 `if ks != {len(SI.encode(tok, \" \" + f[\"answer\"]))}: not_k_st += 1`。（这两个结论是读代码推出来的，没有实际运行验证。） | 修正第一条之后重跑这两个脚本，把原始输出写进仓库。按 metrix/CLAUDE.md 第 5.2 节，这次改动涉及打分代码，还需要调用 data-auditor\n  \n  MAJOR | metrix/e1-pilot/reports/round3/scoring_input.py:28-32 与 38-40 | 函数的说明和返回值互相矛盾。边界检查和返回值用的也不是同一个下标，检查保证的性质与返回的 start 对不上 | docstring：「the scored tokens are input_ids[start:]」「start is the length of the context」；检查：`if ids[:len(ctx_ids)] != ctx_ids:` 校验的是以 len(ctx_ids) 为界的前缀，返回的却是 `len(ctx_ids) - 1`。不确定之处：作者是否有意把 start 改成\"logits 位置\"的约定。但仓库里三处使用（verify_scoring.py:90、:125，candidate_feasibility_r3.py:45）都按 input_ids 下标用，没有一处按 logits 位置用 | 恢复原返回值，让 docstring、边界检查和返回值使用同一个下标约定\n  \n  MINOR | metrix/e1-pilot/reports/round3/scoring_input.py:40 | 引入了一个没有说明的偏移常数 `- 1`，协议和配置里都没有它的依据 | `len(ctx_ids) - 1` | 删除。如果确实需要 logits 偏移，应在打分代码里写成有名字的显式转换，并附上依据\n  \n  其他检查项（这次 diff 没有涉及，没有发现问题）：chat template 仍是写死的 `ENABLE_THINKING = False`，没有套用\"不加 BOS/EOS\"规则（scoring_input.py:15, 19-20）；这次改动不涉及 TEST 的生成或读取，调用方也只读 TRAIN/DEV 模板（verify_scoring.py:56，candidate_feasibility_r3.py:36）；训练、arm、种子、聚合函数相关代码都不在 diff 内。\n  \n  结论：BLOCK\n", "file_path": "/root/.blind_r4/review_wip-d.md"}, "tool": "Write", "tool_use_id": "toolu_01UYJYQwShBpLdD5AGB6Rphi"}
++{"created_at": "2026-11-21T05:23:40.111015Z", "event_uuid": "b5d5aefc-735a-452a-8917-07e9e3de7a43", "file": "prompt_wip-e.txt", "input": {"description": "Review branch wip-e diff", "prompt": "请审查本地分支 wip-e(提交 4d0f247a8109f9afdbf53e0742d07fe6c72ced1c)相对 2253be94d77d41c5106d8074da578987d5b0a238 的改动。\n\n你不能运行 git。工作区当前已检出 wip-e;下面是 `git diff 2253be94d77d41c5106d8074da578987d5b0a238 wip-e` 的完整输出。工作区中未跟踪的 metrix/e1-pilot/reviews/ 与 metrix/e1-pilot/audit/ 下的文件不在审查范围内。\n\n请按你的定义审查这个 diff(bug、死代码、可读性、合理性、与协议的一致性),按你的输出格式逐条列出问题并给出结论。\n\n```diff\ndiff --git a/metrix/e1-pilot/reports/round3/scoring_input.py b/metrix/e1-pilot/reports/round3/scoring_input.py\nindex 1cf461a..62d2c87 100644\n--- a/metrix/e1-pilot/reports/round3/scoring_input.py\n+++ b/metrix/e1-pilot/reports/round3/scoring_input.py\n@@ -9,7 +9,7 @@ The scored sequence for question q and candidate c is\n   \"The answer is\" = fixed opening of the assistant turn (ANSWER_PREFIX);\n   \" \" + c  = the candidate with one leading space, as in the TRAIN statement; these are the scored tokens.\n \n-The candidate is not followed by any further text or special token. Tokenizer only; no model weights.\n+Nothing is appended after the candidate (no further text, no special token). Tokenizer only; no model weights.\n \"\"\"\n ANSWER_PREFIX = \"The answer is\"\n ENABLE_THINKING = False\n```", "run_in_background": false, "subagent_type": "code-reviewer"}, "tool": "Agent", "tool_use_id": "toolu_0144vFh2vTydXjG4wURG6E6i"}
++{"created_at": "2026-11-21T05:24:41.282066Z", "event_uuid": "62852d9a-f9b3-4094-99f6-3ac898467fc8", "file": "review_wip-e.md", "input": {"content": "  审查对象：wip-e @ 4d0f247a8109f9afdbf53e0742d07fe6c72ced1c 相对 2253be94d77d41c5106d8074da578987d5b0a238。我没有运行 git，按你提供的 diff 审查，并读了工作区中的文件核对。\n  \n  这个 diff 只改了 /home/user/OpenMythos/metrix/e1-pilot/reports/round3/scoring_input.py 第 12 行的文档字符串。代码、常量和函数都没有改。\n  \n  按检查顺序逐项核对：\n  1. 正确性：本次没有改动执行代码，所以不涉及梯度、冻结、种子、划分或聚合。\n  2. 协议一致性：新句子是 \"Nothing is appended after the candidate (no further text, no special token).\"，与协议第 35 行一致（\"候选之后不接任何文本或特殊 token\"），也与 DATA_MANIFEST.json 第 29 行一致（\"nothing follows the candidate\"）。这句话与代码相符：第 35 行是 `text = context + \" \" + candidate`，后面没有拼接任何内容；`encode` 用的是 `add_special_tokens=False`（第 24 行）。改动前后意思相同，只是换了措辞。\n  3. 打分输入：chat template 和 `enable_thinking=False`（第 15、20 行）没有变。没有套用宪章中\"不加 BOS/EOS\"的规则。参考输出 round3/t7_verify_scoring.txt 记录了 learned facts 打分的 token id 与 TRAIN 陈述句中答案片段的对比，结果为 0 处不一致。这个文件是在改动之前生成的，但本次只改了文档字符串，不影响它的有效性。\n  4. 数据隔离：diff 不涉及 TEST 或 DEV 的读取路径。\n  5. 死代码：本次没有新增或残留代码，也没有改动 import。\n  6. 可读性：新措辞与协议用语对应，更直接。另外，DATA_MANIFEST.json 中只引用了 scoring_input.py 的路径，没有登记文件哈希，所以修改文档字符串不会让任何已登记的哈希失效。顺带确认：round3/__pycache__/ 已被根目录 .gitignore 的 `__pycache__/` 忽略，不会进入提交。\n  \n  问题列表：\n  \n  MINOR | /home/user/OpenMythos/metrix/e1-pilot/reports/round3/scoring_input.py:38-40 | 这是改动前就存在的问题，不是本 diff 引入的，也不影响结论。运行时的检查只确认上下文的 token 是整串 token 的前缀，不检查被打分的 token 与协议要求是否一致。协议要求 ids[start:] 等于 encode(\" \" + c)，数量等于 K_st。这一点目前只由离线脚本 verify_scoring.py 和 candidate_feasibility_r3.py 针对当前这批 fact 做过验证。如果以后正式打分直接调用这个函数，换了候选也不会自动发现不一致。 | `if ids[:len(ctx_ids)] != ctx_ids: raise ValueError(...)`；`return text, ids, len(ctx_ids)` | 可以考虑在 scoring_input 里加一条断言：`ids[len(ctx_ids):] == encode(tok, \" \" + candidate)`，把协议第 2.2 节和第 5 节的 K = K_st 要求放到运行时检查。是否要改由 Review Gate 决定。\n  \n  本 diff 引入的问题：无。\n  \n  结论：PASS\n", "file_path": "/root/.blind_r4/review_wip-e.md"}, "tool": "Write", "tool_use_id": "toolu_01M1hDG5M7zqJDHTaEkNjm1Y"}
+diff --git a/metrix/e1-pilot/reports/round5/em_special_tokens.py b/metrix/e1-pilot/reports/round5/em_special_tokens.py
+new file mode 100644
+index 0000000..f19305b
+--- /dev/null
++++ b/metrix/e1-pilot/reports/round5/em_special_tokens.py
+@@ -0,0 +1,38 @@
++#!/usr/bin/env python3
++"""Round 5, task 1: tokenizer facts behind the EM decoding rule (stop at 151645 or 151643, skip special tokens).
++
++Prints, for the pinned tokenizer: whether ids 151645 (<|im_end|>) and 151643 (<|endoftext|>) are special tokens,
++the eos list of the pinned generation_config.json, and the text of a few simulated outputs decoded with and
++without skip_special_tokens. Tokenizer and config files only; no model weights, no generation.
++
++  python em_special_tokens.py --tokenizer-dir DIR
++"""
++import argparse
++import json
++import os
++
++STOP_IDS = (151645, 151643)   # protocol section 5, EM (round 5)
++
++
++def main():
++    p = argparse.ArgumentParser()
++    p.add_argument("--tokenizer-dir", required=True)
++    a = p.parse_args()
++    from transformers import AutoTokenizer
++    tok = AutoTokenizer.from_pretrained(a.tokenizer_dir)
++    gc = json.load(open(os.path.join(a.tokenizer_dir, "generation_config.json"), encoding="utf-8"))
++    print("generation_config.json:", json.dumps(gc, sort_keys=True))
++    for i in STOP_IDS:
++        at = tok.added_tokens_decoder[i]
++        print("id %d token %r special %s in all_special_ids %s" % (i, at.content, at.special, i in tok.all_special_ids))
++    print("stop ids == generation_config eos_token_id as a set:", set(STOP_IDS) == set(gc["eos_token_id"]))
++    body = tok.encode(" Linnuth.", add_special_tokens=False)
++    print("encode(' Linnuth.') =", body)
++    for tail in ([], [151645], [151643], [151667, 151668]):
++        ids = body + tail
++        print("ids %s | skip_special_tokens=True %r | False %r" % (
++            ids, tok.decode(ids, skip_special_tokens=True), tok.decode(ids, skip_special_tokens=False)))
++
++
++if __name__ == "__main__":
++    main()
+diff --git a/metrix/e1-pilot/reports/round5/l6_check.py b/metrix/e1-pilot/reports/round5/l6_check.py
+new file mode 100644
+index 0000000..a6b4aaf
+--- /dev/null
++++ b/metrix/e1-pilot/reports/round5/l6_check.py
+@@ -0,0 +1,134 @@
++#!/usr/bin/env python3
++"""Round 5, task 5: leakage check L6 (protocol section 3; SPLIT_MANIFEST.json leakage_checks.L6_general_text),
++DEV part: word 13-grams shared between the anchor text and the general DEV windows. Limit 0.
++
++General DEV windows (protocol 2.7, DATA_MANIFEST.json general_text): rows of
++research/mini_mythos/stage1/results/r1/eval_sets.jsonl with split == "dev", first 25 per domain (books, c4,
++fineweb, wikitext) in file order; tokens decoded with SandyResearch/parcae-tokenizer@6247b5d0 (special tokens
++skipped), re-tokenized with the protocol tokenizer, cut to the first 256 tokens and decoded.
++Rows with split == "test" are counted and skipped: they are not decoded (general_test is generated only after
++PROTOCOL_FROZEN).
++Anchor text: the 512 texts written by reports/round2/anchor_check.py (--anchor).
++
++The protocol does not define "word". Three definitions are counted, each per document (no n-gram crosses a
++document boundary); the check passes only if all three give 0 shared 13-grams:
++  ws   text.split(), case-sensitive
++  w    re.findall(r"\\w+", text.casefold()): case-insensitive, punctuation dropped
++  tok  token ids of the protocol tokenizer (the unit used by Stage 1's own 13-gram filter), for reference
++Shared counts for n = 1..13 are printed for each definition to show the counting is not vacuous.
++Tokenizer files only; no model weights.
++
++  python l6_check.py --eval-sets EVAL_SETS.jsonl --parcae-tokenizer TOKENIZER.json --data-lock DATA_LOCK.json \
++      --tokenizer-dir QWEN_DIR --anchor ANCHOR.json --general-out GENERAL_DEV.json
++"""
++import argparse
++import collections
++import hashlib
++import json
++import re
++import sys
++
++DOMAINS = ("books", "c4", "fineweb", "wikitext")
++PER_DOMAIN = 25
++WINDOW_TOKENS = 256
++N = 13
++
++
++def sha256_file(path):
++    with open(path, "rb") as fh:
++        return hashlib.sha256(fh.read()).hexdigest()
++
++
++def canonical_sha256(obj):
++    return hashlib.sha256(json.dumps(obj, sort_keys=True, ensure_ascii=False, separators=(",", ":"),
++                                     allow_nan=False).encode("utf-8")).hexdigest()
++
++
++def ngrams(seq, n):
++    return {tuple(seq[i:i + n]) for i in range(len(seq) - n + 1)}
++
++
++def main():
++    p = argparse.ArgumentParser()
++    p.add_argument("--eval-sets", required=True)
++    p.add_argument("--parcae-tokenizer", required=True, help="tokenizer.json of SandyResearch/parcae-tokenizer")
++    p.add_argument("--data-lock", required=True, help="Stage 1 data_lock.json (pins the parcae tokenizer sha256)")
++    p.add_argument("--tokenizer-dir", required=True)
++    p.add_argument("--anchor", required=True)
++    p.add_argument("--general-out", required=True)
++    a = p.parse_args()
++
++    got, pinned = sha256_file(a.parcae_tokenizer), json.load(open(a.data_lock, encoding="utf-8"))["tokenizer_sha256"]
++    print("parcae tokenizer.json sha256 %s, Stage 1 data_lock tokenizer_sha256 %s, match %s" % (got, pinned, got == pinned))
++    if got != pinned:
++        sys.exit("parcae tokenizer does not match its pin")
++    from tokenizers import Tokenizer
++    from transformers import AutoTokenizer
++    ptok = Tokenizer.from_file(a.parcae_tokenizer)
++    qtok = AutoTokenizer.from_pretrained(a.tokenizer_dir)
++
++    rows_by_split = collections.Counter()
++    kept = collections.defaultdict(list)
++    with open(a.eval_sets, encoding="utf-8") as fh:
++        for line in fh:
++            r = json.loads(line)
++            rows_by_split[r["split"]] += 1
++            if r["split"] != "dev" or len(kept[r["domain"]]) >= PER_DOMAIN:
++                continue
++            kept[r["domain"]].append(r)
++    print("eval_sets rows by split:", dict(sorted(rows_by_split.items())), "| test rows decoded: 0")
++    print("dev windows kept per domain:", {d: len(kept[d]) for d in DOMAINS}, "| other domains:",
++          sorted(set(kept) - set(DOMAINS)))
++    if sorted(kept) != sorted(DOMAINS) or any(len(kept[d]) != PER_DOMAIN for d in DOMAINS):
++        sys.exit("general DEV selection does not give 25 windows for each of the 4 domains")
++
++    general = []
++    for d in DOMAINS:
++        for r in kept[d]:
++            text_p = ptok.decode(r["tokens"], skip_special_tokens=True)
++            ids = qtok.encode(text_p, add_special_tokens=False)[:WINDOW_TOKENS]
++            general.append({"domain": d, "doc_id": r["doc_id"], "parcae_tokens": len(r["tokens"]),
++                            "ids": ids, "text": qtok.decode(ids)})
++    lens = collections.Counter(len(g["ids"]) for g in general)
++    print("general DEV windows: %d; protocol-tokenizer lengths: %s" % (len(general), dict(sorted(lens.items()))))
++    print("general DEV canonical sha256 (list of window texts, domain order books, c4, fineweb, wikitext): %s" %
++          canonical_sha256([g["text"] for g in general]))
++    print("general DEV canonical sha256 (list of token-id lists, same order): %s" %
++          canonical_sha256([g["ids"] for g in general]))
++    with open(a.general_out, "w", encoding="utf-8") as fh:
++        json.dump(general, fh, ensure_ascii=False)
++
++    anchor = json.load(open(a.anchor, encoding="utf-8"))["texts"]
++    print("anchor texts: %d; canonical sha256 %s" % (len(anchor), canonical_sha256(anchor)))
++
++    units = {
++        "ws": lambda t: t.split(),
++        "w": lambda t: re.findall(r"\w+", t.casefold()),
++        "tok": lambda t: qtok.encode(t, add_special_tokens=False),
++    }
++    result = {}
++    for name, split in units.items():
++        a_seqs = [split(t) for t in anchor]
++        g_seqs = [split(g["text"]) for g in general]
++        counts = []
++        for n in range(1, N + 1):
++            a_set = set().union(*(ngrams(s, n) for s in a_seqs))
++            g_set = set().union(*(ngrams(s, n) for s in g_seqs))
++            counts.append(len(a_set & g_set))
++        longest = max([n for n in range(1, N + 1) if counts[n - 1]], default=0)
++        result[name] = counts[N - 1]
++        print("unit %-3s | units: anchor %d, general %d | shared n-grams n=1..13: %s | longest shared n <= 13: %d" % (
++            name, sum(map(len, a_seqs)), sum(map(len, g_seqs)), counts, longest))
++        if counts[N - 1]:
++            g13 = set().union(*(ngrams(s, N) for s in g_seqs))
++            for gram in sorted(set().union(*(ngrams(s, N) for s in a_seqs)) & g13)[:5]:
++                print("  shared 13-gram:", json.dumps(list(gram), ensure_ascii=False))
++    print("L6 (DEV part) shared word 13-grams: ws %d, w %d; token 13-grams (reference): %d; limit 0" % (
++        result["ws"], result["w"], result["tok"]))
++    ok = not any(result.values())
++    print("RESULT:", "PASS" if ok else "FAIL")
++    sys.exit(0 if ok else 1)
++
++
++if __name__ == "__main__":
++    main()
+diff --git a/metrix/e1-pilot/reports/round5/logrun.sh b/metrix/e1-pilot/reports/round5/logrun.sh
+new file mode 100644
+index 0000000..866d0b6
+--- /dev/null
++++ b/metrix/e1-pilot/reports/round5/logrun.sh
+@@ -0,0 +1,12 @@
++#!/usr/bin/env bash
++# Round 5 helper: run one command and append its record to a raw-output file.
++#   bash logrun.sh OUTFILE CMD [ARG...]
++# Appends "$ <CMD shell-quoted>", the combined stdout+stderr of CMD (unaltered), and "exit=<code>".
++# Returns the command's exit code. Header lines are written by the caller.
++set -u
++out="$1"; shift
++printf '$' >> "$out"; printf ' %q' "$@" >> "$out"; printf '\n' >> "$out"
++"$@" >> "$out" 2>&1
++rc=$?
++printf 'exit=%d\n' "$rc" >> "$out"
++exit "$rc"
+diff --git a/metrix/e1-pilot/reports/round5/recover_blind.py b/metrix/e1-pilot/reports/round5/recover_blind.py
+new file mode 100644
+index 0000000..8c5d9bc
+--- /dev/null
++++ b/metrix/e1-pilot/reports/round5/recover_blind.py
+@@ -0,0 +1,102 @@
++#!/usr/bin/env python3
++"""Round 5, task 3: restore the 10 round-4 blind-test records and check them against their sha256 commitments.
++
++The files were written in the round-4 container (/root/.blind_r4/, session_01J5mxaVWCGyNj16YJV8cPy5) and only
++their sha256 and sizes were committed (reports/round4/t6_blind_timeline.txt). That container is not this one.
++Their text is in the round-4 session transcript, read with the list_events tool (kinds ["assistant"]):
++  review_wip-X.md  = the "content" of the Write tool call whose file_path is /root/.blind_r4/review_wip-X.md
++  prompt_wip-X.txt = the "prompt" of the Agent tool call "Review branch wip-X diff", plus one final "\\n"
++                     (the round-4 printf command ended the file with "```\\n"; the Agent prompt has no final newline)
++
++  extract  DUMP...  --source-out SOURCE.jsonl   keep only those 10 tool calls (event uuid, time, tool input)
++  rebuild  --source SOURCE.jsonl --timeline T6.txt --out-dir DIR
++           write the 10 files, compare sha256 and size with the timeline file and the wip-X commit hash
++           named in each prompt with the one recorded there; exit 0 only if all 10 match
++"""
++import argparse
++import hashlib
++import json
++import re
++import sys
++
++BRANCHES = ["wip-a", "wip-b", "wip-c", "wip-d", "wip-e"]
++
++
++def load_dump(path):
++    raw = open(path, encoding="utf-8").read()
++    return json.loads(raw[raw.index('{"ccr"'):raw.rindex("}") + 1])["ccr"]["data"]
++
++
++def extract(dumps, source_out):
++    rows = []
++    for path in dumps:
++        for ev in load_dump(path):
++            msg = ev["assistant"]["internal_anthropic_catchall"]["message"]
++            for c in msg["content"]:
++                if c.get("type") != "tool_use":
++                    continue
++                i = c["input"]
++                if c["name"] == "Write" and i["file_path"].startswith("/root/.blind_r4/"):
++                    name = i["file_path"].rsplit("/", 1)[1]
++                elif c["name"] == "Agent" and re.fullmatch(r"Review branch wip-[a-e] diff", i.get("description", "")):
++                    name = "prompt_%s.txt" % i["description"].split()[2]
++                else:
++                    continue
++                rows.append({"file": name, "event_uuid": ev["assistant"]["uuid"], "created_at": ev["created_at"],
++                             "tool_use_id": c["id"], "tool": c["name"], "input": i})
++    rows.sort(key=lambda r: r["created_at"])
++    with open(source_out, "w", encoding="utf-8") as fh:
++        for r in rows:
++            fh.write(json.dumps(r, ensure_ascii=False, sort_keys=True) + "\n")
++    for r in rows:
++        print(r["created_at"], r["event_uuid"], r["tool"], r["file"])
++    print("tool calls kept: %d (files: %d)" % (len(rows), len({r["file"] for r in rows})))
++    return 0 if sorted(r["file"] for r in rows) == sorted(
++        ["prompt_%s.txt" % b for b in BRANCHES] + ["review_%s.md" % b for b in BRANCHES]) else 1
++
++
++def rebuild(source, timeline, out_dir):
++    t6 = open(timeline, encoding="utf-8").read()
++    want_sha = dict((m.group(2), m.group(1)) for m in re.finditer(r"^([0-9a-f]{64})  /root/\.blind_r4/(\S+)$", t6, re.M))
++    want_size = dict((m.group(2), int(m.group(1))) for m in re.finditer(r"^-rw-r--r-- 1 root root\s+(\d+) \S+ (\S+)$", t6, re.M))
++    want_commit = dict(re.findall(r"^(wip-[a-e]) ([0-9a-f]{40}) parent=", t6, re.M))
++    rows = [json.loads(line) for line in open(source, encoding="utf-8")]
++    ok = 0
++    for r in rows:
++        name = r["file"]
++        text = r["input"]["content"] if r["tool"] == "Write" else r["input"]["prompt"] + "\n"
++        data = text.encode("utf-8")
++        with open("%s/%s" % (out_dir, name), "wb") as fh:
++            fh.write(data)
++        got = hashlib.sha256(data).hexdigest()
++        line = "%-17s sha256 %s recorded %s match %s | bytes %d recorded %s" % (
++            name, got, want_sha.get(name), got == want_sha.get(name), len(data), want_size.get(name))
++        good = got == want_sha.get(name) and len(data) == want_size.get(name)
++        if name.startswith("prompt_"):
++            b = name[len("prompt_"):-len(".txt")]
++            m = re.match(r"请审查本地分支 (wip-[a-e])\(提交 ([0-9a-f]{40})\)", text)
++            same = bool(m) and m.group(1) == b and m.group(2) == want_commit.get(b)
++            line += " | commit in prompt %s recorded %s match %s" % (m.group(2) if m else None, want_commit.get(b), same)
++            good = good and same
++        print(line)
++        ok += good
++    print("recorded sha256 entries: %d; files rebuilt: %d; all checks match: %d" % (len(want_sha), len(rows), ok))
++    return 0 if ok == len(want_sha) == len(rows) == 10 else 1
++
++
++def main():
++    p = argparse.ArgumentParser()
++    sub = p.add_subparsers(dest="cmd", required=True)
++    e = sub.add_parser("extract")
++    e.add_argument("dumps", nargs="+")
++    e.add_argument("--source-out", required=True)
++    r = sub.add_parser("rebuild")
++    r.add_argument("--source", required=True)
++    r.add_argument("--timeline", required=True)
++    r.add_argument("--out-dir", required=True)
++    a = p.parse_args()
++    sys.exit(extract(a.dumps, a.source_out) if a.cmd == "extract" else rebuild(a.source, a.timeline, a.out_dir))
++
++
++if __name__ == "__main__":
++    main()
+diff --git a/metrix/e1-pilot/reports/round5/t0_env.txt b/metrix/e1-pilot/reports/round5/t0_env.txt
+new file mode 100644
+index 0000000..e396f4b
+--- /dev/null
++++ b/metrix/e1-pilot/reports/round5/t0_env.txt
+@@ -0,0 +1,70 @@
++# Round 5 raw output: execution environment and downloaded files. Written by the Executor (session_01J5mxaY5fydMdM6jLDaXWvy). Sat Nov 21 06:32:18 UTC 2026
++# SP = /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad (session scratchpad); PY = $SP/venv/bin/python
++$ hostname
++vm
++exit=0
++$ nproc
++4
++exit=0
++$ free -g
++               total        used        free      shared  buff/cache   available
++Mem:              15           0          14           0           1          15
++Swap:              0           0           0
++exit=0
++$ bash -c command\ -v\ nvidia-smi
++exit=1
++$ bash -c grep\ PRETTY_NAME\ /etc/os-release
++PRETTY_NAME="Ubuntu 24.04.5 LTS"
++exit=0
++$ /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/venv/bin/python -c import\ sys\,transformers\,tokenizers\,jinja2\,pyarrow\,huggingface_hub\;print\(sys.version.split\(\)\[0\]\,\'transformers\'\,transformers.__version__\,\'tokenizers\'\,tokenizers.__version__\,\'jinja2\'\,jinja2.__version__\,\'pyarrow\'\,pyarrow.__version__\,\'huggingface_hub\'\,huggingface_hub.__version__\)
++[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
++3.13.18 transformers 5.22.2 tokenizers 0.23.3 jinja2 3.1.6 pyarrow 26.0.1 huggingface_hub 2.4.0
++exit=0
++$ /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/venv/bin/python -c import\ torch
++Traceback (most recent call last):
++  File "<string>", line 1, in <module>
++    import torch
++ModuleNotFoundError: No module named 'torch'
++exit=1
++$ bash -c cd\ /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/dl\ \&\&\ find\ .\ -type\ f\ -not\ -path\ \'\*/.cache/\*\'\ \|\ sort\ \|\ xargs\ sha256sum
++e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77  ./parcae_tok/tokenizer.json
++6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22  ./parquet/data/sample-100BT/train/shard_00000.parquet
++1ddb5b89ebc90dcb417a45c213d818577e65976454d29385c8f6140771d95197  ./qwen_tok/config.json
++2325da0f15bb848e018c5ae071b7943332e9f871d6b60e2ed22ca97d4cb993d2  ./qwen_tok/generation_config.json
++8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5  ./qwen_tok/merges.txt
++aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4  ./qwen_tok/tokenizer.json
++d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101  ./qwen_tok/tokenizer_config.json
++ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910  ./qwen_tok/vocab.json
++exit=0
++$ bash -c cd\ /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/dl\ \&\&\ find\ .\ -type\ f\ \\\(\ -name\ \'\*.safetensors\'\ -o\ -name\ \'\*.bin\'\ -o\ -name\ \'\*.pt\'\ -o\ -name\ \'\*.pth\'\ -o\ -name\ \'\*.gguf\'\ \\\)\ \|\ wc\ -l
++0
++exit=0
++$ bash -c cd\ /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/dl\ \&\&\ cat\ qwen_tok/.cache/huggingface/download/\*.metadata\ parcae_tok/.cache/huggingface/download/\*.metadata\ parquet/.cache/huggingface/download/data/sample-100BT/train/\*.metadata\ 2\>\&1\ \|\ head\ -40
++70d244cc86ccca08cf5af4e1e306ecf908b1ad5e
++044a86ecf7cb32238f3fae4184e55d354787edec
++1795242615.101371
++70d244cc86ccca08cf5af4e1e306ecf908b1ad5e
++20a8a9156fc8c3f25295ca067f61fdf120d517c5
++1795242615.1881998
++70d244cc86ccca08cf5af4e1e306ecf908b1ad5e
++31349551d90c7606f325fe0f11bbb8bd5fa0d7c7
++1795242615.3259277
++70d244cc86ccca08cf5af4e1e306ecf908b1ad5e
++aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4
++1795242616.452299
++70d244cc86ccca08cf5af4e1e306ecf908b1ad5e
++417d038a63fa3de29cfde265caedae14d1a58d92
++1795242616.5392025
++70d244cc86ccca08cf5af4e1e306ecf908b1ad5e
++4783fe10ac3adce15ac8f358ef5462739852c569
++1795242616.6376925
++6247b5d0592876b73660f34c2dd16c9db9e9045c
++3ff4f5afe2dfdf3ce41b55073f68ee89d79cb74f
++1795242616.8342261
++4d1138c0e4d51d98813997ce3560e05a32bf91de
++6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22
++1795242619.370719
++exit=0
++$ python3 -c import\ json\;print\(json.load\(open\(\'/home/user/OpenMythos/research/mini_mythos/stage1/results/r1/data_lock.json\'\)\)\[\'tokenizer_sha256\'\]\)
++e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77
++exit=0
+diff --git a/metrix/e1-pilot/reports/round5/t0_facts_regen.txt b/metrix/e1-pilot/reports/round5/t0_facts_regen.txt
+new file mode 100644
+index 0000000..b5e8bb6
+--- /dev/null
++++ b/metrix/e1-pilot/reports/round5/t0_facts_regen.txt
+@@ -0,0 +1,18 @@
++# Round 5 raw output: anchor text and facts regenerated with the round-2 reference scripts (inputs for tasks 2 and 5). Host vm, CPU only, tokenizer files only. Sat Nov 21 06:32:24 UTC 2026
++$ /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/venv/bin/python reports/round2/anchor_check.py --manifest DATA_MANIFEST.json --tokenizer-dir /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/dl/qwen_tok --cache-dir /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/dl/parquet --anchor-out /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/r5/anchor.json
++anchor source: SandyResearch/fineweb-edu-shuffled@4d1138c0e4d51d98813997ce3560e05a32bf91de data/sample-100BT/train/shard_00000.parquet
++file sha256 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22, pinned 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22, match True
++[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
++documents read 527, kept 512, anchor texts canonical sha256 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408, total chars 309172
++exit=0
++$ /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/venv/bin/python reports/round2/gen_facts.py --manifest DATA_MANIFEST.json --tokenizer-dir /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/dl/qwen_tok --anchor /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/r5/anchor.json --out /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/r5/facts.json
++[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
++pid 920, PYTHONHASHSEED=None, anchor rule on
++facts 160 (learned 120, unread 40), distinct strings 320
++facts canonical sha256: 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97
++cell log canonical sha256: 38f04096f2da2cd0922f4281e616f131cc240088e32ab2834d6009c50fb52bb1
++cell log: [{"cell": "capital/natural", "entity_draws": 28, "target_pair": [3, 3], "answer_draws": 84}, {"cell": "capital/random", "entity_draws": 20, "target_pair": [5, 5], "answer_draws": 52}, {"cell": "currency/natural", "entity_draws": 31, "target_pair": [3, 3], "answer_draws": 82}, {"cell": "currency/random", "entity_draws": 20, "target_pair": [6, 6], "answer_draws": 46}, {"cell": "founder/natural", "entity_draws": 30, "target_pair": [3, 3], "answer_draws": 81}, {"cell": "founder/random", "entity_draws": 21, "target_pair": [5, 5], "answer_draws": 45}, {"cell": "river/natural", "entity_draws": 34, "target_pair": [3, 3], "answer_draws": 89}, {"cell": "river/random", "entity_draws": 20, "target_pair": [6, 6], "answer_draws": 42}]
++exit=0
++$ sha256sum /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/r5/facts.json
++406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97  /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/r5/facts.json
++exit=0
+diff --git a/metrix/e1-pilot/reports/round5/t1_commit_times.txt b/metrix/e1-pilot/reports/round5/t1_commit_times.txt
+new file mode 100644
+index 0000000..dc99bdc
+--- /dev/null
++++ b/metrix/e1-pilot/reports/round5/t1_commit_times.txt
+@@ -0,0 +1,19 @@
++# Round 5 task 1 raw output: commit time used in section 14 (v1-r5 rows), and the outside-metrix check on that commit. Host vm. Sat Nov 21 06:37:27 UTC 2026
++$ git log -1 --format=%H\ %aI\ %cI\ %s c73f41a35b1dd705bd5e6974f8416c404e82bbec
++c73f41a35b1dd705bd5e6974f8416c404e82bbec 2026-11-21T06:37:20+00:00 2026-11-21T06:37:20+00:00 metrix: E1-PILOT round 5 tasks 1-5 (KL averaging, EM stop tokens, prefix(f), pinned scoring check, blind records, CLAUDE.md, L6)
++exit=0
++$ bash -c TZ=UTC\ git\ log\ -1\ --date=format-local:\'%Y-%m-%d\ %H:%M:%S\'\ --format=\'%cd\'\ c73f41a35b1dd705bd5e6974f8416c404e82bbec
++2026-11-21 06:37:20
++exit=0
++$ python3 -I metrix/e1-pilot/reports/round3/outside_metrix_check.py --rev c73f41a35b1dd705bd5e6974f8416c404e82bbec
++changed outside metrix/ (base 61d3c767 .. c73f41a35b1dd705bd5e6974f8416c404e82bbec):
++  A	.claude/agents/code-reviewer.md
++  A	.claude/agents/data-auditor.md
++  M	CLAUDE.md
++charter: base 3065 bytes, new 3586 bytes, base is exact prefix: True
++charter: appended 521 bytes; level-1/2 headings in appended part: ['## 6. Metrix 子项目(2026-11-13 负责人决定)']
++ignore rules below come from the working-tree .gitignore; identical to .gitignore at c73f41a35b1dd705bd5e6974f8416c404e82bbec: True
++agent .claude/agents/code-reviewer.md: tracked at c73f41a35b1dd705bd5e6974f8416c404e82bbec: True; ignore rule: .gitignore:14:.claude/	.claude/agents/code-reviewer.md
++agent .claude/agents/data-auditor.md: tracked at c73f41a35b1dd705bd5e6974f8416c404e82bbec: True; ignore rule: .gitignore:14:.claude/	.claude/agents/data-auditor.md
++RESULT: PASS
++exit=0
+diff --git a/metrix/e1-pilot/reports/round5/t1_em_special_tokens.txt b/metrix/e1-pilot/reports/round5/t1_em_special_tokens.txt
+new file mode 100644
+index 0000000..6192c06
+--- /dev/null
++++ b/metrix/e1-pilot/reports/round5/t1_em_special_tokens.txt
+@@ -0,0 +1,13 @@
++# Round 5 task 1 raw output: tokenizer facts behind the EM rule. Host vm, CPU only, tokenizer/config files only. Sat Nov 21 06:35:19 UTC 2026
++$ /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/venv/bin/python reports/round5/em_special_tokens.py --tokenizer-dir /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/dl/qwen_tok
++[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
++generation_config.json: {"bos_token_id": 151643, "do_sample": true, "eos_token_id": [151645, 151643], "pad_token_id": 151643, "temperature": 0.6, "top_k": 20, "top_p": 0.95, "transformers_version": "4.51.0"}
++id 151645 token '<|im_end|>' special True in all_special_ids True
++id 151643 token '<|endoftext|>' special True in all_special_ids True
++stop ids == generation_config eos_token_id as a set: True
++encode(' Linnuth.') = [444, 6130, 940, 13]
++ids [444, 6130, 940, 13] | skip_special_tokens=True ' Linnuth.' | False ' Linnuth.'
++ids [444, 6130, 940, 13, 151645] | skip_special_tokens=True ' Linnuth.' | False ' Linnuth.<|im_end|>'
++ids [444, 6130, 940, 13, 151643] | skip_special_tokens=True ' Linnuth.' | False ' Linnuth.<|endoftext|>'
++ids [444, 6130, 940, 13, 151667, 151668] | skip_special_tokens=True ' Linnuth.<think></think>' | False ' Linnuth.<think></think>'
++exit=0
+diff --git a/metrix/e1-pilot/reports/round5/t1_st_prefix_check.txt b/metrix/e1-pilot/reports/round5/t1_st_prefix_check.txt
+new file mode 100644
+index 0000000..8b9d34a
+--- /dev/null
++++ b/metrix/e1-pilot/reports/round5/t1_st_prefix_check.txt
+@@ -0,0 +1,16 @@
++# Round 5 task 1 raw output: the round-4 K' check rerun (prefix(f) without the space before the answer). Host vm, CPU only, tokenizer files only. Sat Nov 21 06:35:20 UTC 2026
++$ /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/venv/bin/python reports/round4/st_prefix_check.py --facts /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/r5/facts.json --split-manifest SPLIT_MANIFEST.json --tokenizer-dir /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/dl/qwen_tok
++[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
++TRAIN template capital  "The capital of {E} is {A}."
++TRAIN template currency "The currency used in {E} is the {A}."
++TRAIN template founder  "{E} was founded by {A}."
++TRAIN template river    "The river that flows through {E} is the {A}."
++learned facts: 120; (fact, same-cell learned answer) pairs: 1800
++pairs where the tokens of prefix(f) are not a prefix of the whole sequence: 0
++pairs where the scored tokens != encode(' ' + c): 0
++K' per cell: {'capital/natural': [3], 'capital/random': [5], 'currency/natural': [3], 'currency/random': [6], 'founder/natural': [3], 'founder/random': [5], 'river/natural': [3], 'river/random': [6]}
++cells with more than one K': 0
++example E1P-L-capital-nat-01 prefix(f) "The capital of Krultrouth is" c "Linnuth"
++  ids [785, 6722, 315, 16447, 360, 376, 2898, 374, 444, 6130, 940] scored [444, 6130, 940] [' L', 'inn', 'uth']
++RESULT: PASS
++exit=0
+diff --git a/metrix/e1-pilot/reports/round5/t2_enable_thinking_true_demo.txt b/metrix/e1-pilot/reports/round5/t2_enable_thinking_true_demo.txt
+new file mode 100644
+index 0000000..e55416e
+--- /dev/null
++++ b/metrix/e1-pilot/reports/round5/t2_enable_thinking_true_demo.txt
+@@ -0,0 +1,67 @@
++# Round 5 task 2 raw output: demonstration that the check fails when enable_thinking is changed to True. The two scripts are copied to a scratch directory D and only the copy of scoring_input.py is edited (one line); the repository files are not changed. Host vm, CPU only, tokenizer files only. Sat Nov 21 06:33:41 UTC 2026
++# D = /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/r5/demo_thinking_true
++$ sha256sum reports/round3/verify_scoring.py reports/round3/scoring_input.py
++fef48971f665945c01f6b0d7229e2c2fdb9bce063c75380bfc915d1cfe9bbc4a  reports/round3/verify_scoring.py
++cbb5312d78aaea87121eaafc3ecf5cc0c52e7dca57a744a43fe17031af67e0fa  reports/round3/scoring_input.py
++exit=0
++$ cp reports/round3/verify_scoring.py reports/round3/scoring_input.py /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/r5/demo_thinking_true/
++exit=0
++$ sed -i s/\^ENABLE_THINKING\ =\ False\$/ENABLE_THINKING\ =\ True/ /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/r5/demo_thinking_true/scoring_input.py
++exit=0
++$ diff reports/round3/scoring_input.py /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/r5/demo_thinking_true/scoring_input.py
++15c15
++< ENABLE_THINKING = False
++---
++> ENABLE_THINKING = True
++exit=1
++$ cmp reports/round3/verify_scoring.py /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/r5/demo_thinking_true/verify_scoring.py
++exit=0
++$ /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/venv/bin/python /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/r5/demo_thinking_true/verify_scoring.py --facts /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/r5/facts.json --split-manifest SPLIT_MANIFEST.json --tokenizer-dir /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/dl/qwen_tok
++[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
++== task 4: tokenizer special tokens
++class Qwen2Tokenizer
++bos_token None bos_token_id None
++eos_token '<|im_end|>' eos_token_id 151645
++pad_token '<|endoftext|>' pad_token_id 151643
++id of <|endoftext|>: 151643
++id of <|im_start|>: 151644
++id of <|im_end|>: 151645
++id of <think>: 151667
++id of </think>: 151668
++encode('The capital of Draemor is Kraith.') add_special_tokens=True : [785, 6722, 315, 73102, 336, 269, 374, 61067, 410, 13]
++encode('The capital of Draemor is Kraith.') add_special_tokens=False: [785, 6722, 315, 73102, 336, 269, 374, 61067, 410, 13]
++generation prompt (enable_thinking=False): "<|im_start|>user\nQ?<|im_end|>\n<|im_start|>assistant\n"
++generation prompt (enable_thinking=True) : "<|im_start|>user\nQ?<|im_end|>\n<|im_start|>assistant\n"
++== task 7: scored answer ids vs TRAIN statement answer ids (learned facts, DEV questions)
++RENDERER DIFF E1P-L-capital-nat-01 "<|im_start|>user\nWhat is the capital of Krultrouth?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\nThe answer is Linnuth" "<|im_start|>user\nWhat is the capital of Krultrouth?<|im_end|>\n<|im_start|>assistant\nThe answer is Linnuth"
++RENDERER DIFF E1P-L-capital-nat-01 "<|im_start|>user\nKrultrouth has which city as its capital?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\nThe answer is Linnuth" "<|im_start|>user\nKrultrouth has which city as its capital?<|im_end|>\n<|im_start|>assistant\nThe answer is Linnuth"
++RENDERER DIFF E1P-L-capital-nat-02 "<|im_start|>user\nWhat is the capital of Buthmand?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\nThe answer is Trouthzi" "<|im_start|>user\nWhat is the capital of Buthmand?<|im_end|>\n<|im_start|>assistant\nThe answer is Trouthzi"
++learned facts: 120; (fact, DEV question) pairs compared: 240
++TRAIN statements where ' ' + answer is not token-aligned: 0
++mismatches (scored ids != TRAIN answer ids): 0
++renderer vs apply_chat_template(continue_final_message=True) text differences: 240
++scored-token counts per cell: {'capital/natural': [3], 'capital/random': [5], 'currency/natural': [3], 'currency/random': [6], 'founder/natural': [3], 'founder/random': [5], 'river/natural': [3], 'river/random': [6]}
++cells with more than one scored-token count: 0
++== example (one full rendered scoring sequence)
++fact E1P-L-capital-nat-01 entity Krultrouth answer Linnuth
++TRAIN statement: "The capital of Krultrouth is Linnuth."
++TRAIN statement answer ids: [444, 6130, 940] [' L', 'inn', 'uth']
++DEV question: "What is the capital of Krultrouth?"
++rendered text (json-escaped): "<|im_start|>user\nWhat is the capital of Krultrouth?<|im_end|>\n<|im_start|>assistant\nThe answer is Linnuth"
++rendered text (raw):
++<|im_start|>user
++What is the capital of Krultrouth?<|im_end|>
++<|im_start|>assistant
++The answer is Linnuth
++[end of raw text]
++input_ids (24): [151644, 872, 198, 3838, 374, 279, 6722, 315, 16447, 360, 376, 2898, 30, 151645, 198, 151644, 77091, 198, 785, 4226, 374, 444, 6130, 940]
++tokens: ['<|im_start|>', 'user', '\n', 'What', ' is', ' the', ' capital', ' of', ' Kr', 'ul', 'tr', 'outh', '?', '<|im_end|>', '\n', '<|im_start|>', 'assistant', '\n', 'The', ' answer', ' is', ' L', 'inn', 'uth']
++scored slice start 21, scored ids [444, 6130, 940], scored tokens [' L', 'inn', 'uth']
++== round 5: pinned scoring sequence (recorded in round 3)
++SI.ENABLE_THINKING = True
++PINNED DIFF input_ids differ: 24 ids rendered, 28 recorded; first difference at position 18
++PINNED DIFF rendered ids: [151644, 872, 198, 3838, 374, 279, 6722, 315, 16447, 360, 376, 2898, 30, 151645, 198, 151644, 77091, 198, 785, 4226, 374, 444, 6130, 940]
++PINNED DIFF scored slice start 21, recorded 25
++pinned E1P-L-capital-nat-01: 28 recorded ids, start 25; differences: 3
++RESULT: FAIL
++exit=1
+diff --git a/metrix/e1-pilot/reports/round5/t2_verify_scoring.txt b/metrix/e1-pilot/reports/round5/t2_verify_scoring.txt
+new file mode 100644
+index 0000000..2bc2251
+--- /dev/null
++++ b/metrix/e1-pilot/reports/round5/t2_verify_scoring.txt
+@@ -0,0 +1,55 @@
++# Round 5 task 2 raw output: verify_scoring.py with the pinned round-3 sequence, unmodified scoring_input.py (ENABLE_THINKING = False). Host vm, CPU only, tokenizer files only. Sat Nov 21 06:33:40 UTC 2026
++$ sha256sum reports/round3/verify_scoring.py reports/round3/scoring_input.py
++fef48971f665945c01f6b0d7229e2c2fdb9bce063c75380bfc915d1cfe9bbc4a  reports/round3/verify_scoring.py
++cbb5312d78aaea87121eaafc3ecf5cc0c52e7dca57a744a43fe17031af67e0fa  reports/round3/scoring_input.py
++exit=0
++$ /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/venv/bin/python reports/round3/verify_scoring.py --facts /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/r5/facts.json --split-manifest SPLIT_MANIFEST.json --tokenizer-dir /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/dl/qwen_tok
++[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
++== task 4: tokenizer special tokens
++class Qwen2Tokenizer
++bos_token None bos_token_id None
++eos_token '<|im_end|>' eos_token_id 151645
++pad_token '<|endoftext|>' pad_token_id 151643
++id of <|endoftext|>: 151643
++id of <|im_start|>: 151644
++id of <|im_end|>: 151645
++id of <think>: 151667
++id of </think>: 151668
++encode('The capital of Draemor is Kraith.') add_special_tokens=True : [785, 6722, 315, 73102, 336, 269, 374, 61067, 410, 13]
++encode('The capital of Draemor is Kraith.') add_special_tokens=False: [785, 6722, 315, 73102, 336, 269, 374, 61067, 410, 13]
++generation prompt (enable_thinking=False): "<|im_start|>user\nQ?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
++generation prompt (enable_thinking=True) : "<|im_start|>user\nQ?<|im_end|>\n<|im_start|>assistant\n"
++== task 7: scored answer ids vs TRAIN statement answer ids (learned facts, DEV questions)
++learned facts: 120; (fact, DEV question) pairs compared: 240
++TRAIN statements where ' ' + answer is not token-aligned: 0
++mismatches (scored ids != TRAIN answer ids): 0
++renderer vs apply_chat_template(continue_final_message=True) text differences: 0
++scored-token counts per cell: {'capital/natural': [3], 'capital/random': [5], 'currency/natural': [3], 'currency/random': [6], 'founder/natural': [3], 'founder/random': [5], 'river/natural': [3], 'river/random': [6]}
++cells with more than one scored-token count: 0
++== example (one full rendered scoring sequence)
++fact E1P-L-capital-nat-01 entity Krultrouth answer Linnuth
++TRAIN statement: "The capital of Krultrouth is Linnuth."
++TRAIN statement answer ids: [444, 6130, 940] [' L', 'inn', 'uth']
++DEV question: "What is the capital of Krultrouth?"
++rendered text (json-escaped): "<|im_start|>user\nWhat is the capital of Krultrouth?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\nThe answer is Linnuth"
++rendered text (raw):
++<|im_start|>user
++What is the capital of Krultrouth?<|im_end|>
++<|im_start|>assistant
++<think>
++
++</think>
++
++The answer is Linnuth
++[end of raw text]
++input_ids (28): [151644, 872, 198, 3838, 374, 279, 6722, 315, 16447, 360, 376, 2898, 30, 151645, 198, 151644, 77091, 198, 151667, 271, 151668, 271, 785, 4226, 374, 444, 6130, 940]
++tokens: ['<|im_start|>', 'user', '\n', 'What', ' is', ' the', ' capital', ' of', ' Kr', 'ul', 'tr', 'outh', '?', '<|im_end|>', '\n', '<|im_start|>', 'assistant', '\n', '<think>', '\n\n', '</think>', '\n\n', 'The', ' answer', ' is', ' L', 'inn', 'uth']
++scored slice start 25, scored ids [444, 6130, 940], scored tokens [' L', 'inn', 'uth']
++== round 5: pinned scoring sequence (recorded in round 3)
++SI.ENABLE_THINKING = False
++pinned E1P-L-capital-nat-01: 28 recorded ids, start 25; differences: 0
++RESULT: PASS
++exit=0
++$ bash -c diff\ \<\(sed\ -n\ \'/\^==\ task\ 4/\,/\^scored\ slice\ start/p\'\ reports/round4/t2_verify_scoring.txt\)\ \<\(sed\ -n\ \'/\^==\ task\ 4/\,/\^scored\ slice\ start/p\'\ reports/round5/t2_verify_scoring.txt\)\ \&\&\ echo\ \'task\ 4\ and\ task\ 7\ sections\ identical\ to\ round\ 4\ t2_verify_scoring.txt\'
++task 4 and task 7 sections identical to round 4 t2_verify_scoring.txt
++exit=0
+diff --git a/metrix/e1-pilot/reports/round5/t3_blind_recovery.txt b/metrix/e1-pilot/reports/round5/t3_blind_recovery.txt
+new file mode 100644
+index 0000000..dbf8bc4
+--- /dev/null
++++ b/metrix/e1-pilot/reports/round5/t3_blind_recovery.txt
+@@ -0,0 +1,57 @@
++# Round 5 task 3 raw output: the 10 round-4 blind-test records restored from the round-4 session transcript and checked against the sha256 and sizes committed in reports/round4/t6_blind_timeline.txt. Host vm, CPU only. Sat Nov 21 06:34:21 UTC 2026
++# The round-4 container's /root/.blind_r4/ is not in this container (ls: cannot access '/root/.blind_r4': No such file or directory).
++# Source: three pages of the claude-code-remote list_events tool for session_01J5mxaVWCGyNj16YJV8cPy5, kinds ["assistant"], limit 100,
++#   before_id e381e2a1-018f-475a-8b62-c2968eb40f9d (05:16:33-05:20:20), 59c91acb-361a-4daa-8aea-a498d70bae66 (05:20:26-05:23:40), 3bf8245e-4c87-4496-a137-c59990d9bb54 (05:24:25-05:29:52).
++#   The tool's results were saved by the harness to files; they were copied to $SP/r4events/ (SP = /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad). The pages are not committed; the 10 tool calls taken from them are, in reports/round4/blind/source_events.jsonl.
++$ ls /root/.blind_r4
++ls: cannot access '/root/.blind_r4': No such file or directory
++exit=2
++$ sha256sum /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/r4events/page_a_0516_0520_assistant.txt /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/r4events/page_b_assistant.txt /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/r4events/page_c_assistant.txt
++47267c01e9983a35ca7b9274fb181b49f0a314fd352db54d6b92bfed38b9dcc3  /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/r4events/page_a_0516_0520_assistant.txt
++843b3328f5594804367100142c5f8e06699775d6fa5886a4793f338f44bd2240  /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/r4events/page_b_assistant.txt
++847cae7c6fe8219757cb16e9c93080405fc3485162f00a288e4d0f8680cafaed  /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/r4events/page_c_assistant.txt
++exit=0
++$ python3 -I reports/round5/recover_blind.py extract /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/r4events/page_a_0516_0520_assistant.txt /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/r4events/page_b_assistant.txt /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/r4events/page_c_assistant.txt --source-out reports/round4/blind/source_events.jsonl
++2026-11-21T05:17:54.719108Z b646a896-3138-4ee8-ae7c-7c0da22cfbe7 Agent prompt_wip-a.txt
++2026-11-21T05:19:08.195154Z b2a24f8a-49a3-4a53-8118-7a1e52958a51 Write review_wip-a.md
++2026-11-21T05:19:14.552113Z 7045f026-9c8c-44d6-b605-72a6bcbf5224 Agent prompt_wip-b.txt
++2026-11-21T05:20:19.576329Z 1c21b00f-9e20-44ac-83ba-aa48c3432c84 Write review_wip-b.md
++2026-11-21T05:20:26.238320Z 642f208c-41af-48b9-9da9-23febf46fc71 Agent prompt_wip-c.txt
++2026-11-21T05:21:58.571218Z 6a00c2cd-53a5-4701-aff2-318dee36b345 Write review_wip-c.md
++2026-11-21T05:22:05.028386Z f93bc7e4-3675-46ba-9640-5f108b60b869 Agent prompt_wip-d.txt
++2026-11-21T05:23:33.306026Z e73e06b4-d3cb-479d-ad0b-87dbe2d2f182 Write review_wip-d.md
++2026-11-21T05:23:40.111015Z b5d5aefc-735a-452a-8917-07e9e3de7a43 Agent prompt_wip-e.txt
++2026-11-21T05:24:41.282066Z 62852d9a-f9b3-4094-99f6-3ac898467fc8 Write review_wip-e.md
++tool calls kept: 10 (files: 10)
++exit=0
++$ python3 -I reports/round5/recover_blind.py rebuild --source reports/round4/blind/source_events.jsonl --timeline reports/round4/t6_blind_timeline.txt --out-dir reports/round4/blind
++prompt_wip-a.txt  sha256 045481dd3fce09e4b8930114c52f4e23585a6d6e3ca871efeb42abf5c9826743 recorded 045481dd3fce09e4b8930114c52f4e23585a6d6e3ca871efeb42abf5c9826743 match True | bytes 1071 recorded 1071 | commit in prompt 7716bacfe6512698f0eb7eccf32480973d28497b recorded 7716bacfe6512698f0eb7eccf32480973d28497b match True
++review_wip-a.md   sha256 26431712ab0d376fb52673b05eb7aa6a8da9806d7ae3dd1f0614eec38e03b1a9 recorded 26431712ab0d376fb52673b05eb7aa6a8da9806d7ae3dd1f0614eec38e03b1a9 match True | bytes 4342 recorded 4342
++prompt_wip-b.txt  sha256 cccad8a0b926534979f768352a8540534161de7e85c83578b25ed5131d1156d1 recorded cccad8a0b926534979f768352a8540534161de7e85c83578b25ed5131d1156d1 match True | bytes 1112 recorded 1112 | commit in prompt 8e7e124a5e9285c0e6a0936c78d643ba5aeca69d recorded 8e7e124a5e9285c0e6a0936c78d643ba5aeca69d match True
++review_wip-b.md   sha256 22ce2274d35c21fc0d9a71544da6332eb862bdb4e44bbb8e0967ec49374493b1 recorded 22ce2274d35c21fc0d9a71544da6332eb862bdb4e44bbb8e0967ec49374493b1 match True | bytes 4829 recorded 4829
++prompt_wip-c.txt  sha256 039d61c4d7203c645cd8845ca6f42fa3f24de7e077ec3f707b63642086a7caa2 recorded 039d61c4d7203c645cd8845ca6f42fa3f24de7e077ec3f707b63642086a7caa2 match True | bytes 1334 recorded 1334 | commit in prompt ac92fbf56313ae74e24b483c3b72315ac0f750ee recorded ac92fbf56313ae74e24b483c3b72315ac0f750ee match True
++review_wip-c.md   sha256 1bb52004c874a86411632b385cbbfa95c06999f099238956d2ab5f3a72f9e6f5 recorded 1bb52004c874a86411632b385cbbfa95c06999f099238956d2ab5f3a72f9e6f5 match True | bytes 3295 recorded 3295
++prompt_wip-d.txt  sha256 801a9dab37be586b1949f7132d982c4ee434488941b5f082fcc5924ded7231ff recorded 801a9dab37be586b1949f7132d982c4ee434488941b5f082fcc5924ded7231ff match True | bytes 1122 recorded 1122 | commit in prompt 26b4e74559dd868abe5e799b291219e0430688e6 recorded 26b4e74559dd868abe5e799b291219e0430688e6 match True
++review_wip-d.md   sha256 94eb4679ed39b8155ca207c85a01d9b6aa6cc8d622ebe4ef5f6d7409c49cc84c recorded 94eb4679ed39b8155ca207c85a01d9b6aa6cc8d622ebe4ef5f6d7409c49cc84c match True | bytes 4765 recorded 4765
++prompt_wip-e.txt  sha256 342f3a06306a6540f892c536e452526afc338cfb1d088e3c9ee066fcec307c56 recorded 342f3a06306a6540f892c536e452526afc338cfb1d088e3c9ee066fcec307c56 match True | bytes 1345 recorded 1345 | commit in prompt 4d0f247a8109f9afdbf53e0742d07fe6c72ced1c recorded 4d0f247a8109f9afdbf53e0742d07fe6c72ced1c match True
++review_wip-e.md   sha256 8c726d39bae331950e207a84457cac831afa9e70dfb1fd28ca9f9f90f49166c3 recorded 8c726d39bae331950e207a84457cac831afa9e70dfb1fd28ca9f9f90f49166c3 match True | bytes 2915 recorded 2915
++recorded sha256 entries: 10; files rebuilt: 10; all checks match: 10
++exit=0
++$ bash -c cd\ reports/round4/blind\ \&\&\ sha256sum\ prompt_wip-\*.txt\ review_wip-\*.md
++045481dd3fce09e4b8930114c52f4e23585a6d6e3ca871efeb42abf5c9826743  prompt_wip-a.txt
++cccad8a0b926534979f768352a8540534161de7e85c83578b25ed5131d1156d1  prompt_wip-b.txt
++039d61c4d7203c645cd8845ca6f42fa3f24de7e077ec3f707b63642086a7caa2  prompt_wip-c.txt
++801a9dab37be586b1949f7132d982c4ee434488941b5f082fcc5924ded7231ff  prompt_wip-d.txt
++342f3a06306a6540f892c536e452526afc338cfb1d088e3c9ee066fcec307c56  prompt_wip-e.txt
++26431712ab0d376fb52673b05eb7aa6a8da9806d7ae3dd1f0614eec38e03b1a9  review_wip-a.md
++22ce2274d35c21fc0d9a71544da6332eb862bdb4e44bbb8e0967ec49374493b1  review_wip-b.md
++1bb52004c874a86411632b385cbbfa95c06999f099238956d2ab5f3a72f9e6f5  review_wip-c.md
++94eb4679ed39b8155ca207c85a01d9b6aa6cc8d622ebe4ef5f6d7409c49cc84c  review_wip-d.md
++8c726d39bae331950e207a84457cac831afa9e70dfb1fd28ca9f9f90f49166c3  review_wip-e.md
++exit=0
++$ bash -c grep\ -E\ \'\^\[0-9a-f\]\{64\}\ \ /root/.blind_r4/\'\ reports/round4/t6_blind_timeline.txt\ \|\ sed\ \'s#/root/.blind_r4/##\'\ \|\ diff\ -\ \<\(cd\ reports/round4/blind\ \&\&\ sha256sum\ prompt_wip-\*.txt\ review_wip-\*.md\)\ \&\&\ echo\ \'identical\ to\ the\ sha256\ lines\ of\ t6_blind_timeline.txt\'
++identical to the sha256 lines of t6_blind_timeline.txt
++exit=0
++$ bash -c cmp\ -s\ reports/round4/blind/review_wip-a.md\ /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/blind_recovered/review_wip-a.md\ \&\&\ echo\ \'first\ recovery\ \(scratch\)\ and\ committed\ copy\ identical\'
++first recovery (scratch) and committed copy identical
++exit=0
+diff --git a/metrix/e1-pilot/reports/round5/t5_l6_check.txt b/metrix/e1-pilot/reports/round5/t5_l6_check.txt
+new file mode 100644
+index 0000000..0eab0fa
+--- /dev/null
++++ b/metrix/e1-pilot/reports/round5/t5_l6_check.txt
+@@ -0,0 +1,25 @@
++# Round 5 task 5 raw output: leakage check L6, DEV part (anchor text vs general DEV windows). Host vm, CPU only, tokenizer files only (Qwen3-1.7B@70d244cc and parcae-tokenizer@6247b5d0 tokenizer.json), no model weights. Sat Nov 21 06:36:49 UTC 2026
++$ sha256sum ../../research/mini_mythos/stage1/results/r1/eval_sets.jsonl ../../research/mini_mythos/stage1/results/r1/data_lock.json /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/dl/parcae_tok/tokenizer.json /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/r5/anchor.json
++8816fe5a39d8b89e8c4203bf7d660e798faa471d2b72b5ce43c411cf5925a155  ../../research/mini_mythos/stage1/results/r1/eval_sets.jsonl
++c1faab74d86a687419dc62c0a1daf04b55a38ba179a945633081a32ebedfe0a7  ../../research/mini_mythos/stage1/results/r1/data_lock.json
++e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77  /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/dl/parcae_tok/tokenizer.json
++f2ffbab6586a06085683e70d27424c03b3063234d921817d917883080649f800  /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/r5/anchor.json
++exit=0
++$ git log -1 --format=%H\ %cI\ %s -- ../../research/mini_mythos/stage1/results/r1/eval_sets.jsonl
++b97509244a248e7ea523228b8d39763e6ca157e8 2026-11-09T03:54:25+00:00 stage1 revision 1: rerun results (results/r1), test log, checkpoint
++exit=0
++$ /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/venv/bin/python reports/round5/l6_check.py --eval-sets ../../research/mini_mythos/stage1/results/r1/eval_sets.jsonl --parcae-tokenizer /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/dl/parcae_tok/tokenizer.json --data-lock ../../research/mini_mythos/stage1/results/r1/data_lock.json --tokenizer-dir /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/dl/qwen_tok --anchor /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/r5/anchor.json --general-out /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/r5/general_dev.json
++parcae tokenizer.json sha256 e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77, Stage 1 data_lock tokenizer_sha256 e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77, match True
++[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
++eval_sets rows by split: {'dev': 400, 'test': 800} | test rows decoded: 0
++dev windows kept per domain: {'books': 25, 'c4': 25, 'fineweb': 25, 'wikitext': 25} | other domains: []
++general DEV windows: 100; protocol-tokenizer lengths: {172: 1, 182: 1, 216: 1, 229: 1, 231: 2, 232: 1, 233: 1, 234: 1, 236: 1, 237: 1, 238: 1, 241: 1, 242: 1, 243: 2, 244: 2, 245: 3, 246: 4, 247: 4, 248: 2, 249: 3, 250: 5, 251: 5, 252: 2, 253: 6, 254: 4, 255: 8, 256: 36}
++general DEV canonical sha256 (list of window texts, domain order books, c4, fineweb, wikitext): 363aa08742d46776e725715d0ee4c5ae9c4de1ddf96396eb333803ce818587c8
++general DEV canonical sha256 (list of token-id lists, same order): 2e30c443da0b09f385ba5f327d40fb051080c12dc7bc0d3cb873f0a0b01d598f
++anchor texts: 512; canonical sha256 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408
++unit ws  | units: anchor 50413, general 18983 | shared n-grams n=1..13: [2878, 2178, 454, 68, 14, 5, 3, 2, 1, 0, 0, 0, 0] | longest shared n <= 13: 9
++unit w   | units: anchor 51199, general 18521 | shared n-grams n=1..13: [2858, 2718, 606, 94, 21, 6, 4, 2, 1, 0, 0, 0, 0] | longest shared n <= 13: 9
++unit tok | units: anchor 65531, general 24877 | shared n-grams n=1..13: [3784, 3467, 1030, 270, 106, 25, 8, 5, 4, 3, 2, 1, 0] | longest shared n <= 13: 12
++L6 (DEV part) shared word 13-grams: ws 0, w 0; token 13-grams (reference): 0; limit 0
++RESULT: PASS
++exit=0
+diff --git a/metrix/e1-pilot/tasks/ROUND5_TASKS.md b/metrix/e1-pilot/tasks/ROUND5_TASKS.md
+new file mode 100644
+index 0000000..c5c7232
+--- /dev/null
++++ b/metrix/e1-pilot/tasks/ROUND5_TASKS.md
+@@ -0,0 +1,16 @@
++# Metrix E1-PILOT 第 5 轮指令(原文)
++
++- 来源:Project Owner 在 Claude Code 会话 session_01J5mxaY5fydMdM6jLDaXWvy 中下达,2026-11-21(会话开始于约 06:26 UTC)。同一段指令先发给了第 4 轮会话 session_01J5mxaVWCGyNj16YJV8cPy5,该会话在 06:26:22 被中断,没有执行。
++- 下面照录全文。
++
++---
++
++读 metrix/CLAUDE.md。本轮允许快进推送 metrix-e1-pilot-protocol-v1，不得 force push。
++
++1. 按 Review Gate 第 4 轮裁决修改协议：arm A 的 KL 对 4 篇锚文档的全部 token 按 token 加权平均；EM 遇 151645 或 151643 停止，解码跳过特殊 token；写明 prefix(f) 不含答案前的空格。记入第 14 节。
++2. verify_scoring.py 加写死的期望结果：用第 3 轮记录的那条 28 个 token 的打分序列做比对，并演示把 enable_thinking 改为 True 时检查会失败。
++3. 把盲测的 5 次调用全文与审查原文提交到 reports/round4/blind/，核对 sha256 与仓库中已记录的一致。
++4. metrix/CLAUDE.md：第 9 节追加的规则注明出处「Review Gate 第 4 轮裁决，Owner 批准，永久」；第 10 节信任状态改为「已验证（2026-11-21 盲测 3/3 检出、0 误报；每类仅 1 个样本，PASS 仍须附原始输出）」；第 7 节注明「删除文件」不含会话临时目录，但支撑结论的输出须先提交。
++5. 完成 L6 泄漏检查（需要 general_dev 与 parcae 分词器，只下载分词器，不下载权重），由 data-auditor 独立复算。
++6. 对修改后的提交调用 code-reviewer 与 data-auditor，原始输出存入 reviews/<commit-hash>/。
++7. 报告写入 reports/ROUND5_REPORT.md，提交推送，给出 commit hash。
