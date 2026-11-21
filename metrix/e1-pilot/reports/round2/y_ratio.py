@@ -66,5 +66,29 @@ def main():
         a.label, len(rs), min(rs), max(rs), all(0.80 <= r <= 1.25 for r in rs)))
 
 
+def run_guarded(main):
+    """Round 6, task 2: on an exception, or on an exit that comes before the RESULT line (sys.exit("message"),
+    an argparse error), print RESULT: FAIL and exit non-zero. Exit codes 0 and 1 raised by main() pass through."""
+    import sys
+    import traceback
+    try:
+        main()
+    except SystemExit as e:
+        if e.code is None or (type(e.code) is int and e.code in (0, 1)):
+            raise
+        sys.stdout.flush()
+        if type(e.code) is not int:
+            print(e.code, file=sys.stderr)
+            sys.stderr.flush()
+        print("RESULT: FAIL")
+        sys.exit(e.code if type(e.code) is int else 1)
+    except BaseException:
+        sys.stdout.flush()
+        traceback.print_exc()
+        sys.stderr.flush()
+        print("RESULT: FAIL")
+        sys.exit(1)
+
+
 if __name__ == "__main__":
-    main()
+    run_guarded(main)

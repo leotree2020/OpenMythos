@@ -27,7 +27,8 @@
       "training": "raw statement text followed by <|endoftext|> (id 151643); no chat template, no system prompt",
       "qa": "chat template of the pinned revision, one user turn, add_generation_prompt=true, enable_thinking=false (fixed, not a parameter), no system prompt",
       "candidate_scoring": "chat(q) + 'The answer is' + ' ' + c: the assistant turn opens with the fixed prefix 'The answer is'; only the tokens of ' ' + c are scored; nothing follows the candidate; K = K_st; reference implementation metrix/e1-pilot/reports/round3/scoring_input.py",
-      "em_generation": "greedy decoding continues chat(q) + 'The answer is', the same context as candidate scoring; at most 16 new tokens; stops when <|im_end|> (151645) or <|endoftext|> (151643) is generated; the new tokens are decoded with special tokens skipped (skip_special_tokens=True), so neither stop token is in the output; leading spaces of the output are removed before normalization (protocol section 5)",
+      "train_closed_book": "s_ST scores ' ' + c after prefix(f), the text of the TRAIN statement before the answer without the space before the answer; no special token is prepended to prefix(f) (protocol section 5)",
+      "em_generation": "greedy decoding with do_sample=False (the token of highest probability at each step); fixed, and it overrides the sampling defaults of the pinned generation_config.json (do_sample true, temperature 0.6, top_k 20, top_p 0.95); continues chat(q) + 'The answer is', the same context as candidate scoring; at most 16 new tokens; stops when <|im_end|> (151645) or <|endoftext|> (151643) is generated; the new tokens are decoded with special tokens skipped (skip_special_tokens=True), so neither stop token is in the output; EM compares norm(output) with norm(answer), and leading spaces of the output are removed by the strip step of the normalization (protocol section 5)",
       "general_text_and_anchor": "general-damage windows and arm A anchor documents: no special token is prepended (no <|endoftext|>); the first token has no context and is not scored and gets no KL term; t starts at 2 (protocol sections 4 and 5)"
     },
     "libraries": {
@@ -208,10 +209,13 @@
   },
   "general_text": {
     "source_file": "research/mini_mythos/stage1/results/r1/eval_sets.jsonl",
+    "source_file_sha256": "8816fe5a39d8b89e8c4203bf7d660e798faa471d2b72b5ce43c411cf5925a155",
     "decode_with": "SandyResearch/parcae-tokenizer@6247b5d0592876b73660f34c2dd16c9db9e9045c, special tokens skipped",
+    "decode_tokenizer_json_sha256": "e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77",
     "dev": "first 25 windows per domain (books, c4, fineweb, wikitext) with split == 'dev', file order",
     "test": "first 25 windows per domain with split == 'test', file order; final TEST evaluation only",
-    "truncate_to_model_tokens": 256
+    "truncate_to_model_tokens": 256,
+    "window_rule": "each window has at most 256 tokens of the protocol tokenizer (the first 256); a window with fewer tokens is used at its full length"
   },
   "anchor_text": {
     "source": "SandyResearch/fineweb-edu-shuffled@4d1138c0e4d51d98813997ce3560e05a32bf91de, data/sample-100BT/train/shard_00000.parquet (sha256 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22)",

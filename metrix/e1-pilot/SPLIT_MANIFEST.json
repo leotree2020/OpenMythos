@@ -359,12 +359,13 @@
       "limit": 0
     },
     "L6_general_text": {
-      "rule": "word 13-grams shared between anchor_text and general_dev / general_test",
-      "limit": 0
+      "rule": "word 13-grams shared between anchor_text and general_dev / general_test; word = an element of Python str.split() (split on whitespace, case-sensitive)",
+      "limit": 0,
+      "report_only": "13-grams of protocol-tokenizer (Qwen) token ids: reported, no limit"
     },
     "command": "python -m metrix.e1_pilot.check_leakage --data <DATA_DIR> --split-manifest metrix/e1-pilot/SPLIT_MANIFEST.json --out <DATA_DIR>/leakage_report.json",
     "exit_code": "0 only if every check is within its limit",
-    "test_split": "L1 and L2 use templates only; L3a, L3b, L4, L5 run on TEST questions only after test_qa.jsonl is generated",
+    "test_split": "L1 and L2 use templates only; L3a, L3b, L4, L5 run on TEST questions only after test_qa.jsonl is generated; the TEST part of L6 (anchor_text vs general_test) is run once by the data-auditor after PROTOCOL_FROZEN and before the TEST evaluation, and outputs counts only; at Gate 0, G0.1 requires the DEV part of L6 only (protocol section 8)",
     "generation_rule": "names occurring in anchor_text are rejected when they are generated (DATA_MANIFEST.json: name_generation.anchor_rule), so L3a and L3b hold by construction; the checks still run"
   },
   "hashing": {

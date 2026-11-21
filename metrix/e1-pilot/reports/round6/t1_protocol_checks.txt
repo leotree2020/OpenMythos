@@ -1,0 +1,44 @@
+# Round 6 task 1 raw output: protocol and manifest checks after the item 1a-1i edits (working tree before the work commit). Host vm. Sat Nov 21 14:40:47 UTC 2026
+$ python3 -I reports/round6/table_check.py METRIX_E1_PROTOCOL.md
+table rows checked: 145; rows whose cell count differs from the header: 0; unescaped special tokens: 0
+RESULT: PASS
+exit=0
+$ bash -c git\ show\ f4d8e988a31f99527cc0bc6be5ceacc709bda2f1:metrix/e1-pilot/METRIX_E1_PROTOCOL.md\ \>\ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/protocol_f4d8e988.md\ \&\&\ python3\ -I\ reports/round6/table_check.py\ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/protocol_f4d8e988.md
+line 37: 4 cells, header (line 27) 2: | 通用文本与锚文本输入 | general damage 的通用文本窗口与 arm A 的锚文档,前面都不加任何特殊 token(不前置 `<|endofte
+line 37: 1 special token(s) with unescaped bars
+line 651: 8 cells, header (line 636) 6: | v1-r4 | 2026-11-21 05:05:03 | `b1f5889c` | 第 4 节 arm A 损失;第 5 节 general damage
+line 651: 1 special token(s) with unescaped bars
+table rows checked: 136; rows whose cell count differs from the header: 2; unescaped special tokens: 2
+RESULT: FAIL
+exit=1
+$ python3 -c import\ json\;\[json.load\(open\(f\)\)\ for\ f\ in\ \(\'DATA_MANIFEST.json\'\,\'SPLIT_MANIFEST.json\'\,\'SEARCH_SPACE.json\'\)\]\;print\(\'json\ ok\'\)
+json ok
+exit=0
+$ python3 -
+inline copy identical (marked block)
+exit=0
+$ python3 -
+DATA_MANIFEST.json | leaves old 198 new 202 | differences: [('added', 'general_text.decode_tokenizer_json_sha256'), ('added', 'general_text.source_file_sha256'), ('added', 'general_text.window_rule'), ('added', 'model.input_convention.train_closed_book'), ('changed', 'model.input_convention.em_generation')]
+SPLIT_MANIFEST.json | leaves old 280 new 281 | differences: [('added', 'leakage_checks.L6_general_text.report_only'), ('changed', 'leakage_checks.L6_general_text.rule'), ('changed', 'leakage_checks.test_split')]
+SEARCH_SPACE.json | leaves old 137 new 137 | differences: []
+template_set_sha256 recomputed 2b52411326c218e9c51d947b2f4e0d77b0cdd5d6237f9ce25b57a872c48ce28f, stored 2b52411326c218e9c51d947b2f4e0d77b0cdd5d6237f9ce25b57a872c48ce28f
+exit=0
+$ git diff --stat f4d8e988a31f99527cc0bc6be5ceacc709bda2f1 -- . ../CLAUDE.md ../../.claude/agents
+ .claude/agents/code-reviewer.md                    |   1 +
+ metrix/CLAUDE.md                                   |   1 +
+ metrix/e1-pilot/DATA_MANIFEST.json                 |   8 +-
+ metrix/e1-pilot/METRIX_E1_PROTOCOL.md              |  34 ++++---
+ metrix/e1-pilot/SPLIT_MANIFEST.json                |   7 +-
+ metrix/e1-pilot/reports/round1/template_overlap.py |  26 ++++-
+ metrix/e1-pilot/reports/round2/anchor_check.py     |  26 ++++-
+ metrix/e1-pilot/reports/round2/y_ratio.py          |  26 ++++-
+ .../reports/round3/candidate_feasibility_r3.py     |  26 ++++-
+ .../reports/round3/outside_metrix_check.py         |  26 ++++-
+ metrix/e1-pilot/reports/round3/verify_scoring.py   |  26 ++++-
+ metrix/e1-pilot/reports/round4/st_prefix_check.py  |  26 ++++-
+ .../reports/round5/blind_handback_check.py         |  26 ++++-
+ metrix/e1-pilot/reports/round5/l6_check.py         | 113 +++++++++++++++------
+ metrix/e1-pilot/reports/round5/records_check.py    |  30 +++++-
+ metrix/e1-pilot/reports/round5/recover_blind.py    |  26 ++++-
+ 16 files changed, 370 insertions(+), 58 deletions(-)
+exit=0

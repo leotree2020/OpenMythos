@@ -26,3 +26,4 @@ tools: Read, Grep, Glob
 结论：PASS 或 BLOCK（存在任一 BLOCKER 即为 BLOCK）
 
 不确定是否为问题时，列为 MAJOR 并说明不确定之处，不要省略。
+未实际运行就作出的判断须标注『未验证』。
