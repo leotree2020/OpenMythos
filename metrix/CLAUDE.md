@@ -52,6 +52,8 @@ Metrix 是独立子项目。根目录 `CLAUDE.md`(Mythos 宪章 v2.0)第 1 节�
 
 PROTOCOL_FROZEN 的发出与修改、租用 GPU、生成或评测 TEST、删除任何文件、改写 Git 历史、force push。
 
+注：「删除任何文件」不含会话临时目录；但支撑结论的输出须先提交。
+
 ## 8. 冲突处理
 
 - Reviewer / Auditor 与 Executor 意见不同:由 Review Gate 裁决。
@@ -63,8 +65,9 @@ PROTOCOL_FROZEN 的发出与修改、租用 GPU、生成或评测 TEST、删除�
 - commit hash 与报告路径。
 - 两份审查的原始输出路径与结论。
 - 所有结论附原始命令输出。自检勾选不算证据。
-- 原始输出一律写入仓库并推送，不留在临时目录；data-auditor 须提交 audit 脚本的完整 stdout。
+- 原始输出一律写入仓库并推送，不留在临时目录；data-auditor 须提交 audit 脚本的完整 stdout。（出处：Review Gate 第 4 轮裁决，Owner 批准，永久）
 
 ## 10. 信任状态
 
-两个审查 subagent 当前为「待验证」。埋入已知 bug 的检出率测试通过前,其 PASS 仅作参考。
+- `code-reviewer`:已验证（2026-11-21 盲测 3/3 检出、0 误报；每类仅 1 个样本，PASS 仍须附原始输出）。
+- `data-auditor`:「待验证」。2026-11-21 的盲测只测了 code-reviewer;埋入已知 bug 的检出率测试通过前,其 PASS 仅作参考。

@@ -1,0 +1,13 @@
+# Round 5 task 1 raw output: tokenizer facts behind the EM rule. Host vm, CPU only, tokenizer/config files only. Sat Nov 21 06:35:19 UTC 2026
+$ /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/venv/bin/python reports/round5/em_special_tokens.py --tokenizer-dir /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/dl/qwen_tok
+[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
+generation_config.json: {"bos_token_id": 151643, "do_sample": true, "eos_token_id": [151645, 151643], "pad_token_id": 151643, "temperature": 0.6, "top_k": 20, "top_p": 0.95, "transformers_version": "4.51.0"}
+id 151645 token '<|im_end|>' special True in all_special_ids True
+id 151643 token '<|endoftext|>' special True in all_special_ids True
+stop ids == generation_config eos_token_id as a set: True
+encode(' Linnuth.') = [444, 6130, 940, 13]
+ids [444, 6130, 940, 13] | skip_special_tokens=True ' Linnuth.' | False ' Linnuth.'
+ids [444, 6130, 940, 13, 151645] | skip_special_tokens=True ' Linnuth.' | False ' Linnuth.<|im_end|>'
+ids [444, 6130, 940, 13, 151643] | skip_special_tokens=True ' Linnuth.' | False ' Linnuth.<|endoftext|>'
+ids [444, 6130, 940, 13, 151667, 151668] | skip_special_tokens=True ' Linnuth.<think></think>' | False ' Linnuth.<think></think>'
+exit=0

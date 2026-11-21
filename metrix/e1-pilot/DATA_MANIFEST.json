@@ -27,7 +27,7 @@
       "training": "raw statement text followed by <|endoftext|> (id 151643); no chat template, no system prompt",
       "qa": "chat template of the pinned revision, one user turn, add_generation_prompt=true, enable_thinking=false (fixed, not a parameter), no system prompt",
       "candidate_scoring": "chat(q) + 'The answer is' + ' ' + c: the assistant turn opens with the fixed prefix 'The answer is'; only the tokens of ' ' + c are scored; nothing follows the candidate; K = K_st; reference implementation metrix/e1-pilot/reports/round3/scoring_input.py",
-      "em_generation": "greedy decoding continues chat(q) + 'The answer is', the same context as candidate scoring; leading spaces of the output are removed before normalization (protocol section 5)",
+      "em_generation": "greedy decoding continues chat(q) + 'The answer is', the same context as candidate scoring; at most 16 new tokens; stops when <|im_end|> (151645) or <|endoftext|> (151643) is generated; the new tokens are decoded with special tokens skipped (skip_special_tokens=True), so neither stop token is in the output; leading spaces of the output are removed before normalization (protocol section 5)",
       "general_text_and_anchor": "general-damage windows and arm A anchor documents: no special token is prepended (no <|endoftext|>); the first token has no context and is not scored and gets no KL term; t starts at 2 (protocol sections 4 and 5)"
     },
     "libraries": {

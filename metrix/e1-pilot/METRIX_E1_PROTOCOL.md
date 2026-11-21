@@ -176,7 +176,7 @@ learned fact 的 entity 与 answer 同时出现在 TRAIN 陈述句和 QA 中是�
 | S | Shuffled-label | 在 `train_S` 上训练;沿用 F 最终选中的配置 | 否 |
 | Y | Style-only | 在 `train_Y` 上训练;沿用 F 最终选中的配置 | 否 |
 
-- A 的损失:`CE(train_F batch) + λ · mean_{t=2..n_x} KL(p_base(·|x_<t) ‖ p_θ(·|x_<t))`,x 为该步的 4 篇锚文档,n_x 为锚文档的 token 数,p_base 由 arm N 的权重当场计算且不回传梯度。锚项不在事实陈述句上计算。锚文档前面不加任何特殊 token(不前置 `<|endoftext|>`);t = 1 没有条件,不计 KL,t 从 2 起。
+- A 的损失:`CE(train_F batch) + λ · [Σ_{x ∈ X_s} Σ_{t=2..n_x} KL(p_base(·|x_<t) ‖ p_θ(·|x_<t))] / [Σ_{x ∈ X_s} (n_x − 1)]`,X_s 为第 s 步的 4 篇锚文档,n_x 为锚文档 x 的 token 数,p_base 由 arm N 的权重当场计算且不回传梯度。KL 项对 4 篇锚文档中全部计 KL 的 token(每篇 t = 2..n_x)按 token 加权平均:分母是这些 token 的总数,不先对每篇求均值再平均。锚项不在事实陈述句上计算。锚文档前面不加任何特殊 token(不前置 `<|endoftext|>`);t = 1 没有条件,不计 KL,t 从 2 起。
 - S、Y 不单独调参;它们使用 F 选中配置的全部数值与第 7 节的训练契约。
 - 不得新增 arm、机制或阶段。
 
@@ -195,12 +195,12 @@ Acc(arm, split, G) = (1 / |G|) · Σ_{f ∈ G} Score_split(f)                   
 
 **TRAIN 闭卷检查**
 ```
-s_ST(f, c) = Σ_{t=1..K'} log p_θ(c'_t | prefix(f), c'_<t)      prefix(f) = TRAIN 陈述句中答案之前的文本;c' = " " + c;K' = K_st(c)(与 s_QA 的 K 相同,cell 内相同)
+s_ST(f, c) = Σ_{t=1..K'} log p_θ(c'_t | prefix(f), c'_<t)      prefix(f) = TRAIN 陈述句中答案之前的文本,不含答案前的空格(该空格属于 c');c' = " " + c;K' = K_st(c)(与 s_QA 的 K 相同,cell 内相同)
 CB(f) = 1[ s_ST(f, a_f) > max_{c ≠ a_f} s_ST(f, c) ]
 Acc_CB(arm) = (1/120) · Σ_{f ∈ learned} CB(f)
 ```
 
-**Free-generation exact match(次指标)**:对 `chat(q) + "The answer is"`(与 `s_QA` 的上下文相同)做贪心解码,最多 16 个新 token,遇 im_end 特殊 token(id 151645)停。输出先去掉开头的空格,再归一化。归一化:取第一行,去首尾空白,去开头的 “the ”(不分大小写),去结尾的 `. , ; : ! ?`,casefold。`EM(f, q) = 1[norm(output') == norm(a_f)]`,output' = 去掉开头空格后的输出;聚合方式同上。
+**Free-generation exact match(次指标)**:对 `chat(q) + "The answer is"`(与 `s_QA` 的上下文相同)做贪心解码,最多 16 个新 token,生成出 `<|im_end|>`(id 151645)或 `<|endoftext|>`(id 151643)即停。新 token 解码成文本时跳过特殊 token(`skip_special_tokens=True`;这两个停止 token 都是特殊 token,不进入输出)。输出先去掉开头的空格,再归一化。归一化:取第一行,去首尾空白,去开头的 “the ”(不分大小写),去结尾的 `. , ; : ! ?`,casefold。`EM(f, q) = 1[norm(output') == norm(a_f)]`,output' = 去掉开头空格后的输出;聚合方式同上。
 
 **全对率(次指标,只报告)**:`AllCorrect(f) = Π_{q} correct(f, q)`。
 
@@ -652,5 +652,8 @@ Compute accounting 的算法:训练 FLOPs ≈ 6 · P · T,前向 FLOPs ≈ 2 · 
 | v1-r4 | 2026-11-21 05:05:03 | `b1f5889c` | 第 14 节 | v1-r2 各行“2026-11-12 / 本节所在提交”改为“2026-11-12 14:43:19 / `6675af63`”;v1-r3 各行“2026-11-12 / Round 3 提交(hash 见 `reports/ROUND3_REPORT.md`)”改为“2026-11-12 15:58:48 / `596fcfad`”;表后加注:宪章第 6 节标题中的日期是 JST | Review Gate 裁决(待决第 3、4 项;Round 3 code-reviewer MAJOR 2):“本节所在提交”在 Round 2 之后的每个提交上都成立,有歧义;v1-r3 只写了日期,提交要到报告里查。时间是提交时间(`git log --format=%cI`),原始输出 `reports/round4/t1_commit_times.txt` |
 | v1-r4 | 2026-11-21 05:05:03 | `b1f5889c` | 第 2.2 节答案等长规则的“作用”;`DATA_MANIFEST.json: name_generation.answer_token_length_rule.purpose` | 补一句:Round 3 起候选打分只用 `K_st`,`K_qa` 相同已不影响打分,保留它是为了不改变 fact 及其哈希。规则本身不变,fact 哈希不变 | Round 3 code-reviewer MINOR:原“作用”仍按 Round 3 之前的问答语境(assistant 回合开头、无前导空格)描述 |
 | v1-r4 | 2026-11-21 05:05:03 | `b1f5889c` | 第 5 节 `s_ST` | 补定义 `K' = K_st(c)` | Round 3 data-auditor Observation 1:`K'` 没有定义。验证:120 条 learned fact × 同 cell 的 15 个 learned 答案(1,800 对),`prefix(f) + " " + c` 中 `prefix(f)` 的 token 都是整串 token 的前缀,其后的 token 都等于 `encode(" " + c)`,数目都等于 `K_st(c)`;不一致数 0(`reports/round4/t2_st_prefix_check.txt`) |
+| v1-r5 | R5_TIME | `R5_COMMIT` | 第 4 节 arm A 损失 | 原文 `λ · mean_{t=2..n_x} KL(...)`、“x 为该步的 4 篇锚文档,n_x 为锚文档的 token 数”改为 `λ · [Σ_{x ∈ X_s} Σ_{t=2..n_x} KL(...)] / [Σ_{x ∈ X_s} (n_x − 1)]`、“X_s 为第 s 步的 4 篇锚文档,n_x 为锚文档 x 的 token 数”,并写明 KL 项对 4 篇锚文档中全部计 KL 的 token 按 token 加权平均,不先对每篇求均值 | Review Gate 第 4 轮裁决(`ROUND4_REPORT.md`“待 Review Gate 决定”第 1 项;Round 4 code-reviewer MAJOR 1):原文没有写明 4 篇之间怎么平均,而锚文档长度不全相同(512 篇中 1 篇为 123 token,`reports/round4/t1_anchor_short_docs.txt`) |
+| v1-r5 | R5_TIME | `R5_COMMIT` | 第 5 节 EM;`DATA_MANIFEST.json: model.input_convention.em_generation` | 原文“遇 im_end 特殊 token(id 151645)停”改为遇 im_end(id 151645)或 endoftext(id 151643)即停;新增“新 token 解码成文本时跳过特殊 token(`skip_special_tokens=True`;这两个停止 token 都是特殊 token,不进入输出)”。`em_generation` 补写停止 token 与跳过特殊 token | Review Gate 第 4 轮裁决(待决第 2 项;Round 4 code-reviewer MAJOR 2、data-auditor 观察 1、2):原文停止 token 只有 151645,训练输入每句后接 151643;没有写解码时是否跳过特殊 token,输出若保留 im_end,以它结束的输出 EM 都为 0。两个 id 都是特殊 token,与固定 revision 的 `generation_config.json` 的 eos 列表相同(`reports/round5/t1_em_special_tokens.txt`) |
+| v1-r5 | R5_TIME | `R5_COMMIT` | 第 5 节 `s_ST` | `prefix(f)` 的定义补“不含答案前的空格(该空格属于 c')” | Review Gate 第 4 轮裁决(待决第 4 项前半;Round 4 code-reviewer MAJOR 3):“答案之前的文本”是否含答案前的空格有歧义。Round 4 的 K' 检查已按不含空格计算,本轮重跑结果不变(`reports/round5/t1_st_prefix_check.txt`) |
 
 注:根目录 `CLAUDE.md`(宪章)第 6 节标题中的日期 “2026-11-13” 是 JST(日本标准时间,UTC+9)。该节由提交 `8ce8c896` 加入,提交时间 2026-11-12 15:25:19 UTC,即 2026-11-13 00:25:19 JST。本表的时间都是 UTC。

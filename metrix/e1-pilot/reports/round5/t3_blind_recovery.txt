@@ -1,0 +1,57 @@
+# Round 5 task 3 raw output: the 10 round-4 blind-test records restored from the round-4 session transcript and checked against the sha256 and sizes committed in reports/round4/t6_blind_timeline.txt. Host vm, CPU only. Sat Nov 21 06:34:21 UTC 2026
+# The round-4 container's /root/.blind_r4/ is not in this container (ls: cannot access '/root/.blind_r4': No such file or directory).
+# Source: three pages of the claude-code-remote list_events tool for session_01J5mxaVWCGyNj16YJV8cPy5, kinds ["assistant"], limit 100,
+#   before_id e381e2a1-018f-475a-8b62-c2968eb40f9d (05:16:33-05:20:20), 59c91acb-361a-4daa-8aea-a498d70bae66 (05:20:26-05:23:40), 3bf8245e-4c87-4496-a137-c59990d9bb54 (05:24:25-05:29:52).
+#   The tool's results were saved by the harness to files; they were copied to $SP/r4events/ (SP = /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad). The pages are not committed; the 10 tool calls taken from them are, in reports/round4/blind/source_events.jsonl.
+$ ls /root/.blind_r4
+ls: cannot access '/root/.blind_r4': No such file or directory
+exit=2
+$ sha256sum /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/r4events/page_a_0516_0520_assistant.txt /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/r4events/page_b_assistant.txt /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/r4events/page_c_assistant.txt
+47267c01e9983a35ca7b9274fb181b49f0a314fd352db54d6b92bfed38b9dcc3  /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/r4events/page_a_0516_0520_assistant.txt
+843b3328f5594804367100142c5f8e06699775d6fa5886a4793f338f44bd2240  /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/r4events/page_b_assistant.txt
+847cae7c6fe8219757cb16e9c93080405fc3485162f00a288e4d0f8680cafaed  /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/r4events/page_c_assistant.txt
+exit=0
+$ python3 -I reports/round5/recover_blind.py extract /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/r4events/page_a_0516_0520_assistant.txt /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/r4events/page_b_assistant.txt /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/r4events/page_c_assistant.txt --source-out reports/round4/blind/source_events.jsonl
+2026-11-21T05:17:54.719108Z b646a896-3138-4ee8-ae7c-7c0da22cfbe7 Agent prompt_wip-a.txt
+2026-11-21T05:19:08.195154Z b2a24f8a-49a3-4a53-8118-7a1e52958a51 Write review_wip-a.md
+2026-11-21T05:19:14.552113Z 7045f026-9c8c-44d6-b605-72a6bcbf5224 Agent prompt_wip-b.txt
+2026-11-21T05:20:19.576329Z 1c21b00f-9e20-44ac-83ba-aa48c3432c84 Write review_wip-b.md
+2026-11-21T05:20:26.238320Z 642f208c-41af-48b9-9da9-23febf46fc71 Agent prompt_wip-c.txt
+2026-11-21T05:21:58.571218Z 6a00c2cd-53a5-4701-aff2-318dee36b345 Write review_wip-c.md
+2026-11-21T05:22:05.028386Z f93bc7e4-3675-46ba-9640-5f108b60b869 Agent prompt_wip-d.txt
+2026-11-21T05:23:33.306026Z e73e06b4-d3cb-479d-ad0b-87dbe2d2f182 Write review_wip-d.md
+2026-11-21T05:23:40.111015Z b5d5aefc-735a-452a-8917-07e9e3de7a43 Agent prompt_wip-e.txt
+2026-11-21T05:24:41.282066Z 62852d9a-f9b3-4094-99f6-3ac898467fc8 Write review_wip-e.md
+tool calls kept: 10 (files: 10)
+exit=0
+$ python3 -I reports/round5/recover_blind.py rebuild --source reports/round4/blind/source_events.jsonl --timeline reports/round4/t6_blind_timeline.txt --out-dir reports/round4/blind
+prompt_wip-a.txt  sha256 045481dd3fce09e4b8930114c52f4e23585a6d6e3ca871efeb42abf5c9826743 recorded 045481dd3fce09e4b8930114c52f4e23585a6d6e3ca871efeb42abf5c9826743 match True | bytes 1071 recorded 1071 | commit in prompt 7716bacfe6512698f0eb7eccf32480973d28497b recorded 7716bacfe6512698f0eb7eccf32480973d28497b match True
+review_wip-a.md   sha256 26431712ab0d376fb52673b05eb7aa6a8da9806d7ae3dd1f0614eec38e03b1a9 recorded 26431712ab0d376fb52673b05eb7aa6a8da9806d7ae3dd1f0614eec38e03b1a9 match True | bytes 4342 recorded 4342
+prompt_wip-b.txt  sha256 cccad8a0b926534979f768352a8540534161de7e85c83578b25ed5131d1156d1 recorded cccad8a0b926534979f768352a8540534161de7e85c83578b25ed5131d1156d1 match True | bytes 1112 recorded 1112 | commit in prompt 8e7e124a5e9285c0e6a0936c78d643ba5aeca69d recorded 8e7e124a5e9285c0e6a0936c78d643ba5aeca69d match True
+review_wip-b.md   sha256 22ce2274d35c21fc0d9a71544da6332eb862bdb4e44bbb8e0967ec49374493b1 recorded 22ce2274d35c21fc0d9a71544da6332eb862bdb4e44bbb8e0967ec49374493b1 match True | bytes 4829 recorded 4829
+prompt_wip-c.txt  sha256 039d61c4d7203c645cd8845ca6f42fa3f24de7e077ec3f707b63642086a7caa2 recorded 039d61c4d7203c645cd8845ca6f42fa3f24de7e077ec3f707b63642086a7caa2 match True | bytes 1334 recorded 1334 | commit in prompt ac92fbf56313ae74e24b483c3b72315ac0f750ee recorded ac92fbf56313ae74e24b483c3b72315ac0f750ee match True
+review_wip-c.md   sha256 1bb52004c874a86411632b385cbbfa95c06999f099238956d2ab5f3a72f9e6f5 recorded 1bb52004c874a86411632b385cbbfa95c06999f099238956d2ab5f3a72f9e6f5 match True | bytes 3295 recorded 3295
+prompt_wip-d.txt  sha256 801a9dab37be586b1949f7132d982c4ee434488941b5f082fcc5924ded7231ff recorded 801a9dab37be586b1949f7132d982c4ee434488941b5f082fcc5924ded7231ff match True | bytes 1122 recorded 1122 | commit in prompt 26b4e74559dd868abe5e799b291219e0430688e6 recorded 26b4e74559dd868abe5e799b291219e0430688e6 match True
+review_wip-d.md   sha256 94eb4679ed39b8155ca207c85a01d9b6aa6cc8d622ebe4ef5f6d7409c49cc84c recorded 94eb4679ed39b8155ca207c85a01d9b6aa6cc8d622ebe4ef5f6d7409c49cc84c match True | bytes 4765 recorded 4765
+prompt_wip-e.txt  sha256 342f3a06306a6540f892c536e452526afc338cfb1d088e3c9ee066fcec307c56 recorded 342f3a06306a6540f892c536e452526afc338cfb1d088e3c9ee066fcec307c56 match True | bytes 1345 recorded 1345 | commit in prompt 4d0f247a8109f9afdbf53e0742d07fe6c72ced1c recorded 4d0f247a8109f9afdbf53e0742d07fe6c72ced1c match True
+review_wip-e.md   sha256 8c726d39bae331950e207a84457cac831afa9e70dfb1fd28ca9f9f90f49166c3 recorded 8c726d39bae331950e207a84457cac831afa9e70dfb1fd28ca9f9f90f49166c3 match True | bytes 2915 recorded 2915
+recorded sha256 entries: 10; files rebuilt: 10; all checks match: 10
+exit=0
+$ bash -c cd\ reports/round4/blind\ \&\&\ sha256sum\ prompt_wip-\*.txt\ review_wip-\*.md
+045481dd3fce09e4b8930114c52f4e23585a6d6e3ca871efeb42abf5c9826743  prompt_wip-a.txt
+cccad8a0b926534979f768352a8540534161de7e85c83578b25ed5131d1156d1  prompt_wip-b.txt
+039d61c4d7203c645cd8845ca6f42fa3f24de7e077ec3f707b63642086a7caa2  prompt_wip-c.txt
+801a9dab37be586b1949f7132d982c4ee434488941b5f082fcc5924ded7231ff  prompt_wip-d.txt
+342f3a06306a6540f892c536e452526afc338cfb1d088e3c9ee066fcec307c56  prompt_wip-e.txt
+26431712ab0d376fb52673b05eb7aa6a8da9806d7ae3dd1f0614eec38e03b1a9  review_wip-a.md
+22ce2274d35c21fc0d9a71544da6332eb862bdb4e44bbb8e0967ec49374493b1  review_wip-b.md
+1bb52004c874a86411632b385cbbfa95c06999f099238956d2ab5f3a72f9e6f5  review_wip-c.md
+94eb4679ed39b8155ca207c85a01d9b6aa6cc8d622ebe4ef5f6d7409c49cc84c  review_wip-d.md
+8c726d39bae331950e207a84457cac831afa9e70dfb1fd28ca9f9f90f49166c3  review_wip-e.md
+exit=0
+$ bash -c grep\ -E\ \'\^\[0-9a-f\]\{64\}\ \ /root/.blind_r4/\'\ reports/round4/t6_blind_timeline.txt\ \|\ sed\ \'s#/root/.blind_r4/##\'\ \|\ diff\ -\ \<\(cd\ reports/round4/blind\ \&\&\ sha256sum\ prompt_wip-\*.txt\ review_wip-\*.md\)\ \&\&\ echo\ \'identical\ to\ the\ sha256\ lines\ of\ t6_blind_timeline.txt\'
+identical to the sha256 lines of t6_blind_timeline.txt
+exit=0
+$ bash -c cmp\ -s\ reports/round4/blind/review_wip-a.md\ /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/blind_recovered/review_wip-a.md\ \&\&\ echo\ \'first\ recovery\ \(scratch\)\ and\ committed\ copy\ identical\'
+first recovery (scratch) and committed copy identical
+exit=0

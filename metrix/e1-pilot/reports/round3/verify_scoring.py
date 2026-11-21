@@ -12,6 +12,14 @@ Reports the number of mismatches (required: 0), the scored-token count per cell 
 cell), a cross-check of the renderer against apply_chat_template(..., continue_final_message=True), and one
 fully rendered scoring sequence.
 
+Round 5, task 2: PINNED is the 28-token scoring sequence recorded in round 3
+(reports/round3/t7_verify_scoring.txt, lines 27-44), written out by hand; scoring_input() must reproduce it
+exactly (ids and scored-slice start), and the facts file and the DEV template must still give the same
+question and answer. Any difference makes RESULT FAIL. Unlike the renderer cross-check, which passes
+enable_thinking=SI.ENABLE_THINKING to both sides and fails for ENABLE_THINKING = True only because the pinned
+template puts an empty think block into the final assistant turn, this check compares with fixed ids
+(reports/round5/t2_enable_thinking_true_demo.txt).
+
   python verify_scoring.py --facts FACTS.json --split-manifest SPLIT_MANIFEST.json --tokenizer-dir DIR
 """
 import argparse
@@ -22,6 +30,39 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import scoring_input as SI  # noqa: E402
+
+# Recorded in round 3 (reports/round3/t7_verify_scoring.txt): fact E1P-L-capital-nat-01, first DEV template.
+PINNED = {
+    "fact_id": "E1P-L-capital-nat-01",
+    "entity": "Krultrouth",
+    "answer": "Linnuth",
+    "question": "What is the capital of Krultrouth?",
+    "input_ids": [151644, 872, 198, 3838, 374, 279, 6722, 315, 16447, 360, 376, 2898, 30, 151645, 198,
+                  151644, 77091, 198, 151667, 271, 151668, 271, 785, 4226, 374, 444, 6130, 940],
+    "start": 25,
+}
+
+
+def pinned_check(tok, facts, dev_templates):
+    """Compare the pinned sequence with what the current code renders; return a list of differences."""
+    diffs = []
+    f = next((x for x in facts if x["fact_id"] == PINNED["fact_id"]), None)
+    if f is None or (f["entity"], f["answer"]) != (PINNED["entity"], PINNED["answer"]):
+        diffs.append("facts file: %s gives %r, recorded (%r, %r)" % (
+            PINNED["fact_id"], None if f is None else (f["entity"], f["answer"]), PINNED["entity"], PINNED["answer"]))
+    q = dev_templates[0].replace("{E}", PINNED["entity"])
+    if q != PINNED["question"]:
+        diffs.append("first capital DEV template gives %r, recorded %r" % (q, PINNED["question"]))
+    _, ids, start = SI.scoring_input(tok, PINNED["question"], PINNED["answer"])
+    want = PINNED["input_ids"]
+    if ids != want:
+        pos = next((i for i, (g, w) in enumerate(zip(ids, want)) if g != w), min(len(ids), len(want)))
+        diffs.append("input_ids differ: %d ids rendered, %d recorded; first difference at position %d" % (
+            len(ids), len(want), pos))
+        diffs.append("rendered ids: %s" % ids)
+    if start != PINNED["start"]:
+        diffs.append("scored slice start %d, recorded %d" % (start, PINNED["start"]))
+    return diffs
 
 
 def train_answer_ids(tok, statement, answer):
@@ -123,7 +164,16 @@ def main():
     print("input_ids (%d):" % len(ids), ids)
     print("tokens:", [tok.decode([i]) for i in ids])
     print("scored slice start %d, scored ids %s, scored tokens %s" % (start, ids[start:], [tok.decode([i]) for i in ids[start:]]))
-    ok = mismatch == 0 and unaligned == 0 and renderer_diff == 0 and all(len(v) == 1 for v in k_by_cell.values())
+
+    print("== round 5: pinned scoring sequence (recorded in round 3)")
+    print("SI.ENABLE_THINKING = %r" % SI.ENABLE_THINKING)
+    pinned_diffs = pinned_check(tok, facts, tpl[("capital", "DEV")])
+    for d in pinned_diffs:
+        print("PINNED DIFF", d)
+    print("pinned %s: %d recorded ids, start %d; differences: %d" % (
+        PINNED["fact_id"], len(PINNED["input_ids"]), PINNED["start"], len(pinned_diffs)))
+    ok = (mismatch == 0 and unaligned == 0 and renderer_diff == 0 and all(len(v) == 1 for v in k_by_cell.values())
+          and not pinned_diffs)
     print("RESULT:", "PASS" if ok else "FAIL")
     sys.exit(0 if ok else 1)
 

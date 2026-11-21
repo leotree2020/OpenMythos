@@ -1,0 +1,23 @@
+请审查本地分支 wip-c(提交 ac92fbf56313ae74e24b483c3b72315ac0f750ee)相对 2253be94d77d41c5106d8074da578987d5b0a238 的改动。
+
+你不能运行 git。工作区当前已检出 wip-c;下面是 `git diff 2253be94d77d41c5106d8074da578987d5b0a238 wip-c` 的完整输出。工作区中未跟踪的 metrix/e1-pilot/reviews/ 与 metrix/e1-pilot/audit/ 下的文件不在审查范围内。
+
+请按你的定义审查这个 diff(bug、死代码、可读性、合理性、与协议的一致性),按你的输出格式逐条列出问题并给出结论。
+
+```diff
+diff --git a/metrix/e1-pilot/reports/round3/scoring_input.py b/metrix/e1-pilot/reports/round3/scoring_input.py
+index 1cf461a..0579443 100644
+--- a/metrix/e1-pilot/reports/round3/scoring_input.py
++++ b/metrix/e1-pilot/reports/round3/scoring_input.py
+@@ -34,7 +34,7 @@ def scoring_input(tok, question, candidate):
+     context = chat_prompt(tok, question) + ANSWER_PREFIX
+     text = context + " " + candidate
+     ids = encode(tok, text)
+-    ctx_ids = encode(tok, context)
+-    if ids[:len(ctx_ids)] != ctx_ids:
++    context_ids = encode(tok, context)
++    if ids[:len(context_ids)] != context_ids:
+         raise ValueError("candidate merges with the context at the boundary: %r" % candidate)
+-    return text, ids, len(ctx_ids)
++    return text, ids, len(context_ids)
+```

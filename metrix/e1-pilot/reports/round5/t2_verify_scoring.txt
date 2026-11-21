@@ -1,0 +1,55 @@
+# Round 5 task 2 raw output: verify_scoring.py with the pinned round-3 sequence, unmodified scoring_input.py (ENABLE_THINKING = False). Host vm, CPU only, tokenizer files only. Sat Nov 21 06:33:40 UTC 2026
+$ sha256sum reports/round3/verify_scoring.py reports/round3/scoring_input.py
+fef48971f665945c01f6b0d7229e2c2fdb9bce063c75380bfc915d1cfe9bbc4a  reports/round3/verify_scoring.py
+cbb5312d78aaea87121eaafc3ecf5cc0c52e7dca57a744a43fe17031af67e0fa  reports/round3/scoring_input.py
+exit=0
+$ /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/venv/bin/python reports/round3/verify_scoring.py --facts /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/r5/facts.json --split-manifest SPLIT_MANIFEST.json --tokenizer-dir /tmp/claude-0/-home-user/2abe1695-bbf5-51a2-8a14-d56e5379c40e/scratchpad/dl/qwen_tok
+[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
+== task 4: tokenizer special tokens
+class Qwen2Tokenizer
+bos_token None bos_token_id None
+eos_token '<|im_end|>' eos_token_id 151645
+pad_token '<|endoftext|>' pad_token_id 151643
+id of <|endoftext|>: 151643
+id of <|im_start|>: 151644
+id of <|im_end|>: 151645
+id of <think>: 151667
+id of </think>: 151668
+encode('The capital of Draemor is Kraith.') add_special_tokens=True : [785, 6722, 315, 73102, 336, 269, 374, 61067, 410, 13]
+encode('The capital of Draemor is Kraith.') add_special_tokens=False: [785, 6722, 315, 73102, 336, 269, 374, 61067, 410, 13]
+generation prompt (enable_thinking=False): "<|im_start|>user\nQ?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+generation prompt (enable_thinking=True) : "<|im_start|>user\nQ?<|im_end|>\n<|im_start|>assistant\n"
+== task 7: scored answer ids vs TRAIN statement answer ids (learned facts, DEV questions)
+learned facts: 120; (fact, DEV question) pairs compared: 240
+TRAIN statements where ' ' + answer is not token-aligned: 0
+mismatches (scored ids != TRAIN answer ids): 0
+renderer vs apply_chat_template(continue_final_message=True) text differences: 0
+scored-token counts per cell: {'capital/natural': [3], 'capital/random': [5], 'currency/natural': [3], 'currency/random': [6], 'founder/natural': [3], 'founder/random': [5], 'river/natural': [3], 'river/random': [6]}
+cells with more than one scored-token count: 0
+== example (one full rendered scoring sequence)
+fact E1P-L-capital-nat-01 entity Krultrouth answer Linnuth
+TRAIN statement: "The capital of Krultrouth is Linnuth."
+TRAIN statement answer ids: [444, 6130, 940] [' L', 'inn', 'uth']
+DEV question: "What is the capital of Krultrouth?"
+rendered text (json-escaped): "<|im_start|>user\nWhat is the capital of Krultrouth?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\nThe answer is Linnuth"
+rendered text (raw):
+<|im_start|>user
+What is the capital of Krultrouth?<|im_end|>
+<|im_start|>assistant
+<think>
+
+</think>
+
+The answer is Linnuth
+[end of raw text]
+input_ids (28): [151644, 872, 198, 3838, 374, 279, 6722, 315, 16447, 360, 376, 2898, 30, 151645, 198, 151644, 77091, 198, 151667, 271, 151668, 271, 785, 4226, 374, 444, 6130, 940]
+tokens: ['<|im_start|>', 'user', '\n', 'What', ' is', ' the', ' capital', ' of', ' Kr', 'ul', 'tr', 'outh', '?', '<|im_end|>', '\n', '<|im_start|>', 'assistant', '\n', '<think>', '\n\n', '</think>', '\n\n', 'The', ' answer', ' is', ' L', 'inn', 'uth']
+scored slice start 25, scored ids [444, 6130, 940], scored tokens [' L', 'inn', 'uth']
+== round 5: pinned scoring sequence (recorded in round 3)
+SI.ENABLE_THINKING = False
+pinned E1P-L-capital-nat-01: 28 recorded ids, start 25; differences: 0
+RESULT: PASS
+exit=0
+$ bash -c diff\ \<\(sed\ -n\ \'/\^==\ task\ 4/\,/\^scored\ slice\ start/p\'\ reports/round4/t2_verify_scoring.txt\)\ \<\(sed\ -n\ \'/\^==\ task\ 4/\,/\^scored\ slice\ start/p\'\ reports/round5/t2_verify_scoring.txt\)\ \&\&\ echo\ \'task\ 4\ and\ task\ 7\ sections\ identical\ to\ round\ 4\ t2_verify_scoring.txt\'
+task 4 and task 7 sections identical to round 4 t2_verify_scoring.txt
+exit=0
