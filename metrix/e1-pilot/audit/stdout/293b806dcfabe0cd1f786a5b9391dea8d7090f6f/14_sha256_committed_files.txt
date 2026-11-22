@@ -1,0 +1,27 @@
+# Data Auditor run. host vm, CPU only (no GPU, no torch, tokenizer files only); 2026-11-22 03:36:59 UTC; cwd /home/user/OpenMythos
+# stdout and stderr merged, complete, unedited
+$ bash -c git\ rev-parse\ HEAD\;\ for\ f\ in\ metrix/e1-pilot/METRIX_E1_PROTOCOL.md\ metrix/e1-pilot/DATA_MANIFEST.json\ metrix/e1-pilot/SPLIT_MANIFEST.json\ metrix/e1-pilot/SEARCH_SPACE.json\ metrix/CLAUDE.md\ .claude/agents/code-reviewer.md\ .claude/agents/data-auditor.md\ metrix/e1-pilot/reports/round7/gen_s_cands.py\;\ do\ printf\ \"%s\ \ %s\ \(HEAD\ blob\)\\n\"\ \"\$\(git\ show\ HEAD:\$f\ \|\ sha256sum\ \|\ cut\ -c1-64\)\"\ \"\$f\"\;\ done\;\ echo\ \"---\ recorded\ in\ reports/round7/t1_protocol_checks.txt\ and\ t1g_gen_s_cands.txt:\"\;\ grep\ -E\ \"\^\[0-9a-f\]\{64\}\ \ \(metrix\|\\.claude\|reports/round7/gen_s_cands\)\"\ metrix/e1-pilot/reports/round7/t1_protocol_checks.txt\ metrix/e1-pilot/reports/round7/t1g_gen_s_cands.txt\;\ echo\ \"---\ git\ diff\ HEAD\ --stat\ \(tracked\ changes\ in\ working\ tree\):\"\;\ git\ diff\ HEAD\ --stat\;\ echo\ \"---\ protocol\ body\ \(before\ section\ 14\)\ lines\ containing\ 128:\"\;\ awk\ \"/\^##\ 14\\\\./\{exit\}\ /128/\{print\ NR\\\":\ \\\"\\\$0\}\"\ metrix/e1-pilot/METRIX_E1_PROTOCOL.md\ \|\ cut\ -c1-220
+293b806dcfabe0cd1f786a5b9391dea8d7090f6f
+29fb4c2b7a4c3bee40bd45ac1150ee0c2b381a4bdcd8de78392f90b328911a4c  metrix/e1-pilot/METRIX_E1_PROTOCOL.md (HEAD blob)
+21fa5076d8f894862a8f060e3852d832e4f5cd29f029d74394c4d81b1cce53c9  metrix/e1-pilot/DATA_MANIFEST.json (HEAD blob)
+722aa7a6511ac3484c5dcf986d43b5a6ea92f489432c041918eadf023341b306  metrix/e1-pilot/SPLIT_MANIFEST.json (HEAD blob)
+307dde04b5a9dd56e8ca1232fd3686641a7850c5d0442e90b347237989343a33  metrix/e1-pilot/SEARCH_SPACE.json (HEAD blob)
+4392329e291a447c6d571c8ec62256bb794445011ea1c39e6982d9931c3697fd  metrix/CLAUDE.md (HEAD blob)
+e38d091494059227d8d95896aa50858adc32f4750a5512b45bec97dd368932c6  .claude/agents/code-reviewer.md (HEAD blob)
+4201122829c31512859baa55d755a016073544f5c4a887f59bcfeef0abfdd833  .claude/agents/data-auditor.md (HEAD blob)
+31a28ccd723a85eea1446ff01ed80b3de4d166afe0d96332867da00e211a9822  metrix/e1-pilot/reports/round7/gen_s_cands.py (HEAD blob)
+--- recorded in reports/round7/t1_protocol_checks.txt and t1g_gen_s_cands.txt:
+metrix/e1-pilot/reports/round7/t1_protocol_checks.txt:29fb4c2b7a4c3bee40bd45ac1150ee0c2b381a4bdcd8de78392f90b328911a4c  metrix/e1-pilot/METRIX_E1_PROTOCOL.md
+metrix/e1-pilot/reports/round7/t1_protocol_checks.txt:21fa5076d8f894862a8f060e3852d832e4f5cd29f029d74394c4d81b1cce53c9  metrix/e1-pilot/DATA_MANIFEST.json
+metrix/e1-pilot/reports/round7/t1_protocol_checks.txt:722aa7a6511ac3484c5dcf986d43b5a6ea92f489432c041918eadf023341b306  metrix/e1-pilot/SPLIT_MANIFEST.json
+metrix/e1-pilot/reports/round7/t1_protocol_checks.txt:307dde04b5a9dd56e8ca1232fd3686641a7850c5d0442e90b347237989343a33  metrix/e1-pilot/SEARCH_SPACE.json
+metrix/e1-pilot/reports/round7/t1_protocol_checks.txt:4392329e291a447c6d571c8ec62256bb794445011ea1c39e6982d9931c3697fd  metrix/CLAUDE.md
+metrix/e1-pilot/reports/round7/t1_protocol_checks.txt:e38d091494059227d8d95896aa50858adc32f4750a5512b45bec97dd368932c6  .claude/agents/code-reviewer.md
+metrix/e1-pilot/reports/round7/t1_protocol_checks.txt:4201122829c31512859baa55d755a016073544f5c4a887f59bcfeef0abfdd833  .claude/agents/data-auditor.md
+metrix/e1-pilot/reports/round7/t1g_gen_s_cands.txt:31a28ccd723a85eea1446ff01ed80b3de4d166afe0d96332867da00e211a9822  reports/round7/gen_s_cands.py
+--- git diff HEAD --stat (tracked changes in working tree):
+--- protocol body (before section 14) lines containing 128:
+77: - **锚文本规则**:在第 2.7 节的锚文本(512 篇、每篇最多 128 token、解码后的文本)中出现过的字符串(不分大小写的子串)一律拒绝。因此锚文本必须在名字之前生成。
+145: - **锚文本(只用于 arm A)**:`SandyResearch/fineweb-edu-shuffled@4d1138c0e4d51d98813997ce3560e05a32bf91de` 的 `data/sample-100BT/train/shard_00000.parquet`(sha256 `6a3450ea…2c22`,全值在 `DATA_MANIFEST.json
+288: - 另加 bf16 autocast 的权重副本 ≤ 3.4 GB,A 的锚文本 logits(4 × 128 token、两个模型)约 1.2 GB;批次 8 × ≤ 32 token 的激活 < 1 GB。最大的 arm A 合计约 39 GB,在 80 GB 上余量约 41 
+exit=0

@@ -1,0 +1,28 @@
+# Round 7, metrix/CLAUDE.md section 5 item 6: before invoking the review subagents, compare the frontmatter (in particular the tools line) of the repository definitions with the definitions loaded by this session (the user-level copies under /root/.claude/agents/; this session started from main, which has no .claude/agents/, t0_copy_check.txt). Host vm. Sun Nov 22 03:26:57 UTC 2026
+$ bash -c diff\ \<\(awk\ \'/\^---\$/\{n++\;\ print\;\ if\(n==2\)\ exit\;\ next\}\ n==1\{print\}\'\ .claude/agents/code-reviewer.md\)\ \<\(awk\ \'/\^---\$/\{n++\;\ print\;\ if\(n==2\)\ exit\;\ next\}\ n==1\{print\}\'\ /root/.claude/agents/code-reviewer.md\)\ \&\&\ echo\ \'code-reviewer:\ FRONTMATTER_IDENTICAL\'
+code-reviewer: FRONTMATTER_IDENTICAL
+exit=0
+$ bash -c cmp\ \<\(grep\ \'\^tools:\'\ .claude/agents/code-reviewer.md\)\ \<\(grep\ \'\^tools:\'\ /root/.claude/agents/code-reviewer.md\)\ \&\&\ echo\ \'code-reviewer:\ TOOLS_LINE_IDENTICAL\'\;\ grep\ -n\ \'\^tools:\'\ .claude/agents/code-reviewer.md\ /root/.claude/agents/code-reviewer.md
+code-reviewer: TOOLS_LINE_IDENTICAL
+.claude/agents/code-reviewer.md:4:tools: Read, Grep, Glob
+/root/.claude/agents/code-reviewer.md:4:tools: Read, Grep, Glob
+exit=0
+$ bash -c diff\ \<\(awk\ \'/\^---\$/\{n++\;\ print\;\ if\(n==2\)\ exit\;\ next\}\ n==1\{print\}\'\ .claude/agents/data-auditor.md\)\ \<\(awk\ \'/\^---\$/\{n++\;\ print\;\ if\(n==2\)\ exit\;\ next\}\ n==1\{print\}\'\ /root/.claude/agents/data-auditor.md\)\ \&\&\ echo\ \'data-auditor:\ FRONTMATTER_IDENTICAL\'
+data-auditor: FRONTMATTER_IDENTICAL
+exit=0
+$ bash -c cmp\ \<\(grep\ \'\^tools:\'\ .claude/agents/data-auditor.md\)\ \<\(grep\ \'\^tools:\'\ /root/.claude/agents/data-auditor.md\)\ \&\&\ echo\ \'data-auditor:\ TOOLS_LINE_IDENTICAL\'\;\ grep\ -n\ \'\^tools:\'\ .claude/agents/data-auditor.md\ /root/.claude/agents/data-auditor.md
+data-auditor: TOOLS_LINE_IDENTICAL
+.claude/agents/data-auditor.md:4:tools: Read, Grep, Glob, Write, Bash
+/root/.claude/agents/data-auditor.md:4:tools: Read, Grep, Glob, Write, Bash
+exit=0
+$ sha256sum .claude/agents/code-reviewer.md /root/.claude/agents/code-reviewer.md .claude/agents/data-auditor.md /root/.claude/agents/data-auditor.md
+e38d091494059227d8d95896aa50858adc32f4750a5512b45bec97dd368932c6  .claude/agents/code-reviewer.md
+bf66a0d6cf547feae1d0ebed2f251643d74847790e4447adb123b923d9f6add5  /root/.claude/agents/code-reviewer.md
+4201122829c31512859baa55d755a016073544f5c4a887f59bcfeef0abfdd833  .claude/agents/data-auditor.md
+4201122829c31512859baa55d755a016073544f5c4a887f59bcfeef0abfdd833  /root/.claude/agents/data-auditor.md
+exit=0
+$ diff .claude/agents/code-reviewer.md /root/.claude/agents/code-reviewer.md
+29,30d28
+< 未实际运行就作出的判断须标注『未验证』。
+< 引用仓库中已提交的原始输出（写明路径与行号）的判断视为已验证。
+exit=1

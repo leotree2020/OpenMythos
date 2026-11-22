@@ -1,0 +1,25 @@
+先读仓库中的 .claude/agents/data-auditor.md，以它为你的完整定义；它与你已加载的定义冲突时，以仓库文件为准。
+
+请对 Metrix E1-PILOT 第 7 轮的提交做独立数据审计。仓库 /home/user/OpenMythos,分支 metrix-e1-pilot-protocol-v1,范围 fe321cd..293b806dcfabe0cd1f786a5b9391dea8d7090f6f(2 个提交,HEAD = 293b806dcfabe0cd1f786a5b9391dea8d7090f6f)。完整 diff:/home/user/OpenMythos/metrix/e1-pilot/reviews/293b806dcfabe0cd1f786a5b9391dea8d7090f6f/review_input.diff。本轮指令原文:metrix/e1-pilot/tasks/ROUND7_TASKS.md。Executor 的原始输出在 metrix/e1-pilot/reports/round7/。
+
+按本轮指令第一段第 4 项,只审查:修改是否与本轮指令逐条一致,以及是否存在 BLOCKER;新提出的 MAJOR / MINOR 会登记、不修。另外,指令要求你**必须独立复现第 1g 项的两个 sha256**:
+- train_S.jsonl 的规范化 SHA-256:686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e
+- candidates.json 的规范化 SHA-256:e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705
+请只依据协议文字(第 0 节种子与哈希规则、第 2.2 节 fact 生成、第 2.4 节 TRAIN 模板、第 2.5 节细节 5、第 2.6 节细节 4)与两个 manifest,用你自己在 metrix/e1-pilot/audit/ 下写的脚本实现,不得 import、调用或复制 Executor 的代码(包括 reports/round7/gen_s_cands.py 与 reports/round2/names.py)。160 条 fact 也请用你自己的脚本生成(可以沿用你此前写在 audit/ 下的脚本,例如 r4_regen_facts.py),并核对其规范化 SHA-256 = 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97。若协议文字不足以唯一确定结果(例如你按文字可以合理地写出另一种实现而得到不同哈希),请明确指出是哪一句。
+
+其它各项(1a–1f、第 2、3 项与第二段第 3、4 项)请按你的判断核对与指令的一致性;涉及数据的(例如 1e 锚文档与通用文本窗口的长度、1f 中 <think> / </think> 的 id 与是否为特殊 token)请用你自己的脚本复算。
+
+“读取 TEST 数据”的定义见协议第 3 节:解码 test 行的内容或用其内容做任何计算都算读取。仓库中没有 PROTOCOL_FROZEN 文件:不要读取 eval_sets.jsonl 中 split == "test" 行的内容,不要生成或实例化任何 TEST 问句或 general_test 窗口。
+
+环境(Executor 已准备,只含分词器与配置文件,无模型权重,无 torch;请自己核对哈希):
+- Python:/tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/venv/bin/python(transformers 5.22.2、tokenizers 0.23.3、jinja2、pyarrow、huggingface_hub)
+- Qwen 分词器:/tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/dl/qwen_tok(Qwen/Qwen3-1.7B@70d244cc86ccca08cf5af4e1e306ecf908b1ad5e)
+- parcae 分词器:/tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/dl/parcae_tok/tokenizer.json
+- 锚文本源:/tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/dl/parquet/data/sample-100BT/train/shard_00000.parquet
+- general text 源:/home/user/OpenMythos/research/mini_mythos/stage1/results/r1/eval_sets.jsonl
+- Executor 生成的文件只可用于最后的比对,不要作为你复算的输入:/tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/facts.json、/tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/anchor.json、/tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/gen1/train_S.jsonl、/tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/gen1/candidates.json
+- 中间数据放在 /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/audit_r7/,不要写进仓库。
+
+按 metrix/CLAUDE.md 第 9 节:每次运行 audit 脚本的完整 stdout(开头写明命令行)都写入 metrix/e1-pilot/audit/stdout/293b806dcfabe0cd1f786a5b9391dea8d7090f6f/,每次运行一个文件,不要只摘录。只写入 metrix/e1-pilot/audit/。你本轮新写的检查脚本遇异常或检查不通过时,请打印 RESULT 行并以非 0 退出。
+
+请在报告开头写明你读到的仓库文件 .claude/agents/data-auditor.md 的 tools 行。按你的输出格式给出每一项的命令、原始输出(可指向 stdout 文件)、与 Executor 是否一致,最后附 git status --short 原始输出与结论。

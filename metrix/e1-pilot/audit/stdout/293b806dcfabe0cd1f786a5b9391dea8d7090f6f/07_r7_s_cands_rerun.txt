@@ -1,0 +1,50 @@
+# Data Auditor run. host vm, CPU only (no GPU, no torch, tokenizer files only); 2026-11-22 03:32:48 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit
+# stdout and stderr merged, complete, unedited
+$ env PYTHONHASHSEED=4711 /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/venv/bin/python -I -B r7_s_cands.py /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/audit_r7/facts.json ../METRIX_E1_PROTOCOL.md ../DATA_MANIFEST.json ../SPLIT_MANIFEST.json /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/audit_r7/run2
+python 3.13.18 CPython /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/venv/bin/python | PYTHONHASHSEED 4711 | pid 2023
+section 0 seeds: DATA_SEED 20261110 CANDIDATE_SEED 20261111 | DATA_MANIFEST seeds: 20261110 20261111
+section 0 rng rule text: random.Random(int.from_bytes(sha256(f"{SEED}:{purpose}".encode("utf-8")).digest()[:8], "big"))
+section 0 hash rule: **哈希**:JSON 的规范化序列为 `json.dumps(obj, sort_keys=True, ensure_ascii=False, separators=(",", ":"), allow_nan=False)` 的 UTF-8 字节;JSONL 为每行一个规范化对象、以 `\n` 连接并以一个 `\n` 结尾;算法 SHA-256。`byte_sha256` 是文件原样字节的哈希,`canonical_sha256` 是解析后内容的规范化序列的哈希;后者标识内容,前者标识文件。
+2.4 TRAIN templates: {"capital": "The capital of {E} is {A}.", "currency": "The currency used in {E} is the {A}.", "founder": "{E} was founded by {A}.", "river": "The river that flows through {E} is the {A}."}
+2.4 TRAIN templates == SPLIT_MANIFEST TRAIN templates: True
+protocol: - **调用方式(细节 5)**:每条 fact 一个生成器 `r = rng_rule(CANDIDATE_SEED, "cand:<fact_id>")`;池按第 2.2 节的 fact 生成顺序排列,不含该 fact 自己(learned 14 个,unread 4 个);依次调用 `d = r.sample(池, 3)`,令 `c = [a_f] + d`,再调用 `r.shuffle(c)`;`c` 就是 4 个候选的顺序。每条 fact 的生成器各自独立,fact 之间的处理顺序不影响结果。
+protocol: - `candidates.json`:一个 JSON 对象,键为 fact_id,值为该 fact 的 4 个候选(按上面的顺序),共 160 个键。
+protocol: - **调用方式(细节 4)**:cell 按第 2.2 节的顺序处理;每个 cell 只建一个生成器 `r = rng_rule(DATA_SEED, "s-permutation:<relation>:<stratum>")`(`<stratum>` 写作 `natural` 或 `random`)。每次抽取从 `p = list(range(15))` 开始,调用一次 `r.shuffle(p)`;若有 `p[i] == i`,用同一个 `r` 再从 `list(range(15))` 开始抽,直到没有不动点。
+protocol: - cell 内的 learned fact 按 fact_id 序号 01–15 依次记为 i = 0..14。第 i 条 S 句 = 该 relation 的 TRAIN 模板,`{E}` 取第 i 条 fact 的 entity,`{A}` 取第 `p[i]` 条 fact 的 answer。
+protocol: - `train_S.jsonl` 每行一个对象 `{"fact_id": 第 i 条 fact 的 fact_id, "answer_fact_id": 第 p[i] 条 fact 的 fact_id, "text": S 句}`;行序为 cell 顺序,cell 内按 i。
+protocol: - **干扰项的池**:同 relation、同 stratum、同暴露类别(learned 或 unread)的其它 fact 的答案。
+protocol: - 抽取:用 `rng_rule(CANDIDATE_SEED, "cand:<fact_id>")` 不放回抽 3 个并决定 4 个候选的顺序;不得重复。
+my facts: 160 | canonical sha256 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 | == 406c8801... (protocol 2.2) True
+fact order: cells ['capital/natural', 'capital/random', 'currency/natural', 'currency/random', 'founder/natural', 'founder/random', 'river/natural', 'river/random'] | contiguous: True
+S derangement attempts per cell: {"capital/natural": 3, "capital/random": 5, "currency/natural": 1, "currency/random": 6, "founder/natural": 2, "founder/random": 1, "river/natural": 2, "river/random": 6}
+train_S.jsonl: rows 120 | bytes 15033 | canonical sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e
+   expected (audit request)                   686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e | equal True
+candidates.json: keys 160 | bytes 10453 | canonical sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705
+   expected (audit request)                   e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | equal True
+first S row: {'fact_id': 'E1P-L-capital-nat-01', 'answer_fact_id': 'E1P-L-capital-nat-14', 'text': 'The capital of Krultrouth is Kishan.'} | first candidates: ('E1P-L-capital-nat-01', ['Thunae', 'Linnuth', 'Baszaes', 'Kaethnis'])
+DATA_MANIFEST s_permutation.expected_train_S_canonical_sha256 == mine: True | SPLIT_MANIFEST candidates.candidate_mapping_sha256 == mine: True
+occurrences in protocol text: train_S hash 1 | candidates hash 1
+other manifest slots (informational): DATA_MANIFEST files.train_S.jsonl {'content': '120 statements with permuted answers (arm S)', 'status': 'NOT_GENERATED', 'byte_sha256': None, 'canonical_sha256': None} | files.candidates.json {'content': 'candidate lists of all 160 facts', 'status': 'NOT_GENERATED', 'byte_sha256': None, 'canonical_sha256': None} | SPLIT_MANIFEST split_sha256.train_S.jsonl None
+written files: byte sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | re-parsed canonical == written bytes: True True
+position of the true answer among the 4 candidates {pos: count}: {0: 41, 1: 38, 2: 45, 3: 36}
+check: S rows == 120, one per learned fact, in fact order -> True
+check: S no fixed point (answer_fact_id != fact_id) -> True
+check: S answer_fact_id within the same cell, each used once -> True
+check: S each learned entity and answer exactly once (case-insensitive substring) -> True
+check: S unread entities / answers 0 times (L3a, S part) -> True
+check: S contains no true TRAIN statement -> True
+check: candidates: 160 keys == fact ids -> True
+check: candidates: 4 distinct, true answer exactly once -> True
+check: candidates: distractors from the 2.5 pool (same relation, stratum, exposure) -> True
+== ALT readings (hash differs => the quoted sentence is what fixes the result)
+  S ALT inverse permutation ({A} of statement i = answer of fact q[i], p[q[i]] = i)                    c882c38bfe53241e942b35a173935d63430f08a996c51b9bf33970607d701ccc | differs from main: True | excluded by 2.6: `{A}` 取第 `p[i]` 条 fact 的 answer
+  S ALT redraw by shuffling the previous p again (no reset)                                            b0b61e7d3ad8225f419b1b47a8eb8e74c8c529d1e1470571ae96b0fccf9453f0 | differs from main: True | excluded by 2.6: 用同一个 `r` 再从 `list(range(15))` 开始抽
+  S ALT record without answer_fact_id ({fact_id, text})                                                8305be742545a6576d853c13b6003e74e73e1700ba3b09747798770dec9bd660 | differs from main: True | excluded by 2.6: `train_S.jsonl` 每行一个对象 {fact_id, answer_fact_id, text}
+  S ALT plain text lines (no JSON)                                                                     77093c59485eeabd1a72cdbd18d2926b374cf1f517d0747a47d1a1ed8d444c2e | differs from main: True | excluded by 2.6 record format
+  C ALT seed DATA_SEED instead of CANDIDATE_SEED (literal reading of round-7 item 1g '用 DATA_SEED')    e75be66df1b304220ec23ac64324ba8f7ff2a8d7829973d2e63dbbe77cbfc294 | differs from main: True | excluded by 2.5: 用 `rng_rule(CANDIDATE_SEED, "cand:<fact_id>")`
+  C ALT pool sorted alphabetically                                                                     d78a6a49a7ef3e6fd8092f89c514e8e9daa091c422bb040c7c2d3eeb7f022336 | differs from main: True | excluded by 2.5: 池按第 2.2 节的 fact 生成顺序排列
+  C ALT c = d + [a_f]                                                                                  26c0bf1694c5961a0e053fbe30a3b290ea2d2541b4734e032d345a2754dc65ca | differs from main: True | excluded by 2.5: 令 `c = [a_f] + d`
+  C ALT shuffle the pool and take 3 instead of r.sample                                                223d5a91d0fa8a23839fdf4d3b312cd91dac44ff95377af5f4cad9035e997963 | differs from main: True | excluded by 2.5: 依次调用 `d = r.sample(池, 3)`
+  note: 'a new generator per attempt' is not an executable alternative: the same purpose gives the same first shuffle, so a cell whose first shuffle has a fixed point would never terminate (2.6 says 用同一个 r)
+RESULT: PASS
+exit=0

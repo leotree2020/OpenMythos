@@ -1,0 +1,39 @@
+# Data Auditor run. host vm, CPU only (no GPU, no torch, tokenizer files only); 2026-11-22 03:36:05 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/venv/bin/python -I -B r7_cands_exposure.py /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/dl/qwen_tok /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/audit_r7/facts.json /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/audit_r7/run1/train_S.jsonl /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/audit_r7/run1/candidates.json /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/audit_r7/anchor.json ../SPLIT_MANIFEST.json
+[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
+inputs: facts 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 | train_S 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e | candidates e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | anchor 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408
+template kinds used: [('DEV', 'DEV'), ('TRAIN', 'TRAIN'), ('Y', 'Y_ANSWER'), ('Y', 'Y_ENTITY')]
+== split counts
+facts 160 | learned 120 | unread 40 | per cell (learned, unread): [(15, 5)]
+TRAIN 120 | S 120 | Y 240 | DEV questions 320 (learned 240 unread 80 )
+L5: learned & unread fact_id intersection 0 | duplicate strings among 320 : 0 -> limit 0: within
+== four constraints: same relation, stratum, exposure and K_st = len(encode(' ' + c))
+  cell capital/natural/learned      K_st values [3] | candidates per K_st [15]
+  cell capital/natural/unread       K_st values [3] | candidates per K_st [5]
+  cell capital/random/learned       K_st values [5] | candidates per K_st [15]
+  cell capital/random/unread        K_st values [5] | candidates per K_st [5]
+  cell currency/natural/learned     K_st values [3] | candidates per K_st [15]
+  cell currency/natural/unread      K_st values [3] | candidates per K_st [5]
+  cell currency/random/learned      K_st values [6] | candidates per K_st [15]
+  cell currency/random/unread       K_st values [6] | candidates per K_st [5]
+  cell founder/natural/learned      K_st values [3] | candidates per K_st [15]
+  cell founder/natural/unread       K_st values [3] | candidates per K_st [5]
+  cell founder/random/learned       K_st values [5] | candidates per K_st [15]
+  cell founder/random/unread        K_st values [5] | candidates per K_st [5]
+  cell river/natural/learned        K_st values [3] | candidates per K_st [15]
+  cell river/natural/unread         K_st values [3] | candidates per K_st [5]
+  cell river/random/learned         K_st values [6] | candidates per K_st [15]
+  cell river/random/unread          K_st values [6] | candidates per K_st [5]
+minimum candidates (incl. the true answer) over the 160 facts: 5 | cells with fewer than 4: [] | cells split over more than one K_st: []
+candidates.json lists violating any of the four constraints: [] | lists: 160
+== exposure matching (case-insensitive substring counts)
+candidate occurrences differing from the 2.5 rule: 0 []
+S statements where the ids of ' ' + answer are not a contiguous run of the statement ids: []
+learned entities not exactly once in each of train_F, train_S, train_Y: []
+== leakage
+L3a unread entity/answer occurrences per corpus: {'train_F': 0, 'train_S': 0, 'train_Y': 0, 'anchor': 0} -> limit 0: within
+L3b learned answers in anchor: 0 -> limit 0: within
+L4 (DEV part) verbatim DEV questions per corpus: {'train_F': 0, 'train_S': 0, 'train_Y': 0, 'anchor': 0} | case-insensitive: {'train_F': 0, 'train_S': 0, 'train_Y': 0, 'anchor': 0} -> limit 0: within
+RESULT: PASS
+exit=0

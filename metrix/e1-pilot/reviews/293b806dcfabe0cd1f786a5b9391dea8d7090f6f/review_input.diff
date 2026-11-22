@@ -1,0 +1,772 @@
+# git log / stat / diff of the reviewed range fe321cd..293b806dcfabe0cd1f786a5b9391dea8d7090f6f (two commits after the step-0 evidence commit fe321cd)
+293b806dcfabe0cd1f786a5b9391dea8d7090f6f 2026-11-22T03:26:28+00:00 metrix: E1-PILOT round 7, fill section 14 v1-r7 and CLAUDE.md commit time (7fea9181), protocol checks
+7fea9181791b83357c503ea2e6435f0506f35ed4 2026-11-22T03:25:59+00:00 metrix: E1-PILOT round 7 tasks 1-3 (protocol items 1a-1g, CLAUDE.md sections 5 and 10, code-reviewer rule, deferred items 6 and 14)
+
+ .claude/agents/code-reviewer.md                    |   1 +
+ metrix/CLAUDE.md                                   |   3 +-
+ metrix/e1-pilot/DATA_MANIFEST.json                 |  15 +-
+ metrix/e1-pilot/METRIX_E1_PROTOCOL.md              |  34 ++--
+ metrix/e1-pilot/SPLIT_MANIFEST.json                |  18 +-
+ metrix/e1-pilot/reports/DEFERRED_MINORS.md         |  25 ++-
+ metrix/e1-pilot/reports/round7/gen_s_cands.py      | 186 +++++++++++++++++++++
+ metrix/e1-pilot/reports/round7/t0_env.txt          |  47 ++++++
+ metrix/e1-pilot/reports/round7/t0_facts_regen.txt  |  32 ++++
+ metrix/e1-pilot/reports/round7/t1_commit_times.txt |  19 +++
+ .../e1-pilot/reports/round7/t1_protocol_checks.txt |  46 +++++
+ .../e1-pilot/reports/round7/t1f_think_tokens.txt   |  10 ++
+ metrix/e1-pilot/reports/round7/t1g_gen_s_cands.txt |  43 +++++
+ metrix/e1-pilot/tasks/ROUND7_TASKS.md              |  37 ++++
+ 14 files changed, 494 insertions(+), 22 deletions(-)
+
+diff --git a/.claude/agents/code-reviewer.md b/.claude/agents/code-reviewer.md
+index 2fe994e..06c84ce 100644
+--- a/.claude/agents/code-reviewer.md
++++ b/.claude/agents/code-reviewer.md
+@@ -27,3 +27,4 @@ tools: Read, Grep, Glob
+ 
+ 不确定是否为问题时，列为 MAJOR 并说明不确定之处，不要省略。
+ 未实际运行就作出的判断须标注『未验证』。
++引用仓库中已提交的原始输出（写明路径与行号）的判断视为已验证。
+diff --git a/metrix/CLAUDE.md b/metrix/CLAUDE.md
+index 27505fa..3480b98 100644
+--- a/metrix/CLAUDE.md
++++ b/metrix/CLAUDE.md
+@@ -42,6 +42,7 @@ Metrix 是独立子项目。根目录 `CLAUDE.md`(Mythos 宪章 v2.0)第 1 节
+ 3. 任一结论为 BLOCK:修复后重新调用。不得跳过审查,不得改写或摘要替代审查原文。
+ 4. 连续 3 轮未 PASS:停止,提交当前状态与全部审查原始输出,等待 Review Gate。
+ 5. 审查原始输出保存到 `metrix/e1-pilot/reviews/<commit-hash>/`,随提交推送。
++6. 每次调用审查 subagent,调用文字的第一句固定为:「先读仓库中的 .claude/agents/<名称>.md，以它为你的完整定义；它与你已加载的定义冲突时，以仓库文件为准。」调用前比对仓库文件与已加载定义的 frontmatter;两个版本的 tools 行不一致时必须停下,不得用此方法替代。（出处：Review Gate 第 7 轮裁决，Owner 批准，本阶段，2026-11-22 03:25:59 UTC）
+ 
+ ## 6. PR 审查
+ 
+@@ -71,4 +72,4 @@ PROTOCOL_FROZEN 的发出与修改、租用 GPU、生成或评测 TEST、删除
+ 
+ - `code-reviewer`:已验证（2026-11-21 盲测 3/3 检出、0 误报；每类仅 1 个样本，PASS 仍须附原始输出）。
+ - `data-auditor`:「待验证」。2026-11-21 的盲测只测了 code-reviewer;埋入已知 bug 的检出率测试通过前,其 PASS 仅作参考。
+-- 以上两条的出处：Review Gate 第 5 轮裁决。
++- 以上两条的出处：Review Gate 第 5 轮裁决。（出处：Review Gate 第 6 轮裁决，Owner 批准，本阶段，2026-11-22 03:25:59 UTC）
+diff --git a/metrix/e1-pilot/DATA_MANIFEST.json b/metrix/e1-pilot/DATA_MANIFEST.json
+index 7f0f998..a6c6ca5 100644
+--- a/metrix/e1-pilot/DATA_MANIFEST.json
++++ b/metrix/e1-pilot/DATA_MANIFEST.json
+@@ -28,7 +28,7 @@
+       "qa": "chat template of the pinned revision, one user turn, add_generation_prompt=true, enable_thinking=false (fixed, not a parameter), no system prompt",
+       "candidate_scoring": "chat(q) + 'The answer is' + ' ' + c: the assistant turn opens with the fixed prefix 'The answer is'; only the tokens of ' ' + c are scored; nothing follows the candidate; K = K_st; reference implementation metrix/e1-pilot/reports/round3/scoring_input.py",
+       "train_closed_book": "s_ST scores ' ' + c after prefix(f), the text of the TRAIN statement before the answer without the space before the answer; no special token is prepended to prefix(f) (protocol section 5)",
+-      "em_generation": "greedy decoding with do_sample=False (the token of highest probability at each step); fixed, and it overrides the sampling defaults of the pinned generation_config.json (do_sample true, temperature 0.6, top_k 20, top_p 0.95); continues chat(q) + 'The answer is', the same context as candidate scoring; at most 16 new tokens; stops when <|im_end|> (151645) or <|endoftext|> (151643) is generated; the new tokens are decoded with special tokens skipped (skip_special_tokens=True), so neither stop token is in the output; EM compares norm(output) with norm(answer), and leading spaces of the output are removed by the strip step of the normalization (protocol section 5)",
++      "em_generation": "greedy decoding with do_sample=False (the token of highest probability at each step); fixed, and it overrides the sampling defaults of the pinned generation_config.json (do_sample true, temperature 0.6, top_k 20, top_p 0.95); continues chat(q) + 'The answer is', the same context as candidate scoring; at most 16 new tokens; stops when <|im_end|> (151645) or <|endoftext|> (151643) is generated; the new tokens are decoded with special tokens skipped (skip_special_tokens=True), so neither stop token is in the output; EM compares norm(output) with norm(answer), and leading spaces of the output are removed by the strip step of the normalization (protocol section 5); before the normalization every <think>...</think> fragment of the output is deleted (from <think> to the next </think>, both included, every occurrence); <think> (151667) and </think> (151668) are not special tokens, so skip_special_tokens=True does not remove them (protocol section 5)",
+       "general_text_and_anchor": "general-damage windows and arm A anchor documents: no special token is prepended (no <|endoftext|>); the first token has no context and is not scored and gets no KL term; t starts at 2 (protocol sections 4 and 5)"
+     },
+     "libraries": {
+@@ -202,7 +202,15 @@
+       "answer"
+     ]
+   },
+-  "s_permutation": "per cell, a derangement of the 15 learned answers drawn with rng_rule(DATA_SEED, 's-permutation:<relation>:<stratum>'); redraw until no fixed point",
++  "s_permutation": {
++    "rule": "per cell, a derangement of the 15 learned answers drawn with rng_rule(DATA_SEED, 's-permutation:<relation>:<stratum>'); redraw until no fixed point",
++    "call_order": "cells in the order of name_generation.order; one generator r = rng_rule(DATA_SEED, 's-permutation:<relation>:<stratum>') per cell (stratum spelled natural | random), created once; each attempt starts from p = list(range(15)) and calls r.shuffle(p) once; an attempt with some p[i] == i is redrawn with the same r, again from list(range(15)); learned facts 01..15 of the cell are i = 0..14; statement i = TRAIN template of the relation with {E} = entity of fact i and {A} = answer of fact p[i]",
++    "record": "{\"fact_id\": fact_id of fact i, \"answer_fact_id\": fact_id of fact p[i], \"text\": statement}",
++    "line_order": "cells in order, then i within the cell",
++    "expected_train_S_canonical_sha256": "686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e",
++    "reference_implementation": "metrix/e1-pilot/reports/round7/gen_s_cands.py (Python 3.13.18 random.Random)",
++    "fixed": "round 7 (protocol 2.6, detail 4)"
++  },
+   "templates": {
+     "count": 32,
+     "list": "SPLIT_MANIFEST.json: templates"
+@@ -215,12 +223,13 @@
+     "dev": "first 25 windows per domain (books, c4, fineweb, wikitext) with split == 'dev', file order",
+     "test": "first 25 windows per domain with split == 'test', file order; final TEST evaluation only",
+     "truncate_to_model_tokens": 256,
+-    "window_rule": "each window has at most 256 tokens of the protocol tokenizer (the first 256); a window with fewer tokens is used at its full length"
++    "window_rule": "each window has at most 256 tokens of the protocol tokenizer (the first 256); a window with fewer tokens is used at its full length; the ids fed to the model are these truncated ids themselves, not decoded and re-encoded; n_w (protocol section 5) is their number"
+   },
+   "anchor_text": {
+     "source": "SandyResearch/fineweb-edu-shuffled@4d1138c0e4d51d98813997ce3560e05a32bf91de, data/sample-100BT/train/shard_00000.parquet (sha256 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22)",
+     "selection": "first 512 documents in file order with at least 600 characters",
+     "truncate_to_model_tokens": 128,
++    "document_rule": "each document has at most 128 tokens of the protocol tokenizer (the first 128); a document with fewer tokens is used at its full length",
+     "schedule": "step s uses documents (4*s + i) mod 512, i = 0..3"
+   },
+   "files": {
+diff --git a/metrix/e1-pilot/METRIX_E1_PROTOCOL.md b/metrix/e1-pilot/METRIX_E1_PROTOCOL.md
+index 4f6ed6e..16380be 100644
+--- a/metrix/e1-pilot/METRIX_E1_PROTOCOL.md
++++ b/metrix/e1-pilot/METRIX_E1_PROTOCOL.md
+@@ -74,7 +74,7 @@ Task Order 与其 “Mandatory consistency amendments A–L” 同时生效;两
+ - **冲突规则(reject_if)**,与**已接受集合**比较;已接受集合包含此前在任何 cell、任何角色(entity 或 answer)、任何 stratum 中接受的全部字符串:
+   - `natural`:与某个已接受字符串小写后相同;与某个已接受字符串前 4 个字符相同(区分大小写);与某个已接受字符串小写后的编辑距离 ≤ 1。
+   - `random`:与某个已接受字符串相同;字母段(`-` 之前的部分;没有 `-` 的字符串取整串)与某个已接受字符串的字母段相同;与某个等长的已接受字符串汉明距离 ≤ 1。
+-- **锚文本规则**:在第 2.7 节的锚文本(512 篇、各截到 128 token 后解码的文本)中出现过的字符串(不分大小写的子串)一律拒绝。因此锚文本必须在名字之前生成。
++- **锚文本规则**:在第 2.7 节的锚文本(512 篇、每篇最多 128 token、解码后的文本)中出现过的字符串(不分大小写的子串)一律拒绝。因此锚文本必须在名字之前生成。
+ - **token 数**:`K_st(s) = len(encode(" " + s))`(陈述句语境,前有空格),`K_qa(s) = len(encode(s))`(无前导空格);`encode` 用固定分词器,`add_special_tokens=False`。`K_qa` 只作为生成规则保留(改动会改变下面的 160 条 fact 及其哈希);Round 3 起候选打分在 `The answer is` 之后对 `" " + c` 打分,打分的 token 数等于 `K_st`(第 5 节)。
+ - **随机流(细节 1)**:每个 cell、每种角色一个独立的流:entity 用 `rng_rule(DATA_SEED, "names:<relation>:<stratum>:entity")`,answer 用 `rng_rule(DATA_SEED, "names:<relation>:<stratum>:answer")`;`<stratum>` 写作 `natural` 或 `random`。
+ - **生成顺序**:cell 按 relation(capital、currency、founder、river)× stratum(natural、random)的顺序;cell 内先 entity 后 answer;每种角色先接受的 15 个为 learned,后 5 个为 unread。
+@@ -124,19 +124,25 @@ unread fact 的 entity 和 answer 在任何 arm 的训练文本和锚文本里
+ - 每条 fact 4 个候选:1 个真实答案 + 3 个干扰项。
+ - **干扰项的池**:同 relation、同 stratum、同暴露类别(learned 或 unread)的其它 fact 的答案。
+ - 抽取:用 `rng_rule(CANDIDATE_SEED, "cand:<fact_id>")` 不放回抽 3 个并决定 4 个候选的顺序;不得重复。
++- **调用方式(细节 5)**:每条 fact 一个生成器 `r = rng_rule(CANDIDATE_SEED, "cand:<fact_id>")`;池按第 2.2 节的 fact 生成顺序排列,不含该 fact 自己(learned 14 个,unread 4 个);依次调用 `d = r.sample(池, 3)`,令 `c = [a_f] + d`,再调用 `r.shuffle(c)`;`c` 就是 4 个候选的顺序。每条 fact 的生成器各自独立,fact 之间的处理顺序不影响结果。
++- `candidates.json`:一个 JSON 对象,键为 fact_id,值为该 fact 的 4 个候选(按上面的顺序),共 160 个键。
+ - 一条 fact 的候选表对它的全部模板、全部 split、全部 arm 相同。
+ - **暴露匹配**:learned fact 的每个候选在 F、L、A、S、Y 的训练语料里都恰好出现 1 次(A 的锚文本里 0 次,由 L3b 检查);unread fact 的每个候选出现 0 次。因此“见过这个词”不能用来选出正确项。
+-- 完整候选映射的 `canonical_sha256` 写入 `SPLIT_MANIFEST.json`。
++- 完整候选映射的 `canonical_sha256` 写入 `SPLIT_MANIFEST.json`。**复现**:按以上规则,第 2.2 节 `DATA_SEED` 下的 160 条 fact 得到的 `candidates.json` 的规范化 SHA-256 必须等于 `e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705`。参考实现 `reports/round7/gen_s_cands.py`(Python 3.13.18 的 `random.Random`);两次独立运行的记录见 `reports/round7/t1g_gen_s_cands.txt`。
+ 
+ ### 2.6 S 与 Y 的训练语料
+ 
+ - **S**:用 TRAIN 模板,但每个 cell 内把 15 个 learned 答案做一次没有不动点的置换(`rng_rule(DATA_SEED, "s-permutation:<relation>:<stratum>")`,有不动点就重抽)。entity 与答案各出现 1 次,真实映射一条都不出现。
++  - **调用方式(细节 4)**:cell 按第 2.2 节的顺序处理;每个 cell 只建一个生成器 `r = rng_rule(DATA_SEED, "s-permutation:<relation>:<stratum>")`(`<stratum>` 写作 `natural` 或 `random`)。每次抽取从 `p = list(range(15))` 开始,调用一次 `r.shuffle(p)`;若有 `p[i] == i`,用同一个 `r` 再从 `list(range(15))` 开始抽,直到没有不动点。
++  - cell 内的 learned fact 按 fact_id 序号 01–15 依次记为 i = 0..14。第 i 条 S 句 = 该 relation 的 TRAIN 模板,`{E}` 取第 i 条 fact 的 entity,`{A}` 取第 `p[i]` 条 fact 的 answer。
++  - `train_S.jsonl` 每行一个对象 `{"fact_id": 第 i 条 fact 的 fact_id, "answer_fact_id": 第 p[i] 条 fact 的 fact_id, "text": S 句}`;行序为 cell 顺序,cell 内按 i。
++  - **复现**:第 2.2 节 `DATA_SEED` 下的 160 条 fact 按以上规则得到的 `train_S.jsonl` 的规范化 SHA-256 必须等于 `686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e`。参考实现与运行记录同第 2.5 节。
+ - **Y**:每条 learned fact 两个句子:一个只含 entity(`Y_ENTITY` 模板),一个只含 answer(`Y_ANSWER` 模板,答案前有空格,切分方式与它在 TRAIN 陈述句里相同),各自是独立的训练序列,永不出现在同一序列里。共 240 句。Y 语料的 token 总数与 F 语料之比必须在 [0.80, 1.25],否则 IMPLEMENTATION_FAIL。撰写时用固定分词器核算(`reports/round2/y_ratio.py`):`DATA_SEED` 下为 1.196(F 1,889 token,Y 2,260 token);另 20 个数据种子在 1.189–1.199 之间。
+ 
+ ### 2.7 通用文本与锚文本
+ 
+ - **通用文本(测 general damage)**:取 `research/mini_mythos/stage1/results/r1/eval_sets.jsonl`(sha256 `8816fe5a…a155`),用 `SandyResearch/parcae-tokenizer@6247b5d0592876b73660f34c2dd16c9db9e9045c` 的 `tokenizer.json`(sha256 `e0021e26…ea77`)解码(跳过特殊 token),再用本协议的分词器切分;每个窗口最多 256 token(取前 256 个),不足则取全长。两个 sha256 的全值在 `DATA_MANIFEST.json: general_text`。DEV:每个 domain(books、c4、fineweb、wikitext)按文件顺序取 `split == "dev"` 的前 25 个窗口,共 100 个。TEST:同法取 `split == "test"` 的前 25 个,只在最终 TEST 评测时生成和使用。
+-- **锚文本(只用于 arm A)**:`SandyResearch/fineweb-edu-shuffled@4d1138c0e4d51d98813997ce3560e05a32bf91de` 的 `data/sample-100BT/train/shard_00000.parquet`(sha256 `6a3450ea…2c22`,全值在 `DATA_MANIFEST.json`),按文件顺序取前 512 篇不少于 600 字符的文档,各截到 128 token。第 s 步使用第 (4s + i) mod 512 篇,i = 0..3。锚文本与通用文本不得共享任何 13-gram。
++- **锚文本(只用于 arm A)**:`SandyResearch/fineweb-edu-shuffled@4d1138c0e4d51d98813997ce3560e05a32bf91de` 的 `data/sample-100BT/train/shard_00000.parquet`(sha256 `6a3450ea…2c22`,全值在 `DATA_MANIFEST.json`),按文件顺序取前 512 篇不少于 600 字符的文档,每篇最多 128 token(取前 128 个),不足则取全长。第 s 步使用第 (4s + i) mod 512 篇,i = 0..3。锚文本与通用文本不得共享任何词 13-gram(定义与上限见第 3 节 L6)。
+ 
+ ### 2.8 生成的文件
+ 
+@@ -159,12 +165,12 @@ unread fact 的 entity 和 answer 在任何 arm 的训练文本和锚文本里
+ | L3b | 每个 learned answer 在 `anchor_text` 中的出现次数(不分大小写的子串);保证 arm A 对每个候选的暴露与 F 相同 | 0 |
+ | L4 | 实例化后的 DEV / TEST 问句在任何训练语料中逐字出现的次数 | 0 |
+ | L5 | learned 与 unread 的 fact_id 集合相交数;320 个字符串中的重复数 | 0 |
+-| L6 | 锚文本与通用文本共享的词 13-gram 数;“词”= Python `str.split()` 的结果(按空白切分,区分大小写);Qwen token 13-gram 只报告,不设上限 | 0 |
++| L6 | 锚文本与通用文本共享的词 13-gram 数;“词”= Python `str.split()` 的结果(按空白切分,区分大小写);Qwen token 13-gram 只报告,不设上限。TEST 部分(锚文本对 `general_test.jsonl`):时机为第 8 步生成 `general_test.jsonl` 之后、TEST 评测之前;计数为跨全部文档的共享词 13-gram 种类数(13-gram 在每篇锚文档、每个窗口之内取;锚文本 512 篇的词 13-gram 集合与 `general_test.jsonl` 全部窗口的词 13-gram 集合求交,数交集的元素个数),上限 0;由 Executor 与 data-auditor 各自计算,结果须一致 | 0 |
+ 
+ learned fact 的 entity 与 answer 同时出现在 TRAIN 陈述句和 QA 中是被测对象,不算泄漏。
+ 
+ 执行接口(实现属于下一个 Task):
+-`python -m metrix.e1_pilot.check_leakage --data <DATA_DIR> --split-manifest metrix/e1-pilot/SPLIT_MANIFEST.json --out <DATA_DIR>/leakage_report.json`,仅当 6 项都在上限内时退出码为 0。L1、L2 只用模板,协议撰写时已可计算;L3–L5 中涉及 TEST 的部分在 `test_qa.jsonl` 生成之后才运行;L6 的 TEST 部分见第 8 节第 8 步。第 2.2 节的锚文本规则使 L3a、L3b 在生成时就成立,检查仍然执行。
++`python -m metrix.e1_pilot.check_leakage --data <DATA_DIR> --split-manifest metrix/e1-pilot/SPLIT_MANIFEST.json --out <DATA_DIR>/leakage_report.json`,仅当 6 项都在上限内时退出码为 0。L1、L2 只用模板,协议撰写时已可计算;L3–L5 中涉及 TEST 的部分在 `test_qa.jsonl` 生成之后才运行;L6 的 TEST 部分在 `general_test.jsonl` 生成之后才运行(时机与口径见上表 L6 一行与第 8 节第 8 步)。L3–L6 任一项的 TEST 部分超限,按第 11 节 ST10 处理。第 2.2 节的锚文本规则使 L3a、L3b 在生成时就成立,检查仍然执行。
+ 
+ ## 4. Arms(6 个)
+ 
+@@ -201,7 +207,7 @@ CB(f) = 1[ s_ST(f, a_f) > max_{c ≠ a_f} s_ST(f, c) ]
+ Acc_CB(arm) = (1/120) · Σ_{f ∈ learned} CB(f)
+ ```
+ 
+-**Free-generation exact match(次指标)**:对 `chat(q) + "The answer is"`(与 `s_QA` 的上下文相同)做贪心解码:`do_sample=False`,每步取概率最大的 token;这一设置写死,覆盖固定 revision 的 `generation_config.json` 中的采样默认值(`do_sample` true、`temperature` 0.6、`top_k` 20、`top_p` 0.95)。最多 16 个新 token,生成出 `<|im_end|>`(id 151645)或 `<|endoftext|>`(id 151643)即停。新 token 解码成文本时跳过特殊 token(`skip_special_tokens=True`;这两个停止 token 都是特殊 token,不进入输出)。归一化:取第一行,去首尾空白(输出开头的空格在这一步去掉),去开头的 “the ”(不分大小写),去结尾的 `. , ; : ! ?`,casefold。`EM(f, q) = 1[norm(output) == norm(a_f)]`;聚合方式同上。
++**Free-generation exact match(次指标)**:对 `chat(q) + "The answer is"`(与 `s_QA` 的上下文相同)做贪心解码:`do_sample=False`,每步取概率最大的 token;这一设置写死,覆盖固定 revision 的 `generation_config.json` 中的采样默认值(`do_sample` true、`temperature` 0.6、`top_k` 20、`top_p` 0.95)。最多 16 个新 token,生成出 `<|im_end|>`(id 151645)或 `<|endoftext|>`(id 151643)即停。新 token 解码成文本时跳过特殊 token(`skip_special_tokens=True`;这两个停止 token 都是特殊 token,不进入输出)。归一化之前,先删除输出中的 `<think>…</think>` 片段:从 `<think>` 到其后第一个 `</think>`(两者都含),每处都删;这两个标记(id 151667、151668)不是特殊 token,`skip_special_tokens=True` 不会去掉它们。归一化:取第一行,去首尾空白(输出开头的空格在这一步去掉),去开头的 “the ”(不分大小写),去结尾的 `. , ; : ! ?`,casefold。`EM(f, q) = 1[norm(output) == norm(a_f)]`;聚合方式同上。
+ 
+ **全对率(次指标,只报告)**:`AllCorrect(f) = Π_{q} correct(f, q)`。
+ 
+@@ -211,7 +217,7 @@ NLL_arm(w) = −(1/(n_w − 1)) · Σ_{t=2..n_w} log p_θ(x_t | x_<t)
+ dNLL(arm) = mean_{domain} mean_{w ∈ domain} [ NLL_arm(w) − NLL_N(w) ]         主
+ PPL_degradation%(arm) = 100 · (exp(dNLL(arm)) − 1)                           展示
+ ```
+-窗口前面不加任何特殊 token(不前置 `<|endoftext|>`);x_1 没有条件,不计分,t 从 2 起;n_w 为窗口的 token 数。
++窗口前面不加任何特殊 token(不前置 `<|endoftext|>`);x_1 没有条件,不计分,t 从 2 起;n_w 为窗口实际送入模型的 id 序列长度:送入模型的是第 2.7 节用本协议分词器切分后截断得到的原始 id(最多 256 个),不解码再编码。
+ 
+ **Unread controls**(问的是真实答案;不使用 NONE 选项)
+ ```
+@@ -515,7 +521,7 @@ E1-PILOT 只有一个训练阶段:Retention 记为 NOT_TESTED,不进任何门槛
+ 5. L、A 的搜索 → 选定。
+ 6. F、L、A 的另外两个种子;S、Y 各三个种子。
+ 7. 按下表判定 Gate 0。
+-8. Gate 0 通过后:提交冻结记录(选定配置、数据哈希、checkpoint 哈希)→ 生成 `test_qa.jsonl` 与 `general_test.jsonl` → 对 TEST 运行 L3–L5 → L6 的 TEST 部分(锚文本对 `general_test.jsonl`):在 PROTOCOL_FROZEN 之后、TEST 评测之前,由 data-auditor 运行一次,只输出计数 → **TEST 只评一次**。
++8. Gate 0 通过后:提交冻结记录(选定配置、数据哈希、checkpoint 哈希)→ 生成 `test_qa.jsonl` 与 `general_test.jsonl` → 对 TEST 运行 L3–L5 → L6 的 TEST 部分(锚文本对 `general_test.jsonl`):在本步生成 `general_test.jsonl` 之后、TEST 评测之前,由 Executor 与 data-auditor 各自计算一次,只输出计数(口径与上限见第 3 节 L6),两者的结果须一致 → L3–L6 任一项的 TEST 部分超限:停止,不评测 TEST,状态记为 BLOCKED,报告 Owner(ST10) → 全部在上限内时,**TEST 只评一次**。
+ 
+ **算力边界**:第 3–8 步全部在设备全名与首次记录逐字相同的一张 NVIDIA A100 80GB 上执行,累计 GPU wall-clock ≤ 4 小时(第 7 节);任何一步若会使累计时间超过上限,按 ST7 停下,不得静默继续,也不得为节省时间删减本节的任何一步。
+ 
+@@ -523,7 +529,7 @@ E1-PILOT 只有一个训练阶段:Retention 记为 NOT_TESTED,不进任何门槛
+ 
+ | 编号 | 条件 |
+ |---|---|
+-| G0.1 | 泄漏检查 L1–L6 全部在上限内;L6 在 Gate 0 只要求 DEV 部分(锚文本对 `general_dev.jsonl`),TEST 部分按第 8 步运行 |
++| G0.1 | 泄漏检查 L1–L6 全部在上限内;L1–L6 中涉及 TEST 的部分在 Gate 0 不要求,按第 8 步运行 |
+ | G0.2 | 所有用到的损失、分数、NLL 都是有限值 |
+ | G0.3 | N 的下限检查:`Acc(N, DEV-QA, learned)` ∈ [0.15, 0.35],每个 stratum ∈ [0.10, 0.40];`Acc(N, DEV-QA, unread)` ∈ [0.10, 0.40];`Acc_CB(N)` ∈ [0.15, 0.35] |
+ | G0.4 | `Acc_CB(F)` ≥ 0.90,3 个种子都满足 |
+@@ -562,7 +568,7 @@ E1-PILOT 只有一个训练阶段:Retention 记为 NOT_TESTED,不进任何门槛
+ | OPTIMIZATION_OR_CAPACITY_UNRESOLVED | G0.4 满足但 G0.5 或 T1 的正确率不满足 |
+ | CAPACITY_LIMIT | 仅当更强的模型在同一协议下 PASS 之后才可使用;在此之前必须保留 OPTIMIZATION_OR_CAPACITY_UNRESOLVED |
+ | HYPOTHESIS_FAIL | 保留给 E1-V1 的机制比较;E1-PILOT 没有机制假设,不使用 |
+-| BLOCKED | 环境、资源、数据来源或库版本不满足第 0 节,无法按协议执行 |
++| BLOCKED | 环境、资源、数据来源或库版本不满足第 0 节,无法按协议执行;或第 8 步 L3–L6 任一项的 TEST 部分超限(ST10) |
+ | NOT_TESTED | 未运行,或在没有违反任何条件的情况下提前停止 |
+ 
+ 看到结果之后不得修改任何门槛;协议本身有缺陷时,开新版本(PROTOCOL_REVISION_V2)。
+@@ -609,6 +615,7 @@ Compute accounting 的算法:训练 FLOPs ≈ 6 · P · T,前向 FLOPs ≈ 2 ·
+ | ST7 | 累计 GPU wall-clock 超过 4 小时(第 7 节) | 停并报告进度;延长上限、换硬件或降级都需 Owner 决定并记录,不得静默继续 |
+ | ST8 | 环境不满足第 0 节 | BLOCKED |
+ | ST9 | 某次运行开始时读到的设备全名与首次记录不同 | 整批作废:本次 Pilot 的全部结果不得用于任何判断;BLOCKED;在设备全名一致的机器上从第 8 节第 3 步重新开始 |
++| ST10 | 第 8 步 L3–L6 任一项的 TEST 部分超限 | 停止;不评测 TEST;BLOCKED;报告 Owner |
+ 
+ ## 12. Out of Scope
+ 
+@@ -665,5 +672,12 @@ Compute accounting 的算法:训练 FLOPs ≈ 6 · P · T,前向 FLOPs ≈ 2 ·
+ | v1-r6 | 2026-11-21 14:41:02 | `481a6f0f` | 第 3 节(新增一条);第 7 节“选择只用 DEV” | 新增定义:“读取 TEST 数据”= 解码 test 行的内容,或用其内容做任何计算;解析 `split` 字段、计数、对整个文件求哈希不算。第 7 节“TEST 在最终冻结前不可读取、不可生成”后加“(“读取”的定义见第 3 节)” | Review Gate 第 5 轮裁决(待决第 3 项;Round 5 code-reviewer MAJOR 2):Round 5 的 L6 检查对 `eval_sets.jsonl` 的 test 行做了 JSON 解析与计数,原文没有定义这是否算“读取 TEST 数据” |
+ | v1-r6 | 2026-11-21 14:41:02 | `481a6f0f` | 第 2.7 节;`DATA_MANIFEST.json: general_text.source_file_sha256`、`general_text.decode_tokenizer_json_sha256` | 第 2.7 节注明 `eval_sets.jsonl` 与 parcae `tokenizer.json` 的 sha256(缩写,全值在 manifest);manifest 新增这两个 sha256 | Review Gate 第 5 轮裁决(待决第 9 项 `l6_check.py` 末点):原文与 manifest 只锁定了 parcae 分词器的 revision,没有锁定这两个文件的内容;Round 5 以 Stage 1 `data_lock.json` 为基准核对 |
+ | v1-r6 | 2026-11-21 14:41:02 | `481a6f0f` | 第 0 节“通用文本与锚文本输入”;第 14 节 v1-r4 第 2 行 | 两个单元格中 `<\|endoftext\|>` 的两条竖线原文没有转义,改为用反斜杠转义;渲染出的文字不变 | Review Gate 第 5 轮裁决(待决第 10 项):未转义的竖线在 GitHub Markdown 表格里会切开单元格 |
++| v1-r7 | 2026-11-22 03:25:59 | `7fea9181` | 第 2.7 节 | 原文“锚文本与通用文本不得共享任何 13-gram。”改为“锚文本与通用文本不得共享任何词 13-gram(定义与上限见第 3 节 L6)。” | Review Gate 第 6 轮裁决,第 7 轮指令第 1a 项(`ROUND6_REPORT.md`“待 Review Gate 决定”第 1 项;R6 code-reviewer MAJOR,`reviews/599230f9…/code-reviewer.md` 第 17 行):第 3 节 L6 按 v1-r6 只限词 13-gram,Qwen token 13-gram 只报告,第 2.7 节的“任何 13-gram”与之说法不一 |
++| v1-r7 | 2026-11-22 03:25:59 | `7fea9181` | 第 3 节 L6 一行与执行接口;第 8 节第 8 步;`SPLIT_MANIFEST.json: leakage_checks.L6_general_text.test_part`(新增)、`leakage_checks.test_split` | L6 一行新增 TEST 部分的时机、计数与运行者:“时机为第 8 步生成 `general_test.jsonl` 之后、TEST 评测之前;计数为跨全部文档的共享词 13-gram 种类数(……),上限 0;由 Executor 与 data-auditor 各自计算,结果须一致”。第 8 步原文“在 PROTOCOL_FROZEN 之后、TEST 评测之前,由 data-auditor 运行一次,只输出计数”改为“在本步生成 `general_test.jsonl` 之后、TEST 评测之前,由 Executor 与 data-auditor 各自计算一次,只输出计数(口径与上限见第 3 节 L6),两者的结果须一致”。执行接口原文“L6 的 TEST 部分见第 8 节第 8 步”改为“L6 的 TEST 部分在 `general_test.jsonl` 生成之后才运行(时机与口径见上表 L6 一行与第 8 节第 8 步)” | Review Gate 第 6 轮裁决,第 7 轮指令第 1b 项(待决第 2 项;`reviews/599230f9…/code-reviewer.md` 第 14、15、27 行):原时机“PROTOCOL_FROZEN 之后”比 `general_test.jsonl` 的生成条件宽;“计数”没有定义口径;运行者 data-auditor 按 metrix/CLAUDE.md 第 10 节仍为「待验证」 |
++| v1-r7 | 2026-11-22 03:25:59 | `7fea9181` | 第 8 节第 8 步;第 11 节(新增 ST10);第 9 节 BLOCKED 一行;第 3 节执行接口;`SPLIT_MANIFEST.json: leakage_checks.test_part_over_limit`(新增) | 新增:L3–L6 任一项的 TEST 部分超限时,停止,不评测 TEST,状态记为 BLOCKED,报告 Owner(ST10)。第 8 步原文“→ **TEST 只评一次**”改为“→ L3–L6 任一项的 TEST 部分超限:停止,不评测 TEST,状态记为 BLOCKED,报告 Owner(ST10) → 全部在上限内时,**TEST 只评一次**”;第 9 节 BLOCKED 的适用情形后加“或第 8 步 L3–L6 任一项的 TEST 部分超限(ST10)” | Review Gate 第 6 轮裁决,第 7 轮指令第 1c 项(待决第 2 项第 2 点;`reviews/599230f9…/code-reviewer.md` 第 15 行):原文没有写 TEST 部分超限时的动作,ST1 只管第 2 步 |
++| v1-r7 | 2026-11-22 03:25:59 | `7fea9181` | 第 8 节 G0.1;`SPLIT_MANIFEST.json: leakage_checks.test_split` | 原文“泄漏检查 L1–L6 全部在上限内;L6 在 Gate 0 只要求 DEV 部分(锚文本对 `general_dev.jsonl`),TEST 部分按第 8 步运行”改为“泄漏检查 L1–L6 全部在上限内;L1–L6 中涉及 TEST 的部分在 Gate 0 不要求,按第 8 步运行” | Review Gate 第 6 轮裁决,第 7 轮指令第 1d 项(待决第 3 项;`reviews/599230f9…/code-reviewer.md` 第 16 行):原文只给 L6 开了例外,L3–L5 的 TEST 部分也要等第 8 步生成 `test_qa.jsonl` 才能运行 |
++| v1-r7 | 2026-11-22 03:25:59 | `7fea9181` | 第 5 节 general damage;第 2.7 节锚文本;第 2.2 节锚文本规则;`DATA_MANIFEST.json: general_text.window_rule`、`anchor_text.document_rule`(新增) | n_w 原文“窗口的 token 数”改为“窗口实际送入模型的 id 序列长度:送入模型的是第 2.7 节用本协议分词器切分后截断得到的原始 id(最多 256 个),不解码再编码”。锚文本原文“各截到 128 token”改为“每篇最多 128 token(取前 128 个),不足则取全长”;第 2.2 节“512 篇、各截到 128 token 后解码的文本”改为“512 篇、每篇最多 128 token、解码后的文本” | Review Gate 第 6 轮裁决,第 7 轮指令第 1e 项(待决第 4、5 项;`reviews/599230f9…/code-reviewer.md` 第 18、19 行):n_w 与 v1-r6 改过的 n_x 口径不一;第 340 篇锚文档全文只有 123 个 token,“截到 128”与实际不符。数值不变 |
++| v1-r7 | 2026-11-22 03:25:59 | `7fea9181` | 第 5 节 EM;`DATA_MANIFEST.json: model.input_convention.em_generation` | 新增“归一化之前,先删除输出中的 `<think>…</think>` 片段:从 `<think>` 到其后第一个 `</think>`(两者都含),每处都删;这两个标记(id 151667、151668)不是特殊 token,`skip_special_tokens=True` 不会去掉它们” | Review Gate 第 6 轮裁决,第 7 轮指令第 1f 项(待决第 11 项第 1 点;第 5 轮待决 7 第 1 点):两个标记不是特殊 token(`reports/round7/t1f_think_tokens.txt`),原文的 `skip_special_tokens=True` 去不掉;它们出现在输出第一行时,归一化后的输出不可能等于答案 |
++| v1-r7 | 2026-11-22 03:25:59 | `7fea9181` | 第 2.5 节(新增“调用方式(细节 5)”“`candidates.json`”两条与复现哈希);第 2.6 节(新增“调用方式(细节 4)”与复现哈希);`DATA_MANIFEST.json: s_permutation`(字符串改为对象,原文保留为 `rule`);`SPLIT_MANIFEST.json: candidates.call_order`、`file`、`reference_implementation`、`candidate_mapping_sha256_note`(新增),`candidate_mapping_sha256`(null 改为全值) | 写死两处随机流的调用顺序与文件记录格式:S 每个 cell 一个生成器,每次从 `list(range(15))` 开始调用一次 `shuffle`,有不动点用同一生成器重抽;候选每条 fact 一个生成器,依次 `sample(池, 3)`、`shuffle([a_f] + d)`,池按 fact 生成顺序。`DATA_SEED` 下 `train_S.jsonl` 规范化 SHA-256 `686fdd2f…`,`candidates.json` `e5d15c99…`(全值见正文与 manifest) | Review Gate 第 6 轮裁决,第 7 轮指令第 1g 项(待决第 11 项第 2 点;第 4 轮待决 8):原文只写了 purpose,没有写调用方式,只凭协议不能逐字节复现这两个文件。两次独立运行逐字节一致(`reports/round7/t1g_gen_s_cands.txt`) |
+ 
+ 注:根目录 `CLAUDE.md`(宪章)第 6 节标题中的日期 “2026-11-13” 是 JST(日本标准时间,UTC+9)。该节由提交 `8ce8c896` 加入,提交时间 2026-11-12 15:25:19 UTC,即 2026-11-13 00:25:19 JST。本表的时间都是 UTC。
+diff --git a/metrix/e1-pilot/SPLIT_MANIFEST.json b/metrix/e1-pilot/SPLIT_MANIFEST.json
+index 7ae7a3a..ec9717c 100644
+--- a/metrix/e1-pilot/SPLIT_MANIFEST.json
++++ b/metrix/e1-pilot/SPLIT_MANIFEST.json
+@@ -320,7 +320,11 @@
+     "shared_by": "all templates, splits and arms of the fact",
+     "duplicates": "forbidden",
+     "exposure_matching": "every candidate of a learned fact occurs exactly once in the training corpus of F, L, A, S and Y; every candidate of an unread fact occurs zero times",
+-    "candidate_mapping_sha256": null
++    "call_order": "one generator r = rng_rule(CANDIDATE_SEED, 'cand:<fact_id>') per fact; pool = the answers of the other facts with the same relation, stratum and exposure, in the fact order of name_generation (14 for learned, 4 for unread); d = r.sample(pool, 3); c = [answer] + d; r.shuffle(c); c is the order of the 4 candidates",
++    "file": "candidates.json: one JSON object, key fact_id, value the list of the 4 candidates in that order; 160 keys",
++    "reference_implementation": "metrix/e1-pilot/reports/round7/gen_s_cands.py (Python 3.13.18 random.Random)",
++    "candidate_mapping_sha256": "e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705",
++    "candidate_mapping_sha256_note": "canonical sha256 of candidates.json built from the 160 facts of DATA_SEED (fixed round 7, protocol 2.5 detail 5)"
+   },
+   "leakage_checks": {
+     "L1_template_hash": {
+@@ -361,11 +365,19 @@
+     "L6_general_text": {
+       "rule": "word 13-grams shared between anchor_text and general_dev / general_test; word = an element of Python str.split() (split on whitespace, case-sensitive)",
+       "limit": 0,
+-      "report_only": "13-grams of protocol-tokenizer (Qwen) token ids: reported, no limit"
++      "report_only": "13-grams of protocol-tokenizer (Qwen) token ids: reported, no limit",
++      "test_part": {
++        "pair": "anchor_text vs general_test.jsonl",
++        "when": "in step 8 of protocol section 8, after general_test.jsonl is generated and before the TEST evaluation",
++        "count": "number of distinct shared word 13-grams across all documents: 13-grams are taken within each anchor document and within each window; the set of word 13-grams of the 512 anchor documents is intersected with the set of word 13-grams of all general_test.jsonl windows, and the size of the intersection is counted",
++        "limit": 0,
++        "computed_by": "the Executor and the data-auditor, each separately; the two results must be identical"
++      }
+     },
+     "command": "python -m metrix.e1_pilot.check_leakage --data <DATA_DIR> --split-manifest metrix/e1-pilot/SPLIT_MANIFEST.json --out <DATA_DIR>/leakage_report.json",
+     "exit_code": "0 only if every check is within its limit",
+-    "test_split": "L1 and L2 use templates only; L3a, L3b, L4, L5 run on TEST questions only after test_qa.jsonl is generated; the TEST part of L6 (anchor_text vs general_test) is run once by the data-auditor after PROTOCOL_FROZEN and before the TEST evaluation, and outputs counts only; at Gate 0, G0.1 requires the DEV part of L6 only (protocol section 8)",
++    "test_split": "L1 and L2 use templates only; L3a, L3b, L4, L5 run on TEST questions only after test_qa.jsonl is generated; the TEST part of L6 (anchor_text vs general_test) runs after general_test.jsonl is generated in step 8 and before the TEST evaluation, computed separately by the Executor and the data-auditor with identical results, and outputs counts only (L6_general_text.test_part); at Gate 0, G0.1 does not require the parts of L1-L6 that involve TEST, they run in step 8 (protocol section 8)",
++    "test_part_over_limit": "if the TEST part of any of L3-L6 exceeds its limit: stop, do not evaluate TEST, status BLOCKED, report to the Owner (protocol section 11, ST10)",
+     "generation_rule": "names occurring in anchor_text are rejected when they are generated (DATA_MANIFEST.json: name_generation.anchor_rule), so L3a and L3b hold by construction; the checks still run"
+   },
+   "hashing": {
+diff --git a/metrix/e1-pilot/reports/DEFERRED_MINORS.md b/metrix/e1-pilot/reports/DEFERRED_MINORS.md
+index 4b9c0fb..0ebe3c5 100644
+--- a/metrix/e1-pilot/reports/DEFERRED_MINORS.md
++++ b/metrix/e1-pilot/reports/DEFERRED_MINORS.md
+@@ -5,6 +5,7 @@
+ - 来源记法:`R5-CR:20` = `reviews/2724144b…/code-reviewer.md` 第 20 行;`R5-RC:27` = `reviews/2724144b…/code-reviewer_report-commit.md` 第 27 行;`R6-CR` = 本轮 `reviews/599230f9…/code-reviewer.md`;`R6-DA` = 同目录 `data-auditor.md`;`R6b-CR` = `reviews/2620f306…/code-reviewer.md`;`R4 待决 N` = `ROUND4_REPORT.md`“待 Review Gate 决定”第 N 项;`R5 待决 N` 同理。
+ - “不修的理由”一栏说明它为什么不影响数据、指标、门槛或可复现性。凡是影响这四者、但要改协议才能修的,不在本表,列在本文件末节,交 Review Gate。
+ - 状态写明“已解决”的条目也列在后面,便于核对没有遗漏。
++- 第 7 轮(`tasks/ROUND7_TASKS.md`)按指令第 3 项把第 6 轮待决第 6、14 项登记入 1.7 节;第 7 轮审查新提出的 MAJOR / MINOR 按指令第 4 项登记入 1.8 节,不修。第 3 节中已由第 7 轮协议修改(1f、1g)处理的两项移到第 2 节。
+ 
+ ## 1. 登记不修
+ 
+@@ -77,7 +78,21 @@
+ | H4 | `round6/guard_ab.sh:14`;`guard_fail.sh:11、49` | `on_exit` 里的 `rc` 不是局部变量,与 `guard_fail.sh` 第 49 行同名;两个脚本的 `on_exit` 与结尾 4 行逐字重复 | R6b-CR MINOR 3 | 只在退出时覆盖,无害 |
+ | H5 | `round6/guard_ab.sh` | “identical”不检查脚本是否真的运行过:PY 指向忽略参数、输出相同的程序(如 `/bin/true`),或 OLD 与 NEW 是同一目录时,也会得 8/8、`RESULT: PASS` | 第 2 轮 data-auditor 观察 (a)(`reviews/2620f306…/data-auditor.md`) | 原有代码;本轮记录的运行中每个 case 都有非空输出、退出码 0,证据不受影响 |
+ 
+-## 2. 已在第 5、6 轮解决(核对用)
++### 1.7 第 6 轮待决第 6、14 项(第 7 轮指令第 3 项:登记入本文件)
++
++**注:正式流程代码统一要求不通过时打印 RESULT 并以非 0 退出。**(第 7 轮指令第 3 项原文。本节各条都是协议撰写阶段的检查脚本与对照脚本,登记,不修。)
++
++`R6-CR:n` = `reviews/599230f9…/code-reviewer.md` 第 n 行;`R6-DA:n` = 同目录 `data-auditor.md` 第 n 行;`R6b-CR` = `reviews/2620f306…/code-reviewer.md`。
++
++| # | 位置 | 问题 | 来源 | 处理 |
++|---|---|---|---|---|
++| G1 | `reports/round1/template_overlap.py`、`reports/round2/y_ratio.py` | 检查不通过(L1/L2 FAIL、Y/F 比 OUTSIDE)时仍以 0 退出,也不打印 RESULT 行;只有异常时打印 `RESULT: FAIL` | 第 6 轮待决第 6 项第 1 点;R6-CR:20;R6-DA:198 | 登记,不修 |
++| G2 | `reports/round2/anchor_check.py`、`reports/round5/blind_handback_check.py`、`reports/round5/records_check.py`、`reports/round5/recover_blind.py` | 检查不通过时以 1 退出,但没有 RESULT 行(同 D2) | 第 6 轮待决第 6 项第 1 点;R6-DA:197 | 登记,不修 |
++| G3 | 第 6 轮排除在“检查脚本”之外的 7 个脚本,其中 `reports/round4/anchor_short_docs.py`、`reports/round5/em_special_tokens.py` 的输出是协议第 14 节 v1-r5 引用的证据 | 是否也算检查脚本;它们出异常时以 1 退出、打印 traceback,但没有 `RESULT: FAIL` | 第 6 轮待决第 6 项第 2 点;R6-CR:21;R6-DA:201 | 登记,不修 |
++| G4 | data-auditor 已入库的旧脚本(第 6 轮 `audit/stdout/599230f9…/06–09` 用到的,以及 `audit/r5_sources.py`) | 是否在第 6 轮第 2 项“所有检查脚本遇异常须打印 RESULT: FAIL”的范围内;`r5_sources.py` 用 `except Exception` 吞掉异常后以 0 退出(同 A4、A6) | 第 6 轮待决第 6 项第 3 点;R6-DA:214;R5-RC:27 (3) | 登记,不修(Executor 不改 auditor 的文件) |
++| G5 | `reports/round6/guard_ab.sh`、`reports/round6/guard_fail.sh` | 头注释说“出错由 EXIT trap 打印 RESULT: FAIL”,但没有 `set -e`;只用于展示的命令出错时判定不受影响,可能仍输出 `RESULT: PASS`(同 H1) | 第 6 轮待决第 14 项;R6b-CR MAJOR 1 | 登记,不修 |
++
++## 2. 已在第 5–7 轮解决(核对用)
+ 
+ | 原条目 | 来源 | 处理 |
+ |---|---|---|
+@@ -97,11 +112,11 @@
+ | `guard_ab.sh`、`guard_fail.sh` 按判定设置退出码,却没有异常保护与 RESULT 行(data-auditor BLOCK) | R6-DA E3 | 修复提交 `2620f306`(复核结果见 `ROUND6_REPORT.md` 任务 5) |
+ | `t2_harness_fail.txt` 中两次不经管道的运行,完整输出只在 scratchpad | R6b-CR MAJOR 2 | 报告提交中原样入库:`round6/t2_harness_fail_ab_missing_old.out.txt`、`t2_harness_fail_missing_py.out.txt`(sha256 与 scratchpad 中的文件相同,`round6/t2_harness_fail_outputs.txt`) |
+ | `t1_protocol_checks.txt` 是在 `599230f9` 填入第 14 节之前运行的 | R6-CR:31 | 报告提交中对 `599230f9` 的已提交内容重跑:`round6/t1_protocol_checks_599230f9.txt` |
++| `<think>`(151667)与 `</think>`(151668)不是特殊 token,`skip_special_tokens=True` 去不掉,协议没有写 | R5-CR:32 前半;R5 待决 7 第 1 点;R6 待决 11 第 1 点 | 第 7 轮第 1f 项:EM 归一化之前先删除 `<think>…</think>` 片段(协议第 5 节,第 14 节 v1-r7) |
++| 第 2.6 节 S 的置换与第 2.5 节的候选抽取没有写死调用方式,只凭协议文字不能逐字节复现 `train_S.jsonl` 与 `candidates.json` | R4 待决 8;R5 待决 8;R6 待决 11 第 2 点 | 第 7 轮第 1g 项:写死调用方式与记录格式,两次独立生成逐字节一致,规范化 SHA-256 写入协议与 manifest(`reports/round7/t1g_gen_s_cands.txt`) |
+ 
+ ## 3. 不按 MINOR 登记、交 Review Gate 的开放项
+ 
+-下面几项原来有的标为 MINOR,但会影响指标或可复现性,修它们要改协议或改 auditor 的文件,Executor 不能自行处理。详见 `ROUND6_REPORT.md`“待 Review Gate 决定”。
++下面几项原来有的标为 MINOR,但会影响指标或可复现性,修它们要改协议或改 auditor 的文件,Executor 不能自行处理。
+ 
+-- `<think>`(151667)与 `</think>`(151668)不是特殊 token,`skip_special_tokens=True` 去不掉,协议没有写(R5-CR:32 前半;R5 待决 7 第 1 点)。影响 EM。
+-- 第 2.6 节 S 的置换与第 2.5 节的候选抽取没有写死调用方式,只凭协议文字不能逐字节复现 `train_S.jsonl` 与 `candidates.json` 的哈希(R4 待决 8;R5 待决 8)。影响可复现性。
+-- 第 6 轮第 2 项“所有检查脚本”是否包括 auditor 已入库的旧脚本(A4、A6)。
++- 第 6 轮第 2 项“所有检查脚本”是否包括 auditor 已入库的旧脚本(A4、A6):第 7 轮指令第 3 项将其登记入 1.7 节 G4。本节目前没有其它开放项;第 7 轮审查新提出的项见 1.8 节。
+diff --git a/metrix/e1-pilot/reports/round7/gen_s_cands.py b/metrix/e1-pilot/reports/round7/gen_s_cands.py
+new file mode 100644
+index 0000000..bcc895d
+--- /dev/null
++++ b/metrix/e1-pilot/reports/round7/gen_s_cands.py
+@@ -0,0 +1,186 @@
++#!/usr/bin/env python3
++"""Round 7, item 1g: build train_S.jsonl (protocol 2.6) and candidates.json (protocol 2.5) with the call order
++fixed in round 7, write them in canonical form and print their SHA-256.
++
++Inputs: the 160 facts (canonical JSON list from round2/gen_facts.py, canonical sha256 406c8801...) and the
++TRAIN templates of SPLIT_MANIFEST.json. No tokenizer, no model, no TEST data (only the four TRAIN templates
++are used). Run it twice in separate processes and compare the files byte by byte.
++
++  python gen_s_cands.py --facts FACTS.json --data-manifest DATA_MANIFEST.json \
++      --split-manifest SPLIT_MANIFEST.json --out-dir DIR
++
++Fixed call order (protocol 2.5 and 2.6, round 7):
++  S, per cell (cells in the order relation x stratum of 2.2): one generator
++     r = rng_rule(DATA_SEED, "s-permutation:<relation>:<stratum>"), created once per cell; each attempt starts
++     from p = list(range(15)) and calls r.shuffle(p) once; an attempt with a fixed point (p[i] == i) is
++     redrawn with the same r. Statement i = TRAIN template with {E} = entity of learned fact i and
++     {A} = answer of learned fact p[i] (facts 01..15 of the cell, i = 0..14).
++     Record {"fact_id": fact i, "answer_fact_id": fact p[i], "text": statement}; lines in cell order, then i.
++  candidates, per fact: pool = answers of the other facts with the same relation, stratum and exposure, in
++     fact order; r = rng_rule(CANDIDATE_SEED, "cand:<fact_id>"); d = r.sample(pool, 3); c = [answer] + d;
++     r.shuffle(c). candidates.json = {fact_id: c} for all 160 facts.
++Files are written in the canonical serialization of protocol section 0 (JSONL: one canonical object per line,
++joined by '\\n', one final '\\n'; JSON: the canonical bytes, no final newline), so byte_sha256 equals
++canonical_sha256.
++"""
++import argparse
++import hashlib
++import json
++import os
++import random
++import sys
++
++
++def rng_rule(seed, purpose):
++    return random.Random(int.from_bytes(hashlib.sha256(("%s:%s" % (seed, purpose)).encode("utf-8")).digest()[:8], "big"))
++
++
++def canonical(obj):
++    return json.dumps(obj, sort_keys=True, ensure_ascii=False, separators=(",", ":"), allow_nan=False).encode("utf-8")
++
++
++def sha256(b):
++    return hashlib.sha256(b).hexdigest()
++
++
++def build_s(facts, train_tpl, seed):
++    cells, out, attempts = {}, [], {}
++    for f in facts:
++        if f["exposure"] == "learned":
++            cells.setdefault((f["relation"], f["stratum"]), []).append(f)
++    for (rel, st), group in cells.items():          # insertion order = fact order = cell order of 2.2
++        r = rng_rule(seed, "s-permutation:%s:%s" % (rel, st))
++        n = 0
++        while True:
++            p = list(range(len(group)))
++            r.shuffle(p)
++            n += 1
++            if all(p[i] != i for i in range(len(p))):
++                break
++        attempts["%s/%s" % (rel, st)] = n
++        for i, f in enumerate(group):
++            g = group[p[i]]
++            text = train_tpl[rel].replace("{E}", f["entity"]).replace("{A}", g["answer"])
++            out.append({"fact_id": f["fact_id"], "answer_fact_id": g["fact_id"], "text": text})
++    return out, attempts
++
++
++def build_candidates(facts, seed):
++    out = {}
++    for f in facts:
++        pool = [g["answer"] for g in facts
++                if g is not f and (g["relation"], g["stratum"], g["exposure"]) == (f["relation"], f["stratum"], f["exposure"])]
++        r = rng_rule(seed, "cand:%s" % f["fact_id"])
++        c = [f["answer"]] + r.sample(pool, 3)
++        r.shuffle(c)
++        out[f["fact_id"]] = c
++    return out
++
++
++def checks(facts, s_rows, cands):
++    """Self-checks of the generated content; returns a list of problems (empty = all good)."""
++    bad = []
++    by_id = {f["fact_id"]: f for f in facts}
++    learned = [f for f in facts if f["exposure"] == "learned"]
++    unread = [f for f in facts if f["exposure"] == "unread"]
++    if len(s_rows) != len(learned):
++        bad.append("train_S rows %d != learned facts %d" % (len(s_rows), len(learned)))
++    if [r["fact_id"] for r in s_rows] != [f["fact_id"] for f in learned]:
++        bad.append("train_S row order differs from the learned fact order")
++    if sorted(r["answer_fact_id"] for r in s_rows) != sorted(f["fact_id"] for f in learned):
++        bad.append("train_S answers are not a permutation of the learned answers")
++    for r in s_rows:
++        e, a = by_id[r["fact_id"]], by_id[r["answer_fact_id"]]
++        if r["fact_id"] == r["answer_fact_id"]:
++            bad.append("fixed point %s" % r["fact_id"])
++        if (e["relation"], e["stratum"]) != (a["relation"], a["stratum"]):
++            bad.append("answer from another cell in %s" % r["fact_id"])
++    low = "\n".join(r["text"] for r in s_rows).lower()
++    once = [s for f in learned for s in (f["entity"], f["answer"]) if low.count(s.lower()) != 1]
++    zero = [s for f in unread for s in (f["entity"], f["answer"]) if low.count(s.lower()) != 0]
++    if once:
++        bad.append("learned strings not exactly once in train_S: %s" % once)
++    if zero:
++        bad.append("unread strings in train_S (L3a): %s" % zero)
++    if sorted(cands) != sorted(by_id):
++        bad.append("candidates keys differ from the 160 fact_ids")
++    for fid, c in cands.items():
++        f = by_id[fid]
++        pool = {g["answer"] for g in facts
++                if g is not f and (g["relation"], g["stratum"], g["exposure"]) == (f["relation"], f["stratum"], f["exposure"])}
++        if len(c) != 4 or len(set(c)) != 4 or c.count(f["answer"]) != 1 or not set(c) - {f["answer"]} <= pool:
++            bad.append("candidate list of %s violates 2.5: %s" % (fid, c))
++    return bad
++
++
++def main():
++    p = argparse.ArgumentParser()
++    p.add_argument("--facts", required=True)
++    p.add_argument("--data-manifest", required=True)
++    p.add_argument("--split-manifest", required=True)
++    p.add_argument("--out-dir", required=True)
++    a = p.parse_args()
++    facts_blob = open(a.facts, "rb").read()
++    facts = json.loads(facts_blob)
++    dm = json.load(open(a.data_manifest, encoding="utf-8"))
++    sm = json.load(open(a.split_manifest, encoding="utf-8"))
++    want_facts = dm["name_generation"]["expected_facts_canonical_sha256"]
++    got_facts = sha256(canonical(facts))
++    print("pid %d, PYTHONHASHSEED=%s, python %s" % (os.getpid(), os.environ.get("PYTHONHASHSEED"), sys.version.split()[0]))
++    print("facts canonical sha256 %s, expected %s, match %s" % (got_facts, want_facts, got_facts == want_facts))
++    if got_facts != want_facts:
++        sys.exit("facts do not match the protocol hash")
++    train_tpl = {t["relation"]: t["text"] for t in sm["templates"] if t["set"] == "TRAIN"}
++    if sorted(train_tpl) != sorted(dm["facts"]["relations"]):
++        sys.exit("TRAIN templates do not cover the four relations")
++    s_rows, attempts = build_s(facts, train_tpl, dm["seeds"]["DATA_SEED"])
++    cands = build_candidates(facts, dm["seeds"]["CANDIDATE_SEED"])
++    s_blob = b"".join(canonical(r) + b"\n" for r in s_rows)
++    c_blob = canonical(cands)
++    os.makedirs(a.out_dir, exist_ok=True)
++    for name, blob in (("train_S.jsonl", s_blob), ("candidates.json", c_blob)):
++        with open(os.path.join(a.out_dir, name), "wb") as fh:
++            fh.write(blob)
++    # canonical sha256 recomputed from the parsed files (protocol section 0), independently of the write path
++    s_parsed = [json.loads(line) for line in open(os.path.join(a.out_dir, "train_S.jsonl"), encoding="utf-8")]
++    c_parsed = json.load(open(os.path.join(a.out_dir, "candidates.json"), encoding="utf-8"))
++    s_canon = sha256(b"".join(canonical(r) + b"\n" for r in s_parsed))
++    c_canon = sha256(canonical(c_parsed))
++    print("S derangement attempts per cell:", json.dumps(attempts))
++    print("train_S.jsonl   rows %d, byte_sha256 %s, canonical_sha256 %s" % (len(s_rows), sha256(s_blob), s_canon))
++    print("candidates.json facts %d, byte_sha256 %s, canonical_sha256 %s" % (len(cands), sha256(c_blob), c_canon))
++    print("first S row:", s_rows[0]["text"], "| first candidates:", json.dumps(cands[facts[0]["fact_id"]], ensure_ascii=False))
++    bad = checks(facts, s_rows, cands)
++    for b in bad:
++        print("PROBLEM:", b)
++    print("self-checks: train_S derangement within cell, learned strings exactly once, unread strings 0;"
++          " candidates 4 distinct, true answer once, distractors from the 2.5 pool")
++    print("RESULT: %s" % ("FAIL" if bad else "PASS"))
++    sys.exit(1 if bad else 0)
++
++
++def run_guarded(main):
++    """Same guard as the round 6 check scripts: on an exception, or on an exit before the RESULT line
++    (sys.exit("message"), an argparse error), print RESULT: FAIL and exit non-zero."""
++    import traceback
++    try:
++        main()
++    except SystemExit as e:
++        if e.code is None or (type(e.code) is int and e.code in (0, 1)):
++            raise
++        sys.stdout.flush()
++        if type(e.code) is not int:
++            print(e.code, file=sys.stderr)
++            sys.stderr.flush()
++        print("RESULT: FAIL")
++        sys.exit(e.code if type(e.code) is int else 1)
++    except BaseException:
++        sys.stdout.flush()
++        traceback.print_exc()
++        sys.stderr.flush()
++        print("RESULT: FAIL")
++        sys.exit(1)
++
++
++if __name__ == "__main__":
++    run_guarded(main)
+diff --git a/metrix/e1-pilot/reports/round7/t0_env.txt b/metrix/e1-pilot/reports/round7/t0_env.txt
+new file mode 100644
+index 0000000..2d3b162
+--- /dev/null
++++ b/metrix/e1-pilot/reports/round7/t0_env.txt
+@@ -0,0 +1,47 @@
++# Round 7 raw output: execution environment and downloaded files. Written by the Executor (session_01J5mxaTx8SWDUGRUNbxcnqu). Sun Nov 22 03:18:50 UTC 2026
++# SP = /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad (session scratchpad); PY = $SP/venv/bin/python. cwd metrix/e1-pilot. Recorded by reports/round5/logrun.sh.
++$ hostname
++vm
++exit=0
++$ nproc
++4
++exit=0
++$ free -g
++               total        used        free      shared  buff/cache   available
++Mem:              15           0          14           0           0          15
++Swap:              0           0           0
++exit=0
++$ bash -c command\ -v\ nvidia-smi
++exit=1
++$ bash -c grep\ PRETTY_NAME\ /etc/os-release
++PRETTY_NAME="Ubuntu 24.04.5 LTS"
++exit=0
++$ /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/venv/bin/python -c import\ sys\,transformers\,tokenizers\,jinja2\,pyarrow\,huggingface_hub\;print\(sys.version.split\(\)\[0\]\,\'transformers\'\,transformers.__version__\,\'tokenizers\'\,tokenizers.__version__\,\'jinja2\'\,jinja2.__version__\,\'pyarrow\'\,pyarrow.__version__\,\'huggingface_hub\'\,huggingface_hub.__version__\)
++[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
++3.13.18 transformers 5.22.2 tokenizers 0.23.3 jinja2 3.1.6 pyarrow 26.0.1 huggingface_hub 2.4.0
++exit=0
++$ /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/venv/bin/python -c import\ torch
++Traceback (most recent call last):
++  File "<string>", line 1, in <module>
++    import torch
++ModuleNotFoundError: No module named 'torch'
++exit=1
++$ bash -c cd\ /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/dl\ \&\&\ find\ .\ -type\ f\ -not\ -path\ \'\*/.cache/\*\'\ \|\ sort\ \|\ xargs\ sha256sum
++e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77  ./parcae_tok/tokenizer.json
++6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22  ./parquet/data/sample-100BT/train/shard_00000.parquet
++1ddb5b89ebc90dcb417a45c213d818577e65976454d29385c8f6140771d95197  ./qwen_tok/config.json
++2325da0f15bb848e018c5ae071b7943332e9f871d6b60e2ed22ca97d4cb993d2  ./qwen_tok/generation_config.json
++8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5  ./qwen_tok/merges.txt
++aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4  ./qwen_tok/tokenizer.json
++d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101  ./qwen_tok/tokenizer_config.json
++ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910  ./qwen_tok/vocab.json
++exit=0
++$ bash -c cd\ /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/dl\ \&\&\ find\ .\ -type\ f\ \\\(\ -name\ \'\*.safetensors\'\ -o\ -name\ \'\*.bin\'\ -o\ -name\ \'\*.pt\'\ -o\ -name\ \'\*.pth\'\ -o\ -name\ \'\*.gguf\'\ \\\)\ \|\ wc\ -l
++0
++exit=0
++$ bash -c diff\ \<\(grep\ -E\ \'\^\[0-9a-f\]\{64\}\ \ \\./\'\ reports/round6/t0_env.txt\)\ \<\(cd\ /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/dl\ \&\&\ find\ .\ -type\ f\ -not\ -path\ \'\*/.cache/\*\'\ \|\ sort\ \|\ xargs\ sha256sum\)\ \&\&\ echo\ \'downloaded\ files\ identical\ \(sha256\ and\ paths\)\ to\ round\ 6\ t0_env.txt\'
++downloaded files identical (sha256 and paths) to round 6 t0_env.txt
++exit=0
++$ sha256sum ../../research/mini_mythos/stage1/results/r1/eval_sets.jsonl
++8816fe5a39d8b89e8c4203bf7d660e798faa471d2b72b5ce43c411cf5925a155  ../../research/mini_mythos/stage1/results/r1/eval_sets.jsonl
++exit=0
+diff --git a/metrix/e1-pilot/reports/round7/t0_facts_regen.txt b/metrix/e1-pilot/reports/round7/t0_facts_regen.txt
+new file mode 100644
+index 0000000..f499cff
+--- /dev/null
++++ b/metrix/e1-pilot/reports/round7/t0_facts_regen.txt
+@@ -0,0 +1,32 @@
++# Round 7 raw output: anchor text and facts regenerated with the round-2 reference scripts (inputs for item 1g). Host vm, CPU only, tokenizer files only. Sun Nov 22 03:18:57 UTC 2026
++$ /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/venv/bin/python reports/round2/anchor_check.py --manifest DATA_MANIFEST.json --tokenizer-dir /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/dl/qwen_tok --cache-dir /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/dl/parquet --anchor-out /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/anchor.json
++anchor source: SandyResearch/fineweb-edu-shuffled@4d1138c0e4d51d98813997ce3560e05a32bf91de data/sample-100BT/train/shard_00000.parquet
++file sha256 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22, pinned 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22, match True
++[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
++documents read 527, kept 512, anchor texts canonical sha256 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408, total chars 309172
++exit=0
++$ /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/venv/bin/python reports/round2/gen_facts.py --manifest DATA_MANIFEST.json --tokenizer-dir /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/dl/qwen_tok --anchor /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/anchor.json --out /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/facts.json
++[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
++pid 870, PYTHONHASHSEED=None, anchor rule on
++facts 160 (learned 120, unread 40), distinct strings 320
++facts canonical sha256: 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97
++cell log canonical sha256: 38f04096f2da2cd0922f4281e616f131cc240088e32ab2834d6009c50fb52bb1
++cell log: [{"cell": "capital/natural", "entity_draws": 28, "target_pair": [3, 3], "answer_draws": 84}, {"cell": "capital/random", "entity_draws": 20, "target_pair": [5, 5], "answer_draws": 52}, {"cell": "currency/natural", "entity_draws": 31, "target_pair": [3, 3], "answer_draws": 82}, {"cell": "currency/random", "entity_draws": 20, "target_pair": [6, 6], "answer_draws": 46}, {"cell": "founder/natural", "entity_draws": 30, "target_pair": [3, 3], "answer_draws": 81}, {"cell": "founder/random", "entity_draws": 21, "target_pair": [5, 5], "answer_draws": 45}, {"cell": "river/natural", "entity_draws": 34, "target_pair": [3, 3], "answer_draws": 89}, {"cell": "river/random", "entity_draws": 20, "target_pair": [6, 6], "answer_draws": 42}]
++exit=0
++$ sha256sum /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/facts.json /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/anchor.json
++406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97  /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/facts.json
++f2ffbab6586a06085683e70d27424c03b3063234d921817d917883080649f800  /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/anchor.json
++exit=0
++$ /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/venv/bin/python reports/round2/anchor_check.py --manifest DATA_MANIFEST.json --tokenizer-dir /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/dl/qwen_tok --facts /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/facts.json --cache-dir /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/dl/parquet --anchor-out /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/anchor2.json
++anchor source: SandyResearch/fineweb-edu-shuffled@4d1138c0e4d51d98813997ce3560e05a32bf91de data/sample-100BT/train/shard_00000.parquet
++file sha256 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22, pinned 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22, match True
++[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
++documents read 527, kept 512, anchor texts canonical sha256 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408, total chars 309172
++L3a unread entities              strings  40, occurrences 0, strings found 0   -> limit 0: PASS
++L3a unread answers               strings  40, occurrences 0, strings found 0   -> limit 0: PASS
++L3b learned answers              strings 120, occurrences 0, strings found 0   -> limit 0: PASS
++report only: learned entities    strings 120, occurrences 0, strings found 0 
++L3 (a + b): PASS
++exit=0
++$ cmp /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/anchor.json /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/anchor2.json
++exit=0
+diff --git a/metrix/e1-pilot/reports/round7/t1_commit_times.txt b/metrix/e1-pilot/reports/round7/t1_commit_times.txt
+new file mode 100644
+index 0000000..485ff38
+--- /dev/null
++++ b/metrix/e1-pilot/reports/round7/t1_commit_times.txt
+@@ -0,0 +1,19 @@
++# Round 7 raw output: commit time used for the placeholders R7_TIME / R7_COMMIT (protocol section 14 v1-r7 rows; metrix/CLAUDE.md sections 5 and 10), and the outside-metrix check on that commit. Host vm. Sun Nov 22 03:26:06 UTC 2026
++$ git log -1 --format=%H\ %aI\ %cI\ %s 7fea9181791b83357c503ea2e6435f0506f35ed4
++7fea9181791b83357c503ea2e6435f0506f35ed4 2026-11-22T03:25:59+00:00 2026-11-22T03:25:59+00:00 metrix: E1-PILOT round 7 tasks 1-3 (protocol items 1a-1g, CLAUDE.md sections 5 and 10, code-reviewer rule, deferred items 6 and 14)
++exit=0
++$ bash -c TZ=UTC\ git\ log\ -1\ --date=format-local:\'%Y-%m-%d\ %H:%M:%S\'\ --format=\'%cd\'\ 7fea9181791b83357c503ea2e6435f0506f35ed4
++2026-11-22 03:25:59
++exit=0
++$ python3 -I metrix/e1-pilot/reports/round3/outside_metrix_check.py --rev 7fea9181791b83357c503ea2e6435f0506f35ed4
++changed outside metrix/ (base 61d3c767 .. 7fea9181791b83357c503ea2e6435f0506f35ed4):
++  A	.claude/agents/code-reviewer.md
++  A	.claude/agents/data-auditor.md
++  M	CLAUDE.md
++charter: base 3065 bytes, new 3586 bytes, base is exact prefix: True
++charter: appended 521 bytes; level-1/2 headings in appended part: ['## 6. Metrix 子项目(2026-11-13 负责人决定)']
++ignore rules below come from the working-tree .gitignore; identical to .gitignore at 7fea9181791b83357c503ea2e6435f0506f35ed4: True
++agent .claude/agents/code-reviewer.md: tracked at 7fea9181791b83357c503ea2e6435f0506f35ed4: True; ignore rule: .gitignore:14:.claude/	.claude/agents/code-reviewer.md
++agent .claude/agents/data-auditor.md: tracked at 7fea9181791b83357c503ea2e6435f0506f35ed4: True; ignore rule: .gitignore:14:.claude/	.claude/agents/data-auditor.md
++RESULT: PASS
++exit=0
+diff --git a/metrix/e1-pilot/reports/round7/t1_protocol_checks.txt b/metrix/e1-pilot/reports/round7/t1_protocol_checks.txt
+new file mode 100644
+index 0000000..5a5e356
+--- /dev/null
++++ b/metrix/e1-pilot/reports/round7/t1_protocol_checks.txt
+@@ -0,0 +1,46 @@
++# Round 7 item 1 raw output: protocol and manifest checks on the working tree after R7_TIME / R7_COMMIT were filled (= the content of the fill commit that follows 7fea9181). Host vm, CPU only. Sun Nov 22 03:26:23 UTC 2026
++$ sha256sum metrix/e1-pilot/METRIX_E1_PROTOCOL.md metrix/e1-pilot/DATA_MANIFEST.json metrix/e1-pilot/SPLIT_MANIFEST.json metrix/e1-pilot/SEARCH_SPACE.json metrix/CLAUDE.md .claude/agents/code-reviewer.md .claude/agents/data-auditor.md
++29fb4c2b7a4c3bee40bd45ac1150ee0c2b381a4bdcd8de78392f90b328911a4c  metrix/e1-pilot/METRIX_E1_PROTOCOL.md
++21fa5076d8f894862a8f060e3852d832e4f5cd29f029d74394c4d81b1cce53c9  metrix/e1-pilot/DATA_MANIFEST.json
++722aa7a6511ac3484c5dcf986d43b5a6ea92f489432c041918eadf023341b306  metrix/e1-pilot/SPLIT_MANIFEST.json
++307dde04b5a9dd56e8ca1232fd3686641a7850c5d0442e90b347237989343a33  metrix/e1-pilot/SEARCH_SPACE.json
++4392329e291a447c6d571c8ec62256bb794445011ea1c39e6982d9931c3697fd  metrix/CLAUDE.md
++e38d091494059227d8d95896aa50858adc32f4750a5512b45bec97dd368932c6  .claude/agents/code-reviewer.md
++4201122829c31512859baa55d755a016073544f5c4a887f59bcfeef0abfdd833  .claude/agents/data-auditor.md
++exit=0
++$ python3 -I metrix/e1-pilot/reports/round6/table_check.py metrix/e1-pilot/METRIX_E1_PROTOCOL.md
++table rows checked: 153; rows whose cell count differs from the header: 0; unescaped special tokens: 0
++RESULT: PASS
++exit=0
++$ python3 -I -c $'\nimport json, sys\nd = sys.argv[1]\n[json.load(open(d + \'/\' + f, encoding=\'utf-8\')) for f in (\'DATA_MANIFEST.json\', \'SPLIT_MANIFEST.json\', \'SEARCH_SPACE.json\')]\nprint(\'json ok\')\nB, E = \'<!-- BEGIN INLINE COPY: SEARCH_SPACE.json -->\', \'<!-- END INLINE COPY: SEARCH_SPACE.json -->\'\ndoc = open(d + \'/METRIX_E1_PROTOCOL.md\', encoding=\'utf-8\').read()\nassert doc.count(B) == 1 and doc.count(E) == 1\ninner = doc[doc.index(B) + len(B):doc.index(E)]\nblock = inner[len(\'\\n```json\\n\'):-len(\'```\\n\')]\nprint(\'inline copy identical (marked block):\', block == open(d + \'/SEARCH_SPACE.json\', encoding=\'utf-8\').read())\ncl = open(sys.argv[2], encoding=\'utf-8\').read()\nprint(\'placeholders R7_TIME / R7_COMMIT left: protocol\', doc.count(\'R7_TIME\') + doc.count(\'R7_COMMIT\'), \'| metrix/CLAUDE.md\', cl.count(\'R7_TIME\') + cl.count(\'R7_COMMIT\'))\n' metrix/e1-pilot metrix/CLAUDE.md
++json ok
++inline copy identical (marked block): True
++placeholders R7_TIME / R7_COMMIT left: protocol 0 | metrix/CLAUDE.md 0
++exit=0
++$ python3 -I -c $'\nimport hashlib, json, re, sys\nsm = json.load(open(sys.argv[1], encoding=\'utf-8\'))\ndef norm(t):\n    t = t.replace(\'{E}\', \'<ENTITY>\').replace(\'{A}\', \'<ANSWER>\').lower()\n    return re.sub(\' +\', \' \', re.sub(r\'[^a-z0-9<> ]\', \' \', t)).strip()\nbad = [t[\'template_id\'] for t in sm[\'templates\'] if norm(t[\'text\']) != t[\'normalized\'] or hashlib.sha256(t[\'normalized\'].encode()).hexdigest() != t[\'normalized_sha256\']]\ns = hashlib.sha256(\'\\n\'.join(sorted(t[\'normalized_sha256\'] for t in sm[\'templates\'])).encode()).hexdigest()\nprint(\'templates\', len(sm[\'templates\']), \'| normalized / normalized_sha256 not reproduced:\', bad)\nprint(\'template_set_sha256 recomputed\', s, \'| manifest\', sm[\'template_freeze\'][\'template_set_sha256\'], \'| equal\', s == sm[\'template_freeze\'][\'template_set_sha256\'])\n' metrix/e1-pilot/SPLIT_MANIFEST.json
++templates 32 | normalized / normalized_sha256 not reproduced: []
++template_set_sha256 recomputed 2b52411326c218e9c51d947b2f4e0d77b0cdd5d6237f9ce25b57a872c48ce28f | manifest 2b52411326c218e9c51d947b2f4e0d77b0cdd5d6237f9ce25b57a872c48ce28f | equal True
++exit=0
++$ env PYTHONHASHSEED=7 /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/venv/bin/python -I metrix/e1-pilot/reports/round7/gen_s_cands.py --facts /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/facts.json --data-manifest metrix/e1-pilot/DATA_MANIFEST.json --split-manifest metrix/e1-pilot/SPLIT_MANIFEST.json --out-dir /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/gen3
++pid 1293, PYTHONHASHSEED=7, python 3.13.18
++facts canonical sha256 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97, expected 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97, match True
++S derangement attempts per cell: {"capital/natural": 3, "capital/random": 5, "currency/natural": 1, "currency/random": 6, "founder/natural": 2, "founder/random": 1, "river/natural": 2, "river/random": 6}
++train_S.jsonl   rows 120, byte_sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e, canonical_sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e
++candidates.json facts 160, byte_sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705, canonical_sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705
++first S row: The capital of Krultrouth is Kishan. | first candidates: ["Thunae", "Linnuth", "Baszaes", "Kaethnis"]
++self-checks: train_S derangement within cell, learned strings exactly once, unread strings 0; candidates 4 distinct, true answer once, distractors from the 2.5 pool
++RESULT: PASS
++exit=0
++$ bash -c cmp\ /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/gen1/train_S.jsonl\ /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/gen3/train_S.jsonl\ \&\&\ cmp\ /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/gen1/candidates.json\ /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/gen3/candidates.json\ \&\&\ echo\ \'gen3\ \(manifests\ of\ this\ round\)\ byte-identical\ to\ gen1\ \(t1g_gen_s_cands.txt\)\'
++gen3 (manifests of this round) byte-identical to gen1 (t1g_gen_s_cands.txt)
++exit=0
++$ python3 -I -c $'\nimport json, sys\ndm = json.load(open(sys.argv[1], encoding=\'utf-8\')); sm = json.load(open(sys.argv[2], encoding=\'utf-8\')); doc = open(sys.argv[3], encoding=\'utf-8\').read()\ns = dm[\'s_permutation\'][\'expected_train_S_canonical_sha256\']; c = sm[\'candidates\'][\'candidate_mapping_sha256\']\nprint(\'DATA_MANIFEST s_permutation.expected_train_S_canonical_sha256\', s, \'| in protocol text:\', doc.count(s))\nprint(\'SPLIT_MANIFEST candidates.candidate_mapping_sha256\', c, \'| in protocol text:\', doc.count(c))\nprint(\'facts expected hash in protocol text:\', doc.count(dm[\'name_generation\'][\'expected_facts_canonical_sha256\']))\n' metrix/e1-pilot/DATA_MANIFEST.json metrix/e1-pilot/SPLIT_MANIFEST.json metrix/e1-pilot/METRIX_E1_PROTOCOL.md
++DATA_MANIFEST s_permutation.expected_train_S_canonical_sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e | in protocol text: 1
++SPLIT_MANIFEST candidates.candidate_mapping_sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | in protocol text: 1
++facts expected hash in protocol text: 1
++exit=0
++$ grep -n -E $'\346\210\252\345\210\260 128|\345\220\204\346\210\252\345\210\260|\347\252\227\345\217\243\347\232\204 token \346\225\260|\344\270\215\345\276\227\345\205\261\344\272\253\344\273\273\344\275\225 13-gram' metrix/e1-pilot/METRIX_E1_PROTOCOL.md
++653:| v1-r2(Round 3 补记) | 2026-11-12 14:43:19 | `6675af63` | 第 2.2 节;`DATA_MANIFEST.json: name_generation.anchor_rule` | 新增锚文本规则:生成名字时,拒绝在第 2.7 节锚文本(512 篇、各截到 128 token 后解码)中出现过的字符串(不分大小写的子串);因此锚文本须在名字之前生成 | Metrix Round 2 第 5 项把 arm A 纳入暴露匹配(L3b):若某个名字出现在锚文本里,arm A 对该候选的暴露会多于 F,unread 名字也会违反 L3a。在生成时拒绝,使 L3a、L3b 在构造上成立(检查仍执行)。`DATA_SEED` 下这条规则没有拒绝任何名字,160 条 fact 的哈希不变(`ROUND2_REPORT.md` 对照运行 3)。上表 v1-r2 第 2.2 节一行只写了“加锚文本规则”,未写原因,Round 3 第 5 项要求补记 |
++675:| v1-r7 | 2026-11-22 03:25:59 | `7fea9181` | 第 2.7 节 | 原文“锚文本与通用文本不得共享任何 13-gram。”改为“锚文本与通用文本不得共享任何词 13-gram(定义与上限见第 3 节 L6)。” | Review Gate 第 6 轮裁决,第 7 轮指令第 1a 项(`ROUND6_REPORT.md`“待 Review Gate 决定”第 1 项;R6 code-reviewer MAJOR,`reviews/599230f9…/code-reviewer.md` 第 17 行):第 3 节 L6 按 v1-r6 只限词 13-gram,Qwen token 13-gram 只报告,第 2.7 节的“任何 13-gram”与之说法不一 |
++679:| v1-r7 | 2026-11-22 03:25:59 | `7fea9181` | 第 5 节 general damage;第 2.7 节锚文本;第 2.2 节锚文本规则;`DATA_MANIFEST.json: general_text.window_rule`、`anchor_text.document_rule`(新增) | n_w 原文“窗口的 token 数”改为“窗口实际送入模型的 id 序列长度:送入模型的是第 2.7 节用本协议分词器切分后截断得到的原始 id(最多 256 个),不解码再编码”。锚文本原文“各截到 128 token”改为“每篇最多 128 token(取前 128 个),不足则取全长”;第 2.2 节“512 篇、各截到 128 token 后解码的文本”改为“512 篇、每篇最多 128 token、解码后的文本” | Review Gate 第 6 轮裁决,第 7 轮指令第 1e 项(待决第 4、5 项;`reviews/599230f9…/code-reviewer.md` 第 18、19 行):n_w 与 v1-r6 改过的 n_x 口径不一;第 340 篇锚文档全文只有 123 个 token,“截到 128”与实际不符。数值不变 |
++exit=0
+diff --git a/metrix/e1-pilot/reports/round7/t1f_think_tokens.txt b/metrix/e1-pilot/reports/round7/t1f_think_tokens.txt
+new file mode 100644
+index 0000000..dc7f3ad
+--- /dev/null
++++ b/metrix/e1-pilot/reports/round7/t1f_think_tokens.txt
+@@ -0,0 +1,10 @@
++# Round 7 item 1f raw output: ids of <think> / </think> in the pinned tokenizer, whether they are special tokens, and what skip_special_tokens=True leaves in a decoded output. Host vm, CPU only, tokenizer files only. Sun Nov 22 03:21:55 UTC 2026
++$ /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/venv/bin/python -c $'\nimport sys\nfrom transformers import AutoTokenizer\ntok = AutoTokenizer.from_pretrained(sys.argv[1])\nfor t in [\'<think>\', \'</think>\', \'<|im_end|>\', \'<|endoftext|>\']:\n    i = tok.convert_tokens_to_ids(t)\n    print(repr(t), \'id\', i, \'| in all_special_ids:\', i in tok.all_special_ids, \'| added_tokens_decoder special:\', tok.added_tokens_decoder[i].special)\nids = tok.encode(\' Kishan<think>\\nx\\n</think> Kishan.\', add_special_tokens=False) + [151645]\nprint(\'ids\', ids)\nprint(\'decode skip_special_tokens=True :\', repr(tok.decode(ids, skip_special_tokens=True)))\n' /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/dl/qwen_tok
++[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
++'<think>' id 151667 | in all_special_ids: False | added_tokens_decoder special: False
++'</think>' id 151668 | in all_special_ids: False | added_tokens_decoder special: False
++'<|im_end|>' id 151645 | in all_special_ids: True | added_tokens_decoder special: True
++'<|endoftext|>' id 151643 | in all_special_ids: True | added_tokens_decoder special: True
++ids [730, 812, 276, 151667, 198, 87, 198, 151668, 730, 812, 276, 13, 151645]
++decode skip_special_tokens=True : ' Kishan<think>\nx\n</think> Kishan.'
++exit=0
+diff --git a/metrix/e1-pilot/reports/round7/t1g_gen_s_cands.txt b/metrix/e1-pilot/reports/round7/t1g_gen_s_cands.txt
+new file mode 100644
+index 0000000..0446cab
+--- /dev/null
++++ b/metrix/e1-pilot/reports/round7/t1g_gen_s_cands.txt
+@@ -0,0 +1,43 @@
++# Round 7 item 1g raw output: train_S.jsonl and candidates.json generated twice in separate processes (different PYTHONHASHSEED, different output directories) from the facts of DATA_SEED (t0_facts_regen.txt); candidates drawn with CANDIDATE_SEED as protocol 2.5 says. Host vm, CPU only; no tokenizer, no model, no TEST data. Sun Nov 22 03:20:16 UTC 2026
++# Script: reports/round7/gen_s_cands.py at the working tree of this round (sha256 below).
++$ sha256sum reports/round7/gen_s_cands.py DATA_MANIFEST.json SPLIT_MANIFEST.json /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/facts.json
++31a28ccd723a85eea1446ff01ed80b3de4d166afe0d96332867da00e211a9822  reports/round7/gen_s_cands.py
++dde2377ef0834d0959f87198c0b9ec91aa4024735e64e42dfda881d0bbb82a1c  DATA_MANIFEST.json
++02c431fb4e245d3e5215b50d1c957e0b5969ce53da5892008214e8d868647d89  SPLIT_MANIFEST.json
++406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97  /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/facts.json
++exit=0
++$ env PYTHONHASHSEED=0 /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/venv/bin/python -I reports/round7/gen_s_cands.py --facts /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/facts.json --data-manifest DATA_MANIFEST.json --split-manifest SPLIT_MANIFEST.json --out-dir /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/gen1
++pid 924, PYTHONHASHSEED=0, python 3.13.18
++facts canonical sha256 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97, expected 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97, match True
++S derangement attempts per cell: {"capital/natural": 3, "capital/random": 5, "currency/natural": 1, "currency/random": 6, "founder/natural": 2, "founder/random": 1, "river/natural": 2, "river/random": 6}
++train_S.jsonl   rows 120, byte_sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e, canonical_sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e
++candidates.json facts 160, byte_sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705, canonical_sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705
++first S row: The capital of Krultrouth is Kishan. | first candidates: ["Thunae", "Linnuth", "Baszaes", "Kaethnis"]
++self-checks: train_S derangement within cell, learned strings exactly once, unread strings 0; candidates 4 distinct, true answer once, distractors from the 2.5 pool
++RESULT: PASS
++exit=0
++$ env PYTHONHASHSEED=4242 /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/venv/bin/python -I reports/round7/gen_s_cands.py --facts /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/facts.json --data-manifest DATA_MANIFEST.json --split-manifest SPLIT_MANIFEST.json --out-dir /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/gen2
++pid 926, PYTHONHASHSEED=4242, python 3.13.18
++facts canonical sha256 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97, expected 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97, match True
++S derangement attempts per cell: {"capital/natural": 3, "capital/random": 5, "currency/natural": 1, "currency/random": 6, "founder/natural": 2, "founder/random": 1, "river/natural": 2, "river/random": 6}
++train_S.jsonl   rows 120, byte_sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e, canonical_sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e
++candidates.json facts 160, byte_sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705, canonical_sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705
++first S row: The capital of Krultrouth is Kishan. | first candidates: ["Thunae", "Linnuth", "Baszaes", "Kaethnis"]
++self-checks: train_S derangement within cell, learned strings exactly once, unread strings 0; candidates 4 distinct, true answer once, distractors from the 2.5 pool
++RESULT: PASS
++exit=0
++$ cmp /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/gen1/train_S.jsonl /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/gen2/train_S.jsonl
++exit=0
++$ cmp /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/gen1/candidates.json /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/gen2/candidates.json
++exit=0
++$ sha256sum /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/gen1/train_S.jsonl /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/gen2/train_S.jsonl /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/gen1/candidates.json /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/gen2/candidates.json
++686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e  /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/gen1/train_S.jsonl
++686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e  /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/gen2/train_S.jsonl
++e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705  /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/gen1/candidates.json
++e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705  /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/gen2/candidates.json
++exit=0
++$ wc -lc /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/gen1/train_S.jsonl /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/gen1/candidates.json
++  120 15033 /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/gen1/train_S.jsonl
++    0 10453 /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/gen1/candidates.json
++  120 25486 total
++exit=0
+diff --git a/metrix/e1-pilot/tasks/ROUND7_TASKS.md b/metrix/e1-pilot/tasks/ROUND7_TASKS.md
+new file mode 100644
+index 0000000..8d5bbb8
+--- /dev/null
++++ b/metrix/e1-pilot/tasks/ROUND7_TASKS.md
+@@ -0,0 +1,37 @@
++# Metrix E1-PILOT 第 7 轮指令(原文)
++
++- 来源:Project Owner 在 Claude Code 会话 session_01J5mxaTx8SWDUGRUNbxcnqu 中下达,2026-11-22(会话创建于 03:11:08 UTC)。
++- 共两段:第一段是本轮指令;Executor 在第 0 步停下报告后,第二段是 Review Gate 的裁决。下面照录全文。
++- 第二段的“选项 3”指 Executor 停下报告时列出的第 3 种做法:在本会话继续,沿用已加载的旧定义,在调用文字里写明须按仓库中的定义执行。第 0 步的比对原始输出见 `reports/round7/t0_copy_check.txt`(提交 `fe321cd`)。
++
++---
++
++## 第一段:本轮指令
++
++读 metrix/CLAUDE.md。本轮是冻结补丁：只执行下列已定的修改，不开放新的设计问题。允许快进推送 metrix-e1-pilot-protocol-v1，不得 force push。
++
++0. 先比对 ~/.claude/ 下的副本与分支上的文件。规则文件不一致：以仓库为准并在报告中注明；agent 定义不一致：停下报告。
++1. 协议修改（全部记入第 14 节）：
++   a. 第 2.7 节改为「不得共享任何词 13-gram（定义与上限见第 3 节 L6）」。
++   b. L6 的 TEST 部分：时机为「第 8 步生成 general_test.jsonl 之后、TEST 评测之前」；计数为跨全部文档的共享词 13-gram 种类数，上限 0；由 Executor 与 data-auditor 各自计算，结果须一致。
++   c. L3–L6 任一项的 TEST 部分超限：停止，不评测 TEST，状态记为 BLOCKED，报告 Owner。
++   d. G0.1 改为「L1–L6 中涉及 TEST 的部分在 Gate 0 不要求，按第 8 步运行」。
++   e. n_w 定义为实际送入模型的 id 序列长度（截断后的原始 id，不解码再编码）；锚文档的措辞改为「最多 128 token」。
++   f. EM 归一化之前先删除输出中的 <think>…</think> 片段。
++   g. 写死第 2.6 节 S 的置换与第 2.5 节候选抽取的随机流 purpose 和调用顺序；用 DATA_SEED 两次独立生成 train_S.jsonl 与 candidates.json，证明逐字节一致，把 canonical sha256 记入 manifest。
++2. metrix/CLAUDE.md：第 10 节补全「（出处：Review Gate 第 6 轮裁决，Owner 批准，本阶段，<UTC 时间>）」；code-reviewer 定义中的「未验证」规则补充：「引用仓库中已提交的原始输出（写明路径与行号）的判断视为已验证」。
++3. 第 6 轮待决第 6、14 项登记入 DEFERRED_MINORS.md，注明「正式流程代码统一要求不通过时打印 RESULT 并以非 0 退出」。
++4. 调用 code-reviewer 与 data-auditor，只审查：修改是否与本指令逐条一致，以及是否存在 BLOCKER。新提出的 MAJOR/MINOR 登记入 DEFERRED_MINORS.md，不修。data-auditor 须独立复现 1g 的两个 sha256。
++5. 报告写入 reports/ROUND7_REPORT.md，提交推送，给出 commit hash。报告末尾列出冻结时的全部哈希（fact、锚文本、train_S、candidates、模板、tokenizer、eval_sets、协议文件本身）。
++
++---
++
++## 第二段:Review Gate 裁决(Executor 第 0 步停下报告之后)
++
++Review Gate 裁决：选项 3，在本会话继续执行第 7 轮。
++
++1. 把第 0 步的比对原始输出存为 metrix/e1-pilot/reports/round7/t0_copy_check.txt。这属于证据文件，可以不经 code-reviewer 直接提交，commit message 注明「证据文件，未经 code-reviewer」。
++2. 确认两个版本 code-reviewer.md 的 frontmatter（特别是 tools 行）完全相同，把原始输出记入同一文件。如果不同，停下报告。
++3. 从本轮起，每次调用审查 subagent，调用文字的第一句固定为：「先读仓库中的 .claude/agents/<名称>.md，以它为你的完整定义；它与你已加载的定义冲突时，以仓库文件为准。」
++4. 把第 3 项写入 metrix/CLAUDE.md 第 5 节，注明「（出处：Review Gate 第 7 轮裁决，Owner 批准，本阶段，<UTC 时间>）」，并在同一节写明：两个版本的 tools 行不一致时必须停下，不得用此方法替代。
++5. 然后按原指令执行第 1–5 步。

@@ -1,0 +1,42 @@
+# Round 7 item 5 raw output: hashes listed at the end of ROUND7_REPORT.md (state at commit 293b806dcfabe0cd1f786a5b9391dea8d7090f6f). Host vm, CPU only, tokenizer files only. Sun Nov 22 03:28:12 UTC 2026
+$ bash -c for\ f\ in\ metrix/e1-pilot/METRIX_E1_PROTOCOL.md\ metrix/e1-pilot/DATA_MANIFEST.json\ metrix/e1-pilot/SPLIT_MANIFEST.json\ metrix/e1-pilot/SEARCH_SPACE.json\ metrix/CLAUDE.md\;\ do\ printf\ \'%s\ \ %s@293b806dcfabe0cd1f786a5b9391dea8d7090f6f\\n\'\ \$\(git\ show\ 293b806dcfabe0cd1f786a5b9391dea8d7090f6f:\$f\ \|\ sha256sum\ \|\ cut\ -d\'\ \'\ -f1\)\ \$f\;\ done
+29fb4c2b7a4c3bee40bd45ac1150ee0c2b381a4bdcd8de78392f90b328911a4c  metrix/e1-pilot/METRIX_E1_PROTOCOL.md@293b806dcfabe0cd1f786a5b9391dea8d7090f6f
+21fa5076d8f894862a8f060e3852d832e4f5cd29f029d74394c4d81b1cce53c9  metrix/e1-pilot/DATA_MANIFEST.json@293b806dcfabe0cd1f786a5b9391dea8d7090f6f
+722aa7a6511ac3484c5dcf986d43b5a6ea92f489432c041918eadf023341b306  metrix/e1-pilot/SPLIT_MANIFEST.json@293b806dcfabe0cd1f786a5b9391dea8d7090f6f
+307dde04b5a9dd56e8ca1232fd3686641a7850c5d0442e90b347237989343a33  metrix/e1-pilot/SEARCH_SPACE.json@293b806dcfabe0cd1f786a5b9391dea8d7090f6f
+4392329e291a447c6d571c8ec62256bb794445011ea1c39e6982d9931c3697fd  metrix/CLAUDE.md@293b806dcfabe0cd1f786a5b9391dea8d7090f6f
+exit=0
+$ python3 -I -c $'\nimport json, subprocess, sys\nH = sys.argv[1]\ndm = json.loads(subprocess.run([\'git\', \'show\', H + \':metrix/e1-pilot/DATA_MANIFEST.json\'], capture_output=True, check=True).stdout)\nsm = json.loads(subprocess.run([\'git\', \'show\', H + \':metrix/e1-pilot/SPLIT_MANIFEST.json\'], capture_output=True, check=True).stdout)\nprint(\'facts expected canonical sha256   \', dm[\'name_generation\'][\'expected_facts_canonical_sha256\'])\nprint(\'train_S expected canonical sha256 \', dm[\'s_permutation\'][\'expected_train_S_canonical_sha256\'])\nprint(\'candidate_mapping_sha256          \', sm[\'candidates\'][\'candidate_mapping_sha256\'])\nprint(\'template_set_sha256               \', sm[\'template_freeze\'][\'template_set_sha256\'])\nprint(\'eval_sets.jsonl sha256            \', dm[\'general_text\'][\'source_file_sha256\'])\nprint(\'parcae tokenizer.json sha256      \', dm[\'general_text\'][\'decode_tokenizer_json_sha256\'])\nprint(\'anchor source                     \', dm[\'anchor_text\'][\'source\'])\nprint(\'model / tokenizer pin             \', dm[\'model\'][\'tokenizer\'])\n' 293b806dcfabe0cd1f786a5b9391dea8d7090f6f
+facts expected canonical sha256    406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97
+train_S expected canonical sha256  686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e
+candidate_mapping_sha256           e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705
+template_set_sha256                2b52411326c218e9c51d947b2f4e0d77b0cdd5d6237f9ce25b57a872c48ce28f
+eval_sets.jsonl sha256             8816fe5a39d8b89e8c4203bf7d660e798faa471d2b72b5ce43c411cf5925a155
+parcae tokenizer.json sha256       e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77
+anchor source                      SandyResearch/fineweb-edu-shuffled@4d1138c0e4d51d98813997ce3560e05a32bf91de, data/sample-100BT/train/shard_00000.parquet (sha256 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22)
+model / tokenizer pin              {'repo': 'Qwen/Qwen3-1.7B', 'revision': '70d244cc86ccca08cf5af4e1e306ecf908b1ad5e'}
+exit=0
+$ sha256sum /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/facts.json /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/gen1/train_S.jsonl /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/gen1/candidates.json ../OpenMythos/research/mini_mythos/stage1/results/r1/eval_sets.jsonl
+406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97  /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/facts.json
+686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e  /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/gen1/train_S.jsonl
+e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705  /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/gen1/candidates.json
+8816fe5a39d8b89e8c4203bf7d660e798faa471d2b72b5ce43c411cf5925a155  ../OpenMythos/research/mini_mythos/stage1/results/r1/eval_sets.jsonl
+exit=0
+$ bash -c cd\ /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/dl\ \&\&\ find\ .\ -type\ f\ -not\ -path\ \'\*/.cache/\*\'\ \|\ sort\ \|\ xargs\ sha256sum
+e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77  ./parcae_tok/tokenizer.json
+6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22  ./parquet/data/sample-100BT/train/shard_00000.parquet
+1ddb5b89ebc90dcb417a45c213d818577e65976454d29385c8f6140771d95197  ./qwen_tok/config.json
+2325da0f15bb848e018c5ae071b7943332e9f871d6b60e2ed22ca97d4cb993d2  ./qwen_tok/generation_config.json
+8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5  ./qwen_tok/merges.txt
+aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4  ./qwen_tok/tokenizer.json
+d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101  ./qwen_tok/tokenizer_config.json
+ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910  ./qwen_tok/vocab.json
+exit=0
+$ /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/venv/bin/python -I -c $'\nimport hashlib, json, sys\ntexts = json.load(open(sys.argv[1], encoding=\'utf-8\'))[\'texts\']\nblob = json.dumps(texts, sort_keys=True, ensure_ascii=False, separators=(\',\', \':\')).encode(\'utf-8\')\nprint(\'anchor texts: %d decoded texts (first 512 documents >= 600 chars, each the decode of at most 128 tokens); canonical sha256 of the JSON list %s\' % (len(texts), hashlib.sha256(blob).hexdigest()))\n' /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/anchor.json
+anchor texts: 512 decoded texts (first 512 documents >= 600 chars, each the decode of at most 128 tokens); canonical sha256 of the JSON list 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408
+exit=0
+# appended Sun Nov 22 03:51:11 UTC 2026: reference implementation of 1g as committed (7fea9181), compared with the sha256 recorded in t1g_gen_s_cands.txt (working tree before the commit)
+$ bash -c git\ show\ 7fea9181:metrix/e1-pilot/reports/round7/gen_s_cands.py\ \|\ sha256sum\;\ grep\ -m1\ \'gen_s_cands.py\$\'\ metrix/e1-pilot/reports/round7/t1g_gen_s_cands.txt
+31a28ccd723a85eea1446ff01ed80b3de4d166afe0d96332867da00e211a9822  -
+31a28ccd723a85eea1446ff01ed80b3de4d166afe0d96332867da00e211a9822  reports/round7/gen_s_cands.py
+exit=0

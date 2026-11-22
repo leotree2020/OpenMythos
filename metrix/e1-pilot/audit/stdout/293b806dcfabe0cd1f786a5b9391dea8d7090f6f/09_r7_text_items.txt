@@ -1,0 +1,89 @@
+# Data Auditor run. host vm, CPU only (no GPU, no torch, tokenizer files only); 2026-11-22 03:34:59 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/venv/bin/python -I -B r7_text_items.py /home/user/OpenMythos /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/dl/qwen_tok 293b806dcfabe0cd1f786a5b9391dea8d7090f6f
+[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
+[info] HEAD 293b806dcfabe0cd1f786a5b9391dea8d7090f6f | reviewed head 293b806dcfabe0cd1f786a5b9391dea8d7090f6f
+[judged] HEAD == reviewed head                                                          OK  
+[info] files changed fe321cd..293b806d: ['M\t.claude/agents/code-reviewer.md', 'M\tmetrix/CLAUDE.md', 'M\tmetrix/e1-pilot/DATA_MANIFEST.json', 'M\tmetrix/e1-pilot/METRIX_E1_PROTOCOL.md', 'M\tmetrix/e1-pilot/SPLIT_MANIFEST.json', 'M\tmetrix/e1-pilot/reports/DEFERRED_MINORS.md', 'A\tmetrix/e1-pilot/reports/round7/gen_s_cands.py', 'A\tmetrix/e1-pilot/reports/round7/t0_env.txt', 'A\tmetrix/e1-pilot/reports/round7/t0_facts_regen.txt', 'A\tmetrix/e1-pilot/reports/round7/t1_commit_times.txt', 'A\tmetrix/e1-pilot/reports/round7/t1_protocol_checks.txt', 'A\tmetrix/e1-pilot/reports/round7/t1f_think_tokens.txt', 'A\tmetrix/e1-pilot/reports/round7/t1g_gen_s_cands.txt', 'A\tmetrix/e1-pilot/tasks/ROUND7_TASKS.md']
+[judged] outside metrix/ only .claude/agents/code-reviewer.md changed                   OK  ['M\t.claude/agents/code-reviewer.md']
+== 1a (section 2.7)
+[judged] 2.7 contains the 1a sentence                                                   OK  '锚文本与通用文本不得共享任何词 13-gram(定义与上限见第 3 节 L6)'
+== 1b (L6 TEST part)
+[info] L6 row: | L6 | 锚文本与通用文本共享的词 13-gram 数;“词”= Python str.split() 的结果(按空白切分,区分大小写);Qwen token 13-gram 只报告,不设上限。TEST 部分(锚文本对 general_test.jsonl):时机为第 8 步生成 general_test.jsonl 之后、TEST 评测之前;计数为跨全部文档的共享词 13-gram 种类数(13-gram 在每篇锚文档、每个窗口之内取;锚文本 512 篇的词 13-gram 集合与 general_test.jsonl 全部窗口的词 13-gram 集合求交,数交集的元素个数),上限 0;由 Executor 与 data-auditor 各自计算,结果须一致 | 0 |
+[judged] L6 row contains '时机为第 8 步生成 general_test.jsonl 之后、TEST 评测之前'                   OK  
+[judged] L6 row contains '计数为跨全部文档的共享词 13-gram 种类数'                                     OK  
+[judged] L6 row contains '上限 0'                                                         OK  
+[judged] L6 row contains '由 Executor 与 data-auditor 各自计算,结果须一致'                         OK  
+[info] section 8 step 8: 8. Gate 0 通过后:提交冻结记录(选定配置、数据哈希、checkpoint 哈希)→ 生成 test_qa.jsonl 与 general_test.jsonl → 对 TEST 运行 L3–L5 → L6 的 TEST 部分(锚文本对 general_test.jsonl):在本步生成 general_test.jsonl 之后、TEST 评测之前,由 Executor 与 data-auditor 各自计算一次,只输出计数(口径与上限见第 3 节 L6),两者的结果须一致 → L3–L6 任一项的 TEST 部分超限:停止,不评测 TEST,状态记为 BLOCKED,报告 Owner(ST10) → 全部在上限内时,TEST 只评一次。
+[judged] step 8: L6 TEST part after general_test.jsonl, before TEST, both compute, must agree OK  
+[judged] step 8 no longer says 'PROTOCOL_FROZEN 之后' / 'data-auditor 运行一次'               OK  
+[info] SPLIT_MANIFEST L6_general_text.test_part: {"pair": "anchor_text vs general_test.jsonl", "when": "in step 8 of protocol section 8, after general_test.jsonl is generated and before the TEST evaluation", "count": "number of distinct shared word 13-grams across all documents: 13-grams are taken within each anchor document and within each window; the set of word 13-grams of the 512 anchor documents is intersected with the set of word 13-grams of all general_test.jsonl windows, and the size of the intersection is counted", "limit": 0, "computed_by": "the Executor and the data-auditor, each separately; the two results must be identical"}
+[judged] SPLIT_MANIFEST test_part: when / count / limit 0 / both                        OK  
+== 1c (TEST part over limit)
+[judged] step 8 contains the 1c action                                                  OK  
+[info] ST10 row: | ST10 | 第 8 步 L3–L6 任一项的 TEST 部分超限 | 停止;不评测 TEST;BLOCKED;报告 Owner |
+[judged] section 11 ST10 row: stop, no TEST evaluation, BLOCKED, report Owner           OK  
+[info] section 9 BLOCKED row: | BLOCKED | 环境、资源、数据来源或库版本不满足第 0 节,无法按协议执行;或第 8 步 L3–L6 任一项的 TEST 部分超限(ST10) |
+[judged] section 9 BLOCKED row mentions ST10                                            OK  
+[info] SPLIT_MANIFEST test_part_over_limit: if the TEST part of any of L3-L6 exceeds its limit: stop, do not evaluate TEST, status BLOCKED, report to the Owner (protocol section 11, ST10)
+[judged] SPLIT_MANIFEST test_part_over_limit present                                    OK  
+== 1d (G0.1)
+[info] G0.1 row: | G0.1 | 泄漏检查 L1–L6 全部在上限内;L1–L6 中涉及 TEST 的部分在 Gate 0 不要求,按第 8 步运行 |
+[judged] G0.1 contains the 1d text                                                      OK  
+[judged] G0.1 old L6-only exception removed                                             OK  
+[info] step 8 lists the TEST runs as: ['对 TEST 运行 L3–L5', 'L6 的 TEST 部分'] | mentions L1 or L2: False
+== 1e: text checks are in r7_general_dev.py (08); data in 02 and 08
+== 1f (EM: delete <think>...</think> before the normalization)
+[judged] section 5 contains the 1f sentence                                             OK  '归一化之前,先删除输出中的 <think>…</think> 片段:从 <think> 到其后第一个 </think>(两者都含),每处都删'
+[judged] DATA_MANIFEST em_generation has the deletion clause                            OK  
+[info] <think>        tokenizer.json added_tokens id 151667 special False | tokenizer_config special False | convert_tokens_to_ids 151667 | in all_special_ids False
+[judged] <think> id 151667, special False (protocol 1f)                                 OK  
+[info] </think>       tokenizer.json added_tokens id 151668 special False | tokenizer_config special False | convert_tokens_to_ids 151668 | in all_special_ids False
+[judged] </think> id 151668, special False (protocol 1f)                                OK  
+[info] <|im_end|>     tokenizer.json added_tokens id 151645 special True | tokenizer_config special True | convert_tokens_to_ids 151645 | in all_special_ids True
+[judged] <|im_end|> id 151645, special True (protocol 1f)                               OK  
+[info] <|endoftext|>  tokenizer.json added_tokens id 151643 special True | tokenizer_config special True | convert_tokens_to_ids 151643 | in all_special_ids True
+[judged] <|endoftext|> id 151643, special True (protocol 1f)                            OK  
+[info] synthetic ids [730, 812, 276, 151667, 198, 87, 198, 151668, 730, 812, 276, 13, 151645] -> decode(skip_special_tokens=True) = ' Kishan<think>\nx\n</think> Kishan.'
+[judged] skip_special_tokens=True keeps <think> and </think>, drops <|im_end|>          OK  
+[info] EM normalization of ' Kishan<think>\nx\n</think> Kishan.'         -> 'kishan kishan'
+[info] EM normalization of ' <think>\n\n</think>\n\nKishan.'             -> ''
+[info] EM normalization of ' Kishan<think>a</think><think>b</think>.'    -> 'kishan'
+[info] EM normalization of ' Kishan<think>\nunclosed'                    -> 'kishan<think>'
+[info] EM normalization of ' Kishan</think>.'                            -> 'kishan</think>'
+[info] EM normalization of ' <think>x'                                   -> '<think>x'
+[info] the protocol text does not say what happens to a <think> without a following </think> (e.g. cut by the 16-token limit) or to a lone </think>; the reading above leaves both in place
+[info] chat template, placeholder user turn 'Q', add_generation_prompt=True, enable_thinking=False: '<|im_start|>user\nQ<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n'
+== 1g: hashes in r7_s_cands.py (04-07); section text
+[judged] protocol contains '调用方式(细节 5)'                                                 OK  
+[judged] protocol contains '调用方式(细节 4)'                                                 OK  
+[judged] protocol contains '686fdd2f62edc2115b74'                                       OK  
+[judged] protocol contains 'e5d15c9952d8124f2b24'                                       OK  
+[judged] DATA_MANIFEST s_permutation keeps the old rule and adds call_order/record/line_order/hash OK  
+[info] protocol section 0 library row: | 库版本 | torch 2.11.0,transformers 5.22.2;实际版本写入实验记录,不一致即 BLOCKED | | Python version pinned in section 0: False
+== section 14 (all of item 1 recorded)
+[info] v1-r7 rows: 7 | items cited: ['1a', '1b', '1c', '1d', '1e', '1f', '1g']
+[judged] section 14 has v1-r7 rows citing 1a..1g                                        OK  
+[judged] no placeholder left (R7_TIME / R7_COMMIT)                                      OK  
+[info] commit 7fea9181 committer time UTC: 2026-11-22 03:25:59 (local: 2026-11-22 03:25:59)
+[judged] every v1-r7 row carries that time and commit                                   OK  
+== item 2 (metrix/CLAUDE.md section 10; code-reviewer rule)
+[info] section 10 last line: - 以上两条的出处：Review Gate 第 5 轮裁决。（出处：Review Gate 第 6 轮裁决，Owner 批准，本阶段，2026-11-22 03:25:59 UTC）
+[judged] section 10 has '(出处：Review Gate 第 6 轮裁决，Owner 批准，本阶段，<UTC>)'                   OK  
+[judged] code-reviewer.md: new rule right after the 『未验证』 rule                          OK  
+[judged] code-reviewer.md frontmatter unchanged in the range                            OK  
+== item 3 (DEFERRED_MINORS)
+[judged] 1.7 exists with the note '正式流程代码统一要求不通过时打印 RESULT 并以非 0 退出'                    OK  
+[info] 1.7 entries: ['G1', 'G2', 'G3', 'G4', 'G5'] | cite 待决第 6 项: 4 | cite 待决第 14 项: 1
+[judged] 1.7 covers pending items 6 (three points) and 14                               OK  
+[info] DEFERRED_MINORS section 1.8 present yet: False (the file announces it for this round's review items)
+== ruling items 3 and 4 (fixed first sentence; metrix/CLAUDE.md section 5)
+[info] fixed sentence in ROUND7_TASKS.md: 先读仓库中的 .claude/agents/<名称>.md，以它为你的完整定义；它与你已加载的定义冲突时，以仓库文件为准。
+[judged] CLAUDE.md section 5 contains the fixed sentence byte for byte                  OK  
+[judged] CLAUDE.md section 5: tools-line mismatch must stop, not replaceable            OK  
+[judged] CLAUDE.md section 5 attribution '第 7 轮裁决，Owner 批准，本阶段，<UTC>'                   OK  
+[judged] code-reviewer prompt starts with the fixed sentence                            OK  '先读仓库中的 .claude/agents/code-reviewer.md，以'
+[judged] data-auditor prompt starts with the fixed sentence                             OK  '先读仓库中的 .claude/agents/data-auditor.md，以它'
+[info] CLAUDE.md section 8: '只有「永久」的裁决可写入本文件' present: True | 本阶段 attributions in the file: 3
+RESULT: PASS
+exit=0

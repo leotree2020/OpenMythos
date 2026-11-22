@@ -92,6 +92,52 @@
 | G4 | data-auditor 已入库的旧脚本(第 6 轮 `audit/stdout/599230f9…/06–09` 用到的,以及 `audit/r5_sources.py`) | 是否在第 6 轮第 2 项“所有检查脚本遇异常须打印 RESULT: FAIL”的范围内;`r5_sources.py` 用 `except Exception` 吞掉异常后以 0 退出(同 A4、A6) | 第 6 轮待决第 6 项第 3 点;R6-DA:214;R5-RC:27 (3) | 登记,不修(Executor 不改 auditor 的文件) |
 | G5 | `reports/round6/guard_ab.sh`、`reports/round6/guard_fail.sh` | 头注释说“出错由 EXIT trap 打印 RESULT: FAIL”,但没有 `set -e`;只用于展示的命令出错时判定不受影响,可能仍输出 `RESULT: PASS`(同 H1) | 第 6 轮待决第 14 项;R6b-CR MAJOR 1 | 登记,不修 |
 
+### 1.8 第 7 轮审查新提出的 MAJOR / MINOR(第 7 轮指令第 4 项:登记入本文件,不修)
+
+`R7-CR:n` = `reviews/293b806d…/code-reviewer.md` 第 n 行;`R7-DA:n` = 同目录 `data-auditor.md` 第 n 行;`R7-RC:n` = 同目录 `code-reviewer_report-commit.md` 第 n 行。第 7 轮 code-reviewer 结论 PASS,没有 BLOCKER。4 条 MAJOR 都要由 Review Gate 确认或改协议、改 `metrix/CLAUDE.md`,一并列入 `ROUND7_REPORT.md`“待 Review Gate 决定”。
+
+| # | 严重度 | 位置 | 问题 | 来源 |
+|---|---|---|---|---|
+| R1 | MAJOR | `reports/round7/gen_s_cands.py:137`;协议第 2.5 节 | 指令 1g 写“用 DATA_SEED 两次独立生成 train_S.jsonl 与 candidates.json”,实现按协议第 2.5 节用 `CANDIDATE_SEED` 抽候选,`DATA_SEED` 只决定 fact;冻结哈希 `e5d15c99…` 取决于这一读法 | R7-CR:30 |
+| R2 | MAJOR | 协议第 2.5、2.6 节;`DATA_MANIFEST.json: s_permutation.record`;`SPLIT_MANIFEST.json: candidates.file` | `train_S.jsonl` 的记录格式 `{fact_id, answer_fact_id, text}` 与 `candidates.json` 的对象格式由 Executor 自定;两个冻结哈希都依赖它们。另问 `train_F`、`train_Y` 是否采用一致的字段 | R7-CR:31 |
+| R3 | MAJOR | 协议第 3 节 L6;`SPLIT_MANIFEST.json: L6_general_text.test_part.count` | 计数口径加了指令没有的限定“13-gram 在每篇锚文档、每个窗口之内取”;“跨全部文档”也可读成 n-gram 可以跨篇 | R7-CR:32 |
+| R4 | MAJOR | `metrix/CLAUDE.md` 第 5 节第 6 条、第 10 节(对照第 8 节) | 第 8 节写“只有「永久」的裁决可写入本文件”,本轮按指令写入了两条“本阶段”的裁决,文件内部矛盾 | R7-CR:33 |
+| R5 | MINOR | `metrix/CLAUDE.md` 第 10 节末行 | 同一行两个出处(第 5 轮、第 6 轮);时间取 `7fea9181` 的提交时间,第 6 轮待决第 7 项提议的是 `481a6f0f` 的时间 | R7-CR:34 |
+| R6 | MINOR | `metrix/CLAUDE.md` 第 5 节第 6 条 | 超出指令原文加了“调用前比对仓库文件与已加载定义的 frontmatter”;比对整个 frontmatter,停下条件只看 tools 行;Executor 读不到实际加载的定义,只能比对用户级副本 | R7-CR:35 |
+| R7 | MINOR | `reports/DEFERRED_MINORS.md` | 超出第 3 项的编辑(第 3 节两项移到第 2 节);引言引用的 1.8 节当时还不存在;“截至第 6 轮”没更新;G4 在 1.7 节与第 3 节状态不一 | R7-CR:36 |
+| R8 | MINOR | `reports/DEFERRED_MINORS.md` 1.7 节 G3 | “7 个脚本”只点名 2 个,没有列全;`candidate_feasibility.py` 不在其中 | R7-CR:37 |
+| R9 | MINOR | `reports/round7/gen_s_cands.py:156-158` | “self-checks: …”是固定字符串,不论结果都打印;脚本不与 manifest 中的预期哈希比对 | R7-CR:38 |
+| R10 | MINOR | `reports/round7/gen_s_cands.py:46-65` | 按 facts 列表顺序取 i,没有按 fact_id 序号排序,也不断言每个 cell 恰好 15 条(顺序由 `406c8801…` 锁定,第 131 行先核对了哈希) | R7-CR:39 |
+| R11 | MINOR | `reports/round7/t1_protocol_checks.txt`;`t1g_gen_s_cands.txt` | 记录的是提交前工作区中 `gen_s_cands.py` 的 sha256,manifest 改完后的 gen3 运行没有记录脚本 sha256。报告提交补了一条记录:`7fea9181` 中的该脚本 sha256 `31a28ccd…`,与工作区版本相同(`round7/t5_freeze_hashes.txt` 末条;data-auditor 14 号运行第 12 行为 `293b806d` 中的同一值) | R7-CR:40 |
+| R12 | MINOR | 协议第 3 节 L6、第 8 节第 8 步 | “结果须一致”没有规定不一致时怎么办 | R7-CR:41 |
+| R13 | MINOR | 协议第 3 节 L6;`DATA_MANIFEST.json: files.general_test.jsonl` | 没有写明计算词 13-gram 用的窗口文本(≤256 个 id 解码后的文本,还是截断前的全文);`general_test.jsonl` 的字段也没有定义 | R7-CR:42 |
+| R14 | MINOR | 协议第 8 节 G0.1 | 新措辞字面上也覆盖 L1、L2 中涉及 TEST 模板的部分,第 8 步与 ST10 只列 L3–L6;L1、L2 已在撰写时计算,实际没有影响 | R7-CR:43 |
+| R15 | MINOR | 协议第 4 节 n_x 对照第 5 节 n_w、第 2.2 节 | n_w 写明“截断后的原始 id,不解码再编码”,n_x 仍只写“实际送入模型的 id 序列长度” | R7-CR:44 |
+| R16 | MINOR | `DATA_MANIFEST.json: anchor_text` | 新增 `document_rule` 后,旧键 `truncate_to_model_tokens: 128` 仍保留(同 C5) | R7-CR:45 |
+| R17 | MINOR | `SPLIT_MANIFEST.json: test_split`;协议 ST10 | L3a、L3b 的规则本身没有 TEST 部分,`test_split` 与 ST10 仍写“L3–L6”;原有措辞,ST10 沿用指令原文 | R7-CR:46 |
+| R18 | MINOR | 协议第 5 节 EM(1f) | 先删除 `<think>…</think>` 再“取第一行”时,`" <think>\n\n</think>\n\nKishan."` 归一化后为空串(Qwen3 在 `enable_thinking=False` 时生成提示正以 `<think>\n\n</think>\n\n` 结尾);未闭合的 `<think>`(如被 16 token 上限截断)与单独的 `</think>` 怎么处理没有规定。EM 只报告,不进门槛 | R7-DA:149 |
+| R19 | MINOR | 协议第 8 节 G0.1(1d) | 同 R14 | R7-DA:153 |
+| R20 | MINOR | 协议第 4 节 n_x;`DATA_MANIFEST.json: anchor_text.document_rule`(1e) | 同 R15;现有数据上两种 id 512/512 相同 | R7-DA:157 |
+| R21 | MINOR | 协议第 0 节;两个 manifest(1g) | 第 0 节没有固定 Python 版本,两个哈希依赖 CPython `random.Random` 的算法(实测 3.11、3.12、3.13 相同);`files.train_S.jsonl`、`files.candidates.json`、`split_sha256.train_S.jsonl` 仍为 null,同一个值以后有两个位置,填入时须相同 | R7-DA:158 |
+| R22 | 流程观察 | `metrix/CLAUDE.md` 第 8 节;第 10 节的时间;本文件 1.8 节 | 同 R4、R5;另指出当时 1.8 节尚未建立(本节即是) | R7-DA:161 |
+
+data-auditor 结论 PASS(按 `metrix/CLAUDE.md` 第 10 节仅作参考),新提的 5 条都标为 MINOR 或流程观察。
+
+报告提交在提交前由 code-reviewer 审查(`reviews/293b806d…/code-reviewer_report-commit.md`),结论 PASS,没有 BLOCKER。它指出的是报告与本文件自身的错误。按第 5 轮先例(第 2 节“第 5 轮报告中 MINOR 条数、行号、转述等措辞问题 | 第 5 轮报告提交中已改”),能在报告提交中改正的已改正;其余登记。被审查版本与提交版本的差异:`reviews/293b806d…/report_commit_post_review.diff`。
+
+| # | 严重度 | 位置 | 问题 | 来源 | 处理 |
+|---|---|---|---|---|---|
+| RC1 | MAJOR | `ROUND7_REPORT.md` 4 处 | 第 0 步证据提交写成 `fe321cd8`,该提交不存在;实为 `fe321cd9b5b4107bf8ee6d5caab2b56f67c0ee78` | R7-RC:51 | 报告提交中已改 |
+| RC2 | MAJOR | `ROUND7_REPORT.md` 冻结哈希一节 | 协议、三个 JSON 与 `metrix/CLAUDE.md` 的哈希是冻结前 `293b806d` 的值,冻结改状态后会变 | R7-RC:52 | 报告中注明;列入待决第 12 项 |
+| RC3 | MINOR | 同上 | 锚文本 `8828bc4f…` 与 Qwen 6 个文件的 sha256 不在任何会冻结的文件里;`8828bc4f…` 与将来 `anchor_text.jsonl` 的 canonical 口径不同 | R7-RC:53 | 报告中注明;列入待决第 12 项 |
+| RC4 | MINOR | `ROUND7_REPORT.md`;本文件 R11 | R11 已在报告提交中部分处理,R11 一行没有注明;报告只写了 `7fea9181` 中脚本的哈希 | R7-RC:54 | 已在 R11 一行注明;报告补写 `293b806d` 中的同一值 |
+| RC5 | MINOR | `ROUND7_REPORT.md` 第 0 步 | 推送范围 `49471e8..fe321cd` 只适用于 `metrix-e1-pilot-protocol-v1`,会话分支是 `155430a` → `fe321cd9`;推送输出未入库 | R7-RC:55 | 报告中已分开写,注明以 reflog 为据 |
+| RC6 | MINOR | `ROUND7_REPORT.md` 第 0 步 | 用户级 CLAUDE.md 副本对应 `8ce8c896` / `7e5dd9c0` 的依据在 `round6/t4_user_claude_md.txt`,不在 `t0_copy_check.txt` | R7-RC:56 | 报告中已补引用 |
+| RC7 | MINOR | `ROUND7_REPORT.md` 附 | `eval_sets.jsonl` 求整文件哈希的出处漏了 `t5_freeze_hashes.txt` | R7-RC:57 | 报告中已补 |
+| RC8 | MINOR | `ROUND7_REPORT.md` 任务 2、待决第 11 项;`preflight_tools_check_report-commit.txt` | 会话重启后 code-reviewer 已加载新定义,报告仍说用的是旧定义;此时 preflight 比对的 `/root` 副本已不是实际加载的定义(三方 tools 行相同) | R7-RC:58 | 报告中已注明(依据是审查方自己的陈述) |
+| RC9 | MINOR | `ROUND7_REPORT.md` 提交表 | 引用的 `code-reviewer_report-commit.md` 当时还不存在;报告提交审查的调用文字、preflight 与输入文件未暂存(同 P3) | R7-RC:59 | 已一并暂存提交;审查输入不含审查文件自身,同 P3 |
+| RC10 | MINOR | 本文件 1.8 节 | `R7-DA` 记法在表格之后才定义;1.8 节没有“不修的理由”一栏 | R7-RC:60 | 记法已移到表格之前;栏目未加,登记 |
+
 ## 2. 已在第 5–7 轮解决(核对用)
 
 | 原条目 | 来源 | 处理 |

@@ -1,0 +1,150 @@
+# Round 7: changes made to the report commit after the report-commit review (reviewed = the staged versions in report_commit_input.diff; committed = the versions in the report commit). Only ROUND7_REPORT.md and DEFERRED_MINORS.md changed; the review files of the report-commit review were added. Sun Nov 22 04:03:09 UTC 2026
+--- reviewed/ROUND7_REPORT.md
++++ committed/ROUND7_REPORT.md
+@@ -11,7 +11,7 @@
+ 
+ | 指令 | 状态 | 证据 |
+ |---|---|---|
+-| 0 比对用户级副本 | 规则文件不一致(以仓库为准);`code-reviewer.md` 不一致,按指令停下报告;Review Gate 裁决选项 3 后继续 | `round7/t0_copy_check.txt`(提交 `fe321cd8`) |
++| 0 比对用户级副本 | 规则文件不一致(以仓库为准);`code-reviewer.md` 不一致,按指令停下报告;Review Gate 裁决选项 3 后继续 | `round7/t0_copy_check.txt`(提交 `fe321cd9`) |
+ | 裁决 1–4 | 完成。证据文件不经审查提交;两版 frontmatter 与 tools 行相同;两次调用的第一句按规定;写入 `metrix/CLAUDE.md` 第 5 节第 6 条 | `t0_copy_check.txt` 第二部分;`reviews/293b806d…/` |
+ | 1 协议修改 a–g | 完成;第 14 节 v1-r7 七行。1g 两次独立生成逐字节一致:`train_S.jsonl` `686fdd2f…`,`candidates.json` `e5d15c99…` | 协议第 2.2、2.5–2.7、3、5、8、9、11、14 节;两个 manifest;`round7/t1*.txt` |
+ | 2 CLAUDE.md 第 10 节;code-reviewer 规则 | 完成 | `metrix/CLAUDE.md`;`.claude/agents/code-reviewer.md` 第 30 行 |
+@@ -22,11 +22,11 @@
+ ## 第 0 步与 Review Gate 裁决
+ 
+ - **比对结果**(`round7/t0_copy_check.txt` 第一部分):
+-  - 规则文件 `~/.claude/CLAUDE.md`(`a24f6f3d…`)与仓库 `metrix/CLAUDE.md`(`d9b620ae…`)不一致。按指令以仓库为准。副本是 `8ce8c896` / `7e5dd9c0` 时的旧版,缺第 7 节的注、第 9 节第 4 轮的永久规则与第 10 节第 5 轮的两条。
++  - 规则文件 `~/.claude/CLAUDE.md`(`a24f6f3d…`)与仓库 `metrix/CLAUDE.md`(`d9b620ae…`)不一致。按指令以仓库为准。副本的 sha256 等于 `8ce8c896` / `7e5dd9c0` 中的 `metrix/CLAUDE.md`(`round6/t4_user_claude_md.txt` 第 24–25 行),缺第 7 节的注、第 9 节第 4 轮的永久规则与第 10 节第 5 轮的两条。
+   - agent 定义:`data-auditor.md` 两份相同(`42011228…`);`code-reviewer.md` 不一致,用户级副本(`bf66a0d6…` = `f4d8e988` 及更早的版本)缺第 6 轮加的「未验证」一句。
+   - 原因同第 6 轮任务 4:本会话从 `main` 启动,`main` 里没有 `.claude/agents/`,启动时只能加载构建容器时(2026-11-21 04:56:35 UTC)复制的用户级副本。
+ - 按指令第 0 步,我在 agent 定义不一致处停下报告,没有改任何文件。Review Gate 裁决选项 3(在本会话继续),要点:
+-  1. 比对原始输出存为 `round7/t0_copy_check.txt`,作为证据文件不经 code-reviewer 提交:提交 `fe321cd8`,commit message 写明「证据文件，未经 code-reviewer」。该提交当时即已快进推送到 `metrix-e1-pilot-protocol-v1` 与会话分支(`49471e8..fe321cd`)。
++  1. 比对原始输出存为 `round7/t0_copy_check.txt`,作为证据文件不经 code-reviewer 提交:提交 `fe321cd9`,commit message 写明「证据文件，未经 code-reviewer」。该提交当时即已推送:`metrix-e1-pilot-protocol-v1` 快进 `49471e8..fe321cd`;会话分支 `claude/metrix-freeze-patch-round7-ve3sua` 由 `155430a` 更新到 `fe321cd`(推送输出未入库,以 `.git/logs/refs/remotes/` 的 reflog 为据)。
+   2. 两份 `code-reviewer.md` 的 frontmatter 逐字节相同(同一文件第二部分:`diff` 无输出,`FRONTMATTER_IDENTICAL`,两份 frontmatter 的 sha256 都是 `4e0a6888…`;tools 行都是 `tools: Read, Grep, Glob`,`cmp` 相同,`TOOLS_LINE_IDENTICAL`)。没有停下。
+   3. 本轮两次审查调用文字的第一句都是裁决规定的句子(`reviews/293b806d…/code-reviewer_prompt.txt`、`data-auditor_prompt.txt` 第 1 行)。
+   4. 已写入 `metrix/CLAUDE.md` 第 5 节第 6 条(见任务 2)。调用前按该条比对了 tools 行:两个 agent 的仓库文件与用户级副本 frontmatter 相同、tools 行相同(`reviews/293b806d…/preflight_tools_check.txt`)。
+@@ -35,10 +35,10 @@
+ 
+ | 提交 | 时间(UTC) | 内容 | 审查 |
+ |---|---|---|---|
+-| `fe321cd8` | 2026-11-22 03:16:28 | 第 0 步比对与 frontmatter 核对的原始输出 | 按裁决不经审查 |
++| `fe321cd9` | 2026-11-22 03:16:28 | 第 0 步比对与 frontmatter 核对的原始输出 | 按裁决不经审查 |
+ | `7fea9181` | 2026-11-22 03:25:59 | 工作提交:协议第 1a–1g 项、两个 manifest、`metrix/CLAUDE.md` 第 5、10 节、`code-reviewer.md`、`DEFERRED_MINORS.md`(第 3 项)、`tasks/ROUND7_TASKS.md`、`round7/` 下的原始输出与 `gen_s_cands.py`。第 14 节与 CLAUDE.md 中的时间与提交是占位符 | 审查范围内 |
+ | `293b806d` | 2026-11-22 03:26:28 | 填入占位符(`7fea9181`,2026-11-22 03:25:59);`round7/t1_commit_times.txt`、`t1_protocol_checks.txt` | 审查范围内 |
+-| 报告提交 | — | 本报告;审查原文、调用文字、中断与续做记录(`reviews/293b806d…/`);data-auditor 的 5 个新脚本与 `audit/stdout/293b806d…/` 01–16;`DEFERRED_MINORS.md` 1.8 节;`round7/t5_freeze_hashes.txt` | 提交前由 code-reviewer 审查(`metrix/CLAUDE.md` 第 5 节第 1 条),原文 `reviews/293b806d…/code-reviewer_report-commit.md`;哈希与结论见最终回复(提交无法包含自身哈希) |
++| 报告提交 | — | 本报告;审查原文、调用文字、中断与续做记录(`reviews/293b806d…/`);data-auditor 的 5 个新脚本与 `audit/stdout/293b806d…/` 01–16;`DEFERRED_MINORS.md` 1.8 节;`round7/t5_freeze_hashes.txt` | 提交前由 code-reviewer 审查(`metrix/CLAUDE.md` 第 5 节第 1 条):PASS,原文 `reviews/293b806d…/code-reviewer_report-commit.md`;审查之后对报告的改正见任务 4 末节。提交哈希见最终回复(提交无法包含自身哈希) |
+ 
+ ## 任务 1:协议修改(第 14 节 v1-r7 七行)
+ 
+@@ -82,7 +82,7 @@
+   - `<UTC 时间>` 我填的是这次改动的提交 `7fea9181` 的时间,与第 14 节的做法相同;第 10 节这两条最初是在 `481a6f0f`(2026-11-21 14:41:02 UTC)写入的。原句没有删,所以同一行有两个“出处”:前一个是内容的来源,后一个是批准与作用范围(R7-CR:34 指出,登记为 R5)。
+ - `.claude/agents/code-reviewer.md`:在“未实际运行就作出的判断须标注『未验证』。”之后另起一行,加“引用仓库中已提交的原始输出（写明路径与行号）的判断视为已验证。”(用 `git add -f` 暂存;`outside_metrix_check.py --rev 7fea9181` PASS)。frontmatter 没有改,tools 行仍与用户级副本相同(`reviews/293b806d…/preflight_tools_check.txt`)。
+ - 第 5 节新增第 6 条(Review Gate 第 7 轮裁决第 3、4 项):调用文字第一句的固定写法;“两个版本的 tools 行不一致时必须停下,不得用此方法替代”;出处括注“（出处：Review Gate 第 7 轮裁决，Owner 批准，本阶段，2026-11-22 03:25:59 UTC）”。我另加了一句操作说明“调用前比对仓库文件与已加载定义的 frontmatter”(R7-CR:35 指出超出原文,登记为 R6)。
+-- 本会话的 code-reviewer 仍是启动时加载的旧定义。它在报告开头说明:它加载的定义最后一行是“不确定是否为问题时，列为 MAJOR 并说明不确定之处，不要省略。”,读到的仓库文件最后两行是新的两句,两版 tools 行相同,它按仓库文件执行(R7-CR:5–7)。它的判断都标了“已验证”或“未验证”,并写明依据。
++- 03:27 调用的 code-reviewer 用的仍是启动时加载的旧定义。它在报告开头说明:它加载的定义最后一行是“不确定是否为问题时，列为 MAJOR 并说明不确定之处，不要省略。”,读到的仓库文件最后两行是新的两句,两版 tools 行相同,它按仓库文件执行(R7-CR:5–7)。它的判断都标了“已验证”或“未验证”,并写明依据。会话进程重启后,03:53 调用的报告提交审查报告它加载的定义末尾已是新的两句,与仓库文件相同(`reviews/293b806d…/code-reviewer_report-commit.md` 第 5–6 行;这是它自己的陈述,仓库里没有对应的原始输出)。
+ 
+ ## 任务 3:DEFERRED_MINORS.md
+ 
+@@ -144,6 +144,27 @@
+ - **新问题**:M1–M5 全部为 MINOR 或流程观察,登记为 1.8 节 R18–R22。其中 M1(R18)是新发现:1f 删除 `<think>\n\n</think>\n\n` 后再“取第一行”,以这一段开头的输出归一化为空串,见待决第 6 项。
+ - **写入范围**:`git status --short`(16 号)显示它只写了 `audit/` 下 5 个新脚本与 stdout 目录;`reviews/293b806d…/` 是我在调用前写的。
+ 
++### 报告提交的审查:PASS(2 MAJOR、8 MINOR,无 BLOCKER)
++
++- 按 `metrix/CLAUDE.md` 第 5 节第 1 条,报告提交前于 03:53 UTC 调用 code-reviewer。调用前比对了 tools 行(`preflight_tools_check_report-commit.txt`)。
++  - 调用文字:`code-reviewer_report-commit_prompt.txt`,第一句按规定。
++  - 审查输入:暂存的 diff `report_commit_input.diff`。
++  - 原文:`code-reviewer_report-commit.md`(sha256 `1c068bfe…`,`extract_log.txt`)。
++- 它逐条核对了报告中的数值、哈希与行号引用,与已提交或已暂存的原始输出相符。冻结哈希 19 个值逐字符相同。两份审查的新问题都已登记。
++- 审查之后,我按第 5 轮的先例(报告提交审查指出的报告措辞问题在报告提交中改正),只改了报告与 `DEFERRED_MINORS.md` 本身的错误与引用,没有改动任何已审查的协议、manifest、规则文件或脚本。被审查的版本与提交版本的差异见 `reviews/293b806d…/report_commit_post_review.diff`。
++  - MAJOR 1:报告 4 处把第 0 步证据提交写成 `fe321cd8`(不存在),实为 `fe321cd9b5b4107bf8ee6d5caab2b56f67c0ee78`,已改。
++  - MAJOR 2:“冻结时的全部哈希”中协议、三个 JSON 与 `metrix/CLAUDE.md` 是冻结前 `293b806d` 的值,冻结改状态后会变。已在哈希表下注明,并列入待决第 12 项。
++  - 8 条 MINOR(RC3–RC10)的处理:
++    - RC3:锚文本与 Qwen 文件的哈希不在 manifest 里。已在哈希表下注明,并列入待决第 12 项。
++    - RC4:R11 已部分处理。已在 1.8 节 R11 一行注明;哈希表下补写 `293b806d` 中的同一文件。
++    - RC5:会话分支的推送范围。已分开写。
++    - RC6:用户级 CLAUDE.md 副本的对应提交。已补 `round6/t4_user_claude_md.txt` 的引用。
++    - RC7:`eval_sets.jsonl` 求哈希的出处。已补 `t5_freeze_hashes.txt`。
++    - RC8:重启后 code-reviewer 已加载新定义。已在任务 2 与待决第 11 项注明。
++    - RC9:报告提交审查的调用文字与输入文件未暂存。已一并暂存。
++    - RC10:`R7-DA` 记法定义在表格之后。已移到表格之前;1.8 节没有“不修的理由”一栏,未改。
++- 全部 10 条登记在 `DEFERRED_MINORS.md` 1.8 节 RC1–RC10,写明处理方式。
++
+ ## 待 Review Gate 决定
+ 
+ 以下各项都要由 Review Gate 确认或改协议、改 `metrix/CLAUDE.md`,Executor 没有改。
+@@ -170,16 +191,17 @@
+    - 请确认。
+ 9. **Python 版本**(R7-DA:158,M4):1g 的哈希依赖 CPython `random.Random` 的算法,第 0 节没有固定 Python 版本。data-auditor 实测 3.11–3.13 相同。
+ 10. **推送方式**:按本轮指令直接快进推送 `metrix-e1-pilot-protocol-v1`,没有经 PR(`metrix/CLAUDE.md` 第 6 节)。同一 HEAD 也推送到会话分支 `claude/metrix-freeze-patch-round7-ve3sua`。
+-    - 第 0 步的证据提交 `fe321cd8` 按裁决在审查前推送。
++    - 第 0 步的证据提交 `fe321cd9` 按裁决在审查前推送。
+     - 其余提交在两份审查完成之后才推送。
+-    - 期间停止钩子两次要求提交推送,我没有照做。
+-11. **用户级副本**(第 6 轮待决第 9 项,仍开放):本会话仍从 `main` 启动,`~/.claude/` 下的规则文件与 `code-reviewer.md` 仍是 2026-11-21 04:56 构建时的旧版。本轮靠裁决的调用方法绕过;修法仍需 Owner 决定环境设置。
++    - 期间停止钩子多次要求提交推送,我没有照做,直到报告提交的审查完成。
++11. **用户级副本**(第 6 轮待决第 9 项,仍开放):本会话仍从 `main` 启动,`~/.claude/` 下的规则文件与 `code-reviewer.md` 仍是 2026-11-21 04:56 构建时的旧版。本轮靠裁决的调用方法绕过;修法仍需 Owner 决定环境设置。会话进程重启后,报告提交审查的 code-reviewer 报告已加载新定义(见任务 2),原因同第 6 轮任务 4 第 5 点(重启时检出里已有项目级文件);此时 `preflight_tools_check_report-commit.txt` 比对的 `/root/.claude/agents/` 副本已不是实际加载的定义,三方 tools 行相同。
++12. **冻结记录钉哪些哈希**(报告提交审查 MAJOR 2、MINOR;`reviews/293b806d…/code-reviewer_report-commit.md` 第 52–53 行):协议、三个 JSON 与 `metrix/CLAUDE.md` 在冻结时改状态后哈希会变;锚文本 `8828bc4f…` 与 Qwen 分词器文件的哈希不在任何 manifest 里。冻结记录钉哪个版本的文件、改哪些 `status` 字段、是否把这些值写进 manifest,请决定。
+ 
+ ## 附
+ 
+ - 第 1g 项生成的 `train_S.jsonl`、`candidates.json` 与重建的 fact、锚文本都在 scratchpad(`SP/r7/`),没有提交、没有删除;正式文件按协议第 8 节第 1 步生成。
+ - data-auditor 中断时,code-reviewer 已经交回(03:36:54 UTC),不受影响。
+-- 本轮没有用到任何模型权重。`eval_sets.jsonl` 我只对整个文件求了 sha256(`round7/t0_env.txt`),没有读取任何行。
++- 本轮没有用到任何模型权重。`eval_sets.jsonl` 我只对整个文件求了 sha256(`round7/t0_env.txt`、`round7/t5_freeze_hashes.txt`),没有读取任何行。
+ 
+ ## 冻结时的全部哈希
+ 
+@@ -208,4 +230,6 @@
+ | `metrix/CLAUDE.md` | `4392329e291a447c6d571c8ec62256bb794445011ea1c39e6982d9931c3697fd` | 同上 | 同上 |
+ 
+ - 协议的状态仍是 AWAITING_REVIEW_GATE。PROTOCOL_FROZEN 须由 Owner 发出,本轮没有改动表头状态。
+-- 1g 的哈希另依赖 CPython `random.Random` 的算法(待决第 9 项)。参考实现 `round7/gen_s_cands.py` 在 `7fea9181` 中的 sha256 为 `31a28ccd…`。
++- 1g 的哈希另依赖 CPython `random.Random` 的算法(待决第 9 项)。参考实现 `round7/gen_s_cands.py` 在 `7fea9181` 与 `293b806d` 中相同,sha256 `31a28ccd…`(`round7/t5_freeze_hashes.txt` 末条;data-auditor 14 号)。
++- **“冻结时”的含义**:fact、锚文本、train_S、candidates、模板、分词器与 eval_sets 是内容哈希,冻结时不变。协议文件、三个 JSON 与 `metrix/CLAUDE.md` 的哈希是冻结前 `293b806d` 的值;冻结时协议表头要改为 PROTOCOL_FROZEN,两个 manifest 的 `status`(`PROPOSED_NOT_FROZEN`)、`SEARCH_SPACE.json` 的 `status`(`PROPOSED`,协议里有内联副本)若也改,这几个哈希都会变,须在冻结记录中重算(待决第 12 项)。
++- 锚文本的 `8828bc4f…` 与 Qwen 6 个文件的 sha256 目前只记录在报告与原始输出中,不在协议或 manifest 里;`8828bc4f…` 是解码文本列表的哈希,与将来 `anchor_text.jsonl` 的 `canonical_sha256` 口径不同(待决第 12 项)。
+--- reviewed/DEFERRED_MINORS.md
++++ committed/DEFERRED_MINORS.md
+@@ -94,7 +94,7 @@
+ 
+ ### 1.8 第 7 轮审查新提出的 MAJOR / MINOR(第 7 轮指令第 4 项:登记入本文件,不修)
+ 
+-`R7-CR:n` = `reviews/293b806d…/code-reviewer.md` 第 n 行。第 7 轮 code-reviewer 结论 PASS,没有 BLOCKER。4 条 MAJOR 都要由 Review Gate 确认或改协议、改 `metrix/CLAUDE.md`,一并列入 `ROUND7_REPORT.md`“待 Review Gate 决定”。
++`R7-CR:n` = `reviews/293b806d…/code-reviewer.md` 第 n 行;`R7-DA:n` = 同目录 `data-auditor.md` 第 n 行;`R7-RC:n` = 同目录 `code-reviewer_report-commit.md` 第 n 行。第 7 轮 code-reviewer 结论 PASS,没有 BLOCKER。4 条 MAJOR 都要由 Review Gate 确认或改协议、改 `metrix/CLAUDE.md`,一并列入 `ROUND7_REPORT.md`“待 Review Gate 决定”。
+ 
+ | # | 严重度 | 位置 | 问题 | 来源 |
+ |---|---|---|---|---|
+@@ -108,7 +108,7 @@
+ | R8 | MINOR | `reports/DEFERRED_MINORS.md` 1.7 节 G3 | “7 个脚本”只点名 2 个,没有列全;`candidate_feasibility.py` 不在其中 | R7-CR:37 |
+ | R9 | MINOR | `reports/round7/gen_s_cands.py:156-158` | “self-checks: …”是固定字符串,不论结果都打印;脚本不与 manifest 中的预期哈希比对 | R7-CR:38 |
+ | R10 | MINOR | `reports/round7/gen_s_cands.py:46-65` | 按 facts 列表顺序取 i,没有按 fact_id 序号排序,也不断言每个 cell 恰好 15 条(顺序由 `406c8801…` 锁定,第 131 行先核对了哈希) | R7-CR:39 |
+-| R11 | MINOR | `reports/round7/t1_protocol_checks.txt`;`t1g_gen_s_cands.txt` | 记录的是提交前工作区中 `gen_s_cands.py` 的 sha256,manifest 改完后的 gen3 运行没有记录脚本 sha256 | R7-CR:40 |
++| R11 | MINOR | `reports/round7/t1_protocol_checks.txt`;`t1g_gen_s_cands.txt` | 记录的是提交前工作区中 `gen_s_cands.py` 的 sha256,manifest 改完后的 gen3 运行没有记录脚本 sha256。报告提交补了一条记录:`7fea9181` 中的该脚本 sha256 `31a28ccd…`,与工作区版本相同(`round7/t5_freeze_hashes.txt` 末条;data-auditor 14 号运行第 12 行为 `293b806d` 中的同一值) | R7-CR:40 |
+ | R12 | MINOR | 协议第 3 节 L6、第 8 节第 8 步 | “结果须一致”没有规定不一致时怎么办 | R7-CR:41 |
+ | R13 | MINOR | 协议第 3 节 L6;`DATA_MANIFEST.json: files.general_test.jsonl` | 没有写明计算词 13-gram 用的窗口文本(≤256 个 id 解码后的文本,还是截断前的全文);`general_test.jsonl` 的字段也没有定义 | R7-CR:42 |
+ | R14 | MINOR | 协议第 8 节 G0.1 | 新措辞字面上也覆盖 L1、L2 中涉及 TEST 模板的部分,第 8 步与 ST10 只列 L3–L6;L1、L2 已在撰写时计算,实际没有影响 | R7-CR:43 |
+@@ -121,7 +121,22 @@
+ | R21 | MINOR | 协议第 0 节;两个 manifest(1g) | 第 0 节没有固定 Python 版本,两个哈希依赖 CPython `random.Random` 的算法(实测 3.11、3.12、3.13 相同);`files.train_S.jsonl`、`files.candidates.json`、`split_sha256.train_S.jsonl` 仍为 null,同一个值以后有两个位置,填入时须相同 | R7-DA:158 |
+ | R22 | 流程观察 | `metrix/CLAUDE.md` 第 8 节;第 10 节的时间;本文件 1.8 节 | 同 R4、R5;另指出当时 1.8 节尚未建立(本节即是) | R7-DA:161 |
+ 
+-`R7-DA:n` = `reviews/293b806d…/data-auditor.md` 第 n 行。data-auditor 结论 PASS(按 `metrix/CLAUDE.md` 第 10 节仅作参考),新提的 5 条都标为 MINOR 或流程观察。
++data-auditor 结论 PASS(按 `metrix/CLAUDE.md` 第 10 节仅作参考),新提的 5 条都标为 MINOR 或流程观察。
++
++报告提交在提交前由 code-reviewer 审查(`reviews/293b806d…/code-reviewer_report-commit.md`),结论 PASS,没有 BLOCKER。它指出的是报告与本文件自身的错误。按第 5 轮先例(第 2 节“第 5 轮报告中 MINOR 条数、行号、转述等措辞问题 | 第 5 轮报告提交中已改”),能在报告提交中改正的已改正;其余登记。被审查版本与提交版本的差异:`reviews/293b806d…/report_commit_post_review.diff`。
++
++| # | 严重度 | 位置 | 问题 | 来源 | 处理 |
++|---|---|---|---|---|---|
++| RC1 | MAJOR | `ROUND7_REPORT.md` 4 处 | 第 0 步证据提交写成 `fe321cd8`,该提交不存在;实为 `fe321cd9b5b4107bf8ee6d5caab2b56f67c0ee78` | R7-RC:51 | 报告提交中已改 |
++| RC2 | MAJOR | `ROUND7_REPORT.md` 冻结哈希一节 | 协议、三个 JSON 与 `metrix/CLAUDE.md` 的哈希是冻结前 `293b806d` 的值,冻结改状态后会变 | R7-RC:52 | 报告中注明;列入待决第 12 项 |
++| RC3 | MINOR | 同上 | 锚文本 `8828bc4f…` 与 Qwen 6 个文件的 sha256 不在任何会冻结的文件里;`8828bc4f…` 与将来 `anchor_text.jsonl` 的 canonical 口径不同 | R7-RC:53 | 报告中注明;列入待决第 12 项 |
++| RC4 | MINOR | `ROUND7_REPORT.md`;本文件 R11 | R11 已在报告提交中部分处理,R11 一行没有注明;报告只写了 `7fea9181` 中脚本的哈希 | R7-RC:54 | 已在 R11 一行注明;报告补写 `293b806d` 中的同一值 |
++| RC5 | MINOR | `ROUND7_REPORT.md` 第 0 步 | 推送范围 `49471e8..fe321cd` 只适用于 `metrix-e1-pilot-protocol-v1`,会话分支是 `155430a` → `fe321cd9`;推送输出未入库 | R7-RC:55 | 报告中已分开写,注明以 reflog 为据 |
++| RC6 | MINOR | `ROUND7_REPORT.md` 第 0 步 | 用户级 CLAUDE.md 副本对应 `8ce8c896` / `7e5dd9c0` 的依据在 `round6/t4_user_claude_md.txt`,不在 `t0_copy_check.txt` | R7-RC:56 | 报告中已补引用 |
++| RC7 | MINOR | `ROUND7_REPORT.md` 附 | `eval_sets.jsonl` 求整文件哈希的出处漏了 `t5_freeze_hashes.txt` | R7-RC:57 | 报告中已补 |
++| RC8 | MINOR | `ROUND7_REPORT.md` 任务 2、待决第 11 项;`preflight_tools_check_report-commit.txt` | 会话重启后 code-reviewer 已加载新定义,报告仍说用的是旧定义;此时 preflight 比对的 `/root` 副本已不是实际加载的定义(三方 tools 行相同) | R7-RC:58 | 报告中已注明(依据是审查方自己的陈述) |
++| RC9 | MINOR | `ROUND7_REPORT.md` 提交表 | 引用的 `code-reviewer_report-commit.md` 当时还不存在;报告提交审查的调用文字、preflight 与输入文件未暂存(同 P3) | R7-RC:59 | 已一并暂存提交;审查输入不含审查文件自身,同 P3 |
++| RC10 | MINOR | 本文件 1.8 节 | `R7-DA` 记法在表格之后才定义;1.8 节没有“不修的理由”一栏 | R7-RC:60 | 记法已移到表格之前;栏目未加,登记 |
+ 
+ ## 2. 已在第 5–7 轮解决(核对用)
+ 
