@@ -1,0 +1,63 @@
+# Round 6 raw output, after the data-auditor's BLOCK: failure paths of the two harnesses themselves (wrong arguments; a missing OLD tree; a missing interpreter). Run from the repository root. Host vm, CPU only. Sun Nov 22 02:26:17 UTC 2026
+$ bash metrix/e1-pilot/reports/round6/guard_ab.sh
+usage: bash guard_ab.sh OLD_REPORTS_DIR OUT_DIR PY QWEN_TOK_DIR FACTS.json PARQUET_CACHE_DIR
+RESULT: FAIL
+exit=2
+$ bash metrix/e1-pilot/reports/round6/guard_fail.sh only-one-argument
+usage: bash guard_fail.sh OLD_REPORTS_DIR OUT_DIR PY QWEN_TOK_DIR
+RESULT: FAIL
+exit=2
+$ bash -c bash\ metrix/e1-pilot/reports/round6/guard_ab.sh\ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/does_not_exist\ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/ab_missing_old\ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python\ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/dl/qwen_tok\ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/facts.json\ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/dl/parquet\ \|\ grep\ -E\ \'\^==\ \|identical\|\^RESULT\'
+== template_overlap: /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python {OLD,NEW}/round1/template_overlap.py --split-manifest metrix/e1-pilot/SPLIT_MANIFEST.json
+   exit old 2 new 0 | output bytes old 263 new 781 | sha256 old 86dac562ab9b8cc3 new 5596aacae0d3551f | identical: False
+== y_ratio: /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python {OLD,NEW}/round2/y_ratio.py --manifest metrix/e1-pilot/DATA_MANIFEST.json --split-manifest metrix/e1-pilot/SPLIT_MANIFEST.json --tokenizer-dir /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/dl/qwen_tok
+   exit old 2 new 0 | output bytes old 254 new 635 | sha256 old d3b9416da02a48e1 new a5d16041d6471ecb | identical: False
+== anchor_check: /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python {OLD,NEW}/round2/anchor_check.py --manifest metrix/e1-pilot/DATA_MANIFEST.json --tokenizer-dir /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/dl/qwen_tok --facts /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/facts.json --cache-dir /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/dl/parquet --anchor-out /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/ab_missing_old/anchor_ab.json
+   exit old 2 new 0 | output bytes old 259 new 961 | sha256 old 08f59f025fc08ab6 new 1cd525f692a5caf1 | identical: False
+== candidate_feasibility_r3: /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python {OLD,NEW}/round3/candidate_feasibility_r3.py --facts /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/facts.json --split-manifest metrix/e1-pilot/SPLIT_MANIFEST.json --tokenizer-dir /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/dl/qwen_tok
+   exit old 2 new 0 | output bytes old 271 new 1940 | sha256 old c4d461415e3f1b36 new 4c54f8818f866a9b | identical: False
+== outside_metrix_check: /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python {OLD,NEW}/round3/outside_metrix_check.py --rev f4d8e988a31f99527cc0bc6be5ceacc709bda2f1
+   exit old 2 new 0 | output bytes old 267 new 835 | sha256 old bbb73477a29e8fbf new 7e5a9c6d0b398ddf | identical: False
+== verify_scoring: /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python {OLD,NEW}/round3/verify_scoring.py --facts /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/facts.json --split-manifest metrix/e1-pilot/SPLIT_MANIFEST.json --tokenizer-dir /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/dl/qwen_tok
+   exit old 2 new 0 | output bytes old 261 new 2815 | sha256 old 2fc2f0ed77b73c3b new e87688702a49845a | identical: False
+== st_prefix_check: /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python {OLD,NEW}/round4/st_prefix_check.py --facts /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/facts.json --split-manifest metrix/e1-pilot/SPLIT_MANIFEST.json --tokenizer-dir /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/dl/qwen_tok
+   exit old 2 new 0 | output bytes old 262 new 1006 | sha256 old 351752d27db93b6a new 96816b698c339b74 | identical: False
+== recover_blind: /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python {OLD,NEW}/round5/recover_blind.py rebuild --source metrix/e1-pilot/reports/round4/blind/source_events.jsonl --timeline metrix/e1-pilot/reports/round4/t6_blind_timeline.txt --out-dir /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/ab_missing_old/blind_rebuilt
+   exit old 2 new 0 | output bytes old 260 new 2694 | sha256 old e66d2dc3343987fd new 07082d416e45e424 | identical: False
+identical (output and exit code): 0 of 8
+RESULT: PASS
+ignore rules below come from the working-tree .gitignore; identical to .gitignore at f4d8e988a31f99527cc0bc6be5ceacc709bda2f1: True
+RESULT: PASS
+== task 4: tokenizer special tokens
+== task 7: scored answer ids vs TRAIN statement answer ids (learned facts, DEV questions)
+== example (one full rendered scoring sequence)
+== round 5: pinned scoring sequence (recorded in round 3)
+RESULT: PASS
+RESULT: PASS
+RESULT: FAIL
+exit=0
+$ bash -c bash\ metrix/e1-pilot/reports/round6/guard_fail.sh\ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/old_f4d8e988/metrix/e1-pilot/reports\ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/fail_missing_py\ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/does_not_exist/python\ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/dl/qwen_tok\ \|\ grep\ -E\ \'new:\ non-zero\|exactly\ one\|\^RESULT\'
+   exit old 127 new 127 | 'RESULT: FAIL' lines old 0 new 0 | new: non-zero exit and RESULT: FAIL: False
+   exit old 127 new 127 | 'RESULT: FAIL' lines old 0 new 0 | new: non-zero exit and RESULT: FAIL: False
+   exit old 127 new 127 | 'RESULT: FAIL' lines old 0 new 0 | new: non-zero exit and RESULT: FAIL: False
+   exit old 127 new 127 | 'RESULT: FAIL' lines old 0 new 0 | new: non-zero exit and RESULT: FAIL: False
+   exit old 127 new 127 | 'RESULT: FAIL' lines old 0 new 0 | new: non-zero exit and RESULT: FAIL: False
+   exit old 127 new 127 | 'RESULT: FAIL' lines old 0 new 0 | new: non-zero exit and RESULT: FAIL: False
+   exit old 127 new 127 | 'RESULT: FAIL' lines old 0 new 0 | new: non-zero exit and RESULT: FAIL: False
+   exit old 127 new 127 | 'RESULT: FAIL' lines old 0 new 0 | new: non-zero exit and RESULT: FAIL: False
+   exit old 127 new 127 | 'RESULT: FAIL' lines old 0 new 0 | new: non-zero exit and RESULT: FAIL: False
+   exit old 127 new 127 | 'RESULT: FAIL' lines old 0 new 0 | new: non-zero exit and RESULT: FAIL: False
+   exit old 127 new 127 | 'RESULT: FAIL' lines old 0 new 0 | new: non-zero exit and RESULT: FAIL: False
+   exit new 127 | 'RESULT: FAIL' lines new 0 | new: non-zero exit and RESULT: FAIL: False
+new scripts with non-zero exit and exactly one RESULT: FAIL line: 0 of 12
+RESULT: FAIL
+exit=0
+# Note: in the two runs above, exit= is the exit code of grep (pipeline), not of the harness. The two runs below repeat them without a pipe: full output to SP/r6/*.out, then its last line and the harness's own exit code.
+$ bash -c bash\ metrix/e1-pilot/reports/round6/guard_ab.sh\ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/does_not_exist\ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/ab_missing_old2\ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python\ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/dl/qwen_tok\ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/facts.json\ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/dl/parquet\ \>\ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/ab_missing_old2.out\ 2\>\&1\;\ rc=\$\?\;\ tail\ -1\ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/ab_missing_old2.out\;\ echo\ harness_exit=\$rc
+RESULT: FAIL
+harness_exit=1
+exit=0
+$ bash -c bash\ metrix/e1-pilot/reports/round6/guard_fail.sh\ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/old_f4d8e988/metrix/e1-pilot/reports\ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/fail_missing_py2\ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/does_not_exist/python\ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/dl/qwen_tok\ \>\ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/fail_missing_py2.out\ 2\>\&1\;\ rc=\$\?\;\ tail\ -1\ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/fail_missing_py2.out\;\ echo\ harness_exit=\$rc
+RESULT: FAIL
+harness_exit=1
+exit=0

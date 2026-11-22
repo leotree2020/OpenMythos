@@ -4,7 +4,14 @@
 # arguments (a missing input file, a git error, an argparse error, a pin mismatch), and prints for each: exit
 # codes, the number of "RESULT: FAIL" lines in each output, then both outputs in full.
 #   bash guard_fail.sh OLD_REPORTS_DIR OUT_DIR PY QWEN_TOK_DIR      (run from the repository root)
+# Round 6, after the data-auditor's BLOCK (reviews/599230f9.../data-auditor.md, item E3): this harness is a check
+# script as well. Its last line is RESULT: PASS or RESULT: FAIL; on any other exit (wrong number of arguments, an
+# error before the end) the EXIT trap prints RESULT: FAIL and the exit code is non-zero.
+RESULT_DONE=0
+on_exit() { rc=$?; if [ "$RESULT_DONE" = 0 ]; then echo "RESULT: FAIL"; [ "$rc" = 0 ] && rc=1; fi; exit "$rc"; }
+trap on_exit EXIT
 set -u
+if [ $# -ne 4 ]; then echo "usage: bash guard_fail.sh OLD_REPORTS_DIR OUT_DIR PY QWEN_TOK_DIR" >&2; exit 2; fi
 OLD="$1"; OUT="$2"; PY="$3"; TOK="$4"
 NEW=metrix/e1-pilot/reports
 M=metrix/e1-pilot
@@ -54,4 +61,7 @@ for c in "${cases[@]}"; do
 done
 echo "---------- new output: l6_check_pin"
 cat "$OUT/l6_check_pin.new"
-[ "$ok_all" = $(( ${#cases[@]} + 1 )) ]
+RESULT_DONE=1
+if [ "$ok_all" = $(( ${#cases[@]} + 1 )) ]; then echo "RESULT: PASS"; exit 0; fi
+echo "RESULT: FAIL"
+exit 1
