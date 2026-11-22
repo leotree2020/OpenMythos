@@ -1,0 +1,32 @@
+# Round 7 raw output: anchor text and facts regenerated with the round-2 reference scripts (inputs for item 1g). Host vm, CPU only, tokenizer files only. Sun Nov 22 03:18:57 UTC 2026
+$ /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/venv/bin/python reports/round2/anchor_check.py --manifest DATA_MANIFEST.json --tokenizer-dir /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/dl/qwen_tok --cache-dir /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/dl/parquet --anchor-out /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/anchor.json
+anchor source: SandyResearch/fineweb-edu-shuffled@4d1138c0e4d51d98813997ce3560e05a32bf91de data/sample-100BT/train/shard_00000.parquet
+file sha256 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22, pinned 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22, match True
+[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
+documents read 527, kept 512, anchor texts canonical sha256 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408, total chars 309172
+exit=0
+$ /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/venv/bin/python reports/round2/gen_facts.py --manifest DATA_MANIFEST.json --tokenizer-dir /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/dl/qwen_tok --anchor /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/anchor.json --out /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/facts.json
+[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
+pid 870, PYTHONHASHSEED=None, anchor rule on
+facts 160 (learned 120, unread 40), distinct strings 320
+facts canonical sha256: 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97
+cell log canonical sha256: 38f04096f2da2cd0922f4281e616f131cc240088e32ab2834d6009c50fb52bb1
+cell log: [{"cell": "capital/natural", "entity_draws": 28, "target_pair": [3, 3], "answer_draws": 84}, {"cell": "capital/random", "entity_draws": 20, "target_pair": [5, 5], "answer_draws": 52}, {"cell": "currency/natural", "entity_draws": 31, "target_pair": [3, 3], "answer_draws": 82}, {"cell": "currency/random", "entity_draws": 20, "target_pair": [6, 6], "answer_draws": 46}, {"cell": "founder/natural", "entity_draws": 30, "target_pair": [3, 3], "answer_draws": 81}, {"cell": "founder/random", "entity_draws": 21, "target_pair": [5, 5], "answer_draws": 45}, {"cell": "river/natural", "entity_draws": 34, "target_pair": [3, 3], "answer_draws": 89}, {"cell": "river/random", "entity_draws": 20, "target_pair": [6, 6], "answer_draws": 42}]
+exit=0
+$ sha256sum /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/facts.json /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/anchor.json
+406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97  /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/facts.json
+f2ffbab6586a06085683e70d27424c03b3063234d921817d917883080649f800  /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/anchor.json
+exit=0
+$ /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/venv/bin/python reports/round2/anchor_check.py --manifest DATA_MANIFEST.json --tokenizer-dir /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/dl/qwen_tok --facts /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/facts.json --cache-dir /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/dl/parquet --anchor-out /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/anchor2.json
+anchor source: SandyResearch/fineweb-edu-shuffled@4d1138c0e4d51d98813997ce3560e05a32bf91de data/sample-100BT/train/shard_00000.parquet
+file sha256 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22, pinned 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22, match True
+[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
+documents read 527, kept 512, anchor texts canonical sha256 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408, total chars 309172
+L3a unread entities              strings  40, occurrences 0, strings found 0   -> limit 0: PASS
+L3a unread answers               strings  40, occurrences 0, strings found 0   -> limit 0: PASS
+L3b learned answers              strings 120, occurrences 0, strings found 0   -> limit 0: PASS
+report only: learned entities    strings 120, occurrences 0, strings found 0 
+L3 (a + b): PASS
+exit=0
+$ cmp /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/anchor.json /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/anchor2.json
+exit=0

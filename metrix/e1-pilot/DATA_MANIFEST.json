@@ -28,7 +28,7 @@
       "qa": "chat template of the pinned revision, one user turn, add_generation_prompt=true, enable_thinking=false (fixed, not a parameter), no system prompt",
       "candidate_scoring": "chat(q) + 'The answer is' + ' ' + c: the assistant turn opens with the fixed prefix 'The answer is'; only the tokens of ' ' + c are scored; nothing follows the candidate; K = K_st; reference implementation metrix/e1-pilot/reports/round3/scoring_input.py",
       "train_closed_book": "s_ST scores ' ' + c after prefix(f), the text of the TRAIN statement before the answer without the space before the answer; no special token is prepended to prefix(f) (protocol section 5)",
-      "em_generation": "greedy decoding with do_sample=False (the token of highest probability at each step); fixed, and it overrides the sampling defaults of the pinned generation_config.json (do_sample true, temperature 0.6, top_k 20, top_p 0.95); continues chat(q) + 'The answer is', the same context as candidate scoring; at most 16 new tokens; stops when <|im_end|> (151645) or <|endoftext|> (151643) is generated; the new tokens are decoded with special tokens skipped (skip_special_tokens=True), so neither stop token is in the output; EM compares norm(output) with norm(answer), and leading spaces of the output are removed by the strip step of the normalization (protocol section 5)",
+      "em_generation": "greedy decoding with do_sample=False (the token of highest probability at each step); fixed, and it overrides the sampling defaults of the pinned generation_config.json (do_sample true, temperature 0.6, top_k 20, top_p 0.95); continues chat(q) + 'The answer is', the same context as candidate scoring; at most 16 new tokens; stops when <|im_end|> (151645) or <|endoftext|> (151643) is generated; the new tokens are decoded with special tokens skipped (skip_special_tokens=True), so neither stop token is in the output; EM compares norm(output) with norm(answer), and leading spaces of the output are removed by the strip step of the normalization (protocol section 5); before the normalization every <think>...</think> fragment of the output is deleted (from <think> to the next </think>, both included, every occurrence); <think> (151667) and </think> (151668) are not special tokens, so skip_special_tokens=True does not remove them (protocol section 5)",
       "general_text_and_anchor": "general-damage windows and arm A anchor documents: no special token is prepended (no <|endoftext|>); the first token has no context and is not scored and gets no KL term; t starts at 2 (protocol sections 4 and 5)"
     },
     "libraries": {
@@ -202,7 +202,15 @@
       "answer"
     ]
   },
-  "s_permutation": "per cell, a derangement of the 15 learned answers drawn with rng_rule(DATA_SEED, 's-permutation:<relation>:<stratum>'); redraw until no fixed point",
+  "s_permutation": {
+    "rule": "per cell, a derangement of the 15 learned answers drawn with rng_rule(DATA_SEED, 's-permutation:<relation>:<stratum>'); redraw until no fixed point",
+    "call_order": "cells in the order of name_generation.order; one generator r = rng_rule(DATA_SEED, 's-permutation:<relation>:<stratum>') per cell (stratum spelled natural | random), created once; each attempt starts from p = list(range(15)) and calls r.shuffle(p) once; an attempt with some p[i] == i is redrawn with the same r, again from list(range(15)); learned facts 01..15 of the cell are i = 0..14; statement i = TRAIN template of the relation with {E} = entity of fact i and {A} = answer of fact p[i]",
+    "record": "{\"fact_id\": fact_id of fact i, \"answer_fact_id\": fact_id of fact p[i], \"text\": statement}",
+    "line_order": "cells in order, then i within the cell",
+    "expected_train_S_canonical_sha256": "686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e",
+    "reference_implementation": "metrix/e1-pilot/reports/round7/gen_s_cands.py (Python 3.13.18 random.Random)",
+    "fixed": "round 7 (protocol 2.6, detail 4)"
+  },
   "templates": {
     "count": 32,
     "list": "SPLIT_MANIFEST.json: templates"
@@ -215,12 +223,13 @@
     "dev": "first 25 windows per domain (books, c4, fineweb, wikitext) with split == 'dev', file order",
     "test": "first 25 windows per domain with split == 'test', file order; final TEST evaluation only",
     "truncate_to_model_tokens": 256,
-    "window_rule": "each window has at most 256 tokens of the protocol tokenizer (the first 256); a window with fewer tokens is used at its full length"
+    "window_rule": "each window has at most 256 tokens of the protocol tokenizer (the first 256); a window with fewer tokens is used at its full length; the ids fed to the model are these truncated ids themselves, not decoded and re-encoded; n_w (protocol section 5) is their number"
   },
   "anchor_text": {
     "source": "SandyResearch/fineweb-edu-shuffled@4d1138c0e4d51d98813997ce3560e05a32bf91de, data/sample-100BT/train/shard_00000.parquet (sha256 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22)",
     "selection": "first 512 documents in file order with at least 600 characters",
     "truncate_to_model_tokens": 128,
+    "document_rule": "each document has at most 128 tokens of the protocol tokenizer (the first 128); a document with fewer tokens is used at its full length",
     "schedule": "step s uses documents (4*s + i) mod 512, i = 0..3"
   },
   "files": {

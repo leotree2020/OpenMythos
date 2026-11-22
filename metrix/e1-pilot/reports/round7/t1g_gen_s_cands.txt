@@ -1,0 +1,43 @@
+# Round 7 item 1g raw output: train_S.jsonl and candidates.json generated twice in separate processes (different PYTHONHASHSEED, different output directories) from the facts of DATA_SEED (t0_facts_regen.txt); candidates drawn with CANDIDATE_SEED as protocol 2.5 says. Host vm, CPU only; no tokenizer, no model, no TEST data. Sun Nov 22 03:20:16 UTC 2026
+# Script: reports/round7/gen_s_cands.py at the working tree of this round (sha256 below).
+$ sha256sum reports/round7/gen_s_cands.py DATA_MANIFEST.json SPLIT_MANIFEST.json /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/facts.json
+31a28ccd723a85eea1446ff01ed80b3de4d166afe0d96332867da00e211a9822  reports/round7/gen_s_cands.py
+dde2377ef0834d0959f87198c0b9ec91aa4024735e64e42dfda881d0bbb82a1c  DATA_MANIFEST.json
+02c431fb4e245d3e5215b50d1c957e0b5969ce53da5892008214e8d868647d89  SPLIT_MANIFEST.json
+406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97  /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/facts.json
+exit=0
+$ env PYTHONHASHSEED=0 /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/venv/bin/python -I reports/round7/gen_s_cands.py --facts /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/facts.json --data-manifest DATA_MANIFEST.json --split-manifest SPLIT_MANIFEST.json --out-dir /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/gen1
+pid 924, PYTHONHASHSEED=0, python 3.13.18
+facts canonical sha256 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97, expected 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97, match True
+S derangement attempts per cell: {"capital/natural": 3, "capital/random": 5, "currency/natural": 1, "currency/random": 6, "founder/natural": 2, "founder/random": 1, "river/natural": 2, "river/random": 6}
+train_S.jsonl   rows 120, byte_sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e, canonical_sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e
+candidates.json facts 160, byte_sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705, canonical_sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705
+first S row: The capital of Krultrouth is Kishan. | first candidates: ["Thunae", "Linnuth", "Baszaes", "Kaethnis"]
+self-checks: train_S derangement within cell, learned strings exactly once, unread strings 0; candidates 4 distinct, true answer once, distractors from the 2.5 pool
+RESULT: PASS
+exit=0
+$ env PYTHONHASHSEED=4242 /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/venv/bin/python -I reports/round7/gen_s_cands.py --facts /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/facts.json --data-manifest DATA_MANIFEST.json --split-manifest SPLIT_MANIFEST.json --out-dir /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/gen2
+pid 926, PYTHONHASHSEED=4242, python 3.13.18
+facts canonical sha256 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97, expected 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97, match True
+S derangement attempts per cell: {"capital/natural": 3, "capital/random": 5, "currency/natural": 1, "currency/random": 6, "founder/natural": 2, "founder/random": 1, "river/natural": 2, "river/random": 6}
+train_S.jsonl   rows 120, byte_sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e, canonical_sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e
+candidates.json facts 160, byte_sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705, canonical_sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705
+first S row: The capital of Krultrouth is Kishan. | first candidates: ["Thunae", "Linnuth", "Baszaes", "Kaethnis"]
+self-checks: train_S derangement within cell, learned strings exactly once, unread strings 0; candidates 4 distinct, true answer once, distractors from the 2.5 pool
+RESULT: PASS
+exit=0
+$ cmp /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/gen1/train_S.jsonl /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/gen2/train_S.jsonl
+exit=0
+$ cmp /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/gen1/candidates.json /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/gen2/candidates.json
+exit=0
+$ sha256sum /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/gen1/train_S.jsonl /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/gen2/train_S.jsonl /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/gen1/candidates.json /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/gen2/candidates.json
+686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e  /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/gen1/train_S.jsonl
+686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e  /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/gen2/train_S.jsonl
+e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705  /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/gen1/candidates.json
+e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705  /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/gen2/candidates.json
+exit=0
+$ wc -lc /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/gen1/train_S.jsonl /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/gen1/candidates.json
+  120 15033 /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/gen1/train_S.jsonl
+    0 10453 /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/gen1/candidates.json
+  120 25486 total
+exit=0

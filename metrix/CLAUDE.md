@@ -42,6 +42,7 @@ Metrix 是独立子项目。根目录 `CLAUDE.md`(Mythos 宪章 v2.0)第 1 节�
 3. 任一结论为 BLOCK:修复后重新调用。不得跳过审查,不得改写或摘要替代审查原文。
 4. 连续 3 轮未 PASS:停止,提交当前状态与全部审查原始输出,等待 Review Gate。
 5. 审查原始输出保存到 `metrix/e1-pilot/reviews/<commit-hash>/`,随提交推送。
+6. 每次调用审查 subagent,调用文字的第一句固定为:「先读仓库中的 .claude/agents/<名称>.md，以它为你的完整定义；它与你已加载的定义冲突时，以仓库文件为准。」调用前比对仓库文件与已加载定义的 frontmatter;两个版本的 tools 行不一致时必须停下,不得用此方法替代。（出处：Review Gate 第 7 轮裁决，Owner 批准，本阶段，R7_TIME UTC）
 
 ## 6. PR 审查
 
@@ -71,4 +72,4 @@ PROTOCOL_FROZEN 的发出与修改、租用 GPU、生成或评测 TEST、删除�
 
 - `code-reviewer`:已验证（2026-11-21 盲测 3/3 检出、0 误报；每类仅 1 个样本，PASS 仍须附原始输出）。
 - `data-auditor`:「待验证」。2026-11-21 的盲测只测了 code-reviewer;埋入已知 bug 的检出率测试通过前,其 PASS 仅作参考。
-- 以上两条的出处：Review Gate 第 5 轮裁决。
+- 以上两条的出处：Review Gate 第 5 轮裁决。（出处：Review Gate 第 6 轮裁决，Owner 批准，本阶段，R7_TIME UTC）

@@ -1,0 +1,47 @@
+# Round 7 raw output: execution environment and downloaded files. Written by the Executor (session_01J5mxaTx8SWDUGRUNbxcnqu). Sun Nov 22 03:18:50 UTC 2026
+# SP = /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad (session scratchpad); PY = $SP/venv/bin/python. cwd metrix/e1-pilot. Recorded by reports/round5/logrun.sh.
+$ hostname
+vm
+exit=0
+$ nproc
+4
+exit=0
+$ free -g
+               total        used        free      shared  buff/cache   available
+Mem:              15           0          14           0           0          15
+Swap:              0           0           0
+exit=0
+$ bash -c command\ -v\ nvidia-smi
+exit=1
+$ bash -c grep\ PRETTY_NAME\ /etc/os-release
+PRETTY_NAME="Ubuntu 24.04.5 LTS"
+exit=0
+$ /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/venv/bin/python -c import\ sys\,transformers\,tokenizers\,jinja2\,pyarrow\,huggingface_hub\;print\(sys.version.split\(\)\[0\]\,\'transformers\'\,transformers.__version__\,\'tokenizers\'\,tokenizers.__version__\,\'jinja2\'\,jinja2.__version__\,\'pyarrow\'\,pyarrow.__version__\,\'huggingface_hub\'\,huggingface_hub.__version__\)
+[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
+3.13.18 transformers 5.22.2 tokenizers 0.23.3 jinja2 3.1.6 pyarrow 26.0.1 huggingface_hub 2.4.0
+exit=0
+$ /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/venv/bin/python -c import\ torch
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import torch
+ModuleNotFoundError: No module named 'torch'
+exit=1
+$ bash -c cd\ /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/dl\ \&\&\ find\ .\ -type\ f\ -not\ -path\ \'\*/.cache/\*\'\ \|\ sort\ \|\ xargs\ sha256sum
+e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77  ./parcae_tok/tokenizer.json
+6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22  ./parquet/data/sample-100BT/train/shard_00000.parquet
+1ddb5b89ebc90dcb417a45c213d818577e65976454d29385c8f6140771d95197  ./qwen_tok/config.json
+2325da0f15bb848e018c5ae071b7943332e9f871d6b60e2ed22ca97d4cb993d2  ./qwen_tok/generation_config.json
+8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5  ./qwen_tok/merges.txt
+aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4  ./qwen_tok/tokenizer.json
+d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101  ./qwen_tok/tokenizer_config.json
+ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910  ./qwen_tok/vocab.json
+exit=0
+$ bash -c cd\ /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/dl\ \&\&\ find\ .\ -type\ f\ \\\(\ -name\ \'\*.safetensors\'\ -o\ -name\ \'\*.bin\'\ -o\ -name\ \'\*.pt\'\ -o\ -name\ \'\*.pth\'\ -o\ -name\ \'\*.gguf\'\ \\\)\ \|\ wc\ -l
+0
+exit=0
+$ bash -c diff\ \<\(grep\ -E\ \'\^\[0-9a-f\]\{64\}\ \ \\./\'\ reports/round6/t0_env.txt\)\ \<\(cd\ /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/dl\ \&\&\ find\ .\ -type\ f\ -not\ -path\ \'\*/.cache/\*\'\ \|\ sort\ \|\ xargs\ sha256sum\)\ \&\&\ echo\ \'downloaded\ files\ identical\ \(sha256\ and\ paths\)\ to\ round\ 6\ t0_env.txt\'
+downloaded files identical (sha256 and paths) to round 6 t0_env.txt
+exit=0
+$ sha256sum ../../research/mini_mythos/stage1/results/r1/eval_sets.jsonl
+8816fe5a39d8b89e8c4203bf7d660e798faa471d2b72b5ce43c411cf5925a155  ../../research/mini_mythos/stage1/results/r1/eval_sets.jsonl
+exit=0

@@ -5,6 +5,7 @@
 - 来源记法:`R5-CR:20` = `reviews/2724144b…/code-reviewer.md` 第 20 行;`R5-RC:27` = `reviews/2724144b…/code-reviewer_report-commit.md` 第 27 行;`R6-CR` = 本轮 `reviews/599230f9…/code-reviewer.md`;`R6-DA` = 同目录 `data-auditor.md`;`R6b-CR` = `reviews/2620f306…/code-reviewer.md`;`R4 待决 N` = `ROUND4_REPORT.md`“待 Review Gate 决定”第 N 项;`R5 待决 N` 同理。
 - “不修的理由”一栏说明它为什么不影响数据、指标、门槛或可复现性。凡是影响这四者、但要改协议才能修的,不在本表,列在本文件末节,交 Review Gate。
 - 状态写明“已解决”的条目也列在后面,便于核对没有遗漏。
+- 第 7 轮(`tasks/ROUND7_TASKS.md`)按指令第 3 项把第 6 轮待决第 6、14 项登记入 1.7 节;第 7 轮审查新提出的 MAJOR / MINOR 按指令第 4 项登记入 1.8 节,不修。第 3 节中已由第 7 轮协议修改(1f、1g)处理的两项移到第 2 节。
 
 ## 1. 登记不修
 
@@ -77,7 +78,21 @@
 | H4 | `round6/guard_ab.sh:14`;`guard_fail.sh:11、49` | `on_exit` 里的 `rc` 不是局部变量,与 `guard_fail.sh` 第 49 行同名;两个脚本的 `on_exit` 与结尾 4 行逐字重复 | R6b-CR MINOR 3 | 只在退出时覆盖,无害 |
 | H5 | `round6/guard_ab.sh` | “identical”不检查脚本是否真的运行过:PY 指向忽略参数、输出相同的程序(如 `/bin/true`),或 OLD 与 NEW 是同一目录时,也会得 8/8、`RESULT: PASS` | 第 2 轮 data-auditor 观察 (a)(`reviews/2620f306…/data-auditor.md`) | 原有代码;本轮记录的运行中每个 case 都有非空输出、退出码 0,证据不受影响 |
 
-## 2. 已在第 5、6 轮解决(核对用)
+### 1.7 第 6 轮待决第 6、14 项(第 7 轮指令第 3 项:登记入本文件)
+
+**注:正式流程代码统一要求不通过时打印 RESULT 并以非 0 退出。**(第 7 轮指令第 3 项原文。本节各条都是协议撰写阶段的检查脚本与对照脚本,登记,不修。)
+
+`R6-CR:n` = `reviews/599230f9…/code-reviewer.md` 第 n 行;`R6-DA:n` = 同目录 `data-auditor.md` 第 n 行;`R6b-CR` = `reviews/2620f306…/code-reviewer.md`。
+
+| # | 位置 | 问题 | 来源 | 处理 |
+|---|---|---|---|---|
+| G1 | `reports/round1/template_overlap.py`、`reports/round2/y_ratio.py` | 检查不通过(L1/L2 FAIL、Y/F 比 OUTSIDE)时仍以 0 退出,也不打印 RESULT 行;只有异常时打印 `RESULT: FAIL` | 第 6 轮待决第 6 项第 1 点;R6-CR:20;R6-DA:198 | 登记,不修 |
+| G2 | `reports/round2/anchor_check.py`、`reports/round5/blind_handback_check.py`、`reports/round5/records_check.py`、`reports/round5/recover_blind.py` | 检查不通过时以 1 退出,但没有 RESULT 行(同 D2) | 第 6 轮待决第 6 项第 1 点;R6-DA:197 | 登记,不修 |
+| G3 | 第 6 轮排除在“检查脚本”之外的 7 个脚本,其中 `reports/round4/anchor_short_docs.py`、`reports/round5/em_special_tokens.py` 的输出是协议第 14 节 v1-r5 引用的证据 | 是否也算检查脚本;它们出异常时以 1 退出、打印 traceback,但没有 `RESULT: FAIL` | 第 6 轮待决第 6 项第 2 点;R6-CR:21;R6-DA:201 | 登记,不修 |
+| G4 | data-auditor 已入库的旧脚本(第 6 轮 `audit/stdout/599230f9…/06–09` 用到的,以及 `audit/r5_sources.py`) | 是否在第 6 轮第 2 项“所有检查脚本遇异常须打印 RESULT: FAIL”的范围内;`r5_sources.py` 用 `except Exception` 吞掉异常后以 0 退出(同 A4、A6) | 第 6 轮待决第 6 项第 3 点;R6-DA:214;R5-RC:27 (3) | 登记,不修(Executor 不改 auditor 的文件) |
+| G5 | `reports/round6/guard_ab.sh`、`reports/round6/guard_fail.sh` | 头注释说“出错由 EXIT trap 打印 RESULT: FAIL”,但没有 `set -e`;只用于展示的命令出错时判定不受影响,可能仍输出 `RESULT: PASS`(同 H1) | 第 6 轮待决第 14 项;R6b-CR MAJOR 1 | 登记,不修 |
+
+## 2. 已在第 5–7 轮解决(核对用)
 
 | 原条目 | 来源 | 处理 |
 |---|---|---|
@@ -97,11 +112,11 @@
 | `guard_ab.sh`、`guard_fail.sh` 按判定设置退出码,却没有异常保护与 RESULT 行(data-auditor BLOCK) | R6-DA E3 | 修复提交 `2620f306`(复核结果见 `ROUND6_REPORT.md` 任务 5) |
 | `t2_harness_fail.txt` 中两次不经管道的运行,完整输出只在 scratchpad | R6b-CR MAJOR 2 | 报告提交中原样入库:`round6/t2_harness_fail_ab_missing_old.out.txt`、`t2_harness_fail_missing_py.out.txt`(sha256 与 scratchpad 中的文件相同,`round6/t2_harness_fail_outputs.txt`) |
 | `t1_protocol_checks.txt` 是在 `599230f9` 填入第 14 节之前运行的 | R6-CR:31 | 报告提交中对 `599230f9` 的已提交内容重跑:`round6/t1_protocol_checks_599230f9.txt` |
+| `<think>`(151667)与 `</think>`(151668)不是特殊 token,`skip_special_tokens=True` 去不掉,协议没有写 | R5-CR:32 前半;R5 待决 7 第 1 点;R6 待决 11 第 1 点 | 第 7 轮第 1f 项:EM 归一化之前先删除 `<think>…</think>` 片段(协议第 5 节,第 14 节 v1-r7) |
+| 第 2.6 节 S 的置换与第 2.5 节的候选抽取没有写死调用方式,只凭协议文字不能逐字节复现 `train_S.jsonl` 与 `candidates.json` | R4 待决 8;R5 待决 8;R6 待决 11 第 2 点 | 第 7 轮第 1g 项:写死调用方式与记录格式,两次独立生成逐字节一致,规范化 SHA-256 写入协议与 manifest(`reports/round7/t1g_gen_s_cands.txt`) |
 
 ## 3. 不按 MINOR 登记、交 Review Gate 的开放项
 
-下面几项原来有的标为 MINOR,但会影响指标或可复现性,修它们要改协议或改 auditor 的文件,Executor 不能自行处理。详见 `ROUND6_REPORT.md`“待 Review Gate 决定”。
+下面几项原来有的标为 MINOR,但会影响指标或可复现性,修它们要改协议或改 auditor 的文件,Executor 不能自行处理。
 
-- `<think>`(151667)与 `</think>`(151668)不是特殊 token,`skip_special_tokens=True` 去不掉,协议没有写(R5-CR:32 前半;R5 待决 7 第 1 点)。影响 EM。
-- 第 2.6 节 S 的置换与第 2.5 节的候选抽取没有写死调用方式,只凭协议文字不能逐字节复现 `train_S.jsonl` 与 `candidates.json` 的哈希(R4 待决 8;R5 待决 8)。影响可复现性。
-- 第 6 轮第 2 项“所有检查脚本”是否包括 auditor 已入库的旧脚本(A4、A6)。
+- 第 6 轮第 2 项“所有检查脚本”是否包括 auditor 已入库的旧脚本(A4、A6):第 7 轮指令第 3 项将其登记入 1.7 节 G4。本节目前没有其它开放项;第 7 轮审查新提出的项见 1.8 节。

@@ -74,7 +74,7 @@ Task Order 与其 “Mandatory consistency amendments A–L” 同时生效;两�
 - **冲突规则(reject_if)**,与**已接受集合**比较;已接受集合包含此前在任何 cell、任何角色(entity 或 answer)、任何 stratum 中接受的全部字符串:
   - `natural`:与某个已接受字符串小写后相同;与某个已接受字符串前 4 个字符相同(区分大小写);与某个已接受字符串小写后的编辑距离 ≤ 1。
   - `random`:与某个已接受字符串相同;字母段(`-` 之前的部分;没有 `-` 的字符串取整串)与某个已接受字符串的字母段相同;与某个等长的已接受字符串汉明距离 ≤ 1。
-- **锚文本规则**:在第 2.7 节的锚文本(512 篇、各截到 128 token 后解码的文本)中出现过的字符串(不分大小写的子串)一律拒绝。因此锚文本必须在名字之前生成。
+- **锚文本规则**:在第 2.7 节的锚文本(512 篇、每篇最多 128 token、解码后的文本)中出现过的字符串(不分大小写的子串)一律拒绝。因此锚文本必须在名字之前生成。
 - **token 数**:`K_st(s) = len(encode(" " + s))`(陈述句语境,前有空格),`K_qa(s) = len(encode(s))`(无前导空格);`encode` 用固定分词器,`add_special_tokens=False`。`K_qa` 只作为生成规则保留(改动会改变下面的 160 条 fact 及其哈希);Round 3 起候选打分在 `The answer is` 之后对 `" " + c` 打分,打分的 token 数等于 `K_st`(第 5 节)。
 - **随机流(细节 1)**:每个 cell、每种角色一个独立的流:entity 用 `rng_rule(DATA_SEED, "names:<relation>:<stratum>:entity")`,answer 用 `rng_rule(DATA_SEED, "names:<relation>:<stratum>:answer")`;`<stratum>` 写作 `natural` 或 `random`。
 - **生成顺序**:cell 按 relation(capital、currency、founder、river)× stratum(natural、random)的顺序;cell 内先 entity 后 answer;每种角色先接受的 15 个为 learned,后 5 个为 unread。
@@ -124,19 +124,25 @@ unread fact 的 entity 和 answer 在任何 arm 的训练文本和锚文本里�
 - 每条 fact 4 个候选:1 个真实答案 + 3 个干扰项。
 - **干扰项的池**:同 relation、同 stratum、同暴露类别(learned 或 unread)的其它 fact 的答案。
 - 抽取:用 `rng_rule(CANDIDATE_SEED, "cand:<fact_id>")` 不放回抽 3 个并决定 4 个候选的顺序;不得重复。
+- **调用方式(细节 5)**:每条 fact 一个生成器 `r = rng_rule(CANDIDATE_SEED, "cand:<fact_id>")`;池按第 2.2 节的 fact 生成顺序排列,不含该 fact 自己(learned 14 个,unread 4 个);依次调用 `d = r.sample(池, 3)`,令 `c = [a_f] + d`,再调用 `r.shuffle(c)`;`c` 就是 4 个候选的顺序。每条 fact 的生成器各自独立,fact 之间的处理顺序不影响结果。
+- `candidates.json`:一个 JSON 对象,键为 fact_id,值为该 fact 的 4 个候选(按上面的顺序),共 160 个键。
 - 一条 fact 的候选表对它的全部模板、全部 split、全部 arm 相同。
 - **暴露匹配**:learned fact 的每个候选在 F、L、A、S、Y 的训练语料里都恰好出现 1 次(A 的锚文本里 0 次,由 L3b 检查);unread fact 的每个候选出现 0 次。因此“见过这个词”不能用来选出正确项。
-- 完整候选映射的 `canonical_sha256` 写入 `SPLIT_MANIFEST.json`。
+- 完整候选映射的 `canonical_sha256` 写入 `SPLIT_MANIFEST.json`。**复现**:按以上规则,第 2.2 节 `DATA_SEED` 下的 160 条 fact 得到的 `candidates.json` 的规范化 SHA-256 必须等于 `e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705`。参考实现 `reports/round7/gen_s_cands.py`(Python 3.13.18 的 `random.Random`);两次独立运行的记录见 `reports/round7/t1g_gen_s_cands.txt`。
 
 ### 2.6 S 与 Y 的训练语料
 
 - **S**:用 TRAIN 模板,但每个 cell 内把 15 个 learned 答案做一次没有不动点的置换(`rng_rule(DATA_SEED, "s-permutation:<relation>:<stratum>")`,有不动点就重抽)。entity 与答案各出现 1 次,真实映射一条都不出现。
+  - **调用方式(细节 4)**:cell 按第 2.2 节的顺序处理;每个 cell 只建一个生成器 `r = rng_rule(DATA_SEED, "s-permutation:<relation>:<stratum>")`(`<stratum>` 写作 `natural` 或 `random`)。每次抽取从 `p = list(range(15))` 开始,调用一次 `r.shuffle(p)`;若有 `p[i] == i`,用同一个 `r` 再从 `list(range(15))` 开始抽,直到没有不动点。
+  - cell 内的 learned fact 按 fact_id 序号 01–15 依次记为 i = 0..14。第 i 条 S 句 = 该 relation 的 TRAIN 模板,`{E}` 取第 i 条 fact 的 entity,`{A}` 取第 `p[i]` 条 fact 的 answer。
+  - `train_S.jsonl` 每行一个对象 `{"fact_id": 第 i 条 fact 的 fact_id, "answer_fact_id": 第 p[i] 条 fact 的 fact_id, "text": S 句}`;行序为 cell 顺序,cell 内按 i。
+  - **复现**:第 2.2 节 `DATA_SEED` 下的 160 条 fact 按以上规则得到的 `train_S.jsonl` 的规范化 SHA-256 必须等于 `686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e`。参考实现与运行记录同第 2.5 节。
 - **Y**:每条 learned fact 两个句子:一个只含 entity(`Y_ENTITY` 模板),一个只含 answer(`Y_ANSWER` 模板,答案前有空格,切分方式与它在 TRAIN 陈述句里相同),各自是独立的训练序列,永不出现在同一序列里。共 240 句。Y 语料的 token 总数与 F 语料之比必须在 [0.80, 1.25],否则 IMPLEMENTATION_FAIL。撰写时用固定分词器核算(`reports/round2/y_ratio.py`):`DATA_SEED` 下为 1.196(F 1,889 token,Y 2,260 token);另 20 个数据种子在 1.189–1.199 之间。
 
 ### 2.7 通用文本与锚文本
 
 - **通用文本(测 general damage)**:取 `research/mini_mythos/stage1/results/r1/eval_sets.jsonl`(sha256 `8816fe5a…a155`),用 `SandyResearch/parcae-tokenizer@6247b5d0592876b73660f34c2dd16c9db9e9045c` 的 `tokenizer.json`(sha256 `e0021e26…ea77`)解码(跳过特殊 token),再用本协议的分词器切分;每个窗口最多 256 token(取前 256 个),不足则取全长。两个 sha256 的全值在 `DATA_MANIFEST.json: general_text`。DEV:每个 domain(books、c4、fineweb、wikitext)按文件顺序取 `split == "dev"` 的前 25 个窗口,共 100 个。TEST:同法取 `split == "test"` 的前 25 个,只在最终 TEST 评测时生成和使用。
-- **锚文本(只用于 arm A)**:`SandyResearch/fineweb-edu-shuffled@4d1138c0e4d51d98813997ce3560e05a32bf91de` 的 `data/sample-100BT/train/shard_00000.parquet`(sha256 `6a3450ea…2c22`,全值在 `DATA_MANIFEST.json`),按文件顺序取前 512 篇不少于 600 字符的文档,各截到 128 token。第 s 步使用第 (4s + i) mod 512 篇,i = 0..3。锚文本与通用文本不得共享任何 13-gram。
+- **锚文本(只用于 arm A)**:`SandyResearch/fineweb-edu-shuffled@4d1138c0e4d51d98813997ce3560e05a32bf91de` 的 `data/sample-100BT/train/shard_00000.parquet`(sha256 `6a3450ea…2c22`,全值在 `DATA_MANIFEST.json`),按文件顺序取前 512 篇不少于 600 字符的文档,每篇最多 128 token(取前 128 个),不足则取全长。第 s 步使用第 (4s + i) mod 512 篇,i = 0..3。锚文本与通用文本不得共享任何词 13-gram(定义与上限见第 3 节 L6)。
 
 ### 2.8 生成的文件
 
@@ -159,12 +165,12 @@ unread fact 的 entity 和 answer 在任何 arm 的训练文本和锚文本里�
 | L3b | 每个 learned answer 在 `anchor_text` 中的出现次数(不分大小写的子串);保证 arm A 对每个候选的暴露与 F 相同 | 0 |
 | L4 | 实例化后的 DEV / TEST 问句在任何训练语料中逐字出现的次数 | 0 |
 | L5 | learned 与 unread 的 fact_id 集合相交数;320 个字符串中的重复数 | 0 |
-| L6 | 锚文本与通用文本共享的词 13-gram 数;“词”= Python `str.split()` 的结果(按空白切分,区分大小写);Qwen token 13-gram 只报告,不设上限 | 0 |
+| L6 | 锚文本与通用文本共享的词 13-gram 数;“词”= Python `str.split()` 的结果(按空白切分,区分大小写);Qwen token 13-gram 只报告,不设上限。TEST 部分(锚文本对 `general_test.jsonl`):时机为第 8 步生成 `general_test.jsonl` 之后、TEST 评测之前;计数为跨全部文档的共享词 13-gram 种类数(13-gram 在每篇锚文档、每个窗口之内取;锚文本 512 篇的词 13-gram 集合与 `general_test.jsonl` 全部窗口的词 13-gram 集合求交,数交集的元素个数),上限 0;由 Executor 与 data-auditor 各自计算,结果须一致 | 0 |
 
 learned fact 的 entity 与 answer 同时出现在 TRAIN 陈述句和 QA 中是被测对象,不算泄漏。
 
 执行接口(实现属于下一个 Task):
-`python -m metrix.e1_pilot.check_leakage --data <DATA_DIR> --split-manifest metrix/e1-pilot/SPLIT_MANIFEST.json --out <DATA_DIR>/leakage_report.json`,仅当 6 项都在上限内时退出码为 0。L1、L2 只用模板,协议撰写时已可计算;L3–L5 中涉及 TEST 的部分在 `test_qa.jsonl` 生成之后才运行;L6 的 TEST 部分见第 8 节第 8 步。第 2.2 节的锚文本规则使 L3a、L3b 在生成时就成立,检查仍然执行。
+`python -m metrix.e1_pilot.check_leakage --data <DATA_DIR> --split-manifest metrix/e1-pilot/SPLIT_MANIFEST.json --out <DATA_DIR>/leakage_report.json`,仅当 6 项都在上限内时退出码为 0。L1、L2 只用模板,协议撰写时已可计算;L3–L5 中涉及 TEST 的部分在 `test_qa.jsonl` 生成之后才运行;L6 的 TEST 部分在 `general_test.jsonl` 生成之后才运行(时机与口径见上表 L6 一行与第 8 节第 8 步)。L3–L6 任一项的 TEST 部分超限,按第 11 节 ST10 处理。第 2.2 节的锚文本规则使 L3a、L3b 在生成时就成立,检查仍然执行。
 
 ## 4. Arms(6 个)
 
@@ -201,7 +207,7 @@ CB(f) = 1[ s_ST(f, a_f) > max_{c ≠ a_f} s_ST(f, c) ]
 Acc_CB(arm) = (1/120) · Σ_{f ∈ learned} CB(f)
 ```
 
-**Free-generation exact match(次指标)**:对 `chat(q) + "The answer is"`(与 `s_QA` 的上下文相同)做贪心解码:`do_sample=False`,每步取概率最大的 token;这一设置写死,覆盖固定 revision 的 `generation_config.json` 中的采样默认值(`do_sample` true、`temperature` 0.6、`top_k` 20、`top_p` 0.95)。最多 16 个新 token,生成出 `<|im_end|>`(id 151645)或 `<|endoftext|>`(id 151643)即停。新 token 解码成文本时跳过特殊 token(`skip_special_tokens=True`;这两个停止 token 都是特殊 token,不进入输出)。归一化:取第一行,去首尾空白(输出开头的空格在这一步去掉),去开头的 “the ”(不分大小写),去结尾的 `. , ; : ! ?`,casefold。`EM(f, q) = 1[norm(output) == norm(a_f)]`;聚合方式同上。
+**Free-generation exact match(次指标)**:对 `chat(q) + "The answer is"`(与 `s_QA` 的上下文相同)做贪心解码:`do_sample=False`,每步取概率最大的 token;这一设置写死,覆盖固定 revision 的 `generation_config.json` 中的采样默认值(`do_sample` true、`temperature` 0.6、`top_k` 20、`top_p` 0.95)。最多 16 个新 token,生成出 `<|im_end|>`(id 151645)或 `<|endoftext|>`(id 151643)即停。新 token 解码成文本时跳过特殊 token(`skip_special_tokens=True`;这两个停止 token 都是特殊 token,不进入输出)。归一化之前,先删除输出中的 `<think>…</think>` 片段:从 `<think>` 到其后第一个 `</think>`(两者都含),每处都删;这两个标记(id 151667、151668)不是特殊 token,`skip_special_tokens=True` 不会去掉它们。归一化:取第一行,去首尾空白(输出开头的空格在这一步去掉),去开头的 “the ”(不分大小写),去结尾的 `. , ; : ! ?`,casefold。`EM(f, q) = 1[norm(output) == norm(a_f)]`;聚合方式同上。
 
 **全对率(次指标,只报告)**:`AllCorrect(f) = Π_{q} correct(f, q)`。
 
@@ -211,7 +217,7 @@ NLL_arm(w) = −(1/(n_w − 1)) · Σ_{t=2..n_w} log p_θ(x_t | x_<t)           
 dNLL(arm) = mean_{domain} mean_{w ∈ domain} [ NLL_arm(w) − NLL_N(w) ]         主
 PPL_degradation%(arm) = 100 · (exp(dNLL(arm)) − 1)                           展示
 ```
-窗口前面不加任何特殊 token(不前置 `<|endoftext|>`);x_1 没有条件,不计分,t 从 2 起;n_w 为窗口的 token 数。
+窗口前面不加任何特殊 token(不前置 `<|endoftext|>`);x_1 没有条件,不计分,t 从 2 起;n_w 为窗口实际送入模型的 id 序列长度:送入模型的是第 2.7 节用本协议分词器切分后截断得到的原始 id(最多 256 个),不解码再编码。
 
 **Unread controls**(问的是真实答案;不使用 NONE 选项)
 ```
@@ -515,7 +521,7 @@ E1-PILOT 只有一个训练阶段:Retention 记为 NOT_TESTED,不进任何门槛
 5. L、A 的搜索 → 选定。
 6. F、L、A 的另外两个种子;S、Y 各三个种子。
 7. 按下表判定 Gate 0。
-8. Gate 0 通过后:提交冻结记录(选定配置、数据哈希、checkpoint 哈希)→ 生成 `test_qa.jsonl` 与 `general_test.jsonl` → 对 TEST 运行 L3–L5 → L6 的 TEST 部分(锚文本对 `general_test.jsonl`):在 PROTOCOL_FROZEN 之后、TEST 评测之前,由 data-auditor 运行一次,只输出计数 → **TEST 只评一次**。
+8. Gate 0 通过后:提交冻结记录(选定配置、数据哈希、checkpoint 哈希)→ 生成 `test_qa.jsonl` 与 `general_test.jsonl` → 对 TEST 运行 L3–L5 → L6 的 TEST 部分(锚文本对 `general_test.jsonl`):在本步生成 `general_test.jsonl` 之后、TEST 评测之前,由 Executor 与 data-auditor 各自计算一次,只输出计数(口径与上限见第 3 节 L6),两者的结果须一致 → L3–L6 任一项的 TEST 部分超限:停止,不评测 TEST,状态记为 BLOCKED,报告 Owner(ST10) → 全部在上限内时,**TEST 只评一次**。
 
 **算力边界**:第 3–8 步全部在设备全名与首次记录逐字相同的一张 NVIDIA A100 80GB 上执行,累计 GPU wall-clock ≤ 4 小时(第 7 节);任何一步若会使累计时间超过上限,按 ST7 停下,不得静默继续,也不得为节省时间删减本节的任何一步。
 
@@ -523,7 +529,7 @@ E1-PILOT 只有一个训练阶段:Retention 记为 NOT_TESTED,不进任何门槛
 
 | 编号 | 条件 |
 |---|---|
-| G0.1 | 泄漏检查 L1–L6 全部在上限内;L6 在 Gate 0 只要求 DEV 部分(锚文本对 `general_dev.jsonl`),TEST 部分按第 8 步运行 |
+| G0.1 | 泄漏检查 L1–L6 全部在上限内;L1–L6 中涉及 TEST 的部分在 Gate 0 不要求,按第 8 步运行 |
 | G0.2 | 所有用到的损失、分数、NLL 都是有限值 |
 | G0.3 | N 的下限检查:`Acc(N, DEV-QA, learned)` ∈ [0.15, 0.35],每个 stratum ∈ [0.10, 0.40];`Acc(N, DEV-QA, unread)` ∈ [0.10, 0.40];`Acc_CB(N)` ∈ [0.15, 0.35] |
 | G0.4 | `Acc_CB(F)` ≥ 0.90,3 个种子都满足 |
@@ -562,7 +568,7 @@ E1-PILOT 只有一个训练阶段:Retention 记为 NOT_TESTED,不进任何门槛
 | OPTIMIZATION_OR_CAPACITY_UNRESOLVED | G0.4 满足但 G0.5 或 T1 的正确率不满足 |
 | CAPACITY_LIMIT | 仅当更强的模型在同一协议下 PASS 之后才可使用;在此之前必须保留 OPTIMIZATION_OR_CAPACITY_UNRESOLVED |
 | HYPOTHESIS_FAIL | 保留给 E1-V1 的机制比较;E1-PILOT 没有机制假设,不使用 |
-| BLOCKED | 环境、资源、数据来源或库版本不满足第 0 节,无法按协议执行 |
+| BLOCKED | 环境、资源、数据来源或库版本不满足第 0 节,无法按协议执行;或第 8 步 L3–L6 任一项的 TEST 部分超限(ST10) |
 | NOT_TESTED | 未运行,或在没有违反任何条件的情况下提前停止 |
 
 看到结果之后不得修改任何门槛;协议本身有缺陷时,开新版本(PROTOCOL_REVISION_V2)。
@@ -609,6 +615,7 @@ Compute accounting 的算法:训练 FLOPs ≈ 6 · P · T,前向 FLOPs ≈ 2 · 
 | ST7 | 累计 GPU wall-clock 超过 4 小时(第 7 节) | 停并报告进度;延长上限、换硬件或降级都需 Owner 决定并记录,不得静默继续 |
 | ST8 | 环境不满足第 0 节 | BLOCKED |
 | ST9 | 某次运行开始时读到的设备全名与首次记录不同 | 整批作废:本次 Pilot 的全部结果不得用于任何判断;BLOCKED;在设备全名一致的机器上从第 8 节第 3 步重新开始 |
+| ST10 | 第 8 步 L3–L6 任一项的 TEST 部分超限 | 停止;不评测 TEST;BLOCKED;报告 Owner |
 
 ## 12. Out of Scope
 
@@ -665,5 +672,12 @@ Compute accounting 的算法:训练 FLOPs ≈ 6 · P · T,前向 FLOPs ≈ 2 · 
 | v1-r6 | 2026-11-21 14:41:02 | `481a6f0f` | 第 3 节(新增一条);第 7 节“选择只用 DEV” | 新增定义:“读取 TEST 数据”= 解码 test 行的内容,或用其内容做任何计算;解析 `split` 字段、计数、对整个文件求哈希不算。第 7 节“TEST 在最终冻结前不可读取、不可生成”后加“(“读取”的定义见第 3 节)” | Review Gate 第 5 轮裁决(待决第 3 项;Round 5 code-reviewer MAJOR 2):Round 5 的 L6 检查对 `eval_sets.jsonl` 的 test 行做了 JSON 解析与计数,原文没有定义这是否算“读取 TEST 数据” |
 | v1-r6 | 2026-11-21 14:41:02 | `481a6f0f` | 第 2.7 节;`DATA_MANIFEST.json: general_text.source_file_sha256`、`general_text.decode_tokenizer_json_sha256` | 第 2.7 节注明 `eval_sets.jsonl` 与 parcae `tokenizer.json` 的 sha256(缩写,全值在 manifest);manifest 新增这两个 sha256 | Review Gate 第 5 轮裁决(待决第 9 项 `l6_check.py` 末点):原文与 manifest 只锁定了 parcae 分词器的 revision,没有锁定这两个文件的内容;Round 5 以 Stage 1 `data_lock.json` 为基准核对 |
 | v1-r6 | 2026-11-21 14:41:02 | `481a6f0f` | 第 0 节“通用文本与锚文本输入”;第 14 节 v1-r4 第 2 行 | 两个单元格中 `<\|endoftext\|>` 的两条竖线原文没有转义,改为用反斜杠转义;渲染出的文字不变 | Review Gate 第 5 轮裁决(待决第 10 项):未转义的竖线在 GitHub Markdown 表格里会切开单元格 |
+| v1-r7 | R7_TIME | `R7_COMMIT` | 第 2.7 节 | 原文“锚文本与通用文本不得共享任何 13-gram。”改为“锚文本与通用文本不得共享任何词 13-gram(定义与上限见第 3 节 L6)。” | Review Gate 第 6 轮裁决,第 7 轮指令第 1a 项(`ROUND6_REPORT.md`“待 Review Gate 决定”第 1 项;R6 code-reviewer MAJOR,`reviews/599230f9…/code-reviewer.md` 第 17 行):第 3 节 L6 按 v1-r6 只限词 13-gram,Qwen token 13-gram 只报告,第 2.7 节的“任何 13-gram”与之说法不一 |
+| v1-r7 | R7_TIME | `R7_COMMIT` | 第 3 节 L6 一行与执行接口;第 8 节第 8 步;`SPLIT_MANIFEST.json: leakage_checks.L6_general_text.test_part`(新增)、`leakage_checks.test_split` | L6 一行新增 TEST 部分的时机、计数与运行者:“时机为第 8 步生成 `general_test.jsonl` 之后、TEST 评测之前;计数为跨全部文档的共享词 13-gram 种类数(……),上限 0;由 Executor 与 data-auditor 各自计算,结果须一致”。第 8 步原文“在 PROTOCOL_FROZEN 之后、TEST 评测之前,由 data-auditor 运行一次,只输出计数”改为“在本步生成 `general_test.jsonl` 之后、TEST 评测之前,由 Executor 与 data-auditor 各自计算一次,只输出计数(口径与上限见第 3 节 L6),两者的结果须一致”。执行接口原文“L6 的 TEST 部分见第 8 节第 8 步”改为“L6 的 TEST 部分在 `general_test.jsonl` 生成之后才运行(时机与口径见上表 L6 一行与第 8 节第 8 步)” | Review Gate 第 6 轮裁决,第 7 轮指令第 1b 项(待决第 2 项;`reviews/599230f9…/code-reviewer.md` 第 14、15、27 行):原时机“PROTOCOL_FROZEN 之后”比 `general_test.jsonl` 的生成条件宽;“计数”没有定义口径;运行者 data-auditor 按 metrix/CLAUDE.md 第 10 节仍为「待验证」 |
+| v1-r7 | R7_TIME | `R7_COMMIT` | 第 8 节第 8 步;第 11 节(新增 ST10);第 9 节 BLOCKED 一行;第 3 节执行接口;`SPLIT_MANIFEST.json: leakage_checks.test_part_over_limit`(新增) | 新增:L3–L6 任一项的 TEST 部分超限时,停止,不评测 TEST,状态记为 BLOCKED,报告 Owner(ST10)。第 8 步原文“→ **TEST 只评一次**”改为“→ L3–L6 任一项的 TEST 部分超限:停止,不评测 TEST,状态记为 BLOCKED,报告 Owner(ST10) → 全部在上限内时,**TEST 只评一次**”;第 9 节 BLOCKED 的适用情形后加“或第 8 步 L3–L6 任一项的 TEST 部分超限(ST10)” | Review Gate 第 6 轮裁决,第 7 轮指令第 1c 项(待决第 2 项第 2 点;`reviews/599230f9…/code-reviewer.md` 第 15 行):原文没有写 TEST 部分超限时的动作,ST1 只管第 2 步 |
+| v1-r7 | R7_TIME | `R7_COMMIT` | 第 8 节 G0.1;`SPLIT_MANIFEST.json: leakage_checks.test_split` | 原文“泄漏检查 L1–L6 全部在上限内;L6 在 Gate 0 只要求 DEV 部分(锚文本对 `general_dev.jsonl`),TEST 部分按第 8 步运行”改为“泄漏检查 L1–L6 全部在上限内;L1–L6 中涉及 TEST 的部分在 Gate 0 不要求,按第 8 步运行” | Review Gate 第 6 轮裁决,第 7 轮指令第 1d 项(待决第 3 项;`reviews/599230f9…/code-reviewer.md` 第 16 行):原文只给 L6 开了例外,L3–L5 的 TEST 部分也要等第 8 步生成 `test_qa.jsonl` 才能运行 |
+| v1-r7 | R7_TIME | `R7_COMMIT` | 第 5 节 general damage;第 2.7 节锚文本;第 2.2 节锚文本规则;`DATA_MANIFEST.json: general_text.window_rule`、`anchor_text.document_rule`(新增) | n_w 原文“窗口的 token 数”改为“窗口实际送入模型的 id 序列长度:送入模型的是第 2.7 节用本协议分词器切分后截断得到的原始 id(最多 256 个),不解码再编码”。锚文本原文“各截到 128 token”改为“每篇最多 128 token(取前 128 个),不足则取全长”;第 2.2 节“512 篇、各截到 128 token 后解码的文本”改为“512 篇、每篇最多 128 token、解码后的文本” | Review Gate 第 6 轮裁决,第 7 轮指令第 1e 项(待决第 4、5 项;`reviews/599230f9…/code-reviewer.md` 第 18、19 行):n_w 与 v1-r6 改过的 n_x 口径不一;第 340 篇锚文档全文只有 123 个 token,“截到 128”与实际不符。数值不变 |
+| v1-r7 | R7_TIME | `R7_COMMIT` | 第 5 节 EM;`DATA_MANIFEST.json: model.input_convention.em_generation` | 新增“归一化之前,先删除输出中的 `<think>…</think>` 片段:从 `<think>` 到其后第一个 `</think>`(两者都含),每处都删;这两个标记(id 151667、151668)不是特殊 token,`skip_special_tokens=True` 不会去掉它们” | Review Gate 第 6 轮裁决,第 7 轮指令第 1f 项(待决第 11 项第 1 点;第 5 轮待决 7 第 1 点):两个标记不是特殊 token(`reports/round7/t1f_think_tokens.txt`),原文的 `skip_special_tokens=True` 去不掉;它们出现在输出第一行时,归一化后的输出不可能等于答案 |
+| v1-r7 | R7_TIME | `R7_COMMIT` | 第 2.5 节(新增“调用方式(细节 5)”“`candidates.json`”两条与复现哈希);第 2.6 节(新增“调用方式(细节 4)”与复现哈希);`DATA_MANIFEST.json: s_permutation`(字符串改为对象,原文保留为 `rule`);`SPLIT_MANIFEST.json: candidates.call_order`、`file`、`reference_implementation`、`candidate_mapping_sha256_note`(新增),`candidate_mapping_sha256`(null 改为全值) | 写死两处随机流的调用顺序与文件记录格式:S 每个 cell 一个生成器,每次从 `list(range(15))` 开始调用一次 `shuffle`,有不动点用同一生成器重抽;候选每条 fact 一个生成器,依次 `sample(池, 3)`、`shuffle([a_f] + d)`,池按 fact 生成顺序。`DATA_SEED` 下 `train_S.jsonl` 规范化 SHA-256 `686fdd2f…`,`candidates.json` `e5d15c99…`(全值见正文与 manifest) | Review Gate 第 6 轮裁决,第 7 轮指令第 1g 项(待决第 11 项第 2 点;第 4 轮待决 8):原文只写了 purpose,没有写调用方式,只凭协议不能逐字节复现这两个文件。两次独立运行逐字节一致(`reports/round7/t1g_gen_s_cands.txt`) |
 
 注:根目录 `CLAUDE.md`(宪章)第 6 节标题中的日期 “2026-11-13” 是 JST(日本标准时间,UTC+9)。该节由提交 `8ce8c896` 加入,提交时间 2026-11-12 15:25:19 UTC,即 2026-11-13 00:25:19 JST。本表的时间都是 UTC。

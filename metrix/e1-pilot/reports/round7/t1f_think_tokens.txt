@@ -1,0 +1,10 @@
+# Round 7 item 1f raw output: ids of <think> / </think> in the pinned tokenizer, whether they are special tokens, and what skip_special_tokens=True leaves in a decoded output. Host vm, CPU only, tokenizer files only. Sun Nov 22 03:21:55 UTC 2026
+$ /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/venv/bin/python -c $'\nimport sys\nfrom transformers import AutoTokenizer\ntok = AutoTokenizer.from_pretrained(sys.argv[1])\nfor t in [\'<think>\', \'</think>\', \'<|im_end|>\', \'<|endoftext|>\']:\n    i = tok.convert_tokens_to_ids(t)\n    print(repr(t), \'id\', i, \'| in all_special_ids:\', i in tok.all_special_ids, \'| added_tokens_decoder special:\', tok.added_tokens_decoder[i].special)\nids = tok.encode(\' Kishan<think>\\nx\\n</think> Kishan.\', add_special_tokens=False) + [151645]\nprint(\'ids\', ids)\nprint(\'decode skip_special_tokens=True :\', repr(tok.decode(ids, skip_special_tokens=True)))\n' /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/dl/qwen_tok
+[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
+'<think>' id 151667 | in all_special_ids: False | added_tokens_decoder special: False
+'</think>' id 151668 | in all_special_ids: False | added_tokens_decoder special: False
+'<|im_end|>' id 151645 | in all_special_ids: True | added_tokens_decoder special: True
+'<|endoftext|>' id 151643 | in all_special_ids: True | added_tokens_decoder special: True
+ids [730, 812, 276, 151667, 198, 87, 198, 151668, 730, 812, 276, 13, 151645]
+decode skip_special_tokens=True : ' Kishan<think>\nx\n</think> Kishan.'
+exit=0
