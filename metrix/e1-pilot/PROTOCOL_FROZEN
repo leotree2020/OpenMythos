@@ -1,23 +1,68 @@
-# PROTOCOL_FROZEN — METRIX-E1-PILOT protocol v1
+# PROTOCOL_FROZEN — METRIX-E1-PILOT
+
+当前有效版本：v1.1
+
+本文件中的路径都相对仓库根目录。本文件有两节:v1.1(当前有效)与 v1(保留为记录;第 9 轮只改了其中标签一行,并把小节标题降一级)。
+
+## v1.1(当前有效)
+
+Owner 批准，2026-11-22 09:44 UTC
+
+协议 v1.1 是 v1 冻结之后的勘误版。勘误时未运行任何实验,勘误不基于任何结果。
+
+### 冻结提交
+
+| 项 | 值 |
+|---|---|
+| v1.1 冻结提交(完整 hash) | `87a244db28a901f9e89282b50df76778ab5c2887` |
+| 提交时间(author / committer) | 2026-11-22 10:12:04 UTC |
+| 父提交 | `8a49c0875c1479f01f2a12552a4c68733d0117aa` |
+| 标签 | `metrix-e1-pilot-frozen-v1.1`,指向 v1.1 冻结提交(由 Owner 推送) |
+| 仓库 / 分支 | `leotree2020/OpenMythos` / `metrix-e1-pilot-protocol-v1` |
+| 内容 | 第 9 轮指令第 1–3 项(`metrix/e1-pilot/tasks/ROUND9_TASKS.md`):协议勘误 1a–1e(G0.8 恢复复评对象与 NLL 容差、ST12 的比对范围、fact 哈希的比对方法、第 1 节 margin 的表述、版本 v1.1)、`metrix/CLAUDE.md` 2a–2c、`.claude/agents/data-auditor.md` 的 TEST 一条 |
+
+### v1.1 冻结提交下的协议文件与三个 JSON(文件字节的 SHA-256)
+
+格式与 `sha256sum` 相同。以 `git cat-file blob 87a244db28a901f9e89282b50df76778ab5c2887:<路径> | sha256sum` 为准(检出时若做换行转换,工作区字节会不同)。
+
+```
+1e80ca31ed8bb95dca4c09bc74d424a92ed85417f1285512d521cf5315831308  metrix/e1-pilot/METRIX_E1_PROTOCOL.md
+d1c32cdd297f70f418c4f7ad7b67742ac18482b4f0a57fd6b7bebe67b11ab911  metrix/e1-pilot/DATA_MANIFEST.json
+8c2c46a1d012beb4afe4e0ed0466689297fb97caaee3cda4c55b4261338caf5f  metrix/e1-pilot/SPLIT_MANIFEST.json
+aa59e2e7d6599d8605f40513d702f3c4b1ccb98ab0678155e91d65f243259462  metrix/e1-pilot/SEARCH_SPACE.json
+```
+
+### 数据哈希
+
+与 v1 相同:下面 v1 一节“全部数据哈希”表中的 12 个值,在 v1.1 冻结提交的 manifest 中逐一不变;三个 JSON 与 v1 冻结提交相比只有 `version` 由 `v1` 改为 `v1.1`。协议 v1.1 第 11 节 ST12 比对范围 (1) 所说的“`PROTOCOL_FROZEN` 中列出的数据内容哈希”列在该表中(fact 哈希的比对方法见协议第 2.2 节;该表中哪些行属于“内容哈希”见 `metrix/e1-pilot/reports/DEFERRED_MINORS.md` 1.14 节 W1,待 Review Gate 决定);v1.1 冻结提交下四个文件的值见上一小节。
+
+TEST 的条件与 v1 一节“本文件不授权 TEST”相同;本节同样不授权 TEST。
+
+### 依据
+
+- 指令:`metrix/e1-pilot/tasks/ROUND9_TASKS.md` 第一段第 6 项。
+- 审查(第 5 项,对 v1.1 冻结提交):`metrix/e1-pilot/reviews/87a244db28a901f9e89282b50df76778ab5c2887/code-reviewer.md`(PASS,无 BLOCKER)、`metrix/e1-pilot/reviews/87a244db28a901f9e89282b50df76778ab5c2887/data-auditor.md`(PASS,无 BLOCKER;按 `metrix/CLAUDE.md` 第 10 节仍为“待验证”,仅作参考)。
+- Executor 原始输出:`metrix/e1-pilot/reports/round9/t5_frozen_hashes_87a244db.txt`(v1.1 冻结提交中四个文件的 sha256,由 `git cat-file` 读取;两个冻结提交 manifest 中的 11 个数据哈希,不含锚文本源 parquet;metrix/ 以外的改动检查);提交前检查 `metrix/e1-pilot/reports/round9/t1_protocol_checks.txt`。
+- data-auditor 原始输出:`metrix/e1-pilot/audit/stdout/87a244db28a901f9e89282b50df76778ab5c2887/`(`01_r9_files.txt`:四个文件的字节哈希,三个 JSON 与 v1 相比只有 `version` 不同;`10_r9_compare.txt`:v1 一节表中 12 行全部对应,45 个值(12 个表值、32 个单模板值、按协议第 2.2 节方法从 `facts.jsonl` 读回重算的 fact 值)与 v1 及 v1.1 冻结提交的 manifest 相同,`RESULT: PASS`)。
+
+## v1(METRIX-E1-PILOT protocol v1;保留为记录)
 
 Owner 批准，2026-11-22 05:27 UTC
 
-本文件中的路径都相对仓库根目录。
-
-## 冻结提交
+### 冻结提交
 
 | 项 | 值 |
 |---|---|
 | 冻结提交(完整 hash) | `6a474e4a5defa23dfc71b2c6bca9e15a81b517aa` |
 | 提交时间(author / committer) | 2026-11-22 06:04:41 UTC |
 | 父提交 | `180762987b2b0d8a18a3070edb16dd4b4c31911e` |
-| 标签 | `metrix-e1-pilot-frozen`,指向冻结提交(与本文件所在提交同时推送) |
+| 标签 | `metrix-e1-pilot-frozen`,指向冻结提交(由 Owner 在 Codespace 推送) |
 | 仓库 / 分支 | `leotree2020/OpenMythos` / `metrix-e1-pilot-protocol-v1` |
 | 内容 | 第 8 轮指令第 1–3 项与 Owner 的补充 a–e(`metrix/e1-pilot/tasks/ROUND8_TASKS.md`):Review Gate 第 7 轮裁决 1a–1e、PROPOSED 改为冻结值、对照 Task Order V1.2 补齐的五项、协议状态 PROTOCOL_FROZEN |
 
 冻结提交之前的候选 `92df1a60ac816ab02b250d32841397c73b9a67a7`(只含第 1–3 项)没有推送、没有打标签;Owner 的补充要求放进冻结提交,该候选由上面的冻结提交取代。
 
-## 冻结提交下的协议文件与三个 JSON(文件字节的 SHA-256)
+### 冻结提交下的协议文件与三个 JSON(文件字节的 SHA-256)
 
 格式与 `sha256sum` 相同。以 `git cat-file blob 6a474e4a5defa23dfc71b2c6bca9e15a81b517aa:<路径> | sha256sum` 为准(检出时若做换行转换,工作区字节会不同)。
 
@@ -30,7 +75,7 @@ Owner 批准，2026-11-22 05:27 UTC
 
 协议第 8 节第 1 步要把生成的数据文件的哈希写入 `DATA_MANIFEST.json: files` 与 `SPLIT_MANIFEST.json: split_sha256`;写入之后两个 manifest 的字节会与上面不同。这与协议第 11 节 ST12 的关系由 Review Gate 决定(`metrix/e1-pilot/reports/ROUND8_REPORT.md`“待 Review Gate 决定”)。
 
-## 全部数据哈希
+### 全部数据哈希
 
 规范化 SHA-256 按协议第 0 节“哈希”的规则;文件 SHA-256 是文件原样字节的哈希。每个值都与冻结提交的 manifest 中所写相同。第 8 节第 1 步生成的 fact、`train_S.jsonl`、`candidates.json` 的规范化 SHA-256 必须等于下表的值(协议第 2.2、2.5、2.6 节)。
 
@@ -51,11 +96,11 @@ Owner 批准，2026-11-22 05:27 UTC
 
 `DATA_MANIFEST.json: files` 中的数据文件在冻结时都是 `NOT_GENERATED`,`SPLIT_MANIFEST.json: split_sha256` 的 5 项都是 null;按协议第 8 节第 1 步生成后填写。
 
-## 本文件不授权 TEST
+### 本文件不授权 TEST
 
 本文件记录的是协议的冻结,不是协议第 8 节第 8 步的“冻结记录”(选定配置、数据哈希、checkpoint 哈希)。冻结不等于允许生成或评测 TEST:TEST 数据(`test_qa.jsonl`、`general_test.jsonl`)仍只在协议第 8 节第 8 步、Gate 0 通过并提交冻结记录之后生成,且生成或评测 TEST 须等待人工指令(`metrix/CLAUDE.md` 第 7 节)。本节只复述现有规则,不改动协议。
 
-## 依据
+### 依据
 
 - 指令:`metrix/e1-pilot/tasks/ROUND8_TASKS.md` 第一段第 5 项。
 - 审查(第 4 项,对冻结提交):`metrix/e1-pilot/reviews/6a474e4a5defa23dfc71b2c6bca9e15a81b517aa/code-reviewer.md`(PASS,无 BLOCKER)、`data-auditor.md`(PASS,无 BLOCKER;按 `metrix/CLAUDE.md` 第 10 节仍为“待验证”,仅作参考)。

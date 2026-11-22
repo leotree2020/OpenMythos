@@ -231,6 +231,30 @@ data-auditor 结论 PASS(按 `metrix/CLAUDE.md` 第 10 节仅作参考),新提�
 | V13 | MINOR | `ROUND8_REPORT.md` 1b 一行 | 引号内的文字不是协议原文 | R8e-RC:70 | 已改为逐字引用 |
 | V14 | MINOR | `ROUND8_REPORT.md` 第 6 项 | `code-reviewer_report-commit*` 的通配不含另两个文件;本审查原文提交前须暂存 | R8e-RC:72 | 已逐个列出;一并暂存 |
 
+### 1.14 第 9 轮:对 v1.1 冻结提交 `87a244db` 的 code-reviewer 审查新提出的项(`reviews/87a244db…/code-reviewer.md`,记 `R9-CR:n`)
+
+结论 PASS,没有 BLOCKER;13 项逐条“一致”。第 9 轮指令第 5 项:新的 MAJOR/MINOR 只登记不修。
+
+| # | 严重度 | 位置 | 问题 | 来源 |
+|---|---|---|---|---|
+| W1 | MAJOR(审查方注明不确定) | 协议第 11 节 ST12 | 比对范围 (1)“数据内容哈希”可被读成只含规范化(canonical)哈希;`PROTOCOL_FROZEN` 所列的锚文本源 parquet、Qwen 4 个分词器文件、parcae `tokenizer.json`、`eval_sets.jsonl` 是文件字节哈希,可能落在 ST12 之外;文字与指令原文一致 | R9-CR:42 |
+| W2 | MINOR | 协议第 11 节 ST12 | 现有 v1、v1.1 两个冻结提交,(2) 中的“冻结提交”没有指明是哪一个 | R9-CR:44 |
+| W3 | MINOR | 协议第 9 节 BLOCKED 一行 | 仍照搬 ST12 原来的条件文字,没有带上比对范围,只靠括注“(ST12)”间接受限 | R9-CR:46 |
+| W4 | MINOR | 三个 JSON 的 `frozen`;协议第 7 节内联副本 | `version` 已是 v1.1,`frozen` 仍是 v1 的批准时间;与指令“版本字段同步”一致 | R9-CR:48 |
+| W5 | MINOR | `.claude/agents/data-auditor.md` 第 12 行 | 新规则的“读取”“统计”没有引用协议第 3 节对“读取 TEST 数据”的定义(计数、对整个文件求哈希不算读取);对含 test 行的 `eval_sets.jsonl` 整个文件求哈希算不算“统计 TEST”不明;文字与指令逐字一致 | R9-CR:50 |
+| W6 | MINOR | `reports/round9/v11_checks.py` 第 77–90 行 | 对 1a–1d 只检查以某前缀开头的行恰好 1 行,不比对内容;`RESULT: PASS` 不能证明内容与指令一致,内容靠打印出来人工比对 | R9-CR:52 |
+| W7 | MINOR | `reports/round9/t3_data_auditor_frontmatter.txt` 第 34 行 | 注释说忽略规则使 `git add -f` 成为必需,但文件已被跟踪,暂存改动通常不需要 `-f`;原始输出没有记录实际执行的 `git add` 命令 | R9-CR:54 |
+| W8 | MINOR | `metrix/CLAUDE.md` 第 4 节 | 第一条已写“上限 4 小时”,新句又写“累计 GPU 时间超过 4 小时即停(协议 ST7)”,重复;“即停”没有带上 ST7 的“报告进度”;符合 Owner“只换 3 小时那句”的回答 | R9-CR:56 |
+
+### 1.15 第 9 轮:对 v1.1 冻结提交 `87a244db` 的 data-auditor 审计提出的项(`reviews/87a244db…/data-auditor.md`,记 `R9-DA:n`)
+
+结论 PASS(按 `metrix/CLAUDE.md` 第 10 节仅作参考),没有 BLOCKER;45 个数据值与 v1 及本提交 manifest 相同,四个文件的新字节哈希与 Executor 一致。只登记不修。
+
+| # | 严重度 | 位置 | 问题 | 来源 |
+|---|---|---|---|---|
+| X1 | MINOR | 三个 JSON 的 `frozen` | 同 1.14 节 W4:`version` 已是 v1.1,`frozen` 仍是 v1 的批准时间,只看 JSON 看不到 v1.1 的批准时间 | R9-DA:123 |
+| X2 | MINOR | `reports/round9/t5_frozen_hashes_87a244db.txt` | 每个 revision 只列了 11 个数据值,缺锚文本源 parquet 的 sha256(`PROTOCOL_FROZEN` 表有 12 行);auditor 复算的该值与 `PROTOCOL_FROZEN` 和两个 manifest 相同,不影响结论 | R9-DA:124 |
+
 ## 2. 已在第 5–7 轮解决(核对用)
 
 | 原条目 | 来源 | 处理 |

@@ -1,0 +1,12 @@
+先读仓库中的 .claude/agents/code-reviewer.md，以它为你的完整定义；它与你已加载的定义冲突时，以仓库文件为准。
+
+Metrix E1-PILOT 第 9 轮第 6 项的提交前审查(metrix/CLAUDE.md 第 5 节第 1 条)。仓库 /home/user/OpenMythos,本地分支 claude/protocol-v1-1-errata-46z4jc,HEAD 为 v1.1 冻结提交 87a244db28a901f9e89282b50df76778ab5c2887。
+审查对象:暂存区中的提交(尚未提交),主要内容是第 6 项对 metrix/e1-pilot/PROTOCOL_FROZEN 的更新;同时入库第 5 项两份审查的原文、调用文字与输入,data-auditor 的脚本与 stdout,Executor 的提交后原始输出,以及 DEFERRED_MINORS.md 1.14、1.15 节对第 5 项新问题的登记。
+
+- 指令原文:metrix/e1-pilot/tasks/ROUND9_TASKS.md 第一段第 5、6 项。第 6 项原文:“审查通过后，另起一个提交更新 metrix/e1-pilot/PROTOCOL_FROZEN：保留 v1 一节，把其中标签一行改为「由 Owner 在 Codespace 推送」；新增 v1.1 一节，写明 v1.1 冻结提交的完整 hash、该提交下协议与三个 JSON 的 sha256、标签名 metrix-e1-pilot-frozen-v1.1（由 Owner 推送），以及「Owner 批准，2026-11-22 09:44 UTC」。在文件开头注明「当前有效版本：v1.1」。”
+- 审查输入:metrix/e1-pilot/reviews/87a244db28a901f9e89282b50df76778ab5c2887/frozen_file_commit_input.diff(git diff --cached --stat 与完整暂存 diff)。
+- 暂存区中的原始输出:metrix/e1-pilot/reports/round9/t6_protocol_frozen_check.txt(PROTOCOL_FROZEN 与 git 对象的核对;第一次运行因检查脚本自身的错误失败,原样保留,脚本修正后重跑)、t5_frozen_hashes_87a244db.txt;data-auditor 的 metrix/e1-pilot/audit/stdout/87a244db28a901f9e89282b50df76778ab5c2887/(01、10 号)。
+- 第 5 项两份审查的结论(原文在暂存区 reviews/87a244db…/code-reviewer.md、data-auditor.md)都是 PASS、无 BLOCKER。
+- Executor 自己的说明(提交说明、文件中的括注)不作为证据。
+
+请按定义的输出格式逐条给出,每条注明“已验证/未验证”。对第 6 项的每个要求(保留 v1 一节;标签一行;v1.1 一节的完整 hash、四个 sha256、标签名与“由 Owner 推送”、批准字样;文件开头的“当前有效版本：v1.1”;另起一个提交)明确写出“一致/不一致”,并检查暂存区中有无 BLOCKER(包括与第 5 项审查结论或原始输出不符之处)。最后一行给出结论。

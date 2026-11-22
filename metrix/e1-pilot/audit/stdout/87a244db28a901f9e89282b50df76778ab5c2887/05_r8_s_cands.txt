@@ -1,0 +1,30 @@
+# Data Auditor run. host vm, CPU only (no GPU, no torch, tokenizer files only); 2026-11-22 10:16:48 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/1df4d82a-900e-5f17-b09e-42f6e2f7c762/scratchpad/venv/bin/python -I -B r8_s_cands.py /home/user/OpenMythos 87a244db28a901f9e89282b50df76778ab5c2887 /tmp/claude-0/-home-user/1df4d82a-900e-5f17-b09e-42f6e2f7c762/scratchpad/auditor_87a2/work/facts.json /tmp/claude-0/-home-user/1df4d82a-900e-5f17-b09e-42f6e2f7c762/scratchpad/auditor_87a2/work
+freeze-commit manifest: train_S 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e | candidates e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705
+freeze-commit protocol 2.6 value: 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e | 2.5 value: e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705
+seeds: 20261110 20261111 | == transcribed: True
+files.train_S.jsonl.record  : one object per line {"fact_id", "answer_fact_id", "text"} (protocol 2.6); Review Gate round 7 ruling, item 1a
+files.candidates.json.record: one JSON object {fact_id: [4 candidates]} (protocol 2.5); Review Gate round 7 ruling, item 1a
+s_permutation.record        : {"fact_id": fact_id of fact i, "answer_fact_id": fact_id of fact p[i], "text": statement}
+candidates.file             : candidates.json: one JSON object, key fact_id, value the list of the 4 candidates in that order; 160 keys
+record formats are the ones implemented here: train_S True | candidates True
+TRAIN templates (manifest) == transcribed protocol 2.4: True
+facts: 160 | canonical sha256 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 | == manifest: True
+S derangement attempts per cell: {"capital/natural": 3, "capital/random": 5, "currency/natural": 1, "currency/random": 6, "founder/natural": 2, "founder/random": 1, "river/natural": 2, "river/random": 6}
+train_S.jsonl rows 120 | canonical sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e | manifest 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e | MATCH True
+AUDIT_VALUE train_S_canonical_sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e
+candidates.json keys 160 | canonical sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | manifest e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | MATCH True
+AUDIT_VALUE candidates_canonical_sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705
+first S row: The capital of Krultrouth is Kishan. | first candidates: ["Thunae", "Linnuth", "Baszaes", "Kaethnis"]
+train_S structure (keys, line order, derangement within cell, each learned entity/answer exactly once, unread 0, text = TRAIN template): True
+candidates structure (160 keys, 4 distinct, true answer once, distractors from the 2.5 pool): True
+ALT S record without answer_fact_id: 8305be742545a6576d853c13b6003e74e73e1700ba3b09747798770dec9bd660 | equals manifest value: False
+ALT S inverse permutation: c882c38bfe53241e942b35a173935d63430f08a996c51b9bf33970607d701ccc | equals manifest value: False
+ALT S redraw without resetting p: b0b61e7d3ad8225f419b1b47a8eb8e74c8c529d1e1470571ae96b0fccf9453f0 | equals manifest value: False
+ALT S JSONL without final newline: 391bfb5eb8e3da472df761f05b4088a21707ea3d472c1eaa4ea5319e1532d9b9 | equals manifest value: False
+ALT C pool sorted: d78a6a49a7ef3e6fd8092f89c514e8e9daa091c422bb040c7c2d3eeb7f022336 | equals manifest value: False
+ALT C answer appended last before shuffle: 26c0bf1694c5961a0e053fbe30a3b290ea2d2541b4734e032d345a2754dc65ca | equals manifest value: False
+written files re-parse to the same canonical hashes: True
+RESULT: PASS
+exit=0

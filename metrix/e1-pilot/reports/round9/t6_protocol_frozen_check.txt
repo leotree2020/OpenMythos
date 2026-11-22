@@ -1,0 +1,68 @@
+# Round 9 item 6 raw output: check of the working-tree metrix/e1-pilot/PROTOCOL_FROZEN against git objects, before the item-6 commit. Host vm, CPU only. Written by the Executor (session_01J5mxaXPDtdHu9PKCjhmE7G). Sun Nov 22 10:21:30 UTC 2026
+# cwd /home/user/OpenMythos. Recorded by metrix/e1-pilot/reports/round5/logrun.sh. TZ=UTC is set for the commit-time format.
+$ env TZ=UTC python3 -I metrix/e1-pilot/reports/round9/protocol_frozen_check.py /home/user/OpenMythos 87a244db28a901f9e89282b50df76778ab5c2887 6a474e4a5defa23dfc71b2c6bca9e15a81b517aa 8a49c0875c1479f01f2a12552a4c68733d0117aa
+valid UTF-8: True | bytes 10104 | sha256 3f8a3bbaaafa0b451483bb88baa012c77e8b106dd3b157a152ffa675856906ff
+first line after title: True | '当前有效版本：v1.1'
+section order: True | v1.1 at line 7, v1 at line 48
+v1.1 full hash: True | 87a244db28a901f9e89282b50df76778ab5c2887
+v1.1 parent: True | 8a49c0875c1479f01f2a12552a4c68733d0117aa
+v1.1 commit time: True | 2026-11-22 10:12:04|2026-11-22 10:12:04
+v1.1 tag: True
+v1.1 approval: True
+two sha256 blocks: True | found 2
+  v1.1 87a244db git cat-file: 1e80ca31ed8bb95dca4c09bc74d424a92ed85417f1285512d521cf5315831308  metrix/e1-pilot/METRIX_E1_PROTOCOL.md
+  v1.1 87a244db git cat-file: d1c32cdd297f70f418c4f7ad7b67742ac18482b4f0a57fd6b7bebe67b11ab911  metrix/e1-pilot/DATA_MANIFEST.json
+  v1.1 87a244db git cat-file: 8c2c46a1d012beb4afe4e0ed0466689297fb97caaee3cda4c55b4261338caf5f  metrix/e1-pilot/SPLIT_MANIFEST.json
+  v1.1 87a244db git cat-file: aa59e2e7d6599d8605f40513d702f3c4b1ccb98ab0678155e91d65f243259462  metrix/e1-pilot/SEARCH_SPACE.json
+v1.1 sha256 lines == git cat-file 87a244db: True
+  v1 6a474e4a git cat-file: 141473498582e6c67dcdd9dbe35cc4b4e18fbfe4912d74bcfdf5fb60e6593baa  metrix/e1-pilot/METRIX_E1_PROTOCOL.md
+  v1 6a474e4a git cat-file: 94ba8516044e9bf10c5ad907f2e905c5afd91833a383b7212737cf28170e8cf3  metrix/e1-pilot/DATA_MANIFEST.json
+  v1 6a474e4a git cat-file: 7eb5d6edece5096ad107c4ba125fd539c2753d51e169c47556bfffeac18c7fff  metrix/e1-pilot/SPLIT_MANIFEST.json
+  v1 6a474e4a git cat-file: 490d575d54b4cbd3902adb496817d89c82763ad22fa8efac8894bcb4a45a6258  metrix/e1-pilot/SEARCH_SPACE.json
+v1 sha256 lines == git cat-file 6a474e4a: True
+v1 section == file at 8a49c087 with the stated edits only: False | old title '# PROTOCOL_FROZEN — METRIX-E1-PILOT protocol v1' | old approval 'Owner 批准，2026-11-22 05:27 UTC' | old paths sentence '本文件中的路径都相对仓库根目录。'
+paths sentence at top: True
+  v1 tag line: ['| 标签 | `metrix-e1-pilot-frozen`,指向冻结提交(由 Owner 在 Codespace 推送) |']
+every 64-hex value known: True | values 20 | not known []
+RESULT: FAIL
+exit=1
+$ env LC_ALL=C.UTF-8 grep -n -E 45/45\|12\ PROTOCOL_FROZEN\ data\ rows\ mapped\|\^RESULT metrix/e1-pilot/audit/stdout/87a244db28a901f9e89282b50df76778ab5c2887/10_r9_compare.txt
+27:all 12 PROTOCOL_FROZEN data rows mapped: True
+192:data rows: 45 | all values equal: 45/45
+195:RESULT: PASS
+exit=0
+$ git diff --stat HEAD -- metrix/e1-pilot/PROTOCOL_FROZEN
+ metrix/e1-pilot/PROTOCOL_FROZEN | 63 +++++++++++++++++++++++++++++++++++------
+ 1 file changed, 54 insertions(+), 9 deletions(-)
+exit=0
+
+# appended Sun Nov 22 10:21:46 UTC 2026: the run above failed on "v1 section == file ... with the stated edits only" because protocol_frozen_check.py also demoted its own expected section heading ("## v1(...)" -> "### v1(...)"); the first differing line was line 0 of the v1 section (got "## v1(METRIX-E1-PILOT protocol v1;保留为记录)", expected "### v1(..."). The script now demotes only the old body lines (old[5:]); PROTOCOL_FROZEN was not changed. Rerun:
+$ env TZ=UTC python3 -I metrix/e1-pilot/reports/round9/protocol_frozen_check.py /home/user/OpenMythos 87a244db28a901f9e89282b50df76778ab5c2887 6a474e4a5defa23dfc71b2c6bca9e15a81b517aa 8a49c0875c1479f01f2a12552a4c68733d0117aa
+valid UTF-8: True | bytes 10104 | sha256 3f8a3bbaaafa0b451483bb88baa012c77e8b106dd3b157a152ffa675856906ff
+first line after title: True | '当前有效版本：v1.1'
+section order: True | v1.1 at line 7, v1 at line 48
+v1.1 full hash: True | 87a244db28a901f9e89282b50df76778ab5c2887
+v1.1 parent: True | 8a49c0875c1479f01f2a12552a4c68733d0117aa
+v1.1 commit time: True | 2026-11-22 10:12:04|2026-11-22 10:12:04
+v1.1 tag: True
+v1.1 approval: True
+two sha256 blocks: True | found 2
+  v1.1 87a244db git cat-file: 1e80ca31ed8bb95dca4c09bc74d424a92ed85417f1285512d521cf5315831308  metrix/e1-pilot/METRIX_E1_PROTOCOL.md
+  v1.1 87a244db git cat-file: d1c32cdd297f70f418c4f7ad7b67742ac18482b4f0a57fd6b7bebe67b11ab911  metrix/e1-pilot/DATA_MANIFEST.json
+  v1.1 87a244db git cat-file: 8c2c46a1d012beb4afe4e0ed0466689297fb97caaee3cda4c55b4261338caf5f  metrix/e1-pilot/SPLIT_MANIFEST.json
+  v1.1 87a244db git cat-file: aa59e2e7d6599d8605f40513d702f3c4b1ccb98ab0678155e91d65f243259462  metrix/e1-pilot/SEARCH_SPACE.json
+v1.1 sha256 lines == git cat-file 87a244db: True
+  v1 6a474e4a git cat-file: 141473498582e6c67dcdd9dbe35cc4b4e18fbfe4912d74bcfdf5fb60e6593baa  metrix/e1-pilot/METRIX_E1_PROTOCOL.md
+  v1 6a474e4a git cat-file: 94ba8516044e9bf10c5ad907f2e905c5afd91833a383b7212737cf28170e8cf3  metrix/e1-pilot/DATA_MANIFEST.json
+  v1 6a474e4a git cat-file: 7eb5d6edece5096ad107c4ba125fd539c2753d51e169c47556bfffeac18c7fff  metrix/e1-pilot/SPLIT_MANIFEST.json
+  v1 6a474e4a git cat-file: 490d575d54b4cbd3902adb496817d89c82763ad22fa8efac8894bcb4a45a6258  metrix/e1-pilot/SEARCH_SPACE.json
+v1 sha256 lines == git cat-file 6a474e4a: True
+v1 section == file at 8a49c087 with the stated edits only: True | old title '# PROTOCOL_FROZEN — METRIX-E1-PILOT protocol v1' | old approval 'Owner 批准，2026-11-22 05:27 UTC' | old paths sentence '本文件中的路径都相对仓库根目录。'
+paths sentence at top: True
+  v1 tag line: ['| 标签 | `metrix-e1-pilot-frozen`,指向冻结提交(由 Owner 在 Codespace 推送) |']
+every 64-hex value known: True | values 20 | not known []
+RESULT: PASS
+exit=0
+$ sha256sum metrix/e1-pilot/PROTOCOL_FROZEN
+3f8a3bbaaafa0b451483bb88baa012c77e8b106dd3b157a152ffa675856906ff  metrix/e1-pilot/PROTOCOL_FROZEN
+exit=0

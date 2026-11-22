@@ -1,0 +1,196 @@
+# Data Auditor run. host vm, CPU only (no GPU, no torch, tokenizer files only); 2026-11-22 10:18:41 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/1df4d82a-900e-5f17-b09e-42f6e2f7c762/scratchpad/venv/bin/python -I -B r9_compare.py /home/user/OpenMythos 87a244db28a901f9e89282b50df76778ab5c2887 6a474e4a5defa23dfc71b2c6bca9e15a81b517aa stdout/87a244db28a901f9e89282b50df76778ab5c2887
+auditor values read: 53 from ['01_r9_files.txt', '02_r8_fetch.txt', '03_r8_anchor.txt', '04_r8_facts.txt', '05_r8_s_cands.txt', '06_r8_templates.txt', '07_r8_tokenizer.txt', '08_r8_general.txt', '09_r9_facts_jsonl.txt']
+  01_r9_files.txt: ['RESULT: PASS', 'exit=0']
+  02_r8_fetch.txt: ['RESULT: PASS', 'exit=0']
+  03_r8_anchor.txt: ['RESULT: PASS', 'exit=0']
+  04_r8_facts.txt: ['RESULT: PASS', 'exit=0']
+  05_r8_s_cands.txt: ['RESULT: PASS', 'exit=0']
+  06_r8_templates.txt: ['RESULT: PASS', 'exit=0']
+  07_r8_tokenizer.txt: ['RESULT: PASS', 'exit=0']
+  08_r8_general.txt: ['RESULT: PASS', 'exit=0']
+  09_r9_facts_jsonl.txt: ['RESULT: PASS', 'exit=0']
+PROTOCOL_FROZEN (at the commit): sha256-block lines 4 | data-table rows 12
+  PROTOCOL_FROZEN row 'fact(160 条)' -> facts_canonical_sha256
+  PROTOCOL_FROZEN row '锚文本(512 篇解码文本)' -> anchor_decoded_texts_canonical_sha256
+  PROTOCOL_FROZEN row '锚文本源 parquet' -> parquet_sha256
+  PROTOCOL_FROZEN row '`train_S.jsonl`' -> train_S_canonical_sha256
+  PROTOCOL_FROZEN row '`candidates.json`' -> candidates_canonical_sha256
+  PROTOCOL_FROZEN row '模板集合(32 个)' -> template_set_sha256
+  PROTOCOL_FROZEN row 'Qwen `tokenizer.json`' -> qwen_tokenizer_sha256:tokenizer.json
+  PROTOCOL_FROZEN row 'Qwen `tokenizer_config.json`' -> qwen_tokenizer_sha256:tokenizer_config.json
+  PROTOCOL_FROZEN row 'Qwen `vocab.json`' -> qwen_tokenizer_sha256:vocab.json
+  PROTOCOL_FROZEN row 'Qwen `merges.txt`' -> qwen_tokenizer_sha256:merges.txt
+  PROTOCOL_FROZEN row 'parcae 分词器 `tokenizer.json`' -> parcae_tokenizer_json_sha256
+  PROTOCOL_FROZEN row '`eval_sets.jsonl`' -> eval_sets_jsonl_sha256
+all 12 PROTOCOL_FROZEN data rows mapped: True
+Executor t5_frozen_hashes_87a244db.txt present: True | t1_protocol_checks.txt@87a244db bytes 23995
+Executor t5 block 87a244db: 11 values parsed 11
+Executor t5 block 6a474e4a: 11 values parsed 11
+
+== item 1: file sha256 of the protocol and the three JSON
+METRIX_E1_PROTOCOL.md
+    87a244db auditor 1e80ca31ed8bb95dca4c09bc74d424a92ed85417f1285512d521cf5315831308
+             Executor t5 ['1e80ca31ed8bb95dca4c09bc74d424a92ed85417f1285512d521cf5315831308'] | Executor t1 (pre-commit working tree) ['1e80ca31ed8bb95dca4c09bc74d424a92ed85417f1285512d521cf5315831308'] | equal: True
+    v1 6a474e4a auditor 141473498582e6c67dcdd9dbe35cc4b4e18fbfe4912d74bcfdf5fb60e6593baa
+             PROTOCOL_FROZEN 141473498582e6c67dcdd9dbe35cc4b4e18fbfe4912d74bcfdf5fb60e6593baa | Executor t5 ['141473498582e6c67dcdd9dbe35cc4b4e18fbfe4912d74bcfdf5fb60e6593baa'] | equal: True
+DATA_MANIFEST.json
+    87a244db auditor d1c32cdd297f70f418c4f7ad7b67742ac18482b4f0a57fd6b7bebe67b11ab911
+             Executor t5 ['d1c32cdd297f70f418c4f7ad7b67742ac18482b4f0a57fd6b7bebe67b11ab911'] | Executor t1 (pre-commit working tree) ['d1c32cdd297f70f418c4f7ad7b67742ac18482b4f0a57fd6b7bebe67b11ab911'] | equal: True
+    v1 6a474e4a auditor 94ba8516044e9bf10c5ad907f2e905c5afd91833a383b7212737cf28170e8cf3
+             PROTOCOL_FROZEN 94ba8516044e9bf10c5ad907f2e905c5afd91833a383b7212737cf28170e8cf3 | Executor t5 ['94ba8516044e9bf10c5ad907f2e905c5afd91833a383b7212737cf28170e8cf3'] | equal: True
+SPLIT_MANIFEST.json
+    87a244db auditor 8c2c46a1d012beb4afe4e0ed0466689297fb97caaee3cda4c55b4261338caf5f
+             Executor t5 ['8c2c46a1d012beb4afe4e0ed0466689297fb97caaee3cda4c55b4261338caf5f'] | Executor t1 (pre-commit working tree) ['8c2c46a1d012beb4afe4e0ed0466689297fb97caaee3cda4c55b4261338caf5f'] | equal: True
+    v1 6a474e4a auditor 7eb5d6edece5096ad107c4ba125fd539c2753d51e169c47556bfffeac18c7fff
+             PROTOCOL_FROZEN 7eb5d6edece5096ad107c4ba125fd539c2753d51e169c47556bfffeac18c7fff | Executor t5 ['7eb5d6edece5096ad107c4ba125fd539c2753d51e169c47556bfffeac18c7fff'] | equal: True
+SEARCH_SPACE.json
+    87a244db auditor aa59e2e7d6599d8605f40513d702f3c4b1ccb98ab0678155e91d65f243259462
+             Executor t5 ['aa59e2e7d6599d8605f40513d702f3c4b1ccb98ab0678155e91d65f243259462'] | Executor t1 (pre-commit working tree) ['aa59e2e7d6599d8605f40513d702f3c4b1ccb98ab0678155e91d65f243259462'] | equal: True
+    v1 6a474e4a auditor 490d575d54b4cbd3902adb496817d89c82763ad22fa8efac8894bcb4a45a6258
+             PROTOCOL_FROZEN 490d575d54b4cbd3902adb496817d89c82763ad22fa8efac8894bcb4a45a6258 | Executor t5 ['490d575d54b4cbd3902adb496817d89c82763ad22fa8efac8894bcb4a45a6258'] | equal: True
+
+== item 2: data hashes (auditor | PROTOCOL_FROZEN | v1 manifest | commit manifest | Executor t5 v1 / commit)
+manifest value keys: v1 45 | commit 45 | same keys: True
+facts_canonical_sha256
+    auditor 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97
+    PROTOCOL_FROZEN 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 | v1 manifest same | commit manifest same | Executor t5 v1 same | commit same | ALL EQUAL True
+facts_canonical_sha256_from_jsonl
+    auditor 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97
+    PROTOCOL_FROZEN 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 | v1 manifest same | commit manifest same | Executor t5 v1 same | commit same | ALL EQUAL True
+anchor_decoded_texts_canonical_sha256
+    auditor 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408
+    PROTOCOL_FROZEN 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 | v1 manifest same | commit manifest same | Executor t5 v1 same | commit same | ALL EQUAL True
+parquet_sha256
+    auditor 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22
+    PROTOCOL_FROZEN 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22 | v1 manifest same | commit manifest same | Executor t5 v1 not printed | commit not printed | ALL EQUAL True
+train_S_canonical_sha256
+    auditor 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e
+    PROTOCOL_FROZEN 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e | v1 manifest same | commit manifest same | Executor t5 v1 same | commit same | ALL EQUAL True
+candidates_canonical_sha256
+    auditor e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705
+    PROTOCOL_FROZEN e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | v1 manifest same | commit manifest same | Executor t5 v1 same | commit same | ALL EQUAL True
+template_set_sha256
+    auditor 2b52411326c218e9c51d947b2f4e0d77b0cdd5d6237f9ce25b57a872c48ce28f
+    PROTOCOL_FROZEN 2b52411326c218e9c51d947b2f4e0d77b0cdd5d6237f9ce25b57a872c48ce28f | v1 manifest same | commit manifest same | Executor t5 v1 same | commit same | ALL EQUAL True
+parcae_tokenizer_json_sha256
+    auditor e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77
+    PROTOCOL_FROZEN e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77 | v1 manifest same | commit manifest same | Executor t5 v1 same | commit same | ALL EQUAL True
+eval_sets_jsonl_sha256
+    auditor 8816fe5a39d8b89e8c4203bf7d660e798faa471d2b72b5ce43c411cf5925a155
+    PROTOCOL_FROZEN 8816fe5a39d8b89e8c4203bf7d660e798faa471d2b72b5ce43c411cf5925a155 | v1 manifest same | commit manifest same | Executor t5 v1 same | commit same | ALL EQUAL True
+qwen_tokenizer_sha256:tokenizer.json
+    auditor aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4
+    PROTOCOL_FROZEN aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4 | v1 manifest same | commit manifest same | Executor t5 v1 same | commit same | ALL EQUAL True
+qwen_tokenizer_sha256:tokenizer_config.json
+    auditor d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101
+    PROTOCOL_FROZEN d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101 | v1 manifest same | commit manifest same | Executor t5 v1 same | commit same | ALL EQUAL True
+qwen_tokenizer_sha256:vocab.json
+    auditor ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910
+    PROTOCOL_FROZEN ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910 | v1 manifest same | commit manifest same | Executor t5 v1 same | commit same | ALL EQUAL True
+qwen_tokenizer_sha256:merges.txt
+    auditor 8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5
+    PROTOCOL_FROZEN 8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5 | v1 manifest same | commit manifest same | Executor t5 v1 same | commit same | ALL EQUAL True
+template_normalized_sha256:capital.TRAIN.1
+    auditor 74b387557c65a849b0503dee6a2d4249321119697caa4a2ae080336fac2ce39d
+    PROTOCOL_FROZEN - (no row) | v1 manifest same | commit manifest same | Executor t5 v1 not printed | commit not printed | ALL EQUAL True
+template_normalized_sha256:capital.DEV.1
+    auditor 31affd8921ab494f7ce6edbe3247e640538b1d8a70e644be324929bcdeb65d0c
+    PROTOCOL_FROZEN - (no row) | v1 manifest same | commit manifest same | Executor t5 v1 not printed | commit not printed | ALL EQUAL True
+template_normalized_sha256:capital.DEV.2
+    auditor 97981abdd695df5244079b8505273381e5e530a80bdefd128c22e39115e549ec
+    PROTOCOL_FROZEN - (no row) | v1 manifest same | commit manifest same | Executor t5 v1 not printed | commit not printed | ALL EQUAL True
+template_normalized_sha256:capital.TEST.1
+    auditor 0d9f0c72ea22e289a56642ca5ca64516b7b3c893041117fb4b3187687e34c4e0
+    PROTOCOL_FROZEN - (no row) | v1 manifest same | commit manifest same | Executor t5 v1 not printed | commit not printed | ALL EQUAL True
+template_normalized_sha256:capital.TEST.2
+    auditor ae1e9edac4518cefdbc210fea5dc9898a9734d928fd19d8281f883759b464aa7
+    PROTOCOL_FROZEN - (no row) | v1 manifest same | commit manifest same | Executor t5 v1 not printed | commit not printed | ALL EQUAL True
+template_normalized_sha256:capital.TEST.3
+    auditor 57a5472bfda68011d151cd2a4562d6b44650ed3909e9b351af50be93d5bdb81f
+    PROTOCOL_FROZEN - (no row) | v1 manifest same | commit manifest same | Executor t5 v1 not printed | commit not printed | ALL EQUAL True
+template_normalized_sha256:capital.Y_ENTITY.1
+    auditor e13d04f3ce5dc403b709f863fe2a4bf78e59ec2110db3f4190d4c17e4bddca3c
+    PROTOCOL_FROZEN - (no row) | v1 manifest same | commit manifest same | Executor t5 v1 not printed | commit not printed | ALL EQUAL True
+template_normalized_sha256:capital.Y_ANSWER.1
+    auditor 481a4a00b41f7d568bf0eb47760e2c92cb45f5715fe3ade1e7649e1af4b51305
+    PROTOCOL_FROZEN - (no row) | v1 manifest same | commit manifest same | Executor t5 v1 not printed | commit not printed | ALL EQUAL True
+template_normalized_sha256:currency.TRAIN.1
+    auditor 26168688f79cf2790ab69537ee7a5a246b4629a9330350679f2dbad796b431c5
+    PROTOCOL_FROZEN - (no row) | v1 manifest same | commit manifest same | Executor t5 v1 not printed | commit not printed | ALL EQUAL True
+template_normalized_sha256:currency.DEV.1
+    auditor abaa0c42149269c772d6b5a2d3f462a48f6544cdd81f3e73f05e01e4f73f160f
+    PROTOCOL_FROZEN - (no row) | v1 manifest same | commit manifest same | Executor t5 v1 not printed | commit not printed | ALL EQUAL True
+template_normalized_sha256:currency.DEV.2
+    auditor 6255625176ae50124b321c5fb8697276d286e9e01e04a5cbf506c8e77a8d42d1
+    PROTOCOL_FROZEN - (no row) | v1 manifest same | commit manifest same | Executor t5 v1 not printed | commit not printed | ALL EQUAL True
+template_normalized_sha256:currency.TEST.1
+    auditor 67d40b3f9558fe92193806a5ee00c5d79a2353302c48e971ba1ed249d7b99c0e
+    PROTOCOL_FROZEN - (no row) | v1 manifest same | commit manifest same | Executor t5 v1 not printed | commit not printed | ALL EQUAL True
+template_normalized_sha256:currency.TEST.2
+    auditor 38c8bf1c4c393d18bc934baa68a4cfaebe821b8d2a74e8bd3c95f11d22eca15d
+    PROTOCOL_FROZEN - (no row) | v1 manifest same | commit manifest same | Executor t5 v1 not printed | commit not printed | ALL EQUAL True
+template_normalized_sha256:currency.TEST.3
+    auditor 312292a83bc694fa946cebc38cc66b547c6e2ea863fda276410bac1aaf8f519c
+    PROTOCOL_FROZEN - (no row) | v1 manifest same | commit manifest same | Executor t5 v1 not printed | commit not printed | ALL EQUAL True
+template_normalized_sha256:currency.Y_ENTITY.1
+    auditor f2ad875c4bc2680bb8ec2ad62648c3dd57446fc91f11cfa29658c07c50da92ae
+    PROTOCOL_FROZEN - (no row) | v1 manifest same | commit manifest same | Executor t5 v1 not printed | commit not printed | ALL EQUAL True
+template_normalized_sha256:currency.Y_ANSWER.1
+    auditor 7575ee9ec8656de841deca6350dec2b1785f885a66d4d3cb78473720e2488405
+    PROTOCOL_FROZEN - (no row) | v1 manifest same | commit manifest same | Executor t5 v1 not printed | commit not printed | ALL EQUAL True
+template_normalized_sha256:founder.TRAIN.1
+    auditor 00677105bdd63609cfb269f278a64cd69b0446bd4005d22a88e87f20fd2b3e7c
+    PROTOCOL_FROZEN - (no row) | v1 manifest same | commit manifest same | Executor t5 v1 not printed | commit not printed | ALL EQUAL True
+template_normalized_sha256:founder.DEV.1
+    auditor 6c43a9da1c3319e8ebfe940e74e89f8912604a49a92a206f16fbd09ada0fe4e2
+    PROTOCOL_FROZEN - (no row) | v1 manifest same | commit manifest same | Executor t5 v1 not printed | commit not printed | ALL EQUAL True
+template_normalized_sha256:founder.DEV.2
+    auditor 2245dbc30f2f3601eff290fb98aa7ba86ae2d0fc4cd3bc6a1ed169dd37f107a9
+    PROTOCOL_FROZEN - (no row) | v1 manifest same | commit manifest same | Executor t5 v1 not printed | commit not printed | ALL EQUAL True
+template_normalized_sha256:founder.TEST.1
+    auditor 3da3b1f5f7951745687cea88506b53f7aa865f4e75465d4ddb21838bf45f62d3
+    PROTOCOL_FROZEN - (no row) | v1 manifest same | commit manifest same | Executor t5 v1 not printed | commit not printed | ALL EQUAL True
+template_normalized_sha256:founder.TEST.2
+    auditor 3bb7c95a786a63ecebf570e9ae9a1138f34268b1484755824b525f6ffc7f4c22
+    PROTOCOL_FROZEN - (no row) | v1 manifest same | commit manifest same | Executor t5 v1 not printed | commit not printed | ALL EQUAL True
+template_normalized_sha256:founder.TEST.3
+    auditor 4b4d24d4a06c0a1b80fae508e8f2cccbfc8c5f71320dd73734f3c5ce0f797725
+    PROTOCOL_FROZEN - (no row) | v1 manifest same | commit manifest same | Executor t5 v1 not printed | commit not printed | ALL EQUAL True
+template_normalized_sha256:founder.Y_ENTITY.1
+    auditor 838aeb12dee8e2f3c94ed6baf3a4b58f76890dbf7e21f95c3ec17eaba59499f2
+    PROTOCOL_FROZEN - (no row) | v1 manifest same | commit manifest same | Executor t5 v1 not printed | commit not printed | ALL EQUAL True
+template_normalized_sha256:founder.Y_ANSWER.1
+    auditor 275c8caf2ab8bda4247259781a4a0a302ffb24a0080445bcf6046c30a5fbf5b8
+    PROTOCOL_FROZEN - (no row) | v1 manifest same | commit manifest same | Executor t5 v1 not printed | commit not printed | ALL EQUAL True
+template_normalized_sha256:river.TRAIN.1
+    auditor 2e4f5e98d80ad5f1805291d3846cbd7f48a8e2eed074585f3538adbff8540cd6
+    PROTOCOL_FROZEN - (no row) | v1 manifest same | commit manifest same | Executor t5 v1 not printed | commit not printed | ALL EQUAL True
+template_normalized_sha256:river.DEV.1
+    auditor 5951fdcce3de7cfb3f4f8774a5c332501ea4cffd594095802169264834e9c22d
+    PROTOCOL_FROZEN - (no row) | v1 manifest same | commit manifest same | Executor t5 v1 not printed | commit not printed | ALL EQUAL True
+template_normalized_sha256:river.DEV.2
+    auditor d8f78e9891d1dcb69af5a5bc79705d8d842858db2cc047289c17d29f3c84f451
+    PROTOCOL_FROZEN - (no row) | v1 manifest same | commit manifest same | Executor t5 v1 not printed | commit not printed | ALL EQUAL True
+template_normalized_sha256:river.TEST.1
+    auditor ab57af146d7c30a80755cbbbce6b8eb39b2e6c41656cfab832aa208f2310558d
+    PROTOCOL_FROZEN - (no row) | v1 manifest same | commit manifest same | Executor t5 v1 not printed | commit not printed | ALL EQUAL True
+template_normalized_sha256:river.TEST.2
+    auditor 513180142689326b15ed0eecd7cb965dd67c0d2abec8c2fdb7e935a1af9aaad7
+    PROTOCOL_FROZEN - (no row) | v1 manifest same | commit manifest same | Executor t5 v1 not printed | commit not printed | ALL EQUAL True
+template_normalized_sha256:river.TEST.3
+    auditor 5a068b44d53ed952ab973629a2181b972f8d73f150964552c4e1ebf06865f052
+    PROTOCOL_FROZEN - (no row) | v1 manifest same | commit manifest same | Executor t5 v1 not printed | commit not printed | ALL EQUAL True
+template_normalized_sha256:river.Y_ENTITY.1
+    auditor 1b7a623826e7d5e8e187b78e750deb02d12f66032635a9c5de5d252fbd05efa8
+    PROTOCOL_FROZEN - (no row) | v1 manifest same | commit manifest same | Executor t5 v1 not printed | commit not printed | ALL EQUAL True
+template_normalized_sha256:river.Y_ANSWER.1
+    auditor 92a3dcce81042daf25570fb26f361e760c0165b57f5e43f0c8f601ddd07858d2
+    PROTOCOL_FROZEN - (no row) | v1 manifest same | commit manifest same | Executor t5 v1 not printed | commit not printed | ALL EQUAL True
+
+data rows: 45 | all values equal: 45/45
+auditor values not used in the table: []
+PROTOCOL_FROZEN rows without a manifest key (must be empty): []
+RESULT: PASS
+exit=0

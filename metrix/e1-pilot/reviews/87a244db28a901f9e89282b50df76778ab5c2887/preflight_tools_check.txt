@@ -1,0 +1,21 @@
+# Round 9: metrix/CLAUDE.md section 5 item 6 pre-call check for the reviews of the v1.1 freeze commit 87a244db28a901f9e89282b50df76778ab5c2887. Executor, session_01J5mxaXPDtdHu9PKCjhmE7G, host vm (Anthropic cloud container). Sun Nov 22 10:12:38 UTC 2026
+# Repository file vs user-level copy under /root/.claude/agents/ (the loaded definition). The repository data-auditor.md body changed in this commit (line 12, TEST rule); its frontmatter must still match the loaded definition.
+$ bash -c diff\ \<\(awk\ \'/\^---\$/\{n++\;\ print\;\ if\(n==2\)\ exit\;\ next\}\ n==1\{print\}\'\ .claude/agents/code-reviewer.md\)\ \<\(awk\ \'/\^---\$/\{n++\;\ print\;\ if\(n==2\)\ exit\;\ next\}\ n==1\{print\}\'\ /root/.claude/agents/code-reviewer.md\)\ \&\&\ echo\ code-reviewer_FRONTMATTER_IDENTICAL
+code-reviewer_FRONTMATTER_IDENTICAL
+exit=0
+$ bash -c cmp\ \<\(grep\ \'\^tools:\'\ .claude/agents/code-reviewer.md\)\ \<\(grep\ \'\^tools:\'\ /root/.claude/agents/code-reviewer.md\)\ \&\&\ echo\ code-reviewer_TOOLS_LINE_IDENTICAL
+code-reviewer_TOOLS_LINE_IDENTICAL
+exit=0
+$ bash -c diff\ \<\(awk\ \'/\^---\$/\{n++\;\ print\;\ if\(n==2\)\ exit\;\ next\}\ n==1\{print\}\'\ .claude/agents/data-auditor.md\)\ \<\(awk\ \'/\^---\$/\{n++\;\ print\;\ if\(n==2\)\ exit\;\ next\}\ n==1\{print\}\'\ /root/.claude/agents/data-auditor.md\)\ \&\&\ echo\ data-auditor_FRONTMATTER_IDENTICAL
+data-auditor_FRONTMATTER_IDENTICAL
+exit=0
+$ bash -c cmp\ \<\(grep\ \'\^tools:\'\ .claude/agents/data-auditor.md\)\ \<\(grep\ \'\^tools:\'\ /root/.claude/agents/data-auditor.md\)\ \&\&\ echo\ data-auditor_TOOLS_LINE_IDENTICAL
+data-auditor_TOOLS_LINE_IDENTICAL
+exit=0
+$ git rev-parse HEAD
+87a244db28a901f9e89282b50df76778ab5c2887
+exit=0
+$ git status --short
+?? metrix/e1-pilot/reports/round9/t5_frozen_hashes_87a244db.txt
+?? metrix/e1-pilot/reviews/87a244db28a901f9e89282b50df76778ab5c2887/
+exit=0
