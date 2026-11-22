@@ -1,0 +1,194 @@
+# Round 9 raw output: checks of the working tree that becomes the v1.1 freeze commit (items 1-3), run before the commit. Host vm (Anthropic cloud container), CPU only. Written by the Executor (session_01J5mxaXPDtdHu9PKCjhmE7G). Sun Nov 22 10:11:53 UTC 2026
+# cwd /home/user/OpenMythos. Recorded by metrix/e1-pilot/reports/round5/logrun.sh. HEAD is 8a49c087 (round 8 report commit; its protocol and JSONs are identical to the v1 freeze commit 6a474e4a, see the git diff --quiet line). The files checked are the working-tree versions. No data was generated and no model or tokenizer was loaded.
+$ git rev-parse HEAD
+8a49c0875c1479f01f2a12552a4c68733d0117aa
+exit=0
+$ git status --short
+ M .claude/agents/data-auditor.md
+ M metrix/CLAUDE.md
+ M metrix/e1-pilot/DATA_MANIFEST.json
+ M metrix/e1-pilot/METRIX_E1_PROTOCOL.md
+ M metrix/e1-pilot/SEARCH_SPACE.json
+ M metrix/e1-pilot/SPLIT_MANIFEST.json
+?? metrix/e1-pilot/reports/round9/
+?? metrix/e1-pilot/tasks/ROUND9_TASKS.md
+exit=0
+$ bash -c git\ diff\ --quiet\ 6a474e4a5defa23dfc71b2c6bca9e15a81b517aa\ HEAD\ --\ metrix/e1-pilot/METRIX_E1_PROTOCOL.md\ metrix/e1-pilot/DATA_MANIFEST.json\ metrix/e1-pilot/SPLIT_MANIFEST.json\ metrix/e1-pilot/SEARCH_SPACE.json\ \&\&\ echo\ \"HEAD\ protocol+3\ JSONs\ identical\ to\ v1\ freeze\ commit\ 6a474e4a\"
+HEAD protocol+3 JSONs identical to v1 freeze commit 6a474e4a
+exit=0
+$ sha256sum metrix/e1-pilot/METRIX_E1_PROTOCOL.md metrix/e1-pilot/DATA_MANIFEST.json metrix/e1-pilot/SPLIT_MANIFEST.json metrix/e1-pilot/SEARCH_SPACE.json metrix/CLAUDE.md .claude/agents/code-reviewer.md .claude/agents/data-auditor.md
+1e80ca31ed8bb95dca4c09bc74d424a92ed85417f1285512d521cf5315831308  metrix/e1-pilot/METRIX_E1_PROTOCOL.md
+d1c32cdd297f70f418c4f7ad7b67742ac18482b4f0a57fd6b7bebe67b11ab911  metrix/e1-pilot/DATA_MANIFEST.json
+8c2c46a1d012beb4afe4e0ed0466689297fb97caaee3cda4c55b4261338caf5f  metrix/e1-pilot/SPLIT_MANIFEST.json
+aa59e2e7d6599d8605f40513d702f3c4b1ccb98ab0678155e91d65f243259462  metrix/e1-pilot/SEARCH_SPACE.json
+c20d1b7d05168d6b03ee262704ff896d19e0c678aed31024f255b0bf12ea76a5  metrix/CLAUDE.md
+e38d091494059227d8d95896aa50858adc32f4750a5512b45bec97dd368932c6  .claude/agents/code-reviewer.md
+fd556e751947058c10a80b77a669615a62078251d7e36055f111d33cb838eae9  .claude/agents/data-auditor.md
+exit=0
+$ python3 -I metrix/e1-pilot/reports/round6/table_check.py metrix/e1-pilot/METRIX_E1_PROTOCOL.md
+table rows checked: 173; rows whose cell count differs from the header: 0; unescaped special tokens: 0
+RESULT: PASS
+exit=0
+$ python3 -I metrix/e1-pilot/reports/round9/v11_checks.py /home/user/OpenMythos 6a474e4a5defa23dfc71b2c6bca9e15a81b517aa
+new files read from: working tree | v1 freeze commit: 6a474e4a5defa23dfc71b2c6bca9e15a81b517aa
+DATA_MANIFEST.json | version v1.1 | status PROTOCOL_FROZEN | frozen Owner 批准，2026-11-22 05:27 UTC | re-dump identical: True
+  differences from v1 freeze commit: ["/version: 'v1' -> 'v1.1'"]
+SPLIT_MANIFEST.json | version v1.1 | status PROTOCOL_FROZEN | frozen Owner 批准，2026-11-22 05:27 UTC | re-dump identical: True
+  differences from v1 freeze commit: ["/version: 'v1' -> 'v1.1'"]
+SEARCH_SPACE.json | version v1.1 | status PROTOCOL_FROZEN | frozen Owner 批准，2026-11-22 05:27 UTC | re-dump identical: True
+  differences from v1 freeze commit: ["/version: 'v1' -> 'v1.1'"]
+inline copy identical (marked block): True
+== title: 1 line(s)
+1: # METRIX · E1-PILOT · PROTOCOL v1.1
+== status line: 1 line(s)
+6: | 状态 | **PROTOCOL_FROZEN（v1.1）**(v1.1 勘误版:Owner 批准，2026-11-22 09:44 UTC;v1:Owner 批准，2026-11-22 05:27 UTC。v1.1 冻结提交的标签为 `metrix-e1-pilot-frozen-v1.1`,v1 冻结提交的标签为 `metrix-e1-pilot-frozen`,都由 Owner 推送;两个冻结提交的完整 hash 与各自提交下本文件、三个 JSON 的 sha256 记在同目录的 `PROTOCOL_FROZEN` 文件中) |
+== section 1 margin: 1 line(s)
+55: - 不对 general damage 下 non-inferiority 结论(margin 已按提案批准为 dNLL ≤ +0.03,见第 13 节第 2 项;Owner 批准，2026-11-22 05:27 UTC;在 Pilot 中只报告,不进门槛)。
+== section 2.2 fact hash: 1 line(s)
+86: - **fact 哈希的比对方法**:从 `facts.jsonl` 读出 fact 列表(按文件中的行序,即生成顺序;每条 fact 为上一条所列的 6 个字段),按本节的规范化方法(第 0 节对这个 JSON 列表的规范化序列求 SHA-256)重算,与 `406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97` 比对。`facts.jsonl` 文件按 JSONL 规则得到的 `canonical_sha256` 是另一串字节的哈希,不与此值比对。
+== G0.8: 1 line(s)
+543: | G0.8 | 复现：对 F 选定配置的 3 个 checkpoint 各评测两次；候选分数差 ≤ 1e-4；某题两次中任一次最高两个候选分数差 ≤ 1e-4 时允许预测不同，其余预测须完全相同；并列判为错；每个通用窗口的 NLL 差 ≤ 1e-5。实现须开启 PyTorch 确定性设置并记录。 |
+== ST12: 1 line(s)
+624: | ST12 | 任何数据、manifest、模板或候选的哈希,或模型、分词器版本与冻结值不一致。比对范围:(1)`PROTOCOL_FROZEN` 中列出的数据内容哈希(fact 哈希的比对方法见第 2.2 节);(2)冻结提交下本协议文件与三个 JSON 的原始字节哈希,用 `git cat-file` 从冻结提交读取。第 8 节第 1 步写入 manifest 的实际哈希字段(`DATA_MANIFEST.json: files`、`SPLIT_MANIFEST.json: split_sha256`)不在比对范围内 | 停止;BLOCKED |
+== section 14 v1.1 rows: 5
+701: | v1.1(冻结勘误) | v1.1 冻结提交的提交时间(见 `PROTOCOL_FROZEN` 的 v1.1 一节) | v1.1 冻结提交(标签 `metrix-e1-pilot-frozen-v1.1`,由 Owner 推送) | 第 8 节 G0.8 | v1 原文“复现:同一 checkpoint 两次评测,候选分数差 ≤ 1e-4;某题两次中任一次最高两个候选分数差 ≤ 1e-4 时允许预测不同,其余预测须完全相同;并列判为错。实现须开启 PyTorch 确定性设置并记录”改为“复现：对 F 选定配置的 3 个 checkpoint 各评测两次；候选分数差 ≤ 1e-4；某题两次中任一次最高两个候选分数差 ≤ 1e-4 时允许预测不同，其余预测须完全相同；并列判为错；每个通用窗口的 NLL 差 ≤ 1e-5。实现须开启 PyTorch 确定性设置并记录。” | 冻结勘误，Owner 批准 2026-11-22 09:44 UTC；勘误时未运行任何实验。v1 补充 a 的指令措辞使原条整条被替换，丢失复评对象与 NLL 容差(v1-r8 的 G0.8 一行;第 9 轮指令第 1a 项) |
+702: | v1.1(冻结勘误) | 同上 | 同上 | 第 11 节 ST12 | “条件”栏原文“任何数据、manifest、模板或候选的哈希,或模型、分词器版本与冻结值不一致”之后加:“比对范围:(1)`PROTOCOL_FROZEN` 中列出的数据内容哈希(fact 哈希的比对方法见第 2.2 节);(2)冻结提交下本协议文件与三个 JSON 的原始字节哈希,用 `git cat-file` 从冻结提交读取。第 8 节第 1 步写入 manifest 的实际哈希字段(`DATA_MANIFEST.json: files`、`SPLIT_MANIFEST.json: split_sha256`)不在比对范围内”;“处理”栏不变 | 冻结勘误，Owner 批准 2026-11-22 09:44 UTC；勘误时未运行任何实验。v1 的 ST12 没有写比对范围,照字面会在第 8 节第 1 步写入 manifest 后触发(第 9 轮指令第 1b 项;`reports/ROUND8_REPORT.md`“待 Review Gate 决定”第 2 项) |
+703: | v1.1(冻结勘误) | 同上 | 同上 | 第 2.2 节(新增“fact 哈希的比对方法”一条) | 新增:“从 `facts.jsonl` 读出 fact 列表(按文件中的行序,即生成顺序;每条 fact 为上一条所列的 6 个字段),按本节的规范化方法(第 0 节对这个 JSON 列表的规范化序列求 SHA-256)重算,与 `406c8801…` 比对。`facts.jsonl` 文件按 JSONL 规则得到的 `canonical_sha256` 是另一串字节的哈希,不与此值比对。”(正文写全值)。fact 的冻结哈希不变 | 冻结勘误，Owner 批准 2026-11-22 09:44 UTC；勘误时未运行任何实验。v1 没有写 `facts.jsonl` 与 `406c8801…` 的比对口径(第 9 轮指令第 1c 项;`reports/ROUND8_REPORT.md`“待 Review Gate 决定”第 3 项) |
+704: | v1.1(冻结勘误) | 同上 | 同上 | 第 1 节 Non-claims | v1 原文“margin 见第 13 节,在 Pilot 中只报告”改为“margin 已按提案批准为 dNLL ≤ +0.03,见第 13 节第 2 项;Owner 批准，2026-11-22 05:27 UTC;在 Pilot 中只报告,不进门槛”。v1-r8 已把 v1-r7 的“margin 待 Review Gate,见第 13 节”改为 v1 原文;本次写明已批准的值与批准记录 | 冻结勘误，Owner 批准 2026-11-22 09:44 UTC；勘误时未运行任何实验(第 9 轮指令第 1d 项) |
+705: | v1.1(冻结勘误) | 同上 | 同上 | 文件标题;文件头“状态”一行;`DATA_MANIFEST.json`、`SPLIT_MANIFEST.json`、`SEARCH_SPACE.json`(及第 7 节内联副本)的 `version` | 标题“PROTOCOL v1”改为“PROTOCOL v1.1”;三个 JSON 与内联副本的 `version` 由 `v1` 改为 `v1.1`(`status` 仍为 `PROTOCOL_FROZEN`,`frozen` 字段不变);状态一行原文“**PROTOCOL_FROZEN**(Owner 批准，2026-11-22 05:27 UTC;冻结提交打标签 `metrix-e1-pilot-frozen`,其完整 hash 与该提交下本文件、三个 JSON 的 sha256 记在同目录的 `PROTOCOL_FROZEN` 文件中)”改为“**PROTOCOL_FROZEN（v1.1）**(v1.1 勘误版:Owner 批准，2026-11-22 09:44 UTC;v1:Owner 批准，2026-11-22 05:27 UTC。v1.1 冻结提交的标签为 `metrix-e1-pilot-frozen-v1.1`,v1 冻结提交的标签为 `metrix-e1-pilot-frozen`,都由 Owner 推送;两个冻结提交的完整 hash 与各自提交下本文件、三个 JSON 的 sha256 记在同目录的 `PROTOCOL_FROZEN` 文件中)” | 冻结勘误，Owner 批准 2026-11-22 09:44 UTC；勘误时未运行任何实验(第 9 轮指令第 1e 项;标签由 Owner 推送:第 9 轮指令开头) |
+v1.1 rows whose last cell starts with the required reason: 5 of 5
+== unified diff vs v1 freeze commit, lines before section 14 (n=0 context)
+--- v1
++++ v1.1
+@@ -1 +1 @@
+-# METRIX · E1-PILOT · PROTOCOL v1
++# METRIX · E1-PILOT · PROTOCOL v1.1
+@@ -6 +6 @@
+-| 状态 | **PROTOCOL_FROZEN**(Owner 批准，2026-11-22 05:27 UTC;冻结提交打标签 `metrix-e1-pilot-frozen`,其完整 hash 与该提交下本文件、三个 JSON 的 sha256 记在同目录的 `PROTOCOL_FROZEN` 文件中) |
++| 状态 | **PROTOCOL_FROZEN（v1.1）**(v1.1 勘误版:Owner 批准，2026-11-22 09:44 UTC;v1:Owner 批准，2026-11-22 05:27 UTC。v1.1 冻结提交的标签为 `metrix-e1-pilot-frozen-v1.1`,v1 冻结提交的标签为 `metrix-e1-pilot-frozen`,都由 Owner 推送;两个冻结提交的完整 hash 与各自提交下本文件、三个 JSON 的 sha256 记在同目录的 `PROTOCOL_FROZEN` 文件中) |
+@@ -55 +55 @@
+-- 不对 general damage 下 non-inferiority 结论(margin 见第 13 节,在 Pilot 中只报告)。
++- 不对 general damage 下 non-inferiority 结论(margin 已按提案批准为 dNLL ≤ +0.03,见第 13 节第 2 项;Owner 批准，2026-11-22 05:27 UTC;在 Pilot 中只报告,不进门槛)。
+@@ -85,0 +86 @@
++- **fact 哈希的比对方法**:从 `facts.jsonl` 读出 fact 列表(按文件中的行序,即生成顺序;每条 fact 为上一条所列的 6 个字段),按本节的规范化方法(第 0 节对这个 JSON 列表的规范化序列求 SHA-256)重算,与 `406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97` 比对。`facts.jsonl` 文件按 JSONL 规则得到的 `canonical_sha256` 是另一串字节的哈希,不与此值比对。
+@@ -297 +298 @@
+-  "version": "v1",
++  "version": "v1.1",
+@@ -542 +543 @@
+-| G0.8 | 复现:同一 checkpoint 两次评测,候选分数差 ≤ 1e-4;某题两次中任一次最高两个候选分数差 ≤ 1e-4 时允许预测不同,其余预测须完全相同;并列判为错。实现须开启 PyTorch 确定性设置并记录 |
++| G0.8 | 复现：对 F 选定配置的 3 个 checkpoint 各评测两次；候选分数差 ≤ 1e-4；某题两次中任一次最高两个候选分数差 ≤ 1e-4 时允许预测不同，其余预测须完全相同；并列判为错；每个通用窗口的 NLL 差 ≤ 1e-5。实现须开启 PyTorch 确定性设置并记录。 |
+@@ -623 +624 @@
+-| ST12 | 任何数据、manifest、模板或候选的哈希,或模型、分词器版本与冻结值不一致 | 停止;BLOCKED |
++| ST12 | 任何数据、manifest、模板或候选的哈希,或模型、分词器版本与冻结值不一致。比对范围:(1)`PROTOCOL_FROZEN` 中列出的数据内容哈希(fact 哈希的比对方法见第 2.2 节);(2)冻结提交下本协议文件与三个 JSON 的原始字节哈希,用 `git cat-file` 从冻结提交读取。第 8 节第 1 步写入 manifest 的实际哈希字段(`DATA_MANIFEST.json: files`、`SPLIT_MANIFEST.json: split_sha256`)不在比对范围内 | 停止;BLOCKED |
+== section 14: lines added vs v1 (removed lines must be 0)
+added 7 | removed 0
+RESULT: PASS
+exit=0
+$ env LC_ALL=C.UTF-8 grep -c $'Owner \346\211\271\345\207\206 2026-11-22 09:44 UTC\\|Owner \346\211\271\345\207\206\357\274\2142026-11-22 09:44 UTC' metrix/e1-pilot/METRIX_E1_PROTOCOL.md metrix/CLAUDE.md
+metrix/e1-pilot/METRIX_E1_PROTOCOL.md:6
+metrix/CLAUDE.md:3
+exit=0
+$ env LC_ALL=C.UTF-8 grep -n $'Review Gate \347\254\254 8 \350\275\256\350\243\201\345\206\263\357\274\214Owner \346\211\271\345\207\206\357\274\2142026-11-22 09:44 UTC' metrix/CLAUDE.md
+21:- E1 Pilot,状态:PROTOCOL_FROZEN（v1.1）（出处：Review Gate 第 8 轮裁决，Owner 批准，2026-11-22 09:44 UTC；作用范围：本阶段（Owner 在第 9 轮答复，见 metrix/e1-pilot/tasks/ROUND9_TASKS.md 第二段）；原因：协议已冻结并发布 v1.1 勘误版，原状态未随冻结更新，见 metrix/e1-pilot/reports/ROUND8_REPORT.md「待 Review Gate 决定」第 9 项）
+36:- 环境、下载、冒烟测试先在 CPU 环境完成;租卡后只跑正式流程。预检预估总时长超过 3.5 小时即停（协议 ST11）；累计 GPU 时间超过 4 小时即停（协议 ST7）。（出处：Review Gate 第 8 轮裁决，Owner 批准，2026-11-22 09:44 UTC；作用范围：本阶段；只替换本条原末句「实测预计超过 3 小时即停下报告。」，本节其余文字不变（作用范围与替换范围均为 Owner 在第 9 轮答复，见 metrix/e1-pilot/tasks/ROUND9_TASKS.md 第二段）；原因：原 3 小时与协议 ST11 的 3.5 小时不一致，见 metrix/e1-pilot/reports/ROUND8_REPORT.md「待 Review Gate 决定」第 6 项）
+62:- Review Gate 的裁决写入决定记录时须注明作用范围:本次提交 / 本阶段 / 永久。「永久」与「本阶段」的裁决可写入本文件,写入时须注明作用范围;「本阶段」的裁决在本阶段结束时失效。（出处：Review Gate 第 7 轮裁决（第 8 轮指令第 1e 项），Owner 批准，2026-11-22 05:27 UTC；原因：原文只允许「永久」的裁决写入本文件，与已写入的第 5 节第 6 条、第 10 节的「本阶段」裁决矛盾，见 metrix/e1-pilot/reports/ROUND7_REPORT.md「待 Review Gate 决定」第 4 项）（作用范围：永久。出处：Review Gate 第 8 轮裁决，Owner 批准，2026-11-22 09:44 UTC；原因：1e 写入时未注明这条裁决自己的作用范围，见 metrix/e1-pilot/reports/ROUND8_REPORT.md「待 Review Gate 决定」第 1 项）
+exit=0
+$ env LC_ALL=C.UTF-8 grep -n $'\344\275\234\347\224\250\350\214\203\345\233\264\357\274\232' metrix/CLAUDE.md
+21:- E1 Pilot,状态:PROTOCOL_FROZEN（v1.1）（出处：Review Gate 第 8 轮裁决，Owner 批准，2026-11-22 09:44 UTC；作用范围：本阶段（Owner 在第 9 轮答复，见 metrix/e1-pilot/tasks/ROUND9_TASKS.md 第二段）；原因：协议已冻结并发布 v1.1 勘误版，原状态未随冻结更新，见 metrix/e1-pilot/reports/ROUND8_REPORT.md「待 Review Gate 决定」第 9 项）
+36:- 环境、下载、冒烟测试先在 CPU 环境完成;租卡后只跑正式流程。预检预估总时长超过 3.5 小时即停（协议 ST11）；累计 GPU 时间超过 4 小时即停（协议 ST7）。（出处：Review Gate 第 8 轮裁决，Owner 批准，2026-11-22 09:44 UTC；作用范围：本阶段；只替换本条原末句「实测预计超过 3 小时即停下报告。」，本节其余文字不变（作用范围与替换范围均为 Owner 在第 9 轮答复，见 metrix/e1-pilot/tasks/ROUND9_TASKS.md 第二段）；原因：原 3 小时与协议 ST11 的 3.5 小时不一致，见 metrix/e1-pilot/reports/ROUND8_REPORT.md「待 Review Gate 决定」第 6 项）
+62:- Review Gate 的裁决写入决定记录时须注明作用范围:本次提交 / 本阶段 / 永久。「永久」与「本阶段」的裁决可写入本文件,写入时须注明作用范围;「本阶段」的裁决在本阶段结束时失效。（出处：Review Gate 第 7 轮裁决（第 8 轮指令第 1e 项），Owner 批准，2026-11-22 05:27 UTC；原因：原文只允许「永久」的裁决写入本文件，与已写入的第 5 节第 6 条、第 10 节的「本阶段」裁决矛盾，见 metrix/e1-pilot/reports/ROUND7_REPORT.md「待 Review Gate 决定」第 4 项）（作用范围：永久。出处：Review Gate 第 8 轮裁决，Owner 批准，2026-11-22 09:44 UTC；原因：1e 写入时未注明这条裁决自己的作用范围，见 metrix/e1-pilot/reports/ROUND8_REPORT.md「待 Review Gate 决定」第 1 项）
+exit=0
+$ env LC_ALL=C.UTF-8 grep -n TEST .claude/agents/data-auditor.md
+12:- PROTOCOL_FROZEN 之后，只有在指令明确要求执行协议第 8 节第 8 步 L6 TEST 部分时才可读取 TEST，且只输出计数；其余时候一律禁止生成、读取或统计 TEST。
+exit=0
+$ git diff --stat HEAD
+ .claude/agents/data-auditor.md        |  2 +-
+ metrix/CLAUDE.md                      |  6 +++---
+ metrix/e1-pilot/DATA_MANIFEST.json    |  2 +-
+ metrix/e1-pilot/METRIX_E1_PROTOCOL.md | 20 ++++++++++++++------
+ metrix/e1-pilot/SEARCH_SPACE.json     |  2 +-
+ metrix/e1-pilot/SPLIT_MANIFEST.json   |  2 +-
+ 6 files changed, 21 insertions(+), 13 deletions(-)
+exit=0
+$ git diff HEAD -- metrix/CLAUDE.md .claude/agents/data-auditor.md metrix/e1-pilot/DATA_MANIFEST.json metrix/e1-pilot/SPLIT_MANIFEST.json metrix/e1-pilot/SEARCH_SPACE.json
+diff --git a/.claude/agents/data-auditor.md b/.claude/agents/data-auditor.md
+index 0081a86..c9f1835 100644
+--- a/.claude/agents/data-auditor.md
++++ b/.claude/agents/data-auditor.md
+@@ -9,7 +9,7 @@ tools: Read, Grep, Glob, Write, Bash
+ - 所有检查脚本由你在 metrix/e1-pilot/audit/ 下新写。禁止 import、调用或复制 Executor 的检查代码。
+ - 只写入 metrix/e1-pilot/audit/。不修改其它任何文件。
+ - 只在 CPU 上运行，只可加载 tokenizer（Qwen/Qwen3-1.7B @ 70d244cc86ccca08cf5af4e1e306ecf908b1ad5e），禁止加载模型权重。
+-- 仓库中不存在有效的 PROTOCOL_FROZEN 文件时，禁止生成、读取或统计任何 TEST 数据。
++- PROTOCOL_FROZEN 之后，只有在指令明确要求执行协议第 8 节第 8 步 L6 TEST 部分时才可读取 TEST，且只输出计数；其余时候一律禁止生成、读取或统计 TEST。
+ 
+ ## 复算项目
+ 1. 按 SPLIT_MANIFEST.json 的归一化规则重算模板哈希与数据哈希，与 manifest 比对。
+diff --git a/metrix/CLAUDE.md b/metrix/CLAUDE.md
+index 9ff09be..0cdf022 100644
+--- a/metrix/CLAUDE.md
++++ b/metrix/CLAUDE.md
+@@ -18,7 +18,7 @@ Metrix 是独立子项目。根目录 `CLAUDE.md`(Mythos 宪章 v2.0)第 1 节
+ 
+ ## 2. 当前阶段
+ 
+-- E1 Pilot,状态:AWAITING_REVIEW_GATE
++- E1 Pilot,状态:PROTOCOL_FROZEN（v1.1）（出处：Review Gate 第 8 轮裁决，Owner 批准，2026-11-22 09:44 UTC；作用范围：本阶段（Owner 在第 9 轮答复，见 metrix/e1-pilot/tasks/ROUND9_TASKS.md 第二段）；原因：协议已冻结并发布 v1.1 勘误版，原状态未随冻结更新，见 metrix/e1-pilot/reports/ROUND8_REPORT.md「待 Review Gate 决定」第 9 项）
+ - 分支:metrix-e1-pilot-protocol-v1
+ - 基线:leotree2020/OpenMythos mythos-idea-thermo-v1 @ 61d3c76705b28cc2ee334abc5bf1baaac4fc30dc
+ - 模型:Qwen/Qwen3-1.7B @ 70d244cc86ccca08cf5af4e1e306ecf908b1ad5e
+@@ -33,7 +33,7 @@ Metrix 是独立子项目。根目录 `CLAUDE.md`(Mythos 宪章 v2.0)第 1 节
+ ## 4. 算力
+ 
+ - 训练与评测只在单张 A100 80GB 上执行,上限 4 小时。首次运行记录设备全名,同一次 Pilot 内必须一致,否则整批作废。
+-- 环境、下载、冒烟测试先在 CPU 环境完成;租卡后只跑正式流程。实测预计超过 3 小时即停下报告。
++- 环境、下载、冒烟测试先在 CPU 环境完成;租卡后只跑正式流程。预检预估总时长超过 3.5 小时即停（协议 ST11）；累计 GPU 时间超过 4 小时即停（协议 ST7）。（出处：Review Gate 第 8 轮裁决，Owner 批准，2026-11-22 09:44 UTC；作用范围：本阶段；只替换本条原末句「实测预计超过 3 小时即停下报告。」，本节其余文字不变（作用范围与替换范围均为 Owner 在第 9 轮答复，见 metrix/e1-pilot/tasks/ROUND9_TASKS.md 第二段）；原因：原 3 小时与协议 ST11 的 3.5 小时不一致，见 metrix/e1-pilot/reports/ROUND8_REPORT.md「待 Review Gate 决定」第 6 项）
+ 
+ ## 5. 自动审查循环
+ 
+@@ -59,7 +59,7 @@ PROTOCOL_FROZEN 的发出与修改、租用 GPU、生成或评测 TEST、删除
+ 
+ - Reviewer / Auditor 与 Executor 意见不同:由 Review Gate 裁决。
+ - 协议未覆盖的情况:停止并报告,由 Review Gate 提出方案。
+-- Review Gate 的裁决写入决定记录时须注明作用范围:本次提交 / 本阶段 / 永久。「永久」与「本阶段」的裁决可写入本文件,写入时须注明作用范围;「本阶段」的裁决在本阶段结束时失效。（出处：Review Gate 第 7 轮裁决（第 8 轮指令第 1e 项），Owner 批准，2026-11-22 05:27 UTC；原因：原文只允许「永久」的裁决写入本文件，与已写入的第 5 节第 6 条、第 10 节的「本阶段」裁决矛盾，见 metrix/e1-pilot/reports/ROUND7_REPORT.md「待 Review Gate 决定」第 4 项）
++- Review Gate 的裁决写入决定记录时须注明作用范围:本次提交 / 本阶段 / 永久。「永久」与「本阶段」的裁决可写入本文件,写入时须注明作用范围;「本阶段」的裁决在本阶段结束时失效。（出处：Review Gate 第 7 轮裁决（第 8 轮指令第 1e 项），Owner 批准，2026-11-22 05:27 UTC；原因：原文只允许「永久」的裁决写入本文件，与已写入的第 5 节第 6 条、第 10 节的「本阶段」裁决矛盾，见 metrix/e1-pilot/reports/ROUND7_REPORT.md「待 Review Gate 决定」第 4 项）（作用范围：永久。出处：Review Gate 第 8 轮裁决，Owner 批准，2026-11-22 09:44 UTC；原因：1e 写入时未注明这条裁决自己的作用范围，见 metrix/e1-pilot/reports/ROUND8_REPORT.md「待 Review Gate 决定」第 1 项）
+ 
+ ## 9. 汇报格式
+ 
+diff --git a/metrix/e1-pilot/DATA_MANIFEST.json b/metrix/e1-pilot/DATA_MANIFEST.json
+index 2d05ae3..812b7f2 100644
+--- a/metrix/e1-pilot/DATA_MANIFEST.json
++++ b/metrix/e1-pilot/DATA_MANIFEST.json
+@@ -1,6 +1,6 @@
+ {
+   "protocol": "METRIX-E1-PILOT",
+-  "version": "v1",
++  "version": "v1.1",
+   "status": "PROTOCOL_FROZEN",
+   "frozen": "Owner 批准，2026-11-22 05:27 UTC",
+   "base": {
+diff --git a/metrix/e1-pilot/SEARCH_SPACE.json b/metrix/e1-pilot/SEARCH_SPACE.json
+index 5c28fca..30d74ff 100644
+--- a/metrix/e1-pilot/SEARCH_SPACE.json
++++ b/metrix/e1-pilot/SEARCH_SPACE.json
+@@ -1,6 +1,6 @@
+ {
+   "protocol": "METRIX-E1-PILOT",
+-  "version": "v1",
++  "version": "v1.1",
+   "status": "PROTOCOL_FROZEN",
+   "frozen": "Owner 批准，2026-11-22 05:27 UTC",
+   "search_seed": 101,
+diff --git a/metrix/e1-pilot/SPLIT_MANIFEST.json b/metrix/e1-pilot/SPLIT_MANIFEST.json
+index 530087d..5c1f4a8 100644
+--- a/metrix/e1-pilot/SPLIT_MANIFEST.json
++++ b/metrix/e1-pilot/SPLIT_MANIFEST.json
+@@ -1,6 +1,6 @@
+ {
+   "protocol": "METRIX-E1-PILOT",
+-  "version": "v1",
++  "version": "v1.1",
+   "status": "PROTOCOL_FROZEN",
+   "frozen": "Owner 批准，2026-11-22 05:27 UTC",
+   "base": {
+exit=0

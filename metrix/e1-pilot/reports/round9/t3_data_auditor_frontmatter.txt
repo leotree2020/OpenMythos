@@ -1,0 +1,86 @@
+# Round 9 item 3 raw output: frontmatter and tools line of .claude/agents/data-auditor.md before and after the body edit (TEST rule, line 12). Written by the Executor (session_01J5mxaXPDtdHu9PKCjhmE7G). Host vm (Anthropic cloud container). Sun Nov 22 10:10:46 UTC 2026
+# cwd /home/user/OpenMythos. stdout+stderr merged, unedited. Commands recorded by reports/round5/logrun.sh.
+
+## Part A: before the edit
+$ sha256sum .claude/agents/data-auditor.md /root/.claude/agents/data-auditor.md
+4201122829c31512859baa55d755a016073544f5c4a887f59bcfeef0abfdd833  .claude/agents/data-auditor.md
+4201122829c31512859baa55d755a016073544f5c4a887f59bcfeef0abfdd833  /root/.claude/agents/data-auditor.md
+exit=0
+$ bash -c git\ show\ HEAD:.claude/agents/data-auditor.md\ \|\ sha256sum
+4201122829c31512859baa55d755a016073544f5c4a887f59bcfeef0abfdd833  -
+exit=0
+$ awk /\^---\$/\{n++\;\ print\;\ if\(n==2\)\ exit\;\ next\}\ n==1\{print\} .claude/agents/data-auditor.md
+---
+name: data-auditor
+description: Metrix 独立数据审计。改动涉及数据生成、split、候选集、泄漏检查或评测代码时调用。用自写脚本独立复算，不复用 Executor 的检查代码。
+tools: Read, Grep, Glob, Write, Bash
+---
+exit=0
+$ bash -c awk\ \'/\^---\$/\{n++\;\ print\;\ if\(n==2\)\ exit\;\ next\}\ n==1\{print\}\'\ .claude/agents/data-auditor.md\ \|\ sha256sum
+65fcca0c336d888809b4a02acf9d3da28325c48a652cf6e95a12eb90e2466859  -
+exit=0
+$ grep -n \^tools: .claude/agents/data-auditor.md /root/.claude/agents/data-auditor.md
+.claude/agents/data-auditor.md:4:tools: Read, Grep, Glob, Write, Bash
+/root/.claude/agents/data-auditor.md:4:tools: Read, Grep, Glob, Write, Bash
+exit=0
+$ grep -n TEST .claude/agents/data-auditor.md
+12:- 仓库中不存在有效的 PROTOCOL_FROZEN 文件时，禁止生成、读取或统计任何 TEST 数据。
+exit=0
+$ git check-ignore -v .claude/agents/data-auditor.md
+exit=1
+$ git ls-files --error-unmatch .claude/agents/data-auditor.md
+.claude/agents/data-auditor.md
+exit=0
+# git check-ignore without --no-index skips tracked files (exit=1 above); rerun with --no-index to show the ignore rule that makes git add -f necessary.
+$ git check-ignore -v --no-index .claude/agents/data-auditor.md
+.gitignore:14:.claude/	.claude/agents/data-auditor.md
+exit=0
+
+## Part B: after the edit (body line 12 only)
+$ git diff .claude/agents/data-auditor.md
+diff --git a/.claude/agents/data-auditor.md b/.claude/agents/data-auditor.md
+index 0081a86..c9f1835 100644
+--- a/.claude/agents/data-auditor.md
++++ b/.claude/agents/data-auditor.md
+@@ -9,7 +9,7 @@ tools: Read, Grep, Glob, Write, Bash
+ - 所有检查脚本由你在 metrix/e1-pilot/audit/ 下新写。禁止 import、调用或复制 Executor 的检查代码。
+ - 只写入 metrix/e1-pilot/audit/。不修改其它任何文件。
+ - 只在 CPU 上运行，只可加载 tokenizer（Qwen/Qwen3-1.7B @ 70d244cc86ccca08cf5af4e1e306ecf908b1ad5e），禁止加载模型权重。
+-- 仓库中不存在有效的 PROTOCOL_FROZEN 文件时，禁止生成、读取或统计任何 TEST 数据。
++- PROTOCOL_FROZEN 之后，只有在指令明确要求执行协议第 8 节第 8 步 L6 TEST 部分时才可读取 TEST，且只输出计数；其余时候一律禁止生成、读取或统计 TEST。
+ 
+ ## 复算项目
+ 1. 按 SPLIT_MANIFEST.json 的归一化规则重算模板哈希与数据哈希，与 manifest 比对。
+exit=0
+$ sha256sum .claude/agents/data-auditor.md /root/.claude/agents/data-auditor.md
+fd556e751947058c10a80b77a669615a62078251d7e36055f111d33cb838eae9  .claude/agents/data-auditor.md
+4201122829c31512859baa55d755a016073544f5c4a887f59bcfeef0abfdd833  /root/.claude/agents/data-auditor.md
+exit=0
+$ awk /\^---\$/\{n++\;\ print\;\ if\(n==2\)\ exit\;\ next\}\ n==1\{print\} .claude/agents/data-auditor.md
+---
+name: data-auditor
+description: Metrix 独立数据审计。改动涉及数据生成、split、候选集、泄漏检查或评测代码时调用。用自写脚本独立复算，不复用 Executor 的检查代码。
+tools: Read, Grep, Glob, Write, Bash
+---
+exit=0
+$ bash -c awk\ \'/\^---\$/\{n++\;\ print\;\ if\(n==2\)\ exit\;\ next\}\ n==1\{print\}\'\ .claude/agents/data-auditor.md\ \|\ sha256sum
+65fcca0c336d888809b4a02acf9d3da28325c48a652cf6e95a12eb90e2466859  -
+exit=0
+$ bash -c diff\ \<\(git\ show\ HEAD:.claude/agents/data-auditor.md\ \|\ awk\ \'/\^---\$/\{n++\;\ print\;\ if\(n==2\)\ exit\;\ next\}\ n==1\{print\}\'\)\ \<\(awk\ \'/\^---\$/\{n++\;\ print\;\ if\(n==2\)\ exit\;\ next\}\ n==1\{print\}\'\ .claude/agents/data-auditor.md\)\ \&\&\ echo\ FRONTMATTER_UNCHANGED_VS_HEAD
+FRONTMATTER_UNCHANGED_VS_HEAD
+exit=0
+$ bash -c diff\ \<\(awk\ \'/\^---\$/\{n++\;\ print\;\ if\(n==2\)\ exit\;\ next\}\ n==1\{print\}\'\ .claude/agents/data-auditor.md\)\ \<\(awk\ \'/\^---\$/\{n++\;\ print\;\ if\(n==2\)\ exit\;\ next\}\ n==1\{print\}\'\ /root/.claude/agents/data-auditor.md\)\ \&\&\ echo\ FRONTMATTER_IDENTICAL_TO_LOADED
+FRONTMATTER_IDENTICAL_TO_LOADED
+exit=0
+$ bash -c cmp\ \<\(grep\ \'\^tools:\'\ .claude/agents/data-auditor.md\)\ \<\(git\ show\ HEAD:.claude/agents/data-auditor.md\ \|\ grep\ \'\^tools:\'\)\ \&\&\ echo\ TOOLS_LINE_UNCHANGED_VS_HEAD
+TOOLS_LINE_UNCHANGED_VS_HEAD
+exit=0
+$ bash -c cmp\ \<\(grep\ \'\^tools:\'\ .claude/agents/data-auditor.md\)\ \<\(grep\ \'\^tools:\'\ /root/.claude/agents/data-auditor.md\)\ \&\&\ echo\ TOOLS_LINE_IDENTICAL_TO_LOADED
+TOOLS_LINE_IDENTICAL_TO_LOADED
+exit=0
+$ grep -n \^tools: .claude/agents/data-auditor.md
+4:tools: Read, Grep, Glob, Write, Bash
+exit=0
+$ git diff --numstat .claude/agents/data-auditor.md
+1	1	.claude/agents/data-auditor.md
+exit=0

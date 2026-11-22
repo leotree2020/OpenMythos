@@ -18,7 +18,7 @@ Metrix 是独立子项目。根目录 `CLAUDE.md`(Mythos 宪章 v2.0)第 1 节�
 
 ## 2. 当前阶段
 
-- E1 Pilot,状态:AWAITING_REVIEW_GATE
+- E1 Pilot,状态:PROTOCOL_FROZEN（v1.1）（出处：Review Gate 第 8 轮裁决，Owner 批准，2026-11-22 09:44 UTC；作用范围：本阶段（Owner 在第 9 轮答复，见 metrix/e1-pilot/tasks/ROUND9_TASKS.md 第二段）；原因：协议已冻结并发布 v1.1 勘误版，原状态未随冻结更新，见 metrix/e1-pilot/reports/ROUND8_REPORT.md「待 Review Gate 决定」第 9 项）
 - 分支:metrix-e1-pilot-protocol-v1
 - 基线:leotree2020/OpenMythos mythos-idea-thermo-v1 @ 61d3c76705b28cc2ee334abc5bf1baaac4fc30dc
 - 模型:Qwen/Qwen3-1.7B @ 70d244cc86ccca08cf5af4e1e306ecf908b1ad5e
@@ -33,7 +33,7 @@ Metrix 是独立子项目。根目录 `CLAUDE.md`(Mythos 宪章 v2.0)第 1 节�
 ## 4. 算力
 
 - 训练与评测只在单张 A100 80GB 上执行,上限 4 小时。首次运行记录设备全名,同一次 Pilot 内必须一致,否则整批作废。
-- 环境、下载、冒烟测试先在 CPU 环境完成;租卡后只跑正式流程。实测预计超过 3 小时即停下报告。
+- 环境、下载、冒烟测试先在 CPU 环境完成;租卡后只跑正式流程。预检预估总时长超过 3.5 小时即停（协议 ST11）；累计 GPU 时间超过 4 小时即停（协议 ST7）。（出处：Review Gate 第 8 轮裁决，Owner 批准，2026-11-22 09:44 UTC；作用范围：本阶段；只替换本条原末句「实测预计超过 3 小时即停下报告。」，本节其余文字不变（作用范围与替换范围均为 Owner 在第 9 轮答复，见 metrix/e1-pilot/tasks/ROUND9_TASKS.md 第二段）；原因：原 3 小时与协议 ST11 的 3.5 小时不一致，见 metrix/e1-pilot/reports/ROUND8_REPORT.md「待 Review Gate 决定」第 6 项）
 
 ## 5. 自动审查循环
 
@@ -59,7 +59,7 @@ PROTOCOL_FROZEN 的发出与修改、租用 GPU、生成或评测 TEST、删除�
 
 - Reviewer / Auditor 与 Executor 意见不同:由 Review Gate 裁决。
 - 协议未覆盖的情况:停止并报告,由 Review Gate 提出方案。
-- Review Gate 的裁决写入决定记录时须注明作用范围:本次提交 / 本阶段 / 永久。「永久」与「本阶段」的裁决可写入本文件,写入时须注明作用范围;「本阶段」的裁决在本阶段结束时失效。（出处：Review Gate 第 7 轮裁决（第 8 轮指令第 1e 项），Owner 批准，2026-11-22 05:27 UTC；原因：原文只允许「永久」的裁决写入本文件，与已写入的第 5 节第 6 条、第 10 节的「本阶段」裁决矛盾，见 metrix/e1-pilot/reports/ROUND7_REPORT.md「待 Review Gate 决定」第 4 项）
+- Review Gate 的裁决写入决定记录时须注明作用范围:本次提交 / 本阶段 / 永久。「永久」与「本阶段」的裁决可写入本文件,写入时须注明作用范围;「本阶段」的裁决在本阶段结束时失效。（出处：Review Gate 第 7 轮裁决（第 8 轮指令第 1e 项），Owner 批准，2026-11-22 05:27 UTC；原因：原文只允许「永久」的裁决写入本文件，与已写入的第 5 节第 6 条、第 10 节的「本阶段」裁决矛盾，见 metrix/e1-pilot/reports/ROUND7_REPORT.md「待 Review Gate 决定」第 4 项）（作用范围：永久。出处：Review Gate 第 8 轮裁决，Owner 批准，2026-11-22 09:44 UTC；原因：1e 写入时未注明这条裁决自己的作用范围，见 metrix/e1-pilot/reports/ROUND8_REPORT.md「待 Review Gate 决定」第 1 项）
 
 ## 9. 汇报格式
 

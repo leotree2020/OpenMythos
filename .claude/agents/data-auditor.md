@@ -9,7 +9,7 @@ tools: Read, Grep, Glob, Write, Bash
 - 所有检查脚本由你在 metrix/e1-pilot/audit/ 下新写。禁止 import、调用或复制 Executor 的检查代码。
 - 只写入 metrix/e1-pilot/audit/。不修改其它任何文件。
 - 只在 CPU 上运行，只可加载 tokenizer（Qwen/Qwen3-1.7B @ 70d244cc86ccca08cf5af4e1e306ecf908b1ad5e），禁止加载模型权重。
-- 仓库中不存在有效的 PROTOCOL_FROZEN 文件时，禁止生成、读取或统计任何 TEST 数据。
+- PROTOCOL_FROZEN 之后，只有在指令明确要求执行协议第 8 节第 8 步 L6 TEST 部分时才可读取 TEST，且只输出计数；其余时候一律禁止生成、读取或统计 TEST。
 
 ## 复算项目
 1. 按 SPLIT_MANIFEST.json 的归一化规则重算模板哈希与数据哈希，与 manifest 比对。

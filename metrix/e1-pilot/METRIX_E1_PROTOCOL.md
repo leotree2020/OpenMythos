@@ -1,9 +1,9 @@
-# METRIX · E1-PILOT · PROTOCOL v1
+# METRIX · E1-PILOT · PROTOCOL v1.1
 
 | 字段 | 值 |
 |---|---|
 | Task ID | METRIX-E1-PILOT-PROTOCOL-AUTHORING-V1 |
-| 状态 | **PROTOCOL_FROZEN**(Owner 批准，2026-11-22 05:27 UTC;冻结提交打标签 `metrix-e1-pilot-frozen`,其完整 hash 与该提交下本文件、三个 JSON 的 sha256 记在同目录的 `PROTOCOL_FROZEN` 文件中) |
+| 状态 | **PROTOCOL_FROZEN（v1.1）**(v1.1 勘误版:Owner 批准，2026-11-22 09:44 UTC;v1:Owner 批准，2026-11-22 05:27 UTC。v1.1 冻结提交的标签为 `metrix-e1-pilot-frozen-v1.1`,v1 冻结提交的标签为 `metrix-e1-pilot-frozen`,都由 Owner 推送;两个冻结提交的完整 hash 与各自提交下本文件、三个 JSON 的 sha256 记在同目录的 `PROTOCOL_FROZEN` 文件中) |
 | 本文件的作用 | 执行 E1-PILOT 只需要本文件、同目录三个 JSON,以及第 0 节固定的外部来源 |
 | 本文件不包含 | 任何训练、评测结果或结论;任何 TEST 数据 |
 
@@ -52,7 +52,7 @@ Task Order 与其 “Mandatory consistency amendments A–L” 同时生效;两�
 - 不推断 continual learning 是否有效;E1-PILOT 只有一个训练阶段。
 - 不把 Δ(L−F)、Δ(A−F) 当作机制结论;它们在 Pilot 里只是描述量,用来估计 E1-V1 需要的规模。
 - 不推断对其它模型、其它知识类型或更大事实量成立。
-- 不对 general damage 下 non-inferiority 结论(margin 见第 13 节,在 Pilot 中只报告)。
+- 不对 general damage 下 non-inferiority 结论(margin 已按提案批准为 dNLL ≤ +0.03,见第 13 节第 2 项;Owner 批准，2026-11-22 05:27 UTC;在 Pilot 中只报告,不进门槛)。
 
 ## 2. Data Specification
 
@@ -83,6 +83,7 @@ Task Order 与其 “Mandatory consistency amendments A–L” 同时生效;两�
 - **答案等长规则——接受(细节 3)**:**answer 流从头重抽**(用同一个 purpose 新建生成器,不接着统计时的位置);依次接受满足形式规则、`(K_st, K_qa)` 等于目标、冲突规则和锚文本规则的抽样,直到 20 个。作用:同一 cell 的答案在两种语境下 token 数都相同,候选打分比较的是等长序列,没有长度偏差。Round 3 起候选打分只用 `K_st`(第 5 节),`K_st` 相同即保证等长;`K_qa` 相同已不影响打分,保留它是为了不改变 fact 及其哈希。
 - **上限**:每个流最多抽 20,000 次;超过即 IMPLEMENTATION_FAIL。
 - **复现**:按以上规则,`DATA_SEED = 20261110` 生成的 160 条 fact(字段 `fact_id, exposure, relation, stratum, entity, answer`,按生成顺序排列)的规范化 SHA-256 必须等于 `406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97`。参考实现 `reports/round2/names.py`;两次独立运行的记录见 `reports/ROUND2_REPORT.md`。
+- **fact 哈希的比对方法**:从 `facts.jsonl` 读出 fact 列表(按文件中的行序,即生成顺序;每条 fact 为上一条所列的 6 个字段),按本节的规范化方法(第 0 节对这个 JSON 列表的规范化序列求 SHA-256)重算,与 `406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97` 比对。`facts.jsonl` 文件按 JSONL 规则得到的 `canonical_sha256` 是另一串字节的哈希,不与此值比对。
 
 ### 2.3 每条 fact 的文本
 
@@ -294,7 +295,7 @@ E1-PILOT 只有一个训练阶段:Retention 记为 NOT_TESTED,不进任何门槛
 ```json
 {
   "protocol": "METRIX-E1-PILOT",
-  "version": "v1",
+  "version": "v1.1",
   "status": "PROTOCOL_FROZEN",
   "frozen": "Owner 批准，2026-11-22 05:27 UTC",
   "search_seed": 101,
@@ -539,7 +540,7 @@ E1-PILOT 只有一个训练阶段:Retention 记为 NOT_TESTED,不进任何门槛
 | G0.5 | seed-average `Acc(F, DEV-QA, learned)` ≥ 0.70;seed-average Δ(F−N) 的 95% CI 下界 > 0;每个种子的 Δ(F−N) > 0 |
 | G0.6 | seed-average Δ(S−N)(真实映射,DEV-QA,learned):点估计 ≤ +0.05 且 95% CI 上界 ≤ +0.12 |
 | G0.7 | seed-average Δ(Y−N)(DEV-QA,learned):点估计 ≤ +0.05 且 95% CI 上界 ≤ +0.12 |
-| G0.8 | 复现:同一 checkpoint 两次评测,候选分数差 ≤ 1e-4;某题两次中任一次最高两个候选分数差 ≤ 1e-4 时允许预测不同,其余预测须完全相同;并列判为错。实现须开启 PyTorch 确定性设置并记录 |
+| G0.8 | 复现：对 F 选定配置的 3 个 checkpoint 各评测两次；候选分数差 ≤ 1e-4；某题两次中任一次最高两个候选分数差 ≤ 1e-4 时允许预测不同，其余预测须完全相同；并列判为错；每个通用窗口的 NLL 差 ≤ 1e-5。实现须开启 PyTorch 确定性设置并记录。 |
 | G0.9 | 上限检查:seed-average `Acc(F, DEV-QA, learned)` ≤ 0.95 |
 | G0.10 | 能估计 E1-V1 的规模:对 Δ(L−F)、Δ(A−F) 的 seed-average 配对差 d_f 算出标准差 σ_d(有限);分别用 σ_d 的 bootstrap 2.5 分位、点估计、97.5 分位,按 `n = ((1.96 + 0.84) · σ_d / δ)²`(双侧 0.05、功效 0.80)计算 δ ∈ {0.05, 0.10, 0.15} 下的所需 fact 数,以最大者作为 E1-V1 规划依据;再用 Pilot 的 fact 按 n 重抽样验证 CI 半宽。Pilot 的规模估计是规划估计,不是保证 |
 
@@ -620,7 +621,7 @@ Compute accounting 的算法:训练 FLOPs ≈ 6 · P · T,前向 FLOPs ≈ 2 · 
 | ST9 | 某次运行开始时读到的设备全名与首次记录不同 | 整批作废:本次 Pilot 的全部结果不得用于任何判断;BLOCKED;在设备全名一致的机器上从第 8 节第 3 步重新开始 |
 | ST10 | 第 8 步 L3–L6 任一项的 TEST 部分超限;或 L6 的 TEST 部分 Executor 与 data-auditor 的结果不一致 | 停止;不评测 TEST;BLOCKED;报告 Owner |
 | ST11 | 第 8 节第 2 步预检的预估总时长超过 3.5 小时 | 停止;报告 Owner |
-| ST12 | 任何数据、manifest、模板或候选的哈希,或模型、分词器版本与冻结值不一致 | 停止;BLOCKED |
+| ST12 | 任何数据、manifest、模板或候选的哈希,或模型、分词器版本与冻结值不一致。比对范围:(1)`PROTOCOL_FROZEN` 中列出的数据内容哈希(fact 哈希的比对方法见第 2.2 节);(2)冻结提交下本协议文件与三个 JSON 的原始字节哈希,用 `git cat-file` 从冻结提交读取。第 8 节第 1 步写入 manifest 的实际哈希字段(`DATA_MANIFEST.json: files`、`SPLIT_MANIFEST.json: split_sha256`)不在比对范围内 | 停止;BLOCKED |
 | ST13 | 配置冻结前读取 TEST | IMPLEMENTATION_FAIL;本次 Pilot 全部作废 |
 
 ## 12. Out of Scope
@@ -697,7 +698,14 @@ Compute accounting 的算法:训练 FLOPs ≈ 6 · P · T,前向 FLOPs ≈ 2 · 
 | v1-r8(冻结) | 同上 | 同上 | 第 8 节 G0.10 | 原文“并给出 δ ∈ {0.05, 0.10, 0.15} 下的所需 fact 数 `n = …`(双侧 0.05、功效 0.80)”改为“分别用 σ_d 的 bootstrap 2.5 分位、点估计、97.5 分位,按 `n = …`(双侧 0.05、功效 0.80)计算 δ ∈ {0.05, 0.10, 0.15} 下的所需 fact 数,以最大者作为 E1-V1 规划依据”;句末加“Pilot 的规模估计是规划估计,不是保证” | 对照 Task Order V1.2 补齐;第 8 轮补充第 c 项(`tasks/ROUND8_TASKS.md` 第二段;Owner 回答“按所发内容执行”,按原文字面写入) |
 | v1-r8(冻结) | 同上 | 同上 | 第 8 节第 2 步(新增“预检”);第 11 节(新增 ST11) | 新增“预检(正式运行前;ST11):在 A100 上跑第一个配置的前 20 步,记录每步耗时、tokens/s、峰值显存与预估总时长;预估超过 3.5 小时即停止并报告 Owner。”;ST11:“第 8 节第 2 步预检的预估总时长超过 3.5 小时 → 停止;报告 Owner”。第 8 节各步编号不变 | 对照 Task Order V1.2 补齐;第 8 轮补充第 d 项(`tasks/ROUND8_TASKS.md` 第二段;Owner 回答“按所发内容执行”,按原文字面写入) |
 | v1-r8(冻结) | 同上 | 同上 | 第 11 节(新增 ST12、ST13);第 9 节 BLOCKED、IMPLEMENTATION_FAIL 两行 | ST12:“任何数据、manifest、模板或候选的哈希,或模型、分词器版本与冻结值不一致 → 停止;BLOCKED”;ST13:“配置冻结前读取 TEST → IMPLEMENTATION_FAIL;本次 Pilot 全部作废”。第 9 节 BLOCKED 的适用情形加 ST12,IMPLEMENTATION_FAIL 加“或配置冻结前读取 TEST(ST13)” | 对照 Task Order V1.2 补齐;第 8 轮补充第 e 项(`tasks/ROUND8_TASKS.md` 第二段;Owner 回答“按所发内容执行”,按原文字面写入) |
+| v1.1(冻结勘误) | v1.1 冻结提交的提交时间(见 `PROTOCOL_FROZEN` 的 v1.1 一节) | v1.1 冻结提交(标签 `metrix-e1-pilot-frozen-v1.1`,由 Owner 推送) | 第 8 节 G0.8 | v1 原文“复现:同一 checkpoint 两次评测,候选分数差 ≤ 1e-4;某题两次中任一次最高两个候选分数差 ≤ 1e-4 时允许预测不同,其余预测须完全相同;并列判为错。实现须开启 PyTorch 确定性设置并记录”改为“复现：对 F 选定配置的 3 个 checkpoint 各评测两次；候选分数差 ≤ 1e-4；某题两次中任一次最高两个候选分数差 ≤ 1e-4 时允许预测不同，其余预测须完全相同；并列判为错；每个通用窗口的 NLL 差 ≤ 1e-5。实现须开启 PyTorch 确定性设置并记录。” | 冻结勘误，Owner 批准 2026-11-22 09:44 UTC；勘误时未运行任何实验。v1 补充 a 的指令措辞使原条整条被替换，丢失复评对象与 NLL 容差(v1-r8 的 G0.8 一行;第 9 轮指令第 1a 项) |
+| v1.1(冻结勘误) | 同上 | 同上 | 第 11 节 ST12 | “条件”栏原文“任何数据、manifest、模板或候选的哈希,或模型、分词器版本与冻结值不一致”之后加:“比对范围:(1)`PROTOCOL_FROZEN` 中列出的数据内容哈希(fact 哈希的比对方法见第 2.2 节);(2)冻结提交下本协议文件与三个 JSON 的原始字节哈希,用 `git cat-file` 从冻结提交读取。第 8 节第 1 步写入 manifest 的实际哈希字段(`DATA_MANIFEST.json: files`、`SPLIT_MANIFEST.json: split_sha256`)不在比对范围内”;“处理”栏不变 | 冻结勘误，Owner 批准 2026-11-22 09:44 UTC；勘误时未运行任何实验。v1 的 ST12 没有写比对范围,照字面会在第 8 节第 1 步写入 manifest 后触发(第 9 轮指令第 1b 项;`reports/ROUND8_REPORT.md`“待 Review Gate 决定”第 2 项) |
+| v1.1(冻结勘误) | 同上 | 同上 | 第 2.2 节(新增“fact 哈希的比对方法”一条) | 新增:“从 `facts.jsonl` 读出 fact 列表(按文件中的行序,即生成顺序;每条 fact 为上一条所列的 6 个字段),按本节的规范化方法(第 0 节对这个 JSON 列表的规范化序列求 SHA-256)重算,与 `406c8801…` 比对。`facts.jsonl` 文件按 JSONL 规则得到的 `canonical_sha256` 是另一串字节的哈希,不与此值比对。”(正文写全值)。fact 的冻结哈希不变 | 冻结勘误，Owner 批准 2026-11-22 09:44 UTC；勘误时未运行任何实验。v1 没有写 `facts.jsonl` 与 `406c8801…` 的比对口径(第 9 轮指令第 1c 项;`reports/ROUND8_REPORT.md`“待 Review Gate 决定”第 3 项) |
+| v1.1(冻结勘误) | 同上 | 同上 | 第 1 节 Non-claims | v1 原文“margin 见第 13 节,在 Pilot 中只报告”改为“margin 已按提案批准为 dNLL ≤ +0.03,见第 13 节第 2 项;Owner 批准，2026-11-22 05:27 UTC;在 Pilot 中只报告,不进门槛”。v1-r8 已把 v1-r7 的“margin 待 Review Gate,见第 13 节”改为 v1 原文;本次写明已批准的值与批准记录 | 冻结勘误，Owner 批准 2026-11-22 09:44 UTC；勘误时未运行任何实验(第 9 轮指令第 1d 项) |
+| v1.1(冻结勘误) | 同上 | 同上 | 文件标题;文件头“状态”一行;`DATA_MANIFEST.json`、`SPLIT_MANIFEST.json`、`SEARCH_SPACE.json`(及第 7 节内联副本)的 `version` | 标题“PROTOCOL v1”改为“PROTOCOL v1.1”;三个 JSON 与内联副本的 `version` 由 `v1` 改为 `v1.1`(`status` 仍为 `PROTOCOL_FROZEN`,`frozen` 字段不变);状态一行原文“**PROTOCOL_FROZEN**(Owner 批准，2026-11-22 05:27 UTC;冻结提交打标签 `metrix-e1-pilot-frozen`,其完整 hash 与该提交下本文件、三个 JSON 的 sha256 记在同目录的 `PROTOCOL_FROZEN` 文件中)”改为“**PROTOCOL_FROZEN（v1.1）**(v1.1 勘误版:Owner 批准，2026-11-22 09:44 UTC;v1:Owner 批准，2026-11-22 05:27 UTC。v1.1 冻结提交的标签为 `metrix-e1-pilot-frozen-v1.1`,v1 冻结提交的标签为 `metrix-e1-pilot-frozen`,都由 Owner 推送;两个冻结提交的完整 hash 与各自提交下本文件、三个 JSON 的 sha256 记在同目录的 `PROTOCOL_FROZEN` 文件中)” | 冻结勘误，Owner 批准 2026-11-22 09:44 UTC；勘误时未运行任何实验(第 9 轮指令第 1e 项;标签由 Owner 推送:第 9 轮指令开头) |
 
 注(v1-r8):一个提交不能包含自身的 hash,冻结之后补填又会改动冻结的协议,所以 v1-r8 各行的“时间”与“提交”写作“冻结提交”;冻结提交的完整 hash 与提交时间记在 `PROTOCOL_FROZEN` 文件中,并由标签 `metrix-e1-pilot-frozen` 指向。
+
+注(v1.1):v1.1 各行的“时间”与“提交”写作“v1.1 冻结提交”,原因同 v1-r8 的注;v1.1 冻结提交的完整 hash 与提交时间记在 `PROTOCOL_FROZEN` 的 v1.1 一节。v1.1 是冻结后的勘误版,由 Owner 于 2026-11-22 09:44 UTC 批准;勘误时没有运行任何实验,勘误不基于任何结果。v1 的数据哈希(第 2.2、2.5、2.6 节与两个 manifest 中的值)在 v1.1 中都不变。
 
 注:根目录 `CLAUDE.md`(宪章)第 6 节标题中的日期 “2026-11-13” 是 JST(日本标准时间,UTC+9)。该节由提交 `8ce8c896` 加入,提交时间 2026-11-12 15:25:19 UTC,即 2026-11-13 00:25:19 JST。本表的时间都是 UTC。
