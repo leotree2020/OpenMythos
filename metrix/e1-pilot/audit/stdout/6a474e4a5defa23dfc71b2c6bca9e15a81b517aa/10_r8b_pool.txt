@@ -1,0 +1,75 @@
+# Data Auditor run. host vm, CPU only (no GPU, no torch, tokenizer files only); 2026-11-22 08:52:54 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit
+# stdout and stderr merged, complete, unedited
+$ env HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/auditor/venv/bin/python -I -B r8b_pool.py /home/user/OpenMythos 6a474e4a5defa23dfc71b2c6bca9e15a81b517aa /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/auditor_6a47/work/facts.json /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/auditor_6a47/work/candidates.json /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/auditor_6a47/dl/qwen_tok
+[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
+== a. rule text in the freeze commit
+  protocol contains '- **干扰项的池**:同 relation、同 stratum、同暴露类别(learned 或 unread)的其它 fact 的答案。': lines [125]
+  protocol contains '- 干扰项的池少于 4 个答案即 IMPLEMENTATION_FAIL,不生成合成干扰项。': lines [126]
+  protocol contains '不含该 fact 自己(learned 14 个,unread 4 个)': lines [128]
+  new sentence directly follows the pool definition: True | section: ### 2.5 候选(4-way,生成数据时冻结)
+  section 9 IMPLEMENTATION_FAIL row mentions the 2.5 pool rule: True
+  SPLIT_MANIFEST candidates.pool: answers of the other facts with the same relation, stratum and exposure class (learned / unread)
+  SPLIT_MANIFEST candidates.pool_too_small: a distractor pool with fewer than 4 answers: IMPLEMENTATION_FAIL; no synthetic distractors are generated (protocol 2.5; supplement b, Task Order V1.2)
+  SPLIT_MANIFEST candidates.call_order mentions '(14 for learned, 4 for unread)': True
+
+facts: 160 | canonical sha256 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 | manifest 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 | MATCH True
+
+== b. pool per fact (same relation, stratum, exposure; other facts)
+  pool size (count) by exposure: {'learned': [14], 'unread': [4]} | distinct answers by exposure: {'learned': [14], 'unread': [4]}
+  own answer never in own pool: True
+  minimum pool size: 4 | minimum distinct: 4
+  facts with pool < 4: 0 [] | with distinct < 4: 0 []
+  size histogram: {4: 40, 14: 120}
+  IMPLEMENTATION_FAIL by the 2.5 rule under DATA_SEED: False
+POOL_VALUE sizes_learned [14]
+POOL_VALUE sizes_unread [4]
+POOL_VALUE minimum 4
+POOL_VALUE facts_below_4 0
+
+== c. per cell (relation, stratum, exposure)
+  capital  natural learned facts 15 | min pool 14
+  capital  natural unread  facts  5 | min pool 4
+  capital  random  learned facts 15 | min pool 14
+  capital  random  unread  facts  5 | min pool 4
+  currency natural learned facts 15 | min pool 14
+  currency natural unread  facts  5 | min pool 4
+  currency random  learned facts 15 | min pool 14
+  currency random  unread  facts  5 | min pool 4
+  founder  natural learned facts 15 | min pool 14
+  founder  natural unread  facts  5 | min pool 4
+  founder  random  learned facts 15 | min pool 14
+  founder  random  unread  facts  5 | min pool 4
+  river    natural learned facts 15 | min pool 14
+  river    natural unread  facts  5 | min pool 4
+  river    random  learned facts 15 | min pool 14
+  river    random  unread  facts  5 | min pool 4
+  cells: 16
+
+== d. four constraints (+ same answer token count, Qwen tokenizer)
+  tokenizer dir files: ['merges.txt', 'tokenizer.json', 'tokenizer_config.json', 'vocab.json'] | class Qwen2Tokenizer
+  len(encode(' ' + answer)): minimum 4 | facts < 4: 0 | cells with a fact < 4: [] | equal to the 3-constraint pool for every fact: True
+  len(encode(answer)): minimum 4 | facts < 4: 0 | cells with a fact < 4: [] | equal to the 3-constraint pool for every fact: True
+  pair: minimum 4 | facts < 4: 0 | cells with a fact < 4: [] | equal to the 3-constraint pool for every fact: True
+  answer token-count pairs per cell (' '+a, a):
+    capital/natural/learned: [(3, 3)]
+    capital/natural/unread: [(3, 3)]
+    capital/random/learned: [(5, 5)]
+    capital/random/unread: [(5, 5)]
+    currency/natural/learned: [(3, 3)]
+    currency/natural/unread: [(3, 3)]
+    currency/random/learned: [(6, 6)]
+    currency/random/unread: [(6, 6)]
+    founder/natural/learned: [(3, 3)]
+    founder/natural/unread: [(3, 3)]
+    founder/random/learned: [(5, 5)]
+    founder/random/unread: [(5, 5)]
+    river/natural/learned: [(3, 3)]
+    river/natural/unread: [(3, 3)]
+    river/random/learned: [(6, 6)]
+    river/random/unread: [(6, 6)]
+
+== e. rebuilt candidates.json distractors lie in the pool
+  candidates canonical sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | == SPLIT_MANIFEST candidate_mapping_sha256: True
+  every fact: 4 distinct candidates, true answer once, 3 distractors from its pool: True | keys 160
+RESULT: PASS
+exit=0

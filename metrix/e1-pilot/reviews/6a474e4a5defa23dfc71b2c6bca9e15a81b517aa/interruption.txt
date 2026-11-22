@@ -1,0 +1,7 @@
+# Round 8: interruption of the two reviews of the freeze commit 6a474e4a5defa23dfc71b2c6bca9e15a81b517aa. Written by the Executor (session_01J5mxaUfve5PtsqZQQDkJcJ), host vm, Sun Nov 22 08:52:27 UTC 2026.
+Both subagents were invoked at about 06:05 UTC (background) with code-reviewer_prompt.txt and data-auditor_prompt.txt.
+Both terminated early with the same API error before handing back a report (task notifications, quoted):
+  code-reviewer: "Agent terminated early due to an API error: You've hit your 5-hour limit · resets 8:40am (UTC) · out of usage credits (error type rate_limit, HTTP 429, request id req_011ChHU9EJwauvPzErjiUyNZ, ...)"
+  data-auditor:  "Agent terminated early due to an API error: You've hit your 5-hour limit · resets 8:40am (UTC) · out of usage credits (error type rate_limit, HTTP 429, request id req_011ChHU9Hviny5M4t9gvpVcw, ...)"; its last text before stopping: "Now the file hashes (item 1) and the anchor text."
+At that point the data-auditor had written audit/stdout/6a474e4a5defa23dfc71b2c6bca9e15a81b517aa/01-07 and audit/r8b_compare.py, r8b_delta.py, r8b_pool.py; the code-reviewer had written nothing (read-only).
+The session worker process was restarted afterwards. At 08:52 UTC (after the reset) the Owner wrote "继续"; both subagents are resumed with SendMessage (resume_message_code-reviewer.txt, resume_message_data-auditor.txt) so that they continue from where they stopped.

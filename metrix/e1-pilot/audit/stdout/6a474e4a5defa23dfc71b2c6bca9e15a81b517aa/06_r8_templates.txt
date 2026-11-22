@@ -1,0 +1,84 @@
+# Data Auditor run. host vm, CPU only (no GPU, no torch, tokenizer files only); 2026-11-22 06:09:36 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/auditor/venv/bin/python -I -B r8_templates.py /home/user/OpenMythos 6a474e4a5defa23dfc71b2c6bca9e15a81b517aa
+template_freeze.normalization: replace {E} by <ENTITY> and {A} by <ANSWER>, lowercase, replace every character outside [a-z0-9<> ] by a space, collapse spaces
+template_freeze.identity     : normalized_sha256 of every template; template_set_sha256 = SHA-256 of the sorted normalized_sha256 values joined by '\n'
+templates: 32 | distinct ids: 32
+per relation 1 TRAIN, 2 DEV, 3 TEST, 1 Y_ENTITY, 1 Y_ANSWER: True
+template_id format <relation>.<kind>.<n>: True | set field consistent with kind: True
+protocol 2.4 table rows parsed: 16
+manifest template texts == protocol 2.4 table (in order): True
+  capital.TRAIN.1      74b387557c65a849b0503dee6a2d4249321119697caa4a2ae080336fac2ce39d | manifest 74b387557c65a849b0503dee6a2d4249321119697caa4a2ae080336fac2ce39d | normalized equal True | MATCH True | 'the capital of <entity> is <answer>'
+AUDIT_VALUE template_normalized_sha256:capital.TRAIN.1 74b387557c65a849b0503dee6a2d4249321119697caa4a2ae080336fac2ce39d
+  capital.DEV.1        31affd8921ab494f7ce6edbe3247e640538b1d8a70e644be324929bcdeb65d0c | manifest 31affd8921ab494f7ce6edbe3247e640538b1d8a70e644be324929bcdeb65d0c | normalized equal True | MATCH True | 'what is the capital of <entity>'
+AUDIT_VALUE template_normalized_sha256:capital.DEV.1 31affd8921ab494f7ce6edbe3247e640538b1d8a70e644be324929bcdeb65d0c
+  capital.DEV.2        97981abdd695df5244079b8505273381e5e530a80bdefd128c22e39115e549ec | manifest 97981abdd695df5244079b8505273381e5e530a80bdefd128c22e39115e549ec | normalized equal True | MATCH True | '<entity> has which city as its capital'
+AUDIT_VALUE template_normalized_sha256:capital.DEV.2 97981abdd695df5244079b8505273381e5e530a80bdefd128c22e39115e549ec
+  capital.TEST.1       0d9f0c72ea22e289a56642ca5ca64516b7b3c893041117fb4b3187687e34c4e0 | manifest 0d9f0c72ea22e289a56642ca5ca64516b7b3c893041117fb4b3187687e34c4e0 | normalized equal True | MATCH True | 'name the capital city of <entity>'
+AUDIT_VALUE template_normalized_sha256:capital.TEST.1 0d9f0c72ea22e289a56642ca5ca64516b7b3c893041117fb4b3187687e34c4e0
+  capital.TEST.2       ae1e9edac4518cefdbc210fea5dc9898a9734d928fd19d8281f883759b464aa7 | manifest ae1e9edac4518cefdbc210fea5dc9898a9734d928fd19d8281f883759b464aa7 | normalized equal True | MATCH True | 'which city is <entity> s capital'
+AUDIT_VALUE template_normalized_sha256:capital.TEST.2 ae1e9edac4518cefdbc210fea5dc9898a9734d928fd19d8281f883759b464aa7
+  capital.TEST.3       57a5472bfda68011d151cd2a4562d6b44650ed3909e9b351af50be93d5bdb81f | manifest 57a5472bfda68011d151cd2a4562d6b44650ed3909e9b351af50be93d5bdb81f | normalized equal True | MATCH True | 'tell me the name of the city that serves as capital for <entity>'
+AUDIT_VALUE template_normalized_sha256:capital.TEST.3 57a5472bfda68011d151cd2a4562d6b44650ed3909e9b351af50be93d5bdb81f
+  capital.Y_ENTITY.1   e13d04f3ce5dc403b709f863fe2a4bf78e59ec2110db3f4190d4c17e4bddca3c | manifest e13d04f3ce5dc403b709f863fe2a4bf78e59ec2110db3f4190d4c17e4bddca3c | normalized equal True | MATCH True | '<entity> has a capital'
+AUDIT_VALUE template_normalized_sha256:capital.Y_ENTITY.1 e13d04f3ce5dc403b709f863fe2a4bf78e59ec2110db3f4190d4c17e4bddca3c
+  capital.Y_ANSWER.1   481a4a00b41f7d568bf0eb47760e2c92cb45f5715fe3ade1e7649e1af4b51305 | manifest 481a4a00b41f7d568bf0eb47760e2c92cb45f5715fe3ade1e7649e1af4b51305 | normalized equal True | MATCH True | 'a city <answer>'
+AUDIT_VALUE template_normalized_sha256:capital.Y_ANSWER.1 481a4a00b41f7d568bf0eb47760e2c92cb45f5715fe3ade1e7649e1af4b51305
+  currency.TRAIN.1     26168688f79cf2790ab69537ee7a5a246b4629a9330350679f2dbad796b431c5 | manifest 26168688f79cf2790ab69537ee7a5a246b4629a9330350679f2dbad796b431c5 | normalized equal True | MATCH True | 'the currency used in <entity> is the <answer>'
+AUDIT_VALUE template_normalized_sha256:currency.TRAIN.1 26168688f79cf2790ab69537ee7a5a246b4629a9330350679f2dbad796b431c5
+  currency.DEV.1       abaa0c42149269c772d6b5a2d3f462a48f6544cdd81f3e73f05e01e4f73f160f | manifest abaa0c42149269c772d6b5a2d3f462a48f6544cdd81f3e73f05e01e4f73f160f | normalized equal True | MATCH True | 'what currency do people use in <entity>'
+AUDIT_VALUE template_normalized_sha256:currency.DEV.1 abaa0c42149269c772d6b5a2d3f462a48f6544cdd81f3e73f05e01e4f73f160f
+  currency.DEV.2       6255625176ae50124b321c5fb8697276d286e9e01e04a5cbf506c8e77a8d42d1 | manifest 6255625176ae50124b321c5fb8697276d286e9e01e04a5cbf506c8e77a8d42d1 | normalized equal True | MATCH True | 'in <entity> goods are paid for with which currency'
+AUDIT_VALUE template_normalized_sha256:currency.DEV.2 6255625176ae50124b321c5fb8697276d286e9e01e04a5cbf506c8e77a8d42d1
+  currency.TEST.1      67d40b3f9558fe92193806a5ee00c5d79a2353302c48e971ba1ed249d7b99c0e | manifest 67d40b3f9558fe92193806a5ee00c5d79a2353302c48e971ba1ed249d7b99c0e | normalized equal True | MATCH True | 'name the currency of <entity>'
+AUDIT_VALUE template_normalized_sha256:currency.TEST.1 67d40b3f9558fe92193806a5ee00c5d79a2353302c48e971ba1ed249d7b99c0e
+  currency.TEST.2      38c8bf1c4c393d18bc934baa68a4cfaebe821b8d2a74e8bd3c95f11d22eca15d | manifest 38c8bf1c4c393d18bc934baa68a4cfaebe821b8d2a74e8bd3c95f11d22eca15d | normalized equal True | MATCH True | 'which currency is legal tender in <entity>'
+AUDIT_VALUE template_normalized_sha256:currency.TEST.2 38c8bf1c4c393d18bc934baa68a4cfaebe821b8d2a74e8bd3c95f11d22eca15d
+  currency.TEST.3      312292a83bc694fa946cebc38cc66b547c6e2ea863fda276410bac1aaf8f519c | manifest 312292a83bc694fa946cebc38cc66b547c6e2ea863fda276410bac1aaf8f519c | normalized equal True | MATCH True | 'a shopkeeper in <entity> expects payment in what currency'
+AUDIT_VALUE template_normalized_sha256:currency.TEST.3 312292a83bc694fa946cebc38cc66b547c6e2ea863fda276410bac1aaf8f519c
+  currency.Y_ENTITY.1  f2ad875c4bc2680bb8ec2ad62648c3dd57446fc91f11cfa29658c07c50da92ae | manifest f2ad875c4bc2680bb8ec2ad62648c3dd57446fc91f11cfa29658c07c50da92ae | normalized equal True | MATCH True | '<entity> has a currency'
+AUDIT_VALUE template_normalized_sha256:currency.Y_ENTITY.1 f2ad875c4bc2680bb8ec2ad62648c3dd57446fc91f11cfa29658c07c50da92ae
+  currency.Y_ANSWER.1  7575ee9ec8656de841deca6350dec2b1785f885a66d4d3cb78473720e2488405 | manifest 7575ee9ec8656de841deca6350dec2b1785f885a66d4d3cb78473720e2488405 | normalized equal True | MATCH True | 'a currency <answer>'
+AUDIT_VALUE template_normalized_sha256:currency.Y_ANSWER.1 7575ee9ec8656de841deca6350dec2b1785f885a66d4d3cb78473720e2488405
+  founder.TRAIN.1      00677105bdd63609cfb269f278a64cd69b0446bd4005d22a88e87f20fd2b3e7c | manifest 00677105bdd63609cfb269f278a64cd69b0446bd4005d22a88e87f20fd2b3e7c | normalized equal True | MATCH True | '<entity> was founded by <answer>'
+AUDIT_VALUE template_normalized_sha256:founder.TRAIN.1 00677105bdd63609cfb269f278a64cd69b0446bd4005d22a88e87f20fd2b3e7c
+  founder.DEV.1        6c43a9da1c3319e8ebfe940e74e89f8912604a49a92a206f16fbd09ada0fe4e2 | manifest 6c43a9da1c3319e8ebfe940e74e89f8912604a49a92a206f16fbd09ada0fe4e2 | normalized equal True | MATCH True | 'who founded <entity>'
+AUDIT_VALUE template_normalized_sha256:founder.DEV.1 6c43a9da1c3319e8ebfe940e74e89f8912604a49a92a206f16fbd09ada0fe4e2
+  founder.DEV.2        2245dbc30f2f3601eff290fb98aa7ba86ae2d0fc4cd3bc6a1ed169dd37f107a9 | manifest 2245dbc30f2f3601eff290fb98aa7ba86ae2d0fc4cd3bc6a1ed169dd37f107a9 | normalized equal True | MATCH True | '<entity> owes its founding to which person'
+AUDIT_VALUE template_normalized_sha256:founder.DEV.2 2245dbc30f2f3601eff290fb98aa7ba86ae2d0fc4cd3bc6a1ed169dd37f107a9
+  founder.TEST.1       3da3b1f5f7951745687cea88506b53f7aa865f4e75465d4ddb21838bf45f62d3 | manifest 3da3b1f5f7951745687cea88506b53f7aa865f4e75465d4ddb21838bf45f62d3 | normalized equal True | MATCH True | 'name the founder of <entity>'
+AUDIT_VALUE template_normalized_sha256:founder.TEST.1 3da3b1f5f7951745687cea88506b53f7aa865f4e75465d4ddb21838bf45f62d3
+  founder.TEST.2       3bb7c95a786a63ecebf570e9ae9a1138f34268b1484755824b525f6ffc7f4c22 | manifest 3bb7c95a786a63ecebf570e9ae9a1138f34268b1484755824b525f6ffc7f4c22 | normalized equal True | MATCH True | 'which person established <entity>'
+AUDIT_VALUE template_normalized_sha256:founder.TEST.2 3bb7c95a786a63ecebf570e9ae9a1138f34268b1484755824b525f6ffc7f4c22
+  founder.TEST.3       4b4d24d4a06c0a1b80fae508e8f2cccbfc8c5f71320dd73734f3c5ce0f797725 | manifest 4b4d24d4a06c0a1b80fae508e8f2cccbfc8c5f71320dd73734f3c5ce0f797725 | normalized equal True | MATCH True | 'the founding of <entity> is credited to whom'
+AUDIT_VALUE template_normalized_sha256:founder.TEST.3 4b4d24d4a06c0a1b80fae508e8f2cccbfc8c5f71320dd73734f3c5ce0f797725
+  founder.Y_ENTITY.1   838aeb12dee8e2f3c94ed6baf3a4b58f76890dbf7e21f95c3ec17eaba59499f2 | manifest 838aeb12dee8e2f3c94ed6baf3a4b58f76890dbf7e21f95c3ec17eaba59499f2 | normalized equal True | MATCH True | '<entity> had a founder'
+AUDIT_VALUE template_normalized_sha256:founder.Y_ENTITY.1 838aeb12dee8e2f3c94ed6baf3a4b58f76890dbf7e21f95c3ec17eaba59499f2
+  founder.Y_ANSWER.1   275c8caf2ab8bda4247259781a4a0a302ffb24a0080445bcf6046c30a5fbf5b8 | manifest 275c8caf2ab8bda4247259781a4a0a302ffb24a0080445bcf6046c30a5fbf5b8 | normalized equal True | MATCH True | 'a person <answer>'
+AUDIT_VALUE template_normalized_sha256:founder.Y_ANSWER.1 275c8caf2ab8bda4247259781a4a0a302ffb24a0080445bcf6046c30a5fbf5b8
+  river.TRAIN.1        2e4f5e98d80ad5f1805291d3846cbd7f48a8e2eed074585f3538adbff8540cd6 | manifest 2e4f5e98d80ad5f1805291d3846cbd7f48a8e2eed074585f3538adbff8540cd6 | normalized equal True | MATCH True | 'the river that flows through <entity> is the <answer>'
+AUDIT_VALUE template_normalized_sha256:river.TRAIN.1 2e4f5e98d80ad5f1805291d3846cbd7f48a8e2eed074585f3538adbff8540cd6
+  river.DEV.1          5951fdcce3de7cfb3f4f8774a5c332501ea4cffd594095802169264834e9c22d | manifest 5951fdcce3de7cfb3f4f8774a5c332501ea4cffd594095802169264834e9c22d | normalized equal True | MATCH True | 'which river flows through <entity>'
+AUDIT_VALUE template_normalized_sha256:river.DEV.1 5951fdcce3de7cfb3f4f8774a5c332501ea4cffd594095802169264834e9c22d
+  river.DEV.2          d8f78e9891d1dcb69af5a5bc79705d8d842858db2cc047289c17d29f3c84f451 | manifest d8f78e9891d1dcb69af5a5bc79705d8d842858db2cc047289c17d29f3c84f451 | normalized equal True | MATCH True | '<entity> stands on the banks of which river'
+AUDIT_VALUE template_normalized_sha256:river.DEV.2 d8f78e9891d1dcb69af5a5bc79705d8d842858db2cc047289c17d29f3c84f451
+  river.TEST.1         ab57af146d7c30a80755cbbbce6b8eb39b2e6c41656cfab832aa208f2310558d | manifest ab57af146d7c30a80755cbbbce6b8eb39b2e6c41656cfab832aa208f2310558d | normalized equal True | MATCH True | 'name the river running through <entity>'
+AUDIT_VALUE template_normalized_sha256:river.TEST.1 ab57af146d7c30a80755cbbbce6b8eb39b2e6c41656cfab832aa208f2310558d
+  river.TEST.2         513180142689326b15ed0eecd7cb965dd67c0d2abec8c2fdb7e935a1af9aaad7 | manifest 513180142689326b15ed0eecd7cb965dd67c0d2abec8c2fdb7e935a1af9aaad7 | normalized equal True | MATCH True | 'what river passes by <entity>'
+AUDIT_VALUE template_normalized_sha256:river.TEST.2 513180142689326b15ed0eecd7cb965dd67c0d2abec8c2fdb7e935a1af9aaad7
+  river.TEST.3         5a068b44d53ed952ab973629a2181b972f8d73f150964552c4e1ebf06865f052 | manifest 5a068b44d53ed952ab973629a2181b972f8d73f150964552c4e1ebf06865f052 | normalized equal True | MATCH True | 'a boat leaving <entity> would sail on which river'
+AUDIT_VALUE template_normalized_sha256:river.TEST.3 5a068b44d53ed952ab973629a2181b972f8d73f150964552c4e1ebf06865f052
+  river.Y_ENTITY.1     1b7a623826e7d5e8e187b78e750deb02d12f66032635a9c5de5d252fbd05efa8 | manifest 1b7a623826e7d5e8e187b78e750deb02d12f66032635a9c5de5d252fbd05efa8 | normalized equal True | MATCH True | '<entity> has a river'
+AUDIT_VALUE template_normalized_sha256:river.Y_ENTITY.1 1b7a623826e7d5e8e187b78e750deb02d12f66032635a9c5de5d252fbd05efa8
+  river.Y_ANSWER.1     92a3dcce81042daf25570fb26f361e760c0165b57f5e43f0c8f601ddd07858d2 | manifest 92a3dcce81042daf25570fb26f361e760c0165b57f5e43f0c8f601ddd07858d2 | normalized equal True | MATCH True | 'a river <answer>'
+AUDIT_VALUE template_normalized_sha256:river.Y_ANSWER.1 92a3dcce81042daf25570fb26f361e760c0165b57f5e43f0c8f601ddd07858d2
+templates whose normalized string and normalized_sha256 match: 32/32
+template_set_sha256 2b52411326c218e9c51d947b2f4e0d77b0cdd5d6237f9ce25b57a872c48ce28f | manifest 2b52411326c218e9c51d947b2f4e0d77b0cdd5d6237f9ce25b57a872c48ce28f | MATCH True
+AUDIT_VALUE template_set_sha256 2b52411326c218e9c51d947b2f4e0d77b0cdd5d6237f9ce25b57a872c48ce28f
+template_set_sha256 from the manifest's own normalized_sha256 values: 2b52411326c218e9c51d947b2f4e0d77b0cdd5d6237f9ce25b57a872c48ce28f | MATCH True
+ALT no strip (trailing space kept): 0 /32 match
+ALT set hash with a final newline: 3e893702dff3f132487871e9664f95bb17425e0ab63f92cb1ea8b5a7d908cb78 | equals manifest: False
+ALT set hash unsorted (manifest order): 9d3b8c41c1830952366271334c4bedbc95126bce4c5dc4f867f7c93263ad1f05 | equals manifest: False
+informational L1 (pairwise intersections of TRAIN/DEV/TEST/Y normalized_sha256): [] | distinct hashes 32
+RESULT: PASS
+exit=0

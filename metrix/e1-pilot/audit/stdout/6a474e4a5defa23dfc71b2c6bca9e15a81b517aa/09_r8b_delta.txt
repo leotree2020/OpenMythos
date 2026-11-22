@@ -1,0 +1,65 @@
+# Data Auditor run. host vm, CPU only (no GPU, no torch, tokenizer files only); 2026-11-22 08:52:48 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/auditor/venv/bin/python -I -B r8b_delta.py /home/user/OpenMythos 92df1a60ac816ab02b250d32841397c73b9a67a7 6a474e4a5defa23dfc71b2c6bca9e15a81b517aa
+old 92df1a60ac816ab02b250d32841397c73b9a67a7 parents ['180762987b2b0d8a18a3070edb16dd4b4c31911e']
+new 6a474e4a5defa23dfc71b2c6bca9e15a81b517aa parents ['180762987b2b0d8a18a3070edb16dd4b4c31911e']
+same single parent: True
+old is an ancestor of new (expected False, old was superseded): False
+
+== a. files that differ old..new
+   M	metrix/e1-pilot/METRIX_E1_PROTOCOL.md
+   M	metrix/e1-pilot/SPLIT_MANIFEST.json
+   M	metrix/e1-pilot/reports/round8/t1_protocol_checks.txt
+   M	metrix/e1-pilot/tasks/ROUND8_TASKS.md
+changed set == expected {protocol, SPLIT_MANIFEST, t1_protocol_checks, ROUND8_TASKS}: True
+
+== b. byte identity of DATA_MANIFEST.json and SEARCH_SPACE.json
+  DATA_MANIFEST.json: blob old 2d05ae3e687463021e56a2002ba8212952149834 | new 2d05ae3e687463021e56a2002ba8212952149834 | identical True | sha256 new 94ba8516044e9bf10c5ad907f2e905c5afd91833a383b7212737cf28170e8cf3
+  SEARCH_SPACE.json: blob old 5c28fcaa969cc60a6da29fa34e11fec975fb0c85 | new 5c28fcaa969cc60a6da29fa34e11fec975fb0c85 | identical True | sha256 new 490d575d54b4cbd3902adb496817d89c82763ad22fa8efac8894bcb4a45a6258
+
+== c. SPLIT_MANIFEST.json: JSON-level difference
+  new candidates.pool_too_small: a distractor pool with fewer than 4 answers: IMPLEMENTATION_FAIL; no synthetic distractors are generated (protocol 2.5; supplement b, Task Order V1.2)
+  old has candidates.pool_too_small: False
+  new candidates key order: ['way', 'pool', 'draw', 'shared_by', 'duplicates', 'pool_too_small', 'exposure_matching', 'call_order', 'file', 'reference_implementation', 'candidate_mapping_sha256', 'candidate_mapping_sha256_note']
+  new minus candidates.pool_too_small == old (parsed JSON): True
+  new file == json.dumps(indent=2, ensure_ascii=False) + newline: True
+
+== d. 64-hex values in the two manifests
+  DATA_MANIFEST.json: old 10 distinct | new 10 distinct | same set True
+  SPLIT_MANIFEST.json: old 34 distinct | new 34 distinct | same set True
+
+== e. METRIX_E1_PROTOCOL.md changed lines
+  hunks: 8
+   -125,0 +126,1 | section (new) '### 2.5 候选(4-way,生成数据时冻结)' | section (old) None
+   -519,0 +521,1 | section (new) '## 8. Gate 0 — Pipeline Qualification(只用 TRAIN 与 DEV)' | section (old) None
+   -540,1 +542,1 | section (new) '## 8. Gate 0 — Pipeline Qualification(只用 TRAIN 与 DEV)' | section (old) '## 8. Gate 0 — Pipeline Qualification(只用 TRAIN 与 DEV)'
+   -542,1 +544,1 | section (new) '## 8. Gate 0 — Pipeline Qualification(只用 TRAIN 与 DEV)' | section (old) '## 8. Gate 0 — Pipeline Qualification(只用 TRAIN 与 DEV)'
+   -567,1 +569,1 | section (new) '## 9. Failure Taxonomy(固定集合)' | section (old) '## 9. Failure Taxonomy(固定集合)'
+   -572,1 +574,1 | section (new) '## 9. Failure Taxonomy(固定集合)' | section (old) '## 9. Failure Taxonomy(固定集合)'
+   -619,0 +622,3 | section (new) '## 11. Stop Conditions' | section (old) None
+   -689,0 +695,5 | section (new) '## 14. 变更记录' | section (old) None
+  removed lines 4 | added lines 14
+  64-hex values on removed lines: [] | on added lines: []
+  hash sentence '规范化 SHA-256 必须等于 `([0-9a-f]{64})`。参考实现 `'...: old 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 | new 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 | unchanged True
+  hash sentence '`candidates\\.json` 的规范化 SHA-256 必须等于 `(['...: old e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | new e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | unchanged True
+  hash sentence '`train_S\\.jsonl` 的规范化 SHA-256 必须等于 `([0-'...: old 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e | new 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e | unchanged True
+  abbreviated hashes (8…4) old == new: True | new: ['6a3450ea…2c22', '8816fe5a…a155', 'e0021e26…ea77']
+  new status line: ['| 状态 | **PROTOCOL_FROZEN**(Owner 批准，2026-11-22 05:27 UTC;冻结提交打标签 `metrix-e1-pilot-frozen`,其完整 hash 与该提交下本文件、三个 JSON 的 sha256 记在同目录的 `PROTOCOL_FROZEN` 文件中) |', '| 状态 | 何时使用 |']
+  new 2.5 sentence present: True | section: ### 2.5 候选(4-way,生成数据时冻结)
+
+== f. Executor raw outputs in both commits
+  t0_env.txt: old blob 394596c28ba09d3aea7a1e6b5ea2830249c3740a | new blob 394596c28ba09d3aea7a1e6b5ea2830249c3740a | identical True
+  t1d_data_hashes.txt: old blob df7bd2d63403c49def3acf54516001bd89290785 | new blob df7bd2d63403c49def3acf54516001bd89290785 | identical True
+  t1_protocol_checks.txt: old blob df2c5acede66ce7c297c93b3c8ad514163e3e03d | new blob a440e1ee671d4b1d864186c135b94c8a917ad75d | identical False
+  t0_copy_check.txt: old blob 72452c4e6045fdf6caed61175c6c7d22e997d4d4 | new blob 72452c4e6045fdf6caed61175c6c7d22e997d4d4 | identical True
+
+== g. informational: untracked working-tree PROTOCOL_FROZEN
+  in new commit: False | tracked in index: False | exists in working tree: True
+  40-hex values named: ['180762987b2b0d8a18a3070edb16dd4b4c31911e', '4d1138c0e4d51d98813997ce3560e05a32bf91de', '6247b5d0592876b73660f34c2dd16c9db9e9045c', '70d244cc86ccca08cf5af4e1e306ecf908b1ad5e', '92df1a60ac816ab02b250d32841397c73b9a67a7']
+  names new commit: False | names old commit: True
+  METRIX_E1_PROTOCOL.md: PROTOCOL_FROZEN value 61f4b777316cb554846990aa5024d14689124340d4e972a6c77d2d663580f19a | == sha256@new False | == sha256@old True
+  DATA_MANIFEST.json: PROTOCOL_FROZEN value 94ba8516044e9bf10c5ad907f2e905c5afd91833a383b7212737cf28170e8cf3 | == sha256@new True | == sha256@old True
+  SPLIT_MANIFEST.json: PROTOCOL_FROZEN value 2078d0456845b039459dc56e09e5868c4c8f9477dbaab106c4f4a5f924be1baa | == sha256@new False | == sha256@old True
+  SEARCH_SPACE.json: PROTOCOL_FROZEN value 490d575d54b4cbd3902adb496817d89c82763ad22fa8efac8894bcb4a45a6258 | == sha256@new True | == sha256@old True
+RESULT: PASS
+exit=0

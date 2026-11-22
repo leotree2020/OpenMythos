@@ -1,0 +1,296 @@
+# Delta between the superseded candidate 92df1a60ac816ab02b250d32841397c73b9a67a7 (reviewed in reviews/92df1a60ac816ab02b250d32841397c73b9a67a7/) and the freeze commit 6a474e4a5defa23dfc71b2c6bca9e15a81b517aa. Both have parent 18076298.
+ metrix/e1-pilot/METRIX_E1_PROTOCOL.md              |  18 ++-
+ metrix/e1-pilot/SPLIT_MANIFEST.json                |   1 +
+ .../e1-pilot/reports/round8/t1_protocol_checks.txt | 126 ++++++++++++++-------
+ metrix/e1-pilot/tasks/ROUND8_TASKS.md              |  24 ++++
+ 4 files changed, 127 insertions(+), 42 deletions(-)
+diff --git a/metrix/e1-pilot/METRIX_E1_PROTOCOL.md b/metrix/e1-pilot/METRIX_E1_PROTOCOL.md
+index c9f4ee5..1da0d8e 100644
+--- a/metrix/e1-pilot/METRIX_E1_PROTOCOL.md
++++ b/metrix/e1-pilot/METRIX_E1_PROTOCOL.md
+@@ -123,6 +123,7 @@ unread fact 的 entity 和 answer 在任何 arm 的训练文本和锚文本里
+ 
+ - 每条 fact 4 个候选:1 个真实答案 + 3 个干扰项。
+ - **干扰项的池**:同 relation、同 stratum、同暴露类别(learned 或 unread)的其它 fact 的答案。
++- 干扰项的池少于 4 个答案即 IMPLEMENTATION_FAIL,不生成合成干扰项。
+ - 抽取:用 `rng_rule(CANDIDATE_SEED, "cand:<fact_id>")` 不放回抽 3 个并决定 4 个候选的顺序;不得重复。
+ - **调用方式(细节 5)**:每条 fact 一个生成器 `r = rng_rule(CANDIDATE_SEED, "cand:<fact_id>")`;池按第 2.2 节的 fact 生成顺序排列,不含该 fact 自己(learned 14 个,unread 4 个);依次调用 `d = r.sample(池, 3)`,令 `c = [a_f] + d`,再调用 `r.shuffle(c)`;`c` 就是 4 个候选的顺序。每条 fact 的生成器各自独立,fact 之间的处理顺序不影响结果。
+ - `candidates.json`:一个 JSON 对象,键为 fact_id,值为该 fact 的 4 个候选(按上面的顺序),共 160 个键。
+@@ -517,6 +518,7 @@ E1-PILOT 只有一个训练阶段:Retention 记为 NOT_TESTED,不进任何门槛
+ 1. 记录环境与出处;在 CPU 上生成除 TEST 以外的数据,把哈希写入两个 manifest 并提交。
+    GPU 检查(第 7 节):`torch.cuda.get_device_name(0)` 以 `NVIDIA A100` 开头且 `total_memory ≥ 79 GiB`,否则 BLOCKED(ST8)。第一次加载模型时把设备全名写入实验记录,并从此刻起累计 GPU wall-clock;此后每次训练或评测运行开始时核对设备全名(ST9)。
+ 2. 运行泄漏检查。
++   预检(正式运行前;ST11):在 A100 上跑第一个配置的前 20 步,记录每步耗时、tokens/s、峰值显存与预估总时长;预估超过 3.5 小时即停止并报告 Owner。
+ 3. 评测 N:TRAIN 闭卷、DEV-QA、general DEV。
+ 4. F 的 6 个配置(种子 101)→ 选定 → 用选定配置检查阳性对照。
+ 5. L、A 的搜索 → 选定。
+@@ -537,9 +539,9 @@ E1-PILOT 只有一个训练阶段:Retention 记为 NOT_TESTED,不进任何门槛
+ | G0.5 | seed-average `Acc(F, DEV-QA, learned)` ≥ 0.70;seed-average Δ(F−N) 的 95% CI 下界 > 0;每个种子的 Δ(F−N) > 0 |
+ | G0.6 | seed-average Δ(S−N)(真实映射,DEV-QA,learned):点估计 ≤ +0.05 且 95% CI 上界 ≤ +0.12 |
+ | G0.7 | seed-average Δ(Y−N)(DEV-QA,learned):点估计 ≤ +0.05 且 95% CI 上界 ≤ +0.12 |
+-| G0.8 | 复现:对 F 选定配置的 3 个 checkpoint 各评测两次,所有 (fact, 问句) 的预测完全相同,候选分数差 ≤ 1e-4,每个通用窗口的 NLL 差 ≤ 1e-5 |
++| G0.8 | 复现:同一 checkpoint 两次评测,候选分数差 ≤ 1e-4;某题两次中任一次最高两个候选分数差 ≤ 1e-4 时允许预测不同,其余预测须完全相同;并列判为错。实现须开启 PyTorch 确定性设置并记录 |
+ | G0.9 | 上限检查:seed-average `Acc(F, DEV-QA, learned)` ≤ 0.95 |
+-| G0.10 | 能估计 E1-V1 的规模:对 Δ(L−F)、Δ(A−F) 的 seed-average 配对差 d_f 算出标准差 σ_d(有限),并给出 δ ∈ {0.05, 0.10, 0.15} 下的所需 fact 数 `n = ((1.96 + 0.84) · σ_d / δ)²`(双侧 0.05、功效 0.80),再用 Pilot 的 fact 按 n 重抽样验证 CI 半宽 |
++| G0.10 | 能估计 E1-V1 的规模:对 Δ(L−F)、Δ(A−F) 的 seed-average 配对差 d_f 算出标准差 σ_d(有限);分别用 σ_d 的 bootstrap 2.5 分位、点估计、97.5 分位,按 `n = ((1.96 + 0.84) · σ_d / δ)²`(双侧 0.05、功效 0.80)计算 δ ∈ {0.05, 0.10, 0.15} 下的所需 fact 数,以最大者作为 E1-V1 规划依据;再用 Pilot 的 fact 按 n 重抽样验证 CI 半宽。Pilot 的规模估计是规划估计,不是保证 |
+ 
+ - 任一不满足 → **PIPELINE_NOT_QUALIFIED**,禁止进入 E1-V1,TEST 不生成、不评测。
+ - 越过 G0.3 或 G0.9 的界限不代表机制失败:它触发 benchmark 重新校准(新协议版本)。
+@@ -564,12 +566,12 @@ E1-PILOT 只有一个训练阶段:Retention 记为 NOT_TESTED,不进任何门槛
+ |---|---|
+ | PASS | 第 8 节:Gate 0 与 T1–T3 全部满足 |
+ | PIPELINE_NOT_QUALIFIED | Gate 0 或 T1–T3 任一不满足;同时给出下面的一个原因 |
+-| IMPLEMENTATION_FAIL | G0.1、G0.2、G0.6、G0.7、G0.8 不满足,或 Y 的 token 数比越界,或实现与本协议不一致 |
++| IMPLEMENTATION_FAIL | G0.1、G0.2、G0.6、G0.7、G0.8 不满足,或 Y 的 token 数比越界,或第 2.5 节干扰项的池少于 4 个答案,或配置冻结前读取 TEST(ST13),或实现与本协议不一致 |
+ | OPTIMIZATION_FAIL | G0.4 不满足(在给定训练量内连 TRAIN 陈述句都没有记住) |
+ | OPTIMIZATION_OR_CAPACITY_UNRESOLVED | G0.4 满足但 G0.5 或 T1 的正确率不满足 |
+ | CAPACITY_LIMIT | 仅当更强的模型在同一协议下 PASS 之后才可使用;在此之前必须保留 OPTIMIZATION_OR_CAPACITY_UNRESOLVED |
+ | HYPOTHESIS_FAIL | 保留给 E1-V1 的机制比较;E1-PILOT 没有机制假设,不使用 |
+-| BLOCKED | 环境、资源、数据来源或库版本不满足第 0 节,无法按协议执行;或第 8 步 L3–L6 任一项的 TEST 部分超限,或 L6 的 TEST 部分 Executor 与 data-auditor 的结果不一致(ST10) |
++| BLOCKED | 环境、资源、数据来源或库版本不满足第 0 节,无法按协议执行;或第 8 步 L3–L6 任一项的 TEST 部分超限,或 L6 的 TEST 部分 Executor 与 data-auditor 的结果不一致(ST10);或任何数据、manifest、模板或候选的哈希,或模型、分词器版本与冻结值不一致(ST12) |
+ | NOT_TESTED | 未运行,或在没有违反任何条件的情况下提前停止 |
+ 
+ 看到结果之后不得修改任何门槛;协议本身有缺陷时,开新版本(PROTOCOL_REVISION_V2)。
+@@ -617,6 +619,9 @@ Compute accounting 的算法:训练 FLOPs ≈ 6 · P · T,前向 FLOPs ≈ 2 ·
+ | ST8 | 环境不满足第 0 节 | BLOCKED |
+ | ST9 | 某次运行开始时读到的设备全名与首次记录不同 | 整批作废:本次 Pilot 的全部结果不得用于任何判断;BLOCKED;在设备全名一致的机器上从第 8 节第 3 步重新开始 |
+ | ST10 | 第 8 步 L3–L6 任一项的 TEST 部分超限;或 L6 的 TEST 部分 Executor 与 data-auditor 的结果不一致 | 停止;不评测 TEST;BLOCKED;报告 Owner |
++| ST11 | 第 8 节第 2 步预检的预估总时长超过 3.5 小时 | 停止;报告 Owner |
++| ST12 | 任何数据、manifest、模板或候选的哈希,或模型、分词器版本与冻结值不一致 | 停止;BLOCKED |
++| ST13 | 配置冻结前读取 TEST | IMPLEMENTATION_FAIL;本次 Pilot 全部作废 |
+ 
+ ## 12. Out of Scope
+ 
+@@ -687,6 +692,11 @@ Compute accounting 的算法:训练 FLOPs ≈ 6 · P · T,前向 FLOPs ≈ 2 ·
+ | v1-r8(冻结) | 同上 | 同上 | `metrix/CLAUDE.md` 第 8 节(不属于本协议;指令要求第 1 项全部记入本节) | 原文“只有「永久」的裁决可写入本文件。”改为“「永久」与「本阶段」的裁决可写入本文件,写入时须注明作用范围;「本阶段」的裁决在本阶段结束时失效。”,并注明出处、批准、时间与原因 | 第 8 轮指令第 1e 项(待决第 4 项;`reviews/293b806d…/code-reviewer.md` 第 33 行):原文与第 7 轮写入的第 5 节第 6 条、第 10 节两条「本阶段」裁决矛盾 |
+ | v1-r8(冻结) | 同上 | 同上 | 第 7 节训练契约表头;`SEARCH_SPACE.json`(及第 7 节内联副本)、`DATA_MANIFEST.json`、`SPLIT_MANIFEST.json` 的 `status`;第 13 节;文件头说明;第 1 节 Non-claims | 训练契约表头“值(PROPOSED)”改为“值(冻结;Owner 批准，2026-11-22 05:27 UTC)”,表中数值不变。`SEARCH_SPACE.json` 的 `status` 由 `PROPOSED`、两个 manifest 的 `status` 由 `PROPOSED_NOT_FROZEN` 改为 `PROTOCOL_FROZEN`,三个文件都在 `status` 后新增 `"frozen": "Owner 批准，2026-11-22 05:27 UTC"`;内联副本随之更新。第 13 节两项按提案批准:第 1 项值不变(320 条 fact,Pilot 后按 G0.10 重算),第 2 项值后加“在 Pilot 中只报告,不进门槛”;标题“(PENDING_REVIEW_GATE 仅此 2 项)”改为“(原 PENDING_REVIEW_GATE 2 项,已按提案批准)”,表头“PROPOSED”改为“冻结值(按提案批准;Owner 批准，2026-11-22 05:27 UTC)”;末段“其余可执行参数都已写死或标为 PROPOSED;Review Gate 可以改动一次,”改为“其余可执行参数都已写死;原标为 PROPOSED 的训练契约(第 7 节)、`SEARCH_SPACE.json` 与本节 2 项已于冻结时改为冻结值(Owner 批准，2026-11-22 05:27 UTC)。”。文件头“PENDING_REVIEW_GATE 只剩第 13 节的 2 项”改为“PENDING_REVIEW_GATE 原只剩第 13 节的 2 项,已于冻结时按提案批准(Owner 批准，2026-11-22 05:27 UTC)”;第 1 节“margin 待 Review Gate,见第 13 节”改为“margin 见第 13 节,在 Pilot 中只报告” | 第 8 轮指令第 2 项(待决第 12 项中“改哪些 `status` 字段”):Owner 批准冻结,PROPOSED 各项改为冻结值;文件头、第 1 节与第 13 节末段的原文在批准后不再成立 |
+ | v1-r8(冻结) | 同上 | 同上 | 文件头“状态”一行 | 原文“**AWAITING_REVIEW_GATE**(未冻结;冻结后本表改为 PROTOCOL_FROZEN)”改为“**PROTOCOL_FROZEN**(Owner 批准，2026-11-22 05:27 UTC;冻结提交打标签 `metrix-e1-pilot-frozen`,其完整 hash 与该提交下本文件、三个 JSON 的 sha256 记在同目录的 `PROTOCOL_FROZEN` 文件中)” | 第 8 轮指令第 3 项:Owner 于 2026-11-22 05:27 UTC 批准冻结 |
++| v1-r8(冻结) | 同上 | 同上 | 第 8 节 G0.8 | 原文“复现:对 F 选定配置的 3 个 checkpoint 各评测两次,所有 (fact, 问句) 的预测完全相同,候选分数差 ≤ 1e-4,每个通用窗口的 NLL 差 ≤ 1e-5”整条改为“复现:同一 checkpoint 两次评测,候选分数差 ≤ 1e-4;某题两次中任一次最高两个候选分数差 ≤ 1e-4 时允许预测不同,其余预测须完全相同;并列判为错。实现须开启 PyTorch 确定性设置并记录”。原文的“F 选定配置的 3 个 checkpoint”与“每个通用窗口的 NLL 差 ≤ 1e-5”不再出现 | 对照 Task Order V1.2 补齐;第 8 轮补充第 a 项(`tasks/ROUND8_TASKS.md` 第二段;Owner 回答“按所发内容执行”,按原文字面写入) |
++| v1-r8(冻结) | 同上 | 同上 | 第 2.5 节(新增一条);第 9 节 IMPLEMENTATION_FAIL 一行;`SPLIT_MANIFEST.json: candidates.pool_too_small`(新增) | 新增“干扰项的池少于 4 个答案即 IMPLEMENTATION_FAIL,不生成合成干扰项。”;第 9 节 IMPLEMENTATION_FAIL 的适用情形加“或第 2.5 节干扰项的池少于 4 个答案”。`DATA_SEED` 下各 fact 的池为 learned 14 个、unread 4 个,不触发;候选与冻结哈希不变 | 对照 Task Order V1.2 补齐;第 8 轮补充第 b 项(`tasks/ROUND8_TASKS.md` 第二段;Owner 回答“按所发内容执行”,按原文字面写入) |
++| v1-r8(冻结) | 同上 | 同上 | 第 8 节 G0.10 | 原文“并给出 δ ∈ {0.05, 0.10, 0.15} 下的所需 fact 数 `n = …`(双侧 0.05、功效 0.80)”改为“分别用 σ_d 的 bootstrap 2.5 分位、点估计、97.5 分位,按 `n = …`(双侧 0.05、功效 0.80)计算 δ ∈ {0.05, 0.10, 0.15} 下的所需 fact 数,以最大者作为 E1-V1 规划依据”;句末加“Pilot 的规模估计是规划估计,不是保证” | 对照 Task Order V1.2 补齐;第 8 轮补充第 c 项(`tasks/ROUND8_TASKS.md` 第二段;Owner 回答“按所发内容执行”,按原文字面写入) |
++| v1-r8(冻结) | 同上 | 同上 | 第 8 节第 2 步(新增“预检”);第 11 节(新增 ST11) | 新增“预检(正式运行前;ST11):在 A100 上跑第一个配置的前 20 步,记录每步耗时、tokens/s、峰值显存与预估总时长;预估超过 3.5 小时即停止并报告 Owner。”;ST11:“第 8 节第 2 步预检的预估总时长超过 3.5 小时 → 停止;报告 Owner”。第 8 节各步编号不变 | 对照 Task Order V1.2 补齐;第 8 轮补充第 d 项(`tasks/ROUND8_TASKS.md` 第二段;Owner 回答“按所发内容执行”,按原文字面写入) |
++| v1-r8(冻结) | 同上 | 同上 | 第 11 节(新增 ST12、ST13);第 9 节 BLOCKED、IMPLEMENTATION_FAIL 两行 | ST12:“任何数据、manifest、模板或候选的哈希,或模型、分词器版本与冻结值不一致 → 停止;BLOCKED”;ST13:“配置冻结前读取 TEST → IMPLEMENTATION_FAIL;本次 Pilot 全部作废”。第 9 节 BLOCKED 的适用情形加 ST12,IMPLEMENTATION_FAIL 加“或配置冻结前读取 TEST(ST13)” | 对照 Task Order V1.2 补齐;第 8 轮补充第 e 项(`tasks/ROUND8_TASKS.md` 第二段;Owner 回答“按所发内容执行”,按原文字面写入) |
+ 
+ 注(v1-r8):一个提交不能包含自身的 hash,冻结之后补填又会改动冻结的协议,所以 v1-r8 各行的“时间”与“提交”写作“冻结提交”;冻结提交的完整 hash 与提交时间记在 `PROTOCOL_FROZEN` 文件中,并由标签 `metrix-e1-pilot-frozen` 指向。
+ 
+diff --git a/metrix/e1-pilot/SPLIT_MANIFEST.json b/metrix/e1-pilot/SPLIT_MANIFEST.json
+index 6ba1dec..530087d 100644
+--- a/metrix/e1-pilot/SPLIT_MANIFEST.json
++++ b/metrix/e1-pilot/SPLIT_MANIFEST.json
+@@ -320,6 +320,7 @@
+     "draw": "3 distractors without replacement and the order of the 4 candidates from rng_rule(CANDIDATE_SEED, 'cand:<fact_id>')",
+     "shared_by": "all templates, splits and arms of the fact",
+     "duplicates": "forbidden",
++    "pool_too_small": "a distractor pool with fewer than 4 answers: IMPLEMENTATION_FAIL; no synthetic distractors are generated (protocol 2.5; supplement b, Task Order V1.2)",
+     "exposure_matching": "every candidate of a learned fact occurs exactly once in the training corpus of F, L, A, S and Y; every candidate of an unread fact occurs zero times",
+     "call_order": "one generator r = rng_rule(CANDIDATE_SEED, 'cand:<fact_id>') per fact; pool = the answers of the other facts with the same relation, stratum and exposure, in the fact order of name_generation (14 for learned, 4 for unread); d = r.sample(pool, 3); c = [answer] + d; r.shuffle(c); c is the order of the 4 candidates",
+     "file": "candidates.json: one JSON object, key fact_id, value the list of the 4 candidates in that order; 160 keys",
+diff --git a/metrix/e1-pilot/reports/round8/t1_protocol_checks.txt b/metrix/e1-pilot/reports/round8/t1_protocol_checks.txt
+index df2c5ac..a440e1e 100644
+--- a/metrix/e1-pilot/reports/round8/t1_protocol_checks.txt
++++ b/metrix/e1-pilot/reports/round8/t1_protocol_checks.txt
+@@ -1,31 +1,53 @@
+-# Round 8 raw output: checks of the working tree that becomes the freeze commit (items 1-3), run before the commit. Host vm, CPU only. Written by the Executor (session_01J5mxaUfve5PtsqZQQDkJcJ). Sun Nov 22 05:39:06 UTC 2026
+-# cwd /home/user/OpenMythos. Recorded by metrix/e1-pilot/reports/round5/logrun.sh. HEAD is still 18076298 (parent of the freeze commit); the files checked are the working-tree versions.
++# Round 8 raw output: checks of the working tree that becomes the freeze commit (items 1-3 and supplement a-e), run before the commit. Host vm, CPU only. Written by the Executor (session_01J5mxaUfve5PtsqZQQDkJcJ). Sun Nov 22 06:04:12 UTC 2026
++# cwd /home/user/OpenMythos. Recorded by metrix/e1-pilot/reports/round5/logrun.sh. HEAD is 18076298 (parent of the freeze commit); the files checked are the working-tree versions. This file replaces the version in the superseded candidate 92df1a60 (that version is in reviews/92df1a60.../review_input.diff); no output line is cut here.
+ $ git rev-parse HEAD
+ 180762987b2b0d8a18a3070edb16dd4b4c31911e
+ exit=0
+ $ git status --short
+- M metrix/CLAUDE.md
+- M metrix/e1-pilot/DATA_MANIFEST.json
+- M metrix/e1-pilot/METRIX_E1_PROTOCOL.md
+- M metrix/e1-pilot/SEARCH_SPACE.json
+- M metrix/e1-pilot/SPLIT_MANIFEST.json
+-?? metrix/e1-pilot/reports/round8/
+-?? metrix/e1-pilot/tasks/ROUND8_TASKS.md
++M  metrix/CLAUDE.md
++M  metrix/e1-pilot/DATA_MANIFEST.json
++MM metrix/e1-pilot/METRIX_E1_PROTOCOL.md
++M  metrix/e1-pilot/SEARCH_SPACE.json
++MM metrix/e1-pilot/SPLIT_MANIFEST.json
++ M metrix/e1-pilot/reports/DEFERRED_MINORS.md
++A  metrix/e1-pilot/reports/round8/t0_copy_check.txt
++A  metrix/e1-pilot/reports/round8/t0_env.txt
++AM metrix/e1-pilot/reports/round8/t1_protocol_checks.txt
++A  metrix/e1-pilot/reports/round8/t1d_data_hashes.txt
++AM metrix/e1-pilot/tasks/ROUND8_TASKS.md
++?? metrix/e1-pilot/PROTOCOL_FROZEN
++?? metrix/e1-pilot/audit/r8_anchor.py
++?? metrix/e1-pilot/audit/r8_compare.py
++?? metrix/e1-pilot/audit/r8_facts.py
++?? metrix/e1-pilot/audit/r8_fetch.py
++?? metrix/e1-pilot/audit/r8_files.py
++?? metrix/e1-pilot/audit/r8_general.py
++?? metrix/e1-pilot/audit/r8_hashseed_probe.py
++?? metrix/e1-pilot/audit/r8_s_cands.py
++?? metrix/e1-pilot/audit/r8_templates.py
++?? metrix/e1-pilot/audit/r8_tokenizer.py
++?? metrix/e1-pilot/audit/r8_utf8_check.py
++?? metrix/e1-pilot/audit/stdout/92df1a60ac816ab02b250d32841397c73b9a67a7/
++?? metrix/e1-pilot/reports/ROUND8_REPORT.md
++?? metrix/e1-pilot/reports/round8/t5_frozen_hashes.txt
++?? metrix/e1-pilot/reports/round8/t5_protocol_frozen_check.txt
++?? metrix/e1-pilot/reports/round8/t6_supplement_recommit.txt
++?? metrix/e1-pilot/reviews/92df1a60ac816ab02b250d32841397c73b9a67a7/
+ exit=0
+ $ sha256sum metrix/e1-pilot/METRIX_E1_PROTOCOL.md metrix/e1-pilot/DATA_MANIFEST.json metrix/e1-pilot/SPLIT_MANIFEST.json metrix/e1-pilot/SEARCH_SPACE.json metrix/CLAUDE.md .claude/agents/code-reviewer.md .claude/agents/data-auditor.md
+-61f4b777316cb554846990aa5024d14689124340d4e972a6c77d2d663580f19a  metrix/e1-pilot/METRIX_E1_PROTOCOL.md
++141473498582e6c67dcdd9dbe35cc4b4e18fbfe4912d74bcfdf5fb60e6593baa  metrix/e1-pilot/METRIX_E1_PROTOCOL.md
+ 94ba8516044e9bf10c5ad907f2e905c5afd91833a383b7212737cf28170e8cf3  metrix/e1-pilot/DATA_MANIFEST.json
+-2078d0456845b039459dc56e09e5868c4c8f9477dbaab106c4f4a5f924be1baa  metrix/e1-pilot/SPLIT_MANIFEST.json
++7eb5d6edece5096ad107c4ba125fd539c2753d51e169c47556bfffeac18c7fff  metrix/e1-pilot/SPLIT_MANIFEST.json
+ 490d575d54b4cbd3902adb496817d89c82763ad22fa8efac8894bcb4a45a6258  metrix/e1-pilot/SEARCH_SPACE.json
+ c253f73315bb1dfd0645932ba0c970d0a88caf415c0e2a897351d0082bf7da16  metrix/CLAUDE.md
+ e38d091494059227d8d95896aa50858adc32f4750a5512b45bec97dd368932c6  .claude/agents/code-reviewer.md
+ 4201122829c31512859baa55d755a016073544f5c4a887f59bcfeef0abfdd833  .claude/agents/data-auditor.md
+ exit=0
+ $ python3 -I metrix/e1-pilot/reports/round6/table_check.py metrix/e1-pilot/METRIX_E1_PROTOCOL.md
+-table rows checked: 160; rows whose cell count differs from the header: 0; unescaped special tokens: 0
++table rows checked: 168; rows whose cell count differs from the header: 0; unescaped special tokens: 0
+ RESULT: PASS
+ exit=0
+-$ python3 -I -c $'\nimport json, sys\nd = sys.argv[1]\njs = {f: json.load(open(d + \'/\' + f, encoding=\'utf-8\')) for f in (\'DATA_MANIFEST.json\', \'SPLIT_MANIFEST.json\', \'SEARCH_SPACE.json\')}\nprint(\'json ok\')\nfor f, j in js.items():\n    print(f, \'| status\', j[\'status\'], \'| frozen\', j.get(\'frozen\'), \'| re-dump identical to file:\', json.dumps(j, indent=2, ensure_ascii=False) + \'\\n\' == open(d + \'/\' + f, encoding=\'utf-8\').read())\nB, E = \'<!-- BEGIN INLINE COPY: SEARCH_SPACE.json -->\', \'<!-- END INLINE COPY: SEARCH_SPACE.json -->\'\ndoc = open(d + \'/METRIX_E1_PROTOCOL.md\', encoding=\'utf-8\').read()\nassert doc.count(B) == 1 and doc.count(E) == 1\ninner = doc[doc.index(B) + len(B):doc.index(E)]\nblock = inner[len(\'\\n```json\\n\'):-len(\'```\\n\')]\nprint(\'inline copy identical (marked block):\', block == open(d + \'/SEARCH_SPACE.json\', encoding=\'utf-8\').read())\ndm = js[\'DATA_MANIFEST.json\']\nprint(\'tokenizer files_sha256:\', json.dumps(dm[\'model\'][\'tokenizer\'][\'files_sha256\']))\nprint(\'anchor decoded_texts_canonical_sha256:\', dm[\'anchor_text\'][\'decoded_texts_canonical_sha256\'])\nprint(\'facts\', dm[\'name_generation\'][\'expected_facts_canonical_sha256\'], \'| train_S\', dm[\'s_permutation\'][\'expected_train_S_canonical_sha256\'], \'| candidates\', js[\'SPLIT_MANIFEST.json\'][\'candidates\'][\'candidate_mapping_sha256\'], \'| template set\', js[\'SPLIT_MANIFEST.json\'][\'template_freeze\'][\'template_set_sha256\'])\nprint(\'records:\', dm[\'files\'][\'train_S.jsonl\'][\'record\'], \'|\', dm[\'files\'][\'candidates.json\'][\'record\'])\n' metrix/e1-pilot
++$ python3 -I -c $'\nimport json, sys\nd = sys.argv[1]\njs = {f: json.load(open(d + \'/\' + f, encoding=\'utf-8\')) for f in (\'DATA_MANIFEST.json\', \'SPLIT_MANIFEST.json\', \'SEARCH_SPACE.json\')}\nprint(\'json ok\')\nfor f, j in js.items():\n    print(f, \'| status\', j[\'status\'], \'| frozen\', j.get(\'frozen\'), \'| re-dump identical to file:\', json.dumps(j, indent=2, ensure_ascii=False) + \'\\n\' == open(d + \'/\' + f, encoding=\'utf-8\').read())\nB, E = \'<!-- BEGIN INLINE COPY: SEARCH_SPACE.json -->\', \'<!-- END INLINE COPY: SEARCH_SPACE.json -->\'\ndoc = open(d + \'/METRIX_E1_PROTOCOL.md\', encoding=\'utf-8\').read()\nassert doc.count(B) == 1 and doc.count(E) == 1\ninner = doc[doc.index(B) + len(B):doc.index(E)]\nblock = inner[len(\'\\n```json\\n\'):-len(\'```\\n\')]\nprint(\'inline copy identical (marked block):\', block == open(d + \'/SEARCH_SPACE.json\', encoding=\'utf-8\').read())\ndm, sm = js[\'DATA_MANIFEST.json\'], js[\'SPLIT_MANIFEST.json\']\nprint(\'tokenizer files_sha256:\', json.dumps(dm[\'model\'][\'tokenizer\'][\'files_sha256\']))\nprint(\'anchor decoded_texts_canonical_sha256:\', dm[\'anchor_text\'][\'decoded_texts_canonical_sha256\'])\nprint(\'facts\', dm[\'name_generation\'][\'expected_facts_canonical_sha256\'], \'| train_S\', dm[\'s_permutation\'][\'expected_train_S_canonical_sha256\'], \'| candidates\', sm[\'candidates\'][\'candidate_mapping_sha256\'], \'| template set\', sm[\'template_freeze\'][\'template_set_sha256\'])\nprint(\'records:\', dm[\'files\'][\'train_S.jsonl\'][\'record\'], \'|\', dm[\'files\'][\'candidates.json\'][\'record\'])\nprint(\'candidates.pool_too_small:\', sm[\'candidates\'][\'pool_too_small\'])\n' metrix/e1-pilot
+ json ok
+ DATA_MANIFEST.json | status PROTOCOL_FROZEN | frozen Owner 批准，2026-11-22 05:27 UTC | re-dump identical to file: True
+ SPLIT_MANIFEST.json | status PROTOCOL_FROZEN | frozen Owner 批准，2026-11-22 05:27 UTC | re-dump identical to file: True
+@@ -35,42 +57,70 @@ tokenizer files_sha256: {"tokenizer.json": "aeb13307a71acd8fe81861d94ad54ab689df
+ anchor decoded_texts_canonical_sha256: 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408
+ facts 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 | train_S 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e | candidates e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | template set 2b52411326c218e9c51d947b2f4e0d77b0cdd5d6237f9ce25b57a872c48ce28f
+ records: one object per line {"fact_id", "answer_fact_id", "text"} (protocol 2.6); Review Gate round 7 ruling, item 1a | one JSON object {fact_id: [4 candidates]} (protocol 2.5); Review Gate round 7 ruling, item 1a
++candidates.pool_too_small: a distractor pool with fewer than 4 answers: IMPLEMENTATION_FAIL; no synthetic distractors are generated (protocol 2.5; supplement b, Task Order V1.2)
+ exit=0
+ $ python3 -I -c $'\nimport hashlib, json, re, sys\nsm = json.load(open(sys.argv[1], encoding=\'utf-8\'))\ndef norm(t):\n    t = t.replace(\'{E}\', \'<ENTITY>\').replace(\'{A}\', \'<ANSWER>\').lower()\n    return re.sub(\' +\', \' \', re.sub(r\'[^a-z0-9<> ]\', \' \', t)).strip()\nbad = [t[\'template_id\'] for t in sm[\'templates\'] if norm(t[\'text\']) != t[\'normalized\'] or hashlib.sha256(t[\'normalized\'].encode()).hexdigest() != t[\'normalized_sha256\']]\ns = hashlib.sha256(\'\\n\'.join(sorted(t[\'normalized_sha256\'] for t in sm[\'templates\'])).encode()).hexdigest()\nprint(\'templates\', len(sm[\'templates\']), \'| normalized / normalized_sha256 not reproduced:\', bad)\nprint(\'template_set_sha256 recomputed\', s, \'| manifest\', sm[\'template_freeze\'][\'template_set_sha256\'], \'| equal\', s == sm[\'template_freeze\'][\'template_set_sha256\'])\n' metrix/e1-pilot/SPLIT_MANIFEST.json
+ templates 32 | normalized / normalized_sha256 not reproduced: []
+ template_set_sha256 recomputed 2b52411326c218e9c51d947b2f4e0d77b0cdd5d6237f9ce25b57a872c48ce28f | manifest 2b52411326c218e9c51d947b2f4e0d77b0cdd5d6237f9ce25b57a872c48ce28f | equal True
+ exit=0
+-# Remaining PROPOSED / AWAITING / PENDING markers in the protocol and the three JSON (lines cut to 200 characters).
+-$ bash -c $'grep -n -E \'PROPOSED|AWAITING_REVIEW_GATE|PENDING_REVIEW_GATE|\345\276\205 Review Gate\' metrix/e1-pilot/METRIX_E1_PROTOCOL.md metrix/e1-pilot/DATA_MANIFEST.json metrix/e1-pilot/SPLIT_MANIFEST.json metrix/e1-pilot/SEARCH_SPACE.json | cut -c1-200'
+-metrix/e1-pilot/METRIX_E1_PROTOCOL.md:10:Task Order 与其 “Mandatory consistency amendments A–L” 同时生效;两者冲突处以修订条款为准。据此:fact 聚合函数固定为 mean;Gate 
+-metrix/e1-pilot/METRIX_E1_PROTOCOL.md:630:## 13. Open Questions for Review Gate(原 PENDING_REVIEW_GATE 2 项,已按提案批准)
+-metrix/e1-pilot/METRIX_E1_PROTOCOL.md:639:其余可执行参数都已写死;原标为 PROPOSED 的训练契约(第 7 节)、`SEARCH_SPACE.json` 与本节 2 项已于冻结时改为冻结值(Owner 批�
+-metrix/e1-pilot/METRIX_E1_PROTOCOL.md:659:| v1-r4 | 2026-11-21 05:05:03 | `b1f5889c` | 第 5 节 EM;第 0 节(新增“生成输入(EM)”行);`DATA_MANIFEST.json: model.input_convention.em_generation
+-metrix/e1-pilot/METRIX_E1_PROTOCOL.md:664:| v1-r5 | 2026-11-21 06:37:20 | `c73f41a3` | 第 4 节 arm A 损失 | 原文 `λ · mean_{t=2..n_x} KL(...)`、“x 为该步的 4 篇锚文档,n_x 为锚文�
+-metrix/e1-pilot/METRIX_E1_PROTOCOL.md:667:| v1-r6 | 2026-11-21 14:41:02 | `481a6f0f` | 第 3 节 L6;`SPLIT_MANIFEST.json: leakage_checks.L6_general_text` | 原文 L6 规则“锚文本与通用文本�
+-metrix/e1-pilot/METRIX_E1_PROTOCOL.md:676:| v1-r7 | 2026-11-22 03:25:59 | `7fea9181` | 第 2.7 节 | 原文“锚文本与通用文本不得共享任何 13-gram。”改为“锚文本与通用文本�
+-metrix/e1-pilot/METRIX_E1_PROTOCOL.md:683:| v1-r8(冻结) | 冻结提交的提交时间(见 `PROTOCOL_FROZEN`) | 冻结提交(标签 `metrix-e1-pilot-frozen`) | 第 2.5、2.6 节(文字不变);`DATA_M
+-metrix/e1-pilot/METRIX_E1_PROTOCOL.md:688:| v1-r8(冻结) | 同上 | 同上 | 第 7 节训练契约表头;`SEARCH_SPACE.json`(及第 7 节内联副本)、`DATA_MANIFEST.json`、`SPLIT_MANIFEST.json` �
+-metrix/e1-pilot/METRIX_E1_PROTOCOL.md:689:| v1-r8(冻结) | 同上 | 同上 | 文件头“状态”一行 | 原文“**AWAITING_REVIEW_GATE**(未冻结;冻结后本表改为 PROTOCOL_FROZEN)”改为�
++# Supplement b: distractor pool size per fact (same relation, stratum and exposure, excluding the fact itself) for the 160 facts of DATA_SEED regenerated in t1d_data_hashes.txt (canonical sha256 checked first).
++$ python3 -I -c $'\nimport collections, hashlib, json, sys\nraw = open(sys.argv[1], \'rb\').read()\nprint(\'facts file sha256\', hashlib.sha256(raw).hexdigest())\nfacts = json.loads(raw)\ncell = collections.Counter((f[\'relation\'], f[\'stratum\'], f[\'exposure\']) for f in facts)\nsize = {e: sorted({cell[(f[\'relation\'], f[\'stratum\'], e)] - 1 for f in facts if f[\'exposure\'] == e}) for e in (\'learned\', \'unread\')}\nprint(\'pool sizes by exposure:\', size, \'| minimum\', min(min(v) for v in size.values()), \'| facts with pool < 4:\', sum(cell[(f[\'relation\'], f[\'stratum\'], f[\'exposure\'])] - 1 < 4 for f in facts))\n' /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/r8/facts.json
++facts file sha256 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97
++pool sizes by exposure: {'learned': [14], 'unread': [4]} | minimum 4 | facts with pool < 4: 0
+ exit=0
+-$ bash -c $'grep -c \'Owner \346\211\271\345\207\206\357\274\2142026-11-22 05:27 UTC\' metrix/e1-pilot/METRIX_E1_PROTOCOL.md metrix/e1-pilot/DATA_MANIFEST.json metrix/e1-pilot/SPLIT_MANIFEST.json metrix/e1-pilot/SEARCH_SPACE.json metrix/CLAUDE.md'
++# The following greps run with LC_ALL=C.UTF-8 so that "." matches characters, not bytes (a first run under the default byte locale split multi-byte characters; its output was dropped from this file before commit and the greps were re-run here).
++# Remaining PROPOSED / AWAITING / PENDING markers in the protocol and the three JSON (match with up to 30 characters of context).
++$ env LC_ALL=C.UTF-8 bash -c $'grep -n -o -E \'.{0,30}(PROPOSED|AWAITING_REVIEW_GATE|PENDING_REVIEW_GATE|\345\276\205 Review Gate).{0,30}\' metrix/e1-pilot/METRIX_E1_PROTOCOL.md metrix/e1-pilot/DATA_MANIFEST.json metrix/e1-pilot/SPLIT_MANIFEST.json metrix/e1-pilot/SEARCH_SPACE.json'
++metrix/e1-pilot/METRIX_E1_PROTOCOL.md:10:ll-clock 上限 4 小时,见第 7、8、13 节);PENDING_REVIEW_GATE 原只剩第 13 节的 2 项,已于冻结时按提案批准(Own
++metrix/e1-pilot/METRIX_E1_PROTOCOL.md:635:n Questions for Review Gate(原 PENDING_REVIEW_GATE 2 项,已按提案批准)
++metrix/e1-pilot/METRIX_E1_PROTOCOL.md:644:其余可执行参数都已写死;原标为 PROPOSED 的训练契约(第 7 节)、`SEARCH_SPACE.js
++metrix/e1-pilot/METRIX_E1_PROTOCOL.md:664:ew Gate 裁决(`ROUND3_REPORT.md`“待 Review Gate 决定”第 1 项;Round 3 code-reviewe
++metrix/e1-pilot/METRIX_E1_PROTOCOL.md:669:te 第 4 轮裁决(`ROUND4_REPORT.md`“待 Review Gate 决定”第 1 项;Round 4 code-reviewe
++metrix/e1-pilot/METRIX_E1_PROTOCOL.md:672:te 第 5 轮裁决(`ROUND5_REPORT.md`“待 Review Gate 决定”第 4 项;Round 5 data-auditor
++metrix/e1-pilot/METRIX_E1_PROTOCOL.md:681: 轮指令第 1a 项(`ROUND6_REPORT.md`“待 Review Gate 决定”第 1 项;R6 code-reviewer MAJ
++metrix/e1-pilot/METRIX_E1_PROTOCOL.md:688: 轮指令第 1a 项(`ROUND7_REPORT.md`“待 Review Gate 决定”第 2 项;`reviews/293b806d…/c
++metrix/e1-pilot/METRIX_E1_PROTOCOL.md:693:明;第 1 节 Non-claims | 训练契约表头“值(PROPOSED)”改为“值(冻结;Owner 批准，2026-11-22 
++metrix/e1-pilot/METRIX_E1_PROTOCOL.md:693:RCH_SPACE.json` 的 `status` 由 `PROPOSED`、两个 manifest 的 `status` 由 `PR
++metrix/e1-pilot/METRIX_E1_PROTOCOL.md:693:2 项值后加“在 Pilot 中只报告,不进门槛”;标题“(PENDING_REVIEW_GATE 仅此 2 项)”改为“(原 PENDING_REVIEW_
++metrix/e1-pilot/METRIX_E1_PROTOCOL.md:693:GATE 2 项,已按提案批准)”,表头“PROPOSED”改为“冻结值(按提案批准;Owner 批准，2026-11
++metrix/e1-pilot/METRIX_E1_PROTOCOL.md:693:05:27 UTC)”;末段“其余可执行参数都已写死或标为 PROPOSED;Review Gate 可以改动一次,”改为“其余可执行参
++metrix/e1-pilot/METRIX_E1_PROTOCOL.md:693:数都已写死;原标为 PROPOSED 的训练契约(第 7 节)、`SEARCH_SPACE.js
++metrix/e1-pilot/METRIX_E1_PROTOCOL.md:693:准，2026-11-22 05:27 UTC)。”。文件头“PENDING_REVIEW_GATE 只剩第 13 节的 2 项”改为“PENDING_REVI
++metrix/e1-pilot/METRIX_E1_PROTOCOL.md:693:1-22 05:27 UTC)”;第 1 节“margin 待 Review Gate,见第 13 节”改为“margin 见第 13 节,在 P
++metrix/e1-pilot/METRIX_E1_PROTOCOL.md:693:“改哪些 `status` 字段”):Owner 批准冻结,PROPOSED 各项改为冻结值;文件头、第 1 节与第 13 节末段的原文
++metrix/e1-pilot/METRIX_E1_PROTOCOL.md:694: | 同上 | 同上 | 文件头“状态”一行 | 原文“**AWAITING_REVIEW_GATE**(未冻结;冻结后本表改为 PROTOCOL_FROZEN
++exit=0
++$ env LC_ALL=C.UTF-8 bash -c $'grep -c \'Owner \346\211\271\345\207\206\357\274\2142026-11-22 05:27 UTC\' metrix/e1-pilot/METRIX_E1_PROTOCOL.md metrix/e1-pilot/DATA_MANIFEST.json metrix/e1-pilot/SPLIT_MANIFEST.json metrix/e1-pilot/SEARCH_SPACE.json metrix/CLAUDE.md; grep -c \'\345\257\271\347\205\247 Task Order V1.2 \350\241\245\351\275\220\' metrix/e1-pilot/METRIX_E1_PROTOCOL.md'
+ metrix/e1-pilot/METRIX_E1_PROTOCOL.md:8
+ metrix/e1-pilot/DATA_MANIFEST.json:1
+ metrix/e1-pilot/SPLIT_MANIFEST.json:1
+ metrix/e1-pilot/SEARCH_SPACE.json:1
+ metrix/CLAUDE.md:1
++5
++exit=0
++$ env LC_ALL=C.UTF-8 bash -c grep\ -n\ \'\^##\ 14\'\ metrix/e1-pilot/METRIX_E1_PROTOCOL.md
++646:## 14. 变更记录
+ exit=0
+-# Old wording that must be gone outside section 14 (EM first-line order, L6 TEST count wording, ST10 event).
+-$ bash -c $'grep -n -E \'\345\217\226\347\254\254\344\270\200\350\241\214,\345\216\273\351\246\226\345\260\276\347\251\272\347\231\275\\(\350\276\223\345\207\272\345\274\200\345\244\264|\346\225\260\344\272\244\351\233\206\347\232\204\345\205\203\347\264\240\344\270\252\346\225\260|leading spaces of the output are removed by the strip step|\345\217\252\346\234\211\343\200\214\346\260\270\344\271\205\343\200\215\347\232\204\350\243\201\345\206\263\345\217\257\345\206\231\345\205\245\346\234\254\346\226\207\344\273\266\' metrix/e1-pilot/METRIX_E1_PROTOCOL.md metrix/e1-pilot/DATA_MANIFEST.json metrix/e1-pilot/SPLIT_MANIFEST.json metrix/CLAUDE.md | cut -c1-120'
+-metrix/e1-pilot/METRIX_E1_PROTOCOL.md:684:| v1-r8(冻结) | 同上 | 同上 | 第 3 节 L6 一行与执行接口;第 8 �
+-metrix/e1-pilot/METRIX_E1_PROTOCOL.md:685:| v1-r8(冻结) | 同上 | 同上 | 第 5 节 EM;`DATA_MANIFEST.json: model.in
+-metrix/e1-pilot/METRIX_E1_PROTOCOL.md:687:| v1-r8(冻结) | 同上 | 同上 | `metrix/CLAUDE.md` 第 8 节(不属于本�
++# Old wording that must be gone outside section 14: matching line numbers (section 14 starts at the line printed above).
++$ env LC_ALL=C.UTF-8 bash -c $'grep -n -o -E \'\345\217\226\347\254\254\344\270\200\350\241\214,\345\216\273\351\246\226\345\260\276\347\251\272\347\231\275\\(\350\276\223\345\207\272\345\274\200\345\244\264|\346\225\260\344\272\244\351\233\206\347\232\204\345\205\203\347\264\240\344\270\252\346\225\260|leading spaces of the output are removed by the strip step|\345\217\252\346\234\211\343\200\214\346\260\270\344\271\205\343\200\215\347\232\204\350\243\201\345\206\263\345\217\257\345\206\231\345\205\245\346\234\254\346\226\207\344\273\266|\345\257\271 F \351\200\211\345\256\232\351\205\215\347\275\256\347\232\204 3 \344\270\252 checkpoint \345\220\204\350\257\204\346\265\213\344\270\244\346\254\241|\345\271\266\347\273\231\345\207\272 \316\264 \342\210\210 \\{0.05, 0.10, 0.15\\} \344\270\213\347\232\204\346\211\200\351\234\200 fact \346\225\260\' metrix/e1-pilot/METRIX_E1_PROTOCOL.md metrix/e1-pilot/DATA_MANIFEST.json metrix/e1-pilot/SPLIT_MANIFEST.json metrix/CLAUDE.md'
++metrix/e1-pilot/METRIX_E1_PROTOCOL.md:689:数交集的元素个数
++metrix/e1-pilot/METRIX_E1_PROTOCOL.md:690:取第一行,去首尾空白(输出开头
++metrix/e1-pilot/METRIX_E1_PROTOCOL.md:690:leading spaces of the output are removed by the strip step
++metrix/e1-pilot/METRIX_E1_PROTOCOL.md:692:只有「永久」的裁决可写入本文件
++metrix/e1-pilot/METRIX_E1_PROTOCOL.md:695:对 F 选定配置的 3 个 checkpoint 各评测两次
++metrix/e1-pilot/METRIX_E1_PROTOCOL.md:697:并给出 δ ∈ {0.05, 0.10, 0.15} 下的所需 fact 数
+ exit=0
+-$ git diff --stat
+- metrix/CLAUDE.md                      |  2 +-
+- metrix/e1-pilot/DATA_MANIFEST.json    | 24 +++++++++++++++------
+- metrix/e1-pilot/METRIX_E1_PROTOCOL.md | 40 ++++++++++++++++++++++-------------
+- metrix/e1-pilot/SEARCH_SPACE.json     |  3 ++-
+- metrix/e1-pilot/SPLIT_MANIFEST.json   | 10 +++++----
+- 5 files changed, 52 insertions(+), 27 deletions(-)
++$ git diff --stat HEAD
++ metrix/CLAUDE.md                                   |   2 +-
++ metrix/e1-pilot/DATA_MANIFEST.json                 |  24 +++-
++ metrix/e1-pilot/METRIX_E1_PROTOCOL.md              |  56 ++++++---
++ metrix/e1-pilot/SEARCH_SPACE.json                  |   3 +-
++ metrix/e1-pilot/SPLIT_MANIFEST.json                |  11 +-
++ metrix/e1-pilot/reports/DEFERRED_MINORS.md         |  20 ++++
++ metrix/e1-pilot/reports/round8/t0_copy_check.txt   | 132 +++++++++++++++++++++
++ metrix/e1-pilot/reports/round8/t0_env.txt          |  61 ++++++++++
++ .../e1-pilot/reports/round8/t1_protocol_checks.txt | 113 ++++++++++++++++++
++ metrix/e1-pilot/reports/round8/t1d_data_hashes.txt |  83 +++++++++++++
++ metrix/e1-pilot/tasks/ROUND8_TASKS.md              |  45 +++++++
++ 11 files changed, 520 insertions(+), 30 deletions(-)
+ exit=0
+diff --git a/metrix/e1-pilot/tasks/ROUND8_TASKS.md b/metrix/e1-pilot/tasks/ROUND8_TASKS.md
+index a930029..61820af 100644
+--- a/metrix/e1-pilot/tasks/ROUND8_TASKS.md
++++ b/metrix/e1-pilot/tasks/ROUND8_TASKS.md
+@@ -2,9 +2,12 @@
+ 
+ - 来源:Project Owner 在 Claude Code 会话 session_01J5mxaUfve5PtsqZQQDkJcJ 中下达,2026-11-22(会话容器启动于 05:30:39 UTC,`reports/round8/t0_copy_check.txt`)。
+ - 指令中的“Review Gate 第 7 轮裁决”是 Review Gate 对 `reports/ROUND7_REPORT.md`“待 Review Gate 决定”各项的裁决。下面照录全文。
++- 共两段:第一段是本轮指令;第二段是 Owner 在第 4 项审查完成、第 5 项的提交前审查进行中(约 05:55 UTC)补充的五项。补充之后,Executor 就其中两点提问,Owner 的回答也照录在第二段末尾。
+ 
+ ---
+ 
++## 第一段:本轮指令
++
+ 读 metrix/CLAUDE.md。本轮执行协议冻结。Owner 已于 2026-11-22 05:27 UTC 批准冻结。允许快进推送 metrix-e1-pilot-protocol-v1 和推送标签，不得 force push。不开放新的设计问题。
+ 
+ 0. 比对 ~/.claude/ 副本与分支文件，做法同第 7 轮；调用审查时首句按第 5 节固定。
+@@ -19,3 +22,24 @@
+ 4. 对冻结提交调用 code-reviewer（只审查与本指令是否逐条一致、有无 BLOCKER）和 data-auditor（独立复算全部冻结哈希）。新提出的 MAJOR/MINOR 只登记不修。有 BLOCKER 就停下报告，不得进入第 5 项。
+ 5. 审查通过后，另起一个提交新建 metrix/e1-pilot/PROTOCOL_FROZEN，内容包括：冻结提交的完整 hash；该提交下协议文件与三个 JSON 的 sha256；全部数据哈希；「Owner 批准，2026-11-22 05:27 UTC」。给冻结提交打标签 metrix-e1-pilot-frozen 并推送。
+ 6. 报告写入 reports/ROUND8_REPORT.md，提交推送，给出冻结提交 hash 与标签推送输出。
++
++---
++
++## 第二段:补充(原文)
++
++补充（对照 Task Order V1.2，放进冻结提交，全部记入第 14 节，注明「对照 Task Order V1.2 补齐」）：
++a. G0.8 改为：同一 checkpoint 两次评测，候选分数差 ≤ 1e-4；某题两次中任一次最高两个候选分数差 ≤ 1e-4 时允许预测不同，其余预测须完全相同；并列判为错。实现须开启 PyTorch 确定性设置并记录。
++b. 第 2.5 节：干扰项池少于 4 个答案即 IMPLEMENTATION_FAIL，不生成合成干扰项。
++c. G0.10：分别用 σ_d 的 bootstrap 2.5 分位、点估计、97.5 分位计算所需 fact 数，以最大者作为 E1-V1 规划依据；写明「Pilot 的规模估计是规划估计，不是保证」。
++d. 新增预检：正式运行前在 A100 上跑第一个配置的前 20 步，记录每步耗时、tokens/s、峰值显存与预估总时长；预估超过 3.5 小时即停止并报告 Owner（新增 ST11）。
++e. 新增 ST12：任何数据、manifest、模板或候选的哈希，或模型、分词器版本与冻结值不一致 → 停止，BLOCKED。新增 ST13：配置冻结前读取 TEST → IMPLEMENTATION_FAIL，本次 Pilot 全部作废。
++
++### Executor 的提问与 Owner 的回答
++
++Executor 用提问工具问了两点(原文为英文,两题各附两个选项):
++1. e 的 ST12:第 8 节第 1 步要把数据文件的哈希写入两个 manifest 并提交,manifest 的 sha256 会因此改变;照字面 ST12 会在第 1 步触发 BLOCKED。选项:“第 1 步填写的字段除外(推荐)”/“照字面写,只报告冲突”。
++2. a 的 G0.8:现有 G0.8 还写了“对 F 选定配置的 3 个 checkpoint”与“每个通用窗口的 NLL 差 ≤ 1e-5”,新文字都没有提。选项:“两者都保留(推荐)”/“整条替换”。
++
++Owner 的回答(原文):“Please run the last what I sent, it’s the additional things what I want do.”
++
++Executor 据此按补充原文字面执行:G0.8 整条换成补充 a 的文字,ST12 照字面写;两处的后果列入 `reports/ROUND8_REPORT.md`“待 Review Gate 决定”。

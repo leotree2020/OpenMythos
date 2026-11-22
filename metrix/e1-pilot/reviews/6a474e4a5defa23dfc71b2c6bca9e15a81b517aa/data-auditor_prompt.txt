@@ -1,0 +1,14 @@
+先读仓库中的 .claude/agents/data-auditor.md，以它为你的完整定义；它与你已加载的定义冲突时，以仓库文件为准。
+
+Metrix E1-PILOT 第 8 轮(协议冻结)。仓库 /home/user/OpenMythos,分支 metrix-e1-pilot-protocol-v1。
+审查对象:冻结提交 6a474e4a5defa23dfc71b2c6bca9e15a81b517aa(父提交 18076298)。指令原文 metrix/e1-pilot/tasks/ROUND8_TASKS.md;你的任务是第 4 项:独立复算全部冻结哈希。新提出的 MAJOR/MINOR 只登记不修。
+
+背景:你此前对冻结提交的候选 92df1a60 完成了同一任务(PASS,原文 metrix/e1-pilot/reviews/92df1a60ac816ab02b250d32841397c73b9a67a7/data-auditor.md,stdout 在 metrix/e1-pilot/audit/stdout/92df1a60ac816ab02b250d32841397c73b9a67a7/)。之后 Owner 下达“补充”五项(指令第二段),要求放进冻结提交;92df1a60 没有推送、没有打标签,已由本提交取代。与 92df1a60 的差异见 metrix/e1-pilot/reviews/6a474e4a5defa23dfc71b2c6bca9e15a81b517aa/delta_vs_92df1a60.diff:协议第 2.5、8、9、11、14 节,SPLIT_MANIFEST.json 新增 candidates.pool_too_small,tasks 文件与 t1_protocol_checks.txt;DATA_MANIFEST.json、SEARCH_SPACE.json 与数据哈希应当没有变化。
+
+请对本提交重做第 4 项(你在 audit/ 下的 r8_*.py 是你自己的脚本,可以复用,换成本提交即可;仍不得 import、调用或复制 metrix/e1-pilot/reports/ 下的 Executor 脚本):
+1. 协议文件与三个 JSON 在本提交中的 sha256(文件字节),并核对工作区与本提交相同。
+2. 全部数据哈希,与本提交 manifest 中的值逐一比对:160 条 fact;锚文本源 parquet 与 512 篇解码文本;train_S.jsonl 与 candidates.json;32 个模板与 template_set_sha256;Qwen 4 个分词器文件(及“全部文件”核对);parcae tokenizer.json;eval_sets.jsonl(只对整个文件求哈希,不得解码或使用任何 test 行的内容)。
+3. 补充 b(协议第 2.5 节:干扰项的池少于 4 个答案即 IMPLEMENTATION_FAIL):独立计算 DATA_SEED 下每条 fact 的干扰项池大小(同 relation、同 stratum、同暴露类别的其它 fact 的答案),报告最小值与少于 4 的 fact 数,并与 Executor 的 reports/round8/t1_protocol_checks.txt 比对。
+4. 与 Executor 原始输出的汇总比对(reports/round8/t0_env.txt、t1d_data_hashes.txt、t1_protocol_checks.txt;t1_protocol_checks.txt 本次已重跑)。
+
+限制:只在 CPU 上运行,只加载分词器,不加载任何模型权重;不生成、不读取 TEST 数据。只写入 metrix/e1-pilot/audit/;每个脚本的完整 stdout 写入 metrix/e1-pilot/audit/stdout/6a474e4a5defa23dfc71b2c6bca9e15a81b517aa/(编号文件)。最后附 git status --short 原始输出。最后一行按定义给出结论。

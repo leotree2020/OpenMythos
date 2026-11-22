@@ -1,0 +1,47 @@
+# Round 8 raw output: the freeze commit 6a474e4a5defa23dfc71b2c6bca9e15a81b517aa and the hashes recorded in metrix/e1-pilot/PROTOCOL_FROZEN. Host vm, CPU only. Written by the Executor (session_01J5mxaUfve5PtsqZQQDkJcJ). Sun Nov 22 06:05:57 UTC 2026
+# cwd /home/user/OpenMythos. Recorded by metrix/e1-pilot/reports/round5/logrun.sh. Replaces t5_frozen_hashes.txt, which was written for the superseded candidate 92df1a60. Data hashes: values read from the manifests of the freeze commit; their recomputation is in reports/round8/t0_env.txt, t1d_data_hashes.txt and (template set) t1_protocol_checks.txt.
+$ git log -1 --format=%H\ \|\ author\ %aI\ \|\ commit\ %cI\ \|\ parents\ %P\ \|\ %s 6a474e4a5defa23dfc71b2c6bca9e15a81b517aa
+6a474e4a5defa23dfc71b2c6bca9e15a81b517aa | author 2026-11-22T06:04:41+00:00 | commit 2026-11-22T06:04:41+00:00 | parents 180762987b2b0d8a18a3070edb16dd4b4c31911e | metrix: E1-PILOT round 8 freeze commit (rulings 1a-1e, PROPOSED values frozen, supplement a-e per Task Order V1.2, status PROTOCOL_FROZEN)
+exit=0
+$ python3 -I metrix/e1-pilot/reports/round3/outside_metrix_check.py --rev 6a474e4a5defa23dfc71b2c6bca9e15a81b517aa
+changed outside metrix/ (base 61d3c767 .. 6a474e4a5defa23dfc71b2c6bca9e15a81b517aa):
+  A	.claude/agents/code-reviewer.md
+  A	.claude/agents/data-auditor.md
+  M	CLAUDE.md
+charter: base 3065 bytes, new 3586 bytes, base is exact prefix: True
+charter: appended 521 bytes; level-1/2 headings in appended part: ['## 6. Metrix 子项目(2026-11-13 负责人决定)']
+ignore rules below come from the working-tree .gitignore; identical to .gitignore at 6a474e4a5defa23dfc71b2c6bca9e15a81b517aa: True
+agent .claude/agents/code-reviewer.md: tracked at 6a474e4a5defa23dfc71b2c6bca9e15a81b517aa: True; ignore rule: .gitignore:14:.claude/	.claude/agents/code-reviewer.md
+agent .claude/agents/data-auditor.md: tracked at 6a474e4a5defa23dfc71b2c6bca9e15a81b517aa: True; ignore rule: .gitignore:14:.claude/	.claude/agents/data-auditor.md
+RESULT: PASS
+exit=0
+$ bash -c for\ f\ in\ metrix/e1-pilot/METRIX_E1_PROTOCOL.md\ metrix/e1-pilot/DATA_MANIFEST.json\ metrix/e1-pilot/SPLIT_MANIFEST.json\ metrix/e1-pilot/SEARCH_SPACE.json\ metrix/CLAUDE.md\;\ do\ printf\ \'%s\ \ %s@6a474e4a5defa23dfc71b2c6bca9e15a81b517aa\\n\'\ \$\(git\ cat-file\ blob\ 6a474e4a5defa23dfc71b2c6bca9e15a81b517aa:\$f\ \|\ sha256sum\ \|\ cut\ -d\'\ \'\ -f1\)\ \$f\;\ done
+141473498582e6c67dcdd9dbe35cc4b4e18fbfe4912d74bcfdf5fb60e6593baa  metrix/e1-pilot/METRIX_E1_PROTOCOL.md@6a474e4a5defa23dfc71b2c6bca9e15a81b517aa
+94ba8516044e9bf10c5ad907f2e905c5afd91833a383b7212737cf28170e8cf3  metrix/e1-pilot/DATA_MANIFEST.json@6a474e4a5defa23dfc71b2c6bca9e15a81b517aa
+7eb5d6edece5096ad107c4ba125fd539c2753d51e169c47556bfffeac18c7fff  metrix/e1-pilot/SPLIT_MANIFEST.json@6a474e4a5defa23dfc71b2c6bca9e15a81b517aa
+490d575d54b4cbd3902adb496817d89c82763ad22fa8efac8894bcb4a45a6258  metrix/e1-pilot/SEARCH_SPACE.json@6a474e4a5defa23dfc71b2c6bca9e15a81b517aa
+c253f73315bb1dfd0645932ba0c970d0a88caf415c0e2a897351d0082bf7da16  metrix/CLAUDE.md@6a474e4a5defa23dfc71b2c6bca9e15a81b517aa
+exit=0
+$ bash -c git\ diff\ --quiet\ 6a474e4a5defa23dfc71b2c6bca9e15a81b517aa\ --\ metrix/e1-pilot/METRIX_E1_PROTOCOL.md\ metrix/e1-pilot/DATA_MANIFEST.json\ metrix/e1-pilot/SPLIT_MANIFEST.json\ metrix/e1-pilot/SEARCH_SPACE.json\ \&\&\ echo\ \'working\ tree\ identical\ to\ the\ freeze\ commit\ for\ the\ protocol\ and\ the\ three\ JSON\'
+working tree identical to the freeze commit for the protocol and the three JSON
+exit=0
+$ bash -c git\ diff\ --stat\ 92df1a60ac816ab02b250d32841397c73b9a67a7\ 6a474e4a5defa23dfc71b2c6bca9e15a81b517aa\ --\ metrix/e1-pilot/DATA_MANIFEST.json\ metrix/e1-pilot/SEARCH_SPACE.json\ metrix/CLAUDE.md\;\ echo\ \'diff\ exit\ \(empty\ stat\ =\ identical\):\'\ \$\?
+diff exit (empty stat = identical): 0
+exit=0
+$ python3 -I -c $'\nimport json, re, subprocess, sys\nH = sys.argv[1]\ndef j(p): return json.loads(subprocess.run([\'git\', \'cat-file\', \'blob\', H + \':\' + p], capture_output=True, check=True).stdout)\ndm, sm, ss = j(\'metrix/e1-pilot/DATA_MANIFEST.json\'), j(\'metrix/e1-pilot/SPLIT_MANIFEST.json\'), j(\'metrix/e1-pilot/SEARCH_SPACE.json\')\nprint(\'facts (160) canonical\', dm[\'name_generation\'][\'expected_facts_canonical_sha256\'])\nprint(\'anchor decoded texts (512) canonical\', dm[\'anchor_text\'][\'decoded_texts_canonical_sha256\'])\nprint(\'anchor source parquet\', re.search(r\'sha256 ([0-9a-f]{64})\', dm[\'anchor_text\'][\'source\']).group(1))\nprint(\'train_S.jsonl canonical\', dm[\'s_permutation\'][\'expected_train_S_canonical_sha256\'])\nprint(\'candidates.json canonical\', sm[\'candidates\'][\'candidate_mapping_sha256\'])\nprint(\'template_set_sha256\', sm[\'template_freeze\'][\'template_set_sha256\'])\nfor k, v in dm[\'model\'][\'tokenizer\'][\'files_sha256\'].items(): print(\'Qwen\', k, v)\nprint(\'parcae tokenizer.json\', dm[\'general_text\'][\'decode_tokenizer_json_sha256\'])\nprint(\'eval_sets.jsonl\', dm[\'general_text\'][\'source_file_sha256\'])\nprint(\'status\', dm[\'status\'], sm[\'status\'], ss[\'status\'], \'| frozen\', dm[\'frozen\'], sm[\'frozen\'], ss[\'frozen\'])\nprint(\'split_sha256\', json.dumps(sm[\'split_sha256\']))\nprint(\'files statuses\', sorted({v[\'status\'] for v in dm[\'files\'].values()}))\n' 6a474e4a5defa23dfc71b2c6bca9e15a81b517aa
+facts (160) canonical 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97
+anchor decoded texts (512) canonical 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408
+anchor source parquet 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22
+train_S.jsonl canonical 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e
+candidates.json canonical e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705
+template_set_sha256 2b52411326c218e9c51d947b2f4e0d77b0cdd5d6237f9ce25b57a872c48ce28f
+Qwen tokenizer.json aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4
+Qwen tokenizer_config.json d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101
+Qwen vocab.json ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910
+Qwen merges.txt 8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5
+parcae tokenizer.json e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77
+eval_sets.jsonl 8816fe5a39d8b89e8c4203bf7d660e798faa471d2b72b5ce43c411cf5925a155
+status PROTOCOL_FROZEN PROTOCOL_FROZEN PROTOCOL_FROZEN | frozen Owner 批准，2026-11-22 05:27 UTC Owner 批准，2026-11-22 05:27 UTC Owner 批准，2026-11-22 05:27 UTC
+split_sha256 {"train_F.jsonl": null, "train_S.jsonl": null, "train_Y.jsonl": null, "dev_qa.jsonl": null, "test_qa.jsonl": null}
+files statuses ['NOT_GENERATED']
+exit=0
