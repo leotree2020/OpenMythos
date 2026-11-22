@@ -1,7 +1,8 @@
 {
   "protocol": "METRIX-E1-PILOT",
   "version": "v1",
-  "status": "PROPOSED_NOT_FROZEN",
+  "status": "PROTOCOL_FROZEN",
+  "frozen": "Owner 批准，2026-11-22 05:27 UTC",
   "base": {
     "repository": "leotree2020/OpenMythos",
     "branch": "mythos-idea-thermo-v1",
@@ -319,6 +320,7 @@
     "draw": "3 distractors without replacement and the order of the 4 candidates from rng_rule(CANDIDATE_SEED, 'cand:<fact_id>')",
     "shared_by": "all templates, splits and arms of the fact",
     "duplicates": "forbidden",
+    "pool_too_small": "a distractor pool with fewer than 4 answers: IMPLEMENTATION_FAIL; no synthetic distractors are generated (protocol 2.5; supplement b, Task Order V1.2)",
     "exposure_matching": "every candidate of a learned fact occurs exactly once in the training corpus of F, L, A, S and Y; every candidate of an unread fact occurs zero times",
     "call_order": "one generator r = rng_rule(CANDIDATE_SEED, 'cand:<fact_id>') per fact; pool = the answers of the other facts with the same relation, stratum and exposure, in the fact order of name_generation (14 for learned, 4 for unread); d = r.sample(pool, 3); c = [answer] + d; r.shuffle(c); c is the order of the 4 candidates",
     "file": "candidates.json: one JSON object, key fact_id, value the list of the 4 candidates in that order; 160 keys",
@@ -369,15 +371,16 @@
       "test_part": {
         "pair": "anchor_text vs general_test.jsonl",
         "when": "in step 8 of protocol section 8, after general_test.jsonl is generated and before the TEST evaluation",
-        "count": "number of distinct shared word 13-grams across all documents: 13-grams are taken within each anchor document and within each window; the set of word 13-grams of the 512 anchor documents is intersected with the set of word 13-grams of all general_test.jsonl windows, and the size of the intersection is counted",
+        "count": "number of distinct shared word 13-grams across all documents: 13-grams are taken within each document (each anchor document, each window), never across documents; the word 13-grams of the 512 anchor documents are merged into one set, those of all general_test.jsonl windows into another, and the number of distinct elements of their intersection is counted",
+        "text": "the text from which the 13-grams are taken is the decode, with the protocol tokenizer, of the ids actually fed to the model (at most 128 ids per anchor document, at most 256 ids per window)",
         "limit": 0,
-        "computed_by": "the Executor and the data-auditor, each separately; the two results must be identical"
+        "computed_by": "the Executor and the data-auditor, each separately; the two results must be identical; if they differ: BLOCKED, report to the Owner (protocol section 11, ST10)"
       }
     },
     "command": "python -m metrix.e1_pilot.check_leakage --data <DATA_DIR> --split-manifest metrix/e1-pilot/SPLIT_MANIFEST.json --out <DATA_DIR>/leakage_report.json",
     "exit_code": "0 only if every check is within its limit",
     "test_split": "L1 and L2 use templates only; L3a, L3b, L4, L5 run on TEST questions only after test_qa.jsonl is generated; the TEST part of L6 (anchor_text vs general_test) runs after general_test.jsonl is generated in step 8 and before the TEST evaluation, computed separately by the Executor and the data-auditor with identical results, and outputs counts only (L6_general_text.test_part); at Gate 0, G0.1 does not require the parts of L1-L6 that involve TEST, they run in step 8 (protocol section 8)",
-    "test_part_over_limit": "if the TEST part of any of L3-L6 exceeds its limit: stop, do not evaluate TEST, status BLOCKED, report to the Owner (protocol section 11, ST10)",
+    "test_part_over_limit": "if the TEST part of any of L3-L6 exceeds its limit, or the Executor and data-auditor results for the TEST part of L6 differ: stop, do not evaluate TEST, status BLOCKED, report to the Owner (protocol section 11, ST10)",
     "generation_rule": "names occurring in anchor_text are rejected when they are generated (DATA_MANIFEST.json: name_generation.anchor_rule), so L3a and L3b hold by construction; the checks still run"
   },
   "hashing": {

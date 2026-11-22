@@ -1,0 +1,126 @@
+# Round 8 raw output: checks of the working tree that becomes the freeze commit (items 1-3 and supplement a-e), run before the commit. Host vm, CPU only. Written by the Executor (session_01J5mxaUfve5PtsqZQQDkJcJ). Sun Nov 22 06:04:12 UTC 2026
+# cwd /home/user/OpenMythos. Recorded by metrix/e1-pilot/reports/round5/logrun.sh. HEAD is 18076298 (parent of the freeze commit); the files checked are the working-tree versions. This file replaces the version in the superseded candidate 92df1a60 (that version is in reviews/92df1a60.../review_input.diff); no output line is cut here.
+$ git rev-parse HEAD
+180762987b2b0d8a18a3070edb16dd4b4c31911e
+exit=0
+$ git status --short
+M  metrix/CLAUDE.md
+M  metrix/e1-pilot/DATA_MANIFEST.json
+MM metrix/e1-pilot/METRIX_E1_PROTOCOL.md
+M  metrix/e1-pilot/SEARCH_SPACE.json
+MM metrix/e1-pilot/SPLIT_MANIFEST.json
+ M metrix/e1-pilot/reports/DEFERRED_MINORS.md
+A  metrix/e1-pilot/reports/round8/t0_copy_check.txt
+A  metrix/e1-pilot/reports/round8/t0_env.txt
+AM metrix/e1-pilot/reports/round8/t1_protocol_checks.txt
+A  metrix/e1-pilot/reports/round8/t1d_data_hashes.txt
+AM metrix/e1-pilot/tasks/ROUND8_TASKS.md
+?? metrix/e1-pilot/PROTOCOL_FROZEN
+?? metrix/e1-pilot/audit/r8_anchor.py
+?? metrix/e1-pilot/audit/r8_compare.py
+?? metrix/e1-pilot/audit/r8_facts.py
+?? metrix/e1-pilot/audit/r8_fetch.py
+?? metrix/e1-pilot/audit/r8_files.py
+?? metrix/e1-pilot/audit/r8_general.py
+?? metrix/e1-pilot/audit/r8_hashseed_probe.py
+?? metrix/e1-pilot/audit/r8_s_cands.py
+?? metrix/e1-pilot/audit/r8_templates.py
+?? metrix/e1-pilot/audit/r8_tokenizer.py
+?? metrix/e1-pilot/audit/r8_utf8_check.py
+?? metrix/e1-pilot/audit/stdout/92df1a60ac816ab02b250d32841397c73b9a67a7/
+?? metrix/e1-pilot/reports/ROUND8_REPORT.md
+?? metrix/e1-pilot/reports/round8/t5_frozen_hashes.txt
+?? metrix/e1-pilot/reports/round8/t5_protocol_frozen_check.txt
+?? metrix/e1-pilot/reports/round8/t6_supplement_recommit.txt
+?? metrix/e1-pilot/reviews/92df1a60ac816ab02b250d32841397c73b9a67a7/
+exit=0
+$ sha256sum metrix/e1-pilot/METRIX_E1_PROTOCOL.md metrix/e1-pilot/DATA_MANIFEST.json metrix/e1-pilot/SPLIT_MANIFEST.json metrix/e1-pilot/SEARCH_SPACE.json metrix/CLAUDE.md .claude/agents/code-reviewer.md .claude/agents/data-auditor.md
+141473498582e6c67dcdd9dbe35cc4b4e18fbfe4912d74bcfdf5fb60e6593baa  metrix/e1-pilot/METRIX_E1_PROTOCOL.md
+94ba8516044e9bf10c5ad907f2e905c5afd91833a383b7212737cf28170e8cf3  metrix/e1-pilot/DATA_MANIFEST.json
+7eb5d6edece5096ad107c4ba125fd539c2753d51e169c47556bfffeac18c7fff  metrix/e1-pilot/SPLIT_MANIFEST.json
+490d575d54b4cbd3902adb496817d89c82763ad22fa8efac8894bcb4a45a6258  metrix/e1-pilot/SEARCH_SPACE.json
+c253f73315bb1dfd0645932ba0c970d0a88caf415c0e2a897351d0082bf7da16  metrix/CLAUDE.md
+e38d091494059227d8d95896aa50858adc32f4750a5512b45bec97dd368932c6  .claude/agents/code-reviewer.md
+4201122829c31512859baa55d755a016073544f5c4a887f59bcfeef0abfdd833  .claude/agents/data-auditor.md
+exit=0
+$ python3 -I metrix/e1-pilot/reports/round6/table_check.py metrix/e1-pilot/METRIX_E1_PROTOCOL.md
+table rows checked: 168; rows whose cell count differs from the header: 0; unescaped special tokens: 0
+RESULT: PASS
+exit=0
+$ python3 -I -c $'\nimport json, sys\nd = sys.argv[1]\njs = {f: json.load(open(d + \'/\' + f, encoding=\'utf-8\')) for f in (\'DATA_MANIFEST.json\', \'SPLIT_MANIFEST.json\', \'SEARCH_SPACE.json\')}\nprint(\'json ok\')\nfor f, j in js.items():\n    print(f, \'| status\', j[\'status\'], \'| frozen\', j.get(\'frozen\'), \'| re-dump identical to file:\', json.dumps(j, indent=2, ensure_ascii=False) + \'\\n\' == open(d + \'/\' + f, encoding=\'utf-8\').read())\nB, E = \'<!-- BEGIN INLINE COPY: SEARCH_SPACE.json -->\', \'<!-- END INLINE COPY: SEARCH_SPACE.json -->\'\ndoc = open(d + \'/METRIX_E1_PROTOCOL.md\', encoding=\'utf-8\').read()\nassert doc.count(B) == 1 and doc.count(E) == 1\ninner = doc[doc.index(B) + len(B):doc.index(E)]\nblock = inner[len(\'\\n```json\\n\'):-len(\'```\\n\')]\nprint(\'inline copy identical (marked block):\', block == open(d + \'/SEARCH_SPACE.json\', encoding=\'utf-8\').read())\ndm, sm = js[\'DATA_MANIFEST.json\'], js[\'SPLIT_MANIFEST.json\']\nprint(\'tokenizer files_sha256:\', json.dumps(dm[\'model\'][\'tokenizer\'][\'files_sha256\']))\nprint(\'anchor decoded_texts_canonical_sha256:\', dm[\'anchor_text\'][\'decoded_texts_canonical_sha256\'])\nprint(\'facts\', dm[\'name_generation\'][\'expected_facts_canonical_sha256\'], \'| train_S\', dm[\'s_permutation\'][\'expected_train_S_canonical_sha256\'], \'| candidates\', sm[\'candidates\'][\'candidate_mapping_sha256\'], \'| template set\', sm[\'template_freeze\'][\'template_set_sha256\'])\nprint(\'records:\', dm[\'files\'][\'train_S.jsonl\'][\'record\'], \'|\', dm[\'files\'][\'candidates.json\'][\'record\'])\nprint(\'candidates.pool_too_small:\', sm[\'candidates\'][\'pool_too_small\'])\n' metrix/e1-pilot
+json ok
+DATA_MANIFEST.json | status PROTOCOL_FROZEN | frozen Owner 批准，2026-11-22 05:27 UTC | re-dump identical to file: True
+SPLIT_MANIFEST.json | status PROTOCOL_FROZEN | frozen Owner 批准，2026-11-22 05:27 UTC | re-dump identical to file: True
+SEARCH_SPACE.json | status PROTOCOL_FROZEN | frozen Owner 批准，2026-11-22 05:27 UTC | re-dump identical to file: True
+inline copy identical (marked block): True
+tokenizer files_sha256: {"tokenizer.json": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4", "tokenizer_config.json": "d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101", "vocab.json": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910", "merges.txt": "8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5"}
+anchor decoded_texts_canonical_sha256: 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408
+facts 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 | train_S 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e | candidates e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | template set 2b52411326c218e9c51d947b2f4e0d77b0cdd5d6237f9ce25b57a872c48ce28f
+records: one object per line {"fact_id", "answer_fact_id", "text"} (protocol 2.6); Review Gate round 7 ruling, item 1a | one JSON object {fact_id: [4 candidates]} (protocol 2.5); Review Gate round 7 ruling, item 1a
+candidates.pool_too_small: a distractor pool with fewer than 4 answers: IMPLEMENTATION_FAIL; no synthetic distractors are generated (protocol 2.5; supplement b, Task Order V1.2)
+exit=0
+$ python3 -I -c $'\nimport hashlib, json, re, sys\nsm = json.load(open(sys.argv[1], encoding=\'utf-8\'))\ndef norm(t):\n    t = t.replace(\'{E}\', \'<ENTITY>\').replace(\'{A}\', \'<ANSWER>\').lower()\n    return re.sub(\' +\', \' \', re.sub(r\'[^a-z0-9<> ]\', \' \', t)).strip()\nbad = [t[\'template_id\'] for t in sm[\'templates\'] if norm(t[\'text\']) != t[\'normalized\'] or hashlib.sha256(t[\'normalized\'].encode()).hexdigest() != t[\'normalized_sha256\']]\ns = hashlib.sha256(\'\\n\'.join(sorted(t[\'normalized_sha256\'] for t in sm[\'templates\'])).encode()).hexdigest()\nprint(\'templates\', len(sm[\'templates\']), \'| normalized / normalized_sha256 not reproduced:\', bad)\nprint(\'template_set_sha256 recomputed\', s, \'| manifest\', sm[\'template_freeze\'][\'template_set_sha256\'], \'| equal\', s == sm[\'template_freeze\'][\'template_set_sha256\'])\n' metrix/e1-pilot/SPLIT_MANIFEST.json
+templates 32 | normalized / normalized_sha256 not reproduced: []
+template_set_sha256 recomputed 2b52411326c218e9c51d947b2f4e0d77b0cdd5d6237f9ce25b57a872c48ce28f | manifest 2b52411326c218e9c51d947b2f4e0d77b0cdd5d6237f9ce25b57a872c48ce28f | equal True
+exit=0
+# Supplement b: distractor pool size per fact (same relation, stratum and exposure, excluding the fact itself) for the 160 facts of DATA_SEED regenerated in t1d_data_hashes.txt (canonical sha256 checked first).
+$ python3 -I -c $'\nimport collections, hashlib, json, sys\nraw = open(sys.argv[1], \'rb\').read()\nprint(\'facts file sha256\', hashlib.sha256(raw).hexdigest())\nfacts = json.loads(raw)\ncell = collections.Counter((f[\'relation\'], f[\'stratum\'], f[\'exposure\']) for f in facts)\nsize = {e: sorted({cell[(f[\'relation\'], f[\'stratum\'], e)] - 1 for f in facts if f[\'exposure\'] == e}) for e in (\'learned\', \'unread\')}\nprint(\'pool sizes by exposure:\', size, \'| minimum\', min(min(v) for v in size.values()), \'| facts with pool < 4:\', sum(cell[(f[\'relation\'], f[\'stratum\'], f[\'exposure\'])] - 1 < 4 for f in facts))\n' /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/r8/facts.json
+facts file sha256 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97
+pool sizes by exposure: {'learned': [14], 'unread': [4]} | minimum 4 | facts with pool < 4: 0
+exit=0
+# The following greps run with LC_ALL=C.UTF-8 so that "." matches characters, not bytes (a first run under the default byte locale split multi-byte characters; its output was dropped from this file before commit and the greps were re-run here).
+# Remaining PROPOSED / AWAITING / PENDING markers in the protocol and the three JSON (match with up to 30 characters of context).
+$ env LC_ALL=C.UTF-8 bash -c $'grep -n -o -E \'.{0,30}(PROPOSED|AWAITING_REVIEW_GATE|PENDING_REVIEW_GATE|\345\276\205 Review Gate).{0,30}\' metrix/e1-pilot/METRIX_E1_PROTOCOL.md metrix/e1-pilot/DATA_MANIFEST.json metrix/e1-pilot/SPLIT_MANIFEST.json metrix/e1-pilot/SEARCH_SPACE.json'
+metrix/e1-pilot/METRIX_E1_PROTOCOL.md:10:ll-clock 上限 4 小时,见第 7、8、13 节);PENDING_REVIEW_GATE 原只剩第 13 节的 2 项,已于冻结时按提案批准(Own
+metrix/e1-pilot/METRIX_E1_PROTOCOL.md:635:n Questions for Review Gate(原 PENDING_REVIEW_GATE 2 项,已按提案批准)
+metrix/e1-pilot/METRIX_E1_PROTOCOL.md:644:其余可执行参数都已写死;原标为 PROPOSED 的训练契约(第 7 节)、`SEARCH_SPACE.js
+metrix/e1-pilot/METRIX_E1_PROTOCOL.md:664:ew Gate 裁决(`ROUND3_REPORT.md`“待 Review Gate 决定”第 1 项;Round 3 code-reviewe
+metrix/e1-pilot/METRIX_E1_PROTOCOL.md:669:te 第 4 轮裁决(`ROUND4_REPORT.md`“待 Review Gate 决定”第 1 项;Round 4 code-reviewe
+metrix/e1-pilot/METRIX_E1_PROTOCOL.md:672:te 第 5 轮裁决(`ROUND5_REPORT.md`“待 Review Gate 决定”第 4 项;Round 5 data-auditor
+metrix/e1-pilot/METRIX_E1_PROTOCOL.md:681: 轮指令第 1a 项(`ROUND6_REPORT.md`“待 Review Gate 决定”第 1 项;R6 code-reviewer MAJ
+metrix/e1-pilot/METRIX_E1_PROTOCOL.md:688: 轮指令第 1a 项(`ROUND7_REPORT.md`“待 Review Gate 决定”第 2 项;`reviews/293b806d…/c
+metrix/e1-pilot/METRIX_E1_PROTOCOL.md:693:明;第 1 节 Non-claims | 训练契约表头“值(PROPOSED)”改为“值(冻结;Owner 批准，2026-11-22 
+metrix/e1-pilot/METRIX_E1_PROTOCOL.md:693:RCH_SPACE.json` 的 `status` 由 `PROPOSED`、两个 manifest 的 `status` 由 `PR
+metrix/e1-pilot/METRIX_E1_PROTOCOL.md:693:2 项值后加“在 Pilot 中只报告,不进门槛”;标题“(PENDING_REVIEW_GATE 仅此 2 项)”改为“(原 PENDING_REVIEW_
+metrix/e1-pilot/METRIX_E1_PROTOCOL.md:693:GATE 2 项,已按提案批准)”,表头“PROPOSED”改为“冻结值(按提案批准;Owner 批准，2026-11
+metrix/e1-pilot/METRIX_E1_PROTOCOL.md:693:05:27 UTC)”;末段“其余可执行参数都已写死或标为 PROPOSED;Review Gate 可以改动一次,”改为“其余可执行参
+metrix/e1-pilot/METRIX_E1_PROTOCOL.md:693:数都已写死;原标为 PROPOSED 的训练契约(第 7 节)、`SEARCH_SPACE.js
+metrix/e1-pilot/METRIX_E1_PROTOCOL.md:693:准，2026-11-22 05:27 UTC)。”。文件头“PENDING_REVIEW_GATE 只剩第 13 节的 2 项”改为“PENDING_REVI
+metrix/e1-pilot/METRIX_E1_PROTOCOL.md:693:1-22 05:27 UTC)”;第 1 节“margin 待 Review Gate,见第 13 节”改为“margin 见第 13 节,在 P
+metrix/e1-pilot/METRIX_E1_PROTOCOL.md:693:“改哪些 `status` 字段”):Owner 批准冻结,PROPOSED 各项改为冻结值;文件头、第 1 节与第 13 节末段的原文
+metrix/e1-pilot/METRIX_E1_PROTOCOL.md:694: | 同上 | 同上 | 文件头“状态”一行 | 原文“**AWAITING_REVIEW_GATE**(未冻结;冻结后本表改为 PROTOCOL_FROZEN
+exit=0
+$ env LC_ALL=C.UTF-8 bash -c $'grep -c \'Owner \346\211\271\345\207\206\357\274\2142026-11-22 05:27 UTC\' metrix/e1-pilot/METRIX_E1_PROTOCOL.md metrix/e1-pilot/DATA_MANIFEST.json metrix/e1-pilot/SPLIT_MANIFEST.json metrix/e1-pilot/SEARCH_SPACE.json metrix/CLAUDE.md; grep -c \'\345\257\271\347\205\247 Task Order V1.2 \350\241\245\351\275\220\' metrix/e1-pilot/METRIX_E1_PROTOCOL.md'
+metrix/e1-pilot/METRIX_E1_PROTOCOL.md:8
+metrix/e1-pilot/DATA_MANIFEST.json:1
+metrix/e1-pilot/SPLIT_MANIFEST.json:1
+metrix/e1-pilot/SEARCH_SPACE.json:1
+metrix/CLAUDE.md:1
+5
+exit=0
+$ env LC_ALL=C.UTF-8 bash -c grep\ -n\ \'\^##\ 14\'\ metrix/e1-pilot/METRIX_E1_PROTOCOL.md
+646:## 14. 变更记录
+exit=0
+# Old wording that must be gone outside section 14: matching line numbers (section 14 starts at the line printed above).
+$ env LC_ALL=C.UTF-8 bash -c $'grep -n -o -E \'\345\217\226\347\254\254\344\270\200\350\241\214,\345\216\273\351\246\226\345\260\276\347\251\272\347\231\275\\(\350\276\223\345\207\272\345\274\200\345\244\264|\346\225\260\344\272\244\351\233\206\347\232\204\345\205\203\347\264\240\344\270\252\346\225\260|leading spaces of the output are removed by the strip step|\345\217\252\346\234\211\343\200\214\346\260\270\344\271\205\343\200\215\347\232\204\350\243\201\345\206\263\345\217\257\345\206\231\345\205\245\346\234\254\346\226\207\344\273\266|\345\257\271 F \351\200\211\345\256\232\351\205\215\347\275\256\347\232\204 3 \344\270\252 checkpoint \345\220\204\350\257\204\346\265\213\344\270\244\346\254\241|\345\271\266\347\273\231\345\207\272 \316\264 \342\210\210 \\{0.05, 0.10, 0.15\\} \344\270\213\347\232\204\346\211\200\351\234\200 fact \346\225\260\' metrix/e1-pilot/METRIX_E1_PROTOCOL.md metrix/e1-pilot/DATA_MANIFEST.json metrix/e1-pilot/SPLIT_MANIFEST.json metrix/CLAUDE.md'
+metrix/e1-pilot/METRIX_E1_PROTOCOL.md:689:数交集的元素个数
+metrix/e1-pilot/METRIX_E1_PROTOCOL.md:690:取第一行,去首尾空白(输出开头
+metrix/e1-pilot/METRIX_E1_PROTOCOL.md:690:leading spaces of the output are removed by the strip step
+metrix/e1-pilot/METRIX_E1_PROTOCOL.md:692:只有「永久」的裁决可写入本文件
+metrix/e1-pilot/METRIX_E1_PROTOCOL.md:695:对 F 选定配置的 3 个 checkpoint 各评测两次
+metrix/e1-pilot/METRIX_E1_PROTOCOL.md:697:并给出 δ ∈ {0.05, 0.10, 0.15} 下的所需 fact 数
+exit=0
+$ git diff --stat HEAD
+ metrix/CLAUDE.md                                   |   2 +-
+ metrix/e1-pilot/DATA_MANIFEST.json                 |  24 +++-
+ metrix/e1-pilot/METRIX_E1_PROTOCOL.md              |  56 ++++++---
+ metrix/e1-pilot/SEARCH_SPACE.json                  |   3 +-
+ metrix/e1-pilot/SPLIT_MANIFEST.json                |  11 +-
+ metrix/e1-pilot/reports/DEFERRED_MINORS.md         |  20 ++++
+ metrix/e1-pilot/reports/round8/t0_copy_check.txt   | 132 +++++++++++++++++++++
+ metrix/e1-pilot/reports/round8/t0_env.txt          |  61 ++++++++++
+ .../e1-pilot/reports/round8/t1_protocol_checks.txt | 113 ++++++++++++++++++
+ metrix/e1-pilot/reports/round8/t1d_data_hashes.txt |  83 +++++++++++++
+ metrix/e1-pilot/tasks/ROUND8_TASKS.md              |  45 +++++++
+ 11 files changed, 520 insertions(+), 30 deletions(-)
+exit=0

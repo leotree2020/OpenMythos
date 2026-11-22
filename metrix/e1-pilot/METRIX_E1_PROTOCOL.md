@@ -3,11 +3,11 @@
 | 字段 | 值 |
 |---|---|
 | Task ID | METRIX-E1-PILOT-PROTOCOL-AUTHORING-V1 |
-| 状态 | **AWAITING_REVIEW_GATE**(未冻结;冻结后本表改为 PROTOCOL_FROZEN) |
+| 状态 | **PROTOCOL_FROZEN**(Owner 批准，2026-11-22 05:27 UTC;冻结提交打标签 `metrix-e1-pilot-frozen`,其完整 hash 与该提交下本文件、三个 JSON 的 sha256 记在同目录的 `PROTOCOL_FROZEN` 文件中) |
 | 本文件的作用 | 执行 E1-PILOT 只需要本文件、同目录三个 JSON,以及第 0 节固定的外部来源 |
 | 本文件不包含 | 任何训练、评测结果或结论;任何 TEST 数据 |
 
-Task Order 与其 “Mandatory consistency amendments A–L” 同时生效;两者冲突处以修订条款为准。据此:fact 聚合函数固定为 mean;Gate 0 只使用 TRAIN 与 DEV;模型已由 Project Owner 指定;算力已决定(一张 NVIDIA A100 80GB,GPU wall-clock 上限 4 小时,见第 7、8、13 节);PENDING_REVIEW_GATE 只剩第 13 节的 2 项。所有改动见第 14 节变更记录。
+Task Order 与其 “Mandatory consistency amendments A–L” 同时生效;两者冲突处以修订条款为准。据此:fact 聚合函数固定为 mean;Gate 0 只使用 TRAIN 与 DEV;模型已由 Project Owner 指定;算力已决定(一张 NVIDIA A100 80GB,GPU wall-clock 上限 4 小时,见第 7、8、13 节);PENDING_REVIEW_GATE 原只剩第 13 节的 2 项,已于冻结时按提案批准(Owner 批准，2026-11-22 05:27 UTC)。所有改动见第 14 节变更记录。
 
 ## 0. 标识、出处与环境
 
@@ -52,7 +52,7 @@ Task Order 与其 “Mandatory consistency amendments A–L” 同时生效;两�
 - 不推断 continual learning 是否有效;E1-PILOT 只有一个训练阶段。
 - 不把 Δ(L−F)、Δ(A−F) 当作机制结论;它们在 Pilot 里只是描述量,用来估计 E1-V1 需要的规模。
 - 不推断对其它模型、其它知识类型或更大事实量成立。
-- 不对 general damage 下 non-inferiority 结论(margin 待 Review Gate,见第 13 节)。
+- 不对 general damage 下 non-inferiority 结论(margin 见第 13 节,在 Pilot 中只报告)。
 
 ## 2. Data Specification
 
@@ -123,6 +123,7 @@ unread fact 的 entity 和 answer 在任何 arm 的训练文本和锚文本里�
 
 - 每条 fact 4 个候选:1 个真实答案 + 3 个干扰项。
 - **干扰项的池**:同 relation、同 stratum、同暴露类别(learned 或 unread)的其它 fact 的答案。
+- 干扰项的池少于 4 个答案即 IMPLEMENTATION_FAIL,不生成合成干扰项。
 - 抽取:用 `rng_rule(CANDIDATE_SEED, "cand:<fact_id>")` 不放回抽 3 个并决定 4 个候选的顺序;不得重复。
 - **调用方式(细节 5)**:每条 fact 一个生成器 `r = rng_rule(CANDIDATE_SEED, "cand:<fact_id>")`;池按第 2.2 节的 fact 生成顺序排列,不含该 fact 自己(learned 14 个,unread 4 个);依次调用 `d = r.sample(池, 3)`,令 `c = [a_f] + d`,再调用 `r.shuffle(c)`;`c` 就是 4 个候选的顺序。每条 fact 的生成器各自独立,fact 之间的处理顺序不影响结果。
 - `candidates.json`:一个 JSON 对象,键为 fact_id,值为该 fact 的 4 个候选(按上面的顺序),共 160 个键。
@@ -165,12 +166,12 @@ unread fact 的 entity 和 answer 在任何 arm 的训练文本和锚文本里�
 | L3b | 每个 learned answer 在 `anchor_text` 中的出现次数(不分大小写的子串);保证 arm A 对每个候选的暴露与 F 相同 | 0 |
 | L4 | 实例化后的 DEV / TEST 问句在任何训练语料中逐字出现的次数 | 0 |
 | L5 | learned 与 unread 的 fact_id 集合相交数;320 个字符串中的重复数 | 0 |
-| L6 | 锚文本与通用文本共享的词 13-gram 数;“词”= Python `str.split()` 的结果(按空白切分,区分大小写);Qwen token 13-gram 只报告,不设上限。TEST 部分(锚文本对 `general_test.jsonl`):时机为第 8 步生成 `general_test.jsonl` 之后、TEST 评测之前;计数为跨全部文档的共享词 13-gram 种类数(13-gram 在每篇锚文档、每个窗口之内取;锚文本 512 篇的词 13-gram 集合与 `general_test.jsonl` 全部窗口的词 13-gram 集合求交,数交集的元素个数),上限 0;由 Executor 与 data-auditor 各自计算,结果须一致 | 0 |
+| L6 | 锚文本与通用文本共享的词 13-gram 数;“词”= Python `str.split()` 的结果(按空白切分,区分大小写);Qwen token 13-gram 只报告,不设上限。TEST 部分(锚文本对 `general_test.jsonl`):时机为第 8 步生成 `general_test.jsonl` 之后、TEST 评测之前;计数为跨全部文档的共享词 13-gram 种类数:13-gram 在每篇文档(每篇锚文档、每个窗口)之内取,不跨篇拼接;锚文本 512 篇的词 13-gram 合并为一个集合,`general_test.jsonl` 全部窗口的词 13-gram 合并为一个集合,两者求交,计交集的种类数(元素个数);取 13-gram 的文本是实际送入模型的 id 用本协议分词器解码所得(锚文档最多 128 个 id,窗口最多 256 个 id),上限 0;由 Executor 与 data-auditor 各自计算,结果须一致;两者结果不一致时按 BLOCKED 处理并报告 Owner(ST10) | 0 |
 
 learned fact 的 entity 与 answer 同时出现在 TRAIN 陈述句和 QA 中是被测对象,不算泄漏。
 
 执行接口(实现属于下一个 Task):
-`python -m metrix.e1_pilot.check_leakage --data <DATA_DIR> --split-manifest metrix/e1-pilot/SPLIT_MANIFEST.json --out <DATA_DIR>/leakage_report.json`,仅当 6 项都在上限内时退出码为 0。L1、L2 只用模板,协议撰写时已可计算;L3–L5 中涉及 TEST 的部分在 `test_qa.jsonl` 生成之后才运行;L6 的 TEST 部分在 `general_test.jsonl` 生成之后才运行(时机与口径见上表 L6 一行与第 8 节第 8 步)。L3–L6 任一项的 TEST 部分超限,按第 11 节 ST10 处理。第 2.2 节的锚文本规则使 L3a、L3b 在生成时就成立,检查仍然执行。
+`python -m metrix.e1_pilot.check_leakage --data <DATA_DIR> --split-manifest metrix/e1-pilot/SPLIT_MANIFEST.json --out <DATA_DIR>/leakage_report.json`,仅当 6 项都在上限内时退出码为 0。L1、L2 只用模板,协议撰写时已可计算;L3–L5 中涉及 TEST 的部分在 `test_qa.jsonl` 生成之后才运行;L6 的 TEST 部分在 `general_test.jsonl` 生成之后才运行(时机与口径见上表 L6 一行与第 8 节第 8 步)。L3–L6 任一项的 TEST 部分超限,或 L6 的 TEST 部分 Executor 与 data-auditor 的结果不一致,按第 11 节 ST10 处理。第 2.2 节的锚文本规则使 L3a、L3b 在生成时就成立,检查仍然执行。
 
 ## 4. Arms(6 个)
 
@@ -207,7 +208,7 @@ CB(f) = 1[ s_ST(f, a_f) > max_{c ≠ a_f} s_ST(f, c) ]
 Acc_CB(arm) = (1/120) · Σ_{f ∈ learned} CB(f)
 ```
 
-**Free-generation exact match(次指标)**:对 `chat(q) + "The answer is"`(与 `s_QA` 的上下文相同)做贪心解码:`do_sample=False`,每步取概率最大的 token;这一设置写死,覆盖固定 revision 的 `generation_config.json` 中的采样默认值(`do_sample` true、`temperature` 0.6、`top_k` 20、`top_p` 0.95)。最多 16 个新 token,生成出 `<|im_end|>`(id 151645)或 `<|endoftext|>`(id 151643)即停。新 token 解码成文本时跳过特殊 token(`skip_special_tokens=True`;这两个停止 token 都是特殊 token,不进入输出)。归一化之前,先删除输出中的 `<think>…</think>` 片段:从 `<think>` 到其后第一个 `</think>`(两者都含),每处都删;这两个标记(id 151667、151668)不是特殊 token,`skip_special_tokens=True` 不会去掉它们。归一化:取第一行,去首尾空白(输出开头的空格在这一步去掉),去开头的 “the ”(不分大小写),去结尾的 `. , ; : ! ?`,casefold。`EM(f, q) = 1[norm(output) == norm(a_f)]`;聚合方式同上。
+**Free-generation exact match(次指标)**:对 `chat(q) + "The answer is"`(与 `s_QA` 的上下文相同)做贪心解码:`do_sample=False`,每步取概率最大的 token;这一设置写死,覆盖固定 revision 的 `generation_config.json` 中的采样默认值(`do_sample` true、`temperature` 0.6、`top_k` 20、`top_p` 0.95)。最多 16 个新 token,生成出 `<|im_end|>`(id 151645)或 `<|endoftext|>`(id 151643)即停。新 token 解码成文本时跳过特殊 token(`skip_special_tokens=True`;这两个停止 token 都是特殊 token,不进入输出)。归一化之前,先删除输出中的 `<think>…</think>` 片段:从 `<think>` 到其后第一个 `</think>`(两者都含),每处都删;这两个标记(id 151667、151668)不是特殊 token,`skip_special_tokens=True` 不会去掉它们。归一化:删除 `<think>…</think>` 片段之后,先去掉开头的空白(含空格与换行),再取第一行,去首尾空白,去开头的 “the ”(不分大小写),去结尾的 `. , ; : ! ?`,casefold。`EM(f, q) = 1[norm(output) == norm(a_f)]`;聚合方式同上。
 
 **全对率(次指标,只报告)**:`AllCorrect(f) = Π_{q} correct(f, q)`。
 
@@ -258,7 +259,7 @@ E1-PILOT 只有一个训练阶段:Retention 记为 NOT_TESTED,不进任何门槛
 
 **训练契约(冻结后不得改;F、L、A、S 的事实 token 数相同)**
 
-| 项 | 值(PROPOSED) |
+| 项 | 值(冻结;Owner 批准，2026-11-22 05:27 UTC) |
 |---|---|
 | 优化器 | AdamW,betas (0.9, 0.999),eps 1e-8 |
 | 训练量 | 对 120 条 TRAIN 陈述句读 20 遍 |
@@ -294,7 +295,8 @@ E1-PILOT 只有一个训练阶段:Retention 记为 NOT_TESTED,不进任何门槛
 {
   "protocol": "METRIX-E1-PILOT",
   "version": "v1",
-  "status": "PROPOSED",
+  "status": "PROTOCOL_FROZEN",
+  "frozen": "Owner 批准，2026-11-22 05:27 UTC",
   "search_seed": 101,
   "selection": {
     "split": "DEV only",
@@ -516,12 +518,13 @@ E1-PILOT 只有一个训练阶段:Retention 记为 NOT_TESTED,不进任何门槛
 1. 记录环境与出处;在 CPU 上生成除 TEST 以外的数据,把哈希写入两个 manifest 并提交。
    GPU 检查(第 7 节):`torch.cuda.get_device_name(0)` 以 `NVIDIA A100` 开头且 `total_memory ≥ 79 GiB`,否则 BLOCKED(ST8)。第一次加载模型时把设备全名写入实验记录,并从此刻起累计 GPU wall-clock;此后每次训练或评测运行开始时核对设备全名(ST9)。
 2. 运行泄漏检查。
+   预检(正式运行前;ST11):在 A100 上跑第一个配置的前 20 步,记录每步耗时、tokens/s、峰值显存与预估总时长;预估超过 3.5 小时即停止并报告 Owner。
 3. 评测 N:TRAIN 闭卷、DEV-QA、general DEV。
 4. F 的 6 个配置(种子 101)→ 选定 → 用选定配置检查阳性对照。
 5. L、A 的搜索 → 选定。
 6. F、L、A 的另外两个种子;S、Y 各三个种子。
 7. 按下表判定 Gate 0。
-8. Gate 0 通过后:提交冻结记录(选定配置、数据哈希、checkpoint 哈希)→ 生成 `test_qa.jsonl` 与 `general_test.jsonl` → 对 TEST 运行 L3–L5 → L6 的 TEST 部分(锚文本对 `general_test.jsonl`):在本步生成 `general_test.jsonl` 之后、TEST 评测之前,由 Executor 与 data-auditor 各自计算一次,只输出计数(口径与上限见第 3 节 L6),两者的结果须一致 → L3–L6 任一项的 TEST 部分超限:停止,不评测 TEST,状态记为 BLOCKED,报告 Owner(ST10) → 全部在上限内时,**TEST 只评一次**。
+8. Gate 0 通过后:提交冻结记录(选定配置、数据哈希、checkpoint 哈希)→ 生成 `test_qa.jsonl` 与 `general_test.jsonl` → 对 TEST 运行 L3–L5 → L6 的 TEST 部分(锚文本对 `general_test.jsonl`):在本步生成 `general_test.jsonl` 之后、TEST 评测之前,由 Executor 与 data-auditor 各自计算一次,只输出计数(口径与上限见第 3 节 L6),两者的结果须一致 → L3–L6 任一项的 TEST 部分超限,或 L6 的 TEST 部分两者结果不一致:停止,不评测 TEST,状态记为 BLOCKED,报告 Owner(ST10) → 全部在上限内且 L6 两者结果一致时,**TEST 只评一次**。
 
 **算力边界**:第 3–8 步全部在设备全名与首次记录逐字相同的一张 NVIDIA A100 80GB 上执行,累计 GPU wall-clock ≤ 4 小时(第 7 节);任何一步若会使累计时间超过上限,按 ST7 停下,不得静默继续,也不得为节省时间删减本节的任何一步。
 
@@ -536,9 +539,9 @@ E1-PILOT 只有一个训练阶段:Retention 记为 NOT_TESTED,不进任何门槛
 | G0.5 | seed-average `Acc(F, DEV-QA, learned)` ≥ 0.70;seed-average Δ(F−N) 的 95% CI 下界 > 0;每个种子的 Δ(F−N) > 0 |
 | G0.6 | seed-average Δ(S−N)(真实映射,DEV-QA,learned):点估计 ≤ +0.05 且 95% CI 上界 ≤ +0.12 |
 | G0.7 | seed-average Δ(Y−N)(DEV-QA,learned):点估计 ≤ +0.05 且 95% CI 上界 ≤ +0.12 |
-| G0.8 | 复现:对 F 选定配置的 3 个 checkpoint 各评测两次,所有 (fact, 问句) 的预测完全相同,候选分数差 ≤ 1e-4,每个通用窗口的 NLL 差 ≤ 1e-5 |
+| G0.8 | 复现:同一 checkpoint 两次评测,候选分数差 ≤ 1e-4;某题两次中任一次最高两个候选分数差 ≤ 1e-4 时允许预测不同,其余预测须完全相同;并列判为错。实现须开启 PyTorch 确定性设置并记录 |
 | G0.9 | 上限检查:seed-average `Acc(F, DEV-QA, learned)` ≤ 0.95 |
-| G0.10 | 能估计 E1-V1 的规模:对 Δ(L−F)、Δ(A−F) 的 seed-average 配对差 d_f 算出标准差 σ_d(有限),并给出 δ ∈ {0.05, 0.10, 0.15} 下的所需 fact 数 `n = ((1.96 + 0.84) · σ_d / δ)²`(双侧 0.05、功效 0.80),再用 Pilot 的 fact 按 n 重抽样验证 CI 半宽 |
+| G0.10 | 能估计 E1-V1 的规模:对 Δ(L−F)、Δ(A−F) 的 seed-average 配对差 d_f 算出标准差 σ_d(有限);分别用 σ_d 的 bootstrap 2.5 分位、点估计、97.5 分位,按 `n = ((1.96 + 0.84) · σ_d / δ)²`(双侧 0.05、功效 0.80)计算 δ ∈ {0.05, 0.10, 0.15} 下的所需 fact 数,以最大者作为 E1-V1 规划依据;再用 Pilot 的 fact 按 n 重抽样验证 CI 半宽。Pilot 的规模估计是规划估计,不是保证 |
 
 - 任一不满足 → **PIPELINE_NOT_QUALIFIED**,禁止进入 E1-V1,TEST 不生成、不评测。
 - 越过 G0.3 或 G0.9 的界限不代表机制失败:它触发 benchmark 重新校准(新协议版本)。
@@ -563,12 +566,12 @@ E1-PILOT 只有一个训练阶段:Retention 记为 NOT_TESTED,不进任何门槛
 |---|---|
 | PASS | 第 8 节:Gate 0 与 T1–T3 全部满足 |
 | PIPELINE_NOT_QUALIFIED | Gate 0 或 T1–T3 任一不满足;同时给出下面的一个原因 |
-| IMPLEMENTATION_FAIL | G0.1、G0.2、G0.6、G0.7、G0.8 不满足,或 Y 的 token 数比越界,或实现与本协议不一致 |
+| IMPLEMENTATION_FAIL | G0.1、G0.2、G0.6、G0.7、G0.8 不满足,或 Y 的 token 数比越界,或第 2.5 节干扰项的池少于 4 个答案,或配置冻结前读取 TEST(ST13),或实现与本协议不一致 |
 | OPTIMIZATION_FAIL | G0.4 不满足(在给定训练量内连 TRAIN 陈述句都没有记住) |
 | OPTIMIZATION_OR_CAPACITY_UNRESOLVED | G0.4 满足但 G0.5 或 T1 的正确率不满足 |
 | CAPACITY_LIMIT | 仅当更强的模型在同一协议下 PASS 之后才可使用;在此之前必须保留 OPTIMIZATION_OR_CAPACITY_UNRESOLVED |
 | HYPOTHESIS_FAIL | 保留给 E1-V1 的机制比较;E1-PILOT 没有机制假设,不使用 |
-| BLOCKED | 环境、资源、数据来源或库版本不满足第 0 节,无法按协议执行;或第 8 步 L3–L6 任一项的 TEST 部分超限(ST10) |
+| BLOCKED | 环境、资源、数据来源或库版本不满足第 0 节,无法按协议执行;或第 8 步 L3–L6 任一项的 TEST 部分超限,或 L6 的 TEST 部分 Executor 与 data-auditor 的结果不一致(ST10);或任何数据、manifest、模板或候选的哈希,或模型、分词器版本与冻结值不一致(ST12) |
 | NOT_TESTED | 未运行,或在没有违反任何条件的情况下提前停止 |
 
 看到结果之后不得修改任何门槛;协议本身有缺陷时,开新版本(PROTOCOL_REVISION_V2)。
@@ -615,7 +618,10 @@ Compute accounting 的算法:训练 FLOPs ≈ 6 · P · T,前向 FLOPs ≈ 2 · 
 | ST7 | 累计 GPU wall-clock 超过 4 小时(第 7 节) | 停并报告进度;延长上限、换硬件或降级都需 Owner 决定并记录,不得静默继续 |
 | ST8 | 环境不满足第 0 节 | BLOCKED |
 | ST9 | 某次运行开始时读到的设备全名与首次记录不同 | 整批作废:本次 Pilot 的全部结果不得用于任何判断;BLOCKED;在设备全名一致的机器上从第 8 节第 3 步重新开始 |
-| ST10 | 第 8 步 L3–L6 任一项的 TEST 部分超限 | 停止;不评测 TEST;BLOCKED;报告 Owner |
+| ST10 | 第 8 步 L3–L6 任一项的 TEST 部分超限;或 L6 的 TEST 部分 Executor 与 data-auditor 的结果不一致 | 停止;不评测 TEST;BLOCKED;报告 Owner |
+| ST11 | 第 8 节第 2 步预检的预估总时长超过 3.5 小时 | 停止;报告 Owner |
+| ST12 | 任何数据、manifest、模板或候选的哈希,或模型、分词器版本与冻结值不一致 | 停止;BLOCKED |
+| ST13 | 配置冻结前读取 TEST | IMPLEMENTATION_FAIL;本次 Pilot 全部作废 |
 
 ## 12. Out of Scope
 
@@ -626,16 +632,16 @@ Compute accounting 的算法:训练 FLOPs ≈ 6 · P · T,前向 FLOPs ≈ 2 · 
 - NONE / 拒答校准。
 - 探索沙盒(SANDBOX)。
 
-## 13. Open Questions for Review Gate(PENDING_REVIEW_GATE 仅此 2 项)
+## 13. Open Questions for Review Gate(原 PENDING_REVIEW_GATE 2 项,已按提案批准)
 
-| # | 字段 | PROPOSED | 理由 |
+| # | 字段 | 冻结值(按提案批准;Owner 批准，2026-11-22 05:27 UTC) | 理由 |
 |---|---|---|---|
 | 1 | E1-V1 目标 fact 数 | 320(240 learned + 80 unread),并在 Pilot 后按 G0.10 的公式重算 | 若配对差的标准差为 0.5,检出 0.10 的差需要约 196 条 learned fact;取 240 留余量 |
-| 2 | general-damage non-inferiority margin | dNLL ≤ +0.03(约 +3% PPL) | 与本仓库此前实验使用的容忍幅度一致;Pilot 里 general damage 只报告,不进门槛 |
+| 2 | general-damage non-inferiority margin | dNLL ≤ +0.03(约 +3% PPL);在 Pilot 中只报告,不进门槛 | 与本仓库此前实验使用的容忍幅度一致;Pilot 里 general damage 只报告,不进门槛 |
 
 **已决定,不再待定**:原第 3 项“CPU wall-clock 上限”由 Metrix 指令 Round 1 第 8 项(2026-11-12)决定:CPU 不执行任何模型训练或评测(CPU wall-clock 上限对模型计算为 0);整个 Pilot 在一张 NVIDIA A100 80GB 上执行,型号写死,GPU wall-clock 上限 4 小时(第 7、8、11 节)。
 
-其余可执行参数都已写死或标为 PROPOSED;Review Gate 可以改动一次,PROTOCOL_FROZEN 之后任何门槛、split 规则、指标、搜索预算或 Gate 定义的改动都必须开新协议版本。
+其余可执行参数都已写死;原标为 PROPOSED 的训练契约(第 7 节)、`SEARCH_SPACE.json` 与本节 2 项已于冻结时改为冻结值(Owner 批准，2026-11-22 05:27 UTC)。PROTOCOL_FROZEN 之后任何门槛、split 规则、指标、搜索预算或 Gate 定义的改动都必须开新协议版本。
 
 ## 14. 变更记录
 
@@ -679,5 +685,19 @@ Compute accounting 的算法:训练 FLOPs ≈ 6 · P · T,前向 FLOPs ≈ 2 · 
 | v1-r7 | 2026-11-22 03:25:59 | `7fea9181` | 第 5 节 general damage;第 2.7 节锚文本;第 2.2 节锚文本规则;`DATA_MANIFEST.json: general_text.window_rule`、`anchor_text.document_rule`(新增) | n_w 原文“窗口的 token 数”改为“窗口实际送入模型的 id 序列长度:送入模型的是第 2.7 节用本协议分词器切分后截断得到的原始 id(最多 256 个),不解码再编码”。锚文本原文“各截到 128 token”改为“每篇最多 128 token(取前 128 个),不足则取全长”;第 2.2 节“512 篇、各截到 128 token 后解码的文本”改为“512 篇、每篇最多 128 token、解码后的文本” | Review Gate 第 6 轮裁决,第 7 轮指令第 1e 项(待决第 4、5 项;`reviews/599230f9…/code-reviewer.md` 第 18、19 行):n_w 与 v1-r6 改过的 n_x 口径不一;第 340 篇锚文档全文只有 123 个 token,“截到 128”与实际不符。数值不变 |
 | v1-r7 | 2026-11-22 03:25:59 | `7fea9181` | 第 5 节 EM;`DATA_MANIFEST.json: model.input_convention.em_generation` | 新增“归一化之前,先删除输出中的 `<think>…</think>` 片段:从 `<think>` 到其后第一个 `</think>`(两者都含),每处都删;这两个标记(id 151667、151668)不是特殊 token,`skip_special_tokens=True` 不会去掉它们” | Review Gate 第 6 轮裁决,第 7 轮指令第 1f 项(待决第 11 项第 1 点;第 5 轮待决 7 第 1 点):两个标记不是特殊 token(`reports/round7/t1f_think_tokens.txt`),原文的 `skip_special_tokens=True` 去不掉;它们出现在输出第一行时,归一化后的输出不可能等于答案 |
 | v1-r7 | 2026-11-22 03:25:59 | `7fea9181` | 第 2.5 节(新增“调用方式(细节 5)”“`candidates.json`”两条与复现哈希);第 2.6 节(新增“调用方式(细节 4)”与复现哈希);`DATA_MANIFEST.json: s_permutation`(字符串改为对象,原文保留为 `rule`);`SPLIT_MANIFEST.json: candidates.call_order`、`file`、`reference_implementation`、`candidate_mapping_sha256_note`(新增),`candidate_mapping_sha256`(null 改为全值) | 写死两处随机流的调用顺序与文件记录格式:S 每个 cell 一个生成器,每次从 `list(range(15))` 开始调用一次 `shuffle`,有不动点用同一生成器重抽;候选每条 fact 一个生成器,依次 `sample(池, 3)`、`shuffle([a_f] + d)`,池按 fact 生成顺序。`DATA_SEED` 下 `train_S.jsonl` 规范化 SHA-256 `686fdd2f…`,`candidates.json` `e5d15c99…`(全值见正文与 manifest) | Review Gate 第 6 轮裁决,第 7 轮指令第 1g 项(待决第 11 项第 2 点;第 4 轮待决 8):原文只写了 purpose,没有写调用方式,只凭协议不能逐字节复现这两个文件。两次独立运行逐字节一致(`reports/round7/t1g_gen_s_cands.txt`) |
+| v1-r8(冻结) | 冻结提交的提交时间(见 `PROTOCOL_FROZEN`) | 冻结提交(标签 `metrix-e1-pilot-frozen`) | 第 2.5、2.6 节(文字不变);`DATA_MANIFEST.json: files.train_S.jsonl.record`、`files.candidates.json.record`(新增) | 确认 `train_S.jsonl` 每行 `{"fact_id", "answer_fact_id", "text"}`(第 2.6 节)、`candidates.json` 为 `{fact_id: [4 个候选]}`(第 2.5 节);两节的文字 v1-r7 已如此写,本次不改。`DATA_MANIFEST.json: files` 中这两个文件新增 `record` 键,写明同一格式。两个复现哈希不变 | Review Gate 第 7 轮裁决,第 8 轮指令第 1a 项(`ROUND7_REPORT.md`“待 Review Gate 决定”第 2 项;`reviews/293b806d…/code-reviewer.md` 第 31 行):两个文件的记录格式原由 Executor 自定,规范化哈希依赖这一选择 |
+| v1-r8(冻结) | 同上 | 同上 | 第 3 节 L6 一行与执行接口;第 8 节第 8 步;第 9 节 BLOCKED 一行;第 11 节 ST10;`SPLIT_MANIFEST.json: leakage_checks.L6_general_text.test_part.count`、`test_part.text`(新增)、`test_part.computed_by`、`leakage_checks.test_part_over_limit` | L6 TEST 部分计数的括注原文“(13-gram 在每篇锚文档、每个窗口之内取;锚文本 512 篇的词 13-gram 集合与 `general_test.jsonl` 全部窗口的词 13-gram 集合求交,数交集的元素个数)”改为“:13-gram 在每篇文档(每篇锚文档、每个窗口)之内取,不跨篇拼接;锚文本 512 篇的词 13-gram 合并为一个集合,`general_test.jsonl` 全部窗口的词 13-gram 合并为一个集合,两者求交,计交集的种类数(元素个数);取 13-gram 的文本是实际送入模型的 id 用本协议分词器解码所得(锚文档最多 128 个 id,窗口最多 256 个 id)”;“结果须一致”后加“两者结果不一致时按 BLOCKED 处理并报告 Owner(ST10)”。执行接口、第 8 步、第 9 节 BLOCKED 一行与 ST10 的事件各加“L6 的 TEST 部分 Executor 与 data-auditor 的结果不一致”;第 8 步“全部在上限内时”改为“全部在上限内且 L6 两者结果一致时” | 第 8 轮指令第 1b 项(待决第 3、5 项;`reviews/293b806d…/code-reviewer.md` 第 32、41 行):“跨全部文档”也可读成 n-gram 跨篇拼接;计算用的文本没有定义;两方结果不一致时没有规定动作 |
+| v1-r8(冻结) | 同上 | 同上 | 第 5 节 EM;`DATA_MANIFEST.json: model.input_convention.em_generation` | 原文“归一化:取第一行,去首尾空白(输出开头的空格在这一步去掉),去开头的 “the ”……”改为“归一化:删除 `<think>…</think>` 片段之后,先去掉开头的空白(含空格与换行),再取第一行,去首尾空白,去开头的 “the ”……”。manifest 中原文“EM compares norm(output) with norm(answer), and leading spaces of the output are removed by the strip step of the normalization”改为同样的顺序(删除后先去开头空白、再取第一行) | 第 8 轮指令第 1c 项(待决第 6 项第 1 点;`reviews/293b806d…/data-auditor.md` 第 149 行起,M1):`enable_thinking=false` 的生成提示以 `<think>\n\n</think>\n\n` 结尾,模型若再生成这一段,删除后输出以空行开头,原来先“取第一行”会得到空串 |
+| v1-r8(冻结) | 同上 | 同上 | `DATA_MANIFEST.json: model.tokenizer.files_sha256`、`model.tokenizer.files_note`、`anchor_text.decoded_texts_canonical_sha256`、`anchor_text.decoded_texts_hash_rule`(均新增) | 写入固定 revision 的 4 个分词器文件(`tokenizer.json`、`tokenizer_config.json`、`vocab.json`、`merges.txt`;该 revision 的仓库中没有其它分词器文件)的 sha256,以及锚文本 512 篇解码文本的规范化 SHA-256 `8828bc4f…` 与其算法(全值见 manifest) | 第 8 轮指令第 1d 项(待决第 12 项;`reviews/293b806d…/code-reviewer_report-commit.md` 第 52–53 行):这些哈希原先只记在报告与原始输出中,不在 manifest 里。本轮重算见 `reports/round8/t0_env.txt`、`reports/round8/t1d_data_hashes.txt` |
+| v1-r8(冻结) | 同上 | 同上 | `metrix/CLAUDE.md` 第 8 节(不属于本协议;指令要求第 1 项全部记入本节) | 原文“只有「永久」的裁决可写入本文件。”改为“「永久」与「本阶段」的裁决可写入本文件,写入时须注明作用范围;「本阶段」的裁决在本阶段结束时失效。”,并注明出处、批准、时间与原因 | 第 8 轮指令第 1e 项(待决第 4 项;`reviews/293b806d…/code-reviewer.md` 第 33 行):原文与第 7 轮写入的第 5 节第 6 条、第 10 节两条「本阶段」裁决矛盾 |
+| v1-r8(冻结) | 同上 | 同上 | 第 7 节训练契约表头;`SEARCH_SPACE.json`(及第 7 节内联副本)、`DATA_MANIFEST.json`、`SPLIT_MANIFEST.json` 的 `status`;第 13 节;文件头说明;第 1 节 Non-claims | 训练契约表头“值(PROPOSED)”改为“值(冻结;Owner 批准，2026-11-22 05:27 UTC)”,表中数值不变。`SEARCH_SPACE.json` 的 `status` 由 `PROPOSED`、两个 manifest 的 `status` 由 `PROPOSED_NOT_FROZEN` 改为 `PROTOCOL_FROZEN`,三个文件都在 `status` 后新增 `"frozen": "Owner 批准，2026-11-22 05:27 UTC"`;内联副本随之更新。第 13 节两项按提案批准:第 1 项值不变(320 条 fact,Pilot 后按 G0.10 重算),第 2 项值后加“在 Pilot 中只报告,不进门槛”;标题“(PENDING_REVIEW_GATE 仅此 2 项)”改为“(原 PENDING_REVIEW_GATE 2 项,已按提案批准)”,表头“PROPOSED”改为“冻结值(按提案批准;Owner 批准，2026-11-22 05:27 UTC)”;末段“其余可执行参数都已写死或标为 PROPOSED;Review Gate 可以改动一次,”改为“其余可执行参数都已写死;原标为 PROPOSED 的训练契约(第 7 节)、`SEARCH_SPACE.json` 与本节 2 项已于冻结时改为冻结值(Owner 批准，2026-11-22 05:27 UTC)。”。文件头“PENDING_REVIEW_GATE 只剩第 13 节的 2 项”改为“PENDING_REVIEW_GATE 原只剩第 13 节的 2 项,已于冻结时按提案批准(Owner 批准，2026-11-22 05:27 UTC)”;第 1 节“margin 待 Review Gate,见第 13 节”改为“margin 见第 13 节,在 Pilot 中只报告” | 第 8 轮指令第 2 项(待决第 12 项中“改哪些 `status` 字段”):Owner 批准冻结,PROPOSED 各项改为冻结值;文件头、第 1 节与第 13 节末段的原文在批准后不再成立 |
+| v1-r8(冻结) | 同上 | 同上 | 文件头“状态”一行 | 原文“**AWAITING_REVIEW_GATE**(未冻结;冻结后本表改为 PROTOCOL_FROZEN)”改为“**PROTOCOL_FROZEN**(Owner 批准，2026-11-22 05:27 UTC;冻结提交打标签 `metrix-e1-pilot-frozen`,其完整 hash 与该提交下本文件、三个 JSON 的 sha256 记在同目录的 `PROTOCOL_FROZEN` 文件中)” | 第 8 轮指令第 3 项:Owner 于 2026-11-22 05:27 UTC 批准冻结 |
+| v1-r8(冻结) | 同上 | 同上 | 第 8 节 G0.8 | 原文“复现:对 F 选定配置的 3 个 checkpoint 各评测两次,所有 (fact, 问句) 的预测完全相同,候选分数差 ≤ 1e-4,每个通用窗口的 NLL 差 ≤ 1e-5”整条改为“复现:同一 checkpoint 两次评测,候选分数差 ≤ 1e-4;某题两次中任一次最高两个候选分数差 ≤ 1e-4 时允许预测不同,其余预测须完全相同;并列判为错。实现须开启 PyTorch 确定性设置并记录”。原文的“F 选定配置的 3 个 checkpoint”与“每个通用窗口的 NLL 差 ≤ 1e-5”不再出现 | 对照 Task Order V1.2 补齐;第 8 轮补充第 a 项(`tasks/ROUND8_TASKS.md` 第二段;Owner 回答“按所发内容执行”,按原文字面写入) |
+| v1-r8(冻结) | 同上 | 同上 | 第 2.5 节(新增一条);第 9 节 IMPLEMENTATION_FAIL 一行;`SPLIT_MANIFEST.json: candidates.pool_too_small`(新增) | 新增“干扰项的池少于 4 个答案即 IMPLEMENTATION_FAIL,不生成合成干扰项。”;第 9 节 IMPLEMENTATION_FAIL 的适用情形加“或第 2.5 节干扰项的池少于 4 个答案”。`DATA_SEED` 下各 fact 的池为 learned 14 个、unread 4 个,不触发;候选与冻结哈希不变 | 对照 Task Order V1.2 补齐;第 8 轮补充第 b 项(`tasks/ROUND8_TASKS.md` 第二段;Owner 回答“按所发内容执行”,按原文字面写入) |
+| v1-r8(冻结) | 同上 | 同上 | 第 8 节 G0.10 | 原文“并给出 δ ∈ {0.05, 0.10, 0.15} 下的所需 fact 数 `n = …`(双侧 0.05、功效 0.80)”改为“分别用 σ_d 的 bootstrap 2.5 分位、点估计、97.5 分位,按 `n = …`(双侧 0.05、功效 0.80)计算 δ ∈ {0.05, 0.10, 0.15} 下的所需 fact 数,以最大者作为 E1-V1 规划依据”;句末加“Pilot 的规模估计是规划估计,不是保证” | 对照 Task Order V1.2 补齐;第 8 轮补充第 c 项(`tasks/ROUND8_TASKS.md` 第二段;Owner 回答“按所发内容执行”,按原文字面写入) |
+| v1-r8(冻结) | 同上 | 同上 | 第 8 节第 2 步(新增“预检”);第 11 节(新增 ST11) | 新增“预检(正式运行前;ST11):在 A100 上跑第一个配置的前 20 步,记录每步耗时、tokens/s、峰值显存与预估总时长;预估超过 3.5 小时即停止并报告 Owner。”;ST11:“第 8 节第 2 步预检的预估总时长超过 3.5 小时 → 停止;报告 Owner”。第 8 节各步编号不变 | 对照 Task Order V1.2 补齐;第 8 轮补充第 d 项(`tasks/ROUND8_TASKS.md` 第二段;Owner 回答“按所发内容执行”,按原文字面写入) |
+| v1-r8(冻结) | 同上 | 同上 | 第 11 节(新增 ST12、ST13);第 9 节 BLOCKED、IMPLEMENTATION_FAIL 两行 | ST12:“任何数据、manifest、模板或候选的哈希,或模型、分词器版本与冻结值不一致 → 停止;BLOCKED”;ST13:“配置冻结前读取 TEST → IMPLEMENTATION_FAIL;本次 Pilot 全部作废”。第 9 节 BLOCKED 的适用情形加 ST12,IMPLEMENTATION_FAIL 加“或配置冻结前读取 TEST(ST13)” | 对照 Task Order V1.2 补齐;第 8 轮补充第 e 项(`tasks/ROUND8_TASKS.md` 第二段;Owner 回答“按所发内容执行”,按原文字面写入) |
+
+注(v1-r8):一个提交不能包含自身的 hash,冻结之后补填又会改动冻结的协议,所以 v1-r8 各行的“时间”与“提交”写作“冻结提交”;冻结提交的完整 hash 与提交时间记在 `PROTOCOL_FROZEN` 文件中,并由标签 `metrix-e1-pilot-frozen` 指向。
 
 注:根目录 `CLAUDE.md`(宪章)第 6 节标题中的日期 “2026-11-13” 是 JST(日本标准时间,UTC+9)。该节由提交 `8ce8c896` 加入,提交时间 2026-11-12 15:25:19 UTC,即 2026-11-13 00:25:19 JST。本表的时间都是 UTC。

@@ -1,0 +1,83 @@
+# Round 8 raw output (item 1d and the freeze record): anchor text, facts, train_S and candidates regenerated with the reference scripts already in the repository; tokenizer-file check. Host vm, CPU only, tokenizer files only, no model weights, no TEST data. Written by the Executor (session_01J5mxaUfve5PtsqZQQDkJcJ). Sun Nov 22 05:35:23 UTC 2026
+# SP = /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad. cwd metrix/e1-pilot. Manifests read here are those of HEAD 18076298 (unchanged in the working tree at this time). Recorded by reports/round5/logrun.sh.
+$ git -C ../.. rev-parse HEAD
+180762987b2b0d8a18a3070edb16dd4b4c31911e
+exit=0
+$ git -C ../.. status --short
+?? metrix/e1-pilot/reports/round8/
+exit=0
+$ /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/venv/bin/python -I reports/round2/anchor_check.py --manifest DATA_MANIFEST.json --tokenizer-dir /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/dl/qwen_tok --cache-dir /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/dl/parquet --anchor-out /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/r8/anchor.json
+[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
+anchor source: SandyResearch/fineweb-edu-shuffled@4d1138c0e4d51d98813997ce3560e05a32bf91de data/sample-100BT/train/shard_00000.parquet
+file sha256 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22, pinned 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22, match True
+documents read 527, kept 512, anchor texts canonical sha256 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408, total chars 309172
+exit=0
+$ /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/venv/bin/python -I reports/round2/gen_facts.py --manifest DATA_MANIFEST.json --tokenizer-dir /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/dl/qwen_tok --anchor /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/r8/anchor.json --out /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/r8/facts.json
+[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
+pid 735, PYTHONHASHSEED=None, anchor rule on
+facts 160 (learned 120, unread 40), distinct strings 320
+facts canonical sha256: 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97
+cell log canonical sha256: 38f04096f2da2cd0922f4281e616f131cc240088e32ab2834d6009c50fb52bb1
+cell log: [{"cell": "capital/natural", "entity_draws": 28, "target_pair": [3, 3], "answer_draws": 84}, {"cell": "capital/random", "entity_draws": 20, "target_pair": [5, 5], "answer_draws": 52}, {"cell": "currency/natural", "entity_draws": 31, "target_pair": [3, 3], "answer_draws": 82}, {"cell": "currency/random", "entity_draws": 20, "target_pair": [6, 6], "answer_draws": 46}, {"cell": "founder/natural", "entity_draws": 30, "target_pair": [3, 3], "answer_draws": 81}, {"cell": "founder/random", "entity_draws": 21, "target_pair": [5, 5], "answer_draws": 45}, {"cell": "river/natural", "entity_draws": 34, "target_pair": [3, 3], "answer_draws": 89}, {"cell": "river/random", "entity_draws": 20, "target_pair": [6, 6], "answer_draws": 42}]
+exit=0
+$ /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/venv/bin/python -I reports/round2/anchor_check.py --manifest DATA_MANIFEST.json --tokenizer-dir /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/dl/qwen_tok --facts /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/r8/facts.json --cache-dir /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/dl/parquet --anchor-out /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/r8/anchor2.json
+[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
+anchor source: SandyResearch/fineweb-edu-shuffled@4d1138c0e4d51d98813997ce3560e05a32bf91de data/sample-100BT/train/shard_00000.parquet
+file sha256 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22, pinned 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22, match True
+documents read 527, kept 512, anchor texts canonical sha256 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408, total chars 309172
+L3a unread entities              strings  40, occurrences 0, strings found 0   -> limit 0: PASS
+L3a unread answers               strings  40, occurrences 0, strings found 0   -> limit 0: PASS
+L3b learned answers              strings 120, occurrences 0, strings found 0   -> limit 0: PASS
+report only: learned entities    strings 120, occurrences 0, strings found 0 
+L3 (a + b): PASS
+exit=0
+$ cmp /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/r8/anchor.json /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/r8/anchor2.json
+exit=0
+$ env PYTHONHASHSEED=0 /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/venv/bin/python -I reports/round7/gen_s_cands.py --facts /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/r8/facts.json --data-manifest DATA_MANIFEST.json --split-manifest SPLIT_MANIFEST.json --out-dir /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/r8/gen1
+pid 758, PYTHONHASHSEED=0, python 3.13.18
+facts canonical sha256 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97, expected 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97, match True
+S derangement attempts per cell: {"capital/natural": 3, "capital/random": 5, "currency/natural": 1, "currency/random": 6, "founder/natural": 2, "founder/random": 1, "river/natural": 2, "river/random": 6}
+train_S.jsonl   rows 120, byte_sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e, canonical_sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e
+candidates.json facts 160, byte_sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705, canonical_sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705
+first S row: The capital of Krultrouth is Kishan. | first candidates: ["Thunae", "Linnuth", "Baszaes", "Kaethnis"]
+self-checks: train_S derangement within cell, learned strings exactly once, unread strings 0; candidates 4 distinct, true answer once, distractors from the 2.5 pool
+RESULT: PASS
+exit=0
+$ env PYTHONHASHSEED=31337 /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/venv/bin/python -I reports/round7/gen_s_cands.py --facts /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/r8/facts.json --data-manifest DATA_MANIFEST.json --split-manifest SPLIT_MANIFEST.json --out-dir /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/r8/gen2
+pid 760, PYTHONHASHSEED=31337, python 3.13.18
+facts canonical sha256 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97, expected 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97, match True
+S derangement attempts per cell: {"capital/natural": 3, "capital/random": 5, "currency/natural": 1, "currency/random": 6, "founder/natural": 2, "founder/random": 1, "river/natural": 2, "river/random": 6}
+train_S.jsonl   rows 120, byte_sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e, canonical_sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e
+candidates.json facts 160, byte_sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705, canonical_sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705
+first S row: The capital of Krultrouth is Kishan. | first candidates: ["Thunae", "Linnuth", "Baszaes", "Kaethnis"]
+self-checks: train_S derangement within cell, learned strings exactly once, unread strings 0; candidates 4 distinct, true answer once, distractors from the 2.5 pool
+RESULT: PASS
+exit=0
+$ bash -c cmp\ /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/r8/gen1/train_S.jsonl\ /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/r8/gen2/train_S.jsonl\ \&\&\ cmp\ /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/r8/gen1/candidates.json\ /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/r8/gen2/candidates.json\ \&\&\ echo\ BOTH_RUNS_BYTE_IDENTICAL
+BOTH_RUNS_BYTE_IDENTICAL
+exit=0
+$ sha256sum /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/r8/facts.json /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/r8/gen1/train_S.jsonl /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/r8/gen1/candidates.json
+406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97  /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/r8/facts.json
+686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e  /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/r8/gen1/train_S.jsonl
+e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705  /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/r8/gen1/candidates.json
+exit=0
+$ /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/venv/bin/python -I -c $'\nimport hashlib, json, sys\ntexts = json.load(open(sys.argv[1], encoding=\'utf-8\'))[\'texts\']\nblob = json.dumps(texts, sort_keys=True, ensure_ascii=False, separators=(\',\', \':\'), allow_nan=False).encode(\'utf-8\')\nprint(\'anchor texts: %d; canonical sha256 of the JSON list (protocol section 0 rule) %s\' % (len(texts), hashlib.sha256(blob).hexdigest()))' /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/r8/anchor.json
+anchor texts: 512; canonical sha256 of the JSON list (protocol section 0 rule) 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408
+exit=0
+# Tokenizer files: copy only the four tokenizer files of the pinned revision (repo tree in t0_env.txt) into a separate directory, load offline, and compare with the six-file directory used above.
+$ cp /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/dl/qwen_tok/tokenizer.json /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/dl/qwen_tok/tokenizer_config.json /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/dl/qwen_tok/vocab.json /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/dl/qwen_tok/merges.txt /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/r8/tok4/
+exit=0
+$ bash -c cd\ /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/r8/tok4\ \&\&\ ls\ -1\ \|\ xargs\ sha256sum
+8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5  merges.txt
+aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4  tokenizer.json
+d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101  tokenizer_config.json
+ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910  vocab.json
+exit=0
+$ env HF_HUB_OFFLINE=1 /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/venv/bin/python -I -c $'\nimport sys\nfrom transformers import AutoTokenizer\na = AutoTokenizer.from_pretrained(sys.argv[1]); b = AutoTokenizer.from_pretrained(sys.argv[2])\nprint(\'classes\', type(a).__name__, type(b).__name__, \'vocab\', len(a), len(b))\ns = [\'The capital of Brazia is Torvund.\', \' Torvund\', \'KZT-47\', \'What is the capital of X?\']\nprint(\'encode equal:\', all(a.encode(x, add_special_tokens=False) == b.encode(x, add_special_tokens=False) for x in s))\nm = [{\'role\': \'user\', \'content\': \'What is the capital of X?\'}]\nca = a.apply_chat_template(m, tokenize=False, add_generation_prompt=True, enable_thinking=False)\ncb = b.apply_chat_template(m, tokenize=False, add_generation_prompt=True, enable_thinking=False)\nprint(\'chat template equal:\', ca == cb); print(repr(ca))\nprint(\'all_special_ids equal:\', a.all_special_ids == b.all_special_ids, a.all_special_ids)' /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/r8/tok4 /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/dl/qwen_tok
+[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
+classes Qwen2Tokenizer Qwen2Tokenizer vocab 151669 151669
+encode equal: True
+chat template equal: True
+'<|im_start|>user\nWhat is the capital of X?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n'
+all_special_ids equal: True [151645, 151643, 151644, 151646, 151647, 151648, 151649, 151650, 151651, 151652, 151653, 151654, 151655, 151656]
+exit=0

@@ -59,7 +59,7 @@ PROTOCOL_FROZEN 的发出与修改、租用 GPU、生成或评测 TEST、删除�
 
 - Reviewer / Auditor 与 Executor 意见不同:由 Review Gate 裁决。
 - 协议未覆盖的情况:停止并报告,由 Review Gate 提出方案。
-- Review Gate 的裁决写入决定记录时须注明作用范围:本次提交 / 本阶段 / 永久。只有「永久」的裁决可写入本文件。
+- Review Gate 的裁决写入决定记录时须注明作用范围:本次提交 / 本阶段 / 永久。「永久」与「本阶段」的裁决可写入本文件,写入时须注明作用范围;「本阶段」的裁决在本阶段结束时失效。（出处：Review Gate 第 7 轮裁决（第 8 轮指令第 1e 项），Owner 批准，2026-11-22 05:27 UTC；原因：原文只允许「永久」的裁决写入本文件，与已写入的第 5 节第 6 条、第 10 节的「本阶段」裁决矛盾，见 metrix/e1-pilot/reports/ROUND7_REPORT.md「待 Review Gate 决定」第 4 项）
 
 ## 9. 汇报格式
 

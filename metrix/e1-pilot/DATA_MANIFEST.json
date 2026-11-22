@@ -1,7 +1,8 @@
 {
   "protocol": "METRIX-E1-PILOT",
   "version": "v1",
-  "status": "PROPOSED_NOT_FROZEN",
+  "status": "PROTOCOL_FROZEN",
+  "frozen": "Owner 批准，2026-11-22 05:27 UTC",
   "base": {
     "repository": "leotree2020/OpenMythos",
     "branch": "mythos-idea-thermo-v1",
@@ -14,7 +15,14 @@
     "license": "Apache-2.0",
     "tokenizer": {
       "repo": "Qwen/Qwen3-1.7B",
-      "revision": "70d244cc86ccca08cf5af4e1e306ecf908b1ad5e"
+      "revision": "70d244cc86ccca08cf5af4e1e306ecf908b1ad5e",
+      "files_sha256": {
+        "tokenizer.json": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4",
+        "tokenizer_config.json": "d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101",
+        "vocab.json": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910",
+        "merges.txt": "8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5"
+      },
+      "files_note": "all tokenizer files of the pinned revision (the repository tree at this revision has no other tokenizer file); tokenizer_config.json contains the chat template; SHA-256 of the file bytes as downloaded (round 8, Review Gate round 7 ruling, item 1d)"
     },
     "architecture": "Qwen3ForCausalLM, 28 layers, hidden size 2048, about 1.72e9 parameters",
     "recurrence_depth": "not applicable (no recurrent core)",
@@ -28,7 +36,7 @@
       "qa": "chat template of the pinned revision, one user turn, add_generation_prompt=true, enable_thinking=false (fixed, not a parameter), no system prompt",
       "candidate_scoring": "chat(q) + 'The answer is' + ' ' + c: the assistant turn opens with the fixed prefix 'The answer is'; only the tokens of ' ' + c are scored; nothing follows the candidate; K = K_st; reference implementation metrix/e1-pilot/reports/round3/scoring_input.py",
       "train_closed_book": "s_ST scores ' ' + c after prefix(f), the text of the TRAIN statement before the answer without the space before the answer; no special token is prepended to prefix(f) (protocol section 5)",
-      "em_generation": "greedy decoding with do_sample=False (the token of highest probability at each step); fixed, and it overrides the sampling defaults of the pinned generation_config.json (do_sample true, temperature 0.6, top_k 20, top_p 0.95); continues chat(q) + 'The answer is', the same context as candidate scoring; at most 16 new tokens; stops when <|im_end|> (151645) or <|endoftext|> (151643) is generated; the new tokens are decoded with special tokens skipped (skip_special_tokens=True), so neither stop token is in the output; EM compares norm(output) with norm(answer), and leading spaces of the output are removed by the strip step of the normalization (protocol section 5); before the normalization every <think>...</think> fragment of the output is deleted (from <think> to the next </think>, both included, every occurrence); <think> (151667) and </think> (151668) are not special tokens, so skip_special_tokens=True does not remove them (protocol section 5)",
+      "em_generation": "greedy decoding with do_sample=False (the token of highest probability at each step); fixed, and it overrides the sampling defaults of the pinned generation_config.json (do_sample true, temperature 0.6, top_k 20, top_p 0.95); continues chat(q) + 'The answer is', the same context as candidate scoring; at most 16 new tokens; stops when <|im_end|> (151645) or <|endoftext|> (151643) is generated; the new tokens are decoded with special tokens skipped (skip_special_tokens=True), so neither stop token is in the output; EM compares norm(output) with norm(answer) (protocol section 5); before the normalization every <think>...</think> fragment of the output is deleted (from <think> to the next </think>, both included, every occurrence); <think> (151667) and </think> (151668) are not special tokens, so skip_special_tokens=True does not remove them; after the deletion the normalization first removes the leading whitespace (spaces and newlines), then takes the first line, strips, removes a leading 'the ' (case-insensitive), removes trailing . , ; : ! ? and casefolds (protocol section 5)",
       "general_text_and_anchor": "general-damage windows and arm A anchor documents: no special token is prepended (no <|endoftext|>); the first token has no context and is not scored and gets no KL term; t starts at 2 (protocol sections 4 and 5)"
     },
     "libraries": {
@@ -230,7 +238,9 @@
     "selection": "first 512 documents in file order with at least 600 characters",
     "truncate_to_model_tokens": 128,
     "document_rule": "each document has at most 128 tokens of the protocol tokenizer (the first 128); a document with fewer tokens is used at its full length",
-    "schedule": "step s uses documents (4*s + i) mod 512, i = 0..3"
+    "schedule": "step s uses documents (4*s + i) mod 512, i = 0..3",
+    "decoded_texts_canonical_sha256": "8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408",
+    "decoded_texts_hash_rule": "canonical SHA-256 (hashing rule of this manifest) of the JSON list of the 512 anchor texts in document order; text i = decode of the first at most 128 ids of encode(document i, add_special_tokens=False) with the pinned tokenizer (transformers 5.22.2 decode, default arguments); reference implementation metrix/e1-pilot/reports/round2/anchor_check.py (round 8, Review Gate round 7 ruling, item 1d)"
   },
   "files": {
     "facts.jsonl": {
@@ -249,7 +259,8 @@
       "content": "120 statements with permuted answers (arm S)",
       "status": "NOT_GENERATED",
       "byte_sha256": null,
-      "canonical_sha256": null
+      "canonical_sha256": null,
+      "record": "one object per line {\"fact_id\", \"answer_fact_id\", \"text\"} (protocol 2.6); Review Gate round 7 ruling, item 1a"
     },
     "train_Y.jsonl": {
       "content": "240 style-only sentences (arm Y)",
@@ -267,7 +278,8 @@
       "content": "candidate lists of all 160 facts",
       "status": "NOT_GENERATED",
       "byte_sha256": null,
-      "canonical_sha256": null
+      "canonical_sha256": null,
+      "record": "one JSON object {fact_id: [4 candidates]} (protocol 2.5); Review Gate round 7 ruling, item 1a"
     },
     "general_dev.jsonl": {
       "content": "100 general-text windows (25 per domain)",
