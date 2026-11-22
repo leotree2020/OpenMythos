@@ -1,0 +1,17 @@
+# Data Auditor run. host vm, CPU only (no GPU, no torch, tokenizer files only); 2026-11-22 05:48:39 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/auditor/venv/bin/python -I -B r8_hashseed_probe.py
+python 3.13.18 /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/auditor/venv/bin/python
+flags ['-I'] PYTHONHASHSEED=0: flags.hash_randomization 1 | ignore_environment 1 | env PYTHONHASHSEED 0 | hash("abc") -8018007557724269836
+flags ['-I'] PYTHONHASHSEED=0: flags.hash_randomization 1 | ignore_environment 1 | env PYTHONHASHSEED 0 | hash("abc") 6354552541991710559
+flags ['-I'] PYTHONHASHSEED=31337: flags.hash_randomization 1 | ignore_environment 1 | env PYTHONHASHSEED 31337 | hash("abc") -3154985665776366664
+flags ['-I'] PYTHONHASHSEED=31337: flags.hash_randomization 1 | ignore_environment 1 | env PYTHONHASHSEED 31337 | hash("abc") -5087601325024633395
+flags (none) PYTHONHASHSEED=0: flags.hash_randomization 0 | ignore_environment 0 | env PYTHONHASHSEED 0 | hash("abc") -4594863902769663758
+flags (none) PYTHONHASHSEED=0: flags.hash_randomization 0 | ignore_environment 0 | env PYTHONHASHSEED 0 | hash("abc") -4594863902769663758
+flags (none) PYTHONHASHSEED=31337: flags.hash_randomization 1 | ignore_environment 0 | env PYTHONHASHSEED 31337 | hash("abc") 4156869236424505951
+flags (none) PYTHONHASHSEED=31337: flags.hash_randomization 1 | ignore_environment 0 | env PYTHONHASHSEED 31337 | hash("abc") 4156869236424505951
+flags ['-I']: two runs with PYTHONHASHSEED=0 give the same hash('abc'): False
+flags (none): two runs with PYTHONHASHSEED=0 give the same hash('abc'): True
+conclusion: with -I the variable is IGNORED | without -I it is honoured
+RESULT: PASS
+exit=0

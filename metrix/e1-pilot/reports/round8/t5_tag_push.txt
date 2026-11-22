@@ -1,0 +1,50 @@
+# Round 8 raw output (item 5): tag the freeze commit and push the branch (fast-forward) and the tag. Host vm. Written by the Executor (session_01J5mxaUfve5PtsqZQQDkJcJ). Sun Nov 22 09:03:08 UTC 2026
+# cwd /home/user/OpenMythos. Recorded by metrix/e1-pilot/reports/round5/logrun.sh (stdout+stderr of git push included). No force push.
+$ git ls-remote origin refs/heads/metrix-e1-pilot-protocol-v1 refs/tags/metrix-\*
+180762987b2b0d8a18a3070edb16dd4b4c31911e	refs/heads/metrix-e1-pilot-protocol-v1
+exit=0
+$ git merge-base --is-ancestor 180762987b2b0d8a18a3070edb16dd4b4c31911e HEAD
+exit=0
+$ git log --oneline -3
+5c8a965 metrix: E1-PILOT round 8 item 5, PROTOCOL_FROZEN for freeze commit 6a474e4a; reviews and auditor output of the freeze commit
+6a474e4 metrix: E1-PILOT round 8 freeze commit (rulings 1a-1e, PROPOSED values frozen, supplement a-e per Task Order V1.2, status PROTOCOL_FROZEN)
+1807629 metrix: E1-PILOT round 7 report, deferred items (sections 1.7-1.8), review outputs (work commits and report commit), auditor scripts and stdout, freeze hashes
+exit=0
+$ git tag -a metrix-e1-pilot-frozen -m $'METRIX-E1-PILOT protocol v1 frozen (freeze commit 6a474e4a5defa23dfc71b2c6bca9e15a81b517aa). Owner \346\211\271\345\207\206\357\274\2142026-11-22 05:27 UTC. Record: metrix/e1-pilot/PROTOCOL_FROZEN (added in the next commit).' 6a474e4a5defa23dfc71b2c6bca9e15a81b517aa
+exit=0
+$ git rev-parse metrix-e1-pilot-frozen metrix-e1-pilot-frozen\^\{commit\}
+663a8bfc3e0812cf99f7b4a04636755fba6ff294
+6a474e4a5defa23dfc71b2c6bca9e15a81b517aa
+exit=0
+$ git cat-file -p metrix-e1-pilot-frozen
+object 6a474e4a5defa23dfc71b2c6bca9e15a81b517aa
+type commit
+tag metrix-e1-pilot-frozen
+tagger Claude <noreply@anthropic.com> 1795338188 +0000
+
+METRIX-E1-PILOT protocol v1 frozen (freeze commit 6a474e4a5defa23dfc71b2c6bca9e15a81b517aa). Owner 批准，2026-11-22 05:27 UTC. Record: metrix/e1-pilot/PROTOCOL_FROZEN (added in the next commit).
+exit=0
+$ git push origin metrix-e1-pilot-protocol-v1
+To https://github.com/leotree2020/OpenMythos
+   1807629..5c8a965  metrix-e1-pilot-protocol-v1 -> metrix-e1-pilot-protocol-v1
+exit=0
+$ git push origin metrix-e1-pilot-frozen
+error: RPC failed; HTTP 403 curl 22 The requested URL returned error: 403
+send-pack: unexpected disconnect while reading sideband packet
+fatal: the remote end hung up unexpectedly
+Everything up-to-date
+exit=1
+$ git ls-remote origin refs/heads/metrix-e1-pilot-protocol-v1 refs/tags/metrix-e1-pilot-frozen\*
+5c8a965736105063c5fd12b2d71c4e22fc28bf27	refs/heads/metrix-e1-pilot-protocol-v1
+exit=0
+# appended Sun Nov 22 09:03:55 UTC 2026: PROTOCOL_FROZEN as committed in 5c8a9657 (blob id and sha256), to tie t5_protocol_frozen_check_6a474e4a.txt (which checked the working-tree file, sha256 299f4fcf...) to the committed blob
+$ git ls-tree 5c8a965736105063c5fd12b2d71c4e22fc28bf27 metrix/e1-pilot/PROTOCOL_FROZEN
+100644 blob 46cf92f5490a14edccda2b6a226bb6cf89b6756e	metrix/e1-pilot/PROTOCOL_FROZEN
+exit=0
+$ bash -c git\ cat-file\ blob\ 5c8a965736105063c5fd12b2d71c4e22fc28bf27:metrix/e1-pilot/PROTOCOL_FROZEN\ \|\ sha256sum
+299f4fcf1dc69b88bca3d24c344206fbd51f93c8d0a796774df94d56720f2bdf  -
+exit=0
+# appended Sun Nov 22 09:13:06 UTC 2026: commit time of 5c8a9657 (report-commit review asked for the raw output)
+$ git log -1 --format=%H\ %cI\ %P 5c8a965736105063c5fd12b2d71c4e22fc28bf27
+5c8a965736105063c5fd12b2d71c4e22fc28bf27 2026-11-22T09:02:56+00:00 6a474e4a5defa23dfc71b2c6bca9e15a81b517aa
+exit=0

@@ -138,6 +138,99 @@ data-auditor 结论 PASS(按 `metrix/CLAUDE.md` 第 10 节仅作参考),新提�
 | RC9 | MINOR | `ROUND7_REPORT.md` 提交表 | 引用的 `code-reviewer_report-commit.md` 当时还不存在;报告提交审查的调用文字、preflight 与输入文件未暂存(同 P3) | R7-RC:59 | 已一并暂存提交;审查输入不含审查文件自身,同 P3 |
 | RC10 | MINOR | 本文件 1.8 节 | `R7-DA` 记法在表格之后才定义;1.8 节没有“不修的理由”一栏 | R7-RC:60 | 记法已移到表格之前;栏目未加,登记 |
 
+### 1.9 第 8 轮审查新提出的 MAJOR / MINOR(第 8 轮指令第 4 项:只登记不修)
+
+`R8-CR:n` = `reviews/92df1a60…/code-reviewer.md` 第 n 行;`R8-DA:n` = 同目录 `data-auditor.md` 第 n 行。第 8 轮对冻结提交的两份审查:code-reviewer PASS(2 MAJOR、9 MINOR),data-auditor PASS(仅作参考;3 MINOR,其中 1 条与 code-reviewer 的 S11 相同),都没有 BLOCKER。`92df1a60` 是冻结提交的候选,之后被冻结提交 `6a474e4a` 取代(补充 a–e 改动了协议);冻结之后协议不再改动,下列各项都不在本轮修;需要改协议或改 `metrix/CLAUDE.md` 的,列入 `ROUND8_REPORT.md`“待 Review Gate 决定”。
+
+| # | 严重度 | 位置 | 问题 | 来源 |
+|---|---|---|---|---|
+| S1 | MAJOR | `metrix/CLAUDE.md` 第 8 节(第 62 行) | 1e 写入的规则要求“写入时须注明作用范围”,这条裁决自己的括注没有作用范围;指令 1e 没有给出,Executor 没有自定 | R8-CR:71 |
+| S2 | MAJOR | 协议第 2.8 节(对照第 7 节“最终冻结”、第 8 节第 8 步、`DATA_MANIFEST.json: files.test_qa.jsonl.generation_allowed`;`metrix/CLAUDE.md` 第 3 节) | 第 2.8 节“冻结之后才允许生成 `test_qa.jsonl`、`general_test.jsonl`”的“冻结”没有限定,状态改为 PROTOCOL_FROZEN 后可能被读成协议冻结即可生成 TEST;`metrix/CLAUDE.md` 第 3 节的硬性禁止以“收到 PROTOCOL_FROZEN 之前”为限 | R8-CR:73 |
+| S3 | MINOR | `metrix/CLAUDE.md` 第 2 节 | 仍写“E1 Pilot,状态:AWAITING_REVIEW_GATE”,与冻结后的协议不一致;改动须经 Review Gate 裁决 | R8-CR:75 |
+| S4 | MINOR | `DATA_MANIFEST.json: model.tokenizer.files_sha256` | 1d 把“分词器全部文件”读成 4 个文件;第 7 轮报告列的是 Qwen 6 个文件,`config.json`、`generation_config.json` 的 sha256 仍只在报告与原始输出中 | R8-CR:77 |
+| S5 | MINOR | `SPLIT_MANIFEST.json: L6_general_text.test_part.text`;协议第 3 节 L6 | L6 TEST 的文本规则没有写解码参数;tokenizers 库版本没有在第 0 节固定;两方须一致,口径不全可能导致不一致而 BLOCKED | R8-CR:79 |
+| S6 | MINOR | 协议第 5 节 EM;`DATA_MANIFEST.json: em_generation` | 1c 只解决待决第 6 项第 1 点:未闭合的 `<think>`、单独的 `</think>`、“第一行”的切分方式、结尾标点去一个还是全部,仍未规定;“空白(含空格与换行)”与 “(spaces and newlines)” 措辞范围不完全相同 | R8-CR:81 |
+| S7 | MINOR | `DATA_MANIFEST.json: files` | `facts`、`train_F`、`train_Y`、`dev_qa`、`general_dev`、`anchor_text.jsonl` 的记录字段仍未定义;`anchor_text.jsonl` 的 `canonical_sha256` 与 `decoded_texts_canonical_sha256` 的关系没有写明 | R8-CR:83 |
+| S8 | MINOR | 协议文件头状态行;第 14 节 v1-r8 | 引用的 `PROTOCOL_FROZEN` 文件与标签在冻结提交中尚不存在;v1-r8 各行不满足表头“哈希为包含该改动的提交”(已注明原因);1a 一行写“Review Gate 第 7 轮裁决,第 8 轮指令第 1a 项”,1b–1e 只写“第 8 轮指令第 1x 项”,写法不统一 | R8-CR:85 |
+| S9 | MINOR | 两个 manifest 的 `files.*`、`split_sha256` | 第 8 节第 1 步还要往两个 manifest 填哈希,`PROTOCOL_FROZEN` 中钉住的 manifest sha256 之后必然对不上;协议没有写明冻结后允许改哪些 manifest 字段 | R8-CR:87 |
+| S10 | MINOR | `DATA_MANIFEST.json: model.tokenizer.files_sha256`;协议第 0 节 | 分词器文件 sha256 不符时怎么处理(是否 BLOCKED)没有规则;库版本一行写了“不一致即 BLOCKED” | R8-CR:89 |
+| S11 | MINOR | `reports/round8/t1_protocol_checks.txt`(以及 `reviews/92df1a60…/review_input.diff`) | `cut -c1-200`、`cut -c1-120` 按字节截断,切断了多字节 UTF-8 字符,两个文件不是合法 UTF-8 | R8-CR:91;R8-DA:161(`audit/stdout/92df1a60…/12_r8_utf8_check.txt`:8 行) |
+| S12 | MINOR | 协议第 3 节“模板冻结”;`SPLIT_MANIFEST.json: template_freeze.normalization` | 归一化规则的文字只写“合并空格”,没写去掉首尾空格;32 个冻结的 `normalized_sha256` 都要求去掉首尾空格(不去时 0/32 相同,`audit/stdout/92df1a60…/06_r8_templates.txt`)。冻结值本身消除了歧义 | R8-DA:159 |
+| S13 | MINOR | `reports/round8/t1d_data_hashes.txt`;`reports/round7/t1g_gen_s_cands.txt` | 两次独立运行写成 `env PYTHONHASHSEED=n python -I …`,但 `-I` 忽略 `PYTHONHASHSEED`(`audit/stdout/92df1a60…/11_r8_hashseed_probe.txt`);脚本打印的 `PYTHONHASHSEED=0/31337` 是它读到的环境变量,不是解释器实际使用的 hash seed。两次运行实际是两个随机 hash seed,“两次逐字节相同”的结论不受影响 | R8-DA:160 |
+
+### 1.10 第 8 轮:被取代的 `PROTOCOL_FROZEN` 草稿的提交前审查(`reviews/92df1a60…/code-reviewer_frozen-file.md`,记 `R8-FF:n`)
+
+这份草稿是为冻结提交的候选 `92df1a60` 写的,审查结论 PASS、无 BLOCKER;审查进行中 Owner 下达补充,`92df1a60` 被取代,草稿没有提交。为新冻结提交重写 `PROTOCOL_FROZEN` 时,下表“处理”一栏写明新文件中的做法;其余只登记。
+
+| # | 严重度 | 位置 | 问题 | 来源 | 处理 |
+|---|---|---|---|---|---|
+| F1 | MINOR | 草稿第 12、18 行 | 写成标签已存在,审查时还不存在;核对没有覆盖标签 | R8-FF:36 | 报告附 `git rev-parse metrix-e1-pilot-frozen^{commit}` 与 `git ls-remote --tags` 的原始输出 |
+| F2 | MINOR | 草稿第 54 行 | “48 个值三方相同”说多了:4 个文件哈希只有两方;32 个模板值 Executor 侧只有“无不复现”;没提首次比对 09 失败 | R8-FF:38 | 新文件按实际情况写 |
+| F3 | MINOR | 草稿第 54 行;`t5_frozen_hashes.txt` 第 2 行 | 模板集合哈希的 Executor 重算在 `t1_protocol_checks.txt`,引用漏了 | R8-FF:40 | 新文件与 `t5_frozen_hashes_6a474e4a.txt` 已补 |
+| F4 | MINOR | `t5_protocol_frozen_check.txt` | 只判断值“在文件中出现”,不核对标签与值的对应 | R8-FF:42 | 新文件的核对改为按“标签 + 值”逐行比对 |
+| F5 | MINOR | `t5_protocol_frozen_check.txt` | 第一次 `git archive` 解包是死步骤;说明行写在输出中途 | R8-FF:44 | 登记(旧文件保留原样) |
+| F6 | MINOR | 草稿第 46 行 | 没提 `SPLIT_MANIFEST.json: split_sha256`;没说第 1 步生成的 facts、train_S、candidates 的哈希必须等于表中期望值 | R8-FF:46 | 新文件已写 |
+| F7 | MINOR | 草稿第 18 行 | `sha256sum -c` 默认检出时不做换行转换 | R8-FF:48 | 新文件注明以 `git cat-file blob` 为准 |
+| F8 | MINOR | 草稿第 14、18、44、52–54 行 | 路径基准不统一 | R8-FF:50 | 部分处理:新文件声明路径相对仓库根目录,多数引用已写全路径,但“依据”一节仍有只写文件名的引用,见 1.12 节 U4 |
+| F9 | MINOR | 草稿第 27–44 行 | “全部数据哈希”的范围由 Executor 按 manifest 读法确定;Qwen `config.json`、`generation_config.json` 不在内(同 S4) | R8-FF:52 | 登记 |
+| F10 | MINOR | 草稿第 48 行 | 没有明说本文件不是协议第 8 节第 8 步的“冻结记录” | R8-FF:54 | 新文件已写 |
+| F11 | MINOR | `reviews/92df1a60…/` | 审查自身的输入文件与审查原文没有暂存;`DEFERRED_MINORS.md` 放在哪个提交没说明 | R8-FF:56 | 都随报告提交入库;`DEFERRED_MINORS.md` 在报告提交中 |
+
+### 1.11 第 8 轮:对冻结提交 `6a474e4a` 的 code-reviewer 审查新提出的项(`reviews/6a474e4a…/code-reviewer.md`,记 `R8c-CR:n`)
+
+结论 PASS,没有 BLOCKER。沿用的两条 MAJOR 即 1.9 节 S1(第 85 行)与 S2(第 87 行,扩展到 ST13 的“配置冻结”);沿用的 MINOR 即 1.9 节 S3–S8、S10(第 101 行);1.9 节 S9 并入下表 T1,S11 已在冻结提交中重跑的 `t1_protocol_checks.txt` 解决(第 101 行)。以下为新项,只登记不修;须改协议或 `metrix/CLAUDE.md` 的列入 `ROUND8_REPORT.md`“待 Review Gate 决定”。
+
+| # | 严重度 | 位置 | 问题 | 来源 |
+|---|---|---|---|---|
+| T1 | MAJOR | 协议第 11 节 ST12(对照第 8 节第 1 步) | ST12 与第 1 步冲突:第 1 步把数据哈希写入两个 manifest 并提交,manifest 的 sha256 必然改变;数据文件的“冻结值”在冻结时是 null;“冻结值”指什么没有定义。照字面 ST12 会在第 1 步触发 BLOCKED。Owner 已知悉并选择照字面写,所以不列 BLOCKER;须在第 1 步(以及租卡)之前裁决 | R8c-CR:77 |
+| T2 | MAJOR | 协议第 8 节 G0.8 | 适用范围没有定义:哪个 checkpoint、几个、覆盖哪些评测;原有的 3 个 checkpoint 与 NLL ≤ 1e-5 被删除;范围不定可在看到结果后再选 checkpoint | R8c-CR:79 |
+| T3 | MAJOR | 协议第 8 节第 2 步、ST11;`metrix/CLAUDE.md` 第 4 节 | ST11 是 3.5 小时,`metrix/CLAUDE.md` 第 4 节是 3 小时;两者同时生效时 (3, 3.5] 这一段 ST11 不起作用 | R8c-CR:81 |
+| T4 | MAJOR | 分支 reflog | 为把补充放进冻结提交,在本地 reset 未推送的 `92df1a60` 后重新提交,属于改写本地分支历史(`metrix/CLAUDE.md` 第 1、7 节);请在决定记录中确认;`92df1a60` 的审查与审计原始输出须随报告提交入库 | R8c-CR:83 |
+| T5 | MINOR | 协议第 8 节 G0.10 | σ_d 的 bootstrap 次数、是否分 stratum、随机数 purpose、标准差自由度未写;“以最大者”是否跨 δ、跨 Δ(L−F)/Δ(A−F) 有歧义(跨 δ 恒为 δ=0.05);不影响 G0.10 是否通过 | R8c-CR:89 |
+| T6 | MINOR | 协议第 8 节第 2 步、第 9 节、ST9;`SEARCH_SPACE.json` | “第一个配置”是否即 F1、种子 101;20 步之后丢弃还是计入 F1;“预估总时长”的算法;ST11 在第 9 节没有对应状态;ST9“从第 3 步重新开始”会跳过预检;`SEARCH_SPACE.json` 的 hardware.rule 与 counts 不含预检 | R8c-CR:91 |
+| T7 | MINOR | 协议第 8 节 G0.8;第 10 节 | G0.8 要求确定性设置“并记录”,实验记录模板没有对应字段 | R8c-CR:93 |
+| T8 | MINOR | 未跟踪的 `PROTOCOL_FROZEN` 草稿 | 仍写着被取代的 `92df1a60` 及其 sha256;须按 `6a474e4a` 重新生成并重新审查 | R8c-CR:95 |
+| T9 | MINOR | `reports/round8/t1_protocol_checks.txt` | 提交前删去了第一次按字节 locale 运行的 grep 输出(文件中写明);与“原始输出不编辑”的做法不一致;以后保留失败的运行,另起一次附在后面 | R8c-CR:97 |
+| T10 | MINOR | 协议第 2.5 节;`SPLIT_MANIFEST.json: candidates.pool_too_small` | 每条 fact 只抽 3 个干扰项,门槛是池 ≥ 4;`DATA_SEED` 下 unread 的池正好是 4,处在门槛上 | R8c-CR:99 |
+
+### 1.12 第 8 轮:第 5 项提交前审查(`PROTOCOL_FROZEN`,提交 `5c8a9657`;`reviews/6a474e4a…/code-reviewer_frozen-file.md`,记 `R8d-FF:n`)
+
+结论 PASS,没有 BLOCKER。只登记不修;须由 Review Gate 决定的列入 `ROUND8_REPORT.md`“待 Review Gate 决定”。
+
+| # | 严重度 | 位置 | 问题 | 来源 |
+|---|---|---|---|---|
+| U1 | MAJOR | `PROTOCOL_FROZEN` 第 35、39 行;协议第 2.2、2.8 节 | fact 哈希 `406c8801…` 是 160 条 fact 组成的 JSON 列表的规范化哈希;第 1 步生成的是 `facts.jsonl`,按第 0 节的 JSONL 规则其 `canonical_sha256` 是另一串字节的哈希。若拿 `facts.jsonl` 的 `canonical_sha256` 去比 `406c8801…`,ST12 会在第 1 步误判 BLOCKED;协议第 2.2 节也没写明口径 | R8d-FF:80 |
+| U2 | MINOR | `PROTOCOL_FROZEN` 第 52 行 | “`files` …`split_sha256` …按第 1 步生成后填写”字面上包括 TEST 的两个文件与 `split_sha256.test_qa.jsonl`,它们在第 8 步才填;同文件第 56 行已说明不授权 TEST | R8d-FF:82 |
+| U3 | MINOR | `PROTOCOL_FROZEN` 第 31 行 | 引用的 `ROUND8_REPORT.md` 在第 5 项提交中尚不存在,到报告提交才有 | R8d-FF:84 |
+| U4 | MINOR | `PROTOCOL_FROZEN` 第 5、41、61–63 行 | F8 只做了一部分:说“路径都相对仓库根目录”,但依据一节有几处只写了文件名;`data/sample-100BT/…` 是 HF 数据集内的路径 | R8d-FF:86 |
+| U5 | MINOR | `reports/round8/t5_protocol_frozen_check_6a474e4a.txt` | `RESULT` 不含冻结 hash、提交时间、父提交、批准字样四项;提交时间用写死的字符串匹配。四项实际都为 True | R8d-FF:88 |
+| U6 | MINOR | 同上 | 检查的是工作区文件,没有记录 blob id,无法与暂存的 blob 对应。提交后已补记 `5c8a9657` 中该文件的 blob id 与 sha256(`299f4fcf…`,与检查时相同;`round8/t5_tag_push.txt` 末段) | R8d-FF:90 |
+| U7 | MINOR | `reports/round8/t5_frozen_hashes_6a474e4a.txt` | `git diff --stat` 不带 `--exit-code` 时退出码恒为 0,打印的 `$?` 不含信息 | R8d-FF:92 |
+| U8 | MINOR | `PROTOCOL_FROZEN` 第 3、16 行 | 批准时间 05:27 早于补充 a–e(约 05:55),文件头可能被读成全部内容都在 05:27 获批 | R8d-FF:94 |
+| U9 | MINOR | `reviews/6a474e4a…/` 等 | 本次审查的输入文件与原文、`92df1a60` 的记录、`DEFERRED_MINORS.md` 当时不在暂存区(同 F11)。本次审查的输入与原文已在第 5 项提交中一并提交;其余随报告提交入库 | R8d-FF:96 |
+| U10 | MINOR | `PROTOCOL_FROZEN` 第 14 行 | 审查时标签还不存在(同 F1)。标签已在本地创建,推送被拒,见 `ROUND8_REPORT.md` 第 5 项 | R8d-FF:98 |
+
+### 1.13 第 8 轮:报告提交的提交前审查(`reviews/6a474e4a…/code-reviewer_report-commit.md`,记 `R8e-RC:n`)
+
+结论 PASS,没有 BLOCKER。报告与本文件本身的事实错误按第 7 轮的先例在报告提交中改正(差异见 `reviews/6a474e4a…/report_commit_post_review.diff`);其余只登记。
+
+| # | 严重度 | 位置 | 问题 | 来源 | 处理 |
+|---|---|---|---|---|---|
+| V1 | MAJOR | `ROUND8_REPORT.md` TEST 的条件、待决第 8 项;`.claude/agents/data-auditor.md` 第 12 行;`metrix/CLAUDE.md` 第 7 节 | `PROTOCOL_FROZEN` 入库后 data-auditor 定义中的 TEST 禁令失去作用;`metrix/CLAUDE.md` 第 7 节只管“生成或评测”,不管“读取或统计”;冻结后读取或统计 TEST 只受 ST13 约束,“配置冻结”没有定义 | R8e-RC:46 | 写入待决第 8 项;以后调用 data-auditor 时在调用文字中重申 TEST 禁令 |
+| V2 | MINOR | `ROUND8_REPORT.md` 提交表“报告提交”一行 | 写成 1.9、1.10 节;文件列表不全 | R8e-RC:48 | 已改 |
+| V3 | MINOR | `ROUND8_REPORT.md` “补充与冻结提交的重建” | 说 `audit/r8_*.py` 随报告提交入库,实际已在 `5c8a9657` 提交 | R8e-RC:50 | 已改 |
+| V4 | MINOR | 本文件 1.10 节 F8;`ROUND8_REPORT.md` | F8 写成已全部处理,与 U4 矛盾 | R8e-RC:52 | 已改为部分处理 |
+| V5 | MINOR | 本文件 1.9 节导语 | 把 `92df1a60` 称为冻结提交 | R8e-RC:54 | 已改 |
+| V6 | MINOR | `ROUND8_REPORT.md` 第 5 项 | 第 5 项提交前审查的 9 条 MINOR 中 2 条沿用 F1、F11,报告没写 | R8e-RC:56 | 已改 |
+| V7 | MINOR | `ROUND8_REPORT.md` 第 4 项 | data-auditor 的 venv 是沿用的,不是新的 | R8e-RC:58 | 已改 |
+| V8 | MINOR | `ROUND8_REPORT.md` 第 4 项 | “6 条 MAJOR 都不是执行偏差”包括 T4,等于 Executor 审查自己的行为 | R8e-RC:60 | 已删去该断言,注明 T4 由 Review Gate 确认 |
+| V9 | MINOR | `ROUND8_REPORT.md` 第 6 项、待决第 13 项 | 把推送到会话分支写成已发生;会话分支远端仍是 `155430a` | R8e-RC:62 | 第 6 项已改为计划写法;推送输出见最终回复 |
+| V10 | MINOR | `ROUND8_REPORT.md` 结论一览第 5 项、提交表;`PROTOCOL_FROZEN` 第 14 行 | 第 5 项没有明确状态;标签没注明仅在本地;`PROTOCOL_FROZEN` 第 14 行“同时推送”已不成立 | R8e-RC:64 | 报告已改;`PROTOCOL_FROZEN` 是否修改由 Review Gate 决定(待决第 4 项) |
+| V11 | MINOR | `ROUND8_REPORT.md` 第 5 项 | “这是会话环境的策略拒绝”是推断,原始输出中没有 `[agent-proxy]` 行 | R8e-RC:66 | 已改为“原因未确认”,推断单独注明 |
+| V12 | MINOR | `ROUND8_REPORT.md` 提交表 | `5c8a9657` 的提交时间在仓库中没有原始输出 | R8e-RC:68 | 已补 `git log -1 --format='%H %cI %P'`(`round8/t5_tag_push.txt` 末条) |
+| V13 | MINOR | `ROUND8_REPORT.md` 1b 一行 | 引号内的文字不是协议原文 | R8e-RC:70 | 已改为逐字引用 |
+| V14 | MINOR | `ROUND8_REPORT.md` 第 6 项 | `code-reviewer_report-commit*` 的通配不含另两个文件;本审查原文提交前须暂存 | R8e-RC:72 | 已逐个列出;一并暂存 |
+
 ## 2. 已在第 5–7 轮解决(核对用)
 
 | 原条目 | 来源 | 处理 |

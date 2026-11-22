@@ -1,0 +1,28 @@
+# Data Auditor run. host vm, CPU only (no GPU, no torch, tokenizer files only); 2026-11-22 05:47:02 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/auditor/venv/bin/python -I -B r8_general.py /home/user/OpenMythos 92df1a60ac816ab02b250d32841397c73b9a67a7 /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/auditor/dl/parcae_tok/tokenizer.json
+freeze-commit general_text.source_file          : research/mini_mythos/stage1/results/r1/eval_sets.jsonl
+freeze-commit general_text.source_file_sha256   : 8816fe5a39d8b89e8c4203bf7d660e798faa471d2b72b5ce43c411cf5925a155
+freeze-commit general_text.decode_with          : SandyResearch/parcae-tokenizer@6247b5d0592876b73660f34c2dd16c9db9e9045c, special tokens skipped
+freeze-commit general_text.decode_tokenizer_json_sha256: e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77
+
+== a. parcae tokenizer.json
+  /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/auditor/dl/parcae_tok/tokenizer.json: bytes 2326980 | sha256 e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77 | git blob 3ff4f5afe2dfdf3ce41b55073f68ee89d79cb74f | manifest e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77 | MATCH True
+AUDIT_VALUE parcae_tokenizer_json_sha256 e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77
+
+== b. eval_sets.jsonl (whole-file hashes only)
+  git ls-files -s: 100644 71d6c7b58bdfbbbd4233ef31773dcffce259900e 0	research/mini_mythos/stage1/results/r1/eval_sets.jsonl
+  working tree : bytes 1899206 | sha256 8816fe5a39d8b89e8c4203bf7d660e798faa471d2b72b5ce43c411cf5925a155 | git blob 71d6c7b58bdfbbbd4233ef31773dcffce259900e
+  92df1a60 blob: bytes 1899206 | sha256 8816fe5a39d8b89e8c4203bf7d660e798faa471d2b72b5ce43c411cf5925a155 | blob id 71d6c7b58bdfbbbd4233ef31773dcffce259900e
+  base 61d3c767 blob: bytes 1899206 | sha256 8816fe5a39d8b89e8c4203bf7d660e798faa471d2b72b5ce43c411cf5925a155 | blob id 71d6c7b58bdfbbbd4233ef31773dcffce259900e
+  git diff --quiet base..freeze exit 0 | working tree vs freeze exit 0
+  manifest 8816fe5a39d8b89e8c4203bf7d660e798faa471d2b72b5ce43c411cf5925a155 | MATCH True
+AUDIT_VALUE eval_sets_jsonl_sha256 8816fe5a39d8b89e8c4203bf7d660e798faa471d2b72b5ce43c411cf5925a155
+
+== c. protocol 2.7 abbreviations and Stage 1 records
+  abbreviation 8816fe5a…a155 in protocol: True
+  abbreviation e0021e26…ea77 in protocol: True
+  research/mini_mythos/stage1/results/r1/data_lock.json: contains manifest values ['e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77']
+  research/mini_mythos/stage1/results/r1/manifest.json: contains manifest values ['8816fe5a39d8b89e8c4203bf7d660e798faa471d2b72b5ce43c411cf5925a155']
+RESULT: PASS
+exit=0

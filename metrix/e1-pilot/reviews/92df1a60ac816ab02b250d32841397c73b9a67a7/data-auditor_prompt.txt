@@ -1,0 +1,16 @@
+先读仓库中的 .claude/agents/data-auditor.md，以它为你的完整定义；它与你已加载的定义冲突时，以仓库文件为准。
+
+Metrix E1-PILOT 第 8 轮(协议冻结)。仓库 /home/user/OpenMythos,分支 metrix-e1-pilot-protocol-v1。
+审查对象:冻结提交 92df1a60ac816ab02b250d32841397c73b9a67a7(父提交 18076298)。指令原文 metrix/e1-pilot/tasks/ROUND8_TASKS.md;你的任务是第 4 项:独立复算全部冻结哈希。新提出的 MAJOR/MINOR 只登记不修。
+
+请用你自己的脚本(写在 metrix/e1-pilot/audit/ 下,命名建议 r8_*.py;你以前写的 audit/ 脚本可以复用,不得 import、调用或复制 metrix/e1-pilot/reports/ 下的 Executor 脚本),在 CPU 上独立复算下列各值,并与冻结提交中的 manifest / 协议所写的值逐一比对(每项给出:命令、原始输出、manifest 中的值、是否一致):
+
+1. 协议文件与三个 JSON 在冻结提交中的 sha256:git show 92df1a60ac816ab02b250d32841397c73b9a67a7:metrix/e1-pilot/METRIX_E1_PROTOCOL.md、DATA_MANIFEST.json、SPLIT_MANIFEST.json、SEARCH_SPACE.json(文件字节)。另核对工作区这四个文件与该提交相同。
+2. 160 条 fact 的规范化 SHA-256(DATA_MANIFEST.json name_generation.expected_facts_canonical_sha256)。
+3. 锚文本:源 parquet 的 sha256(anchor_text.source)与 512 篇解码文本的规范化 SHA-256(第 1d 项新增的 anchor_text.decoded_texts_canonical_sha256,算法见 decoded_texts_hash_rule)。
+4. train_S.jsonl 的规范化 SHA-256(s_permutation.expected_train_S_canonical_sha256)与 candidates.json 的规范化 SHA-256(SPLIT_MANIFEST.json candidates.candidate_mapping_sha256),记录格式按第 1a 项(files.train_S.jsonl.record、files.candidates.json.record)。
+5. 32 个模板的 normalized_sha256 与 template_set_sha256(SPLIT_MANIFEST.json)。
+6. Qwen/Qwen3-1.7B@70d244cc86ccca08cf5af4e1e306ecf908b1ad5e 分词器文件的 sha256(第 1d 项新增的 model.tokenizer.files_sha256),并核对该 revision 的仓库里是否还有别的分词器文件(“全部文件”)。
+7. parcae 分词器 tokenizer.json(general_text.decode_tokenizer_json_sha256)与 research/mini_mythos/stage1/results/r1/eval_sets.jsonl(general_text.source_file_sha256)的文件 sha256。eval_sets.jsonl 只能对整个文件求哈希,不得解码或使用任何 test 行的内容(协议第 3 节“读取 TEST 数据”的定义);本轮不需要 L6。
+
+限制:只在 CPU 上运行,只加载分词器,不加载任何模型权重;不生成、不读取 TEST 数据。下载可用 huggingface_hub(固定 revision);库版本见协议第 0 节(transformers 5.22.2、tokenizers 0.23.3),可自建 venv。只写入 metrix/e1-pilot/audit/;每个脚本的完整 stdout 写入 metrix/e1-pilot/audit/stdout/92df1a60ac816ab02b250d32841397c73b9a67a7/(编号文件)。最后附 git status --short 原始输出。最后一行按定义给出结论。

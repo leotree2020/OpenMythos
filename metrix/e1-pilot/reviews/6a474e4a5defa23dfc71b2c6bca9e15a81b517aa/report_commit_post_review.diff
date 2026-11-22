@@ -1,0 +1,170 @@
+# Changes made after the report-commit review (reviewed = staged versions at 09:05 UTC; see code-reviewer_report-commit.md). Only the report, DEFERRED_MINORS.md and one appended record in round8/t5_tag_push.txt changed; no protocol, manifest, rule file or script changed.
+--- reviewed/ROUND8_REPORT.md
++++ committed/ROUND8_REPORT.md
+@@ -19,7 +19,7 @@
+ | 补充 a–e | 按原文字面写入冻结提交,第 14 节 v1-r8 五行,各注明「对照 Task Order V1.2 补齐」 | 见“补充 a–e” |
+ | **冻结提交** | **`6a474e4a5defa23dfc71b2c6bca9e15a81b517aa`**(取代未推送的候选 `92df1a60`) | `round8/t5_frozen_hashes_6a474e4a.txt`;`round8/t6_supplement_recommit.txt` |
+ | 4 两份审查 | 对冻结提交 `6a474e4a`:code-reviewer **PASS**(无 BLOCKER;6 MAJOR,其中 2 条沿用;新 MINOR 6 条);data-auditor **PASS**(仅作参考;无 BLOCKER、无 MAJOR、无新 MINOR;48 个哈希值与补充 b 的池指标比对全部一致)。两份都因 HTTP 429 中断后续做完成。新问题登记于 `DEFERRED_MINORS.md` 1.11 节,不修 | `reviews/6a474e4a…/`;`audit/stdout/6a474e4a…/`;候选 `92df1a60` 的审查见 `reviews/92df1a60…/` |
+-| 5 `PROTOCOL_FROZEN` 与标签 | `PROTOCOL_FROZEN` 已提交(`5c8a9657`,提交前审查 PASS);分支已快进推送。**标签 `metrix-e1-pilot-frozen` 已在本地创建、指向冻结提交,但推送被拒(HTTP 403),没有重试或绕过** | `PROTOCOL_FROZEN`;`round8/t5_protocol_frozen_check_6a474e4a.txt`;`round8/t5_tag_push.txt`;`reviews/6a474e4a…/code-reviewer_frozen-file.md` |
++| 5 `PROTOCOL_FROZEN` 与标签 | **未完成:标签未推送**。`PROTOCOL_FROZEN` 已提交(`5c8a9657`,提交前审查 PASS),分支已快进推送;标签 `metrix-e1-pilot-frozen` 只在本地创建、指向冻结提交,推送得到 HTTP 403(原因未确认),没有重试或绕过 | `PROTOCOL_FROZEN`;`round8/t5_protocol_frozen_check_6a474e4a.txt`;`round8/t5_tag_push.txt`;`reviews/6a474e4a…/code-reviewer_frozen-file.md` |
+ | 6 报告与推送 | 本文件;报告提交的 hash 与推送输出见最终回复(提交不能包含自身的 hash) | — |
+ 
+ ## 第 0 步
+@@ -38,7 +38,7 @@
+ - **时间线**:05:39 UTC 提交冻结提交候选 `92df1a60`(只含第 1–3 项),05:40 调用第 4 项的两份审查,两份都 PASS、无 BLOCKER;05:52 对暂存的 `PROTOCOL_FROZEN` 草稿调用提交前审查。审查进行中(约 05:55)Owner 下达补充 a–e,要求“放进冻结提交”。此时 `92df1a60` 没有推送、没有打标签,远端分支仍是 `18076298`(`round8/t6_supplement_recommit.txt` 开头的 `git ls-remote`)。
+ - **提问与回答**:我就两点用提问工具提问:ST12 与第 8 节第 1 步的冲突;G0.8 原有的“F 选定配置的 3 个 checkpoint”与“NLL 差 ≤ 1e-5”是否保留。Owner 回答“Please run the last what I sent, it’s the additional things what I want do.”。我据此按补充原文字面写入,两处后果列入“待 Review Gate 决定”。提问与回答照录在 `tasks/ROUND8_TASKS.md` 第二段末尾。
+ - **重建**:为了让补充进入冻结提交,我取消暂存第 5 项的文件,`git reset --soft 18076298`(工作区与暂存区不变),加入补充后重新提交,得到冻结提交 `6a474e4a`(父提交同为 `18076298`)。命令与输出见 `round8/t6_supplement_recommit.txt`(含前后的 `git log`、`git reflog`)。这在本地替换了一个未推送的提交;`metrix/CLAUDE.md` 第 7 节把“改写 Git 历史”列为须等人工指令的事项,我把“放进冻结提交”理解为这一指令,在此如实报告。`92df1a60` 仍在本地 reflog 中。
+-- **保留的记录**:对 `92df1a60` 的两份审查与草稿审查(`reviews/92df1a60…/`)、data-auditor 对 `92df1a60` 的脚本与 stdout(`audit/r8_*.py`、`audit/stdout/92df1a60…/`)、为 `92df1a60` 写的 `round8/t5_frozen_hashes.txt`、`t5_protocol_frozen_check.txt` 都原样保留并随报告提交入库。`92df1a60` 中的 `t1_protocol_checks.txt` 被冻结提交中重跑的版本取代;旧版本的全文在 `reviews/92df1a60…/review_input.diff` 中。
++- **保留的记录**:对 `92df1a60` 的两份审查与草稿审查(`reviews/92df1a60…/`)、data-auditor 对 `92df1a60` 的 stdout(`audit/stdout/92df1a60…/`;它的脚本 `audit/r8_*.py` 在 `6a474e4a` 的审查中原样复用,已在 `5c8a9657` 中提交)、为 `92df1a60` 写的 `round8/t5_frozen_hashes.txt`、`t5_protocol_frozen_check.txt` 都原样保留并随报告提交入库。`92df1a60` 中的 `t1_protocol_checks.txt` 被冻结提交中重跑的版本取代;旧版本的全文在 `reviews/92df1a60…/review_input.diff` 中。
+ - 冻结提交与 `92df1a60` 的差异:`reviews/6a474e4a…/delta_vs_92df1a60.diff`。`DATA_MANIFEST.json`、`SEARCH_SPACE.json`、`metrix/CLAUDE.md` 相同(`t5_frozen_hashes_6a474e4a.txt`);数据哈希不变。
+ 
+ ## 提交
+@@ -46,9 +46,9 @@
+ | 提交 | 时间(UTC) | 内容 | 审查 |
+ |---|---|---|---|
+ | `92df1a60ac816ab02b250d32841397c73b9a67a7`(候选,已被取代,未推送) | 2026-11-22 05:39:23 | 第 1–3 项 | 第 4 项两份审查 PASS(`reviews/92df1a60…/`) |
+-| **`6a474e4a5defa23dfc71b2c6bca9e15a81b517aa`(冻结提交,标签 `metrix-e1-pilot-frozen`)** | 2026-11-22 06:04:41 | 第 1–3 项与补充 a–e:协议、三个 JSON、`metrix/CLAUDE.md` 第 8 节;`tasks/ROUND8_TASKS.md`;`round8/` 下第 0 步、环境、数据哈希重算、协议检查的原始输出 | 第 4 项:提交后审查(指令规定“对冻结提交调用”) |
+-| `5c8a965736105063c5fd12b2d71c4e22fc28bf27` | 2026-11-22 09:02:56 | 第 5 项:`PROTOCOL_FROZEN`;`reviews/6a474e4a…/`(第 4 项两份审查与第 5 项提交前审查的原文、调用文字、输入、续做与中断记录);`audit/r8_*.py`、`r8b_*.py` 与 `audit/stdout/6a474e4a…/`;`round8/t5_frozen_hashes_6a474e4a.txt`、`t5_protocol_frozen_check_6a474e4a.txt` | 提交前由 code-reviewer 审查:PASS |
+-| 报告提交 | — | 本报告;`DEFERRED_MINORS.md` 1.9、1.10 节;`92df1a60` 的审查与 auditor 记录;`t6_supplement_recommit.txt`;报告提交审查的调用文字、输入与原文 | 提交前由 code-reviewer 审查 |
++| **`6a474e4a5defa23dfc71b2c6bca9e15a81b517aa`(冻结提交;标签 `metrix-e1-pilot-frozen` 仅在本地)** | 2026-11-22 06:04:41 | 第 1–3 项与补充 a–e:协议、三个 JSON、`metrix/CLAUDE.md` 第 8 节;`tasks/ROUND8_TASKS.md`;`round8/` 下第 0 步、环境、数据哈希重算、协议检查的原始输出 | 第 4 项:提交后审查(指令规定“对冻结提交调用”) |
++| `5c8a965736105063c5fd12b2d71c4e22fc28bf27` | 2026-11-22 09:02:56(`round8/t5_tag_push.txt` 末条) | 第 5 项:`PROTOCOL_FROZEN`;`reviews/6a474e4a…/`(第 4 项两份审查与第 5 项提交前审查的原文、调用文字、输入、续做与中断记录);`audit/r8_*.py`、`r8b_*.py` 与 `audit/stdout/6a474e4a…/`;`round8/t5_frozen_hashes_6a474e4a.txt`、`t5_protocol_frozen_check_6a474e4a.txt` | 提交前由 code-reviewer 审查:PASS |
++| 报告提交 | — | 本报告;`DEFERRED_MINORS.md` 1.9–1.13 节;`92df1a60` 的审查原文(`reviews/92df1a60…/`)与 data-auditor 对它的 stdout(`audit/stdout/92df1a60…/`);为 `92df1a60` 写的 `round8/t5_frozen_hashes.txt`、`t5_protocol_frozen_check.txt`;`round8/t6_supplement_recommit.txt`、`round8/t5_tag_push.txt`;报告提交审查的 `code-reviewer_report-commit_prompt.txt`、`report_commit_input.diff`、`preflight_tools_check_report-commit.txt`、`code-reviewer_report-commit.md`、`report_commit_post_review.diff`,以及追加了记录的 `extract_log.txt` | 提交前由 code-reviewer 审查:PASS |
+ 
+ ## 第 1–3 项
+ 
+@@ -57,7 +57,7 @@
+ | 项 | 落地位置 | 改动(摘) |
+ |---|---|---|
+ | 1a | `DATA_MANIFEST.json: files.train_S.jsonl.record`、`files.candidates.json.record`(新增);协议第 2.5、2.6 节文字不变 | 第 2.6 节 `{"fact_id", "answer_fact_id", "text"}` 与第 2.5 节 `{fact_id: [4 个候选]}` 在 v1-r7 已如此写,本次确认;manifest 的 `files` 原来只有 `content`,新增 `record` 写明同一格式。两个冻结哈希不变 |
+-| 1b | 协议第 3 节 L6 一行与执行接口、第 8 节第 8 步、第 9 节 BLOCKED、第 11 节 ST10;`SPLIT_MANIFEST.json: L6_general_text.test_part.count`、`.text`(新增)、`.computed_by`、`test_part_over_limit` | “13-gram 在每篇文档(每篇锚文档、每个窗口)之内取,不跨篇拼接;……各自合并为一个集合,两者求交,计交集的种类数(元素个数);取 13-gram 的文本是实际送入模型的 id 用本协议分词器解码所得(锚文档最多 128 个 id,窗口最多 256 个 id)”;“两者结果不一致时按 BLOCKED 处理并报告 Owner(ST10)”,第 8 步、执行接口、BLOCKED 与 ST10 同步 |
++| 1b | 协议第 3 节 L6 一行与执行接口、第 8 节第 8 步、第 9 节 BLOCKED、第 11 节 ST10;`SPLIT_MANIFEST.json: L6_general_text.test_part.count`、`.text`(新增)、`.computed_by`、`test_part_over_limit` | “13-gram 在每篇文档(每篇锚文档、每个窗口)之内取,不跨篇拼接;锚文本 512 篇的词 13-gram 合并为一个集合,`general_test.jsonl` 全部窗口的词 13-gram 合并为一个集合,两者求交,计交集的种类数(元素个数);取 13-gram 的文本是实际送入模型的 id 用本协议分词器解码所得(锚文档最多 128 个 id,窗口最多 256 个 id)”;“两者结果不一致时按 BLOCKED 处理并报告 Owner(ST10)”,第 8 步、执行接口、BLOCKED 与 ST10 同步 |
+ | 1c | 协议第 5 节 EM;`DATA_MANIFEST.json: em_generation` | “归一化:删除 `<think>…</think>` 片段之后,先去掉开头的空白(含空格与换行),再取第一行,去首尾空白,……”;原括注“(输出开头的空格在这一步去掉)”删去 |
+ | 1d | `DATA_MANIFEST.json: model.tokenizer.files_sha256`、`files_note`、`anchor_text.decoded_texts_canonical_sha256`、`decoded_texts_hash_rule`(新增) | 4 个分词器文件的 sha256 与锚文本 `8828bc4f…` 及其算法。“全部文件”的依据:固定 revision 的仓库树中分词器文件只有 `tokenizer.json`、`tokenizer_config.json`、`vocab.json`、`merges.txt`(`round8/t0_env.txt` 的 `list_repo_tree`);只用这 4 个文件离线加载的分词器与 6 文件目录的类、词表、编码、chat template、特殊 id 都相同(`round8/t1d_data_hashes.txt` 末段)。`config.json`、`generation_config.json` 不是分词器文件,没有写入(S4) |
+ | 1e | `metrix/CLAUDE.md` 第 8 节末条 | “「永久」与「本阶段」的裁决可写入本文件,写入时须注明作用范围;「本阶段」的裁决在本阶段结束时失效。”括注写了出处、Owner 批准、时间与原因;**没有写这条裁决自己的作用范围**:指令没有给出,我没有自定(S1,待决第 1 项) |
+@@ -98,7 +98,7 @@
+ ### 对候选 `92df1a60` 的两份审查(已被取代,`reviews/92df1a60…/`)
+ 
+ - 05:40 UTC 调用。code-reviewer **PASS**(无 BLOCKER;2 MAJOR、9 MINOR;第 1a–1e、2、3 项与同一提交逐条“一致”,`code-reviewer.md` 第 14–66 行)。data-auditor **PASS**(无 BLOCKER、无 MAJOR;3 MINOR;`audit/stdout/92df1a60…/10_r8_compare_rerun.txt` 48 行比对 `RESULT: PASS`)。新问题登记为 `DEFERRED_MINORS.md` 1.9 节 S1–S13。
+-- 对 `PROTOCOL_FROZEN` 草稿的提交前审查(05:52):code-reviewer **PASS**(无 BLOCKER;11 MINOR,登记为 1.10 节 F1–F11)。新草稿按其中能在新文件中处理的几条写成(F2、F3、F6、F7、F8、F10)。
++- 对 `PROTOCOL_FROZEN` 草稿的提交前审查(05:52):code-reviewer **PASS**(无 BLOCKER;11 MINOR,登记为 1.10 节 F1–F11)。新草稿按其中能在新文件中处理的几条写成(F2、F3、F6、F7、F10;F8 只部分处理,见 1.12 节 U4)。
+ 
+ ### 对冻结提交 `6a474e4a` 的两份审查(`reviews/6a474e4a…/`)
+ 
+@@ -108,7 +108,7 @@
+ 
+ **code-reviewer:PASS(无 BLOCKER)**
+ - 逐条结论:1a、1b、1c、1d、1e、2、3、补充 a、b、c、d、e、“全部记入第 14 节并注明「对照 Task Order V1.2 补齐」”、同一提交,全部“一致”;数据隔离:没有 TEST 读取或生成路径,没有加载模型权重。补充 a、e 注明“一致(字面)”。
+-- 6 条 MAJOR(都不是执行偏差,列入“待 Review Gate 决定”):
++- 6 条 MAJOR,都列入“待 Review Gate 决定”(其中 T4 针对 Executor 自己的 reset,由 Review Gate 确认):
+   - T1(第 77 行):ST12 与第 8 节第 1 步冲突;Owner 已知悉并选择照字面写,所以不列 BLOCKER;须在第 1 步(以及租卡)之前裁决。
+   - T2(第 79 行):G0.8 的适用范围没有定义(哪个、几个 checkpoint,哪些评测),原有的 3 个 checkpoint 与 NLL 容差被删除。
+   - T3(第 81 行):ST11 的 3.5 小时与 `metrix/CLAUDE.md` 第 4 节的 3 小时。
+@@ -117,7 +117,7 @@
+ - 新 MINOR 登记为 1.11 节 T5–T10(G0.10 的 bootstrap 细节、预检细节、G0.8 “并记录”没有记录字段、工作区中的旧草稿、`t1_protocol_checks.txt` 在提交前删去了一段输出、unread 池正好等于门槛 4);沿用的 MINOR 见 1.9 节。
+ 
+ **data-auditor:PASS(仅作参考,`metrix/CLAUDE.md` 第 10 节;无 BLOCKER、无 MAJOR、无新 MINOR)**
+-- 新的下载目录与 venv,不复用 Executor 的 scratchpad 文件;6 个下载文件与 Hub 元数据相符(`01_r8_fetch.txt`)。`r8_*.py` 原样复用,新写 `r8b_delta.py`、`r8b_pool.py`、`r8b_compare.py`。
++- 新的下载目录;venv 沿用它上一次审计 `92df1a60` 时自建的 `$S/auditor/venv`;不复用 Executor 的 scratchpad 文件;6 个下载文件与 Hub 元数据相符(`01_r8_fetch.txt`)。`r8_*.py` 原样复用,新写 `r8b_delta.py`、`r8b_pool.py`、`r8b_compare.py`。
+ - 第 1 项(`02`):四个文件的 sha256 与上表相同;工作区、HEAD 与冻结提交相同;三个 JSON 的 `status` 与 `frozen` 正确。
+ - 第 2 项(`03`–`08`):fact、锚文本源与解码文本、`train_S`、`candidates`(6 种替代读法哈希都不同)、32 个模板与集合哈希、Qwen 4 个分词器文件(“全部文件”成立)、parcae `tokenizer.json`、`eval_sets.jsonl`(只按块对整个文件求哈希),全部 `MATCH True`。
+ - 与 `92df1a60` 的差异(`09_r8b_delta.txt`,从 git 对象独立重算):改动的文件正好是协议、`SPLIT_MANIFEST.json`、`t1_protocol_checks.txt`、`ROUND8_TASKS.md`;`DATA_MANIFEST.json`、`SEARCH_SPACE.json` 的 blob 相同;`SPLIT_MANIFEST.json` 去掉 `pool_too_small` 后与旧版相同;删除与新增的行中没有 64 位十六进制值。
+@@ -130,7 +130,7 @@
+ 
+ - **内容**(`metrix/e1-pilot/PROTOCOL_FROZEN`,63 行,sha256 `299f4fcf…`,提交 `5c8a9657` 中的 blob `46cf92f5…`):冻结提交的完整 hash `6a474e4a5defa23dfc71b2c6bca9e15a81b517aa`、提交时间与父提交;被取代的候选 `92df1a60` 的说明;冻结提交下协议文件与三个 JSON 的 sha256(`sha256sum` 格式,以 `git cat-file blob` 为准);全部数据哈希 12 个,每个注明定义与在冻结提交中的位置;“Owner 批准，2026-11-22 05:27 UTC”;“本文件不授权 TEST”一节(只复述现有规则);依据。
+ - **核对**(`round8/t5_protocol_frozen_check_6a474e4a.txt`,`RESULT: PASS`):四个文件的 sha256 与冻结提交的 `git cat-file blob` 相同;12 个数据哈希按“标签 + 值”逐行与冻结提交的 manifest 相同;文件中的 64 位十六进制值都在两张表内;合法 UTF-8。提交后补记了 `5c8a9657` 中该文件的 blob id 与 sha256,与检查时相同(`round8/t5_tag_push.txt` 末段)。
+-- **提交前审查**(`reviews/6a474e4a…/code-reviewer_frozen-file.md`):code-reviewer **PASS**,无 BLOCKER。第 5 项要求的四项内容都在,每个哈希与冻结提交、manifest、Executor 与 data-auditor 的原始输出一致。新提出 1 条 MAJOR(U1:fact 哈希 `406c8801…` 是 JSON 列表的规范化哈希,第 1 步生成的 `facts.jsonl` 的 `canonical_sha256` 不会等于它,见待决第 3 项)与 9 条 MINOR,登记为 `DEFERRED_MINORS.md` 1.12 节。
++- **提交前审查**(`reviews/6a474e4a…/code-reviewer_frozen-file.md`):code-reviewer **PASS**,无 BLOCKER。第 5 项要求的四项内容都在,每个哈希与冻结提交、manifest、Executor 与 data-auditor 的原始输出一致。提出 1 条 MAJOR(U1:fact 哈希 `406c8801…` 是 JSON 列表的规范化哈希,第 1 步生成的 `facts.jsonl` 的 `canonical_sha256` 不会等于它,见待决第 3 项)与 9 条 MINOR(其中 2 条沿用 F1、F11),登记为 `DEFERRED_MINORS.md` 1.12 节。
+ - **标签与推送**(`round8/t5_tag_push.txt`,原样输出):
+   - 推送前远端分支为 `18076298`,没有 `metrix-*` 标签;`18076298` 是 HEAD 的祖先(快进)。
+   - `git tag -a metrix-e1-pilot-frozen … 6a474e4a…`:标签对象 `663a8bfc3e0812cf99f7b4a04636755fba6ff294`,`metrix-e1-pilot-frozen^{commit}` = `6a474e4a5defa23dfc71b2c6bca9e15a81b517aa`。
+@@ -143,7 +143,7 @@
+     Everything up-to-date
+     ```
+   - 推送后 `git ls-remote`:分支为 `5c8a9657…`,远端没有 `metrix-e1-pilot-frozen`。
+-  - 同一会话对同一仓库的分支推送成功,标签推送得到 403,这是会话环境的策略拒绝。按会话代理的说明,403 不重试、不绕过(例如不改用 GitHub REST API 建标签),只报告。标签只存在于本会话的容器中;容器回收后会丢失,但可由任何有推送权限的人按 `PROTOCOL_FROZEN` 中的冻结提交 hash 重建(`git tag -a metrix-e1-pilot-frozen 6a474e4a5defa23dfc71b2c6bca9e15a81b517aa` 后 `git push origin metrix-e1-pilot-frozen`;重建的标签对象 hash 会与 `663a8bfc…` 不同,指向的提交相同)。见待决第 4 项。
++  - 同一会话对同一仓库的分支推送成功,标签推送得到 403。git 只报告了 HTTP 403 与连接中断,命令输出末尾没有 `[agent-proxy]` 行,403 来自哪一层、原因是什么,未确认;我推测是会话环境不允许推送标签。按会话代理的说明,403 不重试、不绕过(例如不改用 GitHub REST API 建标签),只报告。标签只存在于本会话的容器中;容器回收后会丢失,但可由任何有推送权限的人按 `PROTOCOL_FROZEN` 中的冻结提交 hash 重建(`git tag -a metrix-e1-pilot-frozen 6a474e4a5defa23dfc71b2c6bca9e15a81b517aa` 后 `git push origin metrix-e1-pilot-frozen`;重建的标签对象 hash 会与 `663a8bfc…` 不同,指向的提交相同)。已提交的 `PROTOCOL_FROZEN` 第 14 行写“与本文件所在提交同时推送”,协议状态行(冻结提交中)也引用这个标签;两处所说的标签目前在远端不存在,是否修改 `PROTOCOL_FROZEN` 由 Review Gate 决定。见待决第 4 项。
+ 
+ ## TEST 的条件(只复述现有规则)
+ 
+@@ -151,9 +151,9 @@
+ 
+ ## 第 6 项:报告与推送
+ 
+-- 报告提交包含:本报告;`DEFERRED_MINORS.md` 1.9–1.12 节;候选 `92df1a60` 的审查与草稿审查原文(`reviews/92df1a60…/`)、data-auditor 对它的 stdout(`audit/stdout/92df1a60…/`)、为它写的 `round8/t5_frozen_hashes.txt` 与 `t5_protocol_frozen_check.txt`;`round8/t6_supplement_recommit.txt`;`round8/t5_tag_push.txt`;报告提交审查的调用文字、输入与原文(`reviews/6a474e4a…/code-reviewer_report-commit*`)。
+-- 报告提交前由 code-reviewer 审查(`metrix/CLAUDE.md` 第 5 节第 1 条)。报告提交的 hash 与推送输出见最终回复。
+-- 推送:`metrix-e1-pilot-protocol-v1` 快进;同一 HEAD 推送到会话分支 `claude/e1-pilot-protocol-freeze-krvv9u`。
++- 报告提交包含:本报告;`DEFERRED_MINORS.md` 1.9–1.13 节;候选 `92df1a60` 的审查与草稿审查原文(`reviews/92df1a60…/`)、data-auditor 对它的 stdout(`audit/stdout/92df1a60…/`)、为它写的 `round8/t5_frozen_hashes.txt` 与 `t5_protocol_frozen_check.txt`;`round8/t6_supplement_recommit.txt`;`round8/t5_tag_push.txt`;报告提交审查的 `code-reviewer_report-commit_prompt.txt`、`report_commit_input.diff`、`preflight_tools_check_report-commit.txt`、`code-reviewer_report-commit.md`、`report_commit_post_review.diff`(均在 `reviews/6a474e4a…/`)。
++- 报告提交前由 code-reviewer 审查(`metrix/CLAUDE.md` 第 5 节第 1 条):**PASS**,无 BLOCKER;1 条 MAJOR、13 条 MINOR,登记为 `DEFERRED_MINORS.md` 1.13 节。其中报告与登记表本身的事实错误按第 7 轮的先例在报告提交中改正,被审查的版本与提交版本的差异见 `reviews/6a474e4a…/report_commit_post_review.diff`。报告提交的 hash 与推送输出见最终回复。
++- 推送(计划,在报告提交之后):`metrix-e1-pilot-protocol-v1` 快进;同一 HEAD 推送到会话分支 `claude/e1-pilot-protocol-freeze-krvv9u`(远端现为 `155430a`,是 HEAD 的祖先,快进;若不是快进则不推送)。`5c8a9657` 目前只推送到了 metrix 分支。两次推送的输出见最终回复。
+ 
+ ## 待 Review Gate 决定
+ 
+@@ -166,7 +166,7 @@
+ 5. **G0.8 删去的部分**(补充 a):原文的“对 F 选定配置的 3 个 checkpoint”与“每个通用窗口的 NLL 差 ≤ 1e-5”不再出现;新文字没有写对哪些 checkpoint 做两次评测,通用窗口的 NLL 复现也不再有容差。
+ 6. **预检的时长阈值与计时**(补充 d):ST11 是 3.5 小时,`metrix/CLAUDE.md` 第 4 节写“实测预计超过 3 小时即停下报告”;两者不同。另:“第一个配置”按搜索顺序应是 F1(种子 101),协议没有写明;预检是第一次加载模型,按第 7 节“从第一次加载模型起累计”应计入 4 小时 GPU wall-clock,预检的 20 步不产生用于判断的结果,这两点协议也没有写明。
+ 7. **G0.10 的 bootstrap**(补充 c):σ_d 的 bootstrap 次数、重抽方式与随机数 purpose 没有写;第 6 节的 bootstrap 是对 Δ 写的。
+-8. **第 2.8 节“冻结之后”**(S2):在冻结的协议中保留原文;TEST 的条件见上节。是否在下一协议版本中改为“Gate 0 通过并提交冻结记录之后”,以及 `metrix/CLAUDE.md` 第 3 节“收到 PROTOCOL_FROZEN 之前”的禁止在冻结后由什么接替,请决定。
++8. **第 2.8 节“冻结之后”与冻结后的 TEST 禁令**(S2;报告提交审查的 MAJOR):在冻结的协议中保留原文;TEST 的条件见上节。请决定:是否在下一协议版本中把第 2.8 节改为“Gate 0 通过并提交冻结记录之后”;`metrix/CLAUDE.md` 第 3 节“收到 PROTOCOL_FROZEN 之前”的禁止在冻结后由什么接替;`.claude/agents/data-auditor.md` 第 12 行“仓库中不存在有效的 PROTOCOL_FROZEN 文件时,禁止生成、读取或统计任何 TEST 数据”在 `PROTOCOL_FROZEN` 入库后已不再限制 data-auditor;`metrix/CLAUDE.md` 第 7 节只管“生成或评测 TEST”,不管“读取或统计”,冻结后读取或统计 TEST 只受 ST13 约束,而 ST13 的“配置冻结”没有定义。在这些决定之前,我调用 data-auditor 时会在调用文字中重申不得生成、读取或统计 TEST。
+ 9. **`metrix/CLAUDE.md` 第 2 节的阶段状态**(S3):仍为 AWAITING_REVIEW_GATE。
+ 10. **仍未规定的口径**(都不进门槛或尚未用到,登记于 1.9 节):L6 TEST 文本的解码参数与 tokenizers 版本(S5);EM 中未闭合的 `<think>`、单独的 `</think>`、“第一行”的切分、结尾标点去几个(S6);`facts`、`train_F`、`train_Y`、`dev_qa`、`general_dev`、`anchor_text.jsonl` 的记录字段(S7);分词器文件哈希不符时的处理(S10,补充 e 的 ST12 现已覆盖“分词器版本”);模板归一化文字没写去首尾空格(S12,冻结值已消除歧义)。
+ 11. **“分词器全部文件”的读法**(S4):按字面写入 4 个分词器文件;`config.json`(`1ddb5b89…`)与 `generation_config.json`(`2325da0f…`)的 sha256 只在 `round8/t0_env.txt` 与本报告中。
+--- reviewed/DEFERRED_MINORS.md
++++ committed/DEFERRED_MINORS.md
+@@ -140,7 +140,7 @@
+ 
+ ### 1.9 第 8 轮审查新提出的 MAJOR / MINOR(第 8 轮指令第 4 项:只登记不修)
+ 
+-`R8-CR:n` = `reviews/92df1a60…/code-reviewer.md` 第 n 行;`R8-DA:n` = 同目录 `data-auditor.md` 第 n 行。第 8 轮对冻结提交的两份审查:code-reviewer PASS(2 MAJOR、9 MINOR),data-auditor PASS(仅作参考;3 MINOR,其中 1 条与 code-reviewer 的 S11 相同),都没有 BLOCKER。冻结提交 `92df1a60` 之后协议不再改动,下列各项都不在本轮修;需要改协议或改 `metrix/CLAUDE.md` 的,列入 `ROUND8_REPORT.md`“待 Review Gate 决定”。
++`R8-CR:n` = `reviews/92df1a60…/code-reviewer.md` 第 n 行;`R8-DA:n` = 同目录 `data-auditor.md` 第 n 行。第 8 轮对冻结提交的两份审查:code-reviewer PASS(2 MAJOR、9 MINOR),data-auditor PASS(仅作参考;3 MINOR,其中 1 条与 code-reviewer 的 S11 相同),都没有 BLOCKER。`92df1a60` 是冻结提交的候选,之后被冻结提交 `6a474e4a` 取代(补充 a–e 改动了协议);冻结之后协议不再改动,下列各项都不在本轮修;需要改协议或改 `metrix/CLAUDE.md` 的,列入 `ROUND8_REPORT.md`“待 Review Gate 决定”。
+ 
+ | # | 严重度 | 位置 | 问题 | 来源 |
+ |---|---|---|---|---|
+@@ -171,7 +171,7 @@
+ | F5 | MINOR | `t5_protocol_frozen_check.txt` | 第一次 `git archive` 解包是死步骤;说明行写在输出中途 | R8-FF:44 | 登记(旧文件保留原样) |
+ | F6 | MINOR | 草稿第 46 行 | 没提 `SPLIT_MANIFEST.json: split_sha256`;没说第 1 步生成的 facts、train_S、candidates 的哈希必须等于表中期望值 | R8-FF:46 | 新文件已写 |
+ | F7 | MINOR | 草稿第 18 行 | `sha256sum -c` 默认检出时不做换行转换 | R8-FF:48 | 新文件注明以 `git cat-file blob` 为准 |
+-| F8 | MINOR | 草稿第 14、18、44、52–54 行 | 路径基准不统一 | R8-FF:50 | 新文件全部用仓库根目录下的全路径 |
++| F8 | MINOR | 草稿第 14、18、44、52–54 行 | 路径基准不统一 | R8-FF:50 | 部分处理:新文件声明路径相对仓库根目录,多数引用已写全路径,但“依据”一节仍有只写文件名的引用,见 1.12 节 U4 |
+ | F9 | MINOR | 草稿第 27–44 行 | “全部数据哈希”的范围由 Executor 按 manifest 读法确定;Qwen `config.json`、`generation_config.json` 不在内(同 S4) | R8-FF:52 | 登记 |
+ | F10 | MINOR | 草稿第 48 行 | 没有明说本文件不是协议第 8 节第 8 步的“冻结记录” | R8-FF:54 | 新文件已写 |
+ | F11 | MINOR | `reviews/92df1a60…/` | 审查自身的输入文件与审查原文没有暂存;`DEFERRED_MINORS.md` 放在哪个提交没说明 | R8-FF:56 | 都随报告提交入库;`DEFERRED_MINORS.md` 在报告提交中 |
+@@ -210,6 +210,27 @@
+ | U9 | MINOR | `reviews/6a474e4a…/` 等 | 本次审查的输入文件与原文、`92df1a60` 的记录、`DEFERRED_MINORS.md` 当时不在暂存区(同 F11)。本次审查的输入与原文已在第 5 项提交中一并提交;其余随报告提交入库 | R8d-FF:96 |
+ | U10 | MINOR | `PROTOCOL_FROZEN` 第 14 行 | 审查时标签还不存在(同 F1)。标签已在本地创建,推送被拒,见 `ROUND8_REPORT.md` 第 5 项 | R8d-FF:98 |
+ 
++### 1.13 第 8 轮:报告提交的提交前审查(`reviews/6a474e4a…/code-reviewer_report-commit.md`,记 `R8e-RC:n`)
++
++结论 PASS,没有 BLOCKER。报告与本文件本身的事实错误按第 7 轮的先例在报告提交中改正(差异见 `reviews/6a474e4a…/report_commit_post_review.diff`);其余只登记。
++
++| # | 严重度 | 位置 | 问题 | 来源 | 处理 |
++|---|---|---|---|---|---|
++| V1 | MAJOR | `ROUND8_REPORT.md` TEST 的条件、待决第 8 项;`.claude/agents/data-auditor.md` 第 12 行;`metrix/CLAUDE.md` 第 7 节 | `PROTOCOL_FROZEN` 入库后 data-auditor 定义中的 TEST 禁令失去作用;`metrix/CLAUDE.md` 第 7 节只管“生成或评测”,不管“读取或统计”;冻结后读取或统计 TEST 只受 ST13 约束,“配置冻结”没有定义 | R8e-RC:46 | 写入待决第 8 项;以后调用 data-auditor 时在调用文字中重申 TEST 禁令 |
++| V2 | MINOR | `ROUND8_REPORT.md` 提交表“报告提交”一行 | 写成 1.9、1.10 节;文件列表不全 | R8e-RC:48 | 已改 |
++| V3 | MINOR | `ROUND8_REPORT.md` “补充与冻结提交的重建” | 说 `audit/r8_*.py` 随报告提交入库,实际已在 `5c8a9657` 提交 | R8e-RC:50 | 已改 |
++| V4 | MINOR | 本文件 1.10 节 F8;`ROUND8_REPORT.md` | F8 写成已全部处理,与 U4 矛盾 | R8e-RC:52 | 已改为部分处理 |
++| V5 | MINOR | 本文件 1.9 节导语 | 把 `92df1a60` 称为冻结提交 | R8e-RC:54 | 已改 |
++| V6 | MINOR | `ROUND8_REPORT.md` 第 5 项 | 第 5 项提交前审查的 9 条 MINOR 中 2 条沿用 F1、F11,报告没写 | R8e-RC:56 | 已改 |
++| V7 | MINOR | `ROUND8_REPORT.md` 第 4 项 | data-auditor 的 venv 是沿用的,不是新的 | R8e-RC:58 | 已改 |
++| V8 | MINOR | `ROUND8_REPORT.md` 第 4 项 | “6 条 MAJOR 都不是执行偏差”包括 T4,等于 Executor 审查自己的行为 | R8e-RC:60 | 已删去该断言,注明 T4 由 Review Gate 确认 |
++| V9 | MINOR | `ROUND8_REPORT.md` 第 6 项、待决第 13 项 | 把推送到会话分支写成已发生;会话分支远端仍是 `155430a` | R8e-RC:62 | 第 6 项已改为计划写法;推送输出见最终回复 |
++| V10 | MINOR | `ROUND8_REPORT.md` 结论一览第 5 项、提交表;`PROTOCOL_FROZEN` 第 14 行 | 第 5 项没有明确状态;标签没注明仅在本地;`PROTOCOL_FROZEN` 第 14 行“同时推送”已不成立 | R8e-RC:64 | 报告已改;`PROTOCOL_FROZEN` 是否修改由 Review Gate 决定(待决第 4 项) |
++| V11 | MINOR | `ROUND8_REPORT.md` 第 5 项 | “这是会话环境的策略拒绝”是推断,原始输出中没有 `[agent-proxy]` 行 | R8e-RC:66 | 已改为“原因未确认”,推断单独注明 |
++| V12 | MINOR | `ROUND8_REPORT.md` 提交表 | `5c8a9657` 的提交时间在仓库中没有原始输出 | R8e-RC:68 | 已补 `git log -1 --format='%H %cI %P'`(`round8/t5_tag_push.txt` 末条) |
++| V13 | MINOR | `ROUND8_REPORT.md` 1b 一行 | 引号内的文字不是协议原文 | R8e-RC:70 | 已改为逐字引用 |
++| V14 | MINOR | `ROUND8_REPORT.md` 第 6 项 | `code-reviewer_report-commit*` 的通配不含另两个文件;本审查原文提交前须暂存 | R8e-RC:72 | 已逐个列出;一并暂存 |
++
+ ## 2. 已在第 5–7 轮解决(核对用)
+ 
+ | 原条目 | 来源 | 处理 |
+diff --git a/metrix/e1-pilot/reports/round8/t5_tag_push.txt b/metrix/e1-pilot/reports/round8/t5_tag_push.txt
+index d30b572..486a63d 100644
+--- a/metrix/e1-pilot/reports/round8/t5_tag_push.txt
++++ b/metrix/e1-pilot/reports/round8/t5_tag_push.txt
+@@ -44,3 +44,7 @@ exit=0
+ $ bash -c git\ cat-file\ blob\ 5c8a965736105063c5fd12b2d71c4e22fc28bf27:metrix/e1-pilot/PROTOCOL_FROZEN\ \|\ sha256sum
+ 299f4fcf1dc69b88bca3d24c344206fbd51f93c8d0a796774df94d56720f2bdf  -
+ exit=0
++# appended Sun Nov 22 09:13:06 UTC 2026: commit time of 5c8a9657 (report-commit review asked for the raw output)
++$ git log -1 --format=%H\ %cI\ %P 5c8a965736105063c5fd12b2d71c4e22fc28bf27
++5c8a965736105063c5fd12b2d71c4e22fc28bf27 2026-11-22T09:02:56+00:00 6a474e4a5defa23dfc71b2c6bca9e15a81b517aa
++exit=0

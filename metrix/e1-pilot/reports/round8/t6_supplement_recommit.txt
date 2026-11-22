@@ -1,0 +1,65 @@
+# Round 8 raw output: replacing the unpushed freeze-commit candidate 92df1a60 so that the Owner's supplement (Task Order V1.2 items a-e, tasks/ROUND8_TASKS.md second part) goes into the freeze commit. Host vm. Written by the Executor (session_01J5mxaUfve5PtsqZQQDkJcJ). Sun Nov 22 06:02:40 UTC 2026
+# cwd /home/user/OpenMythos. Recorded by metrix/e1-pilot/reports/round5/logrun.sh. 92df1a60 was never pushed and never tagged; the remote branch is still at 18076298. git reset --soft keeps the working tree and the index.
+$ git ls-remote origin refs/heads/metrix-e1-pilot-protocol-v1 refs/tags/metrix-\*
+180762987b2b0d8a18a3070edb16dd4b4c31911e	refs/heads/metrix-e1-pilot-protocol-v1
+exit=0
+$ git log --oneline -2
+92df1a6 metrix: E1-PILOT round 8 freeze commit (Review Gate round 7 rulings 1a-1e, PROPOSED values frozen, status PROTOCOL_FROZEN)
+1807629 metrix: E1-PILOT round 7 report, deferred items (sections 1.7-1.8), review outputs (work commits and report commit), auditor scripts and stdout, freeze hashes
+exit=0
+$ git restore --staged metrix/e1-pilot/PROTOCOL_FROZEN metrix/e1-pilot/audit metrix/e1-pilot/reports/round8/t5_frozen_hashes.txt metrix/e1-pilot/reports/round8/t5_protocol_frozen_check.txt metrix/e1-pilot/reviews/92df1a60ac816ab02b250d32841397c73b9a67a7
+exit=0
+$ git reset --soft 180762987b2b0d8a18a3070edb16dd4b4c31911e
+exit=0
+$ git log --oneline -1
+1807629 metrix: E1-PILOT round 7 report, deferred items (sections 1.7-1.8), review outputs (work commits and report commit), auditor scripts and stdout, freeze hashes
+exit=0
+$ git status --short
+M  metrix/CLAUDE.md
+M  metrix/e1-pilot/DATA_MANIFEST.json
+M  metrix/e1-pilot/METRIX_E1_PROTOCOL.md
+M  metrix/e1-pilot/SEARCH_SPACE.json
+M  metrix/e1-pilot/SPLIT_MANIFEST.json
+ M metrix/e1-pilot/reports/DEFERRED_MINORS.md
+A  metrix/e1-pilot/reports/round8/t0_copy_check.txt
+A  metrix/e1-pilot/reports/round8/t0_env.txt
+A  metrix/e1-pilot/reports/round8/t1_protocol_checks.txt
+A  metrix/e1-pilot/reports/round8/t1d_data_hashes.txt
+A  metrix/e1-pilot/tasks/ROUND8_TASKS.md
+?? metrix/e1-pilot/PROTOCOL_FROZEN
+?? metrix/e1-pilot/audit/r8_anchor.py
+?? metrix/e1-pilot/audit/r8_compare.py
+?? metrix/e1-pilot/audit/r8_facts.py
+?? metrix/e1-pilot/audit/r8_fetch.py
+?? metrix/e1-pilot/audit/r8_files.py
+?? metrix/e1-pilot/audit/r8_general.py
+?? metrix/e1-pilot/audit/r8_hashseed_probe.py
+?? metrix/e1-pilot/audit/r8_s_cands.py
+?? metrix/e1-pilot/audit/r8_templates.py
+?? metrix/e1-pilot/audit/r8_tokenizer.py
+?? metrix/e1-pilot/audit/r8_utf8_check.py
+?? metrix/e1-pilot/audit/stdout/92df1a60ac816ab02b250d32841397c73b9a67a7/
+?? metrix/e1-pilot/reports/ROUND8_REPORT.md
+?? metrix/e1-pilot/reports/round8/t5_frozen_hashes.txt
+?? metrix/e1-pilot/reports/round8/t5_protocol_frozen_check.txt
+?? metrix/e1-pilot/reports/round8/t6_supplement_recommit.txt
+?? metrix/e1-pilot/reviews/92df1a60ac816ab02b250d32841397c73b9a67a7/
+exit=0
+$ git reflog --date=iso -4
+1807629 HEAD@{2026-11-22 06:02:41 +0000}: reset: moving to 180762987b2b0d8a18a3070edb16dd4b4c31911e
+92df1a6 HEAD@{2026-11-22 05:39:23 +0000}: commit: metrix: E1-PILOT round 8 freeze commit (Review Gate round 7 rulings 1a-1e, PROPOSED values frozen, status PROTOCOL_FROZEN)
+1807629 HEAD@{2026-11-22 05:30:54 +0000}: checkout: moving from claude/e1-pilot-protocol-freeze-krvv9u to metrix-e1-pilot-protocol-v1
+155430a HEAD@{2026-11-22 05:30:42 +0000}: checkout: moving from 155430a88d2a98322fc4c79b2a067792c3c9579a to claude/e1-pilot-protocol-freeze-krvv9u
+exit=0
+# after the new freeze commit (Sun Nov 22 06:05:57 UTC 2026)
+$ git log --oneline -2
+6a474e4 metrix: E1-PILOT round 8 freeze commit (rulings 1a-1e, PROPOSED values frozen, supplement a-e per Task Order V1.2, status PROTOCOL_FROZEN)
+1807629 metrix: E1-PILOT round 7 report, deferred items (sections 1.7-1.8), review outputs (work commits and report commit), auditor scripts and stdout, freeze hashes
+exit=0
+$ git reflog --date=iso -2
+6a474e4 HEAD@{2026-11-22 06:04:41 +0000}: commit: metrix: E1-PILOT round 8 freeze commit (rulings 1a-1e, PROPOSED values frozen, supplement a-e per Task Order V1.2, status PROTOCOL_FROZEN)
+1807629 HEAD@{2026-11-22 06:02:41 +0000}: reset: moving to 180762987b2b0d8a18a3070edb16dd4b4c31911e
+exit=0
+$ git ls-remote origin refs/heads/metrix-e1-pilot-protocol-v1 refs/tags/metrix-\*
+180762987b2b0d8a18a3070edb16dd4b4c31911e	refs/heads/metrix-e1-pilot-protocol-v1
+exit=0

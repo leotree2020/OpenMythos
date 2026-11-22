@@ -1,0 +1,30 @@
+# Data Auditor run. host vm, CPU only (no GPU, no torch, tokenizer files only); 2026-11-22 05:49:18 UTC; cwd /home/user/OpenMythos
+# stdout and stderr merged, complete, unedited
+$ bash -c stat\ -c\ \"%y\ \ %n\"\ metrix/e1-pilot/reports/DEFERRED_MINORS.md\ metrix/e1-pilot/reports/round8/t5_frozen_hashes.txt\ metrix/e1-pilot/reviews/92df1a60ac816ab02b250d32841397c73b9a67a7/\*\ \|\ sort\;\ echo\ \"---\ earliest\ auditor\ file\ in\ this\ round:\"\;\ stat\ -c\ \"%y\ \ %n\"\ metrix/e1-pilot/audit/r8_\*.py\ metrix/e1-pilot/audit/stdout/92df1a60ac816ab02b250d32841397c73b9a67a7/\*\ \|\ sort\ \|\ head\ -2\;\ echo\ \"---\ first\ lines:\"\;\ head\ -c\ 300\ metrix/e1-pilot/reviews/92df1a60ac816ab02b250d32841397c73b9a67a7/extract_log.txt\;\ echo\;\ git\ diff\ HEAD\ --\ metrix/e1-pilot/reports/DEFERRED_MINORS.md\ \|\ head\ -12
+2026-11-22 05:39:41.120189832 +0000  metrix/e1-pilot/reviews/92df1a60ac816ab02b250d32841397c73b9a67a7/review_input.diff
+2026-11-22 05:39:41.145949819 +0000  metrix/e1-pilot/reviews/92df1a60ac816ab02b250d32841397c73b9a67a7/preflight_tools_check.txt
+2026-11-22 05:40:00.141616308 +0000  metrix/e1-pilot/reviews/92df1a60ac816ab02b250d32841397c73b9a67a7/code-reviewer_prompt.txt
+2026-11-22 05:40:00.143225545 +0000  metrix/e1-pilot/reviews/92df1a60ac816ab02b250d32841397c73b9a67a7/data-auditor_prompt.txt
+2026-11-22 05:40:29.729523594 +0000  metrix/e1-pilot/reports/round8/t5_frozen_hashes.txt
+2026-11-22 05:46:22.132407468 +0000  metrix/e1-pilot/reviews/92df1a60ac816ab02b250d32841397c73b9a67a7/code-reviewer.md
+2026-11-22 05:46:22.137536197 +0000  metrix/e1-pilot/reviews/92df1a60ac816ab02b250d32841397c73b9a67a7/extract_log.txt
+2026-11-22 05:46:41.809536901 +0000  metrix/e1-pilot/reports/DEFERRED_MINORS.md
+--- earliest auditor file in this round:
+2026-11-22 05:42:41.977528324 +0000  metrix/e1-pilot/audit/r8_fetch.py
+2026-11-22 05:42:51.685528671 +0000  metrix/e1-pilot/audit/stdout/92df1a60ac816ab02b250d32841397c73b9a67a7/01_r8_fetch.txt
+--- first lines:
+# Round 8: extraction of the review reports from this session's subagent transcripts, and check that the invocation texts saved in this directory equal the first user messages the subagents received. Host vm. Sun Nov 22 05:46:22 UTC 2026
+$ python3 -I metrix/e1-pilot/reports/round6/review_extract.py 
+diff --git a/metrix/e1-pilot/reports/DEFERRED_MINORS.md b/metrix/e1-pilot/reports/DEFERRED_MINORS.md
+index 80b6dae..6420165 100644
+--- a/metrix/e1-pilot/reports/DEFERRED_MINORS.md
++++ b/metrix/e1-pilot/reports/DEFERRED_MINORS.md
+@@ -138,6 +138,24 @@ data-auditor 结论 PASS(按 `metrix/CLAUDE.md` 第 10 节仅作参考),新提
+ | RC9 | MINOR | `ROUND7_REPORT.md` 提交表 | 引用的 `code-reviewer_report-commit.md` 当时还不存在;报告提交审查的调用文字、preflight 与输入文件未暂存(同 P3) | R7-RC:59 | 已一并暂存提交;审查输入不含审查文件自身,同 P3 |
+ | RC10 | MINOR | 本文件 1.8 节 | `R7-DA` 记法在表格之后才定义;1.8 节没有“不修的理由”一栏 | R7-RC:60 | 记法已移到表格之前;栏目未加,登记 |
+ 
++### 1.9 第 8 轮审查新提出的 MAJOR / MINOR(第 8 轮指令第 4 项:只登记不修)
++
++`R8-CR:n` = `reviews/92df1a60…/code-reviewer.md` 第 n 行;`R8-DA:n` = 同目录 `data-auditor.md` 第 n 行。第 8 轮 code-reviewer 结论 PASS,没有 BLOCKER。冻结提交 `92df1a60` 之后协议不再改动,下列各项都不在本轮修;需要改协议或改 `metrix/CLAUDE.md` 的,列入 `ROUND8_REPORT.md`“待 Review Gate 决定”。
++
+exit=0

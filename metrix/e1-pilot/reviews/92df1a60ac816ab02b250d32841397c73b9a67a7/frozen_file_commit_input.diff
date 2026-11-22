@@ -1,0 +1,199 @@
+# Staged diff for the item-5 commit (parent 92df1a60ac816ab02b250d32841397c73b9a67a7). git diff --cached --stat, then the full diff of PROTOCOL_FROZEN and the two reports/round8/t5 files. The review, audit files and stdout listed in --stat are on disk.
+ metrix/e1-pilot/PROTOCOL_FROZEN                    |  54 ++
+ metrix/e1-pilot/audit/r8_anchor.py                 | 111 ++++
+ metrix/e1-pilot/audit/r8_compare.py                | 107 ++++
+ metrix/e1-pilot/audit/r8_facts.py                  | 180 ++++++
+ metrix/e1-pilot/audit/r8_fetch.py                  |  84 +++
+ metrix/e1-pilot/audit/r8_files.py                  |  77 +++
+ metrix/e1-pilot/audit/r8_general.py                | 107 ++++
+ metrix/e1-pilot/audit/r8_hashseed_probe.py         |  36 ++
+ metrix/e1-pilot/audit/r8_s_cands.py                | 180 ++++++
+ metrix/e1-pilot/audit/r8_templates.py              | 118 ++++
+ metrix/e1-pilot/audit/r8_tokenizer.py              | 162 +++++
+ metrix/e1-pilot/audit/r8_utf8_check.py             |  46 ++
+ .../01_r8_fetch.txt                                |  26 +
+ .../02_r8_files.txt                                |  42 ++
+ .../03_r8_anchor.txt                               |  28 +
+ .../04_r8_facts.txt                                |  38 ++
+ .../05_r8_s_cands.txt                              |  30 +
+ .../06_r8_templates.txt                            |  84 +++
+ .../07_r8_tokenizer.txt                            |  71 +++
+ .../08_r8_general.txt                              |  28 +
+ .../09_r8_compare.txt                              |  12 +
+ .../10_r8_compare_rerun.txt                        | 253 ++++++++
+ .../11_r8_hashseed_probe.txt                       |  17 +
+ .../12_r8_utf8_check.txt                           |  18 +
+ .../13_git_status.txt                              |  58 ++
+ .../14_outside_audit_mtimes.txt                    |  30 +
+ .../15_git_status_final.txt                        |  19 +
+ .../e1-pilot/reports/round8/t5_frozen_hashes.txt   |  42 ++
+ .../reports/round8/t5_protocol_frozen_check.txt    |  47 ++
+ .../code-reviewer.md                               |  93 +++
+ .../code-reviewer_prompt.txt                       |  12 +
+ .../data-auditor.md                                | 196 ++++++
+ .../data-auditor_prompt.txt                        |  16 +
+ .../extract_log.txt                                |  13 +
+ .../preflight_tools_check.txt                      |  16 +
+ .../review_input.diff                              | 699 +++++++++++++++++++++
+ 36 files changed, 3150 insertions(+)
+diff --git a/metrix/e1-pilot/PROTOCOL_FROZEN b/metrix/e1-pilot/PROTOCOL_FROZEN
+new file mode 100644
+index 0000000..6cc5f29
+--- /dev/null
++++ b/metrix/e1-pilot/PROTOCOL_FROZEN
+@@ -0,0 +1,54 @@
++# PROTOCOL_FROZEN — METRIX-E1-PILOT protocol v1
++
++Owner 批准，2026-11-22 05:27 UTC
++
++## 冻结提交
++
++| 项 | 值 |
++|---|---|
++| 冻结提交(完整 hash) | `92df1a60ac816ab02b250d32841397c73b9a67a7` |
++| 提交时间(author / committer) | 2026-11-22 05:39:23 UTC |
++| 父提交 | `180762987b2b0d8a18a3070edb16dd4b4c31911e` |
++| 标签 | `metrix-e1-pilot-frozen`(指向冻结提交) |
++| 仓库 / 分支 | `leotree2020/OpenMythos` / `metrix-e1-pilot-protocol-v1` |
++| 内容 | 第 8 轮指令第 1–3 项(`tasks/ROUND8_TASKS.md`):Review Gate 第 7 轮裁决 1a–1e、PROPOSED 改为冻结值、协议状态 PROTOCOL_FROZEN |
++
++## 冻结提交下的协议文件与三个 JSON(文件字节的 SHA-256)
++
++格式与 `sha256sum` 相同;路径相对仓库根目录。这四个值标识冻结提交中的版本:在冻结提交(标签 `metrix-e1-pilot-frozen`)的检出上运行 `sha256sum -c` 应全部 OK。协议第 8 节第 1 步生成数据后还要把数据文件的哈希写入两个 manifest,之后工作区中两个 manifest 的字节会与这里不同,核对以冻结提交为准。
++
++```
++61f4b777316cb554846990aa5024d14689124340d4e972a6c77d2d663580f19a  metrix/e1-pilot/METRIX_E1_PROTOCOL.md
++94ba8516044e9bf10c5ad907f2e905c5afd91833a383b7212737cf28170e8cf3  metrix/e1-pilot/DATA_MANIFEST.json
++2078d0456845b039459dc56e09e5868c4c8f9477dbaab106c4f4a5f924be1baa  metrix/e1-pilot/SPLIT_MANIFEST.json
++490d575d54b4cbd3902adb496817d89c82763ad22fa8efac8894bcb4a45a6258  metrix/e1-pilot/SEARCH_SPACE.json
++```
++
++## 全部数据哈希
++
++规范化 SHA-256 按协议第 0 节“哈希”的规则;文件 SHA-256 是文件原样字节的哈希。每个值都与冻结提交的 manifest 中所写相同。
++
++| 项 | SHA-256 | 定义 | 冻结提交中的位置 |
++|---|---|---|---|
++| fact(160 条) | `406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97` | 规范化;协议第 2.2 节 | `DATA_MANIFEST.json: name_generation.expected_facts_canonical_sha256` |
++| 锚文本(512 篇解码文本) | `8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408` | 规范化;JSON 列表,算法见 manifest | `DATA_MANIFEST.json: anchor_text.decoded_texts_canonical_sha256` |
++| 锚文本源 parquet | `6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22` | 文件;`SandyResearch/fineweb-edu-shuffled@4d1138c0e4d51d98813997ce3560e05a32bf91de`,`data/sample-100BT/train/shard_00000.parquet` | `DATA_MANIFEST.json: anchor_text.source` |
++| `train_S.jsonl` | `686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e` | 规范化;协议第 2.6 节 | `DATA_MANIFEST.json: s_permutation.expected_train_S_canonical_sha256` |
++| `candidates.json` | `e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705` | 规范化;协议第 2.5 节 | `SPLIT_MANIFEST.json: candidates.candidate_mapping_sha256` |
++| 模板集合(32 个) | `2b52411326c218e9c51d947b2f4e0d77b0cdd5d6237f9ce25b57a872c48ce28f` | `template_set_sha256`;协议第 3 节 | `SPLIT_MANIFEST.json: template_freeze.template_set_sha256` |
++| Qwen `tokenizer.json` | `aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4` | 文件;`Qwen/Qwen3-1.7B@70d244cc86ccca08cf5af4e1e306ecf908b1ad5e` | `DATA_MANIFEST.json: model.tokenizer.files_sha256` |
++| Qwen `tokenizer_config.json` | `d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101` | 文件;同上,含 chat template | 同上 |
++| Qwen `vocab.json` | `ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910` | 文件;同上 | 同上 |
++| Qwen `merges.txt` | `8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5` | 文件;同上 | 同上 |
++| parcae 分词器 `tokenizer.json` | `e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77` | 文件;`SandyResearch/parcae-tokenizer@6247b5d0592876b73660f34c2dd16c9db9e9045c` | `DATA_MANIFEST.json: general_text.decode_tokenizer_json_sha256` |
++| `eval_sets.jsonl` | `8816fe5a39d8b89e8c4203bf7d660e798faa471d2b72b5ce43c411cf5925a155` | 文件;`research/mini_mythos/stage1/results/r1/eval_sets.jsonl` | `DATA_MANIFEST.json: general_text.source_file_sha256` |
++
++`DATA_MANIFEST.json: files` 中的数据文件在冻结时都是 `NOT_GENERATED`,它们的 `byte_sha256 / canonical_sha256` 按协议第 8 节第 1 步生成后填写。
++
++冻结不等于允许生成或评测 TEST:TEST 数据(`test_qa.jsonl`、`general_test.jsonl`)仍只在协议第 8 节第 8 步(Gate 0 通过并提交冻结记录之后)生成,且生成或评测 TEST 须等待人工指令(`metrix/CLAUDE.md` 第 7 节)。本句只复述现有规则,不改动协议。
++
++## 依据
++
++- 指令:`tasks/ROUND8_TASKS.md` 第 5 项。
++- 审查(第 4 项,对冻结提交):`reviews/92df1a60ac816ab02b250d32841397c73b9a67a7/code-reviewer.md`(PASS,无 BLOCKER)、`data-auditor.md`(PASS,无 BLOCKER;按 `metrix/CLAUDE.md` 第 10 节仍为“待验证”,仅作参考)。
++- 原始输出:Executor `reports/round8/t5_frozen_hashes.txt`(冻结提交中四个文件的 sha256 与 manifest 中的数据哈希)、`reports/round8/t0_env.txt` 与 `t1d_data_hashes.txt`(数据哈希的重算);data-auditor `audit/stdout/92df1a60ac816ab02b250d32841397c73b9a67a7/`(01–08 号逐项独立复算;`10_r8_compare_rerun.txt` 汇总比对 48 个值,复算值、冻结提交中的值与 Executor 原始输出三方相同,`RESULT: PASS`)。
+diff --git a/metrix/e1-pilot/reports/round8/t5_frozen_hashes.txt b/metrix/e1-pilot/reports/round8/t5_frozen_hashes.txt
+new file mode 100644
+index 0000000..04a5ee8
+--- /dev/null
++++ b/metrix/e1-pilot/reports/round8/t5_frozen_hashes.txt
+@@ -0,0 +1,42 @@
++# Round 8 raw output: the freeze commit and the hashes recorded in metrix/e1-pilot/PROTOCOL_FROZEN. Host vm, CPU only. Written by the Executor (session_01J5mxaUfve5PtsqZQQDkJcJ). Sun Nov 22 05:40:29 UTC 2026
++# cwd /home/user/OpenMythos. Recorded by metrix/e1-pilot/reports/round5/logrun.sh. Data hashes: values read from the manifests of the freeze commit; their recomputation is in reports/round8/t0_env.txt and t1d_data_hashes.txt.
++$ git log -1 --format=%H\ \|\ author\ %aI\ \|\ commit\ %cI\ \|\ parents\ %P\ \|\ %s 92df1a60ac816ab02b250d32841397c73b9a67a7
++92df1a60ac816ab02b250d32841397c73b9a67a7 | author 2026-11-22T05:39:23+00:00 | commit 2026-11-22T05:39:23+00:00 | parents 180762987b2b0d8a18a3070edb16dd4b4c31911e | metrix: E1-PILOT round 8 freeze commit (Review Gate round 7 rulings 1a-1e, PROPOSED values frozen, status PROTOCOL_FROZEN)
++exit=0
++$ python3 -I metrix/e1-pilot/reports/round3/outside_metrix_check.py --rev 92df1a60ac816ab02b250d32841397c73b9a67a7
++changed outside metrix/ (base 61d3c767 .. 92df1a60ac816ab02b250d32841397c73b9a67a7):
++  A	.claude/agents/code-reviewer.md
++  A	.claude/agents/data-auditor.md
++  M	CLAUDE.md
++charter: base 3065 bytes, new 3586 bytes, base is exact prefix: True
++charter: appended 521 bytes; level-1/2 headings in appended part: ['## 6. Metrix 子项目(2026-11-13 负责人决定)']
++ignore rules below come from the working-tree .gitignore; identical to .gitignore at 92df1a60ac816ab02b250d32841397c73b9a67a7: True
++agent .claude/agents/code-reviewer.md: tracked at 92df1a60ac816ab02b250d32841397c73b9a67a7: True; ignore rule: .gitignore:14:.claude/	.claude/agents/code-reviewer.md
++agent .claude/agents/data-auditor.md: tracked at 92df1a60ac816ab02b250d32841397c73b9a67a7: True; ignore rule: .gitignore:14:.claude/	.claude/agents/data-auditor.md
++RESULT: PASS
++exit=0
++$ bash -c for\ f\ in\ metrix/e1-pilot/METRIX_E1_PROTOCOL.md\ metrix/e1-pilot/DATA_MANIFEST.json\ metrix/e1-pilot/SPLIT_MANIFEST.json\ metrix/e1-pilot/SEARCH_SPACE.json\ metrix/CLAUDE.md\;\ do\ printf\ \'%s\ \ %s@92df1a60ac816ab02b250d32841397c73b9a67a7\\n\'\ \$\(git\ show\ 92df1a60ac816ab02b250d32841397c73b9a67a7:\$f\ \|\ sha256sum\ \|\ cut\ -d\'\ \'\ -f1\)\ \$f\;\ done
++61f4b777316cb554846990aa5024d14689124340d4e972a6c77d2d663580f19a  metrix/e1-pilot/METRIX_E1_PROTOCOL.md@92df1a60ac816ab02b250d32841397c73b9a67a7
++94ba8516044e9bf10c5ad907f2e905c5afd91833a383b7212737cf28170e8cf3  metrix/e1-pilot/DATA_MANIFEST.json@92df1a60ac816ab02b250d32841397c73b9a67a7
++2078d0456845b039459dc56e09e5868c4c8f9477dbaab106c4f4a5f924be1baa  metrix/e1-pilot/SPLIT_MANIFEST.json@92df1a60ac816ab02b250d32841397c73b9a67a7
++490d575d54b4cbd3902adb496817d89c82763ad22fa8efac8894bcb4a45a6258  metrix/e1-pilot/SEARCH_SPACE.json@92df1a60ac816ab02b250d32841397c73b9a67a7
++c253f73315bb1dfd0645932ba0c970d0a88caf415c0e2a897351d0082bf7da16  metrix/CLAUDE.md@92df1a60ac816ab02b250d32841397c73b9a67a7
++exit=0
++$ bash -c git\ diff\ --quiet\ 92df1a60ac816ab02b250d32841397c73b9a67a7\ --\ metrix/e1-pilot/METRIX_E1_PROTOCOL.md\ metrix/e1-pilot/DATA_MANIFEST.json\ metrix/e1-pilot/SPLIT_MANIFEST.json\ metrix/e1-pilot/SEARCH_SPACE.json\ \&\&\ echo\ \'working\ tree\ identical\ to\ the\ freeze\ commit\ for\ the\ protocol\ and\ the\ three\ JSON\'
++working tree identical to the freeze commit for the protocol and the three JSON
++exit=0
++$ python3 -I -c $'\nimport json, subprocess, sys\nH = sys.argv[1]\ndef j(p): return json.loads(subprocess.run([\'git\', \'show\', H + \':\' + p], capture_output=True, check=True).stdout)\ndm, sm = j(\'metrix/e1-pilot/DATA_MANIFEST.json\'), j(\'metrix/e1-pilot/SPLIT_MANIFEST.json\')\nprint(\'facts (160) canonical\', dm[\'name_generation\'][\'expected_facts_canonical_sha256\'])\nprint(\'anchor decoded texts (512) canonical\', dm[\'anchor_text\'][\'decoded_texts_canonical_sha256\'])\nprint(\'anchor source\', dm[\'anchor_text\'][\'source\'])\nprint(\'train_S.jsonl canonical\', dm[\'s_permutation\'][\'expected_train_S_canonical_sha256\'])\nprint(\'candidates.json canonical\', sm[\'candidates\'][\'candidate_mapping_sha256\'])\nprint(\'template_set_sha256\', sm[\'template_freeze\'][\'template_set_sha256\'])\nfor k, v in dm[\'model\'][\'tokenizer\'][\'files_sha256\'].items(): print(\'Qwen\', k, v)\nprint(\'parcae tokenizer.json\', dm[\'general_text\'][\'decode_tokenizer_json_sha256\'])\nprint(\'eval_sets.jsonl\', dm[\'general_text\'][\'source_file_sha256\'])\nprint(\'status\', dm[\'status\'], sm[\'status\'], j(\'metrix/e1-pilot/SEARCH_SPACE.json\')[\'status\'])\n' 92df1a60ac816ab02b250d32841397c73b9a67a7
++facts (160) canonical 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97
++anchor decoded texts (512) canonical 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408
++anchor source SandyResearch/fineweb-edu-shuffled@4d1138c0e4d51d98813997ce3560e05a32bf91de, data/sample-100BT/train/shard_00000.parquet (sha256 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22)
++train_S.jsonl canonical 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e
++candidates.json canonical e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705
++template_set_sha256 2b52411326c218e9c51d947b2f4e0d77b0cdd5d6237f9ce25b57a872c48ce28f
++Qwen tokenizer.json aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4
++Qwen tokenizer_config.json d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101
++Qwen vocab.json ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910
++Qwen merges.txt 8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5
++parcae tokenizer.json e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77
++eval_sets.jsonl 8816fe5a39d8b89e8c4203bf7d660e798faa471d2b72b5ce43c411cf5925a155
++status PROTOCOL_FROZEN PROTOCOL_FROZEN PROTOCOL_FROZEN
++exit=0
+diff --git a/metrix/e1-pilot/reports/round8/t5_protocol_frozen_check.txt b/metrix/e1-pilot/reports/round8/t5_protocol_frozen_check.txt
+new file mode 100644
+index 0000000..3b1111e
+--- /dev/null
++++ b/metrix/e1-pilot/reports/round8/t5_protocol_frozen_check.txt
+@@ -0,0 +1,47 @@
++# Round 8 raw output (item 5): checks of metrix/e1-pilot/PROTOCOL_FROZEN before it is committed. Host vm. Written by the Executor (session_01J5mxaUfve5PtsqZQQDkJcJ). Sun Nov 22 05:51:54 UTC 2026
++# cwd /home/user/OpenMythos. Recorded by metrix/e1-pilot/reports/round5/logrun.sh. No output is cut.
++$ git rev-parse HEAD
++92df1a60ac816ab02b250d32841397c73b9a67a7
++exit=0
++$ sha256sum metrix/e1-pilot/PROTOCOL_FROZEN
++18ce467b518344befccf4033a162afbe840e7879078d585acce353a0de8063fe  metrix/e1-pilot/PROTOCOL_FROZEN
++exit=0
++$ bash -c sed\ -n\ \'/\^\`\`\`\$/\,/\^\`\`\`\$/p\'\ metrix/e1-pilot/PROTOCOL_FROZEN\ \|\ grep\ -E\ \'\^\[0-9a-f\]\{64\}\ \ \'\ \|\ sha256sum\ -c
++metrix/e1-pilot/METRIX_E1_PROTOCOL.md: OK
++metrix/e1-pilot/DATA_MANIFEST.json: OK
++metrix/e1-pilot/SPLIT_MANIFEST.json: OK
++metrix/e1-pilot/SEARCH_SPACE.json: OK
++exit=0
++$ bash -c git\ archive\ 92df1a60ac816ab02b250d32841397c73b9a67a7\ metrix/e1-pilot\ \|\ tar\ -x\ -C\ \$\(mktemp\ -d\ /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/frz.XXXX\)\ \&\&\ echo\ extracted
++extracted
++exit=0
++$ python3 -I -c $'\nimport json, re, subprocess, sys\nH, P = sys.argv[1], sys.argv[2]\nraw = open(P, \'rb\').read()\nt = raw.decode(\'utf-8\')  # raises if not valid UTF-8\nprint(\'valid UTF-8: True | bytes\', len(raw), \'| lines\', t.count(chr(10)))\ndef show(p): return subprocess.run([\'git\', \'show\', H + \':\' + p], capture_output=True, check=True).stdout\ndm, sm = json.loads(show(\'metrix/e1-pilot/DATA_MANIFEST.json\')), json.loads(show(\'metrix/e1-pilot/SPLIT_MANIFEST.json\'))\nwant = {\n \'facts\': dm[\'name_generation\'][\'expected_facts_canonical_sha256\'],\n \'anchor decoded texts\': dm[\'anchor_text\'][\'decoded_texts_canonical_sha256\'],\n \'anchor parquet\': re.search(r\'sha256 ([0-9a-f]{64})\', dm[\'anchor_text\'][\'source\']).group(1),\n \'train_S\': dm[\'s_permutation\'][\'expected_train_S_canonical_sha256\'],\n \'candidates\': sm[\'candidates\'][\'candidate_mapping_sha256\'],\n \'template set\': sm[\'template_freeze\'][\'template_set_sha256\'],\n \'parcae tokenizer.json\': dm[\'general_text\'][\'decode_tokenizer_json_sha256\'],\n \'eval_sets.jsonl\': dm[\'general_text\'][\'source_file_sha256\']}\nfor k, v in dm[\'model\'][\'tokenizer\'][\'files_sha256\'].items(): want[\'Qwen \' + k] = v\nimport hashlib\nfor f in (\'METRIX_E1_PROTOCOL.md\', \'DATA_MANIFEST.json\', \'SPLIT_MANIFEST.json\', \'SEARCH_SPACE.json\'):\n    want[\'file \' + f] = hashlib.sha256(show(\'metrix/e1-pilot/\' + f)).hexdigest()\nfound = re.findall(r\'(?<![0-9a-f])[0-9a-f]{64}(?![0-9a-f])\', t)\nfor k, v in want.items(): print(\'%-28s %s in PROTOCOL_FROZEN: %s\' % (k, v, v in found))\nprint(\'64-hex values in PROTOCOL_FROZEN:\', len(found), \'| distinct\', len(set(found)), \'| not among the freeze-commit values above:\', sorted(set(found) - set(want.values()) - {H}))\nprint(\'freeze commit hash present:\', H in t, \'| parent present:\', \'180762987b2b0d8a18a3070edb16dd4b4c31911e\' in t)\nprint(\'approval string present:\', \'Owner \346\211\271\345\207\206\357\274\2142026-11-22 05:27 UTC\' in t)\nprint(\'commit time recorded == git %cI:\', subprocess.run([\'git\', \'log\', \'-1\', \'--format=%cI\', H], capture_output=True, text=True).stdout.strip())\n' 92df1a60ac816ab02b250d32841397c73b9a67a7 metrix/e1-pilot/PROTOCOL_FROZEN
++valid UTF-8: True | bytes 5275 | lines 54
++facts                        406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 in PROTOCOL_FROZEN: True
++anchor decoded texts         8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 in PROTOCOL_FROZEN: True
++anchor parquet               6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22 in PROTOCOL_FROZEN: True
++train_S                      686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e in PROTOCOL_FROZEN: True
++candidates                   e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 in PROTOCOL_FROZEN: True
++template set                 2b52411326c218e9c51d947b2f4e0d77b0cdd5d6237f9ce25b57a872c48ce28f in PROTOCOL_FROZEN: True
++parcae tokenizer.json        e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77 in PROTOCOL_FROZEN: True
++eval_sets.jsonl              8816fe5a39d8b89e8c4203bf7d660e798faa471d2b72b5ce43c411cf5925a155 in PROTOCOL_FROZEN: True
++Qwen tokenizer.json          aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4 in PROTOCOL_FROZEN: True
++Qwen tokenizer_config.json   d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101 in PROTOCOL_FROZEN: True
++Qwen vocab.json              ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910 in PROTOCOL_FROZEN: True
++Qwen merges.txt              8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5 in PROTOCOL_FROZEN: True
++file METRIX_E1_PROTOCOL.md   61f4b777316cb554846990aa5024d14689124340d4e972a6c77d2d663580f19a in PROTOCOL_FROZEN: True
++file DATA_MANIFEST.json      94ba8516044e9bf10c5ad907f2e905c5afd91833a383b7212737cf28170e8cf3 in PROTOCOL_FROZEN: True
++file SPLIT_MANIFEST.json     2078d0456845b039459dc56e09e5868c4c8f9477dbaab106c4f4a5f924be1baa in PROTOCOL_FROZEN: True
++file SEARCH_SPACE.json       490d575d54b4cbd3902adb496817d89c82763ad22fa8efac8894bcb4a45a6258 in PROTOCOL_FROZEN: True
++64-hex values in PROTOCOL_FROZEN: 16 | distinct 16 | not among the freeze-commit values above: []
++freeze commit hash present: True | parent present: True
++approval string present: True
++commit time recorded == git %cI: 2026-11-22T05:39:23+00:00
++exit=0
++# The "extracted" line above only extracted the freeze commit; the next command extracts it again and runs sha256sum -c inside the extraction.
++$ bash -c d=\$\(mktemp\ -d\ /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/frz2.XXXX\)\;\ git\ archive\ 92df1a60ac816ab02b250d32841397c73b9a67a7\ metrix/e1-pilot\ \|\ tar\ -x\ -C\ \$d\;\ sed\ -n\ \'/\^\`\`\`\$/\,/\^\`\`\`\$/p\'\ metrix/e1-pilot/PROTOCOL_FROZEN\ \|\ grep\ -E\ \'\^\[0-9a-f\]\{64\}\ \ \'\ \|\ \(cd\ \$d\ \&\&\ sha256sum\ -c\)
++metrix/e1-pilot/METRIX_E1_PROTOCOL.md: OK
++metrix/e1-pilot/DATA_MANIFEST.json: OK
++metrix/e1-pilot/SPLIT_MANIFEST.json: OK
++metrix/e1-pilot/SEARCH_SPACE.json: OK
++exit=0

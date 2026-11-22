@@ -1,0 +1,28 @@
+# Data Auditor run. host vm, CPU only (no GPU, no torch, tokenizer files only); 2026-11-22 05:43:39 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit
+# stdout and stderr merged, complete, unedited
+$ env HF_HUB_OFFLINE=1 /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/auditor/venv/bin/python -I -B r8_anchor.py /home/user/OpenMythos 92df1a60ac816ab02b250d32841397c73b9a67a7 /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/auditor/dl/parquet/data/sample-100BT/train/shard_00000.parquet /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/auditor/dl/qwen_tok /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/auditor/work
+[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
+freeze-commit DATA_MANIFEST.anchor_text:
+  source: SandyResearch/fineweb-edu-shuffled@4d1138c0e4d51d98813997ce3560e05a32bf91de, data/sample-100BT/train/shard_00000.parquet (sha256 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22)
+  selection: first 512 documents in file order with at least 600 characters
+  truncate_to_model_tokens: 128
+  document_rule: each document has at most 128 tokens of the protocol tokenizer (the first 128); a document with fewer tokens is used at its full length
+  schedule: step s uses documents (4*s + i) mod 512, i = 0..3
+  decoded_texts_canonical_sha256: 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408
+  decoded_texts_hash_rule: canonical SHA-256 (hashing rule of this manifest) of the JSON list of the 512 anchor texts in document order; text i = decode of the first at most 128 ids of encode(document i, add_special_tokens=False) with the pinned tokenizer (transformers 5.22.2 decode, default arguments); reference implementation metrix/e1-pilot/reports/round2/anchor_check.py (round 8, Review Gate round 7 ruling, item 1d)
+parquet sha256 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22 | manifest 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22 | MATCH True
+AUDIT_VALUE parquet_sha256 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22
+parquet schema columns: ['text'] | row groups 52 | rows 53248
+tokenizer: Qwen2Tokenizer | len 151669 | transformers 5.22.2 | files in dir ['merges.txt', 'tokenizer.json', 'tokenizer_config.json', 'vocab.json']
+rows read until the 512th kept document: 527 | kept 512
+documents with 128 ids / fewer: {'128': 511, '<128': 1} | total chars of the 512 texts 309172
+decoded texts (512) canonical sha256 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 | manifest 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 | MATCH True
+AUDIT_VALUE anchor_decoded_texts_canonical_sha256 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408
+ALT decode(skip_special_tokens=True): sha256 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 | equal to main texts: True
+ALT tokenizers backend decode: sha256 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 | equal to main texts: True
+ALT no truncation (full document decode): sha256 ddf88306f21a1ca0f0a9a83f241462359be45cfa7784a80e3ec63b2c9899a9df | equal to main texts: False
+ALT threshold len > 600: sha256 053f32f3bbcddcc7d2916c321a08407d3eedaa0e40e7aecb61f04cc641eb9687 | equal to main: False
+texts containing a special-token string: []
+wrote /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/auditor/work/anchor_texts.json
+RESULT: PASS
+exit=0

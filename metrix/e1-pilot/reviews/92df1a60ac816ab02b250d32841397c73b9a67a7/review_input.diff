@@ -1,0 +1,699 @@
+commit 92df1a60ac816ab02b250d32841397c73b9a67a7
+Author: Claude
+Date:   2026-11-22T05:39:23+00:00
+
+metrix: E1-PILOT round 8 freeze commit (Review Gate round 7 rulings 1a-1e, PROPOSED values frozen, status PROTOCOL_FROZEN)
+
+Items 1-3 of the round 8 instruction in one commit (Owner approval 2026-11-22 05:27 UTC):
+- 1a train_S.jsonl / candidates.json record formats confirmed (DATA_MANIFEST files.*.record)
+- 1b L6 TEST part: 13-grams within each document, merged, distinct count; text = decode of the ids fed
+  to the model; Executor / data-auditor disagreement -> BLOCKED, report to Owner (ST10)
+- 1c EM: after deleting <think> fragments, strip leading whitespace, then take the first line
+- 1d DATA_MANIFEST: sha256 of the 4 Qwen tokenizer files and of the decoded anchor texts
+- 1e metrix/CLAUDE.md section 8: stage-scoped rulings may be written into the file
+- 2 PROPOSED values frozen (training contract, SEARCH_SPACE/manifest status, section 13 items)
+- 3 protocol status PROTOCOL_FROZEN; section 14 rows v1-r8
+Also: tasks/ROUND8_TASKS.md (instruction verbatim) and reports/round8 raw outputs (step 0 copy check,
+environment, data hashes, protocol checks).
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01J5mxaUfve5PtsqZQQDkJcJ
+
+ metrix/CLAUDE.md                                   |   2 +-
+ metrix/e1-pilot/DATA_MANIFEST.json                 |  24 +++-
+ metrix/e1-pilot/METRIX_E1_PROTOCOL.md              |  40 ++++---
+ metrix/e1-pilot/SEARCH_SPACE.json                  |   3 +-
+ metrix/e1-pilot/SPLIT_MANIFEST.json                |  10 +-
+ metrix/e1-pilot/reports/round8/t0_copy_check.txt   | 132 +++++++++++++++++++++
+ metrix/e1-pilot/reports/round8/t0_env.txt          |  61 ++++++++++
+ .../e1-pilot/reports/round8/t1_protocol_checks.txt |  76 ++++++++++++
+ metrix/e1-pilot/reports/round8/t1d_data_hashes.txt |  83 +++++++++++++
+ metrix/e1-pilot/tasks/ROUND8_TASKS.md              |  21 ++++
+ 10 files changed, 425 insertions(+), 27 deletions(-)
+diff --git a/metrix/CLAUDE.md b/metrix/CLAUDE.md
+index 3480b98..9ff09be 100644
+--- a/metrix/CLAUDE.md
++++ b/metrix/CLAUDE.md
+@@ -59,7 +59,7 @@ PROTOCOL_FROZEN 的发出与修改、租用 GPU、生成或评测 TEST、删除
+ 
+ - Reviewer / Auditor 与 Executor 意见不同:由 Review Gate 裁决。
+ - 协议未覆盖的情况:停止并报告,由 Review Gate 提出方案。
+-- Review Gate 的裁决写入决定记录时须注明作用范围:本次提交 / 本阶段 / 永久。只有「永久」的裁决可写入本文件。
++- Review Gate 的裁决写入决定记录时须注明作用范围:本次提交 / 本阶段 / 永久。「永久」与「本阶段」的裁决可写入本文件,写入时须注明作用范围;「本阶段」的裁决在本阶段结束时失效。（出处：Review Gate 第 7 轮裁决（第 8 轮指令第 1e 项），Owner 批准，2026-11-22 05:27 UTC；原因：原文只允许「永久」的裁决写入本文件，与已写入的第 5 节第 6 条、第 10 节的「本阶段」裁决矛盾，见 metrix/e1-pilot/reports/ROUND7_REPORT.md「待 Review Gate 决定」第 4 项）
+ 
+ ## 9. 汇报格式
+ 
+diff --git a/metrix/e1-pilot/DATA_MANIFEST.json b/metrix/e1-pilot/DATA_MANIFEST.json
+index a6c6ca5..2d05ae3 100644
+--- a/metrix/e1-pilot/DATA_MANIFEST.json
++++ b/metrix/e1-pilot/DATA_MANIFEST.json
+@@ -1,7 +1,8 @@
+ {
+   "protocol": "METRIX-E1-PILOT",
+   "version": "v1",
+-  "status": "PROPOSED_NOT_FROZEN",
++  "status": "PROTOCOL_FROZEN",
++  "frozen": "Owner 批准，2026-11-22 05:27 UTC",
+   "base": {
+     "repository": "leotree2020/OpenMythos",
+     "branch": "mythos-idea-thermo-v1",
+@@ -14,7 +15,14 @@
+     "license": "Apache-2.0",
+     "tokenizer": {
+       "repo": "Qwen/Qwen3-1.7B",
+-      "revision": "70d244cc86ccca08cf5af4e1e306ecf908b1ad5e"
++      "revision": "70d244cc86ccca08cf5af4e1e306ecf908b1ad5e",
++      "files_sha256": {
++        "tokenizer.json": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4",
++        "tokenizer_config.json": "d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101",
++        "vocab.json": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910",
++        "merges.txt": "8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5"
++      },
++      "files_note": "all tokenizer files of the pinned revision (the repository tree at this revision has no other tokenizer file); tokenizer_config.json contains the chat template; SHA-256 of the file bytes as downloaded (round 8, Review Gate round 7 ruling, item 1d)"
+     },
+     "architecture": "Qwen3ForCausalLM, 28 layers, hidden size 2048, about 1.72e9 parameters",
+     "recurrence_depth": "not applicable (no recurrent core)",
+@@ -28,7 +36,7 @@
+       "qa": "chat template of the pinned revision, one user turn, add_generation_prompt=true, enable_thinking=false (fixed, not a parameter), no system prompt",
+       "candidate_scoring": "chat(q) + 'The answer is' + ' ' + c: the assistant turn opens with the fixed prefix 'The answer is'; only the tokens of ' ' + c are scored; nothing follows the candidate; K = K_st; reference implementation metrix/e1-pilot/reports/round3/scoring_input.py",
+       "train_closed_book": "s_ST scores ' ' + c after prefix(f), the text of the TRAIN statement before the answer without the space before the answer; no special token is prepended to prefix(f) (protocol section 5)",
+-      "em_generation": "greedy decoding with do_sample=False (the token of highest probability at each step); fixed, and it overrides the sampling defaults of the pinned generation_config.json (do_sample true, temperature 0.6, top_k 20, top_p 0.95); continues chat(q) + 'The answer is', the same context as candidate scoring; at most 16 new tokens; stops when <|im_end|> (151645) or <|endoftext|> (151643) is generated; the new tokens are decoded with special tokens skipped (skip_special_tokens=True), so neither stop token is in the output; EM compares norm(output) with norm(answer), and leading spaces of the output are removed by the strip step of the normalization (protocol section 5); before the normalization every <think>...</think> fragment of the output is deleted (from <think> to the next </think>, both included, every occurrence); <think> (151667) and </think> (151668) are not special tokens, so skip_special_tokens=True does not remove them (protocol section 5)",
++      "em_generation": "greedy decoding with do_sample=False (the token of highest probability at each step); fixed, and it overrides the sampling defaults of the pinned generation_config.json (do_sample true, temperature 0.6, top_k 20, top_p 0.95); continues chat(q) + 'The answer is', the same context as candidate scoring; at most 16 new tokens; stops when <|im_end|> (151645) or <|endoftext|> (151643) is generated; the new tokens are decoded with special tokens skipped (skip_special_tokens=True), so neither stop token is in the output; EM compares norm(output) with norm(answer) (protocol section 5); before the normalization every <think>...</think> fragment of the output is deleted (from <think> to the next </think>, both included, every occurrence); <think> (151667) and </think> (151668) are not special tokens, so skip_special_tokens=True does not remove them; after the deletion the normalization first removes the leading whitespace (spaces and newlines), then takes the first line, strips, removes a leading 'the ' (case-insensitive), removes trailing . , ; : ! ? and casefolds (protocol section 5)",
+       "general_text_and_anchor": "general-damage windows and arm A anchor documents: no special token is prepended (no <|endoftext|>); the first token has no context and is not scored and gets no KL term; t starts at 2 (protocol sections 4 and 5)"
+     },
+     "libraries": {
+@@ -230,7 +238,9 @@
+     "selection": "first 512 documents in file order with at least 600 characters",
+     "truncate_to_model_tokens": 128,
+     "document_rule": "each document has at most 128 tokens of the protocol tokenizer (the first 128); a document with fewer tokens is used at its full length",
+-    "schedule": "step s uses documents (4*s + i) mod 512, i = 0..3"
++    "schedule": "step s uses documents (4*s + i) mod 512, i = 0..3",
++    "decoded_texts_canonical_sha256": "8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408",
++    "decoded_texts_hash_rule": "canonical SHA-256 (hashing rule of this manifest) of the JSON list of the 512 anchor texts in document order; text i = decode of the first at most 128 ids of encode(document i, add_special_tokens=False) with the pinned tokenizer (transformers 5.22.2 decode, default arguments); reference implementation metrix/e1-pilot/reports/round2/anchor_check.py (round 8, Review Gate round 7 ruling, item 1d)"
+   },
+   "files": {
+     "facts.jsonl": {
+@@ -249,7 +259,8 @@
+       "content": "120 statements with permuted answers (arm S)",
+       "status": "NOT_GENERATED",
+       "byte_sha256": null,
+-      "canonical_sha256": null
++      "canonical_sha256": null,
++      "record": "one object per line {\"fact_id\", \"answer_fact_id\", \"text\"} (protocol 2.6); Review Gate round 7 ruling, item 1a"
+     },
+     "train_Y.jsonl": {
+       "content": "240 style-only sentences (arm Y)",
+@@ -267,7 +278,8 @@
+       "content": "candidate lists of all 160 facts",
+       "status": "NOT_GENERATED",
+       "byte_sha256": null,
+-      "canonical_sha256": null
++      "canonical_sha256": null,
++      "record": "one JSON object {fact_id: [4 candidates]} (protocol 2.5); Review Gate round 7 ruling, item 1a"
+     },
+     "general_dev.jsonl": {
+       "content": "100 general-text windows (25 per domain)",
+diff --git a/metrix/e1-pilot/METRIX_E1_PROTOCOL.md b/metrix/e1-pilot/METRIX_E1_PROTOCOL.md
+index 16380be..c9f4ee5 100644
+--- a/metrix/e1-pilot/METRIX_E1_PROTOCOL.md
++++ b/metrix/e1-pilot/METRIX_E1_PROTOCOL.md
+@@ -3,11 +3,11 @@
+ | 字段 | 值 |
+ |---|---|
+ | Task ID | METRIX-E1-PILOT-PROTOCOL-AUTHORING-V1 |
+-| 状态 | **AWAITING_REVIEW_GATE**(未冻结;冻结后本表改为 PROTOCOL_FROZEN) |
++| 状态 | **PROTOCOL_FROZEN**(Owner 批准，2026-11-22 05:27 UTC;冻结提交打标签 `metrix-e1-pilot-frozen`,其完整 hash 与该提交下本文件、三个 JSON 的 sha256 记在同目录的 `PROTOCOL_FROZEN` 文件中) |
+ | 本文件的作用 | 执行 E1-PILOT 只需要本文件、同目录三个 JSON,以及第 0 节固定的外部来源 |
+ | 本文件不包含 | 任何训练、评测结果或结论;任何 TEST 数据 |
+ 
+-Task Order 与其 “Mandatory consistency amendments A–L” 同时生效;两者冲突处以修订条款为准。据此:fact 聚合函数固定为 mean;Gate 0 只使用 TRAIN 与 DEV;模型已由 Project Owner 指定;算力已决定(一张 NVIDIA A100 80GB,GPU wall-clock 上限 4 小时,见第 7、8、13 节);PENDING_REVIEW_GATE 只剩第 13 节的 2 项。所有改动见第 14 节变更记录。
++Task Order 与其 “Mandatory consistency amendments A–L” 同时生效;两者冲突处以修订条款为准。据此:fact 聚合函数固定为 mean;Gate 0 只使用 TRAIN 与 DEV;模型已由 Project Owner 指定;算力已决定(一张 NVIDIA A100 80GB,GPU wall-clock 上限 4 小时,见第 7、8、13 节);PENDING_REVIEW_GATE 原只剩第 13 节的 2 项,已于冻结时按提案批准(Owner 批准，2026-11-22 05:27 UTC)。所有改动见第 14 节变更记录。
+ 
+ ## 0. 标识、出处与环境
+ 
+@@ -52,7 +52,7 @@ Task Order 与其 “Mandatory consistency amendments A–L” 同时生效;两
+ - 不推断 continual learning 是否有效;E1-PILOT 只有一个训练阶段。
+ - 不把 Δ(L−F)、Δ(A−F) 当作机制结论;它们在 Pilot 里只是描述量,用来估计 E1-V1 需要的规模。
+ - 不推断对其它模型、其它知识类型或更大事实量成立。
+-- 不对 general damage 下 non-inferiority 结论(margin 待 Review Gate,见第 13 节)。
++- 不对 general damage 下 non-inferiority 结论(margin 见第 13 节,在 Pilot 中只报告)。
+ 
+ ## 2. Data Specification
+ 
+@@ -165,12 +165,12 @@ unread fact 的 entity 和 answer 在任何 arm 的训练文本和锚文本里
+ | L3b | 每个 learned answer 在 `anchor_text` 中的出现次数(不分大小写的子串);保证 arm A 对每个候选的暴露与 F 相同 | 0 |
+ | L4 | 实例化后的 DEV / TEST 问句在任何训练语料中逐字出现的次数 | 0 |
+ | L5 | learned 与 unread 的 fact_id 集合相交数;320 个字符串中的重复数 | 0 |
+-| L6 | 锚文本与通用文本共享的词 13-gram 数;“词”= Python `str.split()` 的结果(按空白切分,区分大小写);Qwen token 13-gram 只报告,不设上限。TEST 部分(锚文本对 `general_test.jsonl`):时机为第 8 步生成 `general_test.jsonl` 之后、TEST 评测之前;计数为跨全部文档的共享词 13-gram 种类数(13-gram 在每篇锚文档、每个窗口之内取;锚文本 512 篇的词 13-gram 集合与 `general_test.jsonl` 全部窗口的词 13-gram 集合求交,数交集的元素个数),上限 0;由 Executor 与 data-auditor 各自计算,结果须一致 | 0 |
++| L6 | 锚文本与通用文本共享的词 13-gram 数;“词”= Python `str.split()` 的结果(按空白切分,区分大小写);Qwen token 13-gram 只报告,不设上限。TEST 部分(锚文本对 `general_test.jsonl`):时机为第 8 步生成 `general_test.jsonl` 之后、TEST 评测之前;计数为跨全部文档的共享词 13-gram 种类数:13-gram 在每篇文档(每篇锚文档、每个窗口)之内取,不跨篇拼接;锚文本 512 篇的词 13-gram 合并为一个集合,`general_test.jsonl` 全部窗口的词 13-gram 合并为一个集合,两者求交,计交集的种类数(元素个数);取 13-gram 的文本是实际送入模型的 id 用本协议分词器解码所得(锚文档最多 128 个 id,窗口最多 256 个 id),上限 0;由 Executor 与 data-auditor 各自计算,结果须一致;两者结果不一致时按 BLOCKED 处理并报告 Owner(ST10) | 0 |
+ 
+ learned fact 的 entity 与 answer 同时出现在 TRAIN 陈述句和 QA 中是被测对象,不算泄漏。
+ 
+ 执行接口(实现属于下一个 Task):
+-`python -m metrix.e1_pilot.check_leakage --data <DATA_DIR> --split-manifest metrix/e1-pilot/SPLIT_MANIFEST.json --out <DATA_DIR>/leakage_report.json`,仅当 6 项都在上限内时退出码为 0。L1、L2 只用模板,协议撰写时已可计算;L3–L5 中涉及 TEST 的部分在 `test_qa.jsonl` 生成之后才运行;L6 的 TEST 部分在 `general_test.jsonl` 生成之后才运行(时机与口径见上表 L6 一行与第 8 节第 8 步)。L3–L6 任一项的 TEST 部分超限,按第 11 节 ST10 处理。第 2.2 节的锚文本规则使 L3a、L3b 在生成时就成立,检查仍然执行。
++`python -m metrix.e1_pilot.check_leakage --data <DATA_DIR> --split-manifest metrix/e1-pilot/SPLIT_MANIFEST.json --out <DATA_DIR>/leakage_report.json`,仅当 6 项都在上限内时退出码为 0。L1、L2 只用模板,协议撰写时已可计算;L3–L5 中涉及 TEST 的部分在 `test_qa.jsonl` 生成之后才运行;L6 的 TEST 部分在 `general_test.jsonl` 生成之后才运行(时机与口径见上表 L6 一行与第 8 节第 8 步)。L3–L6 任一项的 TEST 部分超限,或 L6 的 TEST 部分 Executor 与 data-auditor 的结果不一致,按第 11 节 ST10 处理。第 2.2 节的锚文本规则使 L3a、L3b 在生成时就成立,检查仍然执行。
+ 
+ ## 4. Arms(6 个)
+ 
+@@ -207,7 +207,7 @@ CB(f) = 1[ s_ST(f, a_f) > max_{c ≠ a_f} s_ST(f, c) ]
+ Acc_CB(arm) = (1/120) · Σ_{f ∈ learned} CB(f)
+ ```
+ 
+-**Free-generation exact match(次指标)**:对 `chat(q) + "The answer is"`(与 `s_QA` 的上下文相同)做贪心解码:`do_sample=False`,每步取概率最大的 token;这一设置写死,覆盖固定 revision 的 `generation_config.json` 中的采样默认值(`do_sample` true、`temperature` 0.6、`top_k` 20、`top_p` 0.95)。最多 16 个新 token,生成出 `<|im_end|>`(id 151645)或 `<|endoftext|>`(id 151643)即停。新 token 解码成文本时跳过特殊 token(`skip_special_tokens=True`;这两个停止 token 都是特殊 token,不进入输出)。归一化之前,先删除输出中的 `<think>…</think>` 片段:从 `<think>` 到其后第一个 `</think>`(两者都含),每处都删;这两个标记(id 151667、151668)不是特殊 token,`skip_special_tokens=True` 不会去掉它们。归一化:取第一行,去首尾空白(输出开头的空格在这一步去掉),去开头的 “the ”(不分大小写),去结尾的 `. , ; : ! ?`,casefold。`EM(f, q) = 1[norm(output) == norm(a_f)]`;聚合方式同上。
++**Free-generation exact match(次指标)**:对 `chat(q) + "The answer is"`(与 `s_QA` 的上下文相同)做贪心解码:`do_sample=False`,每步取概率最大的 token;这一设置写死,覆盖固定 revision 的 `generation_config.json` 中的采样默认值(`do_sample` true、`temperature` 0.6、`top_k` 20、`top_p` 0.95)。最多 16 个新 token,生成出 `<|im_end|>`(id 151645)或 `<|endoftext|>`(id 151643)即停。新 token 解码成文本时跳过特殊 token(`skip_special_tokens=True`;这两个停止 token 都是特殊 token,不进入输出)。归一化之前,先删除输出中的 `<think>…</think>` 片段:从 `<think>` 到其后第一个 `</think>`(两者都含),每处都删;这两个标记(id 151667、151668)不是特殊 token,`skip_special_tokens=True` 不会去掉它们。归一化:删除 `<think>…</think>` 片段之后,先去掉开头的空白(含空格与换行),再取第一行,去首尾空白,去开头的 “the ”(不分大小写),去结尾的 `. , ; : ! ?`,casefold。`EM(f, q) = 1[norm(output) == norm(a_f)]`;聚合方式同上。
+ 
+ **全对率(次指标,只报告)**:`AllCorrect(f) = Π_{q} correct(f, q)`。
+ 
+@@ -258,7 +258,7 @@ E1-PILOT 只有一个训练阶段:Retention 记为 NOT_TESTED,不进任何门槛
+ 
+ **训练契约(冻结后不得改;F、L、A、S 的事实 token 数相同)**
+ 
+-| 项 | 值(PROPOSED) |
++| 项 | 值(冻结;Owner 批准，2026-11-22 05:27 UTC) |
+ |---|---|
+ | 优化器 | AdamW,betas (0.9, 0.999),eps 1e-8 |
+ | 训练量 | 对 120 条 TRAIN 陈述句读 20 遍 |
+@@ -294,7 +294,8 @@ E1-PILOT 只有一个训练阶段:Retention 记为 NOT_TESTED,不进任何门槛
+ {
+   "protocol": "METRIX-E1-PILOT",
+   "version": "v1",
+-  "status": "PROPOSED",
++  "status": "PROTOCOL_FROZEN",
++  "frozen": "Owner 批准，2026-11-22 05:27 UTC",
+   "search_seed": 101,
+   "selection": {
+     "split": "DEV only",
+@@ -521,7 +522,7 @@ E1-PILOT 只有一个训练阶段:Retention 记为 NOT_TESTED,不进任何门槛
+ 5. L、A 的搜索 → 选定。
+ 6. F、L、A 的另外两个种子;S、Y 各三个种子。
+ 7. 按下表判定 Gate 0。
+-8. Gate 0 通过后:提交冻结记录(选定配置、数据哈希、checkpoint 哈希)→ 生成 `test_qa.jsonl` 与 `general_test.jsonl` → 对 TEST 运行 L3–L5 → L6 的 TEST 部分(锚文本对 `general_test.jsonl`):在本步生成 `general_test.jsonl` 之后、TEST 评测之前,由 Executor 与 data-auditor 各自计算一次,只输出计数(口径与上限见第 3 节 L6),两者的结果须一致 → L3–L6 任一项的 TEST 部分超限:停止,不评测 TEST,状态记为 BLOCKED,报告 Owner(ST10) → 全部在上限内时,**TEST 只评一次**。
++8. Gate 0 通过后:提交冻结记录(选定配置、数据哈希、checkpoint 哈希)→ 生成 `test_qa.jsonl` 与 `general_test.jsonl` → 对 TEST 运行 L3–L5 → L6 的 TEST 部分(锚文本对 `general_test.jsonl`):在本步生成 `general_test.jsonl` 之后、TEST 评测之前,由 Executor 与 data-auditor 各自计算一次,只输出计数(口径与上限见第 3 节 L6),两者的结果须一致 → L3–L6 任一项的 TEST 部分超限,或 L6 的 TEST 部分两者结果不一致:停止,不评测 TEST,状态记为 BLOCKED,报告 Owner(ST10) → 全部在上限内且 L6 两者结果一致时,**TEST 只评一次**。
+ 
+ **算力边界**:第 3–8 步全部在设备全名与首次记录逐字相同的一张 NVIDIA A100 80GB 上执行,累计 GPU wall-clock ≤ 4 小时(第 7 节);任何一步若会使累计时间超过上限,按 ST7 停下,不得静默继续,也不得为节省时间删减本节的任何一步。
+ 
+@@ -568,7 +569,7 @@ E1-PILOT 只有一个训练阶段:Retention 记为 NOT_TESTED,不进任何门槛
+ | OPTIMIZATION_OR_CAPACITY_UNRESOLVED | G0.4 满足但 G0.5 或 T1 的正确率不满足 |
+ | CAPACITY_LIMIT | 仅当更强的模型在同一协议下 PASS 之后才可使用;在此之前必须保留 OPTIMIZATION_OR_CAPACITY_UNRESOLVED |
+ | HYPOTHESIS_FAIL | 保留给 E1-V1 的机制比较;E1-PILOT 没有机制假设,不使用 |
+-| BLOCKED | 环境、资源、数据来源或库版本不满足第 0 节,无法按协议执行;或第 8 步 L3–L6 任一项的 TEST 部分超限(ST10) |
++| BLOCKED | 环境、资源、数据来源或库版本不满足第 0 节,无法按协议执行;或第 8 步 L3–L6 任一项的 TEST 部分超限,或 L6 的 TEST 部分 Executor 与 data-auditor 的结果不一致(ST10) |
+ | NOT_TESTED | 未运行,或在没有违反任何条件的情况下提前停止 |
+ 
+ 看到结果之后不得修改任何门槛;协议本身有缺陷时,开新版本(PROTOCOL_REVISION_V2)。
+@@ -615,7 +616,7 @@ Compute accounting 的算法:训练 FLOPs ≈ 6 · P · T,前向 FLOPs ≈ 2 ·
+ | ST7 | 累计 GPU wall-clock 超过 4 小时(第 7 节) | 停并报告进度;延长上限、换硬件或降级都需 Owner 决定并记录,不得静默继续 |
+ | ST8 | 环境不满足第 0 节 | BLOCKED |
+ | ST9 | 某次运行开始时读到的设备全名与首次记录不同 | 整批作废:本次 Pilot 的全部结果不得用于任何判断;BLOCKED;在设备全名一致的机器上从第 8 节第 3 步重新开始 |
+-| ST10 | 第 8 步 L3–L6 任一项的 TEST 部分超限 | 停止;不评测 TEST;BLOCKED;报告 Owner |
++| ST10 | 第 8 步 L3–L6 任一项的 TEST 部分超限;或 L6 的 TEST 部分 Executor 与 data-auditor 的结果不一致 | 停止;不评测 TEST;BLOCKED;报告 Owner |
+ 
+ ## 12. Out of Scope
+ 
+@@ -626,16 +627,16 @@ Compute accounting 的算法:训练 FLOPs ≈ 6 · P · T,前向 FLOPs ≈ 2 ·
+ - NONE / 拒答校准。
+ - 探索沙盒(SANDBOX)。
+ 
+-## 13. Open Questions for Review Gate(PENDING_REVIEW_GATE 仅此 2 项)
++## 13. Open Questions for Review Gate(原 PENDING_REVIEW_GATE 2 项,已按提案批准)
+ 
+-| # | 字段 | PROPOSED | 理由 |
++| # | 字段 | 冻结值(按提案批准;Owner 批准，2026-11-22 05:27 UTC) | 理由 |
+ |---|---|---|---|
+ | 1 | E1-V1 目标 fact 数 | 320(240 learned + 80 unread),并在 Pilot 后按 G0.10 的公式重算 | 若配对差的标准差为 0.5,检出 0.10 的差需要约 196 条 learned fact;取 240 留余量 |
+-| 2 | general-damage non-inferiority margin | dNLL ≤ +0.03(约 +3% PPL) | 与本仓库此前实验使用的容忍幅度一致;Pilot 里 general damage 只报告,不进门槛 |
++| 2 | general-damage non-inferiority margin | dNLL ≤ +0.03(约 +3% PPL);在 Pilot 中只报告,不进门槛 | 与本仓库此前实验使用的容忍幅度一致;Pilot 里 general damage 只报告,不进门槛 |
+ 
+ **已决定,不再待定**:原第 3 项“CPU wall-clock 上限”由 Metrix 指令 Round 1 第 8 项(2026-11-12)决定:CPU 不执行任何模型训练或评测(CPU wall-clock 上限对模型计算为 0);整个 Pilot 在一张 NVIDIA A100 80GB 上执行,型号写死,GPU wall-clock 上限 4 小时(第 7、8、11 节)。
+ 
+-其余可执行参数都已写死或标为 PROPOSED;Review Gate 可以改动一次,PROTOCOL_FROZEN 之后任何门槛、split 规则、指标、搜索预算或 Gate 定义的改动都必须开新协议版本。
++其余可执行参数都已写死;原标为 PROPOSED 的训练契约(第 7 节)、`SEARCH_SPACE.json` 与本节 2 项已于冻结时改为冻结值(Owner 批准，2026-11-22 05:27 UTC)。PROTOCOL_FROZEN 之后任何门槛、split 规则、指标、搜索预算或 Gate 定义的改动都必须开新协议版本。
+ 
+ ## 14. 变更记录
+ 
+@@ -679,5 +680,14 @@ Compute accounting 的算法:训练 FLOPs ≈ 6 · P · T,前向 FLOPs ≈ 2 ·
+ | v1-r7 | 2026-11-22 03:25:59 | `7fea9181` | 第 5 节 general damage;第 2.7 节锚文本;第 2.2 节锚文本规则;`DATA_MANIFEST.json: general_text.window_rule`、`anchor_text.document_rule`(新增) | n_w 原文“窗口的 token 数”改为“窗口实际送入模型的 id 序列长度:送入模型的是第 2.7 节用本协议分词器切分后截断得到的原始 id(最多 256 个),不解码再编码”。锚文本原文“各截到 128 token”改为“每篇最多 128 token(取前 128 个),不足则取全长”;第 2.2 节“512 篇、各截到 128 token 后解码的文本”改为“512 篇、每篇最多 128 token、解码后的文本” | Review Gate 第 6 轮裁决,第 7 轮指令第 1e 项(待决第 4、5 项;`reviews/599230f9…/code-reviewer.md` 第 18、19 行):n_w 与 v1-r6 改过的 n_x 口径不一;第 340 篇锚文档全文只有 123 个 token,“截到 128”与实际不符。数值不变 |
+ | v1-r7 | 2026-11-22 03:25:59 | `7fea9181` | 第 5 节 EM;`DATA_MANIFEST.json: model.input_convention.em_generation` | 新增“归一化之前,先删除输出中的 `<think>…</think>` 片段:从 `<think>` 到其后第一个 `</think>`(两者都含),每处都删;这两个标记(id 151667、151668)不是特殊 token,`skip_special_tokens=True` 不会去掉它们” | Review Gate 第 6 轮裁决,第 7 轮指令第 1f 项(待决第 11 项第 1 点;第 5 轮待决 7 第 1 点):两个标记不是特殊 token(`reports/round7/t1f_think_tokens.txt`),原文的 `skip_special_tokens=True` 去不掉;它们出现在输出第一行时,归一化后的输出不可能等于答案 |
+ | v1-r7 | 2026-11-22 03:25:59 | `7fea9181` | 第 2.5 节(新增“调用方式(细节 5)”“`candidates.json`”两条与复现哈希);第 2.6 节(新增“调用方式(细节 4)”与复现哈希);`DATA_MANIFEST.json: s_permutation`(字符串改为对象,原文保留为 `rule`);`SPLIT_MANIFEST.json: candidates.call_order`、`file`、`reference_implementation`、`candidate_mapping_sha256_note`(新增),`candidate_mapping_sha256`(null 改为全值) | 写死两处随机流的调用顺序与文件记录格式:S 每个 cell 一个生成器,每次从 `list(range(15))` 开始调用一次 `shuffle`,有不动点用同一生成器重抽;候选每条 fact 一个生成器,依次 `sample(池, 3)`、`shuffle([a_f] + d)`,池按 fact 生成顺序。`DATA_SEED` 下 `train_S.jsonl` 规范化 SHA-256 `686fdd2f…`,`candidates.json` `e5d15c99…`(全值见正文与 manifest) | Review Gate 第 6 轮裁决,第 7 轮指令第 1g 项(待决第 11 项第 2 点;第 4 轮待决 8):原文只写了 purpose,没有写调用方式,只凭协议不能逐字节复现这两个文件。两次独立运行逐字节一致(`reports/round7/t1g_gen_s_cands.txt`) |
++| v1-r8(冻结) | 冻结提交的提交时间(见 `PROTOCOL_FROZEN`) | 冻结提交(标签 `metrix-e1-pilot-frozen`) | 第 2.5、2.6 节(文字不变);`DATA_MANIFEST.json: files.train_S.jsonl.record`、`files.candidates.json.record`(新增) | 确认 `train_S.jsonl` 每行 `{"fact_id", "answer_fact_id", "text"}`(第 2.6 节)、`candidates.json` 为 `{fact_id: [4 个候选]}`(第 2.5 节);两节的文字 v1-r7 已如此写,本次不改。`DATA_MANIFEST.json: files` 中这两个文件新增 `record` 键,写明同一格式。两个复现哈希不变 | Review Gate 第 7 轮裁决,第 8 轮指令第 1a 项(`ROUND7_REPORT.md`“待 Review Gate 决定”第 2 项;`reviews/293b806d…/code-reviewer.md` 第 31 行):两个文件的记录格式原由 Executor 自定,规范化哈希依赖这一选择 |
++| v1-r8(冻结) | 同上 | 同上 | 第 3 节 L6 一行与执行接口;第 8 节第 8 步;第 9 节 BLOCKED 一行;第 11 节 ST10;`SPLIT_MANIFEST.json: leakage_checks.L6_general_text.test_part.count`、`test_part.text`(新增)、`test_part.computed_by`、`leakage_checks.test_part_over_limit` | L6 TEST 部分计数的括注原文“(13-gram 在每篇锚文档、每个窗口之内取;锚文本 512 篇的词 13-gram 集合与 `general_test.jsonl` 全部窗口的词 13-gram 集合求交,数交集的元素个数)”改为“:13-gram 在每篇文档(每篇锚文档、每个窗口)之内取,不跨篇拼接;锚文本 512 篇的词 13-gram 合并为一个集合,`general_test.jsonl` 全部窗口的词 13-gram 合并为一个集合,两者求交,计交集的种类数(元素个数);取 13-gram 的文本是实际送入模型的 id 用本协议分词器解码所得(锚文档最多 128 个 id,窗口最多 256 个 id)”;“结果须一致”后加“两者结果不一致时按 BLOCKED 处理并报告 Owner(ST10)”。执行接口、第 8 步、第 9 节 BLOCKED 一行与 ST10 的事件各加“L6 的 TEST 部分 Executor 与 data-auditor 的结果不一致”;第 8 步“全部在上限内时”改为“全部在上限内且 L6 两者结果一致时” | 第 8 轮指令第 1b 项(待决第 3、5 项;`reviews/293b806d…/code-reviewer.md` 第 32、41 行):“跨全部文档”也可读成 n-gram 跨篇拼接;计算用的文本没有定义;两方结果不一致时没有规定动作 |
++| v1-r8(冻结) | 同上 | 同上 | 第 5 节 EM;`DATA_MANIFEST.json: model.input_convention.em_generation` | 原文“归一化:取第一行,去首尾空白(输出开头的空格在这一步去掉),去开头的 “the ”……”改为“归一化:删除 `<think>…</think>` 片段之后,先去掉开头的空白(含空格与换行),再取第一行,去首尾空白,去开头的 “the ”……”。manifest 中原文“EM compares norm(output) with norm(answer), and leading spaces of the output are removed by the strip step of the normalization”改为同样的顺序(删除后先去开头空白、再取第一行) | 第 8 轮指令第 1c 项(待决第 6 项第 1 点;`reviews/293b806d…/data-auditor.md` 第 149 行起,M1):`enable_thinking=false` 的生成提示以 `<think>\n\n</think>\n\n` 结尾,模型若再生成这一段,删除后输出以空行开头,原来先“取第一行”会得到空串 |
++| v1-r8(冻结) | 同上 | 同上 | `DATA_MANIFEST.json: model.tokenizer.files_sha256`、`model.tokenizer.files_note`、`anchor_text.decoded_texts_canonical_sha256`、`anchor_text.decoded_texts_hash_rule`(均新增) | 写入固定 revision 的 4 个分词器文件(`tokenizer.json`、`tokenizer_config.json`、`vocab.json`、`merges.txt`;该 revision 的仓库中没有其它分词器文件)的 sha256,以及锚文本 512 篇解码文本的规范化 SHA-256 `8828bc4f…` 与其算法(全值见 manifest) | 第 8 轮指令第 1d 项(待决第 12 项;`reviews/293b806d…/code-reviewer_report-commit.md` 第 52–53 行):这些哈希原先只记在报告与原始输出中,不在 manifest 里。本轮重算见 `reports/round8/t0_env.txt`、`reports/round8/t1d_data_hashes.txt` |
++| v1-r8(冻结) | 同上 | 同上 | `metrix/CLAUDE.md` 第 8 节(不属于本协议;指令要求第 1 项全部记入本节) | 原文“只有「永久」的裁决可写入本文件。”改为“「永久」与「本阶段」的裁决可写入本文件,写入时须注明作用范围;「本阶段」的裁决在本阶段结束时失效。”,并注明出处、批准、时间与原因 | 第 8 轮指令第 1e 项(待决第 4 项;`reviews/293b806d…/code-reviewer.md` 第 33 行):原文与第 7 轮写入的第 5 节第 6 条、第 10 节两条「本阶段」裁决矛盾 |
++| v1-r8(冻结) | 同上 | 同上 | 第 7 节训练契约表头;`SEARCH_SPACE.json`(及第 7 节内联副本)、`DATA_MANIFEST.json`、`SPLIT_MANIFEST.json` 的 `status`;第 13 节;文件头说明;第 1 节 Non-claims | 训练契约表头“值(PROPOSED)”改为“值(冻结;Owner 批准，2026-11-22 05:27 UTC)”,表中数值不变。`SEARCH_SPACE.json` 的 `status` 由 `PROPOSED`、两个 manifest 的 `status` 由 `PROPOSED_NOT_FROZEN` 改为 `PROTOCOL_FROZEN`,三个文件都在 `status` 后新增 `"frozen": "Owner 批准，2026-11-22 05:27 UTC"`;内联副本随之更新。第 13 节两项按提案批准:第 1 项值不变(320 条 fact,Pilot 后按 G0.10 重算),第 2 项值后加“在 Pilot 中只报告,不进门槛”;标题“(PENDING_REVIEW_GATE 仅此 2 项)”改为“(原 PENDING_REVIEW_GATE 2 项,已按提案批准)”,表头“PROPOSED”改为“冻结值(按提案批准;Owner 批准，2026-11-22 05:27 UTC)”;末段“其余可执行参数都已写死或标为 PROPOSED;Review Gate 可以改动一次,”改为“其余可执行参数都已写死;原标为 PROPOSED 的训练契约(第 7 节)、`SEARCH_SPACE.json` 与本节 2 项已于冻结时改为冻结值(Owner 批准，2026-11-22 05:27 UTC)。”。文件头“PENDING_REVIEW_GATE 只剩第 13 节的 2 项”改为“PENDING_REVIEW_GATE 原只剩第 13 节的 2 项,已于冻结时按提案批准(Owner 批准，2026-11-22 05:27 UTC)”;第 1 节“margin 待 Review Gate,见第 13 节”改为“margin 见第 13 节,在 Pilot 中只报告” | 第 8 轮指令第 2 项(待决第 12 项中“改哪些 `status` 字段”):Owner 批准冻结,PROPOSED 各项改为冻结值;文件头、第 1 节与第 13 节末段的原文在批准后不再成立 |
++| v1-r8(冻结) | 同上 | 同上 | 文件头“状态”一行 | 原文“**AWAITING_REVIEW_GATE**(未冻结;冻结后本表改为 PROTOCOL_FROZEN)”改为“**PROTOCOL_FROZEN**(Owner 批准，2026-11-22 05:27 UTC;冻结提交打标签 `metrix-e1-pilot-frozen`,其完整 hash 与该提交下本文件、三个 JSON 的 sha256 记在同目录的 `PROTOCOL_FROZEN` 文件中)” | 第 8 轮指令第 3 项:Owner 于 2026-11-22 05:27 UTC 批准冻结 |
++
++注(v1-r8):一个提交不能包含自身的 hash,冻结之后补填又会改动冻结的协议,所以 v1-r8 各行的“时间”与“提交”写作“冻结提交”;冻结提交的完整 hash 与提交时间记在 `PROTOCOL_FROZEN` 文件中,并由标签 `metrix-e1-pilot-frozen` 指向。
+ 
+ 注:根目录 `CLAUDE.md`(宪章)第 6 节标题中的日期 “2026-11-13” 是 JST(日本标准时间,UTC+9)。该节由提交 `8ce8c896` 加入,提交时间 2026-11-12 15:25:19 UTC,即 2026-11-13 00:25:19 JST。本表的时间都是 UTC。
+diff --git a/metrix/e1-pilot/SEARCH_SPACE.json b/metrix/e1-pilot/SEARCH_SPACE.json
+index 7964761..5c28fca 100644
+--- a/metrix/e1-pilot/SEARCH_SPACE.json
++++ b/metrix/e1-pilot/SEARCH_SPACE.json
+@@ -1,7 +1,8 @@
+ {
+   "protocol": "METRIX-E1-PILOT",
+   "version": "v1",
+-  "status": "PROPOSED",
++  "status": "PROTOCOL_FROZEN",
++  "frozen": "Owner 批准，2026-11-22 05:27 UTC",
+   "search_seed": 101,
+   "selection": {
+     "split": "DEV only",
+diff --git a/metrix/e1-pilot/SPLIT_MANIFEST.json b/metrix/e1-pilot/SPLIT_MANIFEST.json
+index ec9717c..6ba1dec 100644
+--- a/metrix/e1-pilot/SPLIT_MANIFEST.json
++++ b/metrix/e1-pilot/SPLIT_MANIFEST.json
+@@ -1,7 +1,8 @@
+ {
+   "protocol": "METRIX-E1-PILOT",
+   "version": "v1",
+-  "status": "PROPOSED_NOT_FROZEN",
++  "status": "PROTOCOL_FROZEN",
++  "frozen": "Owner 批准，2026-11-22 05:27 UTC",
+   "base": {
+     "repository": "leotree2020/OpenMythos",
+     "branch": "mythos-idea-thermo-v1",
+@@ -369,15 +370,16 @@
+       "test_part": {
+         "pair": "anchor_text vs general_test.jsonl",
+         "when": "in step 8 of protocol section 8, after general_test.jsonl is generated and before the TEST evaluation",
+-        "count": "number of distinct shared word 13-grams across all documents: 13-grams are taken within each anchor document and within each window; the set of word 13-grams of the 512 anchor documents is intersected with the set of word 13-grams of all general_test.jsonl windows, and the size of the intersection is counted",
++        "count": "number of distinct shared word 13-grams across all documents: 13-grams are taken within each document (each anchor document, each window), never across documents; the word 13-grams of the 512 anchor documents are merged into one set, those of all general_test.jsonl windows into another, and the number of distinct elements of their intersection is counted",
++        "text": "the text from which the 13-grams are taken is the decode, with the protocol tokenizer, of the ids actually fed to the model (at most 128 ids per anchor document, at most 256 ids per window)",
+         "limit": 0,
+-        "computed_by": "the Executor and the data-auditor, each separately; the two results must be identical"
++        "computed_by": "the Executor and the data-auditor, each separately; the two results must be identical; if they differ: BLOCKED, report to the Owner (protocol section 11, ST10)"
+       }
+     },
+     "command": "python -m metrix.e1_pilot.check_leakage --data <DATA_DIR> --split-manifest metrix/e1-pilot/SPLIT_MANIFEST.json --out <DATA_DIR>/leakage_report.json",
+     "exit_code": "0 only if every check is within its limit",
+     "test_split": "L1 and L2 use templates only; L3a, L3b, L4, L5 run on TEST questions only after test_qa.jsonl is generated; the TEST part of L6 (anchor_text vs general_test) runs after general_test.jsonl is generated in step 8 and before the TEST evaluation, computed separately by the Executor and the data-auditor with identical results, and outputs counts only (L6_general_text.test_part); at Gate 0, G0.1 does not require the parts of L1-L6 that involve TEST, they run in step 8 (protocol section 8)",
+-    "test_part_over_limit": "if the TEST part of any of L3-L6 exceeds its limit: stop, do not evaluate TEST, status BLOCKED, report to the Owner (protocol section 11, ST10)",
++    "test_part_over_limit": "if the TEST part of any of L3-L6 exceeds its limit, or the Executor and data-auditor results for the TEST part of L6 differ: stop, do not evaluate TEST, status BLOCKED, report to the Owner (protocol section 11, ST10)",
+     "generation_rule": "names occurring in anchor_text are rejected when they are generated (DATA_MANIFEST.json: name_generation.anchor_rule), so L3a and L3b hold by construction; the checks still run"
+   },
+   "hashing": {
+diff --git a/metrix/e1-pilot/reports/round8/t0_copy_check.txt b/metrix/e1-pilot/reports/round8/t0_copy_check.txt
+new file mode 100644
+index 0000000..72452c4
+--- /dev/null
++++ b/metrix/e1-pilot/reports/round8/t0_copy_check.txt
+@@ -0,0 +1,132 @@
++# Round 8 step 0 raw output: compare user-level copies under /root/.claude/ with the files on branch metrix-e1-pilot-protocol-v1 (same method as round 7, reports/round7/t0_copy_check.txt); then compare the frontmatter and tools line of each agent definition (metrix/CLAUDE.md section 5 item 6). Written by the Executor (session_01J5mxaUfve5PtsqZQQDkJcJ). Host vm (Anthropic cloud container). Sun Nov 22 05:34:28 UTC 2026
++# Read-only commands; cwd /home/user/OpenMythos. stdout+stderr merged, unedited. Commands recorded by reports/round5/logrun.sh. diff exit=1 means the files differ.
++
++## Part A: step 0
++$ hostname
++vm
++exit=0
++$ date -u
++Sun Nov 22 05:34:28 UTC 2026
++exit=0
++$ uptime -s
++2026-11-22 05:30:39
++exit=0
++$ git rev-parse HEAD origin/metrix-e1-pilot-protocol-v1
++180762987b2b0d8a18a3070edb16dd4b4c31911e
++180762987b2b0d8a18a3070edb16dd4b4c31911e
++exit=0
++$ git status --short --branch
++## metrix-e1-pilot-protocol-v1...origin/metrix-e1-pilot-protocol-v1
++?? metrix/e1-pilot/reports/round8/
++exit=0
++$ git reflog --date=iso -8
++1807629 HEAD@{2026-11-22 05:30:54 +0000}: checkout: moving from claude/e1-pilot-protocol-freeze-krvv9u to metrix-e1-pilot-protocol-v1
++155430a HEAD@{2026-11-22 05:30:42 +0000}: checkout: moving from 155430a88d2a98322fc4c79b2a067792c3c9579a to claude/e1-pilot-protocol-freeze-krvv9u
++155430a HEAD@{2026-11-22 05:30:42 +0000}: 
++155430a HEAD@{2026-11-21 04:56:34 +0000}: checkout: moving from 155430a88d2a98322fc4c79b2a067792c3c9579a to main
++155430a HEAD@{2026-11-21 04:56:34 +0000}: 
++exit=0
++$ git ls-tree --name-only 155430a
++.gitignore
++LICENSE
++README.md
++docs
++example.py
++examples
++open_mythos
++pyproject.toml
++requirements.txt
++tests
++training
++exit=0
++$ sha256sum metrix/CLAUDE.md /root/.claude/CLAUDE.md .claude/agents/code-reviewer.md /root/.claude/agents/code-reviewer.md .claude/agents/data-auditor.md /root/.claude/agents/data-auditor.md
++4392329e291a447c6d571c8ec62256bb794445011ea1c39e6982d9931c3697fd  metrix/CLAUDE.md
++a24f6f3d23d76012cce17d397c823da6aa171c7dcba0e6919741626f731b249c  /root/.claude/CLAUDE.md
++e38d091494059227d8d95896aa50858adc32f4750a5512b45bec97dd368932c6  .claude/agents/code-reviewer.md
++bf66a0d6cf547feae1d0ebed2f251643d74847790e4447adb123b923d9f6add5  /root/.claude/agents/code-reviewer.md
++4201122829c31512859baa55d755a016073544f5c4a887f59bcfeef0abfdd833  .claude/agents/data-auditor.md
++4201122829c31512859baa55d755a016073544f5c4a887f59bcfeef0abfdd833  /root/.claude/agents/data-auditor.md
++exit=0
++$ stat -c %n\ \|\ birth\ %w\ \|\ modify\ %y /root/.claude/CLAUDE.md /root/.claude/agents/code-reviewer.md /root/.claude/agents/data-auditor.md
++/root/.claude/CLAUDE.md | birth 2026-11-21 04:56:35.338916083 +0000 | modify 2026-11-21 04:56:35.338916083 +0000
++/root/.claude/agents/code-reviewer.md | birth 2026-11-21 04:56:35.334916083 +0000 | modify 2026-11-21 04:56:35.334916083 +0000
++/root/.claude/agents/data-auditor.md | birth 2026-11-21 04:56:35.334916083 +0000 | modify 2026-11-21 04:56:35.338916083 +0000
++exit=0
++$ diff metrix/CLAUDE.md /root/.claude/CLAUDE.md
++45d44
++< 6. 每次调用审查 subagent,调用文字的第一句固定为:「先读仓库中的 .claude/agents/<名称>.md，以它为你的完整定义；它与你已加载的定义冲突时，以仓库文件为准。」调用前比对仓库文件与已加载定义的 frontmatter;两个版本的 tools 行不一致时必须停下,不得用此方法替代。（出处：Review Gate 第 7 轮裁决，Owner 批准，本阶段，2026-11-22 03:25:59 UTC）
++56,57d54
++< 注：「删除任何文件」不含会话临时目录；但支撑结论的输出须先提交。
++< 
++69d65
++< - 原始输出一律写入仓库并推送，不留在临时目录；data-auditor 须提交 audit 脚本的完整 stdout。（出处：Review Gate 第 4 轮裁决，Owner 批准，永久）
++73,75c69
++< - `code-reviewer`:已验证（2026-11-21 盲测 3/3 检出、0 误报；每类仅 1 个样本，PASS 仍须附原始输出）。
++< - `data-auditor`:「待验证」。2026-11-21 的盲测只测了 code-reviewer;埋入已知 bug 的检出率测试通过前,其 PASS 仅作参考。
++< - 以上两条的出处：Review Gate 第 5 轮裁决。（出处：Review Gate 第 6 轮裁决，Owner 批准，本阶段，2026-11-22 03:25:59 UTC）
++---
++> 两个审查 subagent 当前为「待验证」。埋入已知 bug 的检出率测试通过前,其 PASS 仅作参考。
++exit=1
++$ diff .claude/agents/code-reviewer.md /root/.claude/agents/code-reviewer.md
++29,30d28
++< 未实际运行就作出的判断须标注『未验证』。
++< 引用仓库中已提交的原始输出（写明路径与行号）的判断视为已验证。
++exit=1
++$ diff .claude/agents/data-auditor.md /root/.claude/agents/data-auditor.md
++exit=0
++$ bash -c for\ c\ in\ 8ce8c896\ f4d8e988\ 49471e86\ 18076298\;\ do\ printf\ \"%s\ .claude/agents/code-reviewer.md\ \"\ \$c\;\ git\ show\ \$c:.claude/agents/code-reviewer.md\ \|\ sha256sum\;\ done\;\ for\ c\ in\ 8ce8c896\ 18076298\;\ do\ printf\ \"%s\ metrix/CLAUDE.md\ \"\ \$c\;\ git\ show\ \$c:metrix/CLAUDE.md\ \|\ sha256sum\;\ done
++8ce8c896 .claude/agents/code-reviewer.md bf66a0d6cf547feae1d0ebed2f251643d74847790e4447adb123b923d9f6add5  -
++f4d8e988 .claude/agents/code-reviewer.md bf66a0d6cf547feae1d0ebed2f251643d74847790e4447adb123b923d9f6add5  -
++49471e86 .claude/agents/code-reviewer.md 064e1fc76663937e04832affc0b0d16219fd04ea01048b380fd75f2eeba4b1be  -
++18076298 .claude/agents/code-reviewer.md e38d091494059227d8d95896aa50858adc32f4750a5512b45bec97dd368932c6  -
++8ce8c896 metrix/CLAUDE.md a24f6f3d23d76012cce17d397c823da6aa171c7dcba0e6919741626f731b249c  -
++18076298 metrix/CLAUDE.md 4392329e291a447c6d571c8ec62256bb794445011ea1c39e6982d9931c3697fd  -
++exit=0
++
++## Part B: frontmatter and tools line of both agent definitions, repository file vs user-level copy (the loaded definition). Frontmatter = the lines from the first "---" line through the second "---" line.
++$ awk /\^---\$/\{n++\;\ print\;\ if\(n==2\)\ exit\;\ next\}\ n==1\{print\} .claude/agents/code-reviewer.md
++---
++name: code-reviewer
++description: Metrix 独立代码审查。每次提交前必须调用，审查当前 diff 的 bug、死代码、可读性、合理性与协议一致性。只读，不修改任何文件。
++tools: Read, Grep, Glob
++---
++exit=0
++$ awk /\^---\$/\{n++\;\ print\;\ if\(n==2\)\ exit\;\ next\}\ n==1\{print\} /root/.claude/agents/code-reviewer.md
++---
++name: code-reviewer
++description: Metrix 独立代码审查。每次提交前必须调用，审查当前 diff 的 bug、死代码、可读性、合理性与协议一致性。只读，不修改任何文件。
++tools: Read, Grep, Glob
++---
++exit=0
++$ bash -c diff\ \<\(awk\ \'/\^---\$/\{n++\;\ print\;\ if\(n==2\)\ exit\;\ next\}\ n==1\{print\}\'\ .claude/agents/code-reviewer.md\)\ \<\(awk\ \'/\^---\$/\{n++\;\ print\;\ if\(n==2\)\ exit\;\ next\}\ n==1\{print\}\'\ /root/.claude/agents/code-reviewer.md\)\ \&\&\ echo\ FRONTMATTER_IDENTICAL
++FRONTMATTER_IDENTICAL
++exit=0
++$ bash -c cmp\ \<\(grep\ \'\^tools:\'\ .claude/agents/code-reviewer.md\)\ \<\(grep\ \'\^tools:\'\ /root/.claude/agents/code-reviewer.md\)\ \&\&\ echo\ TOOLS_LINE_IDENTICAL
++TOOLS_LINE_IDENTICAL
++exit=0
++$ awk /\^---\$/\{n++\;\ print\;\ if\(n==2\)\ exit\;\ next\}\ n==1\{print\} .claude/agents/data-auditor.md
++---
++name: data-auditor
++description: Metrix 独立数据审计。改动涉及数据生成、split、候选集、泄漏检查或评测代码时调用。用自写脚本独立复算，不复用 Executor 的检查代码。
++tools: Read, Grep, Glob, Write, Bash
++---
++exit=0
++$ awk /\^---\$/\{n++\;\ print\;\ if\(n==2\)\ exit\;\ next\}\ n==1\{print\} /root/.claude/agents/data-auditor.md
++---
++name: data-auditor
++description: Metrix 独立数据审计。改动涉及数据生成、split、候选集、泄漏检查或评测代码时调用。用自写脚本独立复算，不复用 Executor 的检查代码。
++tools: Read, Grep, Glob, Write, Bash
++---
++exit=0
++$ bash -c diff\ \<\(awk\ \'/\^---\$/\{n++\;\ print\;\ if\(n==2\)\ exit\;\ next\}\ n==1\{print\}\'\ .claude/agents/data-auditor.md\)\ \<\(awk\ \'/\^---\$/\{n++\;\ print\;\ if\(n==2\)\ exit\;\ next\}\ n==1\{print\}\'\ /root/.claude/agents/data-auditor.md\)\ \&\&\ echo\ FRONTMATTER_IDENTICAL
++FRONTMATTER_IDENTICAL
++exit=0
++$ bash -c cmp\ \<\(grep\ \'\^tools:\'\ .claude/agents/data-auditor.md\)\ \<\(grep\ \'\^tools:\'\ /root/.claude/agents/data-auditor.md\)\ \&\&\ echo\ TOOLS_LINE_IDENTICAL
++TOOLS_LINE_IDENTICAL
++exit=0
++$ grep -n \^tools: .claude/agents/code-reviewer.md /root/.claude/agents/code-reviewer.md .claude/agents/data-auditor.md /root/.claude/agents/data-auditor.md
++.claude/agents/code-reviewer.md:4:tools: Read, Grep, Glob
++/root/.claude/agents/code-reviewer.md:4:tools: Read, Grep, Glob
++.claude/agents/data-auditor.md:4:tools: Read, Grep, Glob, Write, Bash
++/root/.claude/agents/data-auditor.md:4:tools: Read, Grep, Glob, Write, Bash
++exit=0
+diff --git a/metrix/e1-pilot/reports/round8/t0_env.txt b/metrix/e1-pilot/reports/round8/t0_env.txt
+new file mode 100644
+index 0000000..394596c
+--- /dev/null
++++ b/metrix/e1-pilot/reports/round8/t0_env.txt
+@@ -0,0 +1,61 @@
++# Round 8 raw output: execution environment and downloaded files. Written by the Executor (session_01J5mxaUfve5PtsqZQQDkJcJ). Sun Nov 22 05:35:05 UTC 2026
++# SP = /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad (session scratchpad); PY = $SP/venv/bin/python. cwd metrix/e1-pilot. Recorded by reports/round5/logrun.sh.
++$ hostname
++vm
++exit=0
++$ nproc
++4
++exit=0
++$ free -g
++               total        used        free      shared  buff/cache   available
++Mem:              15           0          14           0           0          15
++Swap:              0           0           0
++exit=0
++$ bash -c command\ -v\ nvidia-smi
++exit=1
++$ bash -c grep\ PRETTY_NAME\ /etc/os-release
++PRETTY_NAME="Ubuntu 24.04.5 LTS"
++exit=0
++$ /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/venv/bin/python -c import\ sys\,transformers\,tokenizers\,jinja2\,pyarrow\,huggingface_hub\;print\(sys.version.split\(\)\[0\]\,\'transformers\'\,transformers.__version__\,\'tokenizers\'\,tokenizers.__version__\,\'jinja2\'\,jinja2.__version__\,\'pyarrow\'\,pyarrow.__version__\,\'huggingface_hub\'\,huggingface_hub.__version__\)
++[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
++3.13.18 transformers 5.22.2 tokenizers 0.23.3 jinja2 3.1.6 pyarrow 26.0.1 huggingface_hub 2.4.0
++exit=0
++$ /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/venv/bin/python -c import\ torch
++Traceback (most recent call last):
++  File "<string>", line 1, in <module>
++    import torch
++ModuleNotFoundError: No module named 'torch'
++exit=1
++$ /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/venv/bin/python -I -c $'\nfrom huggingface_hub import HfApi\nfor f in HfApi().list_repo_tree(\'Qwen/Qwen3-1.7B\', revision=\'70d244cc86ccca08cf5af4e1e306ecf908b1ad5e\'):\n    print(f.path, getattr(f, \'size\', None))'
++.gitattributes 1570
++LICENSE 11343
++README.md 13963
++config.json 726
++generation_config.json 239
++merges.txt 1671853
++model-00001-of-00002.safetensors 3441185608
++model-00002-of-00002.safetensors 622329984
++model.safetensors.index.json 25605
++tokenizer.json 11422654
++tokenizer_config.json 9732
++vocab.json 2776833
++exit=0
++$ bash -c cd\ /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/dl\ \&\&\ find\ .\ -type\ f\ -not\ -path\ \'\*/.cache/\*\'\ \|\ sort\ \|\ xargs\ sha256sum
++e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77  ./parcae_tok/tokenizer.json
++6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22  ./parquet/data/sample-100BT/train/shard_00000.parquet
++1ddb5b89ebc90dcb417a45c213d818577e65976454d29385c8f6140771d95197  ./qwen_tok/config.json
++2325da0f15bb848e018c5ae071b7943332e9f871d6b60e2ed22ca97d4cb993d2  ./qwen_tok/generation_config.json
++8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5  ./qwen_tok/merges.txt
++aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4  ./qwen_tok/tokenizer.json
++d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101  ./qwen_tok/tokenizer_config.json
++ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910  ./qwen_tok/vocab.json
++exit=0
++$ bash -c cd\ /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/dl\ \&\&\ find\ .\ -type\ f\ \\\(\ -name\ \'\*.safetensors\'\ -o\ -name\ \'\*.bin\'\ -o\ -name\ \'\*.pt\'\ -o\ -name\ \'\*.pth\'\ -o\ -name\ \'\*.gguf\'\ \\\)\ \|\ wc\ -l
++0
++exit=0
++$ bash -c diff\ \<\(grep\ -E\ \'\^\[0-9a-f\]\{64\}\ \ \\./\'\ reports/round7/t0_env.txt\)\ \<\(cd\ /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/dl\ \&\&\ find\ .\ -type\ f\ -not\ -path\ \'\*/.cache/\*\'\ \|\ sort\ \|\ xargs\ sha256sum\)\ \&\&\ echo\ \'downloaded\ files\ identical\ \(sha256\ and\ paths\)\ to\ round\ 7\ t0_env.txt\'
++downloaded files identical (sha256 and paths) to round 7 t0_env.txt
++exit=0
++$ sha256sum ../../research/mini_mythos/stage1/results/r1/eval_sets.jsonl
++8816fe5a39d8b89e8c4203bf7d660e798faa471d2b72b5ce43c411cf5925a155  ../../research/mini_mythos/stage1/results/r1/eval_sets.jsonl
++exit=0
+diff --git a/metrix/e1-pilot/reports/round8/t1_protocol_checks.txt b/metrix/e1-pilot/reports/round8/t1_protocol_checks.txt
+new file mode 100644
+index 0000000..df2c5ac
+--- /dev/null
++++ b/metrix/e1-pilot/reports/round8/t1_protocol_checks.txt
+@@ -0,0 +1,76 @@
++# Round 8 raw output: checks of the working tree that becomes the freeze commit (items 1-3), run before the commit. Host vm, CPU only. Written by the Executor (session_01J5mxaUfve5PtsqZQQDkJcJ). Sun Nov 22 05:39:06 UTC 2026
++# cwd /home/user/OpenMythos. Recorded by metrix/e1-pilot/reports/round5/logrun.sh. HEAD is still 18076298 (parent of the freeze commit); the files checked are the working-tree versions.
++$ git rev-parse HEAD
++180762987b2b0d8a18a3070edb16dd4b4c31911e
++exit=0
++$ git status --short
++ M metrix/CLAUDE.md
++ M metrix/e1-pilot/DATA_MANIFEST.json
++ M metrix/e1-pilot/METRIX_E1_PROTOCOL.md
++ M metrix/e1-pilot/SEARCH_SPACE.json
++ M metrix/e1-pilot/SPLIT_MANIFEST.json
++?? metrix/e1-pilot/reports/round8/
++?? metrix/e1-pilot/tasks/ROUND8_TASKS.md
++exit=0
++$ sha256sum metrix/e1-pilot/METRIX_E1_PROTOCOL.md metrix/e1-pilot/DATA_MANIFEST.json metrix/e1-pilot/SPLIT_MANIFEST.json metrix/e1-pilot/SEARCH_SPACE.json metrix/CLAUDE.md .claude/agents/code-reviewer.md .claude/agents/data-auditor.md
++61f4b777316cb554846990aa5024d14689124340d4e972a6c77d2d663580f19a  metrix/e1-pilot/METRIX_E1_PROTOCOL.md
++94ba8516044e9bf10c5ad907f2e905c5afd91833a383b7212737cf28170e8cf3  metrix/e1-pilot/DATA_MANIFEST.json
++2078d0456845b039459dc56e09e5868c4c8f9477dbaab106c4f4a5f924be1baa  metrix/e1-pilot/SPLIT_MANIFEST.json
++490d575d54b4cbd3902adb496817d89c82763ad22fa8efac8894bcb4a45a6258  metrix/e1-pilot/SEARCH_SPACE.json
++c253f73315bb1dfd0645932ba0c970d0a88caf415c0e2a897351d0082bf7da16  metrix/CLAUDE.md
++e38d091494059227d8d95896aa50858adc32f4750a5512b45bec97dd368932c6  .claude/agents/code-reviewer.md
++4201122829c31512859baa55d755a016073544f5c4a887f59bcfeef0abfdd833  .claude/agents/data-auditor.md
++exit=0
++$ python3 -I metrix/e1-pilot/reports/round6/table_check.py metrix/e1-pilot/METRIX_E1_PROTOCOL.md
++table rows checked: 160; rows whose cell count differs from the header: 0; unescaped special tokens: 0
++RESULT: PASS
++exit=0
++$ python3 -I -c $'\nimport json, sys\nd = sys.argv[1]\njs = {f: json.load(open(d + \'/\' + f, encoding=\'utf-8\')) for f in (\'DATA_MANIFEST.json\', \'SPLIT_MANIFEST.json\', \'SEARCH_SPACE.json\')}\nprint(\'json ok\')\nfor f, j in js.items():\n    print(f, \'| status\', j[\'status\'], \'| frozen\', j.get(\'frozen\'), \'| re-dump identical to file:\', json.dumps(j, indent=2, ensure_ascii=False) + \'\\n\' == open(d + \'/\' + f, encoding=\'utf-8\').read())\nB, E = \'<!-- BEGIN INLINE COPY: SEARCH_SPACE.json -->\', \'<!-- END INLINE COPY: SEARCH_SPACE.json -->\'\ndoc = open(d + \'/METRIX_E1_PROTOCOL.md\', encoding=\'utf-8\').read()\nassert doc.count(B) == 1 and doc.count(E) == 1\ninner = doc[doc.index(B) + len(B):doc.index(E)]\nblock = inner[len(\'\\n```json\\n\'):-len(\'```\\n\')]\nprint(\'inline copy identical (marked block):\', block == open(d + \'/SEARCH_SPACE.json\', encoding=\'utf-8\').read())\ndm = js[\'DATA_MANIFEST.json\']\nprint(\'tokenizer files_sha256:\', json.dumps(dm[\'model\'][\'tokenizer\'][\'files_sha256\']))\nprint(\'anchor decoded_texts_canonical_sha256:\', dm[\'anchor_text\'][\'decoded_texts_canonical_sha256\'])\nprint(\'facts\', dm[\'name_generation\'][\'expected_facts_canonical_sha256\'], \'| train_S\', dm[\'s_permutation\'][\'expected_train_S_canonical_sha256\'], \'| candidates\', js[\'SPLIT_MANIFEST.json\'][\'candidates\'][\'candidate_mapping_sha256\'], \'| template set\', js[\'SPLIT_MANIFEST.json\'][\'template_freeze\'][\'template_set_sha256\'])\nprint(\'records:\', dm[\'files\'][\'train_S.jsonl\'][\'record\'], \'|\', dm[\'files\'][\'candidates.json\'][\'record\'])\n' metrix/e1-pilot
++json ok
++DATA_MANIFEST.json | status PROTOCOL_FROZEN | frozen Owner 批准，2026-11-22 05:27 UTC | re-dump identical to file: True
++SPLIT_MANIFEST.json | status PROTOCOL_FROZEN | frozen Owner 批准，2026-11-22 05:27 UTC | re-dump identical to file: True
++SEARCH_SPACE.json | status PROTOCOL_FROZEN | frozen Owner 批准，2026-11-22 05:27 UTC | re-dump identical to file: True
++inline copy identical (marked block): True
++tokenizer files_sha256: {"tokenizer.json": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4", "tokenizer_config.json": "d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101", "vocab.json": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910", "merges.txt": "8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5"}
++anchor decoded_texts_canonical_sha256: 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408
++facts 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 | train_S 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e | candidates e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | template set 2b52411326c218e9c51d947b2f4e0d77b0cdd5d6237f9ce25b57a872c48ce28f
++records: one object per line {"fact_id", "answer_fact_id", "text"} (protocol 2.6); Review Gate round 7 ruling, item 1a | one JSON object {fact_id: [4 candidates]} (protocol 2.5); Review Gate round 7 ruling, item 1a
++exit=0
++$ python3 -I -c $'\nimport hashlib, json, re, sys\nsm = json.load(open(sys.argv[1], encoding=\'utf-8\'))\ndef norm(t):\n    t = t.replace(\'{E}\', \'<ENTITY>\').replace(\'{A}\', \'<ANSWER>\').lower()\n    return re.sub(\' +\', \' \', re.sub(r\'[^a-z0-9<> ]\', \' \', t)).strip()\nbad = [t[\'template_id\'] for t in sm[\'templates\'] if norm(t[\'text\']) != t[\'normalized\'] or hashlib.sha256(t[\'normalized\'].encode()).hexdigest() != t[\'normalized_sha256\']]\ns = hashlib.sha256(\'\\n\'.join(sorted(t[\'normalized_sha256\'] for t in sm[\'templates\'])).encode()).hexdigest()\nprint(\'templates\', len(sm[\'templates\']), \'| normalized / normalized_sha256 not reproduced:\', bad)\nprint(\'template_set_sha256 recomputed\', s, \'| manifest\', sm[\'template_freeze\'][\'template_set_sha256\'], \'| equal\', s == sm[\'template_freeze\'][\'template_set_sha256\'])\n' metrix/e1-pilot/SPLIT_MANIFEST.json
++templates 32 | normalized / normalized_sha256 not reproduced: []
++template_set_sha256 recomputed 2b52411326c218e9c51d947b2f4e0d77b0cdd5d6237f9ce25b57a872c48ce28f | manifest 2b52411326c218e9c51d947b2f4e0d77b0cdd5d6237f9ce25b57a872c48ce28f | equal True
++exit=0
++# Remaining PROPOSED / AWAITING / PENDING markers in the protocol and the three JSON (lines cut to 200 characters).
++$ bash -c $'grep -n -E \'PROPOSED|AWAITING_REVIEW_GATE|PENDING_REVIEW_GATE|\345\276\205 Review Gate\' metrix/e1-pilot/METRIX_E1_PROTOCOL.md metrix/e1-pilot/DATA_MANIFEST.json metrix/e1-pilot/SPLIT_MANIFEST.json metrix/e1-pilot/SEARCH_SPACE.json | cut -c1-200'
++metrix/e1-pilot/METRIX_E1_PROTOCOL.md:10:Task Order 与其 “Mandatory consistency amendments A–L” 同时生效;两者冲突处以修订条款为准。据此:fact 聚合函数固定为 mean;Gate 
++metrix/e1-pilot/METRIX_E1_PROTOCOL.md:630:## 13. Open Questions for Review Gate(原 PENDING_REVIEW_GATE 2 项,已按提案批准)
++metrix/e1-pilot/METRIX_E1_PROTOCOL.md:639:其余可执行参数都已写死;原标为 PROPOSED 的训练契约(第 7 节)、`SEARCH_SPACE.json` 与本节 2 项已于冻结时改为冻结值(Owner 批�
++metrix/e1-pilot/METRIX_E1_PROTOCOL.md:659:| v1-r4 | 2026-11-21 05:05:03 | `b1f5889c` | 第 5 节 EM;第 0 节(新增“生成输入(EM)”行);`DATA_MANIFEST.json: model.input_convention.em_generation
++metrix/e1-pilot/METRIX_E1_PROTOCOL.md:664:| v1-r5 | 2026-11-21 06:37:20 | `c73f41a3` | 第 4 节 arm A 损失 | 原文 `λ · mean_{t=2..n_x} KL(...)`、“x 为该步的 4 篇锚文档,n_x 为锚文�
++metrix/e1-pilot/METRIX_E1_PROTOCOL.md:667:| v1-r6 | 2026-11-21 14:41:02 | `481a6f0f` | 第 3 节 L6;`SPLIT_MANIFEST.json: leakage_checks.L6_general_text` | 原文 L6 规则“锚文本与通用文本�
++metrix/e1-pilot/METRIX_E1_PROTOCOL.md:676:| v1-r7 | 2026-11-22 03:25:59 | `7fea9181` | 第 2.7 节 | 原文“锚文本与通用文本不得共享任何 13-gram。”改为“锚文本与通用文本�
++metrix/e1-pilot/METRIX_E1_PROTOCOL.md:683:| v1-r8(冻结) | 冻结提交的提交时间(见 `PROTOCOL_FROZEN`) | 冻结提交(标签 `metrix-e1-pilot-frozen`) | 第 2.5、2.6 节(文字不变);`DATA_M
++metrix/e1-pilot/METRIX_E1_PROTOCOL.md:688:| v1-r8(冻结) | 同上 | 同上 | 第 7 节训练契约表头;`SEARCH_SPACE.json`(及第 7 节内联副本)、`DATA_MANIFEST.json`、`SPLIT_MANIFEST.json` �
++metrix/e1-pilot/METRIX_E1_PROTOCOL.md:689:| v1-r8(冻结) | 同上 | 同上 | 文件头“状态”一行 | 原文“**AWAITING_REVIEW_GATE**(未冻结;冻结后本表改为 PROTOCOL_FROZEN)”改为�
++exit=0
++$ bash -c $'grep -c \'Owner \346\211\271\345\207\206\357\274\2142026-11-22 05:27 UTC\' metrix/e1-pilot/METRIX_E1_PROTOCOL.md metrix/e1-pilot/DATA_MANIFEST.json metrix/e1-pilot/SPLIT_MANIFEST.json metrix/e1-pilot/SEARCH_SPACE.json metrix/CLAUDE.md'
++metrix/e1-pilot/METRIX_E1_PROTOCOL.md:8
++metrix/e1-pilot/DATA_MANIFEST.json:1
++metrix/e1-pilot/SPLIT_MANIFEST.json:1
++metrix/e1-pilot/SEARCH_SPACE.json:1
++metrix/CLAUDE.md:1
++exit=0
++# Old wording that must be gone outside section 14 (EM first-line order, L6 TEST count wording, ST10 event).
++$ bash -c $'grep -n -E \'\345\217\226\347\254\254\344\270\200\350\241\214,\345\216\273\351\246\226\345\260\276\347\251\272\347\231\275\\(\350\276\223\345\207\272\345\274\200\345\244\264|\346\225\260\344\272\244\351\233\206\347\232\204\345\205\203\347\264\240\344\270\252\346\225\260|leading spaces of the output are removed by the strip step|\345\217\252\346\234\211\343\200\214\346\260\270\344\271\205\343\200\215\347\232\204\350\243\201\345\206\263\345\217\257\345\206\231\345\205\245\346\234\254\346\226\207\344\273\266\' metrix/e1-pilot/METRIX_E1_PROTOCOL.md metrix/e1-pilot/DATA_MANIFEST.json metrix/e1-pilot/SPLIT_MANIFEST.json metrix/CLAUDE.md | cut -c1-120'
++metrix/e1-pilot/METRIX_E1_PROTOCOL.md:684:| v1-r8(冻结) | 同上 | 同上 | 第 3 节 L6 一行与执行接口;第 8 �
++metrix/e1-pilot/METRIX_E1_PROTOCOL.md:685:| v1-r8(冻结) | 同上 | 同上 | 第 5 节 EM;`DATA_MANIFEST.json: model.in
++metrix/e1-pilot/METRIX_E1_PROTOCOL.md:687:| v1-r8(冻结) | 同上 | 同上 | `metrix/CLAUDE.md` 第 8 节(不属于本�
++exit=0
++$ git diff --stat
++ metrix/CLAUDE.md                      |  2 +-
++ metrix/e1-pilot/DATA_MANIFEST.json    | 24 +++++++++++++++------
++ metrix/e1-pilot/METRIX_E1_PROTOCOL.md | 40 ++++++++++++++++++++++-------------
++ metrix/e1-pilot/SEARCH_SPACE.json     |  3 ++-
++ metrix/e1-pilot/SPLIT_MANIFEST.json   | 10 +++++----
++ 5 files changed, 52 insertions(+), 27 deletions(-)
++exit=0
+diff --git a/metrix/e1-pilot/reports/round8/t1d_data_hashes.txt b/metrix/e1-pilot/reports/round8/t1d_data_hashes.txt
+new file mode 100644
+index 0000000..df7bd2d
+--- /dev/null
++++ b/metrix/e1-pilot/reports/round8/t1d_data_hashes.txt
+@@ -0,0 +1,83 @@
++# Round 8 raw output (item 1d and the freeze record): anchor text, facts, train_S and candidates regenerated with the reference scripts already in the repository; tokenizer-file check. Host vm, CPU only, tokenizer files only, no model weights, no TEST data. Written by the Executor (session_01J5mxaUfve5PtsqZQQDkJcJ). Sun Nov 22 05:35:23 UTC 2026
++# SP = /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad. cwd metrix/e1-pilot. Manifests read here are those of HEAD 18076298 (unchanged in the working tree at this time). Recorded by reports/round5/logrun.sh.
++$ git -C ../.. rev-parse HEAD
++180762987b2b0d8a18a3070edb16dd4b4c31911e
++exit=0
++$ git -C ../.. status --short
++?? metrix/e1-pilot/reports/round8/
++exit=0
++$ /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/venv/bin/python -I reports/round2/anchor_check.py --manifest DATA_MANIFEST.json --tokenizer-dir /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/dl/qwen_tok --cache-dir /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/dl/parquet --anchor-out /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/r8/anchor.json
++[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
++anchor source: SandyResearch/fineweb-edu-shuffled@4d1138c0e4d51d98813997ce3560e05a32bf91de data/sample-100BT/train/shard_00000.parquet
++file sha256 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22, pinned 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22, match True
++documents read 527, kept 512, anchor texts canonical sha256 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408, total chars 309172
++exit=0
++$ /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/venv/bin/python -I reports/round2/gen_facts.py --manifest DATA_MANIFEST.json --tokenizer-dir /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/dl/qwen_tok --anchor /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/r8/anchor.json --out /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/r8/facts.json
++[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
++pid 735, PYTHONHASHSEED=None, anchor rule on
++facts 160 (learned 120, unread 40), distinct strings 320
++facts canonical sha256: 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97
++cell log canonical sha256: 38f04096f2da2cd0922f4281e616f131cc240088e32ab2834d6009c50fb52bb1
++cell log: [{"cell": "capital/natural", "entity_draws": 28, "target_pair": [3, 3], "answer_draws": 84}, {"cell": "capital/random", "entity_draws": 20, "target_pair": [5, 5], "answer_draws": 52}, {"cell": "currency/natural", "entity_draws": 31, "target_pair": [3, 3], "answer_draws": 82}, {"cell": "currency/random", "entity_draws": 20, "target_pair": [6, 6], "answer_draws": 46}, {"cell": "founder/natural", "entity_draws": 30, "target_pair": [3, 3], "answer_draws": 81}, {"cell": "founder/random", "entity_draws": 21, "target_pair": [5, 5], "answer_draws": 45}, {"cell": "river/natural", "entity_draws": 34, "target_pair": [3, 3], "answer_draws": 89}, {"cell": "river/random", "entity_draws": 20, "target_pair": [6, 6], "answer_draws": 42}]
++exit=0
++$ /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/venv/bin/python -I reports/round2/anchor_check.py --manifest DATA_MANIFEST.json --tokenizer-dir /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/dl/qwen_tok --facts /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/r8/facts.json --cache-dir /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/dl/parquet --anchor-out /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/r8/anchor2.json
++[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
++anchor source: SandyResearch/fineweb-edu-shuffled@4d1138c0e4d51d98813997ce3560e05a32bf91de data/sample-100BT/train/shard_00000.parquet
++file sha256 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22, pinned 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22, match True
++documents read 527, kept 512, anchor texts canonical sha256 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408, total chars 309172
++L3a unread entities              strings  40, occurrences 0, strings found 0   -> limit 0: PASS
++L3a unread answers               strings  40, occurrences 0, strings found 0   -> limit 0: PASS
++L3b learned answers              strings 120, occurrences 0, strings found 0   -> limit 0: PASS
++report only: learned entities    strings 120, occurrences 0, strings found 0 
++L3 (a + b): PASS
++exit=0
++$ cmp /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/r8/anchor.json /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/r8/anchor2.json
++exit=0
++$ env PYTHONHASHSEED=0 /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/venv/bin/python -I reports/round7/gen_s_cands.py --facts /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/r8/facts.json --data-manifest DATA_MANIFEST.json --split-manifest SPLIT_MANIFEST.json --out-dir /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/r8/gen1
++pid 758, PYTHONHASHSEED=0, python 3.13.18
++facts canonical sha256 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97, expected 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97, match True
++S derangement attempts per cell: {"capital/natural": 3, "capital/random": 5, "currency/natural": 1, "currency/random": 6, "founder/natural": 2, "founder/random": 1, "river/natural": 2, "river/random": 6}
++train_S.jsonl   rows 120, byte_sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e, canonical_sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e
++candidates.json facts 160, byte_sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705, canonical_sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705
++first S row: The capital of Krultrouth is Kishan. | first candidates: ["Thunae", "Linnuth", "Baszaes", "Kaethnis"]
++self-checks: train_S derangement within cell, learned strings exactly once, unread strings 0; candidates 4 distinct, true answer once, distractors from the 2.5 pool
++RESULT: PASS
++exit=0
++$ env PYTHONHASHSEED=31337 /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/venv/bin/python -I reports/round7/gen_s_cands.py --facts /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/r8/facts.json --data-manifest DATA_MANIFEST.json --split-manifest SPLIT_MANIFEST.json --out-dir /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/r8/gen2
++pid 760, PYTHONHASHSEED=31337, python 3.13.18
++facts canonical sha256 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97, expected 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97, match True
++S derangement attempts per cell: {"capital/natural": 3, "capital/random": 5, "currency/natural": 1, "currency/random": 6, "founder/natural": 2, "founder/random": 1, "river/natural": 2, "river/random": 6}
++train_S.jsonl   rows 120, byte_sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e, canonical_sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e
++candidates.json facts 160, byte_sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705, canonical_sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705
++first S row: The capital of Krultrouth is Kishan. | first candidates: ["Thunae", "Linnuth", "Baszaes", "Kaethnis"]
++self-checks: train_S derangement within cell, learned strings exactly once, unread strings 0; candidates 4 distinct, true answer once, distractors from the 2.5 pool
++RESULT: PASS
++exit=0
++$ bash -c cmp\ /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/r8/gen1/train_S.jsonl\ /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/r8/gen2/train_S.jsonl\ \&\&\ cmp\ /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/r8/gen1/candidates.json\ /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/r8/gen2/candidates.json\ \&\&\ echo\ BOTH_RUNS_BYTE_IDENTICAL
++BOTH_RUNS_BYTE_IDENTICAL
++exit=0
++$ sha256sum /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/r8/facts.json /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/r8/gen1/train_S.jsonl /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/r8/gen1/candidates.json
++406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97  /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/r8/facts.json
++686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e  /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/r8/gen1/train_S.jsonl
++e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705  /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/r8/gen1/candidates.json
++exit=0
++$ /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/venv/bin/python -I -c $'\nimport hashlib, json, sys\ntexts = json.load(open(sys.argv[1], encoding=\'utf-8\'))[\'texts\']\nblob = json.dumps(texts, sort_keys=True, ensure_ascii=False, separators=(\',\', \':\'), allow_nan=False).encode(\'utf-8\')\nprint(\'anchor texts: %d; canonical sha256 of the JSON list (protocol section 0 rule) %s\' % (len(texts), hashlib.sha256(blob).hexdigest()))' /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/r8/anchor.json
++anchor texts: 512; canonical sha256 of the JSON list (protocol section 0 rule) 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408
++exit=0
++# Tokenizer files: copy only the four tokenizer files of the pinned revision (repo tree in t0_env.txt) into a separate directory, load offline, and compare with the six-file directory used above.
++$ cp /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/dl/qwen_tok/tokenizer.json /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/dl/qwen_tok/tokenizer_config.json /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/dl/qwen_tok/vocab.json /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/dl/qwen_tok/merges.txt /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/r8/tok4/
++exit=0
++$ bash -c cd\ /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/r8/tok4\ \&\&\ ls\ -1\ \|\ xargs\ sha256sum
++8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5  merges.txt
++aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4  tokenizer.json
++d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101  tokenizer_config.json
++ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910  vocab.json
++exit=0
++$ env HF_HUB_OFFLINE=1 /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/venv/bin/python -I -c $'\nimport sys\nfrom transformers import AutoTokenizer\na = AutoTokenizer.from_pretrained(sys.argv[1]); b = AutoTokenizer.from_pretrained(sys.argv[2])\nprint(\'classes\', type(a).__name__, type(b).__name__, \'vocab\', len(a), len(b))\ns = [\'The capital of Brazia is Torvund.\', \' Torvund\', \'KZT-47\', \'What is the capital of X?\']\nprint(\'encode equal:\', all(a.encode(x, add_special_tokens=False) == b.encode(x, add_special_tokens=False) for x in s))\nm = [{\'role\': \'user\', \'content\': \'What is the capital of X?\'}]\nca = a.apply_chat_template(m, tokenize=False, add_generation_prompt=True, enable_thinking=False)\ncb = b.apply_chat_template(m, tokenize=False, add_generation_prompt=True, enable_thinking=False)\nprint(\'chat template equal:\', ca == cb); print(repr(ca))\nprint(\'all_special_ids equal:\', a.all_special_ids == b.all_special_ids, a.all_special_ids)' /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/r8/tok4 /tmp/claude-0/-home-user/72f8803f-711c-5b87-8cfd-37e6a3779949/scratchpad/dl/qwen_tok
++[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
++classes Qwen2Tokenizer Qwen2Tokenizer vocab 151669 151669
++encode equal: True
++chat template equal: True
++'<|im_start|>user\nWhat is the capital of X?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n'
++all_special_ids equal: True [151645, 151643, 151644, 151646, 151647, 151648, 151649, 151650, 151651, 151652, 151653, 151654, 151655, 151656]
++exit=0
+diff --git a/metrix/e1-pilot/tasks/ROUND8_TASKS.md b/metrix/e1-pilot/tasks/ROUND8_TASKS.md
+new file mode 100644
+index 0000000..a930029
+--- /dev/null
++++ b/metrix/e1-pilot/tasks/ROUND8_TASKS.md
+@@ -0,0 +1,21 @@
++# Metrix E1-PILOT 第 8 轮指令(原文)
++
++- 来源:Project Owner 在 Claude Code 会话 session_01J5mxaUfve5PtsqZQQDkJcJ 中下达,2026-11-22(会话容器启动于 05:30:39 UTC,`reports/round8/t0_copy_check.txt`)。
++- 指令中的“Review Gate 第 7 轮裁决”是 Review Gate 对 `reports/ROUND7_REPORT.md`“待 Review Gate 决定”各项的裁决。下面照录全文。
++
++---
++
++读 metrix/CLAUDE.md。本轮执行协议冻结。Owner 已于 2026-11-22 05:27 UTC 批准冻结。允许快进推送 metrix-e1-pilot-protocol-v1 和推送标签，不得 force push。不开放新的设计问题。
++
++0. 比对 ~/.claude/ 副本与分支文件，做法同第 7 轮；调用审查时首句按第 5 节固定。
++1. 执行 Review Gate 第 7 轮裁决（全部记入第 14 节）：
++   a. 写明 train_S.jsonl 每行 {fact_id, answer_fact_id, text}，candidates.json 为 {fact_id: [4 个候选]}。
++   b. L6 TEST 部分：13-gram 在每篇文档内取，合并后计种类数；文本为实际送入模型的 id 解码所得。Executor 与 data-auditor 结果不一致时按 BLOCKED 处理并报告 Owner。
++   c. EM：删除 <think> 段后，先去开头空白，再取第一行。
++   d. DATA_MANIFEST.json 补入锚文本与 Qwen 分词器全部文件的 sha256。
++   e. metrix/CLAUDE.md 第 8 节改为：「本阶段」裁决也可写入本文件，须注明作用范围，本阶段结束时失效。
++2. 把所有 PROPOSED 改为冻结值：训练契约表、SEARCH_SPACE.json 的 status、第 13 节两项按提案批准（E1-V1 目标 320 条 fact，Pilot 后按 G0.10 重算；dNLL ≤ +0.03 在 Pilot 中只报告），注明「Owner 批准，2026-11-22 05:27 UTC」。
++3. 协议状态行改为 PROTOCOL_FROZEN。第 1–3 项放在同一个提交里，这个提交就是冻结提交。
++4. 对冻结提交调用 code-reviewer（只审查与本指令是否逐条一致、有无 BLOCKER）和 data-auditor（独立复算全部冻结哈希）。新提出的 MAJOR/MINOR 只登记不修。有 BLOCKER 就停下报告，不得进入第 5 项。
++5. 审查通过后，另起一个提交新建 metrix/e1-pilot/PROTOCOL_FROZEN，内容包括：冻结提交的完整 hash；该提交下协议文件与三个 JSON 的 sha256；全部数据哈希；「Owner 批准，2026-11-22 05:27 UTC」。给冻结提交打标签 metrix-e1-pilot-frozen 并推送。
++6. 报告写入 reports/ROUND8_REPORT.md，提交推送，给出冻结提交 hash 与标签推送输出。

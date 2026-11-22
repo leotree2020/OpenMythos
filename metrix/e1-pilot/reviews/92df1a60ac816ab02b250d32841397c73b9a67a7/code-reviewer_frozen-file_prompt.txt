@@ -1,0 +1,11 @@
+先读仓库中的 .claude/agents/code-reviewer.md，以它为你的完整定义；它与你已加载的定义冲突时，以仓库文件为准。
+
+Metrix E1-PILOT 第 8 轮第 5 项的提交前审查(metrix/CLAUDE.md 第 5 节第 1 条)。仓库 /home/user/OpenMythos,分支 metrix-e1-pilot-protocol-v1,HEAD = 冻结提交 92df1a60ac816ab02b250d32841397c73b9a67a7。
+你在第 4 项已审查过冻结提交(结论 PASS,原文 metrix/e1-pilot/reviews/92df1a60ac816ab02b250d32841397c73b9a67a7/code-reviewer.md);data-auditor 也已交回(PASS,原文同目录 data-auditor.md,完整 stdout 在 metrix/e1-pilot/audit/stdout/92df1a60ac816ab02b250d32841397c73b9a67a7/)。
+
+本次审查对象:暂存区中第 5 项的提交(尚未提交),主体是新文件 metrix/e1-pilot/PROTOCOL_FROZEN。
+- 指令第 5 项原文(metrix/e1-pilot/tasks/ROUND8_TASKS.md):“审查通过后，另起一个提交新建 metrix/e1-pilot/PROTOCOL_FROZEN，内容包括：冻结提交的完整 hash；该提交下协议文件与三个 JSON 的 sha256；全部数据哈希；「Owner 批准，2026-11-22 05:27 UTC」。”
+- 审查输入:metrix/e1-pilot/reviews/92df1a60ac816ab02b250d32841397c73b9a67a7/frozen_file_commit_input.diff(暂存区 --stat,以及 PROTOCOL_FROZEN 与两个 reports/round8/t5 文件的完整 diff)。暂存的其它文件(两份审查原文、调用文字、data-auditor 的脚本与 stdout)都在磁盘上,可直接读。
+- 原始输出:metrix/e1-pilot/reports/round8/t5_frozen_hashes.txt、t5_protocol_frozen_check.txt;data-auditor 的 audit/stdout/92df1a60…/10_r8_compare_rerun.txt。
+
+请审查:PROTOCOL_FROZEN 是否包含第 5 项要求的全部内容;每个哈希是否与冻结提交中的文件、manifest 以及已提交或已暂存的原始输出一致;有无错误、歧义或与协议、metrix/CLAUDE.md 冲突之处(例如是否可能被读成允许生成或评测 TEST);有无 BLOCKER。按定义的输出格式,每条注明“已验证/未验证”,最后一行给出结论。新提出的 MAJOR/MINOR 按第 4 项的做法只登记。
