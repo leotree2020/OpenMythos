@@ -1,0 +1,54 @@
+# Round 9 item 7 raw output: the two commits of this round so far and the remote state before any push. Host vm. Written by the Executor (session_01J5mxaXPDtdHu9PKCjhmE7G). Sun Nov 22 13:55:45 UTC 2026
+# cwd /home/user/OpenMythos. Recorded by metrix/e1-pilot/reports/round5/logrun.sh. The report commit cannot contain its own hash; its hash and the push output are in the final reply.
+$ git log -3 --format=%H\ \|\ author\ %aI\ \|\ committer\ %cI\ \|\ parent\ %P\ \|\ %s
+892f26a4fba9901b84ee08f451f15f0800c6be57 | author 2026-11-22T13:55:17+00:00 | committer 2026-11-22T13:55:17+00:00 | parent 87a244db28a901f9e89282b50df76778ab5c2887 | metrix: E1-PILOT round 9 item 6, PROTOCOL_FROZEN v1.1 section; reviews and auditor output of the v1.1 freeze commit 87a244db
+87a244db28a901f9e89282b50df76778ab5c2887 | author 2026-11-22T10:12:04+00:00 | committer 2026-11-22T10:12:04+00:00 | parent 8a49c0875c1479f01f2a12552a4c68733d0117aa | metrix: E1-PILOT round 9 v1.1 freeze commit (protocol errata 1a-1e, metrix/CLAUDE.md 2a-2c, data-auditor TEST rule)
+8a49c0875c1479f01f2a12552a4c68733d0117aa | author 2026-11-22T09:14:12+00:00 | committer 2026-11-22T09:14:12+00:00 | parent 5c8a965736105063c5fd12b2d71c4e22fc28bf27 | metrix: E1-PILOT round 8 report, deferred items (sections 1.9-1.13), superseded-candidate reviews and auditor output, recommit and tag/push records
+exit=0
+$ git show --stat --format=%H 892f26a4fba9901b84ee08f451f15f0800c6be57
+892f26a4fba9901b84ee08f451f15f0800c6be57
+
+ metrix/e1-pilot/PROTOCOL_FROZEN                    |   63 +-
+ metrix/e1-pilot/audit/r9_compare.py                |  157 ++
+ metrix/e1-pilot/audit/r9_facts_jsonl.py            |  119 +
+ metrix/e1-pilot/audit/r9_files.py                  |  196 ++
+ .../01_r9_files.txt                                |   73 +
+ .../02_r8_fetch.txt                                |   26 +
+ .../03_r8_anchor.txt                               |   28 +
+ .../04_r8_facts.txt                                |   38 +
+ .../05_r8_s_cands.txt                              |   30 +
+ .../06_r8_templates.txt                            |   84 +
+ .../07_r8_tokenizer.txt                            |   71 +
+ .../08_r8_general.txt                              |   28 +
+ .../09_r9_facts_jsonl.txt                          |   42 +
+ .../10_r9_compare.txt                              |  196 ++
+ .../11_r9_compare_selftest.txt                     |   19 +
+ .../12_git_status_final.txt                        |   11 +
+ metrix/e1-pilot/reports/DEFERRED_MINORS.md         |   24 +
+ .../reports/round9/protocol_frozen_check.py        |   93 +
+ metrix/e1-pilot/reports/round9/t0_env.txt          |   33 +
+ .../reports/round9/t5_frozen_hashes_87a244db.txt   |  134 +
+ .../reports/round9/t6_protocol_frozen_check.txt    |   68 +
+ .../code-reviewer.md                               |   66 +
+ .../code-reviewer_frozen-file.md                   |   87 +
+ .../code-reviewer_frozen-file_prompt.txt           |   12 +
+ .../code-reviewer_prompt.txt                       |   12 +
+ .../data-auditor.md                                |  142 +
+ .../data-auditor_prompt.txt                        |   12 +
+ .../extract_log.txt                                |   32 +
+ .../frozen_file_commit_input.diff                  | 2841 ++++++++++++++++++++
+ .../interruption_frozen-file.txt                   |   14 +
+ .../preflight_tools_check.txt                      |   21 +
+ .../preflight_tools_check_frozen-file.txt          |   17 +
+ .../resume_message_frozen-file.txt                 |    3 +
+ .../review_input.diff                              |  804 ++++++
+ 34 files changed, 5587 insertions(+), 9 deletions(-)
+exit=0
+$ git ls-remote origin refs/heads/metrix-e1-pilot-protocol-v1 refs/heads/claude/protocol-v1-1-errata-46z4jc refs/tags/metrix-\*
+8a49c0875c1479f01f2a12552a4c68733d0117aa	refs/heads/metrix-e1-pilot-protocol-v1
+exit=0
+$ bash -c git\ merge-base\ --is-ancestor\ 8a49c0875c1479f01f2a12552a4c68733d0117aa\ HEAD\ \&\&\ echo\ \"remote\ metrix-e1-pilot-protocol-v1\ \(8a49c087\)\ is\ an\ ancestor\ of\ HEAD:\ fast-forward\"
+remote metrix-e1-pilot-protocol-v1 (8a49c087) is an ancestor of HEAD: fast-forward
+exit=0
+$ git tag -l metrix-\*
+exit=0

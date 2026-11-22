@@ -233,7 +233,7 @@ data-auditor 结论 PASS(按 `metrix/CLAUDE.md` 第 10 节仅作参考),新提�
 
 ### 1.14 第 9 轮:对 v1.1 冻结提交 `87a244db` 的 code-reviewer 审查新提出的项(`reviews/87a244db…/code-reviewer.md`,记 `R9-CR:n`)
 
-结论 PASS,没有 BLOCKER;13 项逐条“一致”。第 9 轮指令第 5 项:新的 MAJOR/MINOR 只登记不修。
+结论 PASS,没有 BLOCKER;13 项逐条“一致”。第 9 轮指令第 5 项:新的 MAJOR/MINOR 只登记不修。W1 同时列入 `ROUND9_REPORT.md`“待 Review Gate 决定”第 1 项(见 1.16 节 Y1);W2、W3、W4、W5、W8 列入第 2–4a 项(见 1.17 节 Z5、Z6)。
 
 | # | 严重度 | 位置 | 问题 | 来源 |
 |---|---|---|---|---|
@@ -254,6 +254,39 @@ data-auditor 结论 PASS(按 `metrix/CLAUDE.md` 第 10 节仅作参考),新提�
 |---|---|---|---|---|
 | X1 | MINOR | 三个 JSON 的 `frozen` | 同 1.14 节 W4:`version` 已是 v1.1,`frozen` 仍是 v1 的批准时间,只看 JSON 看不到 v1.1 的批准时间 | R9-DA:123 |
 | X2 | MINOR | `reports/round9/t5_frozen_hashes_87a244db.txt` | 每个 revision 只列了 11 个数据值,缺锚文本源 parquet 的 sha256(`PROTOCOL_FROZEN` 表有 12 行);auditor 复算的该值与 `PROTOCOL_FROZEN` 和两个 manifest 相同,不影响结论 | R9-DA:124 |
+
+### 1.16 第 9 轮:第 6 项提交前审查(`PROTOCOL_FROZEN`,提交 `892f26a4`;`reviews/87a244db…/code-reviewer_frozen-file.md`,记 `R9b-FF:n`)
+
+结论 PASS,没有 BLOCKER,没有 MAJOR。审查因 HTTP 429 中断后续做完成。只登记;能在报告提交中处理的注明处理方式。
+
+| # | 严重度 | 位置 | 问题 | 来源 | 处理 |
+|---|---|---|---|---|---|
+| Y1 | MINOR | `PROTOCOL_FROZEN` 第 37 行;本文件 1.14 节 W1、第 3 节 | `PROTOCOL_FROZEN` 写 W1“待 Review Gate 决定”,本文件中 W1 只在“登记不修”的 1.14 节,第 3 节写“目前没有其它开放项”,两处说法不一 | R9b-FF:57 | W1 列入 `ROUND9_REPORT.md`“待 Review Gate 决定”第 1 项;1.14 节导语注明 |
+| Y2 | MINOR | `PROTOCOL_FROZEN` 第 21 行 | “仓库 / 分支”写 `metrix-e1-pilot-protocol-v1`,审查时 v1.1 冻结提交还不在该远端分支上(预先陈述;同第 8 轮 V10) | R9b-FF:59 | 推送的原始输出见最终回复;推送前的远端状态见 `round9/t7_commits_remote.txt` |
+| Y3 | MINOR | `PROTOCOL_FROZEN` 第 5 行 | 自述“只改了其中标签一行,并把小节标题降一级”不完整:原标题变为 v1 小节标题、路径说明移到文件开头没有写 | R9b-FF:61 | 登记;`ROUND9_REPORT.md` 第 6 项列全了改动 |
+| Y4 | MINOR | `reports/round9/protocol_frozen_check.py` 第 56 行 | 变量 `s1` 赋值后未使用 | R9b-FF:63 | 登记 |
+| Y5 | MINOR | `reports/round9/protocol_frozen_check.py`、`v11_checks.py` | 没有异常保护,异常时不打印 `RESULT: FAIL`(第 6 轮第 2 项的要求;是否约束后续各轮的 Executor 脚本仓库中没有明文) | R9b-FF:65 | 登记 |
+| Y6 | MINOR | `reports/round9/t6_protocol_frozen_check.txt` 第 39 行 | 第一次失败的原因说明在原始输出中没有依据;修正前的脚本没有保留 | R9b-FF:67 | `ROUND9_REPORT.md` 第 6 项写出脚本修改前后的行 |
+| Y7 | MINOR | `reports/round9/protocol_frozen_check.py` 第 42 行 | 检查读工作区文件,没有原始输出证明与暂存 blob 相同 | R9b-FF:69 | 提交前补记:`reviews/87a244db…/extract_log.txt` 末段 `worktree == index`,`git hash-object` 与 `:PROTOCOL_FROZEN` 都是 `ae863e96…`,sha256 `3f8a3bba…` 与检查时相同 |
+| Y8 | MINOR | `audit/r9_files.py` 第 18–21、176、183 行 | docstring 把 64 位十六进制值比对写成参考项,代码把它计入 `ok`;auditor 的文件,Executor 不改 | R9b-FF:71 | 登记,由 data-auditor 处理 |
+| Y9 | MINOR | `reviews/87a244db…/` | 审查时 4 个审查记录文件不在暂存区 | R9b-FF:73 | 已与本审查原文一并在 `892f26a4` 中提交 |
+
+### 1.17 第 9 轮:报告提交的提交前审查(`reviews/87a244db…/code-reviewer_report-commit.md`,记 `R9c-RC:n`)
+
+结论 PASS,没有 BLOCKER,没有 MAJOR。报告与本文件本身的错误按第 7、8 轮的先例在报告提交中改正(被审查的版本与提交版本的差异见 `reviews/87a244db…/report_commit_post_review.diff`);其余只登记。
+
+| # | 严重度 | 位置 | 问题 | 来源 | 处理 |
+|---|---|---|---|---|---|
+| Z1 | MINOR | `ROUND9_REPORT.md` 提交表 | 第 6 项提交前审查的记录写在“报告提交”一行,实际在 `892f26a4` 中(同第 8 轮 V3) | R9c-RC:46 | 已改 |
+| Z2 | MINOR | `ROUND9_REPORT.md` 第 5 项 data-auditor 一段 | “45 个值五方相同”说多了:五方都有值的只有 12 个 | R9c-RC:48 | 已改 |
+| Z3 | MINOR | `ROUND9_REPORT.md` 第 5 项“原文” | `dc138737…`、`9bfb5f7b…` 是 `message` 文本的 sha256,不是写入文件的 sha256 | R9c-RC:55 | 已改 |
+| Z4 | MINOR | `ROUND9_REPORT.md` v1.1 冻结提交的哈希表 | 引言说 data-auditor 独立复算一致,但 `metrix/CLAUDE.md`、`data-auditor.md` 两行 auditor 没有复算;v1 列的出处是 `t0_copy_check.txt` | R9c-RC:57 | 已改 |
+| Z5 | MINOR | `ROUND9_REPORT.md`“待 Review Gate 决定” | 漏了 W3、W8、Y5、Y8 | R9c-RC:59 | 已补为待决第 4a 项 |
+| Z6 | MINOR | 本文件第 3 节;1.14 节导语 | Y1 只处理了一半:第 3 节仍写“没有其它开放项” | R9c-RC:67 | 第 3 节加一条,指向 `ROUND9_REPORT.md` 待决第 1–4a 项 |
+| Z7 | MINOR | `ROUND9_REPORT.md` 结论一览第 7 项、待决第 7 项 | 推送写成已发生;“没有 force push”“停止钩子……”没有原始输出;推送输出只在最终回复,不进仓库 | R9c-RC:69 | 改为计划写法,注明没有原始输出;推送输出进不进仓库列入待决第 7 项 |
+| Z8 | MINOR | `ROUND9_REPORT.md` 开头 | “没有……统计 TEST 数据”是无保留断言,与待决第 3 项矛盾 | R9c-RC:75 | 已加限定 |
+| Z9 | MINOR | `ROUND9_REPORT.md` 第 6 项 | 引用了没有入库的 scratchpad 比对输出;修正前的脚本没有保留(并入 Y6) | R9c-RC:77 | 报告注明只有 Executor 的描述;以后检查失败时先保存脚本副本与比对输出 |
+| Z10 | MINOR | `reviews/87a244db…/` | 本次审查的调用文字、输入、调用前检查不在暂存区 | R9c-RC:79 | 与本审查原文一并在报告提交中提交 |
 
 ## 2. 已在第 5–7 轮解决(核对用)
 
@@ -283,3 +316,4 @@ data-auditor 结论 PASS(按 `metrix/CLAUDE.md` 第 10 节仅作参考),新提�
 下面几项原来有的标为 MINOR,但会影响指标或可复现性,修它们要改协议或改 auditor 的文件,Executor 不能自行处理。
 
 - 第 6 轮第 2 项“所有检查脚本”是否包括 auditor 已入库的旧脚本(A4、A6):第 7 轮指令第 3 项将其登记入 1.7 节 G4。本节目前没有其它开放项;第 7 轮审查新提出的项见 1.8 节。
+- 第 9 轮:1.14 节 W1(MAJOR)、W2、W3、W4/X1、W5、W8,1.16 节 Y5、Y8 须由 Review Gate 决定,列于 `ROUND9_REPORT.md`“待 Review Gate 决定”第 1–4a 项(1.16 节 Y1、1.17 节 Z6)。
