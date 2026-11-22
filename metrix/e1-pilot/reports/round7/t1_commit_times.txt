@@ -1,0 +1,19 @@
+# Round 7 raw output: commit time used for the placeholders R7_TIME / R7_COMMIT (protocol section 14 v1-r7 rows; metrix/CLAUDE.md sections 5 and 10), and the outside-metrix check on that commit. Host vm. Sun Nov 22 03:26:06 UTC 2026
+$ git log -1 --format=%H\ %aI\ %cI\ %s 7fea9181791b83357c503ea2e6435f0506f35ed4
+7fea9181791b83357c503ea2e6435f0506f35ed4 2026-11-22T03:25:59+00:00 2026-11-22T03:25:59+00:00 metrix: E1-PILOT round 7 tasks 1-3 (protocol items 1a-1g, CLAUDE.md sections 5 and 10, code-reviewer rule, deferred items 6 and 14)
+exit=0
+$ bash -c TZ=UTC\ git\ log\ -1\ --date=format-local:\'%Y-%m-%d\ %H:%M:%S\'\ --format=\'%cd\'\ 7fea9181791b83357c503ea2e6435f0506f35ed4
+2026-11-22 03:25:59
+exit=0
+$ python3 -I metrix/e1-pilot/reports/round3/outside_metrix_check.py --rev 7fea9181791b83357c503ea2e6435f0506f35ed4
+changed outside metrix/ (base 61d3c767 .. 7fea9181791b83357c503ea2e6435f0506f35ed4):
+  A	.claude/agents/code-reviewer.md
+  A	.claude/agents/data-auditor.md
+  M	CLAUDE.md
+charter: base 3065 bytes, new 3586 bytes, base is exact prefix: True
+charter: appended 521 bytes; level-1/2 headings in appended part: ['## 6. Metrix 子项目(2026-11-13 负责人决定)']
+ignore rules below come from the working-tree .gitignore; identical to .gitignore at 7fea9181791b83357c503ea2e6435f0506f35ed4: True
+agent .claude/agents/code-reviewer.md: tracked at 7fea9181791b83357c503ea2e6435f0506f35ed4: True; ignore rule: .gitignore:14:.claude/	.claude/agents/code-reviewer.md
+agent .claude/agents/data-auditor.md: tracked at 7fea9181791b83357c503ea2e6435f0506f35ed4: True; ignore rule: .gitignore:14:.claude/	.claude/agents/data-auditor.md
+RESULT: PASS
+exit=0

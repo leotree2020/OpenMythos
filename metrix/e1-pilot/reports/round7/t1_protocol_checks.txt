@@ -1,0 +1,46 @@
+# Round 7 item 1 raw output: protocol and manifest checks on the working tree after R7_TIME / R7_COMMIT were filled (= the content of the fill commit that follows 7fea9181). Host vm, CPU only. Sun Nov 22 03:26:23 UTC 2026
+$ sha256sum metrix/e1-pilot/METRIX_E1_PROTOCOL.md metrix/e1-pilot/DATA_MANIFEST.json metrix/e1-pilot/SPLIT_MANIFEST.json metrix/e1-pilot/SEARCH_SPACE.json metrix/CLAUDE.md .claude/agents/code-reviewer.md .claude/agents/data-auditor.md
+29fb4c2b7a4c3bee40bd45ac1150ee0c2b381a4bdcd8de78392f90b328911a4c  metrix/e1-pilot/METRIX_E1_PROTOCOL.md
+21fa5076d8f894862a8f060e3852d832e4f5cd29f029d74394c4d81b1cce53c9  metrix/e1-pilot/DATA_MANIFEST.json
+722aa7a6511ac3484c5dcf986d43b5a6ea92f489432c041918eadf023341b306  metrix/e1-pilot/SPLIT_MANIFEST.json
+307dde04b5a9dd56e8ca1232fd3686641a7850c5d0442e90b347237989343a33  metrix/e1-pilot/SEARCH_SPACE.json
+4392329e291a447c6d571c8ec62256bb794445011ea1c39e6982d9931c3697fd  metrix/CLAUDE.md
+e38d091494059227d8d95896aa50858adc32f4750a5512b45bec97dd368932c6  .claude/agents/code-reviewer.md
+4201122829c31512859baa55d755a016073544f5c4a887f59bcfeef0abfdd833  .claude/agents/data-auditor.md
+exit=0
+$ python3 -I metrix/e1-pilot/reports/round6/table_check.py metrix/e1-pilot/METRIX_E1_PROTOCOL.md
+table rows checked: 153; rows whose cell count differs from the header: 0; unescaped special tokens: 0
+RESULT: PASS
+exit=0
+$ python3 -I -c $'\nimport json, sys\nd = sys.argv[1]\n[json.load(open(d + \'/\' + f, encoding=\'utf-8\')) for f in (\'DATA_MANIFEST.json\', \'SPLIT_MANIFEST.json\', \'SEARCH_SPACE.json\')]\nprint(\'json ok\')\nB, E = \'<!-- BEGIN INLINE COPY: SEARCH_SPACE.json -->\', \'<!-- END INLINE COPY: SEARCH_SPACE.json -->\'\ndoc = open(d + \'/METRIX_E1_PROTOCOL.md\', encoding=\'utf-8\').read()\nassert doc.count(B) == 1 and doc.count(E) == 1\ninner = doc[doc.index(B) + len(B):doc.index(E)]\nblock = inner[len(\'\\n```json\\n\'):-len(\'```\\n\')]\nprint(\'inline copy identical (marked block):\', block == open(d + \'/SEARCH_SPACE.json\', encoding=\'utf-8\').read())\ncl = open(sys.argv[2], encoding=\'utf-8\').read()\nprint(\'placeholders R7_TIME / R7_COMMIT left: protocol\', doc.count(\'R7_TIME\') + doc.count(\'R7_COMMIT\'), \'| metrix/CLAUDE.md\', cl.count(\'R7_TIME\') + cl.count(\'R7_COMMIT\'))\n' metrix/e1-pilot metrix/CLAUDE.md
+json ok
+inline copy identical (marked block): True
+placeholders R7_TIME / R7_COMMIT left: protocol 0 | metrix/CLAUDE.md 0
+exit=0
+$ python3 -I -c $'\nimport hashlib, json, re, sys\nsm = json.load(open(sys.argv[1], encoding=\'utf-8\'))\ndef norm(t):\n    t = t.replace(\'{E}\', \'<ENTITY>\').replace(\'{A}\', \'<ANSWER>\').lower()\n    return re.sub(\' +\', \' \', re.sub(r\'[^a-z0-9<> ]\', \' \', t)).strip()\nbad = [t[\'template_id\'] for t in sm[\'templates\'] if norm(t[\'text\']) != t[\'normalized\'] or hashlib.sha256(t[\'normalized\'].encode()).hexdigest() != t[\'normalized_sha256\']]\ns = hashlib.sha256(\'\\n\'.join(sorted(t[\'normalized_sha256\'] for t in sm[\'templates\'])).encode()).hexdigest()\nprint(\'templates\', len(sm[\'templates\']), \'| normalized / normalized_sha256 not reproduced:\', bad)\nprint(\'template_set_sha256 recomputed\', s, \'| manifest\', sm[\'template_freeze\'][\'template_set_sha256\'], \'| equal\', s == sm[\'template_freeze\'][\'template_set_sha256\'])\n' metrix/e1-pilot/SPLIT_MANIFEST.json
+templates 32 | normalized / normalized_sha256 not reproduced: []
+template_set_sha256 recomputed 2b52411326c218e9c51d947b2f4e0d77b0cdd5d6237f9ce25b57a872c48ce28f | manifest 2b52411326c218e9c51d947b2f4e0d77b0cdd5d6237f9ce25b57a872c48ce28f | equal True
+exit=0
+$ env PYTHONHASHSEED=7 /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/venv/bin/python -I metrix/e1-pilot/reports/round7/gen_s_cands.py --facts /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/facts.json --data-manifest metrix/e1-pilot/DATA_MANIFEST.json --split-manifest metrix/e1-pilot/SPLIT_MANIFEST.json --out-dir /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/gen3
+pid 1293, PYTHONHASHSEED=7, python 3.13.18
+facts canonical sha256 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97, expected 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97, match True
+S derangement attempts per cell: {"capital/natural": 3, "capital/random": 5, "currency/natural": 1, "currency/random": 6, "founder/natural": 2, "founder/random": 1, "river/natural": 2, "river/random": 6}
+train_S.jsonl   rows 120, byte_sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e, canonical_sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e
+candidates.json facts 160, byte_sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705, canonical_sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705
+first S row: The capital of Krultrouth is Kishan. | first candidates: ["Thunae", "Linnuth", "Baszaes", "Kaethnis"]
+self-checks: train_S derangement within cell, learned strings exactly once, unread strings 0; candidates 4 distinct, true answer once, distractors from the 2.5 pool
+RESULT: PASS
+exit=0
+$ bash -c cmp\ /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/gen1/train_S.jsonl\ /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/gen3/train_S.jsonl\ \&\&\ cmp\ /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/gen1/candidates.json\ /tmp/claude-0/-home-user/d0b33d9f-5b9c-5c74-83e2-8142dea6dcc2/scratchpad/r7/gen3/candidates.json\ \&\&\ echo\ \'gen3\ \(manifests\ of\ this\ round\)\ byte-identical\ to\ gen1\ \(t1g_gen_s_cands.txt\)\'
+gen3 (manifests of this round) byte-identical to gen1 (t1g_gen_s_cands.txt)
+exit=0
+$ python3 -I -c $'\nimport json, sys\ndm = json.load(open(sys.argv[1], encoding=\'utf-8\')); sm = json.load(open(sys.argv[2], encoding=\'utf-8\')); doc = open(sys.argv[3], encoding=\'utf-8\').read()\ns = dm[\'s_permutation\'][\'expected_train_S_canonical_sha256\']; c = sm[\'candidates\'][\'candidate_mapping_sha256\']\nprint(\'DATA_MANIFEST s_permutation.expected_train_S_canonical_sha256\', s, \'| in protocol text:\', doc.count(s))\nprint(\'SPLIT_MANIFEST candidates.candidate_mapping_sha256\', c, \'| in protocol text:\', doc.count(c))\nprint(\'facts expected hash in protocol text:\', doc.count(dm[\'name_generation\'][\'expected_facts_canonical_sha256\']))\n' metrix/e1-pilot/DATA_MANIFEST.json metrix/e1-pilot/SPLIT_MANIFEST.json metrix/e1-pilot/METRIX_E1_PROTOCOL.md
+DATA_MANIFEST s_permutation.expected_train_S_canonical_sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e | in protocol text: 1
+SPLIT_MANIFEST candidates.candidate_mapping_sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | in protocol text: 1
+facts expected hash in protocol text: 1
+exit=0
+$ grep -n -E $'\346\210\252\345\210\260 128|\345\220\204\346\210\252\345\210\260|\347\252\227\345\217\243\347\232\204 token \346\225\260|\344\270\215\345\276\227\345\205\261\344\272\253\344\273\273\344\275\225 13-gram' metrix/e1-pilot/METRIX_E1_PROTOCOL.md
+653:| v1-r2(Round 3 补记) | 2026-11-12 14:43:19 | `6675af63` | 第 2.2 节;`DATA_MANIFEST.json: name_generation.anchor_rule` | 新增锚文本规则:生成名字时,拒绝在第 2.7 节锚文本(512 篇、各截到 128 token 后解码)中出现过的字符串(不分大小写的子串);因此锚文本须在名字之前生成 | Metrix Round 2 第 5 项把 arm A 纳入暴露匹配(L3b):若某个名字出现在锚文本里,arm A 对该候选的暴露会多于 F,unread 名字也会违反 L3a。在生成时拒绝,使 L3a、L3b 在构造上成立(检查仍执行)。`DATA_SEED` 下这条规则没有拒绝任何名字,160 条 fact 的哈希不变(`ROUND2_REPORT.md` 对照运行 3)。上表 v1-r2 第 2.2 节一行只写了“加锚文本规则”,未写原因,Round 3 第 5 项要求补记 |
+675:| v1-r7 | 2026-11-22 03:25:59 | `7fea9181` | 第 2.7 节 | 原文“锚文本与通用文本不得共享任何 13-gram。”改为“锚文本与通用文本不得共享任何词 13-gram(定义与上限见第 3 节 L6)。” | Review Gate 第 6 轮裁决,第 7 轮指令第 1a 项(`ROUND6_REPORT.md`“待 Review Gate 决定”第 1 项;R6 code-reviewer MAJOR,`reviews/599230f9…/code-reviewer.md` 第 17 行):第 3 节 L6 按 v1-r6 只限词 13-gram,Qwen token 13-gram 只报告,第 2.7 节的“任何 13-gram”与之说法不一 |
+679:| v1-r7 | 2026-11-22 03:25:59 | `7fea9181` | 第 5 节 general damage;第 2.7 节锚文本;第 2.2 节锚文本规则;`DATA_MANIFEST.json: general_text.window_rule`、`anchor_text.document_rule`(新增) | n_w 原文“窗口的 token 数”改为“窗口实际送入模型的 id 序列长度:送入模型的是第 2.7 节用本协议分词器切分后截断得到的原始 id(最多 256 个),不解码再编码”。锚文本原文“各截到 128 token”改为“每篇最多 128 token(取前 128 个),不足则取全长”;第 2.2 节“512 篇、各截到 128 token 后解码的文本”改为“512 篇、每篇最多 128 token、解码后的文本” | Review Gate 第 6 轮裁决,第 7 轮指令第 1e 项(待决第 4、5 项;`reviews/599230f9…/code-reviewer.md` 第 18、19 行):n_w 与 v1-r6 改过的 n_x 口径不一;第 340 篇锚文档全文只有 123 个 token,“截到 128”与实际不符。数值不变 |
+exit=0
