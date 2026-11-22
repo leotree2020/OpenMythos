@@ -1,0 +1,33 @@
+# Data Auditor run. host vm, CPU only (no GPU, no torch, tokenizer files only); 2026-11-21 14:49:52 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python -I -B r6_general.py /home/user/OpenMythos/research/mini_mythos/stage1/results/r1/eval_sets.jsonl /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/dl/parcae_tok/tokenizer.json /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/dl/qwen_tok ../DATA_MANIFEST.json ../SPLIT_MANIFEST.json ../METRIX_E1_PROTOCOL.md /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/audit_r6/anchor.json /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/audit_r6/anchor_ids.json /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/audit_r6/general_summary.json
+[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
+DATA_MANIFEST general_text.window_rule: each window has at most 256 tokens of the protocol tokenizer (the first 256); a window with fewer tokens is used at its full length | truncate_to_model_tokens: 256
+SPLIT_MANIFEST leakage_checks.L6_general_text: {"rule": "word 13-grams shared between anchor_text and general_dev / general_test; word = an element of Python str.split() (split on whitespace, case-sensitive)", "limit": 0, "report_only": "13-grams of protocol-tokenizer (Qwen) token ids: reported, no limit"}
+protocol L6 row: ['| L6 | 锚文本与通用文本共享的词 13-gram 数;“词”= Python `str.split()` 的结果(按空白切分,区分大小写);Qwen token 13-gram 只报告,不设上限 | 0 |']
+protocol 2.7 window sentence present ('每个窗口最多 256 token(取前 256 个),不足则取全长'): True
+protocol section 4 n_x sentence present ('n_x 为锚文档 x 实际送入模型的 id 序列长度'): True
+eval_sets.jsonl sha256 8816fe5a39d8b89e8c4203bf7d660e798faa471d2b72b5ce43c411cf5925a155 | DATA_MANIFEST general_text.source_file_sha256 8816fe5a39d8b89e8c4203bf7d660e798faa471d2b72b5ce43c411cf5925a155 | equal True
+parcae tokenizer.json sha256 e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77 | DATA_MANIFEST general_text.decode_tokenizer_json_sha256 e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77 | equal True
+eval_sets rows by split (split field only): {'dev': 400, 'test': 800}
+dev windows kept per domain: {'books': 25, 'c4': 25, 'fineweb': 25, 'wikitext': 25} | other domains: []
+rows decoded by split (counted inside decode_row): {'dev': 100} | test rows decoded: 0
+== item 1b: window lengths (Qwen ids)
+windows: 100 | lengths {len: count}: {172: 1, 182: 1, 216: 1, 229: 1, 231: 2, 232: 1, 233: 1, 234: 1, 236: 1, 237: 1, 238: 1, 241: 1, 242: 1, 243: 2, 244: 2, 245: 3, 246: 4, 247: 4, 248: 2, 249: 3, 250: 5, 251: 5, 252: 2, 253: 6, 254: 4, 255: 8, 256: 36}
+exactly 256: 36 | shorter than 256: 64 | shortest: 172 | longest: 256 | longer than 256: 0
+per domain (min, max, number shorter than 256): {'books': (172, 256, 24), 'c4': (216, 256, 18), 'fineweb': (233, 256, 11), 'wikitext': (245, 256, 11)}
+windows whose length == min(256, full Qwen length of the decoded row) (first 256, else full length): 100 of 100
+windows where encode(window text) != window ids: 0 | re-encoded window text longer than 256: 0
+windows containing an id >= 151643: 0
+general DEV canonical sha256, list of window texts (domain order books, c4, fineweb, wikitext): 363aa08742d46776e725715d0ee4c5ae9c4de1ddf96396eb333803ce818587c8
+general DEV canonical sha256, list of token-id lists (same order): 2e30c443da0b09f385ba5f327d40fb051080c12dc7bc0d3cb873f0a0b01d598f
+== item 1a: L6 (DEV part); anchor texts: 512 canonical sha256 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408
+unit ws  (str.split(), JUDGED): units anchor 50413, general 18983 | shared distinct n-grams n=1..13: [2878, 2178, 454, 68, 14, 5, 3, 2, 1, 0, 0, 0, 0] | longest shared n <= 13: 9
+unit tok (encode of both texts): units anchor 65531, general 24877 | shared distinct n-grams n=1..13: [3784, 3467, 1030, 270, 106, 25, 8, 5, 4, 3, 2, 1, 0] | longest shared n <= 13: 12
+unit tokid (ids fed: anchor trunc ids / window ids): units anchor 65531, general 24877 | shared distinct n-grams n=1..13: [3784, 3467, 1030, 270, 106, 25, 8, 5, 4, 3, 2, 1, 0] | longest shared n <= 13: 12
+unit w   (\w+ casefold, comparison only): units anchor 51199, general 18521 | shared distinct n-grams n=1..13: [2858, 2718, 606, 94, 21, 6, 4, 2, 1, 0, 0, 0, 0] | longest shared n <= 13: 9
+L6 (DEV part) shared word 13-grams, word = str.split(): 0; limit 0 -> within limit
+report only, no limit: Qwen token 13-grams (encode of texts) 0 | (ids fed) 0 | \w+ casefold 0
+wrote /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/audit_r6/general_summary.json
+RESULT: PASS
+exit=0

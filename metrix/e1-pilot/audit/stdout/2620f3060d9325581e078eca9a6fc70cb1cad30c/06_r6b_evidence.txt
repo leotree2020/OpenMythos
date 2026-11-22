@@ -1,0 +1,43 @@
+# Data Auditor run. host vm, CPU only (no GPU, no torch, tokenizer files only); 2026-11-22 02:36:31 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python -I -B /home/user/OpenMythos/metrix/e1-pilot/audit/r6b_evidence.py /home/user/OpenMythos 481a6f0f629cb5b8ada849bd935db9b24c3fbbc8 2620f3060d9325581e078eca9a6fc70cb1cad30c
+== 1. scripts run by the harnesses
+   .py under reports/ changed 481a6f0f..2620f306: []
+   working-tree status of .py under reports/ (untracked/modified): ['?? metrix/e1-pilot/reports/round6/review_extract.py']
+   no tracked .py changed: True (untracked .py are not run by either harness)
+== 2. pre-fix vs post-fix harness output
+   guard_ab.sh: t2_guard_normal.txt (149 lines, exit 0) -> t2_guard_normal_rerun.txt (150 lines, exit 0)
+      OUT_DIR /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/ab -> /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/ab2; other arguments identical: True
+      non-equal blocks after OUT_DIR normalisation: [('insert', 149, 149, 149, 150, ['RESULT: PASS'])]
+      only change = 'RESULT: PASS' appended at the end: True | RESULT lines 4 -> 5 | last line 'RESULT: PASS' | harness summary line ['identical (output and exit code): 8 of 8']
+      -> True
+   guard_fail.sh: t2_guard_fail.txt (229 lines, exit 0) -> t2_guard_fail_rerun.txt (230 lines, exit 0)
+      OUT_DIR /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/fail -> /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/fail2; other arguments identical: True
+      non-equal blocks after OUT_DIR normalisation: [('insert', 229, 229, 229, 230, ['RESULT: PASS'])]
+      only change = 'RESULT: PASS' appended at the end: True | RESULT lines 12 -> 13 | last line 'RESULT: PASS' | harness summary line ['new scripts with non-zero exit and exactly one RESULT: FAIL line: 12 of 12']
+      -> True
+== 3. t2_harness_fail.txt
+   run 1: guard_ab.sh with 0 argument(s)
+      output: ['usage: bash guard_ab.sh OLD_REPORTS_DIR OUT_DIR PY QWEN_TOK_DIR FACTS.json PARQUET_CACHE_DIR', 'RESULT: FAIL']
+      summary line: [] | RESULT lines 1 | last line 'RESULT: FAIL' | recorded exit= 2 (of the shell command) | harness exit code: 2
+      RESULT: FAIL last and harness exit non-zero (where recorded): True
+   run 2: guard_fail.sh with 1 argument(s)
+      output: ['usage: bash guard_fail.sh OLD_REPORTS_DIR OUT_DIR PY QWEN_TOK_DIR', 'RESULT: FAIL']
+      summary line: [] | RESULT lines 1 | last line 'RESULT: FAIL' | recorded exit= 2 (of the shell command) | harness exit code: 2
+      RESULT: FAIL last and harness exit non-zero (where recorded): True
+   run 3: guard_ab.sh with 6 argument(s) | piped into grep
+      summary line: ['identical (output and exit code): 0 of 8'] | RESULT lines 5 | last line 'RESULT: FAIL' | recorded exit= 0 (grep) | harness exit code: None
+      RESULT: FAIL last and harness exit non-zero (where recorded): True
+   run 4: guard_fail.sh with 4 argument(s) | piped into grep
+      summary line: ['new scripts with non-zero exit and exactly one RESULT: FAIL line: 0 of 12'] | RESULT lines 1 | last line 'RESULT: FAIL' | recorded exit= 0 (grep) | harness exit code: None
+      RESULT: FAIL last and harness exit non-zero (where recorded): True
+   run 5: guard_ab.sh with 6 argument(s)
+      output: ['RESULT: FAIL', 'harness_exit=1']
+      summary line: [] | RESULT lines 1 | last line 'RESULT: FAIL' | recorded exit= 0 (of the shell command) | harness exit code: 1
+      RESULT: FAIL last and harness exit non-zero (where recorded): True
+   run 6: guard_fail.sh with 4 argument(s)
+      output: ['RESULT: FAIL', 'harness_exit=1']
+      summary line: [] | RESULT lines 1 | last line 'RESULT: FAIL' | recorded exit= 0 (of the shell command) | harness exit code: 1
+      RESULT: FAIL last and harness exit non-zero (where recorded): True
+RESULT: PASS
+exit=0

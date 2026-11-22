@@ -1,0 +1,9 @@
+请审查 Metrix E1-PILOT 第 6 轮的修复提交,范围 599230f9e6069e8f7197a3717aafa789abb788f0..2620f3060d9325581e078eca9a6fc70cb1cad30c(1 个提交)。
+
+背景:第 6 轮工作提交(f4d8e988..599230f9)的两份审查原文在 /home/user/OpenMythos/metrix/e1-pilot/reviews/599230f9e6069e8f7197a3717aafa789abb788f0/:你的上一份审查 code-reviewer.md 结论 PASS;data-auditor.md 结论 BLOCK,唯一的不一致是第 E 项第 3 点:reports/round6/guard_ab.sh 与 guard_fail.sh 按 Executor 自己的标准(按判定设置退出码)属于检查脚本,却不满足第 6 轮指令第 2 项“所有检查脚本遇异常须打印 RESULT: FAIL 并以非 0 退出”。本提交只为修这一点:给两个脚本加 EXIT trap、参数个数检查和最后的 RESULT 行,并提交重跑的原始输出(t2_guard_normal_rerun.txt、t2_guard_fail_rerun.txt、t2_harness_fail.txt)。
+
+你不能运行 git。完整 diff(含 git log 与 --stat)已写入:
+  /home/user/OpenMythos/metrix/e1-pilot/reviews/2620f3060d9325581e078eca9a6fc70cb1cad30c/review_input.diff
+工作区当前就是 2620f306 的内容;另有未跟踪的 reviews/、audit/、reports/ROUND6_REPORT.md(草稿)、reports/DEFERRED_MINORS.md 等文件,不在本次审查范围内。
+
+请按你的定义只审查这个 diff:两个脚本的修复是否满足上述规则(含参数错误、运行中出错、正常结束三种情况)、是否改变了原有的判定与输出(除最后新增的 RESULT 行)、三个原始输出文件是否支持这些结论。凡是没有实际运行就作出的判断,都在该条末尾标注『未验证』。按你的输出格式逐条列出问题并给出结论。

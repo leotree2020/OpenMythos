@@ -1,0 +1,16 @@
+# Data Auditor run. host vm, CPU only (no GPU, no torch, tokenizer files only); 2026-11-21 14:48:51 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python -I -B r5_kl_denoms.py /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/dl/qwen_tok /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/audit_r6/anchor.json /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/dl/parquet/data/sample-100BT/train/shard_00000.parquet
+[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
+documents from parquet: 512 | anchor texts: 512 | decode(truncated ids) == my anchor text for all 512: True
+truncated id length n_x {n: count}: {128: 511, 123: 1} | documents with n_x != 128: [(340, 123)]
+re-encoded length {n: count}: {128: 511, 123: 1} | documents with n_x != 128: [(340, 123)]
+per document: len(truncated ids) != len(re-encoded): [] | truncated ids != re-encoded ids: []
+  s = 0..299, n_x = len(truncated ids): denominators {value: steps} {503: 2, 508: 298} | min 503 max 508 sum 152390 | steps with denominator != 508 (denominator, documents): {85: (503, [340, 341, 342, 343]), 213: (503, [340, 341, 342, 343])}
+  s = 0..299, n_x = len(re-encoded text): denominators {value: steps} {503: 2, 508: 298} | min 503 max 508 sum 152390 | steps with denominator != 508 (denominator, documents): {85: (503, [340, 341, 342, 343]), 213: (503, [340, 341, 342, 343])}
+  s = 1..300, n_x = len(truncated ids): denominators {value: steps} {503: 2, 508: 298} | min 503 max 508 sum 152390 | steps with denominator != 508 (denominator, documents): {85: (503, [340, 341, 342, 343]), 213: (503, [340, 341, 342, 343])}
+  s = 1..300, n_x = len(re-encoded text): denominators {value: steps} {503: 2, 508: 298} | min 503 max 508 sum 152390 | steps with denominator != 508 (denominator, documents): {85: (503, [340, 341, 342, 343]), 213: (503, [340, 341, 342, 343])}
+step 85 documents [340, 341, 342, 343]: KL token count 503; document share of the KL term (token-weighted) [0.2425, 0.2525, 0.2525, 0.2525] vs per-document mean [0.25, 0.25, 0.25, 0.25]
+step 213 documents [340, 341, 342, 343]: KL token count 503; document share of the KL term (token-weighted) [0.2425, 0.2525, 0.2525, 0.2525] vs per-document mean [0.25, 0.25, 0.25, 0.25]
+RESULT: PASS
+exit=0

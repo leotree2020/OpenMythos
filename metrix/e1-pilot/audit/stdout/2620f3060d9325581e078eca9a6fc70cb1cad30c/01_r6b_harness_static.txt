@@ -1,0 +1,106 @@
+# Data Auditor run. host vm, CPU only (no GPU, no torch, tokenizer files only); 2026-11-22 02:33:53 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python -I -B r6b_harness_static.py /home/user/OpenMythos 599230f9e6069e8f7197a3717aafa789abb788f0 2620f3060d9325581e078eca9a6fc70cb1cad30c
+revision 599230f9e6069e8f7197a3717aafa789abb788f0 -> commit 599230f9e6069e8f7197a3717aafa789abb788f0
+revision 2620f3060d9325581e078eca9a6fc70cb1cad30c -> commit 2620f3060d9325581e078eca9a6fc70cb1cad30c
+files changed old..new:
+   M	metrix/e1-pilot/reports/round6/guard_ab.sh
+   M	metrix/e1-pilot/reports/round6/guard_fail.sh
+   A	metrix/e1-pilot/reports/round6/t2_guard_fail_rerun.txt
+   A	metrix/e1-pilot/reports/round6/t2_guard_normal_rerun.txt
+   A	metrix/e1-pilot/reports/round6/t2_harness_fail.txt
+## metrix/e1-pilot/reports/round6/guard_ab.sh
+   old 599230f9: 43 lines, sha256 1c3af38fe6a1717645a0ee9bab3aaeb3b828b60d67397c9e3415299031d65e78
+   new 2620f306: 53 lines, sha256 a96e55406129b9527a3727d25796cb959450655778e982e74cefd064c1837374
+   1. line diff: equal lines 42 (old lines - 1 = 42); non-equal blocks 3
+      insert old 10..9 -> new 10..15
+        + # Round 6, after the data-auditor's BLOCK (reviews/599230f9.../data-auditor.md, item E3): this harness is a check
+        + # script as well. Its last line is RESULT: PASS or RESULT: FAIL; on any other exit (wrong number of arguments, an
+        + # error before the end) the EXIT trap prints RESULT: FAIL and the exit code is non-zero.
+        + RESULT_DONE=0
+        + on_exit() { rc=$?; if [ "$RESULT_DONE" = 0 ]; then echo "RESULT: FAIL"; [ "$rc" = 0 ] && rc=1; fi; exit "$rc"; }
+        + trap on_exit EXIT
+      insert old 11..10 -> new 17..17
+        + if [ $# -ne 6 ]; then echo "usage: bash guard_ab.sh OLD_REPORTS_DIR OUT_DIR PY QWEN_TOK_DIR FACTS.json PARQUET_CACHE_DIR" >&2; exit 2; fi
+      replace old 43..43 -> new 50..53
+        - [ "$same_all" = "${#cases[@]}" ]
+        + RESULT_DONE=1
+        + if [ "$same_all" = "${#cases[@]}" ]; then echo "RESULT: PASS"; exit 0; fi
+        + echo "RESULT: FAIL"
+        + exit 1
+      (a) block inserted directly before `set -u`, comments + [flag=0, handler def, trap EXIT]: True | code lines ['RESULT_DONE=0', 'on_exit() { rc=$?; if [ "$RESULT_DONE" = 0 ]; then echo "RESULT: FAIL"; [ "$rc" = 0 ] && rc=1; fi; exit "$rc"; }', 'trap on_exit EXIT']
+      (b) one line inserted directly after `set -u`: $# check against N=6, exit 2; positional parameters used [1, 2, 3, 4, 5, 6] (max 6): True
+      (c) old last line replaced by [flag=1, if [COND] PASS exit 0, echo FAIL, exit 1]: True
+          old COND: '"$same_all" = "${#cases[@]}"'
+          new COND: '"$same_all" = "${#cases[@]}"' | identical: True
+          old: last command `[ COND ]` -> script exit status 0 if COND true, 1 if false; no output line
+          new: COND true -> 'RESULT: PASS', exit 0; COND false -> 'RESULT: FAIL', exit 1 (same codes, one added line)
+   1 summary: equal lines == old - 1: True; (a) True; (b) True; (c) True -> True
+   2. trap statements: [(15, 'trap on_exit EXIT')]
+      code lines before the trap: ['RESULT_DONE=0', 'on_exit() { rc=$?; if [ "$RESULT_DONE" = 0 ]; then echo "RESULT: FAIL"; [ "$rc" = 0 ] && rc=1; fi; exit "$rc"; }'] | only flag=0 and the handler definition: True
+      forbidden constructs (line numbers): {'set -e / errexit': [], 'exec': [], 'source / .': [], 'background &': [], 'return': [], 'kill': []} | none: True
+      handler on_exit (line 14), statements:
+        rc=$?
+        if [ "$RESULT_DONE" = 0 ]
+        then echo "RESULT: FAIL"
+        [ "$rc" = 0 ] && rc=1
+        fi
+        exit "$rc"
+        first statement captures $? into rc: True | if flag 0: print RESULT: FAIL and status 0 -> 1: True | last statement exit "$rc": True -> True
+      assignments of RESULT_DONE: [(13, 'RESULT_DONE=0'), (50, 'RESULT_DONE=1')] | exactly [=0, =1]: True
+      exit at line 17 with argument 2: flag in force 0 -> handler prints RESULT: FAIL; status kept (non-zero) | ok: True
+      exit at line 51 with argument 0: flag in force 1 -> RESULT line printed before it: True | ok: True
+      exit at line 53 with argument 1: flag in force 1 -> RESULT line printed before it: True | ok: True
+      set -u: variables read before any assignment: [(37, 'rel'), (37, 'args'), (37, 'name'), (39, 'rel'), (39, 'args'), (39, 'name'), (40, 'name'), (40, 'name'), (41, 'name'), (41, 'rel'), (41, 'args'), (42, 'name'), (42, 'name'), (42, 'name'), (42, 'name'), (47, 'name'), (48, 'name')] | loop depth at end 0
+      first use of a positional parameter at line 18; $# check at line [17] -> check first: True
+      variables read after RESULT_DONE=1 (line 50): ['cases', 'same_all']; loop depth of first assignment {'cases': 0, 'same_all': 0} -> all top level: True
+   2 summary -> False
+## metrix/e1-pilot/reports/round6/guard_fail.sh
+   old 599230f9: 57 lines, sha256 29b200e5fbf8c374ea3aa522c90bd521c0e57623670a35703fb9066f539f8db6
+   new 2620f306: 67 lines, sha256 51e876dc474c3142ac7aa8d00bb06819564e67cdb4859be84de08d1ca5835f25
+   1. line diff: equal lines 56 (old lines - 1 = 56); non-equal blocks 3
+      insert old 7..6 -> new 7..12
+        + # Round 6, after the data-auditor's BLOCK (reviews/599230f9.../data-auditor.md, item E3): this harness is a check
+        + # script as well. Its last line is RESULT: PASS or RESULT: FAIL; on any other exit (wrong number of arguments, an
+        + # error before the end) the EXIT trap prints RESULT: FAIL and the exit code is non-zero.
+        + RESULT_DONE=0
+        + on_exit() { rc=$?; if [ "$RESULT_DONE" = 0 ]; then echo "RESULT: FAIL"; [ "$rc" = 0 ] && rc=1; fi; exit "$rc"; }
+        + trap on_exit EXIT
+      insert old 8..7 -> new 14..14
+        + if [ $# -ne 4 ]; then echo "usage: bash guard_fail.sh OLD_REPORTS_DIR OUT_DIR PY QWEN_TOK_DIR" >&2; exit 2; fi
+      replace old 57..57 -> new 64..67
+        - [ "$ok_all" = $(( ${#cases[@]} + 1 )) ]
+        + RESULT_DONE=1
+        + if [ "$ok_all" = $(( ${#cases[@]} + 1 )) ]; then echo "RESULT: PASS"; exit 0; fi
+        + echo "RESULT: FAIL"
+        + exit 1
+      (a) block inserted directly before `set -u`, comments + [flag=0, handler def, trap EXIT]: True | code lines ['RESULT_DONE=0', 'on_exit() { rc=$?; if [ "$RESULT_DONE" = 0 ]; then echo "RESULT: FAIL"; [ "$rc" = 0 ] && rc=1; fi; exit "$rc"; }', 'trap on_exit EXIT']
+      (b) one line inserted directly after `set -u`: $# check against N=4, exit 2; positional parameters used [1, 2, 3, 4] (max 4): True
+      (c) old last line replaced by [flag=1, if [COND] PASS exit 0, echo FAIL, exit 1]: True
+          old COND: '"$ok_all" = $(( ${#cases[@]} + 1 ))'
+          new COND: '"$ok_all" = $(( ${#cases[@]} + 1 ))' | identical: True
+          old: last command `[ COND ]` -> script exit status 0 if COND true, 1 if false; no output line
+          new: COND true -> 'RESULT: PASS', exit 0; COND false -> 'RESULT: FAIL', exit 1 (same codes, one added line)
+   1 summary: equal lines == old - 1: True; (a) True; (b) True; (c) True -> True
+   2. trap statements: [(12, 'trap on_exit EXIT')]
+      code lines before the trap: ['RESULT_DONE=0', 'on_exit() { rc=$?; if [ "$RESULT_DONE" = 0 ]; then echo "RESULT: FAIL"; [ "$rc" = 0 ] && rc=1; fi; exit "$rc"; }'] | only flag=0 and the handler definition: True
+      forbidden constructs (line numbers): {'set -e / errexit': [], 'exec': [], 'source / .': [], 'background &': [], 'return': [], 'kill': []} | none: True
+      handler on_exit (line 11), statements:
+        rc=$?
+        if [ "$RESULT_DONE" = 0 ]
+        then echo "RESULT: FAIL"
+        [ "$rc" = 0 ] && rc=1
+        fi
+        exit "$rc"
+        first statement captures $? into rc: True | if flag 0: print RESULT: FAIL and status 0 -> 1: True | last statement exit "$rc": True -> True
+      assignments of RESULT_DONE: [(10, 'RESULT_DONE=0'), (64, 'RESULT_DONE=1')] | exactly [=0, =1]: True
+      exit at line 14 with argument 2: flag in force 0 -> handler prints RESULT: FAIL; status kept (non-zero) | ok: True
+      exit at line 65 with argument 0: flag in force 1 -> RESULT line printed before it: True | ok: True
+      exit at line 67 with argument 1: flag in force 1 -> RESULT line printed before it: True | ok: True
+      set -u: variables read before any assignment: [(38, 'rel'), (38, 'args'), (38, 'name'), (40, 'rel'), (40, 'args'), (40, 'name'), (41, 'name'), (41, 'name'), (43, 'name'), (43, 'rel'), (43, 'args'), (57, 'name'), (58, 'name'), (59, 'name'), (60, 'name')] | loop depth at end 0
+      first use of a positional parameter at line 15; $# check at line [14] -> check first: True
+      variables read after RESULT_DONE=1 (line 64): ['cases', 'ok_all']; loop depth of first assignment {'cases': 0, 'ok_all': 0} -> all top level: True
+   2 summary -> False
+per file: {'guard_ab.sh': False, 'guard_fail.sh': False}
+RESULT: FAIL
+exit=1

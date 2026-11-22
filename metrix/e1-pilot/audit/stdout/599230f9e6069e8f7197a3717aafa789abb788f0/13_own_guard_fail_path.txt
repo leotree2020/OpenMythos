@@ -1,0 +1,54 @@
+# Data Auditor run. host vm, CPU only (no GPU, no torch, tokenizer files only); 2026-11-22 02:20:53 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit
+# stdout and stderr merged, complete, unedited
+$ bash -c $'\nPY=$1; X=$2; S=$3\nfor c in "r6_env.py" "r6_sources.py" "r6_anchor.py" "r6_general.py" "r6_compare.py" "r6_guard_audit.py" "r5_kl_denoms.py" \\\n         "r6_general.py $X $X $X $X $X $X $X $X $S/audit_r6/x.json" \\\n         "r5_kl_denoms.py $S/dl/qwen_tok $X $X" \\\n         "r6_guard_audit.py /home/user/OpenMythos 0000000000000000000000000000000000000000 599230f9e6069e8f7197a3717aafa789abb788f0"; do\n  out=$("$PY" -I -B $c 2>&1); rc=$?\n  echo "== $PY -I -B $c"\n  echo "$out" | tail -3 | sed "s/^/   /"\n  echo "   exit $rc | lines starting with RESULT: FAIL: $(echo "$out" | grep -c "^RESULT: FAIL")"\ndone' _ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/audit_r6/does_not_exist.json /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad
+== /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python -I -B r6_env.py
+       ^^^^^^^^^^^^^^^^^^^^^^^^^
+   ValueError: not enough values to unpack (expected 4, got 0)
+   RESULT: FAIL (exception)
+   exit 2 | lines starting with RESULT: FAIL: 1
+== /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python -I -B r6_sources.py
+       ^^^^^^^^^^^^^^
+   ValueError: not enough values to unpack (expected 3, got 0)
+   RESULT: FAIL (exception)
+   exit 2 | lines starting with RESULT: FAIL: 1
+== /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python -I -B r6_anchor.py
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   ValueError: not enough values to unpack (expected 4, got 0)
+   RESULT: FAIL (exception)
+   exit 2 | lines starting with RESULT: FAIL: 1
+== /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python -I -B r6_general.py
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   ValueError: not enough values to unpack (expected 9, got 0)
+   RESULT: FAIL (exception)
+   exit 2 | lines starting with RESULT: FAIL: 1
+== /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python -I -B r6_compare.py
+                             ~~~~~~~~^^^
+   IndexError: list index out of range
+   RESULT: FAIL (exception)
+   exit 2 | lines starting with RESULT: FAIL: 1
+== /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python -I -B r6_guard_audit.py
+       ^^^^^^^^^^^^^^^^^^^^^^
+   ValueError: not enough values to unpack (expected 3, got 0)
+   RESULT: FAIL (exception)
+   exit 2 | lines starting with RESULT: FAIL: 1
+== /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python -I -B r5_kl_denoms.py
+                      ~~~~~~~~^^^
+   IndexError: list index out of range
+   RESULT: FAIL (exception)
+   exit 2 | lines starting with RESULT: FAIL: 1
+== /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python -I -B r6_general.py /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/audit_r6/does_not_exist.json /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/audit_r6/does_not_exist.json /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/audit_r6/does_not_exist.json /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/audit_r6/does_not_exist.json /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/audit_r6/does_not_exist.json /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/audit_r6/does_not_exist.json /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/audit_r6/does_not_exist.json /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/audit_r6/does_not_exist.json /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/audit_r6/x.json
+                      ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   FileNotFoundError: [Errno 2] No such file or directory: '/tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/audit_r6/does_not_exist.json'
+   RESULT: FAIL (exception)
+   exit 2 | lines starting with RESULT: FAIL: 1
+== /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python -I -B r5_kl_denoms.py /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/dl/qwen_tok /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/audit_r6/does_not_exist.json /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/audit_r6/does_not_exist.json
+                          ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   FileNotFoundError: [Errno 2] No such file or directory: '/tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/audit_r6/does_not_exist.json'
+   RESULT: FAIL (exception)
+   exit 2 | lines starting with RESULT: FAIL: 1
+== /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python -I -B r6_guard_audit.py /home/user/OpenMythos 0000000000000000000000000000000000000000 599230f9e6069e8f7197a3717aafa789abb788f0
+     round6/guard_fail.sh                 | # Round 6, task 2: every guarded check script, on an exception or an early exit, prints RESULT: FAIL
+                                          | markers {'RESULT': 10, '\\bPASS\\b|\\bFAIL\\b': 10, 'sys\\.exit|^\\s*exit\\b|^\\[ ': 1} | set -e: False | last line: [ "$ok_all" = $(( ${#cases[@]} + 1 )) ]
+   RESULT: PASS
+   exit 0 | lines starting with RESULT: FAIL: 0
+exit=0

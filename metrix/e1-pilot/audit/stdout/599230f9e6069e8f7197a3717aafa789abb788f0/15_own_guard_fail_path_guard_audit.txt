@@ -1,0 +1,19 @@
+# Data Auditor run. host vm, CPU only (no GPU, no torch, tokenizer files only); 2026-11-22 02:21:22 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit
+# stdout and stderr merged, complete, unedited
+$ bash -c $'\nPY=$1\nfor c in "r6_guard_audit.py /home/user/OpenMythos 0000000000000000000000000000000000000000 599230f9e6069e8f7197a3717aafa789abb788f0" \\\n         "r6_guard_audit.py /home/user/OpenMythos 61d3c76705b28cc2ee334abc5bf1baaac4fc30dc 599230f9e6069e8f7197a3717aafa789abb788f0"; do\n  out=$("$PY" -I -B $c 2>&1); rc=$?\n  echo "== $PY -I -B $c"\n  echo "$out" | grep -E "^revision|not present|^RESULT|Error" | tail -8 | cut -c1-220 | sed "s/^/   /"\n  echo "   exit $rc | lines starting with RESULT: FAIL: $(echo "$out" | grep -c "^RESULT: FAIL")"\ndone' _ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python
+== /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python -I -B r6_guard_audit.py /home/user/OpenMythos 0000000000000000000000000000000000000000 599230f9e6069e8f7197a3717aafa789abb788f0
+       raise CalledProcessError(retcode, process.args,
+   subprocess.CalledProcessError: Command '['git', '-C', '/home/user/OpenMythos', 'rev-parse', '--verify', '0000000000000000000000000000000000000000^{commit}']' returned non-zero exit status 128.
+   RESULT: FAIL (exception)
+   exit 2 | lines starting with RESULT: FAIL: 1
+== /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python -I -B r6_guard_audit.py /home/user/OpenMythos 61d3c76705b28cc2ee334abc5bf1baaac4fc30dc 599230f9e6069e8f7197a3717aafa789abb788f0
+     round3/verify_scoring.py                 not present at 61d3c767; listed as added (A) in git diff: True; no old version to compare
+     round4/st_prefix_check.py                not present at 61d3c767; listed as added (A) in git diff: True; no old version to compare
+     round5/blind_handback_check.py           not present at 61d3c767; listed as added (A) in git diff: True; no old version to compare
+     round5/l6_check.py                       not present at 61d3c767; listed as added (A) in git diff: True; no old version to compare
+     round5/records_check.py                  not present at 61d3c767; listed as added (A) in git diff: True; no old version to compare
+     round5/recover_blind.py                  not present at 61d3c767; listed as added (A) in git diff: True; no old version to compare
+     round6/table_check.py                    not present at 61d3c767; listed as added (A) in git diff: True; no old version to compare
+   RESULT: PASS
+   exit 0 | lines starting with RESULT: FAIL: 0
+exit=0

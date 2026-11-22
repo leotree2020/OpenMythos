@@ -1,0 +1,16 @@
+# Round 6 task 1 raw output, added after the code-reviewer's MINOR (reviews/599230f9…/code-reviewer.md line 31): the table check and the JSON / inline-copy checks re-run on the committed content of 599230f9e6069e8f7197a3717aafa789abb788f0 (t1_protocol_checks.txt ran on the working tree before 481a6f0f). Host vm. Sun Nov 22 02:19:43 UTC 2026
+$ bash -c for\ f\ in\ METRIX_E1_PROTOCOL.md\ DATA_MANIFEST.json\ SPLIT_MANIFEST.json\ SEARCH_SPACE.json\;\ do\ git\ show\ 599230f9e6069e8f7197a3717aafa789abb788f0:metrix/e1-pilot/\$f\ \>\ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/at_599230f9/\$f\;\ done\;\ sha256sum\ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/at_599230f9/\*
+dde2377ef0834d0959f87198c0b9ec91aa4024735e64e42dfda881d0bbb82a1c  /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/at_599230f9/DATA_MANIFEST.json
+2f0c5312e5c2dd47f2c32308e16fc5976896ebeedd16dc6251daaad27822b21e  /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/at_599230f9/METRIX_E1_PROTOCOL.md
+307dde04b5a9dd56e8ca1232fd3686641a7850c5d0442e90b347237989343a33  /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/at_599230f9/SEARCH_SPACE.json
+02c431fb4e245d3e5215b50d1c957e0b5969ce53da5892008214e8d868647d89  /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/at_599230f9/SPLIT_MANIFEST.json
+exit=0
+$ python3 -I metrix/e1-pilot/reports/round6/table_check.py /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/at_599230f9/METRIX_E1_PROTOCOL.md
+table rows checked: 145; rows whose cell count differs from the header: 0; unescaped special tokens: 0
+RESULT: PASS
+exit=0
+$ python3 -I -c $'\nimport json, sys\nd = sys.argv[1]\n[json.load(open(d + \'/\' + f, encoding=\'utf-8\')) for f in (\'DATA_MANIFEST.json\', \'SPLIT_MANIFEST.json\', \'SEARCH_SPACE.json\')]\nprint(\'json ok\')\nB, E = \'<!-- BEGIN INLINE COPY: SEARCH_SPACE.json -->\', \'<!-- END INLINE COPY: SEARCH_SPACE.json -->\'\ndoc = open(d + \'/METRIX_E1_PROTOCOL.md\', encoding=\'utf-8\').read()\nassert doc.count(B) == 1 and doc.count(E) == 1\ninner = doc[doc.index(B) + len(B):doc.index(E)]\nblock = inner[len(\'\\n```json\\n\'):-len(\'```\\n\')]\nprint(\'inline copy identical (marked block):\', block == open(d + \'/SEARCH_SPACE.json\', encoding=\'utf-8\').read())\nprint(\'placeholders R6_TIME / R6_COMMIT left:\', doc.count(\'R6_TIME\') + doc.count(\'R6_COMMIT\'))\n' /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/at_599230f9
+json ok
+inline copy identical (marked block): True
+placeholders R6_TIME / R6_COMMIT left: 0
+exit=0

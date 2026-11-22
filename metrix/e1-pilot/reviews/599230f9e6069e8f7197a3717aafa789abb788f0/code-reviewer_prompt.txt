@@ -1,0 +1,31 @@
+请审查 Metrix E1-PILOT 第 6 轮的工作提交,范围 f4d8e988a31f99527cc0bc6be5ceacc709bda2f1..599230f9e6069e8f7197a3717aafa789abb788f0(2 个提交:481a6f0f 为工作提交,599230f9 只把第 14 节 v1-r6 各行的时间与提交哈希填入,并新增 reports/round6/t1_commit_times.txt)。
+
+你不能运行 git。完整 diff(含 git log 与 --stat)已写入:
+  /home/user/OpenMythos/metrix/e1-pilot/reviews/599230f9e6069e8f7197a3717aafa789abb788f0/review_input.diff
+工作区当前就是 599230f9e6069e8f7197a3717aafa789abb788f0 的内容;另有未跟踪的 metrix/e1-pilot/reviews/599230f9…/ 与(data-auditor 并行运行时写入的)metrix/e1-pilot/audit/ 下的新文件,不在审查范围内。
+本轮运行的原始输出在 /home/user/OpenMythos/metrix/e1-pilot/reports/round6/;本轮指令原文在 /home/user/OpenMythos/metrix/e1-pilot/tasks/ROUND6_TASKS.md。
+
+本轮指令(Project Owner 转达)的总原则与第 1–4 项原文:
+原则：只修影响数据、指标、门槛或可复现性的问题；其余 MINOR 只登记不修。报告提交不需要 code-reviewer 审查。
+1. 协议修改（全部记入第 14 节）：
+   a. L6 的「词」定义为 str.split()，word 13-gram 上限 0；Qwen token 13-gram 只报告。
+   b. 第 2.7 节改为「每个窗口最多 256 token，不足则取全长」。
+   c. n_x 定义为实际送入模型的 id 序列长度。
+   d. EM 写死 do_sample=False 的贪心解码，覆盖 generation_config.json 的采样默认值；「去掉开头空格」并入归一化的去首尾空白。
+   e. prefix(f) 前不加任何特殊 token。
+   f. L6 的 TEST 部分在 PROTOCOL_FROZEN 之后、TEST 评测之前由 data-auditor 运行一次，只输出计数；G0.1 在 Gate 0 只要求 L6 的 DEV 部分。写入第 8 节。
+   g. 定义「读取 TEST 数据」：解码 test 行内容或用其内容做任何计算。解析 split 字段、计数、对整个文件求哈希不算。
+   h. DATA_MANIFEST.json 锁定 parcae tokenizer.json 与 eval_sets.jsonl 的 sha256。
+   i. 转义协议表格中的 <|endoftext|> 竖线。
+2. 脚本：l6_check.py 中「test rows decoded」改为实际计数，判定按 1a；所有检查脚本遇异常须打印 RESULT: FAIL 并以非 0 退出。
+3. metrix/CLAUDE.md：第 10 节确认 code-reviewer「已验证」、data-auditor「待验证」，出处「Review Gate 第 5 轮裁决」；code-reviewer 定义追加：「未实际运行就作出的判断须标注『未验证』」。
+4. 查明会话启动时 /root/.claude/CLAUDE.md 为何是旧版本，提出修法，不要直接修改环境设置。(这一项的证据文件 reports/round6/t4_user_claude_md.txt 在 diff 中;结论写在之后的报告里,不在本次审查范围。)
+
+第 1 项的裁决对应 metrix/e1-pilot/reports/ROUND5_REPORT.md「待 Review Gate 决定」各项;第 14 节 v1-r6 各行注明了对应的待决编号。
+
+第 3 项把一句规则追加到了你自己的定义文件 .claude/agents/code-reviewer.md。本会话启动时加载的 subagent 定义可能是旧版本(见第 4 项),所以请:
+- 在审查开头写明:你当前的定义(系统提示)的最后一行原文是什么;其中是否已有「未实际运行就作出的判断须标注『未验证』」这一句。
+- 无论是否已有,本次审查都按这一句执行:凡是没有实际运行就作出的判断,都在该条末尾标注『未验证』。
+- 对 .claude/agents/code-reviewer.md 与 metrix/CLAUDE.md 第 10 节的改动涉及你自己,你对这两处的判断只作参考,请注明。
+
+请按你的定义审查这个 diff(bug、死代码、可读性、合理性、与协议的一致性、与指令的一致性),按你的输出格式逐条列出问题并给出结论。

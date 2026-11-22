@@ -1,0 +1,20 @@
+# Data Auditor run. host vm, CPU only (no GPU, no torch, tokenizer files only); 2026-11-21 14:48:05 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python -I -B r6_sources.py /home/user/OpenMythos /home/user/OpenMythos/research/mini_mythos/stage1/results/r1/eval_sets.jsonl /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/dl/parcae_tok/tokenizer.json
+1. whole-file sha256
+   eval_sets.jsonl        8816fe5a39d8b89e8c4203bf7d660e798faa471d2b72b5ce43c411cf5925a155 | DATA_MANIFEST general_text.source_file_sha256 8816fe5a39d8b89e8c4203bf7d660e798faa471d2b72b5ce43c411cf5925a155 | equal True
+   parcae tokenizer.json  e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77 | DATA_MANIFEST general_text.decode_tokenizer_json_sha256 e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77 | equal True
+   eval_sets.jsonl path given == DATA_MANIFEST general_text.source_file: True
+2. Stage 1 records
+   Stage 1 manifest.json["eval_sets.jsonl"]   8816fe5a39d8b89e8c4203bf7d660e798faa471d2b72b5ce43c411cf5925a155 | == local file sha256 True | == DATA_MANIFEST True
+   Stage 1 data_lock.json["tokenizer_sha256"] e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77 | == local file sha256 True | == DATA_MANIFEST True
+   research/mini_mythos/stage1/results/r1/eval_sets.jsonl: sha256 8816fe5a39d8b89e8c4203bf7d660e798faa471d2b72b5ce43c411cf5925a155 | tracked True | working tree == HEAD True | == base 61d3c767 True | changed base..HEAD: False | last commit b975092 2026-11-09T03:54:25+00:00 stage1 revision 1: rerun results (results/r1), test log, checkpoint
+   research/mini_mythos/stage1/results/r1/manifest.json: sha256 00cd030c33f839a2ebf0e1847b65ec34c4676bdf68f942f856841e994c59732f | tracked True | working tree == HEAD True | == base 61d3c767 True | changed base..HEAD: False | last commit b975092 2026-11-09T03:54:25+00:00 stage1 revision 1: rerun results (results/r1), test log, checkpoint
+   research/mini_mythos/stage1/results/r1/data_lock.json: sha256 c1faab74d86a687419dc62c0a1daf04b55a38ba179a945633081a32ebedfe0a7 | tracked True | working tree == HEAD True | == base 61d3c767 True | changed base..HEAD: False | last commit b975092 2026-11-09T03:54:25+00:00 stage1 revision 1: rerun results (results/r1), test log, checkpoint
+3. manifest change and protocol abbreviations
+   general_text keys f4d8e988 -> 599230f9: added ['decode_tokenizer_json_sha256', 'source_file_sha256', 'window_rule'] | removed [] | changed []
+   protocol 2.7 contains `8816fe5a…a155`: True | all abbreviations in 2.7: [('8816fe5a', 'a155'), ('e0021e26', 'ea77'), ('6a3450ea', '2c22')]
+   protocol 2.7 contains `e0021e26…ea77`: True | all abbreviations in 2.7: [('8816fe5a', 'a155'), ('e0021e26', 'ea77'), ('6a3450ea', '2c22')]
+   general_text now: {"source_file": "research/mini_mythos/stage1/results/r1/eval_sets.jsonl", "source_file_sha256": "8816fe5a39d8b89e8c4203bf7d660e798faa471d2b72b5ce43c411cf5925a155", "decode_with": "SandyResearch/parcae-tokenizer@6247b5d0592876b73660f34c2dd16c9db9e9045c, special tokens skipped", "decode_tokenizer_json_sha256": "e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77", "dev": "first 25 windows per domain (books, c4, fineweb, wikitext) with split == 'dev', file order", "test": "first 25 windows per domain with split == 'test', file order; final TEST evaluation only", "truncate_to_model_tokens": 256, "window_rule": "each window has at most 256 tokens of the protocol tokenizer (the first 256); a window with fewer tokens is used at its full length"}
+RESULT: PASS
+exit=0

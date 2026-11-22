@@ -1,0 +1,34 @@
+请对 Metrix E1-PILOT 第 6 轮的工作提交做独立数据审计,范围 f4d8e988a31f99527cc0bc6be5ceacc709bda2f1..599230f9e6069e8f7197a3717aafa789abb788f0(2 个提交,HEAD = 599230f9e6069e8f7197a3717aafa789abb788f0)。完整 diff:/home/user/OpenMythos/metrix/e1-pilot/reviews/599230f9e6069e8f7197a3717aafa789abb788f0/review_input.diff。Executor 的原始输出在 metrix/e1-pilot/reports/round6/;本轮指令原文在 metrix/e1-pilot/tasks/ROUND6_TASKS.md。
+
+Project Owner 第 6 轮指令第 5 项要求你:复算第 1a–1c、1h 项与第 2 项,并修正 metrix/e1-pilot/audit/r5_kl_denoms.py 中写死的 128。这几项的指令原文:
+   1a. L6 的「词」定义为 str.split()，word 13-gram 上限 0；Qwen token 13-gram 只报告。
+   1b. 第 2.7 节改为「每个窗口最多 256 token，不足则取全长」。
+   1c. n_x 定义为实际送入模型的 id 序列长度。
+   1h. DATA_MANIFEST.json 锁定 parcae tokenizer.json 与 eval_sets.jsonl 的 sha256。
+   2. 脚本：l6_check.py 中「test rows decoded」改为实际计数，判定按 1a；所有检查脚本遇异常须打印 RESULT: FAIL 并以非 0 退出。
+
+请用你自己在 metrix/e1-pilot/audit/ 下写的脚本独立复算(可以沿用你此前写在那里的脚本),至少包括:
+A. 1a:按协议第 2.7 节与 DATA_MANIFEST.json 的 general_text、anchor_text 自己构造 general DEV 的 100 个窗口与 512 篇锚文本;按 str.split() 计算两者共享的词 13-gram 数(上限 0),另报告 Qwen token 13-gram 数(不设上限)。与 reports/round6/t2_l6_check.txt 比对(窗口数、各窗口长度分布、两个规范化哈希、各单位下 n = 1..13 的共享数)。
+B. 1b:每个窗口最多 256 个 Qwen token,不足则取全长:复算长度分布(多少个正好 256、多少个更短、最短多少),确认没有窗口超过 256。
+C. 1c:n_x = 实际送入模型的 id 序列长度。请从数据计算每篇锚文档截断后的 id 序列长度(不再写死 128),并与“截断后解码再重新编码”的长度逐篇比较;按协议第 4 节与第 2.7 节的取法(第 s 步用第 (4s + i) mod 512 篇,i = 0..3)给出 300 步的 KL 分母 Σ(n_x − 1) 的分布。请修正 audit/r5_kl_denoms.py:把 [128] * 512 换成从数据计算的截断 id 长度(修改后的运行同样写入 stdout 目录)。
+D. 1h:eval_sets.jsonl 与 parcae tokenizer.json 的 sha256 是否等于 DATA_MANIFEST.json general_text.source_file_sha256 与 general_text.decode_tokenizer_json_sha256;再与 Stage 1 自己的记录交叉核对(research/mini_mythos/stage1/results/r1/manifest.json 中的 eval_sets.jsonl、data_lock.json 中的 tokenizer_sha256)。
+E. 第 2 项:
+   - l6_check.py 的 “test rows decoded” 现在是否是实际计数、判定是否只看 str.split() 单位(token 与 \w+ 单位只报告)。reports/round6/t2_l6_judgment_demo.txt 是 Executor 的演示,可作对照。
+   - 所有检查脚本遇异常是否打印 RESULT: FAIL 并以非 0 退出。Executor 的覆盖范围与原始输出见 reports/round6/guard_ab.sh、guard_fail.sh、t2_guard_normal.txt、t2_guard_fail.txt;请判断范围是否完整,正常路径是否确实未变。
+   - 按你的定义,你不得 import、调用或复制 Executor 的检查代码。这一项请用你自己的方法核对,例如用你自己的脚本读取 f4d8e988 与 HEAD 两个版本的源码,用 ast 比较除 run_guarded 与 `if __name__ == "__main__"` 块以外的部分是否相同,并检查 run_guarded 的逻辑;或用你自己的数据计算 l6_check.py 应输出的数值。
+
+“读取 TEST 数据”在本轮协议第 3 节已有定义(第 1g 项):解码 test 行的内容,或用其内容做任何计算,都算读取;解析 split 字段、计数、对整个文件求哈希不算。eval_sets.jsonl 中 split == "test" 的行是 general_test 的来源:只可读 split 字段与计数,不要解码 tokens、不要用其它字段做任何计算。仓库中没有 PROTOCOL_FROZEN 文件:不要生成、读取或实例化任何 TEST 问句或 general_test 窗口。
+本轮第 2 项的规则也适用于你本轮新写的检查脚本:遇异常须打印 RESULT: FAIL 并以非 0 退出。
+
+环境(Executor 已准备,只含分词器与配置文件,无模型权重,无 torch;请自己核对哈希):
+- Python:/tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python(transformers 5.22.2、tokenizers 0.23.3、jinja2、pyarrow、huggingface_hub)
+- Qwen 分词器:/tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/dl/qwen_tok(Qwen/Qwen3-1.7B@70d244cc86ccca08cf5af4e1e306ecf908b1ad5e)
+- parcae 分词器:/tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/dl/parcae_tok/tokenizer.json(SandyResearch/parcae-tokenizer@6247b5d0592876b73660f34c2dd16c9db9e9045c)
+- 锚文本源:/tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/dl/parquet/data/sample-100BT/train/shard_00000.parquet
+- general text 源:/home/user/OpenMythos/research/mini_mythos/stage1/results/r1/eval_sets.jsonl
+- Executor 生成的文件只可用于最后的比对,不要作为你复算的输入:/tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/facts.json、/tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/anchor.json、/tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/general_dev.json。
+- 中间数据可放在 /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/audit_r6/,不要写进仓库。
+
+按 metrix/CLAUDE.md 第 9 节:每次运行 audit 脚本的完整 stdout(开头写明命令行)都写入 metrix/e1-pilot/audit/stdout/599230f9e6069e8f7197a3717aafa789abb788f0/,每次运行一个文件,不要只摘录。只写入 metrix/e1-pilot/audit/。
+
+请按你的输出格式给出每一项的命令、原始输出(可指向 stdout 文件)、与 Executor 是否一致,最后附 git status --short 原始输出与结论。

@@ -1,0 +1,18 @@
+# Data Auditor run. host vm, CPU only (no GPU, no torch, tokenizer files only); 2026-11-21 14:48:26 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python -I -B r6_anchor.py /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/dl/parquet/data/sample-100BT/train/shard_00000.parquet /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/dl/qwen_tok ../DATA_MANIFEST.json /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/audit_r6
+[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
+DATA_MANIFEST.anchor_text: {"source": "SandyResearch/fineweb-edu-shuffled@4d1138c0e4d51d98813997ce3560e05a32bf91de, data/sample-100BT/train/shard_00000.parquet (sha256 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22)", "selection": "first 512 documents in file order with at least 600 characters", "truncate_to_model_tokens": 128, "schedule": "step s uses documents (4*s + i) mod 512, i = 0..3"}
+parquet sha256 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22 | pinned 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22 | match True
+rows read 527, documents kept 512 (truncate_to_model_tokens 128)
+full (untruncated) token count: min 123 | documents with fewer than 128 tokens: [(340, 123)]
+truncated id length {len: count}: {123: 1, 128: 511}
+re-encoded length of the decoded text {len: count}: {123: 1, 128: 511}
+documents where len(re-encoded) != len(truncated ids): []
+documents where re-encoded ids != truncated ids (any position): []
+canonical sha256 of the 512 texts: 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 | == round 2-5 value 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 True
+canonical sha256 of the 512 truncated id lists: f15615a4ffe466ce49cf134835b63110f6c4f7d92aacdad5202ea783427d5929
+documents whose truncated ids contain an id >= 151643 or a special id: 0
+wrote /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/audit_r6/anchor.json and anchor_ids.json
+RESULT: PASS
+exit=0

@@ -1,0 +1,14 @@
+请对 Metrix E1-PILOT 第 6 轮的修复提交做独立复核,范围 599230f9e6069e8f7197a3717aafa789abb788f0..2620f3060d9325581e078eca9a6fc70cb1cad30c(1 个提交,HEAD = 2620f3060d9325581e078eca9a6fc70cb1cad30c)。完整 diff:/home/user/OpenMythos/metrix/e1-pilot/reviews/2620f3060d9325581e078eca9a6fc70cb1cad30c/review_input.diff。
+
+背景:你对 f4d8e988..599230f9 的审计(/home/user/OpenMythos/metrix/e1-pilot/reviews/599230f9e6069e8f7197a3717aafa789abb788f0/data-auditor.md)结论 BLOCK,唯一的不一致是第 E 项第 3 点:reports/round6/guard_ab.sh 与 guard_fail.sh 按 Executor 自己的标准属于检查脚本,却不满足第 6 轮指令第 2 项“所有检查脚本遇异常须打印 RESULT: FAIL 并以非 0 退出”。A–D 与第 E 项其余部分你已判定与 Executor 一致。本提交只修这一点:两个脚本加了 EXIT trap、参数个数检查和最后的 RESULT 行;Executor 重跑的原始输出在 reports/round6/t2_guard_normal_rerun.txt、t2_guard_fail_rerun.txt、t2_harness_fail.txt。
+
+请只复核这一点,用你自己的方法(按你的定义,不得 import、调用或复制 Executor 的检查代码;可以沿用你在 metrix/e1-pilot/audit/ 下写的脚本,例如 r6_guard_audit.py,或新写脚本):
+- 两个脚本在参数错误、运行中出错、正常结束三种情况下,是否都打印 RESULT 行,失败时是否以非 0 退出;
+- 除最后新增的 RESULT 行与 trap 外,原有的判定与输出是否未变;
+- 按 Executor 的标准(报告草稿 reports/ROUND6_REPORT.md 任务 2“范围”一段),2620f306 中是否还有未覆盖的检查脚本。
+
+本轮不涉及数据文件;不要生成、读取或实例化任何 TEST 数据(“读取”的定义见协议第 3 节)。仓库中没有 PROTOCOL_FROZEN 文件。
+环境:Python /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python;中间数据放在 /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/audit_r6b/,不要写进仓库。
+按 metrix/CLAUDE.md 第 9 节:每次运行 audit 脚本的完整 stdout(开头写明命令行)写入 metrix/e1-pilot/audit/stdout/2620f3060d9325581e078eca9a6fc70cb1cad30c/,每次运行一个文件。只写入 metrix/e1-pilot/audit/。
+
+请按你的输出格式给出命令、原始输出(可指向 stdout 文件)、与 Executor 是否一致,最后附 git status --short 原始输出与结论。

@@ -1,0 +1,136 @@
+# Data Auditor run. host vm, CPU only (no GPU, no torch, tokenizer files only); 2026-11-22 02:37:29 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python -I -B r6b_scope.py /home/user/OpenMythos 2620f3060d9325581e078eca9a6fc70cb1cad30c /home/user/OpenMythos/metrix/e1-pilot/reports/ROUND6_REPORT.md
+revision 2620f3060d9325581e078eca9a6fc70cb1cad30c -> 2620f3060d9325581e078eca9a6fc70cb1cad30c
+scripts under metrix/ at 2620f306: 47 (Executor reports/: 23, auditor audit/: 24, other: [])
+changed outside metrix/ since the baseline: ['A\t.claude/agents/code-reviewer.md', 'A\t.claude/agents/data-auditor.md', 'M\tCLAUDE.md']
+== Executor scripts (reports/)
+  round1/candidate_feasibility.py: class NO VERDICT | guard none
+      verdict words in output strings: []
+      exits: []
+      __main__ block ['main()'] | asserts 0
+  round1/param_count.py: class NO VERDICT | guard none
+      verdict words in output strings: []
+      exits: []
+      __main__ block ['main()'] | asserts 0
+  round1/template_overlap.py: class CHECK | guard run_guarded(main)
+      verdict words in output strings: ['FAIL', 'PASS', 'RESULT: FAIL']
+      exits: []
+      __main__ block ['run_guarded(main)'] | asserts 0
+  round2/anchor_check.py: class CHECK | guard run_guarded(main)
+      verdict words in output strings: ['FAIL', 'PASS', 'RESULT: FAIL']
+      exits: [(95, 'main', 'raise SystemExit', '1 if fail else 0', 'verdict exit'), (49, 'main', 'raise SystemExit', "'anchor source does not match its pin'", 'message exit')]
+      __main__ block ['run_guarded(main)'] | asserts 0
+  round2/gen_facts.py: class NO VERDICT | guard none
+      verdict words in output strings: []
+      exits: []
+      __main__ block ['main()'] | asserts 0
+  round2/names.py: class NO VERDICT | guard none
+      verdict words in output strings: []
+      exits: []
+      __main__ block None | asserts 0
+  round2/y_ratio.py: class CHECK | guard run_guarded(main)
+      verdict words in output strings: ['OUTSIDE', 'RESULT: FAIL', '[%s] %d other data seeds: ratio min %.3f, max %.3f, all inside [0.80, 1.25]: %s', 'inside']
+      exits: []
+      __main__ block ['run_guarded(main)'] | asserts 0
+  round3/candidate_feasibility_r3.py: class CHECK | guard run_guarded(main)
+      verdict words in output strings: ['FAIL', 'PASS', 'RESULT:', 'RESULT: FAIL']
+      exits: [(69, 'main', 'sys.exit', '0 if ok else 1', 'verdict exit')]
+      __main__ block ['run_guarded(main)'] | asserts 0
+  round3/outside_metrix_check.py: class CHECK | guard run_guarded(main)
+      verdict words in output strings: ['FAIL', 'FAIL:', 'PASS', 'RESULT:', 'RESULT: FAIL']
+      exits: [(112, 'main', 'sys.exit', '0 if not failures else 1', 'verdict exit'), (35, 'git', 'sys.exit', "'git %s failed: %s' % (' '.join(args), r.stderr.decode('utf-8', 'replace').strip())", 'message exit')]
+      __main__ block ['run_guarded(main)'] | asserts 0
+  round3/scoring_input.py: class NO VERDICT | guard none
+      verdict words in output strings: []
+      exits: []
+      __main__ block None | asserts 0
+  round3/verify_scoring.py: class CHECK | guard run_guarded(main)
+      verdict words in output strings: ['FAIL', 'PASS', 'RESULT:', 'RESULT: FAIL']
+      exits: [(178, 'main', 'sys.exit', '0 if ok else 1', 'verdict exit')]
+      __main__ block ['run_guarded(main)'] | asserts 0
+  round4/anchor_short_docs.py: class NO VERDICT | guard none
+      verdict words in output strings: []
+      exits: []
+      __main__ block None | asserts 0
+  round4/st_prefix_check.py: class CHECK | guard run_guarded(main)
+      verdict words in output strings: ['FAIL', 'PASS', 'RESULT:', 'RESULT: FAIL']
+      exits: [(82, 'main', 'sys.exit', '0 if ok else 1', 'verdict exit'), (43, 'main', 'sys.exit', '"TRAIN template of %s does not end with \' {A}.\': %r" % (rel, text)', 'message exit'), (39, 'main', 'sys.exit', "'more than one TRAIN template for %s' % t['relation']", 'message exit')]
+      __main__ block ['run_guarded(main)'] | asserts 0
+  round5/blind_handback_check.py: class CHECK | guard run_guarded(main)
+      verdict words in output strings: ['RESULT: FAIL']
+      exits: [(60, 'main', 'sys.exit', '0 if ok == len(agent_ids) == 5 else 1', 'verdict exit')]
+      __main__ block ['run_guarded(main)'] | asserts 0
+  round5/em_special_tokens.py: class NO VERDICT | guard none
+      verdict words in output strings: []
+      exits: []
+      __main__ block ['main()'] | asserts 0
+  round5/l6_check.py: class CHECK | guard run_guarded(main)
+      verdict words in output strings: ['FAIL', 'PASS', 'RESULT:', 'RESULT: FAIL']
+      exits: [(157, 'main', 'sys.exit', '0 if ok else 1', 'verdict exit'), (100, 'main', 'sys.exit', "'general DEV selection does not give 25 windows for each of the 4 domains'", 'message exit'), (118, 'main', 'sys.exit', "'rows other than dev rows were decoded'", 'message exit'), (74, 'main', 'sys.exit', "'%s does not match its pin' % label", 'message exit'), (86, 'main', 'sys.exit', "'eval_sets.jsonl line %d does not start with the domain and split fields' % lineno", 'message exit'), (93, 'main', 'sys.exit', "'eval_sets.jsonl line %d: parsed split differs from the matched field' % lineno", 'message exit')]
+      __main__ block ['run_guarded(main)'] | asserts 0
+  round5/logrun.sh: class NO VERDICT | guard none
+      verdict words in output strings: []
+      exits: [(12, '"$rc"', "pass-through of a wrapped command's status")]
+      trap statements []
+  round5/records_check.py: class CHECK | guard run_guarded(main)
+      verdict words in output strings: ['RESULT: FAIL']
+      exits: [(59, 'main', 'sys.exit', "reviews(args) if mode == 'reviews' else attempt1(args)", 'verdict exit')]
+      __main__ block ['run_guarded(main)'] | asserts 0
+  round5/recover_blind.py: class CHECK | guard run_guarded(main)
+      verdict words in output strings: ['RESULT: FAIL']
+      exits: [(98, 'main', 'sys.exit', "extract(a.dumps, a.source_out) if a.cmd == 'extract' else rebuild(a.source, a.timeline, a.out_dir)", 'verdict exit')]
+      __main__ block ['run_guarded(main)'] | asserts 0
+  round6/guard_ab.sh: class CHECK | guard EXIT trap printing RESULT: FAIL
+      verdict words in output strings: ['echo "RESULT: FAIL"', 'echo "RESULT: PASS"']
+      exits: [(17, '2', 'argument-count exit'), (51, '0', 'constant (0)'), (53, '1', 'verdict exit')]
+      trap statements ['trap on_exit EXIT']
+  round6/guard_fail.sh: class CHECK | guard EXIT trap printing RESULT: FAIL
+      verdict words in output strings: ['echo "   exit new $rc | \'RESULT: FAIL\' lines new $n | new: non-zero exit and RESULT: FAIL:', 'echo "   exit old $rc_old new $rc_new | \'RESULT: FAIL\' lines old $n_old new $n_new | new: ', 'echo "RESULT: FAIL"', 'echo "RESULT: PASS"', 'echo "new scripts with non-zero exit and exactly one RESULT: FAIL line: $ok_all of $(( ${#']
+      exits: [(14, '2', 'argument-count exit'), (65, '0', 'constant (0)'), (67, '1', 'verdict exit')]
+      trap statements ['trap on_exit EXIT']
+  round6/l6_judgment_demo.py: class MESSAGE-EXIT ONLY | guard none
+      verdict words in output strings: []
+      exits: [(46, 'main', 'raise SystemExit', "'no general DEV window gives 13 Qwen tokens in words 2..12'", 'message exit')]
+      __main__ block ['main()'] | asserts 0
+  round6/table_check.py: class CHECK | guard run_guarded(main)
+      verdict words in output strings: ['FAIL', 'PASS', 'RESULT:', 'RESULT: FAIL']
+      exits: [(41, 'main', 'sys.exit', '0 if ok else 1', 'verdict exit')]
+      __main__ block ['run_guarded(main)'] | asserts 0
+== comparison with the Executor's lists (ROUND6_REPORT.md, task 2, 范围)
+  Executor included (14): ['round1/template_overlap.py', 'round2/anchor_check.py', 'round2/y_ratio.py', 'round3/candidate_feasibility_r3.py', 'round3/outside_metrix_check.py', 'round3/verify_scoring.py', 'round4/st_prefix_check.py', 'round5/blind_handback_check.py', 'round5/l6_check.py', 'round5/records_check.py', 'round5/recover_blind.py', 'round6/guard_ab.sh', 'round6/guard_fail.sh', 'round6/table_check.py']
+  Executor excluded (8): ['round1/candidate_feasibility.py', 'round1/param_count.py', 'round2/gen_facts.py', 'round2/names.py', 'round3/scoring_input.py', 'round4/anchor_short_docs.py', 'round5/em_special_tokens.py', 'round6/l6_judgment_demo.py']
+  my CHECK (14): ['round1/template_overlap.py', 'round2/anchor_check.py', 'round2/y_ratio.py', 'round3/candidate_feasibility_r3.py', 'round3/outside_metrix_check.py', 'round3/verify_scoring.py', 'round4/st_prefix_check.py', 'round5/blind_handback_check.py', 'round5/l6_check.py', 'round5/records_check.py', 'round5/recover_blind.py', 'round6/guard_ab.sh', 'round6/guard_fail.sh', 'round6/table_check.py']
+  CHECK but not in the Executor's included list: []
+  in the Executor's included list but not CHECK: []
+  Executor scripts named in neither list: ['round5/logrun.sh'] -> class [('NO VERDICT', 'none')]
+  included scripts without a guard: []
+  CHECK scripts without a guard: []
+  non-CHECK scripts by class: {k: v for k, v in mine.items() if v[0] != 'CHECK'} = {'round1/candidate_feasibility.py': 'NO VERDICT', 'round1/param_count.py': 'NO VERDICT', 'round2/gen_facts.py': 'NO VERDICT', 'round2/names.py': 'NO VERDICT', 'round3/scoring_input.py': 'NO VERDICT', 'round4/anchor_short_docs.py': 'NO VERDICT', 'round5/em_special_tokens.py': 'NO VERDICT', 'round5/logrun.sh': 'NO VERDICT', 'round6/l6_judgment_demo.py': 'MESSAGE-EXIT ONLY'}
+== auditor scripts (audit/; outside the Executor's standard as written, see its pending item 6)
+  a1_facts.py              class NO VERDICT        guard none
+  a2_regen_facts.py        class NO VERDICT        guard none
+  a3_scoring.py            class NO VERDICT        guard none
+  a4_cands_templates.py    class NO VERDICT        guard none
+  a5_anchor.py             class NO VERDICT        guard none
+  common.py                class NO VERDICT        guard none
+  r4_anchor.py             class NO VERDICT        guard none
+  r4_compare_prev.py       class NO VERDICT        guard none
+  r4_env.py                class NO VERDICT        guard none
+  r4_kprime.py             class NO VERDICT        guard none
+  r4_leak_supp.py          class NO VERDICT        guard none
+  r4_manifests.py          class CHECK             guard none
+  r4_regen_facts.py        class NO VERDICT        guard none
+  r4_scoring_em.py         class NO VERDICT        guard none
+  r5_blind.py              class CHECK             guard none
+  r5_cmp_general.py        class NO VERDICT        guard none
+  r5_compare_prev.py       class NO VERDICT        guard none
+  r5_em_stop.py            class NO VERDICT        guard none
+  r5_kl_denoms.py          class NO VERDICT        guard none
+  r5_l6.py                 class CHECK             guard none
+  r5_manifests.py          class NO VERDICT        guard none
+  r5_pinned.py             class NO VERDICT        guard none
+  r5_sources.py            class NO VERDICT        guard none
+  run_logged.sh            class NO VERDICT        guard none
+RESULT: PASS
+exit=0

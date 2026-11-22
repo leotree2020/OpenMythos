@@ -1,0 +1,185 @@
+# Data Auditor run. host vm, CPU only (no GPU, no torch, tokenizer files only); 2026-11-22 02:21:15 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python -I -B r6_guard_audit.py /home/user/OpenMythos f4d8e988a31f99527cc0bc6be5ceacc709bda2f1 599230f9e6069e8f7197a3717aafa789abb788f0
+revision f4d8e988a31f99527cc0bc6be5ceacc709bda2f1 -> commit f4d8e988a31f99527cc0bc6be5ceacc709bda2f1
+revision 599230f9e6069e8f7197a3717aafa789abb788f0 -> commit 599230f9e6069e8f7197a3717aafa789abb788f0
+files added under metrix/e1-pilot/reports/ in f4d8e988..599230f9: ['metrix/e1-pilot/reports/round6/guard_ab.sh', 'metrix/e1-pilot/reports/round6/guard_fail.sh', 'metrix/e1-pilot/reports/round6/l6_judgment_demo.py', 'metrix/e1-pilot/reports/round6/t0_env.txt', 'metrix/e1-pilot/reports/round6/t0_facts_regen.txt', 'metrix/e1-pilot/reports/round6/t1_commit_times.txt', 'metrix/e1-pilot/reports/round6/t1_protocol_checks.txt', 'metrix/e1-pilot/reports/round6/t2_guard_fail.txt', 'metrix/e1-pilot/reports/round6/t2_guard_normal.txt', 'metrix/e1-pilot/reports/round6/t2_l6_check.txt', 'metrix/e1-pilot/reports/round6/t2_l6_judgment_demo.txt', 'metrix/e1-pilot/reports/round6/t4_user_claude_md.txt', 'metrix/e1-pilot/reports/round6/table_check.py']
+scripts under metrix/e1-pilot/reports/ at 599230f9: 20 .py, 3 .sh
+  GUARDED   round1/template_overlap.py               __main__ block ['run_guarded(main)'] | def main present and block == run_guarded(main): True
+  GUARDED   round2/anchor_check.py                   __main__ block ['run_guarded(main)'] | def main present and block == run_guarded(main): True
+  GUARDED   round2/y_ratio.py                        __main__ block ['run_guarded(main)'] | def main present and block == run_guarded(main): True
+  GUARDED   round3/candidate_feasibility_r3.py       __main__ block ['run_guarded(main)'] | def main present and block == run_guarded(main): True
+  GUARDED   round3/outside_metrix_check.py           __main__ block ['run_guarded(main)'] | def main present and block == run_guarded(main): True
+  GUARDED   round3/verify_scoring.py                 __main__ block ['run_guarded(main)'] | def main present and block == run_guarded(main): True
+  GUARDED   round4/st_prefix_check.py                __main__ block ['run_guarded(main)'] | def main present and block == run_guarded(main): True
+  GUARDED   round5/blind_handback_check.py           __main__ block ['run_guarded(main)'] | def main present and block == run_guarded(main): True
+  GUARDED   round5/l6_check.py                       __main__ block ['run_guarded(main)'] | def main present and block == run_guarded(main): True
+  GUARDED   round5/records_check.py                  __main__ block ['run_guarded(main)'] | def main present and block == run_guarded(main): True
+  GUARDED   round5/recover_blind.py                  __main__ block ['run_guarded(main)'] | def main present and block == run_guarded(main): True
+  GUARDED   round6/table_check.py                    __main__ block ['run_guarded(main)'] | def main present and block == run_guarded(main): True
+guarded: 12 | unguarded .py: 8
+== 2. old vs new AST without run_guarded and the __main__ block
+  round1/template_overlap.py               identical incl. docstrings: True | identical without docstrings: True | old __main__ block ['main()']
+  round2/anchor_check.py                   identical incl. docstrings: True | identical without docstrings: True | old __main__ block ['main()']
+  round2/y_ratio.py                        identical incl. docstrings: True | identical without docstrings: True | old __main__ block ['main()']
+  round3/candidate_feasibility_r3.py       identical incl. docstrings: True | identical without docstrings: True | old __main__ block ['main()']
+  round3/outside_metrix_check.py           identical incl. docstrings: True | identical without docstrings: True | old __main__ block ['main()']
+  round3/verify_scoring.py                 identical incl. docstrings: True | identical without docstrings: True | old __main__ block ['main()']
+  round4/st_prefix_check.py                identical incl. docstrings: True | identical without docstrings: True | old __main__ block ['main()']
+  round5/blind_handback_check.py           identical incl. docstrings: True | identical without docstrings: True | old __main__ block ['main()']
+  round5/l6_check.py                       identical incl. docstrings: False | identical without docstrings: False | old __main__ block ['main()']
+      l6_check.py top-level node 'assign HEAD': added
+      l6_check.py top-level node 'assign JUDGED': added
+      l6_check.py top-level node 'assign N': CHANGED
+      l6_check.py top-level node 'def ngrams': CHANGED
+  round5/records_check.py                  identical incl. docstrings: True | identical without docstrings: True | new def main() body == old __main__ body: True
+  round5/recover_blind.py                  identical incl. docstrings: True | identical without docstrings: True | old __main__ block ['main()']
+  round6/table_check.py                    not present at f4d8e988; listed as added (A) in git diff: True; no old version to compare
+== 3. run_guarded
+distinct run_guarded ASTs across 12 guarded files: 1
+source (ast.unparse, from round1/template_overlap.py):
+    def run_guarded(main):
+        """Round 6, task 2: on an exception, or on an exit that comes before the RESULT line (sys.exit("message"),
+        an argparse error), print RESULT: FAIL and exit non-zero. Exit codes 0 and 1 raised by main() pass through."""
+        import sys
+        import traceback
+        try:
+            main()
+        except SystemExit as e:
+            if e.code is None or (type(e.code) is int and e.code in (0, 1)):
+                raise
+            sys.stdout.flush()
+            if type(e.code) is not int:
+                print(e.code, file=sys.stderr)
+                sys.stderr.flush()
+            print('RESULT: FAIL')
+            sys.exit(e.code if type(e.code) is int else 1)
+        except BaseException:
+            sys.stdout.flush()
+            traceback.print_exc()
+            sys.stderr.flush()
+            print('RESULT: FAIL')
+            sys.exit(1)
+try body: ['main()'] | else: [] | finally: []
+  handler SystemExit as e: statements ['if e.code is None or (type(e.code) is int and e.code in (0, 1)):', 'sys.stdout.flush()', 'if type(e.code) is not int:', "print('RESULT: FAIL')", 'sys.exit(e.code if type(e.code) is int else 1)']
+  handler BaseException as None: statements ['sys.stdout.flush()', 'traceback.print_exc()', 'sys.stderr.flush()', "print('RESULT: FAIL')", 'sys.exit(1)']
+== 4. exits inside the guarded scripts (outside run_guarded)
+  round2/anchor_check.py               line   49 in main: raise SystemExit('anchor source does not match its pin') [str code -> guard prints the message and RESULT: FAIL, exit 1] | main prints a RESULT line: False
+  round2/anchor_check.py               line   95 in main: raise SystemExit(1 if fail else 0) [int [0, 1] -> passes through the guard unchanged] | main prints a RESULT line: False
+  round3/candidate_feasibility_r3.py   line   69 in main: sys.exit(0 if ok else 1) [int [0, 1] -> passes through the guard unchanged] | main prints a RESULT line: True
+  round3/outside_metrix_check.py       line   35 in git: sys.exit('git %s failed: %s' % (' '.join(args), r.stderr.decode('utf-8', 'replace').strip())) [str code -> guard prints the message and RESULT: FAIL, exit 1] | git prints a RESULT line: False
+  round3/outside_metrix_check.py       line  112 in main: sys.exit(0 if not failures else 1) [int [0, 1] -> passes through the guard unchanged] | main prints a RESULT line: True
+  round3/verify_scoring.py             line  178 in main: sys.exit(0 if ok else 1) [int [0, 1] -> passes through the guard unchanged] | main prints a RESULT line: True
+  round4/st_prefix_check.py            line   39 in main: sys.exit('more than one TRAIN template for %s' % t['relation']) [str code -> guard prints the message and RESULT: FAIL, exit 1] | main prints a RESULT line: True
+  round4/st_prefix_check.py            line   43 in main: sys.exit("TRAIN template of %s does not end with ' {A}.': %r" % (rel, text)) [str code -> guard prints the message and RESULT: FAIL, exit 1] | main prints a RESULT line: True
+  round4/st_prefix_check.py            line   82 in main: sys.exit(0 if ok else 1) [int [0, 1] -> passes through the guard unchanged] | main prints a RESULT line: True
+  round5/blind_handback_check.py       line   60 in main: sys.exit(0 if ok == len(agent_ids) == 5 else 1) [int [0, 1, 5] -> passes through the guard unchanged] | main prints a RESULT line: False
+  round5/l6_check.py                   line   74 in main: sys.exit('%s does not match its pin' % label) [str code -> guard prints the message and RESULT: FAIL, exit 1] | main prints a RESULT line: True
+  round5/l6_check.py                   line   86 in main: sys.exit('eval_sets.jsonl line %d does not start with the domain and split fields' % lineno) [str code -> guard prints the message and RESULT: FAIL, exit 1] | main prints a RESULT line: True
+  round5/l6_check.py                   line   93 in main: sys.exit('eval_sets.jsonl line %d: parsed split differs from the matched field' % lineno) [str code -> guard prints the message and RESULT: FAIL, exit 1] | main prints a RESULT line: True
+  round5/l6_check.py                   line  100 in main: sys.exit('general DEV selection does not give 25 windows for each of the 4 domains') [str code -> guard prints the message and RESULT: FAIL, exit 1] | main prints a RESULT line: True
+  round5/l6_check.py                   line  118 in main: sys.exit('rows other than dev rows were decoded') [str code -> guard prints the message and RESULT: FAIL, exit 1] | main prints a RESULT line: True
+  round5/l6_check.py                   line  157 in main: sys.exit(0 if ok else 1) [int [0, 1] -> passes through the guard unchanged] | main prints a RESULT line: True
+  round5/records_check.py              line   59 in main: sys.exit(reviews(args) if mode == 'reviews' else attempt1(args)) [value of an expression/call (int 0/1 at run time) -> passes through the guard unchanged] | main prints a RESULT line: False
+      round5/records_check.py function reviews (its value goes to sys.exit): returns ['0 if ok == len(pairs) else 1'] | prints a RESULT line: False
+      round5/records_check.py function attempt1 (its value goes to sys.exit): returns ['0'] | prints a RESULT line: False
+  round5/recover_blind.py              line   98 in main: sys.exit(extract(a.dumps, a.source_out) if a.cmd == 'extract' else rebuild(a.source, a.timeline, a.out_dir)) [value of an expression/call (int 0/1 at run time) -> passes through the guard unchanged] | main prints a RESULT line: False
+      round5/recover_blind.py function extract (its value goes to sys.exit): returns ["0 if sorted((r['file'] for r in rows)) == sorted(['prompt_%s.txt' % b for b in BRANCHES] + ['review_%s.md' % b for b in BRANCHES]) else 1"] | prints a RESULT line: False
+      round5/recover_blind.py function rebuild (its value goes to sys.exit): returns ['0 if ok == len(want_sha) == len(rows) == 10 else 1'] | prints a RESULT line: False
+  round6/table_check.py                line   41 in main: sys.exit(0 if ok else 1) [int [0, 1] -> passes through the guard unchanged] | main prints a RESULT line: True
+== 5. module-level statements that run outside the guard (beyond stdlib imports, defs, constants)
+  round1/template_overlap.py               none
+  round2/anchor_check.py                   none
+  round2/y_ratio.py                        ['line 15: sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))', 'line 16: import names as NM']
+  round3/candidate_feasibility_r3.py       ['line 18: sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))', 'line 19: import scoring_input as SI']
+  round3/outside_metrix_check.py           ["line 28: HEADING_1_2 = re.compile(b' {0,3}#{1,2}(?:[ \\\\t]|$)')", "line 29: FENCE = re.compile(b' {0,3}(```|~~~)')"]
+  round3/verify_scoring.py                 ['line 31: sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))', 'line 32: import scoring_input as SI']
+  round4/st_prefix_check.py                none
+  round5/blind_handback_check.py           none
+  round5/l6_check.py                       ['line 41: HEAD = re.compile(\'\\\\{"domain": "[^"\\\\\\\\]*", "split": "([^"\\\\\\\\]*)", \')']
+  round5/records_check.py                  none
+  round5/recover_blind.py                  none
+  round6/table_check.py                    ["line 13: BAR = re.compile('(?<!\\\\\\\\)\\\\|')", "line 14: UNESCAPED = re.compile('<\\\\|(?:endoftext|im_end|im_start)\\\\|>')"]
+== 6. l6_check.py at 599230f9
+  module constants: {'DOMAINS': "('books', 'c4', 'fineweb', 'wikitext')", 'PER_DOMAIN': '25', 'WINDOW_TOKENS': '256', 'N': '13', 'JUDGED': "'ws'", 'HEAD': 're.compile(\'\\\\{"domain": "[^"\\\\\\\\]*", "split": "([^"\\\\\\\\]*)", \')'}
+  verdict assignment(s): ['ok = result[JUDGED] == 0']
+  print(s) containing 'test rows decoded': ["print('rows decoded by split: %s | test rows decoded: %d' % (dict(sorted(decoded_by_split.items())), decoded_by_split['test']))"]
+  nested def main: p = argparse.ArgumentParser() ; p.add_argument('--eval-sets', required=True) ; p.add_argument('--parcae-tokenizer', required=True, help='tokenizer.json of SandyResearch/parcae-tokenizer') ; p.add_argument('--manifest', required=True, help='DATA_MANIFEST.json (pins both sha256 values)') ; p.add_argument('--tokenizer-dir', required=True) ; p.add_argument('--anchor', required=True) ; p.add_argument('--general-out', required=True) ; a = p.parse_args() ; gt = json.load(open(a.manifest, encoding='utf-8'))['general_text'] ; for label, path, key in (('eval_sets.jsonl', a.eval_sets, 'source_file_sha256'), ('parcae tokenizer.json', a.parcae_tokenizer, 'decode_tokenizer_json_sha256')):
+    got = sha256_file(path)
+    print('%s sha256 %s, DATA_MANIFEST general_text.%s %s, match %s' % (label, got, key, gt[key], got == gt[key]))
+    if got != gt[key]:
+        sys.exit('%s does not match its pin' % label) ; from tokenizers import Tokenizer ; from transformers import AutoTokenizer ; ptok = Tokenizer.from_file(a.parcae_tokenizer) ; qtok = AutoTokenizer.from_pretrained(a.tokenizer_dir) ; rows_by_split = collections.Counter() ; kept = collections.defaultdict(list) ; with open(a.eval_sets, encoding='utf-8') as fh:
+    for lineno, line in enumerate(fh, 1):
+        m = HEAD.match(line)
+        if m is None:
+            sys.exit('eval_sets.jsonl line %d does not start with the domain and split fields' % lineno)
+        split = m.group(1)
+        rows_by_split[split] += 1
+        if split != 'dev':
+            continue
+        r = json.loads(line)
+        if r['split'] != split:
+            sys.exit('eval_sets.jsonl line %d: parsed split differs from the matched field' % lineno)
+        if len(kept[r['domain']]) < PER_DOMAIN:
+            kept[r['domain']].append(r) ; print('eval_sets rows by split:', dict(sorted(rows_by_split.items()))) ; print('dev windows kept per domain:', {d: len(kept[d]) for d in DOMAINS}, '| other domains:', sorted(set(kept) - set(DOMAINS))) ; if sorted(kept) != sorted(DOMAINS) or any((len(kept[d]) != PER_DOMAIN for d in DOMAINS)):
+    sys.exit('general DEV selection does not give 25 windows for each of the 4 domains') ; decoded_by_split = collections.Counter() ; def decode_parcae(r):
+    decoded_by_split[r['split']] += 1
+    return ptok.decode(r['tokens'], skip_special_tokens=True) ; general = [] ; for d in DOMAINS:
+    for r in kept[d]:
+        text_p = decode_parcae(r)
+        ids = qtok.encode(text_p, add_special_tokens=False)[:WINDOW_TOKENS]
+        general.append({'domain': d, 'doc_id': r['doc_id'], 'parcae_tokens': len(r['tokens']), 'ids': ids, 'text': qtok.decode(ids)}) ; print('rows decoded by split: %s | test rows decoded: %d' % (dict(sorted(decoded_by_split.items())), decoded_by_split['test'])) ; if set(decoded_by_split) != {'dev'}:
+    sys.exit('rows other than dev rows were decoded') ; lens = collections.Counter((len(g['ids']) for g in general)) ; print('general DEV windows: %d; protocol-tokenizer lengths: %s' % (len(general), dict(sorted(lens.items())))) ; print('general DEV canonical sha256 (list of window texts, domain order books, c4, fineweb, wikitext): %s' % canonical_sha256([g['text'] for g in general])) ; print('general DEV canonical sha256 (list of token-id lists, same order): %s' % canonical_sha256([g['ids'] for g in general])) ; with open(a.general_out, 'w', encoding='utf-8') as fh:
+    json.dump(general, fh, ensure_ascii=False) ; anchor = json.load(open(a.anchor, encoding='utf-8'))['texts'] ; print('anchor texts: %d; canonical sha256 %s' % (len(anchor), canonical_sha256(anchor))) ; units = {'ws': lambda t: t.split(), 'w': lambda t: re.findall('\\w+', t.casefold()), 'tok': lambda t: qtok.encode(t, add_special_tokens=False)} ; result = {} ; for name, units_of in units.items():
+    a_seqs = [units_of(t) for t in anchor]
+    g_seqs = [units_of(g['text']) for g in general]
+    counts = []
+    for n in range(1, N + 1):
+        a_set = set().union(*(ngrams(s, n) for s in a_seqs))
+        g_set = set().union(*(ngrams(s, n) for s in g_seqs))
+        counts.append(len(a_set & g_set))
+    longest = max([n for n in range(1, N + 1) if counts[n - 1]], default=0)
+    result[name] = counts[N - 1]
+    print('unit %-3s | units: anchor %d, general %d | shared n-grams n=1..13: %s | longest shared n <= 13: %d' % (name, sum(map(len, a_seqs)), sum(map(len, g_seqs)), counts, longest))
+    if counts[N - 1]:
+        g13 = set().union(*(ngrams(s, N) for s in g_seqs))
+        for gram in sorted(set().union(*(ngrams(s, N) for s in a_seqs)) & g13)[:5]:
+            print('  shared 13-gram:', json.dumps(list(gram), ensure_ascii=False)) ; print('L6 (DEV part) shared word 13-grams (word = str.split(), unit %s): %d; limit 0' % (JUDGED, result[JUDGED])) ; print('report only, no limit: unit w 13-grams %d; Qwen token 13-grams (unit tok) %d' % (result['w'], result['tok'])) ; ok = result[JUDGED] == 0 ; print('RESULT:', 'PASS' if ok else 'FAIL') ; sys.exit(0 if ok else 1)
+  nested def decode_parcae: decoded_by_split[r['split']] += 1 ; return ptok.decode(r['tokens'], skip_special_tokens=True)
+  checks on the decode counter: ["if set(decoded_by_split) != {'dev'}:\n    sys.exit('rows other than dev rows were decoded')"]
+  eval_sets loop body (statement order):
+    m = HEAD.match(line)
+    if m is None:
+    split = m.group(1)
+    rows_by_split[split] += 1
+    if split != 'dev':
+    r = json.loads(line)
+    if r['split'] != split:
+    if len(kept[r['domain']]) < PER_DOMAIN:
+  json.loads at line(s) [91]; `if split != 'dev': continue` at line(s) [89]; parse only after the dev filter: True
+  L6 verdict / report prints: ["print('L6 (DEV part) shared word 13-grams (word = str.split(), unit %s): %d; limit 0' % (JUDGED, result[JUDGED]))", "print('report only, no limit: unit w 13-grams %d; Qwen token 13-grams (unit tok) %d' % (result['w'], result['tok']))"]
+== 7. scripts without the guard
+  round1/candidate_feasibility.py      | Round 1, task 4: can the candidate rules of the protocol (aa0423ef) be met? Tokenizer only.
+                                       | markers {'RESULT': 0, '\\bPASS\\b|\\bFAIL\\b': 0, 'sys\\.exit|^\\s*exit\\b|^\\[ ': 0} | set -e: False | last line:     main()
+  round1/param_count.py                | Round 1, task 3: parameter count of the pinned Qwen3-1.7B from config.json and the safetensors
+                                       | markers {'RESULT': 0, '\\bPASS\\b|\\bFAIL\\b': 0, 'sys\\.exit|^\\s*exit\\b|^\\[ ': 0} | set -e: False | last line:     main()
+  round2/gen_facts.py                  | Round 2, task 4: generate the 160 facts by the protocol's name rules and print their identity.
+                                       | markers {'RESULT': 0, '\\bPASS\\b|\\bFAIL\\b': 0, 'sys\\.exit|^\\s*exit\\b|^\\[ ': 0} | set -e: False | last line:     main()
+  round2/names.py                      | Reference implementation of the E1-PILOT name generation (protocol 2.2 as fixed in round 2), used by
+                                       | markers {'RESULT': 0, '\\bPASS\\b|\\bFAIL\\b': 0, 'sys\\.exit|^\\s*exit\\b|^\\[ ': 0} | set -e: False | last line:     return hashlib.sha256(b).hexdigest()
+  round3/scoring_input.py              | Round 3, task 6: reference construction of the candidate-scoring input (protocol 5, as changed in ro
+                                       | markers {'RESULT': 0, '\\bPASS\\b|\\bFAIL\\b': 0, 'sys\\.exit|^\\s*exit\\b|^\\[ ': 0} | set -e: False | last line:     return text, ids, len(ctx_ids)
+  round4/anchor_short_docs.py          | (no docstring) import pyarrow.parquet as pq
+                                       | markers {'RESULT': 0, '\\bPASS\\b|\\bFAIL\\b': 0, 'sys\\.exit|^\\s*exit\\b|^\\[ ': 0} | set -e: False | last line: print("documents with fewer than 128 tokens before the cut:", sum(k < 128 for k 
+  round5/em_special_tokens.py          | Round 5, task 1: tokenizer facts behind the EM decoding rule (stop at 151645 or 151643, skip special
+                                       | markers {'RESULT': 0, '\\bPASS\\b|\\bFAIL\\b': 0, 'sys\\.exit|^\\s*exit\\b|^\\[ ': 0} | set -e: False | last line:     main()
+  round6/l6_judgment_demo.py           | Round 6, task 2: inputs that show which unit decides the L6 verdict of reports/round5/l6_check.py.
+                                       | markers {'RESULT': 2, '\\bPASS\\b|\\bFAIL\\b': 2, 'sys\\.exit|^\\s*exit\\b|^\\[ ': 0} | set -e: False | last line:     main()
+  round5/logrun.sh                     | # Round 5 helper: run one command and append its record to a raw-output file.
+                                       | markers {'RESULT': 0, '\\bPASS\\b|\\bFAIL\\b': 0, 'sys\\.exit|^\\s*exit\\b|^\\[ ': 0} | set -e: False | last line: exit "$rc"
+  round6/guard_ab.sh                   | # Round 6, task 2: the exception guard (run_guarded) must not change the normal path of a check scri
+                                       | markers {'RESULT': 0, '\\bPASS\\b|\\bFAIL\\b': 0, 'sys\\.exit|^\\s*exit\\b|^\\[ ': 0} | set -e: False | last line: [ "$same_all" = "${#cases[@]}" ]
+  round6/guard_fail.sh                 | # Round 6, task 2: every guarded check script, on an exception or an early exit, prints RESULT: FAIL
+                                       | markers {'RESULT': 10, '\\bPASS\\b|\\bFAIL\\b': 10, 'sys\\.exit|^\\s*exit\\b|^\\[ ': 1} | set -e: False | last line: [ "$ok_all" = $(( ${#cases[@]} + 1 )) ]
+RESULT: PASS
+exit=0

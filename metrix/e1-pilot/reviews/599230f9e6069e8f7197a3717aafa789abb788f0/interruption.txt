@@ -1,0 +1,8 @@
+# Round 6 task 5: both review subagents stopped before handing back a report. Written by the Executor, 2026-11-22 (after the container restart at 02:16:07 UTC).
+# The two task notifications, copied verbatim from the harness (summaries only; the notifications carry no other report text except the auditor's last line shown below):
+code-reviewer (started 2026-11-21 14:42:56Z): status failed | Agent "Code review round 6 commits" failed: Agent terminated early due to an API error: You've hit your 5-hour limit · resets 3:30pm (UTC) · out of usage credits (error type rate_limit, HTTP 429, request id req_011ChGFzVfmAy5JxSybRFq2T, model sent to the API: claude-opus-5-5)
+data-auditor (started 2026-11-21 14:42:5xZ): status failed | Agent "Data audit round 6 commits" failed: Agent terminated early due to an API error: You've hit your 5-hour limit · resets 3:30pm (UTC) · out of usage credits (error type rate_limit, HTTP 429, request id req_011ChGFzuH56bLE1cAjyBbYo, model sent to the API: claude-opus-5-5)
+data-auditor last text before the stop: "Now the general DEV / L6 script (items A and B). Test rows will only have their `split` field located and counted."
+# Both transcripts end at 2026-11-21 14:49 (file mtime). State left in the work tree by the data-auditor at that point (git status --short, 2026-11-22 02:16 UTC):
+#   M metrix/e1-pilot/audit/r5_kl_denoms.py; ?? audit/r6_anchor.py, r6_env.py, r6_general.py, r6_guard.py, r6_sources.py, audit/stdout/599230f9…/
+# Both agents were resumed with SendMessage (text in resume_message.txt), continuing from their saved transcripts rather than restarting.

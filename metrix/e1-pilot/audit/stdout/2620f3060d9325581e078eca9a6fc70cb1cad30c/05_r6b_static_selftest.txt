@@ -1,0 +1,464 @@
+# Data Auditor run. host vm, CPU only (no GPU, no torch, tokenizer files only); 2026-11-22 02:35:38 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python -I -B r6b_static_selftest.py
+######## fixture: correct (expected True)
+## fixture[correct]
+   old old: 16 lines, sha256 f62c67ef183ff9ce313d89d53bdfa2741bd62b63033acf44cf65287f1a467e7a
+   new new: 24 lines, sha256 085a94f9b66a294ec24e923e9d571bdac7dcfb97e60846dcab7b0518fe06c50c
+   1. line diff: equal lines 15 (old lines - 1 = 15); non-equal blocks 3
+      insert old 3..2 -> new 3..6
+        + # fixture: added comment
+        + DONE_FLAG=0
+        + fin() { st=$?; if [ "$DONE_FLAG" = 0 ]; then echo "RESULT: FAIL"; [ "$st" = 0 ] && st=1; fi; exit "$st"; }
+        + trap fin EXIT
+      insert old 4..3 -> new 8..8
+        + if [ $# -ne 2 ]; then echo "usage: toy SRC DST" >&2; exit 2; fi
+      replace old 16..16 -> new 21..24
+        - [ "$hits" = "${#items[@]}" ]
+        + DONE_FLAG=1
+        + if [ "$hits" = "${#items[@]}" ]; then echo "RESULT: PASS"; exit 0; fi
+        + echo "RESULT: FAIL"
+        + exit 1
+      (a) block inserted directly before `set -u`, comments + [flag=0, handler def, trap EXIT]: True | code lines ['DONE_FLAG=0', 'fin() { st=$?; if [ "$DONE_FLAG" = 0 ]; then echo "RESULT: FAIL"; [ "$st" = 0 ] && st=1; fi; exit "$st"; }', 'trap fin EXIT']
+      (b) one line inserted directly after `set -u`: $# check against N=2, exit 2; positional parameters used [1, 2] (max 2): True
+      (c) old last line replaced by [flag=1, if [COND] PASS exit 0, echo FAIL, exit 1]: True
+          old COND: '"$hits" = "${#items[@]}"'
+          new COND: '"$hits" = "${#items[@]}"' | identical: True
+          old: last command `[ COND ]` -> script exit status 0 if COND true, 1 if false; no output line
+          new: COND true -> 'RESULT: PASS', exit 0; COND false -> 'RESULT: FAIL', exit 1 (same codes, one added line)
+   1 summary: equal lines == old - 1: True; (a) True; (b) True; (c) True -> True
+   2. trap statements: [(6, 'trap fin EXIT')]
+      code lines before the trap: ['DONE_FLAG=0', 'fin() { st=$?; if [ "$DONE_FLAG" = 0 ]; then echo "RESULT: FAIL"; [ "$st" = 0 ] && st=1; fi; exit "$st"; }'] | only flag=0 and the handler definition: True
+      forbidden constructs (line numbers): {'set -e / errexit': [], 'exec': [], 'source / .': [], 'background &': [], 'return': [], 'kill': []} | none: True
+      handler fin (line 5), statements:
+        st=$?
+        if [ "$DONE_FLAG" = 0 ]
+        then echo "RESULT: FAIL"
+        [ "$st" = 0 ] && st=1
+        fi
+        exit "$st"
+        first statement captures $? into st: True | if flag 0: print RESULT: FAIL and status 0 -> 1: True | last statement exit "$st": True -> True
+      assignments of DONE_FLAG: [(4, 'DONE_FLAG=0'), (21, 'DONE_FLAG=1')] | exactly [=0, =1]: True
+      exit at line 8 with argument 2: flag in force 0 -> handler prints RESULT: FAIL; status kept (non-zero) | ok: True
+      exit at line 22 with argument 0: flag in force 1 -> RESULT line printed before it: True | ok: True
+      exit at line 24 with argument 1: flag in force 1 -> RESULT line printed before it: True | ok: True
+      set -u: variables read before any assignment: [] | loop depth at end 0
+      first use of a positional parameter at line 9; $# check at line [8] -> check first: True
+      variables read after DONE_FLAG=1 (line 21): ['hits', 'items']; loop depth of first assignment {'hits': 0, 'items': 0} -> all top level: True
+   2 summary -> True
+######## fixture: M1 trap installed after the $# check (expected False)
+## fixture[M1 trap installed after the $# check]
+   old old: 16 lines, sha256 f62c67ef183ff9ce313d89d53bdfa2741bd62b63033acf44cf65287f1a467e7a
+   new new: 24 lines, sha256 7053d55c47ccdc8d34692a9fb71e5c99f6a2bd043e9f3554602a103acb4acdf9
+   1. line diff: equal lines 15 (old lines - 1 = 15); non-equal blocks 3
+      insert old 3..2 -> new 3..5
+        + # fixture: added comment
+        + DONE_FLAG=0
+        + fin() { st=$?; if [ "$DONE_FLAG" = 0 ]; then echo "RESULT: FAIL"; [ "$st" = 0 ] && st=1; fi; exit "$st"; }
+      insert old 4..3 -> new 7..8
+        + if [ $# -ne 2 ]; then echo "usage: toy SRC DST" >&2; exit 2; fi
+        + trap fin EXIT
+      replace old 16..16 -> new 21..24
+        - [ "$hits" = "${#items[@]}" ]
+        + DONE_FLAG=1
+        + if [ "$hits" = "${#items[@]}" ]; then echo "RESULT: PASS"; exit 0; fi
+        + echo "RESULT: FAIL"
+        + exit 1
+      (a) block inserted directly before `set -u`, comments + [flag=0, handler def, trap EXIT]: False | code lines ['DONE_FLAG=0', 'fin() { st=$?; if [ "$DONE_FLAG" = 0 ]; then echo "RESULT: FAIL"; [ "$st" = 0 ] && st=1; fi; exit "$st"; }']
+      (b) one line inserted directly after `set -u`: $# check against N=None, exit None; positional parameters used [1, 2] (max 2): False
+      (c) old last line replaced by [flag=1, if [COND] PASS exit 0, echo FAIL, exit 1]: False
+          old COND: '"$hits" = "${#items[@]}"'
+          new COND: '"$hits" = "${#items[@]}"' | identical: True
+          old: last command `[ COND ]` -> script exit status 0 if COND true, 1 if false; no output line
+          new: COND true -> 'RESULT: PASS', exit 0; COND false -> 'RESULT: FAIL', exit 1 (same codes, one added line)
+   1 summary: equal lines == old - 1: True; (a) False; (b) False; (c) False -> False
+   2. trap statements: [(8, 'trap fin EXIT')]
+      code lines before the trap: ['DONE_FLAG=0', 'fin() { st=$?; if [ "$DONE_FLAG" = 0 ]; then echo "RESULT: FAIL"; [ "$st" = 0 ] && st=1; fi; exit "$st"; }', 'set -u', 'if [ $# -ne 2 ]; then echo "usage: toy SRC DST" >&2; exit 2; fi'] | only flag=0 and the handler definition: False
+      forbidden constructs (line numbers): {'set -e / errexit': [], 'exec': [], 'source / .': [], 'background &': [], 'return': [], 'kill': []} | none: True
+      handler fin (line 5), statements:
+        st=$?
+        if [ "$DONE_FLAG" = 0 ]
+        then echo "RESULT: FAIL"
+        [ "$st" = 0 ] && st=1
+        fi
+        exit "$st"
+        first statement captures $? into st: True | if flag 0: print RESULT: FAIL and status 0 -> 1: True | last statement exit "$st": True -> True
+      assignments of DONE_FLAG: [(4, 'DONE_FLAG=0'), (21, 'DONE_FLAG=1')] | exactly [=0, =1]: True
+      exit at line 7 with argument 2: flag in force 0 -> handler prints RESULT: FAIL; status kept (non-zero) | ok: True
+      exit at line 22 with argument 0: flag in force 1 -> RESULT line printed before it: True | ok: True
+      exit at line 24 with argument 1: flag in force 1 -> RESULT line printed before it: True | ok: True
+      set -u: variables read before any assignment: [] | loop depth at end 0
+      first use of a positional parameter at line 9; $# check at line [7] -> check first: True
+      variables read after DONE_FLAG=1 (line 21): ['hits', 'items']; loop depth of first assignment {'hits': 0, 'items': 0} -> all top level: True
+   2 summary -> False
+######## fixture: M2 verdict condition changed (expected False)
+## fixture[M2 verdict condition changed]
+   old old: 16 lines, sha256 f62c67ef183ff9ce313d89d53bdfa2741bd62b63033acf44cf65287f1a467e7a
+   new new: 24 lines, sha256 2907d603d44d32f733a80eefd0a26b692e0b22a5394b319bf483799c36e660fb
+   1. line diff: equal lines 15 (old lines - 1 = 15); non-equal blocks 3
+      insert old 3..2 -> new 3..6
+        + # fixture: added comment
+        + DONE_FLAG=0
+        + fin() { st=$?; if [ "$DONE_FLAG" = 0 ]; then echo "RESULT: FAIL"; [ "$st" = 0 ] && st=1; fi; exit "$st"; }
+        + trap fin EXIT
+      insert old 4..3 -> new 8..8
+        + if [ $# -ne 2 ]; then echo "usage: toy SRC DST" >&2; exit 2; fi
+      replace old 16..16 -> new 21..24
+        - [ "$hits" = "${#items[@]}" ]
+        + DONE_FLAG=1
+        + if [ "$hits" -ge 1 ]; then echo "RESULT: PASS"; exit 0; fi
+        + echo "RESULT: FAIL"
+        + exit 1
+      (a) block inserted directly before `set -u`, comments + [flag=0, handler def, trap EXIT]: True | code lines ['DONE_FLAG=0', 'fin() { st=$?; if [ "$DONE_FLAG" = 0 ]; then echo "RESULT: FAIL"; [ "$st" = 0 ] && st=1; fi; exit "$st"; }', 'trap fin EXIT']
+      (b) one line inserted directly after `set -u`: $# check against N=2, exit 2; positional parameters used [1, 2] (max 2): True
+      (c) old last line replaced by [flag=1, if [COND] PASS exit 0, echo FAIL, exit 1]: False
+          old COND: '"$hits" = "${#items[@]}"'
+          new COND: '"$hits" -ge 1' | identical: False
+          old: last command `[ COND ]` -> script exit status 0 if COND true, 1 if false; no output line
+          new: COND true -> 'RESULT: PASS', exit 0; COND false -> 'RESULT: FAIL', exit 1 (same codes, one added line)
+   1 summary: equal lines == old - 1: True; (a) True; (b) True; (c) False -> False
+   2. trap statements: [(6, 'trap fin EXIT')]
+      code lines before the trap: ['DONE_FLAG=0', 'fin() { st=$?; if [ "$DONE_FLAG" = 0 ]; then echo "RESULT: FAIL"; [ "$st" = 0 ] && st=1; fi; exit "$st"; }'] | only flag=0 and the handler definition: True
+      forbidden constructs (line numbers): {'set -e / errexit': [], 'exec': [], 'source / .': [], 'background &': [], 'return': [], 'kill': []} | none: True
+      handler fin (line 5), statements:
+        st=$?
+        if [ "$DONE_FLAG" = 0 ]
+        then echo "RESULT: FAIL"
+        [ "$st" = 0 ] && st=1
+        fi
+        exit "$st"
+        first statement captures $? into st: True | if flag 0: print RESULT: FAIL and status 0 -> 1: True | last statement exit "$st": True -> True
+      assignments of DONE_FLAG: [(4, 'DONE_FLAG=0'), (21, 'DONE_FLAG=1')] | exactly [=0, =1]: True
+      exit at line 8 with argument 2: flag in force 0 -> handler prints RESULT: FAIL; status kept (non-zero) | ok: True
+      exit at line 22 with argument 0: flag in force 1 -> RESULT line printed before it: True | ok: True
+      exit at line 24 with argument 1: flag in force 1 -> RESULT line printed before it: True | ok: True
+      set -u: variables read before any assignment: [] | loop depth at end 0
+      first use of a positional parameter at line 9; $# check at line [8] -> check first: True
+      variables read after DONE_FLAG=1 (line 21): ['hits']; loop depth of first assignment {'hits': 0} -> all top level: True
+   2 summary -> True
+######## fixture: M3 one body line changed (expected False)
+## fixture[M3 one body line changed]
+   old old: 16 lines, sha256 f62c67ef183ff9ce313d89d53bdfa2741bd62b63033acf44cf65287f1a467e7a
+   new new: 24 lines, sha256 af2e3bd691832dcd62d2f4f6f64681fbf23edb6d760ada1f755bbfac020c7d44
+   1. line diff: equal lines 14 (old lines - 1 = 15); non-equal blocks 3
+      insert old 3..2 -> new 3..6
+        + # fixture: added comment
+        + DONE_FLAG=0
+        + fin() { st=$?; if [ "$DONE_FLAG" = 0 ]; then echo "RESULT: FAIL"; [ "$st" = 0 ] && st=1; fi; exit "$st"; }
+        + trap fin EXIT
+      insert old 4..3 -> new 8..8
+        + if [ $# -ne 2 ]; then echo "usage: toy SRC DST" >&2; exit 2; fi
+      replace old 15..16 -> new 20..24
+        - echo "hits $hits"
+        - [ "$hits" = "${#items[@]}" ]
+        + echo "hits: $hits"
+        + DONE_FLAG=1
+        + if [ "$hits" = "${#items[@]}" ]; then echo "RESULT: PASS"; exit 0; fi
+        + echo "RESULT: FAIL"
+        + exit 1
+      (a) block inserted directly before `set -u`, comments + [flag=0, handler def, trap EXIT]: True | code lines ['DONE_FLAG=0', 'fin() { st=$?; if [ "$DONE_FLAG" = 0 ]; then echo "RESULT: FAIL"; [ "$st" = 0 ] && st=1; fi; exit "$st"; }', 'trap fin EXIT']
+      (b) one line inserted directly after `set -u`: $# check against N=2, exit 2; positional parameters used [1, 2] (max 2): True
+      (c) old last line replaced by [flag=1, if [COND] PASS exit 0, echo FAIL, exit 1]: False
+          old COND: None
+          new COND: None | identical: True
+          old: last command `[ COND ]` -> script exit status 0 if COND true, 1 if false; no output line
+          new: COND true -> 'RESULT: PASS', exit 0; COND false -> 'RESULT: FAIL', exit 1 (same codes, one added line)
+   1 summary: equal lines == old - 1: False; (a) True; (b) True; (c) False -> False
+   2. trap statements: [(6, 'trap fin EXIT')]
+      code lines before the trap: ['DONE_FLAG=0', 'fin() { st=$?; if [ "$DONE_FLAG" = 0 ]; then echo "RESULT: FAIL"; [ "$st" = 0 ] && st=1; fi; exit "$st"; }'] | only flag=0 and the handler definition: True
+      forbidden constructs (line numbers): {'set -e / errexit': [], 'exec': [], 'source / .': [], 'background &': [], 'return': [], 'kill': []} | none: True
+      handler fin (line 5), statements:
+        st=$?
+        if [ "$DONE_FLAG" = 0 ]
+        then echo "RESULT: FAIL"
+        [ "$st" = 0 ] && st=1
+        fi
+        exit "$st"
+        first statement captures $? into st: True | if flag 0: print RESULT: FAIL and status 0 -> 1: True | last statement exit "$st": True -> True
+      assignments of DONE_FLAG: [(4, 'DONE_FLAG=0'), (21, 'DONE_FLAG=1')] | exactly [=0, =1]: True
+      exit at line 8 with argument 2: flag in force 0 -> handler prints RESULT: FAIL; status kept (non-zero) | ok: True
+      exit at line 22 with argument 0: flag in force 1 -> RESULT line printed before it: True | ok: True
+      exit at line 24 with argument 1: flag in force 1 -> RESULT line printed before it: True | ok: True
+      set -u: variables read before any assignment: [] | loop depth at end 0
+      first use of a positional parameter at line 9; $# check at line [8] -> check first: True
+      variables read after DONE_FLAG=1 (line 21): ['hits', 'items']; loop depth of first assignment {'hits': 0, 'items': 0} -> all top level: True
+   2 summary -> True
+######## fixture: M4 flag set to 1 before the loop (expected False)
+## fixture[M4 flag set to 1 before the loop]
+   old old: 16 lines, sha256 f62c67ef183ff9ce313d89d53bdfa2741bd62b63033acf44cf65287f1a467e7a
+   new new: 25 lines, sha256 42d8422e77435568a2867cdbc8a1f47747a932d183749377854f0bc8910054a9
+   1. line diff: equal lines 15 (old lines - 1 = 15); non-equal blocks 4
+      insert old 3..2 -> new 3..6
+        + # fixture: added comment
+        + DONE_FLAG=0
+        + fin() { st=$?; if [ "$DONE_FLAG" = 0 ]; then echo "RESULT: FAIL"; [ "$st" = 0 ] && st=1; fi; exit "$st"; }
+        + trap fin EXIT
+      insert old 4..3 -> new 8..8
+        + if [ $# -ne 2 ]; then echo "usage: toy SRC DST" >&2; exit 2; fi
+      insert old 10..9 -> new 15..15
+        + DONE_FLAG=1
+      replace old 16..16 -> new 22..25
+        - [ "$hits" = "${#items[@]}" ]
+        + DONE_FLAG=1
+        + if [ "$hits" = "${#items[@]}" ]; then echo "RESULT: PASS"; exit 0; fi
+        + echo "RESULT: FAIL"
+        + exit 1
+      unexpected shape: `set -u` lines old [2] new [6], non-equal blocks 4
+   1 summary: equal lines == old - 1: True; (a) False; (b) False; (c) False -> False
+   2. trap statements: [(6, 'trap fin EXIT')]
+      code lines before the trap: ['DONE_FLAG=0', 'fin() { st=$?; if [ "$DONE_FLAG" = 0 ]; then echo "RESULT: FAIL"; [ "$st" = 0 ] && st=1; fi; exit "$st"; }'] | only flag=0 and the handler definition: True
+      forbidden constructs (line numbers): {'set -e / errexit': [], 'exec': [], 'source / .': [], 'background &': [], 'return': [], 'kill': []} | none: True
+      handler fin (line 5), statements:
+        st=$?
+        if [ "$DONE_FLAG" = 0 ]
+        then echo "RESULT: FAIL"
+        [ "$st" = 0 ] && st=1
+        fi
+        exit "$st"
+        first statement captures $? into st: True | if flag 0: print RESULT: FAIL and status 0 -> 1: True | last statement exit "$st": True -> True
+      assignments of DONE_FLAG: [(4, 'DONE_FLAG=0'), (15, 'DONE_FLAG=1'), (22, 'DONE_FLAG=1')] | exactly [=0, =1]: False
+      exit at line 8 with argument 2: flag in force 0 -> handler prints RESULT: FAIL; status kept (non-zero) | ok: True
+      exit at line 23 with argument 0: flag in force 0 -> handler prints RESULT: FAIL; status kept (non-zero) | ok: False
+      exit at line 25 with argument 1: flag in force 0 -> handler prints RESULT: FAIL; status kept (non-zero) | ok: True
+      set -u: variables read before any assignment: [] | loop depth at end 0
+      first use of a positional parameter at line 9; $# check at line [8] -> check first: True
+      variables read after DONE_FLAG=1 (line None): []; loop depth of first assignment {} -> all top level: True
+   2 summary -> False
+######## fixture: M5 set -e added (expected False)
+## fixture[M5 set -e added]
+   old old: 16 lines, sha256 f62c67ef183ff9ce313d89d53bdfa2741bd62b63033acf44cf65287f1a467e7a
+   new new: 25 lines, sha256 9e4782969cf6192501c024a77047a56285863277eadf9b2cf9820885d1a8b5e1
+   1. line diff: equal lines 15 (old lines - 1 = 15); non-equal blocks 3
+      insert old 3..2 -> new 3..6
+        + # fixture: added comment
+        + DONE_FLAG=0
+        + fin() { st=$?; if [ "$DONE_FLAG" = 0 ]; then echo "RESULT: FAIL"; [ "$st" = 0 ] && st=1; fi; exit "$st"; }
+        + trap fin EXIT
+      insert old 4..3 -> new 8..9
+        + set -e
+        + if [ $# -ne 2 ]; then echo "usage: toy SRC DST" >&2; exit 2; fi
+      replace old 16..16 -> new 22..25
+        - [ "$hits" = "${#items[@]}" ]
+        + DONE_FLAG=1
+        + if [ "$hits" = "${#items[@]}" ]; then echo "RESULT: PASS"; exit 0; fi
+        + echo "RESULT: FAIL"
+        + exit 1
+      (a) block inserted directly before `set -u`, comments + [flag=0, handler def, trap EXIT]: True | code lines ['DONE_FLAG=0', 'fin() { st=$?; if [ "$DONE_FLAG" = 0 ]; then echo "RESULT: FAIL"; [ "$st" = 0 ] && st=1; fi; exit "$st"; }', 'trap fin EXIT']
+      (b) one line inserted directly after `set -u`: $# check against N=None, exit None; positional parameters used [1, 2] (max 2): False
+      (c) old last line replaced by [flag=1, if [COND] PASS exit 0, echo FAIL, exit 1]: True
+          old COND: '"$hits" = "${#items[@]}"'
+          new COND: '"$hits" = "${#items[@]}"' | identical: True
+          old: last command `[ COND ]` -> script exit status 0 if COND true, 1 if false; no output line
+          new: COND true -> 'RESULT: PASS', exit 0; COND false -> 'RESULT: FAIL', exit 1 (same codes, one added line)
+   1 summary: equal lines == old - 1: True; (a) True; (b) False; (c) True -> False
+   2. trap statements: [(6, 'trap fin EXIT')]
+      code lines before the trap: ['DONE_FLAG=0', 'fin() { st=$?; if [ "$DONE_FLAG" = 0 ]; then echo "RESULT: FAIL"; [ "$st" = 0 ] && st=1; fi; exit "$st"; }'] | only flag=0 and the handler definition: True
+      forbidden constructs (line numbers): {'set -e / errexit': [8], 'exec': [], 'source / .': [], 'background &': [], 'return': [], 'kill': []} | none: False
+      handler fin (line 5), statements:
+        st=$?
+        if [ "$DONE_FLAG" = 0 ]
+        then echo "RESULT: FAIL"
+        [ "$st" = 0 ] && st=1
+        fi
+        exit "$st"
+        first statement captures $? into st: True | if flag 0: print RESULT: FAIL and status 0 -> 1: True | last statement exit "$st": True -> True
+      assignments of DONE_FLAG: [(4, 'DONE_FLAG=0'), (22, 'DONE_FLAG=1')] | exactly [=0, =1]: True
+      exit at line 9 with argument 2: flag in force 0 -> handler prints RESULT: FAIL; status kept (non-zero) | ok: True
+      exit at line 23 with argument 0: flag in force 1 -> RESULT line printed before it: True | ok: True
+      exit at line 25 with argument 1: flag in force 1 -> RESULT line printed before it: True | ok: True
+      set -u: variables read before any assignment: [] | loop depth at end 0
+      first use of a positional parameter at line 10; $# check at line [9] -> check first: True
+      variables read after DONE_FLAG=1 (line 22): ['hits', 'items']; loop depth of first assignment {'hits': 0, 'items': 0} -> all top level: True
+   2 summary -> False
+######## fixture: M6 handler does not turn status 0 into 1 (expected False)
+## fixture[M6 handler does not turn status 0 into 1]
+   old old: 16 lines, sha256 f62c67ef183ff9ce313d89d53bdfa2741bd62b63033acf44cf65287f1a467e7a
+   new new: 24 lines, sha256 85726c7a3172acee1041d258931f70b009c087f11e44d4db26a71edaca9c375c
+   1. line diff: equal lines 15 (old lines - 1 = 15); non-equal blocks 3
+      insert old 3..2 -> new 3..6
+        + # fixture: added comment
+        + DONE_FLAG=0
+        + fin() { st=$?; if [ "$DONE_FLAG" = 0 ]; then echo "RESULT: FAIL"; fi; exit "$st"; }
+        + trap fin EXIT
+      insert old 4..3 -> new 8..8
+        + if [ $# -ne 2 ]; then echo "usage: toy SRC DST" >&2; exit 2; fi
+      replace old 16..16 -> new 21..24
+        - [ "$hits" = "${#items[@]}" ]
+        + DONE_FLAG=1
+        + if [ "$hits" = "${#items[@]}" ]; then echo "RESULT: PASS"; exit 0; fi
+        + echo "RESULT: FAIL"
+        + exit 1
+      (a) block inserted directly before `set -u`, comments + [flag=0, handler def, trap EXIT]: True | code lines ['DONE_FLAG=0', 'fin() { st=$?; if [ "$DONE_FLAG" = 0 ]; then echo "RESULT: FAIL"; fi; exit "$st"; }', 'trap fin EXIT']
+      (b) one line inserted directly after `set -u`: $# check against N=2, exit 2; positional parameters used [1, 2] (max 2): True
+      (c) old last line replaced by [flag=1, if [COND] PASS exit 0, echo FAIL, exit 1]: True
+          old COND: '"$hits" = "${#items[@]}"'
+          new COND: '"$hits" = "${#items[@]}"' | identical: True
+          old: last command `[ COND ]` -> script exit status 0 if COND true, 1 if false; no output line
+          new: COND true -> 'RESULT: PASS', exit 0; COND false -> 'RESULT: FAIL', exit 1 (same codes, one added line)
+   1 summary: equal lines == old - 1: True; (a) True; (b) True; (c) True -> True
+   2. trap statements: [(6, 'trap fin EXIT')]
+      code lines before the trap: ['DONE_FLAG=0', 'fin() { st=$?; if [ "$DONE_FLAG" = 0 ]; then echo "RESULT: FAIL"; fi; exit "$st"; }'] | only flag=0 and the handler definition: True
+      forbidden constructs (line numbers): {'set -e / errexit': [], 'exec': [], 'source / .': [], 'background &': [], 'return': [], 'kill': []} | none: True
+      handler fin (line 5), statements:
+        st=$?
+        if [ "$DONE_FLAG" = 0 ]
+        then echo "RESULT: FAIL"
+        fi
+        exit "$st"
+        first statement captures $? into st: True | if flag 0: print RESULT: FAIL and status 0 -> 1: False | last statement exit "$st": True -> False
+      assignments of DONE_FLAG: [(4, 'DONE_FLAG=0'), (21, 'DONE_FLAG=1')] | exactly [=0, =1]: True
+      exit at line 8 with argument 2: flag in force 0 -> handler prints RESULT: FAIL; status kept (non-zero) | ok: True
+      exit at line 22 with argument 0: flag in force 1 -> RESULT line printed before it: True | ok: True
+      exit at line 24 with argument 1: flag in force 1 -> RESULT line printed before it: True | ok: True
+      set -u: variables read before any assignment: [] | loop depth at end 0
+      first use of a positional parameter at line 9; $# check at line [8] -> check first: True
+      variables read after DONE_FLAG=1 (line 21): ['hits', 'items']; loop depth of first assignment {'hits': 0, 'items': 0} -> all top level: True
+   2 summary -> False
+######## fixture: M7 $# check against the wrong count (expected False)
+## fixture[M7 $# check against the wrong count]
+   old old: 16 lines, sha256 f62c67ef183ff9ce313d89d53bdfa2741bd62b63033acf44cf65287f1a467e7a
+   new new: 24 lines, sha256 fdbc0e294fcd62e4095f9e1995aafdcd986c2e7e45dca9ddbe7ba4130e3896bd
+   1. line diff: equal lines 15 (old lines - 1 = 15); non-equal blocks 3
+      insert old 3..2 -> new 3..6
+        + # fixture: added comment
+        + DONE_FLAG=0
+        + fin() { st=$?; if [ "$DONE_FLAG" = 0 ]; then echo "RESULT: FAIL"; [ "$st" = 0 ] && st=1; fi; exit "$st"; }
+        + trap fin EXIT
+      insert old 4..3 -> new 8..8
+        + if [ $# -ne 3 ]; then echo "usage: toy SRC DST" >&2; exit 2; fi
+      replace old 16..16 -> new 21..24
+        - [ "$hits" = "${#items[@]}" ]
+        + DONE_FLAG=1
+        + if [ "$hits" = "${#items[@]}" ]; then echo "RESULT: PASS"; exit 0; fi
+        + echo "RESULT: FAIL"
+        + exit 1
+      (a) block inserted directly before `set -u`, comments + [flag=0, handler def, trap EXIT]: True | code lines ['DONE_FLAG=0', 'fin() { st=$?; if [ "$DONE_FLAG" = 0 ]; then echo "RESULT: FAIL"; [ "$st" = 0 ] && st=1; fi; exit "$st"; }', 'trap fin EXIT']
+      (b) one line inserted directly after `set -u`: $# check against N=3, exit 2; positional parameters used [1, 2] (max 2): False
+      (c) old last line replaced by [flag=1, if [COND] PASS exit 0, echo FAIL, exit 1]: True
+          old COND: '"$hits" = "${#items[@]}"'
+          new COND: '"$hits" = "${#items[@]}"' | identical: True
+          old: last command `[ COND ]` -> script exit status 0 if COND true, 1 if false; no output line
+          new: COND true -> 'RESULT: PASS', exit 0; COND false -> 'RESULT: FAIL', exit 1 (same codes, one added line)
+   1 summary: equal lines == old - 1: True; (a) True; (b) False; (c) True -> False
+   2. trap statements: [(6, 'trap fin EXIT')]
+      code lines before the trap: ['DONE_FLAG=0', 'fin() { st=$?; if [ "$DONE_FLAG" = 0 ]; then echo "RESULT: FAIL"; [ "$st" = 0 ] && st=1; fi; exit "$st"; }'] | only flag=0 and the handler definition: True
+      forbidden constructs (line numbers): {'set -e / errexit': [], 'exec': [], 'source / .': [], 'background &': [], 'return': [], 'kill': []} | none: True
+      handler fin (line 5), statements:
+        st=$?
+        if [ "$DONE_FLAG" = 0 ]
+        then echo "RESULT: FAIL"
+        [ "$st" = 0 ] && st=1
+        fi
+        exit "$st"
+        first statement captures $? into st: True | if flag 0: print RESULT: FAIL and status 0 -> 1: True | last statement exit "$st": True -> True
+      assignments of DONE_FLAG: [(4, 'DONE_FLAG=0'), (21, 'DONE_FLAG=1')] | exactly [=0, =1]: True
+      exit at line 8 with argument 2: flag in force 0 -> handler prints RESULT: FAIL; status kept (non-zero) | ok: True
+      exit at line 22 with argument 0: flag in force 1 -> RESULT line printed before it: True | ok: True
+      exit at line 24 with argument 1: flag in force 1 -> RESULT line printed before it: True | ok: True
+      set -u: variables read before any assignment: [] | loop depth at end 0
+      first use of a positional parameter at line 9; $# check at line [8] -> check first: True
+      variables read after DONE_FLAG=1 (line 21): ['hits', 'items']; loop depth of first assignment {'hits': 0, 'items': 0} -> all top level: True
+   2 summary -> True
+######## fixture: M8 verdict reads a variable first assigned inside the loop (expected False)
+## fixture[M8 verdict reads a variable first assigned inside the loop]
+   old old: 16 lines, sha256 2f30f7f60fda316cb2ce9c1e83b18f67fe4dc484c824ef9a722b829a05144198
+   new new: 24 lines, sha256 245c014641f684d04d6cde248bc9675bff2e7fdc84e8c6c4474bbb98c27604ff
+   1. line diff: equal lines 15 (old lines - 1 = 15); non-equal blocks 3
+      insert old 3..2 -> new 3..6
+        + # fixture: added comment
+        + DONE_FLAG=0
+        + fin() { st=$?; if [ "$DONE_FLAG" = 0 ]; then echo "RESULT: FAIL"; [ "$st" = 0 ] && st=1; fi; exit "$st"; }
+        + trap fin EXIT
+      insert old 4..3 -> new 8..8
+        + if [ $# -ne 2 ]; then echo "usage: toy SRC DST" >&2; exit 2; fi
+      replace old 16..16 -> new 21..24
+        - [ "$hits$val" = "2y" ]
+        + DONE_FLAG=1
+        + if [ "$hits$val" = "2y" ]; then echo "RESULT: PASS"; exit 0; fi
+        + echo "RESULT: FAIL"
+        + exit 1
+      (a) block inserted directly before `set -u`, comments + [flag=0, handler def, trap EXIT]: True | code lines ['DONE_FLAG=0', 'fin() { st=$?; if [ "$DONE_FLAG" = 0 ]; then echo "RESULT: FAIL"; [ "$st" = 0 ] && st=1; fi; exit "$st"; }', 'trap fin EXIT']
+      (b) one line inserted directly after `set -u`: $# check against N=2, exit 2; positional parameters used [1, 2] (max 2): True
+      (c) old last line replaced by [flag=1, if [COND] PASS exit 0, echo FAIL, exit 1]: True
+          old COND: '"$hits$val" = "2y"'
+          new COND: '"$hits$val" = "2y"' | identical: True
+          old: last command `[ COND ]` -> script exit status 0 if COND true, 1 if false; no output line
+          new: COND true -> 'RESULT: PASS', exit 0; COND false -> 'RESULT: FAIL', exit 1 (same codes, one added line)
+   1 summary: equal lines == old - 1: True; (a) True; (b) True; (c) True -> True
+   2. trap statements: [(6, 'trap fin EXIT')]
+      code lines before the trap: ['DONE_FLAG=0', 'fin() { st=$?; if [ "$DONE_FLAG" = 0 ]; then echo "RESULT: FAIL"; [ "$st" = 0 ] && st=1; fi; exit "$st"; }'] | only flag=0 and the handler definition: True
+      forbidden constructs (line numbers): {'set -e / errexit': [], 'exec': [], 'source / .': [], 'background &': [], 'return': [], 'kill': []} | none: True
+      handler fin (line 5), statements:
+        st=$?
+        if [ "$DONE_FLAG" = 0 ]
+        then echo "RESULT: FAIL"
+        [ "$st" = 0 ] && st=1
+        fi
+        exit "$st"
+        first statement captures $? into st: True | if flag 0: print RESULT: FAIL and status 0 -> 1: True | last statement exit "$st": True -> True
+      assignments of DONE_FLAG: [(4, 'DONE_FLAG=0'), (21, 'DONE_FLAG=1')] | exactly [=0, =1]: True
+      exit at line 8 with argument 2: flag in force 0 -> handler prints RESULT: FAIL; status kept (non-zero) | ok: True
+      exit at line 22 with argument 0: flag in force 1 -> RESULT line printed before it: True | ok: True
+      exit at line 24 with argument 1: flag in force 1 -> RESULT line printed before it: True | ok: True
+      set -u: variables read before any assignment: [] | loop depth at end 0
+      first use of a positional parameter at line 9; $# check at line [8] -> check first: True
+      variables read after DONE_FLAG=1 (line 21): ['hits', 'val']; loop depth of first assignment {'hits': 0, 'val': 1} -> all top level: False
+   2 summary -> False
+######## fixture: M9 no RESULT line before the final exit 1 (expected False)
+## fixture[M9 no RESULT line before the final exit 1]
+   old old: 16 lines, sha256 f62c67ef183ff9ce313d89d53bdfa2741bd62b63033acf44cf65287f1a467e7a
+   new new: 24 lines, sha256 82c5a7d7bacd9a19649d77a80ada357c12ebf7086cadba284001b0ed2d615925
+   1. line diff: equal lines 15 (old lines - 1 = 15); non-equal blocks 3
+      insert old 3..2 -> new 3..6
+        + # fixture: added comment
+        + DONE_FLAG=0
+        + fin() { st=$?; if [ "$DONE_FLAG" = 0 ]; then echo "RESULT: FAIL"; [ "$st" = 0 ] && st=1; fi; exit "$st"; }
+        + trap fin EXIT
+      insert old 4..3 -> new 8..8
+        + if [ $# -ne 2 ]; then echo "usage: toy SRC DST" >&2; exit 2; fi
+      replace old 16..16 -> new 21..24
+        - [ "$hits" = "${#items[@]}" ]
+        + DONE_FLAG=1
+        + if [ "$hits" = "${#items[@]}" ]; then echo "RESULT: PASS"; exit 0; fi
+        + echo "done"
+        + exit 1
+      (a) block inserted directly before `set -u`, comments + [flag=0, handler def, trap EXIT]: True | code lines ['DONE_FLAG=0', 'fin() { st=$?; if [ "$DONE_FLAG" = 0 ]; then echo "RESULT: FAIL"; [ "$st" = 0 ] && st=1; fi; exit "$st"; }', 'trap fin EXIT']
+      (b) one line inserted directly after `set -u`: $# check against N=2, exit 2; positional parameters used [1, 2] (max 2): True
+      (c) old last line replaced by [flag=1, if [COND] PASS exit 0, echo FAIL, exit 1]: False
+          old COND: '"$hits" = "${#items[@]}"'
+          new COND: '"$hits" = "${#items[@]}"' | identical: True
+          old: last command `[ COND ]` -> script exit status 0 if COND true, 1 if false; no output line
+          new: COND true -> 'RESULT: PASS', exit 0; COND false -> 'RESULT: FAIL', exit 1 (same codes, one added line)
+   1 summary: equal lines == old - 1: True; (a) True; (b) True; (c) False -> False
+   2. trap statements: [(6, 'trap fin EXIT')]
+      code lines before the trap: ['DONE_FLAG=0', 'fin() { st=$?; if [ "$DONE_FLAG" = 0 ]; then echo "RESULT: FAIL"; [ "$st" = 0 ] && st=1; fi; exit "$st"; }'] | only flag=0 and the handler definition: True
+      forbidden constructs (line numbers): {'set -e / errexit': [], 'exec': [], 'source / .': [], 'background &': [], 'return': [], 'kill': []} | none: True
+      handler fin (line 5), statements:
+        st=$?
+        if [ "$DONE_FLAG" = 0 ]
+        then echo "RESULT: FAIL"
+        [ "$st" = 0 ] && st=1
+        fi
+        exit "$st"
+        first statement captures $? into st: True | if flag 0: print RESULT: FAIL and status 0 -> 1: True | last statement exit "$st": True -> True
+      assignments of DONE_FLAG: [(4, 'DONE_FLAG=0'), (21, 'DONE_FLAG=1')] | exactly [=0, =1]: True
+      exit at line 8 with argument 2: flag in force 0 -> handler prints RESULT: FAIL; status kept (non-zero) | ok: True
+      exit at line 22 with argument 0: flag in force 1 -> RESULT line printed before it: True | ok: True
+      exit at line 24 with argument 1: flag in force 1 -> RESULT line printed before it: False | ok: False
+      set -u: variables read before any assignment: [] | loop depth at end 0
+      first use of a positional parameter at line 9; $# check at line [8] -> check first: True
+      variables read after DONE_FLAG=1 (line 21): ['hits', 'items']; loop depth of first assignment {'hits': 0, 'items': 0} -> all top level: True
+   2 summary -> False
+== summary (fixture, expected, checker result, as expected)
+   ('correct', True, True, True)
+   ('M1 trap installed after the $# check', False, False, True)
+   ('M2 verdict condition changed', False, False, True)
+   ('M3 one body line changed', False, False, True)
+   ('M4 flag set to 1 before the loop', False, False, True)
+   ('M5 set -e added', False, False, True)
+   ('M6 handler does not turn status 0 into 1', False, False, True)
+   ('M7 $# check against the wrong count', False, False, True)
+   ('M8 verdict reads a variable first assigned inside the loop', False, False, True)
+   ('M9 no RESULT line before the final exit 1', False, False, True)
+RESULT: PASS
+exit=0

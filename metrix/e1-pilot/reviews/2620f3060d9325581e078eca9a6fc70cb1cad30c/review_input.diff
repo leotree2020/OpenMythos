@@ -1,0 +1,537 @@
+# Review input for Round 6 task 5, second pass (after the data-auditor's BLOCK on 599230f9e6069e8f7197a3717aafa789abb788f0). Range 599230f9e6069e8f7197a3717aafa789abb788f0 .. 2620f3060d9325581e078eca9a6fc70cb1cad30c. Generated Sun Nov 22 02:27:14 UTC 2026
+$ git log --format=%H\ %cI\ %s 599230f9e6069e8f7197a3717aafa789abb788f0..2620f3060d9325581e078eca9a6fc70cb1cad30c
+2620f3060d9325581e078eca9a6fc70cb1cad30c 2026-11-22T02:27:07+00:00 metrix: E1-PILOT round 6, fix after data-auditor BLOCK: RESULT line and EXIT trap in guard_ab.sh and guard_fail.sh
+exit=0
+$ git diff --stat 599230f9e6069e8f7197a3717aafa789abb788f0 2620f3060d9325581e078eca9a6fc70cb1cad30c
+ metrix/e1-pilot/reports/round6/guard_ab.sh         |  12 +-
+ metrix/e1-pilot/reports/round6/guard_fail.sh       |  12 +-
+ .../reports/round6/t2_guard_fail_rerun.txt         | 233 +++++++++++++++++++++
+ .../reports/round6/t2_guard_normal_rerun.txt       | 153 ++++++++++++++
+ metrix/e1-pilot/reports/round6/t2_harness_fail.txt |  63 ++++++
+ 5 files changed, 471 insertions(+), 2 deletions(-)
+exit=0
+$ git diff 599230f9e6069e8f7197a3717aafa789abb788f0 2620f3060d9325581e078eca9a6fc70cb1cad30c
+diff --git a/metrix/e1-pilot/reports/round6/guard_ab.sh b/metrix/e1-pilot/reports/round6/guard_ab.sh
+index 305a83a..a45f26e 100644
+--- a/metrix/e1-pilot/reports/round6/guard_ab.sh
++++ b/metrix/e1-pilot/reports/round6/guard_ab.sh
+@@ -7,7 +7,14 @@
+ # blind_handback_check.py and records_check.py (their inputs, round-4 event pages and round-5 subagent transcripts,
+ # are not in this container).
+ #   bash guard_ab.sh OLD_REPORTS_DIR OUT_DIR PY QWEN_TOK_DIR FACTS.json PARQUET_CACHE_DIR      (run from the repo root)
++# Round 6, after the data-auditor's BLOCK (reviews/599230f9.../data-auditor.md, item E3): this harness is a check
++# script as well. Its last line is RESULT: PASS or RESULT: FAIL; on any other exit (wrong number of arguments, an
++# error before the end) the EXIT trap prints RESULT: FAIL and the exit code is non-zero.
++RESULT_DONE=0
++on_exit() { rc=$?; if [ "$RESULT_DONE" = 0 ]; then echo "RESULT: FAIL"; [ "$rc" = 0 ] && rc=1; fi; exit "$rc"; }
++trap on_exit EXIT
+ set -u
++if [ $# -ne 6 ]; then echo "usage: bash guard_ab.sh OLD_REPORTS_DIR OUT_DIR PY QWEN_TOK_DIR FACTS.json PARQUET_CACHE_DIR" >&2; exit 2; fi
+ OLD="$1"; OUT="$2"; PY="$3"; TOK="$4"; FACTS="$5"; CACHE="$6"
+ NEW=metrix/e1-pilot/reports
+ M=metrix/e1-pilot
+@@ -40,4 +47,7 @@ for c in "${cases[@]}"; do
+   echo "---------- new output: $name"
+   cat "$OUT/$name.new"
+ done
+-[ "$same_all" = "${#cases[@]}" ]
++RESULT_DONE=1
++if [ "$same_all" = "${#cases[@]}" ]; then echo "RESULT: PASS"; exit 0; fi
++echo "RESULT: FAIL"
++exit 1
+diff --git a/metrix/e1-pilot/reports/round6/guard_fail.sh b/metrix/e1-pilot/reports/round6/guard_fail.sh
+index b7fd489..3070a9b 100644
+--- a/metrix/e1-pilot/reports/round6/guard_fail.sh
++++ b/metrix/e1-pilot/reports/round6/guard_fail.sh
+@@ -4,7 +4,14 @@
+ # arguments (a missing input file, a git error, an argparse error, a pin mismatch), and prints for each: exit
+ # codes, the number of "RESULT: FAIL" lines in each output, then both outputs in full.
+ #   bash guard_fail.sh OLD_REPORTS_DIR OUT_DIR PY QWEN_TOK_DIR      (run from the repository root)
++# Round 6, after the data-auditor's BLOCK (reviews/599230f9.../data-auditor.md, item E3): this harness is a check
++# script as well. Its last line is RESULT: PASS or RESULT: FAIL; on any other exit (wrong number of arguments, an
++# error before the end) the EXIT trap prints RESULT: FAIL and the exit code is non-zero.
++RESULT_DONE=0
++on_exit() { rc=$?; if [ "$RESULT_DONE" = 0 ]; then echo "RESULT: FAIL"; [ "$rc" = 0 ] && rc=1; fi; exit "$rc"; }
++trap on_exit EXIT
+ set -u
++if [ $# -ne 4 ]; then echo "usage: bash guard_fail.sh OLD_REPORTS_DIR OUT_DIR PY QWEN_TOK_DIR" >&2; exit 2; fi
+ OLD="$1"; OUT="$2"; PY="$3"; TOK="$4"
+ NEW=metrix/e1-pilot/reports
+ M=metrix/e1-pilot
+@@ -54,4 +61,7 @@ for c in "${cases[@]}"; do
+ done
+ echo "---------- new output: l6_check_pin"
+ cat "$OUT/l6_check_pin.new"
+-[ "$ok_all" = $(( ${#cases[@]} + 1 )) ]
++RESULT_DONE=1
++if [ "$ok_all" = $(( ${#cases[@]} + 1 )) ]; then echo "RESULT: PASS"; exit 0; fi
++echo "RESULT: FAIL"
++exit 1
+diff --git a/metrix/e1-pilot/reports/round6/t2_guard_fail_rerun.txt b/metrix/e1-pilot/reports/round6/t2_guard_fail_rerun.txt
+new file mode 100644
+index 0000000..ad6bb1c
+--- /dev/null
++++ b/metrix/e1-pilot/reports/round6/t2_guard_fail_rerun.txt
+@@ -0,0 +1,233 @@
++# Round 6 raw output, after the data-auditor's BLOCK: guard_fail.sh with its RESULT line and EXIT trap. Run from the repository root. Host vm, CPU only. Sun Nov 22 02:26:04 UTC 2026
++$ bash metrix/e1-pilot/reports/round6/guard_fail.sh /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/old_f4d8e988/metrix/e1-pilot/reports /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/fail2 /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/dl/qwen_tok
++== template_overlap: /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python {OLD,NEW}/round1/template_overlap.py --split-manifest /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/fail2/does_not_exist.json
++   exit old 1 new 1 | 'RESULT: FAIL' lines old 0 new 1 | new: non-zero exit and RESULT: FAIL: True
++== y_ratio: /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python {OLD,NEW}/round2/y_ratio.py --manifest /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/fail2/does_not_exist.json --split-manifest metrix/e1-pilot/SPLIT_MANIFEST.json --tokenizer-dir /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/dl/qwen_tok
++   exit old 1 new 1 | 'RESULT: FAIL' lines old 0 new 1 | new: non-zero exit and RESULT: FAIL: True
++== anchor_check: /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python {OLD,NEW}/round2/anchor_check.py --manifest /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/fail2/does_not_exist.json --tokenizer-dir /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/dl/qwen_tok --cache-dir /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/fail2 --anchor-out /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/fail2/anchor_fail.json
++   exit old 1 new 1 | 'RESULT: FAIL' lines old 0 new 1 | new: non-zero exit and RESULT: FAIL: True
++== candidate_feasibility_r3: /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python {OLD,NEW}/round3/candidate_feasibility_r3.py --facts /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/fail2/does_not_exist.json --split-manifest metrix/e1-pilot/SPLIT_MANIFEST.json --tokenizer-dir /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/dl/qwen_tok
++   exit old 1 new 1 | 'RESULT: FAIL' lines old 0 new 1 | new: non-zero exit and RESULT: FAIL: True
++== outside_metrix_check: /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python {OLD,NEW}/round3/outside_metrix_check.py --rev 0000000000000000000000000000000000000000
++   exit old 1 new 1 | 'RESULT: FAIL' lines old 0 new 1 | new: non-zero exit and RESULT: FAIL: True
++== verify_scoring: /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python {OLD,NEW}/round3/verify_scoring.py --facts /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/fail2/does_not_exist.json --split-manifest metrix/e1-pilot/SPLIT_MANIFEST.json --tokenizer-dir /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/dl/qwen_tok
++   exit old 1 new 1 | 'RESULT: FAIL' lines old 0 new 1 | new: non-zero exit and RESULT: FAIL: True
++== st_prefix_check: /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python {OLD,NEW}/round4/st_prefix_check.py --facts /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/fail2/does_not_exist.json --split-manifest metrix/e1-pilot/SPLIT_MANIFEST.json --tokenizer-dir /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/dl/qwen_tok
++   exit old 1 new 1 | 'RESULT: FAIL' lines old 0 new 1 | new: non-zero exit and RESULT: FAIL: True
++== l6_check_no_args: /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python {OLD,NEW}/round5/l6_check.py 
++   exit old 2 new 2 | 'RESULT: FAIL' lines old 0 new 1 | new: non-zero exit and RESULT: FAIL: True
++== blind_handback_check: /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python {OLD,NEW}/round5/blind_handback_check.py /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/fail2/does_not_exist.json --source /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/fail2/does_not_exist.json --blind-dir /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/fail2 --handbacks-out /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/fail2/handbacks_fail.jsonl
++   exit old 1 new 1 | 'RESULT: FAIL' lines old 0 new 1 | new: non-zero exit and RESULT: FAIL: True
++== recover_blind: /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python {OLD,NEW}/round5/recover_blind.py rebuild --source /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/fail2/does_not_exist.json --timeline /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/fail2/does_not_exist.json --out-dir /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/fail2
++   exit old 1 new 1 | 'RESULT: FAIL' lines old 0 new 1 | new: non-zero exit and RESULT: FAIL: True
++== records_check_no_args: /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python {OLD,NEW}/round5/records_check.py 
++   exit old 1 new 1 | 'RESULT: FAIL' lines old 0 new 1 | new: non-zero exit and RESULT: FAIL: True
++== l6_check_pin (new only): --eval-sets data_lock.json instead of research/mini_mythos/stage1/results/r1/eval_sets.jsonl
++   exit new 1 | 'RESULT: FAIL' lines new 1 | new: non-zero exit and RESULT: FAIL: True
++new scripts with non-zero exit and exactly one RESULT: FAIL line: 12 of 12
++---------- old output: template_overlap
++Traceback (most recent call last):
++  File "/tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/old_f4d8e988/metrix/e1-pilot/reports/round1/template_overlap.py", line 75, in <module>
++    main()
++    ~~~~^^
++  File "/tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/old_f4d8e988/metrix/e1-pilot/reports/round1/template_overlap.py", line 32, in main
++    m = json.load(open(a.split_manifest, encoding="utf-8"))
++                  ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++FileNotFoundError: [Errno 2] No such file or directory: '/tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/fail2/does_not_exist.json'
++---------- new output: template_overlap
++Traceback (most recent call last):
++  File "/home/user/OpenMythos/metrix/e1-pilot/reports/round1/template_overlap.py", line 80, in run_guarded
++    main()
++    ~~~~^^
++  File "/home/user/OpenMythos/metrix/e1-pilot/reports/round1/template_overlap.py", line 32, in main
++    m = json.load(open(a.split_manifest, encoding="utf-8"))
++                  ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++FileNotFoundError: [Errno 2] No such file or directory: '/tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/fail2/does_not_exist.json'
++RESULT: FAIL
++---------- old output: y_ratio
++[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
++Traceback (most recent call last):
++  File "/tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/old_f4d8e988/metrix/e1-pilot/reports/round2/y_ratio.py", line 70, in <module>
++    main()
++    ~~~~^^
++  File "/tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/old_f4d8e988/metrix/e1-pilot/reports/round2/y_ratio.py", line 47, in main
++    dm = json.load(open(a.manifest, encoding="utf-8"))
++                   ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++FileNotFoundError: [Errno 2] No such file or directory: '/tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/fail2/does_not_exist.json'
++---------- new output: y_ratio
++[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
++Traceback (most recent call last):
++  File "/home/user/OpenMythos/metrix/e1-pilot/reports/round2/y_ratio.py", line 75, in run_guarded
++    main()
++    ~~~~^^
++  File "/home/user/OpenMythos/metrix/e1-pilot/reports/round2/y_ratio.py", line 47, in main
++    dm = json.load(open(a.manifest, encoding="utf-8"))
++                   ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++FileNotFoundError: [Errno 2] No such file or directory: '/tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/fail2/does_not_exist.json'
++RESULT: FAIL
++---------- old output: anchor_check
++Traceback (most recent call last):
++  File "/tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/old_f4d8e988/metrix/e1-pilot/reports/round2/anchor_check.py", line 99, in <module>
++    main()
++    ~~~~^^
++  File "/tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/old_f4d8e988/metrix/e1-pilot/reports/round2/anchor_check.py", line 37, in main
++    dm = json.load(open(a.manifest, encoding="utf-8"))
++                   ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++FileNotFoundError: [Errno 2] No such file or directory: '/tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/fail2/does_not_exist.json'
++---------- new output: anchor_check
++Traceback (most recent call last):
++  File "/home/user/OpenMythos/metrix/e1-pilot/reports/round2/anchor_check.py", line 104, in run_guarded
++    main()
++    ~~~~^^
++  File "/home/user/OpenMythos/metrix/e1-pilot/reports/round2/anchor_check.py", line 37, in main
++    dm = json.load(open(a.manifest, encoding="utf-8"))
++                   ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++FileNotFoundError: [Errno 2] No such file or directory: '/tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/fail2/does_not_exist.json'
++RESULT: FAIL
++---------- old output: candidate_feasibility_r3
++[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
++Traceback (most recent call last):
++  File "/tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/old_f4d8e988/metrix/e1-pilot/reports/round3/candidate_feasibility_r3.py", line 73, in <module>
++    main()
++    ~~~~^^
++  File "/tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/old_f4d8e988/metrix/e1-pilot/reports/round3/candidate_feasibility_r3.py", line 32, in main
++    facts = json.load(open(a.facts, encoding="utf-8"))
++                      ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
++FileNotFoundError: [Errno 2] No such file or directory: '/tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/fail2/does_not_exist.json'
++---------- new output: candidate_feasibility_r3
++[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
++Traceback (most recent call last):
++  File "/home/user/OpenMythos/metrix/e1-pilot/reports/round3/candidate_feasibility_r3.py", line 78, in run_guarded
++    main()
++    ~~~~^^
++  File "/home/user/OpenMythos/metrix/e1-pilot/reports/round3/candidate_feasibility_r3.py", line 32, in main
++    facts = json.load(open(a.facts, encoding="utf-8"))
++                      ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
++FileNotFoundError: [Errno 2] No such file or directory: '/tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/fail2/does_not_exist.json'
++RESULT: FAIL
++---------- old output: outside_metrix_check
++git diff --no-renames --name-status 61d3c76705b28cc2ee334abc5bf1baaac4fc30dc 0000000000000000000000000000000000000000 -- . :(exclude)metrix failed: fatal: bad object 0000000000000000000000000000000000000000
++---------- new output: outside_metrix_check
++git diff --no-renames --name-status 61d3c76705b28cc2ee334abc5bf1baaac4fc30dc 0000000000000000000000000000000000000000 -- . :(exclude)metrix failed: fatal: bad object 0000000000000000000000000000000000000000
++RESULT: FAIL
++---------- old output: verify_scoring
++[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
++Traceback (most recent call last):
++  File "/tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/old_f4d8e988/metrix/e1-pilot/reports/round3/verify_scoring.py", line 182, in <module>
++    main()
++    ~~~~^^
++  File "/tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/old_f4d8e988/metrix/e1-pilot/reports/round3/verify_scoring.py", line 93, in main
++    facts = json.load(open(a.facts, encoding="utf-8"))
++                      ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
++FileNotFoundError: [Errno 2] No such file or directory: '/tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/fail2/does_not_exist.json'
++---------- new output: verify_scoring
++[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
++Traceback (most recent call last):
++  File "/home/user/OpenMythos/metrix/e1-pilot/reports/round3/verify_scoring.py", line 187, in run_guarded
++    main()
++    ~~~~^^
++  File "/home/user/OpenMythos/metrix/e1-pilot/reports/round3/verify_scoring.py", line 93, in main
++    facts = json.load(open(a.facts, encoding="utf-8"))
++                      ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
++FileNotFoundError: [Errno 2] No such file or directory: '/tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/fail2/does_not_exist.json'
++RESULT: FAIL
++---------- old output: st_prefix_check
++[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
++Traceback (most recent call last):
++  File "/tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/old_f4d8e988/metrix/e1-pilot/reports/round4/st_prefix_check.py", line 86, in <module>
++    main()
++    ~~~~^^
++  File "/tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/old_f4d8e988/metrix/e1-pilot/reports/round4/st_prefix_check.py", line 33, in main
++    facts = json.load(open(a.facts, encoding="utf-8"))
++                      ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
++FileNotFoundError: [Errno 2] No such file or directory: '/tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/fail2/does_not_exist.json'
++---------- new output: st_prefix_check
++[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
++Traceback (most recent call last):
++  File "/home/user/OpenMythos/metrix/e1-pilot/reports/round4/st_prefix_check.py", line 91, in run_guarded
++    main()
++    ~~~~^^
++  File "/home/user/OpenMythos/metrix/e1-pilot/reports/round4/st_prefix_check.py", line 33, in main
++    facts = json.load(open(a.facts, encoding="utf-8"))
++                      ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
++FileNotFoundError: [Errno 2] No such file or directory: '/tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/fail2/does_not_exist.json'
++RESULT: FAIL
++---------- old output: l6_check_no_args
++usage: l6_check.py [-h] --eval-sets EVAL_SETS
++                   --parcae-tokenizer PARCAE_TOKENIZER --data-lock DATA_LOCK
++                   --tokenizer-dir TOKENIZER_DIR --anchor ANCHOR
++                   --general-out GENERAL_OUT
++l6_check.py: error: the following arguments are required: --eval-sets, --parcae-tokenizer, --data-lock, --tokenizer-dir, --anchor, --general-out
++---------- new output: l6_check_no_args
++usage: l6_check.py [-h] --eval-sets EVAL_SETS
++                   --parcae-tokenizer PARCAE_TOKENIZER --manifest MANIFEST
++                   --tokenizer-dir TOKENIZER_DIR --anchor ANCHOR
++                   --general-out GENERAL_OUT
++l6_check.py: error: the following arguments are required: --eval-sets, --parcae-tokenizer, --manifest, --tokenizer-dir, --anchor, --general-out
++RESULT: FAIL
++---------- old output: blind_handback_check
++Traceback (most recent call last):
++  File "/tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/old_f4d8e988/metrix/e1-pilot/reports/round5/blind_handback_check.py", line 64, in <module>
++    main()
++    ~~~~^^
++  File "/tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/old_f4d8e988/metrix/e1-pilot/reports/round5/blind_handback_check.py", line 31, in main
++    for line in open(a.source, encoding="utf-8"):
++                ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++FileNotFoundError: [Errno 2] No such file or directory: '/tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/fail2/does_not_exist.json'
++---------- new output: blind_handback_check
++Traceback (most recent call last):
++  File "/home/user/OpenMythos/metrix/e1-pilot/reports/round5/blind_handback_check.py", line 69, in run_guarded
++    main()
++    ~~~~^^
++  File "/home/user/OpenMythos/metrix/e1-pilot/reports/round5/blind_handback_check.py", line 31, in main
++    for line in open(a.source, encoding="utf-8"):
++                ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++FileNotFoundError: [Errno 2] No such file or directory: '/tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/fail2/does_not_exist.json'
++RESULT: FAIL
++---------- old output: recover_blind
++Traceback (most recent call last):
++  File "/tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/old_f4d8e988/metrix/e1-pilot/reports/round5/recover_blind.py", line 102, in <module>
++    main()
++    ~~~~^^
++  File "/tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/old_f4d8e988/metrix/e1-pilot/reports/round5/recover_blind.py", line 98, in main
++    sys.exit(extract(a.dumps, a.source_out) if a.cmd == "extract" else rebuild(a.source, a.timeline, a.out_dir))
++                                                                       ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++  File "/tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/old_f4d8e988/metrix/e1-pilot/reports/round5/recover_blind.py", line 59, in rebuild
++    t6 = open(timeline, encoding="utf-8").read()
++         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++FileNotFoundError: [Errno 2] No such file or directory: '/tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/fail2/does_not_exist.json'
++---------- new output: recover_blind
++Traceback (most recent call last):
++  File "/home/user/OpenMythos/metrix/e1-pilot/reports/round5/recover_blind.py", line 107, in run_guarded
++    main()
++    ~~~~^^
++  File "/home/user/OpenMythos/metrix/e1-pilot/reports/round5/recover_blind.py", line 98, in main
++    sys.exit(extract(a.dumps, a.source_out) if a.cmd == "extract" else rebuild(a.source, a.timeline, a.out_dir))
++                                                                       ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++  File "/home/user/OpenMythos/metrix/e1-pilot/reports/round5/recover_blind.py", line 59, in rebuild
++    t6 = open(timeline, encoding="utf-8").read()
++         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++FileNotFoundError: [Errno 2] No such file or directory: '/tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/fail2/does_not_exist.json'
++RESULT: FAIL
++---------- old output: records_check_no_args
++Traceback (most recent call last):
++  File "/tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/old_f4d8e988/metrix/e1-pilot/reports/round5/records_check.py", line 58, in <module>
++    mode, args = sys.argv[1], sys.argv[2:]
++                 ~~~~~~~~^^^
++IndexError: list index out of range
++---------- new output: records_check_no_args
++Traceback (most recent call last):
++  File "/home/user/OpenMythos/metrix/e1-pilot/reports/round5/records_check.py", line 68, in run_guarded
++    main()
++    ~~~~^^
++  File "/home/user/OpenMythos/metrix/e1-pilot/reports/round5/records_check.py", line 58, in main
++    mode, args = sys.argv[1], sys.argv[2:]
++                 ~~~~~~~~^^^
++IndexError: list index out of range
++RESULT: FAIL
++---------- new output: l6_check_pin
++eval_sets.jsonl sha256 c1faab74d86a687419dc62c0a1daf04b55a38ba179a945633081a32ebedfe0a7, DATA_MANIFEST general_text.source_file_sha256 8816fe5a39d8b89e8c4203bf7d660e798faa471d2b72b5ce43c411cf5925a155, match False
++eval_sets.jsonl does not match its pin
++RESULT: FAIL
++RESULT: PASS
++exit=0
+diff --git a/metrix/e1-pilot/reports/round6/t2_guard_normal_rerun.txt b/metrix/e1-pilot/reports/round6/t2_guard_normal_rerun.txt
+new file mode 100644
+index 0000000..9072ea8
+--- /dev/null
++++ b/metrix/e1-pilot/reports/round6/t2_guard_normal_rerun.txt
+@@ -0,0 +1,153 @@
++# Round 6 raw output, after the data-auditor's BLOCK: guard_ab.sh with its RESULT line and EXIT trap, re-run unchanged otherwise (old = f4d8e988 extracted in t2_guard_normal.txt). Run from the repository root. Host vm, CPU only. Sun Nov 22 02:25:31 UTC 2026
++$ bash metrix/e1-pilot/reports/round6/guard_ab.sh /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/old_f4d8e988/metrix/e1-pilot/reports /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/ab2 /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/dl/qwen_tok /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/facts.json /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/dl/parquet
++== template_overlap: /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python {OLD,NEW}/round1/template_overlap.py --split-manifest metrix/e1-pilot/SPLIT_MANIFEST.json
++   exit old 0 new 0 | output bytes old 781 new 781 | sha256 old 5596aacae0d3551f new 5596aacae0d3551f | identical: True
++== y_ratio: /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python {OLD,NEW}/round2/y_ratio.py --manifest metrix/e1-pilot/DATA_MANIFEST.json --split-manifest metrix/e1-pilot/SPLIT_MANIFEST.json --tokenizer-dir /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/dl/qwen_tok
++   exit old 0 new 0 | output bytes old 635 new 635 | sha256 old a5d16041d6471ecb new a5d16041d6471ecb | identical: True
++== anchor_check: /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python {OLD,NEW}/round2/anchor_check.py --manifest metrix/e1-pilot/DATA_MANIFEST.json --tokenizer-dir /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/dl/qwen_tok --facts /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/facts.json --cache-dir /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/dl/parquet --anchor-out /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/ab2/anchor_ab.json
++   exit old 0 new 0 | output bytes old 961 new 961 | sha256 old 1cd525f692a5caf1 new 1cd525f692a5caf1 | identical: True
++== candidate_feasibility_r3: /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python {OLD,NEW}/round3/candidate_feasibility_r3.py --facts /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/facts.json --split-manifest metrix/e1-pilot/SPLIT_MANIFEST.json --tokenizer-dir /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/dl/qwen_tok
++   exit old 0 new 0 | output bytes old 1940 new 1940 | sha256 old 4c54f8818f866a9b new 4c54f8818f866a9b | identical: True
++== outside_metrix_check: /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python {OLD,NEW}/round3/outside_metrix_check.py --rev f4d8e988a31f99527cc0bc6be5ceacc709bda2f1
++   exit old 0 new 0 | output bytes old 835 new 835 | sha256 old 7e5a9c6d0b398ddf new 7e5a9c6d0b398ddf | identical: True
++== verify_scoring: /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python {OLD,NEW}/round3/verify_scoring.py --facts /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/facts.json --split-manifest metrix/e1-pilot/SPLIT_MANIFEST.json --tokenizer-dir /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/dl/qwen_tok
++   exit old 0 new 0 | output bytes old 2815 new 2815 | sha256 old e87688702a49845a new e87688702a49845a | identical: True
++== st_prefix_check: /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python {OLD,NEW}/round4/st_prefix_check.py --facts /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/facts.json --split-manifest metrix/e1-pilot/SPLIT_MANIFEST.json --tokenizer-dir /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/dl/qwen_tok
++   exit old 0 new 0 | output bytes old 1006 new 1006 | sha256 old 96816b698c339b74 new 96816b698c339b74 | identical: True
++== recover_blind: /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python {OLD,NEW}/round5/recover_blind.py rebuild --source metrix/e1-pilot/reports/round4/blind/source_events.jsonl --timeline metrix/e1-pilot/reports/round4/t6_blind_timeline.txt --out-dir /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/ab2/blind_rebuilt
++   exit old 0 new 0 | output bytes old 2694 new 2694 | sha256 old 07082d416e45e424 new 07082d416e45e424 | identical: True
++identical (output and exit code): 8 of 8
++---------- new output: template_overlap
++templates: 32 | per set: {'TRAIN': 4, 'DEV': 8, 'TEST': 12, 'Y': 8}
++stored normalized_sha256 reproduced: True []
++L1: hashes shared across sets: 0 (limit 0) -> PASS
++L2: word 4-gram Jaccard over 368 cross-set pairs: max 0.2000, mean 0.000543, pairs > 0: 1, limit (max) 0.25 -> PASS
++  0.2000  capital.TRAIN.1 'the capital of <entity> is <answer>' (3 grams)  vs  capital.DEV.1 'what is the capital of <entity>' (3 grams); shared: [('the', 'capital', 'of', '<entity>')]
++templates with fewer than 4 words (no 4-gram, Jaccard 0 by definition): ['capital.Y_ANSWER.1', 'currency.Y_ANSWER.1', 'founder.DEV.1', 'founder.Y_ANSWER.1', 'river.Y_ANSWER.1']
++  sensitivity, word 3-grams: max 0.3333, mean 0.001510, pairs > 0: 3
++  sensitivity, word 2-grams: max 0.4286, mean 0.011445, pairs > 0: 32
++---------- new output: y_ratio
++[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
++[] Y templates: {"capital": ["{E} has a capital.", "A city: {A}."], "currency": ["{E} has a currency.", "A currency: {A}."], "founder": ["{E} had a founder.", "A person: {A}."], "river": ["{E} has a river.", "A river: {A}."]}
++[] DATA_SEED 20261110: F 1889 tokens, Y 2260 tokens, ratio Y/F 1.196 -> inside [0.80, 1.25]; per relation (report only) {'capital': 1.284, 'currency': 1.127, 'founder': 1.369, 'river': 1.06}
++[] 20 other data seeds: ratio min 1.189, max 1.199, all inside [0.80, 1.25]: True
++---------- new output: anchor_check
++anchor source: SandyResearch/fineweb-edu-shuffled@4d1138c0e4d51d98813997ce3560e05a32bf91de data/sample-100BT/train/shard_00000.parquet
++file sha256 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22, pinned 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22, match True
++[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
++documents read 527, kept 512, anchor texts canonical sha256 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408, total chars 309172
++L3a unread entities              strings  40, occurrences 0, strings found 0   -> limit 0: PASS
++L3a unread answers               strings  40, occurrences 0, strings found 0   -> limit 0: PASS
++L3b learned answers              strings 120, occurrences 0, strings found 0   -> limit 0: PASS
++report only: learned entities    strings 120, occurrences 0, strings found 0 
++L3 (a + b): PASS
++---------- new output: candidate_feasibility_r3
++[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
++facts 160; facts whose scored-token count depends on the DEV question: 0
++facts whose scored-token count differs from K_st: 0
++pools under the four constraints (relation, stratum, exposure, scored-token count): 16
++  capital  natural learned K=3: 15 answers -> 14 possible distractors per fact (3 needed)
++  capital  natural unread  K=3:  5 answers ->  4 possible distractors per fact (3 needed)
++  capital  random  learned K=5: 15 answers -> 14 possible distractors per fact (3 needed)
++  capital  random  unread  K=5:  5 answers ->  4 possible distractors per fact (3 needed)
++  currency natural learned K=3: 15 answers -> 14 possible distractors per fact (3 needed)
++  currency natural unread  K=3:  5 answers ->  4 possible distractors per fact (3 needed)
++  currency random  learned K=6: 15 answers -> 14 possible distractors per fact (3 needed)
++  currency random  unread  K=6:  5 answers ->  4 possible distractors per fact (3 needed)
++  founder  natural learned K=3: 15 answers -> 14 possible distractors per fact (3 needed)
++  founder  natural unread  K=3:  5 answers ->  4 possible distractors per fact (3 needed)
++  founder  random  learned K=5: 15 answers -> 14 possible distractors per fact (3 needed)
++  founder  random  unread  K=5:  5 answers ->  4 possible distractors per fact (3 needed)
++  river    natural learned K=3: 15 answers -> 14 possible distractors per fact (3 needed)
++  river    natural unread  K=3:  5 answers ->  4 possible distractors per fact (3 needed)
++  river    random  learned K=6: 15 answers -> 14 possible distractors per fact (3 needed)
++  river    random  unread  K=6:  5 answers ->  4 possible distractors per fact (3 needed)
++(relation, stratum, exposure) groups split over more than one token count: 0 []
++minimum pool size: 5
++pools with fewer than 4 answers: 0 []
++RESULT: PASS
++---------- new output: outside_metrix_check
++changed outside metrix/ (base 61d3c767 .. f4d8e988a31f99527cc0bc6be5ceacc709bda2f1):
++  A	.claude/agents/code-reviewer.md
++  A	.claude/agents/data-auditor.md
++  M	CLAUDE.md
++charter: base 3065 bytes, new 3586 bytes, base is exact prefix: True
++charter: appended 521 bytes; level-1/2 headings in appended part: ['## 6. Metrix 子项目(2026-11-13 负责人决定)']
++ignore rules below come from the working-tree .gitignore; identical to .gitignore at f4d8e988a31f99527cc0bc6be5ceacc709bda2f1: True
++agent .claude/agents/code-reviewer.md: tracked at f4d8e988a31f99527cc0bc6be5ceacc709bda2f1: True; ignore rule: .gitignore:14:.claude/	.claude/agents/code-reviewer.md
++agent .claude/agents/data-auditor.md: tracked at f4d8e988a31f99527cc0bc6be5ceacc709bda2f1: True; ignore rule: .gitignore:14:.claude/	.claude/agents/data-auditor.md
++RESULT: PASS
++---------- new output: verify_scoring
++[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
++== task 4: tokenizer special tokens
++class Qwen2Tokenizer
++bos_token None bos_token_id None
++eos_token '<|im_end|>' eos_token_id 151645
++pad_token '<|endoftext|>' pad_token_id 151643
++id of <|endoftext|>: 151643
++id of <|im_start|>: 151644
++id of <|im_end|>: 151645
++id of <think>: 151667
++id of </think>: 151668
++encode('The capital of Draemor is Kraith.') add_special_tokens=True : [785, 6722, 315, 73102, 336, 269, 374, 61067, 410, 13]
++encode('The capital of Draemor is Kraith.') add_special_tokens=False: [785, 6722, 315, 73102, 336, 269, 374, 61067, 410, 13]
++generation prompt (enable_thinking=False): "<|im_start|>user\nQ?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
++generation prompt (enable_thinking=True) : "<|im_start|>user\nQ?<|im_end|>\n<|im_start|>assistant\n"
++== task 7: scored answer ids vs TRAIN statement answer ids (learned facts, DEV questions)
++learned facts: 120; (fact, DEV question) pairs compared: 240
++TRAIN statements where ' ' + answer is not token-aligned: 0
++mismatches (scored ids != TRAIN answer ids): 0
++renderer vs apply_chat_template(continue_final_message=True) text differences: 0
++scored-token counts per cell: {'capital/natural': [3], 'capital/random': [5], 'currency/natural': [3], 'currency/random': [6], 'founder/natural': [3], 'founder/random': [5], 'river/natural': [3], 'river/random': [6]}
++cells with more than one scored-token count: 0
++== example (one full rendered scoring sequence)
++fact E1P-L-capital-nat-01 entity Krultrouth answer Linnuth
++TRAIN statement: "The capital of Krultrouth is Linnuth."
++TRAIN statement answer ids: [444, 6130, 940] [' L', 'inn', 'uth']
++DEV question: "What is the capital of Krultrouth?"
++rendered text (json-escaped): "<|im_start|>user\nWhat is the capital of Krultrouth?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\nThe answer is Linnuth"
++rendered text (raw):
++<|im_start|>user
++What is the capital of Krultrouth?<|im_end|>
++<|im_start|>assistant
++<think>
++
++</think>
++
++The answer is Linnuth
++[end of raw text]
++input_ids (28): [151644, 872, 198, 3838, 374, 279, 6722, 315, 16447, 360, 376, 2898, 30, 151645, 198, 151644, 77091, 198, 151667, 271, 151668, 271, 785, 4226, 374, 444, 6130, 940]
++tokens: ['<|im_start|>', 'user', '\n', 'What', ' is', ' the', ' capital', ' of', ' Kr', 'ul', 'tr', 'outh', '?', '<|im_end|>', '\n', '<|im_start|>', 'assistant', '\n', '<think>', '\n\n', '</think>', '\n\n', 'The', ' answer', ' is', ' L', 'inn', 'uth']
++scored slice start 25, scored ids [444, 6130, 940], scored tokens [' L', 'inn', 'uth']
++== round 5: pinned scoring sequence (recorded in round 3)
++SI.ENABLE_THINKING = False
++pinned E1P-L-capital-nat-01: 28 recorded ids, start 25; differences: 0
++RESULT: PASS
++---------- new output: st_prefix_check
++[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
++TRAIN template capital  "The capital of {E} is {A}."
++TRAIN template currency "The currency used in {E} is the {A}."
++TRAIN template founder  "{E} was founded by {A}."
++TRAIN template river    "The river that flows through {E} is the {A}."
++learned facts: 120; (fact, same-cell learned answer) pairs: 1800
++pairs where the tokens of prefix(f) are not a prefix of the whole sequence: 0
++pairs where the scored tokens != encode(' ' + c): 0
++K' per cell: {'capital/natural': [3], 'capital/random': [5], 'currency/natural': [3], 'currency/random': [6], 'founder/natural': [3], 'founder/random': [5], 'river/natural': [3], 'river/random': [6]}
++cells with more than one K': 0
++example E1P-L-capital-nat-01 prefix(f) "The capital of Krultrouth is" c "Linnuth"
++  ids [785, 6722, 315, 16447, 360, 376, 2898, 374, 444, 6130, 940] scored [444, 6130, 940] [' L', 'inn', 'uth']
++RESULT: PASS
++---------- new output: recover_blind
++prompt_wip-a.txt  sha256 045481dd3fce09e4b8930114c52f4e23585a6d6e3ca871efeb42abf5c9826743 recorded 045481dd3fce09e4b8930114c52f4e23585a6d6e3ca871efeb42abf5c9826743 match True | bytes 1071 recorded 1071 | commit in prompt 7716bacfe6512698f0eb7eccf32480973d28497b recorded 7716bacfe6512698f0eb7eccf32480973d28497b match True
++review_wip-a.md   sha256 26431712ab0d376fb52673b05eb7aa6a8da9806d7ae3dd1f0614eec38e03b1a9 recorded 26431712ab0d376fb52673b05eb7aa6a8da9806d7ae3dd1f0614eec38e03b1a9 match True | bytes 4342 recorded 4342
++prompt_wip-b.txt  sha256 cccad8a0b926534979f768352a8540534161de7e85c83578b25ed5131d1156d1 recorded cccad8a0b926534979f768352a8540534161de7e85c83578b25ed5131d1156d1 match True | bytes 1112 recorded 1112 | commit in prompt 8e7e124a5e9285c0e6a0936c78d643ba5aeca69d recorded 8e7e124a5e9285c0e6a0936c78d643ba5aeca69d match True
++review_wip-b.md   sha256 22ce2274d35c21fc0d9a71544da6332eb862bdb4e44bbb8e0967ec49374493b1 recorded 22ce2274d35c21fc0d9a71544da6332eb862bdb4e44bbb8e0967ec49374493b1 match True | bytes 4829 recorded 4829
++prompt_wip-c.txt  sha256 039d61c4d7203c645cd8845ca6f42fa3f24de7e077ec3f707b63642086a7caa2 recorded 039d61c4d7203c645cd8845ca6f42fa3f24de7e077ec3f707b63642086a7caa2 match True | bytes 1334 recorded 1334 | commit in prompt ac92fbf56313ae74e24b483c3b72315ac0f750ee recorded ac92fbf56313ae74e24b483c3b72315ac0f750ee match True
++review_wip-c.md   sha256 1bb52004c874a86411632b385cbbfa95c06999f099238956d2ab5f3a72f9e6f5 recorded 1bb52004c874a86411632b385cbbfa95c06999f099238956d2ab5f3a72f9e6f5 match True | bytes 3295 recorded 3295
++prompt_wip-d.txt  sha256 801a9dab37be586b1949f7132d982c4ee434488941b5f082fcc5924ded7231ff recorded 801a9dab37be586b1949f7132d982c4ee434488941b5f082fcc5924ded7231ff match True | bytes 1122 recorded 1122 | commit in prompt 26b4e74559dd868abe5e799b291219e0430688e6 recorded 26b4e74559dd868abe5e799b291219e0430688e6 match True
++review_wip-d.md   sha256 94eb4679ed39b8155ca207c85a01d9b6aa6cc8d622ebe4ef5f6d7409c49cc84c recorded 94eb4679ed39b8155ca207c85a01d9b6aa6cc8d622ebe4ef5f6d7409c49cc84c match True | bytes 4765 recorded 4765
++prompt_wip-e.txt  sha256 342f3a06306a6540f892c536e452526afc338cfb1d088e3c9ee066fcec307c56 recorded 342f3a06306a6540f892c536e452526afc338cfb1d088e3c9ee066fcec307c56 match True | bytes 1345 recorded 1345 | commit in prompt 4d0f247a8109f9afdbf53e0742d07fe6c72ced1c recorded 4d0f247a8109f9afdbf53e0742d07fe6c72ced1c match True
++review_wip-e.md   sha256 8c726d39bae331950e207a84457cac831afa9e70dfb1fd28ca9f9f90f49166c3 recorded 8c726d39bae331950e207a84457cac831afa9e70dfb1fd28ca9f9f90f49166c3 match True | bytes 2915 recorded 2915
++recorded sha256 entries: 10; files rebuilt: 10; all checks match: 10
++RESULT: PASS
++exit=0
+diff --git a/metrix/e1-pilot/reports/round6/t2_harness_fail.txt b/metrix/e1-pilot/reports/round6/t2_harness_fail.txt
+new file mode 100644
+index 0000000..1304236
+--- /dev/null
++++ b/metrix/e1-pilot/reports/round6/t2_harness_fail.txt
+@@ -0,0 +1,63 @@
++# Round 6 raw output, after the data-auditor's BLOCK: failure paths of the two harnesses themselves (wrong arguments; a missing OLD tree; a missing interpreter). Run from the repository root. Host vm, CPU only. Sun Nov 22 02:26:17 UTC 2026
++$ bash metrix/e1-pilot/reports/round6/guard_ab.sh
++usage: bash guard_ab.sh OLD_REPORTS_DIR OUT_DIR PY QWEN_TOK_DIR FACTS.json PARQUET_CACHE_DIR
++RESULT: FAIL
++exit=2
++$ bash metrix/e1-pilot/reports/round6/guard_fail.sh only-one-argument
++usage: bash guard_fail.sh OLD_REPORTS_DIR OUT_DIR PY QWEN_TOK_DIR
++RESULT: FAIL
++exit=2
++$ bash -c bash\ metrix/e1-pilot/reports/round6/guard_ab.sh\ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/does_not_exist\ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/ab_missing_old\ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python\ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/dl/qwen_tok\ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/facts.json\ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/dl/parquet\ \|\ grep\ -E\ \'\^==\ \|identical\|\^RESULT\'
++== template_overlap: /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python {OLD,NEW}/round1/template_overlap.py --split-manifest metrix/e1-pilot/SPLIT_MANIFEST.json
++   exit old 2 new 0 | output bytes old 263 new 781 | sha256 old 86dac562ab9b8cc3 new 5596aacae0d3551f | identical: False
++== y_ratio: /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python {OLD,NEW}/round2/y_ratio.py --manifest metrix/e1-pilot/DATA_MANIFEST.json --split-manifest metrix/e1-pilot/SPLIT_MANIFEST.json --tokenizer-dir /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/dl/qwen_tok
++   exit old 2 new 0 | output bytes old 254 new 635 | sha256 old d3b9416da02a48e1 new a5d16041d6471ecb | identical: False
++== anchor_check: /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python {OLD,NEW}/round2/anchor_check.py --manifest metrix/e1-pilot/DATA_MANIFEST.json --tokenizer-dir /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/dl/qwen_tok --facts /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/facts.json --cache-dir /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/dl/parquet --anchor-out /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/ab_missing_old/anchor_ab.json
++   exit old 2 new 0 | output bytes old 259 new 961 | sha256 old 08f59f025fc08ab6 new 1cd525f692a5caf1 | identical: False
++== candidate_feasibility_r3: /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python {OLD,NEW}/round3/candidate_feasibility_r3.py --facts /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/facts.json --split-manifest metrix/e1-pilot/SPLIT_MANIFEST.json --tokenizer-dir /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/dl/qwen_tok
++   exit old 2 new 0 | output bytes old 271 new 1940 | sha256 old c4d461415e3f1b36 new 4c54f8818f866a9b | identical: False
++== outside_metrix_check: /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python {OLD,NEW}/round3/outside_metrix_check.py --rev f4d8e988a31f99527cc0bc6be5ceacc709bda2f1
++   exit old 2 new 0 | output bytes old 267 new 835 | sha256 old bbb73477a29e8fbf new 7e5a9c6d0b398ddf | identical: False
++== verify_scoring: /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python {OLD,NEW}/round3/verify_scoring.py --facts /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/facts.json --split-manifest metrix/e1-pilot/SPLIT_MANIFEST.json --tokenizer-dir /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/dl/qwen_tok
++   exit old 2 new 0 | output bytes old 261 new 2815 | sha256 old 2fc2f0ed77b73c3b new e87688702a49845a | identical: False
++== st_prefix_check: /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python {OLD,NEW}/round4/st_prefix_check.py --facts /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/facts.json --split-manifest metrix/e1-pilot/SPLIT_MANIFEST.json --tokenizer-dir /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/dl/qwen_tok
++   exit old 2 new 0 | output bytes old 262 new 1006 | sha256 old 351752d27db93b6a new 96816b698c339b74 | identical: False
++== recover_blind: /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python {OLD,NEW}/round5/recover_blind.py rebuild --source metrix/e1-pilot/reports/round4/blind/source_events.jsonl --timeline metrix/e1-pilot/reports/round4/t6_blind_timeline.txt --out-dir /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/ab_missing_old/blind_rebuilt
++   exit old 2 new 0 | output bytes old 260 new 2694 | sha256 old e66d2dc3343987fd new 07082d416e45e424 | identical: False
++identical (output and exit code): 0 of 8
++RESULT: PASS
++ignore rules below come from the working-tree .gitignore; identical to .gitignore at f4d8e988a31f99527cc0bc6be5ceacc709bda2f1: True
++RESULT: PASS
++== task 4: tokenizer special tokens
++== task 7: scored answer ids vs TRAIN statement answer ids (learned facts, DEV questions)
++== example (one full rendered scoring sequence)
++== round 5: pinned scoring sequence (recorded in round 3)
++RESULT: PASS
++RESULT: PASS
++RESULT: FAIL
++exit=0
++$ bash -c bash\ metrix/e1-pilot/reports/round6/guard_fail.sh\ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/old_f4d8e988/metrix/e1-pilot/reports\ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/fail_missing_py\ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/does_not_exist/python\ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/dl/qwen_tok\ \|\ grep\ -E\ \'new:\ non-zero\|exactly\ one\|\^RESULT\'
++   exit old 127 new 127 | 'RESULT: FAIL' lines old 0 new 0 | new: non-zero exit and RESULT: FAIL: False
++   exit old 127 new 127 | 'RESULT: FAIL' lines old 0 new 0 | new: non-zero exit and RESULT: FAIL: False
++   exit old 127 new 127 | 'RESULT: FAIL' lines old 0 new 0 | new: non-zero exit and RESULT: FAIL: False
++   exit old 127 new 127 | 'RESULT: FAIL' lines old 0 new 0 | new: non-zero exit and RESULT: FAIL: False
++   exit old 127 new 127 | 'RESULT: FAIL' lines old 0 new 0 | new: non-zero exit and RESULT: FAIL: False
++   exit old 127 new 127 | 'RESULT: FAIL' lines old 0 new 0 | new: non-zero exit and RESULT: FAIL: False
++   exit old 127 new 127 | 'RESULT: FAIL' lines old 0 new 0 | new: non-zero exit and RESULT: FAIL: False
++   exit old 127 new 127 | 'RESULT: FAIL' lines old 0 new 0 | new: non-zero exit and RESULT: FAIL: False
++   exit old 127 new 127 | 'RESULT: FAIL' lines old 0 new 0 | new: non-zero exit and RESULT: FAIL: False
++   exit old 127 new 127 | 'RESULT: FAIL' lines old 0 new 0 | new: non-zero exit and RESULT: FAIL: False
++   exit old 127 new 127 | 'RESULT: FAIL' lines old 0 new 0 | new: non-zero exit and RESULT: FAIL: False
++   exit new 127 | 'RESULT: FAIL' lines new 0 | new: non-zero exit and RESULT: FAIL: False
++new scripts with non-zero exit and exactly one RESULT: FAIL line: 0 of 12
++RESULT: FAIL
++exit=0
++# Note: in the two runs above, exit= is the exit code of grep (pipeline), not of the harness. The two runs below repeat them without a pipe: full output to SP/r6/*.out, then its last line and the harness's own exit code.
++$ bash -c bash\ metrix/e1-pilot/reports/round6/guard_ab.sh\ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/does_not_exist\ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/ab_missing_old2\ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python\ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/dl/qwen_tok\ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/facts.json\ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/dl/parquet\ \>\ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/ab_missing_old2.out\ 2\>\&1\;\ rc=\$\?\;\ tail\ -1\ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/ab_missing_old2.out\;\ echo\ harness_exit=\$rc
++RESULT: FAIL
++harness_exit=1
++exit=0
++$ bash -c bash\ metrix/e1-pilot/reports/round6/guard_fail.sh\ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/old_f4d8e988/metrix/e1-pilot/reports\ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/fail_missing_py2\ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/does_not_exist/python\ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/dl/qwen_tok\ \>\ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/fail_missing_py2.out\ 2\>\&1\;\ rc=\$\?\;\ tail\ -1\ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/r6/fail_missing_py2.out\;\ echo\ harness_exit=\$rc
++RESULT: FAIL
++harness_exit=1
++exit=0
+exit=0

@@ -1,0 +1,145 @@
+# Data Auditor run. host vm, CPU only (no GPU, no torch, tokenizer files only); 2026-11-22 02:34:50 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/venv/bin/python -I -B r6b_bash_probes.py /usr/bin/bash /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/audit_r6b/probes
+bash: GNU bash, version 5.2.21(1)-release (x86_64-pc-linux-gnu)
+== probe A: bash probe_A.sh 
+   | echo body
+   | FIN=1
+   | if [ 1 = 1 ]; then echo "VERDICT: PASS"; exit 0; fi
+   | echo "VERDICT: FAIL"
+   | exit 1
+   status 2 | stdout ['VERDICT: FAIL'] | stderr ['need 2 arguments']
+   VERDICT: FAIL lines 1, VERDICT: PASS lines 0, last stdout line 'VERDICT: FAIL'
+   expected {'rc': 2, 'fails': 1, 'last': 'VERDICT: FAIL'} -> True
+== probe B: bash probe_B.sh x y
+   | echo before
+   | echo "$NOT_SET_ANYWHERE"
+   | echo after
+   | FIN=1
+   | if [ 1 = 1 ]; then echo "VERDICT: PASS"; exit 0; fi
+   | echo "VERDICT: FAIL"
+   | exit 1
+   status 1 | stdout ['before', 'VERDICT: FAIL'] | stderr ['/tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/audit_r6b/probes/probe_B.sh: line 16: NOT_SET_ANYWHERE: unbound variable']
+   VERDICT: FAIL lines 1, VERDICT: PASS lines 0, last stdout line 'VERDICT: FAIL'
+   expected {'rc_nonzero': True, 'fails': 1, 'last': 'VERDICT: FAIL', 'absent': 'after'} -> True
+== probe C: bash probe_C.sh x y
+   | echo early
+   | exit 0
+   | FIN=1
+   | if [ 1 = 1 ]; then echo "VERDICT: PASS"; exit 0; fi
+   | echo "VERDICT: FAIL"
+   | exit 1
+   status 1 | stdout ['early', 'VERDICT: FAIL'] | stderr []
+   VERDICT: FAIL lines 1, VERDICT: PASS lines 0, last stdout line 'VERDICT: FAIL'
+   expected {'rc': 1, 'fails': 1, 'last': 'VERDICT: FAIL'} -> True
+== probe D: bash probe_D.sh x y
+   | echo body
+   | true
+   status 1 | stdout ['body', 'VERDICT: FAIL'] | stderr []
+   VERDICT: FAIL lines 1, VERDICT: PASS lines 0, last stdout line 'VERDICT: FAIL'
+   expected {'rc': 1, 'fails': 1, 'last': 'VERDICT: FAIL'} -> True
+== probe E1: bash probe_E1.sh x y
+   | n=0
+   | for k in 1 2 3; do n=$((n + 1)); done
+   | FIN=1
+   | if [ "$n" = 3 ]; then echo "VERDICT: PASS"; exit 0; fi
+   | echo "VERDICT: FAIL"
+   | exit 1
+   status 0 | stdout ['VERDICT: PASS'] | stderr []
+   VERDICT: FAIL lines 0, VERDICT: PASS lines 1, last stdout line 'VERDICT: PASS'
+   expected {'rc': 0, 'fails': 0, 'passes': 1, 'last': 'VERDICT: PASS'} -> True
+== probe E2: bash probe_E2.sh x y
+   | n=0
+   | for k in 1 2; do n=$((n + 1)); done
+   | FIN=1
+   | if [ "$n" = 3 ]; then echo "VERDICT: PASS"; exit 0; fi
+   | echo "VERDICT: FAIL"
+   | exit 1
+   status 1 | stdout ['VERDICT: FAIL'] | stderr []
+   VERDICT: FAIL lines 1, VERDICT: PASS lines 0, last stdout line 'VERDICT: FAIL'
+   expected {'rc': 1, 'fails': 1, 'passes': 0, 'last': 'VERDICT: FAIL'} -> True
+== probe F: bash probe_F.sh /tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/audit_r6b/probes y
+   | good=0
+   | /no/such/program --flag > "$A1/out.txt" 2>&1; r1=$?
+   | echo "missing program status $r1"
+   | echo hi > /no/such/dir/file 2>/dev/null; r2=$?
+   | echo "redirect into missing directory status $r2"
+   | if cmp -s /no/such/a /no/such/b; then good=$((good + 1)); fi
+   | c=$(grep -c '^X$' /no/such/file 2>/dev/null); r3=$?
+   | echo "grep -c on a missing file: status $r3, output [$c]"
+   | echo "reached the verdict"
+   | FIN=1
+   | if [ "$good" = 1 ]; then echo "VERDICT: PASS"; exit 0; fi
+   | echo "VERDICT: FAIL"
+   | exit 1
+   status 1 | stdout ['missing program status 127', 'redirect into missing directory status 1', 'grep -c on a missing file: status 2, output []', 'reached the verdict', 'VERDICT: FAIL'] | stderr ['/tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/audit_r6b/probes/probe_F.sh: line 18: /no/such/dir/file: No such file or directory']
+   VERDICT: FAIL lines 1, VERDICT: PASS lines 0, last stdout line 'VERDICT: FAIL'
+   expected {'rc': 1, 'fails': 1, 'last': 'VERDICT: FAIL', 'present': 'reached the verdict'} -> True
+== probe G: bash probe_G.sh x y
+   | x=$(echo inner; exit 3); y=$(( 2 + 3 )); z=$(bash -c 'exit 0')
+   | IFS='|' read -r p q <<< "a|b"
+   | w=$(grep -c . <<< "line")
+   | echo "x=[$x] y=[$y] p=[$p] q=[$q] w=[$w]"
+   | FIN=1
+   | if [ 1 = 1 ]; then echo "VERDICT: PASS"; exit 0; fi
+   | echo "VERDICT: FAIL"
+   | exit 1
+   status 0 | stdout ['x=[inner] y=[5] p=[a] q=[b] w=[1]', 'VERDICT: PASS'] | stderr []
+   VERDICT: FAIL lines 0, VERDICT: PASS lines 1, last stdout line 'VERDICT: PASS'
+   expected {'rc': 0, 'fails': 0, 'passes': 1, 'last': 'VERDICT: PASS'} -> True
+== probe J: bash probe_J.sh x y
+   | exit 5
+   status 5 | stdout ['VERDICT: FAIL'] | stderr []
+   VERDICT: FAIL lines 1, VERDICT: PASS lines 0, last stdout line 'VERDICT: FAIL'
+   expected {'rc': 5, 'fails': 1, 'last': 'VERDICT: FAIL'} -> True
+== probe K: bash probe_K.sh 
+   | set -u
+   | echo "count $#"
+   | echo "first $1"
+   | echo unreachable
+   status 1 | stdout ['count 0'] | stderr ['/tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/audit_r6b/probes/probe_K.sh: line 4: $1: unbound variable']
+   VERDICT: FAIL lines 0, VERDICT: PASS lines 0, last stdout line 'count 0'
+   expected {'rc_nonzero': True, 'absent': 'unreachable', 'present': 'count 0'} -> True
+== probe H: bash probe_H.sh x y
+   | echo before
+   | if [ 1 = 1 ]; then echo x
+   | fi fi )
+   | FIN=1
+   | if [ 1 = 1 ]; then echo "VERDICT: PASS"; exit 0; fi
+   | echo "VERDICT: FAIL"
+   | exit 1
+   status 2 | stdout ['before', 'VERDICT: FAIL'] | stderr ["/tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/audit_r6b/probes/probe_H.sh: line 17: syntax error near unexpected token `fi'", "/tmp/claude-0/-home-user/efb84705-9920-5c9c-9d1c-c122dfd71ce8/scratchpad/audit_r6b/probes/probe_H.sh: line 17: `fi fi )'"]
+   VERDICT: FAIL lines 1, VERDICT: PASS lines 0, last stdout line 'VERDICT: FAIL'
+   (information only)
+== probe I1: bash probe_I1.sh x y
+   | echo before
+   | kill -TERM $$
+   | echo after
+   | FIN=1
+   | if [ 1 = 1 ]; then echo "VERDICT: PASS"; exit 0; fi
+   | echo "VERDICT: FAIL"
+   | exit 1
+   status -15 | stdout ['before', 'VERDICT: FAIL'] | stderr []
+   VERDICT: FAIL lines 1, VERDICT: PASS lines 0, last stdout line 'VERDICT: FAIL'
+   (information only)
+== probe I2: bash probe_I2.sh x y
+   | echo before
+   | kill -INT $$
+   | echo after
+   | FIN=1
+   | if [ 1 = 1 ]; then echo "VERDICT: PASS"; exit 0; fi
+   | echo "VERDICT: FAIL"
+   | exit 1
+   status -2 | stdout ['before', 'VERDICT: FAIL'] | stderr []
+   VERDICT: FAIL lines 1, VERDICT: PASS lines 0, last stdout line 'VERDICT: FAIL'
+   (information only)
+== probe L: bash probe_L.sh x y
+   | echo out1
+   | echo err1 >&2
+   | echo out2
+   | exit 4
+   status 4 | stdout ['out1', 'out2', 'VERDICT: FAIL'] | stderr ['err1']
+   VERDICT: FAIL lines 1, VERDICT: PASS lines 0, last stdout line 'VERDICT: FAIL'
+   (information only)
+RESULT: PASS
+exit=0
