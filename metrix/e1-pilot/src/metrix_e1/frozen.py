@@ -14,7 +14,7 @@ Every protocol value used by the package comes from the bytes of the frozen comm
 Each value of the 12-row table is also compared with the field of the frozen-commit manifest that holds it.
 Any difference raises ST12Error (stop; BLOCKED).
 
-Beyond the two ranges (open item for Review Gate, reports/IMPL_A_REPORT.md): the working-tree copies of the four files
+Beyond the two ranges (an open item for Review Gate): the working-tree copies of the four files
 are compared with the frozen commit too (load(check_working_tree=True)), so that a one-byte change of a frozen file in
 the checkout stops the run (Implementation Task Order V1, section 6 item 10). Line-ending conversion of a checkout
 does not count as a change (PROTOCOL_FROZEN: "以 git cat-file 为准(检出时若做换行转换,工作区字节会不同)"): the
@@ -147,8 +147,9 @@ def _one(matches, what):
 
 
 def parse_protocol_frozen(data):
-    """Parse PROTOCOL_FROZEN (bytes). Raises ST12Error when the structure is not the one of the frozen file."""
-    text = data.decode("utf-8")
+    """Parse PROTOCOL_FROZEN (bytes). Raises ST12Error when the structure is not the one of the frozen file.
+    CRLF line endings of a checkout are read as LF (the file is read from the working tree)."""
+    text = data.decode("utf-8").replace("\r\n", "\n")
     lines = text.split("\n")
     version = _one([m.group(1) for m in (re.fullmatch(r"当前有效版本[：:]\s*(v[0-9.]+)\s*", ln) for ln in lines) if m],
                    "line '当前有效版本：<version>'")
@@ -186,9 +187,9 @@ def parse_protocol_frozen(data):
     labels = [r[0] for r in rows]
     if sorted(labels) != sorted(DATA_TABLE_ROWS):
         raise ST12Error("PROTOCOL_FROZEN: table rows %s differ from the expected rows %s" % (labels, sorted(DATA_TABLE_ROWS)))
-    data = {DATA_TABLE_ROWS[label][0]: sha for label, sha in rows}
-    return FrozenRecord(version=version, commit=commit, file_sha256=files, data_sha256=data,
-                        source_sha256=sha256_hex(text.encode("utf-8")))
+    data_hashes = {DATA_TABLE_ROWS[label][0]: sha for label, sha in rows}
+    return FrozenRecord(version=version, commit=commit, file_sha256=files, data_sha256=data_hashes,
+                        source_sha256=sha256_hex(data))
 
 
 # ------------------------------------------------------------------------------------------------- git and loading
@@ -381,7 +382,7 @@ def load(repo_root=None, protocol_frozen_path=None, check_working_tree=True):
             if rel in STEP1_FIELDS:
                 try:
                     same = strip_step1_fields(rel, json.loads(wt)) == strip_step1_fields(rel, json.loads(blobs[rel]))
-                except (ValueError, KeyError, AttributeError, TypeError):
+                except ValueError:                      # not JSON / not UTF-8
                     same = False
             else:
                 same = wt.replace(b"\r\n", b"\n") == blobs[rel]

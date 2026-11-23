@@ -101,9 +101,12 @@ def test_working_tree_file_one_byte(mini_repo, rel):
 
 
 def test_working_tree_line_endings_and_step1_fields(mini_repo, fz):
-    """Not a change: CRLF line endings of a checkout (PROTOCOL_FROZEN: git cat-file is authoritative), and the
-    fields protocol section 8 step 1 writes (ST12 leaves them out), including new keys in them."""
+    """Not a change: CRLF line endings of a checkout (PROTOCOL_FROZEN: git cat-file is authoritative), also of
+    PROTOCOL_FROZEN itself, and the fields protocol section 8 step 1 writes (ST12 leaves them out), including new keys
+    in them."""
     root, _, _ = mini_repo
+    pf = root / FZ.PROTOCOL_FROZEN_REL
+    pf.write_bytes(pf.read_bytes().replace(b"\n", b"\r\n"))
     for rel in (FZ.PROTOCOL_REL, FZ.SEARCH_SPACE_REL):
         (root / rel).write_bytes(fz.blobs[rel].replace(b"\n", b"\r\n"))
     dm = json.loads(fz.blobs[FZ.DATA_MANIFEST_REL])
@@ -224,9 +227,11 @@ def test_cli_stops_on_tampered_input(inputs_copy, generated):
 
 
 def test_parse_jsonl_splits_on_newline_only():
-    """Review MINOR: JSONL is split on b"\\n" only; U+2028 / U+0085 inside a value (unescaped by
+    """Review MINOR: JSONL is split on b"\\n" only; U+2028, U+2029 and U+0085 inside a value (unescaped by
     json.dumps(ensure_ascii=False)) do not break a line."""
-    rows = [{"text": "a b\u0085c"}, {"text": "d"}]
-    assert FZ.parse_jsonl(FZ.jsonl_bytes(rows)) == rows
+    rows = [{"text": "a\u2028b\u2029c\u0085d"}, {"text": "e"}]
+    raw = FZ.jsonl_bytes(rows)
+    assert all(ch in raw.decode("utf-8") for ch in ("\u2028", "\u2029", "\u0085"))
+    assert FZ.parse_jsonl(raw) == rows
     with pytest.raises(ValueError):
-        FZ.parse_jsonl(FZ.jsonl_bytes(rows)[:-1])
+        FZ.parse_jsonl(raw[:-1])

@@ -33,15 +33,20 @@ def test_files_are_canonical(generated):
         assert h["byte_sha256"] == h["canonical_sha256"], name
 
 
+# Row counts stated by the protocol text itself (independent of the parser under test, data.params):
+# 2.1 "160 facts = 120 learned + 40 unread"; 2.3 one TRAIN statement per learned fact, 2 DEV questions per fact;
+# 2.6 S = one statement per learned fact, Y "共 240 句"; 2.7 general DEV "共 100 个", anchor "前 512 篇".
+PROTOCOL_ROWS = {"facts.jsonl": 160, "train_F.jsonl": 120, "train_S.jsonl": 120, "train_Y.jsonl": 240,
+                 "dev_qa.jsonl": 320, "candidates.json": 160, "general_dev.jsonl": 100, "anchor_text.jsonl": 512}
+
+
 def test_counts_and_ratio(fz, generated):
-    """Row counts of 2.3 / 2.6 / 2.7 (from the frozen manifests) and the Y / F token counts that protocol 2.6 states
+    """Row counts of 2.1 / 2.3 / 2.6 / 2.7 (protocol text, above) and the Y / F token counts that protocol 2.6 states
     for DATA_SEED (read from the frozen protocol text: "F 1,889 token,Y 2,260 token")."""
-    p = D.params(fz)
-    total, learned = fz.data_manifest["facts"]["total"], fz.data_manifest["facts"]["learned"]
-    assert generated["info"]["rows"] == {
-        "facts.jsonl": total, "train_F.jsonl": learned, "train_S.jsonl": learned, "train_Y.jsonl": 2 * learned,
-        "dev_qa.jsonl": total * p.dev_per_fact, "candidates.json": total,
-        "general_dev.jsonl": p.general_dev_per_domain * len(p.general_domains), "anchor_text.jsonl": p.anchor_n_docs}
+    for needle in ("**160 facts = 120 learned + 40 unread controls**", "共 240 句", "共 100 个", "前 512 篇"):
+        assert needle in fz.protocol_text, needle
+    assert fz.data_manifest["facts"]["total"] == PROTOCOL_ROWS["facts.jsonl"]
+    assert generated["info"]["rows"] == PROTOCOL_ROWS
     m = re.findall(r"F ([\d,]+) token,Y ([\d,]+) token", fz.protocol_text)
     assert len(m) == 1
     r = generated["info"]["y_ratio"]

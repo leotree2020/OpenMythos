@@ -1,0 +1,131 @@
+# Implementation stage A raw output for the fix commit after the work commit 602a39e8 (fixes for the round-2 code-reviewer MINORs N1, N3, N5, N6, N7, N8; reviews/602a39e8…/code-reviewer_round2.md). Host vm (Anthropic cloud container, CPU only, no GPU; tokenizer files only, no model weights; no TEST data). Written by the Executor (session_01J5mxaX4SHCYCGz74623D33). Mon Nov 23 01:18:25 UTC 2026
+# SP = /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad; METRIX_INPUTS_DIR = $SP/inputs. cwd metrix/e1-pilot. Recorded by reports/round5/logrun.sh.
+$ git -C ../.. rev-parse HEAD
+602a39e8c4be1e1efa682a26637ad94fb919b7b8
+exit=0
+$ git -C ../.. diff --stat
+ metrix/e1-pilot/src/metrix_e1/frozen.py   | 15 ++++++++-------
+ metrix/e1-pilot/tests/test_data_hashes.py | 19 ++++++++++++-------
+ metrix/e1-pilot/tests/test_leakage.py     |  3 ++-
+ metrix/e1-pilot/tests/test_st12.py        | 17 +++++++++++------
+ 4 files changed, 33 insertions(+), 21 deletions(-)
+exit=0
+$ sha256sum src/metrix_e1/frozen.py src/metrix_e1/data.py src/metrix_e1/leakage.py tests/test_data_hashes.py tests/test_leakage.py tests/test_st12.py
+c1dc13b055b66d21678160e1b0fd6aa75b21f1870ed0c5e4a6ca66abeabec254  src/metrix_e1/frozen.py
+8a531939a8c33fd5e6565d1e0e261947954d01ae39f44b7f49be0e5ab13c9b52  src/metrix_e1/data.py
+5e1d43741cacceca916c4c28f93cf283465f4058da55222169e8b898b732ca98  src/metrix_e1/leakage.py
+e9d749c3b3725059b8c214657f00e0040588b29f64e385c801953405f41f4cdb  tests/test_data_hashes.py
+54bc2312f90131a9a9a897dd8fcef02ad8098a7d0df7c372d4fed794c8c51d43  tests/test_leakage.py
+02be3e520f33f7912178aadf4dc0f77e2efbf16d6bac2f54d8a56febb4e15e6b  tests/test_st12.py
+exit=0
+$ env PYTHONPATH=src PYTHONHASHSEED=99 /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/venv/bin/python -m metrix_e1.data generate --inputs /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/inputs --out /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen5
+frozen: PROTOCOL_FROZEN v1.1, commit 87a244db28a901f9e89282b50df76778ab5c2887; four frozen files match by git cat-file
+python 3.13.18; libraries {"torch": "2.11.0", "transformers": "5.22.2"} (protocol section 0: {"torch": "2.11.0", "transformers": "5.22.2"})
+name generation per cell: [{"cell": "capital/natural", "entity_draws": 28, "target_pair": [3, 3], "answer_draws": 84}, {"cell": "capital/random", "entity_draws": 20, "target_pair": [5, 5], "answer_draws": 52}, {"cell": "currency/natural", "entity_draws": 31, "target_pair": [3, 3], "answer_draws": 82}, {"cell": "currency/random", "entity_draws": 20, "target_pair": [6, 6], "answer_draws": 46}, {"cell": "founder/natural", "entity_draws": 30, "target_pair": [3, 3], "answer_draws": 81}, {"cell": "founder/random", "entity_draws": 21, "target_pair": [5, 5], "answer_draws": 45}, {"cell": "river/natural", "entity_draws": 34, "target_pair": [3, 3], "answer_draws": 89}, {"cell": "river/random", "entity_draws": 20, "target_pair": [6, 6], "answer_draws": 42}]
+S derangement attempts per cell: {"capital/natural": 3, "capital/random": 5, "currency/natural": 1, "currency/random": 6, "founder/natural": 2, "founder/random": 1, "river/natural": 2, "river/random": 6}
+Y / F token ratio: F 1889, Y 2260, ratio 1.1964
+eval_sets.jsonl rows by split (row prefix only): {'dev': 400, 'test': 800}; rows parsed and decoded: 100
+facts.jsonl        rows  160  byte_sha256 e05561ac2d49dcc3c8f59743c5df64151983a540a32ae135fd1b10f5e0fdc828  canonical_sha256 e05561ac2d49dcc3c8f59743c5df64151983a540a32ae135fd1b10f5e0fdc828
+train_F.jsonl      rows  120  byte_sha256 3aa9ab3ca313c0a1113b91e927af51342c915e3e40dd2f20992f3d9e59b0e373  canonical_sha256 3aa9ab3ca313c0a1113b91e927af51342c915e3e40dd2f20992f3d9e59b0e373
+train_S.jsonl      rows  120  byte_sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e  canonical_sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e
+train_Y.jsonl      rows  240  byte_sha256 c7430cadb2b06dd5c144af381a8183d4c186f27f2b5acfa9d8d39da0b7626d15  canonical_sha256 c7430cadb2b06dd5c144af381a8183d4c186f27f2b5acfa9d8d39da0b7626d15
+dev_qa.jsonl       rows  320  byte_sha256 9761eb60d6c9155c2f56394aa228b1e9dfea0ae3926ab50cb21d903108bc7fde  canonical_sha256 9761eb60d6c9155c2f56394aa228b1e9dfea0ae3926ab50cb21d903108bc7fde
+candidates.json    rows  160  byte_sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705  canonical_sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705
+general_dev.jsonl  rows  100  byte_sha256 957666920c91ef5b9328984d26ed0628c8a80b439d461bea49b54c2235635e73  canonical_sha256 957666920c91ef5b9328984d26ed0628c8a80b439d461bea49b54c2235635e73
+anchor_text.jsonl  rows  512  byte_sha256 2089e656819d1fe0f6ececcc26e5cade09ee80a92c50e7c8f607fa4e0ef46da5  canonical_sha256 2089e656819d1fe0f6ececcc26e5cade09ee80a92c50e7c8f607fa4e0ef46da5
+frozen content hash facts        406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 = PROTOCOL_FROZEN (read back from /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen5)
+frozen content hash train_S      686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e = PROTOCOL_FROZEN (read back from /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen5)
+frozen content hash candidates   e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 = PROTOCOL_FROZEN (read back from /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen5)
+frozen content hash anchor_texts 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 = PROTOCOL_FROZEN (read back from /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen5)
+RESULT: PASS
+exit=0
+$ bash -c cd\ /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad\ \&\&\ for\ f\ in\ facts.jsonl\ train_F.jsonl\ train_S.jsonl\ train_Y.jsonl\ dev_qa.jsonl\ candidates.json\ general_dev.jsonl\ anchor_text.jsonl\;\ do\ cmp\ gen1/\$f\ gen5/\$f\ \|\|\ exit\ 1\;\ done\ \&\&\ echo\ GEN5_BYTE_IDENTICAL_TO_GEN1
+GEN5_BYTE_IDENTICAL_TO_GEN1
+exit=0
+$ env PYTHONPATH=src /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/venv/bin/python -m metrix_e1.data verify --inputs /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/inputs --data /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen5
+frozen: PROTOCOL_FROZEN v1.1, commit 87a244db28a901f9e89282b50df76778ab5c2887; four frozen files match by git cat-file
+frozen content hash facts        406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 = PROTOCOL_FROZEN
+frozen content hash train_S      686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e = PROTOCOL_FROZEN
+frozen content hash candidates   e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 = PROTOCOL_FROZEN
+frozen content hash anchor_texts 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 = PROTOCOL_FROZEN
+all 8 data files byte-identical to their regeneration from the frozen inputs
+RESULT: PASS
+exit=0
+$ env PYTHONPATH=metrix/e1-pilot/src /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/venv/bin/python -m metrix.e1_pilot.check_leakage --data /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen5 --split-manifest metrix/e1-pilot/SPLIT_MANIFEST.json --out /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen5/leakage_report.json
+ST12 range (1): facts        406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 = PROTOCOL_FROZEN
+ST12 range (1): train_S      686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e = PROTOCOL_FROZEN
+ST12 range (1): candidates   e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 = PROTOCOL_FROZEN
+ST12 range (1): anchor_texts 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 = PROTOCOL_FROZEN
+L1   value 0                      limit 0     within limit
+L2   value 0.2                    limit 0.25  within limit
+L3a  value 0                      limit 0     within limit
+L3b  value 0                      limit 0     within limit
+L4   value 0                      limit 0     within limit
+L5   value 0                      limit 0     within limit
+L6   value 0                      limit 0     within limit
+L6 report only: shared Qwen token-id 13-grams 0
+report written to /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen5/leakage_report.json
+RESULT: PASS
+exit=0
+$ env METRIX_INPUTS_DIR=/tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/inputs /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/venv/bin/python -m pytest tests -v -p no:cacheprovider
+============================= test session starts ==============================
+platform linux -- Python 3.13.18, pytest-9.2.0, pluggy-1.7.0 -- /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/venv/bin/python
+rootdir: /home/user/OpenMythos
+configfile: pyproject.toml
+plugins: anyio-4.16.0
+collecting ... collected 51 items
+
+tests/test_data_hashes.py::test_four_frozen_hashes PASSED                [  1%]
+tests/test_data_hashes.py::test_files_are_canonical PASSED               [  3%]
+tests/test_data_hashes.py::test_counts_and_ratio PASSED                  [  5%]
+tests/test_data_hashes.py::test_no_test_file PASSED                      [  7%]
+tests/test_data_hashes.py::test_byte_identical_to_reference_scripts PASSED [  9%]
+tests/test_data_hashes.py::test_leakage_gate0_passes PASSED              [ 11%]
+tests/test_environment.py::test_python_is_the_locked_interpreter PASSED  [ 13%]
+tests/test_environment.py::test_library_versions_match_protocol PASSED   [ 15%]
+tests/test_environment.py::test_library_version_mismatch_is_st8 PASSED   [ 17%]
+tests/test_leakage.py::test_clean_data_passes PASSED                     [ 19%]
+tests/test_leakage.py::test_l3a_unread_entity_in_train_Y PASSED          [ 21%]
+tests/test_leakage.py::test_l3a_and_l3b_answers_in_anchor PASSED         [ 23%]
+tests/test_leakage.py::test_l4_dev_question_in_train_F PASSED            [ 25%]
+tests/test_leakage.py::test_l5_duplicate_string_and_fact_id PASSED       [ 27%]
+tests/test_leakage.py::test_l6_shared_13gram_counted_within_documents PASSED [ 29%]
+tests/test_leakage.py::test_l1_l2_templates PASSED                       [ 31%]
+tests/test_leakage.py::test_cli_fail_exit PASSED                         [ 33%]
+tests/test_leakage.py::test_cli_bad_split_manifest PASSED                [ 35%]
+tests/test_leakage.py::test_cli_st12_on_tampered_frozen_data PASSED      [ 37%]
+tests/test_st12.py::test_mini_repo_positive_control PASSED               [ 39%]
+tests/test_st12.py::test_frozen_commit_file_one_byte[metrix/e1-pilot/METRIX_E1_PROTOCOL.md] PASSED [ 41%]
+tests/test_st12.py::test_frozen_commit_file_one_byte[metrix/e1-pilot/DATA_MANIFEST.json] PASSED [ 43%]
+tests/test_st12.py::test_frozen_commit_file_one_byte[metrix/e1-pilot/SPLIT_MANIFEST.json] PASSED [ 45%]
+tests/test_st12.py::test_frozen_commit_file_one_byte[metrix/e1-pilot/SEARCH_SPACE.json] PASSED [ 47%]
+tests/test_st12.py::test_working_tree_file_one_byte[metrix/e1-pilot/METRIX_E1_PROTOCOL.md] PASSED [ 49%]
+tests/test_st12.py::test_working_tree_file_one_byte[metrix/e1-pilot/DATA_MANIFEST.json] PASSED [ 50%]
+tests/test_st12.py::test_working_tree_file_one_byte[metrix/e1-pilot/SPLIT_MANIFEST.json] PASSED [ 52%]
+tests/test_st12.py::test_working_tree_file_one_byte[metrix/e1-pilot/SEARCH_SPACE.json] PASSED [ 54%]
+tests/test_st12.py::test_working_tree_line_endings_and_step1_fields PASSED [ 56%]
+tests/test_st12.py::test_protocol_frozen_hash_one_byte[file] PASSED      [ 58%]
+tests/test_st12.py::test_protocol_frozen_hash_one_byte[data] PASSED      [ 60%]
+tests/test_st12.py::test_eval_sets_one_byte PASSED                       [ 62%]
+tests/test_st12.py::test_input_file_one_byte[qwen:tokenizer.json] PASSED [ 64%]
+tests/test_st12.py::test_input_file_one_byte[qwen:tokenizer_config.json] PASSED [ 66%]
+tests/test_st12.py::test_input_file_one_byte[qwen:vocab.json] PASSED     [ 68%]
+tests/test_st12.py::test_input_file_one_byte[qwen:merges.txt] PASSED     [ 70%]
+tests/test_st12.py::test_input_file_one_byte[parcae_tokenizer] PASSED    [ 72%]
+tests/test_st12.py::test_input_file_one_byte[anchor_parquet] PASSED      [ 74%]
+tests/test_st12.py::test_data_file_message_table_complete PASSED         [ 76%]
+tests/test_st12.py::test_data_file_one_byte[facts.jsonl] PASSED          [ 78%]
+tests/test_st12.py::test_data_file_one_byte[train_F.jsonl] PASSED        [ 80%]
+tests/test_st12.py::test_data_file_one_byte[train_S.jsonl] PASSED        [ 82%]
+tests/test_st12.py::test_data_file_one_byte[train_Y.jsonl] PASSED        [ 84%]
+tests/test_st12.py::test_data_file_one_byte[dev_qa.jsonl] PASSED         [ 86%]
+tests/test_st12.py::test_data_file_one_byte[candidates.json] PASSED      [ 88%]
+tests/test_st12.py::test_data_file_one_byte[general_dev.jsonl] PASSED    [ 90%]
+tests/test_st12.py::test_data_file_one_byte[anchor_text.jsonl] PASSED    [ 92%]
+tests/test_st12.py::test_verify_positive_control PASSED                  [ 94%]
+tests/test_st12.py::test_cli_stops_on_tampered_data PASSED               [ 96%]
+tests/test_st12.py::test_cli_stops_on_tampered_input PASSED              [ 98%]
+tests/test_st12.py::test_parse_jsonl_splits_on_newline_only PASSED       [100%]
+
+============================= 51 passed in 42.96s ==============================
+exit=0

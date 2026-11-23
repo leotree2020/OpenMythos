@@ -112,7 +112,8 @@ def test_cli_fail_exit(generated, tmp_path):
 def test_cli_bad_split_manifest(generated, tmp_path):
     r = _leakage_cli(generated["dir"], generated["dir"] / "candidates.json", tmp_path / "x.json")
     assert r.returncode != 0 and r.stdout.rstrip().endswith("RESULT: FAIL"), r.stdout + r.stderr
-    assert "ST12" in r.stderr and not (tmp_path / "x.json").exists()
+    assert "ST12 -> BLOCKED: --split-manifest" in r.stderr and "differs from SPLIT_MANIFEST.json at the frozen commit" in r.stderr
+    assert not (tmp_path / "x.json").exists()
 
 
 def test_cli_st12_on_tampered_frozen_data(generated, tmp_path):
