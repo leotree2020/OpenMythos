@@ -1,0 +1,135 @@
+# Implementation stage B step 0 raw output: verify the remote branch metrix-e1-pilot-protocol-v1 and the two metrix-* tags with git ls-remote (Owner instruction for stage B, item 0); check whether reports/impl_a/t8_report_push.txt (stage A report-commit push output, kept only in the stage A working tree) still exists. Executor, session_01J5mxaWPrK8siadYKyqZ5pX, host vm (Anthropic cloud container, Claude Code on the web). Mon Nov 23 01:55:15 UTC 2026
+# Read-only commands; cwd /home/user/OpenMythos. stdout+stderr merged, unedited. Commands recorded by metrix/e1-pilot/reports/round5/logrun.sh.
+$ hostname
+vm
+exit=0
+$ date -u
+Mon Nov 23 01:55:15 UTC 2026
+exit=0
+$ uptime -s
+2026-11-23 01:54:28
+exit=0
+$ git ls-remote origin refs/heads/metrix-e1-pilot-protocol-v1 refs/tags/metrix-\*
+620f8611c73fd3109ff78fd2a08b438ffd344a99	refs/heads/metrix-e1-pilot-protocol-v1
+4c023ec8e8c315c679e5c726dc45ba1d614a5f13	refs/tags/metrix-e1-pilot-frozen
+6a474e4a5defa23dfc71b2c6bca9e15a81b517aa	refs/tags/metrix-e1-pilot-frozen^{}
+6fd45fd14bdafa5a1d617482c664df29a85589dd	refs/tags/metrix-e1-pilot-frozen-v1.1
+87a244db28a901f9e89282b50df76778ab5c2887	refs/tags/metrix-e1-pilot-frozen-v1.1^{}
+exit=0
+$ git rev-parse HEAD origin/metrix-e1-pilot-protocol-v1
+620f8611c73fd3109ff78fd2a08b438ffd344a99
+620f8611c73fd3109ff78fd2a08b438ffd344a99
+exit=0
+$ git log -4 --format=%H\ \|\ parent\ %P\ \|\ committer\ %cd\ \|\ %s --date=iso-strict origin/metrix-e1-pilot-protocol-v1
+620f8611c73fd3109ff78fd2a08b438ffd344a99 | parent 219c4a60b1e2274fe57a7cdbe9d9606d814a8ab5 | committer 2026-11-23T01:42:18+00:00 | metrix: E1-PILOT implementation stage A report, reviews, auditor output, deferred items (sections 1.18-1.21)
+219c4a60b1e2274fe57a7cdbe9d9606d814a8ab5 | parent 602a39e8c4be1e1efa682a26637ad94fb919b7b8 | committer 2026-11-23T01:25:36+00:00 | metrix: E1-PILOT implementation stage A fix commit (round-2 code-reviewer MINORs N1, N3, N5-N8)
+602a39e8c4be1e1efa682a26637ad94fb919b7b8 | parent 8149d8727b4a99ea0cc9b0a1a2ebd82bd53fa0af | committer 2026-11-23T01:17:08+00:00 | metrix: E1-PILOT implementation stage A work commit (task order V1 verbatim; frozen.py, data.py, leakage.py Gate 0 part; unit tests 1 and 10; requirements.lock)
+8149d8727b4a99ea0cc9b0a1a2ebd82bd53fa0af | parent 892f26a4fba9901b84ee08f451f15f0800c6be57 | committer 2026-11-22T14:04:27+00:00 | metrix: E1-PILOT round 9 report, deferred items (sections 1.16-1.17), report-commit review records
+exit=0
+$ git status --short --branch
+## metrix-e1-pilot-protocol-v1...origin/metrix-e1-pilot-protocol-v1
+?? metrix/e1-pilot/reports/impl_b/
+exit=0
+$ git reflog --date=iso -4
+620f861 HEAD@{2026-11-23 01:54:42 +0000}: checkout: moving from claude/phase-b-implementation-lvi1j5 to metrix-e1-pilot-protocol-v1
+155430a HEAD@{2026-11-23 01:54:31 +0000}: checkout: moving from 155430a88d2a98322fc4c79b2a067792c3c9579a to claude/phase-b-implementation-lvi1j5
+155430a HEAD@{2026-11-23 01:54:31 +0000}: 
+155430a HEAD@{2026-11-21 04:56:34 +0000}: checkout: moving from 155430a88d2a98322fc4c79b2a067792c3c9579a to main
+exit=0
+$ ls -la metrix/e1-pilot/reports/impl_a/
+total 188
+drwxr-xr-x  2 root root  4096 Nov 23 01:54 .
+drwxr-xr-x 13 root root  4096 Nov 23 01:55 ..
+-rw-r--r--  1 root root 11231 Nov 23 01:54 t0_copy_check.txt
+-rw-r--r--  1 root root 77138 Nov 23 01:54 t1_lock.txt
+-rw-r--r--  1 root root 23168 Nov 23 01:54 t2_fetch_generate.txt
+-rw-r--r--  1 root root  5536 Nov 23 01:54 t3_leakage.txt
+-rw-r--r--  1 root root 15139 Nov 23 01:54 t4_pytest.txt
+-rw-r--r--  1 root root  4913 Nov 23 01:54 t5_commit_push.txt
+-rw-r--r--  1 root root 13508 Nov 23 01:54 t6_fix_commit.txt
+-rw-r--r--  1 root root 16965 Nov 23 01:54 t7_report_commit.txt
+exit=0
+$ bash -c test\ -e\ metrix/e1-pilot/reports/impl_a/t8_report_push.txt\ \&\&\ echo\ T8_PRESENT\ \|\|\ echo\ T8_ABSENT_IN_WORKING_TREE
+T8_ABSENT_IN_WORKING_TREE
+exit=0
+$ bash -c git\ log\ --all\ --format=%H\ --\ metrix/e1-pilot/reports/impl_a/t8_report_push.txt\ \|\ wc\ -l
+0
+exit=0
+$ bash -c find\ /\ -xdev\ -name\ t8_report_push.txt\ 2\>/dev/null\ \|\ wc\ -l
+0
+exit=0
+$ git show --stat --format=%H\ %s 620f861
+620f8611c73fd3109ff78fd2a08b438ffd344a99 metrix: E1-PILOT implementation stage A report, reviews, auditor output, deferred items (sections 1.18-1.21)
+
+ metrix/e1-pilot/audit/ia_00_frozen.py              |  103 +
+ metrix/e1-pilot/audit/ia_01_fetch.py               |   93 +
+ metrix/e1-pilot/audit/ia_02_templates.py           |   66 +
+ metrix/e1-pilot/audit/ia_03_anchor.py              |   72 +
+ metrix/e1-pilot/audit/ia_04_facts.py               |  182 +
+ metrix/e1-pilot/audit/ia_05_derived.py             |  187 +
+ metrix/e1-pilot/audit/ia_06_general.py             |   81 +
+ metrix/e1-pilot/audit/ia_07_leakage.py             |  182 +
+ metrix/e1-pilot/audit/ia_08_feasibility.py         |   74 +
+ metrix/e1-pilot/audit/ia_09_split.py               |   99 +
+ metrix/e1-pilot/audit/ia_10_compare.py             |  131 +
+ metrix/e1-pilot/audit/ia_11_r2_inputs.py           |   76 +
+ metrix/e1-pilot/audit/ia_12_r2_bytes.py            |   83 +
+ metrix/e1-pilot/audit/ia_common.py                 |  120 +
+ metrix/e1-pilot/audit/ia_run_logged.sh             |   13 +
+ .../e1-pilot/audit/stdout/impl_a/00_ia_frozen.txt  |   54 +
+ .../e1-pilot/audit/stdout/impl_a/01_ia_fetch.txt   |   22 +
+ .../audit/stdout/impl_a/02_ia_templates.txt        |   79 +
+ .../e1-pilot/audit/stdout/impl_a/03_ia_anchor.txt  |   22 +
+ .../e1-pilot/audit/stdout/impl_a/04_ia_facts.txt   |   34 +
+ .../e1-pilot/audit/stdout/impl_a/05_ia_derived.txt |   36 +
+ .../e1-pilot/audit/stdout/impl_a/06_ia_general.txt |   25 +
+ .../e1-pilot/audit/stdout/impl_a/07_ia_leakage.txt |   95 +
+ .../audit/stdout/impl_a/08_ia_feasibility.txt      |   38 +
+ .../e1-pilot/audit/stdout/impl_a/09_ia_split.txt   |   20 +
+ .../e1-pilot/audit/stdout/impl_a/10_ia_compare.txt |   48 +
+ .../audit/stdout/impl_a/11_git_status_final.txt    |   40 +
+ .../audit/stdout/impl_a/12_ia_r2_inputs.txt        |   35 +
+ .../audit/stdout/impl_a/13_ia_anchor_r2.txt        |   22 +
+ .../audit/stdout/impl_a/14_ia_facts_r2.txt         |   34 +
+ .../audit/stdout/impl_a/15_ia_derived_r2.txt       |   36 +
+ .../audit/stdout/impl_a/16_ia_general_r2.txt       |   25 +
+ .../audit/stdout/impl_a/17_ia_compare_gen4.txt     |   47 +
+ .../audit/stdout/impl_a/18_ia_leakage_gen4.txt     |   95 +
+ .../audit/stdout/impl_a/19_ia_split_gen4.txt       |   20 +
+ .../audit/stdout/impl_a/20_ia_feasibility_gen4.txt |   38 +
+ .../audit/stdout/impl_a/21_ia_r2_bytes.txt         |   82 +
+ .../audit/stdout/impl_a/22_git_status_final_r2.txt |   84 +
+ metrix/e1-pilot/reports/DEFERRED_MINORS.md         |   60 +
+ metrix/e1-pilot/reports/IMPL_A_REPORT.md           |  161 +
+ .../e1-pilot/reports/impl_a/t7_report_commit.txt   |  121 +
+ .../code-reviewer.md                               |   96 +
+ .../code-reviewer_prompt.txt                       |   10 +
+ .../extract_log.txt                                |    7 +
+ .../precommit_check.txt                            |    6 +
+ .../preflight_tools_check.txt                      |    7 +
+ .../review_input.diff                              |  360 ++
+ .../code-reviewer_prompt.txt                       |   21 +
+ .../code-reviewer_prompt_report-commit.txt         |    9 +
+ .../code-reviewer_prompt_round2.txt                |   16 +
+ .../code-reviewer_report-commit.md                 |   94 +
+ .../code-reviewer_round1.md                        |   85 +
+ .../code-reviewer_round2.md                        |  117 +
+ .../data-auditor_prompt.txt                        |   14 +
+ .../data-auditor_prompt_round2.txt                 |    9 +
+ .../data-auditor_round1.md                         |  224 +
+ .../data-auditor_round2.md                         |  241 +
+ .../extract_log.txt                                |   28 +
+ .../interruption_round2.txt                        |   71 +
+ .../preflight_tools_check.txt                      |   38 +
+ .../preflight_tools_check_report-commit.txt        |    4 +
+ .../preflight_tools_check_round2.txt               |   13 +
+ .../report_commit_input.diff                       |  333 ++
+ .../report_commit_post_review.diff                 |  293 ++
+ .../resume_message_code-reviewer_round2.txt        |    3 +
+ .../resume_message_data-auditor_round2.txt         |    3 +
+ .../review_fixes_round2.diff                       |  934 ++++
+ .../review_input_round1.diff                       | 4340 ++++++++++++++++++
+ .../review_input_round2.diff                       | 4689 ++++++++++++++++++++
+ metrix/e1-pilot/tasks/IMPL_A_OWNER_MESSAGE.md      |   12 +
+ 70 files changed, 15012 insertions(+)
+exit=0
