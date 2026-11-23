@@ -200,19 +200,35 @@ TEST_CHECKS = ("L3a", "L3b", "L4", "L5", "L6")
 
 def verify_authorization(authorization, repo_root):
     """Every TEST path (test_data.generate_test, run_test_part, evaluate.evaluate_model with split "test") calls this
-    first: a TestAuthorization whose two hashes are those of the Gate 0 and freeze records committed now
-    (record.committed_record: formal mode, the right kind, the frozen commit of the authorization)."""
+    first. It re-checks, from what is committed now, everything of conditions 2 and 3 that an authorization stands for:
+    the Gate 0 and freeze records are committed (record.committed_record: formal mode, the right kind, the frozen
+    commit of the authorization) with the hashes the authorization carries; the Gate 0 status is PASS; the freeze
+    record is bound to that Gate 0 record; the authorization's frozen commit is the current one of PROTOCOL_FROZEN.
+    (Condition 1, ST12, is checked by every step start; the interpretation check by check_preconditions.)"""
     if not isinstance(authorization, TestAuthorization):
         raise ImplementationFail("TEST paths run only after the TEST generator's preconditions (no TestAuthorization)")
     from . import record as R
+    recs = {}
     for rel, kind, want in ((R.GATE0_RECORD_REL, "gate0", authorization.gate0_record_sha256),
                             (R.SELECTION_FREEZE_REL, "selection_freeze", authorization.selection_record_sha256)):
         try:
-            _, got = R.committed_record(repo_root, rel, kind, authorization.frozen_commit)
+            recs[kind], got = R.committed_record(repo_root, rel, kind, authorization.frozen_commit)
         except R.NotCommitted as e:
             raise ImplementationFail("TEST path refused: %s" % e) from e
         if got != want:
             raise ImplementationFail("TEST path refused: committed %s has sha256 %s, authorization %s" % (rel, got, want))
+    status = (recs["gate0"].get("gate0") or {}).get("gate0_status")
+    if status != "PASS":
+        raise ImplementationFail("TEST path refused: committed Gate 0 status %r, not PASS" % (status,))
+    if recs["selection_freeze"].get("gate0_record_sha256") != authorization.gate0_record_sha256:
+        raise ImplementationFail("TEST path refused: the freeze record is not bound to the committed Gate 0 record")
+    try:
+        current = FZ.parse_protocol_frozen((Path(repo_root) / FZ.PROTOCOL_FROZEN_REL).read_bytes()).commit
+    except (OSError, ST12Error) as e:
+        raise ImplementationFail("TEST path refused: cannot read PROTOCOL_FROZEN: %s" % e) from e
+    if current != authorization.frozen_commit:
+        raise ImplementationFail("TEST path refused: authorization for frozen commit %s, PROTOCOL_FROZEN names %s" % (
+            authorization.frozen_commit, current))
 
 
 def run_test_part(split_manifest, data, test_qa, general_test, authorization, repo_root):

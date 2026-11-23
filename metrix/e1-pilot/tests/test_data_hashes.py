@@ -67,10 +67,41 @@ def _run(args, **kw):
     return r.stdout
 
 
+_ROW_SPLIT = re.compile(rb'\{"domain": "[^"\\]*", "split": "([^"\\]*)", ')
+
+
+def _dev_rows_only(tmp_path):
+    """The reference script reports/round5/l6_check.py reads eval_sets.jsonl in text mode, which decodes every row
+    (test rows too) from UTF-8 before skipping the non-dev ones (code-reviewer, stage B fix commit, MAJOR; data-auditor
+    round-2 observation 1; pending Review Gate). It is given instead a copy holding only the DEV rows: the rows are
+    selected on the raw bytes of their split field (counting / parsing the split field is not reading TEST, protocol
+    section 3), copied byte for byte, and no test row is decoded. The script pins the file's sha256 through the
+    manifest, so a copy of DATA_MANIFEST.json with that one value replaced goes with it. The script itself is not
+    changed; its selection (first 25 DEV rows per domain, file order) is unaffected by the removed test rows."""
+    src = PILOT.parents[1] / "research/mini_mythos/stage1/results/r1/eval_sets.jsonl"
+    out = tmp_path / "eval_sets_dev_rows.jsonl"
+    n = {"dev": 0, "other": 0}
+    with open(src, "rb") as fi, open(out, "wb") as fo:
+        for line in fi:
+            m = _ROW_SPLIT.match(line)
+            assert m is not None
+            if m.group(1) == b"dev":
+                fo.write(line)
+                n["dev"] += 1
+            else:
+                n["other"] += 1
+    assert n == {"dev": 400, "other": 800}
+    manifest = json.loads((PILOT / "DATA_MANIFEST.json").read_text(encoding="utf-8"))
+    manifest["general_text"]["source_file_sha256"] = FZ.file_sha256(out)
+    mpath = tmp_path / "DATA_MANIFEST_dev_rows.json"
+    mpath.write_text(json.dumps(manifest, ensure_ascii=False), encoding="utf-8")
+    return out, mpath
+
+
 def test_byte_identical_to_reference_scripts(inputs_dir, generated, tmp_path):
     """reports/round2/anchor_check.py, gen_facts.py, reports/round7/gen_s_cands.py and reports/round5/l6_check.py,
-    run on the same inputs, give byte-identical facts, anchor texts, train_S.jsonl, candidates.json and general DEV
-    windows."""
+    run on the same inputs (l6_check.py on the DEV rows of eval_sets.jsonl only, see _dev_rows_only), give
+    byte-identical facts, anchor texts, train_S.jsonl, candidates.json and general DEV windows."""
     rep = PILOT / "reports"
     tok = inputs_dir / "qwen_tokenizer"
     _run([rep / "round2/anchor_check.py", "--manifest", "DATA_MANIFEST.json", "--tokenizer-dir", tok,
@@ -79,8 +110,9 @@ def test_byte_identical_to_reference_scripts(inputs_dir, generated, tmp_path):
           "--anchor", tmp_path / "anchor.json", "--out", tmp_path / "facts.json"])
     _run([rep / "round7/gen_s_cands.py", "--facts", tmp_path / "facts.json", "--data-manifest", "DATA_MANIFEST.json",
           "--split-manifest", "SPLIT_MANIFEST.json", "--out-dir", tmp_path / "sc"])
-    _run([rep / "round5/l6_check.py", "--eval-sets", PILOT.parents[1] / "research/mini_mythos/stage1/results/r1/eval_sets.jsonl",
-          "--parcae-tokenizer", inputs_dir / "parcae_tokenizer/tokenizer.json", "--manifest", "DATA_MANIFEST.json",
+    dev_rows, manifest = _dev_rows_only(tmp_path)
+    _run([rep / "round5/l6_check.py", "--eval-sets", dev_rows,
+          "--parcae-tokenizer", inputs_dir / "parcae_tokenizer/tokenizer.json", "--manifest", manifest,
           "--tokenizer-dir", tok, "--anchor", tmp_path / "anchor.json", "--general-out", tmp_path / "general.json"])
     files = generated["files"]
     facts = FZ.read_jsonl(generated["dir"] / "facts.jsonl")

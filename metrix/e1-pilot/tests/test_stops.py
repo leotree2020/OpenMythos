@@ -199,7 +199,8 @@ def test_st13(fz, tmp_path):
     (d / "general_test.jsonl").write_text("", encoding="utf-8")
     e = raises("ST13", STP.st13_scan, fz, fz.repo_root, [tmp_path / "other", d])
     assert e.void_pilot
-    # a committed freeze record counts only if it is a valid formal one: a smoke record does not stop the scan
+    # a committed freeze record counts only if it is a valid formal one: a smoke record does not count as the
+    # freeze, so the scan still finds the TEST file and stops (ST13); a formal record ends the scan
     import json
     import subprocess
     from metrix_e1 import record as R

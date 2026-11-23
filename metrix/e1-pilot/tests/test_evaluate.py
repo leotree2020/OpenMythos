@@ -168,5 +168,18 @@ def test_test_split_needs_the_authorization(contract, tok, data_rows, fz):
     from metrix_e1.errors import ImplementationFail
     for auth in (None, LK.TestAuthorization(fz.record.commit, "a" * 64, "b" * 64)):
         with pytest.raises(ImplementationFail, match="TEST path"):
-            E.evaluate_model(tiny_model(), tok, data_rows, fz.templates, contract.evaluation, M.smoke_mode(3), "cpu",
+            E.evaluate_model(tiny_model(), tok, data_rows, fz.templates, contract.evaluation, M.FORMAL_MODE, "cpu",
                              split="test", test_authorization=auth, repo_root=fz.repo_root)
+    for mode in (M.smoke_mode(3), M.preflight_mode(contract)):           # TEST is evaluated in formal mode only
+        with pytest.raises(ImplementationFail, match="formal mode only"):
+            E.evaluate_model(tiny_model(), tok, data_rows, fz.templates, contract.evaluation, mode, "cpu",
+                             split="test", test_authorization=None, repo_root=fz.repo_root)
+
+
+
+def test_nonfinite_logits_stop_em_generation(contract):
+    import pytest
+    from metrix_e1.train import NonFinite
+    with pytest.raises(NonFinite) as e:
+        E.greedy_generate(NaNStub(0), [[1, 2, 3]], contract.evaluation, "cpu")
+    assert e.value.stop == "ST6" and e.value.values and all(v != v for v in e.value.values)

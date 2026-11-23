@@ -275,7 +275,6 @@ def test_kl_call_site_order_and_gradient(tok, data_rows, contract, monkeypatch):
     assert val > 0 and abs(val - hand) < 1e-6 and abs(val - rev) > 1e-9
 
 
-
 def test_kl_term_moves_the_parameters(tok, data_rows, contract, monkeypatch):
     """The KL term reaches the gradient: A1 and A3 differ only in lambda (0.3 vs 3.0, same learning rate), so their
     parameters after 2 steps differ. Control: with the KL detached (what a wrong call site would do) lambda has no

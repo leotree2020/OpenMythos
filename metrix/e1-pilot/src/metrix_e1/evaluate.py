@@ -217,6 +217,14 @@ def em_normalize(text):
     return s.rstrip(".,;:!?").casefold()
 
 
+def _finite_argmax(logits):
+    """argmax of the next-token logits; a non-finite logit stops the evaluation (ST6) instead of being argmax'ed."""
+    bad = ~torch.isfinite(logits)
+    if bool(bad.any()):
+        raise NonFinite("EM generation: %d non-finite logits" % int(bad.sum()), logits[bad][:8].tolist())
+    return logits.argmax(-1)
+
+
 def greedy_generate(model, contexts, ev, device, batch_size=32):
     """Greedy decoding (do_sample=False: argmax at every step) of at most max_new_tokens tokens after each context
     (list of id lists); a sequence stops when it generates a stop id (the stop id is kept in the returned ids and
@@ -239,7 +247,7 @@ def greedy_generate(model, contexts, ev, device, batch_size=32):
             last = torch.tensor([len(c) - 1 for c in chunk], dtype=torch.long)
             x, m, pos = x.to(device), m.to(device), pos.to(device)
             o = model(input_ids=x, attention_mask=m, position_ids=pos, use_cache=True)
-            past, nxt = o.past_key_values, o.logits[:, -1].float().argmax(-1)
+            past, nxt = o.past_key_values, _finite_argmax(o.logits[:, -1].float())
             gen = [[] for _ in chunk]
             done = [False] * len(chunk)
             for step in range(ev.max_new_tokens):
@@ -255,7 +263,7 @@ def greedy_generate(model, contexts, ev, device, batch_size=32):
                 m = torch.cat([m, torch.ones((len(chunk), 1), dtype=torch.long, device=m.device)], dim=1)
                 o = model(input_ids=nxt.unsqueeze(1), attention_mask=m, position_ids=last.unsqueeze(1).to(m.device),
                           past_key_values=past, use_cache=True)
-                past, nxt = o.past_key_values, o.logits[:, -1].float().argmax(-1)
+                past, nxt = o.past_key_values, _finite_argmax(o.logits[:, -1].float())
             out += gen
     return out
 
@@ -307,6 +315,9 @@ def evaluate_model(model, tok, data, templates, ev, mode, device, split="dev", w
     if split not in SPLIT_FILES:
         raise ValueError("split %r" % (split,))
     if split == "test":
+        if not mode.formal:
+            raise ImplementationFail("TEST is evaluated in formal mode only (%s mode; protocol section 8 step 8: TEST "
+                                     "is evaluated once)" % mode.name)
         from .leakage import verify_authorization
         verify_authorization(test_authorization, repo_root)
     require_gpu(mode, device)

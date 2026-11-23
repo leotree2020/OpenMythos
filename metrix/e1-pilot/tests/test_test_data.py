@@ -11,7 +11,7 @@ import sys
 
 import pytest
 
-from conftest import SRC
+from conftest import PILOT, SRC
 from metrix_e1 import data as D
 from metrix_e1 import leakage as LK
 from metrix_e1 import record as R
@@ -77,11 +77,19 @@ def test_refuses_without_data(fz, inputs_dir, tmp_path, capsys):
     assert not (tmp_path / "o").exists()
 
 
-def test_generation_needs_authorization(fz, inputs_dir, generated):
+def test_generation_needs_authorization(fz, inputs_dir, generated, monkeypatch):
+    """generate_test refuses a missing or hand-made authorization before it reads anything (readers spied)."""
+    called = []
+    for name in ("check_inputs", "load_qwen_tokenizer", "build_general_dev"):
+        real = getattr(D, name)
+        monkeypatch.setattr(D, name, lambda *a, _n=name, _r=real, **k: called.append(_n) or _r(*a, **k))
+    real_read = TD.FZ.read_jsonl
+    monkeypatch.setattr(TD.FZ, "read_jsonl", lambda *a, **k: called.append("read_jsonl") or real_read(*a, **k))
     with pytest.raises(ImplementationFail):
         TD.generate_test(fz, None, inputs_dir, generated["dir"])
     with pytest.raises(ImplementationFail, match="not committed"):      # a hand-made authorization is re-checked
         TD.generate_test(fz, LK.TestAuthorization(None, None, None), inputs_dir, generated["dir"])
+    assert called == []
     with pytest.raises(ImplementationFail):
         LK.run_test_part(fz.split_manifest, {}, [], [], None, fz.repo_root)
 
@@ -92,6 +100,9 @@ def _repo(tmp_path, files, dirty=None):
     root = tmp_path / "repo"
     root.mkdir()
     subprocess.run(["git", "-C", str(root), "init", "-q"], check=True)
+    pf = root / "metrix/e1-pilot/PROTOCOL_FROZEN"            # the real PROTOCOL_FROZEN (its frozen commit)
+    pf.parent.mkdir(parents=True, exist_ok=True)
+    pf.write_bytes((PILOT / "PROTOCOL_FROZEN").read_bytes())
     for rel, obj in files.items():
         p = root / rel
         p.parent.mkdir(parents=True, exist_ok=True)
@@ -185,25 +196,41 @@ def test_run_test_part_rechecks_the_committed_records(fz, tmp_path):
         LK.run_test_part(fz.split_manifest, {}, [], [], auth, root)
 
 
-
-def test_check_preconditions_calls_the_interpretation_check(fz, contract, generated, inputs_dir, monkeypatch):
-    """With conditions 1-3 replaced by stubs that hold, check_preconditions still refuses while interpretations are
-    pending (the stub run stops before any authorization exists)."""
+def test_check_preconditions_calls_the_interpretation_check(fz, generated, inputs_dir, monkeypatch):
+    """With conditions 1-3 replaced by stubs that hold, check_preconditions refuses while an interpretation is
+    pending, and (control) returns an authorization once none is pending. Only the authorization object is built;
+    no TEST path is called."""
+    from metrix_e1 import interpretations as INT
     monkeypatch.setattr(TD.STP, "st12", lambda *a, **k: fz)
     monkeypatch.setattr(TD, "check_gate0_record", lambda *a, **k: "a" * 64)
     monkeypatch.setattr(TD, "check_selection_record", lambda *a, **k: "b" * 64)
-    with pytest.raises(TD.PreconditionFailed, match="interpretations not yet ruled"):
+    monkeypatch.setattr(INT, "pending", lambda: ["B19"])
+    with pytest.raises(TD.PreconditionFailed, match="interpretations not yet ruled by Review Gate: B19"):
         TD.check_preconditions(None, inputs_dir, generated["dir"])
+    monkeypatch.setattr(INT, "pending", lambda: [])
+    _, auth = TD.check_preconditions(None, inputs_dir, generated["dir"])
+    assert (auth.frozen_commit, auth.gate0_record_sha256, auth.selection_record_sha256) == (fz.record.commit, "a" * 64, "b" * 64)
 
 
-def test_verify_authorization_hash_branches(fz, contract, generated, tmp_path):
-    from metrix_e1 import mode as M
+def test_verify_authorization_branches(fz, contract, generated, tmp_path):
     content = fz.check_data_dir(generated["dir"])
     g = _gate0(fz)
     sel = _selection(fz, contract, content, _sha(g))
     root = _repo(tmp_path, {G0: g, SEL: sel})
-    LK.verify_authorization(LK.TestAuthorization(fz.record.commit, _sha(g), _sha(sel)), root)     # matching hashes
+    LK.verify_authorization(LK.TestAuthorization(fz.record.commit, _sha(g), _sha(sel)), root)     # all checks hold
     with pytest.raises(ImplementationFail, match="authorization"):
         LK.verify_authorization(LK.TestAuthorization(fz.record.commit, _sha(g), "f" * 64), root)
     with pytest.raises(ImplementationFail, match="frozen commit"):
         LK.verify_authorization(LK.TestAuthorization("0" * 40, _sha(g), _sha(sel)), root)
+
+
+@pytest.mark.parametrize("case", ["not_pass", "unbound", "other_protocol_frozen"])
+def test_verify_authorization_rechecks_status_binding_and_frozen_commit(fz, contract, generated, tmp_path, case):
+    content = fz.check_data_dir(generated["dir"])
+    commit = "1" * 40 if case == "other_protocol_frozen" else fz.record.commit
+    g = dict(_gate0(fz, "NOT_TESTED" if case == "not_pass" else "PASS"), frozen_commit=commit)
+    sel = dict(_selection(fz, contract, content, "c" * 64 if case == "unbound" else _sha(g)), frozen_commit=commit)
+    root = _repo(tmp_path, {G0: g, SEL: sel})
+    msg = {"not_pass": "not PASS", "unbound": "not bound", "other_protocol_frozen": "PROTOCOL_FROZEN names"}[case]
+    with pytest.raises(ImplementationFail, match=msg):
+        LK.verify_authorization(LK.TestAuthorization(commit, _sha(g), _sha(sel)), root)
