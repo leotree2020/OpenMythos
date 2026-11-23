@@ -185,8 +185,8 @@ def run_gate0(split_manifest, data):
 
 class TestAuthorization:
     """Created only by test_data.check_preconditions() once the TEST generator's preconditions hold (a convention: Python
-    cannot stop other code from building one; run_test_part therefore re-checks the hashes it carries against the
-    committed records)."""
+    cannot stop other code from building one; every TEST path therefore re-checks the hashes it carries against the
+    committed records, verify_authorization)."""
     __test__ = False        # not a pytest test class
 
     def __init__(self, frozen_commit, gate0_record_sha256, selection_record_sha256):
@@ -198,22 +198,29 @@ class TestAuthorization:
 TEST_CHECKS = ("L3a", "L3b", "L4", "L5", "L6")
 
 
+def verify_authorization(authorization, repo_root):
+    """Every TEST path (test_data.generate_test, run_test_part, evaluate.evaluate_model with split "test") calls this
+    first: a TestAuthorization whose two hashes are those of the Gate 0 and freeze records committed now
+    (record.committed_record: formal mode, the right kind, the frozen commit of the authorization)."""
+    if not isinstance(authorization, TestAuthorization):
+        raise ImplementationFail("TEST paths run only after the TEST generator's preconditions (no TestAuthorization)")
+    from . import record as R
+    for rel, kind, want in ((R.GATE0_RECORD_REL, "gate0", authorization.gate0_record_sha256),
+                            (R.SELECTION_FREEZE_REL, "selection_freeze", authorization.selection_record_sha256)):
+        try:
+            _, got = R.committed_record(repo_root, rel, kind, authorization.frozen_commit)
+        except R.NotCommitted as e:
+            raise ImplementationFail("TEST path refused: %s" % e) from e
+        if got != want:
+            raise ImplementationFail("TEST path refused: committed %s has sha256 %s, authorization %s" % (rel, got, want))
+
+
 def run_test_part(split_manifest, data, test_qa, general_test, authorization, repo_root):
     """Section 8 step 8, after test_qa.jsonl and general_test.jsonl exist: L4 on the instantiated TEST questions,
     L6 anchor_text vs general_test; L3a, L3b and L5 re-run as at Gate 0 (interpretation B19). `data` as load_data();
     `test_qa`, `general_test`: the TEST rows in memory. The authorization is checked again against the committed Gate 0
-    and freeze records (record.committed_json). Returns the report (same layout as run_gate0)."""
-    if not isinstance(authorization, TestAuthorization):
-        raise ImplementationFail("the TEST part of the leakage checks runs only after the TEST generator's preconditions")
-    from . import record as R
-    for rel, want in ((R.GATE0_RECORD_REL, authorization.gate0_record_sha256),
-                      (R.SELECTION_FREEZE_REL, authorization.selection_record_sha256)):
-        try:
-            _, got = R.committed_json(repo_root, rel)
-        except R.NotCommitted as e:
-            raise ImplementationFail("TEST part refused: %s" % e) from e
-        if got != want:
-            raise ImplementationFail("TEST part refused: committed %s has sha256 %s, authorization %s" % (rel, got, want))
+    and freeze records (verify_authorization). Returns the report (same layout as run_gate0)."""
+    verify_authorization(authorization, repo_root)
     gate0 = run_gate0(split_manifest, data)
     rules = _rules(split_manifest)
     corpora = training_corpora(data)

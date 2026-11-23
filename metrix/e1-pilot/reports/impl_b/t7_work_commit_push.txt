@@ -1,0 +1,66 @@
+# Implementation stage B: work commit 74a4d444 (the content both round-2 reviews read), metrix/-outside check, fast-forward push (no tags), remote branch and tags before and after. Executor, session_01J5mxaWPrK8siadYKyqZ5pX, host vm (Anthropic cloud container). Mon Nov 23 08:20:58 UTC 2026
+# cwd repository root. Recorded by metrix/e1-pilot/reports/round5/logrun.sh. Written at push time; committed with the next commit.
+$ git log -2 --format=%H\ \|\ parent\ %P\ \|\ committer\ %cd\ \|\ %s --date=iso-strict
+74a4d4443a3880239996d7adc6c13c636e4edf64 | parent 0bc0eecf1f684773248c198afb94e7026dcfb16d | committer 2026-11-23T08:20:48+00:00 | metrix: E1-PILOT implementation stage B work commit (train, evaluate, stats, gate, stops, compute, record, test_data; unit tests 2-9 and Owner items 5-7)
+0bc0eecf1f684773248c198afb94e7026dcfb16d | parent 620f8611c73fd3109ff78fd2a08b438ffd344a99 | committer 2026-11-23T01:55:26+00:00 | metrix: E1-PILOT implementation stage B step 0, remote branch and tag check (evidence only)
+exit=0
+$ bash -c diff\ \<\(tail\ -n\ +1\ <SCRATCH>/review_work/review_input_round2.diff\)\ \<\(\ \(git\ diff\ --stat\ 0bc0eecf1f684773248c198afb94e7026dcfb16d\ 74a4d4443a3880239996d7adc6c13c636e4edf64\;\ echo\;\ git\ diff\ 0bc0eecf1f684773248c198afb94e7026dcfb16d\ 74a4d4443a3880239996d7adc6c13c636e4edf64\)\ \)\ \&\&\ echo\ WORK_COMMIT_DIFF_IDENTICAL_TO_ROUND2_REVIEW_INPUT
+WORK_COMMIT_DIFF_IDENTICAL_TO_ROUND2_REVIEW_INPUT
+exit=0
+$ python3 -I metrix/e1-pilot/reports/round3/outside_metrix_check.py --rev HEAD
+changed outside metrix/ (base 61d3c767 .. HEAD):
+  A	.claude/agents/code-reviewer.md
+  A	.claude/agents/data-auditor.md
+  M	CLAUDE.md
+charter: base 3065 bytes, new 3586 bytes, base is exact prefix: True
+charter: appended 521 bytes; level-1/2 headings in appended part: ['## 6. Metrix 子项目(2026-11-13 负责人决定)']
+ignore rules below come from the working-tree .gitignore; identical to .gitignore at HEAD: True
+agent .claude/agents/code-reviewer.md: tracked at HEAD: True; ignore rule: .gitignore:14:.claude/	.claude/agents/code-reviewer.md
+agent .claude/agents/data-auditor.md: tracked at HEAD: True; ignore rule: .gitignore:14:.claude/	.claude/agents/data-auditor.md
+RESULT: PASS
+exit=0
+$ git ls-remote origin refs/heads/metrix-e1-pilot-protocol-v1 refs/tags/metrix-\*
+0bc0eecf1f684773248c198afb94e7026dcfb16d	refs/heads/metrix-e1-pilot-protocol-v1
+4c023ec8e8c315c679e5c726dc45ba1d614a5f13	refs/tags/metrix-e1-pilot-frozen
+6a474e4a5defa23dfc71b2c6bca9e15a81b517aa	refs/tags/metrix-e1-pilot-frozen^{}
+6fd45fd14bdafa5a1d617482c664df29a85589dd	refs/tags/metrix-e1-pilot-frozen-v1.1
+87a244db28a901f9e89282b50df76778ab5c2887	refs/tags/metrix-e1-pilot-frozen-v1.1^{}
+exit=0
+$ git fetch origin metrix-e1-pilot-protocol-v1
+From https://github.com/leotree2020/OpenMythos
+ * branch            metrix-e1-pilot-protocol-v1 -> FETCH_HEAD
+exit=0
+$ git merge-base --is-ancestor origin/metrix-e1-pilot-protocol-v1 HEAD
+exit=0
+(exit 0 above = fast-forward)
+$ git push origin HEAD:refs/heads/metrix-e1-pilot-protocol-v1
+To https://github.com/leotree2020/OpenMythos
+   0bc0eec..74a4d44  HEAD -> metrix-e1-pilot-protocol-v1
+exit=0
+$ git ls-remote origin refs/heads/metrix-e1-pilot-protocol-v1 refs/tags/metrix-\*
+74a4d4443a3880239996d7adc6c13c636e4edf64	refs/heads/metrix-e1-pilot-protocol-v1
+4c023ec8e8c315c679e5c726dc45ba1d614a5f13	refs/tags/metrix-e1-pilot-frozen
+6a474e4a5defa23dfc71b2c6bca9e15a81b517aa	refs/tags/metrix-e1-pilot-frozen^{}
+6fd45fd14bdafa5a1d617482c664df29a85589dd	refs/tags/metrix-e1-pilot-frozen-v1.1
+87a244db28a901f9e89282b50df76778ab5c2887	refs/tags/metrix-e1-pilot-frozen-v1.1^{}
+exit=0
+$ git status --short --branch
+## metrix-e1-pilot-protocol-v1...origin/metrix-e1-pilot-protocol-v1
+?? metrix/e1-pilot/audit/ib_00_tag.py
+?? metrix/e1-pilot/audit/ib_01_compare.py
+?? metrix/e1-pilot/audit/ib_02_yratio.py
+?? metrix/e1-pilot/audit/ib_03_scoring.py
+?? metrix/e1-pilot/audit/ib_04_training.py
+?? metrix/e1-pilot/audit/ib_05_test_refusal.py
+?? metrix/e1-pilot/audit/ib_06_static.py
+?? metrix/e1-pilot/audit/ib_run_logged.sh
+?? metrix/e1-pilot/audit/ic_00_state.py
+?? metrix/e1-pilot/audit/ic_01_compare.py
+?? metrix/e1-pilot/audit/ic_02_dump.py
+?? metrix/e1-pilot/audit/ic_03_scoring.py
+?? metrix/e1-pilot/audit/ic_05_test_refusal.py
+?? metrix/e1-pilot/audit/ic_06_static.py
+?? metrix/e1-pilot/audit/ic_07_static_selftest.py
+?? metrix/e1-pilot/audit/stdout/impl_b/
+?? metrix/e1-pilot/reports/impl_b/t7_work_commit_push.txt
+exit=0

@@ -134,3 +134,39 @@ def test_think_marks_are_checked(contract, tok, data_rows):
         E.em(Stub(151645), tok, data_rows["dev_qa.jsonl"][:1], data_rows["facts.jsonl"], bad, "cpu")
     rows = E.em(Stub(151645), tok, data_rows["dev_qa.jsonl"][:2], data_rows["facts.jsonl"], contract.evaluation, "cpu")
     assert [r["generated_ids"] for r in rows] == [[151645], [151645]] and all(r["output"] == "" for r in rows)
+
+
+class NaNStub(Stub):
+    def forward(self, input_ids, attention_mask=None, position_ids=None, past_key_values=None, use_cache=None):
+        out = super().forward(input_ids, attention_mask, position_ids, past_key_values, use_cache)
+        out.logits[:] = float("nan")
+        return out
+
+
+def test_nonfinite_in_evaluation_reaches_st6(contract, tok, data_rows, fz):
+    """A non-finite score in an evaluation stops it with ST6 carrying the values, so stops.st6 decides: a selected
+    configuration or a control -> IMPLEMENTATION_FAIL; otherwise the configuration is excluded."""
+    import pytest
+    from metrix_e1 import stops as STP
+    from metrix_e1.train import NonFinite
+    with pytest.raises(NonFinite) as e:
+        E.score_qa(NaNStub(0), tok, data_rows["dev_qa.jsonl"][:2], data_rows["candidates.json"],
+                   data_rows["facts.jsonl"], contract.evaluation, "cpu")
+    assert e.value.stop == "ST6" and e.value.status is None and len(e.value.values) == 8
+    with pytest.raises(STP.Stop) as s:
+        STP.st6(fz, e.value.values, "evaluation of the selected F", True)
+    assert s.value.status == "IMPLEMENTATION_FAIL"
+    with pytest.raises(STP.Stop) as s:
+        STP.st6(fz, e.value.values, "evaluation of F4 (search)", False)
+    assert s.value.exclude_config
+
+
+def test_test_split_needs_the_authorization(contract, tok, data_rows, fz):
+    import pytest
+    from metrix_e1 import leakage as LK
+    from metrix_e1 import mode as M
+    from metrix_e1.errors import ImplementationFail
+    for auth in (None, LK.TestAuthorization(fz.record.commit, "a" * 64, "b" * 64)):
+        with pytest.raises(ImplementationFail, match="TEST path"):
+            E.evaluate_model(tiny_model(), tok, data_rows, fz.templates, contract.evaluation, M.smoke_mode(3), "cpu",
+                             split="test", test_authorization=auth, repo_root=fz.repo_root)

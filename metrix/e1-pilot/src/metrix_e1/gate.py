@@ -204,6 +204,8 @@ def judge_test(values, gate0_status, contract, mode):
     """Apply T1-T3 (section 8, TEST confirmation, evaluated once after Gate 0). Final pilot status: PASS iff Gate 0 is
     PASS and T1-T3 all hold; otherwise PIPELINE_NOT_QUALIFIED with the section 9 reasons (B24)."""
     _judged_mode(mode)
+    if not mode.smoke and gate0_status != "PASS":
+        raise ValueError("T1-T3 are judged only after Gate 0 PASS (got %r)" % (gate0_status,))
     g = contract.gate
     v = values
     sat = {"T1": v["T1"]["acc_avg"] >= g.t1_acc_min and v["T1"]["delta_avg"]["ci_low"] > 0,
@@ -212,10 +214,7 @@ def judge_test(values, gate0_status, contract, mode):
            "T3": _g3_ranges(v["T3"], g, "test")}
     conds = {c: {"satisfied": sat[c], "reason": _word(None if sat[c] else TEST_REASON[c]),
                  "note": RECALIBRATION_NOTE if c == "T3" and not sat[c] else None} for c in TEST_CONDITIONS}
-    out = _status(conds, sat, mode, "final_status")
-    if not mode.smoke and gate0_status != "PASS":
-        raise ValueError("T1-T3 are judged only after Gate 0 PASS (got %r)" % (gate0_status,))
-    return out
+    return _status(conds, sat, mode, "final_status")
 
 
 def _status(conds, sat, mode, key):

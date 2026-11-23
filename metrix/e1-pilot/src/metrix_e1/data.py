@@ -502,6 +502,7 @@ def build_general_dev(p, tok, eval_sets_path, parcae_path):
     ptok = Tokenizer.from_file(str(parcae_path))
     kept = collections.defaultdict(list)
     rows_by_split = collections.Counter()           # counted from the row prefix only (counting is not reading)
+    parsed = 0                                      # DEV rows decoded and parsed (every DEV row, kept or not)
     want = p.general_dev_split.encode("ascii")
     with open(eval_sets_path, "rb") as fh:
         for lineno, line in enumerate(fh, 1):
@@ -512,6 +513,7 @@ def build_general_dev(p, tok, eval_sets_path, parcae_path):
             if m.group(1) != want:
                 continue
             r = json.loads(line.decode("utf-8"))
+            parsed += 1
             if r["split"] != p.general_dev_split:
                 raise ImplementationFail("eval_sets.jsonl line %d: parsed split differs from the row prefix" % lineno)
             if len(kept[r["domain"]]) < p.general_dev_per_domain:
@@ -523,7 +525,7 @@ def build_general_dev(p, tok, eval_sets_path, parcae_path):
         for r in kept[d]:
             ids = tok.encode(ptok.decode(r["tokens"], skip_special_tokens=True), add_special_tokens=False)[:p.general_max_tokens]
             out.append({"domain": d, "doc_id": r["doc_id"], "ids": ids, "text": tok.decode(ids)})
-    return out, {"rows_by_split": dict(sorted(rows_by_split.items())), "decoded_rows": len(out)}
+    return out, {"rows_by_split": dict(sorted(rows_by_split.items())), "parsed_rows": parsed, "windows": len(out)}
 
 
 # ------------------------------------------------------------------------------------------------ all files (2.8)
@@ -645,8 +647,8 @@ def main(argv=None):
         print("both ratios within [%s, %s]: with %s, without %s" % (
             yr["bounds"][0], yr["bounds"][1], yr["bounds"][0] <= yr["ratio"] <= yr["bounds"][1],
             yr["bounds"][0] <= yr["ratio_without_endoftext"] <= yr["bounds"][1]))
-        print("eval_sets.jsonl rows by split (row prefix only): %(rows_by_split)s; rows parsed and decoded: %(decoded_rows)d"
-              % info["general_dev"])
+        print("eval_sets.jsonl rows by split (row prefix only): %(rows_by_split)s; DEV rows decoded and parsed: "
+              "%(parsed_rows)d; windows kept (decoded with the parcae tokenizer): %(windows)d" % info["general_dev"])
         for name, h in file_hashes(a.out).items():
             print("%-18s rows %4d  byte_sha256 %s  canonical_sha256 %s" % (name, info["rows"][name], h["byte_sha256"], h["canonical_sha256"]))
         for key, sha in fz.check_data_dir(a.out).items():

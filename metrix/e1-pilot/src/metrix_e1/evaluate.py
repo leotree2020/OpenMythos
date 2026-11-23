@@ -81,7 +81,7 @@ def _no_autocast(device):
     return torch.autocast(device_type=torch.device(device).type, enabled=False)
 
 
-def check_device(mode, device):
+def require_gpu(mode, device):
     """Protocol sections 0 and 7: no model evaluation on CPU. Formal and preflight evaluations run on the GPU only;
     smoke mode may use the CPU."""
     if not mode.smoke and torch.device(device).type != "cuda":
@@ -115,7 +115,7 @@ def sequence_logprobs(model, items, pad_id, device, batch_size):
 def _check_finite(values, what):
     bad = [i for i, v in enumerate(values) if not math.isfinite(v)]
     if bad:
-        raise NonFinite("%s: %d non-finite values (first at item %d)" % (what, len(bad), bad[0]))
+        raise NonFinite("%s: %d non-finite values (first at item %d)" % (what, len(bad), bad[0]), [values[i] for i in bad])
 
 
 def _judge(scores, answer_index):
@@ -296,13 +296,20 @@ SPLIT_FILES = {"dev": ("dev_qa.jsonl", "general_dev.jsonl"), "test": ("test_qa.j
 
 
 def evaluate_model(model, tok, data, templates, ev, mode, device, split="dev", with_em=True, with_s_mapping=False,
-                   batch_size=64):
+                   batch_size=64, test_authorization=None, repo_root=None):
     """Section 5 evaluation of one model (parsed files of the data directory in `data`): QA scores of the split, the
     TRAIN closed book, EM on the split's questions, general-text NLL of the split; optionally (DEV) S's own-mapping
     accuracy. Output keys: <split>_qa, train_cb, general_<split>, em_<split>[, s_mapping_dev_qa, s_mapping_cb].
     split "test" needs test_qa.jsonl / general_test.jsonl in `data`, which only exist after the TEST generator's
-    preconditions (test_data.py). Formal and preflight modes evaluate on the GPU only (check_device)."""
-    check_device(mode, device)
+    preconditions (test_data.py), and the TestAuthorization of those preconditions, checked against the committed
+    Gate 0 and freeze records before anything is evaluated (leakage.verify_authorization). Formal and preflight modes
+    evaluate on the GPU only (require_gpu)."""
+    if split not in SPLIT_FILES:
+        raise ValueError("split %r" % (split,))
+    if split == "test":
+        from .leakage import verify_authorization
+        verify_authorization(test_authorization, repo_root)
+    require_gpu(mode, device)
     qa_file, gen_file = SPLIT_FILES[split]
     facts, cands, qs = data["facts.jsonl"], data["candidates.json"], data[qa_file]
     out = {"%s_qa" % split: score_qa(model, tok, qs, cands, facts, ev, device, batch_size),

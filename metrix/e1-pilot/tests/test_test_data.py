@@ -80,6 +80,8 @@ def test_refuses_without_data(fz, inputs_dir, tmp_path, capsys):
 def test_generation_needs_authorization(fz, inputs_dir, generated):
     with pytest.raises(ImplementationFail):
         TD.generate_test(fz, None, inputs_dir, generated["dir"])
+    with pytest.raises(ImplementationFail, match="not committed"):      # a hand-made authorization is re-checked
+        TD.generate_test(fz, LK.TestAuthorization(None, None, None), inputs_dir, generated["dir"])
     with pytest.raises(ImplementationFail):
         LK.run_test_part(fz.split_manifest, {}, [], [], None, fz.repo_root)
 
@@ -181,3 +183,27 @@ def test_run_test_part_rechecks_the_committed_records(fz, tmp_path):
     root = _repo(tmp_path, {})
     with pytest.raises(ImplementationFail, match="not committed"):
         LK.run_test_part(fz.split_manifest, {}, [], [], auth, root)
+
+
+
+def test_check_preconditions_calls_the_interpretation_check(fz, contract, generated, inputs_dir, monkeypatch):
+    """With conditions 1-3 replaced by stubs that hold, check_preconditions still refuses while interpretations are
+    pending (the stub run stops before any authorization exists)."""
+    monkeypatch.setattr(TD.STP, "st12", lambda *a, **k: fz)
+    monkeypatch.setattr(TD, "check_gate0_record", lambda *a, **k: "a" * 64)
+    monkeypatch.setattr(TD, "check_selection_record", lambda *a, **k: "b" * 64)
+    with pytest.raises(TD.PreconditionFailed, match="interpretations not yet ruled"):
+        TD.check_preconditions(None, inputs_dir, generated["dir"])
+
+
+def test_verify_authorization_hash_branches(fz, contract, generated, tmp_path):
+    from metrix_e1 import mode as M
+    content = fz.check_data_dir(generated["dir"])
+    g = _gate0(fz)
+    sel = _selection(fz, contract, content, _sha(g))
+    root = _repo(tmp_path, {G0: g, SEL: sel})
+    LK.verify_authorization(LK.TestAuthorization(fz.record.commit, _sha(g), _sha(sel)), root)     # matching hashes
+    with pytest.raises(ImplementationFail, match="authorization"):
+        LK.verify_authorization(LK.TestAuthorization(fz.record.commit, _sha(g), "f" * 64), root)
+    with pytest.raises(ImplementationFail, match="frozen commit"):
+        LK.verify_authorization(LK.TestAuthorization("0" * 40, _sha(g), _sha(sel)), root)

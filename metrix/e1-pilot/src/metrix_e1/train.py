@@ -371,6 +371,9 @@ def train_run(model, tok, data, spec, contract, mode, device, log_fn=None):
     if mode.preflight and mode.shortened_steps != contract.preflight_steps:
         raise ImplementationFail("preflight runs the protocol's %d steps, not %d" % (contract.preflight_steps,
                                                                                   mode.shortened_steps))
+    if mode.preflight and spec != search_runs(contract, "F")[0]:
+        raise ImplementationFail("preflight runs the first configuration %s, not %s" % (
+            search_runs(contract, "F")[0].name, spec.name))
     steps = mode.steps(tr.total_steps)
     notes = prepare_arm(model, spec, contract, mode)
     params = trainable_parameters(model)

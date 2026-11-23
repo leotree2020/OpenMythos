@@ -17,6 +17,7 @@ import torch
 
 from . import stops as STP
 from .mode import SMOKE_DEVICE_NOTE
+from .train import ARMS_TRAINED
 
 DETERMINISM_ENV = "CUBLAS_WORKSPACE_CONFIG"
 
@@ -199,12 +200,13 @@ def preflight_summary(log, device):
 
 
 def evaluation_units(contract):
-    """B17: evaluations of the pilot in units of one DEV evaluation (evaluate.evaluate_model, split "dev"): N, the 30
-    runs and the second evaluation of F's 3 selected checkpoints (G0.8) on DEV; N and the 30 runs once on TEST,
-    whose question part scales with test / dev questions per fact (taken for the whole evaluation: an upper side)."""
+    """B17: evaluations of the pilot in units of one DEV evaluation (evaluate.evaluate_model, split "dev"): on DEV, N,
+    the 30 runs and the second evaluation of F's 3 selected checkpoints (G0.8); on TEST, once, N and the final
+    checkpoints of the 5 trained arms x 3 seeds (the selected configurations; unselected search runs are not
+    evaluated on TEST), scaled by test / dev questions per fact (taken for the whole evaluation: an upper side)."""
     tr, acc = contract.training, contract.accounting
     dev = 1 + contract.arms.counts["total_training_runs"] + len(tr.training_seeds)
-    test = (1 + contract.arms.counts["total_training_runs"]) * acc.test_questions_per_fact / acc.dev_questions_per_fact
+    test = (1 + len(ARMS_TRAINED) * len(tr.training_seeds)) * acc.test_questions_per_fact / acc.dev_questions_per_fact
     return dev + test
 
 

@@ -27,7 +27,7 @@ import torch
 
 from . import frozen as FZ
 from . import interpretations as INT
-from .errors import ImplementationFail
+from .errors import ImplementationFail, ST12Error
 
 FORMAL_RESULTS_REL = FZ.PILOT_REL + "/results"
 GATE0_RECORD = "gate0_record.json"
@@ -70,6 +70,9 @@ def library_versions():
 def environment(fz, device=None, determinism=None, data_hashes=None):
     """The environment and provenance block of a record."""
     pf = (fz.repo_root / FZ.PROTOCOL_FROZEN_REL).read_bytes()
+    if FZ.sha256_hex(pf) != fz.record.source_sha256:
+        raise ST12Error("PROTOCOL_FROZEN changed after it was loaded (sha256 %s, loaded %s)" % (
+            FZ.sha256_hex(pf), fz.record.source_sha256))
     root = fz.repo_root
     env = {
         "python": sys.version, "python_implementation": platform.python_implementation(),
@@ -83,8 +86,7 @@ def environment(fz, device=None, determinism=None, data_hashes=None):
                             "file_sha256": dict(fz.record.file_sha256), "data_sha256": dict(fz.record.data_sha256),
                             "PROTOCOL_FROZEN_parsed_bytes_sha256": fz.record.source_sha256,
                             "PROTOCOL_FROZEN_working_tree_bytes_sha256": FZ.sha256_hex(pf),
-                            "PROTOCOL_FROZEN_lf_normalized_sha256": FZ.sha256_hex(pf.replace(b"\r\n", b"\n")),
-                            "PROTOCOL_FROZEN_unchanged_since_load": FZ.sha256_hex(pf) == fz.record.source_sha256},
+                            "PROTOCOL_FROZEN_lf_normalized_sha256": FZ.sha256_hex(pf.replace(b"\r\n", b"\n"))},
         "data_hashes": data_hashes,
         "interpretations": INT.as_records(),
     }
@@ -157,6 +159,18 @@ def committed_json(repo_root, rel):
         return json.loads(r.stdout), FZ.sha256_hex(r.stdout)
     except ValueError as e:
         raise NotCommitted("%s does not parse: %r" % (rel, e)) from e
+
+
+def committed_record(repo_root, rel, kind, frozen_commit):
+    """(record, sha256) of a committed formal-mode record of `kind` (gate0 / selection_freeze) naming
+    `frozen_commit`; raises NotCommitted when the file is not committed as it is in the working tree, or is not
+    such a record."""
+    rec, sha = committed_json(repo_root, rel)
+    if rec.get("kind") != kind or rec.get("mode") != "formal" or rec.get("label") is not None:
+        raise NotCommitted("%s is not a formal-mode %s record (kind %r, mode %r)" % (rel, kind, rec.get("kind"), rec.get("mode")))
+    if rec.get("frozen_commit") != frozen_commit:
+        raise NotCommitted("%s names frozen commit %r, PROTOCOL_FROZEN %s" % (rel, rec.get("frozen_commit"), frozen_commit))
+    return rec, sha
 
 
 def gate0_record(fz, mode, gate0_result):

@@ -244,8 +244,6 @@ class Statistics:
     bootstrap_seed: int
     strata: tuple                   # resampled separately, in this order
     z_sum: float                    # 1.96 + 0.84 (G0.10)
-    z_alpha: float
-    z_power: float
     deltas: tuple                   # G0.10 effect sizes
 
 
@@ -265,7 +263,7 @@ def _statistics(dm, protocol_text):
         % (re.escape(lo), re.escape(hi), NUM, NUM, NUM, NUM, NUM), g10, "G0.10").groups()
     return Statistics(n_boot=int(n.replace(",", "")), ci_low_pct=float(lo), ci_high_pct=float(hi), purpose_format=purpose,
                       bootstrap_seed=dm["seeds"]["BOOTSTRAP_SEED"], strata=(s1, s2), z_sum=float(za) + float(zp),
-                      z_alpha=float(za), z_power=float(zp), deltas=(float(d1), float(d2), float(d3)))
+                      deltas=(float(d1), float(d2), float(d3)))
 
 
 # ------------------------------------------------------------------------------------------- Gate 0 (section 8)

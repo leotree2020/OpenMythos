@@ -51,7 +51,9 @@ def test_counts_and_ratio(fz, generated):
     assert len(m) == 1
     r = generated["info"]["y_ratio"]
     assert (r["F_tokens"], r["Y_tokens"]) == tuple(int(x.replace(",", "")) for x in m[0])
-    assert generated["info"]["general_dev"]["decoded_rows"] == generated["info"]["rows"]["general_dev.jsonl"]
+    assert generated["info"]["general_dev"]["windows"] == generated["info"]["rows"]["general_dev.jsonl"]
+    # every row decoded and parsed is a DEV row: as many as the row-prefix count of the DEV split
+    assert generated["info"]["general_dev"]["parsed_rows"] == generated["info"]["general_dev"]["rows_by_split"]["dev"]
 
 
 def test_no_test_file(generated):

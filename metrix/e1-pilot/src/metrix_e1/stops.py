@@ -151,11 +151,12 @@ def st13(fz, test_read_before_freeze):
 
 
 def st13_scan(fz, repo_root, dirs):
-    """ST13 by detection: while the freeze record of the selected configurations is not committed, a TEST file
-    (test_qa.jsonl, general_test.jsonl) in any of `dirs` means TEST was generated before the freeze."""
+    """ST13 by detection: while no valid freeze record of the selected configurations is committed (formal mode,
+    kind selection_freeze, this frozen commit), a TEST file (test_qa.jsonl, general_test.jsonl) in any of `dirs`
+    means TEST was generated before the freeze. To be called at every step start (stage C)."""
     from . import record as R
     try:
-        R.committed_json(repo_root, R.SELECTION_FREEZE_REL)
+        R.committed_record(repo_root, R.SELECTION_FREEZE_REL, "selection_freeze", fz.record.commit)
         return []
     except R.NotCommitted:
         pass

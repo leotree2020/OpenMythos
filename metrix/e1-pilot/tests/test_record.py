@@ -90,4 +90,8 @@ def test_record_constructors_and_committed_json(fz, tmp_path):
 def test_environment_records_the_parsed_protocol_frozen(fz):
     pf = R.environment(fz)["protocol_frozen"]
     assert pf["PROTOCOL_FROZEN_parsed_bytes_sha256"] == fz.record.source_sha256
-    assert pf["PROTOCOL_FROZEN_unchanged_since_load"] is True
+    import dataclasses
+    from metrix_e1.errors import ST12Error
+    changed = dataclasses.replace(fz, record=dataclasses.replace(fz.record, source_sha256="0" * 64))
+    with pytest.raises(ST12Error):                                  # PROTOCOL_FROZEN differs from what was loaded
+        R.environment(changed)

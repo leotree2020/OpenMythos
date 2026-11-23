@@ -248,6 +248,8 @@ def test_preflight_runs_exactly_the_protocol_steps(tok, data_rows, contract):
         T.train_run(tiny_model(), tok, data_rows, _spec(contract, "F", "F1"), contract, M.preflight_mode(contract), "cpu")
     with pytest.raises(ImplementationFail, match="preflight runs the protocol's 20 steps"):
         T.train_run(tiny_model(), tok, data_rows, _spec(contract, "F", "F1"), contract, M.RunMode(M.PREFLIGHT, 5), "cuda")
+    with pytest.raises(ImplementationFail, match="preflight runs the first configuration F-F1-seed101"):
+        T.train_run(tiny_model(), tok, data_rows, _spec(contract, "F", "F2"), contract, M.preflight_mode(contract), "cuda")
 
 
 def test_kl_call_site_order_and_gradient(tok, data_rows, contract, monkeypatch):
@@ -271,3 +273,24 @@ def test_kl_call_site_order_and_gradient(tok, data_rows, contract, monkeypatch):
     assert seen[0] == (True, False) and seen[2] == (True, False)
     val, hand, rev = seen[3]
     assert val > 0 and abs(val - hand) < 1e-6 and abs(val - rev) > 1e-9
+
+
+
+def test_kl_term_moves_the_parameters(tok, data_rows, contract, monkeypatch):
+    """The KL term reaches the gradient: A1 and A3 differ only in lambda (0.3 vs 3.0, same learning rate), so their
+    parameters after 2 steps differ. Control: with the KL detached (what a wrong call site would do) lambda has no
+    effect and the two runs end bit-identical, so this test catches a detached KL."""
+    a1, a3 = _spec(contract, "A", "A1"), _spec(contract, "A", "A3")
+    assert a1.cfg["learning_rate"] == a3.cfg["learning_rate"] and a1.cfg["anchor_lambda"] != a3.cfg["anchor_lambda"]
+    attached = [T.state_sha256(_trained(tok, data_rows, contract, s, 2)) for s in (a1, a3)]
+    assert attached[0] != attached[1]
+    real = T.anchor_kl
+    monkeypatch.setattr(T, "anchor_kl", lambda lt, lb, m: real(lt, lb, m).detach())
+    detached = [T.state_sha256(_trained(tok, data_rows, contract, s, 2)) for s in (a1, a3)]
+    assert detached[0] == detached[1]
+
+
+def _trained(tok, data_rows, contract, spec, steps):
+    m = tiny_model()
+    T.train_run(m, tok, data_rows, spec, contract, M.smoke_mode(steps), "cpu")
+    return m

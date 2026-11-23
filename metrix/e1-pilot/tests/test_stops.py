@@ -151,9 +151,10 @@ def test_st11(fz, contract):
     hours, parts = CP.estimate_total_hours(contract, mean_step_seconds=0.5, fact_tokens_per_step=128,
                                            anchor_tokens_per_step=508, dev_evaluation_seconds=40.0, used_seconds=60.0)
     assert parts["a_runs"] == 8 and parts["other_runs"] == 22
-    assert parts["evaluation_units"] == (1 + 30 + 3) + 31 * 3 / 2 == 80.5
+    # DEV: N + 30 runs + 3 G0.8 re-evaluations; TEST: N + 5 arms x 3 seeds, x 3/2 questions per fact
+    assert parts["evaluation_units"] == (1 + 30 + 3) + (1 + 5 * 3) * 3 / 2 == 58.0
     assert math.isclose(parts["a_factor"], 1 + 8 * 508 / (6 * 128), rel_tol=1e-12)
-    assert math.isclose(hours, (0.5 * 300 * (22 + 8 * parts["a_factor"]) + 40.0 * 80.5 + 60.0) / 3600, rel_tol=1e-12)
+    assert math.isclose(hours, (0.5 * 300 * (22 + 8 * parts["a_factor"]) + 40.0 * 58.0 + 60.0) / 3600, rel_tol=1e-12)
     raises("ST11", STP.st11, fz, contract, CP.estimate_total_hours(contract, 5.0, 128, 508, 40.0)[0])
 
 
@@ -198,6 +199,23 @@ def test_st13(fz, tmp_path):
     (d / "general_test.jsonl").write_text("", encoding="utf-8")
     e = raises("ST13", STP.st13_scan, fz, fz.repo_root, [tmp_path / "other", d])
     assert e.void_pilot
+    # a committed freeze record counts only if it is a valid formal one: a smoke record does not stop the scan
+    import json
+    import subprocess
+    from metrix_e1 import record as R
+    root = tmp_path / "repo"
+    (root / R.FORMAL_RESULTS_REL).mkdir(parents=True)
+    git = ["git", "-C", str(root), "-c", "user.name=t", "-c", "user.email=t@invalid", "-c", "commit.gpgsign=false"]
+    subprocess.run(git[:3] + ["init", "-q"], check=True)
+    for mode, expect_stop in ((M.smoke_mode(3), True), (M.FORMAL_MODE, False)):
+        rec = R.selection_freeze_record(fz, mode, {}, {}, {}, "0" * 64)
+        (root / R.SELECTION_FREEZE_REL).write_text(json.dumps(rec), encoding="utf-8")
+        subprocess.run(git + ["add", "-A"], check=True)
+        subprocess.run(git + ["commit", "-q", "-m", mode.name], check=True)
+        if expect_stop:
+            raises("ST13", STP.st13_scan, fz, root, [d])
+        else:
+            assert STP.st13_scan(fz, root, [d]) == []
 
 
 def test_nonfinite_carries_no_status_and_st6_decides(fz):

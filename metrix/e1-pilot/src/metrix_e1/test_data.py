@@ -49,14 +49,9 @@ class PreconditionFailed(Exception):
 
 def _committed(repo_root, rel, kind, fz):
     try:
-        rec, sha = R.committed_json(repo_root, rel)
+        return R.committed_record(repo_root, rel, kind, fz.record.commit)
     except R.NotCommitted as e:
         raise PreconditionFailed(str(e)) from e
-    if rec.get("kind") != kind or rec.get("mode") != "formal" or rec.get("label") is not None:
-        raise PreconditionFailed("%s is not a formal-mode %s record (kind %r, mode %r)" % (rel, kind, rec.get("kind"), rec.get("mode")))
-    if rec.get("frozen_commit") != fz.record.commit:
-        raise PreconditionFailed("%s names frozen commit %r, PROTOCOL_FROZEN %s" % (rel, rec.get("frozen_commit"), fz.record.commit))
-    return rec, sha
 
 
 def check_gate0_record(fz, repo_root):
@@ -139,9 +134,10 @@ def build_test_qa(fz, facts, per_fact):
 
 
 def generate_test(fz, authorization, inputs_dir, data_dir):
-    """test_qa.jsonl and general_test.jsonl in memory ({file name: bytes}, info). Only with a TestAuthorization."""
-    if not isinstance(authorization, LK.TestAuthorization):
-        raise ImplementationFail("TEST is generated only after the preconditions")
+    """test_qa.jsonl and general_test.jsonl in memory ({file name: bytes}, info). Only with a TestAuthorization whose
+    hashes match the committed Gate 0 and freeze records (leakage.verify_authorization), checked before anything is
+    read."""
+    LK.verify_authorization(authorization, fz.repo_root)
     p = D.params(fz)
     paths = D.check_inputs(fz, p, inputs_dir)
     tok = D.load_qwen_tokenizer(p, paths)
