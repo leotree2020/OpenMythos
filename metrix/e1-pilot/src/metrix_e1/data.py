@@ -425,15 +425,19 @@ def build_train_Y(tpl, facts):
 
 def y_ratio(p, tok, train_F, train_Y):
     """2.6: Y tokens / F tokens over one pass, each sequence = text ids + <|endoftext|> (reference:
-    reports/round2/y_ratio.py). Outside the frozen interval -> IMPLEMENTATION_FAIL."""
+    reports/round2/y_ratio.py; Review Gate ruling on stage A item 3). Outside the frozen interval ->
+    IMPLEMENTATION_FAIL. The ratio without the <|endoftext|> of each sequence is reported next to it (same ruling: both
+    ratios are reported; only the ratio with <|endoftext|> is the protocol check)."""
     def n(rows):
-        return sum(len(tok.encode(r["text"], add_special_tokens=False)) + 1 for r in rows)
-    f_tok, y_tok = n(train_F), n(train_Y)
+        return sum(len(tok.encode(r["text"], add_special_tokens=False)) for r in rows)
+    f_txt, y_txt = n(train_F), n(train_Y)
+    f_tok, y_tok = f_txt + len(train_F), y_txt + len(train_Y)
     ratio = y_tok / f_tok
     lo, hi = p.y_ratio_bounds
     if not lo <= ratio <= hi:
         raise ImplementationFail("Y / F token ratio %.4f outside [%s, %s] (F %d, Y %d tokens)" % (ratio, lo, hi, f_tok, y_tok))
-    return {"F_tokens": f_tok, "Y_tokens": y_tok, "ratio": ratio}
+    return {"F_tokens": f_tok, "Y_tokens": y_tok, "ratio": ratio, "F_tokens_without_endoftext": f_txt,
+            "Y_tokens_without_endoftext": y_txt, "ratio_without_endoftext": y_txt / f_txt, "bounds": [lo, hi]}
 
 
 def build_dev_qa(p, tpl, facts):
@@ -484,27 +488,30 @@ def check_exposure(facts, cands, corpora):
 
 # ------------------------------------------------------------------------------------------ general DEV (2.7, 3)
 
-_ROW_HEAD = re.compile(r'\{"domain": "[^"\\]*", "split": "([^"\\]*)", ')    # group 1: the split field only
+_ROW_HEAD = re.compile(rb'\{"domain": "[^"\\]*", "split": "([^"\\]*)", ')    # group 1: the split field only
 
 
 def build_general_dev(p, tok, eval_sets_path, parcae_path):
-    """2.7 general DEV windows (reference: reports/round5/l6_check.py). Only rows whose split field (read from the
-    row prefix) is the DEV split are parsed and decoded. Window = the first general_max_tokens ids of the protocol
+    """2.7 general DEV windows (reference: reports/round5/l6_check.py). The file is read as bytes; only rows whose
+    split field (matched on the raw bytes of the row prefix) is the DEV split are decoded to text and parsed (protocol
+    section 3: parsing the split field and counting are not reading TEST; data-auditor stage B observation 1: no
+    test row is even decoded from UTF-8). Window = the first general_max_tokens ids of the protocol
     tokenizer for the parcae-decoded text (special tokens skipped); text = decode of those ids (default arguments).
     Rows {"domain", "doc_id", "ids", "text"}, domains in manifest order, file order within a domain."""
     from tokenizers import Tokenizer
     ptok = Tokenizer.from_file(str(parcae_path))
     kept = collections.defaultdict(list)
     rows_by_split = collections.Counter()           # counted from the row prefix only (counting is not reading)
-    with open(eval_sets_path, encoding="utf-8") as fh:
+    want = p.general_dev_split.encode("ascii")
+    with open(eval_sets_path, "rb") as fh:
         for lineno, line in enumerate(fh, 1):
             m = _ROW_HEAD.match(line)
             if m is None:
                 raise ImplementationFail("eval_sets.jsonl line %d does not start with the domain and split fields" % lineno)
-            rows_by_split[m.group(1)] += 1
-            if m.group(1) != p.general_dev_split:
+            rows_by_split[m.group(1).decode("ascii", "replace")] += 1      # the split field only
+            if m.group(1) != want:
                 continue
-            r = json.loads(line)
+            r = json.loads(line.decode("utf-8"))
             if r["split"] != p.general_dev_split:
                 raise ImplementationFail("eval_sets.jsonl line %d: parsed split differs from the row prefix" % lineno)
             if len(kept[r["domain"]]) < p.general_dev_per_domain:
@@ -631,7 +638,13 @@ def main(argv=None):
             info["python"], json.dumps(info["libraries"]), json.dumps(fz.data_manifest["model"]["libraries"])))
         print("name generation per cell:", json.dumps(info["name_log"]))
         print("S derangement attempts per cell:", json.dumps(info["s_attempts"]))
-        print("Y / F token ratio: F %(F_tokens)d, Y %(Y_tokens)d, ratio %(ratio).4f" % info["y_ratio"])
+        yr = info["y_ratio"]
+        print("Y / F token ratio: F %(F_tokens)d, Y %(Y_tokens)d, ratio %(ratio).4f" % yr)
+        print("Y / F token ratio without <|endoftext|> (report only): F %(F_tokens_without_endoftext)d, Y "
+              "%(Y_tokens_without_endoftext)d, ratio %(ratio_without_endoftext).4f" % yr)
+        print("both ratios within [%s, %s]: with %s, without %s" % (
+            yr["bounds"][0], yr["bounds"][1], yr["bounds"][0] <= yr["ratio"] <= yr["bounds"][1],
+            yr["bounds"][0] <= yr["ratio_without_endoftext"] <= yr["bounds"][1]))
         print("eval_sets.jsonl rows by split (row prefix only): %(rows_by_split)s; rows parsed and decoded: %(decoded_rows)d"
               % info["general_dev"])
         for name, h in file_hashes(a.out).items():

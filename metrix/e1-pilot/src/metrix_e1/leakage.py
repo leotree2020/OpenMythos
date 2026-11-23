@@ -18,10 +18,11 @@ Gate 0 part (G0.1; section 8 step 2), computed by run_gate0():
 L1 and L2 use the 32 frozen templates only (template texts, including the TEST templates, are part of the protocol;
 no TEST question is instantiated).
 
-TEST part (section 8 step 8: L3-L5 on TEST after test_qa.jsonl exists; L6 anchor vs general_test.jsonl): not executed
-by this module in Implementation stage A and not reachable from its command line; the step 8 wiring is built in a
-later stage behind the TEST generator's preconditions. The counting functions below take in-memory lists and read no
-file, so the same functions serve both parts.
+TEST part (section 8 step 8: L3-L5 on TEST after test_qa.jsonl exists; L6 anchor vs general_test.jsonl): run_test_part(),
+reachable only with a TestAuthorization, which only test_data.check_preconditions() creates after the three
+preconditions of the TEST generator hold (Implementation Task Order V1, section 5: "涉及 TEST 的部分只能由第 8 步调用");
+not reachable from this module's command line. What L3 and L5 count on TEST is interpretation B19 (pending). The
+counting functions below take in-memory lists and read no file, so the same functions serve both parts.
 
 Command (protocol section 3 interface; also reachable as python -m metrix.e1_pilot.check_leakage):
   python -m metrix_e1.leakage --data <DATA_DIR> --split-manifest metrix/e1-pilot/SPLIT_MANIFEST.json \
@@ -144,12 +145,16 @@ def load_data(data_dir):
             for name in ("facts", "train_F", "train_S", "train_Y", "dev_qa", "anchor_text", "general_dev")}
 
 
+def training_corpora(data):
+    """Texts of every training corpus (L3a, L4): train_F, train_S, train_Y and anchor_text (arm A trains on it)."""
+    return {name: [r["text"] for r in data[name]] for name in ("train_F", "train_S", "train_Y", "anchor_text")}
+
+
 def run_gate0(split_manifest, data):
     """All Gate 0 checks. Returns the report dict (value, limit, within_limit and details per check)."""
     rules = _rules(split_manifest)
     facts = data["facts"]
-    corpora = {"train_F": [r["text"] for r in data["train_F"]], "train_S": [r["text"] for r in data["train_S"]],
-               "train_Y": [r["text"] for r in data["train_Y"]], "anchor_text": [r["text"] for r in data["anchor_text"]]}
+    corpora = training_corpora(data)
     unread = [s for f in facts if f["exposure"] == "unread" for s in (f["entity"], f["answer"])]
     learned_answers = [f["answer"] for f in facts if f["exposure"] == "learned"]
     out = {}
@@ -169,6 +174,59 @@ def run_gate0(split_manifest, data):
                          "anchor_documents": len(data["anchor_text"]), "windows": len(data["general_dev"])})
     report = {"part": "gate0", "checks": {}}
     for c in CHECKS:
+        value, detail = out[c]
+        limit = rules["limits"][c]
+        report["checks"][c] = {"value": value, "limit": limit, "within_limit": value <= limit, "detail": detail}
+    report["result"] = "PASS" if all(v["within_limit"] for v in report["checks"].values()) else "FAIL"
+    return report
+
+
+# ----------------------------------------------------------------------------------------- TEST part (step 8)
+
+class TestAuthorization:
+    """Created only by test_data.check_preconditions() once the TEST generator's preconditions hold (a convention: Python
+    cannot stop other code from building one; run_test_part therefore re-checks the hashes it carries against the
+    committed records)."""
+    __test__ = False        # not a pytest test class
+
+    def __init__(self, frozen_commit, gate0_record_sha256, selection_record_sha256):
+        self.frozen_commit = frozen_commit
+        self.gate0_record_sha256 = gate0_record_sha256
+        self.selection_record_sha256 = selection_record_sha256
+
+
+TEST_CHECKS = ("L3a", "L3b", "L4", "L5", "L6")
+
+
+def run_test_part(split_manifest, data, test_qa, general_test, authorization, repo_root):
+    """Section 8 step 8, after test_qa.jsonl and general_test.jsonl exist: L4 on the instantiated TEST questions,
+    L6 anchor_text vs general_test; L3a, L3b and L5 re-run as at Gate 0 (interpretation B19). `data` as load_data();
+    `test_qa`, `general_test`: the TEST rows in memory. The authorization is checked again against the committed Gate 0
+    and freeze records (record.committed_json). Returns the report (same layout as run_gate0)."""
+    if not isinstance(authorization, TestAuthorization):
+        raise ImplementationFail("the TEST part of the leakage checks runs only after the TEST generator's preconditions")
+    from . import record as R
+    for rel, want in ((R.GATE0_RECORD_REL, authorization.gate0_record_sha256),
+                      (R.SELECTION_FREEZE_REL, authorization.selection_record_sha256)):
+        try:
+            _, got = R.committed_json(repo_root, rel)
+        except R.NotCommitted as e:
+            raise ImplementationFail("TEST part refused: %s" % e) from e
+        if got != want:
+            raise ImplementationFail("TEST part refused: committed %s has sha256 %s, authorization %s" % (rel, got, want))
+    gate0 = run_gate0(split_manifest, data)
+    rules = _rules(split_manifest)
+    corpora = training_corpora(data)
+    out = {c: (gate0["checks"][c]["value"], dict(gate0["checks"][c]["detail"], part="re-run as at Gate 0 (B19)"))
+           for c in ("L3a", "L3b", "L5")}
+    questions = [r["question"] for r in test_qa]
+    total, found = substring_hits(questions, corpora, case_insensitive=False)
+    out["L4"] = (total, {"part": "TEST", "questions": len(questions), "corpora": sorted(corpora), "found": found})
+    out["L6"] = l6_general_text(data["anchor_text"], general_test, rules["l6_n"])
+    out["L6"][1].update({"part": "TEST (anchor_text vs general_test)", "n": rules["l6_n"],
+                         "anchor_documents": len(data["anchor_text"]), "windows": len(general_test)})
+    report = {"part": "test", "checks": {}, "frozen_commit": authorization.frozen_commit}
+    for c in TEST_CHECKS:
         value, detail = out[c]
         limit = rules["limits"][c]
         report["checks"][c] = {"value": value, "limit": limit, "within_limit": value <= limit, "detail": detail}

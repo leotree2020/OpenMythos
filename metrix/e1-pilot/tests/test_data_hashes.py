@@ -98,3 +98,16 @@ def test_leakage_gate0_passes(fz, generated):
     report = LK.run_gate0(fz.split_manifest, LK.load_data(generated["dir"]))
     assert report["result"] == "PASS", report
     assert set(report["checks"]) == set(LK.CHECKS)
+
+
+def test_y_f_ratio_with_and_without_endoftext(generated):
+    """Review Gate ruling on stage A, item 3: the ratio counts one <|endoftext|> per sequence (the protocol check);
+    the ratio without it is reported too; both lie in the protocol interval [0.80, 1.25] (SEARCH_SPACE.json)."""
+    yr = generated["info"]["y_ratio"]
+    assert (yr["F_tokens"], yr["Y_tokens"]) == (1889, 2260)                       # protocol 2.6
+    assert yr["F_tokens_without_endoftext"] == yr["F_tokens"] - 120 == 1769      # 120 F sequences
+    assert yr["Y_tokens_without_endoftext"] == yr["Y_tokens"] - 240 == 2020      # 240 Y sequences
+    lo, hi = yr["bounds"]
+    assert (lo, hi) == (0.80, 1.25)
+    assert lo <= yr["ratio"] <= hi and lo <= yr["ratio_without_endoftext"] <= hi
+    assert round(yr["ratio"], 4) == 1.1964 and round(yr["ratio_without_endoftext"], 4) == 1.1419

@@ -1,0 +1,55 @@
+# Implementation stage B: download config.json (no weight file) of Qwen/Qwen3-1.7B at the pinned revision into the inputs directory, for the parameter counts of the protocol architecture on the meta device (tests/test_train.py). Executor, session_01J5mxaWPrK8siadYKyqZ5pX, host vm (Anthropic cloud container). Mon Nov 23 02:17:15 UTC 2026
+# cwd metrix/e1-pilot/src; <SCRATCH> = session scratchpad. Recorded by metrix/e1-pilot/reports/round5/logrun.sh.
+$ <SCRATCH>/venv/bin/python -m metrix_e1.train fetch-config --inputs <SCRATCH>/inputs
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+config.json of Qwen/Qwen3-1.7B@70d244cc86ccca08cf5af4e1e306ecf908b1ad5e: <SCRATCH>/inputs/qwen_model/config.json sha256 1ddb5b89ebc90dcb417a45c213d818577e65976454d29385c8f6140771d95197 (not a weight file)
+RESULT: PASS
+exit=0
+$ ls -la <SCRATCH>/inputs <SCRATCH>/inputs/qwen_model
+<SCRATCH>/inputs:
+total 24
+drwxr-xr-x 6 root root 4096 Nov 23 02:17 .
+drwx------ 5 root root 4096 Nov 23 02:15 ..
+drwxr-xr-x 4 root root 4096 Nov 23 02:02 anchor_source
+drwxr-xr-x 3 root root 4096 Nov 23 02:02 parcae_tokenizer
+drwxr-xr-x 3 root root 4096 Nov 23 02:17 qwen_model
+drwxr-xr-x 3 root root 4096 Nov 23 02:02 qwen_tokenizer
+
+<SCRATCH>/inputs/qwen_model:
+total 16
+drwxr-xr-x 3 root root 4096 Nov 23 02:17 .
+drwxr-xr-x 6 root root 4096 Nov 23 02:17 ..
+drwxr-xr-x 3 root root 4096 Nov 23 02:17 .cache
+-rw-r--r-- 1 root root  726 Nov 23 02:17 config.json
+exit=0
+$ cat <SCRATCH>/inputs/qwen_model/config.json
+{
+  "architectures": [
+    "Qwen3ForCausalLM"
+  ],
+  "attention_bias": false,
+  "attention_dropout": 0.0,
+  "bos_token_id": 151643,
+  "eos_token_id": 151645,
+  "head_dim": 128,
+  "hidden_act": "silu",
+  "hidden_size": 2048,
+  "initializer_range": 0.02,
+  "intermediate_size": 6144,
+  "max_position_embeddings": 40960,
+  "max_window_layers": 28,
+  "model_type": "qwen3",
+  "num_attention_heads": 16,
+  "num_hidden_layers": 28,
+  "num_key_value_heads": 8,
+  "rms_norm_eps": 1e-06,
+  "rope_scaling": null,
+  "rope_theta": 1000000,
+  "sliding_window": null,
+  "tie_word_embeddings": true,
+  "torch_dtype": "bfloat16",
+  "transformers_version": "4.51.0",
+  "use_cache": true,
+  "use_sliding_window": false,
+  "vocab_size": 151936
+}exit=0
