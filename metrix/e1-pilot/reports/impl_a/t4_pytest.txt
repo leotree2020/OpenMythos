@@ -1,0 +1,192 @@
+# Implementation stage A raw output: unit tests (Implementation Task Order V1 section 6 items 1 and 10, plus leakage checks), pytest from requirements.lock. Host vm (Anthropic cloud container, CPU only, no GPU; tokenizer files only, no model weights; no TEST data). Written by the Executor (session_01J5mxaX4SHCYCGz74623D33). Sun Nov 22 16:33:20 UTC 2026
+# SP = /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad; METRIX_INPUTS_DIR = $SP/inputs (fetched in t2_fetch_generate.txt). cwd metrix/e1-pilot. Recorded by reports/round5/logrun.sh.
+$ git -C ../.. rev-parse HEAD
+8149d8727b4a99ea0cc9b0a1a2ebd82bd53fa0af
+exit=0
+$ bash -c cd\ ../..\ \&\&\ git\ status\ --short\ --untracked-files=all
+?? metrix/e1-pilot/reports/impl_a/t0_copy_check.txt
+?? metrix/e1-pilot/reports/impl_a/t1_lock.txt
+?? metrix/e1-pilot/reports/impl_a/t2_fetch_generate.txt
+?? metrix/e1-pilot/reports/impl_a/t3_leakage.txt
+?? metrix/e1-pilot/reports/impl_a/t4_pytest.txt
+?? metrix/e1-pilot/requirements.lock
+?? metrix/e1-pilot/src/metrix/e1_pilot/__init__.py
+?? metrix/e1-pilot/src/metrix/e1_pilot/check_leakage.py
+?? metrix/e1-pilot/src/metrix_e1/__init__.py
+?? metrix/e1-pilot/src/metrix_e1/_cli.py
+?? metrix/e1-pilot/src/metrix_e1/data.py
+?? metrix/e1-pilot/src/metrix_e1/errors.py
+?? metrix/e1-pilot/src/metrix_e1/frozen.py
+?? metrix/e1-pilot/src/metrix_e1/leakage.py
+?? metrix/e1-pilot/tasks/IMPLEMENTATION_TASK_ORDER_V1.md
+?? metrix/e1-pilot/tests/conftest.py
+?? metrix/e1-pilot/tests/test_data_hashes.py
+?? metrix/e1-pilot/tests/test_leakage.py
+?? metrix/e1-pilot/tests/test_st12.py
+exit=0
+$ sha256sum src/metrix_e1/__init__.py src/metrix_e1/_cli.py src/metrix_e1/errors.py src/metrix_e1/frozen.py src/metrix_e1/data.py src/metrix_e1/leakage.py src/metrix/e1_pilot/__init__.py src/metrix/e1_pilot/check_leakage.py tests/conftest.py tests/test_data_hashes.py tests/test_st12.py tests/test_leakage.py requirements.lock
+a61bdb2fdf97045e63810b24b4dfe06830c5b93a3b888e9c2c0aafc484b80054  src/metrix_e1/__init__.py
+18fd4f60ef2bbc4d4d55b6c7fd643c4f7d8d5578565bbf87a383cc35a748dc5a  src/metrix_e1/_cli.py
+5208ade3664b08d9a5a3762928992b1585bce9ca7a7de6b08a69e33c245f6169  src/metrix_e1/errors.py
+a1a81050f23b863057612a59bfe2c58dd28cf263f59f0abfc21b1b16300573c0  src/metrix_e1/frozen.py
+efa356258b8a462405ac071274f5c0084ad514cddd0ccae91ad2ce03b2859b42  src/metrix_e1/data.py
+2f5d11994ccd93137131eb8b303f6b5ea056ff94b7ad9bbff4f2b6132e7183c5  src/metrix_e1/leakage.py
+ce18532fd6d83602cf93731b5108626be186687f3e9c0d05e1092c9caf244e44  src/metrix/e1_pilot/__init__.py
+df2dcd0858acb44f776b546878c0c275d2c1c76ca3b841fd554a6ce4d42789d4  src/metrix/e1_pilot/check_leakage.py
+29c91e540a1ca524f80285eceb13062df91257eb18164f461e451a7406262ef2  tests/conftest.py
+99ce0cadc55b184db538d66f8ac0890f5f23a7673421f7f1bc6013bb39ff48c3  tests/test_data_hashes.py
+b63f61c4d5821747c97aeeb353b0cfdca7d4bd77786986a10875dc85762d52f0  tests/test_st12.py
+b3c557adc50038ef955812e17b8af0b259c85a318783cac987855b5397616cdf  tests/test_leakage.py
+2320df898130417e53215940469eb8aba153afabf07d398a1821ce0dbbd2fb21  requirements.lock
+exit=0
+$ env METRIX_INPUTS_DIR=/tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/inputs /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/venv/bin/python -m pytest tests -v -p no:cacheprovider
+============================= test session starts ==============================
+platform linux -- Python 3.13.18, pytest-9.2.0, pluggy-1.7.0 -- /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/venv/bin/python
+rootdir: /home/user/OpenMythos
+configfile: pyproject.toml
+plugins: anyio-4.16.0
+collecting ... collected 44 items
+
+tests/test_data_hashes.py::test_four_frozen_hashes PASSED                [  2%]
+tests/test_data_hashes.py::test_files_are_canonical PASSED               [  4%]
+tests/test_data_hashes.py::test_counts_and_ratio PASSED                  [  6%]
+tests/test_data_hashes.py::test_no_test_file PASSED                      [  9%]
+tests/test_data_hashes.py::test_byte_identical_to_reference_scripts PASSED [ 11%]
+tests/test_data_hashes.py::test_leakage_gate0_passes PASSED              [ 13%]
+tests/test_leakage.py::test_clean_data_passes PASSED                     [ 15%]
+tests/test_leakage.py::test_l3a_unread_entity_in_train_Y PASSED          [ 18%]
+tests/test_leakage.py::test_l3a_and_l3b_answers_in_anchor PASSED         [ 20%]
+tests/test_leakage.py::test_l4_dev_question_in_train_F PASSED            [ 22%]
+tests/test_leakage.py::test_l5_duplicate_string_and_fact_id PASSED       [ 25%]
+tests/test_leakage.py::test_l6_shared_13gram_counted_within_documents PASSED [ 27%]
+tests/test_leakage.py::test_l1_l2_templates PASSED                       [ 29%]
+tests/test_leakage.py::test_cli_fail_exit PASSED                         [ 31%]
+tests/test_st12.py::test_mini_repo_positive_control PASSED               [ 34%]
+tests/test_st12.py::test_frozen_commit_file_one_byte[metrix/e1-pilot/METRIX_E1_PROTOCOL.md] PASSED [ 36%]
+tests/test_st12.py::test_frozen_commit_file_one_byte[metrix/e1-pilot/DATA_MANIFEST.json] PASSED [ 38%]
+tests/test_st12.py::test_frozen_commit_file_one_byte[metrix/e1-pilot/SPLIT_MANIFEST.json] PASSED [ 40%]
+tests/test_st12.py::test_frozen_commit_file_one_byte[metrix/e1-pilot/SEARCH_SPACE.json] PASSED [ 43%]
+tests/test_st12.py::test_working_tree_file_one_byte[metrix/e1-pilot/METRIX_E1_PROTOCOL.md] PASSED [ 45%]
+tests/test_st12.py::test_working_tree_file_one_byte[metrix/e1-pilot/DATA_MANIFEST.json] PASSED [ 47%]
+tests/test_st12.py::test_working_tree_file_one_byte[metrix/e1-pilot/SPLIT_MANIFEST.json] PASSED [ 50%]
+tests/test_st12.py::test_working_tree_file_one_byte[metrix/e1-pilot/SEARCH_SPACE.json] PASSED [ 52%]
+tests/test_st12.py::test_step1_fields_are_not_compared PASSED            [ 54%]
+tests/test_st12.py::test_protocol_frozen_hash_one_byte[file] PASSED      [ 56%]
+tests/test_st12.py::test_protocol_frozen_hash_one_byte[data] PASSED      [ 59%]
+tests/test_st12.py::test_eval_sets_one_byte PASSED                       [ 61%]
+tests/test_st12.py::test_input_file_one_byte[qwen:tokenizer.json] PASSED [ 63%]
+tests/test_st12.py::test_input_file_one_byte[qwen:tokenizer_config.json] PASSED [ 65%]
+tests/test_st12.py::test_input_file_one_byte[qwen:vocab.json] PASSED     [ 68%]
+tests/test_st12.py::test_input_file_one_byte[qwen:merges.txt] PASSED     [ 70%]
+tests/test_st12.py::test_input_file_one_byte[parcae_tokenizer] PASSED    [ 72%]
+tests/test_st12.py::test_input_file_one_byte[anchor_parquet] PASSED      [ 75%]
+tests/test_st12.py::test_data_file_one_byte[facts.jsonl] PASSED          [ 77%]
+tests/test_st12.py::test_data_file_one_byte[train_F.jsonl] PASSED        [ 79%]
+tests/test_st12.py::test_data_file_one_byte[train_S.jsonl] PASSED        [ 81%]
+tests/test_st12.py::test_data_file_one_byte[train_Y.jsonl] PASSED        [ 84%]
+tests/test_st12.py::test_data_file_one_byte[dev_qa.jsonl] PASSED         [ 86%]
+tests/test_st12.py::test_data_file_one_byte[candidates.json] PASSED      [ 88%]
+tests/test_st12.py::test_data_file_one_byte[general_dev.jsonl] PASSED    [ 90%]
+tests/test_st12.py::test_data_file_one_byte[anchor_text.jsonl] PASSED    [ 93%]
+tests/test_st12.py::test_verify_positive_control PASSED                  [ 95%]
+tests/test_st12.py::test_cli_stops_on_tampered_data PASSED               [ 97%]
+tests/test_st12.py::test_cli_stops_on_tampered_input PASSED              [100%]
+
+============================= 44 passed in 41.49s ==============================
+exit=0
+
+# ===== Sun Nov 22 16:52:45 UTC 2026: second run, after the fixes for the code-reviewer review of the staged work (the run above is kept as history). New: tests/test_environment.py; changed: test_st12.py (specific messages, CRLF / step-1 positive control, JSONL parsing), test_leakage.py, test_data_hashes.py.
+$ bash -c cd\ ../..\ \&\&\ git\ status\ --short\ --untracked-files=all\ --\ metrix/e1-pilot/src\ metrix/e1-pilot/tests\ metrix/e1-pilot/requirements.lock
+AM metrix/e1-pilot/requirements.lock
+A  metrix/e1-pilot/src/metrix/e1_pilot/__init__.py
+A  metrix/e1-pilot/src/metrix/e1_pilot/check_leakage.py
+A  metrix/e1-pilot/src/metrix_e1/__init__.py
+A  metrix/e1-pilot/src/metrix_e1/_cli.py
+AM metrix/e1-pilot/src/metrix_e1/data.py
+AM metrix/e1-pilot/src/metrix_e1/errors.py
+AM metrix/e1-pilot/src/metrix_e1/frozen.py
+AM metrix/e1-pilot/src/metrix_e1/leakage.py
+A  metrix/e1-pilot/tests/conftest.py
+AM metrix/e1-pilot/tests/test_data_hashes.py
+AM metrix/e1-pilot/tests/test_leakage.py
+AM metrix/e1-pilot/tests/test_st12.py
+?? metrix/e1-pilot/tests/test_environment.py
+exit=0
+$ sha256sum src/metrix_e1/__init__.py src/metrix_e1/_cli.py src/metrix_e1/errors.py src/metrix_e1/frozen.py src/metrix_e1/data.py src/metrix_e1/leakage.py src/metrix/e1_pilot/__init__.py src/metrix/e1_pilot/check_leakage.py tests/conftest.py tests/test_data_hashes.py tests/test_environment.py tests/test_st12.py tests/test_leakage.py requirements.lock
+a61bdb2fdf97045e63810b24b4dfe06830c5b93a3b888e9c2c0aafc484b80054  src/metrix_e1/__init__.py
+18fd4f60ef2bbc4d4d55b6c7fd643c4f7d8d5578565bbf87a383cc35a748dc5a  src/metrix_e1/_cli.py
+9766d21548ed8567eb397b98199eefdccd59972d69bd2b06cdb3d272a206da1f  src/metrix_e1/errors.py
+5abeeccbaecc7b43e4fc781b7e96b6c82fbcefd3ab2a8a0ba1ba7d8496f02cf9  src/metrix_e1/frozen.py
+8a531939a8c33fd5e6565d1e0e261947954d01ae39f44b7f49be0e5ab13c9b52  src/metrix_e1/data.py
+5e1d43741cacceca916c4c28f93cf283465f4058da55222169e8b898b732ca98  src/metrix_e1/leakage.py
+ce18532fd6d83602cf93731b5108626be186687f3e9c0d05e1092c9caf244e44  src/metrix/e1_pilot/__init__.py
+df2dcd0858acb44f776b546878c0c275d2c1c76ca3b841fd554a6ce4d42789d4  src/metrix/e1_pilot/check_leakage.py
+29c91e540a1ca524f80285eceb13062df91257eb18164f461e451a7406262ef2  tests/conftest.py
+2e54592d99e0c94dde5b8049aee9d212d1d21fac17e4451757333765e121df6b  tests/test_data_hashes.py
+e0ae196831de74987ac5e9a2955a24693053e7994487edc52b2f3cb156215032  tests/test_environment.py
+9aa2ebb9842861f9355e9532471e1564635267e84f24e3439395527920efdf82  tests/test_st12.py
+eae23c5a5ce87b5bfbeea9c6d14a80e20b3df3045bdc940fb214ac7ffc29c095  tests/test_leakage.py
+f00dfe2f88fe3fb8584add8da5156a9cf4db7e71d461e15e40354bf7806245a5  requirements.lock
+exit=0
+$ env METRIX_INPUTS_DIR=/tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/inputs /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/venv/bin/python -m pytest tests -v -p no:cacheprovider
+============================= test session starts ==============================
+platform linux -- Python 3.13.18, pytest-9.2.0, pluggy-1.7.0 -- /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/venv/bin/python
+rootdir: /home/user/OpenMythos
+configfile: pyproject.toml
+plugins: anyio-4.16.0
+collecting ... collected 51 items
+
+tests/test_data_hashes.py::test_four_frozen_hashes PASSED                [  1%]
+tests/test_data_hashes.py::test_files_are_canonical PASSED               [  3%]
+tests/test_data_hashes.py::test_counts_and_ratio PASSED                  [  5%]
+tests/test_data_hashes.py::test_no_test_file PASSED                      [  7%]
+tests/test_data_hashes.py::test_byte_identical_to_reference_scripts PASSED [  9%]
+tests/test_data_hashes.py::test_leakage_gate0_passes PASSED              [ 11%]
+tests/test_environment.py::test_python_is_the_locked_interpreter PASSED  [ 13%]
+tests/test_environment.py::test_library_versions_match_protocol PASSED   [ 15%]
+tests/test_environment.py::test_library_version_mismatch_is_st8 PASSED   [ 17%]
+tests/test_leakage.py::test_clean_data_passes PASSED                     [ 19%]
+tests/test_leakage.py::test_l3a_unread_entity_in_train_Y PASSED          [ 21%]
+tests/test_leakage.py::test_l3a_and_l3b_answers_in_anchor PASSED         [ 23%]
+tests/test_leakage.py::test_l4_dev_question_in_train_F PASSED            [ 25%]
+tests/test_leakage.py::test_l5_duplicate_string_and_fact_id PASSED       [ 27%]
+tests/test_leakage.py::test_l6_shared_13gram_counted_within_documents PASSED [ 29%]
+tests/test_leakage.py::test_l1_l2_templates PASSED                       [ 31%]
+tests/test_leakage.py::test_cli_fail_exit PASSED                         [ 33%]
+tests/test_leakage.py::test_cli_bad_split_manifest PASSED                [ 35%]
+tests/test_leakage.py::test_cli_st12_on_tampered_frozen_data PASSED      [ 37%]
+tests/test_st12.py::test_mini_repo_positive_control PASSED               [ 39%]
+tests/test_st12.py::test_frozen_commit_file_one_byte[metrix/e1-pilot/METRIX_E1_PROTOCOL.md] PASSED [ 41%]
+tests/test_st12.py::test_frozen_commit_file_one_byte[metrix/e1-pilot/DATA_MANIFEST.json] PASSED [ 43%]
+tests/test_st12.py::test_frozen_commit_file_one_byte[metrix/e1-pilot/SPLIT_MANIFEST.json] PASSED [ 45%]
+tests/test_st12.py::test_frozen_commit_file_one_byte[metrix/e1-pilot/SEARCH_SPACE.json] PASSED [ 47%]
+tests/test_st12.py::test_working_tree_file_one_byte[metrix/e1-pilot/METRIX_E1_PROTOCOL.md] PASSED [ 49%]
+tests/test_st12.py::test_working_tree_file_one_byte[metrix/e1-pilot/DATA_MANIFEST.json] PASSED [ 50%]
+tests/test_st12.py::test_working_tree_file_one_byte[metrix/e1-pilot/SPLIT_MANIFEST.json] PASSED [ 52%]
+tests/test_st12.py::test_working_tree_file_one_byte[metrix/e1-pilot/SEARCH_SPACE.json] PASSED [ 54%]
+tests/test_st12.py::test_working_tree_line_endings_and_step1_fields PASSED [ 56%]
+tests/test_st12.py::test_protocol_frozen_hash_one_byte[file] PASSED      [ 58%]
+tests/test_st12.py::test_protocol_frozen_hash_one_byte[data] PASSED      [ 60%]
+tests/test_st12.py::test_eval_sets_one_byte PASSED                       [ 62%]
+tests/test_st12.py::test_input_file_one_byte[qwen:tokenizer.json] PASSED [ 64%]
+tests/test_st12.py::test_input_file_one_byte[qwen:tokenizer_config.json] PASSED [ 66%]
+tests/test_st12.py::test_input_file_one_byte[qwen:vocab.json] PASSED     [ 68%]
+tests/test_st12.py::test_input_file_one_byte[qwen:merges.txt] PASSED     [ 70%]
+tests/test_st12.py::test_input_file_one_byte[parcae_tokenizer] PASSED    [ 72%]
+tests/test_st12.py::test_input_file_one_byte[anchor_parquet] PASSED      [ 74%]
+tests/test_st12.py::test_data_file_message_table_complete PASSED         [ 76%]
+tests/test_st12.py::test_data_file_one_byte[facts.jsonl] PASSED          [ 78%]
+tests/test_st12.py::test_data_file_one_byte[train_F.jsonl] PASSED        [ 80%]
+tests/test_st12.py::test_data_file_one_byte[train_S.jsonl] PASSED        [ 82%]
+tests/test_st12.py::test_data_file_one_byte[train_Y.jsonl] PASSED        [ 84%]
+tests/test_st12.py::test_data_file_one_byte[dev_qa.jsonl] PASSED         [ 86%]
+tests/test_st12.py::test_data_file_one_byte[candidates.json] PASSED      [ 88%]
+tests/test_st12.py::test_data_file_one_byte[general_dev.jsonl] PASSED    [ 90%]
+tests/test_st12.py::test_data_file_one_byte[anchor_text.jsonl] PASSED    [ 92%]
+tests/test_st12.py::test_verify_positive_control PASSED                  [ 94%]
+tests/test_st12.py::test_cli_stops_on_tampered_data PASSED               [ 96%]
+tests/test_st12.py::test_cli_stops_on_tampered_input PASSED              [ 98%]
+tests/test_st12.py::test_parse_jsonl_splits_on_newline_only PASSED       [100%]
+
+============================= 51 passed in 44.59s ==============================
+exit=0

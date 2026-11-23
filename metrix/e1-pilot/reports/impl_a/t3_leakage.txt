@@ -1,0 +1,133 @@
+# Implementation stage A raw output: leakage checks, Gate 0 part (L1-L6, protocol section 3), run with the protocol's command (python -m metrix.e1_pilot.check_leakage, PYTHONPATH=metrix/e1-pilot/src, cwd repository root) on the data generated in t2_fetch_generate.txt ($SP/gen1). No TEST file exists or is read. Host vm (Anthropic cloud container, CPU only). Written by the Executor (session_01J5mxaX4SHCYCGz74623D33). Sun Nov 22 16:29:06 UTC 2026
+# SP = /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad. Recorded by metrix/e1-pilot/reports/round5/logrun.sh.
+$ ls /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen1
+anchor_text.jsonl
+candidates.json
+dev_qa.jsonl
+facts.jsonl
+general_dev.jsonl
+train_F.jsonl
+train_S.jsonl
+train_Y.jsonl
+exit=0
+$ env PYTHONPATH=metrix/e1-pilot/src /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/venv/bin/python -m metrix.e1_pilot.check_leakage --data /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen1 --split-manifest metrix/e1-pilot/SPLIT_MANIFEST.json --out /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen1/leakage_report.json
+L1   value 0                      limit 0     within limit
+L2   value 0.2                    limit 0.25  within limit
+L3a  value 0                      limit 0     within limit
+L3b  value 0                      limit 0     within limit
+L4   value 0                      limit 0     within limit
+L5   value 0                      limit 0     within limit
+L6   value 0                      limit 0     within limit
+L6 report only: shared Qwen token-id 13-grams 0
+report written to /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen1/leakage_report.json
+RESULT: PASS
+exit=0
+$ /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/venv/bin/python -c import\ json\,sys\;\ r=json.load\(open\(sys.argv\[1\]\)\)\;\ print\(json.dumps\(\{c:\{k:v\ for\ k\,v\ in\ x.items\(\)\ if\ k\!=\'detail\'\}\|\{\'detail\':x\[\'detail\'\]\}\ for\ c\,x\ in\ r\[\'checks\'\].items\(\)\}\,\ ensure_ascii=False\,\ indent=0\)\[:3000\]\) /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen1/leakage_report.json
+{
+"L1": {
+"limit": 0,
+"value": 0,
+"within_limit": true,
+"detail": {
+"shared_hashes": []
+}
+},
+"L2": {
+"limit": 0.25,
+"value": 0.2,
+"within_limit": true,
+"detail": {
+"n": 4,
+"pair": [
+"capital.TRAIN.1",
+"capital.DEV.1"
+]
+}
+},
+"L3a": {
+"limit": 0,
+"value": 0,
+"within_limit": true,
+"detail": {
+"corpora": [
+"anchor_text",
+"train_F",
+"train_S",
+"train_Y"
+],
+"found": {},
+"strings": 80
+}
+},
+"L3b": {
+"limit": 0,
+"value": 0,
+"within_limit": true,
+"detail": {
+"found": {},
+"strings": 120
+}
+},
+"L4": {
+"limit": 0,
+"value": 0,
+"within_limit": true,
+"detail": {
+"corpora": [
+"anchor_text",
+"train_F",
+"train_S",
+"train_Y"
+],
+"found": {},
+"part": "DEV",
+"questions": 320
+}
+},
+"L5": {
+"limit": 0,
+"value": 0,
+"within_limit": true,
+"detail": {
+"duplicate_strings": 0,
+"fact_id_overlap": 0,
+"learned": 120,
+"strings": 320,
+"unread": 40
+}
+},
+"L6": {
+"limit": 0,
+"value": 0,
+"within_limit": true,
+"detail": {
+"anchor_documents": 512,
+"examples": [],
+"n": 13,
+"part": "DEV (anchor_text vs general_dev)",
+"report_only_token_id_ngrams": 0,
+"windows": 100
+}
+}
+}
+exit=0
+# Sun Nov 22 16:52:38 UTC 2026: rerun with the code after the review fixes (the command now runs the ST12 range (1) check of --data first), on $SP/gen4 (the gen1 report is kept).
+$ env PYTHONPATH=metrix/e1-pilot/src /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/venv/bin/python -m metrix.e1_pilot.check_leakage --data /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen4 --split-manifest metrix/e1-pilot/SPLIT_MANIFEST.json --out /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen4/leakage_report.json
+ST12 range (1): facts        406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 = PROTOCOL_FROZEN
+ST12 range (1): train_S      686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e = PROTOCOL_FROZEN
+ST12 range (1): candidates   e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 = PROTOCOL_FROZEN
+ST12 range (1): anchor_texts 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 = PROTOCOL_FROZEN
+L1   value 0                      limit 0     within limit
+L2   value 0.2                    limit 0.25  within limit
+L3a  value 0                      limit 0     within limit
+L3b  value 0                      limit 0     within limit
+L4   value 0                      limit 0     within limit
+L5   value 0                      limit 0     within limit
+L6   value 0                      limit 0     within limit
+L6 report only: shared Qwen token-id 13-grams 0
+report written to /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen4/leakage_report.json
+RESULT: PASS
+exit=0
+$ bash -c diff\ \<\(python3\ -c\ \'import\ json\,sys\;\ r=json.load\(open\(sys.argv\[1\]\)\)\;\ r.pop\(\"frozen_commit\"\)\;\ print\(json.dumps\(r\,sort_keys=True\)\)\'\ /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen1/leakage_report.json\)\ \<\(python3\ -c\ \'import\ json\,sys\;\ r=json.load\(open\(sys.argv\[1\]\)\)\;\ r.pop\(\"frozen_commit\"\)\;\ print\(json.dumps\(r\,sort_keys=True\)\)\'\ /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen4/leakage_report.json\)\ \&\&\ echo\ LEAKAGE_REPORTS_GEN1_GEN4_IDENTICAL
+LEAKAGE_REPORTS_GEN1_GEN4_IDENTICAL
+exit=0

@@ -1,0 +1,136 @@
+# Implementation stage A step 0 raw output: compare user-level copies under /root/.claude/ with the files on branch metrix-e1-pilot-protocol-v1 (same method as round 7 / round 9, reports/round9/t0_copy_check.txt); then compare the frontmatter and tools line of each agent definition (metrix/CLAUDE.md section 5 item 6). Written by the Executor (session_01J5mxaX4SHCYCGz74623D33). Host vm (Anthropic cloud container). Sun Nov 22 16:12:29 UTC 2026
+# Read-only commands; cwd /home/user/OpenMythos. stdout+stderr merged, unedited. Commands recorded by reports/round5/logrun.sh. diff exit=1 means the files differ.
+
+## Part A: step 0
+$ hostname
+vm
+exit=0
+$ date -u
+Sun Nov 22 16:12:29 UTC 2026
+exit=0
+$ uptime -s
+2026-11-22 16:06:19
+exit=0
+$ git rev-parse HEAD origin/metrix-e1-pilot-protocol-v1
+8149d8727b4a99ea0cc9b0a1a2ebd82bd53fa0af
+8149d8727b4a99ea0cc9b0a1a2ebd82bd53fa0af
+exit=0
+$ git status --short --branch
+## metrix-e1-pilot-protocol-v1...origin/metrix-e1-pilot-protocol-v1
+?? metrix/e1-pilot/reports/impl_a/
+exit=0
+$ git reflog --date=iso -6
+8149d872 HEAD@{2026-11-22 16:10:51 +0000}: checkout: moving from metrix-work to metrix-e1-pilot-protocol-v1
+8149d872 HEAD@{2026-11-22 16:06:44 +0000}: checkout: moving from claude/dreamy-johnson-7tfb25 to metrix-work
+155430a8 HEAD@{2026-11-22 16:06:23 +0000}: checkout: moving from 155430a88d2a98322fc4c79b2a067792c3c9579a to claude/dreamy-johnson-7tfb25
+155430a8 HEAD@{2026-11-22 16:06:23 +0000}: 
+155430a8 HEAD@{2026-11-21 04:56:34 +0000}: checkout: moving from 155430a88d2a98322fc4c79b2a067792c3c9579a to main
+155430a8 HEAD@{2026-11-21 04:56:34 +0000}: 
+exit=0
+$ sha256sum metrix/CLAUDE.md /root/.claude/CLAUDE.md .claude/agents/code-reviewer.md /root/.claude/agents/code-reviewer.md .claude/agents/data-auditor.md /root/.claude/agents/data-auditor.md
+c20d1b7d05168d6b03ee262704ff896d19e0c678aed31024f255b0bf12ea76a5  metrix/CLAUDE.md
+a24f6f3d23d76012cce17d397c823da6aa171c7dcba0e6919741626f731b249c  /root/.claude/CLAUDE.md
+e38d091494059227d8d95896aa50858adc32f4750a5512b45bec97dd368932c6  .claude/agents/code-reviewer.md
+bf66a0d6cf547feae1d0ebed2f251643d74847790e4447adb123b923d9f6add5  /root/.claude/agents/code-reviewer.md
+fd556e751947058c10a80b77a669615a62078251d7e36055f111d33cb838eae9  .claude/agents/data-auditor.md
+4201122829c31512859baa55d755a016073544f5c4a887f59bcfeef0abfdd833  /root/.claude/agents/data-auditor.md
+exit=0
+$ stat -c %n\ \|\ birth\ %w\ \|\ modify\ %y /root/.claude/CLAUDE.md /root/.claude/agents/code-reviewer.md /root/.claude/agents/data-auditor.md
+/root/.claude/CLAUDE.md | birth 2026-11-21 04:56:35.338916083 +0000 | modify 2026-11-21 04:56:35.338916083 +0000
+/root/.claude/agents/code-reviewer.md | birth 2026-11-21 04:56:35.334916083 +0000 | modify 2026-11-21 04:56:35.334916083 +0000
+/root/.claude/agents/data-auditor.md | birth 2026-11-21 04:56:35.334916083 +0000 | modify 2026-11-21 04:56:35.338916083 +0000
+exit=0
+$ diff metrix/CLAUDE.md /root/.claude/CLAUDE.md
+21c21
+< - E1 Pilot,状态:PROTOCOL_FROZEN（v1.1）（出处：Review Gate 第 8 轮裁决，Owner 批准，2026-11-22 09:44 UTC；作用范围：本阶段（Owner 在第 9 轮答复，见 metrix/e1-pilot/tasks/ROUND9_TASKS.md 第二段）；原因：协议已冻结并发布 v1.1 勘误版，原状态未随冻结更新，见 metrix/e1-pilot/reports/ROUND8_REPORT.md「待 Review Gate 决定」第 9 项）
+---
+> - E1 Pilot,状态:AWAITING_REVIEW_GATE
+36c36
+< - 环境、下载、冒烟测试先在 CPU 环境完成;租卡后只跑正式流程。预检预估总时长超过 3.5 小时即停（协议 ST11）；累计 GPU 时间超过 4 小时即停（协议 ST7）。（出处：Review Gate 第 8 轮裁决，Owner 批准，2026-11-22 09:44 UTC；作用范围：本阶段；只替换本条原末句「实测预计超过 3 小时即停下报告。」，本节其余文字不变（作用范围与替换范围均为 Owner 在第 9 轮答复，见 metrix/e1-pilot/tasks/ROUND9_TASKS.md 第二段）；原因：原 3 小时与协议 ST11 的 3.5 小时不一致，见 metrix/e1-pilot/reports/ROUND8_REPORT.md「待 Review Gate 决定」第 6 项）
+---
+> - 环境、下载、冒烟测试先在 CPU 环境完成;租卡后只跑正式流程。实测预计超过 3 小时即停下报告。
+45d44
+< 6. 每次调用审查 subagent,调用文字的第一句固定为:「先读仓库中的 .claude/agents/<名称>.md，以它为你的完整定义；它与你已加载的定义冲突时，以仓库文件为准。」调用前比对仓库文件与已加载定义的 frontmatter;两个版本的 tools 行不一致时必须停下,不得用此方法替代。（出处：Review Gate 第 7 轮裁决，Owner 批准，本阶段，2026-11-22 03:25:59 UTC）
+56,57d54
+< 注：「删除任何文件」不含会话临时目录；但支撑结论的输出须先提交。
+< 
+62c59
+< - Review Gate 的裁决写入决定记录时须注明作用范围:本次提交 / 本阶段 / 永久。「永久」与「本阶段」的裁决可写入本文件,写入时须注明作用范围;「本阶段」的裁决在本阶段结束时失效。（出处：Review Gate 第 7 轮裁决（第 8 轮指令第 1e 项），Owner 批准，2026-11-22 05:27 UTC；原因：原文只允许「永久」的裁决写入本文件，与已写入的第 5 节第 6 条、第 10 节的「本阶段」裁决矛盾，见 metrix/e1-pilot/reports/ROUND7_REPORT.md「待 Review Gate 决定」第 4 项）（作用范围：永久。出处：Review Gate 第 8 轮裁决，Owner 批准，2026-11-22 09:44 UTC；原因：1e 写入时未注明这条裁决自己的作用范围，见 metrix/e1-pilot/reports/ROUND8_REPORT.md「待 Review Gate 决定」第 1 项）
+---
+> - Review Gate 的裁决写入决定记录时须注明作用范围:本次提交 / 本阶段 / 永久。只有「永久」的裁决可写入本文件。
+69d65
+< - 原始输出一律写入仓库并推送，不留在临时目录；data-auditor 须提交 audit 脚本的完整 stdout。（出处：Review Gate 第 4 轮裁决，Owner 批准，永久）
+73,75c69
+< - `code-reviewer`:已验证（2026-11-21 盲测 3/3 检出、0 误报；每类仅 1 个样本，PASS 仍须附原始输出）。
+< - `data-auditor`:「待验证」。2026-11-21 的盲测只测了 code-reviewer;埋入已知 bug 的检出率测试通过前,其 PASS 仅作参考。
+< - 以上两条的出处：Review Gate 第 5 轮裁决。（出处：Review Gate 第 6 轮裁决，Owner 批准，本阶段，2026-11-22 03:25:59 UTC）
+---
+> 两个审查 subagent 当前为「待验证」。埋入已知 bug 的检出率测试通过前,其 PASS 仅作参考。
+exit=1
+$ diff .claude/agents/code-reviewer.md /root/.claude/agents/code-reviewer.md
+29,30d28
+< 未实际运行就作出的判断须标注『未验证』。
+< 引用仓库中已提交的原始输出（写明路径与行号）的判断视为已验证。
+exit=1
+$ diff .claude/agents/data-auditor.md /root/.claude/agents/data-auditor.md
+12c12
+< - PROTOCOL_FROZEN 之后，只有在指令明确要求执行协议第 8 节第 8 步 L6 TEST 部分时才可读取 TEST，且只输出计数；其余时候一律禁止生成、读取或统计 TEST。
+---
+> - 仓库中不存在有效的 PROTOCOL_FROZEN 文件时，禁止生成、读取或统计任何 TEST 数据。
+exit=1
+$ bash -c for\ c\ in\ 87a244db\ 8149d872\;\ do\ for\ f\ in\ .claude/agents/code-reviewer.md\ .claude/agents/data-auditor.md\ metrix/CLAUDE.md\;\ do\ printf\ \"%s\ %s\ \"\ \$c\ \$f\;\ git\ show\ \$c:\$f\ \|\ sha256sum\;\ done\;\ done
+87a244db .claude/agents/code-reviewer.md e38d091494059227d8d95896aa50858adc32f4750a5512b45bec97dd368932c6  -
+87a244db .claude/agents/data-auditor.md fd556e751947058c10a80b77a669615a62078251d7e36055f111d33cb838eae9  -
+87a244db metrix/CLAUDE.md c20d1b7d05168d6b03ee262704ff896d19e0c678aed31024f255b0bf12ea76a5  -
+8149d872 .claude/agents/code-reviewer.md e38d091494059227d8d95896aa50858adc32f4750a5512b45bec97dd368932c6  -
+8149d872 .claude/agents/data-auditor.md fd556e751947058c10a80b77a669615a62078251d7e36055f111d33cb838eae9  -
+8149d872 metrix/CLAUDE.md c20d1b7d05168d6b03ee262704ff896d19e0c678aed31024f255b0bf12ea76a5  -
+exit=0
+
+## Part B: frontmatter and tools line of both agent definitions, repository file vs user-level copy (the loaded definition). Frontmatter = the lines from the first "---" line through the second "---" line.
+$ awk /\^---\$/\{n++\;\ print\;\ if\(n==2\)\ exit\;\ next\}\ n==1\{print\} .claude/agents/code-reviewer.md
+---
+name: code-reviewer
+description: Metrix 独立代码审查。每次提交前必须调用，审查当前 diff 的 bug、死代码、可读性、合理性与协议一致性。只读，不修改任何文件。
+tools: Read, Grep, Glob
+---
+exit=0
+$ awk /\^---\$/\{n++\;\ print\;\ if\(n==2\)\ exit\;\ next\}\ n==1\{print\} /root/.claude/agents/code-reviewer.md
+---
+name: code-reviewer
+description: Metrix 独立代码审查。每次提交前必须调用，审查当前 diff 的 bug、死代码、可读性、合理性与协议一致性。只读，不修改任何文件。
+tools: Read, Grep, Glob
+---
+exit=0
+$ bash -c diff\ \<\(awk\ \'/\^---\$/\{n++\;\ print\;\ if\(n==2\)\ exit\;\ next\}\ n==1\{print\}\'\ .claude/agents/code-reviewer.md\)\ \<\(awk\ \'/\^---\$/\{n++\;\ print\;\ if\(n==2\)\ exit\;\ next\}\ n==1\{print\}\'\ /root/.claude/agents/code-reviewer.md\)\ \&\&\ echo\ FRONTMATTER_IDENTICAL
+FRONTMATTER_IDENTICAL
+exit=0
+$ bash -c cmp\ \<\(grep\ \'\^tools:\'\ .claude/agents/code-reviewer.md\)\ \<\(grep\ \'\^tools:\'\ /root/.claude/agents/code-reviewer.md\)\ \&\&\ echo\ TOOLS_LINE_IDENTICAL
+TOOLS_LINE_IDENTICAL
+exit=0
+$ awk /\^---\$/\{n++\;\ print\;\ if\(n==2\)\ exit\;\ next\}\ n==1\{print\} .claude/agents/data-auditor.md
+---
+name: data-auditor
+description: Metrix 独立数据审计。改动涉及数据生成、split、候选集、泄漏检查或评测代码时调用。用自写脚本独立复算，不复用 Executor 的检查代码。
+tools: Read, Grep, Glob, Write, Bash
+---
+exit=0
+$ awk /\^---\$/\{n++\;\ print\;\ if\(n==2\)\ exit\;\ next\}\ n==1\{print\} /root/.claude/agents/data-auditor.md
+---
+name: data-auditor
+description: Metrix 独立数据审计。改动涉及数据生成、split、候选集、泄漏检查或评测代码时调用。用自写脚本独立复算，不复用 Executor 的检查代码。
+tools: Read, Grep, Glob, Write, Bash
+---
+exit=0
+$ bash -c diff\ \<\(awk\ \'/\^---\$/\{n++\;\ print\;\ if\(n==2\)\ exit\;\ next\}\ n==1\{print\}\'\ .claude/agents/data-auditor.md\)\ \<\(awk\ \'/\^---\$/\{n++\;\ print\;\ if\(n==2\)\ exit\;\ next\}\ n==1\{print\}\'\ /root/.claude/agents/data-auditor.md\)\ \&\&\ echo\ FRONTMATTER_IDENTICAL
+FRONTMATTER_IDENTICAL
+exit=0
+$ bash -c cmp\ \<\(grep\ \'\^tools:\'\ .claude/agents/data-auditor.md\)\ \<\(grep\ \'\^tools:\'\ /root/.claude/agents/data-auditor.md\)\ \&\&\ echo\ TOOLS_LINE_IDENTICAL
+TOOLS_LINE_IDENTICAL
+exit=0
+$ grep -n \^tools: .claude/agents/code-reviewer.md /root/.claude/agents/code-reviewer.md .claude/agents/data-auditor.md /root/.claude/agents/data-auditor.md
+.claude/agents/code-reviewer.md:4:tools: Read, Grep, Glob
+/root/.claude/agents/code-reviewer.md:4:tools: Read, Grep, Glob
+.claude/agents/data-auditor.md:4:tools: Read, Grep, Glob, Write, Bash
+/root/.claude/agents/data-auditor.md:4:tools: Read, Grep, Glob, Write, Bash
+exit=0

@@ -1,0 +1,162 @@
+# Implementation stage A raw output: download of the pinned non-model inputs with metrix_e1.data fetch, then data generation with metrix_e1.data generate (twice, separate processes and PYTHONHASHSEED values) and verify. Host vm (Anthropic cloud container, CPU only, no GPU; tokenizer files only, no model weights; no TEST data). Written by the Executor (session_01J5mxaX4SHCYCGz74623D33). Sun Nov 22 16:27:04 UTC 2026
+# SP = /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad (session scratchpad); PY = $SP/venv/bin/python (installed from requirements.lock, t1_lock.txt); cwd metrix/e1-pilot. Recorded by reports/round5/logrun.sh.
+$ git -C ../.. rev-parse HEAD
+8149d8727b4a99ea0cc9b0a1a2ebd82bd53fa0af
+exit=0
+$ git -C ../.. status --short
+?? metrix/e1-pilot/reports/impl_a/
+?? metrix/e1-pilot/requirements.lock
+?? metrix/e1-pilot/src/
+?? metrix/e1-pilot/tasks/IMPLEMENTATION_TASK_ORDER_V1.md
+exit=0
+$ env PYTHONPATH=src /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/venv/bin/python -I -m metrix_e1.data fetch --inputs /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/inputs
+/tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/venv/bin/python: Error while finding module specification for 'metrix_e1.data' (ModuleNotFoundError: No module named 'metrix_e1')
+exit=1
+# The run above used python -I, which ignores PYTHONPATH; the package was not found and nothing ran. Rerun without -I (PYTHONPATH=src):
+$ env PYTHONPATH=src /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/venv/bin/python -m metrix_e1.data fetch --inputs /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/inputs
+frozen: PROTOCOL_FROZEN v1.1, commit 87a244db28a901f9e89282b50df76778ab5c2887; four frozen files match by git cat-file
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+qwen:tokenizer.json          sha256 aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4 = frozen
+qwen:tokenizer_config.json   sha256 d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101 = frozen
+qwen:vocab.json              sha256 ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910 = frozen
+qwen:merges.txt              sha256 8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5 = frozen
+parcae_tokenizer             sha256 e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77 = frozen
+anchor_parquet               sha256 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22 = frozen
+RESULT: PASS
+exit=0
+$ env PYTHONPATH=src PYTHONHASHSEED=0 /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/venv/bin/python -m metrix_e1.data generate --inputs /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/inputs --out /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen1
+frozen: PROTOCOL_FROZEN v1.1, commit 87a244db28a901f9e89282b50df76778ab5c2887; four frozen files match by git cat-file
+name generation per cell: [{"cell": "capital/natural", "entity_draws": 28, "target_pair": [3, 3], "answer_draws": 84}, {"cell": "capital/random", "entity_draws": 20, "target_pair": [5, 5], "answer_draws": 52}, {"cell": "currency/natural", "entity_draws": 31, "target_pair": [3, 3], "answer_draws": 82}, {"cell": "currency/random", "entity_draws": 20, "target_pair": [6, 6], "answer_draws": 46}, {"cell": "founder/natural", "entity_draws": 30, "target_pair": [3, 3], "answer_draws": 81}, {"cell": "founder/random", "entity_draws": 21, "target_pair": [5, 5], "answer_draws": 45}, {"cell": "river/natural", "entity_draws": 34, "target_pair": [3, 3], "answer_draws": 89}, {"cell": "river/random", "entity_draws": 20, "target_pair": [6, 6], "answer_draws": 42}]
+S derangement attempts per cell: {"capital/natural": 3, "capital/random": 5, "currency/natural": 1, "currency/random": 6, "founder/natural": 2, "founder/random": 1, "river/natural": 2, "river/random": 6}
+Y / F token ratio: F 1889, Y 2260, ratio 1.1964
+eval_sets.jsonl rows by split (row prefix only): {'dev': 400, 'test': 800}; rows parsed and decoded: 100
+facts.jsonl        rows  160  byte_sha256 e05561ac2d49dcc3c8f59743c5df64151983a540a32ae135fd1b10f5e0fdc828  canonical_sha256 e05561ac2d49dcc3c8f59743c5df64151983a540a32ae135fd1b10f5e0fdc828
+train_F.jsonl      rows  120  byte_sha256 3aa9ab3ca313c0a1113b91e927af51342c915e3e40dd2f20992f3d9e59b0e373  canonical_sha256 3aa9ab3ca313c0a1113b91e927af51342c915e3e40dd2f20992f3d9e59b0e373
+train_S.jsonl      rows  120  byte_sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e  canonical_sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e
+train_Y.jsonl      rows  240  byte_sha256 c7430cadb2b06dd5c144af381a8183d4c186f27f2b5acfa9d8d39da0b7626d15  canonical_sha256 c7430cadb2b06dd5c144af381a8183d4c186f27f2b5acfa9d8d39da0b7626d15
+dev_qa.jsonl       rows  320  byte_sha256 9761eb60d6c9155c2f56394aa228b1e9dfea0ae3926ab50cb21d903108bc7fde  canonical_sha256 9761eb60d6c9155c2f56394aa228b1e9dfea0ae3926ab50cb21d903108bc7fde
+candidates.json    rows  160  byte_sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705  canonical_sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705
+general_dev.jsonl  rows  100  byte_sha256 957666920c91ef5b9328984d26ed0628c8a80b439d461bea49b54c2235635e73  canonical_sha256 957666920c91ef5b9328984d26ed0628c8a80b439d461bea49b54c2235635e73
+anchor_text.jsonl  rows  512  byte_sha256 2089e656819d1fe0f6ececcc26e5cade09ee80a92c50e7c8f607fa4e0ef46da5  canonical_sha256 2089e656819d1fe0f6ececcc26e5cade09ee80a92c50e7c8f607fa4e0ef46da5
+frozen content hash facts        406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 = PROTOCOL_FROZEN (read back from /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen1)
+frozen content hash train_S      686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e = PROTOCOL_FROZEN (read back from /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen1)
+frozen content hash candidates   e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 = PROTOCOL_FROZEN (read back from /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen1)
+frozen content hash anchor_texts 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 = PROTOCOL_FROZEN (read back from /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen1)
+RESULT: PASS
+exit=0
+$ env PYTHONPATH=src PYTHONHASHSEED=31337 /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/venv/bin/python -m metrix_e1.data generate --inputs /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/inputs --out /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen2
+frozen: PROTOCOL_FROZEN v1.1, commit 87a244db28a901f9e89282b50df76778ab5c2887; four frozen files match by git cat-file
+name generation per cell: [{"cell": "capital/natural", "entity_draws": 28, "target_pair": [3, 3], "answer_draws": 84}, {"cell": "capital/random", "entity_draws": 20, "target_pair": [5, 5], "answer_draws": 52}, {"cell": "currency/natural", "entity_draws": 31, "target_pair": [3, 3], "answer_draws": 82}, {"cell": "currency/random", "entity_draws": 20, "target_pair": [6, 6], "answer_draws": 46}, {"cell": "founder/natural", "entity_draws": 30, "target_pair": [3, 3], "answer_draws": 81}, {"cell": "founder/random", "entity_draws": 21, "target_pair": [5, 5], "answer_draws": 45}, {"cell": "river/natural", "entity_draws": 34, "target_pair": [3, 3], "answer_draws": 89}, {"cell": "river/random", "entity_draws": 20, "target_pair": [6, 6], "answer_draws": 42}]
+S derangement attempts per cell: {"capital/natural": 3, "capital/random": 5, "currency/natural": 1, "currency/random": 6, "founder/natural": 2, "founder/random": 1, "river/natural": 2, "river/random": 6}
+Y / F token ratio: F 1889, Y 2260, ratio 1.1964
+eval_sets.jsonl rows by split (row prefix only): {'dev': 400, 'test': 800}; rows parsed and decoded: 100
+facts.jsonl        rows  160  byte_sha256 e05561ac2d49dcc3c8f59743c5df64151983a540a32ae135fd1b10f5e0fdc828  canonical_sha256 e05561ac2d49dcc3c8f59743c5df64151983a540a32ae135fd1b10f5e0fdc828
+train_F.jsonl      rows  120  byte_sha256 3aa9ab3ca313c0a1113b91e927af51342c915e3e40dd2f20992f3d9e59b0e373  canonical_sha256 3aa9ab3ca313c0a1113b91e927af51342c915e3e40dd2f20992f3d9e59b0e373
+train_S.jsonl      rows  120  byte_sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e  canonical_sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e
+train_Y.jsonl      rows  240  byte_sha256 c7430cadb2b06dd5c144af381a8183d4c186f27f2b5acfa9d8d39da0b7626d15  canonical_sha256 c7430cadb2b06dd5c144af381a8183d4c186f27f2b5acfa9d8d39da0b7626d15
+dev_qa.jsonl       rows  320  byte_sha256 9761eb60d6c9155c2f56394aa228b1e9dfea0ae3926ab50cb21d903108bc7fde  canonical_sha256 9761eb60d6c9155c2f56394aa228b1e9dfea0ae3926ab50cb21d903108bc7fde
+candidates.json    rows  160  byte_sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705  canonical_sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705
+general_dev.jsonl  rows  100  byte_sha256 957666920c91ef5b9328984d26ed0628c8a80b439d461bea49b54c2235635e73  canonical_sha256 957666920c91ef5b9328984d26ed0628c8a80b439d461bea49b54c2235635e73
+anchor_text.jsonl  rows  512  byte_sha256 2089e656819d1fe0f6ececcc26e5cade09ee80a92c50e7c8f607fa4e0ef46da5  canonical_sha256 2089e656819d1fe0f6ececcc26e5cade09ee80a92c50e7c8f607fa4e0ef46da5
+frozen content hash facts        406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 = PROTOCOL_FROZEN (read back from /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen2)
+frozen content hash train_S      686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e = PROTOCOL_FROZEN (read back from /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen2)
+frozen content hash candidates   e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 = PROTOCOL_FROZEN (read back from /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen2)
+frozen content hash anchor_texts 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 = PROTOCOL_FROZEN (read back from /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen2)
+RESULT: PASS
+exit=0
+$ bash -c cd\ /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad\ \&\&\ for\ f\ in\ gen1/\*\;\ do\ cmp\ \$f\ gen2/\$\(basename\ \$f\)\ \|\|\ exit\ 1\;\ done\ \&\&\ ls\ gen1\ \&\&\ echo\ BOTH_RUNS_BYTE_IDENTICAL
+anchor_text.jsonl
+candidates.json
+dev_qa.jsonl
+facts.jsonl
+general_dev.jsonl
+train_F.jsonl
+train_S.jsonl
+train_Y.jsonl
+BOTH_RUNS_BYTE_IDENTICAL
+exit=0
+$ env PYTHONPATH=src /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/venv/bin/python -m metrix_e1.data verify --inputs /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/inputs --data /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen1
+frozen: PROTOCOL_FROZEN v1.1, commit 87a244db28a901f9e89282b50df76778ab5c2887; four frozen files match by git cat-file
+frozen content hash facts        406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 = PROTOCOL_FROZEN
+frozen content hash train_S      686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e = PROTOCOL_FROZEN
+frozen content hash candidates   e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 = PROTOCOL_FROZEN
+frozen content hash anchor_texts 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 = PROTOCOL_FROZEN
+all 8 data files byte-identical to their regeneration from the frozen inputs
+RESULT: PASS
+exit=0
+# Sun Nov 22 16:34:09 UTC 2026: after the last edit of src/metrix_e1/data.py (the fact record is built with explicit field names and compared with the manifest's expected_facts_fields), generate once more into $SP/gen3 and compare with gen1; source hashes of this state are in t4_pytest.txt.
+$ sha256sum src/metrix_e1/data.py src/metrix_e1/frozen.py
+efa356258b8a462405ac071274f5c0084ad514cddd0ccae91ad2ce03b2859b42  src/metrix_e1/data.py
+a1a81050f23b863057612a59bfe2c58dd28cf263f59f0abfc21b1b16300573c0  src/metrix_e1/frozen.py
+exit=0
+$ env PYTHONPATH=src PYTHONHASHSEED=7 /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/venv/bin/python -m metrix_e1.data generate --inputs /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/inputs --out /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen3
+frozen: PROTOCOL_FROZEN v1.1, commit 87a244db28a901f9e89282b50df76778ab5c2887; four frozen files match by git cat-file
+name generation per cell: [{"cell": "capital/natural", "entity_draws": 28, "target_pair": [3, 3], "answer_draws": 84}, {"cell": "capital/random", "entity_draws": 20, "target_pair": [5, 5], "answer_draws": 52}, {"cell": "currency/natural", "entity_draws": 31, "target_pair": [3, 3], "answer_draws": 82}, {"cell": "currency/random", "entity_draws": 20, "target_pair": [6, 6], "answer_draws": 46}, {"cell": "founder/natural", "entity_draws": 30, "target_pair": [3, 3], "answer_draws": 81}, {"cell": "founder/random", "entity_draws": 21, "target_pair": [5, 5], "answer_draws": 45}, {"cell": "river/natural", "entity_draws": 34, "target_pair": [3, 3], "answer_draws": 89}, {"cell": "river/random", "entity_draws": 20, "target_pair": [6, 6], "answer_draws": 42}]
+S derangement attempts per cell: {"capital/natural": 3, "capital/random": 5, "currency/natural": 1, "currency/random": 6, "founder/natural": 2, "founder/random": 1, "river/natural": 2, "river/random": 6}
+Y / F token ratio: F 1889, Y 2260, ratio 1.1964
+eval_sets.jsonl rows by split (row prefix only): {'dev': 400, 'test': 800}; rows parsed and decoded: 100
+facts.jsonl        rows  160  byte_sha256 e05561ac2d49dcc3c8f59743c5df64151983a540a32ae135fd1b10f5e0fdc828  canonical_sha256 e05561ac2d49dcc3c8f59743c5df64151983a540a32ae135fd1b10f5e0fdc828
+train_F.jsonl      rows  120  byte_sha256 3aa9ab3ca313c0a1113b91e927af51342c915e3e40dd2f20992f3d9e59b0e373  canonical_sha256 3aa9ab3ca313c0a1113b91e927af51342c915e3e40dd2f20992f3d9e59b0e373
+train_S.jsonl      rows  120  byte_sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e  canonical_sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e
+train_Y.jsonl      rows  240  byte_sha256 c7430cadb2b06dd5c144af381a8183d4c186f27f2b5acfa9d8d39da0b7626d15  canonical_sha256 c7430cadb2b06dd5c144af381a8183d4c186f27f2b5acfa9d8d39da0b7626d15
+dev_qa.jsonl       rows  320  byte_sha256 9761eb60d6c9155c2f56394aa228b1e9dfea0ae3926ab50cb21d903108bc7fde  canonical_sha256 9761eb60d6c9155c2f56394aa228b1e9dfea0ae3926ab50cb21d903108bc7fde
+candidates.json    rows  160  byte_sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705  canonical_sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705
+general_dev.jsonl  rows  100  byte_sha256 957666920c91ef5b9328984d26ed0628c8a80b439d461bea49b54c2235635e73  canonical_sha256 957666920c91ef5b9328984d26ed0628c8a80b439d461bea49b54c2235635e73
+anchor_text.jsonl  rows  512  byte_sha256 2089e656819d1fe0f6ececcc26e5cade09ee80a92c50e7c8f607fa4e0ef46da5  canonical_sha256 2089e656819d1fe0f6ececcc26e5cade09ee80a92c50e7c8f607fa4e0ef46da5
+frozen content hash facts        406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 = PROTOCOL_FROZEN (read back from /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen3)
+frozen content hash train_S      686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e = PROTOCOL_FROZEN (read back from /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen3)
+frozen content hash candidates   e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 = PROTOCOL_FROZEN (read back from /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen3)
+frozen content hash anchor_texts 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 = PROTOCOL_FROZEN (read back from /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen3)
+RESULT: PASS
+exit=0
+$ bash -c cd\ /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad\ \&\&\ for\ f\ in\ gen1/\*.json\ gen1/\*.jsonl\;\ do\ case\ \$f\ in\ \*leakage_report\*\)\ continue\;\;\ esac\;\ cmp\ \$f\ gen3/\$\(basename\ \$f\)\ \|\|\ exit\ 1\;\ done\ \&\&\ echo\ GEN3_BYTE_IDENTICAL_TO_GEN1
+GEN3_BYTE_IDENTICAL_TO_GEN1
+exit=0
+# Sun Nov 22 16:52:29 UTC 2026: after the fixes for the code-reviewer review (data.py: fact_id prefix and exposure letters read from the manifests, seeds through Frozen.seeds, JSONL split on '\n' only, ST8 library check before generation; frozen.py: working-tree comparison aligned with the protocol's exclusion and line-ending note), generate into $SP/gen4, compare with gen1, verify gen4.
+$ sha256sum src/metrix_e1/data.py src/metrix_e1/frozen.py src/metrix_e1/leakage.py src/metrix_e1/errors.py
+8a531939a8c33fd5e6565d1e0e261947954d01ae39f44b7f49be0e5ab13c9b52  src/metrix_e1/data.py
+5abeeccbaecc7b43e4fc781b7e96b6c82fbcefd3ab2a8a0ba1ba7d8496f02cf9  src/metrix_e1/frozen.py
+5e1d43741cacceca916c4c28f93cf283465f4058da55222169e8b898b732ca98  src/metrix_e1/leakage.py
+9766d21548ed8567eb397b98199eefdccd59972d69bd2b06cdb3d272a206da1f  src/metrix_e1/errors.py
+exit=0
+$ env PYTHONPATH=src PYTHONHASHSEED=4242 /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/venv/bin/python -m metrix_e1.data generate --inputs /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/inputs --out /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen4
+frozen: PROTOCOL_FROZEN v1.1, commit 87a244db28a901f9e89282b50df76778ab5c2887; four frozen files match by git cat-file
+python 3.13.18; libraries {"torch": "2.11.0", "transformers": "5.22.2"} (protocol section 0: {"torch": "2.11.0", "transformers": "5.22.2"})
+name generation per cell: [{"cell": "capital/natural", "entity_draws": 28, "target_pair": [3, 3], "answer_draws": 84}, {"cell": "capital/random", "entity_draws": 20, "target_pair": [5, 5], "answer_draws": 52}, {"cell": "currency/natural", "entity_draws": 31, "target_pair": [3, 3], "answer_draws": 82}, {"cell": "currency/random", "entity_draws": 20, "target_pair": [6, 6], "answer_draws": 46}, {"cell": "founder/natural", "entity_draws": 30, "target_pair": [3, 3], "answer_draws": 81}, {"cell": "founder/random", "entity_draws": 21, "target_pair": [5, 5], "answer_draws": 45}, {"cell": "river/natural", "entity_draws": 34, "target_pair": [3, 3], "answer_draws": 89}, {"cell": "river/random", "entity_draws": 20, "target_pair": [6, 6], "answer_draws": 42}]
+S derangement attempts per cell: {"capital/natural": 3, "capital/random": 5, "currency/natural": 1, "currency/random": 6, "founder/natural": 2, "founder/random": 1, "river/natural": 2, "river/random": 6}
+Y / F token ratio: F 1889, Y 2260, ratio 1.1964
+eval_sets.jsonl rows by split (row prefix only): {'dev': 400, 'test': 800}; rows parsed and decoded: 100
+facts.jsonl        rows  160  byte_sha256 e05561ac2d49dcc3c8f59743c5df64151983a540a32ae135fd1b10f5e0fdc828  canonical_sha256 e05561ac2d49dcc3c8f59743c5df64151983a540a32ae135fd1b10f5e0fdc828
+train_F.jsonl      rows  120  byte_sha256 3aa9ab3ca313c0a1113b91e927af51342c915e3e40dd2f20992f3d9e59b0e373  canonical_sha256 3aa9ab3ca313c0a1113b91e927af51342c915e3e40dd2f20992f3d9e59b0e373
+train_S.jsonl      rows  120  byte_sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e  canonical_sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e
+train_Y.jsonl      rows  240  byte_sha256 c7430cadb2b06dd5c144af381a8183d4c186f27f2b5acfa9d8d39da0b7626d15  canonical_sha256 c7430cadb2b06dd5c144af381a8183d4c186f27f2b5acfa9d8d39da0b7626d15
+dev_qa.jsonl       rows  320  byte_sha256 9761eb60d6c9155c2f56394aa228b1e9dfea0ae3926ab50cb21d903108bc7fde  canonical_sha256 9761eb60d6c9155c2f56394aa228b1e9dfea0ae3926ab50cb21d903108bc7fde
+candidates.json    rows  160  byte_sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705  canonical_sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705
+general_dev.jsonl  rows  100  byte_sha256 957666920c91ef5b9328984d26ed0628c8a80b439d461bea49b54c2235635e73  canonical_sha256 957666920c91ef5b9328984d26ed0628c8a80b439d461bea49b54c2235635e73
+anchor_text.jsonl  rows  512  byte_sha256 2089e656819d1fe0f6ececcc26e5cade09ee80a92c50e7c8f607fa4e0ef46da5  canonical_sha256 2089e656819d1fe0f6ececcc26e5cade09ee80a92c50e7c8f607fa4e0ef46da5
+frozen content hash facts        406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 = PROTOCOL_FROZEN (read back from /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen4)
+frozen content hash train_S      686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e = PROTOCOL_FROZEN (read back from /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen4)
+frozen content hash candidates   e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 = PROTOCOL_FROZEN (read back from /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen4)
+frozen content hash anchor_texts 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 = PROTOCOL_FROZEN (read back from /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen4)
+RESULT: PASS
+exit=0
+$ bash -c cd\ /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad\ \&\&\ for\ f\ in\ facts.jsonl\ train_F.jsonl\ train_S.jsonl\ train_Y.jsonl\ dev_qa.jsonl\ candidates.json\ general_dev.jsonl\ anchor_text.jsonl\;\ do\ cmp\ gen1/\$f\ gen4/\$f\ \|\|\ exit\ 1\;\ done\ \&\&\ ls\ gen4\ \&\&\ echo\ GEN4_BYTE_IDENTICAL_TO_GEN1
+anchor_text.jsonl
+candidates.json
+dev_qa.jsonl
+facts.jsonl
+general_dev.jsonl
+train_F.jsonl
+train_S.jsonl
+train_Y.jsonl
+GEN4_BYTE_IDENTICAL_TO_GEN1
+exit=0
+$ env PYTHONPATH=src /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/venv/bin/python -m metrix_e1.data verify --inputs /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/inputs --data /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen4
+frozen: PROTOCOL_FROZEN v1.1, commit 87a244db28a901f9e89282b50df76778ab5c2887; four frozen files match by git cat-file
+frozen content hash facts        406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 = PROTOCOL_FROZEN
+frozen content hash train_S      686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e = PROTOCOL_FROZEN
+frozen content hash candidates   e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 = PROTOCOL_FROZEN
+frozen content hash anchor_texts 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 = PROTOCOL_FROZEN
+all 8 data files byte-identical to their regeneration from the frozen inputs
+RESULT: PASS
+exit=0
