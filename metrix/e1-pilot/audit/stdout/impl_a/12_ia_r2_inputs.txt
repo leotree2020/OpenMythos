@@ -1,0 +1,35 @@
+# Data Auditor run (implementation stage A). host vm, CPU only (no GPU device), no model weights loaded (tokenizer files only); 2026-11-23 01:11:15 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/venv/bin/python -I -B ia_11_r2_inputs.py /home/user/OpenMythos /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/auditor_ia/dl /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/inputs /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen4
+env: host vm | Linux-6.18.44-fc-v726-x86_64-with-glibc2.39 | python 3.13.18 (/tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/venv/bin/python) | installed {'transformers': '5.22.2', 'tokenizers': '0.23.3', 'pyarrow': '26.0.1', 'huggingface_hub': '2.4.0', 'torch': '2.11.0'} | nvidia device nodes: []
+== 1/2. input files: auditor copy (round-1 download) | Executor copy | freeze-commit manifest
+  qwen_tok/tokenizer.json: auditor aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4 | Executor aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4 | manifest aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4 | ALL EQUAL True
+  qwen_tok/tokenizer_config.json: auditor d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101 | Executor d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101 | manifest d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101 | ALL EQUAL True
+  qwen_tok/vocab.json: auditor ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910 | Executor ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910 | manifest ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910 | ALL EQUAL True
+  qwen_tok/merges.txt: auditor 8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5 | Executor 8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5 | manifest 8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5 | ALL EQUAL True
+  parcae_tok/tokenizer.json: auditor e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77 | Executor e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77 | manifest e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77 | ALL EQUAL True
+  parquet/data/sample-100BT/train/shard_00000.parquet: auditor 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22 | Executor 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22 | manifest 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22 | ALL EQUAL True
+files under the auditor's dl dir (without .cache): ['parcae_tok/tokenizer.json', 'parquet/data/sample-100BT/train/shard_00000.parquet', 'qwen_tok/merges.txt', 'qwen_tok/tokenizer.json', 'qwen_tok/tokenizer_config.json', 'qwen_tok/vocab.json'] | weight-like: []
+== 3. eval_sets.jsonl (whole file, no line read): 8816fe5a39d8b89e8c4203bf7d660e798faa471d2b72b5ce43c411cf5925a155 | manifest 8816fe5a39d8b89e8c4203bf7d660e798faa471d2b72b5ce43c411cf5925a155 | MATCH True
+== 4. provenance of gen4: staged source blobs vs the hashes printed before the gen4 run
+  data.py: staged blob 8a531939a8c33fd5e6565d1e0e261947954d01ae39f44b7f49be0e5ab13c9b52 | working tree 8a531939a8c33fd5e6565d1e0e261947954d01ae39f44b7f49be0e5ab13c9b52 | printed before the gen4 run 8a531939a8c33fd5e6565d1e0e261947954d01ae39f44b7f49be0e5ab13c9b52 | ALL EQUAL True
+  frozen.py: staged blob 5abeeccbaecc7b43e4fc781b7e96b6c82fbcefd3ab2a8a0ba1ba7d8496f02cf9 | working tree 5abeeccbaecc7b43e4fc781b7e96b6c82fbcefd3ab2a8a0ba1ba7d8496f02cf9 | printed before the gen4 run 5abeeccbaecc7b43e4fc781b7e96b6c82fbcefd3ab2a8a0ba1ba7d8496f02cf9 | ALL EQUAL True
+  leakage.py: staged blob 5e1d43741cacceca916c4c28f93cf283465f4058da55222169e8b898b732ca98 | working tree 5e1d43741cacceca916c4c28f93cf283465f4058da55222169e8b898b732ca98 | printed before the gen4 run 5e1d43741cacceca916c4c28f93cf283465f4058da55222169e8b898b732ca98 | ALL EQUAL True
+  errors.py: staged blob 9766d21548ed8567eb397b98199eefdccd59972d69bd2b06cdb3d272a206da1f | working tree 9766d21548ed8567eb397b98199eefdccd59972d69bd2b06cdb3d272a206da1f | printed before the gen4 run 9766d21548ed8567eb397b98199eefdccd59972d69bd2b06cdb3d272a206da1f | ALL EQUAL True
+== 5. modification times (informational)
+  src/metrix_e1/data.py: 2026-11-22 16:49:11.818353 UTC
+  src/metrix_e1/frozen.py: 2026-11-22 16:51:25.361033 UTC
+  src/metrix_e1/leakage.py: 2026-11-22 16:49:11.817738 UTC
+  src/metrix_e1/errors.py: 2026-11-22 16:48:11.872843 UTC
+  gen4/anchor_text.jsonl: 2026-11-22 16:52:33.382004 UTC
+  gen4/candidates.json: 2026-11-22 16:52:33.381755 UTC
+  gen4/dev_qa.jsonl: 2026-11-22 16:52:33.381694 UTC
+  gen4/facts.jsonl: 2026-11-22 16:52:33.381488 UTC
+  gen4/general_dev.jsonl: 2026-11-22 16:52:33.381778 UTC
+  gen4/leakage_report.json: 2026-11-22 16:52:38.813989 UTC
+  gen4/train_F.jsonl: 2026-11-22 16:52:33.381585 UTC
+  gen4/train_S.jsonl: 2026-11-22 16:52:33.381617 UTC
+  gen4/train_Y.jsonl: 2026-11-22 16:52:33.381665 UTC
+modules: torch imported=False | transformers modeling modules imported=[] | this script never calls a model class or from_pretrained on a model
+RESULT: PASS
+exit=0

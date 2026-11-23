@@ -288,6 +288,65 @@ data-auditor 结论 PASS(按 `metrix/CLAUDE.md` 第 10 节仅作参考),新提�
 | Z9 | MINOR | `ROUND9_REPORT.md` 第 6 项 | 引用了没有入库的 scratchpad 比对输出;修正前的脚本没有保留(并入 Y6) | R9c-RC:77 | 报告注明只有 Executor 的描述;以后检查失败时先保存脚本副本与比对输出 |
 | Z10 | MINOR | `reviews/87a244db…/` | 本次审查的调用文字、输入、调用前检查不在暂存区 | R9c-RC:79 | 与本审查原文一并在报告提交中提交 |
 
+### 1.18 Implementation 阶段 A:工作提交 `602a39e8` 第 1 轮审查(`reviews/602a39e8…/code-reviewer_round1.md` 记 `IA1-CR:n`,`data-auditor_round1.md` 记 `IA1-DA:n`)
+
+code-reviewer 结论 PASS,没有 BLOCKER(2 MAJOR、12 行 MINOR);data-auditor 结论 PASS(仅作参考)。按 Implementation Task Order V1 第 9 节,影响协议一致性、数据、指标或隔离的已在工作提交中修,或属于协议未覆盖、需要解释的,不改代码,交 Review Gate(见 `IMPL_A_REPORT.md`“审查”“待 Review Gate 决定”);下表是没有修或只修了一部分的项。第 1 轮 (d)(e)(f) 三项的现状由第 2 轮原文给出,来源记为 `IA2-CR`。
+
+| # | 严重度 | 位置 | 问题 | 来源 | 处理 |
+|---|---|---|---|---|---|
+| AA1 | MAJOR(审查方注明不确定) | `src/metrix_e1/frozen.py` `load()` | 工作区四个冻结文件与冻结提交的比对超出协议 ST12 比对范围 (2);① 换行转换误判、② manifest 排除范围窄于协议,这两点已修;③ 是否保留这项比对 | IA1-CR:13 | ③ 交 Review Gate(`IMPL_A_REPORT.md` 待决第 1 项) |
+| AA2 | MINOR | `src/metrix_e1/data.py` `verify()` | 没有冻结哈希的数据文件与重新生成结果不同时记为 ST12,标签超出范围 (1) 的字面 | IA1-CR:21 | 交 Review Gate(待决第 2 项) |
+| AA3 | MINOR | `src/metrix_e1/frozen.py` `Frozen.protocol_text`、`FrozenRecord.source_sha256` | 阶段 A 中没有使用方 | IA1-CR:25 | 保留:阶段 B 从 `protocol_text` 解析门槛,`record.py` 写入 `source_sha256` |
+| AA4 | MINOR | `requirements.lock` | torch 2.11.0+cu130,A100 主机须有支持 CUDA 13.0 的驱动,否则 ST8 | IA1-CR:43 | 阶段 C 写入 `RUNBOOK_A100.md`;锁文件注释已注明 |
+| AA5 | MINOR | `src/metrix_e1/frozen.py` | 指令第 5 节“提供全部冻结常量”:G0、ST 门槛只在协议正文,尚未解析 | IA1-CR:45 | 阶段 B 从冻结协议正文解析,不写死 |
+| AA6 | MINOR(data-auditor 说明) | 协议第 3 节 L2 | 两个模板都不足 4 个词(4 个跨集合模板对)时 Jaccard 按 0 计;协议未规定,按 1 计则 L2 超限;manifest 的撰写值 0.2 与 Executor、auditor 一致 | IA1-DA:179 | 交 Review Gate(待决第 5 项) |
+| AA7 | MINOR(data-auditor 说明) | 协议第 2.6 节 | Y/F token 比的计数口径(每个序列加 1 个 `<\|endoftext\|>`)协议没写;不加时 1,769 / 2,020(1.142),两种都在区间内 | IA1-DA:180 | 交 Review Gate(待决第 5 项) |
+| AA8 | MINOR(data-auditor 说明) | 模板归一化 | 不去首尾空格时 0/32 相同 | IA1-DA:181 | 同 1.9 节 S12,已登记 |
+| AA9 | MINOR(第 1 轮 (d)) | 协议第 3 节命令路径 | `python -m metrix.e1_pilot.check_leakage` 需 `PYTHONPATH=metrix/e1-pilot/src`,依赖仓库根 `metrix/` 没有 `__init__.py`;须写入 RUNBOOK | IA2-CR:67 | 阶段 C 写入 `RUNBOOK_A100.md`;`IMPL_A_REPORT.md` 待决第 3 项(备案) |
+| AA10 | MINOR(第 1 轮 (e)) | arm L 的 LoRA | 不用 peft;自写 LoRA 须由单元测试第 4 项覆盖(B = 0、alpha = 2 × rank、dropout 0、28 层 × 7 个模块) | IA2-CR:69 | 阶段 B |
+| AA11 | MINOR(第 1 轮 (f)) | 数据文件的记录字段 | `train_F`、`train_Y`、`dev_qa`、`general_dev`、`anchor_text` 的字段协议未规定,由实现自定(与 1.9 节 S7 同一缺口:S7 是 manifest 没有定义字段) | IA2-CR:71 | 字段列于 `IMPL_A_REPORT.md` `data.py` 一节;待决第 4 项(备案) |
+
+### 1.19 Implementation 阶段 A:工作提交 `602a39e8` 第 2 轮审查(`reviews/602a39e8…/code-reviewer_round2.md` 记 `IA2-CR:n`)
+
+code-reviewer 结论 PASS,没有 BLOCKER;第 1 轮各项的现状见原文第一节;新提 8 条 MINOR(N1–N8)。N1、N3、N5、N6、N7、N8 在修复提交中修(`impl_a/t6_fix_commit.txt`);data-auditor 第 2 轮结论 PASS(仅作参考),没有新项。
+
+| # | 严重度 | 位置 | 问题 | 来源 | 处理 |
+|---|---|---|---|---|---|
+| AB1 | MINOR(N2) | `src/metrix_e1/frozen.py` `load()` | 工作区 manifest 按解析结果比较,空白、`1.0`→`1e0` 一类一字节改动不停;按解析比较是第 8 节第 1 步改写 manifest 所必需;不影响计算 | IA2-CR:76 | 随 AA1 交 Review Gate(待决第 1 项) |
+| AB2 | MINOR(N4) | `src/metrix_e1/frozen.py` `check_library_versions` | 比对发行包元数据版本并忽略 `+local` 标签(`2.11.0+cu130`、`2.11.0+cpu` 都视为 2.11.0),与 PEP 440 的 `==` 一致;元数据版本与 `torch.__version__` 在本环境不同 | IA2-CR:84 | 交 Review Gate 确认(待决第 7 项);阶段 B 的 `record.py` 同时记录两者 |
+
+### 1.20 Implementation 阶段 A:修复提交 `219c4a60` 的提交前审查(`reviews/219c4a60…/code-reviewer.md`,记 `IAF-CR:n`)
+
+结论 PASS,没有 BLOCKER,没有 MAJOR;N1、N3、N5、N6、N7、N8 逐条“已修,修法正确”。新提 4 条 MINOR,都是证据、引用与登记方面的缺口,在报告提交中处理。
+
+| # | 严重度 | 位置 | 问题 | 来源 | 处理 |
+|---|---|---|---|---|---|
+| AC1 | MINOR | `reports/impl_a/t6_fix_commit.txt` 第 1 行 | 引用的 `reviews/602a39e8…/` 在修复提交中不存在;两轮审查原文、`interruption_round2.txt`、data-auditor 的脚本与 stdout 都还不在仓库 | IAF-CR:55 | 报告提交中入库:`reviews/602a39e8c4be1e1efa682a26637ad94fb919b7b8/`(两轮全部调用文字、输入、调用前检查、中断与续做记录、原文、提取记录)、`audit/ia_*`、`audit/stdout/impl_a/` |
+| AC2 | MINOR | `src/metrix_e1/frozen.py` `FrozenRecord.source_sha256` | 是工作区原始字节的哈希;CRLF 与 LF 检出解析出同一 record,但该值不同 | IAF-CR:57 | 登记;阶段 B 的 `record.py` 写入时注明是工作区原始字节的哈希,或另记 LF 归一化后的哈希 |
+| AC3 | MINOR | 本文件 | N2、N4 与第 1 轮 MAJOR #1 ③、(b)、(f) 没有登记;N4 涉及协议第 0 节的解释,须 Review Gate 确认 | IAF-CR:59 | 报告提交中登记:③ 为 AA1、(b) 为 AA2、(f) 为 AA11、N2 为 AB1、N4 为 AB2,并列入 `IMPL_A_REPORT.md`“待 Review Gate 决定”;N4(AB2)裁决前不记为已关闭 |
+| AC4 | MINOR | `reports/impl_a/t5_commit_push.txt` | “工作提交即第 2 轮审查的内容”在 t5 中只有 stat 层面的证据;唯一的逐字节比对在没有入库的 `interruption_round2.txt`(提交前约 7 分钟) | IAF-CR:63 | 报告提交中补:`impl_a/t7_report_commit.txt` 第 1 部分 `git diff 8149d872 602a39e8` 与第 2 轮审查输入逐字节相同;`interruption_round2.txt` 入库;修复提交在 `git commit` 前记录了暂存区与审查输入的逐字节比较(`reviews/219c4a60…/precommit_check.txt`)。另:审查方指出推送后的 `ls-remote` 只查了分支,修复提交的推送记录(`t7` 第 2 部分)已同时列出标签 |
+
+### 1.21 Implementation 阶段 A:报告提交的提交前审查(`reviews/602a39e8…/code-reviewer_report-commit.md`,记 `IAR-CR:n`)
+
+结论 PASS,没有 BLOCKER;2 MAJOR、12 MINOR。按第 7–9 轮的先例,报告、本文件与证据方面的问题在报告提交中处理(被审查的版本与提交版本的差异见 `reviews/602a39e8…/report_commit_post_review.diff`);本提交没有再请审查。
+
+| # | 严重度 | 位置 | 问题 | 来源 | 处理 |
+|---|---|---|---|---|---|
+| AD1 | MAJOR | 两个审查目录的 `extract_log.txt` | 仓库中的审查原文、调用文字、续做消息是否就是被提取、被核对的那几份,没有原始输出(提取与核对在会话临时目录,复制没有记录) | IAR-CR:66 | `impl_a/t7_report_commit.txt` 第 3 部分:23 个仓库副本与临时目录原件逐一 `cmp` 相同;五份审查原文再次直接提取到仓库路径,正文 sha256 与 `extract_log.txt` 所记相同;报告提交审查本身直接提取到仓库路径 |
+| AD2 | MAJOR | `IMPL_A_REPORT.md` 推送一节 | 报告提交的推送输出写成“见最终回复,下一阶段写入”,不符合指令第 3 节第 6 项“推送输出一律写入 reports/” | IAR-CR:68 | 推送时立即用 `logrun.sh` 写入 `impl_a/t8_report_push.txt`(工作区),随下一阶段第一个提交入库;报告与最终回复写明路径 |
+| AD3 | MINOR | `IMPL_A_REPORT.md` 审查一节 | 临时目录路径与仓库文件“同名”不成立:第 1 轮输入改名为 `review_input_round1.diff` | IAR-CR:70 | 已改:写明改名对应关系 |
+| AD4 | MINOR | 本文件 1.18–1.20 节、第 3 节 | (d)(e)(f) 没有登记;AC3 说 (f) 已登记但没有;第 3 节缺待决第 3、4、6 项 | IAR-CR:72 | 已补 AA9–AA11;AC3 改为逐项对应;第 3 节补上(备案项) |
+| AD5 | MINOR | 本文件 1.18 节导语;`IMPL_A_REPORT.md` | “影响协议一致性……的已修”与交 Review Gate 的项矛盾 | IAR-CR:74 | 已改为“已修,或属于协议未覆盖、需要解释的,交 Review Gate” |
+| AD6 | MINOR | `IMPL_A_REPORT.md` | “4 CPU、15 GiB”、peft 发布时间、`metrix-work` 删除没有原始输出 | IAR-CR:76 | `t7` 第 3 部分补 `nproc`、`free -g`、PyPI 发布时间、`git reflog` 与 `git branch --list`,报告引用之 |
+| AD7 | MINOR | `IMPL_A_REPORT.md` 开头 | Owner 的批准时间与另给的三条要求在仓库中没有记录 | IAR-CR:78 | 已补 `tasks/IMPL_A_OWNER_MESSAGE.md`(消息原文) |
+| AD8 | MINOR | `IMPL_A_REPORT.md` 开头 | 第 2 轮调用时间写成 16:56(原始文件为 16:54),续做写成约 01:12(01:11) | IAR-CR:80 | 报告改为 16:54、约 01:11;仓库中第 2 轮两份原文的头部(Executor 写的说明行)在直接提取时改为同样时间,正文不变(`t7` 第 3 部分) |
+| AD9 | MINOR | `IMPL_A_REPORT.md` 开头 | 计数不算读取 TEST 的依据应为协议第 3 节,不是指令第 3 节第 3 项 | IAR-CR:82 | 已改为两处并列 |
+| AD10 | MINOR | `IMPL_A_REPORT.md` 结论一览、`data.py` 一节 | 12 行交叉核对、模板重算、暴露匹配在 `t2` 中没有输出行 | IAR-CR:84 | 已注明由 `load()` 通过与 RESULT: PASS 隐含、没有单独打印;以后的生成命令可打印这些检查(登记,未改代码) |
+| AD11 | MINOR | `IMPL_A_REPORT.md` 单元测试一节 | “各改一位”易读成每个哈希都改 | IAR-CR:86 | 已改为“各改一个(DATA_MANIFEST.json 的文件哈希、fact 的数据哈希)” |
+| AD12 | MINOR | `reviews/219c4a60…/code-reviewer.md` | 原文中的 “t6:NNN”“t5:NNN” 多数是审查输入 diff 的行号 | IAR-CR:88 | 原文不改;报告审查一节写明换算(t6 = diff − 101,t5 = diff − 17) |
+| AD13 | MINOR | 报告提交审查输入 | “只在 metrix/e1-pilot/ 下”只有 stat 的间接证据 | IAR-CR:90 | 提交前的 `git diff --cached --name-only` 与提交后的 `outside_metrix_check.py` 写入 `impl_a/t8_report_push.txt` |
+| AD14 | MINOR | `IMPL_A_REPORT.md` 修复提交一节 | 修复提交不调用 data-auditor 是判断问题(N1 改了 ST12 参照表的读入) | IAR-CR:92 | 列入 `IMPL_A_REPORT.md` 待决第 8 项(备案) |
+
 ## 2. 已在第 5–7 轮解决(核对用)
 
 | 原条目 | 来源 | 处理 |
@@ -317,3 +376,4 @@ data-auditor 结论 PASS(按 `metrix/CLAUDE.md` 第 10 节仅作参考),新提�
 
 - 第 6 轮第 2 项“所有检查脚本”是否包括 auditor 已入库的旧脚本(A4、A6):第 7 轮指令第 3 项将其登记入 1.7 节 G4。本节目前没有其它开放项;第 7 轮审查新提出的项见 1.8 节。
 - 第 9 轮:1.14 节 W1(MAJOR)、W2、W3、W4/X1、W5、W8,1.16 节 Y5、Y8 须由 Review Gate 决定,列于 `ROUND9_REPORT.md`“待 Review Gate 决定”第 1–4a 项(1.16 节 Y1、1.17 节 Z6)。
+- Implementation 阶段 A:1.18 节 AA1、AA2、AA6、AA7,1.19 节 AB1、AB2 须由 Review Gate 决定;AA9(命令路径)、AA11(记录字段)、L4 的语料含 `anchor_text`、1.21 节 AD14(修复提交没有调用 data-auditor)请 Review Gate 备案。都列于 `IMPL_A_REPORT.md`“待 Review Gate 决定”(第 1–8 项)。

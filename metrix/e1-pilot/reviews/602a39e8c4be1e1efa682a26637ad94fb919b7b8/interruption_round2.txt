@@ -1,0 +1,71 @@
+# Implementation stage A: the two round-2 reviews (invoked 2026-11-22 16:54 UTC) stopped early with HTTP 429 (usage limit); the container then restarted. Check before resuming them. Executor, session_01J5mxaX4SHCYCGz74623D33, host vm. Mon Nov 23 01:10:11 UTC 2026
+$ uptime -s
+2026-11-23 01:09:37
+exit=0
+$ git rev-parse HEAD
+8149d8727b4a99ea0cc9b0a1a2ebd82bd53fa0af
+exit=0
+$ git status --short
+A  metrix/e1-pilot/reports/impl_a/t0_copy_check.txt
+A  metrix/e1-pilot/reports/impl_a/t1_lock.txt
+A  metrix/e1-pilot/reports/impl_a/t2_fetch_generate.txt
+A  metrix/e1-pilot/reports/impl_a/t3_leakage.txt
+A  metrix/e1-pilot/reports/impl_a/t4_pytest.txt
+A  metrix/e1-pilot/requirements.lock
+A  metrix/e1-pilot/src/metrix/e1_pilot/__init__.py
+A  metrix/e1-pilot/src/metrix/e1_pilot/check_leakage.py
+A  metrix/e1-pilot/src/metrix_e1/__init__.py
+A  metrix/e1-pilot/src/metrix_e1/_cli.py
+A  metrix/e1-pilot/src/metrix_e1/data.py
+A  metrix/e1-pilot/src/metrix_e1/errors.py
+A  metrix/e1-pilot/src/metrix_e1/frozen.py
+A  metrix/e1-pilot/src/metrix_e1/leakage.py
+A  metrix/e1-pilot/tasks/IMPLEMENTATION_TASK_ORDER_V1.md
+A  metrix/e1-pilot/tests/conftest.py
+A  metrix/e1-pilot/tests/test_data_hashes.py
+A  metrix/e1-pilot/tests/test_environment.py
+A  metrix/e1-pilot/tests/test_leakage.py
+A  metrix/e1-pilot/tests/test_st12.py
+?? metrix/e1-pilot/audit/ia_00_frozen.py
+?? metrix/e1-pilot/audit/ia_01_fetch.py
+?? metrix/e1-pilot/audit/ia_02_templates.py
+?? metrix/e1-pilot/audit/ia_03_anchor.py
+?? metrix/e1-pilot/audit/ia_04_facts.py
+?? metrix/e1-pilot/audit/ia_05_derived.py
+?? metrix/e1-pilot/audit/ia_06_general.py
+?? metrix/e1-pilot/audit/ia_07_leakage.py
+?? metrix/e1-pilot/audit/ia_08_feasibility.py
+?? metrix/e1-pilot/audit/ia_09_split.py
+?? metrix/e1-pilot/audit/ia_10_compare.py
+?? metrix/e1-pilot/audit/ia_common.py
+?? metrix/e1-pilot/audit/ia_run_logged.sh
+?? metrix/e1-pilot/audit/stdout/impl_a/
+exit=0
+$ bash -c diff\ \<\(tail\ -n\ +2\ /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/review_work/review_input_round2.diff\)\ \<\(\{\ echo\ \'\$\ git\ diff\ --cached\ --stat\'\;\ git\ diff\ --cached\ --stat\;\ echo\;\ echo\ \'\$\ git\ diff\ --cached\'\;\ git\ diff\ --cached\;\ \}\)\ \&\&\ echo\ STAGED_DIFF_IDENTICAL_TO_ROUND2_REVIEW_INPUT
+STAGED_DIFF_IDENTICAL_TO_ROUND2_REVIEW_INPUT
+exit=0
+$ git diff --quiet
+exit=0
+$ ls -la metrix/e1-pilot/audit/stdout/impl_a/
+total 88
+drwxr-xr-x  2 root root  4096 Nov 22 16:45 .
+drwxr-xr-x 11 root root  4096 Nov 22 16:39 ..
+-rw-r--r--  1 root root  7443 Nov 22 16:39 00_ia_frozen.txt
+-rw-r--r--  1 root root  5579 Nov 22 16:39 01_ia_fetch.txt
+-rw-r--r--  1 root root 11791 Nov 22 16:39 02_ia_templates.txt
+-rw-r--r--  1 root root  3092 Nov 22 16:40 03_ia_anchor.txt
+-rw-r--r--  1 root root  3970 Nov 22 16:40 04_ia_facts.txt
+-rw-r--r--  1 root root  3385 Nov 22 16:41 05_ia_derived.txt
+-rw-r--r--  1 root root  4718 Nov 22 16:44 06_ia_general.txt
+-rw-r--r--  1 root root  6728 Nov 22 16:45 07_ia_leakage.txt
+-rw-r--r--  1 root root  4660 Nov 22 16:43 08_ia_feasibility.txt
+-rw-r--r--  1 root root  3877 Nov 22 16:45 09_ia_split.txt
+-rw-r--r--  1 root root  8066 Nov 22 16:44 10_ia_compare.txt
+-rw-r--r--  1 root root  1733 Nov 22 16:45 11_git_status_final.txt
+exit=0
+$ bash -c cmp\ \<\(grep\ \'\^tools:\'\ .claude/agents/code-reviewer.md\)\ \<\(grep\ \'\^tools:\'\ /root/.claude/agents/code-reviewer.md\)\ \&\&\ diff\ \<\(awk\ \'/\^---\$/\{n++\;\ print\;\ if\(n==2\)\ exit\;\ next\}\ n==1\{print\}\'\ .claude/agents/code-reviewer.md\)\ \<\(awk\ \'/\^---\$/\{n++\;\ print\;\ if\(n==2\)\ exit\;\ next\}\ n==1\{print\}\'\ /root/.claude/agents/code-reviewer.md\)\ \&\&\ echo\ code-reviewer_FRONTMATTER_AND_TOOLS_LINE_IDENTICAL
+code-reviewer_FRONTMATTER_AND_TOOLS_LINE_IDENTICAL
+exit=0
+$ bash -c cmp\ \<\(grep\ \'\^tools:\'\ .claude/agents/data-auditor.md\)\ \<\(grep\ \'\^tools:\'\ /root/.claude/agents/data-auditor.md\)\ \&\&\ diff\ \<\(awk\ \'/\^---\$/\{n++\;\ print\;\ if\(n==2\)\ exit\;\ next\}\ n==1\{print\}\'\ .claude/agents/data-auditor.md\)\ \<\(awk\ \'/\^---\$/\{n++\;\ print\;\ if\(n==2\)\ exit\;\ next\}\ n==1\{print\}\'\ /root/.claude/agents/data-auditor.md\)\ \&\&\ echo\ data-auditor_FRONTMATTER_AND_TOOLS_LINE_IDENTICAL
+data-auditor_FRONTMATTER_AND_TOOLS_LINE_IDENTICAL
+exit=0

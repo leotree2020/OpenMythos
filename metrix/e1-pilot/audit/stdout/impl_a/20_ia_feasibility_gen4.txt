@@ -1,0 +1,38 @@
+# Data Auditor run (implementation stage A). host vm, CPU only (no GPU device), no model weights loaded (tokenizer files only); 2026-11-23 01:13:15 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/venv/bin/python -I -B ia_08_feasibility.py /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/auditor_ia/dl/qwen_tok /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/auditor_ia/out_r2 /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen4
+env: host vm | Linux-6.18.44-fc-v726-x86_64-with-glibc2.39 | python 3.13.18 (/tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/venv/bin/python) | installed {'transformers': '5.22.2', 'tokenizers': '0.23.3', 'pyarrow': '26.0.1', 'huggingface_hub': '2.4.0', 'torch': '2.11.0'} | nvidia device nodes: []
+cell                                 n K_st/K_qa values       min available  min pool
+capital/natural/learned             15 {(3, 3): 15}                      15        14   (protocol pool without the token constraint: 14)
+capital/natural/unread               5 {(3, 3): 5}                        5         4   (protocol pool without the token constraint: 4)
+  relation x stratum capital/natural: (K_st, K_qa) over all 20 answers {(3, 3): 20}
+capital/random/learned              15 {(5, 5): 15}                      15        14   (protocol pool without the token constraint: 14)
+capital/random/unread                5 {(5, 5): 5}                        5         4   (protocol pool without the token constraint: 4)
+  relation x stratum capital/random: (K_st, K_qa) over all 20 answers {(5, 5): 20}
+currency/natural/learned            15 {(3, 3): 15}                      15        14   (protocol pool without the token constraint: 14)
+currency/natural/unread              5 {(3, 3): 5}                        5         4   (protocol pool without the token constraint: 4)
+  relation x stratum currency/natural: (K_st, K_qa) over all 20 answers {(3, 3): 20}
+currency/random/learned             15 {(6, 6): 15}                      15        14   (protocol pool without the token constraint: 14)
+currency/random/unread               5 {(6, 6): 5}                        5         4   (protocol pool without the token constraint: 4)
+  relation x stratum currency/random: (K_st, K_qa) over all 20 answers {(6, 6): 20}
+founder/natural/learned             15 {(3, 3): 15}                      15        14   (protocol pool without the token constraint: 14)
+founder/natural/unread               5 {(3, 3): 5}                        5         4   (protocol pool without the token constraint: 4)
+  relation x stratum founder/natural: (K_st, K_qa) over all 20 answers {(3, 3): 20}
+founder/random/learned              15 {(5, 5): 15}                      15        14   (protocol pool without the token constraint: 14)
+founder/random/unread                5 {(5, 5): 5}                        5         4   (protocol pool without the token constraint: 4)
+  relation x stratum founder/random: (K_st, K_qa) over all 20 answers {(5, 5): 20}
+river/natural/learned               15 {(3, 3): 15}                      15        14   (protocol pool without the token constraint: 14)
+river/natural/unread                 5 {(3, 3): 5}                        5         4   (protocol pool without the token constraint: 4)
+  relation x stratum river/natural: (K_st, K_qa) over all 20 answers {(3, 3): 20}
+river/random/learned                15 {(6, 6): 15}                      15        14   (protocol pool without the token constraint: 14)
+river/random/unread                  5 {(6, 6): 5}                        5         4   (protocol pool without the token constraint: 4)
+  relation x stratum river/random: (K_st, K_qa) over all 20 answers {(6, 6): 20}
+minimum available candidates per fact (incl. the true answer): 5 | cells with available < 4: []
+minimum distractor pool per fact: 4 | cells with pool < 4: []
+AUDIT_VALUE feasibility:min_available 5
+AUDIT_VALUE feasibility:min_pool 4
+auditor candidates.json: keys 160 | lists violating the four constraints [] (count 0) | position of the true answer {0: 41, 1: 38, 2: 45, 3: 36}
+Executor candidates.json: keys 160 | lists violating the four constraints [] (count 0) | position of the true answer {0: 41, 1: 38, 2: 45, 3: 36}
+modules: torch imported=True | transformers modeling modules imported=['torch', 'transformers.modeling_rope_utils', 'transformers.models.auto.modeling_auto'] | this script never calls a model class or from_pretrained on a model
+RESULT: PASS
+exit=0

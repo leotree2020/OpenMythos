@@ -1,0 +1,38 @@
+# Implementation stage A: metrix/CLAUDE.md section 5 item 6 pre-call check before the reviews of the staged work commit. Executor, session_01J5mxaX4SHCYCGz74623D33, host vm (Anthropic cloud container). Sun Nov 22 16:34:35 UTC 2026
+# Repository file vs user-level copy under /root/.claude/agents/ (the loaded definition).
+$ bash -c diff\ \<\(awk\ \'/\^---\$/\{n++\;\ print\;\ if\(n==2\)\ exit\;\ next\}\ n==1\{print\}\'\ .claude/agents/code-reviewer.md\)\ \<\(awk\ \'/\^---\$/\{n++\;\ print\;\ if\(n==2\)\ exit\;\ next\}\ n==1\{print\}\'\ /root/.claude/agents/code-reviewer.md\)\ \&\&\ echo\ code-reviewer_FRONTMATTER_IDENTICAL
+code-reviewer_FRONTMATTER_IDENTICAL
+exit=0
+$ bash -c cmp\ \<\(grep\ \'\^tools:\'\ .claude/agents/code-reviewer.md\)\ \<\(grep\ \'\^tools:\'\ /root/.claude/agents/code-reviewer.md\)\ \&\&\ echo\ code-reviewer_TOOLS_LINE_IDENTICAL
+code-reviewer_TOOLS_LINE_IDENTICAL
+exit=0
+$ bash -c diff\ \<\(awk\ \'/\^---\$/\{n++\;\ print\;\ if\(n==2\)\ exit\;\ next\}\ n==1\{print\}\'\ .claude/agents/data-auditor.md\)\ \<\(awk\ \'/\^---\$/\{n++\;\ print\;\ if\(n==2\)\ exit\;\ next\}\ n==1\{print\}\'\ /root/.claude/agents/data-auditor.md\)\ \&\&\ echo\ data-auditor_FRONTMATTER_IDENTICAL
+data-auditor_FRONTMATTER_IDENTICAL
+exit=0
+$ bash -c cmp\ \<\(grep\ \'\^tools:\'\ .claude/agents/data-auditor.md\)\ \<\(grep\ \'\^tools:\'\ /root/.claude/agents/data-auditor.md\)\ \&\&\ echo\ data-auditor_TOOLS_LINE_IDENTICAL
+data-auditor_TOOLS_LINE_IDENTICAL
+exit=0
+$ git rev-parse HEAD
+8149d8727b4a99ea0cc9b0a1a2ebd82bd53fa0af
+exit=0
+$ git status --short
+A  metrix/e1-pilot/reports/impl_a/t0_copy_check.txt
+A  metrix/e1-pilot/reports/impl_a/t1_lock.txt
+A  metrix/e1-pilot/reports/impl_a/t2_fetch_generate.txt
+A  metrix/e1-pilot/reports/impl_a/t3_leakage.txt
+A  metrix/e1-pilot/reports/impl_a/t4_pytest.txt
+A  metrix/e1-pilot/requirements.lock
+A  metrix/e1-pilot/src/metrix/e1_pilot/__init__.py
+A  metrix/e1-pilot/src/metrix/e1_pilot/check_leakage.py
+A  metrix/e1-pilot/src/metrix_e1/__init__.py
+A  metrix/e1-pilot/src/metrix_e1/_cli.py
+A  metrix/e1-pilot/src/metrix_e1/data.py
+A  metrix/e1-pilot/src/metrix_e1/errors.py
+A  metrix/e1-pilot/src/metrix_e1/frozen.py
+A  metrix/e1-pilot/src/metrix_e1/leakage.py
+A  metrix/e1-pilot/tasks/IMPLEMENTATION_TASK_ORDER_V1.md
+A  metrix/e1-pilot/tests/conftest.py
+A  metrix/e1-pilot/tests/test_data_hashes.py
+A  metrix/e1-pilot/tests/test_leakage.py
+A  metrix/e1-pilot/tests/test_st12.py
+exit=0

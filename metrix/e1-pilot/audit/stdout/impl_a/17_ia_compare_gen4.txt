@@ -1,0 +1,47 @@
+# Data Auditor run (implementation stage A). host vm, CPU only (no GPU device), no model weights loaded (tokenizer files only); 2026-11-23 01:12:53 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/venv/bin/python -I -B ia_10_compare.py /home/user/OpenMythos /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/auditor_ia/dl/qwen_tok /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/auditor_ia/out_r2 /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen4 /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen1
+env: host vm | Linux-6.18.44-fc-v726-x86_64-with-glibc2.39 | python 3.13.18 (/tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/venv/bin/python) | installed {'transformers': '5.22.2', 'tokenizers': '0.23.3', 'pyarrow': '26.0.1', 'huggingface_hub': '2.4.0', 'torch': '2.11.0'} | nvidia device nodes: []
+== A. four frozen hashes: auditor | from the Executor's file | frozen
+facts.jsonl: 160 lines, every line exactly the 6 fields: True; anchor_text.jsonl doc == line index: True
+  facts        auditor 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 | Executor file 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 | frozen 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 | ALL THREE EQUAL True
+AUDIT_VALUE compare:facts auditor=406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 executor=406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 frozen=406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97
+  train_S      auditor 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e | Executor file 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e | frozen 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e | ALL THREE EQUAL True
+AUDIT_VALUE compare:train_S auditor=686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e executor=686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e frozen=686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e
+  candidates   auditor e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | Executor file e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | frozen e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | ALL THREE EQUAL True
+AUDIT_VALUE compare:candidates auditor=e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 executor=e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 frozen=e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705
+  anchor_texts auditor 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 | Executor file 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 | frozen 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 | ALL THREE EQUAL True
+AUDIT_VALUE compare:anchor_texts auditor=8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 executor=8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 frozen=8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408
+  anchor texts from the auditor's decode of the Executor's ids: 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 | == frozen True
+  facts.jsonl JSONL canonical sha256 (not compared with the fact value, protocol 2.2): e05561ac2d49dcc3c8f59743c5df64151983a540a32ae135fd1b10f5e0fdc828
+  element-wise equal: facts True | train_S records True | candidates True | candidates key order True
+
+== B. files without a frozen hash (contents only)
+  train_F (fact_id, text): auditor 120 | Executor 120 | identical sequence True
+    Executor train_F template_id == <relation>.TRAIN.1: True
+  train_Y (fact_id, kind, text): auditor 240 | Executor 240 | identical sequence True
+    Executor train_Y template_id == <relation>.<kind>.1: True
+  dev_qa (fact_id, template_id, question): auditor 320 | Executor 320 | identical sequence True
+    Executor dev_qa template_id is a DEV template of the fact's relation: True
+  general_dev (domain, source doc_id, ids): auditor 100 | Executor 100 | identical sequence True
+  general_dev texts: auditor 100 | Executor 100 | identical sequence True
+    general_dev n_w total: auditor 24877 | Executor 24877
+  anchor_text (source row, ids): auditor 512 | Executor 512 | identical sequence True
+  anchor_text texts: auditor 512 | Executor 512 | identical sequence True
+AUDIT_VALUE compare:general_dev_ids auditor=2e30c443da0b09f385ba5f327d40fb051080c12dc7bc0d3cb873f0a0b01d598f executor=2e30c443da0b09f385ba5f327d40fb051080c12dc7bc0d3cb873f0a0b01d598f
+AUDIT_VALUE compare:anchor_ids auditor=f15615a4ffe466ce49cf134835b63110f6c4f7d92aacdad5202ea783427d5929 executor=f15615a4ffe466ce49cf134835b63110f6c4f7d92aacdad5202ea783427d5929
+
+== C. informational: Executor file bytes
+  anchor_text.jsonl: byte_sha256 2089e656819d1fe0f6ececcc26e5cade09ee80a92c50e7c8f607fa4e0ef46da5 | canonical_sha256 2089e656819d1fe0f6ececcc26e5cade09ee80a92c50e7c8f607fa4e0ef46da5 | bytes are the canonical form True
+  candidates.json: byte_sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | canonical_sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | bytes are the canonical form True
+  dev_qa.jsonl: byte_sha256 9761eb60d6c9155c2f56394aa228b1e9dfea0ae3926ab50cb21d903108bc7fde | canonical_sha256 9761eb60d6c9155c2f56394aa228b1e9dfea0ae3926ab50cb21d903108bc7fde | bytes are the canonical form True
+  facts.jsonl: byte_sha256 e05561ac2d49dcc3c8f59743c5df64151983a540a32ae135fd1b10f5e0fdc828 | canonical_sha256 e05561ac2d49dcc3c8f59743c5df64151983a540a32ae135fd1b10f5e0fdc828 | bytes are the canonical form True
+  general_dev.jsonl: byte_sha256 957666920c91ef5b9328984d26ed0628c8a80b439d461bea49b54c2235635e73 | canonical_sha256 957666920c91ef5b9328984d26ed0628c8a80b439d461bea49b54c2235635e73 | bytes are the canonical form True
+  leakage_report.json: byte_sha256 6ea9c7ffaf05fd6beb938b2abdf2acf93e778b482511dbfe356dfe82a88eeac2 | canonical_sha256 f63e30709fdb593d47a187374699dc597917fd5e48ed0fdd2e8d15b238317a1b | bytes are the canonical form False
+  train_F.jsonl: byte_sha256 3aa9ab3ca313c0a1113b91e927af51342c915e3e40dd2f20992f3d9e59b0e373 | canonical_sha256 3aa9ab3ca313c0a1113b91e927af51342c915e3e40dd2f20992f3d9e59b0e373 | bytes are the canonical form True
+  train_S.jsonl: byte_sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e | canonical_sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e | bytes are the canonical form True
+  train_Y.jsonl: byte_sha256 c7430cadb2b06dd5c144af381a8183d4c186f27f2b5acfa9d8d39da0b7626d15 | canonical_sha256 c7430cadb2b06dd5c144af381a8183d4c186f27f2b5acfa9d8d39da0b7626d15 | bytes are the canonical form True
+  /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen1: files byte-identical to /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen4: {'anchor_text.jsonl': True, 'candidates.json': True, 'dev_qa.jsonl': True, 'facts.jsonl': True, 'general_dev.jsonl': True, 'leakage_report.json': True, 'train_F.jsonl': True, 'train_S.jsonl': True, 'train_Y.jsonl': True}
+modules: torch imported=True | transformers modeling modules imported=['torch', 'transformers.modeling_rope_utils', 'transformers.models.auto.modeling_auto'] | this script never calls a model class or from_pretrained on a model
+RESULT: PASS
+exit=0

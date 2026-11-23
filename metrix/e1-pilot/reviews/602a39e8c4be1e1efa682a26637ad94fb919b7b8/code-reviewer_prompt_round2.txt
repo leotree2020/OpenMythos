@@ -1,0 +1,16 @@
+先读仓库中的 .claude/agents/code-reviewer.md，以它为你的完整定义；它与你已加载的定义冲突时，以仓库文件为准。
+
+Metrix E1-PILOT Implementation 阶段 A 的工作提交(暂存，尚未提交)，第 2 轮审查。仓库 /home/user/OpenMythos，分支 metrix-e1-pilot-protocol-v1，父提交 8149d8727b4a99ea0cc9b0a1a2ebd82bd53fa0af。协议 v1.1，冻结提交 87a244db28a901f9e89282b50df76778ab5c2887。指令：metrix/e1-pilot/tasks/IMPLEMENTATION_TASK_ORDER_V1.md(阶段 A = 第 10 节表中 A 行；第 9 节：新提出的 MAJOR/MINOR 中影响协议一致性、数据、指标或隔离的必须修，其余登记)。
+
+第 1 轮审查(同一暂存提交的上一版本)的原文：/tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/review_work/code-reviewer_round1.md(结论 PASS，2 MAJOR、13 MINOR)。Executor 此后改了代码、测试和锁文件头部注释：
+- 改动部分(第 1 轮读到的暂存区 → 现在的工作区)：/tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/review_work/review_fixes_round2.diff
+- 现在的完整暂存 diff：/tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/review_work/review_input_round2.diff(工作区与暂存区相同)
+- 改动后的原始输出(追加在原文件末尾，前面的记录保留)：metrix/e1-pilot/reports/impl_a/t1_lock.txt、t2_fetch_generate.txt(gen4 与 gen1 逐字节相同、verify)、t3_leakage.txt(协议命令重跑)、t4_pytest.txt(第二次运行，51 项)。
+- Executor 自己的说明(docstring、注释)不作为证据。
+
+请：
+1. 对第 1 轮的每一条(2 条 MAJOR、13 条 MINOR，按第 1 轮原文的顺序)写明现在的状态：已修且正确 / 已修但有问题 / 未修(Executor 计划在报告中登记或交 Review Gate 的，也写“未修”)，并给出证据。
+2. 审查本轮改动本身是否引入新问题(重点：frozen.load() 工作区比对改为“协议文件与 SEARCH_SPACE.json 做 CRLF→LF 后逐字节比、两个 manifest 去掉 files / split_sha256 整个字段后按解析结果比”；新增的 ST8 库版本检查 check_library_versions 是否符合协议第 0 节与第 11 节 ST8；JSONL 改为只按 \n 切分；fact_id 前缀与 L/U 改从 manifest 读取；泄漏命令先做 ST12 范围 (1) 检查；测试断言改为具体信息)。
+3. 再按第 1 轮的重点对完整暂存 diff 做一次整体核对，有新问题照常列出。
+
+按定义的输出格式逐条给出，每条注明“已验证/未验证”。最后一行给出结论。

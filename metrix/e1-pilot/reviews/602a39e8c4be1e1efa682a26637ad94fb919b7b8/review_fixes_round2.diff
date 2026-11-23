@@ -1,0 +1,934 @@
+# Changes made after the round-1 reviews: working tree vs the index that the round-1 reviews read (git diff, unstaged, plus the new untracked test file). Sun Nov 22 16:54:00 UTC 2026
+$ git diff --stat -- metrix/e1-pilot
+ metrix/e1-pilot/reports/impl_a/t1_lock.txt         |  7 ++
+ .../e1-pilot/reports/impl_a/t2_fetch_generate.txt  | 48 +++++++++++
+ metrix/e1-pilot/reports/impl_a/t3_leakage.txt      | 20 +++++
+ metrix/e1-pilot/reports/impl_a/t4_pytest.txt       | 96 +++++++++++++++++++++
+ metrix/e1-pilot/requirements.lock                  | 12 ++-
+ metrix/e1-pilot/src/metrix_e1/data.py              | 46 ++++++----
+ metrix/e1-pilot/src/metrix_e1/errors.py            |  8 ++
+ metrix/e1-pilot/src/metrix_e1/frozen.py            | 75 +++++++++++-----
+ metrix/e1-pilot/src/metrix_e1/leakage.py           |  5 +-
+ metrix/e1-pilot/tests/test_data_hashes.py          | 21 +++--
+ metrix/e1-pilot/tests/test_leakage.py              | 51 ++++++++---
+ metrix/e1-pilot/tests/test_st12.py                 | 99 ++++++++++++++++------
+ 12 files changed, 396 insertions(+), 92 deletions(-)
+$ git diff -- metrix/e1-pilot
+diff --git a/metrix/e1-pilot/reports/impl_a/t1_lock.txt b/metrix/e1-pilot/reports/impl_a/t1_lock.txt
+index ae66c97e..0c7f4aef 100644
+--- a/metrix/e1-pilot/reports/impl_a/t1_lock.txt
++++ b/metrix/e1-pilot/reports/impl_a/t1_lock.txt
+@@ -1019,3 +1019,10 @@ $ bash -c diff\ /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/sc
+ ---
+ >     # via -r /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/lock/direct.in
+ exit=1
++# Sun Nov 22 16:52:29 UTC 2026: after the code-reviewer review of the staged work (reviews MAJOR 2 and MINOR on line 10), only the comment header of requirements.lock was rewritten (exact interpreter line '# python: CPython 3.13.18', CUDA note, no reference to a report). Requirements and hashes unchanged:
++$ bash -c diff\ \<\(grep\ -v\ \'\^\ \*#\'\ requirements.lock\)\ \<\(grep\ -v\ \'\^\ \*#\'\ /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/lock/compiled3.txt\)\ \&\&\ echo\ LOCK_REQUIREMENTS_AND_HASHES_IDENTICAL_TO_COMPILE_OUTPUT
++LOCK_REQUIREMENTS_AND_HASHES_IDENTICAL_TO_COMPILE_OUTPUT
++exit=0
++$ grep -n \^#\ python: requirements.lock
++2:# python: CPython 3.13.18
++exit=0
+diff --git a/metrix/e1-pilot/reports/impl_a/t2_fetch_generate.txt b/metrix/e1-pilot/reports/impl_a/t2_fetch_generate.txt
+index f77d8b1e..d54770a0 100644
+--- a/metrix/e1-pilot/reports/impl_a/t2_fetch_generate.txt
++++ b/metrix/e1-pilot/reports/impl_a/t2_fetch_generate.txt
+@@ -112,3 +112,51 @@ exit=0
+ $ bash -c cd\ /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad\ \&\&\ for\ f\ in\ gen1/\*.json\ gen1/\*.jsonl\;\ do\ case\ \$f\ in\ \*leakage_report\*\)\ continue\;\;\ esac\;\ cmp\ \$f\ gen3/\$\(basename\ \$f\)\ \|\|\ exit\ 1\;\ done\ \&\&\ echo\ GEN3_BYTE_IDENTICAL_TO_GEN1
+ GEN3_BYTE_IDENTICAL_TO_GEN1
+ exit=0
++# Sun Nov 22 16:52:29 UTC 2026: after the fixes for the code-reviewer review (data.py: fact_id prefix and exposure letters read from the manifests, seeds through Frozen.seeds, JSONL split on '\n' only, ST8 library check before generation; frozen.py: working-tree comparison aligned with the protocol's exclusion and line-ending note), generate into $SP/gen4, compare with gen1, verify gen4.
++$ sha256sum src/metrix_e1/data.py src/metrix_e1/frozen.py src/metrix_e1/leakage.py src/metrix_e1/errors.py
++8a531939a8c33fd5e6565d1e0e261947954d01ae39f44b7f49be0e5ab13c9b52  src/metrix_e1/data.py
++5abeeccbaecc7b43e4fc781b7e96b6c82fbcefd3ab2a8a0ba1ba7d8496f02cf9  src/metrix_e1/frozen.py
++5e1d43741cacceca916c4c28f93cf283465f4058da55222169e8b898b732ca98  src/metrix_e1/leakage.py
++9766d21548ed8567eb397b98199eefdccd59972d69bd2b06cdb3d272a206da1f  src/metrix_e1/errors.py
++exit=0
++$ env PYTHONPATH=src PYTHONHASHSEED=4242 /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/venv/bin/python -m metrix_e1.data generate --inputs /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/inputs --out /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen4
++frozen: PROTOCOL_FROZEN v1.1, commit 87a244db28a901f9e89282b50df76778ab5c2887; four frozen files match by git cat-file
++python 3.13.18; libraries {"torch": "2.11.0", "transformers": "5.22.2"} (protocol section 0: {"torch": "2.11.0", "transformers": "5.22.2"})
++name generation per cell: [{"cell": "capital/natural", "entity_draws": 28, "target_pair": [3, 3], "answer_draws": 84}, {"cell": "capital/random", "entity_draws": 20, "target_pair": [5, 5], "answer_draws": 52}, {"cell": "currency/natural", "entity_draws": 31, "target_pair": [3, 3], "answer_draws": 82}, {"cell": "currency/random", "entity_draws": 20, "target_pair": [6, 6], "answer_draws": 46}, {"cell": "founder/natural", "entity_draws": 30, "target_pair": [3, 3], "answer_draws": 81}, {"cell": "founder/random", "entity_draws": 21, "target_pair": [5, 5], "answer_draws": 45}, {"cell": "river/natural", "entity_draws": 34, "target_pair": [3, 3], "answer_draws": 89}, {"cell": "river/random", "entity_draws": 20, "target_pair": [6, 6], "answer_draws": 42}]
++S derangement attempts per cell: {"capital/natural": 3, "capital/random": 5, "currency/natural": 1, "currency/random": 6, "founder/natural": 2, "founder/random": 1, "river/natural": 2, "river/random": 6}
++Y / F token ratio: F 1889, Y 2260, ratio 1.1964
++eval_sets.jsonl rows by split (row prefix only): {'dev': 400, 'test': 800}; rows parsed and decoded: 100
++facts.jsonl        rows  160  byte_sha256 e05561ac2d49dcc3c8f59743c5df64151983a540a32ae135fd1b10f5e0fdc828  canonical_sha256 e05561ac2d49dcc3c8f59743c5df64151983a540a32ae135fd1b10f5e0fdc828
++train_F.jsonl      rows  120  byte_sha256 3aa9ab3ca313c0a1113b91e927af51342c915e3e40dd2f20992f3d9e59b0e373  canonical_sha256 3aa9ab3ca313c0a1113b91e927af51342c915e3e40dd2f20992f3d9e59b0e373
++train_S.jsonl      rows  120  byte_sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e  canonical_sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e
++train_Y.jsonl      rows  240  byte_sha256 c7430cadb2b06dd5c144af381a8183d4c186f27f2b5acfa9d8d39da0b7626d15  canonical_sha256 c7430cadb2b06dd5c144af381a8183d4c186f27f2b5acfa9d8d39da0b7626d15
++dev_qa.jsonl       rows  320  byte_sha256 9761eb60d6c9155c2f56394aa228b1e9dfea0ae3926ab50cb21d903108bc7fde  canonical_sha256 9761eb60d6c9155c2f56394aa228b1e9dfea0ae3926ab50cb21d903108bc7fde
++candidates.json    rows  160  byte_sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705  canonical_sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705
++general_dev.jsonl  rows  100  byte_sha256 957666920c91ef5b9328984d26ed0628c8a80b439d461bea49b54c2235635e73  canonical_sha256 957666920c91ef5b9328984d26ed0628c8a80b439d461bea49b54c2235635e73
++anchor_text.jsonl  rows  512  byte_sha256 2089e656819d1fe0f6ececcc26e5cade09ee80a92c50e7c8f607fa4e0ef46da5  canonical_sha256 2089e656819d1fe0f6ececcc26e5cade09ee80a92c50e7c8f607fa4e0ef46da5
++frozen content hash facts        406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 = PROTOCOL_FROZEN (read back from /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen4)
++frozen content hash train_S      686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e = PROTOCOL_FROZEN (read back from /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen4)
++frozen content hash candidates   e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 = PROTOCOL_FROZEN (read back from /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen4)
++frozen content hash anchor_texts 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 = PROTOCOL_FROZEN (read back from /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen4)
++RESULT: PASS
++exit=0
++$ bash -c cd\ /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad\ \&\&\ for\ f\ in\ facts.jsonl\ train_F.jsonl\ train_S.jsonl\ train_Y.jsonl\ dev_qa.jsonl\ candidates.json\ general_dev.jsonl\ anchor_text.jsonl\;\ do\ cmp\ gen1/\$f\ gen4/\$f\ \|\|\ exit\ 1\;\ done\ \&\&\ ls\ gen4\ \&\&\ echo\ GEN4_BYTE_IDENTICAL_TO_GEN1
++anchor_text.jsonl
++candidates.json
++dev_qa.jsonl
++facts.jsonl
++general_dev.jsonl
++train_F.jsonl
++train_S.jsonl
++train_Y.jsonl
++GEN4_BYTE_IDENTICAL_TO_GEN1
++exit=0
++$ env PYTHONPATH=src /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/venv/bin/python -m metrix_e1.data verify --inputs /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/inputs --data /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen4
++frozen: PROTOCOL_FROZEN v1.1, commit 87a244db28a901f9e89282b50df76778ab5c2887; four frozen files match by git cat-file
++frozen content hash facts        406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 = PROTOCOL_FROZEN
++frozen content hash train_S      686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e = PROTOCOL_FROZEN
++frozen content hash candidates   e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 = PROTOCOL_FROZEN
++frozen content hash anchor_texts 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 = PROTOCOL_FROZEN
++all 8 data files byte-identical to their regeneration from the frozen inputs
++RESULT: PASS
++exit=0
+diff --git a/metrix/e1-pilot/reports/impl_a/t3_leakage.txt b/metrix/e1-pilot/reports/impl_a/t3_leakage.txt
+index 44f0b3db..8c7d441a 100644
+--- a/metrix/e1-pilot/reports/impl_a/t3_leakage.txt
++++ b/metrix/e1-pilot/reports/impl_a/t3_leakage.txt
+@@ -111,3 +111,23 @@ $ /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/venv/
+ }
+ }
+ exit=0
++# Sun Nov 22 16:52:38 UTC 2026: rerun with the code after the review fixes (the command now runs the ST12 range (1) check of --data first), on $SP/gen4 (the gen1 report is kept).
++$ env PYTHONPATH=metrix/e1-pilot/src /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/venv/bin/python -m metrix.e1_pilot.check_leakage --data /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen4 --split-manifest metrix/e1-pilot/SPLIT_MANIFEST.json --out /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen4/leakage_report.json
++ST12 range (1): facts        406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 = PROTOCOL_FROZEN
++ST12 range (1): train_S      686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e = PROTOCOL_FROZEN
++ST12 range (1): candidates   e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 = PROTOCOL_FROZEN
++ST12 range (1): anchor_texts 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 = PROTOCOL_FROZEN
++L1   value 0                      limit 0     within limit
++L2   value 0.2                    limit 0.25  within limit
++L3a  value 0                      limit 0     within limit
++L3b  value 0                      limit 0     within limit
++L4   value 0                      limit 0     within limit
++L5   value 0                      limit 0     within limit
++L6   value 0                      limit 0     within limit
++L6 report only: shared Qwen token-id 13-grams 0
++report written to /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen4/leakage_report.json
++RESULT: PASS
++exit=0
++$ bash -c diff\ \<\(python3\ -c\ \'import\ json\,sys\;\ r=json.load\(open\(sys.argv\[1\]\)\)\;\ r.pop\(\"frozen_commit\"\)\;\ print\(json.dumps\(r\,sort_keys=True\)\)\'\ /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen1/leakage_report.json\)\ \<\(python3\ -c\ \'import\ json\,sys\;\ r=json.load\(open\(sys.argv\[1\]\)\)\;\ r.pop\(\"frozen_commit\"\)\;\ print\(json.dumps\(r\,sort_keys=True\)\)\'\ /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen4/leakage_report.json\)\ \&\&\ echo\ LEAKAGE_REPORTS_GEN1_GEN4_IDENTICAL
++LEAKAGE_REPORTS_GEN1_GEN4_IDENTICAL
++exit=0
+diff --git a/metrix/e1-pilot/reports/impl_a/t4_pytest.txt b/metrix/e1-pilot/reports/impl_a/t4_pytest.txt
+index bbe71d7f..93fddcc1 100644
+--- a/metrix/e1-pilot/reports/impl_a/t4_pytest.txt
++++ b/metrix/e1-pilot/reports/impl_a/t4_pytest.txt
+@@ -94,3 +94,99 @@ tests/test_st12.py::test_cli_stops_on_tampered_input PASSED              [100%]
+ 
+ ============================= 44 passed in 41.49s ==============================
+ exit=0
++
++# ===== Sun Nov 22 16:52:45 UTC 2026: second run, after the fixes for the code-reviewer review of the staged work (the run above is kept as history). New: tests/test_environment.py; changed: test_st12.py (specific messages, CRLF / step-1 positive control, JSONL parsing), test_leakage.py, test_data_hashes.py.
++$ bash -c cd\ ../..\ \&\&\ git\ status\ --short\ --untracked-files=all\ --\ metrix/e1-pilot/src\ metrix/e1-pilot/tests\ metrix/e1-pilot/requirements.lock
++AM metrix/e1-pilot/requirements.lock
++A  metrix/e1-pilot/src/metrix/e1_pilot/__init__.py
++A  metrix/e1-pilot/src/metrix/e1_pilot/check_leakage.py
++A  metrix/e1-pilot/src/metrix_e1/__init__.py
++A  metrix/e1-pilot/src/metrix_e1/_cli.py
++AM metrix/e1-pilot/src/metrix_e1/data.py
++AM metrix/e1-pilot/src/metrix_e1/errors.py
++AM metrix/e1-pilot/src/metrix_e1/frozen.py
++AM metrix/e1-pilot/src/metrix_e1/leakage.py
++A  metrix/e1-pilot/tests/conftest.py
++AM metrix/e1-pilot/tests/test_data_hashes.py
++AM metrix/e1-pilot/tests/test_leakage.py
++AM metrix/e1-pilot/tests/test_st12.py
++?? metrix/e1-pilot/tests/test_environment.py
++exit=0
++$ sha256sum src/metrix_e1/__init__.py src/metrix_e1/_cli.py src/metrix_e1/errors.py src/metrix_e1/frozen.py src/metrix_e1/data.py src/metrix_e1/leakage.py src/metrix/e1_pilot/__init__.py src/metrix/e1_pilot/check_leakage.py tests/conftest.py tests/test_data_hashes.py tests/test_environment.py tests/test_st12.py tests/test_leakage.py requirements.lock
++a61bdb2fdf97045e63810b24b4dfe06830c5b93a3b888e9c2c0aafc484b80054  src/metrix_e1/__init__.py
++18fd4f60ef2bbc4d4d55b6c7fd643c4f7d8d5578565bbf87a383cc35a748dc5a  src/metrix_e1/_cli.py
++9766d21548ed8567eb397b98199eefdccd59972d69bd2b06cdb3d272a206da1f  src/metrix_e1/errors.py
++5abeeccbaecc7b43e4fc781b7e96b6c82fbcefd3ab2a8a0ba1ba7d8496f02cf9  src/metrix_e1/frozen.py
++8a531939a8c33fd5e6565d1e0e261947954d01ae39f44b7f49be0e5ab13c9b52  src/metrix_e1/data.py
++5e1d43741cacceca916c4c28f93cf283465f4058da55222169e8b898b732ca98  src/metrix_e1/leakage.py
++ce18532fd6d83602cf93731b5108626be186687f3e9c0d05e1092c9caf244e44  src/metrix/e1_pilot/__init__.py
++df2dcd0858acb44f776b546878c0c275d2c1c76ca3b841fd554a6ce4d42789d4  src/metrix/e1_pilot/check_leakage.py
++29c91e540a1ca524f80285eceb13062df91257eb18164f461e451a7406262ef2  tests/conftest.py
++2e54592d99e0c94dde5b8049aee9d212d1d21fac17e4451757333765e121df6b  tests/test_data_hashes.py
++e0ae196831de74987ac5e9a2955a24693053e7994487edc52b2f3cb156215032  tests/test_environment.py
++9aa2ebb9842861f9355e9532471e1564635267e84f24e3439395527920efdf82  tests/test_st12.py
++eae23c5a5ce87b5bfbeea9c6d14a80e20b3df3045bdc940fb214ac7ffc29c095  tests/test_leakage.py
++f00dfe2f88fe3fb8584add8da5156a9cf4db7e71d461e15e40354bf7806245a5  requirements.lock
++exit=0
++$ env METRIX_INPUTS_DIR=/tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/inputs /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/venv/bin/python -m pytest tests -v -p no:cacheprovider
++============================= test session starts ==============================
++platform linux -- Python 3.13.18, pytest-9.2.0, pluggy-1.7.0 -- /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/venv/bin/python
++rootdir: /home/user/OpenMythos
++configfile: pyproject.toml
++plugins: anyio-4.16.0
++collecting ... collected 51 items
++
++tests/test_data_hashes.py::test_four_frozen_hashes PASSED                [  1%]
++tests/test_data_hashes.py::test_files_are_canonical PASSED               [  3%]
++tests/test_data_hashes.py::test_counts_and_ratio PASSED                  [  5%]
++tests/test_data_hashes.py::test_no_test_file PASSED                      [  7%]
++tests/test_data_hashes.py::test_byte_identical_to_reference_scripts PASSED [  9%]
++tests/test_data_hashes.py::test_leakage_gate0_passes PASSED              [ 11%]
++tests/test_environment.py::test_python_is_the_locked_interpreter PASSED  [ 13%]
++tests/test_environment.py::test_library_versions_match_protocol PASSED   [ 15%]
++tests/test_environment.py::test_library_version_mismatch_is_st8 PASSED   [ 17%]
++tests/test_leakage.py::test_clean_data_passes PASSED                     [ 19%]
++tests/test_leakage.py::test_l3a_unread_entity_in_train_Y PASSED          [ 21%]
++tests/test_leakage.py::test_l3a_and_l3b_answers_in_anchor PASSED         [ 23%]
++tests/test_leakage.py::test_l4_dev_question_in_train_F PASSED            [ 25%]
++tests/test_leakage.py::test_l5_duplicate_string_and_fact_id PASSED       [ 27%]
++tests/test_leakage.py::test_l6_shared_13gram_counted_within_documents PASSED [ 29%]
++tests/test_leakage.py::test_l1_l2_templates PASSED                       [ 31%]
++tests/test_leakage.py::test_cli_fail_exit PASSED                         [ 33%]
++tests/test_leakage.py::test_cli_bad_split_manifest PASSED                [ 35%]
++tests/test_leakage.py::test_cli_st12_on_tampered_frozen_data PASSED      [ 37%]
++tests/test_st12.py::test_mini_repo_positive_control PASSED               [ 39%]
++tests/test_st12.py::test_frozen_commit_file_one_byte[metrix/e1-pilot/METRIX_E1_PROTOCOL.md] PASSED [ 41%]
++tests/test_st12.py::test_frozen_commit_file_one_byte[metrix/e1-pilot/DATA_MANIFEST.json] PASSED [ 43%]
++tests/test_st12.py::test_frozen_commit_file_one_byte[metrix/e1-pilot/SPLIT_MANIFEST.json] PASSED [ 45%]
++tests/test_st12.py::test_frozen_commit_file_one_byte[metrix/e1-pilot/SEARCH_SPACE.json] PASSED [ 47%]
++tests/test_st12.py::test_working_tree_file_one_byte[metrix/e1-pilot/METRIX_E1_PROTOCOL.md] PASSED [ 49%]
++tests/test_st12.py::test_working_tree_file_one_byte[metrix/e1-pilot/DATA_MANIFEST.json] PASSED [ 50%]
++tests/test_st12.py::test_working_tree_file_one_byte[metrix/e1-pilot/SPLIT_MANIFEST.json] PASSED [ 52%]
++tests/test_st12.py::test_working_tree_file_one_byte[metrix/e1-pilot/SEARCH_SPACE.json] PASSED [ 54%]
++tests/test_st12.py::test_working_tree_line_endings_and_step1_fields PASSED [ 56%]
++tests/test_st12.py::test_protocol_frozen_hash_one_byte[file] PASSED      [ 58%]
++tests/test_st12.py::test_protocol_frozen_hash_one_byte[data] PASSED      [ 60%]
++tests/test_st12.py::test_eval_sets_one_byte PASSED                       [ 62%]
++tests/test_st12.py::test_input_file_one_byte[qwen:tokenizer.json] PASSED [ 64%]
++tests/test_st12.py::test_input_file_one_byte[qwen:tokenizer_config.json] PASSED [ 66%]
++tests/test_st12.py::test_input_file_one_byte[qwen:vocab.json] PASSED     [ 68%]
++tests/test_st12.py::test_input_file_one_byte[qwen:merges.txt] PASSED     [ 70%]
++tests/test_st12.py::test_input_file_one_byte[parcae_tokenizer] PASSED    [ 72%]
++tests/test_st12.py::test_input_file_one_byte[anchor_parquet] PASSED      [ 74%]
++tests/test_st12.py::test_data_file_message_table_complete PASSED         [ 76%]
++tests/test_st12.py::test_data_file_one_byte[facts.jsonl] PASSED          [ 78%]
++tests/test_st12.py::test_data_file_one_byte[train_F.jsonl] PASSED        [ 80%]
++tests/test_st12.py::test_data_file_one_byte[train_S.jsonl] PASSED        [ 82%]
++tests/test_st12.py::test_data_file_one_byte[train_Y.jsonl] PASSED        [ 84%]
++tests/test_st12.py::test_data_file_one_byte[dev_qa.jsonl] PASSED         [ 86%]
++tests/test_st12.py::test_data_file_one_byte[candidates.json] PASSED      [ 88%]
++tests/test_st12.py::test_data_file_one_byte[general_dev.jsonl] PASSED    [ 90%]
++tests/test_st12.py::test_data_file_one_byte[anchor_text.jsonl] PASSED    [ 92%]
++tests/test_st12.py::test_verify_positive_control PASSED                  [ 94%]
++tests/test_st12.py::test_cli_stops_on_tampered_data PASSED               [ 96%]
++tests/test_st12.py::test_cli_stops_on_tampered_input PASSED              [ 98%]
++tests/test_st12.py::test_parse_jsonl_splits_on_newline_only PASSED       [100%]
++
++============================= 51 passed in 44.59s ==============================
++exit=0
+diff --git a/metrix/e1-pilot/requirements.lock b/metrix/e1-pilot/requirements.lock
+index 15057c9c..c6f0eb58 100644
+--- a/metrix/e1-pilot/requirements.lock
++++ b/metrix/e1-pilot/requirements.lock
+@@ -1,13 +1,17 @@
+ # METRIX E1-PILOT dependency lock (Implementation Task Order V1, section 5 "依赖"; stage A).
+-# Target: Linux x86_64 (manylinux_2_28), CPython 3.13 (the reference implementations of protocol 2.2/2.5/2.6
+-# were run with CPython 3.13.18 random.Random). Protocol section 0 pins torch 2.11.0 and transformers 5.22.2.
+-# The PyPI torch 2.11.0 Linux wheel is built against CUDA 13.0 (cuda-toolkit 13.0.2 below); it also runs on CPU.
++# python: CPython 3.13.18
++#   The interpreter is part of the lock (line above, checked by tests/test_environment.py): the reference
++#   implementations of protocol 2.2 / 2.5 / 2.6 were run with CPython 3.13.18 random.Random, and the lock was
++#   resolved for it. Platform: Linux x86_64 (manylinux_2_28).
++# Protocol section 0 pins torch 2.11.0 and transformers 5.22.2 (checked at run time, ST8).
++# The PyPI torch 2.11.0 Linux wheel is built against CUDA 13.0 (cuda-toolkit 13.0.2 below): the GPU host needs an
++# NVIDIA driver that supports CUDA 13.0 (requirement to be written into RUNBOOK_A100.md, stage C). It also runs on CPU.
+ # Install only from this file, with hash checking and no dependency resolution:
+ #   python -m pip install --require-hashes --no-deps -r metrix/e1-pilot/requirements.lock
+ # Direct requirements (everything else is transitive):
+ #   torch==2.11.0  transformers==5.22.2  tokenizers==0.23.3  huggingface_hub==2.4.0  pyarrow==26.0.1
+ #   jinja2==3.1.6  pytest
+-# peft is not used (LoRA of arm L is implemented in the package; decision recorded in reports/IMPL_A_REPORT.md).
++# peft is not used: the LoRA of arm L is to be implemented inside the package (stage B), so it is not locked.
+ # Generated with uv 0.11.32:
+ #   uv pip compile direct.in --generate-hashes --python-version 3.13 --python-platform x86_64-manylinux_2_28 \
+ #       --exclude-newer 2026-11-08T00:00:00Z --no-header
+diff --git a/metrix/e1-pilot/src/metrix_e1/data.py b/metrix/e1-pilot/src/metrix_e1/data.py
+index 10fb95c6..f0c5d01a 100644
+--- a/metrix/e1-pilot/src/metrix_e1/data.py
++++ b/metrix/e1-pilot/src/metrix_e1/data.py
+@@ -14,6 +14,7 @@ byte-identical to theirs:
+   reports/round5/l6_check.py               2.7 general DEV windows  (ids and decoded texts)
+   reports/round2/y_ratio.py                2.6 Y / F token ratio    (sequence + <|endoftext|>)
+ 
++Before generating, the library versions of protocol section 0 are checked (frozen.check_library_versions, ST8).
+ All numbers and strings of the protocol (counts, probabilities, length limits, seeds, templates, sources, revisions)
+ are read from the frozen manifests through metrix_e1.frozen; where the manifest states a number inside a sentence,
+ the sentence is matched in full and the number taken from it (a different sentence stops the run).
+@@ -26,6 +27,7 @@ Commands (each prints RESULT: PASS / RESULT: FAIL; exit 0 only on PASS):
+ import argparse
+ import collections
+ import json
++import platform
+ import re
+ import sys
+ from dataclasses import dataclass
+@@ -57,8 +59,8 @@ class Params:
+     relations: tuple
+     strata: tuple
+     stratum_short: dict          # natural -> nat, random -> rnd (fact_id format)
+-    exposure_letter: dict        # learned -> L, unread -> U
+-    fact_prefix: str
++    exposure_letter: dict        # learned -> L, unread -> U (SPLIT_MANIFEST fact_ids)
++    fact_prefix: str             # E1P (fact_id format)
+     fact_fields: tuple
+     n_learned: int
+     n_unread: int
+@@ -74,7 +76,7 @@ class Params:
+     pool_min: int
+     endoftext_id: int
+     y_ratio_bounds: tuple
+-    anchor_source: tuple         # (repo, revision, filename, sha256)
++    anchor_source: tuple         # (repo, revision, filename); its sha256 is checked through PROTOCOL_FROZEN
+     anchor_n_docs: int
+     anchor_min_chars: int
+     anchor_max_tokens: int
+@@ -92,9 +94,17 @@ class Params:
+ def params(fz):
+     dm, sm, ss = fz.data_manifest, fz.split_manifest, fz.search_space
+     f, ng = dm["facts"], dm["name_generation"]
+-    m = _match(r"E1P-<L\|U>-<relation>-<(\w+)\|(\w+)>-<two-digit index starting at 01>", f["fact_id_format"], "facts.fact_id_format")
+-    if len(f["strata"]) != 2:
+-        raise ImplementationFail("fact_id_format names two strata, the manifest lists %r" % (f["strata"],))
++    m = _match(r"(\w+)-<(\w)\|(\w)>-<relation>-<(\w+)\|(\w+)>-<two-digit index starting at 01>", f["fact_id_format"],
++               "facts.fact_id_format")
++    prefix_id, short = m.group(1), m.groups()[3:]
++    if len(f["strata"]) != len(short):
++        raise ImplementationFail("fact_id_format names %d strata, the manifest lists %r" % (len(short), f["strata"]))
++    letters = {}
++    for exposure in ("learned", "unread"):
++        e = _match(r"(\w+)-(\w)-\*: (\d+) facts, .*", sm["fact_ids"][exposure], "fact_ids.%s" % exposure)
++        if e.group(1) != prefix_id or int(e.group(3)) != f[exposure] or e.group(2) not in m.groups()[1:3]:
++            raise ImplementationFail("fact_ids.%s %r disagrees with fact_id_format / facts" % (exposure, sm["fact_ids"][exposure]))
++        letters[exposure] = e.group(2)
+     nat = ng["natural"]
+     _match(r"length_chars", nat["form_rules"][0], "natural form rule 1")
+     tok_min = int(_match(r"len\(encode\(' ' \+ s\)\) > (\d+) \(not a single token with a leading space\)",
+@@ -134,8 +144,8 @@ def params(fz):
+                     ss["training_contract"]["primary_training_token_budget"],
+                     "SEARCH_SPACE training_contract.primary_training_token_budget").groups()
+     at = dm["anchor_text"]
+-    a_repo, a_rev, a_file, a_sha = _match(r"([\w.-]+/[\w.-]+)@([0-9a-f]{40}), (\S+) \(sha256 ([0-9a-f]{64})\)",
+-                                          at["source"], "anchor_text.source").groups()
++    a_repo, a_rev, a_file = _match(r"([\w.-]+/[\w.-]+)@([0-9a-f]{40}), (\S+) \(sha256 [0-9a-f]{64}\)",
++                                   at["source"], "anchor_text.source").groups()
+     a_n, a_chars = (int(x) for x in _match(r"first (\d+) documents in file order with at least (\d+) characters",
+                                            at["selection"], "anchor_text.selection").groups())
+     gt = dm["general_text"]
+@@ -147,15 +157,15 @@ def params(fz):
+                        "splits.DEV").group(1))
+     tok = dm["model"]["tokenizer"]
+     return Params(
+-        data_seed=dm["seeds"]["DATA_SEED"], candidate_seed=dm["seeds"]["CANDIDATE_SEED"],
++        data_seed=fz.seeds["DATA_SEED"], candidate_seed=fz.seeds["CANDIDATE_SEED"],
+         relations=tuple(f["relations"]), strata=tuple(f["strata"]),
+-        stratum_short=dict(zip(f["strata"], m.groups())), exposure_letter={"learned": "L", "unread": "U"},
+-        fact_prefix="E1P", fact_fields=tuple(ng["expected_facts_fields"]),
++        stratum_short=dict(zip(f["strata"], short)), exposure_letter=letters,
++        fact_prefix=prefix_id, fact_fields=tuple(ng["expected_facts_fields"]),
+         n_learned=f["per_cell"]["learned"], n_unread=f["per_cell"]["unread"], names=ng,
+         natural_min_tokens_exclusive=tok_min, natural_prefix_chars=prefix, natural_max_edit=edit,
+         random_max_hamming=ham, random_digits=digits, survey_size=survey, max_draws=ng["max_draws_per_stream"],
+         candidate_way=cand["way"], pool_min=pool_min, endoftext_id=eot, y_ratio_bounds=(float(lo), float(hi)),
+-        anchor_source=(a_repo, a_rev, a_file, a_sha), anchor_n_docs=a_n, anchor_min_chars=a_chars,
++        anchor_source=(a_repo, a_rev, a_file), anchor_n_docs=a_n, anchor_min_chars=a_chars,
+         anchor_max_tokens=at["truncate_to_model_tokens"], general_source=gt["source_file"], parcae=(p_repo, p_rev),
+         general_dev_per_domain=int(g_n), general_domains=tuple(d.strip() for d in g_domains.split(",")),
+         general_dev_split=g_split, general_max_tokens=gt["truncate_to_model_tokens"],
+@@ -198,7 +208,7 @@ def check_inputs(fz, p, inputs_dir):
+     return paths
+ 
+ 
+-def load_qwen_tokenizer(fz, p, paths):
++def load_qwen_tokenizer(p, paths):
+     """The protocol tokenizer from the four checked files only (offline)."""
+     from transformers import AutoTokenizer
+     tok = AutoTokenizer.from_pretrained(str(paths["qwen:tokenizer.json"].parent), local_files_only=True)
+@@ -515,8 +525,9 @@ def generate(fz, inputs_dir):
+     """Build the 8 non-TEST files of 2.8 in memory. Every frozen hash is checked as soon as its content exists
+     (ST12). Returns ({file name: bytes}, info). Files are in canonical form, so byte_sha256 == canonical_sha256."""
+     p = params(fz)
++    libraries = FZ.check_library_versions(fz.data_manifest)
+     paths = check_inputs(fz, p, inputs_dir)
+-    tok = load_qwen_tokenizer(fz, p, paths)
++    tok = load_qwen_tokenizer(p, paths)
+     anchor = build_anchor(p, tok, paths["anchor_parquet"])
+     fz.check_content("anchor_texts", FZ.sha256_hex(FZ.canonical_bytes([r["text"] for r in anchor])))
+     facts, name_log = NameGenerator(p, tok, [r["text"] for r in anchor]).build()
+@@ -543,7 +554,8 @@ def generate(fz, inputs_dir):
+         "anchor_text.jsonl": FZ.jsonl_bytes(anchor),
+     }
+     assert tuple(files) == DATA_FILES
+-    info = {"name_log": name_log, "s_attempts": s_attempts, "y_ratio": ratio, "general_dev": general_stats,
++    info = {"python": platform.python_version(), "libraries": libraries,
++            "name_log": name_log, "s_attempts": s_attempts, "y_ratio": ratio, "general_dev": general_stats,
+             "rows": {"facts.jsonl": len(facts), "train_F.jsonl": len(train_F), "train_S.jsonl": len(train_S),
+                      "train_Y.jsonl": len(train_Y), "dev_qa.jsonl": len(dev_qa), "candidates.json": len(cands),
+                      "general_dev.jsonl": len(general), "anchor_text.jsonl": len(anchor)}}
+@@ -567,7 +579,7 @@ def file_hashes(data_dir):
+     for name in DATA_FILES:
+         raw = (d / name).read_bytes()
+         if name.endswith(".jsonl"):
+-            canon = FZ.jsonl_bytes([json.loads(line) for line in raw.decode("utf-8").splitlines()])
++            canon = FZ.jsonl_bytes(FZ.parse_jsonl(raw))
+         else:
+             canon = FZ.canonical_bytes(json.loads(raw))
+         out[name] = {"byte_sha256": FZ.sha256_hex(raw), "canonical_sha256": FZ.sha256_hex(canon)}
+@@ -615,6 +627,8 @@ def main(argv=None):
+     elif a.cmd == "generate":
+         files, info = generate(fz, a.inputs)
+         write(files, a.out)
++        print("python %s; libraries %s (protocol section 0: %s)" % (
++            info["python"], json.dumps(info["libraries"]), json.dumps(fz.data_manifest["model"]["libraries"])))
+         print("name generation per cell:", json.dumps(info["name_log"]))
+         print("S derangement attempts per cell:", json.dumps(info["s_attempts"]))
+         print("Y / F token ratio: F %(F_tokens)d, Y %(Y_tokens)d, ratio %(ratio).4f" % info["y_ratio"])
+diff --git a/metrix/e1-pilot/src/metrix_e1/errors.py b/metrix/e1-pilot/src/metrix_e1/errors.py
+index e42b68c8..3cb294cc 100644
+--- a/metrix/e1-pilot/src/metrix_e1/errors.py
++++ b/metrix/e1-pilot/src/metrix_e1/errors.py
+@@ -29,6 +29,14 @@ class ST12Error(ProtocolStop):
+         super().__init__("ST12", "BLOCKED", message)
+ 
+ 
++class ST8Error(ProtocolStop):
++    """Protocol section 11, ST8: the environment does not satisfy section 0 (e.g. library versions differ from
++    DATA_MANIFEST.json model.libraries) -> BLOCKED."""
++
++    def __init__(self, message):
++        super().__init__("ST8", "BLOCKED", message)
++
++
+ class ImplementationFail(ProtocolStop):
+     """Protocol section 9, IMPLEMENTATION_FAIL raised by data generation: a name stream exhausted (2.2), a distractor
+     pool with too few answers (2.5), the Y / F token ratio outside its interval (2.6)."""
+diff --git a/metrix/e1-pilot/src/metrix_e1/frozen.py b/metrix/e1-pilot/src/metrix_e1/frozen.py
+index 4bf54d7a..c3f2edaf 100644
+--- a/metrix/e1-pilot/src/metrix_e1/frozen.py
++++ b/metrix/e1-pilot/src/metrix_e1/frozen.py
+@@ -11,15 +11,22 @@ metrix/e1-pilot/PROTOCOL_FROZEN; Implementation Task Order V1 section 3 items 1
+       three JSON are read from that commit with `git cat-file` and their SHA-256 compared with PROTOCOL_FROZEN.
+ 
+ Every protocol value used by the package comes from the bytes of the frozen commit, never from the working tree.
+-Each value of the 12-row table is also compared with the field of the frozen-commit manifest that holds it. The
+-working-tree copies of the four files are checked too (load(check_working_tree=True)): the protocol and
+-SEARCH_SPACE.json must be byte-identical to the frozen commit; the two manifests must be identical except for the
+-fields that protocol section 8 step 1 fills in (DATA_MANIFEST.json files.<name>.status / byte_sha256 /
+-canonical_sha256, SPLIT_MANIFEST.json split_sha256.<name>), which ST12 excludes from its comparison.
++Each value of the 12-row table is also compared with the field of the frozen-commit manifest that holds it.
+ Any difference raises ST12Error (stop; BLOCKED).
++
++Beyond the two ranges (open item for Review Gate, reports/IMPL_A_REPORT.md): the working-tree copies of the four files
++are compared with the frozen commit too (load(check_working_tree=True)), so that a one-byte change of a frozen file in
++the checkout stops the run (Implementation Task Order V1, section 6 item 10). Line-ending conversion of a checkout
++does not count as a change (PROTOCOL_FROZEN: "以 git cat-file 为准(检出时若做换行转换,工作区字节会不同)"): the
++protocol and SEARCH_SPACE.json are compared byte for byte after CRLF -> LF; the two manifests, which protocol
++section 8 step 1 rewrites, are compared as parsed JSON without the field that step writes (DATA_MANIFEST.json
++"files", SPLIT_MANIFEST.json "split_sha256"), as ST12 leaves those fields out.
++
++Section 0 library versions (torch, transformers; "不一致即 BLOCKED") are checked by check_library_versions() (ST8).
+ """
+ import copy
+ import hashlib
++import importlib.metadata
+ import json
+ import random
+ import re
+@@ -27,7 +34,7 @@ import subprocess
+ from dataclasses import dataclass
+ from pathlib import Path
+ 
+-from .errors import ST12Error
++from .errors import ST8Error, ST12Error
+ 
+ PILOT_REL = "metrix/e1-pilot"
+ PROTOCOL_REL = PILOT_REL + "/METRIX_E1_PROTOCOL.md"
+@@ -91,10 +98,20 @@ def file_sha256(path):
+     return h.hexdigest()
+ 
+ 
++def parse_jsonl(raw):
++    """Parse JSONL bytes written by jsonl_bytes(): split on b"\\n" only (not on other Unicode line breaks, which
++    json.dumps(ensure_ascii=False) leaves unescaped), one final b"\\n" required for a non-empty file."""
++    if raw == b"":
++        return []
++    if not raw.endswith(b"\n"):
++        raise ValueError("JSONL data does not end with a newline")
++    return [json.loads(line) for line in raw[:-1].split(b"\n")]
++
++
+ def read_jsonl(path):
+-    """Parse a JSONL file line by line (file order)."""
+-    with open(path, encoding="utf-8") as fh:
+-        return [json.loads(line) for line in fh]
++    """Parse a JSONL file (file order of the lines)."""
++    with open(path, "rb") as fh:
++        return parse_jsonl(fh.read())
+ 
+ 
+ def rng_rule(seed, purpose):
+@@ -119,7 +136,8 @@ class FrozenRecord:
+     commit: str             # full hash of the frozen commit of the current section
+     file_sha256: dict       # repository path -> SHA-256 of the file bytes at the frozen commit (4 entries)
+     data_sha256: dict       # package key (DATA_TABLE_ROWS) -> SHA-256 (12 entries)
+-    source_sha256: str      # SHA-256 of the PROTOCOL_FROZEN bytes that were parsed (recorded, not frozen anywhere)
++    source_sha256: str      # SHA-256 of the PROTOCOL_FROZEN bytes that were parsed (not frozen anywhere; written
++                            # into the experiment record by record.py, stage B)
+ 
+ 
+ def _one(matches, what):
+@@ -195,28 +213,41 @@ def _get(obj, path):
+     return obj
+ 
+ 
+-STEP1_DATA_FIELDS = ("status", "byte_sha256", "canonical_sha256")
++STEP1_FIELDS = {DATA_MANIFEST_REL: "files", SPLIT_MANIFEST_REL: "split_sha256"}
+ 
+ 
+ def strip_step1_fields(rel, obj):
+-    """Copy of a manifest with the fields that protocol section 8 step 1 writes set to None (ST12: not compared)."""
++    """Copy of a manifest without the field that protocol section 8 step 1 writes (DATA_MANIFEST.json "files",
++    SPLIT_MANIFEST.json "split_sha256"; ST12 leaves them out of its comparison). Other files are returned as copies."""
+     obj = copy.deepcopy(obj)
+-    if rel == DATA_MANIFEST_REL:
+-        for entry in obj["files"].values():
+-            for k in STEP1_DATA_FIELDS:
+-                entry[k] = None
+-    elif rel == SPLIT_MANIFEST_REL:
+-        obj["split_sha256"] = {k: None for k in obj["split_sha256"]}
++    if rel in STEP1_FIELDS and isinstance(obj, dict):
++        obj.pop(STEP1_FIELDS[rel], None)
+     return obj
+ 
+ 
++def check_library_versions(data_manifest, installed=None):
++    """Protocol section 0: the library versions of DATA_MANIFEST.json model.libraries (torch, transformers) must be
++    the installed ones (distribution metadata; a local build tag such as "+cu130" is not part of the version);
++    otherwise BLOCKED (ST8). `installed` overrides the lookup (tests). Returns {library: installed version}."""
++    got = {}
++    for lib, want in data_manifest["model"]["libraries"].items():
++        try:
++            v = installed[lib] if installed is not None else importlib.metadata.version(lib)
++        except (KeyError, importlib.metadata.PackageNotFoundError):
++            raise ST8Error("library %s is not installed; protocol section 0 requires %s" % (lib, want)) from None
++        got[lib] = v
++        if v.split("+")[0] != want:
++            raise ST8Error("library %s is %s; protocol section 0 requires %s" % (lib, v, want))
++    return got
++
++
+ @dataclass
+ class Frozen:
+     """The frozen protocol: everything read from the frozen commit after the ST12 checks of load()."""
+     repo_root: Path
+     record: FrozenRecord
+     blobs: dict             # repository path -> bytes at the frozen commit
+-    protocol_text: str
++    protocol_text: str      # protocol bytes at the frozen commit, decoded (gate thresholds are read from it, stage B)
+     data_manifest: dict
+     split_manifest: dict
+     search_space: dict
+@@ -347,15 +378,15 @@ def load(repo_root=None, protocol_frozen_path=None, check_working_tree=True):
+                 wt = (root / rel).read_bytes()
+             except OSError as e:
+                 raise ST12Error("cannot read working-tree %s: %r" % (rel, e)) from e
+-            if rel in (DATA_MANIFEST_REL, SPLIT_MANIFEST_REL):
++            if rel in STEP1_FIELDS:
+                 try:
+                     same = strip_step1_fields(rel, json.loads(wt)) == strip_step1_fields(rel, json.loads(blobs[rel]))
+                 except (ValueError, KeyError, AttributeError, TypeError):
+                     same = False
+             else:
+-                same = wt == blobs[rel]
++                same = wt.replace(b"\r\n", b"\n") == blobs[rel]
+             if not same:
+                 raise ST12Error("working-tree %s differs from the frozen commit %s%s" % (
+-                    rel, record.commit, " outside the fields written by step 1" if rel in (DATA_MANIFEST_REL, SPLIT_MANIFEST_REL) else ""))
++                    rel, record.commit, " outside the field written by step 1" if rel in STEP1_FIELDS else ""))
+     return Frozen(repo_root=root, record=record, blobs=blobs, protocol_text=protocol_text,
+                   data_manifest=dm, split_manifest=sm, search_space=ss)
+diff --git a/metrix/e1-pilot/src/metrix_e1/leakage.py b/metrix/e1-pilot/src/metrix_e1/leakage.py
+index 44e5a429..60234f3e 100644
+--- a/metrix/e1-pilot/src/metrix_e1/leakage.py
++++ b/metrix/e1-pilot/src/metrix_e1/leakage.py
+@@ -26,6 +26,8 @@ file, so the same functions serve both parts.
+ Command (protocol section 3 interface; also reachable as python -m metrix.e1_pilot.check_leakage):
+   python -m metrix_e1.leakage --data <DATA_DIR> --split-manifest metrix/e1-pilot/SPLIT_MANIFEST.json \
+       --out <DATA_DIR>/leakage_report.json
++Before the checks the command runs the ST12 range (1) check of the data directory (the four content hashes of
++PROTOCOL_FROZEN, frozen.Frozen.check_data_dir); a difference stops it (ST12) without a report.
+ Exit code 0 only if every Gate 0 check is within its limit (RESULT: PASS); otherwise RESULT: FAIL and exit 1.
+ """
+ import argparse
+@@ -40,7 +42,6 @@ from ._cli import run_guarded
+ from .errors import ImplementationFail, ST12Error
+ 
+ CHECKS = ("L1", "L2", "L3a", "L3b", "L4", "L5", "L6")
+-TEMPLATE_SETS = ("TRAIN", "DEV", "TEST", "Y")
+ 
+ 
+ def _rules(split_manifest):
+@@ -186,6 +187,8 @@ def main(argv=None):
+         given = json.load(fh)
+     if FZ.strip_step1_fields(FZ.SPLIT_MANIFEST_REL, given) != FZ.strip_step1_fields(FZ.SPLIT_MANIFEST_REL, fz.split_manifest):
+         raise ST12Error("--split-manifest %s differs from SPLIT_MANIFEST.json at the frozen commit" % a.split_manifest)
++    for key, sha in fz.check_data_dir(a.data).items():
++        print("ST12 range (1): %-12s %s = PROTOCOL_FROZEN" % (key, sha))
+     report = run_gate0(fz.split_manifest, load_data(a.data))
+     report["frozen_commit"] = fz.record.commit
+     Path(a.out).write_text(json.dumps(report, ensure_ascii=False, indent=1, sort_keys=True) + "\n", encoding="utf-8")
+diff --git a/metrix/e1-pilot/tests/test_data_hashes.py b/metrix/e1-pilot/tests/test_data_hashes.py
+index 50790c98..df93fc62 100644
+--- a/metrix/e1-pilot/tests/test_data_hashes.py
++++ b/metrix/e1-pilot/tests/test_data_hashes.py
+@@ -4,6 +4,7 @@ the reference scripts in reports/round*/ that it was ported from (section 5, dat
+ leakage checks passes on them (protocol section 3)."""
+ import json
+ import os
++import re
+ import subprocess
+ import sys
+ 
+@@ -32,14 +33,20 @@ def test_files_are_canonical(generated):
+         assert h["byte_sha256"] == h["canonical_sha256"], name
+ 
+ 
+-def test_counts_and_ratio(generated):
+-    """Row counts of 2.3 / 2.6 / 2.7 and the Y / F token counts the protocol states in 2.6 (F 1,889, Y 2,260)."""
+-    assert generated["info"]["rows"] == {"facts.jsonl": 160, "train_F.jsonl": 120, "train_S.jsonl": 120,
+-                                         "train_Y.jsonl": 240, "dev_qa.jsonl": 320, "candidates.json": 160,
+-                                         "general_dev.jsonl": 100, "anchor_text.jsonl": 512}
++def test_counts_and_ratio(fz, generated):
++    """Row counts of 2.3 / 2.6 / 2.7 (from the frozen manifests) and the Y / F token counts that protocol 2.6 states
++    for DATA_SEED (read from the frozen protocol text: "F 1,889 token,Y 2,260 token")."""
++    p = D.params(fz)
++    total, learned = fz.data_manifest["facts"]["total"], fz.data_manifest["facts"]["learned"]
++    assert generated["info"]["rows"] == {
++        "facts.jsonl": total, "train_F.jsonl": learned, "train_S.jsonl": learned, "train_Y.jsonl": 2 * learned,
++        "dev_qa.jsonl": total * p.dev_per_fact, "candidates.json": total,
++        "general_dev.jsonl": p.general_dev_per_domain * len(p.general_domains), "anchor_text.jsonl": p.anchor_n_docs}
++    m = re.findall(r"F ([\d,]+) token,Y ([\d,]+) token", fz.protocol_text)
++    assert len(m) == 1
+     r = generated["info"]["y_ratio"]
+-    assert (r["F_tokens"], r["Y_tokens"]) == (1889, 2260)
+-    assert generated["info"]["general_dev"]["decoded_rows"] == 100
++    assert (r["F_tokens"], r["Y_tokens"]) == tuple(int(x.replace(",", "")) for x in m[0])
++    assert generated["info"]["general_dev"]["decoded_rows"] == generated["info"]["rows"]["general_dev.jsonl"]
+ 
+ 
+ def test_no_test_file(generated):
+diff --git a/metrix/e1-pilot/tests/test_leakage.py b/metrix/e1-pilot/tests/test_leakage.py
+index b2403115..ff2df0ba 100644
+--- a/metrix/e1-pilot/tests/test_leakage.py
++++ b/metrix/e1-pilot/tests/test_leakage.py
+@@ -4,11 +4,13 @@ over its limit (Implementation Task Order V1, section 5 "检查脚本"). No TEST
+ import copy
+ import json
+ import os
++import shutil
+ import subprocess
+ import sys
+ 
+ import pytest
+ 
++from metrix_e1 import frozen as FZ
+ from metrix_e1 import leakage as LK
+ 
+ from conftest import PILOT, SRC
+@@ -86,21 +88,42 @@ def test_l1_l2_templates(fz, loaded):
+     assert {"L1", "L2"} <= over and report["checks"]["L2"]["value"] == 1.0
+ 
+ 
+-def test_cli_fail_exit(fz, generated, tmp_path):
+-    """python -m metrix.e1_pilot.check_leakage (the protocol's command) on data with a planted L4 violation."""
+-    import shutil
++def _leakage_cli(d, split_manifest, out):
++    env = dict(os.environ, PYTHONPATH=str(SRC))
++    args = ["--data", d, "--split-manifest", split_manifest, "--out", out]
++    return subprocess.run([sys.executable, "-m", "metrix.e1_pilot.check_leakage", *map(str, args)], capture_output=True,
++                          text=True, env=env, cwd=PILOT.parents[1])
++
++
++def test_cli_fail_exit(generated, tmp_path):
++    """python -m metrix.e1_pilot.check_leakage (the protocol's command) on data with a planted L4 violation in
++    train_F (a file without a frozen hash, so the ST12 range (1) check passes and the leakage check decides)."""
+     d = tmp_path / "data"
+     shutil.copytree(generated["dir"], d)
+-    rows = [json.loads(x) for x in (d / "train_S.jsonl").read_text(encoding="utf-8").splitlines()]
+-    rows[0]["text"] += " " + json.loads((d / "dev_qa.jsonl").read_text(encoding="utf-8").splitlines()[0])["question"]
+-    (d / "train_S.jsonl").write_text("".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8")
+-    env = dict(os.environ, PYTHONPATH=str(SRC))
+-    args = ["--data", d, "--split-manifest", PILOT / "SPLIT_MANIFEST.json", "--out", d / "leakage_report.json"]
+-    r = subprocess.run([sys.executable, "-m", "metrix.e1_pilot.check_leakage", *map(str, args)], capture_output=True,
+-                       text=True, env=env, cwd=PILOT.parents[1])
++    rows = FZ.read_jsonl(d / "train_F.jsonl")
++    rows[0]["text"] += " " + FZ.read_jsonl(d / "dev_qa.jsonl")[0]["question"]
++    (d / "train_F.jsonl").write_bytes(FZ.jsonl_bytes(rows))
++    r = _leakage_cli(d, PILOT / "SPLIT_MANIFEST.json", d / "leakage_report.json")
+     assert r.returncode == 1 and r.stdout.rstrip().endswith("RESULT: FAIL"), r.stdout + r.stderr
+-    assert json.loads((d / "leakage_report.json").read_text(encoding="utf-8"))["checks"]["L4"]["value"] == 1
+-    r = subprocess.run([sys.executable, "-m", "metrix.e1_pilot.check_leakage", *map(str, args[:2]), "--split-manifest",
+-                        d / "candidates.json", "--out", d / "x.json"], capture_output=True, text=True, env=env,
+-                       cwd=PILOT.parents[1])
++    report = json.loads((d / "leakage_report.json").read_text(encoding="utf-8"))
++    assert report["checks"]["L4"]["value"] == 1 and report["result"] == "FAIL"
++
++
++def test_cli_bad_split_manifest(generated, tmp_path):
++    r = _leakage_cli(generated["dir"], generated["dir"] / "candidates.json", tmp_path / "x.json")
++    assert r.returncode != 0 and r.stdout.rstrip().endswith("RESULT: FAIL"), r.stdout + r.stderr
++    assert "ST12" in r.stderr and not (tmp_path / "x.json").exists()
++
++
++def test_cli_st12_on_tampered_frozen_data(generated, tmp_path):
++    """A one-byte change of train_S.jsonl (frozen content hash) stops the command with ST12 before any check."""
++    d = tmp_path / "data"
++    shutil.copytree(generated["dir"], d)
++    raw = bytearray((d / "train_S.jsonl").read_bytes())
++    i = raw.index(b'"text":"') + len(b'"text":"')
++    raw[i] = raw[i] + 1
++    (d / "train_S.jsonl").write_bytes(bytes(raw))
++    r = _leakage_cli(d, PILOT / "SPLIT_MANIFEST.json", d / "leakage_report.json")
+     assert r.returncode != 0 and r.stdout.rstrip().endswith("RESULT: FAIL"), r.stdout + r.stderr
++    assert "ST12 -> BLOCKED: train_S: content sha256" in r.stderr
++    assert not (d / "leakage_report.json").exists()
+diff --git a/metrix/e1-pilot/tests/test_st12.py b/metrix/e1-pilot/tests/test_st12.py
+index c04ab2aa..6de2f668 100644
+--- a/metrix/e1-pilot/tests/test_st12.py
++++ b/metrix/e1-pilot/tests/test_st12.py
+@@ -1,10 +1,19 @@
+ """Implementation Task Order V1, section 6 item 10: change one byte of any frozen file or data file and the run
+ stops at once with ST12 (protocol v1.1 section 11; Task Order section 3 items 1-2).
+ 
+-Frozen files (protocol + three JSON at the frozen commit, and PROTOCOL_FROZEN itself) are tampered inside a
+-throw-away git repository built in a temporary directory from the bytes of the real frozen commit, so the real
+-repository is never touched. Input files and data files are tampered in temporary copies.
++Covered, each with the message of the check that must fire:
++  - the four frozen files at the frozen commit (range (2)): a one-byte change in the commit named by PROTOCOL_FROZEN;
++  - the working-tree copies of the four frozen files (beyond range (2), see frozen.py);
++  - PROTOCOL_FROZEN: one hex digit of a listed file hash, and of a value of the data-hash table (the prose of
++    PROTOCOL_FROZEN is not covered: a byte changed there and nowhere else changes no value the run uses);
++  - the input files with frozen file-byte hashes (range (1)): eval_sets.jsonl, the four Qwen tokenizer files, the
++    parcae tokenizer.json, the anchor parquet;
++  - the eight generated data files: the four with frozen content hashes (range (1)) and the four without one
++    (regeneration check of data.verify).
++Frozen files are tampered inside a throw-away git repository built in a temporary directory from the bytes of the real
++frozen commit, so the real repository is never touched. Input files and data files are tampered in temporary copies.
+ """
++import json
+ import os
+ import shutil
+ import subprocess
+@@ -30,6 +39,11 @@ def flip(path, pos=None):
+     return pos
+ 
+ 
++def value_byte(path):
++    """Position of a byte inside a JSON string value (first character of the "protocol" value)."""
++    return path.read_bytes().index(b'"METRIX-E1-PILOT"') + 1
++
++
+ def git(repo, *args):
+     r = subprocess.run(["git", "-C", str(repo), *GIT_ID, *args], capture_output=True, text=True, check=True)
+     return r.stdout.strip()
+@@ -66,53 +80,55 @@ def test_mini_repo_positive_control(mini_repo):
+ 
+ @pytest.mark.parametrize("rel", FZ.FROZEN_FILES)
+ def test_frozen_commit_file_one_byte(mini_repo, rel):
+-    """A frozen commit whose file differs by one byte from the PROTOCOL_FROZEN hash (range (2))."""
+-    root, _, text = mini_repo
++    """Range (2): the file at the commit named by PROTOCOL_FROZEN differs by one byte from the listed hash."""
++    root, commit, text = mini_repo
+     flip(root / rel)
+     git(root, "commit", "-q", "-am", "one byte changed")
+     tampered = git(root, "rev-parse", "HEAD")
+-    (root / FZ.PROTOCOL_FROZEN_REL).write_text(text.replace(git(root, "rev-parse", "HEAD~1"), tampered), encoding="utf-8")
+-    with pytest.raises(ST12Error, match="ST12"):
++    (root / FZ.PROTOCOL_FROZEN_REL).write_text(text.replace(commit, tampered), encoding="utf-8")
++    with pytest.raises(ST12Error, match="ST12 -> BLOCKED: %s at the frozen commit %s has sha256" % (rel, tampered)):
+         FZ.load(repo_root=root)
+ 
+ 
+ @pytest.mark.parametrize("rel", FZ.FROZEN_FILES)
+ def test_working_tree_file_one_byte(mini_repo, rel):
+-    """The working-tree copy of a frozen file differs by one byte from the frozen commit (for the two manifests the
+-    byte is inside a frozen field: the first character of the "protocol" value)."""
++    """The working-tree copy differs by one byte from the frozen commit (JSON: a byte inside a string value)."""
+     root, _, _ = mini_repo
+     path = root / rel
+-    if rel in (FZ.DATA_MANIFEST_REL, FZ.SPLIT_MANIFEST_REL):
+-        flip(path, path.read_bytes().index(b'"METRIX-E1-PILOT"') + 1)
+-    else:
+-        flip(path)
+-    with pytest.raises(ST12Error, match="ST12"):
++    flip(path, value_byte(path) if rel.endswith(".json") else None)
++    with pytest.raises(ST12Error, match="ST12 -> BLOCKED: working-tree %s differs from the frozen commit" % rel):
+         FZ.load(repo_root=root)
+ 
+ 
+-def test_step1_fields_are_not_compared(mini_repo, fz):
+-    """Protocol section 11 ST12: the hash fields written by section 8 step 1 are outside the comparison range."""
++def test_working_tree_line_endings_and_step1_fields(mini_repo, fz):
++    """Not a change: CRLF line endings of a checkout (PROTOCOL_FROZEN: git cat-file is authoritative), and the
++    fields protocol section 8 step 1 writes (ST12 leaves them out), including new keys in them."""
+     root, _, _ = mini_repo
+-    import json
++    for rel in (FZ.PROTOCOL_REL, FZ.SEARCH_SPACE_REL):
++        (root / rel).write_bytes(fz.blobs[rel].replace(b"\n", b"\r\n"))
+     dm = json.loads(fz.blobs[FZ.DATA_MANIFEST_REL])
+     dm["files"]["facts.jsonl"].update(status="GENERATED", byte_sha256="0" * 64, canonical_sha256="0" * 64)
++    dm["files"]["facts.jsonl"]["rows"] = 160
+     (root / FZ.DATA_MANIFEST_REL).write_text(json.dumps(dm, ensure_ascii=False, indent=2), encoding="utf-8")
+     sm = json.loads(fz.blobs[FZ.SPLIT_MANIFEST_REL])
+     sm["split_sha256"]["train_F.jsonl"] = "0" * 64
++    sm["split_sha256"]["extra.jsonl"] = "0" * 64
+     (root / FZ.SPLIT_MANIFEST_REL).write_text(json.dumps(sm, ensure_ascii=False, indent=2), encoding="utf-8")
+     FZ.load(repo_root=root)
+ 
+ 
+ @pytest.mark.parametrize("which", ["file", "data"])
+ def test_protocol_frozen_hash_one_byte(mini_repo, fz, which):
+-    """One hex digit of a hash listed in PROTOCOL_FROZEN changed: a file hash of the current section, or a value of
+-    the data-hash table (no longer equal to the frozen-commit manifest)."""
+-    root, _, text = mini_repo
++    """One hex digit of a hash listed in PROTOCOL_FROZEN changed: a file hash of the current section (no longer the
++    hash of the frozen-commit blob), or a value of the data-hash table (no longer the frozen-commit manifest value)."""
++    root, commit, text = mini_repo
+     sha = fz.record.file_sha256[FZ.DATA_MANIFEST_REL] if which == "file" else fz.data_hash("facts")
+     assert text.count(sha) == 1
+     other = sha[:10] + ("0" if sha[10] != "0" else "1") + sha[11:]
+     (root / FZ.PROTOCOL_FROZEN_REL).write_text(text.replace(sha, other), encoding="utf-8")
+-    with pytest.raises(ST12Error, match="ST12"):
++    expected = ("%s at the frozen commit %s has sha256 %s, PROTOCOL_FROZEN %s" % (FZ.DATA_MANIFEST_REL, commit, sha, other)
++                if which == "file" else "PROTOCOL_FROZEN row 'fact\\(160 条\\)' \\(%s\\) differs from" % other)
++    with pytest.raises(ST12Error, match=expected):
+         FZ.load(repo_root=root)
+ 
+ 
+@@ -122,14 +138,14 @@ def test_eval_sets_one_byte(mini_repo, inputs_dir):
+     p = D.params(fzm)
+     D.check_inputs(fzm, p, inputs_dir)                           # positive control
+     flip(root / p.general_source)
+-    with pytest.raises(ST12Error, match="eval_sets"):
++    with pytest.raises(ST12Error, match="ST12 -> BLOCKED: eval_sets: file .* has sha256"):
+         D.check_inputs(fzm, p, inputs_dir)
+ 
+ 
+ @pytest.fixture
+ def inputs_copy(fz, inputs_dir, tmp_path):
+     dst = tmp_path / "inputs"
+-    for key, path in D.input_paths(D.params(fz), inputs_dir).items():
++    for path in D.input_paths(D.params(fz), inputs_dir).values():
+         target = dst / path.relative_to(inputs_dir)
+         target.parent.mkdir(parents=True, exist_ok=True)
+         shutil.copyfile(path, target)
+@@ -142,9 +158,10 @@ def test_input_file_one_byte(fz, inputs_copy, key, generated):
+     p = D.params(fz)
+     D.check_inputs(fz, p, inputs_copy)                            # positive control
+     flip(D.input_paths(p, inputs_copy)[key])
+-    with pytest.raises(ST12Error, match=key):
++    expected = "ST12 -> BLOCKED: %s: file .* has sha256" % key
++    with pytest.raises(ST12Error, match=expected):
+         D.check_inputs(fz, p, inputs_copy)
+-    with pytest.raises(ST12Error):
++    with pytest.raises(ST12Error, match=expected):
+         D.verify(fz, inputs_copy, generated["dir"])
+ 
+ 
+@@ -155,10 +172,27 @@ def data_copy(generated, tmp_path):
+     return dst
+ 
+ 
++# the check that must fire for a one-byte change of each data file (middle byte)
++DATA_FILE_MESSAGE = {
++    "facts.jsonl": "facts: content sha256|cannot read the generated data",
++    "train_S.jsonl": "train_S: content sha256|cannot read the generated data",
++    "candidates.json": "candidates: content sha256|cannot read the generated data",
++    "anchor_text.jsonl": "anchor_texts: content sha256|cannot read the generated data|anchor_text.jsonl in .* differs",
++    "train_F.jsonl": "train_F.jsonl in .* differs from its regeneration",
++    "train_Y.jsonl": "train_Y.jsonl in .* differs from its regeneration",
++    "dev_qa.jsonl": "dev_qa.jsonl in .* differs from its regeneration",
++    "general_dev.jsonl": "general_dev.jsonl in .* differs from its regeneration",
++}
++
++
++def test_data_file_message_table_complete():
++    assert sorted(DATA_FILE_MESSAGE) == sorted(D.DATA_FILES)
++
++
+ @pytest.mark.parametrize("name", D.DATA_FILES)
+ def test_data_file_one_byte(fz, inputs_dir, data_copy, name):
+     flip(data_copy / name)
+-    with pytest.raises(ST12Error, match="ST12"):
++    with pytest.raises(ST12Error, match="ST12 -> BLOCKED: (%s)" % DATA_FILE_MESSAGE[name]):
+         D.verify(fz, inputs_dir, data_copy)
+ 
+ 
+@@ -179,11 +213,20 @@ def test_cli_stops_on_tampered_data(inputs_dir, data_copy):
+     flip(data_copy / "dev_qa.jsonl")
+     bad = _cli("verify", "--inputs", inputs_dir, "--data", data_copy)
+     assert bad.returncode != 0 and bad.stdout.rstrip().endswith("RESULT: FAIL"), bad.stdout + bad.stderr
+-    assert "ST12" in bad.stderr
++    assert "ST12 -> BLOCKED: dev_qa.jsonl in" in bad.stderr
+ 
+ 
+ def test_cli_stops_on_tampered_input(inputs_copy, generated):
+     flip(inputs_copy / "qwen_tokenizer" / "tokenizer_config.json")
+     bad = _cli("verify", "--inputs", inputs_copy, "--data", generated["dir"])
+     assert bad.returncode != 0 and bad.stdout.rstrip().endswith("RESULT: FAIL"), bad.stdout + bad.stderr
+-    assert "ST12" in bad.stderr
++    assert "ST12 -> BLOCKED: qwen:tokenizer_config.json: file" in bad.stderr
++
++
++def test_parse_jsonl_splits_on_newline_only():
++    """Review MINOR: JSONL is split on b"\\n" only; U+2028 / U+0085 inside a value (unescaped by
++    json.dumps(ensure_ascii=False)) do not break a line."""
++    rows = [{"text": "a b\u0085c"}, {"text": "d"}]
++    assert FZ.parse_jsonl(FZ.jsonl_bytes(rows)) == rows
++    with pytest.raises(ValueError):
++        FZ.parse_jsonl(FZ.jsonl_bytes(rows)[:-1])
+$ git diff --no-index /dev/null metrix/e1-pilot/tests/test_environment.py
+diff --git a/metrix/e1-pilot/tests/test_environment.py b/metrix/e1-pilot/tests/test_environment.py
+new file mode 100644
+index 00000000..28340bcf
+--- /dev/null
++++ b/metrix/e1-pilot/tests/test_environment.py
+@@ -0,0 +1,38 @@
++"""Environment of the run (protocol v1.1 section 0; Implementation Task Order V1 section 5 "依赖"): the interpreter is
++the one named in requirements.lock, the library versions are those of DATA_MANIFEST.json model.libraries, and a
++different library version stops the run with ST8 (BLOCKED)."""
++import platform
++import re
++
++import pytest
++
++from metrix_e1 import frozen as FZ
++from metrix_e1.errors import ST8Error
++
++from conftest import PILOT
++
++
++def test_python_is_the_locked_interpreter():
++    lines = [ln for ln in (PILOT / "requirements.lock").read_text(encoding="utf-8").splitlines()
++             if re.fullmatch(r"# python: CPython \d+\.\d+\.\d+", ln)]
++    assert len(lines) == 1
++    assert platform.python_implementation() == "CPython"
++    assert lines[0] == "# python: CPython %s" % platform.python_version()
++
++
++def test_library_versions_match_protocol(fz):
++    got = FZ.check_library_versions(fz.data_manifest)
++    assert sorted(got) == sorted(fz.data_manifest["model"]["libraries"])
++
++
++def test_library_version_mismatch_is_st8(fz):
++    libs = dict(fz.data_manifest["model"]["libraries"])
++    FZ.check_library_versions(fz.data_manifest, installed={k: v + "+cu130" for k, v in libs.items()})   # local tag ignored
++    for lib in libs:
++        wrong = dict(libs)
++        wrong[lib] = libs[lib] + ".1"
++        with pytest.raises(ST8Error, match="ST8 -> BLOCKED: library %s is" % lib):
++            FZ.check_library_versions(fz.data_manifest, installed=wrong)
++        missing = {k: v for k, v in libs.items() if k != lib}
++        with pytest.raises(ST8Error, match="library %s is not installed" % lib):
++            FZ.check_library_versions(fz.data_manifest, installed=missing)

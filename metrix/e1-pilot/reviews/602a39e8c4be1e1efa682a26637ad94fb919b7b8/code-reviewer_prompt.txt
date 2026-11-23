@@ -1,0 +1,21 @@
+先读仓库中的 .claude/agents/code-reviewer.md，以它为你的完整定义；它与你已加载的定义冲突时，以仓库文件为准。
+
+Metrix E1-PILOT Implementation 阶段 A 的工作提交(暂存，尚未提交)。仓库 /home/user/OpenMythos，分支 metrix-e1-pilot-protocol-v1，父提交 8149d8727b4a99ea0cc9b0a1a2ebd82bd53fa0af。协议 v1.1，冻结提交 87a244db28a901f9e89282b50df76778ab5c2887(metrix/e1-pilot/PROTOCOL_FROZEN 当前有效节)。
+
+- 指令原文：metrix/e1-pilot/tasks/IMPLEMENTATION_TASK_ORDER_V1.md(本提交中新增，Owner 批准的 Implementation Task Order V1)。本阶段 = 第 10 节表中 A 行：本文件原文入库；frozen.py、data.py、leakage.py(不含 TEST 部分的执行)；单元测试 1、10；requirements.lock。第 2 节红线、第 3 节执行解释、第 5 节模块要求(含“确定性”“检查脚本”“依赖”三段)、第 6 节第 1、10 项、第 9 节审查重点同样适用于本阶段的代码。
+- 审查输入(git diff --cached --stat 与完整 diff)：/tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/review_work/review_input.diff。暂存区内容也可直接读工作区文件(与暂存区相同)：metrix/e1-pilot/src/、metrix/e1-pilot/tests/、metrix/e1-pilot/requirements.lock、metrix/e1-pilot/tasks/IMPLEMENTATION_TASK_ORDER_V1.md。
+- 本提交中的原始输出：metrix/e1-pilot/reports/impl_a/t0_copy_check.txt(阶段开始时 ~/.claude/ 副本比对)、t1_lock.txt(锁文件生成与按哈希安装)、t2_fetch_generate.txt(下载、两次生成、verify)、t3_leakage.txt(按协议第 3 节命令运行泄漏检查)、t4_pytest.txt(单元测试)。
+- 迁移来源(参考脚本)：metrix/e1-pilot/reports/round2/names.py、gen_facts.py、anchor_check.py、y_ratio.py；reports/round7/gen_s_cands.py；reports/round5/l6_check.py；reports/round1/template_overlap.py。
+- Executor 自己的说明(docstring、注释、提交说明)不作为证据。
+
+请逐条对照协议 v1.1(第 0、2、3、9、11 节)与指令，重点(指令第 9 节)：与协议逐条一致；冻结参数(协议中的数值、种子、哈希、模板是否都从冻结文件读取，代码里有无写死的协议数值)；TEST 隔离(有无任何代码路径生成、读取或统计 TEST；eval_sets.jsonl 的 test 行是否被解析或解码)；ST12 的实现是否符合协议第 11 节与指令第 3 节第 1、2 项；data.py 的输出与参考脚本逐字节相同的证明是否成立；单元测试第 1、10 项是否真正检验了指令所说的内容；requirements.lock 是否满足第 5 节“依赖”。
+
+以下几处是实现中的取舍，请判断是否与协议、指令一致，或是否属于协议未覆盖、应交 Review Gate 的情况：
+(a) frozen.load() 除协议 ST12 比对范围 (2) 外，还比对工作区中四个冻结文件与冻结提交(两个 manifest 不比第 8 节第 1 步写入的字段)；
+(b) data.verify() 把没有冻结哈希的数据文件(train_F、train_Y、dev_qa、general_dev 及 anchor_text 的 ids)与按冻结输入重新生成的结果逐字节比对，不一致按 ST12 处理；
+(c) L4 的“任何训练语料”包括 anchor_text；
+(d) 协议第 3 节的执行接口 python -m metrix.e1_pilot.check_leakage 放在 metrix/e1-pilot/src/metrix/e1_pilot/ 下(需 PYTHONPATH=metrix/e1-pilot/src)，而指令第 4 节交付物写的是 src/metrix_e1/；
+(e) 不使用 peft，requirements.lock 不含 peft(arm L 的 LoRA 将在阶段 B 于包内实现)；
+(f) 训练语料、DEV 问句等文件(train_F、train_Y、dev_qa、general_dev、anchor_text)的记录字段协议未规定，由实现自定。
+
+请按定义的输出格式逐条给出，每条注明“已验证/未验证”。对上述 (a)–(f) 各给出明确判断。最后一行给出结论。

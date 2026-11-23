@@ -1,0 +1,14 @@
+先读仓库中的 .claude/agents/data-auditor.md，以它为你的完整定义；它与你已加载的定义冲突时，以仓库文件为准。
+
+Metrix E1-PILOT Implementation 阶段 A。仓库 /home/user/OpenMythos，分支 metrix-e1-pilot-protocol-v1，HEAD 8149d8727b4a99ea0cc9b0a1a2ebd82bd53fa0af；Executor 的阶段 A 工作提交已暂存、尚未提交(新的数据生成代码 metrix/e1-pilot/src/metrix_e1/data.py、frozen.py、leakage.py)。协议 v1.1，冻结提交 87a244db28a901f9e89282b50df76778ab5c2887(metrix/e1-pilot/PROTOCOL_FROZEN 当前有效节)。指令：metrix/e1-pilot/tasks/IMPLEMENTATION_TASK_ORDER_V1.md 第 9 节“数据生成代码完成后，调用 data-auditor 用自写脚本独立复算四个冻结哈希”。
+
+任务：
+1. 用你自己在 metrix/e1-pilot/audit/ 下新写的脚本(建议前缀 ia_)，从固定来源独立重新生成并复算四个冻结哈希：fact(160 条，协议第 2.2 节，含比对方法)406c8801…、train_S.jsonl(第 2.6 节)686fdd2f…、candidates.json(第 2.5 节)e5d15c99…、锚文本 512 篇解码文本(DATA_MANIFEST.json anchor_text.decoded_texts_hash_rule)8828bc4f…；全值以 PROTOCOL_FROZEN 与冻结提交中的 manifest 为准。可以参考你以前在 audit/ 下写的脚本；禁止 import、调用或复制 Executor 的代码(metrix/e1-pilot/src/ 与 reports/ 下的脚本)。
+2. 把你的结果与 Executor 生成的文件逐一比对：Executor 的输出目录 /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen1/(facts.jsonl、train_F.jsonl、train_S.jsonl、train_Y.jsonl、dev_qa.jsonl、candidates.json、general_dev.jsonl、anchor_text.jsonl，以及 leakage_report.json)。对四个冻结哈希，按协议的方法从 Executor 的文件读回重算并与你的值、冻结值三方比对；对没有冻结哈希的文件(train_F、train_Y、dev_qa、general_dev、anchor_text 的 ids)，用你自己对协议第 2.3、2.4、2.6、2.7 节的理解独立生成并比较内容(这些文件的记录字段协议未规定，比较时只比内容：文本、id 序列、顺序、数量)。
+3. 你定义中的复算项目 1–4：模板哈希与 template_set_sha256；L1–L6 的 Gate 0 部分(L6 只做锚文本对 general DEV；与 Executor 的 leakage_report.json 比对)；候选可行性；split(fact_id 互斥、数量)。
+
+输入文件：已下载的固定文件在 /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/inputs/(qwen_tokenizer/ 下 4 个分词器文件、parcae_tokenizer/tokenizer.json、anchor_source/data/sample-100BT/train/shard_00000.parquet)；使用前请自己核对它们的 sha256，也可以自己从 Hugging Face 按固定 revision 重新下载(只下载这些文件，不下载任何模型权重)。eval_sets.jsonl 在仓库 research/mini_mythos/stage1/results/r1/eval_sets.jsonl。Python 环境：/tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/venv/bin/python(Python 3.13.18，transformers 5.22.2、tokenizers 0.23.3、pyarrow 26.0.1；也装有 torch，但你不得加载任何模型)。
+
+TEST：本任务不要求执行协议第 8 节第 8 步 L6 TEST 部分，所以禁止生成、读取或统计 TEST。按协议第 3 节的定义，eval_sets.jsonl 只可对整个文件求哈希、按行前缀读取 split 字段与计数；split 不是 "dev" 的行不得解析或解码(指令第 3 节第 3 项：对整个 eval_sets.jsonl 求文件哈希不算“统计 TEST”)。不得实例化任何 TEST 问句。
+
+输出：所有脚本的完整 stdout 写入 metrix/e1-pilot/audit/stdout/impl_a/(可用 metrix/e1-pilot/audit/run_logged.sh)。只写入 metrix/e1-pilot/audit/。按定义的输出格式给出每一项的命令、原始输出、与 Executor 是否一致；最后附 git status --short 原始输出；最后一行给出结论。

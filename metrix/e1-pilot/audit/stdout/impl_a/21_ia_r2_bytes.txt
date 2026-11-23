@@ -1,0 +1,82 @@
+# Data Auditor run (implementation stage A). host vm, CPU only (no GPU device), no model weights loaded (tokenizer files only); 2026-11-23 01:13:47 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/venv/bin/python -I -B ia_12_r2_bytes.py /home/user/OpenMythos/metrix/e1-pilot/audit /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen1 /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen4 /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/auditor_ia/out /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/auditor_ia/out_r2
+env: host vm | Linux-6.18.44-fc-v726-x86_64-with-glibc2.39 | python 3.13.18 (/tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/venv/bin/python) | installed {'transformers': '5.22.2', 'tokenizers': '0.23.3', 'pyarrow': '26.0.1', 'huggingface_hub': '2.4.0', 'torch': '2.11.0'} | nvidia device nodes: []
+== A. gen4 vs gen1, the 8 data files
+gen1 listing ['anchor_text.jsonl', 'candidates.json', 'dev_qa.jsonl', 'facts.jsonl', 'general_dev.jsonl', 'leakage_report.json', 'train_F.jsonl', 'train_S.jsonl', 'train_Y.jsonl'] == expected True | gen4 listing ['anchor_text.jsonl', 'candidates.json', 'dev_qa.jsonl', 'facts.jsonl', 'general_dev.jsonl', 'leakage_report.json', 'train_F.jsonl', 'train_S.jsonl', 'train_Y.jsonl'] == expected True
+  facts.jsonl: gen1 21489 bytes sha256 e05561ac2d49dcc3c8f59743c5df64151983a540a32ae135fd1b10f5e0fdc828 | gen4 21489 bytes sha256 e05561ac2d49dcc3c8f59743c5df64151983a540a32ae135fd1b10f5e0fdc828 | byte-identical True | gen1 == round-1 record e05561ac2d49dcc3c8f59743c5df64151983a540a32ae135fd1b10f5e0fdc828 True
+  train_F.jsonl: gen1 14073 bytes sha256 3aa9ab3ca313c0a1113b91e927af51342c915e3e40dd2f20992f3d9e59b0e373 | gen4 14073 bytes sha256 3aa9ab3ca313c0a1113b91e927af51342c915e3e40dd2f20992f3d9e59b0e373 | byte-identical True | gen1 == round-1 record 3aa9ab3ca313c0a1113b91e927af51342c915e3e40dd2f20992f3d9e59b0e373 True
+  train_S.jsonl: gen1 15033 bytes sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e | gen4 15033 bytes sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e | byte-identical True | gen1 == round-1 record 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e True
+  train_Y.jsonl: gen1 28203 bytes sha256 c7430cadb2b06dd5c144af381a8183d4c186f27f2b5acfa9d8d39da0b7626d15 | gen4 28203 bytes sha256 c7430cadb2b06dd5c144af381a8183d4c186f27f2b5acfa9d8d39da0b7626d15 | byte-identical True | gen1 == round-1 record c7430cadb2b06dd5c144af381a8183d4c186f27f2b5acfa9d8d39da0b7626d15 True
+  dev_qa.jsonl: gen1 37176 bytes sha256 9761eb60d6c9155c2f56394aa228b1e9dfea0ae3926ab50cb21d903108bc7fde | gen4 37176 bytes sha256 9761eb60d6c9155c2f56394aa228b1e9dfea0ae3926ab50cb21d903108bc7fde | byte-identical True | gen1 == round-1 record 9761eb60d6c9155c2f56394aa228b1e9dfea0ae3926ab50cb21d903108bc7fde True
+  candidates.json: gen1 10453 bytes sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | gen4 10453 bytes sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | byte-identical True | gen1 == round-1 record e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 True
+  general_dev.jsonl: gen1 233241 bytes sha256 957666920c91ef5b9328984d26ed0628c8a80b439d461bea49b54c2235635e73 | gen4 233241 bytes sha256 957666920c91ef5b9328984d26ed0628c8a80b439d461bea49b54c2235635e73 | byte-identical True | gen1 == round-1 record 957666920c91ef5b9328984d26ed0628c8a80b439d461bea49b54c2235635e73 True
+  anchor_text.jsonl: gen1 639712 bytes sha256 2089e656819d1fe0f6ececcc26e5cade09ee80a92c50e7c8f607fa4e0ef46da5 | gen4 639712 bytes sha256 2089e656819d1fe0f6ececcc26e5cade09ee80a92c50e7c8f607fa4e0ef46da5 | byte-identical True | gen1 == round-1 record 2089e656819d1fe0f6ececcc26e5cade09ee80a92c50e7c8f607fa4e0ef46da5 True
+8 data files gen4 byte-identical to gen1: True
+
+== B. leakage_report.json
+gen1 sha256 6ea9c7ffaf05fd6beb938b2abdf2acf93e778b482511dbfe356dfe82a88eeac2 | gen4 sha256 6ea9c7ffaf05fd6beb938b2abdf2acf93e778b482511dbfe356dfe82a88eeac2 | byte-identical True | gen1 == round-1 record 6ea9c7ffaf05fd6beb938b2abdf2acf93e778b482511dbfe356dfe82a88eeac2 True
+  leaf checks.L1.detail.shared_hashes = [] | compared one by one in ia_07 True
+  leaf checks.L1.limit = 0 | compared one by one in ia_07 True
+  leaf checks.L1.value = 0 | compared one by one in ia_07 True
+  leaf checks.L1.within_limit = true | compared one by one in ia_07 True
+  leaf checks.L2.detail.n = 4 | compared one by one in ia_07 True
+  leaf checks.L2.detail.pair = ["capital.TRAIN.1", "capital.DEV.1"] | compared one by one in ia_07 True
+  leaf checks.L2.limit = 0.25 | compared one by one in ia_07 True
+  leaf checks.L2.value = 0.2 | compared one by one in ia_07 True
+  leaf checks.L2.within_limit = true | compared one by one in ia_07 True
+  leaf checks.L3a.detail.corpora = ["anchor_text", "train_F", "train_S", "train_Y"] | compared one by one in ia_07 True
+  leaf checks.L3a.detail.found = {} | compared one by one in ia_07 True
+  leaf checks.L3a.detail.strings = 80 | compared one by one in ia_07 True
+  leaf checks.L3a.limit = 0 | compared one by one in ia_07 True
+  leaf checks.L3a.value = 0 | compared one by one in ia_07 True
+  leaf checks.L3a.within_limit = true | compared one by one in ia_07 True
+  leaf checks.L3b.detail.found = {} | compared one by one in ia_07 True
+  leaf checks.L3b.detail.strings = 120 | compared one by one in ia_07 True
+  leaf checks.L3b.limit = 0 | compared one by one in ia_07 True
+  leaf checks.L3b.value = 0 | compared one by one in ia_07 True
+  leaf checks.L3b.within_limit = true | compared one by one in ia_07 True
+  leaf checks.L4.detail.corpora = ["anchor_text", "train_F", "train_S", "train_Y"] | compared one by one in ia_07 True
+  leaf checks.L4.detail.found = {} | compared one by one in ia_07 True
+  leaf checks.L4.detail.part = "DEV" | compared one by one in ia_07 True
+  leaf checks.L4.detail.questions = 320 | compared one by one in ia_07 True
+  leaf checks.L4.limit = 0 | compared one by one in ia_07 True
+  leaf checks.L4.value = 0 | compared one by one in ia_07 True
+  leaf checks.L4.within_limit = true | compared one by one in ia_07 True
+  leaf checks.L5.detail.duplicate_strings = 0 | compared one by one in ia_07 True
+  leaf checks.L5.detail.fact_id_overlap = 0 | compared one by one in ia_07 True
+  leaf checks.L5.detail.learned = 120 | compared one by one in ia_07 True
+  leaf checks.L5.detail.strings = 320 | compared one by one in ia_07 True
+  leaf checks.L5.detail.unread = 40 | compared one by one in ia_07 True
+  leaf checks.L5.limit = 0 | compared one by one in ia_07 True
+  leaf checks.L5.value = 0 | compared one by one in ia_07 True
+  leaf checks.L5.within_limit = true | compared one by one in ia_07 True
+  leaf checks.L6.detail.anchor_documents = 512 | compared one by one in ia_07 True
+  leaf checks.L6.detail.examples = [] | compared one by one in ia_07 True
+  leaf checks.L6.detail.n = 13 | compared one by one in ia_07 True
+  leaf checks.L6.detail.part = "DEV (anchor_text vs general_dev)" | compared one by one in ia_07 False
+  leaf checks.L6.detail.report_only_token_id_ngrams = 0 | compared one by one in ia_07 True
+  leaf checks.L6.detail.windows = 100 | compared one by one in ia_07 True
+  leaf checks.L6.limit = 0 | compared one by one in ia_07 True
+  leaf checks.L6.value = 0 | compared one by one in ia_07 True
+  leaf checks.L6.within_limit = true | compared one by one in ia_07 True
+  leaf frozen_commit = "87a244db28a901f9e89282b50df76778ab5c2887" | compared one by one in ia_07 True
+  leaf part = "gate0" | compared one by one in ia_07 True
+  leaf result = "PASS" | compared one by one in ia_07 True
+leaves 47 | not compared in ia_07: [('checks.L6.detail.part', 'DEV (anchor_text vs general_dev)')] | ia_07 comparisons without a leaf: []
+checks.L6.detail.part names the Gate 0 part (anchor text vs general DEV windows, no TEST): True
+
+== C. auditor regeneration round 2 vs round 1
+round 1 files ['anchor.json', 'candidates.json', 'dev_qa.json', 'facts.json', 'facts_k.json', 'general.json', 'train_F.json', 'train_S.jsonl', 'train_Y.json'] | round 2 files ['anchor.json', 'candidates.json', 'dev_qa.json', 'facts.json', 'facts_k.json', 'general.json', 'train_F.json', 'train_S.jsonl', 'train_Y.json'] | same names True
+  anchor.json: round 1 sha256 531f2146cb5a12741378706d2e729fddadded499f6db7075efeeefe38b750be2 | round 2 sha256 531f2146cb5a12741378706d2e729fddadded499f6db7075efeeefe38b750be2 | byte-identical True
+  candidates.json: round 1 sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | round 2 sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | byte-identical True
+  dev_qa.json: round 1 sha256 b4354d9b81bd8ab686546b82c2262eaaf121817ba145dde947822b4f98576616 | round 2 sha256 b4354d9b81bd8ab686546b82c2262eaaf121817ba145dde947822b4f98576616 | byte-identical True
+  facts.json: round 1 sha256 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 | round 2 sha256 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 | byte-identical True
+  facts_k.json: round 1 sha256 2ddcd7b84dfa5d955e40f8f07901a01f44ea67251ed73316c31330678a1dfc79 | round 2 sha256 2ddcd7b84dfa5d955e40f8f07901a01f44ea67251ed73316c31330678a1dfc79 | byte-identical True
+  general.json: round 1 sha256 40bec2dde45f27db84c76f2fedcc9350edfc7b1ad886baa1a6793fc74a296e03 | round 2 sha256 40bec2dde45f27db84c76f2fedcc9350edfc7b1ad886baa1a6793fc74a296e03 | byte-identical True
+  train_F.json: round 1 sha256 3a2baf04cc74bb3fa45da8f655a3fbc94d174a09576fb7b773845cbdf550e222 | round 2 sha256 3a2baf04cc74bb3fa45da8f655a3fbc94d174a09576fb7b773845cbdf550e222 | byte-identical True
+  train_S.jsonl: round 1 sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e | round 2 sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e | byte-identical True
+  train_Y.json: round 1 sha256 35e53f4ea2d1defd036c728f632f5dfc353cd47c0972d683e74187086c84db63 | round 2 sha256 35e53f4ea2d1defd036c728f632f5dfc353cd47c0972d683e74187086c84db63 | byte-identical True
+modules: torch imported=False | transformers modeling modules imported=[] | this script never calls a model class or from_pretrained on a model
+RESULT: PASS
+exit=0

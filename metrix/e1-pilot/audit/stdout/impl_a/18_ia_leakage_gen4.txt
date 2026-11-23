@@ -1,0 +1,95 @@
+# Data Auditor run (implementation stage A). host vm, CPU only (no GPU device), no model weights loaded (tokenizer files only); 2026-11-23 01:12:59 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/venv/bin/python -I -B ia_07_leakage.py /home/user/OpenMythos /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/auditor_ia/dl/qwen_tok /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/auditor_ia/out_r2 /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen4
+env: host vm | Linux-6.18.44-fc-v726-x86_64-with-glibc2.39 | python 3.13.18 (/tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/venv/bin/python) | installed {'transformers': '5.22.2', 'tokenizers': '0.23.3', 'pyarrow': '26.0.1', 'huggingface_hub': '2.4.0', 'torch': '2.11.0'} | nvidia device nodes: []
+limits (freeze-commit SPLIT_MANIFEST): {'L1': 0, 'L2': 0.25, 'L3a': 0, 'L3b': 0, 'L4': 0, 'L5': 0, 'L6': 0}
+manifest authoring results: L1 {'duplicate_normalized_hashes': []} | L2 {'max': 0.2, 'pair': ['capital.TRAIN.1', 'capital.DEV.1']}
+
+== L1 / L2 (templates only; identical for both data sets)
+{"L1": 0, "L1_shared": [], "L1_sets": {"TRAIN": 4, "DEV": 8, "TEST": 12, "Y": 8}, "L2": 0.2, "L2_pairs_at_max": [["capital.TRAIN.1", "capital.DEV.1"]], "L2_pairs": 368, "L2_both_empty": 4}
+
+Executor anchor_text.jsonl: decode(ids) == text field for 512 of 512 | general_dev.jsonl: decode(ids) == text field for 100 of 100
+
+== L3a-L6 on the auditor's data / on the Executor's files
+  L3a: auditor 0 | Executor files 0 | equal True
+  L3a_strings: auditor 80 | Executor files 80 | equal True
+  L3a_hits: auditor {} | Executor files {} | equal True
+  L3b: auditor 0 | Executor files 0 | equal True
+  L3b_strings: auditor 120 | Executor files 120 | equal True
+  L3b_hits: auditor {} | Executor files {} | equal True
+  L4: auditor 0 | Executor files 0 | equal True
+  L4_questions: auditor 320 | Executor files 320 | equal True
+  L4_hits: auditor {} | Executor files {} | equal True
+  L4_case_insensitive: auditor 0 | Executor files 0 | equal True
+  L5: auditor 0 | Executor files 0 | equal True
+  L5_fact_id_overlap: auditor 0 | Executor files 0 | equal True
+  L5_duplicate_strings: auditor 0 | Executor files 0 | equal True
+  L5_learned: auditor 120 | Executor files 120 | equal True
+  L5_unread: auditor 40 | Executor files 40 | equal True
+  L5_strings: auditor 320 | Executor files 320 | equal True
+  L5_duplicates_case_insensitive: auditor 0 | Executor files 0 | equal True
+  L6: auditor 0 | Executor files 0 | equal True
+  L6_examples: auditor [] | Executor files [] | equal True
+  L6_anchor_docs: auditor 512 | Executor files 512 | equal True
+  L6_windows: auditor 100 | Executor files 100 | equal True
+  L6_anchor_word_13grams: auditor 44255 | Executor files 44255 | equal True
+  L6_window_word_13grams: auditor 17780 | Executor files 17780 | equal True
+  L6_token_id_shared: auditor 0 | Executor files 0 | equal True
+
+== comparison with the Executor's leakage_report.json
+report: part gate0 | result PASS | frozen_commit 87a244db28a901f9e89282b50df76778ab5c2887
+  L1 value: auditor 0 | Executor report 0 | equal True
+  L1 shared hashes: auditor [] | Executor report [] | equal True
+  L2 value: auditor 0.2 | Executor report 0.2 | equal True
+  L2 pair: auditor [['capital.TRAIN.1', 'capital.DEV.1']] | Executor report [['capital.TRAIN.1', 'capital.DEV.1']] | equal True
+  L2 n: auditor 4 | Executor report 4 | equal True
+  L3a value: auditor 0 | Executor report 0 | equal True
+  L3a strings: auditor 80 | Executor report 80 | equal True
+  L3a corpora: auditor ['anchor_text', 'train_F', 'train_S', 'train_Y'] | Executor report ['anchor_text', 'train_F', 'train_S', 'train_Y'] | equal True
+  L3a found: auditor {} | Executor report {} | equal True
+  L3b value: auditor 0 | Executor report 0 | equal True
+  L3b strings: auditor 120 | Executor report 120 | equal True
+  L3b found: auditor {} | Executor report {} | equal True
+  L4 value: auditor 0 | Executor report 0 | equal True
+  L4 questions: auditor 320 | Executor report 320 | equal True
+  L4 corpora: auditor ['anchor_text', 'train_F', 'train_S', 'train_Y'] | Executor report ['anchor_text', 'train_F', 'train_S', 'train_Y'] | equal True
+  L4 found: auditor {} | Executor report {} | equal True
+  L4 part: auditor 'DEV' | Executor report 'DEV' | equal True
+  L5 value: auditor 0 | Executor report 0 | equal True
+  L5 fact_id_overlap: auditor 0 | Executor report 0 | equal True
+  L5 duplicate_strings: auditor 0 | Executor report 0 | equal True
+  L5 learned: auditor 120 | Executor report 120 | equal True
+  L5 unread: auditor 40 | Executor report 40 | equal True
+  L5 strings: auditor 320 | Executor report 320 | equal True
+  L6 value: auditor 0 | Executor report 0 | equal True
+  L6 anchor_documents: auditor 512 | Executor report 512 | equal True
+  L6 windows: auditor 100 | Executor report 100 | equal True
+  L6 n: auditor 13 | Executor report 13 | equal True
+  L6 examples: auditor [] | Executor report [] | equal True
+  L6 report-only token-id 13-grams: auditor 0 | Executor report 0 | equal True
+  L1 limit: auditor 0 | Executor report 0 | equal True
+  L1 within_limit: auditor True | Executor report True | equal True
+  L2 limit: auditor 0.25 | Executor report 0.25 | equal True
+  L2 within_limit: auditor True | Executor report True | equal True
+  L3a limit: auditor 0 | Executor report 0 | equal True
+  L3a within_limit: auditor True | Executor report True | equal True
+  L3b limit: auditor 0 | Executor report 0 | equal True
+  L3b within_limit: auditor True | Executor report True | equal True
+  L4 limit: auditor 0 | Executor report 0 | equal True
+  L4 within_limit: auditor True | Executor report True | equal True
+  L5 limit: auditor 0 | Executor report 0 | equal True
+  L5 within_limit: auditor True | Executor report True | equal True
+  L6 limit: auditor 0 | Executor report 0 | equal True
+  L6 within_limit: auditor True | Executor report True | equal True
+  result: auditor 'PASS' | Executor report 'PASS' | equal True
+  check keys: auditor ['L1', 'L2', 'L3a', 'L3b', 'L4', 'L5', 'L6'] | Executor report ['L1', 'L2', 'L3a', 'L3b', 'L4', 'L5', 'L6'] | equal True
+AUDIT_VALUE leakage:L1 0
+AUDIT_VALUE leakage:L2 0.2
+AUDIT_VALUE leakage:L3a 0
+AUDIT_VALUE leakage:L3b 0
+AUDIT_VALUE leakage:L4 0
+AUDIT_VALUE leakage:L5 0
+AUDIT_VALUE leakage:L6 0
+modules: torch imported=True | transformers modeling modules imported=['torch', 'transformers.modeling_rope_utils', 'transformers.models.auto.modeling_auto'] | this script never calls a model class or from_pretrained on a model
+RESULT: PASS
+exit=0

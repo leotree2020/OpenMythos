@@ -1,0 +1,9 @@
+先读仓库中的 .claude/agents/data-auditor.md，以它为你的完整定义；它与你已加载的定义冲突时，以仓库文件为准。
+
+Metrix E1-PILOT Implementation 阶段 A，第 2 轮审计。仓库 /home/user/OpenMythos，分支 metrix-e1-pilot-protocol-v1，HEAD 8149d8727b4a99ea0cc9b0a1a2ebd82bd53fa0af；Executor 的阶段 A 工作提交仍暂存、未提交。第 1 轮审计(你在本会话中对同一暂存提交上一版本的审计)结论 PASS，脚本在 metrix/e1-pilot/audit/ia_*.py，stdout 在 metrix/e1-pilot/audit/stdout/impl_a/00–11。此后 Executor 改了数据生成代码(metrix/e1-pilot/src/metrix_e1/data.py：fact_id 前缀与 L/U 从 manifest 读取、种子经 Frozen.seeds 读取、JSONL 只按 \n 切分、生成前检查库版本；frozen.py；leakage.py：命令先做 ST12 范围 (1) 检查)，并用改动后的代码重新生成到 /tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/gen4/(含 leakage_report.json)。
+
+任务：用你自己的脚本(可复用你第 1 轮的 ia_*.py；如需新脚本仍写在 metrix/e1-pilot/audit/，前缀 ia_；禁止 import、调用或复制 Executor 的代码)对 gen4 重做第 1 轮第 2、2b、3、5 项的比对：四个冻结哈希的三方比对(你的值、从 gen4 文件按协议方法读回的值、冻结值)；没有冻结哈希的文件的内容比对；L1–L6 Gate 0 部分与 gen4/leakage_report.json 逐项比对；split。另外写明 gen4 与 gen1 的 8 个数据文件是否逐字节相同。
+
+约束与第 1 轮相同：只用 CPU、只加载分词器、不下载或加载模型权重；本任务不要求执行协议第 8 节第 8 步 L6 TEST 部分，所以禁止生成、读取或统计 TEST(eval_sets.jsonl 只可对整个文件求哈希、按行前缀读 split 字段与计数，非 dev 行不得解析或解码；不得实例化任何 TEST 问句)。Python：/tmp/claude-0/-home-user/0dff44d1-df17-5cd8-99ed-7d453ca71e71/scratchpad/venv/bin/python。
+
+输出：完整 stdout 写入 metrix/e1-pilot/audit/stdout/impl_a/，编号从 12 起。只写入 metrix/e1-pilot/audit/。按定义的输出格式给出每一项的命令、原始输出、与 Executor 是否一致；最后附 git status --short 原始输出；最后一行给出结论。
