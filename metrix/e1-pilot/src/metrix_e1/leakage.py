@@ -224,9 +224,12 @@ def verify_authorization(authorization, fz, repo_root=None):
         current = FZ.parse_protocol_frozen((root / FZ.PROTOCOL_FROZEN_REL).read_bytes()).commit
     except (OSError, ST12Error) as e:
         raise ImplementationFail("TEST path refused: cannot read PROTOCOL_FROZEN: %s" % e) from e
-    if not authorization.frozen_commit == current == fz.record.commit:
-        raise ImplementationFail("TEST path refused: authorization for frozen commit %s, PROTOCOL_FROZEN names %s, the "
-                                 "loaded frozen files %s" % (authorization.frozen_commit, current, fz.record.commit))
+    if authorization.frozen_commit != fz.record.commit:                       # BE2: three comparisons, three messages
+        raise ImplementationFail("TEST path refused: authorization for frozen commit %s, the loaded frozen files %s" % (
+            authorization.frozen_commit, fz.record.commit))
+    if current != fz.record.commit:
+        raise ImplementationFail("TEST path refused: PROTOCOL_FROZEN names %s, the loaded frozen files %s" % (
+            current, fz.record.commit))
     recs = {}
     for rel, kind, want in ((R.GATE0_RECORD_REL, "gate0", authorization.gate0_record_sha256),
                             (R.SELECTION_FREEZE_REL, "selection_freeze", authorization.selection_record_sha256)):
@@ -242,9 +245,9 @@ def verify_authorization(authorization, fz, repo_root=None):
                                                                           authorization.gate0_record_sha256))):
         if problem:
             raise ImplementationFail("TEST path refused: committed %s: %s" % (rel, problem))
-    open_ids = INT.pending()
-    if open_ids:
-        raise ImplementationFail("TEST path refused: interpretations not yet ruled by Review Gate: %s" % ", ".join(open_ids))
+    problem = INT.pending_problem()
+    if problem:
+        raise ImplementationFail("TEST path refused: %s" % problem)
 
 
 def run_test_part(fz, data, test_qa, general_test, authorization, repo_root=None):

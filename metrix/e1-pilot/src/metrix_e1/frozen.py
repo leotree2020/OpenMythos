@@ -294,12 +294,13 @@ class Frozen:
         anchor = read_jsonl(d / "anchor_text.jsonl")
         with open(d / "candidates.json", encoding="utf-8") as fh:
             cands = json.load(fh)
-        return {
-            "facts": sha256_hex(canonical_bytes(read_jsonl(d / "facts.jsonl"))),
-            "train_S": sha256_hex(jsonl_bytes(read_jsonl(d / "train_S.jsonl"))),
-            "candidates": sha256_hex(canonical_bytes(cands)),
-            "anchor_texts": sha256_hex(canonical_bytes([r["text"] for r in anchor])),
+        makers = {
+            "facts": lambda: sha256_hex(canonical_bytes(read_jsonl(d / "facts.jsonl"))),
+            "train_S": lambda: sha256_hex(jsonl_bytes(read_jsonl(d / "train_S.jsonl"))),
+            "candidates": lambda: sha256_hex(canonical_bytes(cands)),
+            "anchor_texts": lambda: sha256_hex(canonical_bytes([r["text"] for r in anchor])),
         }
+        return {k: makers[k]() for k in CONTENT_HASH_KEYS}      # BE9: the key list is CONTENT_HASH_KEYS only
 
     def check_data_dir(self, data_dir):
         """ST12 range (1) for the generated data: the four content hashes against PROTOCOL_FROZEN."""

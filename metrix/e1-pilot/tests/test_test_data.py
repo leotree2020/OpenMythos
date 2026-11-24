@@ -240,7 +240,7 @@ def test_verify_authorization_branches(fz, contract, generated, tmp_path, monkey
         LK.verify_authorization(LK.TestAuthorization(fz.record.commit, _sha(g), _sha(sel)), other, root)
 
 
-VERIFY_CASES = {"not_pass": "not PASS", "unbound": "not bound", "other_protocol_frozen": "PROTOCOL_FROZEN names",
+VERIFY_CASES = {"not_pass": "not PASS", "unbound": "not bound", "other_protocol_frozen": "names frozen commit '1{40}', PROTOCOL_FROZEN",
                 "bad_selection": "not configurations of SEARCH_SPACE", "S_selected": "not configurations of SEARCH_SPACE",
                 "checkpoint": "no checkpoint hash for 1 of the 30 runs", "checkpoint_not_hex": "no checkpoint hash",
                 "data_hashes": "data content hashes", "pending": "interpretations not yet ruled by Review Gate: B19$"}
@@ -265,5 +265,8 @@ def test_verify_authorization_rechecks_what_the_generator_checked(fz, contract, 
         ck[sorted(ck)[0]] = "A" * 64
     sel["checkpoints"] = ck
     root = _repo(tmp_path, {G0: g, SEL: sel})
+    # BE2: the authorization names the loaded frozen commit; only the committed records of other_protocol_frozen name
+    # "1" * 40 (the authorization's own comparisons come first and pass).
+    auth_commit = fz.record.commit if case == "other_protocol_frozen" else commit
     with pytest.raises(ImplementationFail, match=VERIFY_CASES[case]):
-        LK.verify_authorization(LK.TestAuthorization(commit, _sha(g), _sha(sel)), fz, root)
+        LK.verify_authorization(LK.TestAuthorization(auth_commit, _sha(g), _sha(sel)), fz, root)

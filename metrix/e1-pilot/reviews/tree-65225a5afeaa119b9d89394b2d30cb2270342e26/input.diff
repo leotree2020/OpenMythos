@@ -1,0 +1,640 @@
+diff --git a/metrix/e1-pilot/src/metrix_e1/evaluate.py b/metrix/e1-pilot/src/metrix_e1/evaluate.py
+index 4033d9a..8e79ffa 100644
+--- a/metrix/e1-pilot/src/metrix_e1/evaluate.py
++++ b/metrix/e1-pilot/src/metrix_e1/evaluate.py
+@@ -311,7 +311,7 @@ def evaluate_model(model, tok, data, templates, ev, mode, device, split="dev", w
+     split "test" needs test_qa.jsonl / general_test.jsonl in `data`, which only exist after the TEST generator's
+     preconditions (test_data.py), and the TestAuthorization of those preconditions, checked with the frozen files `fz`
+     (frozen.load) against the committed Gate 0 and freeze records before anything is evaluated
+-    (leakage.verify_authorization). Formal and preflight modes evaluate on the GPU only (require_gpu)."""
++    (leakage.verify_authorization); then the committed ST10 record and the committed TEST reservation (testonce). Formal and preflight modes evaluate on the GPU only (require_gpu)."""
+     if split not in SPLIT_FILES:
+         raise ValueError("split %r" % (split,))
+     if split == "test":
+@@ -322,6 +322,9 @@ def evaluate_model(model, tok, data, templates, ev, mode, device, split="dev", w
+         if fz is None:
+             raise ImplementationFail("TEST path refused: the frozen files (fz) are needed to check the authorization")
+         verify_authorization(test_authorization, fz)
++        from . import testonce as TO
++        TO.require_st10(fz, test_authorization)                  # ST10 PASS, committed (stage C item 7)
++        TO.require_reservation(fz, test_authorization)           # TEST evaluated once: reserved, committed, not evaluated
+     require_gpu(mode, device)
+     qa_file, gen_file = SPLIT_FILES[split]
+     facts, cands, qs = data["facts.jsonl"], data["candidates.json"], data[qa_file]
+diff --git a/metrix/e1-pilot/src/metrix_e1/frozen.py b/metrix/e1-pilot/src/metrix_e1/frozen.py
+index e6d6000..2d1f434 100644
+--- a/metrix/e1-pilot/src/metrix_e1/frozen.py
++++ b/metrix/e1-pilot/src/metrix_e1/frozen.py
+@@ -294,12 +294,13 @@ class Frozen:
+         anchor = read_jsonl(d / "anchor_text.jsonl")
+         with open(d / "candidates.json", encoding="utf-8") as fh:
+             cands = json.load(fh)
+-        return {
+-            "facts": sha256_hex(canonical_bytes(read_jsonl(d / "facts.jsonl"))),
+-            "train_S": sha256_hex(jsonl_bytes(read_jsonl(d / "train_S.jsonl"))),
+-            "candidates": sha256_hex(canonical_bytes(cands)),
+-            "anchor_texts": sha256_hex(canonical_bytes([r["text"] for r in anchor])),
++        makers = {
++            "facts": lambda: sha256_hex(canonical_bytes(read_jsonl(d / "facts.jsonl"))),
++            "train_S": lambda: sha256_hex(jsonl_bytes(read_jsonl(d / "train_S.jsonl"))),
++            "candidates": lambda: sha256_hex(canonical_bytes(cands)),
++            "anchor_texts": lambda: sha256_hex(canonical_bytes([r["text"] for r in anchor])),
+         }
++        return {k: makers[k]() for k in CONTENT_HASH_KEYS}      # BE9: the key list is CONTENT_HASH_KEYS only
+ 
+     def check_data_dir(self, data_dir):
+         """ST12 range (1) for the generated data: the four content hashes against PROTOCOL_FROZEN."""
+diff --git a/metrix/e1-pilot/src/metrix_e1/interpretations.py b/metrix/e1-pilot/src/metrix_e1/interpretations.py
+index 6589bb7..bf72da3 100644
+--- a/metrix/e1-pilot/src/metrix_e1/interpretations.py
++++ b/metrix/e1-pilot/src/metrix_e1/interpretations.py
+@@ -4,62 +4,63 @@ Each entry names the protocol text it reads, the choice the code makes and where
+ an arm, a metric or a step; each is a reading of a sentence that admits more than one implementation. They are
+ listed for Review Gate in reports/IMPL_B_REPORT.md ("待 Review Gate 决定") and written into every experiment record
+ (record.py), so that a ruling can be checked against the code that ran. Status PENDING_REVIEW_GATE until ruled;
+-pending() returns the ones not yet ruled (a formal run is expected to start only when it is empty; the run entry
+-point is stage C).
++pending() returns the ones not yet ruled (a formal run starts only when it is empty; Review Gate ruled all of B1-B24
++on 2026-11-24, stage C, item 1 of its stage-B ruling).
+ """
+ PENDING = "PENDING_REVIEW_GATE"
++ACCEPTED = "ACCEPTED（Review Gate 2026-11-24）"
+ 
+ ENTRIES = (
+-    {"id": "B1", "where": "train.step_numbers (used by train.batch_schedule), train.anchor_docs", "protocol": "2.7, 4, 7",
++    {"id": "B1", "status": ACCEPTED, "where": "train.step_numbers (used by train.batch_schedule), train.anchor_docs", "protocol": "2.7, 4, 7",
+      "text": "Optimizer steps are numbered s = 1..300 (the protocol's '第 300 步' is the last step). Step s of arm A uses "
+              "anchor documents (4s + i) mod 512, i = 0..3, documents numbered 0..511 in anchor_text.jsonl order (step "
+              "1: documents 4-7; with s = 0..299 the first step would use 0-3 and every step's documents would differ)."},
+-    {"id": "B2", "where": "train.lr_at", "protocol": "7 (warmup, scheduler)",
++    {"id": "B2", "status": ACCEPTED, "where": "train.lr_at", "protocol": "7 (warmup, scheduler)",
+      "text": "lr(s) = peak * s / 15 for s <= 15 (rises linearly from 0; step 1 already has peak/15); for s >= 15, "
+              "lr(s) = peak * (0.1 + 0.9 * 0.5 * (1 + cos(pi * (s - 15) / (300 - 15)))), so lr(15) = peak and "
+              "lr(300) = 0.1 * peak. Set on every parameter group before optimizer step s."},
+-    {"id": "B3", "where": "train.epoch_batches, train.batch_schedule", "protocol": "7 (order)",
++    {"id": "B3", "status": ACCEPTED, "where": "train.epoch_batches, train.batch_schedule", "protocol": "7 (order)",
+      "text": "Epochs are numbered e = 1..20 and the purpose is 'order:<e>' with TRAIN_SEED = the run's seed; "
+              "permutation p = list(range(N)); r.shuffle(p) (the same call as protocol 2.6 detail 4); the batches of "
+              "epoch e are p[0:B], p[B:2B], ... (B = 8 for F, L, A, S; B = 16 for Y), rows indexed in the file order of "
+              "the corpus. The row order of train_Y.jsonl (fact order, the Y_ENTITY sentence before the Y_ANSWER one) is "
+              "a stage A choice without a frozen hash (DEFERRED_MINORS AA11), so Y's batches depend on it."},
+-    {"id": "B4", "where": "train.token_ce", "protocol": "4 (CE), 7 (sequence)",
++    {"id": "B4", "status": ACCEPTED, "where": "train.token_ce", "protocol": "4 (CE), 7 (sequence)",
+      "text": "CE(batch) = sum of -log p(x_t | x_<t) over every non-padding target position (t = 2..n of each "
+              "sequence, the final <|endoftext|> included) divided by the number of those positions (token-weighted "
+              "over the batch, like the anchor KL); sequences are not averaged first."},
+-    {"id": "B5", "where": "train.lora_a_init, train.apply_lora", "protocol": "4 (arm L), 0 (rng_rule)",
++    {"id": "B5", "status": ACCEPTED, "where": "train.lora_a_init, train.apply_lora", "protocol": "4 (arm L), 0 (rng_rule)",
+      "text": "LoRA A is initialised uniformly in [-1/sqrt(in_features), 1/sqrt(in_features)] (the Kaiming-uniform "
+              "default of torch.nn.Linear and peft): every value is r.uniform(-b, b) of r = rng_rule(TRAIN_SEED, "
+              "'lora_A:<module path>'), row by row, stored as float32; B = 0; scaling alpha / rank = 2; the adapter "
+              "output B(A x) * scaling is added to the frozen base output; LoRA parameters are float32. The distribution "
+              "and the purpose string are not in the protocol."},
+-    {"id": "B6", "where": "train.anchor_kl, train.train_run", "protocol": "4 (arm A), 7 (precision)",
++    {"id": "B6", "status": ACCEPTED, "where": "train.anchor_kl, train.train_run", "protocol": "4 (arm A), 7 (precision)",
+      "text": "The base copy's forward and the trained model's forward on the anchor documents both run under the "
+              "same bf16 autocast as the rest of training; their logits are cast to float32 before log_softmax and the "
+              "KL is computed in float32."},
+-    {"id": "B7", "where": "train.make_optimizer", "protocol": "7 (weight decay)",
++    {"id": "B7", "status": ACCEPTED, "where": "train.make_optimizer", "protocol": "7 (weight decay)",
+      "text": "'2-D weight matrices' = every trainable parameter with ndim == 2, including the tied embedding / "
+              "lm_head matrix for F, S, Y; 1-D parameters (RMSNorm weights) get no weight decay."},
+-    {"id": "B8", "where": "evaluate.em_normalize", "protocol": "5 (EM)",
++    {"id": "B8", "status": ACCEPTED, "where": "evaluate.em_normalize", "protocol": "5 (EM)",
+      "text": "'去结尾的 . , ; : ! ?' removes every trailing character of that set (str.rstrip('.,;:!?'), as in the "
+              "data-auditor's audit/r4_scoring_em.py and r5_em_stop.py); a leading 'the ' is removed once; a <think> "
+              "without a later </think> is left as it is."},
+-    {"id": "B9", "where": "evaluate.score_cb", "protocol": "5 (TRAIN closed book)",
++    {"id": "B9", "status": ACCEPTED, "where": "evaluate.score_cb", "protocol": "5 (TRAIN closed book)",
+      "text": "The candidates c of CB(f) are the 4 candidates C_f of candidates.json (protocol 2.5: one candidate list "
+              "for all templates, splits and arms)."},
+-    {"id": "B10", "where": "stats.stratified_draws, stats.paired_bootstrap", "protocol": "6",
++    {"id": "B10", "status": ACCEPTED, "where": "stats.stratified_draws, stats.paired_bootstrap", "protocol": "6",
+      "text": "One generator r = rng_rule(BOOTSTRAP_SEED, purpose) per comparison; for each of the 10,000 replicates, "
+              "for each stratum in the order natural, random: r.choices(d_stratum, k=len(d_stratum)) with the facts "
+              "of the stratum in facts.jsonl order; Delta* = mean of the 120 drawn values."},
+-    {"id": "B11", "where": "stats.percentile", "protocol": "6",
++    {"id": "B11", "status": ACCEPTED, "where": "stats.percentile", "protocol": "6",
+      "text": "Percentile = linear interpolation between order statistics at position (B - 1) * p / 100 of the sorted "
+              "replicates (numpy's default 'linear' method)."},
+-    {"id": "B12", "where": "stats.purpose", "protocol": "6",
++    {"id": "B12", "status": ACCEPTED, "where": "stats.purpose", "protocol": "6",
+      "text": "Purpose '<比较>:<split>:<seed 或 avg>' is written '<X>-<Y>:<split>:<seed>' with ASCII '-', split 'DEV' "
+              "or 'TEST', seed the integer or 'avg' (e.g. 'F-N:DEV:101', 'F-N:DEV:avg'); the Spill of an arm, compared "
+              "with N on the unread facts, is written 'Spill-<arm>:<split>:<seed>'."},
+-    {"id": "B13", "where": "stats.size_estimate, stats.halfwidth_check, gate.judge (G0.10)", "protocol": "8 (G0.10)",
++    {"id": "B13", "status": ACCEPTED, "where": "stats.size_estimate, stats.halfwidth_check, gate.judge (G0.10)", "protocol": "8 (G0.10)",
+      "text": "sigma_d = sample standard deviation (ddof 1) of the 120 seed-average d_f; its bootstrap 2.5 / 97.5 "
+              "percentiles from the stratified resampling of B10 with purpose 'sigma:<X>-<Y>:DEV:avg'; n = ceil(((1.96 + "
+              "0.84) * sigma / delta)^2); planning n = the largest n over the three sigma values, the three deltas and "
+@@ -67,55 +68,55 @@ ENTRIES = (
+              "purpose 'halfwidth:<X>-<Y>:DEV:avg:<n>' and reports the half-width of the 95% CI of the mean (report "
+              "only; skipped and noted when n = 0, i.e. sigma_d = 0). G0.10 holds iff sigma_d, both percentiles and "
+              "every n are finite."},
+-    {"id": "B14", "where": "gate.judge", "protocol": "8, 9",
++    {"id": "B14", "status": ACCEPTED, "where": "gate.judge", "protocol": "8, 9",
+      "text": "Gate 0 status words: all G0 satisfied -> gate0 'PASS' (the pilot's final status still needs T1-T3); any "
+              "G0 not satisfied -> 'PIPELINE_NOT_QUALIFIED' with the reasons of section 9 (G0.1, G0.2, G0.6, G0.7, G0.8 "
+              "-> IMPLEMENTATION_FAIL; G0.4 -> OPTIMIZATION_FAIL; G0.5 with G0.4 satisfied -> "
+              "OPTIMIZATION_OR_CAPACITY_UNRESOLVED for any of its three parts, not only the accuracy; G0.5 with G0.4 not "
+              "satisfied -> OPTIMIZATION_FAIL, although section 8 calls [0.40, 0.70) UNRESOLVED without naming G0.4; "
+              "seed-average Acc(F) < 0.40 adds the section 8 note '对该模型与该训练量过难'). Section 9 lists no reason for G0.3, "
+-             "G0.9 (section 8: benchmark recalibration, noted) and G0.10: their reason is null, although section 9 says "
+-             "one reason is given. Several unsatisfied conditions give several reasons (section 9 says 'a reason')."},
+-    {"id": "B15", "where": "gate.repro_compare", "protocol": "8 (G0.8)",
++             "G0.9 and G0.10: their reason is null, although section 9 says "
++             "one reason is given. G0.3 and G0.9 are null with the note '需重新校准' (benchmark recalibration; Task Order V1.2 §15.8). Several unsatisfied conditions give several reasons (section 9 says 'a reason')."},
++    {"id": "B15", "status": ACCEPTED, "where": "gate.repro_compare", "protocol": "8 (G0.8)",
+      "text": "'候选分数' = every candidate score of the evaluation (s_QA on DEV-QA and s_ST of the TRAIN closed book); "
+              "'预测' = the index of the highest candidate, or 'tie' when the top score is shared (tie = wrong)."},
+-    {"id": "B16", "where": "stops", "protocol": "11",
++    {"id": "B16", "status": ACCEPTED, "where": "stops", "protocol": "11",
+      "text": "Statuses section 11 does not state: ST3 -> PIPELINE_NOT_QUALIFIED with reason OPTIMIZATION_FAIL "
+              "(Acc_CB < 0.90) or OPTIMIZATION_OR_CAPACITY_UNRESOLVED (otherwise); ST4, ST5 -> PIPELINE_NOT_QUALIFIED "
+              "with reason IMPLEMENTATION_FAIL (section 9 for G0.6, G0.7); ST6 outside the selected configurations and "
+              "the controls -> that configuration is excluded from selection (section 7), no pilot status; ST7, ST11 "
+              "-> BLOCKED (resources)."},
+-    {"id": "B17", "where": "compute.estimate_total_hours, compute.evaluation_units", "protocol": "8 step 2 (preflight), 11 ST11",
++    {"id": "B17", "status": ACCEPTED, "where": "compute.estimate_total_hours, compute.evaluation_units", "protocol": "8 step 2 (preflight), 11 ST11",
+      "text": "Preflight estimate = (measured mean seconds per step of the first configuration's first 20 steps, the "
+              "first step excluded as warm-up, CUDA synchronised before each timestamp) x sum over the 30 runs of 300 "
+              "steps x the run's FLOP factor (F, S, Y, L: 1; A: 1 + (2 + 6) * anchor tokens / (6 * fact tokens) per "
+              "step, section 10 coefficients) + (measured seconds of one float32 DEV evaluation, timed in the preflight) "
+              "x evaluation units (N, 30 runs and the 3 G0.8 re-evaluations on DEV; N and the 15 final checkpoints of the "
+              "5 arms x 3 seeds on TEST, at test / dev questions per fact = 1.5) + the GPU time already used."},
+-    {"id": "B18", "where": "compute.flops", "protocol": "10 (compute accounting)",
++    {"id": "B18", "status": ACCEPTED, "where": "compute.flops", "protocol": "10 (compute accounting)",
+      "text": "P = parameters taking part in the forward pass (for L: base plus adapters); T = non-padding tokens fed "
+              "(training: fact tokens of the batch; anchor: anchor tokens). Arm A's anchor compute is listed "
+              "separately: base forward 2 * P * T_anchor + trained-model forward and backward 6 * P * T_anchor."},
+-    {"id": "B19", "where": "leakage.run_test_part", "protocol": "8 step 8 ('对 TEST 运行 L3–L5'), 3",
++    {"id": "B19", "status": ACCEPTED, "where": "leakage.run_test_part", "protocol": "8 step 8 ('对 TEST 运行 L3–L5'), 3",
+      "text": "Announced in reports/IMPL_A_REPORT.md for this stage: the protocol does not say what L3 and L5 count "
+              "on TEST. Implemented: L4 on every instantiated TEST question (verbatim in train_F, train_S, train_Y, "
+              "anchor_text); L3a, L3b and L5 re-run as at Gate 0 (they read no TEST content, so the TEST part cannot "
+              "change them); L6 TEST part as protocol section 3. To be ruled before step 8 runs."},
+-    {"id": "B20", "where": "evaluate.score_s_mapping", "protocol": "8 (report only: S on its own permuted mapping)",
++    {"id": "B20", "status": ACCEPTED, "where": "evaluate.score_s_mapping", "protocol": "8 (report only: S on its own permuted mapping)",
+      "text": "S's accuracy on its own mapping: for each learned fact f with S answer a' = answer of answer_fact_id, the "
+              "DEV-QA questions of f and the TRAIN-statement prefix of f are scored with the candidate list of the "
+              "fact a' belongs to (it contains a' and has 4 equal-length candidates); correct iff a' scores strictly "
+              "highest. Report only."},
+-    {"id": "B21", "where": "train.load_model", "protocol": "0 (determinism), 8 (G0.8)",
++    {"id": "B21", "status": ACCEPTED, "where": "train.load_model", "protocol": "0 (determinism), 8 (G0.8)",
+      "text": "The model is loaded with attn_implementation='eager' (not the default 'sdpa') so that attention uses "
+              "plain matmul and softmax under torch.use_deterministic_algorithms(True); this changes numbers at the 1e-6 "
+              "level, not the definitions."},
+-    {"id": "B22", "where": "gate._g3_ranges", "protocol": "8 (G0.3, T3)",
++    {"id": "B22", "status": ACCEPTED, "where": "gate._g3_ranges", "protocol": "8 (G0.3, T3)",
+      "text": "'每个 stratum ∈ [0.10, 0.40]' is read as Acc(N, DEV-QA, learned) of each stratum (the clause follows the "
+              "learned accuracy); the unread accuracy is checked overall only."},
+-    {"id": "B23", "where": "evaluate.em_normalize", "protocol": "5 (EM)",
++    {"id": "B23", "status": ACCEPTED, "where": "evaluate.em_normalize", "protocol": "5 (EM)",
+      "text": "'取第一行' splits at the first '\\n' only ('\\r' is not a line break here)."},
+-    {"id": "B24", "where": "gate.judge_test", "protocol": "8 (T1-T3), 9",
++    {"id": "B24", "status": ACCEPTED, "where": "gate.judge_test", "protocol": "8 (T1-T3), 9",
+      "text": "Final status: PASS iff Gate 0 is PASS and T1-T3 hold; otherwise PIPELINE_NOT_QUALIFIED with reasons T1 -> "
+              "OPTIMIZATION_OR_CAPACITY_UNRESOLVED (section 9 names T1's accuracy; the CI part is given the same "
+              "reason), T2 -> IMPLEMENTATION_FAIL (the G0.6 / G0.7 numbers), T3 -> null with the recalibration note (as "
+@@ -128,5 +129,14 @@ def pending():
+     return [e["id"] for e in ENTRIES if e.get("status", PENDING) == PENDING]
+ 
+ 
++def pending_problem():
++    """None when every interpretation is ruled, else the message naming the open ids (used by the TEST generator and
++    by leakage.verify_authorization: one check, BE9)."""
++    open_ids = pending()
++    if open_ids:
++        return "interpretations not yet ruled by Review Gate: %s" % ", ".join(open_ids)
++    return None
++
++
+ def as_records():
+     return [dict(e, status=e.get("status", PENDING)) for e in ENTRIES]
+diff --git a/metrix/e1-pilot/src/metrix_e1/leakage.py b/metrix/e1-pilot/src/metrix_e1/leakage.py
+index 749cb79..51f7901 100644
+--- a/metrix/e1-pilot/src/metrix_e1/leakage.py
++++ b/metrix/e1-pilot/src/metrix_e1/leakage.py
+@@ -224,9 +224,12 @@ def verify_authorization(authorization, fz, repo_root=None):
+         current = FZ.parse_protocol_frozen((root / FZ.PROTOCOL_FROZEN_REL).read_bytes()).commit
+     except (OSError, ST12Error) as e:
+         raise ImplementationFail("TEST path refused: cannot read PROTOCOL_FROZEN: %s" % e) from e
+-    if not authorization.frozen_commit == current == fz.record.commit:
+-        raise ImplementationFail("TEST path refused: authorization for frozen commit %s, PROTOCOL_FROZEN names %s, the "
+-                                 "loaded frozen files %s" % (authorization.frozen_commit, current, fz.record.commit))
++    if authorization.frozen_commit != fz.record.commit:                       # BE2: three comparisons, three messages
++        raise ImplementationFail("TEST path refused: authorization for frozen commit %s, the loaded frozen files %s" % (
++            authorization.frozen_commit, fz.record.commit))
++    if current != fz.record.commit:
++        raise ImplementationFail("TEST path refused: PROTOCOL_FROZEN names %s, the loaded frozen files %s" % (
++            current, fz.record.commit))
+     recs = {}
+     for rel, kind, want in ((R.GATE0_RECORD_REL, "gate0", authorization.gate0_record_sha256),
+                             (R.SELECTION_FREEZE_REL, "selection_freeze", authorization.selection_record_sha256)):
+@@ -242,9 +245,9 @@ def verify_authorization(authorization, fz, repo_root=None):
+                                                                           authorization.gate0_record_sha256))):
+         if problem:
+             raise ImplementationFail("TEST path refused: committed %s: %s" % (rel, problem))
+-    open_ids = INT.pending()
+-    if open_ids:
+-        raise ImplementationFail("TEST path refused: interpretations not yet ruled by Review Gate: %s" % ", ".join(open_ids))
++    problem = INT.pending_problem()
++    if problem:
++        raise ImplementationFail("TEST path refused: %s" % problem)
+ 
+ 
+ def run_test_part(fz, data, test_qa, general_test, authorization, repo_root=None):
+diff --git a/metrix/e1-pilot/src/metrix_e1/record.py b/metrix/e1-pilot/src/metrix_e1/record.py
+index d86fe79..3a832a4 100644
+--- a/metrix/e1-pilot/src/metrix_e1/record.py
++++ b/metrix/e1-pilot/src/metrix_e1/record.py
+@@ -218,4 +218,3 @@ def freeze_record_problem(rec, contract, content_hashes, gate0_sha):
+         return "not bound to the committed Gate 0 record (sha256 %r, committed %s)" % (rec.get("gate0_record_sha256"),
+                                                                                        gate0_sha)
+     return None
+-
+diff --git a/metrix/e1-pilot/src/metrix_e1/test_data.py b/metrix/e1-pilot/src/metrix_e1/test_data.py
+index a42526d..c153f6b 100644
+--- a/metrix/e1-pilot/src/metrix_e1/test_data.py
++++ b/metrix/e1-pilot/src/metrix_e1/test_data.py
+@@ -78,9 +78,9 @@ def check_interpretations_ruled():
+     """Beyond the three conditions of the task order (listed for Review Gate): no TEST while an interpretation of
+     interpretations.py is still pending (B19 decides what the TEST part of the leakage checks counts; the others
+     decide how the runs whose checkpoints TEST evaluates were made)."""
+-    open_ids = INT.pending()
+-    if open_ids:
+-        raise PreconditionFailed("interpretations not yet ruled by Review Gate: %s" % ", ".join(open_ids))
++    problem = INT.pending_problem()
++    if problem:
++        raise PreconditionFailed(problem)
+ 
+ 
+ def check_preconditions(repo_root, inputs_dir, data_dir):
+diff --git a/metrix/e1-pilot/src/metrix_e1/testonce.py b/metrix/e1-pilot/src/metrix_e1/testonce.py
+new file mode 100644
+index 0000000..fd08f8c
+--- /dev/null
++++ b/metrix/e1-pilot/src/metrix_e1/testonce.py
+@@ -0,0 +1,118 @@
++"""The two hard preconditions of TEST evaluation (protocol v1.1 section 8 step 8 and section 11 ST10; Implementation
++Task Order V1 stage C item 7; DEFERRED_MINORS BB1, BC2, BD8).
++
++1. ST10 passed, as a committed record: results/st10_record.json. It is written only when stops.st10 does not stop
++   (the TEST part of L3-L6 within every limit; the Executor's and the data-auditor's L6 TEST counts equal), it names the
++   frozen commit and the three hashes of the TestAuthorization, and it must be committed as it is in the working tree.
++   require_st10() checks the committed bytes before any TEST evaluation.
++2. TEST is evaluated once: reserve_test_evaluation() writes results/test_evaluation_reserved.json, which must then be
++   committed before TEST is evaluated. A reservation (committed or left uncommitted in the working tree) refuses any
++   further reservation. evaluate_model(split="test") needs the reservation committed with the same authorization, and
++   refuses when results/test_evaluated.json is committed (the driver commits it after the evaluation).
++"""
++import json
++from pathlib import Path
++
++from . import frozen as FZ
++from . import leakage as LK
++from . import record as R
++from . import stops as STP
++from .errors import ImplementationFail
++
++ST10_REL = "results/st10_record.json"
++RESERVATION_REL = "results/test_evaluation_reserved.json"
++EVALUATED_REL = "results/test_evaluated.json"
++
++
++def _authorization_fields(authorization):
++    return {"frozen_commit": authorization.frozen_commit,
++            "gate0_record_sha256": authorization.gate0_record_sha256,
++            "selection_record_sha256": authorization.selection_record_sha256}
++
++
++def make_st10_record(fz, authorization, report, executor_l6, auditor_l6):
++    """The ST10 PASS record. Raises stops.Stop (ST10) when the TEST part of the leakage report or the two L6 counts
++    do not pass; nothing is written then."""
++    STP.st10(fz, report, executor_l6, auditor_l6)
++    checks = {c: {"value": v["value"], "limit": v["limit"], "within_limit": v["within_limit"]}
++              for c, v in report["checks"].items()}
++    return {"kind": "st10", "mode": "formal", "label": None, "frozen_commit": fz.record.commit,
++            "authorization": _authorization_fields(authorization), "leakage_test_checks": checks,
++            "l6_executor": executor_l6, "l6_auditor": auditor_l6, "result": "PASS"}
++
++
++def st10_problem(rec, fz, authorization):
++    """None when the record is a formal ST10 PASS for this frozen commit and this authorization, else the reason."""
++    if rec.get("kind") != "st10" or rec.get("mode") != "formal" or rec.get("label") is not None:
++        return "not a formal-mode st10 record (kind %r, mode %r)" % (rec.get("kind"), rec.get("mode"))
++    if rec.get("result") != "PASS":
++        return "result %r, not PASS" % (rec.get("result"),)
++    if rec.get("frozen_commit") != fz.record.commit or authorization.frozen_commit != fz.record.commit:
++        return "names frozen commit %r, the loaded frozen files %s" % (rec.get("frozen_commit"), fz.record.commit)
++    if rec.get("authorization") != _authorization_fields(authorization):
++        return "not bound to this TEST authorization"
++    checks = rec.get("leakage_test_checks") or {}
++    if set(checks) != set(LK.TEST_CHECKS):
++        return "checks %s, not %s" % (sorted(checks), list(LK.TEST_CHECKS))
++    over = sorted(c for c, v in checks.items() if v.get("within_limit") is not True)
++    if over:
++        return "TEST part over limit: %s" % ", ".join(over)
++    l6e, l6a = rec.get("l6_executor"), rec.get("l6_auditor")
++    if l6a is None or l6e != l6a:
++        return "L6 TEST counts differ: Executor %r, data-auditor %r" % (l6e, l6a)
++    return None
++
++
++def require_st10(fz, authorization, repo_root=None):
++    """Condition 1 of the TEST path: the committed ST10 record passes st10_problem."""
++    root = Path(repo_root) if repo_root is not None else fz.repo_root
++    try:
++        rec, _sha = R.committed_json(root, ST10_REL)
++    except R.NotCommitted as e:
++        raise ImplementationFail("TEST path refused: no committed ST10 record: %s" % e) from e
++    problem = st10_problem(rec, fz, authorization)
++    if problem:
++        raise ImplementationFail("TEST path refused: committed %s: %s" % (ST10_REL, problem))
++
++
++def _is_committed(root, rel):
++    try:
++        R.committed_json(root, rel)
++        return True
++    except R.NotCommitted:
++        return False
++
++
++def reserve_test_evaluation(fz, authorization, repo_root=None):
++    """Write the reservation (the caller commits it before TEST is evaluated). Refused, before anything is written,
++    when ST10 has not passed, when a reservation is committed or present in the working tree, or when TEST is already
++    marked evaluated. Returns the path written."""
++    root = Path(repo_root) if repo_root is not None else fz.repo_root
++    LK.verify_authorization(authorization, fz, root)
++    require_st10(fz, authorization, root)
++    path = root / RESERVATION_REL
++    if _is_committed(root, RESERVATION_REL) or path.exists():
++        raise ImplementationFail("TEST only once: %s already exists (committed or in the working tree)" % RESERVATION_REL)
++    if _is_committed(root, EVALUATED_REL):
++        raise ImplementationFail("TEST only once: %s is committed" % EVALUATED_REL)
++    rec = {"kind": "test_reservation", "mode": "formal", "label": None, "frozen_commit": fz.record.commit,
++           "authorization": _authorization_fields(authorization), "result": "RESERVED"}
++    path.parent.mkdir(parents=True, exist_ok=True)
++    path.write_text(json.dumps(rec, ensure_ascii=False, indent=1, sort_keys=True) + "\n", encoding="utf-8")
++    return path
++
++
++def require_reservation(fz, authorization, repo_root=None):
++    """Condition 2 of the TEST path: the reservation is committed, as it is in the working tree, for this authorization,
++    and TEST is not marked evaluated (committed)."""
++    root = Path(repo_root) if repo_root is not None else fz.repo_root
++    if _is_committed(root, EVALUATED_REL):
++        raise ImplementationFail("TEST only once: %s is committed; TEST is not evaluated again" % EVALUATED_REL)
++    try:
++        rec, _sha = R.committed_json(root, RESERVATION_REL)
++    except R.NotCommitted as e:
++        raise ImplementationFail("TEST path refused: no committed TEST reservation: %s" % e) from e
++    if (rec.get("kind") != "test_reservation" or rec.get("mode") != "formal" or rec.get("result") != "RESERVED"
++            or rec.get("frozen_commit") != fz.record.commit
++            or rec.get("authorization") != _authorization_fields(authorization)):
++        raise ImplementationFail("TEST path refused: committed %s is not the reservation of this authorization" % RESERVATION_REL)
+diff --git a/metrix/e1-pilot/tests/test_evaluate.py b/metrix/e1-pilot/tests/test_evaluate.py
+index 9b3101b..e8ee1bb 100644
+--- a/metrix/e1-pilot/tests/test_evaluate.py
++++ b/metrix/e1-pilot/tests/test_evaluate.py
+@@ -170,6 +170,10 @@ def test_test_split_needs_the_authorization(contract, tok, data_rows, fz):
+         with pytest.raises(ImplementationFail, match="TEST path"):
+             E.evaluate_model(tiny_model(), tok, data_rows, fz.templates, contract.evaluation, M.FORMAL_MODE, "cpu",
+                              split="test", test_authorization=auth, fz=fz)
++    auth = LK.TestAuthorization(fz.record.commit, "a" * 64, "b" * 64)    # BE10: the frozen files are needed (fz None)
++    with pytest.raises(ImplementationFail, match="the frozen files"):
++        E.evaluate_model(tiny_model(), tok, data_rows, fz.templates, contract.evaluation, M.FORMAL_MODE, "cpu",
++                         split="test", test_authorization=auth, fz=None)
+     for mode in (M.smoke_mode(3), M.preflight_mode(contract)):           # TEST is evaluated in formal mode only
+         with pytest.raises(ImplementationFail, match="formal mode only"):
+             E.evaluate_model(tiny_model(), tok, data_rows, fz.templates, contract.evaluation, mode, "cpu",
+@@ -196,5 +200,6 @@ def test_nonfinite_logits_stop_em_generation(contract):
+     late = LateNaNStub(374)                                   # 374 is not a stop id: decoding goes on to step 2
+     with pytest.raises(NonFinite) as e:
+         E.greedy_generate(late, [[1, 2, 3]], contract.evaluation, "cpu")
+-    assert late.calls == 2 and e.value.stop == "ST6" and all(v != v for v in e.value.values)
+-    assert E.greedy_generate(Stub(374), [[1, 2, 3]], contract.evaluation, "cpu") == [[374] * 16]   # control: finite
++    assert late.calls == 2 and e.value.stop == "ST6" and e.value.values and all(v != v for v in e.value.values)
++    n = contract.evaluation.max_new_tokens                  # BE10: the control's length comes from the contract
++    assert E.greedy_generate(Stub(374), [[1, 2, 3]], contract.evaluation, "cpu") == [[374] * n]   # control: finite
+diff --git a/metrix/e1-pilot/tests/test_test_data.py b/metrix/e1-pilot/tests/test_test_data.py
+index 3c48ef3..a7189f6 100644
+--- a/metrix/e1-pilot/tests/test_test_data.py
++++ b/metrix/e1-pilot/tests/test_test_data.py
+@@ -240,7 +240,7 @@ def test_verify_authorization_branches(fz, contract, generated, tmp_path, monkey
+         LK.verify_authorization(LK.TestAuthorization(fz.record.commit, _sha(g), _sha(sel)), other, root)
+ 
+ 
+-VERIFY_CASES = {"not_pass": "not PASS", "unbound": "not bound", "other_protocol_frozen": "PROTOCOL_FROZEN names",
++VERIFY_CASES = {"not_pass": "not PASS", "unbound": "not bound", "other_protocol_frozen": "names frozen commit '1{40}', PROTOCOL_FROZEN",
+                 "bad_selection": "not configurations of SEARCH_SPACE", "S_selected": "not configurations of SEARCH_SPACE",
+                 "checkpoint": "no checkpoint hash for 1 of the 30 runs", "checkpoint_not_hex": "no checkpoint hash",
+                 "data_hashes": "data content hashes", "pending": "interpretations not yet ruled by Review Gate: B19$"}
+@@ -265,5 +265,8 @@ def test_verify_authorization_rechecks_what_the_generator_checked(fz, contract,
+         ck[sorted(ck)[0]] = "A" * 64
+     sel["checkpoints"] = ck
+     root = _repo(tmp_path, {G0: g, SEL: sel})
++    # BE2: the authorization names the loaded frozen commit; only the committed records of other_protocol_frozen name
++    # "1" * 40 (the authorization's own comparisons come first and pass).
++    auth_commit = fz.record.commit if case == "other_protocol_frozen" else commit
+     with pytest.raises(ImplementationFail, match=VERIFY_CASES[case]):
+-        LK.verify_authorization(LK.TestAuthorization(commit, _sha(g), _sha(sel)), fz, root)
++        LK.verify_authorization(LK.TestAuthorization(auth_commit, _sha(g), _sha(sel)), fz, root)
+diff --git a/metrix/e1-pilot/tests/test_testonce.py b/metrix/e1-pilot/tests/test_testonce.py
+new file mode 100644
+index 0000000..90a7d2f
+--- /dev/null
++++ b/metrix/e1-pilot/tests/test_testonce.py
+@@ -0,0 +1,191 @@
++"""Stage C item 7 (testonce.py): the two hard preconditions of TEST evaluation.
++- ST10 PASS as a committed record (positive and negative cases; committed bytes against the working tree);
++- TEST evaluated once: a committed or uncommitted reservation refuses any further reservation; evaluate_model's TEST
++  path needs the committed reservation and refuses after the evaluated marker is committed.
++Throw-away git repositories under tmp_path; no TEST content is generated or read (the authorization is hand-built and
++its checks stop before any row is read, or the synthetic leakage report is used).
++"""
++import json
++import subprocess
++
++import pytest
++
++from metrix_e1 import leakage as LK
++from metrix_e1 import stops as STP
++from metrix_e1 import testonce as TO
++from metrix_e1.errors import ImplementationFail
++
++
++def _auth(fz, g="a" * 64, s="b" * 64):
++    return LK.TestAuthorization(fz.record.commit, g, s)
++
++
++def _report(within=True):
++    return {"part": "test", "result": "PASS" if within else "FAIL",
++            "checks": {c: {"value": 0, "limit": 0, "within_limit": within, "detail": {}} for c in LK.TEST_CHECKS}}
++
++
++def _commit_repo(tmp_path, files):
++    """A repository whose HEAD holds `files` (rel path -> text); returns the root."""
++    root = tmp_path / "repo"
++    root.mkdir()
++    git = ["git", "-C", str(root), "-c", "user.name=t", "-c", "user.email=t@example.invalid"]
++    subprocess.run(["git", "-C", str(root), "init", "-q"], check=True)
++    for rel, text in files.items():
++        p = root / rel
++        p.parent.mkdir(parents=True, exist_ok=True)
++        p.write_text(text, encoding="utf-8")
++    subprocess.run(git + ["add", "-A"], check=True)
++    subprocess.run(git + ["commit", "-q", "-m", "t"], check=True)
++    return root
++
++
++def _record_text(rec):
++    return json.dumps(rec, ensure_ascii=False, indent=1, sort_keys=True) + "\n"
++
++
++# ----------------------------------------------------------------------------------------------- ST10 record
++
++def test_st10_record_pass_is_accepted(fz):
++    auth = _auth(fz)
++    rec = TO.make_st10_record(fz, auth, _report(), 7, 7)
++    assert rec["result"] == "PASS" and TO.st10_problem(rec, fz, auth) is None
++
++
++def test_st10_record_is_not_written_when_st10_stops(fz):
++    auth = _auth(fz)
++    with pytest.raises(STP.Stop) as e:
++        TO.make_st10_record(fz, auth, _report(), 7, 8)          # the two L6 counts differ
++    assert e.value.stop == "ST10"
++    with pytest.raises(STP.Stop):
++        TO.make_st10_record(fz, auth, _report(within=False), 7, 7)   # a TEST part over its limit
++    with pytest.raises(STP.Stop):
++        TO.make_st10_record(fz, auth, _report(), 7, None)       # no data-auditor count
++
++
++@pytest.mark.parametrize("case", ["result", "frozen_commit", "bound", "checks", "over", "l6", "label"])
++def test_st10_problem_branches(fz, case):
++    auth = _auth(fz)
++    rec = TO.make_st10_record(fz, auth, _report(), 7, 7)
++    if case == "result":
++        rec["result"] = "FAIL"
++    elif case == "frozen_commit":
++        rec["frozen_commit"] = "1" * 40
++    elif case == "bound":
++        rec["authorization"]["gate0_record_sha256"] = "c" * 64
++    elif case == "checks":
++        del rec["leakage_test_checks"]["L6"]
++    elif case == "over":
++        rec["leakage_test_checks"]["L4"]["within_limit"] = False
++    elif case == "l6":
++        rec["l6_auditor"] = 8
++    elif case == "label":
++        rec["label"] = "smoke"
++    assert TO.st10_problem(rec, fz, auth) is not None
++
++
++def test_st10_committed_bytes_must_match_the_working_tree(fz, tmp_path):
++    auth = _auth(fz)
++    rec = TO.make_st10_record(fz, auth, _report(), 7, 7)
++    root = _commit_repo(tmp_path, {TO.ST10_REL: _record_text(rec)})
++    TO.require_st10(fz, auth, root)                                  # committed and equal: accepted
++    (root / TO.ST10_REL).write_text(_record_text(dict(rec, l6_auditor=6)), encoding="utf-8")   # edited, not committed
++    with pytest.raises(ImplementationFail, match="no committed ST10 record|differs"):
++        TO.require_st10(fz, auth, root)
++
++
++def test_st10_not_committed_refuses(fz, tmp_path):
++    auth = _auth(fz)
++    root = _commit_repo(tmp_path, {"README.md": "x\n"})
++    (root / TO.ST10_REL).parent.mkdir(parents=True)
++    (root / TO.ST10_REL).write_text(_record_text(TO.make_st10_record(fz, auth, _report(), 7, 7)), encoding="utf-8")
++    with pytest.raises(ImplementationFail, match="no committed ST10 record"):
++        TO.require_st10(fz, auth, root)
++
++
++# ----------------------------------------------------------------------------------- one reservation, evaluated once
++
++@pytest.fixture
++def no_leakage_recheck(monkeypatch):
++    """verify_authorization re-checks the committed Gate 0 and freeze records (tested in test_test_data.py); here the
++    reservation rules are the subject, so that re-check is replaced by a no-op."""
++    monkeypatch.setattr(LK, "verify_authorization", lambda *a, **k: None)
++
++
++class _FZ:
++    """The frozen commit only: reserve_test_evaluation uses fz.record.commit and fz.repo_root."""
++    def __init__(self, root, commit):
++        self.repo_root = root
++        self.record = type("R", (), {"commit": commit})()
++
++
++def test_reservation_is_written_once_after_st10_and_refused_again(fz, tmp_path, no_leakage_recheck):
++    auth = _auth(fz)
++    st10 = TO.make_st10_record(fz, auth, _report(), 7, 7)
++    root = _commit_repo(tmp_path, {TO.ST10_REL: _record_text(st10)})
++    fake = _FZ(root, fz.record.commit)
++    with pytest.raises(ImplementationFail, match="no committed TEST reservation"):
++        TO.require_reservation(fake, auth, root)
++    path = TO.reserve_test_evaluation(fake, auth, root)
++    assert path.exists()
++    with pytest.raises(ImplementationFail, match="TEST only once"):
++        TO.reserve_test_evaluation(fake, auth, root)              # the reservation exists in the working tree
++    subprocess.run(["git", "-C", str(root), "-c", "user.name=t", "-c", "user.email=t@example.invalid",
++                    "add", "-A"], check=True)
++    subprocess.run(["git", "-C", str(root), "-c", "user.name=t", "-c", "user.email=t@example.invalid",
++                    "commit", "-q", "-m", "reserve"], check=True)
++    TO.require_reservation(fake, auth, root)                      # committed and matching: the evaluation may run
++    with pytest.raises(ImplementationFail, match="TEST only once"):
++        TO.reserve_test_evaluation(fake, auth, root)              # a committed reservation refuses again
++
++
++def test_reservation_refused_without_st10_and_nothing_written(fz, tmp_path, no_leakage_recheck):
++    auth = _auth(fz)
++    root = _commit_repo(tmp_path, {"README.md": "x\n"})
++    with pytest.raises(ImplementationFail, match="no committed ST10 record"):
++        TO.reserve_test_evaluation(_FZ(root, fz.record.commit), auth, root)
++    assert not (root / TO.RESERVATION_REL).exists()
++
++
++def test_evaluated_marker_refuses_the_evaluation(fz, tmp_path, no_leakage_recheck):
++    auth = _auth(fz)
++    st10 = TO.make_st10_record(fz, auth, _report(), 7, 7)
++    reservation = {"kind": "test_reservation", "mode": "formal", "label": None, "frozen_commit": fz.record.commit,
++                   "authorization": TO._authorization_fields(auth), "result": "RESERVED"}
++    root = _commit_repo(tmp_path, {TO.ST10_REL: _record_text(st10), TO.RESERVATION_REL: _record_text(reservation),
++                                   TO.EVALUATED_REL: _record_text({"kind": "test_evaluated"})})
++    with pytest.raises(ImplementationFail, match="TEST only once"):
++        TO.require_reservation(_FZ(root, fz.record.commit), auth, root)
++    with pytest.raises(ImplementationFail, match="TEST only once"):
++        TO.reserve_test_evaluation(_FZ(root, fz.record.commit), auth, root)
++
++
++def test_reservation_for_another_authorization_is_refused(fz, tmp_path, no_leakage_recheck):
++    auth = _auth(fz)
++    st10 = TO.make_st10_record(fz, auth, _report(), 7, 7)
++    other = {"kind": "test_reservation", "mode": "formal", "label": None, "frozen_commit": fz.record.commit,
++             "authorization": TO._authorization_fields(_auth(fz, g="d" * 64)), "result": "RESERVED"}
++    root = _commit_repo(tmp_path, {TO.ST10_REL: _record_text(st10), TO.RESERVATION_REL: _record_text(other)})
++    with pytest.raises(ImplementationFail, match="not the reservation of this authorization"):
++        TO.require_reservation(_FZ(root, fz.record.commit), auth, root)
++
++
++def test_evaluate_model_test_path_refuses_without_committed_st10(fz, contract, tmp_path):
++    """evaluate_model(split="test") in the real repository: no ST10 record is committed there, so the TEST path refuses
++    before any data is read (the synthetic authorization fails verify_authorization first; the ST10 check is the
++    second precondition, reached in test_st10_not_committed_refuses)."""
++    from metrix_e1 import evaluate as E
++    from metrix_e1 import mode as M
++    with pytest.raises(ImplementationFail, match="TEST path refused"):
++        E.evaluate_model(None, None, {}, fz.templates, contract.evaluation, M.FORMAL_MODE, "cuda", split="test",
++                         test_authorization=_auth(fz), fz=fz)
++
++
++def test_protocol_frozen_file_names_another_commit(fz, monkeypatch):
++    """BE2: the authorization equals the loaded frozen commit, but the PROTOCOL_FROZEN file of the repository names
++    another commit: refused with that comparison's own message (the parser is replaced; the file is not changed)."""
++    from types import SimpleNamespace
++    from metrix_e1 import frozen as FZm
++    monkeypatch.setattr(FZm, "parse_protocol_frozen", lambda data: SimpleNamespace(commit="3" * 40))
++    with pytest.raises(ImplementationFail, match="PROTOCOL_FROZEN names 3{40}, the loaded frozen files"):
++        LK.verify_authorization(_auth(fz), fz)
