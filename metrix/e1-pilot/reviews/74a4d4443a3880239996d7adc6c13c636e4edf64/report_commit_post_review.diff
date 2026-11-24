@@ -1,0 +1,390 @@
+# Implementation stage B report commit: every change after both reviews, relative to the reviewed index tree 0417d563919a7e7f9349aec3268a3951a3fbb9ea (git write-tree, written after both reviews, before any post-review change). Full diff for reports/ (report, DEFERRED_MINORS.md, new evidence files) ; stat only for the added review records of the report commit and the data-auditor's output of this round (verbatim copies / auditor files, see impl_b/t12d_report_review_records.txt and the data-auditor report). This file itself is not included. Index tree after the changes, without this file: 908c32952ccd653e99c71cba19dc5615bcf5751f. Tue Nov 24 03:52:21 UTC 2026
+ metrix/e1-pilot/audit/if_00_state.py               |   167 +
+ metrix/e1-pilot/audit/if_01_content_hashes.py      |   228 +
+ metrix/e1-pilot/audit/if_02_trials.py              |   100 +
+ metrix/e1-pilot/audit/if_06_static.py              |   835 +
+ metrix/e1-pilot/audit/if_07_static_selftest.py     |   157 +
+ .../e1-pilot/audit/stdout/impl_b/50_if_state.txt   |    72 +
+ .../audit/stdout/impl_b/51_if_content_hashes.txt   |    67 +
+ .../e1-pilot/audit/stdout/impl_b/52_if_trials.txt  |    53 +
+ .../audit/stdout/impl_b/53_ic_test_refusal.txt     |    30 +
+ .../e1-pilot/audit/stdout/impl_b/54_if_static.txt  |   325 +
+ .../audit/stdout/impl_b/55_if_static_selftest.txt  |   203 +
+ .../audit/stdout/impl_b/56_git_status_final.txt    |   156 +
+ .../audit/stdout/impl_b/trials/if_trial1_if00.txt  |    72 +
+ .../audit/stdout/impl_b/trials/if_trial1_if01.txt  |    67 +
+ .../audit/stdout/impl_b/trials/if_trial1_if02.txt  |    53 +
+ .../audit/stdout/impl_b/trials/if_trial1_if06.txt  |   325 +
+ .../audit/stdout/impl_b/trials/if_trial1_if07.txt  |   203 +
+ .../audit/stdout/impl_b/trials/if_trial2_if06.txt  |   325 +
+ metrix/e1-pilot/reports/DEFERRED_MINORS.md         |    28 +-
+ metrix/e1-pilot/reports/IMPL_B_REPORT.md           |    33 +-
+ .../reports/impl_b/t12c_reviewed_code_pytest.txt   |    34 +
+ .../reports/impl_b/t12d_report_review_records.txt  |   143 +
+ .../check_resume_message_report-commit.py          |    18 +
+ .../code-reviewer_prompt_report-commit.txt         |    25 +
+ .../code-reviewer_report-commit.md                 |   126 +
+ .../data-auditor_prompt_report-commit.txt          |    13 +
+ .../data-auditor_report-commit.md                  |   516 +
+ .../extract_log_report-commit.txt                  |    26 +
+ .../interruption_report-commit.txt                 |    33 +
+ .../preflight_tools_check_report-commit.txt        |    24 +
+ .../report_commit_input.diff                       | 33779 +++++++++++++++++++
+ .../report_commit_input_src_tests_reports.diff     |  1220 +
+ .../resume_message_code-reviewer_report-commit.txt |     3 +
+ .../resume_message_data-auditor_report-commit.txt  |     3 +
+ 34 files changed, 39447 insertions(+), 15 deletions(-)
+
+diff --git a/metrix/e1-pilot/reports/DEFERRED_MINORS.md b/metrix/e1-pilot/reports/DEFERRED_MINORS.md
+index 6289733..e21caba 100644
+--- a/metrix/e1-pilot/reports/DEFERRED_MINORS.md
++++ b/metrix/e1-pilot/reports/DEFERRED_MINORS.md
+@@ -357,10 +357,10 @@ code-reviewer 结论 PASS,没有 BLOCKER(10 MAJOR、19 MINOR);data-auditor 结
+ | BA2 | MAJOR | B5(LoRA A 初始化) | 随机数已改为 `rng_rule` 给出的 `random.Random` 本身(`r.uniform`);分布与 purpose 字符串协议未规定 | IB1-CR:30 | 交 Review Gate(待决第 1 项) |
+ | BA3 | MAJOR | B17(预检估算) | 评测时间改为预检中实测一次 FP32 DEV 评测 × 评测单位数;估算方法协议未规定 | IB1-CR:26 | 交 Review Gate(待决第 1 项) |
+ | BA4 | MINOR | `stops.st13_scan` | ST13 原来只映射调用方的布尔值;已加按文件检测的 `st13_scan`,src 中没有调用方 | IB1-CR:34 | 阶段 C 由 `run_pilot` 在每步开始时调用 |
+-| BA5 | MINOR | `stats.immediate_gain`、`record.render_text`、`compute.cost_usd` | 已实现,没有调用方 | IB1-CR:37、41 | 阶段 C 接线 |
++| BA5 | MINOR | `stats.immediate_gain`、`record.render_text`、`compute.cost_usd`、`compute.run_flops`、`compute.preflight_summary`、`compute.estimate_total_hours` | 已实现,没有调用方(后三个由报告提交审查补列,IBR-CR:99) | IB1-CR:37、41 | 阶段 C 接线 |
+ | BA6 | MINOR | `train.fetch_model_config` | 下载的 `config.json`(sha256 `1ddb5b89…`)没有冻结值可比;冒烟小模型若由它构造,来源不受 ST12 覆盖 | IB1-CR:46 | 阶段 C:RUNBOOK 与实验记录写明其哈希 |
+ | BA7 | — | B19 与阶段 A 预告的停止点 | 阶段 A 预告“如协议未覆盖即停下”,本阶段改为实现并列入待决 | IB1-CR:76 | 交 Review Gate 明确接受(待决第 4 项) |
+-| BA8 | 观察 | `data.build_general_dev` | `eval_sets.jsonl` 以文本模式读取,test 行被 UTF-8 解码 | IB1-DA:217 | 工作提交中已改为按字节读取;读法问题见 BB4 |
++| BA8 | 观察 | `data.build_general_dev` | `eval_sets.jsonl` 以文本模式读取,test 行被 UTF-8 解码 | IB1-DA:217 | 工作提交中已改为按字节读取;此前 `data.py` 自身以文本模式读取的运行列于 `IMPL_B_REPORT.md` 待决第 3 项(BE1),读法问题交 Review Gate |
+ | BA9 | 观察 | B1–B3 | s、epoch 的起点与置换调用方式的具体后果;`train_Y.jsonl` 的行序未冻结 | IB1-DA:222 | B3 写明行序;交 Review Gate(待决第 1 项) |
+ | BA10 | 观察 | `TestAuthorization` | 只是约定上的保护,任何代码都能构造 | IB1-DA:223 | 每个 TEST 路径先调用 `leakage.verify_authorization`,按已提交记录复核(1.25 节 BD1) |
+ 
+@@ -390,7 +390,7 @@ code-reviewer 结论 PASS,没有 BLOCKER(1 MAJOR、9 MINOR);data-auditor 结论
+ 
+ ### 1.25 Implementation 阶段 B:第二个修复提交 `493d7f9c` 的提交前审查(`reviews/493d7f9c…/code-reviewer.md` 记 `IBF2-CR:n`,`data-auditor.md` 记 `IBF2-DA:n`)
+ 
+-code-reviewer 结论 PASS,没有 BLOCKER(1 MAJOR 为 BC1 的遗留、8 MINOR);data-auditor 结论 PASS(仅作参考)。MINOR 中的代码与测试项在本报告提交中修(`impl_b/t12_fix3.txt`;本报告提交的审查见 `reviews/<报告提交>/`)。
++code-reviewer 结论 PASS,没有 BLOCKER(1 MAJOR 为 BC1 的遗留、8 MINOR);data-auditor 结论 PASS(仅作参考)。MINOR 中的代码与测试项在本报告提交中修(`impl_b/t12_fix3.txt`;本报告提交的审查见 `reviews/74a4d444…/` 的 `*_report-commit*`,登记于 1.26 节)。
+ 
+ | # | 严重度 | 位置 | 问题 | 来源 | 处理 |
+ |---|---|---|---|---|---|
+@@ -405,6 +405,27 @@ code-reviewer 结论 PASS,没有 BLOCKER(1 MAJOR 为 BC1 的遗留、8 MINOR);da
+ | BD9 | 观察 | `leakage.verify_authorization` | 读工作区的 PROTOCOL_FROZEN,不是 HEAD blob | IBF2-DA:254 | 登记;本报告提交起另与调用方 `frozen.load` 得到的冻结提交比较 |
+ | BD10 | 观察 | `tests/test_st12.py` | 翻转的那个字节落在 test 行范围内;只改临时副本的原始字节,随后只对整个文件求哈希,不解码、不解析 | IBF2-DA:256 | 列入 `IMPL_B_REPORT.md` 待决第 3 项(备案) |
+ 
++### 1.26 Implementation 阶段 B:报告提交的提交前审查(`reviews/74a4d444…/code-reviewer_report-commit.md` 记 `IBR-CR:n`,`data-auditor_report-commit.md` 记 `IBR-DA:n`)
++
++code-reviewer 结论 PASS,没有 BLOCKER(1 MAJOR、12 MINOR);data-auditor 结论 PASS(仅作参考),6 条观察,35 个埋入故障全部检出。两份审查都因 HTTP 429 中断后续审完成。按阶段 A 报告提交的先例,审查之后只改报告、本文件与证据,不改代码(审查之后的改动见 `reviews/74a4d444…/report_commit_post_review.diff`);代码与测试类的项登记到阶段 C 的第一个代码提交。
++
++| # | 严重度 | 位置 | 问题 | 来源 | 处理 |
++|---|---|---|---|---|---|
++| BE1 | MAJOR | `IMPL_B_REPORT.md` 待决第 3 项;BA8 | 交 Review Gate 的运行清单只列了 `l6_check.py` 的运行,漏了 `data.py` 自身在工作提交修复前以文本模式读取的运行(data generate、verify、条件 1、各次 pytest) | IBR-CR:74 | 已补:待决第 3 项逐条列出(含 `data.py` 版本的 sha256 核对与无法核实的早期版本),另补 data-auditor 冻结前第 5 轮两个以文本模式读取的脚本;BA8 改为指向第 3 项。读法仍交 Review Gate |
++| BE2 | MINOR | `src/metrix_e1/leakage.py` `verify_authorization`;`tests/test_test_data.py` | 三方比较合成一个条件、一句报错,`other_protocol_frozen` 用例区分不出“与当前 PROTOCOL_FROZEN 比较”一项 | IBR-CR:76 | 登记;阶段 C 第一个代码提交中分开比较或补“授权等于 fz、不等于当前 PROTOCOL_FROZEN”的用例 |
++| BE3 | MINOR | `IMPL_B_REPORT.md` 单元测试第 9 项 | “逐项去掉检查后对应用例失败”超出 `t12` 变异检查的 6 项 | IBR-CR:78 | 已改为准确列出变异了哪几项 |
++| BE4 | MINOR | `IMPL_B_REPORT.md` 审查表第 1 行 | “8 条改代码”与原文不符 | IBR-CR:80 | 已改为“9 条改代码(其中 B5、B17 改后仍交 Review Gate),B14 只登记” |
++| BE5 | MINOR | `IMPL_B_REPORT.md`、本文件 1.25 节 | 报告提交审查记录的位置说法不一;路径对照缺 `review_report/` | IBR-CR:82 | 已统一为 `reviews/74a4d444…/*_report-commit*`,补对照与两处改名 |
++| BE6 | MINOR | `IMPL_B_REPORT.md` 提交、推送 | 报告提交的推送记录 `t13` 留在工作区,与阶段 A `t8` 丢失的情形相同 | IBR-CR:84 | 推送后立即作为证据单独提交并快进推送(Owner 第 0 项);那次推送自身的输出 `t14` 随阶段 C 第 0 步入库;列入待决第 6 项请 Review Gate 确认 |
++| BE7 | MINOR | `IMPL_B_REPORT.md` 开头“中断” | 没有写第三次重启与本轮 HTTP 429 中断;中断记录不在仓库 | IBR-CR:86 | 已补;`interruption_report-commit.txt`、续审消息与核对续审消息送达的脚本入库 |
++| BE8 | MINOR | `reports/impl_b/t12_fix3.txt` | 被测代码与暂存内容之间只有 stat 行数对应,没有哈希 | IBR-CR:88 | 已补 `impl_b/t12c_reviewed_code_pytest.txt`:两份审查之后在被审的暂存代码上重跑,204 passed;运行前后 `src/`、`tests/` 的树哈希相同、工作区等于暂存区,`src/`、`tests/` 部分的 diff 与审查输入的同一部分 sha256 相同 |
++| BE9 | MINOR | `test_data.check_interpretations_ruled`、`leakage.verify_authorization`;`frozen.CONTENT_HASH_KEYS` 与 `Frozen.content_hashes` | 解释裁决检查仍是两份代码;`content_hashes` 另写一遍字面键 | IBR-CR:90 | 登记;阶段 C 抽 `interpretations.pending_problem()`,`content_hashes` 按 `CONTENT_HASH_KEYS` 组装 |
++| BE10 | MINOR | `evaluate.evaluate_model`;`tests/test_evaluate.py` | `fz is None` 分支无测试;`LateNaNStub` 用例没断言 `values` 非空;对照写死 16 | IBR-CR:94 | 登记;阶段 C 补 |
++| BE11 | MINOR | `IMPL_B_REPORT.md` 留给阶段 C 的事项 | `compute.run_flops`、`preflight_summary`、`estimate_total_hours` 没有调用方,未列 | IBR-CR:99 | 已补入报告与 BA5 |
++| BE12 | MINOR | `src/metrix_e1/record.py` 末尾 | 多一个空行(W391) | IBR-CR:101 | 登记;阶段 C 删 |
++| BE13 | MINOR | `reports/impl_b/mutate_fix3.py` | 变量 `SP` 未使用 | IBR-CR:103 | 登记,不改:该文件须与 `t12` 中运行的脚本逐字节相同(`t12` 末尾的 `cmp`) |
++| BE14 | 观察 | `leakage.verify_authorization` | 信任调用方传入的 `fz`:四个冻结值取自 `fz.record.data_sha256`,手工构造的 Frozen 可带入别的值(与手工构造 TestAuthorization 同一类约定;不是读取 TEST 的路径) | IBR-DA:338 | 登记;阶段 C 由 `run_pilot` 只用 `frozen.load()` 的结果调用 |
++
+ ## 2. 已在第 5–7 轮解决(核对用)
+ 
+ | 原条目 | 来源 | 处理 |
+@@ -436,3 +457,4 @@ code-reviewer 结论 PASS,没有 BLOCKER(1 MAJOR 为 BC1 的遗留、8 MINOR);da
+ - 第 9 轮:1.14 节 W1(MAJOR)、W2、W3、W4/X1、W5、W8,1.16 节 Y5、Y8 须由 Review Gate 决定,列于 `ROUND9_REPORT.md`“待 Review Gate 决定”第 1–4a 项(1.16 节 Y1、1.17 节 Z6)。
+ - Implementation 阶段 A:1.18 节 AA1、AA2、AA6、AA7,1.19 节 AB1、AB2 须由 Review Gate 决定;AA9(命令路径)、AA11(记录字段)、L4 的语料含 `anchor_text`、1.21 节 AD14(修复提交没有调用 data-auditor)请 Review Gate 备案。都列于 `IMPL_A_REPORT.md`“待 Review Gate 决定”(第 1–8 项)。
+ - Implementation 阶段 B:1.22 节 BA1–BA3、BA7、BA9,1.23 节 BB2、BB4、BB6,1.24 节 BC1 须由 Review Gate 决定;1.25 节 BD10 请 Review Gate 备案。都列于 `IMPL_B_REPORT.md`“待 Review Gate 决定”(第 1–5 项)。BB1 / BC2 / BD8(ST10 凭据与“TEST 只评一次”)是阶段 C 的硬性前提。
++- Implementation 阶段 B 报告提交:1.26 节 BE1(待决第 3 项的运行清单)与 BE6(推送记录的证据提交不经审查,待决第 6 项)请 Review Gate 决定或确认。
+diff --git a/metrix/e1-pilot/reports/IMPL_B_REPORT.md b/metrix/e1-pilot/reports/IMPL_B_REPORT.md
+index 2f15b28..3f70a35 100644
+--- a/metrix/e1-pilot/reports/IMPL_B_REPORT.md
++++ b/metrix/e1-pilot/reports/IMPL_B_REPORT.md
+@@ -3,7 +3,7 @@
+ - 指令:`tasks/IMPLEMENTATION_TASK_ORDER_V1.md` 第 10 节表中 B 行;Owner 下达阶段 B 的消息原文 `tasks/IMPL_B_OWNER_MESSAGE.md`(第 0 步远端核对;Review Gate 对阶段 A 的裁决 1–4;阶段 B 额外要求 5–7;直接在 `metrix-e1-pilot-protocol-v1` 上工作,只做快进推送,不 force push,不推送标签,不经 PR;阶段 B 结束后停下)。
+ - 执行会话:session_01J5mxaWPrK8siadYKyqZ5pX。会话从会话分支 `claude/phase-b-implementation-lvi1j5`(`155430a`)启动;本地分支 `metrix-e1-pilot-protocol-v1` 设为 `origin/metrix-e1-pilot-protocol-v1`(`620f8611`,阶段 A 报告提交)后在其上工作(`impl_b/t0_remote_check.txt` 的 `git reflog`)。会话分支没有使用,没有改写任何已有提交。
+ - 运行环境:Claude Code on the web 云容器,hostname `vm`,4 CPU,15 GiB 内存,没有 nvidia 设备,`torch.cuda.is_available()` 为 False(`impl_b/t1_env_baseline.txt`)。Python 3.13.18;容器是新的,依赖按 `requirements.lock` 以 `--require-hashes --no-deps` 重新安装到会话临时目录的 venv,`pip check` 通过;torch 元数据版本 2.11.0、`__version__` 2.11.0+cu130,transformers 5.22.2。
+-- 中断:工作进程两次重启(`uptime -s` 07:31:22 与 13:34:42 UTC),工作区、暂存区与会话临时目录都保留。第一次发生在第 1 轮审查调用之前;第二次发生在修复提交的审查输入与调用前核对写好之后、调用之前,重启后先核对暂存区与审查输入逐字节相同,并重做了 frontmatter / tools 行核对(`reviews/fdbb9def…/preflight_tools_check.txt` 末段)再调用。
++- 中断:工作进程三次重启(`uptime -s` 2026-11-23 07:31:22、13:34:42 与 2026-11-24 03:30:52 UTC),工作区、暂存区与会话临时目录都保留。第一次发生在第 1 轮审查调用之前;第二次发生在修复提交的审查输入与调用前核对写好之后、调用之前,重启后先核对暂存区与审查输入逐字节相同,并重做了 frontmatter / tools 行核对(`reviews/fdbb9def…/preflight_tools_check.txt` 末段)再调用。第三次:报告提交的两份审查都因 API 额度限制(HTTP 429)中途停止,随后工作进程重启;重启后核对 HEAD、暂存区与两份审查输入逐字节相同、没有未暂存或未跟踪的文件(data-auditor 中断前没有写入)、frontmatter 与 tools 行相同,再向两个审查 subagent 发送续审消息(首句为固定句)让其从中断处继续(`reviews/74a4d444…/interruption_report-commit.txt`、`resume_message_*_report-commit.txt`;续审消息原样送达,见 `extract_log_report-commit.txt`)。
+ - 停止钩子在审查结论出来之前多次要求提交推送;按 `metrix/CLAUDE.md` 第 5 节,每次提交都在两份审查结论出来之后(这一点没有原始输出)。
+ - 没有加载任何模型权重、没有下载权重文件(下载的是 4 个分词器文件、parcae `tokenizer.json`、锚文本 parquet 与固定 revision 的 `config.json`,`impl_b/t1`、`t2`)、没有使用 GPU、没有对真实模型训练或评测。训练与评测代码只在随机初始化的同构小模型(Qwen3ForCausalLM,2–3 层,hidden 64,词表与协议分词器相同)上运行,或在 meta 设备上实例化协议结构以核对参数数(不分配内存、无权重)。没有生成 TEST,也没有实例化任何 TEST 问句;TEST 生成器只测试了拒绝运行。关于 `eval_sets.jsonl` 的 test 行,见“待 Review Gate 决定”第 3 项:阶段 A 起的参考比对测试曾让 `reports/round5/l6_check.py` 以文本模式读取整个文件(test 行被 UTF-8 解码、不被解析),第二个修复提交起不再如此。
+ - 原始输出在 `reports/impl_b/`(命令行由 `round5/logrun.sh` 记录);审查的调用文字、输入与原文在 `reviews/74a4d444…/`(工作提交两轮,以及按阶段 A 的先例放在这里的报告提交审查 `*_report-commit*`)、`reviews/fdbb9def…/`、`reviews/493d7f9c…/`;data-auditor 的脚本与 stdout 在 `audit/ib_*`、`ic_*`、`id_*`、`ie_*` 与 `audit/stdout/impl_b/`。
+@@ -31,10 +31,10 @@ Owner 在下达阶段 B 时转达(原文 `tasks/IMPL_B_OWNER_MESSAGE.md`):
+ | 第 0 步:`git ls-remote` 核对远端分支与两个标签 | 完成:远端 `620f8611`,两个标签不变;`impl_a/t8_report_push.txt` 已不在(阶段 A 容器回收,任何提交中都没有),以 ls-remote 输出代替 | `impl_b/t0_remote_check.txt`(提交 `0bc0eecf`),推送 `impl_b/t0b_step0_push.txt` |
+ | 阶段开始:比对 `~/.claude/` 副本 | 完成:用户级副本与阶段 A 记录的哈希相同(仍是旧版);两个 agent 的 frontmatter 与 tools 行相同 | `impl_b/t0c_copy_check.txt` |
+ | `train.py`、`evaluate.py`、`stats.py`、`gate.py`、`stops.py`、`compute.py`、`record.py`、`test_data.py` | 完成(另有 `contract.py`、`mode.py`、`interpretations.py`) | 见“交付物与实现” |
+-| 单元测试 2–9 与 Owner 额外要求 5–7 | 全部通过:204 passed(报告提交;第二个修复提交为 198 passed) | `impl_b/t12_fix3.txt`;各轮 `t4`、`t6`、`t8`、`t10` |
++| 单元测试 2–9 与 Owner 额外要求 5–7 | 全部通过:204 passed(报告提交;审查前 `t12`,两份审查之后在被审的暂存代码上重跑 `t12c`;第二个修复提交为 198 passed) | `impl_b/t12_fix3.txt`、`t12c_reviewed_code_pytest.txt`;各轮 `t4`、`t6`、`t8`、`t10` |
+ | 数据未变 | 改动后三次重新生成(data_b、data_c、data_d),8 个文件与阶段 A 逐字节相同;四个冻结哈希五方一致(data-auditor 独立复算) | `impl_b/t3`、`t6`、`t8`;`audit/stdout/impl_b/07`、`21`、`36`;此后 `data.py` 未改,`t10`、`t12` 的 pytest 重新生成数据并核对四个冻结哈希(`test_four_frozen_hashes`) |
+ | TEST | 没有生成;生成器在当前状态拒绝(RESULT: FAIL,exit 1,无输出目录) | `impl_b/t6`、`t8`、`t10`、`t12`;data-auditor 黑盒运行 `11`、`25`、`38`、`ie_*` |
+-| 审查 | 工作提交:code-reviewer 两轮 PASS / PASS,data-auditor 两轮 PASS / PASS;修复提交:PASS / PASS;第二个修复提交:PASS / PASS;报告提交:见“审查”末段 | `reviews/74a4d444…/`、`reviews/fdbb9def…/`、`reviews/493d7f9c…/` |
++| 审查 | 工作提交:code-reviewer 两轮 PASS / PASS,data-auditor 两轮 PASS / PASS;修复提交:PASS / PASS;第二个修复提交:PASS / PASS;报告提交:PASS / PASS(code-reviewer 1 MAJOR 交 Review Gate) | `reviews/74a4d444…/`、`reviews/fdbb9def…/`、`reviews/493d7f9c…/` |
+ | 提交与推送 | 全部快进推送,没有推送标签;每次推送前后 ls-remote 核对分支与两个标签 | `impl_b/t0b`、`t7`、`t9`、`t11`;本报告提交 `t13`(工作区) |
+ 
+ ## 提交
+@@ -45,9 +45,10 @@ Owner 在下达阶段 B 时转达(原文 `tasks/IMPL_B_OWNER_MESSAGE.md`):
+ | `74a4d444`(工作提交;即第 2 轮两份审查读到的暂存内容) | 8 个模块与 3 个辅助模块;`data.py`(两个 Y/F 比值;`eval_sets.jsonl` 按字节读取)、`errors.py`、`leakage.py`(TEST 部分);测试;`impl_b/t0b`–`t6`、`dump_for_audit.py`;`IMPL_B_OWNER_MESSAGE.md` |
+ | `fdbb9def`(修复提交;第 2 轮 code-reviewer 的 MAJOR 1–2 与 MINOR) | 见“审查”;`impl_b/t7`(工作提交推送)、`t8` |
+ | `493d7f9c`(第二个修复提交;修复提交审查的 MAJOR 与 MINOR) | 见“审查”;`impl_b/t9`(修复提交推送)、`t10` |
+-| 报告提交 | 第二个修复提交审查的代码与测试 MINOR(`DEFERRED_MINORS.md` 1.25 节 BD1–BD5、BD7:`leakage.verify_authorization` 与 TEST 生成器共用条件 2、3 的内容检查并复核解释裁决,`record.gate0_record_problem`、`freeze_record_problem`,`frozen.CONTENT_HASH_KEYS`;EM 解码循环内的非有限值测试;解释裁决测试不依赖当前状态;参考比对的 DEV 行副本先核对源文件哈希);本文件;`DEFERRED_MINORS.md` 1.22–1.25 节与第 3 节;全部审查记录;data-auditor 的脚本、stdout 与试跑输出;`impl_b/t11`(第二个修复提交推送)、`t12`(代码部分:全部 `open(` 调用、TEST 生成器拒绝、变异检查、204 passed)、`mutate_fix3.py`、`t12b`(审查记录与 auditor 试跑输出的复制核对) |
++| 报告提交 | 第二个修复提交审查的代码与测试 MINOR(`DEFERRED_MINORS.md` 1.25 节 BD1–BD5、BD7:`leakage.verify_authorization` 与 TEST 生成器共用条件 2、3 的内容检查并复核解释裁决,`record.gate0_record_problem`、`freeze_record_problem`,`frozen.CONTENT_HASH_KEYS`;EM 解码循环内的非有限值测试;解释裁决测试不依赖当前状态;参考比对的 DEV 行副本先核对源文件哈希);本文件;`DEFERRED_MINORS.md` 1.22–1.25 节与第 3 节;全部审查记录;data-auditor 的脚本、stdout 与试跑输出;`impl_b/t11`(第二个修复提交推送)、`t12`(代码部分:全部 `open(` 调用、TEST 生成器拒绝、变异检查、204 passed)、`mutate_fix3.py`、`t12b`(审查记录与 auditor 试跑输出的复制核对)、`t12c`(审查之后在被审代码上重跑 pytest)、`t12d`(报告提交审查记录的复制核对);报告提交自己的审查记录(`reviews/74a4d444…/*_report-commit*`、`interruption_report-commit.txt`、`report_commit_post_review.diff`)与 data-auditor 本轮的 `audit/if_*`、`stdout/impl_b/50–56`、`trials/if_trial*` |
++| 推送记录提交(证据,不经审查;Owner 第 0 项“以后每个阶段都用这种方式核对推送结果”) | `impl_b/t13_report_push.txt`:报告提交的快进推送与推送前后的 ls-remote;推送后立即提交并快进推送,不留在工作区(报告提交审查 MINOR,BE6)。这次推送自身的输出写入 `impl_b/t14_evidence_push.txt`(工作区),随阶段 C 第 0 步的证据提交入库 |
+ 
+-推送顺序:每个提交在两份审查结论出来之后提交并立即推送(`0bc0eecf` → `74a4d444` → `fdbb9def` → `493d7f9c` → 报告提交)。前三次审查的原文与 data-auditor 的输出在推送时还在会话临时目录与工作区(`audit/` 未跟踪),随本报告提交一起入库(修复提交与第二个修复提交的审查都指出了这一点:`DEFERRED_MINORS.md` BC3、BD6);仓库副本与临时目录原件逐一比较相同(`diff -r`,见“审查”首段)。本报告提交自己的推送输出写入 `impl_b/t13_report_push.txt`(工作区),随阶段 C 的第一个提交入库,并在最终回复中给出;按 Owner 第 0 项,阶段 C 开始时以 `git ls-remote` 重新核对。
++推送顺序:每个提交在两份审查结论出来之后提交并立即推送(`0bc0eecf` → `74a4d444` → `fdbb9def` → `493d7f9c` → 报告提交)。前三次审查的原文与 data-auditor 的输出在推送时还在会话临时目录与工作区(`audit/` 未跟踪),随本报告提交一起入库(修复提交与第二个修复提交的审查都指出了这一点:`DEFERRED_MINORS.md` BC3、BD6);仓库副本与临时目录原件逐一比较相同(`diff -r`,见“审查”首段)。本报告提交自己的推送输出写入 `impl_b/t13_report_push.txt`,推送后立即作为证据单独提交(见上表与“推送”);按 Owner 第 0 项,阶段 C 开始时以 `git ls-remote` 重新核对。
+ 
+ ## 交付物与实现
+ 
+@@ -101,7 +102,7 @@ G0.1–G0.10 与 T1–T3 的计算与判定;只输出第 9 节的状态词;原
+ | 6 S、Y 用 F 的配置 | `test_train.py`:30 次运行;搜索阶段没有 S、Y;S、Y 的学习率与 weight decay 等于 F 选定配置(换一个选定配置同样跟随) |
+ | 7 gate | `test_gate.py`:每个 G0 条件在边界上满足、越界不满足;原因映射;词汇只来自第 9 节;冒烟为 NOT_TESTED;T1–T3;G0.8 复评比较 |
+ | 8 stops | `test_stops.py`:ST1–ST13 各有触发与不触发用例;GPU 时钟、设备账本、设备检查、预检估算 |
+-| 9 TEST 生成器 | `test_test_data.py`:当前状态下子进程运行 RESULT: FAIL、非 0 退出、无输出目录、数据与仓库不变;拒绝时只解析 DEV 行;条件 2、3 各有正、反用例;解释裁决检查(不依赖当前裁决状态);手造授权在任何读取之前被拒;授权复核各分支(冻结提交与当前 PROTOCOL_FROZEN、与加载的冻结文件;哈希;Gate 0 状态;选定配置、S 被选、checkpoint 缺一个或非十六进制、数据内容哈希、绑定;待决解释),逐项去掉检查后对应用例失败(`impl_b/t12_fix3.txt`) |
++| 9 TEST 生成器 | `test_test_data.py`:当前状态下子进程运行 RESULT: FAIL、非 0 退出、无输出目录、数据与仓库不变;拒绝时只解析 DEV 行;条件 2、3 各有正、反用例;解释裁决检查(不依赖当前裁决状态);手造授权在任何读取之前被拒;授权复核各分支(冻结提交与当前 PROTOCOL_FROZEN、与加载的冻结文件;哈希;Gate 0 状态;选定配置、S 被选、checkpoint 缺一个或非十六进制、数据内容哈希、绑定;待决解释)各有用例,以报错文字匹配区分。`impl_b/t12_fix3.txt` 的变异检查只做了 6 项(EM 循环内的非有限值检查、待决解释、整个 `freeze_record_problem` 调用、与加载的冻结文件比较、checkpoint、数据内容哈希),各自使对应用例失败;其余分支没有做变异。其中“与当前 PROTOCOL_FROZEN 比较”一项现有用例区分不出(三方比较合成一个条件,报告提交审查 MINOR,登记 BE2,阶段 C 补用例) |
+ | Owner 5 LoRA 手算 | `test_lora.py`:float64 下逐元素手算 W·x + (alpha/r)·B·A·x 与前向输出一致(B 非零);只有 LoRA 参数可训练,训练后全部 base 参数哈希不变;A 的值与 `rng_rule` 的 `r.uniform` 逐值相同 |
+ | Owner 6 KL | `test_arm_a.py`:对不对称分布,结果等于 KL(p_base ‖ p_θ)、不等于反向;两篇长度不同的文档按 token 加权((k1 + 4k2)/5),不是逐篇平均;补齐位置与 t = n_x 之后的位置不计入。`test_train.py`:调用处 (θ, base) 顺序与梯度(θ 带梯度、base 不带;λ 不同的两次运行参数不同,KL 被 detach 时两者逐位相同) |
+ | Owner 7 可训练参数数 | `test_train.py`:随机小模型上 F、A、S、Y 等于全部唯一参数,L 等于 Σ r·(in + out);固定 revision 的 `config.json` 在 meta 设备上:F、A、S、Y 为 1,720,574,976(等于协议第 7 节),L 秩 32 为 34,865,152(协议“3,486 万”)、秩 8 为其 1/4 |
+@@ -111,19 +112,19 @@ G0.1–G0.10 与 T1–T3 的计算与判定;只输出第 9 节的状态词;原
+ 
+ ## 审查
+ 
+-审查原文都由 `round6/review_extract.py` 从本会话的 subagent 记录原样提取;`extract_log.txt` 核对了每份调用文字与 subagent 收到的第一条消息相同;每次调用前比对了 frontmatter 与 tools 行(`preflight_tools_check*.txt`);每次 `git commit` 前核对暂存内容与审查输入逐字节相同(`precommit_check.txt`),推送后核对提交的 diff 与审查输入逐字节相同(`impl_b/t7`、`t9`、`t11`)。原文中 `…/scratchpad/review_work/X` 对应 `reviews/74a4d444…/X`,`review_fix/X` 对应 `reviews/fdbb9def…/X`,`review_fix2/X` 对应 `reviews/493d7f9c…/X`;三个目录是临时目录原件的完整副本(`impl_b/t12b_review_records_copy.txt`:`diff -r` 无差异,并列出每个文件的 sha256)。`review_input.diff` 与 `review_input_round1.diff` 内容相同(第 1 轮调用文字引用前者)。data-auditor 在正式记录前的试跑输出与辅助片段(`trial*`、`id06_base.py` 等,原在会话临时目录)原样入库于 `audit/stdout/impl_b/trials/`(同一记录中 `cmp` 相同);auditor 临时目录中的下载文件、重新生成的数据与变异源码副本没有入库(可由 `audit/` 脚本重新生成)。
++审查原文都由 `round6/review_extract.py` 从本会话的 subagent 记录原样提取;`extract_log.txt` 核对了每份调用文字与 subagent 收到的第一条消息相同;每次调用前比对了 frontmatter 与 tools 行(`preflight_tools_check*.txt`);每次 `git commit` 前核对暂存内容与审查输入逐字节相同(`precommit_check.txt`),推送后核对提交的 diff 与审查输入逐字节相同(`impl_b/t7`、`t9`、`t11`)。原文中 `…/scratchpad/review_work/X` 对应 `reviews/74a4d444…/X`,`review_fix/X` 对应 `reviews/fdbb9def…/X`,`review_fix2/X` 对应 `reviews/493d7f9c…/X`,`review_report/X` 对应 `reviews/74a4d444…/X`(其中 `extract_log.txt` 改名为 `extract_log_report-commit.txt`,`check_resume_message.py` 改名为 `check_resume_message_report-commit.py`,以免与工作提交的同名文件冲突);三个目录是临时目录原件的完整副本(`impl_b/t12b_review_records_copy.txt`:`diff -r` 无差异,并列出每个文件的 sha256)。`review_input.diff` 与 `review_input_round1.diff` 内容相同(第 1 轮调用文字引用前者)。data-auditor 在正式记录前的试跑输出与辅助片段(`trial*`、`id06_base.py` 等,原在会话临时目录)原样入库于 `audit/stdout/impl_b/trials/`(同一记录中 `cmp` 相同);auditor 临时目录中的下载文件、重新生成的数据与变异源码副本没有入库(可由 `audit/` 脚本重新生成)。
+ 
+ | 被审内容 | code-reviewer | data-auditor(仅作参考) | 处理 |
+ |---|---|---|---|
+-| 工作提交,第 1 轮(暂存;父 `0bc0eecf`) | PASS;10 MAJOR、19 MINOR | PASS;3 条观察 | 第 2 轮前修:MAJOR 1–10 中 8 条改代码,B5、B14、B17 交 Review Gate;19 条 MINOR 中 17 条修,余见 `DEFERRED_MINORS.md` 1.22 节;观察 1 改为按字节读 `eval_sets.jsonl` |
++| 工作提交,第 1 轮(暂存;父 `0bc0eecf`) | PASS;10 MAJOR、19 MINOR | PASS;3 条观察 | 第 2 轮前修:MAJOR 1–10 中 9 条改代码(其中 B5、B17 改后仍交 Review Gate),B14 只登记、交 Review Gate;19 条 MINOR 中 17 条修,余见 `DEFERRED_MINORS.md` 1.22 节;观察 1 改为按字节读 `eval_sets.jsonl` |
+ | 工作提交,第 2 轮(第 1 轮修复后;即提交 `74a4d444`) | PASS;2 MAJOR、15 MINOR | PASS;6 条观察(观察 1:参考比对测试让 `l6_check.py` 以文本模式读完整文件) | 修复提交;余见 1.23 节 |
+ | 修复提交 `fdbb9def` | PASS;1 MAJOR(交 Review Gate:观察 1 的登记与已执行的运行)、9 MINOR | PASS;4 条观察 | 第二个修复提交;余见 1.24 节 |
+ | 第二个修复提交 `493d7f9c` | PASS;1 MAJOR(上一条的遗留,交 Review Gate)、8 MINOR | PASS;7 条观察;20 个埋入故障全部检出 | 本报告提交;见 1.25 节 |
+-| 报告提交 | 见下 | 见下 | 见下 |
++| 报告提交(暂存;父 `493d7f9c`;因 HTTP 429 中断后续审) | PASS;1 MAJOR(交 Review Gate:待决第 3 项漏列 `data.py` 自身以文本模式读取的运行)、12 MINOR | PASS;6 条观察;35 个埋入故障全部检出 | 审查之后只改报告、登记与证据(见下);代码与测试类 MINOR 不在本提交改,登记 1.26 节,阶段 C 处理 |
+ 
+ 两个审查 subagent 的信任状态按 `metrix/CLAUDE.md` 第 10 节:code-reviewer 已验证(PASS 仍附原文);data-auditor「待验证」,其 PASS 仅作参考。连续未 PASS 的轮数为 0。
+ 
+-报告提交:提交前由 code-reviewer 与 data-auditor(代码部分涉及 TEST 路径与评测代码)审查,调用文字、输入与原文放在 `reviews/74a4d444…/` 的 `*_report-commit*`;结论与处理在审查之后填入本段,审查之后对报告与登记的改动见同目录 `report_commit_post_review.diff`。
++报告提交:提交前由 code-reviewer 与 data-auditor(代码部分涉及 TEST 路径与评测代码)审查,调用文字、续审消息、输入、中断记录与原文放在 `reviews/74a4d444…/` 的 `*_report-commit*`(与临时目录原件逐一 `cmp` 相同,`impl_b/t12d_report_review_records.txt`)。两份都是 PASS。按阶段 A 报告提交的先例,审查之后只改了本文件、`DEFERRED_MINORS.md` 与证据,没有再请审查;被审的暂存树为 `0417d563…`(`git write-tree`,两份审查之后、任何改动之前),审查之后相对它的全部改动见同目录 `report_commit_post_review.diff`(新增的审查记录与 data-auditor 本轮输出只列 stat)。代码与测试没有改动:`impl_b/t12c` 在被审的暂存代码上重跑 204 passed,`src/`、`tests/` 的树在运行前后相同。code-reviewer 的 MAJOR 补入待决第 3 项;12 条 MINOR 的处理见 `DEFERRED_MINORS.md` 1.26 节:报告与登记类 5 条已改(BE3、BE4、BE5、BE7、BE11);被测代码与暂存内容的对应补了 `t12c`(BE8);推送记录改为推送后立即作为证据提交(BE6);代码与测试类 4 条(BE2、BE9、BE10、BE12)与已运行的变异脚本中的未用变量(BE13)登记,阶段 C 处理。data-auditor 的观察 3(`verify_authorization` 信任调用方传入的 `fz`)登记 BE14。
+ 
+ ## 待 Review Gate 决定
+ 
+@@ -135,17 +136,25 @@ G0.1–G0.10 与 T1–T3 的计算与判定;只输出第 9 节的状态词;原
+    - 包内:`data.build_general_dev` 自工作提交起按字节读取,只有 DEV 行被解码与解析。
+    - 测试:阶段 A 起 `test_data_hashes.py::test_byte_identical_to_reference_scripts` 让阶段 A 的参考脚本 `reports/round5/l6_check.py` 以文本模式读取完整文件。第二个修复提交起改为只给它 DEV 行的字节副本(脚本本身未改)。
+    - 已经发生的、以文本模式读取完整文件的运行(都没有解析或分词 test 行):冻结前第 5、6 轮直接运行 `l6_check.py`(`round5/t5_l6_check.txt`、`round6/t2_l6_check.txt`、`round6/t2_l6_judgment_demo.txt` 与 `round6` 的守卫测试);阶段 A 的 pytest(`impl_a/t4_pytest.txt` 两次、`t6_fix_commit.txt` 一次;阶段 A 开发中另有未记录的运行);阶段 B 的 pytest(`impl_b/t1_env_baseline.txt`、`t4_pytest.txt` 已记录一次与被覆盖的一次、`t6_fix_round.txt`、`t8_fix_commit.txt`;另有开发中未记录的全套运行约 4 次)。data-auditor 没有运行过这个脚本(它的脚本按字节读取)。`t10`、`t12` 起不再如此;裁决之前不再对完整的 `eval_sets.jsonl` 运行 `l6_check.py`(`DEFERRED_MINORS.md` BC1)。
++   - 包内 `data.py` 自身(报告提交 code-reviewer MAJOR,BE1;data-auditor 第 1 轮观察 1):`build_general_dev` 从阶段 A 工作提交 `602a39e8` 起到阶段 B 工作提交 `74a4d444` 之前都以文本模式打开 `eval_sets.jsonl`(`602a39e8`、`219c4a60`、`620f8611`、`0bc0eecf` 中 `data.py:499` 为 `open(eval_sets_path, encoding="utf-8")`,四个提交的 `data.py` sha256 都是 `8a531939…`;第 1 轮审查输入没有改这一行,第 2 轮审查输入 `review_input_round2.diff:1715-1717` 改为 `"rb"`)。test 行被解码后只做行前缀匹配、随即跳过,不解析、不分词。凡是运行 `data generate`、`data verify` 的运行都经过这条路径(TEST 生成器的条件 1 与 pytest 的数据生成也经由它们)。已记录的运行:
++     - 阶段 A,`data.py` sha256 为 `8a531939…`(与上述提交相同,文本模式已核实):`impl_a/t2_fetch_generate.txt:122`(generate)、`:154`(verify);`impl_a/t4_pytest.txt:131`;`impl_a/t6_fix_commit.txt:21`(generate)、`:45`(verify)、`:70`(pytest)。
++     - 阶段 A,较早的未提交版本(`t2:89`、`t4:32` 记 sha256 `efa35625…`,没有入库,读取方式无法核实,推定相同):`t2:92`、`t4:42`;`t2:27`、`:47`、`:78` 之前没有记录哈希。
++     - 阶段 B 工作提交之前(`data.py` 只改了 `y_ratio`,打开方式未改):`impl_b/t1_env_baseline.txt:97`(generate)、`:118`(pytest);`t3_generate_leakage.txt:3`(generate)、`:36`(verify);`t4_pytest.txt:3`(pytest,含 TEST 生成器拒绝的测试)。`t5_dump_for_audit.txt` 只对输入文件求哈希,不经过这条路径。
++     - 阶段 A、B 开发中另有未记录的运行。`impl_b/t6` 起(第 1 轮修复之后)按字节读取。
++   - data-auditor 自己的脚本:冻结前第 5 轮的 `audit/r5_l6.py:68`、`audit/r5_cmp_general.py:13` 也以文本模式打开完整文件(stdout `audit/stdout/2724144b…/03_r5_l6.txt`、`04_r5_l6.txt`、`05_r5_cmp_general.txt`);阶段 A 起它的脚本都按字节读取(如 `ia_06_general.py:41`)。
+    - 备案(data-auditor 第二个修复提交观察 5,BD10):`tests/test_st12.py` 翻转临时副本中间的一个字节以检验 ST12,这个字节落在 test 行范围内;只改原始字节、随后只对整个文件求哈希,不解码、不解析。
+    - 按宽读法这些都不是读取 TEST;按严读法它们是冻结前读取 TEST(ST13:IMPLEMENTATION_FAIL,本次 Pilot 全部作废——Pilot 尚未开始任何训练或评测)。请裁决采用哪种读法。
+ 4. **B19 预告的停止点**:阶段 A 报告预告“第 8 步‘对 TEST 运行 L3–L5’中 L3、L5 对 TEST 的具体含义,届时如协议未覆盖即停下报告”。本阶段没有停止,而是按 B19 实现(L4 对 TEST 问句;L3a、L3b、L5 按 Gate 0 重跑;L6 TEST 部分按协议第 3 节)并列入待决;理由是本阶段不运行 TEST 部分,且第 4 个前提保证裁决前不会运行。code-reviewer 判为须由 Review Gate 明确接受。
+ 5. **G0.3 / G0.9 / G0.10 不满足时没有第 9 节的原因词**,以及 G0.5 的原因(B14):见 B14 文字。
++6. **推送记录的证据提交不经审查**(报告提交 code-reviewer MINOR,BE6):阶段 A 的推送记录 `impl_a/t8_report_push.txt` 留在工作区、随容器回收丢失。本阶段按 Owner 第 0 项(“以后每个阶段都用这种方式核对推送结果”,第 0 步的证据提交“不需要审查”)把报告提交的推送记录 `t13` 在推送后立即单独提交并快进推送,不经审查;这次推送自身的输出 `t14` 随阶段 C 第 0 步的证据提交入库。请确认这一读法(证据提交只含推送与 ls-remote 的原始输出)。
+ 
+ ## 留给阶段 C 的事项
+ 
+ - `run_pilot.py` 编排:每步开始前 ST12 与 `stops.st13_scan`;设备检查、设备全名账本、GPU 时钟;预检(第一个配置 20 步 + 一次 FP32 DEV 评测计时,B17);第 3–8 步;Gate 0 记录与选择冻结记录(`record.gate0_record`、`selection_freeze_record`)的写入与提交;checkpoint 的保存与哈希(全模型 FP32 每个约 6.9 GB,F/A/S/Y 选定配置 12 个,另加选择前的搜索 checkpoint,磁盘规划写入 RUNBOOK)。
+ - TEST 评测的硬性前提(第 2 轮 MAJOR 2 的余项;修复提交与第二个修复提交审查 MINOR;`DEFERRED_MINORS.md` BB1、BC2、BD8):ST10 通过的凭据(Executor 与 data-auditor 的 L6 TEST 计数一致、L3–L5 TEST 部分在上限内)须以已提交的记录体现,`evaluate_model(split="test")` 前核对;“TEST 只评一次”须有已提交的标记并在再次评测前拒绝。阶段 C 审查时复核这两项,缺任一项不进入 TEST 评测。
+ - `evaluate_model(split="test")` 的调用方(阶段 C 的驱动代码)加入后,data-auditor 再审 TEST 路径(data-auditor 第 2 轮观察 3)。
+-- 只在阶段 C 接线的函数:`record.render_text`、`compute.cost_usd`、`stats.immediate_gain`、`gate.report_comparisons`、`stops.st13_scan` 的调用方。
++- 只在阶段 C 接线的函数:`record.render_text`、`compute.cost_usd`、`compute.run_flops`、`compute.preflight_summary`、`compute.estimate_total_hours`、`stats.immediate_gain`、`gate.report_comparisons`、`stops.st13_scan` 的调用方。
++- 报告提交审查登记的代码与测试 MINOR(`DEFERRED_MINORS.md` 1.26 节 BE2、BE9、BE10、BE12、BE13):在阶段 C 的第一个代码提交中处理并送审。
+ - `config.json`(sha256 `1ddb5b89…`)没有冻结值;冒烟小模型若由它构造,RUNBOOK 与实验记录写明其哈希。
+ - 阶段 A 裁决 4 与登记 AA4:CUDA 构建兼容性(另锁 CUDA 12.x 构建、驱动确认、一次 Pilot 一种构建);`PYTHONPATH=metrix/e1-pilot/src`(AA9);`check_device` 与 `require_gpu` 在 A100 上的首次运行;确定性模式下 CUDA 上个别算子可能报错(本容器无 GPU,未验证)。
+ 
+@@ -153,4 +162,4 @@ G0.1–G0.10 与 T1–T3 的计算与判定;只输出第 9 节的状态词;原
+ 
+ - 每个提交推送前后都用 `git ls-remote` 核对远端分支与两个标签(Owner 第 0 项),推送前 `git merge-base --is-ancestor` 确认是快进;推送命令只推分支 `HEAD:refs/heads/metrix-e1-pilot-protocol-v1`,没有 `--tags`、没有 `--force`。
+ - 记录:第 0 步 `impl_b/t0b_step0_push.txt`(`620f861..0bc0eec`);工作提交 `t7_work_commit_push.txt`(`0bc0eec..74a4d44`);修复提交 `t9_fix_commit_push.txt`(`74a4d44..fdbb9de`);第二个修复提交 `t11_fix2_commit_push.txt`(`fdbb9de..493d7f9`)。每次推送前后两个标签都是 `metrix-e1-pilot-frozen` → `6a474e4a…`、`metrix-e1-pilot-frozen-v1.1` → `87a244db…`(peeled),没有变化。
+-- 本报告提交的推送输出写入 `impl_b/t13_report_push.txt`(工作区;推送时由 `logrun.sh` 立即记录),随阶段 C 的第一个提交入库,并在最终回复中给出;阶段 C 开始时以 `git ls-remote` 重新核对。
++- 本报告提交的推送输出写入 `impl_b/t13_report_push.txt`(推送时由 `logrun.sh` 立即记录),随即作为证据单独提交并快进推送(待决第 6 项);那次推送的输出写入 `impl_b/t14_evidence_push.txt`(工作区),随阶段 C 第 0 步的证据提交入库,并在最终回复中给出;阶段 C 开始时以 `git ls-remote` 重新核对。
+diff --git a/metrix/e1-pilot/reports/impl_b/t12c_reviewed_code_pytest.txt b/metrix/e1-pilot/reports/impl_b/t12c_reviewed_code_pytest.txt
+new file mode 100644
+index 0000000..4872246
+--- /dev/null
++++ b/metrix/e1-pilot/reports/impl_b/t12c_reviewed_code_pytest.txt
+@@ -0,0 +1,34 @@
++# Implementation stage B report commit, after both reviews (code-reviewer report commit MINOR on t12: no hash ties the tested code to the reviewed content): full pytest on the reviewed staged code, with the src/ and tests/ trees of the reviewed index (git write-tree 0417d563919a7e7f9349aec3268a3951a3fbb9ea, written after both reviews, before any post-review change) and the working tree compared before and after. Executor, session_01J5mxaWPrK8siadYKyqZ5pX, host vm (Anthropic cloud container, CPU only, no GPU). Tue Nov 24 03:48:17 UTC 2026
++# cwd repository root; <SCRATCH> = session scratchpad. Recorded by metrix/e1-pilot/reports/round5/logrun.sh. No model weights, no GPU, no TEST data.
++$ bash -c cmp\ \<\(\ \(git\ diff\ --cached\ --stat\;\ echo\;\ git\ diff\ --cached\)\ \)\ <SCRATCH>/review_report/report_commit_input.diff\ \&\&\ echo\ INDEX_EQUALS_REPORT_REVIEW_INPUT
++INDEX_EQUALS_REPORT_REVIEW_INPUT
++exit=0
++$ bash -c git\ write-tree\;\ echo\ reviewed\ tree\ 0417d563919a7e7f9349aec3268a3951a3fbb9ea
++0417d563919a7e7f9349aec3268a3951a3fbb9ea
++reviewed tree 0417d563919a7e7f9349aec3268a3951a3fbb9ea
++exit=0
++$ git rev-parse 0417d563919a7e7f9349aec3268a3951a3fbb9ea:metrix/e1-pilot/src 0417d563919a7e7f9349aec3268a3951a3fbb9ea:metrix/e1-pilot/tests
++2bc8b7853d479379dd5dacb6c53bbdf33ab68514
++4337445314823b510a68d6d10ede26bfde31732c
++exit=0
++$ bash -c git\ diff\ --quiet\ --\ metrix/e1-pilot/src\ metrix/e1-pilot/tests\ \&\&\ echo\ WORKING_TREE_SRC_TESTS_EQUAL_INDEX
++WORKING_TREE_SRC_TESTS_EQUAL_INDEX
++exit=0
++$ bash -c git\ diff\ --cached\ 493d7f9c102cae3ebb916f1d72fcc1759b26bee8\ --\ metrix/e1-pilot/src\ metrix/e1-pilot/tests\ \|\ sha256sum\;\ sed\ -n\ \'/\^diff\ --git\ a\\/metrix\\/e1-pilot\\/src\\//\,\$p\'\ <SCRATCH>/review_report/report_commit_input_src_tests_reports.diff\ \|\ awk\ \'/\^diff\ --git\ a\\/metrix\\/e1-pilot\\/reports\\//\{skip=1\}\ /\^diff\ --git\ a\\/metrix\\/e1-pilot\\/\(src\|tests\)\\//\{skip=0\}\ \!skip\'\ \|\ sha256sum
++ff6c7ecff04d17754d4fc03480f569635d5ac1339bf6288211e9da53d20e6b4a  -
++ff6c7ecff04d17754d4fc03480f569635d5ac1339bf6288211e9da53d20e6b4a  -
++exit=0
++$ <SCRATCH>/venv/bin/python -m pytest -q -p no:cacheprovider metrix/e1-pilot/tests
++........................................................................ [ 35%]
++........................................................................ [ 70%]
++............................................................             [100%]
++204 passed in 113.76s (0:01:53)
++exit=0
++$ git rev-parse 0417d563919a7e7f9349aec3268a3951a3fbb9ea:metrix/e1-pilot/src 0417d563919a7e7f9349aec3268a3951a3fbb9ea:metrix/e1-pilot/tests
++2bc8b7853d479379dd5dacb6c53bbdf33ab68514
++4337445314823b510a68d6d10ede26bfde31732c
++exit=0
++$ bash -c git\ diff\ --quiet\ --\ metrix/e1-pilot/src\ metrix/e1-pilot/tests\ \&\&\ echo\ WORKING_TREE_SRC_TESTS_EQUAL_INDEX_AFTER\;\ git\ write-tree
++WORKING_TREE_SRC_TESTS_EQUAL_INDEX_AFTER
++0417d563919a7e7f9349aec3268a3951a3fbb9ea
++exit=0
+diff --git a/metrix/e1-pilot/reports/impl_b/t12d_report_review_records.txt b/metrix/e1-pilot/reports/impl_b/t12d_report_review_records.txt
+new file mode 100644
+index 0000000..198687e
+--- /dev/null
++++ b/metrix/e1-pilot/reports/impl_b/t12d_report_review_records.txt
+@@ -0,0 +1,143 @@
++# Implementation stage B report commit, after both reviews: the review records of the report commit copied from the session scratchpad into reviews/74a4d444.../ (extract_log.txt renamed extract_log_report-commit.txt, check_resume_message.py renamed check_resume_message_report-commit.py), compared with the originals; sha256 of each copy; the data-auditor's new files of this round. Executor, session_01J5mxaWPrK8siadYKyqZ5pX, host vm (Anthropic cloud container, CPU only). Tue Nov 24 03:52:11 UTC 2026
++# cwd repository root; <SCRATCH> = session scratchpad. Recorded by metrix/e1-pilot/reports/round5/logrun.sh.
++$ cmp <SCRATCH>/review_report/code-reviewer_prompt_report-commit.txt metrix/e1-pilot/reviews/74a4d4443a3880239996d7adc6c13c636e4edf64/code-reviewer_prompt_report-commit.txt
++exit=0
++$ cmp <SCRATCH>/review_report/data-auditor_prompt_report-commit.txt metrix/e1-pilot/reviews/74a4d4443a3880239996d7adc6c13c636e4edf64/data-auditor_prompt_report-commit.txt
++exit=0
++$ cmp <SCRATCH>/review_report/resume_message_code-reviewer_report-commit.txt metrix/e1-pilot/reviews/74a4d4443a3880239996d7adc6c13c636e4edf64/resume_message_code-reviewer_report-commit.txt
++exit=0
++$ cmp <SCRATCH>/review_report/resume_message_data-auditor_report-commit.txt metrix/e1-pilot/reviews/74a4d4443a3880239996d7adc6c13c636e4edf64/resume_message_data-auditor_report-commit.txt
++exit=0
++$ cmp <SCRATCH>/review_report/code-reviewer_report-commit.md metrix/e1-pilot/reviews/74a4d4443a3880239996d7adc6c13c636e4edf64/code-reviewer_report-commit.md
++exit=0
++$ cmp <SCRATCH>/review_report/data-auditor_report-commit.md metrix/e1-pilot/reviews/74a4d4443a3880239996d7adc6c13c636e4edf64/data-auditor_report-commit.md
++exit=0
++$ cmp <SCRATCH>/review_report/preflight_tools_check_report-commit.txt metrix/e1-pilot/reviews/74a4d4443a3880239996d7adc6c13c636e4edf64/preflight_tools_check_report-commit.txt
++exit=0
++$ cmp <SCRATCH>/review_report/interruption_report-commit.txt metrix/e1-pilot/reviews/74a4d4443a3880239996d7adc6c13c636e4edf64/interruption_report-commit.txt
++exit=0
++$ cmp <SCRATCH>/review_report/report_commit_input.diff metrix/e1-pilot/reviews/74a4d4443a3880239996d7adc6c13c636e4edf64/report_commit_input.diff
++exit=0
++$ cmp <SCRATCH>/review_report/report_commit_input_src_tests_reports.diff metrix/e1-pilot/reviews/74a4d4443a3880239996d7adc6c13c636e4edf64/report_commit_input_src_tests_reports.diff
++exit=0
++$ cmp <SCRATCH>/review_report/extract_log.txt metrix/e1-pilot/reviews/74a4d4443a3880239996d7adc6c13c636e4edf64/extract_log_report-commit.txt
++exit=0
++$ cmp <SCRATCH>/review_report/check_resume_message.py metrix/e1-pilot/reviews/74a4d4443a3880239996d7adc6c13c636e4edf64/check_resume_message_report-commit.py
++exit=0
++$ bash -c cd\ metrix/e1-pilot/reviews/74a4d4443a3880239996d7adc6c13c636e4edf64\ \&\&\ sha256sum\ \*report-commit\*\ \*report_commit\*
++8b2d98c21c8da200f2599bb5db1d34ebc695ec4ff1b9a683f9b08c617f0f40fc  check_resume_message_report-commit.py
++e170c69d58196c3115c8e0f6cf9b1d5ac7677653777920db50860e2061103c0b  code-reviewer_prompt_report-commit.txt
++79272f0e7b9c902908f4df16547d484e0bb1d5e1761fc1a3436c12079628391b  code-reviewer_report-commit.md
++f98c1dc86d0a13bdd1f10533f0cf899f05e38dc0a8ce7e906b2adcc24720540a  data-auditor_prompt_report-commit.txt
++f29d646a957cde893d629b209e3b154fa979ff08a49bfe1bcec9e630f7616da8  data-auditor_report-commit.md
++e871f0b623cc65f75434cf0123b1fda8ee50c503c40b7d93a352bb393311a17e  extract_log_report-commit.txt
++8a2129ffe4a78c3a9177730b1e310ead976ef49846b820eb252ef711118ef820  interruption_report-commit.txt
++d5db50d704019b535b3c2fd145fae330069ccf62c5d9da2b50f628b4360ce62d  preflight_tools_check_report-commit.txt
++5bc82887f3c68b8902119dd2dada9a9dc2faf9db8a718e75a805ca37f373427b  resume_message_code-reviewer_report-commit.txt
++32aa67103fe6a4de6c89b983fa7f3fbd18c78b35a159f2b3769d4f7cba70e791  resume_message_data-auditor_report-commit.txt
++4cdddfb6c593982150c08c5b41d685cb089a948b60982cfc1b198c0dc1fe6f3c  report_commit_input.diff
++e62146242c174e552c8756973e2a3ff60fea42e071fa4a6863f36dac09ade8ea  report_commit_input_src_tests_reports.diff
++exit=0
++$ bash -c git\ status\ --short\ --untracked-files=all\ metrix/e1-pilot/audit
++A  metrix/e1-pilot/audit/ib_00_tag.py
++A  metrix/e1-pilot/audit/ib_01_compare.py
++A  metrix/e1-pilot/audit/ib_02_yratio.py
++A  metrix/e1-pilot/audit/ib_03_scoring.py
++A  metrix/e1-pilot/audit/ib_04_training.py
++A  metrix/e1-pilot/audit/ib_05_test_refusal.py
++A  metrix/e1-pilot/audit/ib_06_static.py
++A  metrix/e1-pilot/audit/ib_run_logged.sh
++A  metrix/e1-pilot/audit/ic_00_state.py
++A  metrix/e1-pilot/audit/ic_01_compare.py
++A  metrix/e1-pilot/audit/ic_02_dump.py
++A  metrix/e1-pilot/audit/ic_03_scoring.py
++A  metrix/e1-pilot/audit/ic_05_test_refusal.py
++A  metrix/e1-pilot/audit/ic_06_static.py
++A  metrix/e1-pilot/audit/ic_07_static_selftest.py
++A  metrix/e1-pilot/audit/id_00_state.py
++A  metrix/e1-pilot/audit/id_01_compare.py
++A  metrix/e1-pilot/audit/id_02_dump.py
++A  metrix/e1-pilot/audit/id_06_static.py
++A  metrix/e1-pilot/audit/id_07_static_selftest.py
++A  metrix/e1-pilot/audit/ie_00_state.py
++A  metrix/e1-pilot/audit/ie_01_devrows.py
++A  metrix/e1-pilot/audit/ie_06_static.py
++A  metrix/e1-pilot/audit/ie_07_static_selftest.py
++A  metrix/e1-pilot/audit/stdout/impl_b/00_ia_frozen.txt
++A  metrix/e1-pilot/audit/stdout/impl_b/01_ib_tag.txt
++A  metrix/e1-pilot/audit/stdout/impl_b/02_ia_fetch.txt
++A  metrix/e1-pilot/audit/stdout/impl_b/03_ia_anchor.txt
++A  metrix/e1-pilot/audit/stdout/impl_b/04_ia_facts.txt
++A  metrix/e1-pilot/audit/stdout/impl_b/05_ia_derived.txt
++A  metrix/e1-pilot/audit/stdout/impl_b/06_ia_general.txt
++A  metrix/e1-pilot/audit/stdout/impl_b/07_ib_compare.txt
++A  metrix/e1-pilot/audit/stdout/impl_b/08_ib_yratio.txt
++A  metrix/e1-pilot/audit/stdout/impl_b/09_ib_scoring.txt
++A  metrix/e1-pilot/audit/stdout/impl_b/10_ib_training.txt
++A  metrix/e1-pilot/audit/stdout/impl_b/11_ib_test_refusal.txt
++A  metrix/e1-pilot/audit/stdout/impl_b/12_ib_static.txt
++A  metrix/e1-pilot/audit/stdout/impl_b/13_git_status_final.txt
++A  metrix/e1-pilot/audit/stdout/impl_b/14_ia_frozen.txt
++A  metrix/e1-pilot/audit/stdout/impl_b/15_ib_tag.txt
++A  metrix/e1-pilot/audit/stdout/impl_b/16_ic_state.txt
++A  metrix/e1-pilot/audit/stdout/impl_b/17_ia_anchor.txt
++A  metrix/e1-pilot/audit/stdout/impl_b/18_ia_facts.txt
++A  metrix/e1-pilot/audit/stdout/impl_b/19_ia_derived.txt
++A  metrix/e1-pilot/audit/stdout/impl_b/20_ia_general.txt
++A  metrix/e1-pilot/audit/stdout/impl_b/21_ic_compare.txt
++A  metrix/e1-pilot/audit/stdout/impl_b/22_ic_dump.txt
++A  metrix/e1-pilot/audit/stdout/impl_b/23_ic_scoring.txt
++A  metrix/e1-pilot/audit/stdout/impl_b/24_ib_training.txt
++A  metrix/e1-pilot/audit/stdout/impl_b/25_ic_test_refusal.txt
++A  metrix/e1-pilot/audit/stdout/impl_b/26_ic_static.txt
++A  metrix/e1-pilot/audit/stdout/impl_b/27_ic_static_selftest.txt
++A  metrix/e1-pilot/audit/stdout/impl_b/28_git_status_final.txt
++A  metrix/e1-pilot/audit/stdout/impl_b/29_ia_frozen.txt
++A  metrix/e1-pilot/audit/stdout/impl_b/30_ib_tag.txt
++A  metrix/e1-pilot/audit/stdout/impl_b/31_id_state.txt
++A  metrix/e1-pilot/audit/stdout/impl_b/32_ia_anchor.txt
++A  metrix/e1-pilot/audit/stdout/impl_b/33_ia_facts.txt
++A  metrix/e1-pilot/audit/stdout/impl_b/34_ia_derived.txt
++A  metrix/e1-pilot/audit/stdout/impl_b/35_ia_general.txt
++A  metrix/e1-pilot/audit/stdout/impl_b/36_id_compare.txt
++A  metrix/e1-pilot/audit/stdout/impl_b/37_id_dump.txt
++A  metrix/e1-pilot/audit/stdout/impl_b/38_ic_test_refusal.txt
++A  metrix/e1-pilot/audit/stdout/impl_b/39_id_static.txt
++A  metrix/e1-pilot/audit/stdout/impl_b/40_id_static_selftest.txt
++A  metrix/e1-pilot/audit/stdout/impl_b/41_id_static_on_selftest_M2.txt
++A  metrix/e1-pilot/audit/stdout/impl_b/42_id_static_on_selftest_M8.txt
++A  metrix/e1-pilot/audit/stdout/impl_b/43_git_status_final.txt
++A  metrix/e1-pilot/audit/stdout/impl_b/44_ie_state.txt
++A  metrix/e1-pilot/audit/stdout/impl_b/45_ie_devrows.txt
++A  metrix/e1-pilot/audit/stdout/impl_b/46_ic_test_refusal.txt
++A  metrix/e1-pilot/audit/stdout/impl_b/47_ie_static.txt
++A  metrix/e1-pilot/audit/stdout/impl_b/48_ie_static_selftest.txt
++A  metrix/e1-pilot/audit/stdout/impl_b/49_git_status_final.txt
++A  metrix/e1-pilot/audit/stdout/impl_b/trials/id_trial_id06.txt
++A  metrix/e1-pilot/audit/stdout/impl_b/trials/ie_helper_id06_base.py
++A  metrix/e1-pilot/audit/stdout/impl_b/trials/ie_helper_part_head.py
++A  metrix/e1-pilot/audit/stdout/impl_b/trials/ie_helper_part_mid.py
++A  metrix/e1-pilot/audit/stdout/impl_b/trials/ie_trial1_ie06.txt
++A  metrix/e1-pilot/audit/stdout/impl_b/trials/ie_trial2_ie06.txt
++A  metrix/e1-pilot/audit/stdout/impl_b/trials/ie_trial3_ie06.txt
++A  metrix/e1-pilot/audit/stdout/impl_b/trials/ie_trial4_ie06.txt
++A  metrix/e1-pilot/audit/stdout/impl_b/trials/ie_trial_ie07.txt
++?? metrix/e1-pilot/audit/if_00_state.py
++?? metrix/e1-pilot/audit/if_01_content_hashes.py
++?? metrix/e1-pilot/audit/if_02_trials.py
++?? metrix/e1-pilot/audit/if_06_static.py
++?? metrix/e1-pilot/audit/if_07_static_selftest.py
++?? metrix/e1-pilot/audit/stdout/impl_b/50_if_state.txt
++?? metrix/e1-pilot/audit/stdout/impl_b/51_if_content_hashes.txt
++?? metrix/e1-pilot/audit/stdout/impl_b/52_if_trials.txt
++?? metrix/e1-pilot/audit/stdout/impl_b/53_ic_test_refusal.txt
++?? metrix/e1-pilot/audit/stdout/impl_b/54_if_static.txt
++?? metrix/e1-pilot/audit/stdout/impl_b/55_if_static_selftest.txt
++?? metrix/e1-pilot/audit/stdout/impl_b/56_git_status_final.txt
++?? metrix/e1-pilot/audit/stdout/impl_b/trials/if_trial1_if00.txt
++?? metrix/e1-pilot/audit/stdout/impl_b/trials/if_trial1_if01.txt
++?? metrix/e1-pilot/audit/stdout/impl_b/trials/if_trial1_if02.txt
++?? metrix/e1-pilot/audit/stdout/impl_b/trials/if_trial1_if06.txt
++?? metrix/e1-pilot/audit/stdout/impl_b/trials/if_trial1_if07.txt
++?? metrix/e1-pilot/audit/stdout/impl_b/trials/if_trial2_if06.txt
++exit=0

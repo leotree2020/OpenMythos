@@ -1,0 +1,57 @@
+# Data Auditor run (implementation stage B). host vm, CPU only (no GPU device), no model weights loaded (tokenizer files only); 2026-11-23 08:15:28 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit; PYTHONDONTWRITEBYTECODE=1
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/venv/bin/python -I -B ib_04_training.py /home/user/OpenMythos /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/auditor_ib/dl/qwen_tok /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/auditor_ic/out /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/audit_dump_c.json
+env: host vm | Linux-6.18.44-fc-v726-x86_64-with-glibc2.39 | python 3.13.18 (/tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/venv/bin/python) | installed {'transformers': '5.22.2', 'tokenizers': '0.23.3', 'pyarrow': '26.0.1', 'huggingface_hub': '2.4.0', 'torch': '2.11.0'} | nvidia device nodes: []
+freeze-commit SEARCH_SPACE training_contract: {'epochs': 20, 'batch_size_statements': 8, 'steps_per_epoch': 15, 'total_steps': 300, 'example_order': "one permutation of the corpus per epoch from Random(rng_rule(TRAIN_SEED, 'order:<epoch>'))", 'warmup': 'linear from 0 over the first 15 steps', 'scheduler': 'cosine from the peak to 10% of the peak at step 300', 'training_seeds': [101, 202, 303]}
+protocol sentences (freeze commit):
+  | 训练输入 | 原始陈述句文本,后接 endoftext 特殊 token(id 151643);不用 chat template,不加 system prompt |
+  - **锚文本(只用于 arm A)**:`SandyResearch/fineweb-edu-shuffled@4d1138c0e4d51d98813997ce3560e05a32bf91de` 的 `data/sample-100BT/train/shard_00000.parquet`(sha256 `6a3450ea…2c22`,全值在 `DATA_MANIFEST.json`),按文件顺序取前 512 篇不少于 600 字符的文档,每篇最多 128 token(取前 128 个),不足则取全长。第 s 步使用第 (4s + i) mod 512 篇,i = 0..3。锚文本与通用文本不得共享任何词 13-gram(定义与上限见第 3 节 L6)。
+  | 训练量 | 对 120 条 TRAIN 陈述句读 20 遍 |
+  | batch | 8 条陈述句;每遍 15 步;共 300 步 |
+  | 顺序 | 每遍一次全排列,`rng_rule(TRAIN_SEED, "order:<epoch>")` |
+  | 序列 | 一条陈述句一个序列;右侧补齐到批内最长;补齐位不计损失 |
+  | warmup | 前 15 步从 0 线性上升 |
+  | scheduler | 余弦,从峰值降到第 300 步时峰值的 10% |
+  | Y 的训练量 | 对它的 240 句读 20 遍,batch 16,同为 300 步;token 数比见 2.6 |
+
+== training sequences: encode(text) + [151643], file order
+dump training_sequences keys: ['train_F.jsonl', 'train_S.jsonl', 'train_Y.jsonl'] | == mine: True
+  train_F.jsonl: mine 120 | Executor 120 | differing sequences 0 [] | tokens incl. <|endoftext|> 1889 | max length 21 | every sequence ends with 151643 True | special ids before the last position 0
+  train_S.jsonl: mine 120 | Executor 120 | differing sequences 0 [] | tokens incl. <|endoftext|> 1889 | max length 21 | every sequence ends with 151643 True | special ids before the last position 0
+  train_Y.jsonl: mine 240 | Executor 240 | differing sequences 0 [] | tokens incl. <|endoftext|> 2260 | max length 13 | every sequence ends with 151643 True | special ids before the last position 0
+  F / S fact tokens (incl. <|endoftext|>): 1889 / 1889 (protocol 7: F, L, A, S have the same fact-token count)
+
+== batch schedule (B3)
+dump batch_schedule keys: ['101:120:8', '101:240:16', '202:120:8', '202:240:16', '303:120:8', '303:240:16']
+  seed 101, 120 rows, batch 8: steps mine 300 | Executor 300 | differing steps 0 [] | step numbers 1..300 True | each epoch a permutation True | batch sizes {8: 300} | step 1 batch [7, 21, 0, 60, 19, 16, 78, 33]
+  seed 101, 240 rows, batch 16: steps mine 300 | Executor 300 | differing steps 0 [] | step numbers 1..300 True | each epoch a permutation True | batch sizes {16: 300} | step 1 batch [25, 158, 214, 193, 80, 89, 13, 57, 182, 153, 232, 227, 119, 196, 73, 209]
+  seed 202, 120 rows, batch 8: steps mine 300 | Executor 300 | differing steps 0 [] | step numbers 1..300 True | each epoch a permutation True | batch sizes {8: 300} | step 1 batch [110, 94, 117, 33, 3, 83, 7, 8]
+  seed 202, 240 rows, batch 16: steps mine 300 | Executor 300 | differing steps 0 [] | step numbers 1..300 True | each epoch a permutation True | batch sizes {16: 300} | step 1 batch [20, 25, 120, 140, 65, 69, 163, 196, 195, 207, 21, 222, 125, 62, 56, 91]
+  seed 303, 120 rows, batch 8: steps mine 300 | Executor 300 | differing steps 0 [] | step numbers 1..300 True | each epoch a permutation True | batch sizes {8: 300} | step 1 batch [81, 114, 92, 61, 13, 70, 104, 21]
+  seed 303, 240 rows, batch 16: steps mine 300 | Executor 300 | differing steps 0 [] | step numbers 1..300 True | each epoch a permutation True | batch sizes {16: 300} | step 1 batch [101, 214, 148, 144, 221, 81, 232, 215, 218, 152, 79, 211, 99, 89, 134, 223]
+  (F, L, A, S at the same seed use the same 120-row index order; S rows are permuted answers of the same i)
+
+== anchor documents (B1)
+steps mine 300 | Executor 300 | same step keys True | differing steps 0 []
+step 1 [4, 5, 6, 7] | step 127 [508, 509, 510, 511] | step 128 [0, 1, 2, 3] | step 300 [176, 177, 178, 179] | uses per document {2: 336, 3: 176}
+
+== learning-rate factor lr(s)/peak (B2)
+steps mine 300 | Executor 300 | same keys True | not bit-identical 0 [] | max |diff| 0.000e+00
+  s   1: mine 0.06666666666666667 | Executor 0.06666666666666667
+  s   2: mine 0.13333333333333333 | Executor 0.13333333333333333
+  s  14: mine 0.9333333333333333 | Executor 0.9333333333333333
+  s  15: mine 1.0 | Executor 1.0
+  s  16: mine 0.9999726606524544 | Executor 0.9999726606524544
+  s 150: mine 0.5871607054625496 | Executor 0.5871607054625496
+  s 299: mine 0.10002733934754565 | Executor 0.10002733934754565
+  s 300: mine 0.1 | Executor 0.1
+increasing on 1..15, decreasing on 15..300: True | lr(15) == 1: True | lr(300) == 0.1: True
+
+== alternative readings (informational, not compared with anything)
+  epochs numbered 0..19 ('order:0'..'order:19'): seed 101 step 1 batch [9, 89, 73, 90, 86, 27, 69, 19] (B3 reading: [7, 21, 0, 60, 19, 16, 78, 33]); steps with a different batch 300 / 300
+  permutation by r.sample(range(120), 120) instead of r.shuffle(list(range(120))): epoch 1 first batch [38, 5, 9, 75, 4, 118, 119, 95] | same as shuffle False
+  steps numbered 0..299 for the anchor rule: first step docs [0, 1, 2, 3] (B1: [4, 5, 6, 7]); steps with different docs 300 / 300
+  0-based warmup (first step at lr 0, peak at the 16th step): first 3 factors [0.0, 0.06666666666666667, 0.13333333333333333] | 15th 0.9333333333333333 | 16th 1.0 | last 0.100027 (B2: 0.066667, 0.133333, 0.200000 | 15th 1.0 | last 0.100000)
+modules: torch imported=True | transformers modeling modules imported=['torch', 'transformers.modeling_rope_utils', 'transformers.models.auto.modeling_auto'] | this script never calls a model class or from_pretrained on a model
+RESULT: PASS
+exit=0

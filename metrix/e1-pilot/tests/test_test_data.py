@@ -87,11 +87,13 @@ def test_generation_needs_authorization(fz, inputs_dir, generated, monkeypatch):
     monkeypatch.setattr(TD.FZ, "read_jsonl", lambda *a, **k: called.append("read_jsonl") or real_read(*a, **k))
     with pytest.raises(ImplementationFail):
         TD.generate_test(fz, None, inputs_dir, generated["dir"])
-    with pytest.raises(ImplementationFail, match="not committed"):      # a hand-made authorization is re-checked
+    with pytest.raises(ImplementationFail, match="frozen commit"):     # a hand-made authorization is re-checked
         TD.generate_test(fz, LK.TestAuthorization(None, None, None), inputs_dir, generated["dir"])
+    with pytest.raises(ImplementationFail, match="not committed"):
+        TD.generate_test(fz, LK.TestAuthorization(fz.record.commit, "a" * 64, "b" * 64), inputs_dir, generated["dir"])
     assert called == []
     with pytest.raises(ImplementationFail):
-        LK.run_test_part(fz.split_manifest, {}, [], [], None, fz.repo_root)
+        LK.run_test_part(fz, {}, [], [], None)
 
 
 # ---------------------------------------------------------------- conditions 2 and 3 on throw-away repositories
@@ -181,11 +183,13 @@ def test_selection_record_condition(fz, contract, generated, tmp_path, case):
 
 
 def test_pending_interpretations_block_test(monkeypatch):
+    """Independent of the current rulings: one entry left pending blocks TEST; none pending lets the check pass."""
     from metrix_e1 import interpretations as INT
-    assert INT.pending()                                     # current state: every entry awaits Review Gate
-    with pytest.raises(TD.PreconditionFailed, match="B1"):
+    ruled = tuple(dict(e, status="RULED") for e in INT.ENTRIES)
+    monkeypatch.setattr(INT, "ENTRIES", ruled[:3] + (dict(ruled[3], status=INT.PENDING),) + ruled[4:])
+    with pytest.raises(TD.PreconditionFailed, match="interpretations not yet ruled by Review Gate: %s$" % ruled[3]["id"]):
         TD.check_interpretations_ruled()
-    monkeypatch.setattr(INT, "ENTRIES", tuple(dict(e, status="RULED") for e in INT.ENTRIES))
+    monkeypatch.setattr(INT, "ENTRIES", ruled)
     TD.check_interpretations_ruled()
 
 
@@ -193,7 +197,7 @@ def test_run_test_part_rechecks_the_committed_records(fz, tmp_path):
     auth = LK.TestAuthorization(fz.record.commit, "a" * 64, "b" * 64)
     root = _repo(tmp_path, {})
     with pytest.raises(ImplementationFail, match="not committed"):
-        LK.run_test_part(fz.split_manifest, {}, [], [], auth, root)
+        LK.run_test_part(fz, {}, [], [], auth, root)
 
 
 def test_check_preconditions_calls_the_interpretation_check(fz, generated, inputs_dir, monkeypatch):
@@ -212,25 +216,54 @@ def test_check_preconditions_calls_the_interpretation_check(fz, generated, input
     assert (auth.frozen_commit, auth.gate0_record_sha256, auth.selection_record_sha256) == (fz.record.commit, "a" * 64, "b" * 64)
 
 
-def test_verify_authorization_branches(fz, contract, generated, tmp_path):
+def _no_pending(monkeypatch, ids=()):
+    from metrix_e1 import interpretations as INT
+    monkeypatch.setattr(INT, "pending", lambda: list(ids))
+
+
+def test_verify_authorization_branches(fz, contract, generated, tmp_path, monkeypatch):
+    _no_pending(monkeypatch)
     content = fz.check_data_dir(generated["dir"])
     g = _gate0(fz)
     sel = _selection(fz, contract, content, _sha(g))
     root = _repo(tmp_path, {G0: g, SEL: sel})
-    LK.verify_authorization(LK.TestAuthorization(fz.record.commit, _sha(g), _sha(sel)), root)     # all checks hold
+    LK.verify_authorization(LK.TestAuthorization(fz.record.commit, _sha(g), _sha(sel)), fz, root)   # all checks hold
     with pytest.raises(ImplementationFail, match="authorization"):
-        LK.verify_authorization(LK.TestAuthorization(fz.record.commit, _sha(g), "f" * 64), root)
+        LK.verify_authorization(LK.TestAuthorization(fz.record.commit, _sha(g), "f" * 64), fz, root)
     with pytest.raises(ImplementationFail, match="frozen commit"):
-        LK.verify_authorization(LK.TestAuthorization("0" * 40, _sha(g), _sha(sel)), root)
+        LK.verify_authorization(LK.TestAuthorization("0" * 40, _sha(g), _sha(sel)), fz, root)
+    import copy
+    import dataclasses
+    other = copy.copy(fz)                                    # frozen files loaded for another frozen commit
+    other.record = dataclasses.replace(fz.record, commit="2" * 40)
+    with pytest.raises(ImplementationFail, match="the loaded frozen files 2{40}"):
+        LK.verify_authorization(LK.TestAuthorization(fz.record.commit, _sha(g), _sha(sel)), other, root)
 
 
-@pytest.mark.parametrize("case", ["not_pass", "unbound", "other_protocol_frozen"])
-def test_verify_authorization_rechecks_status_binding_and_frozen_commit(fz, contract, generated, tmp_path, case):
+VERIFY_CASES = {"not_pass": "not PASS", "unbound": "not bound", "other_protocol_frozen": "PROTOCOL_FROZEN names",
+                "bad_selection": "not configurations of SEARCH_SPACE", "S_selected": "not configurations of SEARCH_SPACE",
+                "checkpoint": "no checkpoint hash for 1 of the 30 runs", "checkpoint_not_hex": "no checkpoint hash",
+                "data_hashes": "data content hashes", "pending": "interpretations not yet ruled by Review Gate: B19$"}
+
+
+@pytest.mark.parametrize("case", sorted(VERIFY_CASES))
+def test_verify_authorization_rechecks_what_the_generator_checked(fz, contract, generated, tmp_path, monkeypatch, case):
+    """Each case breaks one thing the TEST generator's conditions 2 and 3 (and the interpretation check) require, in
+    otherwise correct committed records with matching hashes; verify_authorization refuses with that reason."""
+    _no_pending(monkeypatch, ["B19"] if case == "pending" else [])
     content = fz.check_data_dir(generated["dir"])
     commit = "1" * 40 if case == "other_protocol_frozen" else fz.record.commit
     g = dict(_gate0(fz, "NOT_TESTED" if case == "not_pass" else "PASS"), frozen_commit=commit)
-    sel = dict(_selection(fz, contract, content, "c" * 64 if case == "unbound" else _sha(g)), frozen_commit=commit)
+    selected = {"bad_selection": {"F": "F9", "L": "L2", "A": "A5"},
+                "S_selected": {"F": "S1", "L": "L2", "A": "A5"}}.get(case, SELECTED)
+    sel = _selection(fz, contract, dict(content, facts="0" * 64) if case == "data_hashes" else content,
+                     "c" * 64 if case == "unbound" else _sha(g), selected=selected, frozen_commit=commit)
+    ck = dict(sel["checkpoints"])
+    if case == "checkpoint":
+        ck.pop(sorted(ck)[0])
+    if case == "checkpoint_not_hex":
+        ck[sorted(ck)[0]] = "A" * 64
+    sel["checkpoints"] = ck
     root = _repo(tmp_path, {G0: g, SEL: sel})
-    msg = {"not_pass": "not PASS", "unbound": "not bound", "other_protocol_frozen": "PROTOCOL_FROZEN names"}[case]
-    with pytest.raises(ImplementationFail, match=msg):
-        LK.verify_authorization(LK.TestAuthorization(commit, _sha(g), _sha(sel)), root)
+    with pytest.raises(ImplementationFail, match=VERIFY_CASES[case]):
+        LK.verify_authorization(LK.TestAuthorization(commit, _sha(g), _sha(sel)), fz, root)

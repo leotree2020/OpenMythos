@@ -20,7 +20,7 @@ TASK_ORDER_PREFIXES = {"facts": "406c8801", "train_S": "686fdd2f", "candidates":
 
 def test_four_frozen_hashes(fz, generated):
     got = fz.content_hashes(generated["dir"])                      # read back from the written files
-    assert sorted(got) == sorted(TASK_ORDER_PREFIXES)
+    assert sorted(got) == sorted(TASK_ORDER_PREFIXES) == sorted(FZ.CONTENT_HASH_KEYS)
     for key, sha in got.items():
         assert sha == fz.data_hash(key), key
         assert sha.startswith(TASK_ORDER_PREFIXES[key]), key
@@ -70,15 +70,19 @@ def _run(args, **kw):
 _ROW_SPLIT = re.compile(rb'\{"domain": "[^"\\]*", "split": "([^"\\]*)", ')
 
 
-def _dev_rows_only(tmp_path):
+def _dev_rows_only(fz, generated, tmp_path):
     """The reference script reports/round5/l6_check.py reads eval_sets.jsonl in text mode, which decodes every row
     (test rows too) from UTF-8 before skipping the non-dev ones (code-reviewer, stage B fix commit, MAJOR; data-auditor
     round-2 observation 1; pending Review Gate). It is given instead a copy holding only the DEV rows: the rows are
     selected on the raw bytes of their split field (counting / parsing the split field is not reading TEST, protocol
-    section 3), copied byte for byte, and no test row is decoded. The script pins the file's sha256 through the
-    manifest, so a copy of DATA_MANIFEST.json with that one value replaced goes with it. The script itself is not
-    changed; its selection (first 25 DEV rows per domain, file order) is unaffected by the removed test rows."""
-    src = PILOT.parents[1] / "research/mini_mythos/stage1/results/r1/eval_sets.jsonl"
+    section 3), copied byte for byte, and no test row is decoded. Before the copy, the whole source file's sha256 is
+    checked against the frozen value (hashing the whole file is not reading TEST either), and the row counts against
+    data.py's row-prefix count. The script pins the file's sha256 through the manifest, so a copy of the frozen
+    DATA_MANIFEST.json with that one value replaced by the copy's goes with it. The script itself is not changed; its
+    selection (first 25 DEV rows per domain, file order) is unaffected by the removed test rows."""
+    import copy
+    src = fz.repo_root / D.params(fz).general_source
+    assert FZ.file_sha256(src) == fz.data_hash("eval_sets")
     out = tmp_path / "eval_sets_dev_rows.jsonl"
     n = {"dev": 0, "other": 0}
     with open(src, "rb") as fi, open(out, "wb") as fo:
@@ -90,15 +94,16 @@ def _dev_rows_only(tmp_path):
                 n["dev"] += 1
             else:
                 n["other"] += 1
-    assert n == {"dev": 400, "other": 800}
-    manifest = json.loads((PILOT / "DATA_MANIFEST.json").read_text(encoding="utf-8"))
+    by_split = generated["info"]["general_dev"]["rows_by_split"]
+    assert n == {"dev": by_split["dev"], "other": sum(v for k, v in by_split.items() if k != "dev")}
+    manifest = copy.deepcopy(fz.data_manifest)
     manifest["general_text"]["source_file_sha256"] = FZ.file_sha256(out)
     mpath = tmp_path / "DATA_MANIFEST_dev_rows.json"
     mpath.write_text(json.dumps(manifest, ensure_ascii=False), encoding="utf-8")
     return out, mpath
 
 
-def test_byte_identical_to_reference_scripts(inputs_dir, generated, tmp_path):
+def test_byte_identical_to_reference_scripts(fz, inputs_dir, generated, tmp_path):
     """reports/round2/anchor_check.py, gen_facts.py, reports/round7/gen_s_cands.py and reports/round5/l6_check.py,
     run on the same inputs (l6_check.py on the DEV rows of eval_sets.jsonl only, see _dev_rows_only), give
     byte-identical facts, anchor texts, train_S.jsonl, candidates.json and general DEV windows."""
@@ -110,7 +115,7 @@ def test_byte_identical_to_reference_scripts(inputs_dir, generated, tmp_path):
           "--anchor", tmp_path / "anchor.json", "--out", tmp_path / "facts.json"])
     _run([rep / "round7/gen_s_cands.py", "--facts", tmp_path / "facts.json", "--data-manifest", "DATA_MANIFEST.json",
           "--split-manifest", "SPLIT_MANIFEST.json", "--out-dir", tmp_path / "sc"])
-    dev_rows, manifest = _dev_rows_only(tmp_path)
+    dev_rows, manifest = _dev_rows_only(fz, generated, tmp_path)
     _run([rep / "round5/l6_check.py", "--eval-sets", dev_rows,
           "--parcae-tokenizer", inputs_dir / "parcae_tokenizer/tokenizer.json", "--manifest", manifest,
           "--tokenizer-dir", tok, "--anchor", tmp_path / "anchor.json", "--general-out", tmp_path / "general.json"])

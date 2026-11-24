@@ -1,0 +1,112 @@
+# Data Auditor run (implementation stage B). host vm, CPU only (no GPU device), no model weights loaded (tokenizer files only); 2026-11-23 13:44:41 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit; PYTHONDONTWRITEBYTECODE=1
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/venv/bin/python -I -B id_01_compare.py /home/user/OpenMythos /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/auditor_ib/dl/qwen_tok /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/auditor_id/out /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/auditor_ic/out /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/data_b /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/data_c /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/data_d
+env: host vm | Linux-6.18.44-fc-v726-x86_64-with-glibc2.39 | python 3.13.18 (/tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/venv/bin/python) | installed {'transformers': '5.22.2', 'tokenizers': '0.23.3', 'pyarrow': '26.0.1', 'huggingface_hub': '2.4.0', 'torch': '2.11.0'} | nvidia device nodes: []
+frozen facts        PROTOCOL_FROZEN 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 | freeze-commit manifest 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 | same True
+frozen train_S      PROTOCOL_FROZEN 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e | freeze-commit manifest 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e | same True
+frozen candidates   PROTOCOL_FROZEN e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | freeze-commit manifest e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | same True
+frozen anchor_texts PROTOCOL_FROZEN 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 | freeze-commit manifest 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 | same True
+Executor t8 lines 3-44 (as recorded):
+  t8:3: $ <SCRATCH>/venv/bin/python -m metrix_e1.data generate --inputs <SCRATCH>/inputs --out <SCRATCH>/data_d
+  t8:4: frozen: PROTOCOL_FROZEN v1.1, commit 87a244db28a901f9e89282b50df76778ab5c2887; four frozen files match by git cat-file
+  t8:5: python 3.13.18; libraries {"torch": "2.11.0", "transformers": "5.22.2"} (protocol section 0: {"torch": "2.11.0", "transformers": "5.22.2"})
+  t8:6: name generation per cell: [{"cell": "capital/natural", "entity_draws": 28, "target_pair": [3, 3], "answer_draws": 84}, {"cell": "capital/random", "entity_draws": 20, "target_pair": [5, 5], "answer_draws": 52}, {"cell": "currency/natural", "entity_draws": 31, "target_pair": [3, 3], "answer_draws": 82}, {"cell": "currency/random", "entity_draws": 20, "target_pair": [6, 6], "answer_draws": 46}, {"cell": "founder/natural", "entity_draws": 30, "target_pair": [3, 3], "answer_draws": 81}, {"cell": "founder/random", "entity_draws": 21, "target_pair": [5, 5], "answer_draws": 45}, {"cell": "river/natural", "entity_draws": 34, "target_pair": [3, 3], "answer_draws": 89}, {"cell": "river/random", "entity_draws": 20, "target_pair": [6, 6], "answer_draws": 42}]
+  t8:7: S derangement attempts per cell: {"capital/natural": 3, "capital/random": 5, "currency/natural": 1, "currency/random": 6, "founder/natural": 2, "founder/random": 1, "river/natural": 2, "river/random": 6}
+  t8:8: Y / F token ratio: F 1889, Y 2260, ratio 1.1964
+  t8:9: Y / F token ratio without <|endoftext|> (report only): F 1769, Y 2020, ratio 1.1419
+  t8:10: both ratios within [0.8, 1.25]: with True, without True
+  t8:11: eval_sets.jsonl rows by split (row prefix only): {'dev': 400, 'test': 800}; DEV rows decoded and parsed: 400; windows kept (decoded with the parcae tokenizer): 100
+  t8:12: facts.jsonl        rows  160  byte_sha256 e05561ac2d49dcc3c8f59743c5df64151983a540a32ae135fd1b10f5e0fdc828  canonical_sha256 e05561ac2d49dcc3c8f59743c5df64151983a540a32ae135fd1b10f5e0fdc828
+  t8:13: train_F.jsonl      rows  120  byte_sha256 3aa9ab3ca313c0a1113b91e927af51342c915e3e40dd2f20992f3d9e59b0e373  canonical_sha256 3aa9ab3ca313c0a1113b91e927af51342c915e3e40dd2f20992f3d9e59b0e373
+  t8:14: train_S.jsonl      rows  120  byte_sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e  canonical_sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e
+  t8:15: train_Y.jsonl      rows  240  byte_sha256 c7430cadb2b06dd5c144af381a8183d4c186f27f2b5acfa9d8d39da0b7626d15  canonical_sha256 c7430cadb2b06dd5c144af381a8183d4c186f27f2b5acfa9d8d39da0b7626d15
+  t8:16: dev_qa.jsonl       rows  320  byte_sha256 9761eb60d6c9155c2f56394aa228b1e9dfea0ae3926ab50cb21d903108bc7fde  canonical_sha256 9761eb60d6c9155c2f56394aa228b1e9dfea0ae3926ab50cb21d903108bc7fde
+  t8:17: candidates.json    rows  160  byte_sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705  canonical_sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705
+  t8:18: general_dev.jsonl  rows  100  byte_sha256 957666920c91ef5b9328984d26ed0628c8a80b439d461bea49b54c2235635e73  canonical_sha256 957666920c91ef5b9328984d26ed0628c8a80b439d461bea49b54c2235635e73
+  t8:19: anchor_text.jsonl  rows  512  byte_sha256 2089e656819d1fe0f6ececcc26e5cade09ee80a92c50e7c8f607fa4e0ef46da5  canonical_sha256 2089e656819d1fe0f6ececcc26e5cade09ee80a92c50e7c8f607fa4e0ef46da5
+  t8:20: frozen content hash facts        406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 = PROTOCOL_FROZEN (read back from <SCRATCH>/data_d)
+  t8:21: frozen content hash train_S      686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e = PROTOCOL_FROZEN (read back from <SCRATCH>/data_d)
+  t8:22: frozen content hash candidates   e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 = PROTOCOL_FROZEN (read back from <SCRATCH>/data_d)
+  t8:23: frozen content hash anchor_texts 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 = PROTOCOL_FROZEN (read back from <SCRATCH>/data_d)
+  t8:24: RESULT: PASS
+  t8:25: exit=0
+  t8:26: $ bash -c cd\ <SCRATCH>\ \&\&\ for\ f\ in\ facts.jsonl\ train_F.jsonl\ train_S.jsonl\ train_Y.jsonl\ dev_qa.jsonl\ candidates.json\ general_dev.jsonl\ anchor_text.jsonl\;\ do\ cmp\ data_c/\$f\ data_d/\$f\ \&\&\ echo\ \"identical\ \$f\"\;\ done
+  t8:27: identical facts.jsonl
+  t8:28: identical train_F.jsonl
+  t8:29: identical train_S.jsonl
+  t8:30: identical train_Y.jsonl
+  t8:31: identical dev_qa.jsonl
+  t8:32: identical candidates.json
+  t8:33: identical general_dev.jsonl
+  t8:34: identical anchor_text.jsonl
+  t8:35: exit=0
+  t8:36: $ <SCRATCH>/venv/bin/python -m metrix_e1.data verify --inputs <SCRATCH>/inputs --data <SCRATCH>/data_d
+  t8:37: frozen: PROTOCOL_FROZEN v1.1, commit 87a244db28a901f9e89282b50df76778ab5c2887; four frozen files match by git cat-file
+  t8:38: frozen content hash facts        406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 = PROTOCOL_FROZEN
+  t8:39: frozen content hash train_S      686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e = PROTOCOL_FROZEN
+  t8:40: frozen content hash candidates   e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 = PROTOCOL_FROZEN
+  t8:41: frozen content hash anchor_texts 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 = PROTOCOL_FROZEN
+  t8:42: all 8 data files byte-identical to their regeneration from the frozen inputs
+  t8:43: RESULT: PASS
+  t8:44: exit=0
+parsed: t8 generate read-back 4 | t8 verify 4 | t8 file lines 8 | t6 file lines 8 | t3 file lines 8 | t8 cmp 'identical' lines 8 (exit=0) | t8 verify tail ('all 8 data files byte-identical to their regeneration from the frozen inputs', 'RESULT: PASS', 'exit=0')
+
+== A. my regeneration of this round vs my round-2 regeneration (byte comparison)
+files: this round ['anchor.json', 'candidates.json', 'dev_qa.json', 'facts.json', 'facts_k.json', 'general.json', 'train_F.json', 'train_S.jsonl', 'train_Y.json'] | round 2 ['anchor.json', 'candidates.json', 'dev_qa.json', 'facts.json', 'facts_k.json', 'general.json', 'train_F.json', 'train_S.jsonl', 'train_Y.json'] | same names True
+  anchor.json: sha256 531f2146cb5a12741378706d2e729fddadded499f6db7075efeeefe38b750be2 | round 2 531f2146cb5a12741378706d2e729fddadded499f6db7075efeeefe38b750be2 | identical True
+  candidates.json: sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | round 2 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | identical True
+  dev_qa.json: sha256 b4354d9b81bd8ab686546b82c2262eaaf121817ba145dde947822b4f98576616 | round 2 b4354d9b81bd8ab686546b82c2262eaaf121817ba145dde947822b4f98576616 | identical True
+  facts.json: sha256 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 | round 2 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 | identical True
+  facts_k.json: sha256 2ddcd7b84dfa5d955e40f8f07901a01f44ea67251ed73316c31330678a1dfc79 | round 2 2ddcd7b84dfa5d955e40f8f07901a01f44ea67251ed73316c31330678a1dfc79 | identical True
+  general.json: sha256 40bec2dde45f27db84c76f2fedcc9350edfc7b1ad886baa1a6793fc74a296e03 | round 2 40bec2dde45f27db84c76f2fedcc9350edfc7b1ad886baa1a6793fc74a296e03 | identical True
+  train_F.json: sha256 3a2baf04cc74bb3fa45da8f655a3fbc94d174a09576fb7b773845cbdf550e222 | round 2 3a2baf04cc74bb3fa45da8f655a3fbc94d174a09576fb7b773845cbdf550e222 | identical True
+  train_S.jsonl: sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e | round 2 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e | identical True
+  train_Y.json: sha256 35e53f4ea2d1defd036c728f632f5dfc353cd47c0972d683e74187086c84db63 | round 2 35e53f4ea2d1defd036c728f632f5dfc353cd47c0972d683e74187086c84db63 | identical True
+
+== B. four frozen hashes: auditor | read back from data_d | PROTOCOL_FROZEN | t8 generate | t8 verify
+facts.jsonl: 160 lines, every line exactly the 6 fields: True | anchor_text.jsonl: 512 lines, doc == line index: True
+  facts        auditor 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 | from data_d 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 | PROTOCOL_FROZEN 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 | t8 generate 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 | t8 verify 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 | ALL EQUAL True
+  train_S      auditor 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e | from data_d 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e | PROTOCOL_FROZEN 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e | t8 generate 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e | t8 verify 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e | ALL EQUAL True
+  candidates   auditor e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | from data_d e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | PROTOCOL_FROZEN e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | t8 generate e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | t8 verify e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | ALL EQUAL True
+  anchor_texts auditor 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 | from data_d 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 | PROTOCOL_FROZEN 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 | t8 generate 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 | t8 verify 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 | ALL EQUAL True
+  anchor texts from my decode of the Executor's data_d ids: 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 | == PROTOCOL_FROZEN True
+  element-wise equal: facts True | train_S records True | candidates True | candidates key order True
+
+== C. files without a frozen hash (contents, data_d vs my regeneration)
+  train_F (fact_id, text): auditor 120 | Executor 120 | identical sequence True
+  train_Y (fact_id, kind, text): auditor 240 | Executor 240 | identical sequence True
+  dev_qa (fact_id, template_id, question): auditor 320 | Executor 320 | identical sequence True
+  template_id fields: train_F <relation>.TRAIN.1 True | train_Y <relation>.<kind>.1 True | dev_qa a DEV template of the fact's relation True
+  general_dev (domain, source doc_id, ids): auditor 100 | Executor 100 | identical sequence True
+  general_dev texts: auditor 100 | Executor 100 | identical sequence True
+  anchor_text (source row, ids): auditor 512 | Executor 512 | identical sequence True
+  anchor_text texts: auditor 512 | Executor 512 | identical sequence True
+
+== D. data_d vs data_c and data_b (bytes) and the printed file hashes
+  facts.jsonl: rows 160 | byte e05561ac2d49dcc3c8f59743c5df64151983a540a32ae135fd1b10f5e0fdc828 | canonical e05561ac2d49dcc3c8f59743c5df64151983a540a32ae135fd1b10f5e0fdc828 | data_d == data_c True | data_d == data_b True | canonical form True | == t8 line True | == t6 line True | == t3 line True
+  train_F.jsonl: rows 120 | byte 3aa9ab3ca313c0a1113b91e927af51342c915e3e40dd2f20992f3d9e59b0e373 | canonical 3aa9ab3ca313c0a1113b91e927af51342c915e3e40dd2f20992f3d9e59b0e373 | data_d == data_c True | data_d == data_b True | canonical form True | == t8 line True | == t6 line True | == t3 line True
+  train_S.jsonl: rows 120 | byte 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e | canonical 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e | data_d == data_c True | data_d == data_b True | canonical form True | == t8 line True | == t6 line True | == t3 line True
+  train_Y.jsonl: rows 240 | byte c7430cadb2b06dd5c144af381a8183d4c186f27f2b5acfa9d8d39da0b7626d15 | canonical c7430cadb2b06dd5c144af381a8183d4c186f27f2b5acfa9d8d39da0b7626d15 | data_d == data_c True | data_d == data_b True | canonical form True | == t8 line True | == t6 line True | == t3 line True
+  dev_qa.jsonl: rows 320 | byte 9761eb60d6c9155c2f56394aa228b1e9dfea0ae3926ab50cb21d903108bc7fde | canonical 9761eb60d6c9155c2f56394aa228b1e9dfea0ae3926ab50cb21d903108bc7fde | data_d == data_c True | data_d == data_b True | canonical form True | == t8 line True | == t6 line True | == t3 line True
+  candidates.json: rows 160 | byte e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | canonical e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | data_d == data_c True | data_d == data_b True | canonical form True | == t8 line True | == t6 line True | == t3 line True
+  general_dev.jsonl: rows 100 | byte 957666920c91ef5b9328984d26ed0628c8a80b439d461bea49b54c2235635e73 | canonical 957666920c91ef5b9328984d26ed0628c8a80b439d461bea49b54c2235635e73 | data_d == data_c True | data_d == data_b True | canonical form True | == t8 line True | == t6 line True | == t3 line True
+  anchor_text.jsonl: rows 512 | byte 2089e656819d1fe0f6ececcc26e5cade09ee80a92c50e7c8f607fa4e0ef46da5 | canonical 2089e656819d1fe0f6ececcc26e5cade09ee80a92c50e7c8f607fa4e0ef46da5 | data_d == data_c True | data_d == data_b True | canonical form True | == t8 line True | == t6 line True | == t3 line True
+
+== E. data_d listing
+data_d listing ['anchor_text.jsonl', 'candidates.json', 'dev_qa.jsonl', 'facts.jsonl', 'general_dev.jsonl', 'leakage_report.json', 'train_F.jsonl', 'train_S.jsonl', 'train_Y.jsonl'] | == 8 data files + leakage_report.json True | test_qa.jsonl present False | general_test.jsonl present False
+leakage_report.json data_d == data_c byte for byte (informational; the leakage check itself is not part of this task): True
+
+== F. t8 line 11 against my own counts
+t8:11 parsed: rows by split {'dev': 400, 'test': 800} | DEV rows decoded and parsed 400 | windows kept 100
+my binary line-prefix count of research/mini_mythos/stage1/results/r1/eval_sets.jsonl: {'dev': 400, 'test': 800} | lines without the prefix key 0
+  rows by split == my prefix count: True
+  'DEV rows decoded and parsed' 400 == my prefix count of dev rows 400: True
+  'windows kept' 100 == my general DEV windows 100 (== rows of data_d/general_dev.jsonl 100): True
+
+  t8 lines 3-25 vs t6 lines 3-25 (differences only, after replacing data_c by data_d in t6):
+    line 11: t6 "eval_sets.jsonl rows by split (row prefix only): {'dev': 400, 'test': 800}; rows parsed and decoded: 100"
+    line 11: t8 "eval_sets.jsonl rows by split (row prefix only): {'dev': 400, 'test': 800}; DEV rows decoded and parsed: 400; windows kept (decoded with the parcae tokenizer): 100"
+  differing lines: 1 (expected: line 11 only, the relabelled count line)
+modules: torch imported=True | transformers modeling modules imported=['torch', 'transformers.modeling_rope_utils', 'transformers.models.auto.modeling_auto'] | this script never calls a model class or from_pretrained on a model
+RESULT: PASS
+exit=0

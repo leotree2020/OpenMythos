@@ -1,0 +1,25 @@
+先读仓库中的 .claude/agents/code-reviewer.md，以它为你的完整定义；它与你已加载的定义冲突时，以仓库文件为准。
+
+Metrix E1-PILOT Implementation 阶段 B 工作提交的第 2 轮审查(暂存，尚未提交；父提交 0bc0eecf1f684773248c198afb94e7026dcfb16d)。第 1 轮你的结论是 PASS(无 BLOCKER，10 条 MAJOR，约 20 条 MINOR)，原文：/tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/review_work/code-reviewer_round1.md；同轮 data-auditor 的原文：/tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/review_work/data-auditor_round1.md(PASS，观察 1–3)。指令、协议与 Owner 消息同第 1 轮(调用文字 /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/review_work/code-reviewer_prompt.txt)。
+
+- 第 1 轮之后的改动(工作区相对第 1 轮暂存内容的差异)：/tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/review_work/review_fixes_round2.diff。
+- 第 2 轮审查输入(git diff --cached --stat 与完整 diff，相对父提交)：/tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/review_work/review_input_round2.diff。暂存内容与工作区文件相同。
+- 改动后的原始输出：metrix/e1-pilot/reports/impl_b/t6_fix_round.txt(重新生成数据并与第 1 轮逐字节比对、verify、泄漏命令、TEST 生成器拒绝、全部测试 189 passed、导出与第 1 轮逐字节相同)。
+- 运行环境同第 1 轮(会话临时目录 /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad)。
+- Executor 自己的说明(docstring、注释、下面的处理表)不作为证据。
+
+Executor 对第 1 轮各项的处理(请逐条核对：已修且正确 / 已修但有问题 / 未修；“交 Review Gate”的请判断登记是否充分)：
+MAJOR 1 预检模式隔离：mode.py 文档更正、字段 smoke_steps 改名 shortened_steps；gate.judge / judge_test 拒绝 preflight；train_run 在 preflight 下要求步数等于 contract.preflight_steps；evaluate_model 在非冒烟模式拒绝 CPU。
+MAJOR 2 G0.8：judge 要求 checkpoints 的键恰为三个训练种子。
+MAJOR 3 NonFinite：不再带状态(status None，stop ST6)，由 stops.st6 决定；errors.ProtocolStop 只对 ST6 允许 None。
+MAJOR 4 pending() 未被强制：test_data.check_preconditions 在三个条件之后增加 check_interpretations_ruled(全部解释裁决前不生成 TEST)。这一条超出任务书的三个条件，列入待 Review Gate。
+MAJOR 5 条件 2、3：record.gate0_record / selection_freeze_record 定义记录格式(含 kind)，选择冻结记录以 gate0_record_sha256 绑定已提交的 Gate 0 记录；条件 2、3 各加正向对照(只调用单个检查函数，不进入生成)。
+MAJOR 6 B17：评测部分改为预检中实测一次 FP32 DEV 评测的秒数 × 评测单位数(compute.evaluation_units)；训练部分的系数取自第 10 节；B17 仍交 Review Gate。
+MAJOR 7 T1–T3：gate.compute_test_values / judge_test；evaluate_model 增加 split="test"(只在 TEST 文件存在时可用)；原因词见 B24。
+MAJOR 8 GpuClock：open() 立即写入开始时刻；死掉的进程留下的未闭合段由后续进程计入到当前时刻。
+MAJOR 9 B14 与第 9 节的张力：不改代码，B14 文字写明四点张力，交 Review Gate。
+MAJOR 10 B5：LoRA A 的每个值改为 rng_rule 返回的 random.Random 的 r.uniform；分布与 purpose 仍交 Review Gate。
+MINOR：KL 调用处参数顺序与梯度经 train_run 的测试(test_train.py::test_kl_call_site_order_and_gradient)；ST13 增加 stops.st13_scan；run_test_part 按已提交记录复核 TestAuthorization 的两个哈希；σ_d = 0 时跳过半宽检查；死代码(删除 lora_parameters、路径函数改为 REL 常量、step_numbers 由 batch_schedule 使用、contract 中 purpose_format 与协议原文核对、think id 在 em 中核对、anchor_docs_per_step 在 train_run 中核对、source_sha256 写入记录；render_text、cost_usd 留给阶段 C，登记)；FLOP 系数从协议第 10 节解析；STATUSES 与协议第 9 节核对；实现 ImmediateGain；记录写入 load 时解析的 PROTOCOL_FROZEN 哈希；_sliced 逐 id 比较；重复逻辑提取(leakage.training_corpora、gate._Ctx、evaluate._qa_unit/_cb_unit)；config.json 的哈希登记(阶段 C)；CUDA 计时前 synchronize；新增解释 B21–B23(eager、G0.3 的 stratum、EM 第一行)；G0.3 端点测试；DeviceLedger 未记录时报 RuntimeError 而非 ST9。
+data-auditor 观察 1：data.build_general_dev 改为按字节读取 eval_sets.jsonl，只有行前缀 split 为 dev 的行才解码与解析(输出与第 1 轮逐字节相同，见 t6)；观察 2：B1–B3 维持待决，B3 写明 train_Y 行序未冻结；观察 3：见上 run_test_part 复核。
+
+请：(1) 逐条核对上表；(2) 审查第 1 轮之后的改动本身有无新问题(重点：TEST 隔离、正式/冒烟/预检隔离、与协议的一致性、测试是否真正检验所说内容)；(3) 按定义的输出格式给出，每条注明“已验证/未验证”。最后一行给出结论。

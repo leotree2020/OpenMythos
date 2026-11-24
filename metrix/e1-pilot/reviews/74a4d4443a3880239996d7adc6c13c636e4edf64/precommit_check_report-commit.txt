@@ -1,0 +1,23 @@
+# Implementation stage B report commit: before git commit. The reviewed index tree 0417d563919a7e7f9349aec3268a3951a3fbb9ea; the index now (without this file); src/ and tests/ unchanged since the review; post-review diff covers every change (except itself and this file); nothing outside metrix/e1-pilot/. Tue Nov 24 03:52:34 UTC 2026
+$ git rev-parse HEAD
+493d7f9c102cae3ebb916f1d72fcc1759b26bee8
+exit=0
+$ bash -c git\ write-tree
+5f383a68123383e0c065cd0aedebc3621033dc6b
+exit=0
+$ bash -c git\ diff\ --quiet\ 0417d563919a7e7f9349aec3268a3951a3fbb9ea\ \$\(git\ write-tree\)\ --\ metrix/e1-pilot/src\ metrix/e1-pilot/tests\ \&\&\ echo\ SRC_TESTS_UNCHANGED_SINCE_REVIEW
+SRC_TESTS_UNCHANGED_SINCE_REVIEW
+exit=0
+$ bash -c git\ rev-parse\ \$\(git\ write-tree\):metrix/e1-pilot/src\ \$\(git\ write-tree\):metrix/e1-pilot/tests
+2bc8b7853d479379dd5dacb6c53bbdf33ab68514
+4337445314823b510a68d6d10ede26bfde31732c
+exit=0
+$ bash -c git\ diff\ --name-only\ 0417d563919a7e7f9349aec3268a3951a3fbb9ea\ \$\(git\ write-tree\)\ \|\ grep\ -v\ \'\^metrix/e1-pilot/reviews/74a4d4443a3880239996d7adc6c13c636e4edf64/report_commit_post_review.diff\$\'\ \|\ sort\ \>\ <SCRATCH>/now.txt\;\ sed\ -n\ \'2\,/\^\$/p\'\ metrix/e1-pilot/reviews/74a4d4443a3880239996d7adc6c13c636e4edf64/report_commit_post_review.diff\ \|\ grep\ \'\ \|\ \'\ \|\ sed\ \'s/\ \*\|.\*//\;\ s/\^\ \*//\'\ \|\ wc\ -l\;\ wc\ -l\ \<\ <SCRATCH>/now.txt
+34
+34
+exit=0
+$ bash -c git\ diff\ --cached\ --name-only\ \|\ grep\ -cv\ \'\^metrix/e1-pilot/\'\;\ echo\ unstaged:\ \$\(git\ diff\ --name-only\ \|\ wc\ -l\)\;\ echo\ untracked:\ \$\(git\ status\ --short\ --untracked-files=all\ \|\ grep\ -c\ \'\^\?\?\'\)
+0
+unstaged: 0
+untracked: 1
+exit=0

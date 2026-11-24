@@ -198,45 +198,63 @@ class TestAuthorization:
 TEST_CHECKS = ("L3a", "L3b", "L4", "L5", "L6")
 
 
-def verify_authorization(authorization, repo_root):
+def verify_authorization(authorization, fz, repo_root=None):
     """Every TEST path (test_data.generate_test, run_test_part, evaluate.evaluate_model with split "test") calls this
-    first. It re-checks, from what is committed now, everything of conditions 2 and 3 that an authorization stands for:
-    the Gate 0 and freeze records are committed (record.committed_record: formal mode, the right kind, the frozen
-    commit of the authorization) with the hashes the authorization carries; the Gate 0 status is PASS; the freeze
-    record is bound to that Gate 0 record; the authorization's frozen commit is the current one of PROTOCOL_FROZEN.
-    (Condition 1, ST12, is checked by every step start; the interpretation check by check_preconditions.)"""
+    first. From what is committed now, it re-checks everything an authorization stands for, with the TEST generator's
+    own checks (record.gate0_record_problem, record.freeze_record_problem):
+      - the frozen commit: the authorization's is the one of the PROTOCOL_FROZEN file now in the repository and of
+        the frozen files `fz` (frozen.load) the caller runs with;
+      - condition 2: the committed Gate 0 record (record.committed_record: formal mode, kind gate0, that frozen
+        commit) has the SHA-256 the authorization carries and status PASS;
+      - condition 3: the committed freeze record (formal mode, kind selection_freeze, that frozen commit) has the
+        SHA-256 the authorization carries; its selected configurations form the training plan of the contract, it
+        holds a 64-hex checkpoint hash for each of the 30 runs, its data content hashes are the frozen ones
+        (PROTOCOL_FROZEN: facts, train_S, candidates, anchor_texts), and it is bound to that Gate 0 record;
+      - every interpretation of interpretations.py has been ruled.
+    Not re-checked here: condition 1 (ST12: the frozen files, input files and data directory against the frozen
+    hashes), which the caller runs at every step start (stops.st12). `repo_root` (default fz.repo_root): where the
+    records and PROTOCOL_FROZEN are read."""
     if not isinstance(authorization, TestAuthorization):
         raise ImplementationFail("TEST paths run only after the TEST generator's preconditions (no TestAuthorization)")
+    from . import contract as C
+    from . import interpretations as INT
     from . import record as R
+    root = Path(repo_root) if repo_root is not None else fz.repo_root
+    try:
+        current = FZ.parse_protocol_frozen((root / FZ.PROTOCOL_FROZEN_REL).read_bytes()).commit
+    except (OSError, ST12Error) as e:
+        raise ImplementationFail("TEST path refused: cannot read PROTOCOL_FROZEN: %s" % e) from e
+    if not authorization.frozen_commit == current == fz.record.commit:
+        raise ImplementationFail("TEST path refused: authorization for frozen commit %s, PROTOCOL_FROZEN names %s, the "
+                                 "loaded frozen files %s" % (authorization.frozen_commit, current, fz.record.commit))
     recs = {}
     for rel, kind, want in ((R.GATE0_RECORD_REL, "gate0", authorization.gate0_record_sha256),
                             (R.SELECTION_FREEZE_REL, "selection_freeze", authorization.selection_record_sha256)):
         try:
-            recs[kind], got = R.committed_record(repo_root, rel, kind, authorization.frozen_commit)
+            recs[kind], got = R.committed_record(root, rel, kind, authorization.frozen_commit)
         except R.NotCommitted as e:
             raise ImplementationFail("TEST path refused: %s" % e) from e
         if got != want:
             raise ImplementationFail("TEST path refused: committed %s has sha256 %s, authorization %s" % (rel, got, want))
-    status = (recs["gate0"].get("gate0") or {}).get("gate0_status")
-    if status != "PASS":
-        raise ImplementationFail("TEST path refused: committed Gate 0 status %r, not PASS" % (status,))
-    if recs["selection_freeze"].get("gate0_record_sha256") != authorization.gate0_record_sha256:
-        raise ImplementationFail("TEST path refused: the freeze record is not bound to the committed Gate 0 record")
-    try:
-        current = FZ.parse_protocol_frozen((Path(repo_root) / FZ.PROTOCOL_FROZEN_REL).read_bytes()).commit
-    except (OSError, ST12Error) as e:
-        raise ImplementationFail("TEST path refused: cannot read PROTOCOL_FROZEN: %s" % e) from e
-    if current != authorization.frozen_commit:
-        raise ImplementationFail("TEST path refused: authorization for frozen commit %s, PROTOCOL_FROZEN names %s" % (
-            authorization.frozen_commit, current))
+    content = {k: fz.data_hash(k) for k in FZ.CONTENT_HASH_KEYS}
+    for rel, problem in ((R.GATE0_RECORD_REL, R.gate0_record_problem(recs["gate0"])),
+                         (R.SELECTION_FREEZE_REL, R.freeze_record_problem(recs["selection_freeze"], C.load(fz), content,
+                                                                          authorization.gate0_record_sha256))):
+        if problem:
+            raise ImplementationFail("TEST path refused: committed %s: %s" % (rel, problem))
+    open_ids = INT.pending()
+    if open_ids:
+        raise ImplementationFail("TEST path refused: interpretations not yet ruled by Review Gate: %s" % ", ".join(open_ids))
 
 
-def run_test_part(split_manifest, data, test_qa, general_test, authorization, repo_root):
+def run_test_part(fz, data, test_qa, general_test, authorization, repo_root=None):
     """Section 8 step 8, after test_qa.jsonl and general_test.jsonl exist: L4 on the instantiated TEST questions,
-    L6 anchor_text vs general_test; L3a, L3b and L5 re-run as at Gate 0 (interpretation B19). `data` as load_data();
-    `test_qa`, `general_test`: the TEST rows in memory. The authorization is checked again against the committed Gate 0
-    and freeze records (verify_authorization). Returns the report (same layout as run_gate0)."""
-    verify_authorization(authorization, repo_root)
+    L6 anchor_text vs general_test; L3a, L3b and L5 re-run as at Gate 0 (interpretation B19). `fz`: frozen.load();
+    `data` as load_data(); `test_qa`, `general_test`: the TEST rows in memory. The authorization is checked again
+    against the committed Gate 0 and freeze records (verify_authorization; `repo_root` as there). Returns the report
+    (same layout as run_gate0)."""
+    verify_authorization(authorization, fz, repo_root)
+    split_manifest = fz.split_manifest
     gate0 = run_gate0(split_manifest, data)
     rules = _rules(split_manifest)
     corpora = training_corpora(data)

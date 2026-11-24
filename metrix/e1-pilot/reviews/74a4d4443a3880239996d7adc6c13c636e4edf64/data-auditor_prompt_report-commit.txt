@@ -1,0 +1,13 @@
+先读仓库中的 .claude/agents/data-auditor.md，以它为你的完整定义；它与你已加载的定义冲突时，以仓库文件为准。
+
+Metrix E1-PILOT Implementation 阶段 B 的报告提交(暂存，尚未提交；父提交 493d7f9c102cae3ebb916f1d72fcc1759b26bee8，即你上一轮审查过的第二个修复提交，原文 /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/review_fix2/data-auditor.md)。本提交的代码改动涉及 TEST 路径：leakage.verify_authorization 现在除两份已提交记录的哈希、Gate 0 状态、绑定与冻结提交之外，还复核冻结记录的内容(选定配置构成训练计划、30 个 checkpoint 哈希、数据内容哈希等于 PROTOCOL_FROZEN 中的冻结值)与解释裁决，这些内容检查与 TEST 生成器共用 record.gate0_record_problem、record.freeze_record_problem；签名改为 verify_authorization(authorization, fz, repo_root=None)，run_test_part(fz, …) 与 evaluate_model(…, fz=…) 相应改动。另有 tests/test_data_hashes.py 的 _dev_rows_only 在过滤前对整个 eval_sets.jsonl 求 sha256 并与冻结值比较、计数与 data.build_general_dev 的按行前缀计数比较。本提交也把你此前四轮的脚本、stdout 与试跑输出(原在会话临时目录的 trial* 等，复制到 audit/stdout/impl_b/trials/)入库。审查输入：/tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/review_report/report_commit_input_src_tests_reports.diff(src/、tests/、reports/ 部分；完整 diff 为 /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/review_report/report_commit_input.diff)；Executor 的原始输出：metrix/e1-pilot/reports/impl_b/t12_fix3.txt、t12b_review_records_copy.txt。
+
+任务(用你自己的脚本，可沿用你之前在 metrix/e1-pilot/audit/ 下的脚本或新写 if_ 脚本；禁止 import、调用或复制 Executor 的代码；不得加载任何模型权重)：
+1. 静态检查 src/ 与 tests/：改动之后，有无任何路径以文本模式打开或解码 eval_sets.jsonl 的 test 行；每个 TEST 路径(test_data.generate_test、leakage.run_test_part、evaluate.evaluate_model(split="test"))是否在读取任何 TEST 内容之前调用 verify_authorization；verify_authorization 的各项复核是否都在其中、在什么条件下拒绝；TEST 生成器的条件 2、3 在改为共用函数后是否仍检查同样的内容。
+2. 独立核对 verify_authorization 用来比较的四个数据内容哈希就是 PROTOCOL_FROZEN 中 facts、train_S、candidates、anchor_texts 的冻结值(用你自己的方法读取 PROTOCOL_FROZEN)，并与 /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/data_d 中对应文件按协议规则重算的值一致。
+3. 核对 audit/stdout/impl_b/trials/ 中的文件与你原来写在会话临时目录中的文件逐字节相同。
+4. 以黑盒方式运行一次 TEST 生成器(--data /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/data_d，--out 为一个不存在的目录)，确认拒绝且无产物。
+
+输入、Python 与 TEST 的限制同前(调用文字 /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/review_work/data-auditor_prompt.txt)：禁止生成、读取或统计 TEST；eval_sets.jsonl 只可对整个文件求哈希、按行前缀读取 split 字段与计数，非 dev 行不得解析或解码；不得实例化任何 TEST 问句。
+
+输出：所有脚本的完整 stdout 写入 metrix/e1-pilot/audit/stdout/impl_b/(接着之前的编号)。只写入 metrix/e1-pilot/audit/。按定义的输出格式给出每一项的命令、原始输出、与 Executor 是否一致；最后附 git status --short 原始输出；最后一行给出结论。

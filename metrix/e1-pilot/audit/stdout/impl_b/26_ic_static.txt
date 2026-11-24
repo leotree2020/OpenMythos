@@ -1,0 +1,196 @@
+# Data Auditor run (implementation stage B). host vm, CPU only (no GPU device), no model weights loaded (tokenizer files only); 2026-11-23 08:17:30 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit; PYTHONDONTWRITEBYTECODE=1
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/venv/bin/python -I -B ic_06_static.py /home/user/OpenMythos
+env: host vm | Linux-6.18.44-fc-v726-x86_64-with-glibc2.39 | python 3.13.18 (/tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/venv/bin/python) | installed {'transformers': '5.22.2', 'tokenizers': '0.23.3', 'pyarrow': '26.0.1', 'huggingface_hub': '2.4.0', 'torch': '2.11.0'} | nvidia device nodes: []
+files parsed: ['__init__.py', '_cli.py', 'compute.py', 'contract.py', 'data.py', 'errors.py', 'evaluate.py', 'frozen.py', 'gate.py', 'interpretations.py', 'leakage.py', 'mode.py', 'record.py', 'stats.py', 'stops.py', 'test_data.py', 'train.py', 'dump_for_audit.py']
+
+== a. call sites, TEST constants, file reads
+  generate_test: [('test_data.py', 176, 'main')]
+  build_test_qa: [('test_data.py', 150, 'generate_test')]
+  params_for_test: [('test_data.py', 148, 'generate_test')]
+  run_test_part: [('test_data.py', 181, 'main')]
+  TestAuthorization: [('test_data.py', 114, 'check_preconditions')]
+  build_general_dev: [('data.py', 552, 'generate'), ('test_data.py', 152, 'generate_test')]
+  check_preconditions: [('test_data.py', 166, 'main')]
+  check_interpretations_ruled: [('test_data.py', 113, 'check_preconditions')]
+  committed_json: [('leakage.py', 212, 'run_test_part'), ('stops.py', 158, 'st13_scan'), ('test_data.py', 52, '_committed')]
+  evaluate_model: []
+  generate_test: called only from [('test_data.py', 'main')] | expected [('test_data.py', 'main')] | True
+  build_test_qa: called only from [('test_data.py', 'generate_test')] | expected [('test_data.py', 'generate_test')] | True
+  params_for_test: called only from [('test_data.py', 'generate_test')] | expected [('test_data.py', 'generate_test')] | True
+  run_test_part: called only from [('test_data.py', 'main')] | expected [('test_data.py', 'main')] | True
+  TestAuthorization: called only from [('test_data.py', 'check_preconditions')] | expected [('test_data.py', 'check_preconditions')] | True
+  build_general_dev: called only from [('data.py', 'generate'), ('test_data.py', 'generate_test')] | expected [('data.py', 'generate'), ('test_data.py', 'generate_test')] | True
+  check_preconditions: called only from [('test_data.py', 'main')] | expected [('test_data.py', 'main')] | True
+  check_interpretations_ruled: called only from [('test_data.py', 'check_preconditions')] | expected [('test_data.py', 'check_preconditions')] | True
+  evaluate_model: called only from [] | expected [] | True
+  constants naming TEST material (file, line, function, value):
+    ('contract.py', 379, '_accounting', 'TEST')
+    ('data.py', 42, '<module>', 'test_qa.jsonl')
+    ('data.py', 42, '<module>', 'general_test.jsonl')
+    ('evaluate.py', 295, '<module>', 'test')
+    ('evaluate.py', 295, '<module>', 'test_qa.jsonl')
+    ('evaluate.py', 295, '<module>', 'general_test.jsonl')
+    ('gate.py', 144, 'compute_test_values', 'test')
+    ('gate.py', 212, 'judge_test', 'test')
+    ('leakage.py', 228, 'run_test_part', 'test')
+    ('leakage.py', 224, 'run_test_part', 'TEST')
+    ('test_data.py', 153, 'generate_test', 'test_qa.jsonl')
+    ('test_data.py', 153, 'generate_test', 'general_test.jsonl')
+    ('test_data.py', 134, 'build_test_qa', 'TEST')
+    ('test_data.py', 124, 'params_for_test', 'test')
+  constants outside module-level name tuples, contract accounting (a count), gate T1-T3 labels, the generator and run_test_part: []
+  file reads in the package (file, line, function, call):
+    ('compute.py', 122, '_state', "json.loads(self.path.read_text(encoding='utf-8'))")
+    ('compute.py', 87, 'recorded', "json.loads(self.path.read_text(encoding='utf-8'))")
+    ('compute.py', 122, '_state', "self.path.read_text(encoding='utf-8')")
+    ('compute.py', 87, 'recorded', "self.path.read_text(encoding='utf-8')")
+    ('data.py', 629, 'main', 'FZ.load()')
+    ('data.py', 506, 'build_general_dev', "open(eval_sets_path, 'rb')")
+    ('data.py', 587, 'file_hashes', '(d / name).read_bytes()')
+    ('data.py', 514, 'build_general_dev', "json.loads(line.decode('utf-8'))")
+    ('data.py', 607, 'verify', '(d / name).read_bytes()')
+    ('data.py', 589, 'file_hashes', 'FZ.parse_jsonl(raw)')
+    ('data.py', 591, 'file_hashes', 'json.loads(raw)')
+    ('frozen.py', 95, 'file_sha256', "open(path, 'rb')")
+    ('frozen.py', 108, 'parse_jsonl', 'json.loads(line)')
+    ('frozen.py', 113, 'read_jsonl', "open(path, 'rb')")
+    ('frozen.py', 114, 'read_jsonl', 'parse_jsonl(fh.read())')
+    ('frozen.py', 292, 'content_hashes', "read_jsonl(d / 'anchor_text.jsonl')")
+    ('frozen.py', 338, 'load', 'pf_path.read_bytes()')
+    ('frozen.py', 354, 'load', 'json.loads(blobs[DATA_MANIFEST_REL])')
+    ('frozen.py', 355, 'load', 'json.loads(blobs[SPLIT_MANIFEST_REL])')
+    ('frozen.py', 356, 'load', 'json.loads(blobs[SEARCH_SPACE_REL])')
+    ('frozen.py', 293, 'content_hashes', "open(d / 'candidates.json', encoding='utf-8')")
+    ('frozen.py', 294, 'content_hashes', 'json.load(fh)')
+    ('frozen.py', 379, 'load', '(root / rel).read_bytes()')
+    ('frozen.py', 296, 'content_hashes', "read_jsonl(d / 'facts.jsonl')")
+    ('frozen.py', 297, 'content_hashes', "read_jsonl(d / 'train_S.jsonl')")
+    ('frozen.py', 384, 'load', 'json.loads(wt)')
+    ('frozen.py', 384, 'load', 'json.loads(blobs[rel])')
+    ('leakage.py', 243, 'main', 'FZ.load()')
+    ('leakage.py', 144, 'load_data', "FZ.read_jsonl(d / ('%s.jsonl' % name))")
+    ('leakage.py', 244, 'main', "open(a.split_manifest, encoding='utf-8')")
+    ('leakage.py', 245, 'main', 'json.load(fh)')
+    ('record.py', 72, 'environment', '(fz.repo_root / FZ.PROTOCOL_FROZEN_REL).read_bytes()')
+    ('record.py', 154, 'committed_json', 'wt.read_bytes()')
+    ('record.py', 157, 'committed_json', 'json.loads(r.stdout)')
+    ('stops.py', 137, 'st12', 'FZ.load(repo_root)')
+    ('test_data.py', 109, 'check_preconditions', 'C.load(fz)')
+    ('test_data.py', 149, 'generate_test', "FZ.read_jsonl(Path(data_dir) / 'facts.jsonl')")
+    ('test_data.py', 122, 'params_for_test', 'C.load(fz)')
+    ('train.py', 481, 'main', 'FZ.load()')
+    ('dump_for_audit.py', 33, 'main', 'FZ.load()')
+    ('dump_for_audit.py', 34, 'main', 'C.load(fz)')
+    ('dump_for_audit.py', 40, 'main', "json.loads((d / 'candidates.json').read_text(encoding='utf-8'))")
+    ('dump_for_audit.py', 39, 'main', 'FZ.read_jsonl(d / n)')
+    ('dump_for_audit.py', 40, 'main', "(d / 'candidates.json').read_text(encoding='utf-8')")
+  calls that open eval_sets.jsonl: [('data.py', 506, 'build_general_dev', "open(eval_sets_path, 'rb')")]
+  data.DATA_FILES (read by data.file_hashes / verify): ['"facts.jsonl",', '"train_F.jsonl",', '"train_S.jsonl",', '"train_Y.jsonl",', '"dev_qa.jsonl",', '"candidates.json",', '"general_dev.jsonl",', '"anchor_text.jsonl"']
+
+== b. data.build_general_dev
+  _ROW_HEAD = re.compile(b'\\{"domain": "[^"\\\\]*", "split": "([^"\\\\]*)", ') | pattern is bytes: True
+  pattern bytes b'\\{"domain": "[^"\\\\]*", "split": "([^"\\\\]*)", ' | capture groups 1 | anchored at the domain field, group 1 = the split value up to the next quote: True
+  open calls: ["open(eval_sets_path, 'rb')"]
+  exactly one open, mode 'rb', no encoding argument: True
+  want: ["want = p.general_dev_split.encode('ascii')"]
+    loop statement 0: m = _ROW_HEAD.match(line)
+    loop statement 1: if m is None:
+    loop statement 2: rows_by_split[m.group(1).decode('ascii', 'replace')] += 1
+    loop statement 3: if m.group(1) != want:
+    loop statement 4: r = json.loads(line.decode('utf-8'))
+    loop statement 5: if r['split'] != p.general_dev_split:
+    loop statement 6: if len(kept[r['domain']]) < p.general_dev_per_domain:
+  non-dev continue: statement 3, test 'm.group(1) != want'
+  calls before the continue that take the row bytes: ['_ROW_HEAD.match(line)']
+  decode / json calls before the continue: ["m.group(1).decode('ascii', 'replace')"]
+  calls that decode or parse the row, with their statement index: [(4, "json.loads(line.decode('utf-8'))"), (4, "line.decode('utf-8')")]
+  data.generate: ['p = params(fz)'] (the only p passed to build_general_dev there)
+  data.params assignment of g_split: ['g_n, g_domains, g_split = _match("first (\\\\d+) windows per domain \\\\(([a-z0-9, ]+)\\\\) with split == \'(\\\\w+)\', file order", gt[\'dev\'], \'general_text.dev\').groups()']
+  frozen general_text.dev: "first 25 windows per domain (books, c4, fineweb, wikitext) with split == 'dev', file order" -> split value: dev
+  test_data.generate_test: statement 0 'if not isinstance(authorization, LK.TestAuthorization):'; the TEST split is set at statement 7: 'pt = dataclasses.replace(p, general_dev_split=split, general_dev_per_domain=n_windows)'
+
+== c. test_data.main, check_preconditions, interpretation check, committed_json
+  statements before the try: ["ap = argparse.ArgumentParser(prog='python -m metrix_e1.test_", "ap.add_argument('--inputs', required=True)", "ap.add_argument('--data', required=True)", "ap.add_argument('--out', required=True)", 'a = ap.parse_args(argv)']
+  try body calls: ['check_preconditions'] | handlers: [('(PreconditionFailed, ProtocolStop)', ["print('TEST generator refused: %s' % e)", "print('no TEST content was generated, read or written')", "print('RESULT: FAIL')", 'sys.exit(1)'])]
+  handler ends with sys.exit(1): True | finally / else: False / False | calls after the try: ['Path', 'exists', 'ImplementationFail', 'generate_test', 'mkdir', 'items', 'write_bytes', 'print', 'sha256_hex', 'run_test_part', 'load_data', 'write_text', 'dumps', 'items', 'print', 'print', 'print', 'exit']
+  module entry point is run_guarded(main) (any other exception leaves main before generation): True
+    check_preconditions statement 0: fz = STP.st12(repo_root, inputs_dir, data_dir)
+    check_preconditions statement 1: contract = C.load(fz)
+    check_preconditions statement 2: content = fz.check_data_dir(data_dir)
+    check_preconditions statement 3: g_sha = check_gate0_record(fz, fz.repo_root)
+    check_preconditions statement 4: s_sha = check_selection_record(fz, contract, fz.repo_root, content, g_sha)
+    check_preconditions statement 5: check_interpretations_ruled()
+    check_preconditions statement 6: return (fz, LK.TestAuthorization(fz.record.commit, g_sha, s_sha))
+  first call of each statement: ['st12', 'load', 'check_data_dir', 'check_gate0_record', 'check_selection_record', 'check_interpretations_ruled', 'TestAuthorization'] | == ['st12', 'load', 'check_data_dir', 'check_gate0_record', 'check_selection_record', 'check_interpretations_ruled', 'TestAuthorization']: True
+  check_interpretations_ruled: ['open_ids = INT.pending()', "if open_ids:\n    raise PreconditionFailed('interpretations not yet ruled by Review Gate: %s' % ', '.join(open_ids))"]
+  interpretations.pending: return [e['id'] for e in ENTRIES if e.get('status', PENDING) == PENDING]
+  ENTRIES 24 ids ['B1', 'B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8', 'B9', 'B10', 'B11', 'B12', 'B13', 'B14', 'B15', 'B16', 'B17', 'B18', 'B19', 'B20', 'B21', 'B22', 'B23', 'B24'] | with a status key 0 | pending now 24
+  -> in the current state check_interpretations_ruled would also refuse (it runs after conditions 2 and 3)
+  _committed calls: ['PreconditionFailed', 'committed_json', 'get', 'str']
+  check_gate0_record calls: ['PreconditionFailed', '_committed', 'get']
+  check_selection_record calls: ['PreconditionFailed', '_committed', 'compile', 'fullmatch', 'get', 'isinstance', 'len', 'training_plan']
+  record.committed_json calls: ["subprocess.run(['git', '-C', str(repo_root), 'cat-file', 'blob', 'HEAD:%s' % rel], capture_output=Tr", "NotCommitted('%s is not committed at HEAD' % rel)", 'Path(repo_root)', "NotCommitted('%s in the working tree differs from its committed version' % rel)", 'str(repo_root)', 'wt.is_file()', 'wt.read_bytes()', 'json.loads(r.stdout)', 'FZ.sha256_hex(r.stdout)', "NotCommitted('%s does not parse: %r' % (rel, e))"]
+  frozen.content_hashes (check_data_dir) reads: ["d / 'anchor_text.jsonl'", "d / 'candidates.json'", "d / 'facts.jsonl'", "d / 'train_S.jsonl'"]
+
+== d. guards
+  generate_test statement 0: "if not isinstance(authorization, LK.TestAuthorization):\n    raise ImplementationFail('TEST is generated only after the preconditions')" -> guard True
+  run_test_part statement 0: 'if not isinstance(authorization, TestAuthorization):\n    raise ImplementationFail("the TEST part of the leakage checks runs only after the TEST generator\'s preconditions")' -> guard True
+  run_test_part: record re-check loop at statement 2 (((R.GATE0_RECORD_REL, authorization.gate0_record_sha256), (R.SELECTION_FREEZE_REL, authori); first statement using test_qa / general_test: 7 ("questions = [r['question'] for r in test_qa]") | re-check first True
+  TestAuthorization(...) constructed in the package at: [('test_data.py', 114, 'check_preconditions')]
+
+== e. leakage.py
+  load_data file stems: ['facts', 'train_F', 'train_S', 'train_Y', 'dev_qa', 'anchor_text', 'general_dev']
+  '{E}' / '{A}' constants in leakage.py: []
+  leakage.main calls run_test_part: False | run_gate0: True
+
+== f. template instantiation ({E} substitution)
+    ('data.py', 'build_dev_qa')
+    ('data.py', 'build_train_F')
+    ('data.py', 'build_train_S')
+    ('data.py', 'build_train_Y')
+    ('data.py', 'fill')
+    ('evaluate.py', 'statement_prefix')
+    ('test_data.py', 'build_test_qa')
+  in test_data.py: ['build_test_qa'] | elsewhere: [('data.py', 'build_dev_qa'), ('data.py', 'build_train_F'), ('data.py', 'build_train_S'), ('data.py', 'build_train_Y'), ('data.py', 'fill'), ('evaluate.py', 'statement_prefix')] | elsewhere == DEV / TRAIN / Y builders, fill, prefix(f): True
+  data.build_train_F template kinds selected: ['TRAIN']
+  data.build_train_S template kinds selected: ['TRAIN']
+  data.build_train_Y template kinds selected: ['Y_ANSWER', 'Y_ENTITY']
+  data.build_dev_qa template kinds selected: ['DEV']
+  evaluate.train_templates selects: t['kind'] == 'TRAIN'
+  statement_prefix (TRAIN template only) called from: ['_cb_unit', 'main']
+
+== g. evaluate.evaluate_model with split 'test'
+  SPLIT_FILES = {'dev': ('dev_qa.jsonl', 'general_dev.jsonl'), 'test': ('test_qa.jsonl', 'general_test.jsonl')}
+  evaluate_model signature: (model, tok, data, templates, ev, mode, device, split='dev', with_em=True, with_s_mapping=False, batch_size=64)
+  callers in src/ and reports/impl_b/dump_for_audit.py: []
+
+== h. tests/ and every eval_sets.jsonl reader under metrix/
+  test_evaluate.py:125 in test_formal_evaluation_refuses_cpu: E.evaluate_model(tiny_model(), tok, data_rows, fz.templates, contract.evaluation, mode, 'cpu')
+  test_test_data.py:180 in test_run_test_part_rechecks_the_committed_records: LK.TestAuthorization(fz.record.commit, 'a' * 64, 'b' * 64)
+  test_test_data.py:82 in test_generation_needs_authorization: TD.generate_test(fz, None, inputs_dir, generated['dir'])
+  test_test_data.py:84 in test_generation_needs_authorization: LK.run_test_part(fz.split_manifest, {}, [], [], None, fz.repo_root)
+  test_test_data.py:183 in test_run_test_part_rechecks_the_committed_records: LK.run_test_part(fz.split_manifest, {}, [], [], auth, root)
+  test_data_hashes.py:80 in test_byte_identical_to_reference_scripts: call on the eval_sets path: _run([rep / 'round5/l6_check.py', '--eval-sets', PILOT.parents[1] / 'research/mini_mythos/stage1/results/r1/eval_sets.jsonl', '--parcae-tokenizer', in
+  test_st12.py:33 flip() calls: ['bytearray(path.read_bytes())', 'path.write_bytes(bytes(b))', 'path.read_bytes()', 'bytes(b)', 'len(b)']
+  test_st12.py:72 in mini_repo: byte copy: shutil.copyfile(fz.repo_root / ev, root / ev)
+  test_st12.py:143 in test_eval_sets_one_byte: call on the eval_sets path: flip(root / p.general_source)
+  test_st12.py:144 in test_eval_sets_one_byte: call on the eval_sets path: pytest.raises(ST12Error, match='ST12 -> BLOCKED: eval_sets: file .* has sha256')
+  test_st12.py:154 in inputs_copy: byte copy: shutil.copyfile(path, target)
+  executable files under metrix/ that mention eval_sets: ['metrix/e1-pilot/src/metrix_e1/frozen.py', 'metrix/e1-pilot/src/metrix_e1/data.py', 'metrix/e1-pilot/src/metrix_e1/test_data.py', 'metrix/e1-pilot/audit/ia_11_r2_inputs.py', 'metrix/e1-pilot/audit/r5_sources.py', 'metrix/e1-pilot/audit/r6_guard_audit.py', 'metrix/e1-pilot/audit/ib_06_static.py', 'metrix/e1-pilot/audit/r6_general.py', 'metrix/e1-pilot/audit/r7_general_dev.py', 'metrix/e1-pilot/audit/r5_l6.py', 'metrix/e1-pilot/audit/ia_06_general.py', 'metrix/e1-pilot/audit/r9_compare.py', 'metrix/e1-pilot/audit/r8_general.py', 'metrix/e1-pilot/audit/ic_06_static.py', 'metrix/e1-pilot/audit/r6_sources.py', 'metrix/e1-pilot/audit/r5_cmp_general.py', 'metrix/e1-pilot/audit/ia_01_fetch.py', 'metrix/e1-pilot/audit/ic_00_state.py', 'metrix/e1-pilot/audit/r8_compare.py', 'metrix/e1-pilot/audit/ic_01_compare.py', 'metrix/e1-pilot/audit/ia_00_frozen.py', 'metrix/e1-pilot/audit/r6_compare.py', 'metrix/e1-pilot/audit/ic_07_static_selftest.py', 'metrix/e1-pilot/audit/r8b_compare.py', 'metrix/e1-pilot/tests/test_data_hashes.py', 'metrix/e1-pilot/tests/test_test_data.py', 'metrix/e1-pilot/tests/test_st12.py', 'metrix/e1-pilot/reports/round5/l6_check.py', 'metrix/e1-pilot/reports/round6/guard_fail.sh']
+   metrix/e1-pilot/src/metrix_e1/data.py:506 in build_general_dev: open(eval_sets_path, 'rb')
+   metrix/e1-pilot/reports/round5/l6_check.py:82 in main: open(a.eval_sets, encoding='utf-8')
+   metrix/e1-pilot/reports/round6/guard_fail.sh: not Python
+    l6_check.py loop statement 0: m = HEAD.match(line)
+    l6_check.py loop statement 1: if m is None:
+    l6_check.py loop statement 2: split = m.group(1)
+    l6_check.py loop statement 3: rows_by_split[split] += 1
+    l6_check.py loop statement 4: if split != 'dev':
+    l6_check.py loop statement 5: r = json.loads(line)
+    l6_check.py loop statement 6: if r['split'] != split:
+    l6_check.py loop statement 7: if len(kept[r['domain']]) < PER_DOMAIN:
+  l6_check.py: open ["open(a.eval_sets, encoding='utf-8')"] (text mode: every line, test rows included, is UTF-8-decoded into str by Python) | non-dev continue at 4, json.loads at 5: continue first True
+  tests/test_data_hashes.py runs round5/l6_check.py with --eval-sets ['PILOT.parents[1] / "research/mini_mythos/stage1/results/r1/eval_sets.jsonl"'] (the real file; pytest of t6 ran it: test_byte_identical_to_reference_scripts)
+modules: torch imported=False | transformers modeling modules imported=[] | this script never calls a model class or from_pretrained on a model
+RESULT: PASS
+exit=0

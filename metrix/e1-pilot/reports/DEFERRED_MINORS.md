@@ -347,6 +347,85 @@ code-reviewer 结论 PASS,没有 BLOCKER;第 1 轮各项的现状见原文第一
 | AD13 | MINOR | 报告提交审查输入 | “只在 metrix/e1-pilot/ 下”只有 stat 的间接证据 | IAR-CR:90 | 提交前的 `git diff --cached --name-only` 与提交后的 `outside_metrix_check.py` 写入 `impl_a/t8_report_push.txt` |
 | AD14 | MINOR | `IMPL_A_REPORT.md` 修复提交一节 | 修复提交不调用 data-auditor 是判断问题(N1 改了 ST12 参照表的读入) | IAR-CR:92 | 列入 `IMPL_A_REPORT.md` 待决第 8 项(备案) |
 
+### 1.22 Implementation 阶段 B:工作提交 `74a4d444` 第 1 轮审查(`reviews/74a4d444…/code-reviewer_round1.md` 记 `IB1-CR:n`,`data-auditor_round1.md` 记 `IB1-DA:n`)
+
+code-reviewer 结论 PASS,没有 BLOCKER(10 MAJOR、19 MINOR);data-auditor 结论 PASS(仅作参考),3 条观察。第 1 轮各项在第 2 轮暂存内容中的现状由第 2 轮原文第一节逐条给出(`IB2-CR:15-91`);下表只列没有修、只修了一部分或交 Review Gate 的项。
+
+| # | 严重度 | 位置 | 问题 | 来源 | 处理 |
+|---|---|---|---|---|---|
+| BA1 | MAJOR | `src/metrix_e1/interpretations.py` B14 | 状态原因与第 9 节的四点张力(G0.5 三部分同一原因;G0.4 改判;G0.3、G0.9、G0.10 无原因词;可能多个原因) | IB1-CR:29 | 登记于 B14,交 Review Gate(`IMPL_B_REPORT.md` 待决第 1、5 项) |
+| BA2 | MAJOR | B5(LoRA A 初始化) | 随机数已改为 `rng_rule` 给出的 `random.Random` 本身(`r.uniform`);分布与 purpose 字符串协议未规定 | IB1-CR:30 | 交 Review Gate(待决第 1 项) |
+| BA3 | MAJOR | B17(预检估算) | 评测时间改为预检中实测一次 FP32 DEV 评测 × 评测单位数;估算方法协议未规定 | IB1-CR:26 | 交 Review Gate(待决第 1 项) |
+| BA4 | MINOR | `stops.st13_scan` | ST13 原来只映射调用方的布尔值;已加按文件检测的 `st13_scan`,src 中没有调用方 | IB1-CR:34 | 阶段 C 由 `run_pilot` 在每步开始时调用 |
+| BA5 | MINOR | `stats.immediate_gain`、`record.render_text`、`compute.cost_usd`、`compute.run_flops`、`compute.preflight_summary`、`compute.estimate_total_hours` | 已实现,没有调用方(后三个由报告提交审查补列,IBR-CR:99) | IB1-CR:37、41 | 阶段 C 接线 |
+| BA6 | MINOR | `train.fetch_model_config` | 下载的 `config.json`(sha256 `1ddb5b89…`)没有冻结值可比;冒烟小模型若由它构造,来源不受 ST12 覆盖 | IB1-CR:46 | 阶段 C:RUNBOOK 与实验记录写明其哈希 |
+| BA7 | — | B19 与阶段 A 预告的停止点 | 阶段 A 预告“如协议未覆盖即停下”,本阶段改为实现并列入待决 | IB1-CR:76 | 交 Review Gate 明确接受(待决第 4 项) |
+| BA8 | 观察 | `data.build_general_dev` | `eval_sets.jsonl` 以文本模式读取,test 行被 UTF-8 解码 | IB1-DA:217 | 工作提交中已改为按字节读取;此前 `data.py` 自身以文本模式读取的运行列于 `IMPL_B_REPORT.md` 待决第 3 项(BE1),读法问题交 Review Gate |
+| BA9 | 观察 | B1–B3 | s、epoch 的起点与置换调用方式的具体后果;`train_Y.jsonl` 的行序未冻结 | IB1-DA:222 | B3 写明行序;交 Review Gate(待决第 1 项) |
+| BA10 | 观察 | `TestAuthorization` | 只是约定上的保护,任何代码都能构造 | IB1-DA:223 | 每个 TEST 路径先调用 `leakage.verify_authorization`,按已提交记录复核(1.25 节 BD1) |
+
+### 1.23 Implementation 阶段 B:工作提交 `74a4d444` 第 2 轮审查(`reviews/74a4d444…/code-reviewer_round2.md` 记 `IB2-CR:n`,`data-auditor_round2.md` 记 `IB2-DA:n`)
+
+code-reviewer 结论 PASS,没有 BLOCKER(2 MAJOR、15 MINOR);data-auditor 结论 PASS(仅作参考),6 条观察。两条 MAJOR 与 15 条 MINOR 在修复提交 `fdbb9def` 中处理,现状由修复提交审查原文第一节逐条给出(`IBF-CR:16-60`);下表只列没有修完或交 Review Gate 的项。
+
+| # | 严重度 | 位置 | 问题 | 来源 | 处理 |
+|---|---|---|---|---|---|
+| BB1 | MAJOR(一部分) | `evaluate.evaluate_model(split="test")` | TEST 评测入口的守卫:授权复核已加(修复提交,本报告提交补齐);ST10 通过的凭据与“TEST 只评一次”没有实现 | IB2-CR:96 | 阶段 C 的硬性前提(`IMPL_B_REPORT.md`“留给阶段 C 的事项”;1.25 节 BD8) |
+| BB2 | MINOR | B24(T3 含 Acc_CB(N)) | T3 原文只说 TEST-QA,实现同时检查 Acc_CB(N) | IB2-CR:102 | B24 写明,交 Review Gate(待决第 1 项) |
+| BB3 | MINOR | 登记 | 第 4 个前提、render_text、cost_usd、config.json 哈希的登记不在暂存内容中 | IB2-CR:124 | 本报告提交:`IMPL_B_REPORT.md` 待决第 2 项、“留给阶段 C 的事项”;BA5、BA6 |
+| BB4 | 观察 | `tests/test_data_hashes.py` → `reports/round5/l6_check.py` | 参考比对测试让 `l6_check.py` 以文本模式读取完整的 `eval_sets.jsonl`,test 行被 UTF-8 解码(不解析、不分词) | IB2-DA:213 | 第二个修复提交起只给它 DEV 行的字节副本;过去的运行是否属于读取 TEST 交 Review Gate(待决第 3 项;BC1) |
+| BB5 | 观察 | `evaluate_model(split="test")` | 新路径,没有调用者;阶段 C 的驱动代码加入后需要再审 | IB2-DA:225 | 阶段 C 审查 |
+| BB6 | 观察 | `test_data.check_interpretations_ruled` | 协议三个前提之外的第 4 个前提 | IB2-DA:226 | 交 Review Gate(待决第 2 项) |
+
+### 1.24 Implementation 阶段 B:修复提交 `fdbb9def` 的提交前审查(`reviews/fdbb9def…/code-reviewer.md` 记 `IBF-CR:n`,`data-auditor.md` 记 `IBF-DA:n`)
+
+code-reviewer 结论 PASS,没有 BLOCKER(1 MAJOR、9 MINOR);data-auditor 结论 PASS(仅作参考)。MAJOR 的代码部分与 7 条 MINOR 在第二个修复提交 `493d7f9c` 中修(现状见 `IBF2-CR:15-73`);下表是余下的项。
+
+| # | 严重度 | 位置 | 问题 | 来源 | 处理 |
+|---|---|---|---|---|---|
+| BC1 | MAJOR(审查方注明不确定) | `reports/round5/l6_check.py:82`;`tests/test_data_hashes.py` | BB4 的登记不充分;每次 pytest 都让 `l6_check.py` 以文本模式解码全部 1200 行(800 行 test) | IBF-CR:63 | 代码:第二个修复提交起测试只给它 DEV 行的字节副本(脚本未改)。已执行过的运行逐条列于 `IMPL_B_REPORT.md` 待决第 3 项,交 Review Gate;裁决之前不得再对完整的 `eval_sets.jsonl` 运行 `l6_check.py` |
+| BC2 | MINOR | `evaluate.evaluate_model` | ST10 凭据与“只评一次”(BB1 的另两项) | IBF-CR:69 | 同 BB1 |
+| BC3 | MINOR | 审查记录 | 工作提交推送时审查原文与 auditor 输出不在仓库 | IBF-CR:81 | 本报告提交入库:`reviews/74a4d444…/`、`reviews/fdbb9def…/`、`reviews/493d7f9c…/`、`audit/ib_*`–`ie_*`、`audit/stdout/impl_b/`;推送顺序写入 `IMPL_B_REPORT.md`“提交” |
+| BC4 | 观察 | `leakage.verify_authorization` | 不复核条件 1(ST12)与解释裁决 | IBF-DA:220 | 解释裁决:本报告提交起复核(BD1)。条件 1:每步开始时的 `stops.st12` 负责,`verify_authorization` 文档写明 |
+
+### 1.25 Implementation 阶段 B:第二个修复提交 `493d7f9c` 的提交前审查(`reviews/493d7f9c…/code-reviewer.md` 记 `IBF2-CR:n`,`data-auditor.md` 记 `IBF2-DA:n`)
+
+code-reviewer 结论 PASS,没有 BLOCKER(1 MAJOR 为 BC1 的遗留、8 MINOR);data-auditor 结论 PASS(仅作参考)。MINOR 中的代码与测试项在本报告提交中修(`impl_b/t12_fix3.txt`;本报告提交的审查见 `reviews/74a4d444…/` 的 `*_report-commit*`,登记于 1.26 节)。
+
+| # | 严重度 | 位置 | 问题 | 来源 | 处理 |
+|---|---|---|---|---|---|
+| BD1 | MINOR | `leakage.verify_authorization` | 文档说复核条件 2、3 的全部内容,实际不复核选定配置构成训练计划、30 个 checkpoint 哈希、数据内容哈希与解释裁决 | IBF2-CR:78 | 已修:条件 2、3 的内容检查提到 `record.gate0_record_problem`、`freeze_record_problem`,TEST 生成器与 `verify_authorization` 共用;数据内容哈希与冻结值比较;解释裁决复核;授权的冻结提交同时与当前 PROTOCOL_FROZEN 和调用方加载的冻结文件比较(签名改为 `verify_authorization(authorization, fz, repo_root=None)`;`run_test_part`、`evaluate_model` 相应改为传 `fz`)。测试逐项去掉检查后失败(`t12` 的变异检查) |
+| BD2 | MINOR | `tests/test_evaluate.py` | 非有限值测试只覆盖第一次前向,不覆盖解码循环内一步 | IBF2-CR:80 | 已修:`LateNaNStub` 第 1 次前向有限、之后 NaN;去掉循环内检查测试失败(`t12`) |
+| BD3 | MINOR | `tests/test_evaluate.py` | 3 个连续空行 | IBF2-CR:82 | 已修 |
+| BD4 | MINOR | `tests/test_test_data.py::test_pending_interpretations_block_test` | 依赖当前仍有待决解释 | IBF2-CR:84 | 已修:monkeypatch 出“一条待决”与“全部已裁决”两种状态 |
+| BD5 | MINOR | `tests/test_data_hashes.py::_dev_rows_only` | 过滤前不核对源文件哈希;路径与计数写死 | IBF2-CR:86 | 已修:过滤前整文件 sha256 与冻结值比较;路径取 `D.params(fz).general_source`;计数与 `data.build_general_dev` 的按行前缀计数比较;manifest 副本取自冻结提交 |
+| BD6 | MINOR | 审查记录 | 同 BC3 | IBF2-CR:88 | 同 BC3 |
+| BD7 | MINOR | `reports/impl_b/t10_fix2_commit.txt` | grep 只显示含 `eval_sets` 的行,也不含 `reports/` | IBF2-CR:90 | `t12` 列出 src/ 与 tests/ 中全部 `open(`、`read_text(`、`read_bytes(` 调用;`reports/round5/l6_check.py` 是唯一以文本模式打开 `eval_sets.jsonl` 的文件,裁决之前不再对完整文件运行(BC1) |
+| BD8 | MINOR | `evaluate.evaluate_model` | ST10 凭据与“只评一次” | IBF2-CR:92 | 同 BB1 |
+| BD9 | 观察 | `leakage.verify_authorization` | 读工作区的 PROTOCOL_FROZEN,不是 HEAD blob | IBF2-DA:254 | 登记;本报告提交起另与调用方 `frozen.load` 得到的冻结提交比较 |
+| BD10 | 观察 | `tests/test_st12.py` | 翻转的那个字节落在 test 行范围内;只改临时副本的原始字节,随后只对整个文件求哈希,不解码、不解析 | IBF2-DA:256 | 列入 `IMPL_B_REPORT.md` 待决第 3 项(备案) |
+
+### 1.26 Implementation 阶段 B:报告提交的提交前审查(`reviews/74a4d444…/code-reviewer_report-commit.md` 记 `IBR-CR:n`,`data-auditor_report-commit.md` 记 `IBR-DA:n`)
+
+code-reviewer 结论 PASS,没有 BLOCKER(1 MAJOR、12 MINOR);data-auditor 结论 PASS(仅作参考),6 条观察,35 个埋入故障全部检出。两份审查都因 HTTP 429 中断后续审完成。按阶段 A 报告提交的先例,审查之后只改报告、本文件与证据,不改代码(审查之后的改动见 `reviews/74a4d444…/report_commit_post_review.diff`);代码与测试类的项登记到阶段 C 的第一个代码提交。
+
+| # | 严重度 | 位置 | 问题 | 来源 | 处理 |
+|---|---|---|---|---|---|
+| BE1 | MAJOR | `IMPL_B_REPORT.md` 待决第 3 项;BA8 | 交 Review Gate 的运行清单只列了 `l6_check.py` 的运行,漏了 `data.py` 自身在工作提交修复前以文本模式读取的运行(data generate、verify、条件 1、各次 pytest) | IBR-CR:74 | 已补:待决第 3 项逐条列出(含 `data.py` 版本的 sha256 核对与无法核实的早期版本),另补 data-auditor 冻结前第 5 轮两个以文本模式读取的脚本;BA8 改为指向第 3 项。读法仍交 Review Gate |
+| BE2 | MINOR | `src/metrix_e1/leakage.py` `verify_authorization`;`tests/test_test_data.py` | 三方比较合成一个条件、一句报错,`other_protocol_frozen` 用例区分不出“与当前 PROTOCOL_FROZEN 比较”一项 | IBR-CR:76 | 登记;阶段 C 第一个代码提交中分开比较或补“授权等于 fz、不等于当前 PROTOCOL_FROZEN”的用例 |
+| BE3 | MINOR | `IMPL_B_REPORT.md` 单元测试第 9 项 | “逐项去掉检查后对应用例失败”超出 `t12` 变异检查的 6 项 | IBR-CR:78 | 已改为准确列出变异了哪几项 |
+| BE4 | MINOR | `IMPL_B_REPORT.md` 审查表第 1 行 | “8 条改代码”与原文不符 | IBR-CR:80 | 已改为“9 条改代码(其中 B5、B17 改后仍交 Review Gate),B14 只登记” |
+| BE5 | MINOR | `IMPL_B_REPORT.md`、本文件 1.25 节 | 报告提交审查记录的位置说法不一;路径对照缺 `review_report/` | IBR-CR:82 | 已统一为 `reviews/74a4d444…/*_report-commit*`,补对照与两处改名 |
+| BE6 | MINOR | `IMPL_B_REPORT.md` 提交、推送 | 报告提交的推送记录 `t13` 留在工作区,与阶段 A `t8` 丢失的情形相同 | IBR-CR:84 | 推送后立即作为证据单独提交并快进推送(Owner 第 0 项);那次推送自身的输出 `t14` 随阶段 C 第 0 步入库;列入待决第 6 项请 Review Gate 确认 |
+| BE7 | MINOR | `IMPL_B_REPORT.md` 开头“中断” | 没有写第三次重启与本轮 HTTP 429 中断;中断记录不在仓库 | IBR-CR:86 | 已补;`interruption_report-commit.txt`、续审消息与核对续审消息送达的脚本入库 |
+| BE8 | MINOR | `reports/impl_b/t12_fix3.txt` | 被测代码与暂存内容之间只有 stat 行数对应,没有哈希 | IBR-CR:88 | 已补 `impl_b/t12c_reviewed_code_pytest.txt`:两份审查之后在被审的暂存代码上重跑,204 passed;运行前后 `src/`、`tests/` 的树哈希相同、工作区等于暂存区,`src/`、`tests/` 部分的 diff 与审查输入的同一部分 sha256 相同 |
+| BE9 | MINOR | `test_data.check_interpretations_ruled`、`leakage.verify_authorization`;`frozen.CONTENT_HASH_KEYS` 与 `Frozen.content_hashes` | 解释裁决检查仍是两份代码;`content_hashes` 另写一遍字面键 | IBR-CR:90 | 登记;阶段 C 抽 `interpretations.pending_problem()`,`content_hashes` 按 `CONTENT_HASH_KEYS` 组装 |
+| BE10 | MINOR | `evaluate.evaluate_model`;`tests/test_evaluate.py` | `fz is None` 分支无测试;`LateNaNStub` 用例没断言 `values` 非空;对照写死 16 | IBR-CR:94 | 登记;阶段 C 补 |
+| BE11 | MINOR | `IMPL_B_REPORT.md` 留给阶段 C 的事项 | `compute.run_flops`、`preflight_summary`、`estimate_total_hours` 没有调用方,未列 | IBR-CR:99 | 已补入报告与 BA5 |
+| BE12 | MINOR | `src/metrix_e1/record.py` 末尾 | 多一个空行(W391) | IBR-CR:101 | 登记;阶段 C 删 |
+| BE13 | MINOR | `reports/impl_b/mutate_fix3.py` | 变量 `SP` 未使用 | IBR-CR:103 | 登记,不改:该文件须与 `t12` 中运行的脚本逐字节相同(`t12` 末尾的 `cmp`) |
+| BE14 | 观察 | `leakage.verify_authorization` | 信任调用方传入的 `fz`:四个冻结值取自 `fz.record.data_sha256`,手工构造的 Frozen 可带入别的值(与手工构造 TestAuthorization 同一类约定;不是读取 TEST 的路径) | IBR-DA:338 | 登记;阶段 C 由 `run_pilot` 只用 `frozen.load()` 的结果调用 |
+
 ## 2. 已在第 5–7 轮解决(核对用)
 
 | 原条目 | 来源 | 处理 |
@@ -377,3 +456,5 @@ code-reviewer 结论 PASS,没有 BLOCKER;第 1 轮各项的现状见原文第一
 - 第 6 轮第 2 项“所有检查脚本”是否包括 auditor 已入库的旧脚本(A4、A6):第 7 轮指令第 3 项将其登记入 1.7 节 G4。本节目前没有其它开放项;第 7 轮审查新提出的项见 1.8 节。
 - 第 9 轮:1.14 节 W1(MAJOR)、W2、W3、W4/X1、W5、W8,1.16 节 Y5、Y8 须由 Review Gate 决定,列于 `ROUND9_REPORT.md`“待 Review Gate 决定”第 1–4a 项(1.16 节 Y1、1.17 节 Z6)。
 - Implementation 阶段 A:1.18 节 AA1、AA2、AA6、AA7,1.19 节 AB1、AB2 须由 Review Gate 决定;AA9(命令路径)、AA11(记录字段)、L4 的语料含 `anchor_text`、1.21 节 AD14(修复提交没有调用 data-auditor)请 Review Gate 备案。都列于 `IMPL_A_REPORT.md`“待 Review Gate 决定”(第 1–8 项)。
+- Implementation 阶段 B:1.22 节 BA1–BA3、BA7、BA9,1.23 节 BB2、BB4、BB6,1.24 节 BC1 须由 Review Gate 决定;1.25 节 BD10 请 Review Gate 备案。都列于 `IMPL_B_REPORT.md`“待 Review Gate 决定”(第 1–5 项)。BB1 / BC2 / BD8(ST10 凭据与“TEST 只评一次”)是阶段 C 的硬性前提。
+- Implementation 阶段 B 报告提交:1.26 节 BE1(待决第 3 项的运行清单)与 BE6(推送记录的证据提交不经审查,待决第 6 项)请 Review Gate 决定或确认。

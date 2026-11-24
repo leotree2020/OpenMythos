@@ -1,0 +1,67 @@
+# Data Auditor run (implementation stage B). host vm, CPU only (no GPU device), no model weights loaded (tokenizer files only); 2026-11-24 03:44:08 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit; PYTHONDONTWRITEBYTECODE=1
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/venv/bin/python -I -B if_01_content_hashes.py /home/user/OpenMythos /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/auditor_ib/dl/qwen_tok /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/data_d /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/auditor_id/out
+env: host vm | Linux-6.18.44-fc-v819-x86_64-with-glibc2.39 | python 3.13.18 (/tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/venv/bin/python) | installed {'transformers': '5.22.2', 'tokenizers': '0.23.3', 'pyarrow': '26.0.1', 'huggingface_hub': '2.4.0', 'torch': '2.11.0'} | nvidia device nodes: []
+== A. PROTOCOL_FROZEN, my own reading
+metrix/e1-pilot/PROTOCOL_FROZEN: sha256 3f8a3bbaaafa0b451483bb88baa012c77e8b106dd3b157a152ffa675856906ff | working tree == HEAD blob True | == index blob True
+current-version lines ['当前有效版本：v1.1'] -> version v1.1
+current section: lines 7..47 ('## v1.1(当前有效)')
+frozen commit of the current section: 87a244db28a901f9e89282b50df76778ab5c2887 | == 87a244db28a901f9e89282b50df76778ab5c2887: True
+the current section refers to the table '全部数据哈希' with ['12'] values
+table header ['项', 'SHA-256', '定义', '冻结提交中的位置'] | rows 12
+  my reading: facts        row 'fact(160 条)' -> 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 | definition cell '规范化;协议第 2.2 节' names '协议第 2.2 节': True | location 'DATA_MANIFEST.json: name_generation.expected_facts_canonical_sha256'
+  my reading: train_S      row '`train_S.jsonl`' -> 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e | definition cell '规范化;协议第 2.6 节' names '协议第 2.6 节': True | location 'DATA_MANIFEST.json: s_permutation.expected_train_S_canonical_sha256'
+  my reading: candidates   row '`candidates.json`' -> e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | definition cell '规范化;协议第 2.5 节' names '协议第 2.5 节': True | location 'SPLIT_MANIFEST.json: candidates.candidate_mapping_sha256'
+  my reading: anchor_texts row '锚文本(512 篇解码文本)' -> 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 | definition cell '规范化;JSON 列表,算法见 manifest' names 'JSON 列表': True | location 'DATA_MANIFEST.json: anchor_text.decoded_texts_canonical_sha256'
+  freeze-commit DATA_MANIFEST.json: name_generation.expected_facts_canonical_sha256 = 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 | == table value True
+  freeze-commit DATA_MANIFEST.json: s_permutation.expected_train_S_canonical_sha256 = 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e | == table value True
+  freeze-commit SPLIT_MANIFEST.json: candidates.candidate_mapping_sha256 = e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | == table value True
+  freeze-commit DATA_MANIFEST.json: anchor_text.decoded_texts_canonical_sha256 = 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 | == table value True
+  freeze-commit protocol text, facts: ['406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97'] | == table value True
+  freeze-commit protocol text, candidates: ['e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705'] | == table value True
+  freeze-commit protocol text, train_S: ['686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e'] | == table value True
+  freeze-commit DATA_MANIFEST anchor_text.decoded_texts_hash_rule: 'canonical SHA-256 (hashing rule of this manifest) of the JSON list of the 512 anchor texts in document order; text i = decode of the first at most 128 ids of encode(document i, add_special_tokens=False) with the pinned tokenizer (transformers 5.22.2 decode, default arguments); reference implementation metrix/e1-pilot/reports/round2/anchor_check.py (round 8, Review Gate round 7 ruling, item 1d)'
+  freeze-commit DATA_MANIFEST hashing: serialization "json.dumps(obj, sort_keys=True, ensure_ascii=False, separators=(',', ':'), allow_nan=False)" | jsonl "one canonical object per line, joined by '\\n', one final '\\n'"
+
+== B. the four values verify_authorization compares with (static trace; Executor files read as text)
+frozen.CONTENT_HASH_KEYS = ('facts', 'train_S', 'candidates', 'anchor_texts')
+frozen.DATA_TABLE_ROWS: 12 labels | labels == my table's labels: True
+parse_protocol_frozen: ['table_at = _one([i for i, ln in enumerate(lines) if ln == \'### 全部数据哈希\'], "heading \'### 全部数据哈希\'")'] | ['data_hashes = {DATA_TABLE_ROWS[label][0]: sha for label, sha in rows}'] | ['return FrozenRecord(version=version, commit=commit, file_sha256=files, data_sha256=data_hashes, source_sha256=sha256_hex(data))']
+Frozen.data_hash: ['return self.record.data_sha256[key]']
+frozen.load binds data_sha256 to the frozen-commit manifests: ['if found != [record.data_sha256[key]]:']
+verify_authorization: ['content = {k: fz.data_hash(k) for k in FZ.CONTENT_HASH_KEYS}'] | R.freeze_record_problem arguments ["recs['selection_freeze']", 'C.load(fz)', 'content', 'authorization.gate0_record_sha256']
+record.freeze_record_problem(rec, contract, content_hashes, gate0_sha): data hash comparison ["rec.get('data_content_hashes') != content_hashes"]
+test_data.check_preconditions (the generator's condition 3 gets `content`): 'content = fz.check_data_dir(data_dir)' -> 's_sha = check_selection_record(fz, contract, fz.repo_root, content, g_sha)'
+Frozen.content_hashes returns keys ['facts', 'train_S', 'candidates', 'anchor_texts'] (== CONTENT_HASH_KEYS as a set: True) | check_content: ['if got != self.data_hash(key):', 'return got'] | check_data_dir: got[key] = check_content(key, sha) for each: True
+  facts        DATA_TABLE_ROWS label ['fact(160 条)'] -> value in my reading of PROTOCOL_FROZEN 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 | same row as my own reading: True
+  train_S      DATA_TABLE_ROWS label ['`train_S.jsonl`'] -> value in my reading of PROTOCOL_FROZEN 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e | same row as my own reading: True
+  candidates   DATA_TABLE_ROWS label ['`candidates.json`'] -> value in my reading of PROTOCOL_FROZEN e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | same row as my own reading: True
+  anchor_texts DATA_TABLE_ROWS label ['锚文本(512 篇解码文本)'] -> value in my reading of PROTOCOL_FROZEN 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 | same row as my own reading: True
+
+== C. recomputed from data_d by the protocol rules, and from my round-3 regeneration
+facts.jsonl 160 lines, each exactly the 6 fields: True | train_S.jsonl 120 rows | candidates.json 160 facts | anchor_text.jsonl 512 rows, doc == line index: True
+anchor texts from my decode of data_d's ids: 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 | every decoded text == the stored text: True
+  facts        data_d 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 | my round-3 regeneration 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 | value verify_authorization compares with 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 | ALL EQUAL True
+  train_S      data_d 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e | my round-3 regeneration 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e | value verify_authorization compares with 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e | ALL EQUAL True
+  candidates   data_d e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | my round-3 regeneration e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | value verify_authorization compares with e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | ALL EQUAL True
+  anchor_texts data_d 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 | my round-3 regeneration 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 | value verify_authorization compares with 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 | ALL EQUAL True
+  -> the generator's condition 3 (content = check_data_dir(data_d)) and verify_authorization (content = data_hash) would compare the record with the same dict for data_d: True
+
+== D. data_d unchanged since my round 3; the Executor's printed values
+36_id_compare.txt section D lines parsed: 8
+  facts.jsonl: now e05561ac2d49dcc3c8f59743c5df64151983a540a32ae135fd1b10f5e0fdc828 | round 3 e05561ac2d49dcc3c8f59743c5df64151983a540a32ae135fd1b10f5e0fdc828 | unchanged True
+  train_F.jsonl: now 3aa9ab3ca313c0a1113b91e927af51342c915e3e40dd2f20992f3d9e59b0e373 | round 3 3aa9ab3ca313c0a1113b91e927af51342c915e3e40dd2f20992f3d9e59b0e373 | unchanged True
+  train_S.jsonl: now 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e | round 3 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e | unchanged True
+  train_Y.jsonl: now c7430cadb2b06dd5c144af381a8183d4c186f27f2b5acfa9d8d39da0b7626d15 | round 3 c7430cadb2b06dd5c144af381a8183d4c186f27f2b5acfa9d8d39da0b7626d15 | unchanged True
+  dev_qa.jsonl: now 9761eb60d6c9155c2f56394aa228b1e9dfea0ae3926ab50cb21d903108bc7fde | round 3 9761eb60d6c9155c2f56394aa228b1e9dfea0ae3926ab50cb21d903108bc7fde | unchanged True
+  candidates.json: now e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | round 3 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | unchanged True
+  general_dev.jsonl: now 957666920c91ef5b9328984d26ed0628c8a80b439d461bea49b54c2235635e73 | round 3 957666920c91ef5b9328984d26ed0628c8a80b439d461bea49b54c2235635e73 | unchanged True
+  anchor_text.jsonl: now 2089e656819d1fe0f6ececcc26e5cade09ee80a92c50e7c8f607fa4e0ef46da5 | round 3 2089e656819d1fe0f6ececcc26e5cade09ee80a92c50e7c8f607fa4e0ef46da5 | unchanged True
+  other files in data_d: ['leakage_report.json'] | test_qa.jsonl / general_test.jsonl present: []
+  facts        Executor t8 generate (line 20) 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 | t8 verify (line 38) 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 | == mine True
+  train_S      Executor t8 generate (line 21) 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e | t8 verify (line 39) 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e | == mine True
+  candidates   Executor t8 generate (line 22) e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | t8 verify (line 40) e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | == mine True
+  anchor_texts Executor t8 generate (line 23) 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 | t8 verify (line 41) 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 | == mine True
+modules: torch imported=True | transformers modeling modules imported=['torch', 'transformers.modeling_rope_utils', 'transformers.models.auto.modeling_auto'] | this script never calls a model class or from_pretrained on a model
+RESULT: PASS
+exit=0

@@ -1,0 +1,9 @@
+# Implementation stage B work commit: before git commit, the staged content equals the round-2 review input (review_input_round2.diff, written before both round-2 reviews). Mon Nov 23 08:20:34 UTC 2026
+$ bash -c cmp\ \<\(\ \(git\ diff\ --cached\ --stat\;\ echo\;\ git\ diff\ --cached\)\ \)\ <SCRATCH>/review_work/review_input_round2.diff\ \&\&\ echo\ STAGED_EQUALS_ROUND2_REVIEW_INPUT
+STAGED_EQUALS_ROUND2_REVIEW_INPUT
+exit=0
+$ bash -c git\ diff\ --name-only\ \|\ wc\ -l\;\ git\ status\ --short\ \|\ grep\ -v\ \'\^\?\?\ metrix/e1-pilot/audit/\'\ \|\ grep\ -c\ \'\^\?\?\'
+0
+0
+exit=1
+(exit=1 above is grep -c printing count 0: no unstaged change, no untracked file outside metrix/e1-pilot/audit/)

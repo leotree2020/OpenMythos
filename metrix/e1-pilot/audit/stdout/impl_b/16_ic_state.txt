@@ -1,0 +1,28 @@
+# Data Auditor run (implementation stage B). host vm, CPU only (no GPU device), no model weights loaded (tokenizer files only); 2026-11-23 08:14:40 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit; PYTHONDONTWRITEBYTECODE=1
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/venv/bin/python -I -B ic_00_state.py /home/user/OpenMythos /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/auditor_ib/dl /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/inputs
+env: host vm | Linux-6.18.44-fc-v726-x86_64-with-glibc2.39 | python 3.13.18 (/tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/venv/bin/python) | installed {'transformers': '5.22.2', 'tokenizers': '0.23.3', 'pyarrow': '26.0.1', 'huggingface_hub': '2.4.0', 'torch': '2.11.0'} | nvidia device nodes: []
+== a. state
+HEAD 0bc0eecf1f684773248c198afb94e7026dcfb16d | == 0bc0eecf1f684773248c198afb94e7026dcfb16d: True | branch metrix-e1-pilot-protocol-v1
+unstaged changes under metrix/ (working tree vs index): []
+staged files: 37 | staged files under metrix/e1-pilot/audit/: []
+git diff --cached sha256 963c144e9b696af1f44b1b215ff988d72e09672c8090692305099d2f51ab88cf | review_input_round2.diff body sha256 963c144e9b696af1f44b1b215ff988d72e09672c8090692305099d2f51ab88cf | identical True
+review_input_round2.diff: sha256 b562dfa8b00a28d0db721a20b7fddf8f6e2f51189e4b4f28a1ecab6c1daf9500 | recorded in preflight_tools_check_round2.txt b562dfa8b00a28d0db721a20b7fddf8f6e2f51189e4b4f28a1ecab6c1daf9500 | MATCH True
+review_fixes_round2.diff: sha256 8b6c03072ceccbe37a54a5cf845c456bf6bf6fff0f3b9b4869fad5a7723605e6 | recorded in preflight_tools_check_round2.txt 8b6c03072ceccbe37a54a5cf845c456bf6bf6fff0f3b9b4869fad5a7723605e6 | MATCH True
+
+== b. input files vs the freeze-commit DATA_MANIFEST
+  qwen_tok/tokenizer.json: mine aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4 | Executor qwen_tokenizer/tokenizer.json aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4 | manifest aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4 | ALL EQUAL True
+  qwen_tok/tokenizer_config.json: mine d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101 | Executor qwen_tokenizer/tokenizer_config.json d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101 | manifest d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101 | ALL EQUAL True
+  qwen_tok/vocab.json: mine ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910 | Executor qwen_tokenizer/vocab.json ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910 | manifest ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910 | ALL EQUAL True
+  qwen_tok/merges.txt: mine 8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5 | Executor qwen_tokenizer/merges.txt 8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5 | manifest 8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5 | ALL EQUAL True
+  parcae_tok/tokenizer.json: mine e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77 | Executor parcae_tokenizer/tokenizer.json e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77 | manifest e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77 | ALL EQUAL True
+  parquet/data/sample-100BT/train/shard_00000.parquet: mine 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22 | Executor anchor_source/data/sample-100BT/train/shard_00000.parquet 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22 | manifest 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22 | ALL EQUAL True
+  weight-like files under /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/auditor_ib/dl: []
+  weight-like files under /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/inputs: []
+
+== c. eval_sets.jsonl (whole-file hash; split value from the line prefix, counted; binary mode)
+research/mini_mythos/stage1/results/r1/eval_sets.jsonl: sha256 8816fe5a39d8b89e8c4203bf7d660e798faa471d2b72b5ce43c411cf5925a155 | manifest 8816fe5a39d8b89e8c4203bf7d660e798faa471d2b72b5ce43c411cf5925a155 | MATCH True
+rows by split value (line prefix only): {'dev': 400, 'test': 800} | lines without the prefix key: 0
+modules: torch imported=False | transformers modeling modules imported=[] | this script never calls a model class or from_pretrained on a model
+RESULT: PASS
+exit=0

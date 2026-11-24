@@ -1,0 +1,45 @@
+# Data Auditor run (implementation stage B). host vm, CPU only (no GPU device), no model weights loaded (tokenizer files only); 2026-11-23 14:00:38 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit; PYTHONDONTWRITEBYTECODE=1
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/venv/bin/python -I -B ie_01_devrows.py /home/user/OpenMythos /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/auditor_ib/dl/parcae_tok/tokenizer.json /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/auditor_ib/dl/qwen_tok /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/data_d /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/auditor_id/out/general.json /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/auditor_ie/devrows /tmp/pytest-of-root/pytest-15/test_byte_identical_to_referen0 /tmp/pytest-of-root/pytest-14/test_byte_identical_to_referen0
+env: host vm | Linux-6.18.44-fc-v726-x86_64-with-glibc2.39 | python 3.13.18 (/tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/venv/bin/python) | installed {'transformers': '5.22.2', 'tokenizers': '0.23.3', 'pyarrow': '26.0.1', 'huggingface_hub': '2.4.0', 'torch': '2.11.0'} | nvidia device nodes: []
+freeze-commit general_text.dev: "first 25 windows per domain (books, c4, fineweb, wikitext) with split == 'dev', file order" | truncate_to_model_tokens 256
+
+== A. eval_sets.jsonl: whole-file hash; pass 1 (binary file iteration), two split locators per row
+research/mini_mythos/stage1/results/r1/eval_sets.jsonl sha256 8816fe5a39d8b89e8c4203bf7d660e798faa471d2b72b5ce43c411cf5925a155 | frozen manifest 8816fe5a39d8b89e8c4203bf7d660e798faa471d2b72b5ce43c411cf5925a155 | MATCH True
+rows by split value (prefix only): {'dev': 400, 'test': 800} | rows where L1 / L2 is missing or they disagree: []
+DEV row numbers in eval_sets.jsonl (runs): ['1-400']
+wrote /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/auditor_ie/devrows/eval_sets_dev_rows.jsonl (only rows whose split value is b'dev'; raw bytes, file order)
+
+== B. (a) the DEV file == the DEV rows of eval_sets.jsonl, byte for byte, same order
+eval_sets.jsonl bytes 1899206 (whole file read as bytes; sha256 8816fe5a39d8b89e8c4203bf7d660e798faa471d2b72b5ce43c411cf5925a155 == pass-1 hash True)
+pass 2 (byte offsets) rows 1200 | DEV rows met 400 | each equal to the next DEV-file row: True | DEV-file rows 400 all consumed: True
+DEV file bytes 632604 == sum of the DEV rows' lengths 632604: True
+DEV-file rows whose split (L1 or L2) is not dev: []
+DEV rows: strict UTF-8 + JSON, parsed split == 'dev': True | rows with a b'\r' byte: [] | rows without the final b'\n': []
+DEV file read in text mode (UTF-8, universal newlines, as a text-mode reader would): 400 lines, equal to the binary rows: True
+DEV file sha256 ca433fdf9764b2a5a52179282a97016e3b2f54ed0e266991e06a9a1ecf766658 (the value the test's temporary manifest carries as general_text.source_file_sha256)
+metrix/e1-pilot/DATA_MANIFEST.json: working tree == freeze-commit blob: True
+the test's temporary manifest (built here in memory) differs from the frozen manifest at: [('general_text', 'source_file_sha256')]
+l6_check.py (read as text): manifest loads ['json.load(open(a.manifest, encoding="utf-8"))["general_text"]'] | gt[...] subscripts ['key'] | keys of the pin loop [('source_file_sha256', 'decode_tokenizer_json_sha256')]
+Executor pytest copy /tmp/pytest-of-root/pytest-15/test_byte_identical_to_referen0/eval_sets_dev_rows.jsonl: bytes 632604 sha256 ca433fdf9764b2a5a52179282a97016e3b2f54ed0e266991e06a9a1ecf766658 | == my DEV file byte for byte: True
+  its DATA_MANIFEST_dev_rows.json differs from the frozen manifest at [('general_text', 'source_file_sha256')] | value == my DEV file sha256: True
+Executor pytest copy /tmp/pytest-of-root/pytest-14/test_byte_identical_to_referen0/eval_sets_dev_rows.jsonl: bytes 632604 sha256 ca433fdf9764b2a5a52179282a97016e3b2f54ed0e266991e06a9a1ecf766658 | == my DEV file byte for byte: True
+  its DATA_MANIFEST_dev_rows.json differs from the frozen manifest at [('general_text', 'source_file_sha256')] | value == my DEV file sha256: True
+
+== C. (b) protocol 2.7 general DEV selection: complete file vs DEV file vs data_d/general_dev.jsonl
+kept per domain: complete file {books: 25, c4: 25, fineweb: 25, wikitext: 25} other domains [] | DEV file {books: 25, c4: 25, fineweb: 25, wikitext: 25} other domains []
+selected rows byte-identical and in the same order: True | DEV-file row k is eval_sets row dev_numbers[k] for every selected row: True
+  books: eval_sets rows 301..325 | DEV-file rows 301..325 | doc_id books-dev-000..books-dev-024
+  c4: eval_sets rows 101..125 | DEV-file rows 101..125 | doc_id c4-dev-000..c4-dev-024
+  fineweb: eval_sets rows 1..25 | DEV-file rows 1..25 | doc_id fineweb-dev-000..fineweb-dev-024
+  wikitext: eval_sets rows 201..225 | DEV-file rows 201..225 | doc_id wikitext-dev-000..wikitext-dev-024
+parcae tokenizer.json sha256 e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77 | frozen manifest e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77 | MATCH True
+windows: complete file 100 | DEV file 100 | identical (domain, doc_id, ids, text): True
+data_d/general_dev.jsonl: rows 100 | byte sha256 957666920c91ef5b9328984d26ed0628c8a80b439d461bea49b54c2235635e73 | keys ['doc_id', 'domain', 'ids', 'text']
+my windows (from the DEV file) == data_d/general_dev.jsonl row by row (domain, doc_id, ids, text): True | mismatching rows []
+== my round-3 regeneration /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/auditor_id/out/general.json (complete file, ia_06): True
+AUDIT_VALUE general_dev_ids_canonical_sha256 2e30c443da0b09f385ba5f327d40fb051080c12dc7bc0d3cb873f0a0b01d598f
+AUDIT_VALUE general_dev_texts_canonical_sha256 363aa08742d46776e725715d0ee4c5ae9c4de1ddf96396eb333803ce818587c8
+modules: torch imported=True | transformers modeling modules imported=['torch', 'transformers.modeling_rope_utils', 'transformers.models.auto.modeling_auto'] | this script never calls a model class or from_pretrained on a model
+RESULT: PASS
+exit=0

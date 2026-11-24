@@ -25,7 +25,6 @@ follow outside this command). TEST is evaluated once afterwards (not by this mod
 import argparse
 import dataclasses
 import json
-import re
 import sys
 from pathlib import Path
 
@@ -36,7 +35,6 @@ from . import interpretations as INT
 from . import leakage as LK
 from . import record as R
 from . import stops as STP
-from . import train as T
 from ._cli import run_guarded
 from .errors import ImplementationFail, ProtocolStop
 
@@ -55,36 +53,24 @@ def _committed(repo_root, rel, kind, fz):
 
 
 def check_gate0_record(fz, repo_root):
-    """Condition 2: the committed Gate 0 record (record.gate0_record) of formal mode with status PASS."""
+    """Condition 2: the committed Gate 0 record (record.gate0_record) of formal mode with status PASS
+    (record.gate0_record_problem)."""
     rec, sha = _committed(repo_root, R.GATE0_RECORD_REL, "gate0", fz)
-    status = (rec.get("gate0") or {}).get("gate0_status")
-    if status != "PASS":
-        raise PreconditionFailed("%s: Gate 0 status %r, not PASS" % (R.GATE0_RECORD_REL, status))
+    problem = R.gate0_record_problem(rec)
+    if problem:
+        raise PreconditionFailed("%s: %s" % (R.GATE0_RECORD_REL, problem))
     return sha
 
 
 def check_selection_record(fz, contract, repo_root, content_hashes, gate0_sha):
-    """Condition 3: the committed freeze record (record.selection_freeze_record) of formal mode: selected F, L, A
-    configurations of SEARCH_SPACE.json; data content hashes equal to the data directory's; a 64-hex checkpoint hash
-    for every one of the 30 runs of the plan; bound to the committed Gate 0 record by its SHA-256."""
-    rel = R.SELECTION_FREEZE_REL
-    rec, sha = _committed(repo_root, rel, "selection_freeze", fz)
-    selected = rec.get("selected") or {}
-    try:
-        plan = T.training_plan(contract, selected)
-    except (ValueError, KeyError, AttributeError) as e:
-        raise PreconditionFailed("%s: selected configurations %r are not configurations of SEARCH_SPACE.json (%s)" % (
-            rel, selected, e)) from e
-    if rec.get("data_content_hashes") != content_hashes:
-        raise PreconditionFailed("%s: data content hashes differ from the data directory" % rel)
-    ck = rec.get("checkpoints") or {}
-    hexes = re.compile(r"[0-9a-f]{64}")
-    missing = [s.name for s in plan if not isinstance(ck.get(s.name), str) or not hexes.fullmatch(ck[s.name])]
-    if missing:
-        raise PreconditionFailed("%s: no checkpoint hash for %d runs (first %s)" % (rel, len(missing), missing[0]))
-    if rec.get("gate0_record_sha256") != gate0_sha:
-        raise PreconditionFailed("%s is not bound to the committed Gate 0 record (sha256 %r, committed %s)" % (
-            rel, rec.get("gate0_record_sha256"), gate0_sha))
+    """Condition 3: the committed freeze record (record.selection_freeze_record) of formal mode whose content meets
+    record.freeze_record_problem: selected F, L, A configurations of SEARCH_SPACE.json; data content hashes equal to
+    the data directory's; a 64-hex checkpoint hash for every one of the 30 runs of the plan; bound to the committed
+    Gate 0 record by its SHA-256."""
+    rec, sha = _committed(repo_root, R.SELECTION_FREEZE_REL, "selection_freeze", fz)
+    problem = R.freeze_record_problem(rec, contract, content_hashes, gate0_sha)
+    if problem:
+        raise PreconditionFailed("%s: %s" % (R.SELECTION_FREEZE_REL, problem))
     return sha
 
 
@@ -137,7 +123,7 @@ def generate_test(fz, authorization, inputs_dir, data_dir):
     """test_qa.jsonl and general_test.jsonl in memory ({file name: bytes}, info). Only with a TestAuthorization whose
     hashes match the committed Gate 0 and freeze records (leakage.verify_authorization), checked before anything is
     read."""
-    LK.verify_authorization(authorization, fz.repo_root)
+    LK.verify_authorization(authorization, fz)
     p = D.params(fz)
     paths = D.check_inputs(fz, p, inputs_dir)
     tok = D.load_qwen_tokenizer(p, paths)
@@ -174,8 +160,7 @@ def main(argv=None):
     for name, blob in files.items():
         (out / name).write_bytes(blob)
         print("%-18s byte_sha256 %s" % (name, FZ.sha256_hex(blob)))
-    report = LK.run_test_part(fz.split_manifest, LK.load_data(a.data), info["test_qa"], info["general_test"], auth,
-                              fz.repo_root)
+    report = LK.run_test_part(fz, LK.load_data(a.data), info["test_qa"], info["general_test"], auth)
     (out / "leakage_test_report.json").write_text(json.dumps(report, ensure_ascii=False, indent=1, sort_keys=True) + "\n",
                                                   encoding="utf-8")
     for c, v in report["checks"].items():

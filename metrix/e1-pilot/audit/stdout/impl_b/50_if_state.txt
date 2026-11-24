@@ -1,0 +1,72 @@
+# Data Auditor run (implementation stage B). host vm, CPU only (no GPU device), no model weights loaded (tokenizer files only); 2026-11-24 03:44:07 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit; PYTHONDONTWRITEBYTECODE=1
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/venv/bin/python -I -B if_00_state.py /home/user/OpenMythos /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/auditor_ib/dl /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/inputs
+env: host vm | Linux-6.18.44-fc-v819-x86_64-with-glibc2.39 | python 3.13.18 (/tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/venv/bin/python) | installed {'transformers': '5.22.2', 'tokenizers': '0.23.3', 'pyarrow': '26.0.1', 'huggingface_hub': '2.4.0', 'torch': '2.11.0'} | nvidia device nodes: []
+== a. state
+HEAD 493d7f9c102cae3ebb916f1d72fcc1759b26bee8 | == 493d7f9c102cae3ebb916f1d72fcc1759b26bee8: True | branch metrix-e1-pilot-protocol-v1
+unstaged changes under metrix/ (working tree vs index): []
+untracked files under metrix/: 12, all my own new files of this round (audit/if_*.py, audit/stdout/impl_b/5x_*.txt, audit/stdout/impl_b/trials/if_*.txt): True | others: []
+(git diff --cached --stat; echo; git diff --cached) sha256 4cdddfb6c593982150c08c5b41d685cb089a948b60982cfc1b198c0dc1fe6f3c | report_commit_input.diff sha256 4cdddfb6c593982150c08c5b41d685cb089a948b60982cfc1b198c0dc1fe6f3c | identical True
+(same, restricted to src/ tests/ reports/) sha256 e62146242c174e552c8756973e2a3ff60fea42e071fa4a6863f36dac09ade8ea | report_commit_input_src_tests_reports.diff sha256 e62146242c174e552c8756973e2a3ff60fea42e071fa4a6863f36dac09ade8ea | identical True
+report_commit_input.diff: sha256 4cdddfb6c593982150c08c5b41d685cb089a948b60982cfc1b198c0dc1fe6f3c | recorded in preflight_tools_check_report-commit.txt ['4cdddfb6c593982150c08c5b41d685cb089a948b60982cfc1b198c0dc1fe6f3c'] | MATCH True
+report_commit_input_src_tests_reports.diff: sha256 e62146242c174e552c8756973e2a3ff60fea42e071fa4a6863f36dac09ade8ea | recorded in preflight_tools_check_report-commit.txt ['e62146242c174e552c8756973e2a3ff60fea42e071fa4a6863f36dac09ade8ea'] | MATCH True
+preflight_tools_check_report-commit.txt records data-auditor_TOOLS_LINE_IDENTICAL: True
+preflight_tools_check_report-commit.txt records data-auditor_FRONTMATTER_IDENTICAL: True
+staged files: 129 | outside metrix/e1-pilot/: []
+  metrix/e1-pilot/audit (scripts): 24 files, status [('A', 24)] | ['ib_00_tag.py', 'ib_01_compare.py', 'ib_02_yratio.py', 'ib_03_scoring.py', 'ib_04_training.py', 'ib_05_test_refusal.py', 'ib_06_static.py', 'ib_run_logged.sh', 'ic_00_state.py', 'ic_01_compare.py', 'ic_02_dump.py', 'ic_03_scoring.py', 'ic_05_test_refusal.py', 'ic_06_static.py', 'ic_07_static_selftest.py', 'id_00_state.py', 'id_01_compare.py', 'id_02_dump.py', 'id_06_static.py', 'id_07_static_selftest.py', 'ie_00_state.py', 'ie_01_devrows.py', 'ie_06_static.py', 'ie_07_static_selftest.py']
+  metrix/e1-pilot/audit/stdout/impl_b: 50 files, status [('A', 50)] | ['00_ia_frozen.txt', '01_ib_tag.txt', '02_ia_fetch.txt', '03_ia_anchor.txt', '04_ia_facts.txt', '05_ia_derived.txt', '06_ia_general.txt', '07_ib_compare.txt', '08_ib_yratio.txt', '09_ib_scoring.txt', '10_ib_training.txt', '11_ib_test_refusal.txt', '12_ib_static.txt', '13_git_status_final.txt', '14_ia_frozen.txt', '15_ib_tag.txt', '16_ic_state.txt', '17_ia_anchor.txt', '18_ia_facts.txt', '19_ia_derived.txt', '20_ia_general.txt', '21_ic_compare.txt', '22_ic_dump.txt', '23_ic_scoring.txt', '24_ib_training.txt', '25_ic_test_refusal.txt', '26_ic_static.txt', '27_ic_static_selftest.txt', '28_git_status_final.txt', '29_ia_frozen.txt', '30_ib_tag.txt', '31_id_state.txt', '32_ia_anchor.txt', '33_ia_facts.txt', '34_ia_derived.txt', '35_ia_general.txt', '36_id_compare.txt', '37_id_dump.txt', '38_ic_test_refusal.txt', '39_id_static.txt', '40_id_static_selftest.txt', '41_id_static_on_selftest_M2.txt', '42_id_static_on_selftest_M8.txt', '43_git_status_final.txt', '44_ie_state.txt', '45_ie_devrows.txt', '46_ic_test_refusal.txt', '47_ie_static.txt', '48_ie_static_selftest.txt', '49_git_status_final.txt']
+  metrix/e1-pilot/audit/stdout/impl_b/trials: 9 files, status [('A', 9)] | ['id_trial_id06.txt', 'ie_helper_id06_base.py', 'ie_helper_part_head.py', 'ie_helper_part_mid.py', 'ie_trial1_ie06.txt', 'ie_trial2_ie06.txt', 'ie_trial3_ie06.txt', 'ie_trial4_ie06.txt', 'ie_trial_ie07.txt']
+  M metrix/e1-pilot/reports/DEFERRED_MINORS.md
+  A metrix/e1-pilot/reports/IMPL_B_REPORT.md
+  A metrix/e1-pilot/reports/impl_b/mutate_fix3.py
+  A metrix/e1-pilot/reports/impl_b/t11_fix2_commit_push.txt
+  A metrix/e1-pilot/reports/impl_b/t12_fix3.txt
+  A metrix/e1-pilot/reports/impl_b/t12b_review_records_copy.txt
+  metrix/e1-pilot/reviews/493d7f9c102cae3ebb916f1d72fcc1759b26bee8: 8 files, status [('A', 8)]
+  metrix/e1-pilot/reviews/74a4d4443a3880239996d7adc6c13c636e4edf64: 16 files, status [('A', 16)]
+  metrix/e1-pilot/reviews/fdbb9def89351aa187c1b1ae9749884bc3a80fe9: 8 files, status [('A', 8)]
+  M metrix/e1-pilot/src/metrix_e1/evaluate.py
+  M metrix/e1-pilot/src/metrix_e1/frozen.py
+  M metrix/e1-pilot/src/metrix_e1/leakage.py
+  M metrix/e1-pilot/src/metrix_e1/record.py
+  M metrix/e1-pilot/src/metrix_e1/test_data.py
+  M metrix/e1-pilot/tests/test_data_hashes.py
+  M metrix/e1-pilot/tests/test_evaluate.py
+  M metrix/e1-pilot/tests/test_test_data.py
+staged files under audit/: 83 | index bytes != working-tree bytes: []
+files under audit/ in the working tree: 305 | not in the index: ['metrix/e1-pilot/audit/if_00_state.py', 'metrix/e1-pilot/audit/if_01_content_hashes.py', 'metrix/e1-pilot/audit/if_02_trials.py', 'metrix/e1-pilot/audit/if_06_static.py', 'metrix/e1-pilot/audit/if_07_static_selftest.py', 'metrix/e1-pilot/audit/stdout/impl_b/50_if_state.txt', 'metrix/e1-pilot/audit/stdout/impl_b/trials/if_trial1_if00.txt', 'metrix/e1-pilot/audit/stdout/impl_b/trials/if_trial1_if01.txt', 'metrix/e1-pilot/audit/stdout/impl_b/trials/if_trial1_if02.txt', 'metrix/e1-pilot/audit/stdout/impl_b/trials/if_trial1_if06.txt', 'metrix/e1-pilot/audit/stdout/impl_b/trials/if_trial1_if07.txt', 'metrix/e1-pilot/audit/stdout/impl_b/trials/if_trial2_if06.txt'] (expected: only this round's own new files)
+audit/ files in the index but not at HEAD: 83 | == the staged audit/ files: True
+  not in the staged change, working tree == HEAD blob: metrix/e1-pilot/src/metrix_e1/data.py: True
+  not in the staged change, working tree == HEAD blob: metrix/e1-pilot/src/metrix_e1/stops.py: True
+  not in the staged change, working tree == HEAD blob: metrix/e1-pilot/src/metrix_e1/mode.py: True
+  not in the staged change, working tree == HEAD blob: metrix/e1-pilot/src/metrix_e1/contract.py: True
+  not in the staged change, working tree == HEAD blob: metrix/e1-pilot/src/metrix_e1/train.py: True
+  not in the staged change, working tree == HEAD blob: metrix/e1-pilot/src/metrix_e1/interpretations.py: True
+  not in the staged change, working tree == HEAD blob: metrix/e1-pilot/reports/round5/l6_check.py: True
+  not in the staged change, working tree == HEAD blob: metrix/e1-pilot/reports/round2/anchor_check.py: True
+  not in the staged change, working tree == HEAD blob: metrix/e1-pilot/reports/round2/gen_facts.py: True
+  not in the staged change, working tree == HEAD blob: metrix/e1-pilot/reports/round7/gen_s_cands.py: True
+  not in the staged change, working tree == HEAD blob: metrix/e1-pilot/tests/conftest.py: True
+  not in the staged change, working tree == HEAD blob: metrix/e1-pilot/tests/test_st12.py: True
+  not in the staged change, working tree == HEAD blob: metrix/e1-pilot/PROTOCOL_FROZEN: True
+  not in the staged change, working tree == HEAD blob: metrix/e1-pilot/DATA_MANIFEST.json: True
+  not in the staged change, working tree == HEAD blob: metrix/e1-pilot/SPLIT_MANIFEST.json: True
+  not in the staged change, working tree == HEAD blob: metrix/e1-pilot/SEARCH_SPACE.json: True
+  not in the staged change, working tree == HEAD blob: metrix/e1-pilot/METRIX_E1_PROTOCOL.md: True
+
+== b. input files vs the freeze-commit DATA_MANIFEST
+  qwen_tok/tokenizer.json: mine aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4 | Executor qwen_tokenizer/tokenizer.json aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4 | manifest aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4 | ALL EQUAL True
+  qwen_tok/tokenizer_config.json: mine d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101 | Executor qwen_tokenizer/tokenizer_config.json d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101 | manifest d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101 | ALL EQUAL True
+  qwen_tok/vocab.json: mine ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910 | Executor qwen_tokenizer/vocab.json ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910 | manifest ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910 | ALL EQUAL True
+  qwen_tok/merges.txt: mine 8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5 | Executor qwen_tokenizer/merges.txt 8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5 | manifest 8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5 | ALL EQUAL True
+  parcae_tok/tokenizer.json: mine e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77 | Executor parcae_tokenizer/tokenizer.json e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77 | manifest e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77 | ALL EQUAL True
+  parquet/data/sample-100BT/train/shard_00000.parquet: mine 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22 | Executor anchor_source/data/sample-100BT/train/shard_00000.parquet 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22 | manifest 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22 | ALL EQUAL True
+  weight-like files under /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/auditor_ib/dl: []
+  weight-like files under /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/inputs: []
+
+== c. eval_sets.jsonl (whole-file hash; split value from the line prefix, counted; binary mode)
+research/mini_mythos/stage1/results/r1/eval_sets.jsonl: sha256 8816fe5a39d8b89e8c4203bf7d660e798faa471d2b72b5ce43c411cf5925a155 | manifest 8816fe5a39d8b89e8c4203bf7d660e798faa471d2b72b5ce43c411cf5925a155 | MATCH True
+rows by split value (line prefix only): {'dev': 400, 'test': 800} | lines without the prefix key: 0
+modules: torch imported=False | transformers modeling modules imported=[] | this script never calls a model class or from_pretrained on a model
+RESULT: PASS
+exit=0

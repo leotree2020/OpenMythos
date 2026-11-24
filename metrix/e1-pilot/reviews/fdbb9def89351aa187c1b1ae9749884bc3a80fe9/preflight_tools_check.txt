@@ -1,0 +1,35 @@
+# Implementation stage B fix commit: metrix/CLAUDE.md section 5 item 6 pre-call check. Executor, session_01J5mxaWPrK8siadYKyqZ5pX, host vm. Mon Nov 23 08:31:13 UTC 2026
+$ bash -c diff\ \<\(awk\ \'/\^---\$/\{n++\;\ print\;\ if\(n==2\)\ exit\;\ next\}\ n==1\{print\}\'\ .claude/agents/code-reviewer.md\)\ \<\(awk\ \'/\^---\$/\{n++\;\ print\;\ if\(n==2\)\ exit\;\ next\}\ n==1\{print\}\'\ /root/.claude/agents/code-reviewer.md\)\ \&\&\ echo\ code-reviewer_FRONTMATTER_IDENTICAL
+code-reviewer_FRONTMATTER_IDENTICAL
+exit=0
+$ bash -c cmp\ \<\(grep\ \'\^tools:\'\ .claude/agents/code-reviewer.md\)\ \<\(grep\ \'\^tools:\'\ /root/.claude/agents/code-reviewer.md\)\ \&\&\ echo\ code-reviewer_TOOLS_LINE_IDENTICAL
+code-reviewer_TOOLS_LINE_IDENTICAL
+exit=0
+$ bash -c diff\ \<\(awk\ \'/\^---\$/\{n++\;\ print\;\ if\(n==2\)\ exit\;\ next\}\ n==1\{print\}\'\ .claude/agents/data-auditor.md\)\ \<\(awk\ \'/\^---\$/\{n++\;\ print\;\ if\(n==2\)\ exit\;\ next\}\ n==1\{print\}\'\ /root/.claude/agents/data-auditor.md\)\ \&\&\ echo\ data-auditor_FRONTMATTER_IDENTICAL
+data-auditor_FRONTMATTER_IDENTICAL
+exit=0
+$ bash -c cmp\ \<\(grep\ \'\^tools:\'\ .claude/agents/data-auditor.md\)\ \<\(grep\ \'\^tools:\'\ /root/.claude/agents/data-auditor.md\)\ \&\&\ echo\ data-auditor_TOOLS_LINE_IDENTICAL
+data-auditor_TOOLS_LINE_IDENTICAL
+exit=0
+$ git rev-parse HEAD
+74a4d4443a3880239996d7adc6c13c636e4edf64
+exit=0
+$ sha256sum <SCRATCH>/review_fix/review_input.diff
+b314514a35a38e5ad18fa4336267359f0e85e674843b9301eeb7440bad938d61  <SCRATCH>/review_fix/review_input.diff
+exit=0
+# re-run after the worker restart (uptime -s 13:34:42), before invoking the fix-commit reviews. Mon Nov 23 13:35:34 UTC 2026
+$ bash -c diff\ \<\(awk\ \'/\^---\$/\{n++\;\ print\;\ if\(n==2\)\ exit\;\ next\}\ n==1\{print\}\'\ .claude/agents/code-reviewer.md\)\ \<\(awk\ \'/\^---\$/\{n++\;\ print\;\ if\(n==2\)\ exit\;\ next\}\ n==1\{print\}\'\ /root/.claude/agents/code-reviewer.md\)\ \&\&\ echo\ code-reviewer_FRONTMATTER_IDENTICAL
+code-reviewer_FRONTMATTER_IDENTICAL
+exit=0
+$ bash -c cmp\ \<\(grep\ \'\^tools:\'\ .claude/agents/code-reviewer.md\)\ \<\(grep\ \'\^tools:\'\ /root/.claude/agents/code-reviewer.md\)\ \&\&\ echo\ code-reviewer_TOOLS_LINE_IDENTICAL
+code-reviewer_TOOLS_LINE_IDENTICAL
+exit=0
+$ bash -c diff\ \<\(awk\ \'/\^---\$/\{n++\;\ print\;\ if\(n==2\)\ exit\;\ next\}\ n==1\{print\}\'\ .claude/agents/data-auditor.md\)\ \<\(awk\ \'/\^---\$/\{n++\;\ print\;\ if\(n==2\)\ exit\;\ next\}\ n==1\{print\}\'\ /root/.claude/agents/data-auditor.md\)\ \&\&\ echo\ data-auditor_FRONTMATTER_IDENTICAL
+data-auditor_FRONTMATTER_IDENTICAL
+exit=0
+$ bash -c cmp\ \<\(grep\ \'\^tools:\'\ .claude/agents/data-auditor.md\)\ \<\(grep\ \'\^tools:\'\ /root/.claude/agents/data-auditor.md\)\ \&\&\ echo\ data-auditor_TOOLS_LINE_IDENTICAL
+data-auditor_TOOLS_LINE_IDENTICAL
+exit=0
+$ bash -c cmp\ \<\(\ \(git\ diff\ --cached\ --stat\;\ echo\;\ git\ diff\ --cached\)\ \)\ <SCRATCH>/review_fix/review_input.diff\ \&\&\ echo\ STAGED_EQUALS_REVIEW_INPUT
+STAGED_EQUALS_REVIEW_INPUT
+exit=0

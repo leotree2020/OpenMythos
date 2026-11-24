@@ -187,3 +187,35 @@ def selection_freeze_record(fz, mode, selected, data_content_hashes, checkpoints
             "selected": dict(selected), "data_content_hashes": dict(data_content_hashes), "checkpoints": dict(checkpoints),
             "gate0_record_sha256": gate0_record_sha256}
 
+
+# The content checks of the two committed records, shared by the TEST generator (test_data.check_gate0_record,
+# check_selection_record) and by every TEST path (leakage.verify_authorization), so both check the same things.
+
+def gate0_record_problem(rec):
+    """None if the Gate 0 record's status is PASS (condition 2 of the TEST generator), else the reason."""
+    status = (rec.get("gate0") or {}).get("gate0_status")
+    return None if status == "PASS" else "Gate 0 status %r, not PASS" % (status,)
+
+
+def freeze_record_problem(rec, contract, content_hashes, gate0_sha):
+    """None if the content of a freeze record meets condition 3 of the TEST generator, else the first reason:
+    selected F, L, A configurations of SEARCH_SPACE.json that form the training plan (train.training_plan); data
+    content hashes equal to `content_hashes`; a 64-hex checkpoint hash for every one of the 30 runs of the plan;
+    bound to the Gate 0 record whose SHA-256 is `gate0_sha`."""
+    from .train import training_plan
+    selected = rec.get("selected") or {}
+    try:
+        plan = training_plan(contract, selected)
+    except (ValueError, KeyError, AttributeError) as e:
+        return "selected configurations %r are not configurations of SEARCH_SPACE.json (%s)" % (selected, e)
+    if rec.get("data_content_hashes") != content_hashes:
+        return "data content hashes %r differ from %r" % (rec.get("data_content_hashes"), content_hashes)
+    ck = rec.get("checkpoints") or {}
+    missing = [s.name for s in plan if not isinstance(ck.get(s.name), str) or not FZ.HEX64.fullmatch(ck[s.name])]
+    if missing:
+        return "no checkpoint hash for %d of the %d runs (first %s)" % (len(missing), len(plan), missing[0])
+    if rec.get("gate0_record_sha256") != gate0_sha:
+        return "not bound to the committed Gate 0 record (sha256 %r, committed %s)" % (rec.get("gate0_record_sha256"),
+                                                                                       gate0_sha)
+    return None
+

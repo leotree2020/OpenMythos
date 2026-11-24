@@ -1,0 +1,203 @@
+# Data Auditor run (implementation stage B). host vm, CPU only (no GPU device), no model weights loaded (tokenizer files only); 2026-11-24 03:43:29 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit; PYTHONDONTWRITEBYTECODE=1
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/venv/bin/python -I -B if_07_static_selftest.py /home/user/OpenMythos /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/auditor_if/selftest_trial
+env: host vm | Linux-6.18.44-fc-v819-x86_64-with-glibc2.39 | python 3.13.18 (/tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/venv/bin/python) | installed {'transformers': '5.22.2', 'tokenizers': '0.23.3', 'pyarrow': '26.0.1', 'huggingface_hub': '2.4.0', 'torch': '2.11.0'} | nvidia device nodes: []
+control: fault applied True | if_06 exit 0 | last line 'RESULT: PASS' | expected PASS -> True
+P1: fault applied True | if_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   if_06 output lines that differ from the control run (4; lines with a False check or an error first):
+     imports ['from . import contract as C', 'from . import interpretations as INT', 'from . import record as R'] | statements accounted for 13 of 13 | order as listed: False
+     RESULT: FAIL
+     statement 6: if not authorization.frozen_commit == current:
+     None: NOT (authorization.frozen_commit == the commit PROTOCOL_FROZEN names now == fz.record.commit)
+P2: fault applied True | if_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   if_06 output lines that differ from the control run (5; lines with a False check or an error first):
+     imports ['from . import contract as C', 'from . import interpretations as INT', 'from . import record as R'] | statements accounted for 13 of 13 | order as listed: False
+     RESULT: FAIL
+     statement 10: for rel, problem in ((R.GATE0_RECORD_REL, R.gate0_record_problem(recs['gate0'])), (R.SELECTION_FREEZE_REL, None and R.freeze_recor
+     10: record.gate0_record_problem(committed Gate 0 record) or record.freeze_record_problem(committed freeze record, C.load(fz), content = frozen data_hash of 9, authorization.gate0_record_sha256) not None -> refuse (False)
+P3: fault applied True | if_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   if_06 output lines that differ from the control run (7; lines with a False check or an error first):
+     pending: called from [('test_data.py', 'check_interpretations_ruled')] | expected [('leakage.py', 'verify_authorization'), ('test_data.py', 'check_interpretations_ruled')] | False
+     imports ['from . import contract as C', 'from . import interpretations as INT', 'from . import record as R'] | statements accounted for 13 of 13 | order as listed: False
+     the closure contains the shared checks, training_plan, contract.load, pending, parse_protocol_frozen, Frozen.data_hash, committed_record: False
+     RESULT: FAIL
+P4: fault applied True | if_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   if_06 output lines that differ from the control run (7; lines with a False check or an error first):
+     imports ['from . import contract as C', 'from . import interpretations as INT', 'from . import record as R'] | statements accounted for 13 of 13 | order as listed: False
+     the closure contains the shared checks, training_plan, contract.load, pending, parse_protocol_frozen, Frozen.data_hash, committed_record: False
+     RESULT: FAIL
+     statement 9: content = recs['selection_freeze'].get('data_content_hashes')
+P5: fault applied True | if_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   if_06 output lines that differ from the control run (2; lines with a False check or an error first):
+     RESULT: FAIL
+     frozen.CONTENT_HASH_KEYS ('facts', 'train_S', 'candidates') | their PROTOCOL_FROZEN table labels (DATA_TABLE_ROWS) {'facts': ['fact(160 条)'], 'train_S': ['`train_S.jsonl`'], 'candidates': ['`candidates.json`']} | == the 
+P6: fault applied True | if_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   if_06 output lines that differ from the control run (2; lines with a False check or an error first):
+     RESULT: FAIL
+     frozen.CONTENT_HASH_KEYS ('facts', 'train_S', 'candidates', 'anchor_texts') | their PROTOCOL_FROZEN table labels (DATA_TABLE_ROWS) {'facts': ['锚文本(512 篇解码文本)'], 'train_S': ['`train_S.jsonl`'], 'candidates': ['`candidates
+P7: fault applied True | if_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   if_06 output lines that differ from the control run (3; lines with a False check or an error first):
+     condition 3: same sequence of assignments and checks after renaming T.training_plan -> training_plan, hexes -> FZ.HEX64: False
+     RESULT: FAIL
+     ('if', 'False', 'FAIL', False)
+P8: fault applied True | if_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   if_06 output lines that differ from the control run (3; lines with a False check or an error first):
+     condition 3: same sequence of assignments and checks after renaming T.training_plan -> training_plan, hexes -> FZ.HEX64: False
+     RESULT: FAIL
+     ('if', 'False', 'FAIL', False)
+P9: fault applied True | if_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   if_06 output lines that differ from the control run (3; lines with a False check or an error first):
+     condition 3: same sequence of assignments and checks after renaming T.training_plan -> training_plan, hexes -> FZ.HEX64: False
+     RESULT: FAIL
+     ('if', "rec.get('gate0_record_sha256') != gate0_sha and False", 'FAIL', False)
+P10: fault applied True | if_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   if_06 output lines that differ from the control run (3; lines with a False check or an error first):
+     condition 2: same assignment, and the failing condition `status != 'PASS'` == `not (status == 'PASS')`: False
+     RESULT: FAIL
+     ('if', "not (status in ('PASS', 'NOT_TESTED'))", 'FAIL', False)
+P11: fault applied True | if_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   if_06 output lines that differ from the control run (5; lines with a False check or an error first):
+     the closure contains the shared checks, training_plan, contract.load, pending, parse_protocol_frozen, Frozen.data_hash, committed_record: False
+     ('try', ('plan = []',), (('(ValueError, KeyError, AttributeError)', 'FAIL'),))
+     condition 3: same sequence of assignments and checks after renaming T.training_plan -> training_plan, hexes -> FZ.HEX64: False
+     RESULT: FAIL
+P12: fault applied True | if_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   if_06 output lines that differ from the control run (4; lines with a False check or an error first):
+     freeze_record_problem: called from [('leakage.py', 'verify_authorization')] | expected [('leakage.py', 'verify_authorization'), ('test_data.py', 'check_selection_record')] | False
+     test_data callers: same committed record read (_committed), shared function called with the same arguments, any problem -> PreconditionFailed, return sha: False | signatures unchanged: True | check_preconditions unchange
+     RESULT: FAIL
+     check_selection_record calls: ['PreconditionFailed', '_committed']
+P13: fault applied True | if_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   if_06 output lines that differ from the control run (4; lines with a False check or an error first):
+     gate0_record_problem: called from [('leakage.py', 'verify_authorization')] | expected [('leakage.py', 'verify_authorization'), ('test_data.py', 'check_gate0_record')] | False
+     test_data callers: same committed record read (_committed), shared function called with the same arguments, any problem -> PreconditionFailed, return sha: False | signatures unchanged: True | check_preconditions unchange
+     RESULT: FAIL
+     check_gate0_record calls: ['PreconditionFailed', '_committed']
+P14: fault applied True | if_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   if_06 output lines that differ from the control run (2; lines with a False check or an error first):
+     generate_test statement 0: 'p = D.params(fz)' -> verify first False | readers / builders after it: [(0, 'params'), (1, 'check_inputs'), (3, 'load_qwen_tokenizer'), (4, 'params_for_test'), (5, 'read_jsonl'), (6, 'build_te
+     RESULT: FAIL
+P15: fault applied True | if_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   if_06 output lines that differ from the control run (10; lines with a False check or an error first):
+     run_test_part('fz', 'data', 'test_qa', 'general_test', 'authorization', 'repo_root') defaults {'repo_root': 'None'} | statement 0: 'n_q = len(test_qa)' -> verify first False | statement 1: 'verify_authorization(authoriza
+     every call I enumerate is in the Executor's listing, and every extra grep line is a docstring or a def: False
+     RESULT: FAIL
+     ('leakage.py', 270, 'run_test_part', 'test')
+P16: fault applied True | if_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   if_06 output lines that differ from the control run (6; lines with a False check or an error first):
+     guard `if split == 'test'` at statement 1: formal-mode check at 0; `if fz is None: raise` at None; verify_authorization(test_authorization, fz) at None; calls in the guard ['ImplementationFail', 'verify_authorization']; 
+     evaluate_model: for split 'test' the formal-mode check, the fz check and verify_authorization run before anything touches the data: False
+     RESULT: FAIL
+     uses of TEST_FILES / SPLIT_FILES (file, line, function): [('data.py', 42, '<module>'), ('data.py', 577, 'write'), ('evaluate.py', 303, '<module>'), ('evaluate.py', 315, 'evaluate_model'), ('evaluate.py', 325, 'evaluate_m
+P17: fault applied True | if_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   if_06 output lines that differ from the control run (5; lines with a False check or an error first):
+     guard `if split == 'test'` at statement 1: formal-mode check at 0; `if fz is None: raise` at 2; verify_authorization(test_authorization, fz) at None; calls in the guard ['ImplementationFail']; else branch False
+     evaluate_model: for split 'test' the formal-mode check, the fz check and verify_authorization run before anything touches the data: False
+     RESULT: FAIL
+     verify_authorization: called from [('leakage.py', 'run_test_part'), ('test_data.py', 'generate_test')] | expected [('evaluate.py', 'evaluate_model'), ('leakage.py', 'run_test_part'), ('test_data.py', 'generate_test')] | 
+P18: fault applied True | if_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   if_06 output lines that differ from the control run (33; lines with a False check or an error first):
+     6: PROTOCOL_FROZEN at <root>/metrix/e1-pilot/PROTOCOL_FROZEN cannot be read or parsed (OSError / ST12Error); root = repo_root or fz.repo_root (4)
+     imports ['from . import contract as C', 'from . import interpretations as INT', 'from . import record as R'] | statements accounted for 13 of 14 | order as listed: False
+     leaves == PROTOCOL_FROZEN read + committed_json reads: False | the only subprocess is committed_json's git cat-file blob HEAD:<rel>: True
+     every call I enumerate is in the Executor's listing, and every extra grep line is a docstring or a def: False
+P19: fault applied True | if_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   if_06 output lines that differ from the control run (9; lines with a False check or an error first):
+     constants outside module-level name tuples, the evaluate_model guard, contract accounting (a count), gate T1-T3 labels, the generator and run_test_part: [('contract.py', 409, 'load', 'general_test.jsonl')] | none: False
+     leaves == PROTOCOL_FROZEN read + committed_json reads: False | the only subprocess is committed_json's git cat-file blob HEAD:<rel>: True
+     every call I enumerate is in the Executor's listing, and every extra grep line is a docstring or a def: False
+     RESULT: FAIL
+P20: fault applied True | if_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   if_06 output lines that differ from the control run (24; lines with a False check or an error first):
+     hits outside the expected set: [] | expected hits all present: False
+     every call I enumerate is in the Executor's listing, and every extra grep line is a docstring or a def: False
+     RESULT: FAIL
+     metrix/e1-pilot/tests/test_data_hashes.py:99 in _dev_rows_only: FZ.file_sha256(out)
+P21: fault applied True | if_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   if_06 output lines that differ from the control run (12; lines with a False check or an error first):
+     every call I enumerate is in the Executor's listing, and every extra grep line is a docstring or a def: False
+     RESULT: FAIL
+     metrix/e1-pilot/tests/test_data_hashes.py:87 in _dev_rows_only: open(src, 'rb')
+     metrix/e1-pilot/tests/test_data_hashes.py:87 in _dev_rows_only: open(out, 'wb')
+P22: fault applied True | if_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   if_06 output lines that differ from the control run (5; lines with a False check or an error first):
+     hits outside the expected set: [('metrix/e1-pilot/tests/test_data_hashes.py', '_dev_rows_only', "open(src, encoding='utf-8')")] | expected hits all present: False
+     RESULT: FAIL
+     metrix/e1-pilot/tests/test_data_hashes.py:88 in _dev_rows_only: open(src, encoding='utf-8')
+     statement 5: with open(src, encoding='utf-8') as fi, open(out, 'wb') as fo:
+P23: fault applied True | if_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   if_06 output lines that differ from the control run (8; lines with a False check or an error first):
+     every call I enumerate is in the Executor's listing, and every extra grep line is a docstring or a def: False
+     RESULT: FAIL
+     metrix/e1-pilot/tests/test_data_hashes.py:101 in _dev_rows_only: FZ.file_sha256(out)
+     metrix/e1-pilot/tests/test_data_hashes.py:120 in test_byte_identical_to_reference_scripts: _run([rep / 'round5/l6_check.py', '--eval-sets', dev_rows, '--parcae-tokenizer', inputs_dir / 'parcae_tokenizer/tokenizer.json', 
+P24: fault applied True | if_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   if_06 output lines that differ from the control run (8; lines with a False check or an error first):
+     every call I enumerate is in the Executor's listing, and every extra grep line is a docstring or a def: False
+     RESULT: FAIL
+     metrix/e1-pilot/tests/test_data_hashes.py:101 in _dev_rows_only: FZ.file_sha256(out)
+     metrix/e1-pilot/tests/test_data_hashes.py:120 in test_byte_identical_to_reference_scripts: _run([rep / 'round5/l6_check.py', '--eval-sets', dev_rows, '--parcae-tokenizer', inputs_dir / 'parcae_tokenizer/tokenizer.json', 
+P25: fault applied True | if_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   if_06 output lines that differ from the control run (11; lines with a False check or an error first):
+     every call I enumerate is in the Executor's listing, and every extra grep line is a docstring or a def: False
+     RESULT: FAIL
+     metrix/e1-pilot/tests/test_data_hashes.py:120 in test_byte_identical_to_reference_scripts: _run([rep / 'round5/l6_check.py', '--eval-sets', dev_rows, '--parcae-tokenizer', inputs_dir / 'parcae_tokenizer/tokenizer.json', 
+     statement 10: manifest['general_text']['decode_tokenizer_json_sha256'] = '0' * 64
+P26: fault applied True | if_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   if_06 output lines that differ from the control run (5; lines with a False check or an error first):
+     `dev_rows, manifest = _dev_rows_only(fz, generated, tmp_path)` at statement 5; l6_check.py gets --eval-sets dev_rows and --manifest manifest, no other script gets --eval-sets: False
+     RESULT: FAIL
+     metrix/e1-pilot/tests/test_data_hashes.py:119 in test_byte_identical_to_reference_scripts: _run([rep / 'round5/l6_check.py', '--eval-sets', fz.repo_root / D.params(fz).general_source, '--parcae-tokenizer', inputs_dir / '
+     hits outside the expected set: [('metrix/e1-pilot/tests/test_data_hashes.py', 'test_byte_identical_to_reference_scripts', "_run([rep / 'round5/l6_check.py', '--eval-sets', fz.repo_root / D.params(fz).general_source, '--p
+P27: fault applied True | if_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   if_06 output lines that differ from the control run (16; lines with a False check or an error first):
+     -> the test function calls no TEST path: False ['generate_test']
+     -> fz + None / TestAuthorization(None, None, None) (frozen-commit refusal) / TestAuthorization(fz.record.commit, 'a'*64, 'b'*64) (records not committed in the real repository -> refusal): False
+     -> the test function calls no TEST path: False ['generate_test']
+     -> the test function calls no TEST path: False ['generate_test']
+P28: fault applied True | if_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   if_06 output lines that differ from the control run (4; lines with a False check or an error first):
+     imports ['from . import contract as C', 'from . import interpretations as INT', 'from . import record as R'] | statements accounted for 13 of 13 | order as listed: False
+     RESULT: FAIL
+     8: for the Gate 0 record and the freeze record (both: True): committed_record(root, rel, kind, authorization.frozen_commit) raises NotCommitted -> refuse (False); committed sha256 != the authorization's -> refuse (True)
+     raises 6 (kinds ['ImplementationFail']) | TEST names used []
+P29: fault applied True | if_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   if_06 output lines that differ from the control run (4; lines with a False check or an error first):
+     None: PROTOCOL_FROZEN at <root>/metrix/e1-pilot/PROTOCOL_FROZEN cannot be read or parsed (OSError / ST12Error); root = repo_root or fz.repo_root (4)
+     imports ['from . import contract as C', 'from . import interpretations as INT', 'from . import record as R'] | statements accounted for 13 of 13 | order as listed: False
+     RESULT: FAIL
+     raises 6 (kinds ['ImplementationFail']) | TEST names used []
+P30: fault applied True | if_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   if_06 output lines that differ from the control run (2; lines with a False check or an error first):
+     test_data callers: same committed record read (_committed), shared function called with the same arguments, any problem -> PreconditionFailed, return sha: False | signatures unchanged: True | check_preconditions unchange
+     RESULT: FAIL
+M1: fault applied True | if_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   if_06 output lines that differ from the control run (6; lines with a False check or an error first):
+     open calls: ["open(eval_sets_path, encoding='utf-8')"] | exactly one open, mode 'rb', no encoding argument: False
+     hits outside the expected set: [('metrix/e1-pilot/src/metrix_e1/data.py', 'build_general_dev', "open(eval_sets_path, encoding='utf-8')")] | expected hits all present: False
+     RESULT: FAIL
+     ('data.py', 507, 'build_general_dev', "open(eval_sets_path, encoding='utf-8')")
+M2: fault applied True | if_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   if_06 output lines that differ from the control run (16; lines with a False check or an error first):
+     every call I enumerate is in the Executor's listing, and every extra grep line is a docstring or a def: False
+     RESULT: FAIL
+     ('data.py', 632, 'main', 'FZ.load()')
+     ('data.py', 590, 'file_hashes', '(d / name).read_bytes()')
+M8: fault applied True | if_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   if_06 output lines that differ from the control run (3; lines with a False check or an error first):
+     imports ['from . import contract as C', 'from . import interpretations as INT', 'from . import record as R'] | statements accounted for 13 of 13 | order as listed: False
+     RESULT: FAIL
+     8: for the Gate 0 record and the freeze record (both: True): committed_record(root, rel, kind, authorization.frozen_commit) raises NotCommitted -> refuse (True); committed sha256 != the authorization's -> refuse (False)
+N12: fault applied True | if_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   if_06 output lines that differ from the control run (5; lines with a False check or an error first):
+     every call I enumerate is in the Executor's listing, and every extra grep line is a docstring or a def: False
+     RESULT: FAIL
+     metrix/e1-pilot/tests/test_st12.py:144 in test_eval_sets_one_byte: flip(root / p.general_source)
+     tests/test_st12.py flip calls ['bytearray', 'bytes', 'len', 'read_bytes', 'write_bytes'] | test_eval_sets_one_byte calls ['check_inputs', 'flip', 'load', 'params', 'raises', 'read_text'] (unchanged file; raw bytes only, 
+N13: fault applied True | if_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   if_06 output lines that differ from the control run (2; lines with a False check or an error first):
+     RESULT: FAIL
+     tests/test_st12.py flip calls ['bytearray', 'bytes', 'encode', 'len', 'read_text', 'write_bytes'] | test_eval_sets_one_byte calls ['check_inputs', 'flip', 'load', 'params', 'raises'] (unchanged file; raw bytes only, whol
+modules: torch imported=False | transformers modeling modules imported=[] | this script never calls a model class or from_pretrained on a model
+RESULT: PASS
+exit=0

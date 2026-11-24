@@ -169,17 +169,32 @@ def test_test_split_needs_the_authorization(contract, tok, data_rows, fz):
     for auth in (None, LK.TestAuthorization(fz.record.commit, "a" * 64, "b" * 64)):
         with pytest.raises(ImplementationFail, match="TEST path"):
             E.evaluate_model(tiny_model(), tok, data_rows, fz.templates, contract.evaluation, M.FORMAL_MODE, "cpu",
-                             split="test", test_authorization=auth, repo_root=fz.repo_root)
+                             split="test", test_authorization=auth, fz=fz)
     for mode in (M.smoke_mode(3), M.preflight_mode(contract)):           # TEST is evaluated in formal mode only
         with pytest.raises(ImplementationFail, match="formal mode only"):
             E.evaluate_model(tiny_model(), tok, data_rows, fz.templates, contract.evaluation, mode, "cpu",
-                             split="test", test_authorization=None, repo_root=fz.repo_root)
+                             split="test", test_authorization=None, fz=fz)
 
+
+class LateNaNStub(Stub):
+    """Finite logits on the first forward (the prompt), NaN from the second on (the cached decoding steps)."""
+
+    def forward(self, input_ids, attention_mask=None, position_ids=None, past_key_values=None, use_cache=None):
+        out = super().forward(input_ids, attention_mask, position_ids, past_key_values, use_cache)
+        if self.calls > 1:
+            out.logits[:] = float("nan")
+        return out
 
 
 def test_nonfinite_logits_stop_em_generation(contract):
+    """NaN logits stop greedy decoding with ST6 both on the prompt's forward and inside the decoding loop."""
     import pytest
     from metrix_e1.train import NonFinite
     with pytest.raises(NonFinite) as e:
         E.greedy_generate(NaNStub(0), [[1, 2, 3]], contract.evaluation, "cpu")
     assert e.value.stop == "ST6" and e.value.values and all(v != v for v in e.value.values)
+    late = LateNaNStub(374)                                   # 374 is not a stop id: decoding goes on to step 2
+    with pytest.raises(NonFinite) as e:
+        E.greedy_generate(late, [[1, 2, 3]], contract.evaluation, "cpu")
+    assert late.calls == 2 and e.value.stop == "ST6" and all(v != v for v in e.value.values)
+    assert E.greedy_generate(Stub(374), [[1, 2, 3]], contract.evaluation, "cpu") == [[374] * 16]   # control: finite

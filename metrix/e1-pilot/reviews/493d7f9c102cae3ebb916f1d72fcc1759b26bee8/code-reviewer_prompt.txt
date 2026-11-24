@@ -1,0 +1,21 @@
+先读仓库中的 .claude/agents/code-reviewer.md，以它为你的完整定义；它与你已加载的定义冲突时，以仓库文件为准。
+
+Metrix E1-PILOT Implementation 阶段 B 的第二个修复提交(暂存，尚未提交；父提交为修复提交 fdbb9def89351aa187c1b1ae9749884bc3a80fe9，即你上一轮审查过的内容，已快进推送)。上一轮你的结论是 PASS(1 条 MAJOR 交 Review Gate，9 条 MINOR)，原文 /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/review_fix/code-reviewer.md；同轮 data-auditor 原文 /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/review_fix/data-auditor.md。指令、协议与 Owner 消息同前(调用文字 /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/review_work/code-reviewer_prompt.txt)。
+
+- 审查输入(git diff --cached --stat 与完整 diff，相对 fdbb9def)：/tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/review_fix2/review_input.diff。暂存内容与工作区文件相同。
+- 本提交中的原始输出：metrix/e1-pilot/reports/impl_b/t9_fix_commit_push.txt(修复提交与审查输入逐字节比对、metrix/ 以外检查、快进推送、推送前后的远端分支与标签)；t10_fix2_commit.txt(src 与 tests 中打开 eval_sets.jsonl 之处、TEST 生成器拒绝、全部测试 198 passed)。
+- Executor 自己的说明不作为证据。
+
+Executor 对上一轮各项的处理(请逐条核对：已修且正确 / 已修但有问题 / 未修；登记项请判断是否充分——登记写入之后的报告提交)：
+MAJOR(l6_check.py 在测试中以文本模式解码 test 行)：test_data_hashes 不再把真实的 eval_sets.jsonl 交给 l6_check.py：按 split 字段的原始字节只复制 DEV 行到临时文件(test 行不解码)，并给一份只替换 source_file_sha256 的临时 DATA_MANIFEST.json；参考脚本本身不改，比对结论不变。已经执行过的、让 l6_check.py 读取完整文件的运行(阶段 A 与阶段 B 的各次 pytest)将在报告中逐条列出，“UTF-8 解码 test 行是否算读取 TEST”仍交 Review Gate。
+MINOR verify_authorization 弱于前提条件：增加 Gate 0 状态为 PASS、冻结记录绑定 Gate 0 记录、授权的冻结提交等于当前 PROTOCOL_FROZEN 的冻结提交三项复核，各有测试。
+MINOR split="test" 不限模式：evaluate_model 在非正式模式拒绝 TEST，测试覆盖 smoke 与 preflight。
+MINOR ST10 凭据与“只评一次”：登记为阶段 C 的硬性前提(不在本提交)。
+MINOR generate_test 拒绝发生在读取之前：测试监视 check_inputs、load_qwen_tokenizer、build_general_dev、read_jsonl，断言拒绝时一次也没有调用。
+MINOR 测试依赖“当前仍有待决解释”：改为 monkeypatch INT.pending，并加“没有待决时返回授权”的对照(只构造授权对象，不调用任何 TEST 路径)；删除未用的 contract 参数。
+MINOR 死 import 与多余空行：已删。
+MINOR test_stops 的注释：已改。
+MINOR EM 生成不检查非有限值：greedy_generate 每步检查 logits，非有限即抛 NonFinite(ST6)，有测试。
+MINOR 审查原文与 auditor 输出尚未入库：在之后的报告提交中入库，报告写明推送顺序。
+
+请：(1) 逐条核对上表；(2) 审查本提交的改动本身有无新问题(重点：TEST 隔离、测试是否真正检验所说内容)；(3) 按定义的输出格式给出，每条注明“已验证/未验证”。最后一行给出结论。

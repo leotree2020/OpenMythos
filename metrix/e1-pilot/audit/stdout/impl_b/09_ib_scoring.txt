@@ -1,0 +1,62 @@
+# Data Auditor run (implementation stage B). host vm, CPU only (no GPU device), no model weights loaded (tokenizer files only); 2026-11-23 07:46:14 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit; PYTHONDONTWRITEBYTECODE=1
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/venv/bin/python -I -B ib_03_scoring.py /home/user/OpenMythos /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/auditor_ib/dl/qwen_tok /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/auditor_ib/out /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/audit_dump_b.json
+env: host vm | Linux-6.18.44-fc-v726-x86_64-with-glibc2.39 | python 3.13.18 (/tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/venv/bin/python) | installed {'transformers': '5.22.2', 'tokenizers': '0.23.3', 'pyarrow': '26.0.1', 'huggingface_hub': '2.4.0', 'torch': '2.11.0'} | nvidia device nodes: []
+audit_dump_b.json sha256 3ba470a97419dd34bd655e97d4d061c7de72700ae7692de37d14e1db2615be50 | recorded in t5 3ba470a97419dd34bd655e97d4d061c7de72700ae7692de37d14e1db2615be50 | MATCH True
+
+== DEV-QA candidate-scoring inputs (protocol 0 '候选打分输入', 5 s_QA)
+entries 1280 | chat(q) != literal Qwen3 rendering: 0 | apply_chat_template(tokenize=True) != encode(chat(q)): 0 | ids != encode(chat(q) + 'The answer is') + encode(' ' + c): 0
+Executor qa_inputs 1280 | distinct keys (fact_id, template_id, candidate) 1280 | same key set as mine True | same order as mine True
+ids differ: 0 [] | start differs: 0 []
+Executor ids[start:] != encode(' ' + c): 0 | len(scored) != K_st(c): 0
+facts whose 4 candidates differ in scored length: 0 | scored length per cell: {'capital/natural': [3], 'capital/random': [5], 'currency/natural': [3], 'currency/random': [6], 'founder/natural': [3], 'founder/random': [5], 'river/natural': [3], 'river/random': [6]}
+entries with a special-token id inside the scored slice: 0 | every input ends with the scored slice (nothing after c): True
+
+== TRAIN closed-book inputs (protocol 5 s_ST)
+entries 480 | statements not starting with prefix + ' ' + answer: 0 | ids != encode(prefix) + encode(' ' + c): 0
+Executor cb_inputs 480 | distinct keys 480 | same key set True | same order as mine True
+ids differ: 0 [] | start differs: 0 | prefix string differs: 0
+len(scored) != K_st(c): 0 | facts whose 4 candidates differ in length: 0 | inputs containing any special-token id (none before the prefix): 0 | first token is the first token of the prefix text: True
+
+== learned answers: scored ids vs the ' ' + answer ids inside the TRAIN statement (240 pairs)
+pairs compared 240 | mismatches by prefix encoding 0 | by offset mapping 0 [] | vs the Executor's train_F training sequence 0
+
+== reports/ROUND3_REPORT.md task 7: the 28-token sequence
+fact E1P-L-capital-nat-01 | question 'What is the capital of Krultrouth?' | answer 'Linnuth'
+recorded 28 ids | mine 28 | Executor 28 | rendered text == recorded True
+   0 recorded 151644 | mine 151644 | Executor 151644 | token '<|im_start|>' | equal True
+   1 recorded 872 | mine 872 | Executor 872 | token 'user' | equal True
+   2 recorded 198 | mine 198 | Executor 198 | token 'Ċ' | equal True
+   3 recorded 3838 | mine 3838 | Executor 3838 | token 'What' | equal True
+   4 recorded 374 | mine 374 | Executor 374 | token 'Ġis' | equal True
+   5 recorded 279 | mine 279 | Executor 279 | token 'Ġthe' | equal True
+   6 recorded 6722 | mine 6722 | Executor 6722 | token 'Ġcapital' | equal True
+   7 recorded 315 | mine 315 | Executor 315 | token 'Ġof' | equal True
+   8 recorded 16447 | mine 16447 | Executor 16447 | token 'ĠKr' | equal True
+   9 recorded 360 | mine 360 | Executor 360 | token 'ul' | equal True
+  10 recorded 376 | mine 376 | Executor 376 | token 'tr' | equal True
+  11 recorded 2898 | mine 2898 | Executor 2898 | token 'outh' | equal True
+  12 recorded 30 | mine 30 | Executor 30 | token '?' | equal True
+  13 recorded 151645 | mine 151645 | Executor 151645 | token '<|im_end|>' | equal True
+  14 recorded 198 | mine 198 | Executor 198 | token 'Ċ' | equal True
+  15 recorded 151644 | mine 151644 | Executor 151644 | token '<|im_start|>' | equal True
+  16 recorded 77091 | mine 77091 | Executor 77091 | token 'assistant' | equal True
+  17 recorded 198 | mine 198 | Executor 198 | token 'Ċ' | equal True
+  18 recorded 151667 | mine 151667 | Executor 151667 | token '<think>' | equal True
+  19 recorded 271 | mine 271 | Executor 271 | token 'ĊĊ' | equal True
+  20 recorded 151668 | mine 151668 | Executor 151668 | token '</think>' | equal True
+  21 recorded 271 | mine 271 | Executor 271 | token 'ĊĊ' | equal True
+  22 recorded 785 | mine 785 | Executor 785 | token 'The' | equal True
+  23 recorded 4226 | mine 4226 | Executor 4226 | token 'Ġanswer' | equal True
+  24 recorded 374 | mine 374 | Executor 374 | token 'Ġis' | equal True
+  25 recorded 444 | mine 444 | Executor 444 | token 'ĠL' | equal True | scored
+  26 recorded 6130 | mine 6130 | Executor 6130 | token 'inn' | equal True | scored
+  27 recorded 940 | mine 940 | Executor 940 | token 'uth' | equal True | scored
+start: recorded 25 | mine 25 | Executor 25 | scored ids recorded [444, 6130, 940] | mine [444, 6130, 940]
+positions not equal in all three: 0
+AUDIT_VALUE qa_inputs_ids_sha256 d05b57e54a77cb482d98ffc42945d0d14aae97533a31c2575285fa2948b79ccd
+AUDIT_VALUE cb_inputs_ids_sha256 97e406d6617afdf394ef65af08c29549529e513f809134a95a1b3f5b7e718d28
+scored lengths over all DEV-QA entries: {3: 640, 5: 320, 6: 320}
+modules: torch imported=True | transformers modeling modules imported=['torch', 'transformers.modeling_rope_utils', 'transformers.models.auto.modeling_auto'] | this script never calls a model class or from_pretrained on a model
+RESULT: PASS
+exit=0

@@ -1,0 +1,53 @@
+# Data Auditor run (implementation stage B). host vm, CPU only (no GPU device), no model weights loaded (tokenizer files only); 2026-11-24 03:35:55 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit; PYTHONDONTWRITEBYTECODE=1
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/venv/bin/python -I -B if_02_trials.py /home/user/OpenMythos /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad
+env: host vm | Linux-6.18.44-fc-v819-x86_64-with-glibc2.39 | python 3.13.18 (/tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/venv/bin/python) | installed {'transformers': '5.22.2', 'tokenizers': '0.23.3', 'pyarrow': '26.0.1', 'huggingface_hub': '2.4.0', 'torch': '2.11.0'} | nvidia device nodes: []
+== a. what I wrote in the scratchpad (rounds 1-4 of implementation stage B)
+  auditor_ib: files [] | working-data subdirectories (file counts) {'dl': 24, 'out': 9}
+  auditor_ic: files [] | working-data subdirectories (file counts) {'out': 9, 'selftest': 245}
+  auditor_id: files ['trial_id06.txt'] | working-data subdirectories (file counts) {'out': 9, 'selftest': 525}
+  auditor_ie: files ['id06_base.py', 'part_head.py', 'part_mid.py', 'trial1_ie06.txt', 'trial2_ie06.txt', 'trial3_ie06.txt', 'trial4_ie06.txt', 'trial_ie07.txt'] | working-data subdirectories (file counts) {'devrows': 1, 'selftest': 840, 'selftest_trial': 840}
+  originals to be kept: 9
+
+== b. each original vs its repository copy (working tree and index)
+  auditor_id/trial_id06.txt (26303 bytes, sha256 5e13fae28bb8f676186e72fa44257096c264876aef11bef10cb242bbb8c21a64) -> id_trial_id06.txt: working tree True | index True | IDENTICAL True
+  auditor_ie/id06_base.py (37264 bytes, sha256 8198a940e768ee319b92520d34eddfef622d43f4913086d3aeed5eab3dd139ba) -> ie_helper_id06_base.py: working tree True | index True | IDENTICAL True
+  auditor_ie/part_head.py (21636 bytes, sha256 8fcdd5a09a2cdbb9f2d82f2db16196f39642fd2ffbf5d63c572a39ccdb25fc32) -> ie_helper_part_head.py: working tree True | index True | IDENTICAL True
+  auditor_ie/part_mid.py (10150 bytes, sha256 54ea583f1f252efe832f690d8cdbe436838db43e39102d031584c9a1de8bf91f) -> ie_helper_part_mid.py: working tree True | index True | IDENTICAL True
+  auditor_ie/trial1_ie06.txt (28749 bytes, sha256 c387e1bdadaea0d27d0bab1b8b2f18041031a29579ee2776b10be2a25efa44b8) -> ie_trial1_ie06.txt: working tree True | index True | IDENTICAL True
+  auditor_ie/trial2_ie06.txt (29029 bytes, sha256 e3fd25fcf61a793b8a7883f2e9b855a2e35f05445dc01b720c5e5fb23f32be57) -> ie_trial2_ie06.txt: working tree True | index True | IDENTICAL True
+  auditor_ie/trial3_ie06.txt (29493 bytes, sha256 cfc59e3e875a0ac7fbdd68f8d55085643fbb1b91a48d0cd6c979ee157cbb88af) -> ie_trial3_ie06.txt: working tree True | index True | IDENTICAL True
+  auditor_ie/trial4_ie06.txt (29492 bytes, sha256 ff4562e0a60ac38ea058274d1cede1985ea463f459f55a33b1652e21197e66df) -> ie_trial4_ie06.txt: working tree True | index True | IDENTICAL True
+  auditor_ie/trial_ie07.txt (13465 bytes, sha256 f2c1dbfa6dcba80e315a80459bd94e8dbf07eb550ef251f5537176c95bb021fd) -> ie_trial_ie07.txt: working tree True | index True | IDENTICAL True
+  by content, independent of names: repository copy -> scratch originals with the same bytes
+    id_trial_id06.txt -> ['auditor_id/trial_id06.txt']
+    ie_helper_id06_base.py -> ['auditor_ie/id06_base.py']
+    ie_helper_part_head.py -> ['auditor_ie/part_head.py']
+    ie_helper_part_mid.py -> ['auditor_ie/part_mid.py']
+    ie_trial1_ie06.txt -> ['auditor_ie/trial1_ie06.txt']
+    ie_trial2_ie06.txt -> ['auditor_ie/trial2_ie06.txt']
+    ie_trial3_ie06.txt -> ['auditor_ie/trial3_ie06.txt']
+    ie_trial4_ie06.txt -> ['auditor_ie/trial4_ie06.txt']
+    ie_trial_ie07.txt -> ['auditor_ie/trial_ie07.txt']
+
+== c. contents of trials/
+  files 12 | copies of my originals 9 | this round's own trial outputs ['if_trial1_if00.txt', 'if_trial1_if01.txt', 'if_trial1_if02.txt'] | anything else [] | originals without a copy []
+
+== d. the Executor's sha256 (reports/impl_b/t12b_review_records_copy.txt)
+  sha256 lines for trials/: 9 | cmp lines 9, all exit=0: True
+  id_trial_id06.txt: mine 5e13fae28bb8f676186e72fa44257096c264876aef11bef10cb242bbb8c21a64 | Executor 5e13fae28bb8f676186e72fa44257096c264876aef11bef10cb242bbb8c21a64 | equal True
+  ie_helper_id06_base.py: mine 8198a940e768ee319b92520d34eddfef622d43f4913086d3aeed5eab3dd139ba | Executor 8198a940e768ee319b92520d34eddfef622d43f4913086d3aeed5eab3dd139ba | equal True
+  ie_helper_part_head.py: mine 8fcdd5a09a2cdbb9f2d82f2db16196f39642fd2ffbf5d63c572a39ccdb25fc32 | Executor 8fcdd5a09a2cdbb9f2d82f2db16196f39642fd2ffbf5d63c572a39ccdb25fc32 | equal True
+  ie_helper_part_mid.py: mine 54ea583f1f252efe832f690d8cdbe436838db43e39102d031584c9a1de8bf91f | Executor 54ea583f1f252efe832f690d8cdbe436838db43e39102d031584c9a1de8bf91f | equal True
+  ie_trial1_ie06.txt: mine c387e1bdadaea0d27d0bab1b8b2f18041031a29579ee2776b10be2a25efa44b8 | Executor c387e1bdadaea0d27d0bab1b8b2f18041031a29579ee2776b10be2a25efa44b8 | equal True
+  ie_trial2_ie06.txt: mine e3fd25fcf61a793b8a7883f2e9b855a2e35f05445dc01b720c5e5fb23f32be57 | Executor e3fd25fcf61a793b8a7883f2e9b855a2e35f05445dc01b720c5e5fb23f32be57 | equal True
+  ie_trial3_ie06.txt: mine cfc59e3e875a0ac7fbdd68f8d55085643fbb1b91a48d0cd6c979ee157cbb88af | Executor cfc59e3e875a0ac7fbdd68f8d55085643fbb1b91a48d0cd6c979ee157cbb88af | equal True
+  ie_trial4_ie06.txt: mine ff4562e0a60ac38ea058274d1cede1985ea463f459f55a33b1652e21197e66df | Executor ff4562e0a60ac38ea058274d1cede1985ea463f459f55a33b1652e21197e66df | equal True
+  ie_trial_ie07.txt: mine f2c1dbfa6dcba80e315a80459bd94e8dbf07eb550ef251f5537176c95bb021fd | Executor f2c1dbfa6dcba80e315a80459bd94e8dbf07eb550ef251f5537176c95bb021fd | equal True
+  the Executor's cmp pairs == my original -> copy pairs: True
+
+== e. the helper .py files
+  id06_base.py == audit/id_06_static.py: True | part_head.py is a verbatim excerpt of it: True (at offset 0) | part_mid.py is a verbatim excerpt of it: True (at offset 25591)
+modules: torch imported=False | transformers modeling modules imported=[] | this script never calls a model class or from_pretrained on a model
+RESULT: PASS
+exit=0

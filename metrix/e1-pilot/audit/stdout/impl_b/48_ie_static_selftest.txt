@@ -1,0 +1,138 @@
+# Data Auditor run (implementation stage B). host vm, CPU only (no GPU device), no model weights loaded (tokenizer files only); 2026-11-23 14:06:58 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit; PYTHONDONTWRITEBYTECODE=1
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/venv/bin/python -I -B ie_07_static_selftest.py /home/user/OpenMythos /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/auditor_ie/selftest
+env: host vm | Linux-6.18.44-fc-v726-x86_64-with-glibc2.39 | python 3.13.18 (/tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/venv/bin/python) | installed {'transformers': '5.22.2', 'tokenizers': '0.23.3', 'pyarrow': '26.0.1', 'huggingface_hub': '2.4.0', 'torch': '2.11.0'} | nvidia device nodes: []
+control: fault applied True | ie_06 exit 0 | last line 'RESULT: PASS' | expected PASS -> True
+N1: fault applied True | ie_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   ie_06 output lines that differ from the control run (5; lines with a False check or an error first):
+     RESULT: FAIL
+     metrix/e1-pilot/tests/test_data_hashes.py:84 in _dev_rows_only: open(src, encoding='utf-8')
+     hits outside the expected set (binary open in build_general_dev and its two callers; binary open of eval_sets.jsonl, write, hash and l6_check.py run of the DEV-rows copy in the test helper; shutil.copyfile and flip in te
+     _dev_rows_only statement 3: with open(src, encoding='utf-8') as fi, open(out, 'wb') as fo:
+     src = the frozen general_text.source_file under the repository root: True | open calls ["open(src, encoding='utf-8')", "open(out, 'wb')"]
+N2: fault applied True | ie_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   ie_06 output lines that differ from the control run (5; lines with a False check or an error first):
+     `dev_rows, manifest = _dev_rows_only(tmp_path)` at statement 5; l6_check.py gets --eval-sets dev_rows and --manifest manifest, no other script gets --eval-sets: False
+     RESULT: FAIL
+     metrix/e1-pilot/tests/test_data_hashes.py:114 in test_byte_identical_to_reference_scripts: _run([rep / 'round5/l6_check.py', '--eval-sets', PILOT.parents[1] / 'research/mini_mythos/stage1/results/r1/eval_sets.jsonl', '--
+     hits outside the expected set (binary open in build_general_dev and its two callers; binary open of eval_sets.jsonl, write, hash and l6_check.py run of the DEV-rows copy in the test helper; shutil.copyfile and flip in te
+     _run at statement 6: rep / 'round5/l6_check.py' | --eval-sets PILOT.parents[1] / 'research/mini_mythos/stage1/results/r1/eval_sets.jsonl' | --manifest manifest
+N3: fault applied True | ie_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   ie_06 output lines that differ from the control run (5; lines with a False check or an error first):
+     RESULT: FAIL
+     metrix/e1-pilot/tests/test_data_hashes.py:96 in _dev_rows_only: FZ.file_sha256(out)
+     metrix/e1-pilot/tests/test_data_hashes.py:115 in test_byte_identical_to_reference_scripts: _run([rep / 'round5/l6_check.py', '--eval-sets', dev_rows, '--parcae-tokenizer', inputs_dir / 'parcae_tokenizer/tokenizer.json', 
+     calls in the loop that take the row: [(0, "line.decode('utf-8')"), (1, '_ROW_SPLIT.match(line)'), (3, 'fo.write(line)')] | decode / json of a row anywhere in the helper: ["line.decode('utf-8')"]
+     `if m.group(1) == b'dev'` at loop statement 3; fo.write(line) only in its body, nothing written in the else branch: True | write calls in the helper ["mpath.write_text(json.dumps(manifest, ensure_ascii=False), encoding='
+N4: fault applied True | ie_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   ie_06 output lines that differ from the control run (5; lines with a False check or an error first):
+     `if m.group(1) == b'dev'` at loop statement 2; fo.write(line) only in its body, nothing written in the else branch: False | write calls in the helper ["mpath.write_text(json.dumps(manifest, ensure_ascii=False), encoding=
+     RESULT: FAIL
+     metrix/e1-pilot/tests/test_data_hashes.py:96 in _dev_rows_only: FZ.file_sha256(out)
+     metrix/e1-pilot/tests/test_data_hashes.py:115 in test_byte_identical_to_reference_scripts: _run([rep / 'round5/l6_check.py', '--eval-sets', dev_rows, '--parcae-tokenizer', inputs_dir / 'parcae_tokenizer/tokenizer.json', 
+     calls in the loop that take the row: [(0, '_ROW_SPLIT.match(line)'), (2, 'fo.write(line)'), (2, 'fo.write(line)')] | decode / json of a row anywhere in the helper: []
+N5: fault applied True | ie_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   ie_06 output lines that differ from the control run (7; lines with a False check or an error first):
+     RESULT: FAIL
+     metrix/e1-pilot/tests/test_data_hashes.py:115 in test_byte_identical_to_reference_scripts: _run([rep / 'round5/l6_check.py', '--eval-sets', dev_rows, '--parcae-tokenizer', inputs_dir / 'parcae_tokenizer/tokenizer.json', 
+     _dev_rows_only statement 7: manifest['general_text']['decode_tokenizer_json_sha256'] = '0' * 64
+     _dev_rows_only statement 8: mpath = tmp_path / 'DATA_MANIFEST_dev_rows.json'
+     _dev_rows_only statement 9: mpath.write_text(json.dumps(manifest, ensure_ascii=False), encoding='utf-8')
+N6: fault applied True | ie_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   ie_06 output lines that differ from the control run (9; lines with a False check or an error first):
+     evaluate_model: for split 'test' the formal-mode check and then verify_authorization run before anything touches the data: False
+     -> the three new re-checks are statements of verify_authorization, which is statement 0 of generate_test and run_test_part and runs inside the evaluate_model guard before the data: False
+     RESULT: FAIL
+     verify_authorization: [('evaluate.py', 319, 'evaluate_model'), ('leakage.py', 239, 'run_test_part'), ('test_data.py', 140, 'generate_test')]
+     uses of TEST_FILES / SPLIT_FILES (file, line, function): [('data.py', 42, '<module>'), ('data.py', 577, 'write'), ('evaluate.py', 303, '<module>'), ('evaluate.py', 315, 'evaluate_model'), ('evaluate.py', 321, 'evaluate_m
+N7: fault applied True | ie_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   ie_06 output lines that differ from the control run (16; lines with a False check or an error first):
+     evaluate_model: for split 'test' the formal-mode check and then verify_authorization run before anything touches the data: False
+     -> the three new re-checks are statements of verify_authorization, which is statement 0 of generate_test and run_test_part and runs inside the evaluate_model guard before the data: False
+     RESULT: FAIL
+     verify_authorization: [('evaluate.py', 319, 'evaluate_model'), ('leakage.py', 239, 'run_test_part'), ('test_data.py', 140, 'generate_test')]
+     ('evaluate.py', 323, 'evaluate_model', 'test')
+N8: fault applied True | ie_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   ie_06 output lines that differ from the control run (14; lines with a False check or an error first):
+     after the loop: status from the committed Gate 0 record at 0, `status != 'PASS'` -> raise at None; binding (committed freeze record's gate0_record_sha256 == authorization's) -> raise at 1; PROTOCOL_FROZEN parsed (OSError
+     -> the three new re-checks are statements of verify_authorization, which is statement 0 of generate_test and run_test_part and runs inside the evaluate_model guard before the data: False
+     RESULT: FAIL
+     verify_authorization: [('evaluate.py', 322, 'evaluate_model'), ('leakage.py', 237, 'run_test_part'), ('test_data.py', 140, 'generate_test')]
+     ('leakage.py', 249, 'run_test_part', 'test')
+N9: fault applied True | ie_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   ie_06 output lines that differ from the control run (13; lines with a False check or an error first):
+     after the loop: status from the committed Gate 0 record at 0, `status != 'PASS'` -> raise at 1; binding (committed freeze record's gate0_record_sha256 == authorization's) -> raise at None; PROTOCOL_FROZEN parsed (OSError
+     -> the three new re-checks are statements of verify_authorization, which is statement 0 of generate_test and run_test_part and runs inside the evaluate_model guard before the data: False
+     RESULT: FAIL
+     verify_authorization: [('evaluate.py', 322, 'evaluate_model'), ('leakage.py', 237, 'run_test_part'), ('test_data.py', 140, 'generate_test')]
+     ('leakage.py', 249, 'run_test_part', 'test')
+N10: fault applied True | ie_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   ie_06 output lines that differ from the control run (4; lines with a False check or an error first):
+     after the loop: status from the committed Gate 0 record at 0, `status != 'PASS'` -> raise at None; binding (committed freeze record's gate0_record_sha256 == authorization's) -> raise at 2; PROTOCOL_FROZEN parsed (OSError
+     -> the three new re-checks are statements of verify_authorization, which is statement 0 of generate_test and run_test_part and runs inside the evaluate_model guard before the data: False
+     RESULT: FAIL
+     verify_authorization statement 5: if status not in ('PASS', 'NOT_TESTED'):
+N11: fault applied True | ie_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   ie_06 output lines that differ from the control run (20; lines with a False check or an error first):
+     after the loop: status from the committed Gate 0 record at 1, `status != 'PASS'` -> raise at 2; binding (committed freeze record's gate0_record_sha256 == authorization's) -> raise at 3; PROTOCOL_FROZEN parsed (OSError / 
+     RESULT: FAIL
+     verify_authorization: [('evaluate.py', 322, 'evaluate_model'), ('leakage.py', 240, 'run_test_part'), ('test_data.py', 140, 'generate_test')]
+     ('leakage.py', 252, 'run_test_part', 'test')
+     ('leakage.py', 248, 'run_test_part', 'TEST')
+N12: fault applied True | ie_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   ie_06 output lines that differ from the control run (3; lines with a False check or an error first):
+     RESULT: FAIL
+     metrix/e1-pilot/tests/test_st12.py:144 in test_eval_sets_one_byte: flip(root / p.general_source)
+     tests/test_st12.py test_eval_sets_one_byte: ['root, _, _ = mini_repo', 'fzm = FZ.load(repo_root=root)', 'p = D.params(fzm)', 'D.check_inputs(fzm, p, inputs_dir)', "(root / p.general_source).read_text(encoding='utf-8')", 
+N13: fault applied True | ie_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   ie_06 output lines that differ from the control run (2; lines with a False check or an error first):
+     tests/test_st12.py flip calls ['bytearray', 'bytes', 'encode', 'len', 'read_text', 'write_bytes'] (raw bytes in, one byte changed, raw bytes out; no decode): False
+     RESULT: FAIL
+N14: fault applied True | ie_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   ie_06 output lines that differ from the control run (4; lines with a False check or an error first):
+     after the loop: status from the committed Gate 0 record at 0, `status != 'PASS'` -> raise at 1; binding (committed freeze record's gate0_record_sha256 == authorization's) -> raise at 2; PROTOCOL_FROZEN parsed (OSError / 
+     -> the three new re-checks are statements of verify_authorization, which is statement 0 of generate_test and run_test_part and runs inside the evaluate_model guard before the data: False
+     RESULT: FAIL
+     verify_authorization statement 8: if current != authorization.frozen_commit and False:
+M1: fault applied True | ie_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   ie_06 output lines that differ from the control run (6; lines with a False check or an error first):
+     open calls: ["open(eval_sets_path, encoding='utf-8')"] | exactly one open, mode 'rb', no encoding argument: False
+     RESULT: FAIL
+     ('data.py', 507, 'build_general_dev', "open(eval_sets_path, encoding='utf-8')")
+     calls that open eval_sets.jsonl: [('data.py', 507, 'build_general_dev', "open(eval_sets_path, encoding='utf-8')")]
+     metrix/e1-pilot/src/metrix_e1/data.py:507 in build_general_dev: open(eval_sets_path, encoding='utf-8')
+M2: fault applied True | ie_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   ie_06 output lines that differ from the control run (24; lines with a False check or an error first):
+     decode / json calls before the continue: ["json.loads(line.decode('utf-8'))", "line.decode('utf-8')", "m.group(1).decode('ascii', 'replace')"] | only the prefix match and the split-field decode: False
+     RESULT: FAIL
+     build_general_dev: [('data.py', 555, 'generate'), ('test_data.py', 148, 'generate_test')]
+     ('data.py', 632, 'main', 'FZ.load()')
+     ('data.py', 590, 'file_hashes', '(d / name).read_bytes()')
+M5: fault applied True | ie_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   ie_06 output lines that differ from the control run (7; lines with a False check or an error first):
+     evaluate_model: for split 'test' the formal-mode check and then verify_authorization run before anything touches the data: False
+     -> the three new re-checks are statements of verify_authorization, which is statement 0 of generate_test and run_test_part and runs inside the evaluate_model guard before the data: False
+     RESULT: FAIL
+     verify_authorization: [('leakage.py', 239, 'run_test_part'), ('test_data.py', 140, 'generate_test')]
+     verify_authorization: called only from [('leakage.py', 'run_test_part'), ('test_data.py', 'generate_test')] | expected [('evaluate.py', 'evaluate_model'), ('leakage.py', 'run_test_part'), ('test_data.py', 'generate_test'
+M6: fault applied True | ie_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   ie_06 output lines that differ from the control run (6; lines with a False check or an error first):
+     generate_test statement 0 is LK.verify_authorization(authorization, fz.repo_root): False | readers / builders after it: [(0, 'params'), (1, 'check_inputs'), (2, 'load_qwen_tokenizer'), (3, 'params_for_test'), (4, 'read_j
+     -> the three new re-checks are statements of verify_authorization, which is statement 0 of generate_test and run_test_part and runs inside the evaluate_model guard before the data: False
+     RESULT: FAIL
+     params_for_test: [('test_data.py', 143, 'generate_test')]
+     verify_authorization: [('evaluate.py', 322, 'evaluate_model'), ('leakage.py', 239, 'run_test_part'), ('test_data.py', 145, 'generate_test')]
+M7: fault applied True | ie_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   ie_06 output lines that differ from the control run (9; lines with a False check or an error first):
+     run_test_part statement 0: 'n_q = len(test_qa)' -> verify first False | first statement using test_qa / general_test: 0 | after the verify False
+     -> the three new re-checks are statements of verify_authorization, which is statement 0 of generate_test and run_test_part and runs inside the evaluate_model guard before the data: False
+     RESULT: FAIL
+     verify_authorization: [('evaluate.py', 322, 'evaluate_model'), ('leakage.py', 240, 'run_test_part'), ('test_data.py', 140, 'generate_test')]
+     ('leakage.py', 252, 'run_test_part', 'test')
+M8: fault applied True | ie_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   ie_06 output lines that differ from the control run (2; lines with a False check or an error first):
+     RESULT: FAIL
+     statement 0 isinstance guard raising True | loop (statement 3) over both records (gate0, selection_freeze) True | recs[kind], got = committed_record(repo_root, rel, kind, authorization.frozen_commit) True | NotCommitted 
+modules: torch imported=False | transformers modeling modules imported=[] | this script never calls a model class or from_pretrained on a model
+RESULT: PASS
+exit=0

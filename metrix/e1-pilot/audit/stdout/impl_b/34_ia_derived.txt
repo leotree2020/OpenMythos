@@ -1,0 +1,36 @@
+# Data Auditor run (implementation stage B). host vm, CPU only (no GPU device), no model weights loaded (tokenizer files only); 2026-11-23 13:44:27 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit; PYTHONDONTWRITEBYTECODE=1
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/venv/bin/python -I -B ia_05_derived.py /home/user/OpenMythos /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/auditor_ib/dl/qwen_tok /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/auditor_id/out
+env: host vm | Linux-6.18.44-fc-v726-x86_64-with-glibc2.39 | python 3.13.18 (/tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/venv/bin/python) | installed {'transformers': '5.22.2', 'tokenizers': '0.23.3', 'pyarrow': '26.0.1', 'huggingface_hub': '2.4.0', 'torch': '2.11.0'} | nvidia device nodes: []
+facts from ia_04: 160 | canonical sha256 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 | == frozen: True
+
+== train_S.jsonl (frozen)
+derangement attempts per cell: {'capital/natural': 3, 'capital/random': 5, 'currency/natural': 1, 'currency/random': 6, 'founder/natural': 2, 'founder/random': 1, 'river/natural': 2, 'river/random': 6}
+train_S rows 120 | canonical sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e | frozen 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e | MATCH True
+AUDIT_VALUE train_S_canonical_sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e
+
+== candidates.json (frozen)
+candidates keys 160 | canonical sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | frozen e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | MATCH True
+AUDIT_VALUE candidates_canonical_sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705
+
+== train_F, train_Y, dev_qa (no frozen hash; my reading of 2.3 / 2.4 / 2.6)
+train_F 120 | train_Y 240 | dev_qa 320
+Y sentences containing both an entity and an answer: 0
+AUDIT_VALUE train_F_texts_canonical_sha256 e7e6d45f5e4b11675a22f22a5543678c8666357c2e845982dcb2e1660e97df1b
+AUDIT_VALUE train_Y_texts_canonical_sha256 99ecbe7547084fd9267e7cb581b3e3861dd3f01f77c3d24607956dcdb31f2377
+AUDIT_VALUE dev_qa_texts_canonical_sha256 99d7d9f5622c1be170d0348f7422aa7e684c244b6f8f2581121f19f10d5c0cb8
+
+== Y / F token ratio (2.6)
+without the end-of-text token: F 1769 | Y 2020 | ratio 1.1419
+with one end-of-text token (id 151643) per sequence: F 1889 | Y 2260 | ratio 1.1964
+authoring numbers F 1,889 / Y 2,260 reproduced by the counting with the end-of-text token: True
+
+== Y_ANSWER and TRAIN statement tokenize ' ' + answer identically (2.6)
+learned facts checked: 120 | mismatches: []
+
+== exposure matching (2.5), case-insensitive substring counts
+learned: 4 candidates x {F,S,Y} == 1 and anchor == 0; learned entity x {F,S,Y} == 1; unread: candidates and entity x {F,S,Y,anchor} == 0 | violations: [] | count 0
+wrote train_S.jsonl, candidates.json, train_F.json, train_Y.json, dev_qa.json to /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/auditor_id/out
+modules: torch imported=True | transformers modeling modules imported=['torch', 'transformers.modeling_rope_utils', 'transformers.models.auto.modeling_auto'] | this script never calls a model class or from_pretrained on a model
+RESULT: PASS
+exit=0

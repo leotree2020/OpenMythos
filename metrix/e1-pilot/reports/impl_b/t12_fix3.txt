@@ -1,0 +1,313 @@
+# Implementation stage B report commit, code part (fix2 code-reviewer MINORs): every open() call in src/ and tests/, TEST generator refusal, the new tests with each new check removed in turn (sources restored), full pytest. Executor, session_01J5mxaWPrK8siadYKyqZ5pX, host vm (Anthropic cloud container, CPU only, no GPU). Mon Nov 23 14:17:39 UTC 2026
+# cwd repository root; <SCRATCH> = session scratchpad. Recorded by metrix/e1-pilot/reports/round5/logrun.sh. No model weights, no GPU, no TEST data.
+$ git log -1 --format=%H
+493d7f9c102cae3ebb916f1d72fcc1759b26bee8
+exit=0
+$ git diff --stat HEAD -- metrix/e1-pilot/src metrix/e1-pilot/tests
+ metrix/e1-pilot/src/metrix_e1/evaluate.py  | 12 ++---
+ metrix/e1-pilot/src/metrix_e1/frozen.py    |  2 +
+ metrix/e1-pilot/src/metrix_e1/leakage.py   | 70 +++++++++++++++++++-----------
+ metrix/e1-pilot/src/metrix_e1/record.py    | 32 ++++++++++++++
+ metrix/e1-pilot/src/metrix_e1/test_data.py | 45 +++++++------------
+ metrix/e1-pilot/tests/test_data_hashes.py  | 25 ++++++-----
+ metrix/e1-pilot/tests/test_evaluate.py     | 19 +++++++-
+ metrix/e1-pilot/tests/test_test_data.py    | 69 +++++++++++++++++++++--------
+ 8 files changed, 183 insertions(+), 91 deletions(-)
+exit=0
+# every open( / read_text( / read_bytes( call in src/ and tests/ (not only the lines naming eval_sets; t10's grep showed only lines that contain 'eval_sets'). eval_sets.jsonl is opened at data.py ("rb") and tests/test_data_hashes.py _dev_rows_only ("rb"); reports/round5/l6_check.py (text mode) is not run on the full file any more.
+$ bash -c grep\ -rn\ \'open\(\\\|read_text\(\\\|read_bytes\(\'\ metrix/e1-pilot/src\ metrix/e1-pilot/tests\ --include=\*.py
+metrix/e1-pilot/src/metrix_e1/leakage.py:224:        current = FZ.parse_protocol_frozen((root / FZ.PROTOCOL_FROZEN_REL).read_bytes()).commit
+metrix/e1-pilot/src/metrix_e1/leakage.py:285:    with open(a.split_manifest, encoding="utf-8") as fh:
+metrix/e1-pilot/src/metrix_e1/frozen.py:97:    with open(path, "rb") as fh:
+metrix/e1-pilot/src/metrix_e1/frozen.py:115:    with open(path, "rb") as fh:
+metrix/e1-pilot/src/metrix_e1/frozen.py:295:        with open(d / "candidates.json", encoding="utf-8") as fh:
+metrix/e1-pilot/src/metrix_e1/frozen.py:340:        pf_bytes = pf_path.read_bytes()
+metrix/e1-pilot/src/metrix_e1/frozen.py:381:                wt = (root / rel).read_bytes()
+metrix/e1-pilot/src/metrix_e1/record.py:72:    pf = (fz.repo_root / FZ.PROTOCOL_FROZEN_REL).read_bytes()
+metrix/e1-pilot/src/metrix_e1/record.py:156:    if not wt.is_file() or wt.read_bytes() != r.stdout:
+metrix/e1-pilot/src/metrix_e1/compute.py:88:        return json.loads(self.path.read_text(encoding="utf-8"))["device_name"]
+metrix/e1-pilot/src/metrix_e1/compute.py:112:    end], ...], "open": start or null}. open() writes its start at once, so a segment of a process that dies is not
+metrix/e1-pilot/src/metrix_e1/compute.py:123:        return json.loads(self.path.read_text(encoding="utf-8"))
+metrix/e1-pilot/src/metrix_e1/compute.py:129:    def open(self):
+metrix/e1-pilot/src/metrix_e1/data.py:507:    with open(eval_sets_path, "rb") as fh:
+metrix/e1-pilot/src/metrix_e1/data.py:589:        raw = (d / name).read_bytes()
+metrix/e1-pilot/src/metrix_e1/data.py:609:            on_disk = (d / name).read_bytes()
+metrix/e1-pilot/tests/test_leakage.py:108:    report = json.loads((d / "leakage_report.json").read_text(encoding="utf-8"))
+metrix/e1-pilot/tests/test_leakage.py:123:    raw = bytearray((d / "train_S.jsonl").read_bytes())
+metrix/e1-pilot/tests/test_stops.py:89:    clock.open()
+metrix/e1-pilot/tests/test_stops.py:92:    clock.open()
+metrix/e1-pilot/tests/test_stops.py:103:    CP.GpuClock(path, now=lambda: t[0]).open()                          # this "process" dies without close()
+metrix/e1-pilot/tests/test_stops.py:108:        later.open()                                                    # the open segment must be closed first
+metrix/e1-pilot/tests/test_stops.py:180:            (bad / p.name).write_bytes(p.read_bytes())
+metrix/e1-pilot/tests/test_stops.py:181:    b = bytearray((bad / "dev_qa.jsonl").read_bytes())
+metrix/e1-pilot/tests/test_data_hashes.py:88:    with open(src, "rb") as fi, open(out, "wb") as fo:
+metrix/e1-pilot/tests/test_data_hashes.py:124:    assert (tmp_path / "facts.json").read_bytes() == FZ.canonical_bytes(facts)
+metrix/e1-pilot/tests/test_data_hashes.py:125:    assert (tmp_path / "sc/train_S.jsonl").read_bytes() == files["train_S.jsonl"]
+metrix/e1-pilot/tests/test_data_hashes.py:126:    assert (tmp_path / "sc/candidates.json").read_bytes() == files["candidates.json"]
+metrix/e1-pilot/tests/test_data_hashes.py:127:    ref_anchor = json.loads((tmp_path / "anchor.json").read_text(encoding="utf-8"))["texts"]
+metrix/e1-pilot/tests/test_data_hashes.py:130:    ref_general = json.loads((tmp_path / "general.json").read_text(encoding="utf-8"))
+metrix/e1-pilot/tests/test_test_data.py:36:    data_before = {p.name: p.read_bytes() for p in generated["dir"].iterdir()}
+metrix/e1-pilot/tests/test_test_data.py:48:    assert {p.name: p.read_bytes() for p in generated["dir"].iterdir()} == data_before
+metrix/e1-pilot/tests/test_test_data.py:107:    pf.write_bytes((PILOT / "PROTOCOL_FROZEN").read_bytes())
+metrix/e1-pilot/tests/test_environment.py:16:    lines = [ln for ln in (PILOT / "requirements.lock").read_text(encoding="utf-8").splitlines()
+metrix/e1-pilot/tests/test_st12.py:35:    b = bytearray(path.read_bytes())
+metrix/e1-pilot/tests/test_st12.py:44:    return path.read_bytes().index(b'"METRIX-E1-PILOT"') + 1
+metrix/e1-pilot/tests/test_st12.py:66:    src = (fz.repo_root / FZ.PROTOCOL_FROZEN_REL).read_text(encoding="utf-8")
+metrix/e1-pilot/tests/test_st12.py:109:    pf.write_bytes(pf.read_bytes().replace(b"\n", b"\r\n"))
+metrix/e1-pilot/tests/test_record.py:48:    assert json.loads(p.read_text(encoding="utf-8"))["label"] == "SMOKE — NOT A RESULT"
+metrix/e1-pilot/tests/test_record.py:59:    raw = (fz.repo_root / "metrix/e1-pilot/PROTOCOL_FROZEN").read_bytes()
+exit=0
+$ bash -c cd\ metrix/e1-pilot/src\ \&\&\ <SCRATCH>/venv/bin/python\ -m\ metrix_e1.test_data\ --inputs\ <SCRATCH>/inputs\ --data\ <SCRATCH>/data_d\ --out\ <SCRATCH>/test_out_never_f\;\ echo\ exit=\$\?\;\ test\ -e\ <SCRATCH>/test_out_never_f\ \&\&\ echo\ OUT_EXISTS\ \|\|\ echo\ NO_OUTPUT_DIRECTORY
+TEST generator refused: metrix/e1-pilot/results/gate0_record.json is not committed at HEAD
+no TEST content was generated, read or written
+RESULT: FAIL
+exit=1
+NO_OUTPUT_DIRECTORY
+exit=0
+$ python3 <SCRATCH>/mutate_fix3.py <SCRATCH> <SCRATCH>/venv/bin/python
+loop NaN check removed         -> exit 1 | 1 failed, 11 passed in 15.14s
+     FAILED metrix/e1-pilot/tests/test_evaluate.py::test_nonfinite_logits_stop_em_generation
+pending check removed          -> exit 1 | 1 failed, 33 passed in 14.40s
+     FAILED metrix/e1-pilot/tests/test_test_data.py::test_verify_authorization_rechecks_what_the_generator_checked[pending]
+freeze content check removed   -> exit 1 | 6 failed, 28 passed in 15.14s
+     FAILED metrix/e1-pilot/tests/test_test_data.py::test_verify_authorization_rechecks_what_the_generator_checked[S_selected]
+     FAILED metrix/e1-pilot/tests/test_test_data.py::test_verify_authorization_rechecks_what_the_generator_checked[bad_selection]
+     FAILED metrix/e1-pilot/tests/test_test_data.py::test_verify_authorization_rechecks_what_the_generator_checked[checkpoint]
+     FAILED metrix/e1-pilot/tests/test_test_data.py::test_verify_authorization_rechecks_what_the_generator_checked[checkpoint_not_hex]
+     FAILED metrix/e1-pilot/tests/test_test_data.py::test_verify_authorization_rechecks_what_the_generator_checked[data_hashes]
+     FAILED metrix/e1-pilot/tests/test_test_data.py::test_verify_authorization_rechecks_what_the_generator_checked[unbound]
+fz commit check removed        -> exit 1 | 1 failed, 33 passed in 15.26s
+     FAILED metrix/e1-pilot/tests/test_test_data.py::test_verify_authorization_branches
+checkpoint check removed       -> exit 1 | 3 failed, 31 passed in 15.06s
+     FAILED metrix/e1-pilot/tests/test_test_data.py::test_selection_record_condition[checkpoint]
+     FAILED metrix/e1-pilot/tests/test_test_data.py::test_verify_authorization_rechecks_what_the_generator_checked[checkpoint]
+     FAILED metrix/e1-pilot/tests/test_test_data.py::test_verify_authorization_rechecks_what_the_generator_checked[checkpoint_not_hex]
+data hash check removed        -> exit 1 | 2 failed, 32 passed in 14.92s
+     FAILED metrix/e1-pilot/tests/test_test_data.py::test_selection_record_condition[data_hashes]
+     FAILED metrix/e1-pilot/tests/test_test_data.py::test_verify_authorization_rechecks_what_the_generator_checked[data_hashes]
+exit=0
+$ git status --short metrix/e1-pilot/src
+ M metrix/e1-pilot/src/metrix_e1/evaluate.py
+ M metrix/e1-pilot/src/metrix_e1/frozen.py
+ M metrix/e1-pilot/src/metrix_e1/leakage.py
+ M metrix/e1-pilot/src/metrix_e1/record.py
+ M metrix/e1-pilot/src/metrix_e1/test_data.py
+exit=0
+$ <SCRATCH>/venv/bin/python -m pytest -v -p no:cacheprovider metrix/e1-pilot/tests
+============================= test session starts ==============================
+platform linux -- Python 3.13.18, pytest-9.2.0, pluggy-1.7.0 -- <SCRATCH>/venv/bin/python
+rootdir: /home/user/OpenMythos
+configfile: pyproject.toml
+plugins: anyio-4.16.0
+collecting ... collected 204 items
+
+metrix/e1-pilot/tests/test_arm_a.py::test_kl_direction_is_base_to_theta PASSED [  0%]
+metrix/e1-pilot/tests/test_arm_a.py::test_kl_is_token_weighted_over_documents PASSED [  0%]
+metrix/e1-pilot/tests/test_arm_a.py::test_kl_positions_are_t2_to_n PASSED [  1%]
+metrix/e1-pilot/tests/test_arm_a.py::test_base_copy_is_frozen PASSED     [  1%]
+metrix/e1-pilot/tests/test_arm_a.py::test_step0_kl_zero_base_unchanged_after_training PASSED [  2%]
+metrix/e1-pilot/tests/test_contract.py::test_values_match_the_frozen_files PASSED [  2%]
+metrix/e1-pilot/tests/test_contract.py::test_changed_protocol_sentence_stops[| G0.4 | `Acc_CB(F)` \u2265 0.90,3 \u4e2a\u79cd\u5b50\u90fd\u6ee1\u8db3 |-| G0.4 | `Acc_CB(F)` \u2265 0.90,2 \u4e2a\u79cd\u5b50\u90fd\u6ee1\u8db3 |] PASSED [  3%]
+metrix/e1-pilot/tests/test_contract.py::test_changed_protocol_sentence_stops[- \u6b21\u6570 **10,000**;-- \u6b21\u6570 **10,000** \u6b21;] PASSED [  3%]
+metrix/e1-pilot/tests/test_contract.py::test_changed_protocol_sentence_stops[| ST11 | \u7b2c 8 \u8282\u7b2c 2 \u6b65\u9884\u68c0\u7684\u9884\u4f30\u603b\u65f6\u957f\u8d85\u8fc7 3.5 \u5c0f\u65f6 |-| ST11 | \u7b2c 8 \u8282\u7b2c 2 \u6b65\u9884\u68c0\u7684\u9884\u4f30\u603b\u65f6\u957f\u8d85\u8fc7 3.5 \u4e2a\u5c0f\u65f6 |] PASSED [  4%]
+metrix/e1-pilot/tests/test_contract.py::test_changed_search_space_sentence_stops PASSED [  4%]
+metrix/e1-pilot/tests/test_contract.py::test_accounting_and_status_vocabulary PASSED [  5%]
+metrix/e1-pilot/tests/test_contract.py::test_changed_status_vocabulary_stops PASSED [  5%]
+metrix/e1-pilot/tests/test_data_hashes.py::test_four_frozen_hashes PASSED [  6%]
+metrix/e1-pilot/tests/test_data_hashes.py::test_files_are_canonical PASSED [  6%]
+metrix/e1-pilot/tests/test_data_hashes.py::test_counts_and_ratio PASSED  [  7%]
+metrix/e1-pilot/tests/test_data_hashes.py::test_no_test_file PASSED      [  7%]
+metrix/e1-pilot/tests/test_data_hashes.py::test_byte_identical_to_reference_scripts PASSED [  8%]
+metrix/e1-pilot/tests/test_data_hashes.py::test_leakage_gate0_passes PASSED [  8%]
+metrix/e1-pilot/tests/test_data_hashes.py::test_y_f_ratio_with_and_without_endoftext PASSED [  9%]
+metrix/e1-pilot/tests/test_environment.py::test_python_is_the_locked_interpreter PASSED [  9%]
+metrix/e1-pilot/tests/test_environment.py::test_library_versions_match_protocol PASSED [ 10%]
+metrix/e1-pilot/tests/test_environment.py::test_library_version_mismatch_is_st8 PASSED [ 10%]
+metrix/e1-pilot/tests/test_evaluate.py::test_em_normalize PASSED         [ 11%]
+metrix/e1-pilot/tests/test_evaluate.py::test_greedy_stops_at_stop_ids_and_caps_length PASSED [ 11%]
+metrix/e1-pilot/tests/test_evaluate.py::test_batched_cached_greedy_equals_naive PASSED [ 12%]
+metrix/e1-pilot/tests/test_evaluate.py::test_general_nll_t_from_2_and_batching PASSED [ 12%]
+metrix/e1-pilot/tests/test_evaluate.py::test_evaluation_is_float32_without_autocast PASSED [ 13%]
+metrix/e1-pilot/tests/test_evaluate.py::test_scores_do_not_depend_on_batch_composition PASSED [ 13%]
+metrix/e1-pilot/tests/test_evaluate.py::test_s_mapping_uses_the_s_answer PASSED [ 14%]
+metrix/e1-pilot/tests/test_evaluate.py::test_formal_evaluation_refuses_cpu PASSED [ 14%]
+metrix/e1-pilot/tests/test_evaluate.py::test_think_marks_are_checked PASSED [ 15%]
+metrix/e1-pilot/tests/test_evaluate.py::test_nonfinite_in_evaluation_reaches_st6 PASSED [ 15%]
+metrix/e1-pilot/tests/test_evaluate.py::test_test_split_needs_the_authorization PASSED [ 16%]
+metrix/e1-pilot/tests/test_evaluate.py::test_nonfinite_logits_stop_em_generation PASSED [ 16%]
+metrix/e1-pilot/tests/test_gate.py::test_all_satisfied_at_the_boundaries_is_pass PASSED [ 17%]
+metrix/e1-pilot/tests/test_gate.py::test_each_condition_not_satisfied[G0.1] PASSED [ 17%]
+metrix/e1-pilot/tests/test_gate.py::test_each_condition_not_satisfied[G0.2] PASSED [ 18%]
+metrix/e1-pilot/tests/test_gate.py::test_each_condition_not_satisfied[G0.3] PASSED [ 18%]
+metrix/e1-pilot/tests/test_gate.py::test_each_condition_not_satisfied[G0.4] PASSED [ 19%]
+metrix/e1-pilot/tests/test_gate.py::test_each_condition_not_satisfied[G0.5] PASSED [ 19%]
+metrix/e1-pilot/tests/test_gate.py::test_each_condition_not_satisfied[G0.6] PASSED [ 20%]
+metrix/e1-pilot/tests/test_gate.py::test_each_condition_not_satisfied[G0.7] PASSED [ 20%]
+metrix/e1-pilot/tests/test_gate.py::test_each_condition_not_satisfied[G0.8] PASSED [ 21%]
+metrix/e1-pilot/tests/test_gate.py::test_each_condition_not_satisfied[G0.9] PASSED [ 21%]
+metrix/e1-pilot/tests/test_gate.py::test_each_condition_not_satisfied[G0.10] PASSED [ 22%]
+metrix/e1-pilot/tests/test_gate.py::test_g03_endpoints_are_inside PASSED [ 22%]
+metrix/e1-pilot/tests/test_gate.py::test_preflight_mode_is_not_judged PASSED [ 23%]
+metrix/e1-pilot/tests/test_gate.py::test_reasons_follow_section_9 PASSED [ 23%]
+metrix/e1-pilot/tests/test_gate.py::test_smoke_mode_status_is_not_tested PASSED [ 24%]
+metrix/e1-pilot/tests/test_gate.py::test_unknown_status_word_is_refused PASSED [ 24%]
+metrix/e1-pilot/tests/test_gate.py::test_repro_compare PASSED            [ 25%]
+metrix/e1-pilot/tests/test_gate.py::test_compute_values_and_comparisons PASSED [ 25%]
+metrix/e1-pilot/tests/test_gate.py::test_t1_t3 PASSED                    [ 25%]
+metrix/e1-pilot/tests/test_gate.py::test_compute_test_values PASSED      [ 26%]
+metrix/e1-pilot/tests/test_leakage.py::test_clean_data_passes PASSED     [ 26%]
+metrix/e1-pilot/tests/test_leakage.py::test_l3a_unread_entity_in_train_Y PASSED [ 27%]
+metrix/e1-pilot/tests/test_leakage.py::test_l3a_and_l3b_answers_in_anchor PASSED [ 27%]
+metrix/e1-pilot/tests/test_leakage.py::test_l4_dev_question_in_train_F PASSED [ 28%]
+metrix/e1-pilot/tests/test_leakage.py::test_l5_duplicate_string_and_fact_id PASSED [ 28%]
+metrix/e1-pilot/tests/test_leakage.py::test_l6_shared_13gram_counted_within_documents PASSED [ 29%]
+metrix/e1-pilot/tests/test_leakage.py::test_l1_l2_templates PASSED       [ 29%]
+metrix/e1-pilot/tests/test_leakage.py::test_cli_fail_exit PASSED         [ 30%]
+metrix/e1-pilot/tests/test_leakage.py::test_cli_bad_split_manifest PASSED [ 30%]
+metrix/e1-pilot/tests/test_leakage.py::test_cli_st12_on_tampered_frozen_data PASSED [ 31%]
+metrix/e1-pilot/tests/test_lora.py::test_step0_output_equals_base PASSED [ 31%]
+metrix/e1-pilot/tests/test_lora.py::test_forward_equals_hand_computation PASSED [ 32%]
+metrix/e1-pilot/tests/test_lora.py::test_alpha_is_two_times_rank_on_all_modules_of_all_layers PASSED [ 32%]
+metrix/e1-pilot/tests/test_lora.py::test_layer_count_is_checked_outside_smoke PASSED [ 33%]
+metrix/e1-pilot/tests/test_lora.py::test_only_lora_trainable_and_base_hash_unchanged_after_training PASSED [ 33%]
+metrix/e1-pilot/tests/test_lora.py::test_lora_a_values_come_from_rng_rule PASSED [ 34%]
+metrix/e1-pilot/tests/test_record.py::test_template_fields_from_the_protocol PASSED [ 34%]
+metrix/e1-pilot/tests/test_record.py::test_no_field_can_be_dropped PASSED [ 35%]
+metrix/e1-pilot/tests/test_record.py::test_smoke_records_are_labelled_and_kept_apart PASSED [ 35%]
+metrix/e1-pilot/tests/test_record.py::test_environment_block PASSED      [ 36%]
+metrix/e1-pilot/tests/test_record.py::test_record_constructors_and_committed_json PASSED [ 36%]
+metrix/e1-pilot/tests/test_record.py::test_environment_records_the_parsed_protocol_frozen PASSED [ 37%]
+metrix/e1-pilot/tests/test_scoring.py::test_pinned_28_token_sequence PASSED [ 37%]
+metrix/e1-pilot/tests/test_scoring.py::test_enable_thinking_true_makes_the_check_fail PASSED [ 38%]
+metrix/e1-pilot/tests/test_scoring.py::test_enable_thinking_is_not_a_parameter PASSED [ 38%]
+metrix/e1-pilot/tests/test_scoring.py::test_scored_slice_equals_train_statement_answer PASSED [ 39%]
+metrix/e1-pilot/tests/test_scoring.py::test_closed_book_slice_equals_train_statement_answer PASSED [ 39%]
+metrix/e1-pilot/tests/test_scoring.py::test_every_candidate_has_k_st_scored_tokens PASSED [ 40%]
+metrix/e1-pilot/tests/test_st12.py::test_mini_repo_positive_control PASSED [ 40%]
+metrix/e1-pilot/tests/test_st12.py::test_frozen_commit_file_one_byte[metrix/e1-pilot/METRIX_E1_PROTOCOL.md] PASSED [ 41%]
+metrix/e1-pilot/tests/test_st12.py::test_frozen_commit_file_one_byte[metrix/e1-pilot/DATA_MANIFEST.json] PASSED [ 41%]
+metrix/e1-pilot/tests/test_st12.py::test_frozen_commit_file_one_byte[metrix/e1-pilot/SPLIT_MANIFEST.json] PASSED [ 42%]
+metrix/e1-pilot/tests/test_st12.py::test_frozen_commit_file_one_byte[metrix/e1-pilot/SEARCH_SPACE.json] PASSED [ 42%]
+metrix/e1-pilot/tests/test_st12.py::test_working_tree_file_one_byte[metrix/e1-pilot/METRIX_E1_PROTOCOL.md] PASSED [ 43%]
+metrix/e1-pilot/tests/test_st12.py::test_working_tree_file_one_byte[metrix/e1-pilot/DATA_MANIFEST.json] PASSED [ 43%]
+metrix/e1-pilot/tests/test_st12.py::test_working_tree_file_one_byte[metrix/e1-pilot/SPLIT_MANIFEST.json] PASSED [ 44%]
+metrix/e1-pilot/tests/test_st12.py::test_working_tree_file_one_byte[metrix/e1-pilot/SEARCH_SPACE.json] PASSED [ 44%]
+metrix/e1-pilot/tests/test_st12.py::test_working_tree_line_endings_and_step1_fields PASSED [ 45%]
+metrix/e1-pilot/tests/test_st12.py::test_protocol_frozen_hash_one_byte[file] PASSED [ 45%]
+metrix/e1-pilot/tests/test_st12.py::test_protocol_frozen_hash_one_byte[data] PASSED [ 46%]
+metrix/e1-pilot/tests/test_st12.py::test_eval_sets_one_byte PASSED       [ 46%]
+metrix/e1-pilot/tests/test_st12.py::test_input_file_one_byte[qwen:tokenizer.json] PASSED [ 47%]
+metrix/e1-pilot/tests/test_st12.py::test_input_file_one_byte[qwen:tokenizer_config.json] PASSED [ 47%]
+metrix/e1-pilot/tests/test_st12.py::test_input_file_one_byte[qwen:vocab.json] PASSED [ 48%]
+metrix/e1-pilot/tests/test_st12.py::test_input_file_one_byte[qwen:merges.txt] PASSED [ 48%]
+metrix/e1-pilot/tests/test_st12.py::test_input_file_one_byte[parcae_tokenizer] PASSED [ 49%]
+metrix/e1-pilot/tests/test_st12.py::test_input_file_one_byte[anchor_parquet] PASSED [ 49%]
+metrix/e1-pilot/tests/test_st12.py::test_data_file_message_table_complete PASSED [ 50%]
+metrix/e1-pilot/tests/test_st12.py::test_data_file_one_byte[facts.jsonl] PASSED [ 50%]
+metrix/e1-pilot/tests/test_st12.py::test_data_file_one_byte[train_F.jsonl] PASSED [ 50%]
+metrix/e1-pilot/tests/test_st12.py::test_data_file_one_byte[train_S.jsonl] PASSED [ 51%]
+metrix/e1-pilot/tests/test_st12.py::test_data_file_one_byte[train_Y.jsonl] PASSED [ 51%]
+metrix/e1-pilot/tests/test_st12.py::test_data_file_one_byte[dev_qa.jsonl] PASSED [ 52%]
+metrix/e1-pilot/tests/test_st12.py::test_data_file_one_byte[candidates.json] PASSED [ 52%]
+metrix/e1-pilot/tests/test_st12.py::test_data_file_one_byte[general_dev.jsonl] PASSED [ 53%]
+metrix/e1-pilot/tests/test_st12.py::test_data_file_one_byte[anchor_text.jsonl] PASSED [ 53%]
+metrix/e1-pilot/tests/test_st12.py::test_verify_positive_control PASSED  [ 54%]
+metrix/e1-pilot/tests/test_st12.py::test_cli_stops_on_tampered_data PASSED [ 54%]
+metrix/e1-pilot/tests/test_st12.py::test_cli_stops_on_tampered_input PASSED [ 55%]
+metrix/e1-pilot/tests/test_st12.py::test_parse_jsonl_splits_on_newline_only PASSED [ 55%]
+metrix/e1-pilot/tests/test_stats.py::test_tie_with_the_true_answer_is_wrong PASSED [ 56%]
+metrix/e1-pilot/tests/test_stats.py::test_all_candidates_tied_gives_accuracy_zero PASSED [ 56%]
+metrix/e1-pilot/tests/test_stats.py::test_fact_score_is_the_mean_over_questions_and_acc_the_mean_over_facts PASSED [ 57%]
+metrix/e1-pilot/tests/test_stats.py::test_seed_average_is_the_per_fact_mean PASSED [ 57%]
+metrix/e1-pilot/tests/test_stats.py::test_bootstrap_resamples_facts_within_strata PASSED [ 58%]
+metrix/e1-pilot/tests/test_stats.py::test_bootstrap_does_not_depend_on_the_number_of_questions PASSED [ 58%]
+metrix/e1-pilot/tests/test_stats.py::test_percentile_linear_interpolation PASSED [ 59%]
+metrix/e1-pilot/tests/test_stats.py::test_dnll_is_mean_over_domains_of_window_means PASSED [ 59%]
+metrix/e1-pilot/tests/test_stats.py::test_size_estimate_formula PASSED   [ 60%]
+metrix/e1-pilot/tests/test_stats.py::test_immediate_gain_and_halfwidth_at_zero PASSED [ 60%]
+metrix/e1-pilot/tests/test_stops.py::test_every_code_has_a_check PASSED  [ 61%]
+metrix/e1-pilot/tests/test_stops.py::test_actions_come_from_the_frozen_protocol PASSED [ 61%]
+metrix/e1-pilot/tests/test_stops.py::test_st1 PASSED                     [ 62%]
+metrix/e1-pilot/tests/test_stops.py::test_st2 PASSED                     [ 62%]
+metrix/e1-pilot/tests/test_stops.py::test_st3 PASSED                     [ 63%]
+metrix/e1-pilot/tests/test_stops.py::test_st4_st5 PASSED                 [ 63%]
+metrix/e1-pilot/tests/test_stops.py::test_st6 PASSED                     [ 64%]
+metrix/e1-pilot/tests/test_stops.py::test_st7 PASSED                     [ 64%]
+metrix/e1-pilot/tests/test_stops.py::test_gpu_clock_counts_a_segment_left_open_by_a_dead_process PASSED [ 65%]
+metrix/e1-pilot/tests/test_stops.py::test_st8 PASSED                     [ 65%]
+metrix/e1-pilot/tests/test_stops.py::test_st9 PASSED                     [ 66%]
+metrix/e1-pilot/tests/test_stops.py::test_st10 PASSED                    [ 66%]
+metrix/e1-pilot/tests/test_stops.py::test_st11 PASSED                    [ 67%]
+metrix/e1-pilot/tests/test_stops.py::test_preflight_summary_and_flops PASSED [ 67%]
+metrix/e1-pilot/tests/test_stops.py::test_st12 PASSED                    [ 68%]
+metrix/e1-pilot/tests/test_stops.py::test_st13 PASSED                    [ 68%]
+metrix/e1-pilot/tests/test_stops.py::test_nonfinite_carries_no_status_and_st6_decides PASSED [ 69%]
+metrix/e1-pilot/tests/test_stops.py::test_determinism_settings PASSED    [ 69%]
+metrix/e1-pilot/tests/test_test_data.py::test_refuses_in_the_current_state PASSED [ 70%]
+metrix/e1-pilot/tests/test_test_data.py::test_refusal_never_parses_test_rows PASSED [ 70%]
+metrix/e1-pilot/tests/test_test_data.py::test_refuses_without_data PASSED [ 71%]
+metrix/e1-pilot/tests/test_test_data.py::test_generation_needs_authorization PASSED [ 71%]
+metrix/e1-pilot/tests/test_test_data.py::test_gate0_record_condition_positive_control PASSED [ 72%]
+metrix/e1-pilot/tests/test_test_data.py::test_gate0_record_condition[missing] PASSED [ 72%]
+metrix/e1-pilot/tests/test_test_data.py::test_gate0_record_condition[dirty] PASSED [ 73%]
+metrix/e1-pilot/tests/test_test_data.py::test_gate0_record_condition[smoke] PASSED [ 73%]
+metrix/e1-pilot/tests/test_test_data.py::test_gate0_record_condition[not_pass] PASSED [ 74%]
+metrix/e1-pilot/tests/test_test_data.py::test_gate0_record_condition[not_tested] PASSED [ 74%]
+metrix/e1-pilot/tests/test_test_data.py::test_gate0_record_condition[other_commit] PASSED [ 75%]
+metrix/e1-pilot/tests/test_test_data.py::test_gate0_record_condition[wrong_kind] PASSED [ 75%]
+metrix/e1-pilot/tests/test_test_data.py::test_selection_record_condition_positive_control PASSED [ 75%]
+metrix/e1-pilot/tests/test_test_data.py::test_selection_record_condition[missing] PASSED [ 76%]
+metrix/e1-pilot/tests/test_test_data.py::test_selection_record_condition[smoke] PASSED [ 76%]
+metrix/e1-pilot/tests/test_test_data.py::test_selection_record_condition[bad_selection] PASSED [ 77%]
+metrix/e1-pilot/tests/test_test_data.py::test_selection_record_condition[S_selected] PASSED [ 77%]
+metrix/e1-pilot/tests/test_test_data.py::test_selection_record_condition[data_hashes] PASSED [ 78%]
+metrix/e1-pilot/tests/test_test_data.py::test_selection_record_condition[checkpoint] PASSED [ 78%]
+metrix/e1-pilot/tests/test_test_data.py::test_selection_record_condition[unbound] PASSED [ 79%]
+metrix/e1-pilot/tests/test_test_data.py::test_selection_record_condition[wrong_kind] PASSED [ 79%]
+metrix/e1-pilot/tests/test_test_data.py::test_pending_interpretations_block_test PASSED [ 80%]
+metrix/e1-pilot/tests/test_test_data.py::test_run_test_part_rechecks_the_committed_records PASSED [ 80%]
+metrix/e1-pilot/tests/test_test_data.py::test_check_preconditions_calls_the_interpretation_check PASSED [ 81%]
+metrix/e1-pilot/tests/test_test_data.py::test_verify_authorization_branches PASSED [ 81%]
+metrix/e1-pilot/tests/test_test_data.py::test_verify_authorization_rechecks_what_the_generator_checked[S_selected] PASSED [ 82%]
+metrix/e1-pilot/tests/test_test_data.py::test_verify_authorization_rechecks_what_the_generator_checked[bad_selection] PASSED [ 82%]
+metrix/e1-pilot/tests/test_test_data.py::test_verify_authorization_rechecks_what_the_generator_checked[checkpoint] PASSED [ 83%]
+metrix/e1-pilot/tests/test_test_data.py::test_verify_authorization_rechecks_what_the_generator_checked[checkpoint_not_hex] PASSED [ 83%]
+metrix/e1-pilot/tests/test_test_data.py::test_verify_authorization_rechecks_what_the_generator_checked[data_hashes] PASSED [ 84%]
+metrix/e1-pilot/tests/test_test_data.py::test_verify_authorization_rechecks_what_the_generator_checked[not_pass] PASSED [ 84%]
+metrix/e1-pilot/tests/test_test_data.py::test_verify_authorization_rechecks_what_the_generator_checked[other_protocol_frozen] PASSED [ 85%]
+metrix/e1-pilot/tests/test_test_data.py::test_verify_authorization_rechecks_what_the_generator_checked[pending] PASSED [ 85%]
+metrix/e1-pilot/tests/test_test_data.py::test_verify_authorization_rechecks_what_the_generator_checked[unbound] PASSED [ 86%]
+metrix/e1-pilot/tests/test_train.py::test_plan_has_30_runs_and_s_y_inherit_f PASSED [ 86%]
+metrix/e1-pilot/tests/test_train.py::test_s_and_y_follow_another_f_selection PASSED [ 87%]
+metrix/e1-pilot/tests/test_train.py::test_selection_rule PASSED          [ 87%]
+metrix/e1-pilot/tests/test_train.py::test_trainable_counts_random_model[F-F1] PASSED [ 88%]
+metrix/e1-pilot/tests/test_train.py::test_trainable_counts_random_model[A-A1] PASSED [ 88%]
+metrix/e1-pilot/tests/test_train.py::test_trainable_counts_random_model[S-None] PASSED [ 89%]
+metrix/e1-pilot/tests/test_train.py::test_trainable_counts_random_model[Y-None] PASSED [ 89%]
+metrix/e1-pilot/tests/test_train.py::test_trainable_counts_random_model[L-L1] PASSED [ 90%]
+metrix/e1-pilot/tests/test_train.py::test_trainable_counts_random_model[L-L2] PASSED [ 90%]
+metrix/e1-pilot/tests/test_train.py::test_trainable_counts_protocol_architecture[F-F1] PASSED [ 91%]
+metrix/e1-pilot/tests/test_train.py::test_trainable_counts_protocol_architecture[A-A1] PASSED [ 91%]
+metrix/e1-pilot/tests/test_train.py::test_trainable_counts_protocol_architecture[S-None] PASSED [ 92%]
+metrix/e1-pilot/tests/test_train.py::test_trainable_counts_protocol_architecture[Y-None] PASSED [ 92%]
+metrix/e1-pilot/tests/test_train.py::test_trainable_counts_protocol_architecture[L-L1] PASSED [ 93%]
+metrix/e1-pilot/tests/test_train.py::test_trainable_counts_protocol_architecture[L-L2] PASSED [ 93%]
+metrix/e1-pilot/tests/test_train.py::test_formal_mode_cannot_take_a_shortened_step_count PASSED [ 94%]
+metrix/e1-pilot/tests/test_train.py::test_formal_mode_does_not_train_on_cpu PASSED [ 94%]
+metrix/e1-pilot/tests/test_train.py::test_run_length_comes_from_the_mode PASSED [ 95%]
+metrix/e1-pilot/tests/test_train.py::test_lr_schedule PASSED             [ 95%]
+metrix/e1-pilot/tests/test_train.py::test_batch_schedule PASSED          [ 96%]
+metrix/e1-pilot/tests/test_train.py::test_anchor_schedule PASSED         [ 96%]
+metrix/e1-pilot/tests/test_train.py::test_padded_ce_is_token_weighted_and_ignores_padding PASSED [ 97%]
+metrix/e1-pilot/tests/test_train.py::test_training_input_ends_with_endoftext PASSED [ 97%]
+metrix/e1-pilot/tests/test_train.py::test_weight_decay_only_on_2d PASSED [ 98%]
+metrix/e1-pilot/tests/test_train.py::test_smoke_run_is_reproducible PASSED [ 98%]
+metrix/e1-pilot/tests/test_train.py::test_preflight_runs_exactly_the_protocol_steps PASSED [ 99%]
+metrix/e1-pilot/tests/test_train.py::test_kl_call_site_order_and_gradient PASSED [ 99%]
+metrix/e1-pilot/tests/test_train.py::test_kl_term_moves_the_parameters PASSED [100%]
+
+======================= 204 passed in 120.85s (0:02:00) ========================
+exit=0
+$ cmp <SCRATCH>/mutate_fix3.py metrix/e1-pilot/reports/impl_b/mutate_fix3.py
+exit=0
+# (exit 0 above: <SCRATCH>/mutate_fix3.py, run above, is byte-identical to the committed metrix/e1-pilot/reports/impl_b/mutate_fix3.py)

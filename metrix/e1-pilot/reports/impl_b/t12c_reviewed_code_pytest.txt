@@ -1,0 +1,34 @@
+# Implementation stage B report commit, after both reviews (code-reviewer report commit MINOR on t12: no hash ties the tested code to the reviewed content): full pytest on the reviewed staged code, with the src/ and tests/ trees of the reviewed index (git write-tree 0417d563919a7e7f9349aec3268a3951a3fbb9ea, written after both reviews, before any post-review change) and the working tree compared before and after. Executor, session_01J5mxaWPrK8siadYKyqZ5pX, host vm (Anthropic cloud container, CPU only, no GPU). Tue Nov 24 03:48:17 UTC 2026
+# cwd repository root; <SCRATCH> = session scratchpad. Recorded by metrix/e1-pilot/reports/round5/logrun.sh. No model weights, no GPU, no TEST data.
+$ bash -c cmp\ \<\(\ \(git\ diff\ --cached\ --stat\;\ echo\;\ git\ diff\ --cached\)\ \)\ <SCRATCH>/review_report/report_commit_input.diff\ \&\&\ echo\ INDEX_EQUALS_REPORT_REVIEW_INPUT
+INDEX_EQUALS_REPORT_REVIEW_INPUT
+exit=0
+$ bash -c git\ write-tree\;\ echo\ reviewed\ tree\ 0417d563919a7e7f9349aec3268a3951a3fbb9ea
+0417d563919a7e7f9349aec3268a3951a3fbb9ea
+reviewed tree 0417d563919a7e7f9349aec3268a3951a3fbb9ea
+exit=0
+$ git rev-parse 0417d563919a7e7f9349aec3268a3951a3fbb9ea:metrix/e1-pilot/src 0417d563919a7e7f9349aec3268a3951a3fbb9ea:metrix/e1-pilot/tests
+2bc8b7853d479379dd5dacb6c53bbdf33ab68514
+4337445314823b510a68d6d10ede26bfde31732c
+exit=0
+$ bash -c git\ diff\ --quiet\ --\ metrix/e1-pilot/src\ metrix/e1-pilot/tests\ \&\&\ echo\ WORKING_TREE_SRC_TESTS_EQUAL_INDEX
+WORKING_TREE_SRC_TESTS_EQUAL_INDEX
+exit=0
+$ bash -c git\ diff\ --cached\ 493d7f9c102cae3ebb916f1d72fcc1759b26bee8\ --\ metrix/e1-pilot/src\ metrix/e1-pilot/tests\ \|\ sha256sum\;\ sed\ -n\ \'/\^diff\ --git\ a\\/metrix\\/e1-pilot\\/src\\//\,\$p\'\ <SCRATCH>/review_report/report_commit_input_src_tests_reports.diff\ \|\ awk\ \'/\^diff\ --git\ a\\/metrix\\/e1-pilot\\/reports\\//\{skip=1\}\ /\^diff\ --git\ a\\/metrix\\/e1-pilot\\/\(src\|tests\)\\//\{skip=0\}\ \!skip\'\ \|\ sha256sum
+ff6c7ecff04d17754d4fc03480f569635d5ac1339bf6288211e9da53d20e6b4a  -
+ff6c7ecff04d17754d4fc03480f569635d5ac1339bf6288211e9da53d20e6b4a  -
+exit=0
+$ <SCRATCH>/venv/bin/python -m pytest -q -p no:cacheprovider metrix/e1-pilot/tests
+........................................................................ [ 35%]
+........................................................................ [ 70%]
+............................................................             [100%]
+204 passed in 113.76s (0:01:53)
+exit=0
+$ git rev-parse 0417d563919a7e7f9349aec3268a3951a3fbb9ea:metrix/e1-pilot/src 0417d563919a7e7f9349aec3268a3951a3fbb9ea:metrix/e1-pilot/tests
+2bc8b7853d479379dd5dacb6c53bbdf33ab68514
+4337445314823b510a68d6d10ede26bfde31732c
+exit=0
+$ bash -c git\ diff\ --quiet\ --\ metrix/e1-pilot/src\ metrix/e1-pilot/tests\ \&\&\ echo\ WORKING_TREE_SRC_TESTS_EQUAL_INDEX_AFTER\;\ git\ write-tree
+WORKING_TREE_SRC_TESTS_EQUAL_INDEX_AFTER
+0417d563919a7e7f9349aec3268a3951a3fbb9ea
+exit=0

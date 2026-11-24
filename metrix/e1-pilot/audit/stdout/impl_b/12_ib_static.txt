@@ -1,0 +1,85 @@
+# Data Auditor run (implementation stage B). host vm, CPU only (no GPU device), no model weights loaded (tokenizer files only); 2026-11-23 07:49:55 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit; PYTHONDONTWRITEBYTECODE=1
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/venv/bin/python -I -B ib_06_static.py /home/user/OpenMythos
+env: host vm | Linux-6.18.44-fc-v726-x86_64-with-glibc2.39 | python 3.13.18 (/tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/venv/bin/python) | installed {'transformers': '5.22.2', 'tokenizers': '0.23.3', 'pyarrow': '26.0.1', 'huggingface_hub': '2.4.0', 'torch': '2.11.0'} | nvidia device nodes: []
+files parsed: ['__init__.py', '_cli.py', 'compute.py', 'contract.py', 'data.py', 'errors.py', 'evaluate.py', 'frozen.py', 'gate.py', 'interpretations.py', 'leakage.py', 'mode.py', 'record.py', 'stats.py', 'stops.py', 'test_data.py', 'train.py', 'dump_for_audit.py']
+
+== a. call sites of the TEST entry points and of build_general_dev
+  generate_test: [('test_data.py', 170, 'main')]
+  build_test_qa: [('test_data.py', 144, 'generate_test')]
+  params_for_test: [('test_data.py', 142, 'generate_test')]
+  run_test_part: [('test_data.py', 175, 'main')]
+  TestAuthorization: [('test_data.py', 107, 'check_preconditions')]
+  build_general_dev: [('data.py', 549, 'generate'), ('test_data.py', 146, 'generate_test')]
+  generate_test: called only from [('test_data.py', 'main')] | expected [('test_data.py', 'main')] | True
+  build_test_qa: called only from [('test_data.py', 'generate_test')] | expected [('test_data.py', 'generate_test')] | True
+  params_for_test: called only from [('test_data.py', 'generate_test')] | expected [('test_data.py', 'generate_test')] | True
+  run_test_part: called only from [('test_data.py', 'main')] | expected [('test_data.py', 'main')] | True
+  TestAuthorization: called only from [('test_data.py', 'check_preconditions')] | expected [('test_data.py', 'check_preconditions')] | True
+  build_general_dev: called only from [('data.py', 'generate'), ('test_data.py', 'generate_test')] | expected [('data.py', 'generate'), ('test_data.py', 'generate_test')] | True
+  string keys that select TEST material:
+    ('data.py', 42, '<module>', 'test_qa.jsonl')
+    ('data.py', 42, '<module>', 'general_test.jsonl')
+    ('leakage.py', 213, 'run_test_part', 'test')
+    ('leakage.py', 209, 'run_test_part', 'TEST')
+    ('test_data.py', 147, 'generate_test', 'test_qa.jsonl')
+    ('test_data.py', 147, 'generate_test', 'general_test.jsonl')
+    ('test_data.py', 128, 'build_test_qa', 'TEST')
+    ('test_data.py', 118, 'params_for_test', 'test')
+    ('test_data.py', 116, 'params_for_test', 'TEST')
+  constants outside test_data.py generation / module-level constants / leakage.run_test_part: []
+
+== b. test_data.main
+  statements before the try: ["ap = argparse.ArgumentParser(prog='python -m metrix_e1.test_", "ap.add_argument('--inputs', required=True)", "ap.add_argument('--data', required=True)", "ap.add_argument('--out', required=True)", 'a = ap.parse_args(argv)']
+  try body calls: ['check_preconditions']
+  handlers: [('(PreconditionFailed, ProtocolStop)', ["print('TEST generator refused: %s' % e)", "print('no TEST content was generated, read or written')", "print('RESULT: FAIL')", 'sys.exit(1)'])]
+  handler ends with sys.exit(1): True | finally / else clauses: False / False | calls after the try: ['Path', 'exists', 'ImplementationFail', 'generate_test', 'mkdir', 'items', 'write_bytes', 'print', 'sha256_hex', 'run_test_part', 'load_data', 'write_text', 'dumps', 'items', 'print', 'print', 'print', 'exit']
+  handled exception types: (PreconditionFailed, ProtocolStop) (any other exception leaves main before generation)
+  module entry point is run_guarded(main): True
+
+== c. check_preconditions, guards
+  check_preconditions calls: ['st12', 'load', 'check_data_dir', 'check_gate0_record', 'check_selection_record', 'TestAuthorization']
+  last statement: return (fz, LK.TestAuthorization(fz.record.commit, g_sha, s_sha))
+  generate_test first statement: "if not isinstance(authorization, LK.TestAuthorization):\n    raise ImplementationFail('TEST is generated only after the preconditions')" -> guard True
+  run_test_part first statement: 'if not isinstance(authorization, TestAuthorization):\n    raise ImplementationFail("the TEST part of the leakage checks runs only after the TEST generator\'s preconditions")' -> guard True
+  TestAuthorization(...) constructed at: [('test_data.py', 107, 'check_preconditions')]
+
+== d. data.build_general_dev
+  open calls: ["open(eval_sets_path, encoding='utf-8')"]
+    loop statement 0: m = _ROW_HEAD.match(line)
+    loop statement 1: if m is None:
+    loop statement 2: rows_by_split[m.group(1)] += 1
+    loop statement 3: if m.group(1) != p.general_dev_split:
+    loop statement 4: r = json.loads(line)
+    loop statement 5: if r['split'] != p.general_dev_split:
+    loop statement 6: if len(kept[r['domain']]) < p.general_dev_per_domain:
+  non-dev continue at statement 3, json.loads at statement 4: continue first True
+  statements before the continue that use the line: ['m = _ROW_HEAD.match(line)', "if m is None:\n    raise ImplementationFail('eval_sets.jsonl line %d does not sta"]
+  _ROW_HEAD pattern: r'\{"domain": "[^"\\]*", "split": "([^"\\]*)", ' (used with .match, i.e. anchored at the line start)
+  frozen general_text.dev: "first 25 windows per domain (books, c4, fineweb, wikitext) with split == 'dev', file order" -> split value the dev generation compares with: dev
+  file opened in text mode (Python decodes every line, test rows included, from UTF-8 into str before the prefix match; no JSON parse and no token decode of a non-dev row): True
+
+== e. leakage.py
+  file reads: [(144, "FZ.read_jsonl(d / ('%s.jsonl' % name))"), (229, "open(a.split_manifest, encoding='utf-8')")]
+  load_data file stems: ["'facts'", "'train_F'", "'train_S'", "'train_Y'", "'dev_qa'", "'anchor_text'", "'general_dev'"]
+  '{E}' / '{A}' constants in leakage.py (template instantiation): []
+  leakage.main calls run_test_part: False | run_gate0: True
+
+== f. every template instantiation in the package ({E} substitution: data.fill or .replace('{E}', ...))
+    ('data.py', 370, 'fill')
+    ('data.py', 386, 'build_train_F')
+    ('data.py', 410, 'build_train_S')
+    ('data.py', 422, 'build_train_Y')
+    ('data.py', 452, 'build_dev_qa')
+    ('evaluate.py', 69, 'statement_prefix')
+    ('test_data.py', 131, 'build_test_qa')
+  instantiation sites in test_data.py: ['build_test_qa'] | elsewhere: [('data.py', 'build_dev_qa'), ('data.py', 'build_train_F'), ('data.py', 'build_train_S'), ('data.py', 'build_train_Y'), ('data.py', 'fill'), ('evaluate.py', 'statement_prefix')]
+  elsewhere == the DEV / TRAIN / Y builders and prefix(f) (+ the definition of fill): True
+  data.build_train_F template kinds selected: ['TRAIN']
+  data.build_train_S template kinds selected: ['TRAIN']
+  data.build_train_Y template kinds selected: ['Y_ANSWER', 'Y_ENTITY']
+  data.build_dev_qa template kinds selected: ['DEV']
+  evaluate.train_templates selects: t['kind'] == 'TRAIN'
+modules: torch imported=False | transformers modeling modules imported=[] | this script never calls a model class or from_pretrained on a model
+RESULT: PASS
+exit=0

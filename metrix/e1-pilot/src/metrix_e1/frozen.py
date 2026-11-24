@@ -72,6 +72,8 @@ DATA_TABLE_ROWS = {
 }
 
 HEX64 = re.compile(r"[0-9a-f]{64}")
+# Keys of the four content hashes of the generated data (Frozen.content_hashes, check_data_dir).
+CONTENT_HASH_KEYS = ("facts", "train_S", "candidates", "anchor_texts")
 
 
 # ---------------------------------------------------------------------------------------------- hashing (section 0)

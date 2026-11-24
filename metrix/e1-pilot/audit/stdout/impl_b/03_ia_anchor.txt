@@ -1,0 +1,22 @@
+# Data Auditor run (implementation stage B). host vm, CPU only (no GPU device), no model weights loaded (tokenizer files only); 2026-11-23 07:43:23 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit; PYTHONDONTWRITEBYTECODE=1
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/venv/bin/python -I -B ia_03_anchor.py /home/user/OpenMythos /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/auditor_ib/dl/parquet/data/sample-100BT/train/shard_00000.parquet /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/auditor_ib/dl/qwen_tok /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/auditor_ib/out
+env: host vm | Linux-6.18.44-fc-v726-x86_64-with-glibc2.39 | python 3.13.18 (/tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/venv/bin/python) | installed {'transformers': '5.22.2', 'tokenizers': '0.23.3', 'pyarrow': '26.0.1', 'huggingface_hub': '2.4.0', 'torch': '2.11.0'} | nvidia device nodes: []
+freeze-commit anchor_text.source: SandyResearch/fineweb-edu-shuffled@4d1138c0e4d51d98813997ce3560e05a32bf91de, data/sample-100BT/train/shard_00000.parquet (sha256 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22)
+freeze-commit anchor_text.selection: first 512 documents in file order with at least 600 characters
+freeze-commit anchor_text.truncate_to_model_tokens: 128
+freeze-commit anchor_text.document_rule: each document has at most 128 tokens of the protocol tokenizer (the first 128); a document with fewer tokens is used at its full length
+freeze-commit anchor_text.decoded_texts_canonical_sha256: 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408
+parquet sha256 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22 | pinned 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22 | MATCH True
+parquet columns ['text'] | rows 53248 | row groups 52
+tokenizer class Qwen2Tokenizer | len 151669 | dir files ['merges.txt', 'tokenizer.json', 'tokenizer_config.json', 'vocab.json']
+parquet rows read up to the 512th selected document: 527 | selected 512 | first rows [0, 1, 2, 3, 4] | last row 526
+ids per document {n: count}: {123: 1, 128: 511} | documents with fewer than 128 ids: [(340, 123, 123)]
+documents containing a special-token id: []
+anchor decoded texts (512) canonical sha256 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 | frozen 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 | MATCH True
+AUDIT_VALUE anchor_texts_canonical_sha256 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408
+id lists canonical sha256 (informational): f15615a4ffe466ce49cf134835b63110f6c4f7d92aacdad5202ea783427d5929
+wrote /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/auditor_ib/out/anchor.json
+modules: torch imported=True | transformers modeling modules imported=['torch', 'transformers.modeling_rope_utils', 'transformers.models.auto.modeling_auto'] | this script never calls a model class or from_pretrained on a model
+RESULT: PASS
+exit=0

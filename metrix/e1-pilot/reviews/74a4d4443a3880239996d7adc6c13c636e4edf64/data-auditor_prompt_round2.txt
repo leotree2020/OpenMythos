@@ -1,0 +1,12 @@
+先读仓库中的 .claude/agents/data-auditor.md，以它为你的完整定义；它与你已加载的定义冲突时，以仓库文件为准。
+
+Metrix E1-PILOT Implementation 阶段 B，第 2 轮。仓库 /home/user/OpenMythos，HEAD 0bc0eecf1f684773248c198afb94e7026dcfb16d；Executor 按第 1 轮两份审查修改了暂存内容(你第 1 轮的原文：/tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/review_work/data-auditor_round1.md)。其中涉及数据与打分的改动：data.py 的 build_general_dev 改为按字节读取 eval_sets.jsonl，只有行前缀 split 为 dev 的行才解码与解析(你的观察 1)；evaluate.py 的打分输入改为逐 id 比较打分区间与 encode(" " + c)；test_data.py 与 leakage.py 的 TEST 前提条件与授权复核有改动。全部改动：/tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/review_work/review_fixes_round2.diff；Executor 改动后的原始输出：metrix/e1-pilot/reports/impl_b/t6_fix_round.txt。
+
+任务(用你自己的脚本，可沿用你第 1 轮在 metrix/e1-pilot/audit/ 下写的 ia_ / ib_ 脚本或新写 ic_ 脚本；禁止 import、调用或复制 Executor 的代码；不得加载任何模型权重)：
+1. Executor 改动后重新生成的目录 /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/data_c/：8 个数据文件与你第 1 轮独立生成的结果(以及 /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/data_b/)逐一比对；四个冻结哈希按协议方法读回复算。
+2. Executor 改动后的导出 /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/audit_dump_c.json(t6 末尾记录其 sha256 与第 1 轮 audit_dump_b.json 逐字节相同)：核对 sha256，并重跑你第 1 轮对打分输入、训练序列、batch 顺序、锚文档、学习率因子的比对。
+3. TEST 隔离：以黑盒方式运行一次 TEST 生成器(同第 1 轮第 5 项，--data 改为 /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/data_c，--out 为一个不存在的目录)，确认拒绝且无产物；静态检查 data.build_general_dev 的新读取方式、test_data.py 与 leakage.py 的改动：三个前提条件(及新增的解释裁决检查)都满足之前，有无任何路径解码或解析 eval_sets.jsonl 中 split 不是 dev 的行、或实例化 TEST 问句。
+
+输入、Python 与 TEST 的限制同第 1 轮(调用文字 /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/review_work/data-auditor_prompt.txt)：禁止生成、读取或统计 TEST；eval_sets.jsonl 只可对整个文件求哈希、按行前缀读取 split 字段与计数，非 dev 行不得解析或解码；不得实例化任何 TEST 问句。
+
+输出：所有脚本的完整 stdout 写入 metrix/e1-pilot/audit/stdout/impl_b/(接着第 1 轮的编号)。只写入 metrix/e1-pilot/audit/。按定义的输出格式给出每一项的命令、原始输出、与 Executor 是否一致；最后附 git status --short 原始输出；最后一行给出结论。

@@ -1,0 +1,12 @@
+先读仓库中的 .claude/agents/data-auditor.md，以它为你的完整定义；它与你已加载的定义冲突时，以仓库文件为准。
+
+Metrix E1-PILOT Implementation 阶段 B 的第二个修复提交(暂存，尚未提交；父提交 fdbb9def89351aa187c1b1ae9749884bc3a80fe9，即你上一轮审查过的修复提交，原文 /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/review_fix/data-auditor.md)。改动涉及 eval_sets.jsonl 在测试中的读取(你第 2 轮观察 1)：tests/test_data_hashes.py 不再把真实的 eval_sets.jsonl 交给 reports/round5/l6_check.py，而是按 split 字段的原始字节只复制 DEV 行到临时文件，并给一份只替换 source_file_sha256 的临时 manifest；另有 leakage.verify_authorization 的三项新复核、evaluate_model 的 TEST 只允许正式模式、EM 生成的非有限值检查。审查输入：/tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/review_fix2/review_input.diff；Executor 的原始输出：metrix/e1-pilot/reports/impl_b/t10_fix2_commit.txt。
+
+任务(用你自己的脚本，可沿用你之前在 metrix/e1-pilot/audit/ 下的脚本或新写 ie_ 脚本；禁止 import、调用或复制 Executor 的代码；不得加载任何模型权重)：
+1. 用你自己的方法按协议第 2.7 节从 eval_sets.jsonl 只取 DEV 行(二进制、按行前缀)，独立构造与测试中 _dev_rows_only 相同含义的 DEV 行文件，说明：(a) 它与原文件的 dev 行逐字节相同且顺序相同；(b) 只用 DEV 行时第 2.7 节的 general DEV 选择(每个 domain 前 25 个、文件顺序)与用完整文件时相同，与 /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/data_d/general_dev.jsonl 一致。不要运行 l6_check.py 读取完整的 eval_sets.jsonl。
+2. 静态检查 src/ 与 tests/：改动之后，有无任何路径(包括测试调用的 reports/ 下的参考脚本)以文本模式打开或解码 eval_sets.jsonl 的 test 行；verify_authorization 的新复核与 evaluate_model 的模式限制是否在读取任何 TEST 内容之前执行。
+3. 以黑盒方式运行一次 TEST 生成器(--data /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/data_d，--out 为一个不存在的目录)，确认拒绝且无产物。
+
+输入、Python 与 TEST 的限制同前(调用文字 /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/review_work/data-auditor_prompt.txt)：禁止生成、读取或统计 TEST；eval_sets.jsonl 只可对整个文件求哈希、按行前缀读取 split 字段与计数，非 dev 行不得解析或解码；不得实例化任何 TEST 问句。
+
+输出：所有脚本的完整 stdout 写入 metrix/e1-pilot/audit/stdout/impl_b/(接着之前的编号)。只写入 metrix/e1-pilot/audit/。按定义的输出格式给出每一项的命令、原始输出、与 Executor 是否一致；最后附 git status --short 原始输出；最后一行给出结论。

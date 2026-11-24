@@ -1,0 +1,25 @@
+先读仓库中的 .claude/agents/code-reviewer.md，以它为你的完整定义；它与你已加载的定义冲突时，以仓库文件为准。
+
+Metrix E1-PILOT Implementation 阶段 B 的报告提交(暂存，尚未提交；父提交为第二个修复提交 493d7f9c102cae3ebb916f1d72fcc1759b26bee8，即你上一轮审查过的内容，已快进推送)。上一轮你的结论是 PASS(1 条 MAJOR 交 Review Gate，8 条 MINOR)，原文 /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/review_fix2/code-reviewer.md(已原样入库为 metrix/e1-pilot/reviews/493d7f9c102cae3ebb916f1d72fcc1759b26bee8/code-reviewer.md)；同轮 data-auditor 原文 /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/review_fix2/data-auditor.md。指令、协议与 Owner 消息同前(调用文字 /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/review_work/code-reviewer_prompt.txt；Owner 消息原文 metrix/e1-pilot/tasks/IMPL_B_OWNER_MESSAGE.md)。
+
+本提交包含：
+(a) 代码与测试：你上一轮 MINOR 中的代码与测试项(src/metrix_e1/leakage.py、record.py、test_data.py、evaluate.py、frozen.py；tests/test_test_data.py、test_evaluate.py、test_data_hashes.py)。
+(b) 报告与登记：metrix/e1-pilot/reports/IMPL_B_REPORT.md(新)；reports/DEFERRED_MINORS.md 1.22–1.25 节与第 3 节。
+(c) 原始输出：reports/impl_b/t11_fix2_commit_push.txt(第二个修复提交与审查输入逐字节比对、metrix/ 以外检查、快进推送、推送前后的分支与标签)；t12_fix3.txt(src 与 tests 中全部 open( / read_text( / read_bytes( 调用、TEST 生成器拒绝、逐项去掉新检查的变异检查、全部测试 204 passed)；mutate_fix3.py(t12 中运行的变异脚本)；t12b_review_records_copy.txt(审查记录与 auditor 试跑输出的复制核对与 sha256)。
+(d) 原样复制、不需逐行审读的记录：reviews/74a4d444…/、reviews/fdbb9def…/、reviews/493d7f9c…/(此前三次提交的审查调用文字、输入、调用前检查、原文与提取记录)；audit/ib_*、ic_*、id_*、ie_* 与 audit/stdout/impl_b/(data-auditor 的脚本、stdout、试跑输出)。
+
+- 审查输入：完整暂存 diff(git diff --cached --stat 与完整 diff，相对 493d7f9c；2.4 MB，绝大部分是 (d))：/tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/review_report/report_commit_input.diff；只含 src/、tests/、reports/ 的部分：/tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/review_report/report_commit_input_src_tests_reports.diff。暂存内容与工作区文件相同。
+- Executor 自己的说明不作为证据。
+
+Executor 对上一轮各项的处理(请逐条核对：已修且正确 / 已修但有问题 / 未修；登记项请判断是否充分)：
+MAJOR(l6_check.py 过去对完整文件的运行如何定性)：报告“待 Review Gate 决定”第 3 项逐条列出已执行的运行，交 Review Gate；DEFERRED_MINORS BC1 写明裁决之前不再对完整文件运行 l6_check.py。
+MINOR 1 verify_authorization 的缺口：条件 2、3 的内容检查提到 record.gate0_record_problem、record.freeze_record_problem，TEST 生成器(test_data.check_gate0_record、check_selection_record)与 verify_authorization 共用；verify_authorization 另复核数据内容哈希(与冻结值比较，frozen.CONTENT_HASH_KEYS)、解释裁决、授权的冻结提交同时等于当前 PROTOCOL_FROZEN 与调用方加载的冻结文件。签名改为 verify_authorization(authorization, fz, repo_root=None)，run_test_part 与 evaluate_model 相应改为传 fz。不复核条件 1(ST12)，文档写明由每步开始的 stops.st12 负责。
+MINOR 2 循环内非有限值测试：LateNaNStub(第 1 次前向有限、之后 NaN)，断言抛 NonFinite 且第 2 次调用发生。
+MINOR 3 多余空行：已删。
+MINOR 4 test_pending_interpretations_block_test 依赖当前状态：monkeypatch INT.ENTRIES 构造“一条待决”与“全部已裁决”。
+MINOR 5 _dev_rows_only：过滤前整文件 sha256 与冻结值比较；路径取 D.params(fz).general_source；计数与 build_general_dev 的按行前缀计数比较；manifest 副本取自冻结提交(fz.data_manifest)。
+MINOR 6 审查记录未入库：本提交入库并核对(t12b)。
+MINOR 7 t10 grep 口径：t12 列出全部 open( / read_text( / read_bytes( 调用。
+MINOR 8 ST10 凭据与“只评一次”：报告“留给阶段 C 的事项”与 DEFERRED_MINORS BB1/BC2/BD8 写为阶段 C 的硬性前提。
+
+请：(1) 逐条核对上表；(2) 审查 (a) 的改动本身有无新问题(重点：TEST 隔离、测试是否真正检验所说内容、共用函数后 TEST 生成器的行为是否不变)；(3) 审查 (b) 与 (c)：报告中的每条结论是否有原始输出支持、引用的文件与行号是否存在、数字与审查原文是否一致、DEFERRED_MINORS 新节是否遗漏了此前各轮未修的项；(4) 按定义的输出格式给出，每条注明“已验证/未验证”。最后一行给出结论。

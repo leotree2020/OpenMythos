@@ -304,14 +304,14 @@ SPLIT_FILES = {"dev": ("dev_qa.jsonl", "general_dev.jsonl"), "test": ("test_qa.j
 
 
 def evaluate_model(model, tok, data, templates, ev, mode, device, split="dev", with_em=True, with_s_mapping=False,
-                   batch_size=64, test_authorization=None, repo_root=None):
+                   batch_size=64, test_authorization=None, fz=None):
     """Section 5 evaluation of one model (parsed files of the data directory in `data`): QA scores of the split, the
     TRAIN closed book, EM on the split's questions, general-text NLL of the split; optionally (DEV) S's own-mapping
     accuracy. Output keys: <split>_qa, train_cb, general_<split>, em_<split>[, s_mapping_dev_qa, s_mapping_cb].
     split "test" needs test_qa.jsonl / general_test.jsonl in `data`, which only exist after the TEST generator's
-    preconditions (test_data.py), and the TestAuthorization of those preconditions, checked against the committed
-    Gate 0 and freeze records before anything is evaluated (leakage.verify_authorization). Formal and preflight modes
-    evaluate on the GPU only (require_gpu)."""
+    preconditions (test_data.py), and the TestAuthorization of those preconditions, checked with the frozen files `fz`
+    (frozen.load) against the committed Gate 0 and freeze records before anything is evaluated
+    (leakage.verify_authorization). Formal and preflight modes evaluate on the GPU only (require_gpu)."""
     if split not in SPLIT_FILES:
         raise ValueError("split %r" % (split,))
     if split == "test":
@@ -319,7 +319,9 @@ def evaluate_model(model, tok, data, templates, ev, mode, device, split="dev", w
             raise ImplementationFail("TEST is evaluated in formal mode only (%s mode; protocol section 8 step 8: TEST "
                                      "is evaluated once)" % mode.name)
         from .leakage import verify_authorization
-        verify_authorization(test_authorization, repo_root)
+        if fz is None:
+            raise ImplementationFail("TEST path refused: the frozen files (fz) are needed to check the authorization")
+        verify_authorization(test_authorization, fz)
     require_gpu(mode, device)
     qa_file, gen_file = SPLIT_FILES[split]
     facts, cands, qs = data["facts.jsonl"], data["candidates.json"], data[qa_file]

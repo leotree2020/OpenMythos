@@ -1,0 +1,17 @@
+先读仓库中的 .claude/agents/code-reviewer.md，以它为你的完整定义；它与你已加载的定义冲突时，以仓库文件为准。
+
+Metrix E1-PILOT Implementation 阶段 B 的修复提交(暂存，尚未提交；父提交为工作提交 74a4d4443a3880239996d7adc6c13c636e4edf64，已快进推送)。工作提交即你第 2 轮审查过的内容(第 2 轮结论 PASS，原文 /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/review_work/code-reviewer_round2.md；同轮 data-auditor 原文 /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/review_work/data-auditor_round2.md)。本修复提交处理第 2 轮的两条 MAJOR 与各条 MINOR。指令、协议与 Owner 消息同前两轮(调用文字 /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/review_work/code-reviewer_prompt.txt)。
+
+- 审查输入(git diff --cached --stat 与完整 diff，相对 74a4d444)：/tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/review_fix/review_input.diff。暂存内容与工作区文件相同。
+- 本提交中的原始输出：metrix/e1-pilot/reports/impl_b/t7_work_commit_push.txt(工作提交与第 2 轮审查输入逐字节比对、metrix/ 以外检查、快进推送、推送前后的远端分支与标签)；t8_fix_commit.txt(重新生成数据与第 2 轮逐字节比对、verify、泄漏命令、TEST 生成器拒绝、导出与第 1 轮逐字节相同、全部测试 194 passed)。
+- 运行环境同前(会话临时目录 /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad)。
+- Executor 自己的说明(docstring、注释、下面的处理表)不作为证据。
+
+Executor 对第 2 轮各项的处理(请逐条核对：已修且正确 / 已修但有问题 / 未修；登记项请判断登记是否充分——登记写入阶段 B 报告与 DEFERRED_MINORS.md，二者在之后的报告提交中，本提交里还没有)：
+新 MAJOR 1(评测中的非有限值)：evaluate._check_finite 把非有限值传入 NonFinite；新测试经由 score_qa 触发并交给 stops.st6。
+新 MAJOR 2(TEST 评测入口无守卫)：新增 leakage.verify_authorization(复核已提交的 Gate 0 与冻结记录：formal、kind、冻结提交、sha256)，evaluate_model(split="test")、test_data.generate_test、leakage.run_test_part 都先调用它；ST10 通过的凭据与“TEST 只评一次”属于阶段 C 的 run_pilot 编排，登记。
+MINOR：generate_test 开头复核授权(见上)；B17 的 TEST 单位改为 N + 5 个 arm × 3 个种子(B17 文字同步)；B24 写明 T3 包含 Acc_CB(N)；KL 梯度测试改为 A1/A3 两步后参数不同，并以 detach 的 KL 作对照(两者相同)；check_preconditions 调用解释裁决检查的测试(条件 1–3 用桩)；verify_authorization 哈希不一致与冻结提交不一致的分支测试；预检要求 spec 为第一个配置；data.py 的计数标签改为“DEV rows decoded and parsed 400 / windows kept 100”并加测试；删除未使用的 z_alpha、z_power；B15 的位置改为 gate.repro_compare(B10 同样更正)；evaluate.check_device 改名 require_gpu；st13_scan 改用 record.committed_record(核对 kind、mode、label、冻结提交)，测试覆盖已提交的冒烟记录；judge_test 的 Gate 0 检查移到开头；record.environment 在 PROTOCOL_FROZEN 自加载后改变时抛出 ST12Error。
+登记、不改代码：render_text、cost_usd、ImmediateGain、st13_scan 的调用方与 config.json 哈希属阶段 C；第 4 个前提条件交 Review Gate。
+data-auditor 第 2 轮观察 1(reports/round5/l6_check.py 在 test_data_hashes 的参考比对中以文本模式读 eval_sets.jsonl)：这是阶段 A 已入库的参考脚本与证据，不改；交 Review Gate 裁决“UTF-8 解码 test 行”是否属于协议第 3 节的“读取 TEST”。观察 2 见上(计数标签)。
+
+请：(1) 逐条核对上表；(2) 审查本修复提交的改动本身有无新问题(重点：TEST 隔离、模式隔离、与协议的一致性、测试是否真正检验所说内容)；(3) 按定义的输出格式给出，每条注明“已验证/未验证”。最后一行给出结论。

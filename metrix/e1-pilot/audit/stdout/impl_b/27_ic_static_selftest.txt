@@ -1,0 +1,54 @@
+# Data Auditor run (implementation stage B). host vm, CPU only (no GPU device), no model weights loaded (tokenizer files only); 2026-11-23 08:17:44 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit; PYTHONDONTWRITEBYTECODE=1
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/venv/bin/python -I -B ic_07_static_selftest.py /home/user/OpenMythos /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/auditor_ic/selftest
+env: host vm | Linux-6.18.44-fc-v726-x86_64-with-glibc2.39 | python 3.13.18 (/tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/venv/bin/python) | installed {'transformers': '5.22.2', 'tokenizers': '0.23.3', 'pyarrow': '26.0.1', 'huggingface_hub': '2.4.0', 'torch': '2.11.0'} | nvidia device nodes: []
+control: fault applied True | ic_06 exit 0 | last line 'RESULT: PASS' | expected PASS -> True
+M1: fault applied True | ic_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   ic_06 output lines that differ from the control run (6; lines with a False check first):
+     exactly one open, mode 'rb', no encoding argument: False
+     RESULT: FAIL
+     ('data.py', 506, 'build_general_dev', "open(eval_sets_path, encoding='utf-8')")
+     calls that open eval_sets.jsonl: [('data.py', 506, 'build_general_dev', "open(eval_sets_path, encoding='utf-8')")]
+     open calls: ["open(eval_sets_path, encoding='utf-8')"]
+     metrix/e1-pilot/src/metrix_e1/data.py:506 in build_general_dev: open(eval_sets_path, encoding='utf-8')
+M2: fault applied True | ic_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   ic_06 output lines that differ from the control run (19; lines with a False check first):
+     RESULT: FAIL
+     build_general_dev: [('data.py', 553, 'generate'), ('test_data.py', 152, 'generate_test')]
+     ('data.py', 630, 'main', 'FZ.load()')
+     ('data.py', 588, 'file_hashes', '(d / name).read_bytes()')
+     ('data.py', 511, 'build_general_dev', "json.loads(line.decode('utf-8'))")
+     ('data.py', 515, 'build_general_dev', "json.loads(line.decode('utf-8'))")
+M3: fault applied True | ic_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   ic_06 output lines that differ from the control run (19; lines with a False check first):
+     check_interpretations_ruled: called only from [] | expected [('test_data.py', 'check_preconditions')] | False
+     RESULT: FAIL
+     generate_test: [('test_data.py', 175, 'main')]
+     build_test_qa: [('test_data.py', 149, 'generate_test')]
+     params_for_test: [('test_data.py', 147, 'generate_test')]
+     run_test_part: [('test_data.py', 180, 'main')]
+M4: fault applied True | ic_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   ic_06 output lines that differ from the control run (8; lines with a False check first):
+     RESULT: FAIL
+     committed_json: [('leakage.py', 213, 'run_test_part'), ('stops.py', 158, 'st13_scan'), ('test_data.py', 52, '_committed')]
+     ('leakage.py', 229, 'run_test_part', 'test')
+     ('leakage.py', 225, 'run_test_part', 'TEST')
+     ('leakage.py', 244, 'main', 'FZ.load()')
+     ('leakage.py', 245, 'main', "open(a.split_manifest, encoding='utf-8')")
+M5: fault applied True | ic_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   ic_06 output lines that differ from the control run (4; lines with a False check first):
+     RESULT: FAIL
+     generate_test: [('test_data.py', 177, 'main'), ('test_data.py', 167, 'main')]
+     run_test_part: [('test_data.py', 182, 'main')]
+     try body calls: ['check_preconditions', 'generate_test'] | handlers: [('(PreconditionFailed, ProtocolStop)', ["print('TEST generator refused: %s' % e)", "print('no TEST content was generated, read or 
+M6: fault applied True | ic_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   ic_06 output lines that differ from the control run (15; lines with a False check first):
+     RESULT: FAIL
+     build_general_dev: [('data.py', 556, 'generate'), ('test_data.py', 152, 'generate_test')]
+     ('data.py', 495, 'peek_test', 'TEST')
+     constants outside module-level name tuples, contract accounting (a count), gate T1-T3 labels, the generator and run_test_part: [('data.py', 495, 'peek_test', 'TEST')]
+     ('data.py', 633, 'main', 'FZ.load()')
+     ('data.py', 510, 'build_general_dev', "open(eval_sets_path, 'rb')")
+modules: torch imported=False | transformers modeling modules imported=[] | this script never calls a model class or from_pretrained on a model
+RESULT: PASS
+exit=0

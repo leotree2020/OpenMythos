@@ -1,0 +1,22 @@
+# Data Auditor run (implementation stage B). host vm, CPU only (no GPU device), no model weights loaded (tokenizer files only); 2026-11-23 07:44:51 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit; PYTHONDONTWRITEBYTECODE=1
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/venv/bin/python -I -B ib_02_yratio.py /home/user/OpenMythos /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/auditor_ib/dl/qwen_tok /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/auditor_ib/out /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/data_b
+env: host vm | Linux-6.18.44-fc-v726-x86_64-with-glibc2.39 | python 3.13.18 (/tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/venv/bin/python) | installed {'transformers': '5.22.2', 'tokenizers': '0.23.3', 'pyarrow': '26.0.1', 'huggingface_hub': '2.4.0', 'torch': '2.11.0'} | nvidia device nodes: []
+interval from the freeze-commit SEARCH_SPACE: [0.8, 1.25] | protocol 2.6 sentence with [0.80, 1.25] present: True
+tokenizer: <|endoftext|> id 151643 | == 151643: True
+== auditor regeneration: sequences F 120 | Y 240
+  with one <|endoftext|> per sequence: F 1889 | Y 2260 | ratio 1.196400 | in [0.8, 1.25]: True
+  without <|endoftext|>:               F 1769 | Y 2020 | ratio 1.141888 | in [0.8, 1.25]: True
+== Executor data_b texts: sequences F 120 | Y 240
+  with one <|endoftext|> per sequence: F 1889 | Y 2260 | ratio 1.196400 | in [0.8, 1.25]: True
+  without <|endoftext|>:               F 1769 | Y 2020 | ratio 1.141888 | in [0.8, 1.25]: True
+auditor regeneration and data_b texts give the same counts: True
+Executor t3 lines 8-10 (as recorded):
+  t3:8: Y / F token ratio: F 1889, Y 2260, ratio 1.1964
+  t3:9: Y / F token ratio without <|endoftext|> (report only): F 1769, Y 2020, ratio 1.1419
+  t3:10: both ratios within [0.8, 1.25]: with True, without True
+t3 line 8 (with) == mine (F, Y, ratio to 4 places): True | line 9 (without) == mine: True | line 10 interval and both True: True
+protocol 2.6 authoring numbers F 1,889 / Y 2,260 / 1.196 == the 'with' counting: True
+modules: torch imported=True | transformers modeling modules imported=['torch', 'transformers.modeling_rope_utils', 'transformers.models.auto.modeling_auto'] | this script never calls a model class or from_pretrained on a model
+RESULT: PASS
+exit=0

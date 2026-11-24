@@ -1,0 +1,25 @@
+# Data Auditor run (implementation stage B). host vm, CPU only (no GPU device), no model weights loaded (tokenizer files only); 2026-11-23 08:14:58 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit; PYTHONDONTWRITEBYTECODE=1
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/venv/bin/python -I -B ia_06_general.py /home/user/OpenMythos /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/auditor_ib/dl/parcae_tok/tokenizer.json /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/auditor_ib/dl/qwen_tok /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/auditor_ic/out
+env: host vm | Linux-6.18.44-fc-v726-x86_64-with-glibc2.39 | python 3.13.18 (/tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/venv/bin/python) | installed {'transformers': '5.22.2', 'tokenizers': '0.23.3', 'pyarrow': '26.0.1', 'huggingface_hub': '2.4.0', 'torch': '2.11.0'} | nvidia device nodes: []
+freeze-commit general_text.source_file: research/mini_mythos/stage1/results/r1/eval_sets.jsonl
+freeze-commit general_text.source_file_sha256: 8816fe5a39d8b89e8c4203bf7d660e798faa471d2b72b5ce43c411cf5925a155
+freeze-commit general_text.decode_with: SandyResearch/parcae-tokenizer@6247b5d0592876b73660f34c2dd16c9db9e9045c, special tokens skipped
+freeze-commit general_text.decode_tokenizer_json_sha256: e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77
+freeze-commit general_text.dev: first 25 windows per domain (books, c4, fineweb, wikitext) with split == 'dev', file order
+freeze-commit general_text.truncate_to_model_tokens: 256
+freeze-commit general_text.window_rule: each window has at most 256 tokens of the protocol tokenizer (the first 256); a window with fewer tokens is used at its full length; the ids fed to the model are these truncated ids themselves, not decoded and re-encoded; n_w (protocol section 5) is their number
+eval_sets.jsonl (whole file) sha256 8816fe5a39d8b89e8c4203bf7d660e798faa471d2b72b5ce43c411cf5925a155 | manifest 8816fe5a39d8b89e8c4203bf7d660e798faa471d2b72b5ce43c411cf5925a155 | MATCH True
+parcae tokenizer.json sha256 e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77 | manifest e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77 | MATCH True
+eval_sets lines by located split value (counts only): {'dev': 400, 'test': 800}
+non-dev lines: only located and counted (the loop continues before any parse or decode)
+dev lines kept per domain: {'books': 25, 'c4': 25, 'fineweb': 25, 'wikitext': 25} | domains outside the protocol list: []
+windows 100 | n_w == 256: 36 | n_w < 256: [('books', 1, 231), ('books', 2, 242), ('books', 3, 247), ('books', 4, 251), ('books', 5, 253), ('books', 6, 243), ('books', 7, 248), ('books', 8, 229), ('books', 9, 246), ('books', 10, 244), ('books', 11, 246), ('books', 12, 232), ('books', 13, 244), ('books', 14, 182), ('books', 15, 237), ('books', 16, 234), ('books', 17, 172), ('books', 18, 245), ('books', 19, 243), ('books', 20, 231), ('books', 21, 238), ('books', 22, 251), ('books', 23, 236), ('books', 24, 247), ('c4', 0, 241), ('c4', 2, 254), ('c4', 4, 250), ('c4', 5, 249), ('c4', 8, 255), ('c4', 9, 255), ('c4', 10, 252), ('c4', 12, 252), ('c4', 13, 254), ('c4', 14, 250), ('c4', 15, 216), ('c4', 16, 255), ('c4', 17, 253), ('c4', 18, 247), ('c4', 19, 249), ('c4', 20, 253), ('c4', 21, 251), ('c4', 23, 253), ('fineweb', 0, 255), ('fineweb', 1, 251), ('fineweb', 4, 245), ('fineweb', 6, 250), ('fineweb', 13, 254), ('fineweb', 15, 246), ('fineweb', 18, 233), ('fineweb', 19, 255), ('fineweb', 20, 249), ('fineweb', 22, 248), ('fineweb', 23, 251), ('wikitext', 0, 255), ('wikitext', 1, 250), ('wikitext', 2, 253), ('wikitext', 3, 250), ('wikitext', 4, 245), ('wikitext', 6, 255), ('wikitext', 15, 253), ('wikitext', 16, 247), ('wikitext', 20, 246), ('wikitext', 22, 255), ('wikitext', 24, 254)]
+windows containing a special-token id: []
+file lines of the kept windows, first per domain: {'books': 301, 'c4': 101, 'fineweb': 1, 'wikitext': 201} | last per domain: {'books': 325, 'c4': 125, 'fineweb': 25, 'wikitext': 225}
+AUDIT_VALUE general_dev_ids_canonical_sha256 2e30c443da0b09f385ba5f327d40fb051080c12dc7bc0d3cb873f0a0b01d598f
+AUDIT_VALUE general_dev_texts_canonical_sha256 363aa08742d46776e725715d0ee4c5ae9c4de1ddf96396eb333803ce818587c8
+wrote /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/auditor_ic/out/general.json
+modules: torch imported=True | transformers modeling modules imported=['torch', 'transformers.modeling_rope_utils', 'transformers.models.auto.modeling_auto'] | this script never calls a model class or from_pretrained on a model
+RESULT: PASS
+exit=0

@@ -1,0 +1,98 @@
+# Implementation stage B: metrix/CLAUDE.md section 5 item 6 pre-call check before the reviews of the staged work commit. Executor, session_01J5mxaWPrK8siadYKyqZ5pX, host vm (Anthropic cloud container). Mon Nov 23 07:37:11 UTC 2026
+# Repository file vs user-level copy under /root/.claude/agents/ (the loaded definition).
+$ bash -c diff\ \<\(awk\ \'/\^---\$/\{n++\;\ print\;\ if\(n==2\)\ exit\;\ next\}\ n==1\{print\}\'\ .claude/agents/code-reviewer.md\)\ \<\(awk\ \'/\^---\$/\{n++\;\ print\;\ if\(n==2\)\ exit\;\ next\}\ n==1\{print\}\'\ /root/.claude/agents/code-reviewer.md\)\ \&\&\ echo\ code-reviewer_FRONTMATTER_IDENTICAL
+code-reviewer_FRONTMATTER_IDENTICAL
+exit=0
+$ bash -c cmp\ \<\(grep\ \'\^tools:\'\ .claude/agents/code-reviewer.md\)\ \<\(grep\ \'\^tools:\'\ /root/.claude/agents/code-reviewer.md\)\ \&\&\ echo\ code-reviewer_TOOLS_LINE_IDENTICAL
+code-reviewer_TOOLS_LINE_IDENTICAL
+exit=0
+$ bash -c diff\ \<\(awk\ \'/\^---\$/\{n++\;\ print\;\ if\(n==2\)\ exit\;\ next\}\ n==1\{print\}\'\ .claude/agents/data-auditor.md\)\ \<\(awk\ \'/\^---\$/\{n++\;\ print\;\ if\(n==2\)\ exit\;\ next\}\ n==1\{print\}\'\ /root/.claude/agents/data-auditor.md\)\ \&\&\ echo\ data-auditor_FRONTMATTER_IDENTICAL
+data-auditor_FRONTMATTER_IDENTICAL
+exit=0
+$ bash -c cmp\ \<\(grep\ \'\^tools:\'\ .claude/agents/data-auditor.md\)\ \<\(grep\ \'\^tools:\'\ /root/.claude/agents/data-auditor.md\)\ \&\&\ echo\ data-auditor_TOOLS_LINE_IDENTICAL
+data-auditor_TOOLS_LINE_IDENTICAL
+exit=0
+$ git rev-parse HEAD
+0bc0eecf1f684773248c198afb94e7026dcfb16d
+exit=0
+$ git status --short
+A  metrix/e1-pilot/reports/impl_b/t0b_step0_push.txt
+A  metrix/e1-pilot/reports/impl_b/t0c_copy_check.txt
+A  metrix/e1-pilot/reports/impl_b/t1_env_baseline.txt
+A  metrix/e1-pilot/reports/impl_b/t2_fetch_config.txt
+A  metrix/e1-pilot/reports/impl_b/t3_generate_leakage.txt
+A  metrix/e1-pilot/reports/impl_b/t4_pytest.txt
+A  metrix/e1-pilot/src/metrix_e1/compute.py
+A  metrix/e1-pilot/src/metrix_e1/contract.py
+M  metrix/e1-pilot/src/metrix_e1/data.py
+M  metrix/e1-pilot/src/metrix_e1/errors.py
+A  metrix/e1-pilot/src/metrix_e1/evaluate.py
+A  metrix/e1-pilot/src/metrix_e1/gate.py
+A  metrix/e1-pilot/src/metrix_e1/interpretations.py
+M  metrix/e1-pilot/src/metrix_e1/leakage.py
+A  metrix/e1-pilot/src/metrix_e1/mode.py
+A  metrix/e1-pilot/src/metrix_e1/record.py
+A  metrix/e1-pilot/src/metrix_e1/stats.py
+A  metrix/e1-pilot/src/metrix_e1/stops.py
+A  metrix/e1-pilot/src/metrix_e1/test_data.py
+A  metrix/e1-pilot/src/metrix_e1/train.py
+A  metrix/e1-pilot/tasks/IMPL_B_OWNER_MESSAGE.md
+M  metrix/e1-pilot/tests/conftest.py
+A  metrix/e1-pilot/tests/test_arm_a.py
+A  metrix/e1-pilot/tests/test_contract.py
+M  metrix/e1-pilot/tests/test_data_hashes.py
+A  metrix/e1-pilot/tests/test_evaluate.py
+A  metrix/e1-pilot/tests/test_gate.py
+A  metrix/e1-pilot/tests/test_lora.py
+A  metrix/e1-pilot/tests/test_record.py
+A  metrix/e1-pilot/tests/test_scoring.py
+A  metrix/e1-pilot/tests/test_stats.py
+A  metrix/e1-pilot/tests/test_stops.py
+A  metrix/e1-pilot/tests/test_test_data.py
+A  metrix/e1-pilot/tests/test_train.py
+exit=0
+$ sha256sum <SCRATCH>/review_work/review_input.diff
+4192c46342ea9f57070dead2f8b4dd3f33559ffc88e0768413d3ae726848144c  <SCRATCH>/review_work/review_input.diff
+exit=0
+# (re-run of the last two commands after staging dump_for_audit.py and t5_dump_for_audit.txt; the review input diff was regenerated) Mon Nov 23 07:37:52 UTC 2026
+$ git status --short
+A  metrix/e1-pilot/reports/impl_b/dump_for_audit.py
+A  metrix/e1-pilot/reports/impl_b/t0b_step0_push.txt
+A  metrix/e1-pilot/reports/impl_b/t0c_copy_check.txt
+A  metrix/e1-pilot/reports/impl_b/t1_env_baseline.txt
+A  metrix/e1-pilot/reports/impl_b/t2_fetch_config.txt
+A  metrix/e1-pilot/reports/impl_b/t3_generate_leakage.txt
+A  metrix/e1-pilot/reports/impl_b/t4_pytest.txt
+A  metrix/e1-pilot/reports/impl_b/t5_dump_for_audit.txt
+A  metrix/e1-pilot/src/metrix_e1/compute.py
+A  metrix/e1-pilot/src/metrix_e1/contract.py
+M  metrix/e1-pilot/src/metrix_e1/data.py
+M  metrix/e1-pilot/src/metrix_e1/errors.py
+A  metrix/e1-pilot/src/metrix_e1/evaluate.py
+A  metrix/e1-pilot/src/metrix_e1/gate.py
+A  metrix/e1-pilot/src/metrix_e1/interpretations.py
+M  metrix/e1-pilot/src/metrix_e1/leakage.py
+A  metrix/e1-pilot/src/metrix_e1/mode.py
+A  metrix/e1-pilot/src/metrix_e1/record.py
+A  metrix/e1-pilot/src/metrix_e1/stats.py
+A  metrix/e1-pilot/src/metrix_e1/stops.py
+A  metrix/e1-pilot/src/metrix_e1/test_data.py
+A  metrix/e1-pilot/src/metrix_e1/train.py
+A  metrix/e1-pilot/tasks/IMPL_B_OWNER_MESSAGE.md
+M  metrix/e1-pilot/tests/conftest.py
+A  metrix/e1-pilot/tests/test_arm_a.py
+A  metrix/e1-pilot/tests/test_contract.py
+M  metrix/e1-pilot/tests/test_data_hashes.py
+A  metrix/e1-pilot/tests/test_evaluate.py
+A  metrix/e1-pilot/tests/test_gate.py
+A  metrix/e1-pilot/tests/test_lora.py
+A  metrix/e1-pilot/tests/test_record.py
+A  metrix/e1-pilot/tests/test_scoring.py
+A  metrix/e1-pilot/tests/test_stats.py
+A  metrix/e1-pilot/tests/test_stops.py
+A  metrix/e1-pilot/tests/test_test_data.py
+A  metrix/e1-pilot/tests/test_train.py
+exit=0
+$ sha256sum <SCRATCH>/review_work/review_input.diff
+28a5e609156ca4c90a689bd863a55dcce8cb95c25d32acce210858c194a6faf2  <SCRATCH>/review_work/review_input.diff
+exit=0

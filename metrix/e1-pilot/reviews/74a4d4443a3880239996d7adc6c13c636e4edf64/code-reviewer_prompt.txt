@@ -1,0 +1,32 @@
+先读仓库中的 .claude/agents/code-reviewer.md，以它为你的完整定义；它与你已加载的定义冲突时，以仓库文件为准。
+
+Metrix E1-PILOT Implementation 阶段 B 的工作提交(暂存，尚未提交)。仓库 /home/user/OpenMythos，分支 metrix-e1-pilot-protocol-v1，父提交 0bc0eecf1f684773248c198afb94e7026dcfb16d(阶段 B 第 0 步的证据提交)。协议 v1.1，冻结提交 87a244db28a901f9e89282b50df76778ab5c2887(metrix/e1-pilot/PROTOCOL_FROZEN 当前有效节)。
+
+- 指令：metrix/e1-pilot/tasks/IMPLEMENTATION_TASK_ORDER_V1.md。本阶段 = 第 10 节表中 B 行：train.py、evaluate.py、stats.py、gate.py、stops.py、compute.py、record.py、test_data.py；单元测试 2–9。第 2 节红线、第 3 节执行解释、第 5 节模块要求(含“确定性”“检查脚本”“依赖”)、第 6 节第 2–9 项、第 7 节中与本阶段代码有关的部分(正式模式不能使用冒烟的缩减步数、冒烟输出标注与隔离、Gate 0 在冒烟模式固定为 NOT_TESTED)、第 9 节审查重点适用。
+- Owner 下达阶段 B 时的消息原文(本提交新增)：metrix/e1-pilot/tasks/IMPL_B_OWNER_MESSAGE.md。其中阶段 B 额外要求 5–7(自实现 LoRA 的手算对照与冻结、arm A 的 KL 方向与按 token 加权、各 arm 可训练参数数)与 Review Gate 对阶段 A 的裁决 1–4(裁决 3 要求同时给出加与不加 <|endoftext|> 的 Y/F 比值)。
+- 上一阶段报告：metrix/e1-pilot/reports/IMPL_A_REPORT.md(“留给阶段 B、C 的事项”一节)；登记项 metrix/e1-pilot/reports/DEFERRED_MINORS.md 1.18–1.21 节(AA3、AA5、AA10、AB2、AC2 指向阶段 B)。
+- 审查输入(git diff --cached --stat 与完整 diff)：/tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/review_work/review_input.diff。暂存内容与工作区文件相同，可直接读 metrix/e1-pilot/src/metrix_e1/、metrix/e1-pilot/tests/、metrix/e1-pilot/reports/impl_b/。
+- 本提交中的原始输出：reports/impl_b/t0b_step0_push.txt(第 0 步提交的推送)、t0c_copy_check.txt(阶段开始的副本比对)、t1_env_baseline.txt(重建 venv、下载、生成、阶段 A 测试基线 51 passed)、t2_fetch_config.txt(下载固定 revision 的 config.json，不是权重文件)、t3_generate_leakage.txt(改动后重新生成、与基线逐字节相同、verify、泄漏命令、两个 Y/F 比值)、t4_pytest.txt(全部测试)、t5_dump_for_audit.txt(给 data-auditor 的导出)。
+- 运行环境：会话临时目录 /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad(venv、inputs、data、data_b)。可以运行命令时用 /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/venv/bin/python，METRIX_INPUTS_DIR=/tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/inputs。
+- Executor 自己的说明(docstring、注释、提交说明)不作为证据。
+
+请逐条对照协议 v1.1(第 0、4、5、6、7、8、9、10、11 节)与指令审查，重点：
+1. 训练契约(第 7 节)与 arm 定义(第 4 节)：每个 arm 的语料、batch、可训练参数、优化器、warmup、余弦、weight decay、梯度裁剪、bf16 autocast、补齐位不计损失、训练输入后接 <|endoftext|>；LoRA(目标模块、alpha = 2 × rank、dropout 0、B = 0、base 冻结)；arm A 的 KL(方向、按 token 加权、t 从 2 起、冻结 base 副本、无梯度、每步 4 篇锚文档)。
+2. 打分(第 5 节)：s_QA 的输入与打分区间、并列判为错、enable_thinking 写死、s_ST 的 prefix(f)、EM(贪心、16 个新 token、两个停止 token、skip_special_tokens、<think> 片段删除与归一化)、general dNLL(n_w、t 从 2 起)、评测 FP32 无 autocast。
+3. 统计(第 6 节)：按 fact 聚合(mean)、分层配对 bootstrap、10,000 次、rng_rule 的 purpose、seed-average；G0.10。
+4. gate.py 与 stops.py：G0.1–G0.10、ST1–ST13 的条件与动作、状态词只取第 9 节；冒烟模式。
+5. 冻结参数：协议数值是否都从冻结文件读取(contract.py)，代码里有无写死的协议数值。
+6. TEST 隔离：test_data.py 的三个前提条件是否与指令第 5 节一致；不满足时是否在产生任何文件、解析任何 test 行之前退出并打印 RESULT: FAIL；leakage.run_test_part 是否只能在前提条件之后调用；有无其它代码路径生成、读取或统计 TEST。
+7. 正式模式与冒烟模式隔离(指令第 7 节)：正式模式无法使用缩减步数；冒烟输出的标注与目录隔离。
+8. 单元测试 2–9 与 Owner 额外要求 5–7 是否真正检验了所说的内容(测试是否可能在实现错误时仍然通过)。
+9. 死代码、可读性、合理性。
+
+以下取舍请判断是否与协议、指令一致，或属于协议未覆盖、应交 Review Gate 的情况：
+(a) metrix/e1-pilot/src/metrix_e1/interpretations.py 列出的 B1–B20(协议留有选择余地之处的实现选择；每条写明位置与理由)，请逐条判断：与协议原文一致 / 协议未覆盖须交 Review Gate / 与协议冲突；
+(b) B19：阶段 A 报告预告“第 8 节第 8 步‘对 TEST 运行 L3–L5’中 L3、L5 对 TEST 的具体含义，届时如协议未覆盖即停下报告”；本阶段按 B19 实现并列入待决，而不是停止(TEST 部分本阶段不会运行)；
+(c) train_run 在非冒烟模式下拒绝在 CPU 上训练；新增 PREFLIGHT 模式(协议第 8 节第 2 步，步数取协议的 20 步)；
+(d) 为了在 meta 设备上核对协议结构的参数数(1,720,574,976 与“秩 32 时 3,486 万”)，下载了固定 revision 的 config.json(train.py fetch-config)；
+(e) errors.ProtocolStop 允许 status 为 None(只用于 ST6 发生在非选定配置、非对照时：该配置从选择中剔除)；
+(f) data.py 的 y_ratio 增加不加 <|endoftext|> 的比值(只报告，不作判定)。
+
+请按定义的输出格式逐条给出，每条注明“已验证/未验证”。对上述 (a)–(f) 各给出明确判断。最后一行给出结论。

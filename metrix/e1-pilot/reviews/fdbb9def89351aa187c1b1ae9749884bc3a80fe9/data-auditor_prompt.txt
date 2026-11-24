@@ -1,0 +1,12 @@
+先读仓库中的 .claude/agents/data-auditor.md，以它为你的完整定义；它与你已加载的定义冲突时，以仓库文件为准。
+
+Metrix E1-PILOT Implementation 阶段 B 的修复提交(暂存，尚未提交；父提交为工作提交 74a4d4443a3880239996d7adc6c13c636e4edf64，即你第 2 轮审查过的内容，原文 /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/review_work/data-auditor_round2.md)。改动涉及评测代码(evaluate.py：非有限值传给 ST6、TEST 评测入口须先通过 leakage.verify_authorization)、TEST 路径(test_data.generate_test、leakage.run_test_part 同样先复核授权；stops.st13_scan)与 data.py(只改了 eval_sets.jsonl 计数的打印标签与 info 字段)。审查输入：/tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/review_fix/review_input.diff；Executor 的原始输出：metrix/e1-pilot/reports/impl_b/t8_fix_commit.txt。
+
+任务(用你自己的脚本，可沿用你前两轮在 metrix/e1-pilot/audit/ 下的脚本或新写 id_ 脚本；禁止 import、调用或复制 Executor 的代码；不得加载任何模型权重)：
+1. Executor 修复后重新生成的目录 /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/data_d/：8 个数据文件与你独立生成的结果、与 /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/data_c/ 逐一比对；四个冻结哈希按协议方法读回复算；t8 中“DEV rows decoded and parsed: 400; windows kept: 100”与你按行前缀计数的 dev 行数、窗口数是否一致。
+2. 导出 /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/audit_dump_d.json：核对 sha256 与 t8 所记相同、与第 1 轮 audit_dump_b.json 逐字节相同。
+3. TEST 隔离：以黑盒方式运行一次 TEST 生成器(--data /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/data_d，--out 为一个不存在的目录)，确认拒绝且无产物；静态检查本次改动：evaluate_model(split="test")、generate_test、run_test_part 是否都在读取或使用任何 TEST 内容之前调用 verify_authorization；三个前提条件(及解释裁决检查)满足之前，有无任何路径解码或解析 eval_sets.jsonl 中 split 不是 dev 的行、或实例化 TEST 问句。
+
+输入、Python 与 TEST 的限制同前两轮(调用文字 /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/review_work/data-auditor_prompt.txt)：禁止生成、读取或统计 TEST；eval_sets.jsonl 只可对整个文件求哈希、按行前缀读取 split 字段与计数，非 dev 行不得解析或解码；不得实例化任何 TEST 问句。
+
+输出：所有脚本的完整 stdout 写入 metrix/e1-pilot/audit/stdout/impl_b/(接着前两轮的编号)。只写入 metrix/e1-pilot/audit/。按定义的输出格式给出每一项的命令、原始输出、与 Executor 是否一致；最后附 git status --short 原始输出；最后一行给出结论。

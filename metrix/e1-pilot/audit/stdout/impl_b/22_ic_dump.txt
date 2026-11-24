@@ -1,0 +1,12 @@
+# Data Auditor run (implementation stage B). host vm, CPU only (no GPU device), no model weights loaded (tokenizer files only); 2026-11-23 08:15:17 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit; PYTHONDONTWRITEBYTECODE=1
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/venv/bin/python -I -B ic_02_dump.py /home/user/OpenMythos /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/audit_dump_b.json /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/audit_dump_c.json
+env: host vm | Linux-6.18.44-fc-v726-x86_64-with-glibc2.39 | python 3.13.18 (/tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/venv/bin/python) | installed {'transformers': '5.22.2', 'tokenizers': '0.23.3', 'pyarrow': '26.0.1', 'huggingface_hub': '2.4.0', 'torch': '2.11.0'} | nvidia device nodes: []
+t5 recorded (audit_dump_b.json): ['3ba470a97419dd34bd655e97d4d061c7de72700ae7692de37d14e1db2615be50'] | t6 recorded (audit_dump_c.json): ['3ba470a97419dd34bd655e97d4d061c7de72700ae7692de37d14e1db2615be50'] | t6 cmp exit 0
+audit_dump_b.json sha256 3ba470a97419dd34bd655e97d4d061c7de72700ae7692de37d14e1db2615be50 | == t5 True
+audit_dump_c.json sha256 3ba470a97419dd34bd655e97d4d061c7de72700ae7692de37d14e1db2615be50 | == t6 True | == t5 True
+bytes: b 632222 | c 632222 | identical True
+keys ['anchor_docs', 'batch_schedule', 'cb_inputs', 'lr_factor', 'qa_inputs', 'training_sequences'] | qa_inputs 1280 | cb_inputs 480 | training_sequences {'train_F.jsonl': 120, 'train_S.jsonl': 120, 'train_Y.jsonl': 240} | batch_schedule ['101:120:8', '101:240:16', '202:120:8', '202:240:16', '303:120:8', '303:240:16'] | anchor_docs 300 | lr_factor 300
+modules: torch imported=False | transformers modeling modules imported=[] | this script never calls a model class or from_pretrained on a model
+RESULT: PASS
+exit=0

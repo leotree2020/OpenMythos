@@ -1,0 +1,97 @@
+# Data Auditor run (implementation stage B). host vm, CPU only (no GPU device), no model weights loaded (tokenizer files only); 2026-11-23 13:45:04 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit; PYTHONDONTWRITEBYTECODE=1
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/venv/bin/python -I -B id_07_static_selftest.py /home/user/OpenMythos /tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/auditor_id/selftest
+env: host vm | Linux-6.18.44-fc-v726-x86_64-with-glibc2.39 | python 3.13.18 (/tmp/claude-0/-home-user/f24b86c9-a2c5-5317-8b43-751d1f505d91/scratchpad/venv/bin/python) | installed {'transformers': '5.22.2', 'tokenizers': '0.23.3', 'pyarrow': '26.0.1', 'huggingface_hub': '2.4.0', 'torch': '2.11.0'} | nvidia device nodes: []
+control: fault applied True | id_06 exit 0 | last line 'RESULT: PASS' | expected PASS -> True
+M1: fault applied True | id_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   id_06 output lines that differ from the control run (5; lines with a False check or an error first):
+     open calls: ["open(eval_sets_path, encoding='utf-8')"] | exactly one open, mode 'rb', no encoding argument: False
+     RESULT: FAIL
+     ('data.py', 507, 'build_general_dev', "open(eval_sets_path, encoding='utf-8')")
+     calls that open eval_sets.jsonl: [('data.py', 507, 'build_general_dev', "open(eval_sets_path, encoding='utf-8')")]
+     metrix/e1-pilot/src/metrix_e1/data.py:507 in build_general_dev: open(eval_sets_path, encoding='utf-8')
+M2: fault applied True | id_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   id_06 output lines that differ from the control run (23; lines with a False check or an error first):
+     RESULT: FAIL
+     build_general_dev: [('data.py', 555, 'generate'), ('test_data.py', 148, 'generate_test')]
+     ('data.py', 632, 'main', 'FZ.load()')
+     ('data.py', 590, 'file_hashes', '(d / name).read_bytes()')
+     ('data.py', 512, 'build_general_dev', "json.loads(line.decode('utf-8'))")
+M3: fault applied True | id_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   id_06 output lines that differ from the control run (24; lines with a False check or an error first):
+     check_interpretations_ruled: called only from [] | expected [('test_data.py', 'check_preconditions')] | False
+     RESULT: FAIL
+     generate_test: [('test_data.py', 171, 'main')]
+     build_test_qa: [('test_data.py', 145, 'generate_test')]
+     params_for_test: [('test_data.py', 143, 'generate_test')]
+M4: fault applied True | id_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   id_06 output lines that differ from the control run (18; lines with a False check or an error first):
+     split check at statement 0 | guard `if split == 'test'` at statement 2, calls ['verify_authorization(test_authorization, repo_root)'], else branch False | first statement touching data / qa_file / gen_file at 1: 'n_rows 
+     evaluate_model: verify_authorization(test_authorization, repo_root) runs for split 'test' before anything touches the data: False
+     RESULT: FAIL
+     verify_authorization: [('evaluate.py', 312, 'evaluate_model'), ('leakage.py', 223, 'run_test_part'), ('test_data.py', 140, 'generate_test')]
+     ('evaluate.py', 310, 'evaluate_model', 'test')
+M5: fault applied True | id_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   id_06 output lines that differ from the control run (5; lines with a False check or an error first):
+     split check at statement 0 | guard `if split == 'test'` at statement 1, calls [], else branch False | first statement touching data / qa_file / gen_file at 3: 'qa_file, gen_file = SPLIT_FILES[split]'
+     evaluate_model: verify_authorization(test_authorization, repo_root) runs for split 'test' before anything touches the data: False
+     RESULT: FAIL
+     verify_authorization: [('leakage.py', 223, 'run_test_part'), ('test_data.py', 140, 'generate_test')]
+     verify_authorization: called only from [('leakage.py', 'run_test_part'), ('test_data.py', 'generate_test')] | expected [('evaluate.py', 'evaluate_model'), ('leakage.py', 'run_test_part'), ('test_data.py', 'generate_test'
+M6: fault applied True | id_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   id_06 output lines that differ from the control run (11; lines with a False check or an error first):
+     generate_test statement 0 is LK.verify_authorization(authorization, fz.repo_root): False | readers / builders after it: [(0, 'params'), (1, 'check_inputs'), (2, 'load_qwen_tokenizer'), (3, 'params_for_test'), (4, 'read_j
+     RESULT: FAIL
+     params_for_test: [('test_data.py', 143, 'generate_test')]
+     verify_authorization: [('evaluate.py', 311, 'evaluate_model'), ('leakage.py', 223, 'run_test_part'), ('test_data.py', 145, 'generate_test')]
+     ('test_data.py', 144, 'generate_test', "FZ.read_jsonl(Path(data_dir) / 'facts.jsonl')")
+M7: fault applied True | id_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   id_06 output lines that differ from the control run (8; lines with a False check or an error first):
+     run_test_part statement 0: 'n_q = len(test_qa)' -> verify first False | first statement using test_qa / general_test: 0 ('n_q = len(test_qa)') | after the verify False
+     RESULT: FAIL
+     verify_authorization: [('evaluate.py', 311, 'evaluate_model'), ('leakage.py', 224, 'run_test_part'), ('test_data.py', 140, 'generate_test')]
+     ('leakage.py', 236, 'run_test_part', 'test')
+     ('leakage.py', 232, 'run_test_part', 'TEST')
+M8: fault applied True | id_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   id_06 output lines that differ from the control run (2; lines with a False check or an error first):
+     RESULT: FAIL
+     verify_authorization: statement 0 isinstance guard raising True | loop over both records (gate0, selection_freeze) True | committed_record(repo_root, rel, kind, authorization.frozen_commit) True | NotCommitted -> raise, 
+M9: fault applied True | id_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   id_06 output lines that differ from the control run (4; lines with a False check or an error first):
+     stops.py:163 in st13_scan: found = [str(Path(d) / n) for d in dirs for n in D.TEST_FILES if (Path(d) / n).exists() and (Path(d) / n).read_bytes() i | calls ['Path', 'exists', 'read_bytes', 'str'] | no reader False
+     RESULT: FAIL
+     ('stops.py', 163, 'st13_scan', '(Path(d) / n).read_bytes()')
+     stops.st13_scan calls: ['st13(fz, bool(found))', "R.committed_record(repo_root, R.SELECTION_FREEZE_REL, 'selection_freeze', fz.record.commit)", 'str(Path(d) / n)', 'bool(found)', 'Path(d)', '(Path(d) / n).exists()', '(Pa
+M10: fault applied True | id_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   id_06 output lines that differ from the control run (6; lines with a False check or an error first):
+     RESULT: FAIL
+     generate_test: [('test_data.py', 173, 'main'), ('test_data.py', 163, 'main')]
+     run_test_part: [('test_data.py', 178, 'main')]
+     uses of TEST_FILES / SPLIT_FILES (file, line, function): [('data.py', 42, '<module>'), ('data.py', 577, 'write'), ('evaluate.py', 295, '<module>'), ('evaluate.py', 307, 'evaluate_model'), ('evaluate.py', 313, 'evaluate_m
+     test_data.py:170 in main: present = [n for n in D.TEST_FILES if (out / n).exists()] | calls ['exists'] | no reader True
+M11: fault applied True | id_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   id_06 output lines that differ from the control run (17; lines with a False check or an error first):
+     RESULT: FAIL
+     build_general_dev: [('data.py', 558, 'generate'), ('test_data.py', 148, 'generate_test')]
+     ('data.py', 495, 'peek_test', 'TEST')
+     constants outside module-level name tuples, the evaluate_model guard, contract accounting (a count), gate T1-T3 labels, the generator and run_test_part: [('data.py', 495, 'peek_test', 'TEST')]
+     ('data.py', 635, 'main', 'FZ.load()')
+M12: fault applied True | id_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   id_06 output lines that differ from the control run (3; lines with a False check or an error first):
+     -> test_qa and general_test are [] (no TEST content): False
+     RESULT: FAIL
+     test_test_data.py:185 in test_run_test_part_rechecks_the_committed_records: LK.run_test_part(fz.split_manifest, {}, [{'question': 'q'}], [], auth, root)
+M13: fault applied True | id_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   id_06 output lines that differ from the control run (2; lines with a False check or an error first):
+     -> split 'test' with repo_root fz.repo_root (records not committed -> refused) and data_rows (generated non-TEST files only): False
+     RESULT: FAIL
+M14: fault applied True | id_06 exit 1 | last line 'RESULT: FAIL' | expected FAIL -> True
+   id_06 output lines that differ from the control run (9; lines with a False check or an error first):
+     TestAuthorization: called only from [('evaluate.py', 'evaluate_model'), ('test_data.py', 'check_preconditions')] | expected [('test_data.py', 'check_preconditions')] | False
+     split check at statement 0 | guard `if split == 'test'` at statement 1, calls ['verify_authorization(test_authorization, repo_root)', 'TestAuthorization(None, None, None)'], else branch False | first statement touching d
+     evaluate_model: verify_authorization(test_authorization, repo_root) runs for split 'test' before anything touches the data: False
+     RESULT: FAIL
+     TestAuthorization: [('evaluate.py', 311, 'evaluate_model'), ('test_data.py', 109, 'check_preconditions')]
+modules: torch imported=False | transformers modeling modules imported=[] | this script never calls a model class or from_pretrained on a model
+RESULT: PASS
+exit=0

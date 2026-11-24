@@ -1,0 +1,2341 @@
+ metrix/e1-pilot/reports/impl_b/t6_fix_round.txt  | 287 +++++++++++++++++++++++
+ metrix/e1-pilot/src/metrix_e1/compute.py         | 100 +++++---
+ metrix/e1-pilot/src/metrix_e1/contract.py        |  44 +++-
+ metrix/e1-pilot/src/metrix_e1/data.py            |  17 +-
+ metrix/e1-pilot/src/metrix_e1/errors.py          |   7 +-
+ metrix/e1-pilot/src/metrix_e1/evaluate.py        |  90 ++++---
+ metrix/e1-pilot/src/metrix_e1/gate.py            | 183 +++++++++------
+ metrix/e1-pilot/src/metrix_e1/interpretations.py |  78 +++---
+ metrix/e1-pilot/src/metrix_e1/leakage.py         |  29 ++-
+ metrix/e1-pilot/src/metrix_e1/mode.py            |  36 +--
+ metrix/e1-pilot/src/metrix_e1/record.py          |  42 +++-
+ metrix/e1-pilot/src/metrix_e1/stats.py           |  42 ++--
+ metrix/e1-pilot/src/metrix_e1/stops.py           |  18 +-
+ metrix/e1-pilot/src/metrix_e1/test_data.py       |  85 ++++---
+ metrix/e1-pilot/src/metrix_e1/train.py           |  69 +++---
+ metrix/e1-pilot/tests/test_contract.py           |  17 ++
+ metrix/e1-pilot/tests/test_evaluate.py           |  20 ++
+ metrix/e1-pilot/tests/test_gate.py               |  83 ++++++-
+ metrix/e1-pilot/tests/test_lora.py               |  20 +-
+ metrix/e1-pilot/tests/test_record.py             |  28 +++
+ metrix/e1-pilot/tests/test_stats.py              |  11 +
+ metrix/e1-pilot/tests/test_stops.py              |  60 ++++-
+ metrix/e1-pilot/tests/test_test_data.py          |  88 +++++--
+ metrix/e1-pilot/tests/test_train.py              |  30 +++
+ 24 files changed, 1152 insertions(+), 332 deletions(-)
+
+diff --git a/metrix/e1-pilot/reports/impl_b/t6_fix_round.txt b/metrix/e1-pilot/reports/impl_b/t6_fix_round.txt
+new file mode 100644
+index 0000000..2274baf
+--- /dev/null
++++ b/metrix/e1-pilot/reports/impl_b/t6_fix_round.txt
+@@ -0,0 +1,287 @@
++# Implementation stage B, fixes after the round-1 reviews (code-reviewer PASS with 10 MAJOR / MINORs; data-auditor PASS with observation 1): data generation with eval_sets.jsonl read as bytes, byte comparison with the round-1 data, verify, leakage command, TEST generator refusal, full unit tests. Executor, session_01J5mxaWPrK8siadYKyqZ5pX, host vm (Anthropic cloud container, CPU only). Mon Nov 23 08:02:54 UTC 2026
++# cwd metrix/e1-pilot/src for the module commands; <SCRATCH> = session scratchpad. Recorded by metrix/e1-pilot/reports/round5/logrun.sh.
++$ <SCRATCH>/venv/bin/python -m metrix_e1.data generate --inputs <SCRATCH>/inputs --out <SCRATCH>/data_c
++frozen: PROTOCOL_FROZEN v1.1, commit 87a244db28a901f9e89282b50df76778ab5c2887; four frozen files match by git cat-file
++python 3.13.18; libraries {"torch": "2.11.0", "transformers": "5.22.2"} (protocol section 0: {"torch": "2.11.0", "transformers": "5.22.2"})
++name generation per cell: [{"cell": "capital/natural", "entity_draws": 28, "target_pair": [3, 3], "answer_draws": 84}, {"cell": "capital/random", "entity_draws": 20, "target_pair": [5, 5], "answer_draws": 52}, {"cell": "currency/natural", "entity_draws": 31, "target_pair": [3, 3], "answer_draws": 82}, {"cell": "currency/random", "entity_draws": 20, "target_pair": [6, 6], "answer_draws": 46}, {"cell": "founder/natural", "entity_draws": 30, "target_pair": [3, 3], "answer_draws": 81}, {"cell": "founder/random", "entity_draws": 21, "target_pair": [5, 5], "answer_draws": 45}, {"cell": "river/natural", "entity_draws": 34, "target_pair": [3, 3], "answer_draws": 89}, {"cell": "river/random", "entity_draws": 20, "target_pair": [6, 6], "answer_draws": 42}]
++S derangement attempts per cell: {"capital/natural": 3, "capital/random": 5, "currency/natural": 1, "currency/random": 6, "founder/natural": 2, "founder/random": 1, "river/natural": 2, "river/random": 6}
++Y / F token ratio: F 1889, Y 2260, ratio 1.1964
++Y / F token ratio without <|endoftext|> (report only): F 1769, Y 2020, ratio 1.1419
++both ratios within [0.8, 1.25]: with True, without True
++eval_sets.jsonl rows by split (row prefix only): {'dev': 400, 'test': 800}; rows parsed and decoded: 100
++facts.jsonl        rows  160  byte_sha256 e05561ac2d49dcc3c8f59743c5df64151983a540a32ae135fd1b10f5e0fdc828  canonical_sha256 e05561ac2d49dcc3c8f59743c5df64151983a540a32ae135fd1b10f5e0fdc828
++train_F.jsonl      rows  120  byte_sha256 3aa9ab3ca313c0a1113b91e927af51342c915e3e40dd2f20992f3d9e59b0e373  canonical_sha256 3aa9ab3ca313c0a1113b91e927af51342c915e3e40dd2f20992f3d9e59b0e373
++train_S.jsonl      rows  120  byte_sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e  canonical_sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e
++train_Y.jsonl      rows  240  byte_sha256 c7430cadb2b06dd5c144af381a8183d4c186f27f2b5acfa9d8d39da0b7626d15  canonical_sha256 c7430cadb2b06dd5c144af381a8183d4c186f27f2b5acfa9d8d39da0b7626d15
++dev_qa.jsonl       rows  320  byte_sha256 9761eb60d6c9155c2f56394aa228b1e9dfea0ae3926ab50cb21d903108bc7fde  canonical_sha256 9761eb60d6c9155c2f56394aa228b1e9dfea0ae3926ab50cb21d903108bc7fde
++candidates.json    rows  160  byte_sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705  canonical_sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705
++general_dev.jsonl  rows  100  byte_sha256 957666920c91ef5b9328984d26ed0628c8a80b439d461bea49b54c2235635e73  canonical_sha256 957666920c91ef5b9328984d26ed0628c8a80b439d461bea49b54c2235635e73
++anchor_text.jsonl  rows  512  byte_sha256 2089e656819d1fe0f6ececcc26e5cade09ee80a92c50e7c8f607fa4e0ef46da5  canonical_sha256 2089e656819d1fe0f6ececcc26e5cade09ee80a92c50e7c8f607fa4e0ef46da5
++frozen content hash facts        406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 = PROTOCOL_FROZEN (read back from <SCRATCH>/data_c)
++frozen content hash train_S      686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e = PROTOCOL_FROZEN (read back from <SCRATCH>/data_c)
++frozen content hash candidates   e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 = PROTOCOL_FROZEN (read back from <SCRATCH>/data_c)
++frozen content hash anchor_texts 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 = PROTOCOL_FROZEN (read back from <SCRATCH>/data_c)
++RESULT: PASS
++exit=0
++$ bash -c cd\ <SCRATCH>\ \&\&\ for\ f\ in\ data_b/\*.json\*\;\ do\ cmp\ \$f\ data_c/\$\(basename\ \$f\)\ \&\&\ echo\ \"identical\ \$\(basename\ \$f\)\"\;\ done
++identical anchor_text.jsonl
++identical candidates.json
++identical dev_qa.jsonl
++identical facts.jsonl
++identical general_dev.jsonl
++cmp: data_c/leakage_report.json: No such file or directory
++identical train_F.jsonl
++identical train_S.jsonl
++identical train_Y.jsonl
++exit=0
++$ <SCRATCH>/venv/bin/python -m metrix_e1.data verify --inputs <SCRATCH>/inputs --data <SCRATCH>/data_c
++frozen: PROTOCOL_FROZEN v1.1, commit 87a244db28a901f9e89282b50df76778ab5c2887; four frozen files match by git cat-file
++frozen content hash facts        406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 = PROTOCOL_FROZEN
++frozen content hash train_S      686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e = PROTOCOL_FROZEN
++frozen content hash candidates   e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 = PROTOCOL_FROZEN
++frozen content hash anchor_texts 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 = PROTOCOL_FROZEN
++all 8 data files byte-identical to their regeneration from the frozen inputs
++RESULT: PASS
++exit=0
++$ env PYTHONPATH=. <SCRATCH>/venv/bin/python -m metrix.e1_pilot.check_leakage --data <SCRATCH>/data_c --split-manifest ../SPLIT_MANIFEST.json --out <SCRATCH>/data_c/leakage_report.json
++ST12 range (1): facts        406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 = PROTOCOL_FROZEN
++ST12 range (1): train_S      686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e = PROTOCOL_FROZEN
++ST12 range (1): candidates   e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 = PROTOCOL_FROZEN
++ST12 range (1): anchor_texts 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 = PROTOCOL_FROZEN
++L1   value 0                      limit 0     within limit
++L2   value 0.2                    limit 0.25  within limit
++L3a  value 0                      limit 0     within limit
++L3b  value 0                      limit 0     within limit
++L4   value 0                      limit 0     within limit
++L5   value 0                      limit 0     within limit
++L6   value 0                      limit 0     within limit
++L6 report only: shared Qwen token-id 13-grams 0
++report written to <SCRATCH>/data_c/leakage_report.json
++RESULT: PASS
++exit=0
++$ <SCRATCH>/venv/bin/python -m metrix_e1.test_data --inputs <SCRATCH>/inputs --data <SCRATCH>/data_c --out <SCRATCH>/test_out_never
++TEST generator refused: metrix/e1-pilot/results/gate0_record.json is not committed at HEAD
++no TEST content was generated, read or written
++RESULT: FAIL
++exit=1
++$ bash -c ls\ <SCRATCH>/test_out_never\ 2\>\&1\;\ ls\ <SCRATCH>/data_c
++ls: cannot access '<SCRATCH>/test_out_never': No such file or directory
++anchor_text.jsonl
++candidates.json
++dev_qa.jsonl
++facts.jsonl
++general_dev.jsonl
++leakage_report.json
++train_F.jsonl
++train_S.jsonl
++train_Y.jsonl
++exit=0
++$ <SCRATCH>/venv/bin/python -m pytest -v -p no:cacheprovider metrix/e1-pilot/tests
++============================= test session starts ==============================
++platform linux -- Python 3.13.18, pytest-9.2.0, pluggy-1.7.0 -- <SCRATCH>/venv/bin/python
++rootdir: /home/user/OpenMythos
++configfile: pyproject.toml
++plugins: anyio-4.16.0
++collecting ... collected 189 items
++
++metrix/e1-pilot/tests/test_arm_a.py::test_kl_direction_is_base_to_theta PASSED [  0%]
++metrix/e1-pilot/tests/test_arm_a.py::test_kl_is_token_weighted_over_documents PASSED [  1%]
++metrix/e1-pilot/tests/test_arm_a.py::test_kl_positions_are_t2_to_n PASSED [  1%]
++metrix/e1-pilot/tests/test_arm_a.py::test_base_copy_is_frozen PASSED     [  2%]
++metrix/e1-pilot/tests/test_arm_a.py::test_step0_kl_zero_base_unchanged_after_training PASSED [  2%]
++metrix/e1-pilot/tests/test_contract.py::test_values_match_the_frozen_files PASSED [  3%]
++metrix/e1-pilot/tests/test_contract.py::test_changed_protocol_sentence_stops[| G0.4 | `Acc_CB(F)` \u2265 0.90,3 \u4e2a\u79cd\u5b50\u90fd\u6ee1\u8db3 |-| G0.4 | `Acc_CB(F)` \u2265 0.90,2 \u4e2a\u79cd\u5b50\u90fd\u6ee1\u8db3 |] PASSED [  3%]
++metrix/e1-pilot/tests/test_contract.py::test_changed_protocol_sentence_stops[- \u6b21\u6570 **10,000**;-- \u6b21\u6570 **10,000** \u6b21;] PASSED [  4%]
++metrix/e1-pilot/tests/test_contract.py::test_changed_protocol_sentence_stops[| ST11 | \u7b2c 8 \u8282\u7b2c 2 \u6b65\u9884\u68c0\u7684\u9884\u4f30\u603b\u65f6\u957f\u8d85\u8fc7 3.5 \u5c0f\u65f6 |-| ST11 | \u7b2c 8 \u8282\u7b2c 2 \u6b65\u9884\u68c0\u7684\u9884\u4f30\u603b\u65f6\u957f\u8d85\u8fc7 3.5 \u4e2a\u5c0f\u65f6 |] PASSED [  4%]
++metrix/e1-pilot/tests/test_contract.py::test_changed_search_space_sentence_stops PASSED [  5%]
++metrix/e1-pilot/tests/test_contract.py::test_accounting_and_status_vocabulary PASSED [  5%]
++metrix/e1-pilot/tests/test_contract.py::test_changed_status_vocabulary_stops PASSED [  6%]
++metrix/e1-pilot/tests/test_data_hashes.py::test_four_frozen_hashes PASSED [  6%]
++metrix/e1-pilot/tests/test_data_hashes.py::test_files_are_canonical PASSED [  7%]
++metrix/e1-pilot/tests/test_data_hashes.py::test_counts_and_ratio PASSED  [  7%]
++metrix/e1-pilot/tests/test_data_hashes.py::test_no_test_file PASSED      [  8%]
++metrix/e1-pilot/tests/test_data_hashes.py::test_byte_identical_to_reference_scripts PASSED [  8%]
++metrix/e1-pilot/tests/test_data_hashes.py::test_leakage_gate0_passes PASSED [  9%]
++metrix/e1-pilot/tests/test_data_hashes.py::test_y_f_ratio_with_and_without_endoftext PASSED [ 10%]
++metrix/e1-pilot/tests/test_environment.py::test_python_is_the_locked_interpreter PASSED [ 10%]
++metrix/e1-pilot/tests/test_environment.py::test_library_versions_match_protocol PASSED [ 11%]
++metrix/e1-pilot/tests/test_environment.py::test_library_version_mismatch_is_st8 PASSED [ 11%]
++metrix/e1-pilot/tests/test_evaluate.py::test_em_normalize PASSED         [ 12%]
++metrix/e1-pilot/tests/test_evaluate.py::test_greedy_stops_at_stop_ids_and_caps_length PASSED [ 12%]
++metrix/e1-pilot/tests/test_evaluate.py::test_batched_cached_greedy_equals_naive PASSED [ 13%]
++metrix/e1-pilot/tests/test_evaluate.py::test_general_nll_t_from_2_and_batching PASSED [ 13%]
++metrix/e1-pilot/tests/test_evaluate.py::test_evaluation_is_float32_without_autocast PASSED [ 14%]
++metrix/e1-pilot/tests/test_evaluate.py::test_scores_do_not_depend_on_batch_composition PASSED [ 14%]
++metrix/e1-pilot/tests/test_evaluate.py::test_s_mapping_uses_the_s_answer PASSED [ 15%]
++metrix/e1-pilot/tests/test_evaluate.py::test_formal_evaluation_refuses_cpu PASSED [ 15%]
++metrix/e1-pilot/tests/test_evaluate.py::test_think_marks_are_checked PASSED [ 16%]
++metrix/e1-pilot/tests/test_gate.py::test_all_satisfied_at_the_boundaries_is_pass PASSED [ 16%]
++metrix/e1-pilot/tests/test_gate.py::test_each_condition_not_satisfied[G0.1] PASSED [ 17%]
++metrix/e1-pilot/tests/test_gate.py::test_each_condition_not_satisfied[G0.2] PASSED [ 17%]
++metrix/e1-pilot/tests/test_gate.py::test_each_condition_not_satisfied[G0.3] PASSED [ 18%]
++metrix/e1-pilot/tests/test_gate.py::test_each_condition_not_satisfied[G0.4] PASSED [ 19%]
++metrix/e1-pilot/tests/test_gate.py::test_each_condition_not_satisfied[G0.5] PASSED [ 19%]
++metrix/e1-pilot/tests/test_gate.py::test_each_condition_not_satisfied[G0.6] PASSED [ 20%]
++metrix/e1-pilot/tests/test_gate.py::test_each_condition_not_satisfied[G0.7] PASSED [ 20%]
++metrix/e1-pilot/tests/test_gate.py::test_each_condition_not_satisfied[G0.8] PASSED [ 21%]
++metrix/e1-pilot/tests/test_gate.py::test_each_condition_not_satisfied[G0.9] PASSED [ 21%]
++metrix/e1-pilot/tests/test_gate.py::test_each_condition_not_satisfied[G0.10] PASSED [ 22%]
++metrix/e1-pilot/tests/test_gate.py::test_g03_endpoints_are_inside PASSED [ 22%]
++metrix/e1-pilot/tests/test_gate.py::test_preflight_mode_is_not_judged PASSED [ 23%]
++metrix/e1-pilot/tests/test_gate.py::test_reasons_follow_section_9 PASSED [ 23%]
++metrix/e1-pilot/tests/test_gate.py::test_smoke_mode_status_is_not_tested PASSED [ 24%]
++metrix/e1-pilot/tests/test_gate.py::test_unknown_status_word_is_refused PASSED [ 24%]
++metrix/e1-pilot/tests/test_gate.py::test_repro_compare PASSED            [ 25%]
++metrix/e1-pilot/tests/test_gate.py::test_compute_values_and_comparisons PASSED [ 25%]
++metrix/e1-pilot/tests/test_gate.py::test_t1_t3 PASSED                    [ 26%]
++metrix/e1-pilot/tests/test_gate.py::test_compute_test_values PASSED      [ 26%]
++metrix/e1-pilot/tests/test_leakage.py::test_clean_data_passes PASSED     [ 27%]
++metrix/e1-pilot/tests/test_leakage.py::test_l3a_unread_entity_in_train_Y PASSED [ 28%]
++metrix/e1-pilot/tests/test_leakage.py::test_l3a_and_l3b_answers_in_anchor PASSED [ 28%]
++metrix/e1-pilot/tests/test_leakage.py::test_l4_dev_question_in_train_F PASSED [ 29%]
++metrix/e1-pilot/tests/test_leakage.py::test_l5_duplicate_string_and_fact_id PASSED [ 29%]
++metrix/e1-pilot/tests/test_leakage.py::test_l6_shared_13gram_counted_within_documents PASSED [ 30%]
++metrix/e1-pilot/tests/test_leakage.py::test_l1_l2_templates PASSED       [ 30%]
++metrix/e1-pilot/tests/test_leakage.py::test_cli_fail_exit PASSED         [ 31%]
++metrix/e1-pilot/tests/test_leakage.py::test_cli_bad_split_manifest PASSED [ 31%]
++metrix/e1-pilot/tests/test_leakage.py::test_cli_st12_on_tampered_frozen_data PASSED [ 32%]
++metrix/e1-pilot/tests/test_lora.py::test_step0_output_equals_base PASSED [ 32%]
++metrix/e1-pilot/tests/test_lora.py::test_forward_equals_hand_computation PASSED [ 33%]
++metrix/e1-pilot/tests/test_lora.py::test_alpha_is_two_times_rank_on_all_modules_of_all_layers PASSED [ 33%]
++metrix/e1-pilot/tests/test_lora.py::test_layer_count_is_checked_outside_smoke PASSED [ 34%]
++metrix/e1-pilot/tests/test_lora.py::test_only_lora_trainable_and_base_hash_unchanged_after_training PASSED [ 34%]
++metrix/e1-pilot/tests/test_lora.py::test_lora_a_values_come_from_rng_rule PASSED [ 35%]
++metrix/e1-pilot/tests/test_record.py::test_template_fields_from_the_protocol PASSED [ 35%]
++metrix/e1-pilot/tests/test_record.py::test_no_field_can_be_dropped PASSED [ 36%]
++metrix/e1-pilot/tests/test_record.py::test_smoke_records_are_labelled_and_kept_apart PASSED [ 37%]
++metrix/e1-pilot/tests/test_record.py::test_environment_block PASSED      [ 37%]
++metrix/e1-pilot/tests/test_record.py::test_record_constructors_and_committed_json PASSED [ 38%]
++metrix/e1-pilot/tests/test_record.py::test_environment_records_the_parsed_protocol_frozen PASSED [ 38%]
++metrix/e1-pilot/tests/test_scoring.py::test_pinned_28_token_sequence PASSED [ 39%]
++metrix/e1-pilot/tests/test_scoring.py::test_enable_thinking_true_makes_the_check_fail PASSED [ 39%]
++metrix/e1-pilot/tests/test_scoring.py::test_enable_thinking_is_not_a_parameter PASSED [ 40%]
++metrix/e1-pilot/tests/test_scoring.py::test_scored_slice_equals_train_statement_answer PASSED [ 40%]
++metrix/e1-pilot/tests/test_scoring.py::test_closed_book_slice_equals_train_statement_answer PASSED [ 41%]
++metrix/e1-pilot/tests/test_scoring.py::test_every_candidate_has_k_st_scored_tokens PASSED [ 41%]
++metrix/e1-pilot/tests/test_st12.py::test_mini_repo_positive_control PASSED [ 42%]
++metrix/e1-pilot/tests/test_st12.py::test_frozen_commit_file_one_byte[metrix/e1-pilot/METRIX_E1_PROTOCOL.md] PASSED [ 42%]
++metrix/e1-pilot/tests/test_st12.py::test_frozen_commit_file_one_byte[metrix/e1-pilot/DATA_MANIFEST.json] PASSED [ 43%]
++metrix/e1-pilot/tests/test_st12.py::test_frozen_commit_file_one_byte[metrix/e1-pilot/SPLIT_MANIFEST.json] PASSED [ 43%]
++metrix/e1-pilot/tests/test_st12.py::test_frozen_commit_file_one_byte[metrix/e1-pilot/SEARCH_SPACE.json] PASSED [ 44%]
++metrix/e1-pilot/tests/test_st12.py::test_working_tree_file_one_byte[metrix/e1-pilot/METRIX_E1_PROTOCOL.md] PASSED [ 44%]
++metrix/e1-pilot/tests/test_st12.py::test_working_tree_file_one_byte[metrix/e1-pilot/DATA_MANIFEST.json] PASSED [ 45%]
++metrix/e1-pilot/tests/test_st12.py::test_working_tree_file_one_byte[metrix/e1-pilot/SPLIT_MANIFEST.json] PASSED [ 46%]
++metrix/e1-pilot/tests/test_st12.py::test_working_tree_file_one_byte[metrix/e1-pilot/SEARCH_SPACE.json] PASSED [ 46%]
++metrix/e1-pilot/tests/test_st12.py::test_working_tree_line_endings_and_step1_fields PASSED [ 47%]
++metrix/e1-pilot/tests/test_st12.py::test_protocol_frozen_hash_one_byte[file] PASSED [ 47%]
++metrix/e1-pilot/tests/test_st12.py::test_protocol_frozen_hash_one_byte[data] PASSED [ 48%]
++metrix/e1-pilot/tests/test_st12.py::test_eval_sets_one_byte PASSED       [ 48%]
++metrix/e1-pilot/tests/test_st12.py::test_input_file_one_byte[qwen:tokenizer.json] PASSED [ 49%]
++metrix/e1-pilot/tests/test_st12.py::test_input_file_one_byte[qwen:tokenizer_config.json] PASSED [ 49%]
++metrix/e1-pilot/tests/test_st12.py::test_input_file_one_byte[qwen:vocab.json] PASSED [ 50%]
++metrix/e1-pilot/tests/test_st12.py::test_input_file_one_byte[qwen:merges.txt] PASSED [ 50%]
++metrix/e1-pilot/tests/test_st12.py::test_input_file_one_byte[parcae_tokenizer] PASSED [ 51%]
++metrix/e1-pilot/tests/test_st12.py::test_input_file_one_byte[anchor_parquet] PASSED [ 51%]
++metrix/e1-pilot/tests/test_st12.py::test_data_file_message_table_complete PASSED [ 52%]
++metrix/e1-pilot/tests/test_st12.py::test_data_file_one_byte[facts.jsonl] PASSED [ 52%]
++metrix/e1-pilot/tests/test_st12.py::test_data_file_one_byte[train_F.jsonl] PASSED [ 53%]
++metrix/e1-pilot/tests/test_st12.py::test_data_file_one_byte[train_S.jsonl] PASSED [ 53%]
++metrix/e1-pilot/tests/test_st12.py::test_data_file_one_byte[train_Y.jsonl] PASSED [ 54%]
++metrix/e1-pilot/tests/test_st12.py::test_data_file_one_byte[dev_qa.jsonl] PASSED [ 55%]
++metrix/e1-pilot/tests/test_st12.py::test_data_file_one_byte[candidates.json] PASSED [ 55%]
++metrix/e1-pilot/tests/test_st12.py::test_data_file_one_byte[general_dev.jsonl] PASSED [ 56%]
++metrix/e1-pilot/tests/test_st12.py::test_data_file_one_byte[anchor_text.jsonl] PASSED [ 56%]
++metrix/e1-pilot/tests/test_st12.py::test_verify_positive_control PASSED  [ 57%]
++metrix/e1-pilot/tests/test_st12.py::test_cli_stops_on_tampered_data PASSED [ 57%]
++metrix/e1-pilot/tests/test_st12.py::test_cli_stops_on_tampered_input PASSED [ 58%]
++metrix/e1-pilot/tests/test_st12.py::test_parse_jsonl_splits_on_newline_only PASSED [ 58%]
++metrix/e1-pilot/tests/test_stats.py::test_tie_with_the_true_answer_is_wrong PASSED [ 59%]
++metrix/e1-pilot/tests/test_stats.py::test_all_candidates_tied_gives_accuracy_zero PASSED [ 59%]
++metrix/e1-pilot/tests/test_stats.py::test_fact_score_is_the_mean_over_questions_and_acc_the_mean_over_facts PASSED [ 60%]
++metrix/e1-pilot/tests/test_stats.py::test_seed_average_is_the_per_fact_mean PASSED [ 60%]
++metrix/e1-pilot/tests/test_stats.py::test_bootstrap_resamples_facts_within_strata PASSED [ 61%]
++metrix/e1-pilot/tests/test_stats.py::test_bootstrap_does_not_depend_on_the_number_of_questions PASSED [ 61%]
++metrix/e1-pilot/tests/test_stats.py::test_percentile_linear_interpolation PASSED [ 62%]
++metrix/e1-pilot/tests/test_stats.py::test_dnll_is_mean_over_domains_of_window_means PASSED [ 62%]
++metrix/e1-pilot/tests/test_stats.py::test_size_estimate_formula PASSED   [ 63%]
++metrix/e1-pilot/tests/test_stats.py::test_immediate_gain_and_halfwidth_at_zero PASSED [ 64%]
++metrix/e1-pilot/tests/test_stops.py::test_every_code_has_a_check PASSED  [ 64%]
++metrix/e1-pilot/tests/test_stops.py::test_actions_come_from_the_frozen_protocol PASSED [ 65%]
++metrix/e1-pilot/tests/test_stops.py::test_st1 PASSED                     [ 65%]
++metrix/e1-pilot/tests/test_stops.py::test_st2 PASSED                     [ 66%]
++metrix/e1-pilot/tests/test_stops.py::test_st3 PASSED                     [ 66%]
++metrix/e1-pilot/tests/test_stops.py::test_st4_st5 PASSED                 [ 67%]
++metrix/e1-pilot/tests/test_stops.py::test_st6 PASSED                     [ 67%]
++metrix/e1-pilot/tests/test_stops.py::test_st7 PASSED                     [ 68%]
++metrix/e1-pilot/tests/test_stops.py::test_gpu_clock_counts_a_segment_left_open_by_a_dead_process PASSED [ 68%]
++metrix/e1-pilot/tests/test_stops.py::test_st8 PASSED                     [ 69%]
++metrix/e1-pilot/tests/test_stops.py::test_st9 PASSED                     [ 69%]
++metrix/e1-pilot/tests/test_stops.py::test_st10 PASSED                    [ 70%]
++metrix/e1-pilot/tests/test_stops.py::test_st11 PASSED                    [ 70%]
++metrix/e1-pilot/tests/test_stops.py::test_preflight_summary_and_flops PASSED [ 71%]
++metrix/e1-pilot/tests/test_stops.py::test_st12 PASSED                    [ 71%]
++metrix/e1-pilot/tests/test_stops.py::test_st13 PASSED                    [ 72%]
++metrix/e1-pilot/tests/test_stops.py::test_nonfinite_carries_no_status_and_st6_decides PASSED [ 73%]
++metrix/e1-pilot/tests/test_stops.py::test_determinism_settings PASSED    [ 73%]
++metrix/e1-pilot/tests/test_test_data.py::test_refuses_in_the_current_state PASSED [ 74%]
++metrix/e1-pilot/tests/test_test_data.py::test_refusal_never_parses_test_rows PASSED [ 74%]
++metrix/e1-pilot/tests/test_test_data.py::test_refuses_without_data PASSED [ 75%]
++metrix/e1-pilot/tests/test_test_data.py::test_generation_needs_authorization PASSED [ 75%]
++metrix/e1-pilot/tests/test_test_data.py::test_gate0_record_condition_positive_control PASSED [ 76%]
++metrix/e1-pilot/tests/test_test_data.py::test_gate0_record_condition[missing] PASSED [ 76%]
++metrix/e1-pilot/tests/test_test_data.py::test_gate0_record_condition[dirty] PASSED [ 77%]
++metrix/e1-pilot/tests/test_test_data.py::test_gate0_record_condition[smoke] PASSED [ 77%]
++metrix/e1-pilot/tests/test_test_data.py::test_gate0_record_condition[not_pass] PASSED [ 78%]
++metrix/e1-pilot/tests/test_test_data.py::test_gate0_record_condition[not_tested] PASSED [ 78%]
++metrix/e1-pilot/tests/test_test_data.py::test_gate0_record_condition[other_commit] PASSED [ 79%]
++metrix/e1-pilot/tests/test_test_data.py::test_gate0_record_condition[wrong_kind] PASSED [ 79%]
++metrix/e1-pilot/tests/test_test_data.py::test_selection_record_condition_positive_control PASSED [ 80%]
++metrix/e1-pilot/tests/test_test_data.py::test_selection_record_condition[missing] PASSED [ 80%]
++metrix/e1-pilot/tests/test_test_data.py::test_selection_record_condition[smoke] PASSED [ 81%]
++metrix/e1-pilot/tests/test_test_data.py::test_selection_record_condition[bad_selection] PASSED [ 82%]
++metrix/e1-pilot/tests/test_test_data.py::test_selection_record_condition[S_selected] PASSED [ 82%]
++metrix/e1-pilot/tests/test_test_data.py::test_selection_record_condition[data_hashes] PASSED [ 83%]
++metrix/e1-pilot/tests/test_test_data.py::test_selection_record_condition[checkpoint] PASSED [ 83%]
++metrix/e1-pilot/tests/test_test_data.py::test_selection_record_condition[unbound] PASSED [ 84%]
++metrix/e1-pilot/tests/test_test_data.py::test_selection_record_condition[wrong_kind] PASSED [ 84%]
++metrix/e1-pilot/tests/test_test_data.py::test_pending_interpretations_block_test PASSED [ 85%]
++metrix/e1-pilot/tests/test_test_data.py::test_run_test_part_rechecks_the_committed_records PASSED [ 85%]
++metrix/e1-pilot/tests/test_train.py::test_plan_has_30_runs_and_s_y_inherit_f PASSED [ 86%]
++metrix/e1-pilot/tests/test_train.py::test_s_and_y_follow_another_f_selection PASSED [ 86%]
++metrix/e1-pilot/tests/test_train.py::test_selection_rule PASSED          [ 87%]
++metrix/e1-pilot/tests/test_train.py::test_trainable_counts_random_model[F-F1] PASSED [ 87%]
++metrix/e1-pilot/tests/test_train.py::test_trainable_counts_random_model[A-A1] PASSED [ 88%]
++metrix/e1-pilot/tests/test_train.py::test_trainable_counts_random_model[S-None] PASSED [ 88%]
++metrix/e1-pilot/tests/test_train.py::test_trainable_counts_random_model[Y-None] PASSED [ 89%]
++metrix/e1-pilot/tests/test_train.py::test_trainable_counts_random_model[L-L1] PASSED [ 89%]
++metrix/e1-pilot/tests/test_train.py::test_trainable_counts_random_model[L-L2] PASSED [ 90%]
++metrix/e1-pilot/tests/test_train.py::test_trainable_counts_protocol_architecture[F-F1] PASSED [ 91%]
++metrix/e1-pilot/tests/test_train.py::test_trainable_counts_protocol_architecture[A-A1] PASSED [ 91%]
++metrix/e1-pilot/tests/test_train.py::test_trainable_counts_protocol_architecture[S-None] PASSED [ 92%]
++metrix/e1-pilot/tests/test_train.py::test_trainable_counts_protocol_architecture[Y-None] PASSED [ 92%]
++metrix/e1-pilot/tests/test_train.py::test_trainable_counts_protocol_architecture[L-L1] PASSED [ 93%]
++metrix/e1-pilot/tests/test_train.py::test_trainable_counts_protocol_architecture[L-L2] PASSED [ 93%]
++metrix/e1-pilot/tests/test_train.py::test_formal_mode_cannot_take_a_shortened_step_count PASSED [ 94%]
++metrix/e1-pilot/tests/test_train.py::test_formal_mode_does_not_train_on_cpu PASSED [ 94%]
++metrix/e1-pilot/tests/test_train.py::test_run_length_comes_from_the_mode PASSED [ 95%]
++metrix/e1-pilot/tests/test_train.py::test_lr_schedule PASSED             [ 95%]
++metrix/e1-pilot/tests/test_train.py::test_batch_schedule PASSED          [ 96%]
++metrix/e1-pilot/tests/test_train.py::test_anchor_schedule PASSED         [ 96%]
++metrix/e1-pilot/tests/test_train.py::test_padded_ce_is_token_weighted_and_ignores_padding PASSED [ 97%]
++metrix/e1-pilot/tests/test_train.py::test_training_input_ends_with_endoftext PASSED [ 97%]
++metrix/e1-pilot/tests/test_train.py::test_weight_decay_only_on_2d PASSED [ 98%]
++metrix/e1-pilot/tests/test_train.py::test_smoke_run_is_reproducible PASSED [ 98%]
++metrix/e1-pilot/tests/test_train.py::test_preflight_runs_exactly_the_protocol_steps PASSED [ 99%]
++metrix/e1-pilot/tests/test_train.py::test_kl_call_site_order_and_gradient PASSED [100%]
++
++======================== 189 passed in 99.64s (0:01:39) ========================
++exit=0
++# Executor dump after the fixes (evaluate._sliced now compares every scored id; data from data_c): compare with the round-1 dump of t5_dump_for_audit.txt. Mon Nov 23 08:05:05 UTC 2026
++$ <SCRATCH>/venv/bin/python metrix/e1-pilot/reports/impl_b/dump_for_audit.py --inputs <SCRATCH>/inputs --data <SCRATCH>/data_c --out <SCRATCH>/audit_dump_c.json
++qa_inputs 1280, cb_inputs 480, training sequences {'train_F.jsonl': 120, 'train_S.jsonl': 120, 'train_Y.jsonl': 240}, schedules 6, anchor steps 300
++written <SCRATCH>/audit_dump_c.json sha256 3ba470a97419dd34bd655e97d4d061c7de72700ae7692de37d14e1db2615be50
++RESULT: PASS
++exit=0
++$ cmp <SCRATCH>/audit_dump_b.json <SCRATCH>/audit_dump_c.json
++exit=0
++(cmp exit 0 = the round-2 dump is byte-identical to the round-1 dump)
+diff --git a/metrix/e1-pilot/src/metrix_e1/compute.py b/metrix/e1-pilot/src/metrix_e1/compute.py
+index 1ac64e5..d3ebcb2 100644
+--- a/metrix/e1-pilot/src/metrix_e1/compute.py
++++ b/metrix/e1-pilot/src/metrix_e1/compute.py
+@@ -95,43 +95,55 @@ class DeviceLedger:
+         return name
+ 
+     def check(self, fz, current_name):
+-        """ST9 at the start of a run."""
+-        STP.st9(fz, self.recorded(), current_name)
++        """ST9 at the start of a run. Nothing recorded yet is a wrong call order (record_first comes first, at the
++        first model load), not a device change: it raises RuntimeError, not ST9."""
++        recorded = self.recorded()
++        if recorded is None:
++            raise RuntimeError("no device name recorded in %s; record_first() at the first model load" % self.path)
++        STP.st9(fz, recorded, current_name)
+         return current_name
+ 
+ 
+ # ------------------------------------------------------------------------------------------ GPU clock (7, ST7)
+ 
+ class GpuClock:
+-    """Cumulative GPU wall-clock from the first model load (section 7). Closed segments are stored in a JSON file;
+-    `open()` starts a segment, `close()` ends it; `used()` = closed segments + the open one."""
++    """Cumulative GPU wall-clock from the first model load (section 7), kept in a JSON file {"segments": [[start,
++    end], ...], "open": start or null}. open() writes its start at once, so a segment of a process that dies is not
++    lost: a later process sees it open and counts it up to now (it may over-count the time after the crash, never
++    under-count; ST7 stays on the safe side); close() ends the open segment, whichever process opened it."""
+ 
+     def __init__(self, path, now=time.time):
+         self.path = Path(path)
+         self.now = now
+-        self.started = None
+ 
+-    def _segments(self):
++    def _state(self):
+         if not self.path.exists():
+-            return []
+-        return json.loads(self.path.read_text(encoding="utf-8"))["segments"]
++            return {"segments": [], "open": None}
++        return json.loads(self.path.read_text(encoding="utf-8"))
++
++    def _write(self, state):
++        self.path.parent.mkdir(parents=True, exist_ok=True)
++        self.path.write_text(json.dumps(state) + "\n", encoding="utf-8")
+ 
+     def open(self):
+-        if self.started is not None:
+-            raise RuntimeError("GPU clock segment already open")
+-        self.started = self.now()
++        st = self._state()
++        if st["open"] is not None:
++            raise RuntimeError("GPU clock segment already open since %r (close it first)" % st["open"])
++        st["open"] = self.now()
++        self._write(st)
+ 
+     def close(self):
+-        if self.started is None:
++        st = self._state()
++        if st["open"] is None:
+             raise RuntimeError("no GPU clock segment open")
+-        seg = self._segments() + [[self.started, self.now()]]
+-        self.path.parent.mkdir(parents=True, exist_ok=True)
+-        self.path.write_text(json.dumps({"segments": seg}) + "\n", encoding="utf-8")
+-        self.started = None
++        st["segments"].append([st["open"], self.now()])
++        st["open"] = None
++        self._write(st)
+ 
+     def used(self):
+-        closed = sum(b - a for a, b in self._segments())
+-        return closed + (self.now() - self.started if self.started is not None else 0.0)
++        st = self._state()
++        closed = sum(b - a for a, b in st["segments"])
++        return closed + (self.now() - st["open"] if st["open"] is not None else 0.0)
+ 
+     def check(self, fz, contract, next_seconds=0.0):
+         """ST7 before a step: stop if the limit is exceeded or the next step would exceed it."""
+@@ -141,20 +153,21 @@ class GpuClock:
+ 
+ # ------------------------------------------------------------------------------------ FLOPs (10; B18) and cost
+ 
+-def flops(params, tokens, kind):
+-    """Section 10: training ~ 6 P T, forward ~ 2 P T."""
+-    return {"train": 6, "forward": 2}[kind] * params * tokens
++def flops(contract, params, tokens, kind):
++    """Section 10 (coefficients from the frozen text, contract.Accounting): training ~ 6 P T, forward ~ 2 P T."""
++    acc = contract.accounting
++    return {"train": acc.train_flops_per_param_token, "forward": acc.forward_flops_per_param_token}[kind] * params * tokens
+ 
+ 
+-def run_flops(result, params_forward):
++def run_flops(contract, result, params_forward):
+     """Compute accounting of one training run (train.RunResult): fact-token training FLOPs and, for arm A, the
+-    anchor FLOPs listed separately (base forward 2 P T_anchor + trained model forward and backward 6 P T_anchor)."""
++    anchor FLOPs listed separately (B18: base forward + trained model forward and backward)."""
+     out = {"params_forward": params_forward, "fact_tokens": result.fact_tokens, "steps": result.steps_run,
+-           "wall_seconds": result.wall_seconds, "train_flops": flops(params_forward, result.fact_tokens, "train")}
++           "wall_seconds": result.wall_seconds, "train_flops": flops(contract, params_forward, result.fact_tokens, "train")}
+     if result.anchor_tokens:
+         out["anchor_tokens"] = result.anchor_tokens
+-        out["anchor_flops"] = (flops(params_forward, result.anchor_tokens, "forward")
+-                               + flops(params_forward, result.anchor_tokens, "train"))
++        out["anchor_flops"] = (flops(contract, params_forward, result.anchor_tokens, "forward")
++                               + flops(contract, params_forward, result.anchor_tokens, "train"))
+     return out
+ 
+ 
+@@ -185,18 +198,29 @@ def preflight_summary(log, device):
+             "tokens_per_second": sum(tokens[1:] or tokens) / sum(rest), "peak_memory_bytes": peak_memory_bytes(device)}
+ 
+ 
+-def estimate_total_hours(contract, mean_step_seconds, fact_tokens_per_step, anchor_tokens_per_step, eval_forward_tokens,
+-                         used_seconds=0.0):
+-    """B17: (mean seconds per step) x sum over the 30 runs of steps x FLOP factor (A: 1 + 8 T_anchor / (6 T_fact))
+-    + evaluation forward tokens at one third of the per-token training time + GPU time already used. Hours."""
+-    tr = contract.training
+-    counts = contract.arms.counts
++def evaluation_units(contract):
++    """B17: evaluations of the pilot in units of one DEV evaluation (evaluate.evaluate_model, split "dev"): N, the 30
++    runs and the second evaluation of F's 3 selected checkpoints (G0.8) on DEV; N and the 30 runs once on TEST,
++    whose question part scales with test / dev questions per fact (taken for the whole evaluation: an upper side)."""
++    tr, acc = contract.training, contract.accounting
++    dev = 1 + contract.arms.counts["total_training_runs"] + len(tr.training_seeds)
++    test = (1 + contract.arms.counts["total_training_runs"]) * acc.test_questions_per_fact / acc.dev_questions_per_fact
++    return dev + test
++
++
++def estimate_total_hours(contract, mean_step_seconds, fact_tokens_per_step, anchor_tokens_per_step,
++                         dev_evaluation_seconds, used_seconds=0.0):
++    """B17: (measured mean seconds per step of the first configuration) x sum over the 30 runs of steps x FLOP factor
++    (A: 1 + (forward + train) T_anchor / (train T_fact), section 10 coefficients) + (measured seconds of one float32
++    DEV evaluation on the A100) x evaluation_units + GPU time already used. Hours."""
++    tr, acc = contract.training, contract.accounting
+     a_runs = len(contract.arms.configs["A"]) + len([s for s in tr.training_seeds if s != tr.search_seed])
+-    other_runs = counts["total_training_runs"] - a_runs
+-    a_factor = 1.0 + 8.0 * anchor_tokens_per_step / (6.0 * fact_tokens_per_step)
++    other_runs = contract.arms.counts["total_training_runs"] - a_runs
++    a_factor = 1.0 + ((acc.forward_flops_per_param_token + acc.train_flops_per_param_token) * anchor_tokens_per_step
++                      / (acc.train_flops_per_param_token * fact_tokens_per_step))
+     train_s = mean_step_seconds * tr.total_steps * (other_runs + a_runs * a_factor)
+-    per_token_train = mean_step_seconds / fact_tokens_per_step
+-    eval_s = eval_forward_tokens * per_token_train / 3.0
++    units = evaluation_units(contract)
++    eval_s = dev_evaluation_seconds * units
+     return (train_s + eval_s + used_seconds) / 3600.0, {"train_seconds": train_s, "eval_seconds": eval_s,
+-                                                        "used_seconds": used_seconds, "a_runs": a_runs,
+-                                                        "other_runs": other_runs, "a_factor": a_factor}
++                                                        "evaluation_units": units, "used_seconds": used_seconds,
++                                                        "a_runs": a_runs, "other_runs": other_runs, "a_factor": a_factor}
+diff --git a/metrix/e1-pilot/src/metrix_e1/contract.py b/metrix/e1-pilot/src/metrix_e1/contract.py
+index 45ff20c..0da4ec4 100644
+--- a/metrix/e1-pilot/src/metrix_e1/contract.py
++++ b/metrix/e1-pilot/src/metrix_e1/contract.py
+@@ -15,7 +15,7 @@ meaning. Numbers that the protocol repeats in two places are compared with each
+ import re
+ from dataclasses import dataclass
+ 
+-from .errors import ImplementationFail
++from .errors import STATUSES, ImplementationFail
+ 
+ NUM = r"([0-9]+(?:\.[0-9]+)?(?:e-?[0-9]+)?)"
+ 
+@@ -256,6 +256,7 @@ def _statistics(dm, protocol_text):
+         r"`Δ\* = mean\(d_f\)`;95%% CI = 第 %s 与第 %s 百分位。随机数:`rng_rule\(BOOTSTRAP_SEED, \"([^\"]+)\"\)`。" % (NUM, NUM),
+         ln, "protocol section 6 bootstrap").groups()
+     _eq((s1, s2), tuple(dm["facts"]["strata"]), "bootstrap strata vs DATA_MANIFEST facts.strata")
++    _fm(r"<比较>:<split>:<seed 或 avg>", purpose, "bootstrap purpose (stats.purpose writes '<X>-<Y>:<split>:<seed>')")
+     g10 = protocol_row(protocol_text, "G0.10")
+     za, zp, d1, d2, d3 = _fm(
+         r"能估计 E1-V1 的规模:对 Δ\(L−F\)、Δ\(A−F\) 的 seed-average 配对差 d_f 算出标准差 σ_d\(有限\);分别用 σ_d 的 bootstrap "
+@@ -286,6 +287,7 @@ class Gate:
+     g8_nll_tol: float
+     g9_acc_max: float
+     too_hard_below: float           # section 8: < 0.40 "对该模型与该训练量过难"
++    t1_acc_min: float               # section 8 TEST confirmation T1 (T2, T3 reuse the G0.6 / G0.7 / G0.3 numbers)
+ 
+ 
+ def _gate(protocol_text):
+@@ -312,12 +314,16 @@ def _gate(protocol_text):
+                          r"OPTIMIZATION_OR_CAPACITY_UNRESOLVED。两者都属于 PIPELINE_NOT_QUALIFIED。" % (NUM, NUM, NUM),
+                          protocol_line(protocol_text, "- seed-average `Acc(F, DEV-QA, learned)` <"),
+                          "section 8 too-hard line").groups()
++    t1 = float(_fm(r"seed-average `Acc\(F, TEST-QA, learned\)` ≥ %s,且 seed-average Δ\(F−N\) 的 95%% CI 下界 > 0" % NUM,
++                   protocol_row(protocol_text, "T1"), "T1").group(1))
++    _fm(r"S、Y 在 TEST-QA 上满足 G0\.6、G0\.7 的同样数值", protocol_row(protocol_text, "T2"), "T2")
++    _fm(r"N 在 TEST-QA 上满足 G0\.3 的同样范围", protocol_row(protocol_text, "T3"), "T3")
+     _eq(float(lo2), float(hard), "too-hard bound vs unresolved interval")
+     _eq(float(hi2), g5, "unresolved interval upper bound vs G0.5")
+     return Gate(g3_learned=tuple(g3[0:2]), g3_stratum=tuple(g3[2:4]), g3_unread=tuple(g3[4:6]), g3_cb=tuple(g3[6:8]),
+                 g4_cb_min=g4, g5_acc_min=g5, g6_point_max=g6[0], g6_upper_max=g6[1], g7_point_max=g7[0],
+                 g7_upper_max=g7[1], g8_score_tol=g8[0], g8_top2_tol=g8[1], g8_nll_tol=g8[2], g9_acc_max=g9,
+-                too_hard_below=float(hard))
++                too_hard_below=float(hard), t1_acc_min=t1)
+ 
+ 
+ # ------------------------------------------------------------------------------------- stops (sections 0, 11)
+@@ -353,6 +359,37 @@ def preflight_steps(protocol_text):
+                    protocol_line(protocol_text, "   预检(").strip(), "preflight").group(1))
+ 
+ 
++# ------------------------------------------------------------------------------- record, statuses, splits (9, 10)
++
++@dataclass(frozen=True)
++class Accounting:
++    train_flops_per_param_token: int        # section 10: training FLOPs ~ 6 P T
++    forward_flops_per_param_token: int      # section 10: forward FLOPs ~ 2 P T
++    dev_questions_per_fact: int             # SPLIT_MANIFEST splits.DEV
++    test_questions_per_fact: int            # SPLIT_MANIFEST splits.TEST
++
++
++def _accounting(sm, protocol_text):
++    tr, fw = (int(x) for x in _fm(
++        r"Compute accounting 的算法:训练 FLOPs ≈ (\d+) · P · T,前向 FLOPs ≈ (\d+) · P · T\(P = 参与计算的参数量,T = token 数\);"
++        r"token、步数、wall-clock 取实测值;A 的锚文本算力单列。",
++        protocol_line(protocol_text, "Compute accounting 的算法"), "section 10 compute accounting").groups())
++    dev = int(_fm(r"(\d+) questions per fact \(learned and unread\), DEV templates", sm["splits"]["DEV"], "splits.DEV").group(1))
++    test = int(_fm(r"(\d+) questions per fact \(learned and unread\), TEST templates; not generated before the final freeze",
++                   sm["splits"]["TEST"], "splits.TEST").group(1))
++    return Accounting(train_flops_per_param_token=tr, forward_flops_per_param_token=fw, dev_questions_per_fact=dev,
++                      test_questions_per_fact=test)
++
++
++def check_status_vocabulary(protocol_text):
++    """Section 9: the fixed status set, read from the frozen protocol, must be errors.STATUSES (same words, same
++    order); otherwise the implementation does not match the protocol."""
++    line = protocol_line(protocol_text, "`PASS` / ")
++    words = tuple(w.strip().strip("`") for w in line.split(" / "))
++    _eq(words, STATUSES, "section 9 status vocabulary vs errors.STATUSES")
++    return words
++
++
+ # ------------------------------------------------------------------------------------------------------ all
+ 
+ @dataclass(frozen=True)
+@@ -363,6 +400,8 @@ class Contract:
+     statistics: Statistics
+     gate: Gate
+     stops: Stops
++    accounting: Accounting
++    statuses: tuple
+     preflight_steps: int
+ 
+ 
+@@ -372,4 +411,5 @@ def load(fz):
+     training = _training(ss, dm)
+     return Contract(training=training, arms=_arms(ss, dm, text), evaluation=_evaluation(dm, text),
+                     statistics=_statistics(dm, text), gate=_gate(text), stops=_stops(text, training),
++                    accounting=_accounting(fz.split_manifest, text), statuses=check_status_vocabulary(text),
+                     preflight_steps=preflight_steps(text))
+diff --git a/metrix/e1-pilot/src/metrix_e1/data.py b/metrix/e1-pilot/src/metrix_e1/data.py
+index 02bbc6c..85ca907 100644
+--- a/metrix/e1-pilot/src/metrix_e1/data.py
++++ b/metrix/e1-pilot/src/metrix_e1/data.py
+@@ -488,27 +488,30 @@ def check_exposure(facts, cands, corpora):
+ 
+ # ------------------------------------------------------------------------------------------ general DEV (2.7, 3)
+ 
+-_ROW_HEAD = re.compile(r'\{"domain": "[^"\\]*", "split": "([^"\\]*)", ')    # group 1: the split field only
++_ROW_HEAD = re.compile(rb'\{"domain": "[^"\\]*", "split": "([^"\\]*)", ')    # group 1: the split field only
+ 
+ 
+ def build_general_dev(p, tok, eval_sets_path, parcae_path):
+-    """2.7 general DEV windows (reference: reports/round5/l6_check.py). Only rows whose split field (read from the
+-    row prefix) is the DEV split are parsed and decoded. Window = the first general_max_tokens ids of the protocol
++    """2.7 general DEV windows (reference: reports/round5/l6_check.py). The file is read as bytes; only rows whose
++    split field (matched on the raw bytes of the row prefix) is the DEV split are decoded to text and parsed (protocol
++    section 3: parsing the split field and counting are not reading TEST; data-auditor stage B observation 1: no
++    test row is even decoded from UTF-8). Window = the first general_max_tokens ids of the protocol
+     tokenizer for the parcae-decoded text (special tokens skipped); text = decode of those ids (default arguments).
+     Rows {"domain", "doc_id", "ids", "text"}, domains in manifest order, file order within a domain."""
+     from tokenizers import Tokenizer
+     ptok = Tokenizer.from_file(str(parcae_path))
+     kept = collections.defaultdict(list)
+     rows_by_split = collections.Counter()           # counted from the row prefix only (counting is not reading)
+-    with open(eval_sets_path, encoding="utf-8") as fh:
++    want = p.general_dev_split.encode("ascii")
++    with open(eval_sets_path, "rb") as fh:
+         for lineno, line in enumerate(fh, 1):
+             m = _ROW_HEAD.match(line)
+             if m is None:
+                 raise ImplementationFail("eval_sets.jsonl line %d does not start with the domain and split fields" % lineno)
+-            rows_by_split[m.group(1)] += 1
+-            if m.group(1) != p.general_dev_split:
++            rows_by_split[m.group(1).decode("ascii", "replace")] += 1      # the split field only
++            if m.group(1) != want:
+                 continue
+-            r = json.loads(line)
++            r = json.loads(line.decode("utf-8"))
+             if r["split"] != p.general_dev_split:
+                 raise ImplementationFail("eval_sets.jsonl line %d: parsed split differs from the row prefix" % lineno)
+             if len(kept[r["domain"]]) < p.general_dev_per_domain:
+diff --git a/metrix/e1-pilot/src/metrix_e1/errors.py b/metrix/e1-pilot/src/metrix_e1/errors.py
+index 7801d5c..4c4eb1e 100644
+--- a/metrix/e1-pilot/src/metrix_e1/errors.py
++++ b/metrix/e1-pilot/src/metrix_e1/errors.py
+@@ -5,17 +5,18 @@ condition (e.g. "ST12") when one applies and the section 9 status the run must b
+ remaining stop conditions; this module only holds the classes the data side needs.
+ """
+ 
++# Checked against the frozen protocol's section 9 line by contract.check_status_vocabulary (contract.load).
+ STATUSES = ("PASS", "HYPOTHESIS_FAIL", "IMPLEMENTATION_FAIL", "OPTIMIZATION_FAIL", "CAPACITY_LIMIT",
+             "OPTIMIZATION_OR_CAPACITY_UNRESOLVED", "BLOCKED", "NOT_TESTED", "PIPELINE_NOT_QUALIFIED")
+ 
+ 
+ class ProtocolStop(Exception):
+     """A condition of the protocol that stops the run. `stop` is the section 11 code or None; `status` is a section 9
+-    status, or None only for a stop that gives the pilot no status (stops.st6 outside the selected configurations and
+-    the controls: the run's configuration is excluded from selection)."""
++    status, or None only for ST6 where no status is decided yet (train.NonFinite) or none applies (stops.st6 outside
++    the selected configurations and the controls: the run's configuration is excluded from selection)."""
+ 
+     def __init__(self, stop, status, message):
+-        if status not in STATUSES and not (status is None and stop is not None):
++        if status not in STATUSES and not (status is None and stop == "ST6"):
+             raise ValueError("status %r is not in the protocol section 9 vocabulary" % (status,))
+         self.stop = stop
+         self.status = status
+diff --git a/metrix/e1-pilot/src/metrix_e1/evaluate.py b/metrix/e1-pilot/src/metrix_e1/evaluate.py
+index 610b0f3..582da22 100644
+--- a/metrix/e1-pilot/src/metrix_e1/evaluate.py
++++ b/metrix/e1-pilot/src/metrix_e1/evaluate.py
+@@ -50,8 +50,9 @@ def _sliced(tok, context, candidate):
+     ctx = encode(tok, context)
+     if ids[:len(ctx)] != ctx:
+         raise ImplementationFail("candidate %r merges with the context at the boundary" % candidate)
+-    if len(ids) - len(ctx) != k_st(tok, candidate):
+-        raise ImplementationFail("candidate %r: %d scored tokens, K_st = %d" % (candidate, len(ids) - len(ctx), k_st(tok, candidate)))
++    if ids[len(ctx):] != encode(tok, " " + candidate):
++        raise ImplementationFail("candidate %r: scored ids %s are not encode(' ' + c) (K_st = %d)" % (
++            candidate, ids[len(ctx):], k_st(tok, candidate)))
+     return ids, len(ctx)
+ 
+ 
+@@ -80,6 +81,13 @@ def _no_autocast(device):
+     return torch.autocast(device_type=torch.device(device).type, enabled=False)
+ 
+ 
++def check_device(mode, device):
++    """Protocol sections 0 and 7: no model evaluation on CPU. Formal and preflight evaluations run on the GPU only;
++    smoke mode may use the CPU."""
++    if not mode.smoke and torch.device(device).type != "cuda":
++        raise ImplementationFail("%s mode evaluates only on the GPU (protocol sections 0 and 7)" % mode.name)
++
++
+ def sequence_logprobs(model, items, pad_id, device, batch_size):
+     """items: list of (ids, start). Returns [sum of log p(ids[t] | ids[<t]) for t >= start] in item order (float32
+     log-probabilities, float64 sums). Float32, no autocast."""
+@@ -147,12 +155,7 @@ def score_qa(model, tok, questions, candidates, facts, ev, device, batch_size=64
+     """s_QA for every question row {fact_id, template_id, question} with the 4 candidates of its fact. Returns one
+     row per question: fact_id, template_id, candidates, answer_index, scores, K, correct, prediction, top2_gap."""
+     answer = {f["fact_id"]: f["answer"] for f in facts}
+-    units = []
+-    for q in questions:
+-        cs = candidates[q["fact_id"]]
+-        units.append({"fact_id": q["fact_id"], "template_id": q["template_id"], "candidates": list(cs),
+-                      "answer_index": cs.index(answer[q["fact_id"]]),
+-                      "inputs": [qa_input(tok, q["question"], c, ev.answer_prefix) for c in cs]})
++    units = [_qa_unit(tok, q, candidates[q["fact_id"]], answer[q["fact_id"]], ev) for q in questions]
+     return _scored_rows(model, tok, units, ev.endoftext_id, device, batch_size, "s_QA")
+ 
+ 
+@@ -166,17 +169,22 @@ def train_templates(templates):
+     return out
+ 
+ 
++def _qa_unit(tok, q, cs, answer, ev):
++    return {"fact_id": q["fact_id"], "template_id": q["template_id"], "candidates": list(cs),
++            "answer_index": cs.index(answer), "inputs": [qa_input(tok, q["question"], c, ev.answer_prefix) for c in cs]}
++
++
++def _cb_unit(tok, f, template, cs, answer):
++    prefix = statement_prefix(template["text"], f["entity"])
++    return {"fact_id": f["fact_id"], "template_id": template["template_id"], "candidates": list(cs),
++            "answer_index": cs.index(answer), "inputs": [cb_input(tok, prefix, c) for c in cs]}
++
++
+ def score_cb(model, tok, facts, candidates, templates, ev, device, batch_size=64):
+     """TRAIN closed book (protocol section 5) for every learned fact: s_ST(f, c) for c in C_f (B9)."""
+     tt = train_templates(templates)
+-    units = []
+-    for f in facts:
+-        if f["exposure"] != "learned":
+-            continue
+-        cs = candidates[f["fact_id"]]
+-        prefix = statement_prefix(tt[f["relation"]]["text"], f["entity"])
+-        units.append({"fact_id": f["fact_id"], "template_id": tt[f["relation"]]["template_id"], "candidates": list(cs),
+-                      "answer_index": cs.index(f["answer"]), "inputs": [cb_input(tok, prefix, c) for c in cs]})
++    units = [_cb_unit(tok, f, tt[f["relation"]], candidates[f["fact_id"]], f["answer"])
++             for f in facts if f["exposure"] == "learned"]
+     return _scored_rows(model, tok, units, ev.endoftext_id, device, batch_size, "s_ST")
+ 
+ 
+@@ -187,21 +195,10 @@ def score_s_mapping(model, tok, facts, candidates, templates, dev_qa, train_S, e
+     by_id = {f["fact_id"]: f for f in facts}
+     s_answer = {r["fact_id"]: r["answer_fact_id"] for r in train_S}
+     tt = train_templates(templates)
+-    qa_units, cb_units = [], []
+-    for q in dev_qa:
+-        if q["fact_id"] not in s_answer:
+-            continue
+-        af = by_id[s_answer[q["fact_id"]]]
+-        cs = candidates[af["fact_id"]]
+-        qa_units.append({"fact_id": q["fact_id"], "template_id": q["template_id"], "candidates": list(cs),
+-                         "answer_index": cs.index(af["answer"]),
+-                         "inputs": [qa_input(tok, q["question"], c, ev.answer_prefix) for c in cs]})
+-    for fid, afid in s_answer.items():
+-        f, af = by_id[fid], by_id[afid]
+-        cs = candidates[afid]
+-        prefix = statement_prefix(tt[f["relation"]]["text"], f["entity"])
+-        cb_units.append({"fact_id": fid, "template_id": tt[f["relation"]]["template_id"], "candidates": list(cs),
+-                         "answer_index": cs.index(af["answer"]), "inputs": [cb_input(tok, prefix, c) for c in cs]})
++    qa_units = [_qa_unit(tok, q, candidates[s_answer[q["fact_id"]]], by_id[s_answer[q["fact_id"]]]["answer"], ev)
++                for q in dev_qa if q["fact_id"] in s_answer]
++    cb_units = [_cb_unit(tok, by_id[fid], tt[by_id[fid]["relation"]], candidates[afid], by_id[afid]["answer"])
++                for fid, afid in s_answer.items()]
+     return (_scored_rows(model, tok, qa_units, ev.endoftext_id, device, batch_size, "S-mapping s_QA"),
+             _scored_rows(model, tok, cb_units, ev.endoftext_id, device, batch_size, "S-mapping s_ST"))
+ 
+@@ -266,6 +263,10 @@ def greedy_generate(model, contexts, ev, device, batch_size=32):
+ def em(model, tok, questions, facts, ev, device, batch_size=32):
+     """EM for every question row: generation context chat(q) + 'The answer is' (the scoring context), greedy, decode
+     with skip_special_tokens=True, normalize, compare with norm(a_f)."""
++    marks = tok.convert_ids_to_tokens([ev.think_open_id, ev.think_close_id])
++    if marks != ["<think>", "</think>"]:
++        raise ImplementationFail("ids %d, %d are %r, not <think>, </think> (protocol section 5)" % (
++            ev.think_open_id, ev.think_close_id, marks))
+     answer = {f["fact_id"]: f["answer"] for f in facts}
+     contexts = [encode(tok, chat_prompt(tok, q["question"]) + ev.answer_prefix) for q in questions]
+     gens = greedy_generate(model, contexts, ev, device, batch_size)
+@@ -291,16 +292,27 @@ def general_nll(model, windows, ev, device, batch_size=16):
+ 
+ # ------------------------------------------------------------------------------------------- one evaluation
+ 
+-def evaluate_model(model, tok, data, templates, ev, device, with_em=True, with_s_mapping=False, batch_size=64):
+-    """Section 5 evaluation of one model on the non-TEST data of `data` (parsed files of the data directory):
+-    DEV-QA scores, TRAIN closed book, EM (DEV-QA), general DEV NLL; optionally S's own-mapping accuracy."""
+-    facts, cands, dev = data["facts.jsonl"], data["candidates.json"], data["dev_qa.jsonl"]
+-    out = {"dev_qa": score_qa(model, tok, dev, cands, facts, ev, device, batch_size),
++SPLIT_FILES = {"dev": ("dev_qa.jsonl", "general_dev.jsonl"), "test": ("test_qa.jsonl", "general_test.jsonl")}
++
++
++def evaluate_model(model, tok, data, templates, ev, mode, device, split="dev", with_em=True, with_s_mapping=False,
++                   batch_size=64):
++    """Section 5 evaluation of one model (parsed files of the data directory in `data`): QA scores of the split, the
++    TRAIN closed book, EM on the split's questions, general-text NLL of the split; optionally (DEV) S's own-mapping
++    accuracy. Output keys: <split>_qa, train_cb, general_<split>, em_<split>[, s_mapping_dev_qa, s_mapping_cb].
++    split "test" needs test_qa.jsonl / general_test.jsonl in `data`, which only exist after the TEST generator's
++    preconditions (test_data.py). Formal and preflight modes evaluate on the GPU only (check_device)."""
++    check_device(mode, device)
++    qa_file, gen_file = SPLIT_FILES[split]
++    facts, cands, qs = data["facts.jsonl"], data["candidates.json"], data[qa_file]
++    out = {"%s_qa" % split: score_qa(model, tok, qs, cands, facts, ev, device, batch_size),
+            "train_cb": score_cb(model, tok, facts, cands, templates, ev, device, batch_size),
+-           "general_dev": general_nll(model, data["general_dev.jsonl"], ev, device, max(1, batch_size // 4))}
++           "general_%s" % split: general_nll(model, data[gen_file], ev, device, max(1, batch_size // 4))}
+     if with_em:
+-        out["em_dev"] = em(model, tok, dev, facts, ev, device, max(1, batch_size // 2))
++        out["em_%s" % split] = em(model, tok, qs, facts, ev, device, max(1, batch_size // 2))
+     if with_s_mapping:
+-        qa, cb = score_s_mapping(model, tok, facts, cands, templates, dev, data["train_S.jsonl"], ev, device, batch_size)
++        if split != "dev":
++            raise ValueError("S's own-mapping accuracy is reported on DEV only (protocol section 8)")
++        qa, cb = score_s_mapping(model, tok, facts, cands, templates, qs, data["train_S.jsonl"], ev, device, batch_size)
+         out["s_mapping_dev_qa"], out["s_mapping_cb"] = qa, cb
+     return out
+diff --git a/metrix/e1-pilot/src/metrix_e1/gate.py b/metrix/e1-pilot/src/metrix_e1/gate.py
+index c61cff1..10f9e95 100644
+--- a/metrix/e1-pilot/src/metrix_e1/gate.py
++++ b/metrix/e1-pilot/src/metrix_e1/gate.py
+@@ -1,13 +1,14 @@
+-"""Gate 0 of METRIX E1-PILOT: G0.1-G0.10 and the status words.
++"""Gate 0 (G0.1-G0.10), the TEST confirmation (T1-T3) and the status words of METRIX E1-PILOT.
+ 
+-Protocol v1.1 section 8 (Gate 0 table; "seed-average"; the notes under the table) and section 9 (the fixed status
+-vocabulary and which reason belongs to which condition). Thresholds come from metrix_e1.contract (parsed from the
+-frozen protocol text). Status words are only those of section 9 (errors.STATUSES); interpretation B14 covers what
+-section 9 leaves open, B15 the meaning of G0.8's terms.
++Protocol v1.1 section 8 (Gate 0 table; "seed-average"; the notes under the table; T1-T3 and the final status) and
++section 9 (the fixed status vocabulary and which reason belongs to which condition). Thresholds come from
++metrix_e1.contract (parsed from the frozen protocol text). Status words are only those of section 9
++(errors.STATUSES, checked against the frozen protocol by contract.load); interpretation B14 covers what section 9
++leaves open for Gate 0, B24 for T1-T3, B15 the meaning of G0.8's terms.
+ 
+-compute_values() turns evaluations into the numbers each condition reads; judge() applies the thresholds. In smoke
+-mode judge() computes everything but the Gate 0 status is fixed to NOT_TESTED with the note "冒烟测试，不构成结论"
+-(Implementation Task Order V1, section 7).
++compute_values() / compute_test_values() turn evaluation summaries into the numbers each condition reads; judge() /
++judge_test() apply the thresholds. In smoke mode the conditions are computed but the status is fixed to NOT_TESTED
++with the note "冒烟测试，不构成结论" (Implementation Task Order V1, section 7); preflight mode is refused.
+ """
+ import math
+ 
+@@ -19,6 +20,8 @@ CONDITIONS = ("G0.1", "G0.2", "G0.3", "G0.4", "G0.5", "G0.6", "G0.7", "G0.8", "G
+ REASON = {"G0.1": "IMPLEMENTATION_FAIL", "G0.2": "IMPLEMENTATION_FAIL", "G0.6": "IMPLEMENTATION_FAIL",
+           "G0.7": "IMPLEMENTATION_FAIL", "G0.8": "IMPLEMENTATION_FAIL", "G0.4": "OPTIMIZATION_FAIL",
+           "G0.5": "OPTIMIZATION_OR_CAPACITY_UNRESOLVED", "G0.3": None, "G0.9": None, "G0.10": None}
++TEST_CONDITIONS = ("T1", "T2", "T3")
++TEST_REASON = {"T1": "OPTIMIZATION_OR_CAPACITY_UNRESOLVED", "T2": "IMPLEMENTATION_FAIL", "T3": None}
+ RECALIBRATION_NOTE = "越过 G0.3 或 G0.9 的界限不代表机制失败:它触发 benchmark 重新校准(新协议版本)"
+ TOO_HARD_NOTE = "对该模型与该训练量过难"
+ 
+@@ -33,6 +36,11 @@ def _in(x, iv):
+     return iv[0] <= x <= iv[1]
+ 
+ 
++def _judged_mode(mode):
++    if mode.preflight:
++        raise ValueError("preflight mode is timing only; Gate 0 and T1-T3 are not judged in it")
++
++
+ # ----------------------------------------------------------------------------------------- G0.8 (B15)
+ 
+ def repro_compare(ev1, ev2, g):
+@@ -63,84 +71,118 @@ def repro_compare(ev1, ev2, g):
+ 
+ # -------------------------------------------------------------------------------------- values from evaluations
+ 
++class _Ctx:
++    """Fact groups, strata and seed-averages shared by the computations of one split."""
++
++    def __init__(self, inp, contract, split):
++        self.st = contract.statistics
++        self.seeds = contract.training.training_seeds
++        self.inp, self.split, self.label = inp, split, split.upper()
++        self.grp = S.groups(inp["facts"], self.st.strata)
++        self.stratum_of = {f["fact_id"]: f["stratum"] for f in inp["facts"]}
++        self._avg = {}
++
++    def scores(self, arm, seed):
++        key = "scores_%s" % self.split
++        if arm == "N":
++            return self.inp["N"][key]
++        if seed == "avg":
++            if arm not in self._avg:
++                self._avg[arm] = S.seed_average([self.inp[arm][s][key] for s in self.seeds])
++            return self._avg[arm]
++        return self.inp[arm][seed][key]
++
++    def cmp(self, x, y, seed, group="learned", label=None):
++        label = label or "%s-%s" % (x, y)
++        return S.paired_bootstrap(self.scores(x, seed), self.scores(y, seed), self.grp[group], self.stratum_of, self.st,
++                                  S.purpose(label, self.label, seed))
++
++
+ def compute_values(inp, contract):
+     """Numbers read by G0.1-G0.10. `inp`:
+       leakage      the Gate 0 leakage report (leakage.run_gate0)
+       all_finite   True iff every loss, score and NLL used was finite; nonfinite: list of descriptions
+       facts        facts.jsonl rows
+-      N            stats.evaluation_summary of arm N
++      N            stats.evaluation_summary of arm N (split "dev")
+       F, S, Y, L, A  {seed: stats.evaluation_summary} of the selected configuration (F, L, A) / F's configuration (S, Y)
+       repro        {seed: (evaluation 1, evaluation 2)} of F's selected configuration (raw evaluate_model outputs)
+     """
+-    st, g = contract.statistics, contract.gate
+-    facts = inp["facts"]
+-    grp = S.groups(facts, st.strata)
+-    learned = grp["learned"]
+-    stratum_of = {f["fact_id"]: f["stratum"] for f in facts}
+-    seeds = contract.training.training_seeds
+-    N = inp["N"]
+-
+-    def cmp(x_scores, y_scores, label, seed):
+-        return S.paired_bootstrap(x_scores, y_scores, learned, stratum_of, st, S.purpose(label, "DEV", seed))
+-
+-    def avg(arm):
+-        return S.seed_average([inp[arm][s]["scores_dev"] for s in seeds])
+-
++    c = _Ctx(inp, contract, "dev")
++    st, g, learned, N = c.st, contract.gate, c.grp["learned"], inp["N"]
+     v = {}
+     v["G0.1"] = {"leakage_result": inp["leakage"]["result"],
+-                 "over_limit": sorted(c for c, x in inp["leakage"]["checks"].items() if not x["within_limit"])}
++                 "over_limit": sorted(k for k, x in inp["leakage"]["checks"].items() if not x["within_limit"])}
+     v["G0.2"] = {"all_finite": bool(inp["all_finite"]), "nonfinite": list(inp.get("nonfinite", []))}
+     v["G0.3"] = {"acc_dev_learned": float(N["acc_dev_learned"]), "acc_dev_unread": float(N["acc_dev_unread"]),
+                  "acc_cb": float(N["acc_cb"])}
+     for s_ in st.strata:
+         v["G0.3"]["acc_dev_learned:%s" % s_] = float(N["acc_dev_learned:%s" % s_])
+-    v["G0.4"] = {"acc_cb_by_seed": {s: float(inp["F"][s]["acc_cb"]) for s in seeds}}
+-    f_avg = avg("F")
+-    v["G0.5"] = {"acc_avg": float(S.acc(f_avg, learned)),
+-                 "delta_avg": cmp(f_avg, N["scores_dev"], "F-N", "avg"),
+-                 "delta_by_seed": {s: cmp(inp["F"][s]["scores_dev"], N["scores_dev"], "F-N", s)["point"] for s in seeds}}
++    v["G0.4"] = {"acc_cb_by_seed": {s: float(inp["F"][s]["acc_cb"]) for s in c.seeds}}
++    v["G0.5"] = {"acc_avg": float(S.acc(c.scores("F", "avg"), learned)), "delta_avg": c.cmp("F", "N", "avg"),
++                 "delta_by_seed": {s: c.cmp("F", "N", s)["point"] for s in c.seeds}}
+     for cond, arm in (("G0.6", "S"), ("G0.7", "Y")):
+-        d = cmp(avg(arm), N["scores_dev"], "%s-N" % arm, "avg")
++        d = c.cmp(arm, "N", "avg")
+         v[cond] = {"point": d["point"], "ci_high": d["ci_high"], "delta_avg": d}
+     v["G0.8"] = {"checkpoints": {s: repro_compare(a, b, g) for s, (a, b) in inp["repro"].items()}}
+     v["G0.9"] = {"acc_avg": v["G0.5"]["acc_avg"]}
+-    est = {}
++    f_avg, d_avg, est = c.scores("F", "avg"), {}, {}
+     for arm in ("L", "A"):
+-        x_avg = avg(arm)
+-        d_avg = {f: x_avg[f] - f_avg[f] for f in learned}
+-        est["%s-F" % arm] = S.size_estimate(d_avg, learned, stratum_of, st, "%s-F" % arm)
++        x_avg = c.scores(arm, "avg")
++        d_avg[arm] = {f: x_avg[f] - f_avg[f] for f in learned}
++        est["%s-F" % arm] = S.size_estimate(d_avg[arm], learned, c.stratum_of, st, "%s-F" % arm)
+     planning = max(e["n_max"] for e in est.values())
+     v["G0.10"] = {"estimates": est, "planning_n": planning}
+     if math.isfinite(planning):
+         for arm in ("L", "A"):
+-            x_avg = avg(arm)
+-            d_avg = {f: x_avg[f] - f_avg[f] for f in learned}
+-            est["%s-F" % arm]["halfwidth_at_planning_n"] = S.halfwidth_check(d_avg, learned, stratum_of, st,
++            est["%s-F" % arm]["halfwidth_at_planning_n"] = S.halfwidth_check(d_avg[arm], learned, c.stratum_of, st,
+                                                                               "%s-F" % arm, planning)
+     return v
+ 
+ 
++def compute_test_values(inp, contract):
++    """Numbers read by T1-T3 (`inp` as compute_values, with summaries of split "test")."""
++    c = _Ctx(inp, contract, "test")
++    N = inp["N"]
++    d_f = c.cmp("F", "N", "avg")
++    v = {"T1": {"acc_avg": float(S.acc(c.scores("F", "avg"), c.grp["learned"])), "delta_avg": d_f}}
++    v["T2"] = {}
++    for arm in ("S", "Y"):
++        d = c.cmp(arm, "N", "avg")
++        v["T2"][arm] = {"point": d["point"], "ci_high": d["ci_high"], "delta_avg": d}
++    v["T3"] = {"acc_test_learned": float(N["acc_test_learned"]), "acc_test_unread": float(N["acc_test_unread"]),
++               "acc_cb": float(N["acc_cb"])}
++    for s_ in c.st.strata:
++        v["T3"]["acc_test_learned:%s" % s_] = float(N["acc_test_learned:%s" % s_])
++    return v
++
++
+ # ------------------------------------------------------------------------------------------------- judge
+ 
++def _g3_ranges(x, g, split):
++    return (_in(x["acc_%s_learned" % split], g.g3_learned) and _in(x["acc_%s_unread" % split], g.g3_unread)
++            and _in(x["acc_cb"], g.g3_cb)
++            and all(_in(x[k], g.g3_stratum) for k in x if k.startswith("acc_%s_learned:" % split)))
++
++
+ def judge(values, contract, mode):
+     """Apply G0.1-G0.10 to `values`. Returns {conditions: {G0.k: {satisfied, reason, note}}, gate0_status, reasons,
+-    note}. Every status word is from section 9."""
++    note}. Every status word is from section 9. G0.8 needs the re-evaluation of exactly the training seeds' three
++    checkpoints."""
++    _judged_mode(mode)
+     g = contract.gate
+     v = values
+     sat = {}
+     sat["G0.1"] = v["G0.1"]["leakage_result"] == "PASS" and not v["G0.1"]["over_limit"]
+     sat["G0.2"] = v["G0.2"]["all_finite"]
+-    x = v["G0.3"]
+-    sat["G0.3"] = (_in(x["acc_dev_learned"], g.g3_learned) and _in(x["acc_dev_unread"], g.g3_unread)
+-                   and _in(x["acc_cb"], g.g3_cb)
+-                   and all(_in(x[k], g.g3_stratum) for k in x if k.startswith("acc_dev_learned:")))
++    sat["G0.3"] = _g3_ranges(v["G0.3"], g, "dev")
+     sat["G0.4"] = all(a >= g.g4_cb_min for a in v["G0.4"]["acc_cb_by_seed"].values())
+     x = v["G0.5"]
+     sat["G0.5"] = (x["acc_avg"] >= g.g5_acc_min and x["delta_avg"]["ci_low"] > 0
+                    and all(d > 0 for d in x["delta_by_seed"].values()))
+     sat["G0.6"] = v["G0.6"]["point"] <= g.g6_point_max and v["G0.6"]["ci_high"] <= g.g6_upper_max
+     sat["G0.7"] = v["G0.7"]["point"] <= g.g7_point_max and v["G0.7"]["ci_high"] <= g.g7_upper_max
+-    sat["G0.8"] = bool(v["G0.8"]["checkpoints"]) and all(c["satisfied"] for c in v["G0.8"]["checkpoints"].values())
++    ck = v["G0.8"]["checkpoints"]
++    sat["G0.8"] = set(ck) == set(contract.training.training_seeds) and all(c["satisfied"] for c in ck.values())
+     sat["G0.9"] = v["G0.9"]["acc_avg"] <= g.g9_acc_max
+     sat["G0.10"] = all(e["finite"] for e in v["G0.10"]["estimates"].values())
+     conds = {}
+@@ -155,16 +197,38 @@ def judge(values, contract, mode):
+             if c in ("G0.3", "G0.9"):
+                 note = RECALIBRATION_NOTE
+         conds[c] = {"satisfied": sat[c], "reason": _word(reason), "note": note}
++    return _status(conds, sat, mode, "gate0_status")
++
++
++def judge_test(values, gate0_status, contract, mode):
++    """Apply T1-T3 (section 8, TEST confirmation, evaluated once after Gate 0). Final pilot status: PASS iff Gate 0 is
++    PASS and T1-T3 all hold; otherwise PIPELINE_NOT_QUALIFIED with the section 9 reasons (B24)."""
++    _judged_mode(mode)
++    g = contract.gate
++    v = values
++    sat = {"T1": v["T1"]["acc_avg"] >= g.t1_acc_min and v["T1"]["delta_avg"]["ci_low"] > 0,
++           "T2": (v["T2"]["S"]["point"] <= g.g6_point_max and v["T2"]["S"]["ci_high"] <= g.g6_upper_max
++                  and v["T2"]["Y"]["point"] <= g.g7_point_max and v["T2"]["Y"]["ci_high"] <= g.g7_upper_max),
++           "T3": _g3_ranges(v["T3"], g, "test")}
++    conds = {c: {"satisfied": sat[c], "reason": _word(None if sat[c] else TEST_REASON[c]),
++                 "note": RECALIBRATION_NOTE if c == "T3" and not sat[c] else None} for c in TEST_CONDITIONS}
++    out = _status(conds, sat, mode, "final_status")
++    if not mode.smoke and gate0_status != "PASS":
++        raise ValueError("T1-T3 are judged only after Gate 0 PASS (got %r)" % (gate0_status,))
++    return out
++
++
++def _status(conds, sat, mode, key):
+     if mode.smoke:
+         # Implementation Task Order V1 section 7: computed as usual, status fixed to NOT_TESTED; no reason word and
+         # no computed status leave smoke mode (the satisfied flags are smoke values).
+         for c in conds.values():
+             c["reason"] = None
+-        return {"conditions": conds, "gate0_status": _word("NOT_TESTED"), "reasons": [],
+-                "note": SMOKE_GATE_NOTE, "label": SMOKE_LABEL}
++        return {"conditions": conds, key: _word("NOT_TESTED"), "reasons": [], "note": SMOKE_GATE_NOTE,
++                "label": SMOKE_LABEL}
+     reasons = sorted({c["reason"] for c in conds.values() if c["reason"]})
+     status = "PASS" if all(sat.values()) else "PIPELINE_NOT_QUALIFIED"
+-    return {"conditions": conds, "gate0_status": _word(status), "reasons": [_word(r) for r in reasons], "note": None}
++    return {"conditions": conds, key: _word(status), "reasons": [_word(r) for r in reasons], "note": None}
+ 
+ 
+ # ------------------------------------------------------------------------------- section 6 comparisons (report)
+@@ -172,32 +236,15 @@ def judge(values, contract, mode):
+ COMPARISONS = (("F", "N"), ("L", "F"), ("A", "F"), ("S", "N"), ("Y", "N"))
+ 
+ 
+-def report_comparisons(inp, contract, split="DEV"):
++def report_comparisons(inp, contract, split="dev"):
+     """Section 6 comparisons, reported (not judged): every training seed and the seed-average, with the paired
+     stratified bootstrap. Delta(F-N), Delta(L-F), Delta(A-F), Delta(S-N), Delta(Y-N) on learned facts; Spill(arm) =
+     Acc(arm, unread) - Prior on unread facts (purpose 'Spill-<arm>:<split>:<seed>', B12). `inp` as compute_values()."""
+-    st = contract.statistics
+-    facts = inp["facts"]
+-    grp = S.groups(facts, st.strata)
+-    stratum_of = {f["fact_id"]: f["stratum"] for f in facts}
+-    seeds = contract.training.training_seeds
+-    n_scores = inp["N"]["scores_dev"]
+-
+-    def scores(arm, seed):
+-        if arm == "N":
+-            return n_scores
+-        if seed == "avg":
+-            return S.seed_average([inp[arm][s]["scores_dev"] for s in seeds])
+-        return inp[arm][seed]["scores_dev"]
+-
++    c = _Ctx(inp, contract, split)
+     out = {}
+-    for seed in list(seeds) + ["avg"]:
++    for seed in list(c.seeds) + ["avg"]:
+         for x, y in COMPARISONS:
+-            label = "%s-%s" % (x, y)
+-            out["%s:%s" % (label, seed)] = S.paired_bootstrap(scores(x, seed), scores(y, seed), grp["learned"],
+-                                                              stratum_of, st, S.purpose(label, split, seed))
++            out["%s-%s:%s" % (x, y, seed)] = c.cmp(x, y, seed)
+         for arm in ("F", "L", "A", "S", "Y"):
+-            label = "Spill-%s" % arm
+-            out["%s:%s" % (label, seed)] = S.paired_bootstrap(scores(arm, seed), n_scores, grp["unread"], stratum_of, st,
+-                                                              S.purpose(label, split, seed))
++            out["Spill-%s:%s" % (arm, seed)] = c.cmp(arm, "N", seed, group="unread", label="Spill-%s" % arm)
+     return out
+diff --git a/metrix/e1-pilot/src/metrix_e1/interpretations.py b/metrix/e1-pilot/src/metrix_e1/interpretations.py
+index 3731922..2cf0f67 100644
+--- a/metrix/e1-pilot/src/metrix_e1/interpretations.py
++++ b/metrix/e1-pilot/src/metrix_e1/interpretations.py
+@@ -10,29 +10,30 @@ point is stage C).
+ PENDING = "PENDING_REVIEW_GATE"
+ 
+ ENTRIES = (
+-    {"id": "B1", "where": "train.step_numbers, train.anchor_docs", "protocol": "2.7, 4, 7",
+-     "text": "Optimizer steps are numbered s = 1..300 (the protocol's '第 300 步' is the last step). Step s of arm A "
+-             "uses anchor documents (4s + i) mod 512, i = 0..3, documents numbered 0..511 in anchor_text.jsonl order "
+-             "(step 1: documents 4-7; the alternative s = 0..299 would use 0-3 at the first step and never 1200-1203 "
+-             "mod 512)."},
++    {"id": "B1", "where": 'train.step_numbers (used by train.batch_schedule), train.anchor_docs', "protocol": '2.7, 4, 7',
++     "text": "Optimizer steps are numbered s = 1..300 (the protocol's '第 300 步' is the last step). Step s of arm A uses "
++             "anchor documents (4s + i) mod 512, i = 0..3, documents numbered 0..511 in anchor_text.jsonl order (step "
++             "1: documents 4-7; with s = 0..299 the first step would use 0-3 and every step's documents would differ)."},
+     {"id": "B2", "where": "train.lr_at", "protocol": "7 (warmup, scheduler)",
+      "text": "lr(s) = peak * s / 15 for s <= 15 (rises linearly from 0; step 1 already has peak/15); for s >= 15, "
+              "lr(s) = peak * (0.1 + 0.9 * 0.5 * (1 + cos(pi * (s - 15) / (300 - 15)))), so lr(15) = peak and "
+              "lr(300) = 0.1 * peak. Set on every parameter group before optimizer step s."},
+-    {"id": "B3", "where": "train.epoch_batches", "protocol": "7 (order)",
++    {"id": "B3", "where": 'train.epoch_batches, train.batch_schedule', "protocol": '7 (order)',
+      "text": "Epochs are numbered e = 1..20 and the purpose is 'order:<e>' with TRAIN_SEED = the run's seed; "
+              "permutation p = list(range(N)); r.shuffle(p) (the same call as protocol 2.6 detail 4); the batches of "
+              "epoch e are p[0:B], p[B:2B], ... (B = 8 for F, L, A, S; B = 16 for Y), rows indexed in the file order of "
+-             "the corpus."},
++             "the corpus. The row order of train_Y.jsonl (fact order, the Y_ENTITY sentence before the Y_ANSWER one) is "
++             "a stage A choice without a frozen hash (DEFERRED_MINORS AA11), so Y's batches depend on it."},
+     {"id": "B4", "where": "train.token_ce", "protocol": "4 (CE), 7 (sequence)",
+      "text": "CE(batch) = sum of -log p(x_t | x_<t) over every non-padding target position (t = 2..n of each "
+              "sequence, the final <|endoftext|> included) divided by the number of those positions (token-weighted "
+              "over the batch, like the anchor KL); sequences are not averaged first."},
+-    {"id": "B5", "where": "train.LoRALinear", "protocol": "4 (arm L)",
++    {"id": "B5", "where": 'train.lora_a_init, train.apply_lora', "protocol": '4 (arm L), 0 (rng_rule)',
+      "text": "LoRA A is initialised uniformly in [-1/sqrt(in_features), 1/sqrt(in_features)] (the Kaiming-uniform "
+-             "default of torch.nn.Linear and peft), float32, drawn on CPU from torch.Generator seeded with "
+-             "rng_rule(TRAIN_SEED, 'lora_A:<module path>').getrandbits(64); B = 0; scaling alpha / rank = 2; the "
+-             "adapter output B(A x) * scaling is added to the frozen base output; LoRA parameters are float32."},
++             "default of torch.nn.Linear and peft): every value is r.uniform(-b, b) of r = rng_rule(TRAIN_SEED, "
++             "'lora_A:<module path>'), row by row, stored as float32; B = 0; scaling alpha / rank = 2; the adapter "
++             "output B(A x) * scaling is added to the frozen base output; LoRA parameters are float32. The distribution "
++             "and the purpose string are not in the protocol."},
+     {"id": "B6", "where": "train.anchor_kl, train.train_run", "protocol": "4 (arm A), 7 (precision)",
+      "text": "The base copy's forward and the trained model's forward on the anchor documents both run under the "
+              "same bf16 autocast as the rest of training; their logits are cast to float32 before log_softmax and the "
+@@ -58,21 +59,23 @@ ENTRIES = (
+      "text": "Purpose '<比较>:<split>:<seed 或 avg>' is written '<X>-<Y>:<split>:<seed>' with ASCII '-', split 'DEV' "
+              "or 'TEST', seed the integer or 'avg' (e.g. 'F-N:DEV:101', 'F-N:DEV:avg'); the Spill of an arm, compared "
+              "with N on the unread facts, is written 'Spill-<arm>:<split>:<seed>'."},
+-    {"id": "B13", "where": "stats.size_estimate, gate.g0_10", "protocol": "8 (G0.10)",
++    {"id": "B13", "where": 'stats.size_estimate, stats.halfwidth_check, gate.judge (G0.10)', "protocol": '8 (G0.10)',
+      "text": "sigma_d = sample standard deviation (ddof 1) of the 120 seed-average d_f; its bootstrap 2.5 / 97.5 "
+-             "percentiles from the stratified resampling of B10 with purpose 'sigma:<X>-<Y>:DEV:avg'; "
+-             "n = ceil(((1.96 + 0.84) * sigma / delta)^2); planning n = the largest n over the three sigma values, "
+-             "the three deltas and both comparisons; the CI half-width check resamples n facts (stratified, n/2 per "
+-             "stratum rounded up) with purpose 'halfwidth:<X>-<Y>:DEV:avg:<n>' and reports the half-width of the 95% "
+-             "CI of the mean (report only). G0.10 holds iff sigma_d, both percentiles and every n are finite."},
+-    {"id": "B14", "where": "gate.evaluate_gate0", "protocol": "8, 9",
+-     "text": "Gate 0 status words: all G0 satisfied -> gate0 'PASS' (the pilot's final status still needs T1-T3); "
+-             "any G0 not satisfied -> 'PIPELINE_NOT_QUALIFIED' with the reasons of section 9 (G0.1, G0.2, G0.6, G0.7, "
+-             "G0.8 -> IMPLEMENTATION_FAIL; G0.4 -> OPTIMIZATION_FAIL; G0.5 with G0.4 satisfied -> "
++             "percentiles from the stratified resampling of B10 with purpose 'sigma:<X>-<Y>:DEV:avg'; n = ceil(((1.96 + "
++             "0.84) * sigma / delta)^2); planning n = the largest n over the three sigma values, the three deltas and "
++             "both comparisons; the CI half-width check resamples n facts (stratified, n/2 per stratum rounded up) with "
++             "purpose 'halfwidth:<X>-<Y>:DEV:avg:<n>' and reports the half-width of the 95% CI of the mean (report "
++             "only; skipped and noted when n = 0, i.e. sigma_d = 0). G0.10 holds iff sigma_d, both percentiles and "
++             "every n are finite."},
++    {"id": "B14", "where": 'gate.judge', "protocol": '8, 9',
++     "text": "Gate 0 status words: all G0 satisfied -> gate0 'PASS' (the pilot's final status still needs T1-T3); any "
++             "G0 not satisfied -> 'PIPELINE_NOT_QUALIFIED' with the reasons of section 9 (G0.1, G0.2, G0.6, G0.7, G0.8 "
++             "-> IMPLEMENTATION_FAIL; G0.4 -> OPTIMIZATION_FAIL; G0.5 with G0.4 satisfied -> "
+              "OPTIMIZATION_OR_CAPACITY_UNRESOLVED for any of its three parts, not only the accuracy; G0.5 with G0.4 not "
+-             "satisfied -> OPTIMIZATION_FAIL; seed-average Acc(F) < 0.40 adds the section 8 note '对该模型与该训练量过难'). "
+-             "Section 9 lists no reason for G0.3, G0.9 (section 8: benchmark recalibration, noted) and G0.10: their "
+-             "reason is null."},
++             "satisfied -> OPTIMIZATION_FAIL, although section 8 calls [0.40, 0.70) UNRESOLVED without naming G0.4; "
++             "seed-average Acc(F) < 0.40 adds the section 8 note '对该模型与该训练量过难'). Section 9 lists no reason for G0.3, "
++             "G0.9 (section 8: benchmark recalibration, noted) and G0.10: their reason is null, although section 9 says "
++             "one reason is given. Several unsatisfied conditions give several reasons (section 9 says 'a reason')."},
+     {"id": "B15", "where": "gate.g0_8", "protocol": "8 (G0.8)",
+      "text": "'候选分数' = every candidate score of the evaluation (s_QA on DEV-QA and s_ST of the TRAIN closed book); "
+              "'预测' = the index of the highest candidate, or 'tie' when the top score is shared (tie = wrong)."},
+@@ -82,12 +85,13 @@ ENTRIES = (
+              "with reason IMPLEMENTATION_FAIL (section 9 for G0.6, G0.7); ST6 outside the selected configurations and "
+              "the controls -> that configuration is excluded from selection (section 7), no pilot status; ST7, ST11 "
+              "-> BLOCKED (resources)."},
+-    {"id": "B17", "where": "compute.estimate_total_hours", "protocol": "8 step 2 (preflight), 11 ST11",
+-     "text": "Preflight estimate = (measured mean seconds per step of the first configuration's first 20 steps, "
+-             "the first step excluded as warm-up) x sum over the 30 runs of 300 steps x the run's FLOP factor "
+-             "(F, S, Y, L: 1; A: 1 + (2 + 6) * anchor tokens / (6 * fact tokens) per step) + evaluation time "
+-             "(forward FLOPs of all scoring, generation and general-text tokens of the 31 evaluations and the G0.8 "
+-             "re-evaluations, converted with the measured training throughput / 3) + the GPU time already used."},
++    {"id": "B17", "where": 'compute.estimate_total_hours, compute.evaluation_units', "protocol": '8 step 2 (preflight), 11 ST11',
++     "text": "Preflight estimate = (measured mean seconds per step of the first configuration's first 20 steps, the "
++             "first step excluded as warm-up, CUDA synchronised before each timestamp) x sum over the 30 runs of 300 "
++             "steps x the run's FLOP factor (F, S, Y, L: 1; A: 1 + (2 + 6) * anchor tokens / (6 * fact tokens) per "
++             "step, section 10 coefficients) + (measured seconds of one float32 DEV evaluation, timed in the preflight) "
++             "x evaluation units (N, 30 runs and the 3 G0.8 re-evaluations on DEV; N and 30 runs on TEST at test / dev "
++             "questions per fact = 1.5) + the GPU time already used."},
+     {"id": "B18", "where": "compute.flops", "protocol": "10 (compute accounting)",
+      "text": "P = parameters taking part in the forward pass (for L: base plus adapters); T = non-padding tokens fed "
+              "(training: fact tokens of the batch; anchor: anchor tokens). Arm A's anchor compute is listed "
+@@ -102,6 +106,20 @@ ENTRIES = (
+              "DEV-QA questions of f and the TRAIN-statement prefix of f are scored with the candidate list of the "
+              "fact a' belongs to (it contains a' and has 4 equal-length candidates); correct iff a' scores strictly "
+              "highest. Report only."},
++    {"id": 'B21', "where": 'train.load_model', "protocol": '0 (determinism), 8 (G0.8)',
++     "text": "The model is loaded with attn_implementation='eager' (not the default 'sdpa') so that attention uses "
++             "plain matmul and softmax under torch.use_deterministic_algorithms(True); this changes numbers at the 1e-6 "
++             "level, not the definitions."},
++    {"id": 'B22', "where": 'gate._g3_ranges', "protocol": '8 (G0.3, T3)',
++     "text": "'每个 stratum ∈ [0.10, 0.40]' is read as Acc(N, DEV-QA, learned) of each stratum (the clause follows the "
++             "learned accuracy); the unread accuracy is checked overall only."},
++    {"id": 'B23', "where": 'evaluate.em_normalize', "protocol": '5 (EM)',
++     "text": "'取第一行' splits at the first '\\n' only ('\\r' is not a line break here)."},
++    {"id": 'B24', "where": 'gate.judge_test', "protocol": '8 (T1-T3), 9',
++     "text": "Final status: PASS iff Gate 0 is PASS and T1-T3 hold; otherwise PIPELINE_NOT_QUALIFIED with reasons T1 -> "
++             "OPTIMIZATION_OR_CAPACITY_UNRESOLVED (section 9 names T1's accuracy; the CI part is given the same "
++             "reason), T2 -> IMPLEMENTATION_FAIL (the G0.6 / G0.7 numbers), T3 -> null with the recalibration note (as "
++             "G0.3). TEST comparisons use the purpose split 'TEST'."},
+ )
+ 
+ 
+diff --git a/metrix/e1-pilot/src/metrix_e1/leakage.py b/metrix/e1-pilot/src/metrix_e1/leakage.py
+index d3cd329..034b943 100644
+--- a/metrix/e1-pilot/src/metrix_e1/leakage.py
++++ b/metrix/e1-pilot/src/metrix_e1/leakage.py
+@@ -145,12 +145,16 @@ def load_data(data_dir):
+             for name in ("facts", "train_F", "train_S", "train_Y", "dev_qa", "anchor_text", "general_dev")}
+ 
+ 
++def training_corpora(data):
++    """Texts of every training corpus (L3a, L4): train_F, train_S, train_Y and anchor_text (arm A trains on it)."""
++    return {name: [r["text"] for r in data[name]] for name in ("train_F", "train_S", "train_Y", "anchor_text")}
++
++
+ def run_gate0(split_manifest, data):
+     """All Gate 0 checks. Returns the report dict (value, limit, within_limit and details per check)."""
+     rules = _rules(split_manifest)
+     facts = data["facts"]
+-    corpora = {"train_F": [r["text"] for r in data["train_F"]], "train_S": [r["text"] for r in data["train_S"]],
+-               "train_Y": [r["text"] for r in data["train_Y"]], "anchor_text": [r["text"] for r in data["anchor_text"]]}
++    corpora = training_corpora(data)
+     unread = [s for f in facts if f["exposure"] == "unread" for s in (f["entity"], f["answer"])]
+     learned_answers = [f["answer"] for f in facts if f["exposure"] == "learned"]
+     out = {}
+@@ -180,7 +184,9 @@ def run_gate0(split_manifest, data):
+ # ----------------------------------------------------------------------------------------- TEST part (step 8)
+ 
+ class TestAuthorization:
+-    """Created only by test_data.check_preconditions() once the TEST generator's preconditions hold."""
++    """Created only by test_data.check_preconditions() once the TEST generator's preconditions hold (a convention: Python
++    cannot stop other code from building one; run_test_part therefore re-checks the hashes it carries against the
++    committed records)."""
+     __test__ = False        # not a pytest test class
+ 
+     def __init__(self, frozen_commit, gate0_record_sha256, selection_record_sha256):
+@@ -192,16 +198,25 @@ class TestAuthorization:
+ TEST_CHECKS = ("L3a", "L3b", "L4", "L5", "L6")
+ 
+ 
+-def run_test_part(split_manifest, data, test_qa, general_test, authorization):
++def run_test_part(split_manifest, data, test_qa, general_test, authorization, repo_root):
+     """Section 8 step 8, after test_qa.jsonl and general_test.jsonl exist: L4 on the instantiated TEST questions,
+     L6 anchor_text vs general_test; L3a, L3b and L5 re-run as at Gate 0 (interpretation B19). `data` as load_data();
+-    `test_qa`, `general_test`: the TEST rows in memory. Returns the report (same layout as run_gate0)."""
++    `test_qa`, `general_test`: the TEST rows in memory. The authorization is checked again against the committed Gate 0
++    and freeze records (record.committed_json). Returns the report (same layout as run_gate0)."""
+     if not isinstance(authorization, TestAuthorization):
+         raise ImplementationFail("the TEST part of the leakage checks runs only after the TEST generator's preconditions")
++    from . import record as R
++    for rel, want in ((R.GATE0_RECORD_REL, authorization.gate0_record_sha256),
++                      (R.SELECTION_FREEZE_REL, authorization.selection_record_sha256)):
++        try:
++            _, got = R.committed_json(repo_root, rel)
++        except R.NotCommitted as e:
++            raise ImplementationFail("TEST part refused: %s" % e) from e
++        if got != want:
++            raise ImplementationFail("TEST part refused: committed %s has sha256 %s, authorization %s" % (rel, got, want))
+     gate0 = run_gate0(split_manifest, data)
+     rules = _rules(split_manifest)
+-    corpora = {"train_F": [r["text"] for r in data["train_F"]], "train_S": [r["text"] for r in data["train_S"]],
+-               "train_Y": [r["text"] for r in data["train_Y"]], "anchor_text": [r["text"] for r in data["anchor_text"]]}
++    corpora = training_corpora(data)
+     out = {c: (gate0["checks"][c]["value"], dict(gate0["checks"][c]["detail"], part="re-run as at Gate 0 (B19)"))
+            for c in ("L3a", "L3b", "L5")}
+     questions = [r["question"] for r in test_qa]
+diff --git a/metrix/e1-pilot/src/metrix_e1/mode.py b/metrix/e1-pilot/src/metrix_e1/mode.py
+index 38107ed..3e86529 100644
+--- a/metrix/e1-pilot/src/metrix_e1/mode.py
++++ b/metrix/e1-pilot/src/metrix_e1/mode.py
+@@ -1,11 +1,15 @@
+-"""Formal mode and smoke mode (Implementation Task Order V1, section 7; section 2 red line 7).
+-
+-A RunMode is passed to every function whose behaviour differs between the modes. Only smoke mode may shorten
+-training to a chosen number of steps or skip the GPU device checks; whatever it writes carries SMOKE_LABEL and
+-never goes to the formal results directory (record.py), and no Gate 0 conclusion comes out of it (gate.py fixes the
+-status to NOT_TESTED). Formal mode accepts no shortened step count: RunMode cannot be built with one
+-(tests/test_train.py). Preflight mode (protocol section 8 step 2, ST11) runs the first configuration for the
+-protocol's preflight step count on the A100 (device checks not skipped); only its timing is used.
++"""Formal, smoke and preflight modes (Implementation Task Order V1, section 7; section 2 red line 7; protocol v1.1
++section 8 step 2).
++
++A RunMode is passed to every function whose behaviour differs between the modes.
++  formal     the contract's step count only (RunMode cannot be built with another); GPU only (train.train_run and
++             evaluate.evaluate_model refuse any other device); Gate 0 is judged.
++  smoke      a chosen, shortened step count; device checks skipped and recorded as "smoke: device check skipped";
++             everything written carries SMOKE_LABEL and is refused in the formal results directory (record.py);
++             Gate 0 is computed but its status is fixed to NOT_TESTED (gate.py).
++  preflight  section 8 step 2 (ST11): the first configuration for exactly the protocol's preflight step count
++             (train.train_run checks it against contract.preflight_steps), on the A100 with device checks; only its
++             timing is used; gate.judge refuses it; its outputs carry PREFLIGHT_LABEL.
+ """
+ from dataclasses import dataclass
+ 
+@@ -21,15 +25,15 @@ SMOKE_DEVICE_NOTE = "smoke: device check skipped"
+ @dataclass(frozen=True)
+ class RunMode:
+     name: str
+-    smoke_steps: int = None         # steps per run in smoke mode (and the protocol's preflight steps); None in formal
++    shortened_steps: int = None     # smoke: the chosen step count; preflight: the protocol's; formal: None
+ 
+     def __post_init__(self):
+         if self.name == FORMAL:
+-            if self.smoke_steps is not None:
+-                raise ValueError("formal mode takes no shortened step count (got %r)" % (self.smoke_steps,))
++            if self.shortened_steps is not None:
++                raise ValueError("formal mode takes no shortened step count (got %r)" % (self.shortened_steps,))
+         elif self.name in (SMOKE, PREFLIGHT):
+-            if type(self.smoke_steps) is not int or self.smoke_steps < 1:
+-                raise ValueError("smoke mode needs a positive integer step count (got %r)" % (self.smoke_steps,))
++            if type(self.shortened_steps) is not int or self.shortened_steps < 1:
++                raise ValueError("%s mode needs a positive integer step count (got %r)" % (self.name, self.shortened_steps))
+         else:
+             raise ValueError("unknown mode %r" % (self.name,))
+ 
+@@ -54,9 +58,9 @@ class RunMode:
+         count, which must be below the contract's."""
+         if self.formal:
+             return contract_steps
+-        if self.smoke_steps >= contract_steps:
+-            raise ValueError("%s steps %d must be fewer than the contract's %d" % (self.name, self.smoke_steps, contract_steps))
+-        return self.smoke_steps
++        if self.shortened_steps >= contract_steps:
++            raise ValueError("%s steps %d must be fewer than the contract's %d" % (self.name, self.shortened_steps, contract_steps))
++        return self.shortened_steps
+ 
+ 
+ FORMAL_MODE = RunMode(FORMAL)
+diff --git a/metrix/e1-pilot/src/metrix_e1/record.py b/metrix/e1-pilot/src/metrix_e1/record.py
+index fb2717a..be3d100 100644
+--- a/metrix/e1-pilot/src/metrix_e1/record.py
++++ b/metrix/e1-pilot/src/metrix_e1/record.py
+@@ -81,8 +81,10 @@ def environment(fz, device=None, determinism=None, data_hashes=None):
+                 "status_porcelain": _git(root, "status", "--porcelain")},
+         "protocol_frozen": {"version": fz.record.version, "commit": fz.record.commit,
+                             "file_sha256": dict(fz.record.file_sha256), "data_sha256": dict(fz.record.data_sha256),
++                            "PROTOCOL_FROZEN_parsed_bytes_sha256": fz.record.source_sha256,
+                             "PROTOCOL_FROZEN_working_tree_bytes_sha256": FZ.sha256_hex(pf),
+-                            "PROTOCOL_FROZEN_lf_normalized_sha256": FZ.sha256_hex(pf.replace(b"\r\n", b"\n"))},
++                            "PROTOCOL_FROZEN_lf_normalized_sha256": FZ.sha256_hex(pf.replace(b"\r\n", b"\n")),
++                            "PROTOCOL_FROZEN_unchanged_since_load": FZ.sha256_hex(pf) == fz.record.source_sha256},
+         "data_hashes": data_hashes,
+         "interpretations": INT.as_records(),
+     }
+@@ -134,10 +136,40 @@ def render_text(rec):
+     return "\n".join(lines) + "\n"
+ 
+ 
+-def gate0_record_path(repo_root):
+-    return Path(repo_root) / FORMAL_RESULTS_REL / GATE0_RECORD
++GATE0_RECORD_REL = FORMAL_RESULTS_REL + "/" + GATE0_RECORD
++SELECTION_FREEZE_REL = FORMAL_RESULTS_REL + "/" + SELECTION_FREEZE_RECORD
+ 
+ 
+-def selection_freeze_path(repo_root):
+-    return Path(repo_root) / FORMAL_RESULTS_REL / SELECTION_FREEZE_RECORD
++class NotCommitted(Exception):
++    pass
++
++
++def committed_json(repo_root, rel):
++    """(parsed JSON, SHA-256 of the committed bytes) of a file committed at HEAD whose working-tree bytes equal the
++    committed blob. Raises NotCommitted otherwise."""
++    r = subprocess.run(["git", "-C", str(repo_root), "cat-file", "blob", "HEAD:%s" % rel], capture_output=True, check=False)
++    if r.returncode != 0:
++        raise NotCommitted("%s is not committed at HEAD" % rel)
++    wt = Path(repo_root) / rel
++    if not wt.is_file() or wt.read_bytes() != r.stdout:
++        raise NotCommitted("%s in the working tree differs from its committed version" % rel)
++    try:
++        return json.loads(r.stdout), FZ.sha256_hex(r.stdout)
++    except ValueError as e:
++        raise NotCommitted("%s does not parse: %r" % (rel, e)) from e
++
++
++def gate0_record(fz, mode, gate0_result):
++    """The Gate 0 record (section 8 step 7) whose committed form is precondition 2 of the TEST generator:
++    gate0_result is gate.judge's output."""
++    return {"kind": "gate0", "mode": mode.name, "label": mode.label, "frozen_commit": fz.record.commit,
++            "gate0": gate0_result}
++
++
++def selection_freeze_record(fz, mode, selected, data_content_hashes, checkpoints, gate0_record_sha256):
++    """The freeze record of section 8 step 8 (selected configurations, data hashes, checkpoint hashes), bound to the
++    committed Gate 0 record by its SHA-256; its committed form is precondition 3 of the TEST generator."""
++    return {"kind": "selection_freeze", "mode": mode.name, "label": mode.label, "frozen_commit": fz.record.commit,
++            "selected": dict(selected), "data_content_hashes": dict(data_content_hashes), "checkpoints": dict(checkpoints),
++            "gate0_record_sha256": gate0_record_sha256}
+ 
+diff --git a/metrix/e1-pilot/src/metrix_e1/stats.py b/metrix/e1-pilot/src/metrix_e1/stats.py
+index d4928e0..37999e5 100644
+--- a/metrix/e1-pilot/src/metrix_e1/stats.py
++++ b/metrix/e1-pilot/src/metrix_e1/stats.py
+@@ -1,7 +1,7 @@
+ """Metrics and statistics of METRIX E1-PILOT.
+ 
+ Protocol v1.1 section 5 (Score_split(f) = mean over the fact's questions; Acc = mean over facts; AllCorrect, FPR,
+-Spill, ImmediateGain, dNLL, PPL degradation) and section 6 (the unit is the fact: question scores are aggregated to
++ImmediateGain, dNLL, PPL degradation; Spill = Delta(arm - N) on unread facts, gate.report_comparisons) and section 6 (the unit is the fact: question scores are aggregated to
+ one score per fact before anything is resampled; paired, stratified bootstrap; 10,000 replicates; 95% CI = 2.5th and
+ 97.5th percentiles; seed-average = per-fact mean over the 3 seeds, then bootstrap; rng_rule(BOOTSTRAP_SEED, purpose));
+ section 8 G0.10 (size estimate). Choices left open by the protocol: interpretations B10-B13.
+@@ -62,6 +62,12 @@ def seed_average(per_seed):
+     return {f: sum((s[f] for s in per_seed), Fraction(0)) / len(per_seed) for f in keys}
+ 
+ 
++def immediate_gain(summary_arm, summary_n, split="dev"):
++    """ImmediateGain(arm, split) = Acc(arm, split, learned) - Acc(N, split, learned) (protocol section 5)."""
++    key = "acc_%s_learned" % split
++    return summary_arm[key] - summary_n[key]
++
++
+ def dnll(rows_arm, rows_n):
+     """dNLL(arm) = mean over domains of mean over the domain's windows of NLL_arm(w) - NLL_N(w); domains in the order
+     of the rows. Returns (dNLL, PPL_degradation% = 100 (exp(dNLL) - 1))."""
+@@ -150,7 +156,10 @@ def size_estimate(d_avg, fact_ids, stratum_of, st, comparison, split="DEV"):
+ 
+ def halfwidth_check(d_avg, fact_ids, stratum_of, st, comparison, n, split="DEV"):
+     """B13 (report only): resample n facts (ceil(n / number of strata) per stratum) n_boot times and report the
+-    half-width of the 95% CI of the mean."""
++    half-width of the 95% CI of the mean. n = 0 (sigma_d = 0: every d_f equal) has nothing to resample: reported as
++    skipped."""
++    if n == 0:
++        return {"n": 0, "per_stratum": 0, "halfwidth": None, "skipped": "n = 0 (sigma_d = 0)"}
+     by = _by_stratum(d_avg, fact_ids, stratum_of, st.strata)
+     per = math.ceil(n / len(by))
+     rng = FZ.rng_rule(st.bootstrap_seed, purpose("halfwidth:" + comparison, split, "avg:%d" % n))
+@@ -166,24 +175,25 @@ def halfwidth_check(d_avg, fact_ids, stratum_of, st, comparison, n, split="DEV")
+ 
+ # ------------------------------------------------------------------------------------- per-evaluation summary
+ 
+-def evaluation_summary(ev_out, facts, strata):
+-    """Section 5 summary of one evaluation (evaluate.evaluate_model output): exact fact scores and accuracies.
+-    Keys: scores_dev (Score_DEV(f) for all 160 facts), scores_cb (CB(f) for the 120 learned facts), acc_dev_learned,
+-    acc_dev_unread, acc_dev_<exposure>:<stratum>, acc_cb, all_correct_dev, fpr_dev, em_dev_learned / em_dev_unread
+-    (if EM was run), and the general DEV NLL rows."""
++def evaluation_summary(ev_out, facts, strata, split="dev"):
++    """Section 5 summary of one evaluation (evaluate.evaluate_model output for `split`): exact fact scores and
++    accuracies. Keys (shown for split "dev"): scores_dev (Score(f) for all 160 facts), scores_cb (CB(f) for the 120
++    learned facts), acc_dev_learned, acc_dev_unread, acc_dev_<exposure>:<stratum>, acc_cb, all_correct_dev, fpr_dev,
++    em_dev_learned / em_dev_unread (if EM was run), general_dev (the NLL rows)."""
+     g = groups(facts, strata)
+-    sd = fact_scores(ev_out["dev_qa"])
++    sd = fact_scores(ev_out["%s_qa" % split])
+     scb = fact_scores(ev_out["train_cb"])
+-    allc = all_correct(ev_out["dev_qa"])
+-    out = {"scores_dev": sd, "scores_cb": scb, "acc_dev_learned": acc(sd, g["learned"]),
+-           "acc_dev_unread": acc(sd, g["unread"]), "acc_cb": acc(scb, g["learned"]),
+-           "all_correct_dev": allc, "fpr_dev": acc(allc, g["unread"]), "general_dev": ev_out["general_dev"]}
++    allc = all_correct(ev_out["%s_qa" % split])
++    out = {"scores_%s" % split: sd, "scores_cb": scb, "acc_%s_learned" % split: acc(sd, g["learned"]),
++           "acc_%s_unread" % split: acc(sd, g["unread"]), "acc_cb": acc(scb, g["learned"]),
++           "all_correct_%s" % split: allc, "fpr_%s" % split: acc(allc, g["unread"]),
++           "general_%s" % split: ev_out["general_%s" % split]}
+     for st in strata:
+         for e in ("learned", "unread"):
+-            out["acc_dev_%s:%s" % (e, st)] = acc(sd, g["%s:%s" % (e, st)])
+-    if "em_dev" in ev_out:
+-        se = fact_scores(ev_out["em_dev"], key="em")
+-        out["em_dev_learned"], out["em_dev_unread"] = acc(se, g["learned"]), acc(se, g["unread"])
++            out["acc_%s_%s:%s" % (split, e, st)] = acc(sd, g["%s:%s" % (e, st)])
++    if "em_%s" % split in ev_out:
++        se = fact_scores(ev_out["em_%s" % split], key="em")
++        out["em_%s_learned" % split], out["em_%s_unread" % split] = acc(se, g["learned"]), acc(se, g["unread"])
+     if "s_mapping_dev_qa" in ev_out:
+         out["s_mapping_dev_learned"] = acc(fact_scores(ev_out["s_mapping_dev_qa"]), g["learned"])
+         out["s_mapping_cb"] = acc(fact_scores(ev_out["s_mapping_cb"]), g["learned"])
+diff --git a/metrix/e1-pilot/src/metrix_e1/stops.py b/metrix/e1-pilot/src/metrix_e1/stops.py
+index 4d9286f..d0bf6ba 100644
+--- a/metrix/e1-pilot/src/metrix_e1/stops.py
++++ b/metrix/e1-pilot/src/metrix_e1/stops.py
+@@ -10,6 +10,7 @@ does not state are interpretation B16. Thresholds come from metrix_e1.contract.
+ ST12 is raised by metrix_e1.frozen and metrix_e1.data (errors.ST12Error); st12() runs those checks.
+ """
+ import math
++from pathlib import Path
+ 
+ from . import contract as C
+ from . import data as D
+@@ -142,7 +143,22 @@ def st12(repo_root=None, inputs_dir=None, data_dir=None):
+ 
+ 
+ def st13(fz, test_read_before_freeze):
+-    """TEST read before the configurations are frozen -> IMPLEMENTATION_FAIL; the whole pilot is void."""
++    """TEST read before the configurations are frozen -> IMPLEMENTATION_FAIL; the whole pilot is void. The flag is
++    the caller's knowledge; st13_scan() detects the files."""
+     if test_read_before_freeze:
+         raise Stop("ST13", "IMPLEMENTATION_FAIL", action(fz, "ST13"), "TEST read before the configuration freeze",
+                    void_pilot=True)
++
++
++def st13_scan(fz, repo_root, dirs):
++    """ST13 by detection: while the freeze record of the selected configurations is not committed, a TEST file
++    (test_qa.jsonl, general_test.jsonl) in any of `dirs` means TEST was generated before the freeze."""
++    from . import record as R
++    try:
++        R.committed_json(repo_root, R.SELECTION_FREEZE_REL)
++        return []
++    except R.NotCommitted:
++        pass
++    found = [str(Path(d) / n) for d in dirs for n in D.TEST_FILES if (Path(d) / n).exists()]
++    st13(fz, bool(found))
++    return found
+diff --git a/metrix/e1-pilot/src/metrix_e1/test_data.py b/metrix/e1-pilot/src/metrix_e1/test_data.py
+index 190eee1..f55cba5 100644
+--- a/metrix/e1-pilot/src/metrix_e1/test_data.py
++++ b/metrix/e1-pilot/src/metrix_e1/test_data.py
+@@ -8,7 +8,10 @@ Implementation Task Order V1, section 5: before anything is generated, all three
+      bytes equal the blob of HEAD);
+   3. the freeze record of the selected configurations has been committed (results/selection_freeze_record.json,
+      formal mode, committed; selected F, L, A configurations of SEARCH_SPACE.json; data content hashes equal to the
+-     ones just checked; a 64-hex checkpoint hash for every one of the 30 training runs of the plan).
++     ones just checked; a 64-hex checkpoint hash for every one of the 30 training runs of the plan; bound to the
++     committed Gate 0 record by its SHA-256).
++  Beyond the task order (for Review Gate): every interpretation of interpretations.py has been ruled.
++The two records are built by record.gate0_record and record.selection_freeze_record.
+ If any condition fails: the reason is printed, then "RESULT: FAIL", exit 1; no directory or file is created and no
+ TEST row is read (eval_sets.jsonl test rows are only parsed by generate_test(), after the checks).
+ 
+@@ -23,13 +26,13 @@ import argparse
+ import dataclasses
+ import json
+ import re
+-import subprocess
+ import sys
+ from pathlib import Path
+ 
+ from . import contract as C
+ from . import data as D
+ from . import frozen as FZ
++from . import interpretations as INT
+ from . import leakage as LK
+ from . import record as R
+ from . import stops as STP
+@@ -44,42 +47,33 @@ class PreconditionFailed(Exception):
+     pass
+ 
+ 
+-def _committed_json(repo_root, rel):
+-    """JSON of a file that is committed at HEAD with no uncommitted change in the working tree."""
+-    r = subprocess.run(["git", "-C", str(repo_root), "cat-file", "blob", "HEAD:%s" % rel], capture_output=True, check=False)
+-    if r.returncode != 0:
+-        raise PreconditionFailed("%s is not committed at HEAD" % rel)
+-    wt = Path(repo_root) / rel
+-    if not wt.is_file() or wt.read_bytes() != r.stdout:
+-        raise PreconditionFailed("%s in the working tree differs from its committed version" % rel)
++def _committed(repo_root, rel, kind, fz):
+     try:
+-        return json.loads(r.stdout), FZ.sha256_hex(r.stdout)
+-    except ValueError as e:
+-        raise PreconditionFailed("%s does not parse: %r" % (rel, e)) from e
++        rec, sha = R.committed_json(repo_root, rel)
++    except R.NotCommitted as e:
++        raise PreconditionFailed(str(e)) from e
++    if rec.get("kind") != kind or rec.get("mode") != "formal" or rec.get("label") is not None:
++        raise PreconditionFailed("%s is not a formal-mode %s record (kind %r, mode %r)" % (rel, kind, rec.get("kind"), rec.get("mode")))
++    if rec.get("frozen_commit") != fz.record.commit:
++        raise PreconditionFailed("%s names frozen commit %r, PROTOCOL_FROZEN %s" % (rel, rec.get("frozen_commit"), fz.record.commit))
++    return rec, sha
+ 
+ 
+ def check_gate0_record(fz, repo_root):
+-    """Condition 2."""
+-    rel = "%s/%s" % (R.FORMAL_RESULTS_REL, R.GATE0_RECORD)
+-    rec, sha = _committed_json(repo_root, rel)
+-    if rec.get("mode") != "formal" or rec.get("label") is not None:
+-        raise PreconditionFailed("%s is not a formal-mode record (mode %r)" % (rel, rec.get("mode")))
+-    if rec.get("frozen_commit") != fz.record.commit:
+-        raise PreconditionFailed("%s names frozen commit %r, PROTOCOL_FROZEN %s" % (rel, rec.get("frozen_commit"), fz.record.commit))
++    """Condition 2: the committed Gate 0 record (record.gate0_record) of formal mode with status PASS."""
++    rec, sha = _committed(repo_root, R.GATE0_RECORD_REL, "gate0", fz)
+     status = (rec.get("gate0") or {}).get("gate0_status")
+     if status != "PASS":
+-        raise PreconditionFailed("%s: Gate 0 status %r, not PASS" % (rel, status))
++        raise PreconditionFailed("%s: Gate 0 status %r, not PASS" % (R.GATE0_RECORD_REL, status))
+     return sha
+ 
+ 
+-def check_selection_record(fz, contract, repo_root, content_hashes):
+-    """Condition 3."""
+-    rel = "%s/%s" % (R.FORMAL_RESULTS_REL, R.SELECTION_FREEZE_RECORD)
+-    rec, sha = _committed_json(repo_root, rel)
+-    if rec.get("mode") != "formal" or rec.get("label") is not None:
+-        raise PreconditionFailed("%s is not a formal-mode record (mode %r)" % (rel, rec.get("mode")))
+-    if rec.get("frozen_commit") != fz.record.commit:
+-        raise PreconditionFailed("%s names frozen commit %r, PROTOCOL_FROZEN %s" % (rel, rec.get("frozen_commit"), fz.record.commit))
++def check_selection_record(fz, contract, repo_root, content_hashes, gate0_sha):
++    """Condition 3: the committed freeze record (record.selection_freeze_record) of formal mode: selected F, L, A
++    configurations of SEARCH_SPACE.json; data content hashes equal to the data directory's; a 64-hex checkpoint hash
++    for every one of the 30 runs of the plan; bound to the committed Gate 0 record by its SHA-256."""
++    rel = R.SELECTION_FREEZE_REL
++    rec, sha = _committed(repo_root, rel, "selection_freeze", fz)
+     selected = rec.get("selected") or {}
+     try:
+         plan = T.training_plan(contract, selected)
+@@ -93,29 +87,41 @@ def check_selection_record(fz, contract, repo_root, content_hashes):
+     missing = [s.name for s in plan if not isinstance(ck.get(s.name), str) or not hexes.fullmatch(ck[s.name])]
+     if missing:
+         raise PreconditionFailed("%s: no checkpoint hash for %d runs (first %s)" % (rel, len(missing), missing[0]))
++    if rec.get("gate0_record_sha256") != gate0_sha:
++        raise PreconditionFailed("%s is not bound to the committed Gate 0 record (sha256 %r, committed %s)" % (
++            rel, rec.get("gate0_record_sha256"), gate0_sha))
+     return sha
+ 
+ 
++def check_interpretations_ruled():
++    """Beyond the three conditions of the task order (listed for Review Gate): no TEST while an interpretation of
++    interpretations.py is still pending (B19 decides what the TEST part of the leakage checks counts; the others
++    decide how the runs whose checkpoints TEST evaluates were made)."""
++    open_ids = INT.pending()
++    if open_ids:
++        raise PreconditionFailed("interpretations not yet ruled by Review Gate: %s" % ", ".join(open_ids))
++
++
+ def check_preconditions(repo_root, inputs_dir, data_dir):
+-    """The three conditions, in order. Returns (Frozen, TestAuthorization); raises PreconditionFailed or a protocol
+-    stop (ST12) on the first condition that fails."""
++    """The three conditions, in order, then check_interpretations_ruled(). Returns (Frozen, TestAuthorization);
++    raises PreconditionFailed or a protocol stop (ST12) on the first condition that fails."""
+     fz = STP.st12(repo_root, inputs_dir, data_dir)                    # condition 1 (raises ST12Error)
+     contract = C.load(fz)
+     content = fz.check_data_dir(data_dir)
+     g_sha = check_gate0_record(fz, fz.repo_root)                     # condition 2
+-    s_sha = check_selection_record(fz, contract, fz.repo_root, content)   # condition 3
++    s_sha = check_selection_record(fz, contract, fz.repo_root, content, g_sha)   # condition 3
++    check_interpretations_ruled()
+     return fz, LK.TestAuthorization(fz.record.commit, g_sha, s_sha)
+ 
+ 
+ # ------------------------------------------------------------------------------------------- generation (2.3, 2.7)
+ 
+ def params_for_test(fz):
+-    """TEST counts and the TEST split of the general text, from the frozen manifests."""
+-    sm, dm = fz.split_manifest, fz.data_manifest
+-    per_fact = int(C.fullmatch_frozen(r"(\d+) questions per fact \(learned and unread\), TEST templates; not generated before the "
+-                         r"final freeze", sm["splits"]["TEST"], "splits.TEST").group(1))
+-    n, split = C.fullmatch_frozen(r"first (\d+) windows per domain with split == '(\w+)', file order; final TEST evaluation only",
+-                     dm["general_text"]["test"], "general_text.test").groups()
++    """TEST questions per fact (contract.Accounting, from SPLIT_MANIFEST splits.TEST) and the TEST windows of the
++    general text, from the frozen manifests."""
++    per_fact = C.load(fz).accounting.test_questions_per_fact
++    n, split = C.fullmatch_frozen(r"first (\d+) windows per domain with split == '(\w+)', file order; final TEST "
++                                  r"evaluation only", fz.data_manifest["general_text"]["test"], "general_text.test").groups()
+     return per_fact, int(n), split
+ 
+ 
+@@ -172,7 +178,8 @@ def main(argv=None):
+     for name, blob in files.items():
+         (out / name).write_bytes(blob)
+         print("%-18s byte_sha256 %s" % (name, FZ.sha256_hex(blob)))
+-    report = LK.run_test_part(fz.split_manifest, LK.load_data(a.data), info["test_qa"], info["general_test"], auth)
++    report = LK.run_test_part(fz.split_manifest, LK.load_data(a.data), info["test_qa"], info["general_test"], auth,
++                              fz.repo_root)
+     (out / "leakage_test_report.json").write_text(json.dumps(report, ensure_ascii=False, indent=1, sort_keys=True) + "\n",
+                                                   encoding="utf-8")
+     for c, v in report["checks"].items():
+diff --git a/metrix/e1-pilot/src/metrix_e1/train.py b/metrix/e1-pilot/src/metrix_e1/train.py
+index 2025c3c..04e58c8 100644
+--- a/metrix/e1-pilot/src/metrix_e1/train.py
++++ b/metrix/e1-pilot/src/metrix_e1/train.py
+@@ -14,8 +14,9 @@ Training input: statement ids + <|endoftext|>; no chat template; right padding t
+ padding excluded from the loss. AdamW, warmup + cosine, global-norm clipping, bf16 autocast with float32 master
+ weights, 300 steps. Only the final state is kept.
+ 
+-Modes (metrix_e1.mode): formal mode always runs the contract's steps; smoke mode runs a shortened number of steps
+-and is the only mode that can (RunMode refuses a shortened count in formal mode).
++Modes (metrix_e1.mode): formal mode always runs the contract's steps and only on the GPU (RunMode refuses a shortened
++count in formal mode); smoke mode runs a chosen shortened number of steps (CPU allowed); preflight mode runs exactly
++the protocol's preflight steps of the first configuration (section 8 step 2), on the GPU.
+ """
+ import copy
+ import hashlib
+@@ -35,12 +36,13 @@ ANCHOR_FILE = "anchor_text.jsonl"
+ 
+ 
+ class NonFinite(ProtocolStop):
+-    """Protocol section 11 ST6: a non-finite value in a training run or an evaluation. Stops that run; the caller
+-    decides (stops.st6) whether the run's configuration is excluded (section 7) or the pilot is IMPLEMENTATION_FAIL
+-    (selected configuration or a control)."""
++    """Protocol section 11 ST6: a non-finite value in a training run or an evaluation. Stops that run. It carries no
++    status: whether the run's configuration is excluded from selection (section 7) or the pilot is
++    IMPLEMENTATION_FAIL (selected configuration or a control) is decided by stops.st6 with what the caller knows."""
+ 
+-    def __init__(self, message):
+-        super().__init__("ST6", "IMPLEMENTATION_FAIL", message)
++    def __init__(self, message, values=()):
++        super().__init__("ST6", None, message)
++        self.values = list(values)
+ 
+ 
+ # --------------------------------------------------------------------------------------------- run plan (7, 8)
+@@ -122,7 +124,7 @@ def select_config(contract, arm, results):
+ # --------------------------------------------------------------------------------- order and schedule (7; B1-B3)
+ 
+ def step_numbers(total):
+-    """B1: optimizer steps are numbered 1..total."""
++    """B1: optimizer steps are numbered 1..total (used by batch_schedule, hence by train_run)."""
+     return range(1, total + 1)
+ 
+ 
+@@ -139,15 +141,11 @@ def epoch_batches(n_rows, batch_size, seed, epoch, purpose_template):
+ 
+ def batch_schedule(tr, n_rows, batch_size, seed):
+     """[(step, epoch, row indices)] for steps 1..total (B1, B3)."""
+-    out, s = [], 0
+-    for e in range(1, tr.epochs + 1):
+-        for b in epoch_batches(n_rows, batch_size, seed, e, tr.order_purpose):
+-            s += 1
+-            out.append((s, e, b))
+-    if s != tr.total_steps:
++    batches = [(e, b) for e in range(1, tr.epochs + 1) for b in epoch_batches(n_rows, batch_size, seed, e, tr.order_purpose)]
++    if len(batches) != tr.total_steps:
+         raise ImplementationFail("%d rows / batch %d x %d epochs gives %d steps, the contract says %d" % (
+-            n_rows, batch_size, tr.epochs, s, tr.total_steps))
+-    return out
++            n_rows, batch_size, tr.epochs, len(batches), tr.total_steps))
++    return [(s, e, b) for s, (e, b) in zip(step_numbers(tr.total_steps), batches)]
+ 
+ 
+ def lr_at(step, peak, tr):
+@@ -209,12 +207,21 @@ def anchor_kl(logits_theta, logits_base, attention_mask):
+ 
+ # --------------------------------------------------------------------------------------------- LoRA (arm L)
+ 
++def lora_a_init(rank, in_features, rng):
++    """B5: LoRA A (rank x in_features), uniform in [-1/sqrt(in_features), 1/sqrt(in_features)], every value drawn
++    from `rng` (a random.Random from rng_rule; protocol section 0: all random numbers come from rng_rule) with
++    rng.uniform, row by row; float32."""
++    bound = 1.0 / math.sqrt(in_features)
++    vals = [rng.uniform(-bound, bound) for _ in range(rank * in_features)]
++    return torch.tensor(vals, dtype=torch.float64).reshape(rank, in_features).to(torch.float32)
++
++
+ class LoRALinear(torch.nn.Module):
+     """y = W x (+ b) + (alpha / r) * B (A x). The wrapped base Linear is frozen; A (r x in) and B (out x r) are the
+     only trainable parameters; B starts at 0, so the wrapped layer equals the base layer at step 0; dropout 0 (no
+-    dropout module). A's initialisation: B5."""
++    dropout module). A's initialisation: lora_a_init (B5); `rng` is the random.Random of the module."""
+ 
+-    def __init__(self, base, rank, alpha, generator):
++    def __init__(self, base, rank, alpha, rng):
+         super().__init__()
+         if not isinstance(base, torch.nn.Linear):
+             raise TypeError("LoRA wraps torch.nn.Linear, got %s" % type(base).__name__)
+@@ -222,8 +229,7 @@ class LoRALinear(torch.nn.Module):
+         for p in base.parameters():
+             p.requires_grad_(False)
+         self.rank, self.alpha, self.scaling = rank, alpha, alpha / rank
+-        bound = 1.0 / math.sqrt(base.in_features)
+-        a = (torch.rand((rank, base.in_features), generator=generator, dtype=torch.float32) * 2.0 - 1.0) * bound
++        a = lora_a_init(rank, base.in_features, rng)
+         dev = base.weight.device
+         self.lora_A = torch.nn.Parameter(a.to(dev))
+         self.lora_B = torch.nn.Parameter(torch.zeros((base.out_features, rank), dtype=torch.float32, device=dev))
+@@ -252,17 +258,11 @@ def apply_lora(model, arms, rank, seed, expect_layers):
+         for name in arms.lora_modules:
+             parent = layer.self_attn if name in ("q_proj", "k_proj", "v_proj", "o_proj") else layer.mlp
+             path = "model.layers.%d.%s.%s" % (li, "self_attn" if parent is layer.self_attn else "mlp", name)
+-            g = torch.Generator(device="cpu")
+-            g.manual_seed(FZ.rng_rule(seed, "lora_A:%s" % path).getrandbits(64))
+-            setattr(parent, name, LoRALinear(getattr(parent, name), rank, alpha, g))
++            setattr(parent, name, LoRALinear(getattr(parent, name), rank, alpha, FZ.rng_rule(seed, "lora_A:%s" % path)))
+             paths.append(path)
+     return paths
+ 
+ 
+-def lora_parameters(model):
+-    return [p for n, p in model.named_parameters() if n.endswith(".lora_A") or n.endswith(".lora_B")]
+-
+-
+ def trainable_parameters(model):
+     return [p for p in model.parameters() if p.requires_grad]
+ 
+@@ -320,10 +320,16 @@ class RunResult:
+ 
+ def _finite(x, what, spec, step):
+     if not math.isfinite(x):
+-        raise NonFinite("%s: %s is %r at step %d" % (spec.name, what, x, step))
++        raise NonFinite("%s: %s is %r at step %d" % (spec.name, what, x, step), [x])
+     return x
+ 
+ 
++def _sync(device):
++    """Wait for queued CUDA work so that wall-clock timestamps cover it (no-op on CPU)."""
++    if torch.device(device).type == "cuda":
++        torch.cuda.synchronize(device)
++
++
+ def make_base_copy(model):
+     """Arm A's frozen base copy (protocol section 4: p_base from the weights of arm N, no gradient): a deep copy of the
+     model before training, every parameter with requires_grad False, in eval mode."""
+@@ -362,6 +368,9 @@ def train_run(model, tok, data, spec, contract, mode, device, log_fn=None):
+     if not mode.smoke and torch.device(device).type != "cuda":
+         raise ImplementationFail("%s mode trains only on the GPU (protocol sections 0 and 7: no model training on CPU)"
+                                  % mode.name)
++    if mode.preflight and mode.shortened_steps != contract.preflight_steps:
++        raise ImplementationFail("preflight runs the protocol's %d steps, not %d" % (contract.preflight_steps,
++                                                                                  mode.shortened_steps))
+     steps = mode.steps(tr.total_steps)
+     notes = prepare_arm(model, spec, contract, mode)
+     params = trainable_parameters(model)
+@@ -387,6 +396,7 @@ def train_run(model, tok, data, spec, contract, mode, device, log_fn=None):
+     opt = make_optimizer(params, tr, cfg["learning_rate"], cfg["weight_decay"])
+     model.train()
+     dev_type = torch.device(device).type
++    _sync(device)
+     t0 = time.perf_counter()
+     for s, epoch, rows_idx in schedule[:steps]:
+         lr = lr_at(s, cfg["learning_rate"], tr)
+@@ -400,6 +410,8 @@ def train_run(model, tok, data, spec, contract, mode, device, log_fn=None):
+         entry = {"step": s, "epoch": epoch, "lr": lr, "rows": list(rows_idx), "fact_tokens": int(mask.sum())}
+         if spec.arm == "A":
+             docs = anchor_docs(s, ar)
++            if len(docs) != ar.anchor_docs_per_step:
++                raise ImplementationFail("step %d: %d anchor documents, the protocol %d" % (s, len(docs), ar.anchor_docs_per_step))
+             a_ids, a_mask = pad_right([anchors[d] for d in docs], ev.endoftext_id, device)
+             with torch.no_grad(), torch.autocast(device_type=dev_type, dtype=torch.bfloat16):
+                 lb = base(input_ids=a_ids, attention_mask=a_mask).logits
+@@ -416,6 +428,7 @@ def train_run(model, tok, data, spec, contract, mode, device, log_fn=None):
+         gn = torch.nn.utils.clip_grad_norm_(params, tr.grad_clip_norm)
+         entry["grad_norm"] = _finite(float(gn), "gradient norm", spec, s)
+         opt.step()
++        _sync(device)
+         entry["seconds"] = time.perf_counter() - t0
+         result.fact_tokens += entry["fact_tokens"]
+         result.log.append(entry)
+diff --git a/metrix/e1-pilot/tests/test_contract.py b/metrix/e1-pilot/tests/test_contract.py
+index b151460..fffa474 100644
+--- a/metrix/e1-pilot/tests/test_contract.py
++++ b/metrix/e1-pilot/tests/test_contract.py
+@@ -45,3 +45,20 @@ def test_changed_search_space_sentence_stops(fz):
+     f2.search_space["training_contract"]["total_steps"] = 299
+     with pytest.raises(ImplementationFail):
+         C.load(f2)
++
++
++def test_accounting_and_status_vocabulary(fz, contract):
++    from metrix_e1.errors import STATUSES
++    a = contract.accounting
++    assert (a.train_flops_per_param_token, a.forward_flops_per_param_token) == (6, 2)
++    assert (a.dev_questions_per_fact, a.test_questions_per_fact) == (2, 3)
++    assert contract.statuses == STATUSES
++    assert contract.gate.t1_acc_min == 0.70
++
++
++def test_changed_status_vocabulary_stops(fz):
++    f2 = copy.copy(fz)
++    f2.protocol_text = fz.protocol_text.replace("`BLOCKED` / `NOT_TESTED`", "`NOT_TESTED` / `BLOCKED`")
++    assert f2.protocol_text != fz.protocol_text
++    with pytest.raises(ImplementationFail):
++        C.load(f2)
+diff --git a/metrix/e1-pilot/tests/test_evaluate.py b/metrix/e1-pilot/tests/test_evaluate.py
+index be18586..5e4cb32 100644
+--- a/metrix/e1-pilot/tests/test_evaluate.py
++++ b/metrix/e1-pilot/tests/test_evaluate.py
+@@ -114,3 +114,23 @@ def test_s_mapping_uses_the_s_answer(contract, tok, data_rows, fz):
+         assert r["candidates"] == data_rows["candidates.json"][af["fact_id"]]
+         assert r["candidates"][r["answer_index"]] == af["answer"] != facts[r["fact_id"]]["answer"]
+     assert len(cb) == 120
++
++
++def test_formal_evaluation_refuses_cpu(contract, tok, data_rows, fz):
++    import pytest
++    from metrix_e1 import mode as M
++    from metrix_e1.errors import ImplementationFail
++    for mode in (M.FORMAL_MODE, M.preflight_mode(contract)):
++        with pytest.raises(ImplementationFail, match="evaluates only on the GPU"):
++            E.evaluate_model(tiny_model(), tok, data_rows, fz.templates, contract.evaluation, mode, "cpu")
++
++
++def test_think_marks_are_checked(contract, tok, data_rows):
++    import dataclasses
++    import pytest
++    from metrix_e1.errors import ImplementationFail
++    bad = dataclasses.replace(contract.evaluation, think_open_id=151643)
++    with pytest.raises(ImplementationFail):
++        E.em(Stub(151645), tok, data_rows["dev_qa.jsonl"][:1], data_rows["facts.jsonl"], bad, "cpu")
++    rows = E.em(Stub(151645), tok, data_rows["dev_qa.jsonl"][:2], data_rows["facts.jsonl"], contract.evaluation, "cpu")
++    assert [r["generated_ids"] for r in rows] == [[151645], [151645]] and all(r["output"] == "" for r in rows)
+diff --git a/metrix/e1-pilot/tests/test_gate.py b/metrix/e1-pilot/tests/test_gate.py
+index 2065c0d..90181e4 100644
+--- a/metrix/e1-pilot/tests/test_gate.py
++++ b/metrix/e1-pilot/tests/test_gate.py
+@@ -46,7 +46,9 @@ def failing_variants(c):
+         "G0.6": [("point", g.g6_point_max + eps), ("ci_high", g.g6_upper_max + eps)],
+         "G0.7": [("point", g.g7_point_max + eps), ("ci_high", g.g7_upper_max + eps)],
+         "G0.8": [("checkpoints", {101: {"satisfied": True}, 202: {"satisfied": False}, 303: {"satisfied": True}}),
+-                 ("checkpoints", {})],
++                 ("checkpoints", {}),
++                 ("checkpoints", {101: {"satisfied": True}, 202: {"satisfied": True}}),      # only 2 of the 3
++                 ("checkpoints", {101: {"satisfied": True}, 202: {"satisfied": True}, 404: {"satisfied": True}})],
+         "G0.9": [("acc_avg", g.g9_acc_max + eps)],
+         "G0.10": [("estimates", {"L-F": {"finite": True}, "A-F": {"finite": False}})],
+     }
+@@ -77,6 +79,22 @@ def test_each_condition_not_satisfied(contract, cond):
+         assert all(w in STATUSES for w in _words(res))
+ 
+ 
++def test_g03_endpoints_are_inside(contract):
++    g = contract.gate
++    for side in (0, 1):
++        v = passing(contract)
++        v["G0.3"] = {"acc_dev_learned": g.g3_learned[side], "acc_dev_unread": g.g3_unread[side], "acc_cb": g.g3_cb[side],
++                     "acc_dev_learned:natural": g.g3_stratum[side], "acc_dev_learned:random": g.g3_stratum[side]}
++        assert G.judge(v, contract, M.FORMAL_MODE)["conditions"]["G0.3"]["satisfied"]
++
++
++def test_preflight_mode_is_not_judged(contract):
++    with pytest.raises(ValueError):
++        G.judge(passing(contract), contract, M.preflight_mode(contract))
++    with pytest.raises(ValueError):
++        G.judge_test(passing_test(contract), "PASS", contract, M.preflight_mode(contract))
++
++
+ def test_reasons_follow_section_9(contract):
+     assert {c for c, r in G.REASON.items() if r == "IMPLEMENTATION_FAIL"} == {"G0.1", "G0.2", "G0.6", "G0.7", "G0.8"}
+     assert G.REASON["G0.4"] == "OPTIMIZATION_FAIL"
+@@ -182,3 +200,66 @@ def test_compute_values_and_comparisons(contract, data_rows):
+     assert len(rep) == 4 * (5 + 5)
+     assert rep["Spill-F:101"]["n_facts"] == 40 and rep["L-F:avg"]["n_facts"] == 120
+     assert rep["F-N:avg"] == v["G0.5"]["delta_avg"]
++
++
++# --------------------------------------------------------------------------------------------- T1-T3 (B24)
++
++def passing_test(c):
++    g = c.gate
++    return {"T1": {"acc_avg": g.t1_acc_min, "delta_avg": {"ci_low": 0.01}},
++            "T2": {"S": {"point": g.g6_point_max, "ci_high": g.g6_upper_max},
++                   "Y": {"point": g.g7_point_max, "ci_high": g.g7_upper_max}},
++            "T3": {"acc_test_learned": g.g3_learned[0], "acc_test_unread": g.g3_unread[1], "acc_cb": g.g3_cb[0],
++                   "acc_test_learned:natural": g.g3_stratum[0], "acc_test_learned:random": g.g3_stratum[1]}}
++
++
++def test_t1_t3(contract):
++    g = contract.gate
++    res = G.judge_test(passing_test(contract), "PASS", contract, M.FORMAL_MODE)
++    assert res["final_status"] == "PASS" and all(x["satisfied"] for x in res["conditions"].values())
++    eps = 1e-9
++    cases = [("T1", lambda v: v["T1"].update(acc_avg=g.t1_acc_min - eps), "OPTIMIZATION_OR_CAPACITY_UNRESOLVED"),
++             ("T1", lambda v: v["T1"].update(delta_avg={"ci_low": 0.0}), "OPTIMIZATION_OR_CAPACITY_UNRESOLVED"),
++             ("T2", lambda v: v["T2"]["S"].update(point=g.g6_point_max + eps), "IMPLEMENTATION_FAIL"),
++             ("T2", lambda v: v["T2"]["Y"].update(ci_high=g.g7_upper_max + eps), "IMPLEMENTATION_FAIL"),
++             ("T3", lambda v: v["T3"].update(acc_test_unread=g.g3_unread[1] + eps), None),
++             ("T3", lambda v: v["T3"].update(**{"acc_test_learned:random": g.g3_stratum[0] - eps}), None)]
++    for cond, change, reason in cases:
++        v = passing_test(contract)
++        change(v)
++        res = G.judge_test(v, "PASS", contract, M.FORMAL_MODE)
++        assert [c for c, x in res["conditions"].items() if not x["satisfied"]] == [cond]
++        assert res["final_status"] == "PIPELINE_NOT_QUALIFIED" and res["conditions"][cond]["reason"] == reason
++        assert all(w in STATUSES for w in _words_final(res))
++    with pytest.raises(ValueError):
++        G.judge_test(passing_test(contract), "PIPELINE_NOT_QUALIFIED", contract, M.FORMAL_MODE)
++    smoke = G.judge_test(passing_test(contract), "NOT_TESTED", contract, M.smoke_mode(3))
++    assert smoke["final_status"] == "NOT_TESTED" and smoke["reasons"] == []
++
++
++def _words_final(res):
++    return [w for w in [res["final_status"]] + res["reasons"] + [x["reason"] for x in res["conditions"].values()] if w]
++
++
++def test_compute_test_values(contract, data_rows):
++    import random
++    from fractions import Fraction
++    from metrix_e1 import stats as S
++    facts = data_rows["facts.jsonl"]
++    rng = random.Random(1)
++    learned = [f["fact_id"] for f in facts if f["exposure"] == "learned"]
++    unread = [f["fact_id"] for f in facts if f["exposure"] == "unread"]
++
++    def summ(p):
++        return {"scores_test": {f["fact_id"]: Fraction(int(rng.random() < p), 1) for f in facts}, "acc_cb": Fraction(1, 4)}
++    N = summ(0.25)
++    N.update({"acc_test_learned": S.acc(N["scores_test"], learned), "acc_test_unread": S.acc(N["scores_test"], unread),
++              "acc_test_learned:natural": Fraction(1, 4), "acc_test_learned:random": Fraction(1, 4)})
++    inp = {"facts": facts, "N": N}
++    for arm, p in (("F", 0.9), ("S", 0.25), ("Y", 0.25)):
++        inp[arm] = {s: summ(p) for s in SEEDS}
++    v = G.compute_test_values(inp, contract)
++    assert v["T1"]["delta_avg"]["purpose"] == "F-N:TEST:avg"
++    assert v["T2"]["S"]["delta_avg"]["purpose"] == "S-N:TEST:avg"
++    assert v["T3"]["acc_test_learned"] == float(N["acc_test_learned"])
++    assert G.judge_test(v, "PASS", contract, M.FORMAL_MODE)["final_status"] in STATUSES
+diff --git a/metrix/e1-pilot/tests/test_lora.py b/metrix/e1-pilot/tests/test_lora.py
+index bd599e2..3c80f23 100644
+--- a/metrix/e1-pilot/tests/test_lora.py
++++ b/metrix/e1-pilot/tests/test_lora.py
+@@ -6,6 +6,9 @@ trainable; every base parameter is frozen and its hash is unchanged after traini
+ Protocol v1.1 section 4: LoRA on q, k, v, o, gate, up, down of every layer; alpha = 2 x rank; dropout 0; B = 0.
+ Random-initialisation models only; no weights are loaded.
+ """
++import math
++import random
++
+ import torch
+ 
+ from conftest import tiny_model
+@@ -34,8 +37,7 @@ def test_step0_output_equals_base(contract):
+ def test_forward_equals_hand_computation():
+     torch.manual_seed(3)
+     lin = torch.nn.Linear(6, 5, bias=False).double()
+-    g = torch.Generator().manual_seed(7)
+-    layer = T.LoRALinear(lin, rank=2, alpha=4.0, generator=g).double()
++    layer = T.LoRALinear(lin, rank=2, alpha=4.0, rng=random.Random(7)).double()
+     with torch.no_grad():
+         layer.lora_B.copy_(torch.randn(5, 2, dtype=torch.float64))
+     x = torch.randn(3, 6, dtype=torch.float64)
+@@ -88,3 +90,17 @@ def test_only_lora_trainable_and_base_hash_unchanged_after_training(tok, data_ro
+     assert res.frozen_sha256_before == res.frozen_sha256_after
+     assert any(float(mod.lora_B.detach().abs().sum()) > 0 for mod in m.modules() if isinstance(mod, T.LoRALinear))
+     assert res.steps_run == 3
++
++
++def test_lora_a_values_come_from_rng_rule(contract):
++    """B5: every value of A is r.uniform(-1/sqrt(in), 1/sqrt(in)) of r = rng_rule(TRAIN_SEED, 'lora_A:<path>')."""
++    from metrix_e1 import frozen as FZ
++    m = tiny_model()
++    T.apply_lora(m, contract.arms, 8, 202, expect_layers=None)
++    mod = m.model.layers[1].mlp.down_proj
++    r = FZ.rng_rule(202, "lora_A:model.layers.1.mlp.down_proj")
++    b = 1 / math.sqrt(mod.base.in_features)
++    want = torch.tensor([r.uniform(-b, b) for _ in range(8 * mod.base.in_features)], dtype=torch.float64)
++    assert torch.equal(mod.lora_A.detach(), want.reshape(8, -1).float())
++    other = m.model.layers[1].mlp.up_proj
++    assert not torch.equal(other.lora_A.detach()[:, :8], mod.lora_A.detach()[:, :8])     # one stream per module
+diff --git a/metrix/e1-pilot/tests/test_record.py b/metrix/e1-pilot/tests/test_record.py
+index f7bebfb..3eb27b3 100644
+--- a/metrix/e1-pilot/tests/test_record.py
++++ b/metrix/e1-pilot/tests/test_record.py
+@@ -63,3 +63,31 @@ def test_environment_block(fz):
+     assert pf["commit"] == fz.record.commit and len(pf["data_sha256"]) == 12
+     assert env["git"]["head"] and isinstance(env["git"]["dirty"], bool)
+     assert [e["id"] for e in env["interpretations"]] == ["B%d" % i for i in range(1, len(env["interpretations"]) + 1)]
++
++
++def test_record_constructors_and_committed_json(fz, tmp_path):
++    import subprocess
++    g = R.gate0_record(fz, M.FORMAL_MODE, {"gate0_status": "PIPELINE_NOT_QUALIFIED"})
++    assert (g["kind"], g["mode"], g["label"], g["frozen_commit"]) == ("gate0", "formal", None, fz.record.commit)
++    s = R.selection_freeze_record(fz, M.smoke_mode(3), {"F": "F1"}, {"facts": "x"}, {"r": "y"}, "z")
++    assert s["kind"] == "selection_freeze" and s["label"] == M.SMOKE_LABEL and s["gate0_record_sha256"] == "z"
++    root = tmp_path / "repo"
++    root.mkdir()
++    subprocess.run(["git", "-C", str(root), "init", "-q"], check=True)
++    (root / "a.json").write_text(json.dumps(g), encoding="utf-8")
++    with pytest.raises(R.NotCommitted):
++        R.committed_json(root, "a.json")
++    subprocess.run(["git", "-C", str(root), "add", "a.json"], check=True)
++    subprocess.run(["git", "-C", str(root), "-c", "user.name=t", "-c", "user.email=t@invalid", "-c", "commit.gpgsign=false",
++                    "commit", "-q", "-m", "r"], check=True)
++    obj, sha = R.committed_json(root, "a.json")
++    assert obj == g
++    (root / "a.json").write_text("{}", encoding="utf-8")
++    with pytest.raises(R.NotCommitted):
++        R.committed_json(root, "a.json")
++
++
++def test_environment_records_the_parsed_protocol_frozen(fz):
++    pf = R.environment(fz)["protocol_frozen"]
++    assert pf["PROTOCOL_FROZEN_parsed_bytes_sha256"] == fz.record.source_sha256
++    assert pf["PROTOCOL_FROZEN_unchanged_since_load"] is True
+diff --git a/metrix/e1-pilot/tests/test_stats.py b/metrix/e1-pilot/tests/test_stats.py
+index 8db7d81..dc7d581 100644
+--- a/metrix/e1-pilot/tests/test_stats.py
++++ b/metrix/e1-pilot/tests/test_stats.py
+@@ -131,3 +131,14 @@ def test_size_estimate_formula(contract):
+     assert est["n"]["point|delta=0.1"] == math.ceil(((1.96 + 0.84) * sigma / 0.1) ** 2)
+     assert est["finite"] and est["n_max"] == max(est["n"].values())
+     assert est["sigma"]["p2.5"] <= sigma <= est["sigma"]["p97.5"]
++
++
++def test_immediate_gain_and_halfwidth_at_zero(contract):
++    assert S.immediate_gain({"acc_dev_learned": Fraction(3, 4)}, {"acc_dev_learned": Fraction(1, 4)}) == Fraction(1, 2)
++    facts = _facts()
++    ids = [f["fact_id"] for f in facts]
++    stratum_of = {f["fact_id"]: f["stratum"] for f in facts}
++    d = {f: 0.0 for f in ids}                                  # every d_f equal: sigma_d = 0, planning n = 0
++    est = S.size_estimate(d, ids, stratum_of, contract.statistics, "L-F")
++    assert est["sigma"]["point"] == 0 and est["n_max"] == 0 and est["finite"]
++    assert S.halfwidth_check(d, ids, stratum_of, contract.statistics, "L-F", 0)["skipped"]
+diff --git a/metrix/e1-pilot/tests/test_stops.py b/metrix/e1-pilot/tests/test_stops.py
+index 67ae0cf..ed88a92 100644
+--- a/metrix/e1-pilot/tests/test_stops.py
++++ b/metrix/e1-pilot/tests/test_stops.py
+@@ -84,7 +84,8 @@ def test_st7(fz, contract, tmp_path):
+     raises("ST7", STP.st7, fz, contract, 3 * 3600, 3601)            # the next step would cross the limit
+     STP.st7(fz, contract, 3 * 3600, 3600)
+     t = [1000.0]
+-    clock = CP.GpuClock(tmp_path / "gpu_clock.json", now=lambda: t[0])
++    path = tmp_path / "gpu_clock.json"
++    clock = CP.GpuClock(path, now=lambda: t[0])
+     clock.open()
+     t[0] += 2 * 3600
+     clock.close()
+@@ -93,7 +94,20 @@ def test_st7(fz, contract, tmp_path):
+     assert clock.used() == 4 * 3600 + 5
+     raises("ST7", clock.check, fz, contract)
+     clock.close()
+-    assert CP.GpuClock(tmp_path / "gpu_clock.json").used() == 4 * 3600 + 5     # survives a new process
++    assert CP.GpuClock(path).used() == 4 * 3600 + 5                     # survives a new process
++
++
++def test_gpu_clock_counts_a_segment_left_open_by_a_dead_process(tmp_path):
++    t = [0.0]
++    path = tmp_path / "gpu_clock.json"
++    CP.GpuClock(path, now=lambda: t[0]).open()                          # this "process" dies without close()
++    t[0] = 600.0
++    later = CP.GpuClock(path, now=lambda: t[0])                         # a new process
++    assert later.used() == 600.0
++    with pytest.raises(RuntimeError):
++        later.open()                                                    # the open segment must be closed first
++    later.close()
++    assert later.used() == 600.0
+ 
+ 
+ def test_st8(fz, contract):
+@@ -110,7 +124,8 @@ def test_st8(fz, contract):
+ 
+ def test_st9(fz, tmp_path):
+     led = CP.DeviceLedger(tmp_path / "device.json")
+-    raises("ST9", led.check, fz, A100["name"])                      # nothing recorded yet
++    with pytest.raises(RuntimeError):                               # nothing recorded yet: a call-order error, not ST9
++        led.check(fz, A100["name"])
+     led.record_first(A100["name"])
+     assert led.check(fz, A100["name"]) == A100["name"]
+     e = raises("ST9", led.check, fz, "NVIDIA A100-PCIE-80GB")
+@@ -134,11 +149,25 @@ def test_st11(fz, contract):
+     raises("ST11", STP.st11, fz, contract, float("nan"))
+     STP.st11(fz, contract, 3.5)
+     hours, parts = CP.estimate_total_hours(contract, mean_step_seconds=0.5, fact_tokens_per_step=128,
+-                                           anchor_tokens_per_step=508, eval_forward_tokens=10 ** 6)
++                                           anchor_tokens_per_step=508, dev_evaluation_seconds=40.0, used_seconds=60.0)
+     assert parts["a_runs"] == 8 and parts["other_runs"] == 22
+-    assert math.isclose(hours, (0.5 * 300 * (22 + 8 * parts["a_factor"]) + 10 ** 6 * 0.5 / 128 / 3) / 3600, rel_tol=1e-12)
++    assert parts["evaluation_units"] == (1 + 30 + 3) + 31 * 3 / 2 == 80.5
+     assert math.isclose(parts["a_factor"], 1 + 8 * 508 / (6 * 128), rel_tol=1e-12)
+-    raises("ST11", STP.st11, fz, contract, CP.estimate_total_hours(contract, 5.0, 128, 508, 10 ** 6)[0])
++    assert math.isclose(hours, (0.5 * 300 * (22 + 8 * parts["a_factor"]) + 40.0 * 80.5 + 60.0) / 3600, rel_tol=1e-12)
++    raises("ST11", STP.st11, fz, contract, CP.estimate_total_hours(contract, 5.0, 128, 508, 40.0)[0])
++
++
++def test_preflight_summary_and_flops(contract):
++    log = [{"seconds": 2.0, "fact_tokens": 100}, {"seconds": 2.5, "fact_tokens": 120, "anchor_tokens": 508},
++           {"seconds": 3.5, "fact_tokens": 80}]
++    s = CP.preflight_summary(log, "cpu")
++    assert s["seconds_per_step"] == [2.0, 0.5, 1.0] and s["mean_seconds_per_step_excluding_first"] == 0.75
++    assert s["tokens_per_second"] == (628 + 80) / 1.5 and s["peak_memory_bytes"] > 0
++    assert CP.flops(contract, 10, 3, "train") == 180 and CP.flops(contract, 10, 3, "forward") == 60
++    from types import SimpleNamespace
++    r = SimpleNamespace(fact_tokens=5, anchor_tokens=7, steps_run=2, wall_seconds=1.0)
++    out = CP.run_flops(contract, r, 10)
++    assert out["train_flops"] == 300 and out["anchor_flops"] == 2 * 10 * 7 + 6 * 10 * 7
+ 
+ 
+ def test_st12(fz, inputs_dir, generated, tmp_path):
+@@ -158,10 +187,27 @@ def test_st12(fz, inputs_dir, generated, tmp_path):
+         STP.st12(None, None, bad)
+ 
+ 
+-def test_st13(fz):
++def test_st13(fz, tmp_path):
+     e = raises("ST13", STP.st13, fz, True)
+     assert e.status == "IMPLEMENTATION_FAIL" and e.void_pilot and "全部作废" in e.action
+     STP.st13(fz, False)
++    # detection: no freeze record is committed in this repository, so a TEST file anywhere scanned is ST13
++    d = tmp_path / "data"
++    d.mkdir()
++    assert STP.st13_scan(fz, fz.repo_root, [d]) == []
++    (d / "general_test.jsonl").write_text("", encoding="utf-8")
++    e = raises("ST13", STP.st13_scan, fz, fz.repo_root, [tmp_path / "other", d])
++    assert e.void_pilot
++
++
++def test_nonfinite_carries_no_status_and_st6_decides(fz):
++    from metrix_e1.train import NonFinite
++    from metrix_e1.errors import ProtocolStop
++    e = NonFinite("loss is nan", [float("nan")])
++    assert e.stop == "ST6" and e.status is None
++    with pytest.raises(ValueError):
++        ProtocolStop("ST7", None, "only ST6 may carry no status")
++    raises("ST6", STP.st6, fz, e.values, "selected run", True)
+ 
+ 
+ def test_determinism_settings(contract):
+diff --git a/metrix/e1-pilot/tests/test_test_data.py b/metrix/e1-pilot/tests/test_test_data.py
+index 6d737f3..7cb4b4a 100644
+--- a/metrix/e1-pilot/tests/test_test_data.py
++++ b/metrix/e1-pilot/tests/test_test_data.py
+@@ -1,7 +1,9 @@
+ """Implementation Task Order V1, section 6 item 9: in the current state (no Gate 0 PASS record) the TEST generator
+ refuses to run: RESULT: FAIL, non-zero exit, no file produced. No test here generates, reads or counts TEST: every
+-case fails one of the three preconditions before generation, and the TEST split of eval_sets.jsonl is never parsed
+-(spied below). Records used for the precondition checks live in throw-away git repositories under tmp_path."""
++run of the generator fails a precondition before generation, and the TEST split of eval_sets.jsonl is never parsed
++(spied below). Conditions 2 and 3 are also tested one at a time (check_gate0_record, check_selection_record) with a
++correct record as positive control, on throw-away git repositories under tmp_path; those calls never reach
++generation (generate_test is never called with an authorization)."""
+ import json
+ import os
+ import subprocess
+@@ -79,7 +81,7 @@ def test_generation_needs_authorization(fz, inputs_dir, generated):
+     with pytest.raises(ImplementationFail):
+         TD.generate_test(fz, None, inputs_dir, generated["dir"])
+     with pytest.raises(ImplementationFail):
+-        LK.run_test_part(fz.split_manifest, {}, [], [], None)
++        LK.run_test_part(fz.split_manifest, {}, [], [], None, fz.repo_root)
+ 
+ 
+ # ---------------------------------------------------------------- conditions 2 and 3 on throw-away repositories
+@@ -99,43 +101,83 @@ def _repo(tmp_path, files, dirty=None):
+     return root
+ 
+ 
+-G0 = "%s/%s" % (R.FORMAL_RESULTS_REL, R.GATE0_RECORD)
+-SEL = "%s/%s" % (R.FORMAL_RESULTS_REL, R.SELECTION_FREEZE_RECORD)
++G0, SEL = R.GATE0_RECORD_REL, R.SELECTION_FREEZE_REL
++SELECTED = {"F": "F3", "L": "L2", "A": "A5"}
+ 
+ 
+-def _gate0(fz, **kw):
+-    rec = {"mode": "formal", "label": None, "frozen_commit": fz.record.commit, "gate0": {"gate0_status": "PASS"}}
++def _gate0(fz, status="PASS", mode=None, **kw):
++    from metrix_e1 import mode as M
++    rec = R.gate0_record(fz, mode or M.FORMAL_MODE, {"gate0_status": status})
+     rec.update(kw)
+     return rec
+ 
+ 
+-@pytest.mark.parametrize("case", ["missing", "dirty", "smoke", "not_pass", "not_tested", "other_commit"])
++def _sha(obj):
++    import hashlib
++    return hashlib.sha256(json.dumps(obj).encode("utf-8")).hexdigest()
++
++
++def test_gate0_record_condition_positive_control(fz, tmp_path):
++    rec = _gate0(fz)
++    root = _repo(tmp_path, {G0: rec})
++    assert TD.check_gate0_record(fz, root) == _sha(rec)          # condition 2 alone holds for a correct record
++
++
++@pytest.mark.parametrize("case", ["missing", "dirty", "smoke", "not_pass", "not_tested", "other_commit", "wrong_kind"])
+ def test_gate0_record_condition(fz, tmp_path, case):
+-    rec = {"missing": None, "dirty": _gate0(fz), "smoke": _gate0(fz, mode="smoke", label="SMOKE — NOT A RESULT"),
+-           "not_pass": _gate0(fz, gate0={"gate0_status": "PIPELINE_NOT_QUALIFIED"}),
+-           "not_tested": _gate0(fz, gate0={"gate0_status": "NOT_TESTED"}), "other_commit": _gate0(fz, frozen_commit="0" * 40)}[case]
++    from metrix_e1 import mode as M
++    rec = {"missing": None, "dirty": _gate0(fz), "smoke": _gate0(fz, mode=M.smoke_mode(3)),
++           "not_pass": _gate0(fz, "PIPELINE_NOT_QUALIFIED"), "not_tested": _gate0(fz, "NOT_TESTED"),
++           "other_commit": _gate0(fz, frozen_commit="0" * 40), "wrong_kind": _gate0(fz, kind="selection_freeze")}[case]
+     root = _repo(tmp_path, {} if rec is None else {G0: rec}, dirty=G0 if case == "dirty" else None)
+     with pytest.raises(TD.PreconditionFailed):
+         TD.check_gate0_record(fz, root)
+ 
+ 
+-def _selection(fz, contract, content, **kw):
+-    sel = {"F": "F3", "L": "L2", "A": "A5"}
+-    rec = {"mode": "formal", "label": None, "frozen_commit": fz.record.commit, "selected": sel,
+-           "data_content_hashes": content, "checkpoints": {s.name: "a" * 64 for s in T.training_plan(contract, sel)}}
++def _selection(fz, contract, content, gate0_sha, mode=None, selected=SELECTED, **kw):
++    from metrix_e1 import mode as M
++    ck = {s.name: "a" * 64 for s in T.training_plan(contract, SELECTED)}
++    rec = R.selection_freeze_record(fz, mode or M.FORMAL_MODE, selected, content, ck, gate0_sha)
+     rec.update(kw)
+     return rec
+ 
+ 
+-@pytest.mark.parametrize("case", ["missing", "smoke", "bad_selection", "S_selected", "data_hashes", "checkpoint"])
++def test_selection_record_condition_positive_control(fz, contract, generated, tmp_path):
++    content = fz.check_data_dir(generated["dir"])
++    rec = _selection(fz, contract, content, "b" * 64)
++    root = _repo(tmp_path, {SEL: rec})
++    assert TD.check_selection_record(fz, contract, root, content, "b" * 64) == _sha(rec)   # condition 3 alone holds
++
++
++@pytest.mark.parametrize("case", ["missing", "smoke", "bad_selection", "S_selected", "data_hashes", "checkpoint",
++                                  "unbound", "wrong_kind"])
+ def test_selection_record_condition(fz, contract, generated, tmp_path, case):
++    from metrix_e1 import mode as M
+     content = fz.check_data_dir(generated["dir"])
+-    good = _selection(fz, contract, content)
+-    rec = {"missing": None, "smoke": _selection(fz, contract, content, mode="smoke", label="SMOKE — NOT A RESULT"),
+-           "bad_selection": _selection(fz, contract, content, selected={"F": "F9", "L": "L2", "A": "A5"}),
+-           "S_selected": _selection(fz, contract, content, selected={"F": "S1", "L": "L2", "A": "A5"}),
+-           "data_hashes": _selection(fz, contract, dict(content, facts="0" * 64)),
+-           "checkpoint": dict(good, checkpoints=dict(list(good["checkpoints"].items())[:-1]))}[case]
++    good = _selection(fz, contract, content, "b" * 64)
++    rec = {"missing": None, "smoke": _selection(fz, contract, content, "b" * 64, mode=M.smoke_mode(3)),
++           "bad_selection": _selection(fz, contract, content, "b" * 64, selected={"F": "F9", "L": "L2", "A": "A5"}),
++           "S_selected": _selection(fz, contract, content, "b" * 64, selected={"F": "S1", "L": "L2", "A": "A5"}),
++           "data_hashes": _selection(fz, contract, dict(content, facts="0" * 64), "b" * 64),
++           "checkpoint": dict(good, checkpoints=dict(list(good["checkpoints"].items())[:-1])),
++           "unbound": _selection(fz, contract, content, "c" * 64),
++           "wrong_kind": dict(good, kind="gate0")}[case]
+     root = _repo(tmp_path, {} if rec is None else {SEL: rec})
+     with pytest.raises(TD.PreconditionFailed):
+-        TD.check_selection_record(fz, contract, root, content)
++        TD.check_selection_record(fz, contract, root, content, "b" * 64)
++
++
++def test_pending_interpretations_block_test(monkeypatch):
++    from metrix_e1 import interpretations as INT
++    assert INT.pending()                                     # current state: every entry awaits Review Gate
++    with pytest.raises(TD.PreconditionFailed, match="B1"):
++        TD.check_interpretations_ruled()
++    monkeypatch.setattr(INT, "ENTRIES", tuple(dict(e, status="RULED") for e in INT.ENTRIES))
++    TD.check_interpretations_ruled()
++
++
++def test_run_test_part_rechecks_the_committed_records(fz, tmp_path):
++    auth = LK.TestAuthorization(fz.record.commit, "a" * 64, "b" * 64)
++    root = _repo(tmp_path, {})
++    with pytest.raises(ImplementationFail, match="not committed"):
++        LK.run_test_part(fz.split_manifest, {}, [], [], auth, root)
+diff --git a/metrix/e1-pilot/tests/test_train.py b/metrix/e1-pilot/tests/test_train.py
+index 1a6491f..9c81b9d 100644
+--- a/metrix/e1-pilot/tests/test_train.py
++++ b/metrix/e1-pilot/tests/test_train.py
+@@ -241,3 +241,33 @@ def test_smoke_run_is_reproducible(tok, data_rows, contract):
+     assert [e["loss"] for e in ra.log] == [e["loss"] for e in rb.log]
+     assert ra.log[0]["lr"] == spec.cfg["learning_rate"] / 15
+     assert ra.log[0]["rows"] == T.batch_schedule(contract.training, 120, 8, 101)[0][2]
++
++
++def test_preflight_runs_exactly_the_protocol_steps(tok, data_rows, contract):
++    with pytest.raises(ImplementationFail, match="trains only on the GPU"):
++        T.train_run(tiny_model(), tok, data_rows, _spec(contract, "F", "F1"), contract, M.preflight_mode(contract), "cpu")
++    with pytest.raises(ImplementationFail, match="preflight runs the protocol's 20 steps"):
++        T.train_run(tiny_model(), tok, data_rows, _spec(contract, "F", "F1"), contract, M.RunMode(M.PREFLIGHT, 5), "cuda")
++
++
++def test_kl_call_site_order_and_gradient(tok, data_rows, contract, monkeypatch):
++    """Owner stage B item 6 at the call site: train_run passes (trained-model logits, base logits) in that order; the
++    first carries the gradient, the second does not, and the logged KL is KL(p_base || p_theta) of those logits."""
++    seen = []
++    real = T.anchor_kl
++
++    def spy(lt, lb, mask):
++        seen.append((lt.requires_grad, lb.requires_grad))
++        val = real(lt, lb, mask)
++        lp_t = torch.log_softmax(lt[:, :-1].float(), -1)
++        lp_b = torch.log_softmax(lb[:, :-1].float(), -1)
++        m = mask[:, 1:].float()
++        hand = ((lp_b.exp() * (lp_b - lp_t)).sum(-1) * m).sum() / m.sum()
++        rev = ((lp_t.exp() * (lp_t - lp_b)).sum(-1) * m).sum() / m.sum()
++        seen.append((float(val.detach()), float(hand.detach()), float(rev.detach())))
++        return val
++    monkeypatch.setattr(T, "anchor_kl", spy)
++    T.train_run(tiny_model(), tok, data_rows, _spec(contract, "A", "A6"), contract, M.smoke_mode(2), "cpu")
++    assert seen[0] == (True, False) and seen[2] == (True, False)
++    val, hand, rev = seen[3]
++    assert val > 0 and abs(val - hand) < 1e-6 and abs(val - rev) > 1e-9
