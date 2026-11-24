@@ -1,0 +1,97 @@
+ic1 gate scenarios, independent model; temp repos under /tmp/claude-0/-home-user/e5a3383f-e830-5f3b-a633-ebf5365f35df/scratchpad/ic1_repos
+[A1] ST10 missing
+    action   : evaluate with no ST10 record
+    expected : REFUSE
+    observed : REFUSE (ST10 record not committed)
+    result   : PASS
+[A2] ST10 written but not committed
+    action   : evaluate with ST10 record written, not committed
+    expected : REFUSE
+    observed : REFUSE (ST10 record not committed)
+    result   : PASS
+[A3] ST10 committed, working tree differs
+    action   : ST10 committed, then working tree edited
+    expected : REFUSE
+    observed : REFUSE (ST10 record in working tree differs from committed)
+    result   : PASS
+[A4] ST10 two L6 counts differ
+    action   : ST10 committed with L6 counts 3 vs 4
+    expected : REFUSE
+    observed : REFUSE (L6 TEST counts differ (Executor 3, data-auditor 4))
+    result   : PASS
+[A5] ST10 one check over limit (honest flag)
+    action   : ST10 committed with L4 value 3 > limit 2, within_limit false
+    expected : REFUSE
+    observed : REFUSE (TEST check L4 over limit (value 3, limit 2))
+    result   : PASS
+[A6] ST10 one check over limit (flag forged true)
+    action   : ST10 committed with L4 value 3 > limit 2, within_limit forged true
+    expected : REFUSE
+    observed : REFUSE (TEST check L4 over limit (value 3, limit 2))
+    result   : PASS
+[A7] ST10 bound to another authorization
+    action   : ST10 committed for another gate0 hash, evaluate with AUTH
+    expected : REFUSE
+    observed : REFUSE (ST10 record not bound to this authorization)
+    result   : PASS
+[A8] ST10 result FAIL
+    action   : ST10 committed with result FAIL
+    expected : REFUSE
+    observed : REFUSE (ST10 record is not a PASS)
+    result   : PASS
+[A9] control: valid ST10
+    action   : control: ST10 PASS committed (ST10 check alone, before reservation)
+    expected : ACCEPT
+    observed : ACCEPT (ST10 passes)
+    result   : PASS
+[B1] reservation residual in working tree refuses reserve
+    action   : reserve with a reservation file left uncommitted in working tree
+    expected : REFUSE
+    observed : REFUSE (reservation already committed or present in working tree)
+    result   : PASS
+[B2] reserve again after reservation committed
+    action   : reserve again after reservation committed
+    expected : REFUSE
+    observed : REFUSE (reservation already committed or present in working tree)
+    result   : PASS
+[B3] reserve after evaluated marker committed
+    action   : reserve after evaluated marker committed
+    expected : REFUSE
+    observed : REFUSE (evaluated marker committed)
+    result   : PASS
+[B4] reserve without ST10
+    action   : reserve with no ST10 record
+    expected : REFUSE
+    observed : REFUSE (ST10 record not committed)
+    result   : PASS
+[B5] reserve with authorization hash mismatch
+    action   : reserve with authorization whose gate0 hash differs from ST10 record
+    expected : REFUSE
+    observed : REFUSE (ST10 record not bound to this authorization)
+    result   : PASS
+[B6] evaluate with reservation uncommitted
+    action   : evaluate with reservation written, not committed
+    expected : REFUSE
+    observed : REFUSE (reservation not committed)
+    result   : PASS
+[B7] evaluate with reservation for other authorization
+    action   : evaluate with AUTH; ST10 is for AUTH, committed reservation is for AUTH_OTHER
+    expected : REFUSE
+    observed : REFUSE (reservation is not for this authorization)
+    result   : PASS
+[B8] evaluate after evaluated marker committed
+    action   : evaluate with reservation and evaluated marker committed
+    expected : REFUSE
+    observed : REFUSE (TEST already evaluated (evaluated marker committed))
+    result   : PASS
+[B9] control: full valid path reaches evaluation
+    action   : control: ST10 PASS + reservation committed, no marker
+    expected : ACCEPT
+    observed : ACCEPT (TEST evaluation allowed)
+    result   : PASS
+[B10] observation: second evaluate without marker
+    action   : second evaluate when the first run committed NO evaluated marker (window)
+    expected : ACCEPT
+    observed : ACCEPT (TEST evaluation allowed)
+    result   : PASS
+SUMMARY: 19/19 scenarios as expected

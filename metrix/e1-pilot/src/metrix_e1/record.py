@@ -218,3 +218,4 @@ def freeze_record_problem(rec, contract, content_hashes, gate0_sha):
         return "not bound to the committed Gate 0 record (sha256 %r, committed %s)" % (rec.get("gate0_record_sha256"),
                                                                                        gate0_sha)
     return None
+

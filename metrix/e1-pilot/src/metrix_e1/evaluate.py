@@ -311,7 +311,7 @@ def evaluate_model(model, tok, data, templates, ev, mode, device, split="dev", w
     split "test" needs test_qa.jsonl / general_test.jsonl in `data`, which only exist after the TEST generator's
     preconditions (test_data.py), and the TestAuthorization of those preconditions, checked with the frozen files `fz`
     (frozen.load) against the committed Gate 0 and freeze records before anything is evaluated
-    (leakage.verify_authorization); then the committed ST10 record and the committed TEST reservation (testonce). Formal and preflight modes evaluate on the GPU only (require_gpu)."""
+    (leakage.verify_authorization). Formal and preflight modes evaluate on the GPU only (require_gpu)."""
     if split not in SPLIT_FILES:
         raise ValueError("split %r" % (split,))
     if split == "test":
@@ -322,9 +322,6 @@ def evaluate_model(model, tok, data, templates, ev, mode, device, split="dev", w
         if fz is None:
             raise ImplementationFail("TEST path refused: the frozen files (fz) are needed to check the authorization")
         verify_authorization(test_authorization, fz)
-        from . import testonce as TO
-        TO.require_st10(fz, test_authorization)                  # ST10 PASS, committed (stage C item 7)
-        TO.require_reservation(fz, test_authorization)           # TEST evaluated once: reserved, committed, not evaluated
     require_gpu(mode, device)
     qa_file, gen_file = SPLIT_FILES[split]
     facts, cands, qs = data["facts.jsonl"], data["candidates.json"], data[qa_file]

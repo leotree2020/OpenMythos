@@ -78,9 +78,9 @@ def check_interpretations_ruled():
     """Beyond the three conditions of the task order (listed for Review Gate): no TEST while an interpretation of
     interpretations.py is still pending (B19 decides what the TEST part of the leakage checks counts; the others
     decide how the runs whose checkpoints TEST evaluates were made)."""
-    problem = INT.pending_problem()
-    if problem:
-        raise PreconditionFailed(problem)
+    open_ids = INT.pending()
+    if open_ids:
+        raise PreconditionFailed("interpretations not yet ruled by Review Gate: %s" % ", ".join(open_ids))
 
 
 def check_preconditions(repo_root, inputs_dir, data_dir):
