@@ -1,0 +1,43 @@
+# Stage C, C1 round 3: the container restarted (uptime -s 2026-11-25 00:41:23) while reports/impl_c/c1_mutate_r3.py was running inside the recorded checks (c1_05_checks_r3.txt, renamed c1_05_checks_r3_interrupted.txt). The mutation in progress ('evaluate_model: claim removed') was left in the working tree (the script restores in a finally block, which a killed process does not reach). Found by comparing every file of src/ and tests/ with its reference: the round-3 files with the copies in the session worktree (scratchpad/wt, where the round-3 edits were made and tested), the others with the round-2 staged tree dc4f28df. Restored from the reference; the recorded checks are run again in full (c1_06_checks_r3.txt). Wed Nov 25 00:42:01 UTC 2026
+$ diff <worktree reference> metrix/e1-pilot/src/metrix_e1/evaluate.py   (before restoring)
+333d332
+<         TG.claim_checkpoint(test_session, checkpoint_name)
+exit=1
+$ cp <worktree reference> metrix/e1-pilot/src/metrix_e1/evaluate.py; then every src/ and tests/ file against its reference:
+metrix/e1-pilot/src/metrix/e1_pilot/__init__.py: same as round-2 tree dc4f28df
+metrix/e1-pilot/src/metrix/e1_pilot/check_leakage.py: same as round-2 tree dc4f28df
+metrix/e1-pilot/src/metrix_e1/__init__.py: same as round-2 tree dc4f28df
+metrix/e1-pilot/src/metrix_e1/_cli.py: same as round-2 tree dc4f28df
+metrix/e1-pilot/src/metrix_e1/compute.py: same as round-2 tree dc4f28df
+metrix/e1-pilot/src/metrix_e1/contract.py: same as round-2 tree dc4f28df
+metrix/e1-pilot/src/metrix_e1/data.py: same as round-2 tree dc4f28df
+metrix/e1-pilot/src/metrix_e1/errors.py: same as round-2 tree dc4f28df
+metrix/e1-pilot/src/metrix_e1/evaluate.py: same as the worktree reference
+metrix/e1-pilot/src/metrix_e1/frozen.py: same as round-2 tree dc4f28df
+metrix/e1-pilot/src/metrix_e1/gate.py: same as round-2 tree dc4f28df
+metrix/e1-pilot/src/metrix_e1/interpretations.py: same as the worktree reference
+metrix/e1-pilot/src/metrix_e1/leakage.py: same as round-2 tree dc4f28df
+metrix/e1-pilot/src/metrix_e1/mode.py: same as round-2 tree dc4f28df
+metrix/e1-pilot/src/metrix_e1/record.py: same as the worktree reference
+metrix/e1-pilot/src/metrix_e1/stats.py: same as round-2 tree dc4f28df
+metrix/e1-pilot/src/metrix_e1/stops.py: same as round-2 tree dc4f28df
+metrix/e1-pilot/src/metrix_e1/test_data.py: same as the worktree reference
+metrix/e1-pilot/src/metrix_e1/testgate.py: same as the worktree reference
+metrix/e1-pilot/src/metrix_e1/train.py: same as round-2 tree dc4f28df
+metrix/e1-pilot/tests/conftest.py: same as round-2 tree dc4f28df
+metrix/e1-pilot/tests/test_arm_a.py: same as round-2 tree dc4f28df
+metrix/e1-pilot/tests/test_contract.py: same as round-2 tree dc4f28df
+metrix/e1-pilot/tests/test_data_hashes.py: same as round-2 tree dc4f28df
+metrix/e1-pilot/tests/test_environment.py: same as round-2 tree dc4f28df
+metrix/e1-pilot/tests/test_evaluate.py: same as round-2 tree dc4f28df
+metrix/e1-pilot/tests/test_gate.py: same as round-2 tree dc4f28df
+metrix/e1-pilot/tests/test_leakage.py: same as round-2 tree dc4f28df
+metrix/e1-pilot/tests/test_lora.py: same as round-2 tree dc4f28df
+metrix/e1-pilot/tests/test_record.py: same as round-2 tree dc4f28df
+metrix/e1-pilot/tests/test_scoring.py: same as round-2 tree dc4f28df
+metrix/e1-pilot/tests/test_st12.py: same as round-2 tree dc4f28df
+metrix/e1-pilot/tests/test_stats.py: same as round-2 tree dc4f28df
+metrix/e1-pilot/tests/test_stops.py: same as round-2 tree dc4f28df
+metrix/e1-pilot/tests/test_test_data.py: same as the worktree reference
+metrix/e1-pilot/tests/test_testgate.py: same as the worktree reference
+metrix/e1-pilot/tests/test_train.py: same as round-2 tree dc4f28df

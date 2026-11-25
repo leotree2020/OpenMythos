@@ -1,0 +1,24 @@
+先读仓库中的 .claude/agents/data-auditor.md，以它为你的完整定义；它与你已加载的定义冲突时，以仓库文件为准。
+
+审计对象：METRIX E1-PILOT 阶段 C 第 1 段（C1）工作提交的第 3 轮，暂存区内容（尚未提交），父提交 eb05e42243b54b78cb400b40293ef56f67611852。你第 2 轮（暂存树 dc4f28df…）的结论是 BLOCK，唯一原因是暂存的探针与接口不符（原文 /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/review_c1/data-auditor_round2.md）。这是连续第 3 轮，按 metrix/CLAUDE.md 第 5 节第 4 条，本轮若仍未 PASS 即停止并交 Review Gate。审查输入（同目录）：input_round3.diff（整个工作提交）、delta_round3.diff（第 2 轮暂存树到本轮暂存树的差异）、tree_round3.txt。任务、依据、限制与第 1 轮调用文字相同（同目录 data-auditor_prompt.txt）。Executor 本轮的原始输出：metrix/e1-pilot/reports/impl_c/c1_06_checks_r3.txt（含 Executor 运行探针一次的输出，c1_probe_run.py）；第一次录制 c1_05_checks_r3_interrupted.txt 因容器重启中断，留在工作区的一个变异已恢复并逐文件核对（c1_05b_restart_restore.txt）。
+
+本轮改动（Executor 的说明，不作为证据；请在运行探针之前按这些语义更新你的预期）：
+- 探针（你第 2 轮的 BLOCK 项）：按你核对过的修正副本改正两处，保留 PILOT = Path(__file__).resolve().parents[2]；另加：拒绝在本仓库或 origin 为 testgate.CANONICAL_REPO（"leotree2020/OpenMythos"）的克隆上运行；为探测临时仓库，探针把 testgate.CANONICAL_REPO 设为 REPO 的 origin 的仓库名、testgate.PILOT_BRANCH 设为 "main"，并打印一行。
+- 远端与分支（code-reviewer 第 2 轮 MAJOR）：check_remote 要求远端 URL 的仓库名（最后两段路径，去掉 .git 与凭据）等于 CANONICAL_REPO，分支参数与当前检出分支都等于 PILOT_BRANCH，浅克隆一律 STOP - BLOCKED；用于 remote_heads（即 marker 操作与 begin 的标记检索）、commit_paths（begin 的标记提交、finish）、begin 写标记前的预检、test_data.main。所以在你的场景中，若临时仓库的检出分支不是 main，begin 与 marker 为 BLOCKED；浅克隆为 BLOCKED。
+- 历史检索加 --reflog：只在 reflog 中的标记提交（你第 2 轮的 B13，当时观察为 ACCEPT 的 INFO）现在 STOP - BLOCKED；只能从远端标签到达、没有任何分支的标记（B17）仍不在检索范围内（remote_heads 只列分支）。
+- URL 中的凭据（user:token@）不写入标记的 remote 字段，也不出现在报错中（testgate.scrub）。
+- record.committed_json 对非对象的 JSON 抛 NotCommitted（verify_authorization 经它读取 Gate 0 与冻结记录，所以这两份记录是 JSON 数组时现在是 REFUSE 而不是 AttributeError）；testgate._committed 中重复的检查删去，报错文字仍含 “is a JSON list, not an object”。
+- finish_test_evaluation 核对已提交标记的字节是否为本会话的标记。
+- evaluate_model 的 TEST 分支：闸门 → require_gpu → claim_checkpoint（语义与第 2 轮相同）。
+- test_data.main：生成之前另做 check_remote(origin, PILOT_BRANCH)；ST10 记录由它自己用 commit_paths 提交并推送（只含该路径）。
+- require_test_session 不再返回值；_is_ancestor 只比 HEAD。
+
+任务（脚本放在 metrix/e1-pilot/audit/，文件名前缀 ic4_，可沿用你的 ic3_ 脚本；完整 stdout 写入 metrix/e1-pilot/audit/stdout/impl_c/；不 import、不复制 Executor 的代码）：
+1. 用你的独立模型对本轮代码、以已提交（暂存）的探针（不带替代探针参数）重跑第 2 轮的全部场景（带 --interpretations-ruled，另含不带它的 B25 对照），按上面的语义更新预期，并补：B13（标记只在 reflog）；检出分支不是 main；浅克隆；remote URL 带 user:secret@（标记与报错中不出现 secret）；Gate 0 或冻结记录为 JSON 数组时 begin 与 eval 为 REFUSE。预期须在运行探针之前由你的模型算出。
+2. 用你自己的脚本独立复算四个冻结内容哈希，对照 /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/c1_data（本轮由正式代码重新生成）。
+3. 静态核对同第 2 轮第 3 项（含探针与 testgate 接口的一致性、test_data.main 中各检查在生成之前、ST10 记录与标记中没有 TEST 内容）。
+4. 以黑盒方式运行一次 TEST 生成器（--data 为上述 c1_data，--out 为一个不存在的仓库外目录），确认拒绝且无产物。
+
+环境与限制同前：Python /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/venv/bin/python；非 TEST 输入 /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/inputs；临时仓库放在会话临时目录（例如 /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/ic4_repos）；禁止生成、读取或统计真实 TEST；不加载任何模型权重；不使用 GPU；只写入 metrix/e1-pilot/audit/。
+
+输出：按定义的输出格式给出每一项的命令、原始输出、与 Executor 是否一致；脚本路径与完整 stdout 路径；最后附 git status --short 原始输出；最后一行给出结论 PASS 或 BLOCK。

@@ -1,0 +1,39 @@
+# C1 work commit, round 2: the data-auditor stopped by the API usage limit (HTTP 429, rate_limit, 'resets 8pm (UTC)'); the worker process then restarted. Checks before resuming the data-auditor. Tue Nov 24 23:01:28 UTC 2026
+$ uptime -s
+2026-11-24 23:01:02
+$ git rev-parse HEAD
+eb05e42243b54b78cb400b40293ef56f67611852
+$ git write-tree; cat tree_round2.txt
+dc4f28df108ac129120eae801de1ad02119c4c05
+dc4f28df108ac129120eae801de1ad02119c4c05
+$ { git diff --cached --stat; echo; git diff --cached; } | cmp - input_round2.diff
+INPUT_DIFF_IDENTICAL
+$ git diff --quiet
+WORKTREE_EQUALS_INDEX
+$ ls -la metrix/e1-pilot/audit/ic3_* metrix/e1-pilot/audit/stdout/impl_c/
+-rw-r--r-- 1 root root 69142 Nov 24 17:01 metrix/e1-pilot/audit/ic3_01_gate_scenarios.py
+-rw-r--r-- 1 root root 15539 Nov 24 17:02 metrix/e1-pilot/audit/ic3_02_content_hashes.py
+-rw-r--r-- 1 root root 27094 Nov 24 17:04 metrix/e1-pilot/audit/ic3_03_static.py
+-rw-r--r-- 1 root root   873 Nov 24 16:59 metrix/e1-pilot/audit/ic3_run_logged.sh
+
+metrix/e1-pilot/audit/stdout/impl_c/:
+total 136
+drwxr-xr-x  2 root root  4096 Nov 24 15:25 .
+drwxr-xr-x 13 root root  4096 Nov 24 04:28 ..
+-rw-r--r--  1 root root  4194 Nov 24 04:28 ic1_test_gate_scenarios.stdout
+-rw-r--r--  1 root root  3346 Nov 24 15:20 ic2_00_state.txt
+-rw-r--r--  1 root root 66730 Nov 24 15:25 ic2_01_gate_scenarios.txt
+-rw-r--r--  1 root root  2319 Nov 24 15:25 ic2_01b_B05_history.txt
+-rw-r--r--  1 root root  8542 Nov 24 15:25 ic2_02_content_hashes.txt
+-rw-r--r--  1 root root 16555 Nov 24 15:25 ic2_03_static.txt
+-rw-r--r--  1 root root  3356 Nov 24 15:25 ic2_04_test_refusal.txt
+-rw-r--r--  1 root root  2029 Nov 24 15:25 ic2_99_git_status_final.txt
+35714f35a0e3a9344a3cab922703aaa418bd7491dfacfdd9014788a1feae1035  metrix/e1-pilot/audit/ic3_01_gate_scenarios.py
+cfc2a5cf7ab949465e59b60a6635514804287ada89136fc65a8ba24adc728bbb  metrix/e1-pilot/audit/ic3_02_content_hashes.py
+5b36366864ccf0d93697d6e65e0786244c3ef83a12ff849d71bc38ab4072e2b6  metrix/e1-pilot/audit/ic3_03_static.py
+eb839c554961ed0ea02a89c9ef3756131b26c24b265e3602e31016f3f947ff9d  metrix/e1-pilot/audit/ic3_run_logged.sh
+--- preflight repeated:
+code-reviewer FRONTMATTER_IDENTICAL
+code-reviewer TOOLS_LINE_IDENTICAL: tools: Read, Grep, Glob
+data-auditor FRONTMATTER_IDENTICAL
+data-auditor TOOLS_LINE_IDENTICAL: tools: Read, Grep, Glob, Write, Bash

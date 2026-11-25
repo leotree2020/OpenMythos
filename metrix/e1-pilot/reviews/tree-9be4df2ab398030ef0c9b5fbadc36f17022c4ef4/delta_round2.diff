@@ -1,0 +1,2014 @@
+diff --git a/metrix/e1-pilot/reports/impl_c/c1_03_checks_r2.txt b/metrix/e1-pilot/reports/impl_c/c1_03_checks_r2.txt
+new file mode 100644
+index 0000000..808dd78
+--- /dev/null
++++ b/metrix/e1-pilot/reports/impl_c/c1_03_checks_r2.txt
+@@ -0,0 +1,313 @@
++# Stage C, C1 work commit, round 2 (after the round-1 reviews: data-auditor BLOCK B05, code-reviewer PASS with MAJORs; before the round-2 reviews): working-tree state, data regenerated and verified (four frozen hashes), TEST generator refusal in the current state (black box), outside_metrix_check.py, full pytest, mutation check of the TEST gates and BE fixes (reports/impl_c/c1_mutate_r2.py). Host vm, Anthropic cloud container, CPU only. Tue Nov 24 15:34:50 UTC 2026
++# stdout+stderr merged, unedited. Commands recorded by reports/round5/logrun.sh. METRIX_INPUTS_DIR=/tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/inputs
++$ git rev-parse HEAD
++eb05e42243b54b78cb400b40293ef56f67611852
++exit=0
++$ git status --short --untracked-files=all
++A  metrix/e1-pilot/reports/IMPL_C_REPORT.md
++A  metrix/e1-pilot/reports/impl_c/c1_00_session_start.txt
++A  metrix/e1-pilot/reports/impl_c/c1_01_env_fetch.txt
++A  metrix/e1-pilot/reports/impl_c/c1_02_checks.txt
++AM metrix/e1-pilot/reports/impl_c/c1_gate_probe.py
++A  metrix/e1-pilot/reports/impl_c/c1_mutate.py
++MM metrix/e1-pilot/src/metrix_e1/evaluate.py
++MM metrix/e1-pilot/src/metrix_e1/frozen.py
++M  metrix/e1-pilot/src/metrix_e1/gate.py
++MM metrix/e1-pilot/src/metrix_e1/interpretations.py
++MM metrix/e1-pilot/src/metrix_e1/leakage.py
++MM metrix/e1-pilot/src/metrix_e1/record.py
++M  metrix/e1-pilot/src/metrix_e1/stops.py
++MM metrix/e1-pilot/src/metrix_e1/test_data.py
++AM metrix/e1-pilot/src/metrix_e1/testgate.py
++A  metrix/e1-pilot/tasks/IMPL_C_OWNER_MESSAGE.md
++MM metrix/e1-pilot/tests/test_data_hashes.py
++M  metrix/e1-pilot/tests/test_evaluate.py
++M  metrix/e1-pilot/tests/test_gate.py
++M  metrix/e1-pilot/tests/test_stops.py
++MM metrix/e1-pilot/tests/test_test_data.py
++AM metrix/e1-pilot/tests/test_testgate.py
++?? metrix/e1-pilot/audit/ic2_01_gate_scenarios.py
++?? metrix/e1-pilot/audit/ic2_02_content_hashes.py
++?? metrix/e1-pilot/audit/ic2_03_static.py
++?? metrix/e1-pilot/audit/ic2_04_test_refusal.py
++?? metrix/e1-pilot/audit/ic2_run_logged.sh
++?? metrix/e1-pilot/audit/stdout/impl_c/ic2_00_state.txt
++?? metrix/e1-pilot/audit/stdout/impl_c/ic2_01_gate_scenarios.txt
++?? metrix/e1-pilot/audit/stdout/impl_c/ic2_01b_B05_history.txt
++?? metrix/e1-pilot/audit/stdout/impl_c/ic2_02_content_hashes.txt
++?? metrix/e1-pilot/audit/stdout/impl_c/ic2_03_static.txt
++?? metrix/e1-pilot/audit/stdout/impl_c/ic2_04_test_refusal.txt
++?? metrix/e1-pilot/audit/stdout/impl_c/ic2_99_git_status_final.txt
++?? metrix/e1-pilot/reports/impl_c/c1_03_checks_r2.txt
++?? metrix/e1-pilot/reports/impl_c/c1_mutate_r2.py
++exit=0
++$ git diff --stat HEAD
++ metrix/e1-pilot/reports/IMPL_C_REPORT.md           |  44 ++
++ .../reports/impl_c/c1_00_session_start.txt         |  49 ++
++ metrix/e1-pilot/reports/impl_c/c1_01_env_fetch.txt |  38 ++
++ metrix/e1-pilot/reports/impl_c/c1_02_checks.txt    | 244 ++++++++
++ metrix/e1-pilot/reports/impl_c/c1_gate_probe.py    | 142 +++++
++ metrix/e1-pilot/reports/impl_c/c1_mutate.py        | 132 +++++
++ metrix/e1-pilot/src/metrix_e1/evaluate.py          |  13 +-
++ metrix/e1-pilot/src/metrix_e1/frozen.py            |  29 +-
++ metrix/e1-pilot/src/metrix_e1/gate.py              |   5 +-
++ metrix/e1-pilot/src/metrix_e1/interpretations.py   |  99 ++--
++ metrix/e1-pilot/src/metrix_e1/leakage.py           |  32 +-
++ metrix/e1-pilot/src/metrix_e1/record.py            |   5 +-
++ metrix/e1-pilot/src/metrix_e1/stops.py             |  12 +-
++ metrix/e1-pilot/src/metrix_e1/test_data.py         |  59 +-
++ metrix/e1-pilot/src/metrix_e1/testgate.py          | 495 ++++++++++++++++
++ metrix/e1-pilot/tasks/IMPL_C_OWNER_MESSAGE.md      |  31 +
++ metrix/e1-pilot/tests/test_data_hashes.py          |   8 +
++ metrix/e1-pilot/tests/test_evaluate.py             |  10 +-
++ metrix/e1-pilot/tests/test_gate.py                 |   6 +-
++ metrix/e1-pilot/tests/test_stops.py                |  17 +-
++ metrix/e1-pilot/tests/test_test_data.py            |  76 ++-
++ metrix/e1-pilot/tests/test_testgate.py             | 655 +++++++++++++++++++++
++ 22 files changed, 2095 insertions(+), 106 deletions(-)
++exit=0
++$ bash -c git\ ls-files\ -o\ --exclude-standard\ -z\ \|\ xargs\ -0\ sha256sum\;\ git\ diff\ HEAD\ --\ metrix/e1-pilot/src\ metrix/e1-pilot/tests\ \|\ sha256sum
++a0b5a8c6d7f40ff4a9be15b3e63faf6ff4c2181f0bba0f961a9538d09335c5b0  metrix/e1-pilot/audit/ic2_01_gate_scenarios.py
++017ec32e9ff0236fb2844d50a4efec41c73de555af27b42d1c6989cb0783b96e  metrix/e1-pilot/audit/ic2_02_content_hashes.py
++dcb224cc39fed51bf212b9baf962246365ff8a0aaaa887e86088a0494b6729be  metrix/e1-pilot/audit/ic2_03_static.py
++a6328a5adbcc068dcb6bb341b2d7dc12af1a21dc4da7db8dfa686820f7cfe102  metrix/e1-pilot/audit/ic2_04_test_refusal.py
++9fee1845d66f7f4ddd37d2587546bb17100a680bd0935b21eaf623df455dd950  metrix/e1-pilot/audit/ic2_run_logged.sh
++fdcd86e8cd61a350f4bbe8397ca13653f327f77c830346bc86fd8f2e8573881c  metrix/e1-pilot/audit/stdout/impl_c/ic2_00_state.txt
++5ca30f21c1f04c043bdfa5c0d28a4f50cabcf9471c0049474b1db9b9147e5a60  metrix/e1-pilot/audit/stdout/impl_c/ic2_01_gate_scenarios.txt
++e50eb6c202029717ba540f1464c41da2418a105b1365d05fa66687914de2a06c  metrix/e1-pilot/audit/stdout/impl_c/ic2_01b_B05_history.txt
++25be6771ed935ff77c02cd776e9ab2cf0abd8f0095e455aba00de64a00691f78  metrix/e1-pilot/audit/stdout/impl_c/ic2_02_content_hashes.txt
++974c21fe1b646f8d5085b03a5d2766c68f955792aa356f707567183f463c7e38  metrix/e1-pilot/audit/stdout/impl_c/ic2_03_static.txt
++aecdac874df6a437b55d6b525661c0d4149349d37fce9236e29740ea4ca3f08c  metrix/e1-pilot/audit/stdout/impl_c/ic2_04_test_refusal.txt
++f7d0c06db1125768b1123ab2a8423f4f271c6b69e27ddf695d3a37b72f3ea7a7  metrix/e1-pilot/audit/stdout/impl_c/ic2_99_git_status_final.txt
++be61dee11ccf36a3f03da9ae52c27b390c65ceb9705302af7363d6ac23cb10f6  metrix/e1-pilot/reports/impl_c/c1_03_checks_r2.txt
++d351d683700acba935ddb8e1bbae7a361f1ce02d93d5300993105eedc976bd35  metrix/e1-pilot/reports/impl_c/c1_mutate_r2.py
++df91a8a881406da597e897c7d964501b60884060abbb8a83358595d0ca8f314f  -
++exit=0
++$ env PYTHONPATH=metrix/e1-pilot/src /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/venv/bin/python -m metrix_e1.data generate --inputs /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/inputs --out /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/c1_data
++frozen: PROTOCOL_FROZEN v1.1, commit 87a244db28a901f9e89282b50df76778ab5c2887; four frozen files match by git cat-file
++python 3.13.18; libraries {"torch": "2.11.0", "transformers": "5.22.2"} (protocol section 0: {"torch": "2.11.0", "transformers": "5.22.2"})
++name generation per cell: [{"cell": "capital/natural", "entity_draws": 28, "target_pair": [3, 3], "answer_draws": 84}, {"cell": "capital/random", "entity_draws": 20, "target_pair": [5, 5], "answer_draws": 52}, {"cell": "currency/natural", "entity_draws": 31, "target_pair": [3, 3], "answer_draws": 82}, {"cell": "currency/random", "entity_draws": 20, "target_pair": [6, 6], "answer_draws": 46}, {"cell": "founder/natural", "entity_draws": 30, "target_pair": [3, 3], "answer_draws": 81}, {"cell": "founder/random", "entity_draws": 21, "target_pair": [5, 5], "answer_draws": 45}, {"cell": "river/natural", "entity_draws": 34, "target_pair": [3, 3], "answer_draws": 89}, {"cell": "river/random", "entity_draws": 20, "target_pair": [6, 6], "answer_draws": 42}]
++S derangement attempts per cell: {"capital/natural": 3, "capital/random": 5, "currency/natural": 1, "currency/random": 6, "founder/natural": 2, "founder/random": 1, "river/natural": 2, "river/random": 6}
++Y / F token ratio: F 1889, Y 2260, ratio 1.1964
++Y / F token ratio without <|endoftext|> (report only): F 1769, Y 2020, ratio 1.1419
++both ratios within [0.8, 1.25]: with True, without True
++eval_sets.jsonl rows by split (row prefix only): {'dev': 400, 'test': 800}; DEV rows decoded and parsed: 400; windows kept (decoded with the parcae tokenizer): 100
++facts.jsonl        rows  160  byte_sha256 e05561ac2d49dcc3c8f59743c5df64151983a540a32ae135fd1b10f5e0fdc828  canonical_sha256 e05561ac2d49dcc3c8f59743c5df64151983a540a32ae135fd1b10f5e0fdc828
++train_F.jsonl      rows  120  byte_sha256 3aa9ab3ca313c0a1113b91e927af51342c915e3e40dd2f20992f3d9e59b0e373  canonical_sha256 3aa9ab3ca313c0a1113b91e927af51342c915e3e40dd2f20992f3d9e59b0e373
++train_S.jsonl      rows  120  byte_sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e  canonical_sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e
++train_Y.jsonl      rows  240  byte_sha256 c7430cadb2b06dd5c144af381a8183d4c186f27f2b5acfa9d8d39da0b7626d15  canonical_sha256 c7430cadb2b06dd5c144af381a8183d4c186f27f2b5acfa9d8d39da0b7626d15
++dev_qa.jsonl       rows  320  byte_sha256 9761eb60d6c9155c2f56394aa228b1e9dfea0ae3926ab50cb21d903108bc7fde  canonical_sha256 9761eb60d6c9155c2f56394aa228b1e9dfea0ae3926ab50cb21d903108bc7fde
++candidates.json    rows  160  byte_sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705  canonical_sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705
++general_dev.jsonl  rows  100  byte_sha256 957666920c91ef5b9328984d26ed0628c8a80b439d461bea49b54c2235635e73  canonical_sha256 957666920c91ef5b9328984d26ed0628c8a80b439d461bea49b54c2235635e73
++anchor_text.jsonl  rows  512  byte_sha256 2089e656819d1fe0f6ececcc26e5cade09ee80a92c50e7c8f607fa4e0ef46da5  canonical_sha256 2089e656819d1fe0f6ececcc26e5cade09ee80a92c50e7c8f607fa4e0ef46da5
++frozen content hash facts        406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 = PROTOCOL_FROZEN (read back from /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/c1_data)
++frozen content hash train_S      686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e = PROTOCOL_FROZEN (read back from /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/c1_data)
++frozen content hash candidates   e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 = PROTOCOL_FROZEN (read back from /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/c1_data)
++frozen content hash anchor_texts 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 = PROTOCOL_FROZEN (read back from /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/c1_data)
++RESULT: PASS
++exit=0
++$ env PYTHONPATH=metrix/e1-pilot/src /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/venv/bin/python -m metrix_e1.data verify --inputs /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/inputs --data /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/c1_data
++frozen: PROTOCOL_FROZEN v1.1, commit 87a244db28a901f9e89282b50df76778ab5c2887; four frozen files match by git cat-file
++frozen content hash facts        406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 = PROTOCOL_FROZEN
++frozen content hash train_S      686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e = PROTOCOL_FROZEN
++frozen content hash candidates   e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 = PROTOCOL_FROZEN
++frozen content hash anchor_texts 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 = PROTOCOL_FROZEN
++all 8 data files byte-identical to their regeneration from the frozen inputs
++RESULT: PASS
++exit=0
++$ env PYTHONPATH=metrix/e1-pilot/src /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/venv/bin/python -m metrix_e1.test_data --inputs /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/inputs --data /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/c1_data --out /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/c1_test_out_r2
++TEST generator refused: metrix/e1-pilot/results/gate0_record.json is not committed at HEAD
++no TEST content was generated, read or written
++RESULT: FAIL
++exit=1
++$ bash -c ls\ -la\ /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/c1_test_out_r2\ 2\>\&1\;\ ls\ /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/c1_data\;\ git\ status\ --short\ --\ metrix/e1-pilot/results\ 2\>\&1\;\ ls\ metrix/e1-pilot/results\ 2\>\&1
++ls: cannot access '/tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/c1_test_out_r2': No such file or directory
++anchor_text.jsonl
++candidates.json
++dev_qa.jsonl
++facts.jsonl
++general_dev.jsonl
++train_F.jsonl
++train_S.jsonl
++train_Y.jsonl
++ls: cannot access 'metrix/e1-pilot/results': No such file or directory
++exit=2
++$ /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/venv/bin/python metrix/e1-pilot/reports/round3/outside_metrix_check.py
++changed outside metrix/ (base 61d3c767 .. HEAD):
++  A	.claude/agents/code-reviewer.md
++  A	.claude/agents/data-auditor.md
++  M	CLAUDE.md
++charter: base 3065 bytes, new 3586 bytes, base is exact prefix: True
++charter: appended 521 bytes; level-1/2 headings in appended part: ['## 6. Metrix 子项目(2026-11-13 负责人决定)']
++ignore rules below come from the working-tree .gitignore; identical to .gitignore at HEAD: True
++agent .claude/agents/code-reviewer.md: tracked at HEAD: True; ignore rule: .gitignore:14:.claude/	.claude/agents/code-reviewer.md
++agent .claude/agents/data-auditor.md: tracked at HEAD: True; ignore rule: .gitignore:14:.claude/	.claude/agents/data-auditor.md
++RESULT: PASS
++exit=0
++$ /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/venv/bin/python -m pytest -q -p no:cacheprovider metrix/e1-pilot/tests
++........................................................................ [ 27%]
++........................................................................ [ 54%]
++........................................................................ [ 81%]
++................................................                         [100%]
++264 passed in 237.18s (0:03:57)
++exit=0
++$ /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/venv/bin/python metrix/e1-pilot/reports/impl_c/c1_mutate_r2.py /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/venv/bin/python
++st10: authorization binding                      -> CAUGHT exit 1 | 1 failed, 23 passed in 26.71s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_st10_check_refuses[unbound]
++st10: record frozen commit                       -> CAUGHT exit 1 | 1 failed, 19 passed in 21.00s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_st10_check_refuses[frozen_commit]
++st10: record kind/mode                           -> CAUGHT exit 1 | 1 failed, 20 passed in 23.60s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_st10_check_refuses[record_kind]
++st10: TEST file hashes                           -> CAUGHT exit 1 | 1 failed, 18 passed in 20.57s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_st10_check_refuses[files]
++st10: code commit ancestor                       -> CAUGHT exit 1 | 1 failed, 14 passed in 17.32s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_st10_check_refuses[code_commit]
++st10: ancestor test always true                  -> CAUGHT exit 1 | 1 failed, 14 passed in 17.61s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_st10_check_refuses[code_commit]
++st10: counts are integers                        -> CAUGHT exit 1 | 1 failed, 15 passed in 18.16s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_st10_check_refuses[count_bool]
++st10: auditor kind/commit                        -> CAUGHT exit 1 | 1 failed, 9 passed in 12.08s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_st10_check_refuses[auditor_frozen_commit]
++st10: auditor counted the same file              -> CAUGHT exit 1 | 1 failed, 13 passed in 16.55s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_st10_check_refuses[auditor_other_file]
++st10: auditor count is an integer                -> CAUGHT exit 1 | 1 failed, 12 passed in 15.25s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_st10_check_refuses[auditor_not_int]
++st10: auditor count replaced by Executor's       -> CAUGHT exit 1 | 1 failed, 31 passed in 30.93s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_st10_stops_when_the_l6_counts_differ
++stops.st10: no over-limit judgement              -> CAUGHT exit 1 | 1 failed, 11 passed in 1.50s
++       FAILED metrix/e1-pilot/tests/test_stops.py::test_st10 - Failed: DID NOT RAISE...
++committed record: no object check                -> CAUGHT exit 1 | 1 failed, 7 passed in 10.05s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_st10_check_refuses_a_record_that_is_not_an_object[metrix/e1-pilot/results/st10_record.json]
++record: counts read from flags                   -> CAUGHT exit 1 | 1 failed in 4.37s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_st10_record_holds_raw_counts_hashes_and_code_commit
++record: no integer check                         -> CAUGHT exit 1 | 1 failed, 2 passed in 5.77s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_st10_record_refuses_counts_that_are_not_integers[bad0]
++record: code paths not checked                   -> CAUGHT exit 1 | 1 failed, 1 passed in 4.92s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_st10_record_refuses_uncommitted_code
++record: overwrite allowed                        -> CAUGHT exit 1 | 1 failed in 3.98s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_st10_record_holds_raw_counts_hashes_and_code_commit
++st10 record: history not searched                -> CAUGHT exit 1 | 1 failed, 56 passed in 57.25s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_driver_writes_the_st10_record_and_judges_raw_counts
++history: simplified (no --full-history)          -> CAUGHT exit 1 | 1 failed, 37 passed in 36.69s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_a_marker_deleted_on_a_merged_side_branch_refuses
++marker: working tree ignored                     -> CAUGHT exit 1 | 1 failed, 33 passed in 33.57s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_begin_twice_is_refused_as_already_started
++marker: HEAD only, not --all                     -> CAUGHT exit 1 | 1 failed, 35 passed in 36.77s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_a_marker_on_another_branch_refuses
++marker: remote branches not searched             -> CAUGHT exit 1 | 1 failed, 39 passed in 39.52s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_a_marker_only_on_the_remote_refuses
++remote: only the tips' refs, nothing fetched     -> CAUGHT exit 1 | 1 failed, 40 passed in 39.40s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_a_marker_on_another_remote_branch_refuses_a_lagging_clone
++marker: result ignored                           -> CAUGHT exit 1 | 1 failed, 38 passed in 38.76s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_a_result_without_a_marker_refuses
++begin: no marker check                           -> CAUGHT exit 1 | 1 failed, 33 passed in 32.88s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_begin_twice_is_refused_as_already_started
++begin: staged changes allowed                    -> CAUGHT exit 1 | 1 failed, 44 passed in 44.54s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_begin_refuses_before_writing_anything
++begin: no identity check                         -> CAUGHT exit 1 | 1 failed, 45 passed in 44.98s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_begin_refuses_without_a_committer_identity
++begin: no fast-forward precheck                  -> CAUGHT exit 1 | 1 failed, 47 passed in 46.97s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_a_rejected_non_fast_forward_push_is_blocked
++begin: no ST10 gate                              -> CAUGHT exit 1 | 1 failed, 32 passed in 32.91s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_begin_commits_and_pushes_the_marker_only
++commit_paths: staged paths not checked           -> NOT CAUGHT exit 0 | 57 passed in 57.11s
++commit_paths: commit failure ignored             -> CAUGHT exit 1 | 1 failed, 48 passed in 49.04s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_a_failing_commit_is_blocked
++push: remote ref not checked                     -> CAUGHT exit 1 | 1 failed, 46 passed in 46.73s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_a_push_that_fails_is_blocked_and_the_marker_refuses_later_runs
++push: tags followed                              -> CAUGHT exit 1 | 1 failed, 32 passed in 33.73s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_begin_commits_and_pushes_the_marker_only
++session: not checked against this process        -> CAUGHT exit 1 | 1 failed, 50 passed in 48.97s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_evaluate_model_refusals
++session: marker id not checked                   -> NOT CAUGHT exit 0 | 57 passed in 54.85s
++session: marker bytes not checked                -> CAUGHT exit 1 | 1 failed, 52 passed in 51.44s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_evaluate_model_refuses_a_rewritten_marker_with_the_same_id
++session: marker bound to the authorization       -> CAUGHT exit 1 | 1 failed, 53 passed in 53.22s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_evaluate_model_refuses_an_authorization_other_than_the_markers
++session: rows not checked against marker         -> CAUGHT exit 1 | 1 failed, 50 passed in 50.14s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_evaluate_model_refusals
++session: ST10 change after marker allowed        -> CAUGHT exit 1 | 1 failed, 50 passed in 51.29s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_evaluate_model_refusals
++session: any model name                          -> CAUGHT exit 1 | 1 failed, 50 passed in 51.37s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_evaluate_model_refusals
++session: model hash not checked                  -> CAUGHT exit 1 | 1 failed, 50 passed in 51.07s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_evaluate_model_refusals
++claim: a model twice                             -> CAUGHT exit 1 | 1 failed, 49 passed in 51.09s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_evaluate_model_passes_every_gate_then_stops_at_the_gpu_check
++claim: any session                               -> CAUGHT exit 1 | 1 failed, 49 passed in 50.28s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_evaluate_model_passes_every_gate_then_stops_at_the_gpu_check
++finish: models left allowed                      -> CAUGHT exit 1 | 1 failed, 55 passed in 57.88s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_finish_commits_the_result_after_every_model
++finish: staged changes allowed                   -> CAUGHT exit 1 | 1 failed, 55 passed in 57.39s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_finish_commits_the_result_after_every_model
++evaluate_model: no TEST session gate             -> CAUGHT exit 1 | 1 failed, 49 passed in 49.93s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_evaluate_model_passes_every_gate_then_stops_at_the_gpu_check
++evaluate_model: claim before the GPU check       -> CAUGHT exit 1 | 1 failed, 49 passed in 50.24s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_evaluate_model_passes_every_gate_then_stops_at_the_gpu_check
++driver: --out inside the repository allowed      -> CAUGHT exit 1 | 1 failed, 56 passed in 58.72s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_driver_writes_the_st10_record_and_judges_raw_counts
++driver: verdict from the report's flags          -> CAUGHT exit 1 | 1 failed, 56 passed in 59.41s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_driver_writes_the_st10_record_and_judges_raw_counts
++driver: ST10 record existence not checked        -> CAUGHT exit 1 | 1 failed, 56 passed in 58.08s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_driver_writes_the_st10_record_and_judges_raw_counts
++driver: code checked only after generation       -> CAUGHT exit 1 | 1 failed, 56 passed in 58.79s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_driver_writes_the_st10_record_and_judges_raw_counts
++BE2: PROTOCOL_FROZEN vs fz removed               -> CAUGHT exit 1 | 1 failed, 26 passed in 14.16s
++       FAILED metrix/e1-pilot/tests/test_test_data.py::test_verify_authorization_frozen_commit_comparisons
++BE2: authorization vs PROTOCOL_FROZEN removed    -> CAUGHT exit 1 | 1 failed, 3 passed in 13.76s
++       FAILED metrix/e1-pilot/tests/test_test_data.py::test_generation_needs_authorization
++BE9: pending_problem always None                 -> CAUGHT exit 1 | 1 failed, 21 passed in 14.76s
++       FAILED metrix/e1-pilot/tests/test_test_data.py::test_pending_interpretations_block_test
++BE9: content hashes from a literal key list      -> CAUGHT exit 1 | 1 failed, 1 passed in 4.75s
++       FAILED metrix/e1-pilot/tests/test_data_hashes.py::test_content_hashes_are_built_from_content_hash_keys
++BE10: fz is None check removed                   -> CAUGHT exit 1 | 1 failed, 10 passed in 14.50s
++       FAILED metrix/e1-pilot/tests/test_evaluate.py::test_test_split_needs_the_authorization
++B14: note changed                                -> CAUGHT exit 1 | 1 failed, 13 passed in 0.08s
++       FAILED metrix/e1-pilot/tests/test_gate.py::test_reasons_follow_section_9 - As...
++ruling: one entry pending                        -> CAUGHT exit 1 | 1 failed, 22 passed in 12.86s
++       FAILED metrix/e1-pilot/tests/test_test_data.py::test_interpretations_ruled_by_review_gate
++ruling: B25 marked accepted                      -> CAUGHT exit 1 | 1 failed, 22 passed in 13.49s
++       FAILED metrix/e1-pilot/tests/test_test_data.py::test_interpretations_ruled_by_review_gate
++mutations 59, caught 57
++src+tests sha256 before c3185588d9894cd1858cd7073d2b9375ec6055e4bf8095ab1e9c3c6b3d3b7813 after c3185588d9894cd1858cd7073d2b9375ec6055e4bf8095ab1e9c3c6b3d3b7813 EQUAL
++RESULT: FAIL
++exit=0
++$ bash -c git\ status\ --short\ --untracked-files=all\;\ git\ diff\ HEAD\ --\ metrix/e1-pilot/src\ metrix/e1-pilot/tests\ \|\ sha256sum
++A  metrix/e1-pilot/reports/IMPL_C_REPORT.md
++A  metrix/e1-pilot/reports/impl_c/c1_00_session_start.txt
++A  metrix/e1-pilot/reports/impl_c/c1_01_env_fetch.txt
++A  metrix/e1-pilot/reports/impl_c/c1_02_checks.txt
++AM metrix/e1-pilot/reports/impl_c/c1_gate_probe.py
++A  metrix/e1-pilot/reports/impl_c/c1_mutate.py
++MM metrix/e1-pilot/src/metrix_e1/evaluate.py
++MM metrix/e1-pilot/src/metrix_e1/frozen.py
++M  metrix/e1-pilot/src/metrix_e1/gate.py
++MM metrix/e1-pilot/src/metrix_e1/interpretations.py
++MM metrix/e1-pilot/src/metrix_e1/leakage.py
++MM metrix/e1-pilot/src/metrix_e1/record.py
++M  metrix/e1-pilot/src/metrix_e1/stops.py
++MM metrix/e1-pilot/src/metrix_e1/test_data.py
++AM metrix/e1-pilot/src/metrix_e1/testgate.py
++A  metrix/e1-pilot/tasks/IMPL_C_OWNER_MESSAGE.md
++MM metrix/e1-pilot/tests/test_data_hashes.py
++M  metrix/e1-pilot/tests/test_evaluate.py
++M  metrix/e1-pilot/tests/test_gate.py
++M  metrix/e1-pilot/tests/test_stops.py
++MM metrix/e1-pilot/tests/test_test_data.py
++AM metrix/e1-pilot/tests/test_testgate.py
++?? metrix/e1-pilot/audit/ic2_01_gate_scenarios.py
++?? metrix/e1-pilot/audit/ic2_02_content_hashes.py
++?? metrix/e1-pilot/audit/ic2_03_static.py
++?? metrix/e1-pilot/audit/ic2_04_test_refusal.py
++?? metrix/e1-pilot/audit/ic2_run_logged.sh
++?? metrix/e1-pilot/audit/stdout/impl_c/ic2_00_state.txt
++?? metrix/e1-pilot/audit/stdout/impl_c/ic2_01_gate_scenarios.txt
++?? metrix/e1-pilot/audit/stdout/impl_c/ic2_01b_B05_history.txt
++?? metrix/e1-pilot/audit/stdout/impl_c/ic2_02_content_hashes.txt
++?? metrix/e1-pilot/audit/stdout/impl_c/ic2_03_static.txt
++?? metrix/e1-pilot/audit/stdout/impl_c/ic2_04_test_refusal.txt
++?? metrix/e1-pilot/audit/stdout/impl_c/ic2_99_git_status_final.txt
++?? metrix/e1-pilot/reports/impl_c/c1_03_checks_r2.txt
++?? metrix/e1-pilot/reports/impl_c/c1_mutate_r2.py
++df91a8a881406da597e897c7d964501b60884060abbb8a83358595d0ca8f314f  -
++exit=0
+diff --git a/metrix/e1-pilot/reports/impl_c/c1_04_checks_r2b.txt b/metrix/e1-pilot/reports/impl_c/c1_04_checks_r2b.txt
+new file mode 100644
+index 0000000..91bc996
+--- /dev/null
++++ b/metrix/e1-pilot/reports/impl_c/c1_04_checks_r2b.txt
+@@ -0,0 +1,316 @@
++# Stage C, C1 work commit, round 2 (after the round-1 reviews: data-auditor BLOCK B05, code-reviewer PASS with MAJORs; before the round-2 reviews; repeated after c1_03_checks_r2.txt, where 2 of 59 mutations were not caught: test of the staging check added, the redundant session-id comparison removed): working-tree state, data regenerated and verified (four frozen hashes), TEST generator refusal in the current state (black box), outside_metrix_check.py, full pytest, mutation check of the TEST gates and BE fixes (reports/impl_c/c1_mutate_r2.py). Host vm, Anthropic cloud container, CPU only. Tue Nov 24 16:14:15 UTC 2026
++# stdout+stderr merged, unedited. Commands recorded by reports/round5/logrun.sh. METRIX_INPUTS_DIR=/tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/inputs
++$ git rev-parse HEAD
++eb05e42243b54b78cb400b40293ef56f67611852
++exit=0
++$ git status --short --untracked-files=all
++A  metrix/e1-pilot/reports/IMPL_C_REPORT.md
++A  metrix/e1-pilot/reports/impl_c/c1_00_session_start.txt
++A  metrix/e1-pilot/reports/impl_c/c1_01_env_fetch.txt
++A  metrix/e1-pilot/reports/impl_c/c1_02_checks.txt
++AM metrix/e1-pilot/reports/impl_c/c1_gate_probe.py
++A  metrix/e1-pilot/reports/impl_c/c1_mutate.py
++MM metrix/e1-pilot/src/metrix_e1/evaluate.py
++MM metrix/e1-pilot/src/metrix_e1/frozen.py
++M  metrix/e1-pilot/src/metrix_e1/gate.py
++MM metrix/e1-pilot/src/metrix_e1/interpretations.py
++MM metrix/e1-pilot/src/metrix_e1/leakage.py
++MM metrix/e1-pilot/src/metrix_e1/record.py
++M  metrix/e1-pilot/src/metrix_e1/stops.py
++MM metrix/e1-pilot/src/metrix_e1/test_data.py
++AM metrix/e1-pilot/src/metrix_e1/testgate.py
++A  metrix/e1-pilot/tasks/IMPL_C_OWNER_MESSAGE.md
++MM metrix/e1-pilot/tests/test_data_hashes.py
++M  metrix/e1-pilot/tests/test_evaluate.py
++M  metrix/e1-pilot/tests/test_gate.py
++M  metrix/e1-pilot/tests/test_stops.py
++MM metrix/e1-pilot/tests/test_test_data.py
++AM metrix/e1-pilot/tests/test_testgate.py
++?? metrix/e1-pilot/audit/ic2_01_gate_scenarios.py
++?? metrix/e1-pilot/audit/ic2_02_content_hashes.py
++?? metrix/e1-pilot/audit/ic2_03_static.py
++?? metrix/e1-pilot/audit/ic2_04_test_refusal.py
++?? metrix/e1-pilot/audit/ic2_run_logged.sh
++?? metrix/e1-pilot/audit/stdout/impl_c/ic2_00_state.txt
++?? metrix/e1-pilot/audit/stdout/impl_c/ic2_01_gate_scenarios.txt
++?? metrix/e1-pilot/audit/stdout/impl_c/ic2_01b_B05_history.txt
++?? metrix/e1-pilot/audit/stdout/impl_c/ic2_02_content_hashes.txt
++?? metrix/e1-pilot/audit/stdout/impl_c/ic2_03_static.txt
++?? metrix/e1-pilot/audit/stdout/impl_c/ic2_04_test_refusal.txt
++?? metrix/e1-pilot/audit/stdout/impl_c/ic2_99_git_status_final.txt
++?? metrix/e1-pilot/reports/impl_c/c1_03_checks_r2.txt
++?? metrix/e1-pilot/reports/impl_c/c1_04_checks_r2b.txt
++?? metrix/e1-pilot/reports/impl_c/c1_mutate_r2.py
++exit=0
++$ git diff --stat HEAD
++ metrix/e1-pilot/reports/IMPL_C_REPORT.md           |  44 ++
++ .../reports/impl_c/c1_00_session_start.txt         |  49 ++
++ metrix/e1-pilot/reports/impl_c/c1_01_env_fetch.txt |  38 ++
++ metrix/e1-pilot/reports/impl_c/c1_02_checks.txt    | 244 ++++++++
++ metrix/e1-pilot/reports/impl_c/c1_gate_probe.py    | 142 +++++
++ metrix/e1-pilot/reports/impl_c/c1_mutate.py        | 132 ++++
++ metrix/e1-pilot/src/metrix_e1/evaluate.py          |  13 +-
++ metrix/e1-pilot/src/metrix_e1/frozen.py            |  29 +-
++ metrix/e1-pilot/src/metrix_e1/gate.py              |   5 +-
++ metrix/e1-pilot/src/metrix_e1/interpretations.py   |  99 ++-
++ metrix/e1-pilot/src/metrix_e1/leakage.py           |  32 +-
++ metrix/e1-pilot/src/metrix_e1/record.py            |   5 +-
++ metrix/e1-pilot/src/metrix_e1/stops.py             |  12 +-
++ metrix/e1-pilot/src/metrix_e1/test_data.py         |  59 +-
++ metrix/e1-pilot/src/metrix_e1/testgate.py          | 495 +++++++++++++++
++ metrix/e1-pilot/tasks/IMPL_C_OWNER_MESSAGE.md      |  31 +
++ metrix/e1-pilot/tests/test_data_hashes.py          |   8 +
++ metrix/e1-pilot/tests/test_evaluate.py             |  10 +-
++ metrix/e1-pilot/tests/test_gate.py                 |   6 +-
++ metrix/e1-pilot/tests/test_stops.py                |  17 +-
++ metrix/e1-pilot/tests/test_test_data.py            |  76 ++-
++ metrix/e1-pilot/tests/test_testgate.py             | 664 +++++++++++++++++++++
++ 22 files changed, 2104 insertions(+), 106 deletions(-)
++exit=0
++$ bash -c git\ ls-files\ -o\ --exclude-standard\ -z\ \|\ xargs\ -0\ sha256sum\;\ git\ diff\ HEAD\ --\ metrix/e1-pilot/src\ metrix/e1-pilot/tests\ \|\ sha256sum
++a0b5a8c6d7f40ff4a9be15b3e63faf6ff4c2181f0bba0f961a9538d09335c5b0  metrix/e1-pilot/audit/ic2_01_gate_scenarios.py
++017ec32e9ff0236fb2844d50a4efec41c73de555af27b42d1c6989cb0783b96e  metrix/e1-pilot/audit/ic2_02_content_hashes.py
++dcb224cc39fed51bf212b9baf962246365ff8a0aaaa887e86088a0494b6729be  metrix/e1-pilot/audit/ic2_03_static.py
++a6328a5adbcc068dcb6bb341b2d7dc12af1a21dc4da7db8dfa686820f7cfe102  metrix/e1-pilot/audit/ic2_04_test_refusal.py
++9fee1845d66f7f4ddd37d2587546bb17100a680bd0935b21eaf623df455dd950  metrix/e1-pilot/audit/ic2_run_logged.sh
++fdcd86e8cd61a350f4bbe8397ca13653f327f77c830346bc86fd8f2e8573881c  metrix/e1-pilot/audit/stdout/impl_c/ic2_00_state.txt
++5ca30f21c1f04c043bdfa5c0d28a4f50cabcf9471c0049474b1db9b9147e5a60  metrix/e1-pilot/audit/stdout/impl_c/ic2_01_gate_scenarios.txt
++e50eb6c202029717ba540f1464c41da2418a105b1365d05fa66687914de2a06c  metrix/e1-pilot/audit/stdout/impl_c/ic2_01b_B05_history.txt
++25be6771ed935ff77c02cd776e9ab2cf0abd8f0095e455aba00de64a00691f78  metrix/e1-pilot/audit/stdout/impl_c/ic2_02_content_hashes.txt
++974c21fe1b646f8d5085b03a5d2766c68f955792aa356f707567183f463c7e38  metrix/e1-pilot/audit/stdout/impl_c/ic2_03_static.txt
++aecdac874df6a437b55d6b525661c0d4149349d37fce9236e29740ea4ca3f08c  metrix/e1-pilot/audit/stdout/impl_c/ic2_04_test_refusal.txt
++f7d0c06db1125768b1123ab2a8423f4f271c6b69e27ddf695d3a37b72f3ea7a7  metrix/e1-pilot/audit/stdout/impl_c/ic2_99_git_status_final.txt
++95dd2115fb1207d2c06bf9fafa27eb32f4993201c29a74ac279487ea78dbdd26  metrix/e1-pilot/reports/impl_c/c1_03_checks_r2.txt
++4adffcdfb3a5bc6ee239d697b40af58f49b5940845305687844f999bf410c413  metrix/e1-pilot/reports/impl_c/c1_04_checks_r2b.txt
++6fd61868c9e5f001b98338bcc1759ebfa30171ca3f3243fae36d198ffa29c836  metrix/e1-pilot/reports/impl_c/c1_mutate_r2.py
++dc234bf3c570a6c28117ea093661f99a58e7f71c90706dad925ca43af9e1f6d5  -
++exit=0
++$ env PYTHONPATH=metrix/e1-pilot/src /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/venv/bin/python -m metrix_e1.data generate --inputs /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/inputs --out /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/c1_data
++frozen: PROTOCOL_FROZEN v1.1, commit 87a244db28a901f9e89282b50df76778ab5c2887; four frozen files match by git cat-file
++python 3.13.18; libraries {"torch": "2.11.0", "transformers": "5.22.2"} (protocol section 0: {"torch": "2.11.0", "transformers": "5.22.2"})
++name generation per cell: [{"cell": "capital/natural", "entity_draws": 28, "target_pair": [3, 3], "answer_draws": 84}, {"cell": "capital/random", "entity_draws": 20, "target_pair": [5, 5], "answer_draws": 52}, {"cell": "currency/natural", "entity_draws": 31, "target_pair": [3, 3], "answer_draws": 82}, {"cell": "currency/random", "entity_draws": 20, "target_pair": [6, 6], "answer_draws": 46}, {"cell": "founder/natural", "entity_draws": 30, "target_pair": [3, 3], "answer_draws": 81}, {"cell": "founder/random", "entity_draws": 21, "target_pair": [5, 5], "answer_draws": 45}, {"cell": "river/natural", "entity_draws": 34, "target_pair": [3, 3], "answer_draws": 89}, {"cell": "river/random", "entity_draws": 20, "target_pair": [6, 6], "answer_draws": 42}]
++S derangement attempts per cell: {"capital/natural": 3, "capital/random": 5, "currency/natural": 1, "currency/random": 6, "founder/natural": 2, "founder/random": 1, "river/natural": 2, "river/random": 6}
++Y / F token ratio: F 1889, Y 2260, ratio 1.1964
++Y / F token ratio without <|endoftext|> (report only): F 1769, Y 2020, ratio 1.1419
++both ratios within [0.8, 1.25]: with True, without True
++eval_sets.jsonl rows by split (row prefix only): {'dev': 400, 'test': 800}; DEV rows decoded and parsed: 400; windows kept (decoded with the parcae tokenizer): 100
++facts.jsonl        rows  160  byte_sha256 e05561ac2d49dcc3c8f59743c5df64151983a540a32ae135fd1b10f5e0fdc828  canonical_sha256 e05561ac2d49dcc3c8f59743c5df64151983a540a32ae135fd1b10f5e0fdc828
++train_F.jsonl      rows  120  byte_sha256 3aa9ab3ca313c0a1113b91e927af51342c915e3e40dd2f20992f3d9e59b0e373  canonical_sha256 3aa9ab3ca313c0a1113b91e927af51342c915e3e40dd2f20992f3d9e59b0e373
++train_S.jsonl      rows  120  byte_sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e  canonical_sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e
++train_Y.jsonl      rows  240  byte_sha256 c7430cadb2b06dd5c144af381a8183d4c186f27f2b5acfa9d8d39da0b7626d15  canonical_sha256 c7430cadb2b06dd5c144af381a8183d4c186f27f2b5acfa9d8d39da0b7626d15
++dev_qa.jsonl       rows  320  byte_sha256 9761eb60d6c9155c2f56394aa228b1e9dfea0ae3926ab50cb21d903108bc7fde  canonical_sha256 9761eb60d6c9155c2f56394aa228b1e9dfea0ae3926ab50cb21d903108bc7fde
++candidates.json    rows  160  byte_sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705  canonical_sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705
++general_dev.jsonl  rows  100  byte_sha256 957666920c91ef5b9328984d26ed0628c8a80b439d461bea49b54c2235635e73  canonical_sha256 957666920c91ef5b9328984d26ed0628c8a80b439d461bea49b54c2235635e73
++anchor_text.jsonl  rows  512  byte_sha256 2089e656819d1fe0f6ececcc26e5cade09ee80a92c50e7c8f607fa4e0ef46da5  canonical_sha256 2089e656819d1fe0f6ececcc26e5cade09ee80a92c50e7c8f607fa4e0ef46da5
++frozen content hash facts        406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 = PROTOCOL_FROZEN (read back from /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/c1_data)
++frozen content hash train_S      686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e = PROTOCOL_FROZEN (read back from /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/c1_data)
++frozen content hash candidates   e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 = PROTOCOL_FROZEN (read back from /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/c1_data)
++frozen content hash anchor_texts 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 = PROTOCOL_FROZEN (read back from /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/c1_data)
++RESULT: PASS
++exit=0
++$ env PYTHONPATH=metrix/e1-pilot/src /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/venv/bin/python -m metrix_e1.data verify --inputs /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/inputs --data /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/c1_data
++frozen: PROTOCOL_FROZEN v1.1, commit 87a244db28a901f9e89282b50df76778ab5c2887; four frozen files match by git cat-file
++frozen content hash facts        406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 = PROTOCOL_FROZEN
++frozen content hash train_S      686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e = PROTOCOL_FROZEN
++frozen content hash candidates   e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 = PROTOCOL_FROZEN
++frozen content hash anchor_texts 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 = PROTOCOL_FROZEN
++all 8 data files byte-identical to their regeneration from the frozen inputs
++RESULT: PASS
++exit=0
++$ env PYTHONPATH=metrix/e1-pilot/src /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/venv/bin/python -m metrix_e1.test_data --inputs /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/inputs --data /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/c1_data --out /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/c1_test_out_r2
++TEST generator refused: metrix/e1-pilot/results/gate0_record.json is not committed at HEAD
++no TEST content was generated, read or written
++RESULT: FAIL
++exit=1
++$ bash -c ls\ -la\ /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/c1_test_out_r2\ 2\>\&1\;\ ls\ /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/c1_data\;\ git\ status\ --short\ --\ metrix/e1-pilot/results\ 2\>\&1\;\ ls\ metrix/e1-pilot/results\ 2\>\&1
++ls: cannot access '/tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/c1_test_out_r2': No such file or directory
++anchor_text.jsonl
++candidates.json
++dev_qa.jsonl
++facts.jsonl
++general_dev.jsonl
++train_F.jsonl
++train_S.jsonl
++train_Y.jsonl
++ls: cannot access 'metrix/e1-pilot/results': No such file or directory
++exit=2
++$ /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/venv/bin/python metrix/e1-pilot/reports/round3/outside_metrix_check.py
++changed outside metrix/ (base 61d3c767 .. HEAD):
++  A	.claude/agents/code-reviewer.md
++  A	.claude/agents/data-auditor.md
++  M	CLAUDE.md
++charter: base 3065 bytes, new 3586 bytes, base is exact prefix: True
++charter: appended 521 bytes; level-1/2 headings in appended part: ['## 6. Metrix 子项目(2026-11-13 负责人决定)']
++ignore rules below come from the working-tree .gitignore; identical to .gitignore at HEAD: True
++agent .claude/agents/code-reviewer.md: tracked at HEAD: True; ignore rule: .gitignore:14:.claude/	.claude/agents/code-reviewer.md
++agent .claude/agents/data-auditor.md: tracked at HEAD: True; ignore rule: .gitignore:14:.claude/	.claude/agents/data-auditor.md
++RESULT: PASS
++exit=0
++$ /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/venv/bin/python -m pytest -q -p no:cacheprovider metrix/e1-pilot/tests
++........................................................................ [ 27%]
++........................................................................ [ 54%]
++........................................................................ [ 81%]
++.................................................                        [100%]
++265 passed in 164.35s (0:02:44)
++exit=0
++$ /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/venv/bin/python metrix/e1-pilot/reports/impl_c/c1_mutate_r2.py /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/venv/bin/python
++st10: authorization binding                      -> CAUGHT exit 1 | 1 failed, 23 passed in 23.86s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_st10_check_refuses[unbound]
++st10: record frozen commit                       -> CAUGHT exit 1 | 1 failed, 19 passed in 20.78s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_st10_check_refuses[frozen_commit]
++st10: record kind/mode                           -> CAUGHT exit 1 | 1 failed, 20 passed in 22.56s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_st10_check_refuses[record_kind]
++st10: TEST file hashes                           -> CAUGHT exit 1 | 1 failed, 18 passed in 19.20s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_st10_check_refuses[files]
++st10: code commit ancestor                       -> CAUGHT exit 1 | 1 failed, 14 passed in 15.84s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_st10_check_refuses[code_commit]
++st10: ancestor test always true                  -> CAUGHT exit 1 | 1 failed, 14 passed in 16.25s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_st10_check_refuses[code_commit]
++st10: counts are integers                        -> CAUGHT exit 1 | 1 failed, 15 passed in 16.88s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_st10_check_refuses[count_bool]
++st10: auditor kind/commit                        -> CAUGHT exit 1 | 1 failed, 9 passed in 11.17s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_st10_check_refuses[auditor_frozen_commit]
++st10: auditor counted the same file              -> CAUGHT exit 1 | 1 failed, 13 passed in 15.08s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_st10_check_refuses[auditor_other_file]
++st10: auditor count is an integer                -> CAUGHT exit 1 | 1 failed, 12 passed in 14.50s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_st10_check_refuses[auditor_not_int]
++st10: auditor count replaced by Executor's       -> CAUGHT exit 1 | 1 failed, 31 passed in 30.00s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_st10_stops_when_the_l6_counts_differ
++stops.st10: no over-limit judgement              -> CAUGHT exit 1 | 1 failed, 11 passed in 1.51s
++       FAILED metrix/e1-pilot/tests/test_stops.py::test_st10 - Failed: DID NOT RAISE...
++committed record: no object check                -> CAUGHT exit 1 | 1 failed, 7 passed in 10.28s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_st10_check_refuses_a_record_that_is_not_an_object[metrix/e1-pilot/results/st10_record.json]
++record: counts read from flags                   -> CAUGHT exit 1 | 1 failed in 4.54s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_st10_record_holds_raw_counts_hashes_and_code_commit
++record: no integer check                         -> CAUGHT exit 1 | 1 failed, 2 passed in 6.27s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_st10_record_refuses_counts_that_are_not_integers[bad0]
++record: code paths not checked                   -> CAUGHT exit 1 | 1 failed, 1 passed in 5.25s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_st10_record_refuses_uncommitted_code
++record: overwrite allowed                        -> CAUGHT exit 1 | 1 failed in 4.20s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_st10_record_holds_raw_counts_hashes_and_code_commit
++st10 record: history not searched                -> CAUGHT exit 1 | 1 failed, 57 passed in 57.26s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_driver_writes_the_st10_record_and_judges_raw_counts
++history: simplified (no --full-history)          -> CAUGHT exit 1 | 1 failed, 37 passed in 35.75s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_a_marker_deleted_on_a_merged_side_branch_refuses
++marker: working tree ignored                     -> CAUGHT exit 1 | 1 failed, 33 passed in 32.33s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_begin_twice_is_refused_as_already_started
++marker: HEAD only, not --all                     -> CAUGHT exit 1 | 1 failed, 35 passed in 34.82s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_a_marker_on_another_branch_refuses
++marker: remote branches not searched             -> CAUGHT exit 1 | 1 failed, 39 passed in 38.21s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_a_marker_only_on_the_remote_refuses
++remote: only the tips' refs, nothing fetched     -> CAUGHT exit 1 | 1 failed, 40 passed in 39.36s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_a_marker_on_another_remote_branch_refuses_a_lagging_clone
++marker: result ignored                           -> CAUGHT exit 1 | 1 failed, 38 passed in 36.23s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_a_result_without_a_marker_refuses
++begin: no marker check                           -> CAUGHT exit 1 | 1 failed, 33 passed in 31.64s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_begin_twice_is_refused_as_already_started
++begin: staged changes allowed                    -> CAUGHT exit 1 | 1 failed, 44 passed in 43.32s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_begin_refuses_before_writing_anything
++begin: no identity check                         -> CAUGHT exit 1 | 1 failed, 45 passed in 43.38s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_begin_refuses_without_a_committer_identity
++begin: no fast-forward precheck                  -> CAUGHT exit 1 | 1 failed, 47 passed in 46.61s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_a_rejected_non_fast_forward_push_is_blocked
++begin: no ST10 gate                              -> CAUGHT exit 1 | 1 failed, 32 passed in 31.79s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_begin_commits_and_pushes_the_marker_only
++commit_paths: staged paths not checked           -> CAUGHT exit 1 | 1 failed, 48 passed in 47.29s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_commit_paths_stages_exactly_the_named_paths
++commit_paths: commit failure ignored             -> CAUGHT exit 1 | 1 failed, 49 passed in 46.60s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_a_failing_commit_is_blocked
++push: remote ref not checked                     -> CAUGHT exit 1 | 1 failed, 46 passed in 42.64s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_a_push_that_fails_is_blocked_and_the_marker_refuses_later_runs
++push: tags followed                              -> CAUGHT exit 1 | 1 failed, 32 passed in 30.03s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_begin_commits_and_pushes_the_marker_only
++session: not checked against this process        -> CAUGHT exit 1 | 1 failed, 51 passed in 47.18s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_evaluate_model_refusals
++session: marker bytes not checked                -> CAUGHT exit 1 | 1 failed, 52 passed in 47.69s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_evaluate_model_refuses_another_committed_marker
++session: marker bound to the authorization       -> CAUGHT exit 1 | 1 failed, 54 passed in 48.69s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_evaluate_model_refuses_an_authorization_other_than_the_markers
++session: rows not checked against marker         -> CAUGHT exit 1 | 1 failed, 51 passed in 45.72s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_evaluate_model_refusals
++session: ST10 change after marker allowed        -> CAUGHT exit 1 | 1 failed, 51 passed in 45.54s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_evaluate_model_refusals
++session: any model name                          -> CAUGHT exit 1 | 1 failed, 51 passed in 46.56s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_evaluate_model_refusals
++session: model hash not checked                  -> CAUGHT exit 1 | 1 failed, 51 passed in 47.20s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_evaluate_model_refusals
++claim: a model twice                             -> CAUGHT exit 1 | 1 failed, 50 passed in 45.38s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_evaluate_model_passes_every_gate_then_stops_at_the_gpu_check
++claim: any session                               -> CAUGHT exit 1 | 1 failed, 50 passed in 44.99s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_evaluate_model_passes_every_gate_then_stops_at_the_gpu_check
++finish: models left allowed                      -> CAUGHT exit 1 | 1 failed, 56 passed in 50.65s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_finish_commits_the_result_after_every_model
++finish: staged changes allowed                   -> CAUGHT exit 1 | 1 failed, 56 passed in 50.39s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_finish_commits_the_result_after_every_model
++evaluate_model: no TEST session gate             -> CAUGHT exit 1 | 1 failed, 50 passed in 44.92s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_evaluate_model_passes_every_gate_then_stops_at_the_gpu_check
++evaluate_model: claim before the GPU check       -> CAUGHT exit 1 | 1 failed, 50 passed in 47.11s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_evaluate_model_passes_every_gate_then_stops_at_the_gpu_check
++driver: --out inside the repository allowed      -> CAUGHT exit 1 | 1 failed, 57 passed in 53.54s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_driver_writes_the_st10_record_and_judges_raw_counts
++driver: verdict from the report's flags          -> CAUGHT exit 1 | 1 failed, 57 passed in 52.00s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_driver_writes_the_st10_record_and_judges_raw_counts
++driver: ST10 record existence not checked        -> CAUGHT exit 1 | 1 failed, 57 passed in 52.09s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_driver_writes_the_st10_record_and_judges_raw_counts
++driver: code checked only after generation       -> CAUGHT exit 1 | 1 failed, 57 passed in 52.86s
++       FAILED metrix/e1-pilot/tests/test_testgate.py::test_driver_writes_the_st10_record_and_judges_raw_counts
++BE2: PROTOCOL_FROZEN vs fz removed               -> CAUGHT exit 1 | 1 failed, 26 passed in 12.33s
++       FAILED metrix/e1-pilot/tests/test_test_data.py::test_verify_authorization_frozen_commit_comparisons
++BE2: authorization vs PROTOCOL_FROZEN removed    -> CAUGHT exit 1 | 1 failed, 3 passed in 12.29s
++       FAILED metrix/e1-pilot/tests/test_test_data.py::test_generation_needs_authorization
++BE9: pending_problem always None                 -> CAUGHT exit 1 | 1 failed, 21 passed in 12.45s
++       FAILED metrix/e1-pilot/tests/test_test_data.py::test_pending_interpretations_block_test
++BE9: content hashes from a literal key list      -> CAUGHT exit 1 | 1 failed, 1 passed in 4.46s
++       FAILED metrix/e1-pilot/tests/test_data_hashes.py::test_content_hashes_are_built_from_content_hash_keys
++BE10: fz is None check removed                   -> CAUGHT exit 1 | 1 failed, 10 passed in 11.70s
++       FAILED metrix/e1-pilot/tests/test_evaluate.py::test_test_split_needs_the_authorization
++B14: note changed                                -> CAUGHT exit 1 | 1 failed, 13 passed in 0.08s
++       FAILED metrix/e1-pilot/tests/test_gate.py::test_reasons_follow_section_9 - As...
++ruling: one entry pending                        -> CAUGHT exit 1 | 1 failed, 22 passed in 11.93s
++       FAILED metrix/e1-pilot/tests/test_test_data.py::test_interpretations_ruled_by_review_gate
++ruling: B25 marked accepted                      -> CAUGHT exit 1 | 1 failed, 22 passed in 11.57s
++       FAILED metrix/e1-pilot/tests/test_test_data.py::test_interpretations_ruled_by_review_gate
++mutations 58, caught 58
++src+tests sha256 before 0388f9d578ce5e2f0fa21f879cd56a8efc6338e28bc33759f7d9e568f86a6e88 after 0388f9d578ce5e2f0fa21f879cd56a8efc6338e28bc33759f7d9e568f86a6e88 EQUAL
++RESULT: PASS
++exit=0
++$ bash -c git\ status\ --short\ --untracked-files=all\;\ git\ diff\ HEAD\ --\ metrix/e1-pilot/src\ metrix/e1-pilot/tests\ \|\ sha256sum
++A  metrix/e1-pilot/reports/IMPL_C_REPORT.md
++A  metrix/e1-pilot/reports/impl_c/c1_00_session_start.txt
++A  metrix/e1-pilot/reports/impl_c/c1_01_env_fetch.txt
++A  metrix/e1-pilot/reports/impl_c/c1_02_checks.txt
++AM metrix/e1-pilot/reports/impl_c/c1_gate_probe.py
++A  metrix/e1-pilot/reports/impl_c/c1_mutate.py
++MM metrix/e1-pilot/src/metrix_e1/evaluate.py
++MM metrix/e1-pilot/src/metrix_e1/frozen.py
++M  metrix/e1-pilot/src/metrix_e1/gate.py
++MM metrix/e1-pilot/src/metrix_e1/interpretations.py
++MM metrix/e1-pilot/src/metrix_e1/leakage.py
++MM metrix/e1-pilot/src/metrix_e1/record.py
++M  metrix/e1-pilot/src/metrix_e1/stops.py
++MM metrix/e1-pilot/src/metrix_e1/test_data.py
++AM metrix/e1-pilot/src/metrix_e1/testgate.py
++A  metrix/e1-pilot/tasks/IMPL_C_OWNER_MESSAGE.md
++MM metrix/e1-pilot/tests/test_data_hashes.py
++M  metrix/e1-pilot/tests/test_evaluate.py
++M  metrix/e1-pilot/tests/test_gate.py
++M  metrix/e1-pilot/tests/test_stops.py
++MM metrix/e1-pilot/tests/test_test_data.py
++AM metrix/e1-pilot/tests/test_testgate.py
++?? metrix/e1-pilot/audit/ic2_01_gate_scenarios.py
++?? metrix/e1-pilot/audit/ic2_02_content_hashes.py
++?? metrix/e1-pilot/audit/ic2_03_static.py
++?? metrix/e1-pilot/audit/ic2_04_test_refusal.py
++?? metrix/e1-pilot/audit/ic2_run_logged.sh
++?? metrix/e1-pilot/audit/stdout/impl_c/ic2_00_state.txt
++?? metrix/e1-pilot/audit/stdout/impl_c/ic2_01_gate_scenarios.txt
++?? metrix/e1-pilot/audit/stdout/impl_c/ic2_01b_B05_history.txt
++?? metrix/e1-pilot/audit/stdout/impl_c/ic2_02_content_hashes.txt
++?? metrix/e1-pilot/audit/stdout/impl_c/ic2_03_static.txt
++?? metrix/e1-pilot/audit/stdout/impl_c/ic2_04_test_refusal.txt
++?? metrix/e1-pilot/audit/stdout/impl_c/ic2_99_git_status_final.txt
++?? metrix/e1-pilot/reports/impl_c/c1_03_checks_r2.txt
++?? metrix/e1-pilot/reports/impl_c/c1_04_checks_r2b.txt
++?? metrix/e1-pilot/reports/impl_c/c1_mutate_r2.py
++dc234bf3c570a6c28117ea093661f99a58e7f71c90706dad925ca43af9e1f6d5  -
++exit=0
+diff --git a/metrix/e1-pilot/reports/impl_c/c1_gate_probe.py b/metrix/e1-pilot/reports/impl_c/c1_gate_probe.py
+index f9ed0ed..af9b936 100644
+--- a/metrix/e1-pilot/reports/impl_c/c1_gate_probe.py
++++ b/metrix/e1-pilot/reports/impl_c/c1_gate_probe.py
+@@ -4,7 +4,10 @@ for the data-auditor. It runs the package's gate functions on a repository the c
+ line per operation, so that an independent model can be compared with what the code does without importing the
+ package (the probe is run as a subprocess, like `python -m metrix_e1.test_data`).
+ 
+-  python c1_gate_probe.py REPO TEST_DIR OP [OP ...]
++  python c1_gate_probe.py [--interpretations-ruled] REPO TEST_DIR OP [OP ...]
++
++--interpretations-ruled  treat every entry of interpretations.py as ruled (interpretations.pending returns []), so
++          that the gates can be probed while an interpretation (B25) is still pending; printed as the first line.
+ 
+ REPO      a git repository holding metrix/e1-pilot/PROTOCOL_FROZEN (the real one), the committed Gate 0 and freeze
+           records (results/gate0_record.json, results/selection_freeze_record.json) and, as the scenario needs, the ST10
+@@ -13,8 +16,8 @@ TEST_DIR  a directory outside REPO with test_qa.jsonl and general_test.jsonl (sy
+ OP        st10                 testgate.st10_check for the TEST rows of TEST_DIR
+           marker               testgate.refuse_if_marker(REPO, "origin", "main")
+           begin:BASESHA        testgate.begin_test_evaluation(..., base_model_sha256=BASESHA, "origin", "main", retries=1)
+-          gate:NAME:SHA        testgate.require_test_session for checkpoint NAME and model state sha256 SHA (needs an
+-                               earlier begin in the same run)
++          gate:NAME:SHA        testgate.require_test_session for checkpoint NAME and a stand-in model whose state
++                               sha256 is SHA, then testgate.claim_checkpoint (needs an earlier begin in the same run)
+           eval:NAME:SEED       evaluate.evaluate_model(split="test") on a random tiny Qwen3 model (torch.manual_seed(SEED),
+                                2 layers, hidden 64; no weights), checkpoint NAME, formal mode, device cpu: a call that
+                                passes every gate is refused by require_gpu ("ACCEPTED-BY-GATES")
+@@ -55,13 +58,34 @@ def tiny(seed):
+     return Qwen3ForCausalLM(cfg).eval()
+ 
+ 
++class _ShaModel:
++    """Stands for a model whose train.state_sha256 is `sha` (gate:NAME:SHA): train.state_sha256 is wrapped below to
++    return `sha` for these objects only (real models are hashed as before)."""
++
++    def __init__(self, sha):
++        self.sha = sha
++
++
++def _wrap_state_sha256():
++    from metrix_e1 import train as T
++    real = T.state_sha256
++    T.state_sha256 = lambda m: m.sha if isinstance(m, _ShaModel) else real(m)
++
++
+ def committed_sha(repo, rel):
+     r = subprocess.run(["git", "-C", str(repo), "cat-file", "blob", "HEAD:%s" % rel], capture_output=True)
+     return hashlib.sha256(r.stdout).hexdigest() if r.returncode == 0 else None
+ 
+ 
+ def main():
+-    repo, test_dir, ops = Path(sys.argv[1]).resolve(), Path(sys.argv[2]), sys.argv[3:]
++    args = sys.argv[1:]
++    if args and args[0] == "--interpretations-ruled":
++        from metrix_e1 import interpretations as INT
++        INT.pending = lambda: []
++        print("probe: interpretations.pending replaced by a function returning [] (--interpretations-ruled)")
++        args = args[1:]
++    repo, test_dir, ops = Path(args[0]).resolve(), Path(args[1]), args[2:]
++    _wrap_state_sha256()
+     fz = dataclasses.replace(FZ.load(), repo_root=repo)
+     auth = LK.TestAuthorization(fz.record.commit, committed_sha(repo, R.GATE0_RECORD_REL),
+                                 committed_sha(repo, R.SELECTION_FREEZE_REL))
+@@ -81,7 +105,8 @@ def main():
+                 print("%s ACCEPT marker commit %s models %d" % (op, session.marker_commit, len(session.models)))
+             elif kind == "gate":
+                 name, sha = arg.split(":")
+-                TG.require_test_session(fz, auth, session, name, data, sha)
++                TG.require_test_session(fz, auth, session, name, data, _ShaModel(sha))
++                TG.claim_checkpoint(session, name)
+                 print("%s ACCEPT" % op)
+             elif kind == "eval":
+                 name, seed = arg.split(":")
+diff --git a/metrix/e1-pilot/reports/impl_c/c1_mutate_r2.py b/metrix/e1-pilot/reports/impl_c/c1_mutate_r2.py
+new file mode 100644
+index 0000000..bbd4f53
+--- /dev/null
++++ b/metrix/e1-pilot/reports/impl_c/c1_mutate_r2.py
+@@ -0,0 +1,171 @@
++"""Stage C, C1, round 2 (after the round-1 reviews): mutation check of the TEST gates and the BE fixes. Each mutation
++removes or weakens one check in the working tree, runs the named tests and restores the file (byte-for-byte, checked).
++A mutation is "caught" when the named tests fail. Round 1's script (c1_mutate.py) is kept as it ran (c1_02_checks.txt).
++Run from the repository root:
++    METRIX_INPUTS_DIR=DIR python metrix/e1-pilot/reports/impl_c/c1_mutate_r2.py PYTHON
++Prints one line per mutation and, at the end, the sha256 of src/ and tests/ before and after (must be equal).
++"""
++import hashlib
++import subprocess
++import sys
++from pathlib import Path
++
++PY = sys.argv[1]
++S = Path("metrix/e1-pilot/src/metrix_e1")
++G = S / "testgate.py"
++TG, TT, TE, TS, TH = ("tests/test_testgate.py", "tests/test_test_data.py", "tests/test_evaluate.py",
++                      "tests/test_stops.py", "tests/test_data_hashes.py")
++MUTS = [
++    # st10_check
++    ("st10: authorization binding", G, 'if rec.get("authorization") != auth_fields(authorization):', 'if False:', TG),
++    ("st10: record frozen commit", G, 'if rec.get("frozen_commit") != authorization.frozen_commit:', 'if False:', TG),
++    ("st10: record kind/mode", G,
++     'if rec.get("kind") != "st10" or rec.get("mode") != "formal" or rec.get("label") is not None:', 'if False:', TG),
++    ("st10: TEST file hashes", G, "    if files != rows_hashes:\n", "    if False:\n", TG),
++    ("st10: code commit ancestor", G, "    if not _is_ancestor(root, cc):\n", "    if False:\n", TG),
++    ("st10: ancestor test always true", G, '_git(root, "merge-base", "--is-ancestor", commit, of).returncode == 0)',
++     '_git(root, "merge-base", "--is-ancestor", commit, of).returncode >= 0)', TG),
++    ("st10: counts are integers", G, "    if not _counts_ok(counts):\n", "    if False:\n", TG),
++    ("st10: auditor kind/commit", G,
++     'if aud.get("kind") != "st10_auditor_l6" or aud.get("frozen_commit") != authorization.frozen_commit:', 'if False:', TG),
++    ("st10: auditor counted the same file", G, 'if aud.get("general_test_sha256") != files["general_test.jsonl"]:',
++     'if False:', TG),
++    ("st10: auditor count is an integer", G, 'if not _count(aud.get("l6_test_count")):', 'if False:', TG),
++    ("st10: auditor count replaced by Executor's", G, 'STP.st10(fz, counts, test_limits(fz), aud["l6_test_count"])',
++     'STP.st10(fz, counts, test_limits(fz), counts["L6"])', TG),
++    ("stops.st10: no over-limit judgement", S / "stops.py",
++     "    over = sorted(c for c, v in counts.items() if v > limits[c])", "    over = []", TS + " " + TG),
++    ("committed record: no object check", G, "    if not isinstance(obj, dict):\n", "    if False:\n", TG),
++    # ST10 record
++    ("record: counts read from flags", G, 'counts = {c: report["checks"][c]["value"] for c in LK.TEST_CHECKS}',
++     'counts = {c: 0 if report["checks"][c].get("within_limit") else 1 for c in LK.TEST_CHECKS}', TG),
++    ("record: no integer check", G, '    if bad:\n        raise ImplementationFail("TEST part counts',
++     '    if False:\n        raise ImplementationFail("TEST part counts', TG),
++    ("record: code paths not checked", G, "    if st.stdout.strip():\n", "    if False:\n", TG),
++    ("record: overwrite allowed", G, '    if path.exists():\n        raise ImplementationFail("%s exists',
++     '    if False:\n        raise ImplementationFail("%s exists', TG),
++    ("st10 record: history not searched", G, 'where = _where(root, ST10_RECORD_REL, ["--all"] + remote_heads(root, remote))',
++     'where = ["working tree"] if (root / ST10_RECORD_REL).exists() else []', TG),
++    # history and remote search
++    ("history: simplified (no --full-history)", G, '"log", "--full-history", *revs,', '"log", *revs,', TG),
++    ("marker: working tree ignored", G, '    return (["working tree"] if (Path(root) / rel).exists() else []) + [',
++     '    return [] + [', TG),
++    ("marker: HEAD only, not --all", G, '    revs = ["--all"] + remote_heads(root, remote)\n    where, result',
++     '    revs = ["HEAD"] + remote_heads(root, remote)\n    where, result', TG),
++    ("marker: remote branches not searched", G, '    revs = ["--all"] + remote_heads(root, remote)\n    where, result',
++     '    revs = ["--all"]\n    where, result', TG),
++    ("remote: only the tips' refs, nothing fetched", G,
++     '    f = _git(root, "fetch", "-q", "--no-tags", remote, *[ref for _, ref in heads])',
++     '    f = _git(root, "rev-parse", "HEAD")', TG),
++    ("marker: result ignored", G, "    if result:\n", "    if False:\n", TG),
++    ("begin: no marker check", G, "    refuse_if_marker(root, remote)\n", "    pass\n", TG),
++    ("begin: staged changes allowed", G,
++     '    if _git(root, "diff", "--cached", "--quiet").returncode != 0:\n        raise _blocked("the git index holds staged '
++     'changes; the marker', '    if False:\n        raise _blocked("the git index holds staged changes; the marker', TG),
++    ("begin: no identity check", G, '    if _git(root, "var", "GIT_COMMITTER_IDENT").returncode != 0:', '    if False:', TG),
++    ("begin: no fast-forward precheck", G, "    if tip and not _is_ancestor(root, tip[0]):", "    if False:", TG),
++    ("begin: no ST10 gate", G, "    st10_sha, aud_sha = st10_check(fz, authorization, rows_hashes, root)\n    if not isinstance",
++     "    st10_sha, aud_sha = None, None\n    if not isinstance", TG),
++    ("commit_paths: staged paths not checked", G, "    if add.returncode != 0 or staged != sorted(rels):",
++     "    if add.returncode != 0:", TG),
++    ("commit_paths: commit failure ignored", G, "    c = _git(root, \"commit\", \"-q\", \"-m\", message)\n    if c.returncode != 0:",
++     "    c = _git(root, \"commit\", \"-q\", \"-m\", message)\n    if False:", TG),
++    ("push: remote ref not checked", G, 'if r.returncode == 0 and ls.returncode == 0 and ls.stdout.split()[:1] == [head]:',
++     'if True:', TG),
++    ("push: tags followed", G, '"push", "--no-follow-tags", remote, "HEAD:refs/heads/%s" % branch)\n        ls',
++     '"push", "--follow-tags", remote, "HEAD:refs/heads/%s" % branch)\n        ls', TG),
++    # require_test_session / claim / finish
++    ("session: not checked against this process", G,
++     "    if not isinstance(session, TestSession) or _LIVE.get(session.session_id) is not session:\n        raise _refuse(\"no TEST "
++     "session of this process (begin_test_evaluation)\")\n    marker, sha",
++     "    if not isinstance(session, TestSession):\n        raise _refuse(\"no TEST session of this process "
++     "(begin_test_evaluation)\")\n    marker, sha", TG),
++    ("session: marker bytes not checked", G, "    if sha != session.marker_sha256:                   # the bytes",
++     "    if False:                   # the bytes", TG),
++    ("session: marker bound to the authorization", G,
++     "    if (marker.get(\"frozen_commit\") != authorization.frozen_commit\n            or marker.get(\"authorization\") != "
++     "auth_fields(authorization)):", "    if False:", TG),
++    ("session: rows not checked against marker", G, '    if marker.get("test_files_sha256") != rows_hashes:\n',
++     '    if False:\n', TG),
++    ("session: ST10 change after marker allowed", G,
++     'if (st10_sha, aud_sha) != (marker.get("st10_record_sha256"), marker.get("auditor_count_sha256")):', 'if False:', TG),
++    ("session: any model name", G, '    if checkpoint_name not in marker["models"]:\n', "    if False:\n", TG),
++    ("session: model hash not checked", G, '    if got != marker["checkpoints"][checkpoint_name]:\n', "    if False:\n", TG),
++    ("claim: a model twice", G, "    if checkpoint_name in session.evaluated:\n        raise _refuse(\"%s was already evaluated on "
++     "TEST in this session\" % checkpoint_name)\n    session.evaluated.add",
++     "    if False:\n        raise _refuse(\"%s was already evaluated on TEST in this session\" % checkpoint_name)\n    "
++     "session.evaluated.add", TG),
++    ("claim: any session", G, '''    if _LIVE.get(getattr(session, "session_id", None)) is not session:
++        raise _refuse("no TEST session of this process (begin_test_evaluation)")
++    if checkpoint_name in session.evaluated:''', '''    if False:
++        raise _refuse("no TEST session of this process (begin_test_evaluation)")
++    if checkpoint_name in session.evaluated:''', TG),
++    ("finish: models left allowed", G, "    if left:\n", "    if False:\n", TG),
++    ("finish: staged changes allowed", G,
++     '    if _git(root, "diff", "--cached", "--quiet").returncode != 0:\n        raise _blocked("the git index holds staged changes; '
++     'the result', '    if False:\n        raise _blocked("the git index holds staged changes; the result', TG),
++    ("evaluate_model: no TEST session gate", S / "evaluate.py",
++     "        TG.require_test_session(fz, test_authorization, test_session, checkpoint_name, data, model)", "        pass", TG),
++    ("evaluate_model: claim before the GPU check", S / "evaluate.py",
++     '''        TG.require_test_session(fz, test_authorization, test_session, checkpoint_name, data, model)
++    require_gpu(mode, device)''', '''        TG.require_test_session(fz, test_authorization, test_session, checkpoint_name, data, model)
++        TG.claim_checkpoint(test_session, checkpoint_name)
++    require_gpu(mode, device)''', TG),
++    # TEST driver
++    ("driver: --out inside the repository allowed", S / "test_data.py",
++     "    if out.resolve() == root or root in out.resolve().parents:", "    if False:", TG),
++    ("driver: verdict from the report's flags", S / "test_data.py", '    over = TG.over_limit(fz, rec["counts"])',
++     '    over = sorted(c for c, v in report["checks"].items() if not v["within_limit"])', TG),
++    ("driver: ST10 record existence not checked", S / "test_data.py", "    TG.refuse_if_st10_record(root, a.remote)\n", "", TG),
++    ("driver: code checked only after generation", S / "test_data.py",
++     "    TG.code_commit(root)                                # the code that generates TEST is committed (ST10 record)\n",
++     "", TG),
++    # BE2, BE9, BE10, interpretations, B14
++    ("BE2: PROTOCOL_FROZEN vs fz removed", S / "leakage.py", "    if current != fz.record.commit:\n", "    if False:\n", TT),
++    ("BE2: authorization vs PROTOCOL_FROZEN removed", S / "leakage.py", "    if authorization.frozen_commit != current:",
++     "    if False:", TT),
++    ("BE9: pending_problem always None", S / "interpretations.py", "    if open_ids:\n        return \"interpretations",
++     "    if False:\n        return \"interpretations", TT),
++    ("BE9: content hashes from a literal key list", S / "frozen.py",
++     "for key in CONTENT_HASH_KEYS}    # DEFERRED_MINORS BE9",
++     'for key in ("facts", "train_S", "candidates", "anchor_texts")}', TH),
++    ("BE10: fz is None check removed", S / "evaluate.py", "        if fz is None:\n", "        if False:\n", TE),
++    ("B14: note changed", S / "gate.py", 'RECALIBRATION_NOTE = "需重新校准"', 'RECALIBRATION_NOTE = "recalibrate"',
++     "tests/test_gate.py"),
++    ("ruling: one entry pending", S / "interpretations.py", '{"id": "B7", "status": ACCEPTED,', '{"id": "B7",', TT),
++    ("ruling: B25 marked accepted", S / "interpretations.py", '{"id": "B25", "where"', '{"id": "B25", "status": ACCEPTED, "where"',
++     TT),
++]
++
++
++def tree_sha():
++    h = hashlib.sha256()
++    for p in sorted(Path("metrix/e1-pilot/src").rglob("*.py")) + sorted(Path("metrix/e1-pilot/tests").rglob("*.py")):
++        h.update(str(p).encode() + b"\0" + p.read_bytes())
++    return h.hexdigest()
++
++
++before = tree_sha()
++caught = 0
++for name, path, old, new, tests in MUTS:
++    orig = path.read_bytes()
++    s = orig.decode("utf-8")
++    if s.count(old) != 1:
++        print("%-48s -> MUTATION NOT APPLICABLE (%d matches)" % (name, s.count(old)))
++        continue
++    path.write_text(s.replace(old, new), encoding="utf-8")
++    try:
++        r = subprocess.run([PY, "-m", "pytest", "-q", "-x", "-p", "no:cacheprovider"] +
++                           ["metrix/e1-pilot/" + t for t in tests.split()], capture_output=True, text=True)
++        last = r.stdout.strip().split("\n")[-1]
++        failed = [ln for ln in r.stdout.split("\n") if ln.startswith("FAILED")]
++        caught += r.returncode != 0
++        print("%-48s -> %s exit %d | %s" % (name, "CAUGHT" if r.returncode else "NOT CAUGHT", r.returncode, last))
++        for ln in failed[:2]:
++            print("      ", ln[:170])
++    finally:
++        path.write_bytes(orig)
++after = tree_sha()
++print("mutations %d, caught %d" % (len(MUTS), caught))
++print("src+tests sha256 before %s after %s %s" % (before, after, "EQUAL" if before == after else "DIFFERENT"))
++print("RESULT: %s" % ("PASS" if caught == len(MUTS) and before == after else "FAIL"))
+diff --git a/metrix/e1-pilot/src/metrix_e1/evaluate.py b/metrix/e1-pilot/src/metrix_e1/evaluate.py
+index 3c22eba..403a83f 100644
+--- a/metrix/e1-pilot/src/metrix_e1/evaluate.py
++++ b/metrix/e1-pilot/src/metrix_e1/evaluate.py
+@@ -23,7 +23,7 @@ import re
+ import torch
+ 
+ from .errors import ImplementationFail
+-from .train import NonFinite, state_sha256
++from .train import NonFinite
+ 
+ ENABLE_THINKING = False     # protocol section 0: "enable_thinking=false(写死,不作参数)" -- a constant, never an argument
+ 
+@@ -315,7 +315,8 @@ def evaluate_model(model, tok, data, templates, ev, mode, device, split="dev", w
+     the TEST session begun by this process with the committed and pushed marker, the ST10 gate from the committed
+     records for these rows, `checkpoint_name` one of the marker's models not yet evaluated, and the model's state
+     sha256 equal to the marker's hash of that checkpoint). Formal and preflight modes evaluate on the GPU only
+-    (require_gpu)."""
++    (require_gpu); a TEST checkpoint is claimed for the session only after that (testgate.claim_checkpoint), right
++    before it is evaluated."""
+     if split not in SPLIT_FILES:
+         raise ValueError("split %r" % (split,))
+     if split == "test":
+@@ -327,8 +328,10 @@ def evaluate_model(model, tok, data, templates, ev, mode, device, split="dev", w
+             raise ImplementationFail("TEST path refused: the frozen files (fz) are needed to check the authorization")
+         verify_authorization(test_authorization, fz)
+         from . import testgate as TG
+-        TG.require_test_session(fz, test_authorization, test_session, checkpoint_name, data, state_sha256(model))
++        TG.require_test_session(fz, test_authorization, test_session, checkpoint_name, data, model)
+     require_gpu(mode, device)
++    if split == "test":
++        TG.claim_checkpoint(test_session, checkpoint_name)
+     qa_file, gen_file = SPLIT_FILES[split]
+     facts, cands, qs = data["facts.jsonl"], data["candidates.json"], data[qa_file]
+     out = {"%s_qa" % split: score_qa(model, tok, qs, cands, facts, ev, device, batch_size),
+diff --git a/metrix/e1-pilot/src/metrix_e1/frozen.py b/metrix/e1-pilot/src/metrix_e1/frozen.py
+index dc5ad2e..9acd9b3 100644
+--- a/metrix/e1-pilot/src/metrix_e1/frozen.py
++++ b/metrix/e1-pilot/src/metrix_e1/frozen.py
+@@ -34,7 +34,7 @@ import subprocess
+ from dataclasses import dataclass
+ from pathlib import Path
+ 
+-from .errors import ImplementationFail, ST8Error, ST12Error
++from .errors import ST8Error, ST12Error
+ 
+ PILOT_REL = "metrix/e1-pilot"
+ PROTOCOL_REL = PILOT_REL + "/METRIX_E1_PROTOCOL.md"
+@@ -72,7 +72,8 @@ DATA_TABLE_ROWS = {
+ }
+ 
+ HEX64 = re.compile(r"[0-9a-f]{64}")
+-# Keys of the four content hashes of the generated data (Frozen.content_hashes, check_data_dir).
++# Keys of the four content hashes of the generated data (Frozen.content_hashes, check_data_dir); the bytes each one
++# hashes are CONTENT_HASH_BYTES[key](data directory), defined below the readers.
+ CONTENT_HASH_KEYS = ("facts", "train_S", "candidates", "anchor_texts")
+ 
+ 
+@@ -116,6 +117,22 @@ def read_jsonl(path):
+         return parse_jsonl(fh.read())
+ 
+ 
++def _json_file(path):
++    with open(path, encoding="utf-8") as fh:
++        return json.load(fh)
++
++
++# The serialized content behind each content hash (protocol 2.2 facts: canonical list of facts.jsonl rows; 2.6
++# train_S: JSONL rule; 2.5 candidates: canonical object; DATA_MANIFEST anchor_text.decoded_texts_hash_rule: canonical
++# list of the 512 texts in document order). One entry per CONTENT_HASH_KEYS key (DEFERRED_MINORS BE9).
++CONTENT_HASH_BYTES = {
++    "facts": lambda d: canonical_bytes(read_jsonl(d / "facts.jsonl")),
++    "train_S": lambda d: jsonl_bytes(read_jsonl(d / "train_S.jsonl")),
++    "candidates": lambda d: canonical_bytes(_json_file(d / "candidates.json")),
++    "anchor_texts": lambda d: canonical_bytes([r["text"] for r in read_jsonl(d / "anchor_text.jsonl")]),
++}
++
++
+ def rng_rule(seed, purpose):
+     """Protocol section 0: random.Random(int.from_bytes(sha256(f"{SEED}:{purpose}".encode("utf-8")).digest()[:8], "big"))."""
+     return random.Random(int.from_bytes(hashlib.sha256(f"{seed}:{purpose}".encode("utf-8")).digest()[:8], "big"))
+@@ -291,19 +308,7 @@ class Frozen:
+         (2.5: canonical object), anchor texts (DATA_MANIFEST anchor_text.decoded_texts_hash_rule: list of the 512
+         texts in document order)."""
+         d = Path(data_dir)
+-        anchor = read_jsonl(d / "anchor_text.jsonl")
+-        with open(d / "candidates.json", encoding="utf-8") as fh:
+-            cands = json.load(fh)
+-        got = {
+-            "facts": sha256_hex(canonical_bytes(read_jsonl(d / "facts.jsonl"))),
+-            "train_S": sha256_hex(jsonl_bytes(read_jsonl(d / "train_S.jsonl"))),
+-            "candidates": sha256_hex(canonical_bytes(cands)),
+-            "anchor_texts": sha256_hex(canonical_bytes([r["text"] for r in anchor])),
+-        }
+-        if tuple(got) != CONTENT_HASH_KEYS:             # one list of keys (DEFERRED_MINORS BE9)
+-            raise ImplementationFail("content hash keys %s differ from CONTENT_HASH_KEYS %s" % (tuple(got),
+-                                                                                         CONTENT_HASH_KEYS))
+-        return got
++        return {key: sha256_hex(CONTENT_HASH_BYTES[key](d)) for key in CONTENT_HASH_KEYS}    # DEFERRED_MINORS BE9
+ 
+     def check_data_dir(self, data_dir):
+         """ST12 range (1) for the generated data: the four content hashes against PROTOCOL_FROZEN."""
+diff --git a/metrix/e1-pilot/src/metrix_e1/interpretations.py b/metrix/e1-pilot/src/metrix_e1/interpretations.py
+index befed77..c90ef41 100644
+--- a/metrix/e1-pilot/src/metrix_e1/interpretations.py
++++ b/metrix/e1-pilot/src/metrix_e1/interpretations.py
+@@ -7,8 +7,8 @@ listed for Review Gate in reports/IMPL_B_REPORT.md ("待 Review Gate 决定") an
+ 
+ Review Gate accepted all of B1-B24 on 2026-11-24 (scope: this stage). The ruling is recorded in RULING_REF (no
+ separate decision file: Owner's stage-C message, tasks/IMPL_C_OWNER_MESSAGE.md); every entry carries the status
+-ACCEPTED and the reference. B3 and B14 carry the ruling's notes. pending() returns the entries not yet ruled (the
+-TEST generator and every TEST path refuse while it is not empty: pending_problem()).
++ACCEPTED and the reference. B3 and B14 carry the ruling's notes. B25 (stage C) is pending. pending() returns the
++entries not yet ruled (the TEST generator and every TEST path refuse while it is not empty: pending_problem()).
+ """
+ PENDING = "PENDING_REVIEW_GATE"
+ ACCEPTED = "ACCEPTED（Review Gate 2026-11-24）"
+@@ -130,6 +130,13 @@ ENTRIES = (
+              "reason), T2 -> IMPLEMENTATION_FAIL (the G0.6 / G0.7 numbers), T3 -> null with the recalibration note (as "
+              "G0.3). T3's 'G0.3 的同样范围' is read as all four G0.3 ranges, Acc_CB(N) included (a TRAIN closed-book "
+              "value that does not depend on TEST). TEST comparisons use the purpose split 'TEST'."},
++    {"id": "B25", "where": "record.selection_freeze_record, testgate.require_test_session, train.state_sha256",
++     "protocol": "8 step 8 ('提交冻结记录(选定配置、数据哈希、checkpoint 哈希)')",
++     "text": "A run's checkpoint hash is train.state_sha256 of the trained model: SHA-256 over its state dict in sorted "
++             "key order, each entry's name, dtype, shape and bytes (for arm L the state dict of the LoRA-wrapped model, "
++             "base weights and adapters; N's is the loaded base model's). It is not a file-byte hash. TEST evaluation "
++             "recomputes it on the model loaded from the saved checkpoint and requires equality with the freeze "
++             "record (through the TEST marker) before the model is evaluated."},
+ )
+ 
+ 
+diff --git a/metrix/e1-pilot/src/metrix_e1/leakage.py b/metrix/e1-pilot/src/metrix_e1/leakage.py
+index 6933d42..884b934 100644
+--- a/metrix/e1-pilot/src/metrix_e1/leakage.py
++++ b/metrix/e1-pilot/src/metrix_e1/leakage.py
+@@ -216,7 +216,7 @@ def verify_authorization(authorization, fz, repo_root=None):
+       - every interpretation of interpretations.py has been ruled (interpretations.pending_problem).
+     Not re-checked here: condition 1 (ST12: the frozen files, input files and data directory against the frozen
+     hashes), which the caller runs at every step start (stops.st12). `repo_root` (default fz.repo_root): where the
+-    records and PROTOCOL_FROZEN are read."""
++    records and PROTOCOL_FROZEN are read. Returns the two committed records ({"gate0": ..., "selection_freeze": ...})."""
+     if not isinstance(authorization, TestAuthorization):
+         raise ImplementationFail("TEST paths run only after the TEST generator's preconditions (no TestAuthorization)")
+     from . import contract as C
+@@ -251,6 +251,7 @@ def verify_authorization(authorization, fz, repo_root=None):
+     problem = INT.pending_problem()
+     if problem:
+         raise ImplementationFail("TEST path refused: %s" % problem)
++    return recs
+ 
+ 
+ def run_test_part(fz, data, test_qa, general_test, authorization, repo_root=None):
+@@ -259,7 +260,7 @@ def run_test_part(fz, data, test_qa, general_test, authorization, repo_root=None
+     `data` as load_data(); `test_qa`, `general_test`: the TEST rows in memory. The authorization is checked again
+     against the committed Gate 0 and freeze records (verify_authorization; `repo_root` as there). Returns the report
+     (same layout as run_gate0); its within_limit flags are for the printout only: the ST10 record keeps the raw
+-    counts (testgate.st10_record) and the gate re-judges them against the frozen limits (testgate.st10_problem)."""
++    counts (testgate.st10_record) and the gate re-judges them against the frozen limits (testgate.st10_check)."""
+     verify_authorization(authorization, fz, repo_root)
+     split_manifest = fz.split_manifest
+     gate0 = run_gate0(split_manifest, data)
+diff --git a/metrix/e1-pilot/src/metrix_e1/record.py b/metrix/e1-pilot/src/metrix_e1/record.py
+index 3a832a4..162f02f 100644
+--- a/metrix/e1-pilot/src/metrix_e1/record.py
++++ b/metrix/e1-pilot/src/metrix_e1/record.py
+@@ -182,7 +182,9 @@ def gate0_record(fz, mode, gate0_result):
+ 
+ def selection_freeze_record(fz, mode, selected, data_content_hashes, checkpoints, gate0_record_sha256):
+     """The freeze record of section 8 step 8 (selected configurations, data hashes, checkpoint hashes), bound to the
+-    committed Gate 0 record by its SHA-256; its committed form is precondition 3 of the TEST generator."""
++    committed Gate 0 record by its SHA-256; its committed form is precondition 3 of the TEST generator.
++    `checkpoints`: {run name: train.state_sha256 of the trained model} (interpretation B25: not a file-byte hash; TEST
++    evaluation recomputes it on the loaded checkpoint, testgate.require_test_session)."""
+     return {"kind": "selection_freeze", "mode": mode.name, "label": mode.label, "frozen_commit": fz.record.commit,
+             "selected": dict(selected), "data_content_hashes": dict(data_content_hashes), "checkpoints": dict(checkpoints),
+             "gate0_record_sha256": gate0_record_sha256}
+diff --git a/metrix/e1-pilot/src/metrix_e1/test_data.py b/metrix/e1-pilot/src/metrix_e1/test_data.py
+index 856d7c8..5a8f667 100644
+--- a/metrix/e1-pilot/src/metrix_e1/test_data.py
++++ b/metrix/e1-pilot/src/metrix_e1/test_data.py
+@@ -24,7 +24,9 @@ supplementary ruling 3) and judges the counts against the frozen limits. Committ
+ data-auditor's own L6 count (testgate.AUDITOR_L6_REL) and the TEST evaluation (once: testgate.begin_test_evaluation)
+ follow outside this command; the evaluation re-judges ST10 from the committed records.
+ 
+-  python -m metrix_e1.test_data --inputs DIR --data DIR --out DIR
++  python -m metrix_e1.test_data --inputs DIR --data DIR --out DIR [--remote origin]
++Before anything is generated: --out outside the repository, no TEST file in it, the code committed (the ST10 record's
++code commit, testgate.code_commit), and no ST10 record anywhere (working tree, any commit, any branch of --remote).
+ """
+ import argparse
+ import dataclasses
+@@ -148,6 +150,7 @@ def main(argv=None):
+     ap.add_argument("--inputs", required=True)
+     ap.add_argument("--data", required=True)
+     ap.add_argument("--out", required=True)
++    ap.add_argument("--remote", default="origin", help="remote whose branches are searched for an ST10 record")
+     a = ap.parse_args(argv)
+     try:
+         fz, auth = check_preconditions(None, a.inputs, a.data)
+@@ -163,7 +166,8 @@ def main(argv=None):
+     present = [n for n in D.TEST_FILES if (out / n).exists()]
+     if present:
+         raise ImplementationFail("%s already holds %s; TEST is generated once" % (out, present))
+-    TG.refuse_if_st10_record(root)
++    TG.code_commit(root)                                # the code that generates TEST is committed (ST10 record)
++    TG.refuse_if_st10_record(root, a.remote)
+     files, info = generate_test(fz, auth, a.inputs, a.data)
+     out.mkdir(parents=True, exist_ok=True)
+     for name, blob in files.items():
+diff --git a/metrix/e1-pilot/src/metrix_e1/testgate.py b/metrix/e1-pilot/src/metrix_e1/testgate.py
+index aadbfdf..fefa822 100644
+--- a/metrix/e1-pilot/src/metrix_e1/testgate.py
++++ b/metrix/e1-pilot/src/metrix_e1/testgate.py
+@@ -10,9 +10,10 @@ ST10 record, results/st10_record.json, written by the step 8 TEST driver (test_d
+ the TEST part of the leakage checks (st10_record, write_st10_record):
+     kind "st10", mode "formal", label null, frozen_commit, authorization {gate0_record_sha256,
+     selection_record_sha256}, test_files_sha256 {test_qa.jsonl, general_test.jsonl}, code_commit (HEAD when the TEST
+-    files were generated; the package and run_pilot.py had no uncommitted change), counts {L3a, L3b, L4, L5, L6}: the
+-    raw counts of the TEST part, no limit, no flag, no result word. The driver refuses before generating anything
+-    when an ST10 record exists in the working tree or any commit (refuse_if_st10_record: TEST is generated once).
++    files were generated; the package and run_pilot.py had no uncommitted change: checked before generation), counts
++    {L3a, L3b, L4, L5, L6}: the raw counts of the TEST part, no limit, no flag, no result word. The driver refuses
++    before generating anything when an ST10 record exists in the working tree, in any commit of a local or
++    remote-tracking ref, or on any branch of the remote fetched now (refuse_if_st10_record: TEST is generated once).
+ data-auditor's count, audit/st10_l6_test_count.json, written by the data-auditor with its own script and committed:
+     kind "st10_auditor_l6", frozen_commit, general_test_sha256 (of the file it counted), l6_test_count (integer).
+ ST10 gate (st10_check), before the TEST evaluation starts and again before every TEST evaluation call: both files are
+@@ -24,22 +25,26 @@ A missing or unbound record refuses the TEST path (ImplementationFail, as leakag
+ its limit or two different L6 counts stop with ST10 (BLOCKED, report to the Owner).
+ 
+ TEST evaluated once, marker results/test_evaluation_marker.json:
+-  - begin_test_evaluation refuses while a marker exists anywhere (working tree, any commit of any local or
+-    remote-tracking ref, or of the remote branch fetched now: refuse_if_marker). Otherwise it checks the authorization
+-    and the ST10 gate again, writes the marker (frozen commit, authorization, sha256 of the ST10 record and of the
+-    data-auditor's count, TEST file hashes, every checkpoint hash of the committed freeze record plus N, the models
+-    TEST evaluates, code commit, a random session id), stages that one path only, commits it, pushes the branch (no
+-    tags, no force) and checks the remote ref. Only then it returns the TestSession. A failed push leaves the marker committed: BLOCKED, report to the Owner.
+-  - evaluate.evaluate_model(split="test") calls require_test_session: the session must have been returned by
+-    begin_test_evaluation in this process, the committed marker must carry its id and be bound to the authorization,
+-    the ST10 gate must hold for the rows given, the rows must be the files of the marker, the model's state hash
+-    (train.state_sha256) must be the marker's hash of the named checkpoint, and each checkpoint is evaluated at most
+-    once in the session.
+-  - finish_test_evaluation commits and pushes results/test_evaluation_result.json once every model was evaluated.
+-  - A marker without a committed result: the evaluation started and did not finish; it counts as evaluated; BLOCKED;
+-    report to the Owner. A marker with a result: TEST was evaluated; refused.
+-Python cannot stop other code from writing these files or building these objects; the checks hold for the package's
+-own paths, which is what the reviews and the data-auditor check.
++  - begin_test_evaluation refuses while a marker exists anywhere (refuse_if_marker: working tree, any commit of any
++    local or remote-tracking ref, any branch of the remote fetched now). Otherwise it checks the authorization and the
++    ST10 gate again and the preconditions of the commit and the push (nothing staged, a committer identity, HEAD a
++    descendant of the remote branch, `git push --dry-run` accepted), writes the marker (frozen commit, authorization,
++    remote URL and branch, sha256 of the ST10 record and of the data-auditor's count, TEST file hashes, every
++    checkpoint hash of the committed freeze record plus N, the models TEST evaluates, code commit, a random session
++    id), commits that one path (commit_paths), pushes the branch (no tags, no force) and checks the remote ref. Only
++    then it returns the TestSession. A commit or push that fails after the marker was written is BLOCKED.
++  - evaluate.evaluate_model(split="test") calls require_test_session (no claim), then evaluate.require_gpu, then
++    claim_checkpoint: the session must have been returned by begin_test_evaluation in this process, the committed
++    marker must be the session's (the bytes begin wrote, session id included) and bound to the authorization, the TEST rows must be the files of the
++    marker, the ST10 gate must hold for them with the records the marker names, the checkpoint must be one of the
++    marker's models not yet claimed in the session, and the model's state sha256 (train.state_sha256, interpretation
++    B25) must be the marker's hash of that checkpoint.
++  - finish_test_evaluation commits and pushes results/test_evaluation_result.json once every model was claimed.
++  - A marker without a result: the evaluation started and did not finish; it counts as evaluated; BLOCKED; report to
++    the Owner. A marker with a result: TEST was evaluated (TestAlreadyEvaluated, no pilot status of its own).
++Refusals caused by the environment (the remote cannot be fetched, the index holds staged changes, the commit or push
++preconditions) are BLOCKED; refusals of a missing or unbound record are ImplementationFail. Python cannot stop other
++code from writing these files or building these objects; the checks hold for the package's own paths.
+ """
+ import json
+ import re
+@@ -65,6 +70,12 @@ BASE_MODEL = "N"
+ HEX40 = re.compile(r"[0-9a-f]{40}")
+ 
+ 
++class TestAlreadyEvaluated(Exception):
++    """TEST was evaluated (marker and result exist): any further TEST evaluation is refused. Carries no section 9
++    status: the pilot's status is the one of its result."""
++    __test__ = False        # not a pytest test class
++
++
+ def _git(root, *args):
+     return subprocess.run(["git", "-C", str(root), *args], capture_output=True, text=True, check=False)
+ 
+@@ -73,19 +84,24 @@ def _refuse(message):
+     return ImplementationFail("TEST path refused: %s" % message)
+ 
+ 
++def _blocked(message):
++    return ProtocolStop(None, "BLOCKED", "TEST path refused: %s; report to the Owner" % message)
++
++
+ def _count(v):
+     return type(v) is int and v >= 0
+ 
+ 
+ def _counts_ok(counts):
+     """One non-negative integer (not a bool, not a float) per check of the TEST part."""
+-    return isinstance(counts, dict) and sorted(counts) == sorted(LK.TEST_CHECKS) and all(_count(v) for v in counts.values())
++    return (isinstance(counts, dict) and sorted(counts) == sorted(LK.TEST_CHECKS)
++            and all(_count(v) for v in counts.values()))
+ 
+ 
+-def _is_ancestor(root, commit):
+-    """`commit` is a full 40-hex commit id that is an ancestor of (or equal to) HEAD."""
++def _is_ancestor(root, commit, of="HEAD"):
++    """`commit` is a full 40-hex commit id that is an ancestor of (or equal to) `of`."""
+     return (isinstance(commit, str) and HEX40.fullmatch(commit) is not None
+-            and _git(root, "merge-base", "--is-ancestor", commit, "HEAD").returncode == 0)
++            and _git(root, "merge-base", "--is-ancestor", commit, of).returncode == 0)
+ 
+ 
+ def auth_fields(authorization):
+@@ -119,6 +135,87 @@ def over_limit(fz, counts):
+     return sorted(c for c in LK.TEST_CHECKS if counts[c] > limits[c])
+ 
+ 
++# ------------------------------------------------------------------------------------------------- git helpers
++
++def _ever_committed(root, rel, revs):
++    """Commits reachable from `revs` that touch `rel` (newest first). --full-history: no history simplification, so a
++    file added and deleted again on a side branch that was merged back is still found (data-auditor C1 round 1, B05)."""
++    r = _git(root, "log", "--full-history", *revs, "--format=%H", "--", rel)
++    if r.returncode != 0:
++        raise ImplementationFail("git log %s -- %s failed: %s" % (" ".join(revs), rel, r.stderr))
++    return r.stdout.split()
++
++
++def remote_heads(root, remote):
++    """Every branch of `remote`: listed (git ls-remote --heads), fetched by name (no tags, no local ref written), and
++    their tip commit ids returned, so that a file committed on any branch of the remote is found even in a clone that
++    lags behind or tracks another branch. Without a remote: []. A remote that cannot be listed or fetched is BLOCKED
++    (what it holds is unknown)."""
++    if remote is None:
++        return []
++    ls = _git(root, "ls-remote", "--heads", remote)
++    if ls.returncode != 0:
++        raise _blocked("cannot list the branches of %s to look for TEST records there: %s" % (
++            remote, ls.stderr.strip()))
++    heads = [ln.split("\t") for ln in ls.stdout.splitlines() if ln.strip()]
++    if not heads:
++        return []
++    f = _git(root, "fetch", "-q", "--no-tags", remote, *[ref for _, ref in heads])
++    if f.returncode != 0:
++        raise _blocked("cannot fetch the branches of %s to look for TEST records there: %s" % (
++            remote, f.stderr.strip()))
++    shas = sorted({sha for sha, _ in heads})
++    if not all(HEX40.fullmatch(x) for x in shas):
++        raise _blocked("unexpected ls-remote output from %s: %r" % (remote, ls.stdout[:200]))
++    return shas
++
++
++def _where(root, rel, revs):
++    return (["working tree"] if (Path(root) / rel).exists() else []) + [
++        "commit %s" % c for c in _ever_committed(root, rel, revs)]
++
++
++def remote_url(root, remote):
++    r = _git(root, "remote", "get-url", remote)
++    return r.stdout.strip() if r.returncode == 0 else remote
++
++
++def _push(root, remote, branch, retries, sleep, what):
++    """Push HEAD to `remote` `branch` (a plain push: fast-forward only; --no-follow-tags) and check the remote ref;
++    retried `retries` times with 2, 4, 8, ... s pauses. Raises BLOCKED when the remote ref is not HEAD at the end."""
++    head = _git(root, "rev-parse", "HEAD").stdout.strip()
++    last = ""
++    for i in range(retries):
++        r = _git(root, "push", "--no-follow-tags", remote, "HEAD:refs/heads/%s" % branch)
++        ls = _git(root, "ls-remote", remote, "refs/heads/%s" % branch)
++        if r.returncode == 0 and ls.returncode == 0 and ls.stdout.split()[:1] == [head]:
++            return head
++        last = (r.stderr + ls.stderr).strip()
++        if i + 1 < retries:
++            sleep(2 ** (i + 1))
++    raise ProtocolStop(None, "BLOCKED", "%s is committed (%s) but was not pushed to %s %s (%s); report to the Owner" % (
++        what, head, remote, branch, last))
++
++
++def commit_paths(repo_root, rels, message, remote, branch, what, retries=4, sleep=time.sleep):
++    """Commit exactly the repository paths `rels` and push them: refused (BLOCKED) when anything is staged before;
++    `git add --` of those paths only; the staged paths must be exactly them; commit; push and remote-ref check
++    (_push). A staging, commit or push failure is BLOCKED (report to the Owner). Returns the commit."""
++    root = Path(repo_root)
++    if _git(root, "diff", "--cached", "--quiet").returncode != 0:
++        raise _blocked("the git index holds staged changes; the commit of %s holds its own paths only" % what)
++    add = _git(root, "add", "--", *rels)
++    staged = sorted(_git(root, "diff", "--cached", "--name-only").stdout.split())
++    if add.returncode != 0 or staged != sorted(rels):
++        raise ProtocolStop(None, "BLOCKED", "staging %s failed (%s; staged %s, expected %s); report to the Owner" % (
++            what, add.stderr.strip(), staged, sorted(rels)))
++    c = _git(root, "commit", "-q", "-m", message)
++    if c.returncode != 0:
++        raise ProtocolStop(None, "BLOCKED", "committing %s failed (%s); report to the Owner" % (
++            what, (c.stdout + c.stderr).strip()))
++    return _push(root, remote, branch, retries, sleep, what)
++
++
+ # ------------------------------------------------------------------------------------------------- ST10 record
+ 
+ def code_commit(repo_root):
+@@ -133,12 +230,23 @@ def code_commit(repo_root):
+     return head.stdout.strip()
+ 
+ 
++def refuse_if_st10_record(repo_root, remote=None):
++    """TEST is generated once: refused when an ST10 record exists in the working tree, in any commit of any local or
++    remote-tracking ref, or (with `remote`) on any branch of the remote fetched now. The TEST driver calls this before
++    it generates anything."""
++    root = Path(repo_root)
++    where = _where(root, ST10_RECORD_REL, ["--all"] + remote_heads(root, remote))
++    if where:
++        raise ImplementationFail("%s exists (%s): TEST is generated once" % (ST10_RECORD_REL, ", ".join(where)))
++
++
+ def st10_record(fz, authorization, report, test_files, repo_root=None):
+     """The ST10 record (Review Gate supplementary ruling 3): the raw counts of the TEST part (`report` from
+     leakage.run_test_part: only checks[c]["value"] is read), the sha256 of the two TEST files (`test_files`:
+     {name: bytes as written}), the code commit, bound to the authorization."""
+     if sorted(report["checks"]) != sorted(LK.TEST_CHECKS):
+-        raise ImplementationFail("TEST part checks %s, expected %s" % (sorted(report["checks"]), sorted(LK.TEST_CHECKS)))
++        raise ImplementationFail("TEST part checks %s, expected %s" % (sorted(report["checks"]),
++                                                                        sorted(LK.TEST_CHECKS)))
+     counts = {c: report["checks"][c]["value"] for c in LK.TEST_CHECKS}
+     bad = [c for c, v in counts.items() if not _count(v)]
+     if bad:
+@@ -152,16 +260,6 @@ def st10_record(fz, authorization, report, test_files, repo_root=None):
+             "code_commit": code_commit(root), "counts": counts}
+ 
+ 
+-def refuse_if_st10_record(repo_root):
+-    """TEST is generated once: refused when an ST10 record exists in the working tree or in any commit of any local
+-    or remote-tracking ref (the TEST driver calls this before it generates anything)."""
+-    root = Path(repo_root)
+-    where = (["working tree"] if (root / ST10_RECORD_REL).exists() else []) + [
+-        "commit %s" % c for c in _ever_committed(root, ST10_RECORD_REL, ["--all"])]
+-    if where:
+-        raise ImplementationFail("%s exists (%s): TEST is generated once" % (ST10_RECORD_REL, ", ".join(where)))
+-
+-
+ def write_st10_record(fz, authorization, report, test_files, repo_root=None):
+     """Write the ST10 record to ST10_RECORD_REL (refused if one exists: TEST is generated once). The caller commits it;
+     st10_check reads only the committed version."""
+@@ -183,10 +281,14 @@ def auditor_count_record(fz, general_test_sha256, l6_test_count):
+ 
+ 
+ def _committed(root, rel, what):
++    """(object, sha256) of a committed JSON file that is an object (a list or a scalar is refused)."""
+     try:
+-        return R.committed_json(root, rel)
++        obj, sha = R.committed_json(root, rel)
+     except R.NotCommitted as e:
+         raise _refuse("%s: %s" % (what, e)) from e
++    if not isinstance(obj, dict):
++        raise _refuse("%s: %s is a JSON %s, not an object" % (what, rel, type(obj).__name__))
++    return obj, sha
+ 
+ 
+ def st10_check(fz, authorization, rows_hashes, repo_root=None):
+@@ -212,8 +314,8 @@ def st10_check(fz, authorization, rows_hashes, repo_root=None):
+         raise _refuse("code commit %r of the ST10 record is not an ancestor of HEAD" % (cc,))
+     counts = rec.get("counts")
+     if not _counts_ok(counts):
+-        raise _refuse("ST10 record counts %r are not one non-negative integer per check %s" % (counts,
+-                                                                                               list(LK.TEST_CHECKS)))
++        raise _refuse("ST10 record counts %r are not one non-negative integer per check %s" % (
++            counts, list(LK.TEST_CHECKS)))
+     aud, aud_sha = _committed(root, AUDITOR_L6_REL, "data-auditor's L6 TEST count")
+     if aud.get("kind") != "st10_auditor_l6" or aud.get("frozen_commit") != authorization.frozen_commit:
+         raise _refuse("%s is not the data-auditor's L6 TEST count for frozen commit %s (kind %r, frozen commit %r)" % (
+@@ -229,46 +331,34 @@ def st10_check(fz, authorization, rows_hashes, repo_root=None):
+ 
+ # ------------------------------------------------------------------------------------------------ TEST once
+ 
+-def _ever_committed(root, rel, revs):
+-    """Commits reachable from `revs` that touch `rel` (newest first)."""
+-    r = _git(root, "log", *revs, "--format=%H", "--", rel)
+-    if r.returncode != 0:
+-        raise ImplementationFail("git log %s -- %s failed: %s" % (" ".join(revs), rel, r.stderr))
+-    return r.stdout.split()
+-
+-
+-def refuse_if_marker(repo_root, remote=None, branch=None):
++def refuse_if_marker(repo_root, remote=None):
+     """Returns when no marker exists anywhere: not in the working tree, in no commit of any local or remote-tracking
+-    ref, and (when `remote` is given) in no commit of `remote` `branch` as fetched now. Else raises: a marker with a
+-    result (working tree or any such commit) -> TEST was evaluated (refused); a marker without one -> the evaluation
+-    started and did not finish: it counts as evaluated, BLOCKED (Review Gate supplementary ruling 4). A remote that
+-    cannot be fetched refuses (the marker could be there)."""
++    ref, and (with `remote`) on no branch of the remote fetched now. Else raises: a marker with a result (anywhere)
++    -> TestAlreadyEvaluated (also a result without a marker); a marker without one -> the evaluation started and did
++    not finish: it counts as evaluated, BLOCKED (Review Gate supplementary ruling 4). A remote that cannot be listed
++    or fetched is BLOCKED."""
+     root = Path(repo_root)
+-    revs = ["--all"]
+-    if remote is not None:
+-        f = _git(root, "fetch", "-q", "--no-tags", remote, "refs/heads/%s" % branch)
+-        if f.returncode != 0:
+-            raise _refuse("cannot fetch %s %s to look for a TEST marker there: %s" % (remote, branch, f.stderr.strip()))
+-        revs.append("FETCH_HEAD")
+-    where = (["working tree"] if (root / MARKER_REL).exists() else []) + [
+-        "commit %s" % c for c in _ever_committed(root, MARKER_REL, revs)]
++    revs = ["--all"] + remote_heads(root, remote)
++    where, result = _where(root, MARKER_REL, revs), _where(root, RESULT_REL, revs)
++    if result:
++        raise TestAlreadyEvaluated("TEST was already evaluated (marker %s in %s; result %s in %s): TEST is evaluated "
++                                   "once" % (MARKER_REL, ", ".join(where) or "nowhere", RESULT_REL, ", ".join(result)))
+     if not where:
+         return
+-    if (root / RESULT_REL).exists() or _ever_committed(root, RESULT_REL, revs):
+-        raise _refuse("TEST was already evaluated (marker %s in %s; result %s): TEST is evaluated once" % (
+-            MARKER_REL, ", ".join(where), RESULT_REL))
+     raise ProtocolStop(None, "BLOCKED", "TEST evaluation was already started (marker %s in %s) and no result was "
+                        "committed: it counts as evaluated; no further TEST evaluation; report to the Owner" % (
+                            MARKER_REL, ", ".join(where)))
+ 
+ 
+ def evaluated_models(contract, selected):
+-    """The models TEST evaluates: N and the final checkpoints of the five trained arms with three seeds each (F, L, A
+-    with their selected configuration, seed 101 being the search run; S and Y)."""
++    """The models TEST evaluates: N and the final checkpoints of the trained arms with every training seed (F, L, A
++    with their selected configuration, the search seed's run included; S and Y)."""
+     from .train import training_plan
+     plan = training_plan(contract, selected)
+-    names = [s.name for s in plan if s.arm in ("S", "Y") or (s.arm in ("F", "L", "A") and s.config_id == selected[s.arm])]
+-    want = len(contract.training.training_seeds) * 5
++    searched = ("F", "L", "A")
++    names = [s.name for s in plan if s.arm in contract.arms.inheriting
++             or (s.arm in searched and s.config_id == selected[s.arm])]
++    want = len(contract.training.training_seeds) * (len(searched) + len(contract.arms.inheriting))
+     if len(names) != want:
+         raise ImplementationFail("%d trained models for TEST, expected %d" % (len(names), want))
+     return [BASE_MODEL] + names
+@@ -280,132 +370,126 @@ class TestSession:
+     session_id: str
+     marker_commit: str
+     marker_sha256: str
+-    checkpoints: dict
+-    models: list
+     evaluated: set = field(default_factory=set)
+ 
+ 
+ _LIVE = {}                  # session_id -> TestSession, only those returned by begin_test_evaluation in this process
+ 
+ 
+-def _push(root, remote, branch, retries, sleep, what):
+-    """Push HEAD to `remote` `branch` (a plain push: fast-forward only, no tags) and check the remote ref; retried
+-    `retries` times with 2, 4, 8, ... s pauses. Raises BLOCKED when the remote ref is not HEAD at the end."""
+-    head = _git(root, "rev-parse", "HEAD").stdout.strip()
+-    last = ""
+-    for i in range(retries):
+-        r = _git(root, "push", remote, "HEAD:refs/heads/%s" % branch)
+-        ls = _git(root, "ls-remote", remote, "refs/heads/%s" % branch)
+-        if r.returncode == 0 and ls.returncode == 0 and ls.stdout.split()[:1] == [head]:
+-            return head
+-        last = (r.stderr + ls.stderr).strip()
+-        if i + 1 < retries:
+-            sleep(2 ** (i + 1))
+-    raise ProtocolStop(None, "BLOCKED", "%s is committed (%s) but was not pushed to %s %s (%s); report to the Owner" % (
+-        what, head, remote, branch, last))
++def _commit_preconditions(root, remote, branch):
++    """Before the marker is written: a committer identity, HEAD a descendant of the remote branch (when it exists),
++    and a dry-run push accepted. Any failure is BLOCKED and leaves nothing written."""
++    if _git(root, "var", "GIT_COMMITTER_IDENT").returncode != 0:
++        raise _blocked("no git committer identity (user.name, user.email)")
++    ls = _git(root, "ls-remote", remote, "refs/heads/%s" % branch)
++    if ls.returncode != 0:
++        raise _blocked("cannot read %s %s: %s" % (remote, branch, ls.stderr.strip()))
++    tip = ls.stdout.split()[:1]
++    if tip and not _is_ancestor(root, tip[0]):
++        raise _blocked("%s %s (%s) is not an ancestor of HEAD: the push would not be a fast-forward" % (
++            remote, branch, tip[0]))
++    dry = _git(root, "push", "--dry-run", "--no-follow-tags", remote, "HEAD:refs/heads/%s" % branch)
++    if dry.returncode != 0:
++        raise _blocked("a dry-run push to %s %s fails: %s" % (remote, branch, dry.stderr.strip()))
+ 
+ 
+ def begin_test_evaluation(fz, authorization, data, base_model_sha256, remote, branch, repo_root=None, retries=4,
+                           sleep=time.sleep):
+     """Start the single TEST evaluation (Review Gate supplementary ruling 4): checks (no marker anywhere; the
+-    authorization; the ST10 gate for the TEST rows in `data`; nothing staged), writes the marker with every checkpoint
+-    hash of the committed freeze record plus N (`base_model_sha256`, train.state_sha256 of the loaded base model),
+-    commits only the marker and pushes it to `remote` `branch`. Returns the TestSession."""
++    authorization; the ST10 gate for the TEST rows in `data`; nothing staged; the commit and push preconditions),
++    writes the marker with every checkpoint hash of the committed freeze record plus N (`base_model_sha256`,
++    train.state_sha256 of the loaded base model), commits only the marker and pushes it to `remote` `branch`. Returns
++    the TestSession."""
+     from . import contract as C
+     root = Path(repo_root) if repo_root is not None else fz.repo_root
+-    refuse_if_marker(root, remote, branch)
+-    LK.verify_authorization(authorization, fz, root)
++    refuse_if_marker(root, remote)
++    recs = LK.verify_authorization(authorization, fz, root)
+     rows_hashes = rows_hashes_of(data)
+     st10_sha, aud_sha = st10_check(fz, authorization, rows_hashes, root)
+-    try:                    # verified above by verify_authorization; read here for its checkpoints and selection
+-        freeze, freeze_sha = R.committed_record(root, R.SELECTION_FREEZE_REL, "selection_freeze",
+-                                                authorization.frozen_commit)
+-    except R.NotCommitted as e:
+-        raise _refuse(str(e)) from e
+-    if freeze_sha != authorization.selection_record_sha256:
+-        raise _refuse("committed freeze record sha256 %s, authorization %s" % (freeze_sha,
+-                                                                              authorization.selection_record_sha256))
+     if not isinstance(base_model_sha256, str) or not FZ.HEX64.fullmatch(base_model_sha256):
+         raise _refuse("base model hash %r" % (base_model_sha256,))
++    freeze = recs["selection_freeze"]
+     checkpoints = dict(freeze["checkpoints"], **{BASE_MODEL: base_model_sha256})
+     models = evaluated_models(C.load(fz), freeze["selected"])
+     if _git(root, "diff", "--cached", "--quiet").returncode != 0:
+-        raise _refuse("the git index holds staged changes; the marker commit holds the marker only")
++        raise _blocked("the git index holds staged changes; the marker commit holds the marker only")
++    _commit_preconditions(root, remote, branch)
+     session_id = secrets.token_hex(16)
+     marker = {"kind": "test_evaluation_marker", "mode": "formal", "frozen_commit": authorization.frozen_commit,
+-              "authorization": auth_fields(authorization), "st10_record_sha256": st10_sha,
+-              "auditor_count_sha256": aud_sha, "test_files_sha256": rows_hashes, "checkpoints": checkpoints,
+-              "models": models, "code_commit": code_commit(root), "session_id": session_id,
+-              "started_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
++              "authorization": auth_fields(authorization), "remote": remote_url(root, remote), "branch": branch,
++              "st10_record_sha256": st10_sha, "auditor_count_sha256": aud_sha, "test_files_sha256": rows_hashes,
++              "checkpoints": checkpoints, "models": models, "code_commit": code_commit(root),
++              "session_id": session_id, "started_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
+     path = root / MARKER_REL
+     path.parent.mkdir(parents=True, exist_ok=True)
+     blob = (json.dumps(marker, ensure_ascii=False, indent=1, sort_keys=True) + "\n").encode("utf-8")
+     path.write_bytes(blob)
+-    add = _git(root, "add", "--", MARKER_REL)
+-    staged = _git(root, "diff", "--cached", "--name-only").stdout.split()
+-    if add.returncode != 0 or staged != [MARKER_REL]:
+-        raise ProtocolStop(None, "BLOCKED", "staging the TEST marker failed (%s; staged %s); report to the Owner" % (
+-            add.stderr.strip(), staged))
+-    c = _git(root, "commit", "-q", "-m", "metrix: E1-PILOT TEST evaluation marker (section 8 step 8: TEST is evaluated "
+-             "once; every checkpoint hash)")
+-    if c.returncode != 0:
+-        raise ProtocolStop(None, "BLOCKED", "committing the TEST marker failed (%s); report to the Owner" % (
+-            (c.stdout + c.stderr).strip(),))
+-    head = _push(root, remote, branch, retries, sleep, "the TEST marker (TEST not evaluated; the marker refuses any "
+-                 "later evaluation)")
+-    session = TestSession(session_id, head, FZ.sha256_hex(blob), checkpoints, models)
++    head = commit_paths(root, [MARKER_REL], "metrix: E1-PILOT TEST evaluation marker (section 8 step 8: TEST is "
++                        "evaluated once; every checkpoint hash)", remote, branch,
++                        "the TEST marker (TEST not evaluated; the marker refuses any later evaluation)", retries, sleep)
++    session = TestSession(session_id, head, FZ.sha256_hex(blob))
+     _LIVE[session_id] = session
+     return session
+ 
+ 
+-def require_test_session(fz, authorization, session, checkpoint_name, data, model_sha256, repo_root=None):
++def require_test_session(fz, authorization, session, checkpoint_name, data, model, repo_root=None):
+     """Called by evaluate.evaluate_model(split="test") after leakage.verify_authorization and before anything is
+-    evaluated (see the module docstring). Marks `checkpoint_name` as evaluated in the session."""
++    evaluated (see the module docstring). Claims nothing (claim_checkpoint, after the GPU check). The model's state
++    sha256 is computed last, after the cheaper checks."""
++    from .train import state_sha256
+     root = Path(repo_root) if repo_root is not None else fz.repo_root
+     if not isinstance(session, TestSession) or _LIVE.get(session.session_id) is not session:
+         raise _refuse("no TEST session of this process (begin_test_evaluation)")
+     marker, sha = _committed(root, MARKER_REL, "TEST marker")
+-    if marker.get("session_id") != session.session_id or sha != session.marker_sha256:
++    if sha != session.marker_sha256:                   # the bytes begin wrote (its session id included)
+         raise _refuse("the committed TEST marker is not the one of this session")
+-    if marker.get("frozen_commit") != authorization.frozen_commit or marker.get("authorization") != auth_fields(authorization):
++    if (marker.get("frozen_commit") != authorization.frozen_commit
++            or marker.get("authorization") != auth_fields(authorization)):
+         raise _refuse("the TEST marker is not bound to this authorization")
+     rows_hashes = rows_hashes_of(data)
+     if marker.get("test_files_sha256") != rows_hashes:
+-        raise _refuse("the TEST rows %r are not the files of the marker %r" % (rows_hashes, marker.get("test_files_sha256")))
++        raise _refuse("the TEST rows %r are not the files of the marker %r" % (rows_hashes,
++                                                                              marker.get("test_files_sha256")))
+     st10_sha, aud_sha = st10_check(fz, authorization, rows_hashes, root)
+     if (st10_sha, aud_sha) != (marker.get("st10_record_sha256"), marker.get("auditor_count_sha256")):
+         raise _refuse("the ST10 record or the data-auditor's count changed after the marker")
+-    if checkpoint_name not in session.models:
+-        raise _refuse("%r is not a model TEST evaluates (%s)" % (checkpoint_name, session.models))
++    if checkpoint_name not in marker["models"]:
++        raise _refuse("%r is not a model TEST evaluates (%s)" % (checkpoint_name, marker["models"]))
+     if checkpoint_name in session.evaluated:
+         raise _refuse("%s was already evaluated on TEST in this session" % checkpoint_name)
+-    if model_sha256 != session.checkpoints[checkpoint_name]:
++    got = state_sha256(model)
++    if got != marker["checkpoints"][checkpoint_name]:
+         raise _refuse("the model's state sha256 %s is not the marker's %s for %s" % (
+-            model_sha256, session.checkpoints[checkpoint_name], checkpoint_name))
++            got, marker["checkpoints"][checkpoint_name], checkpoint_name))
++    return marker
++
++
++def claim_checkpoint(session, checkpoint_name):
++    """Right before the evaluation of `checkpoint_name` starts (after require_test_session and the GPU check): the
++    checkpoint is evaluated at most once in the session."""
++    if _LIVE.get(getattr(session, "session_id", None)) is not session:
++        raise _refuse("no TEST session of this process (begin_test_evaluation)")
++    if checkpoint_name in session.evaluated:
++        raise _refuse("%s was already evaluated on TEST in this session" % checkpoint_name)
+     session.evaluated.add(checkpoint_name)
+ 
+ 
+ def finish_test_evaluation(fz, session, result, remote, branch, repo_root=None, retries=4, sleep=time.sleep):
+-    """After every model of the session was evaluated: write `result` (the TEST results) to RESULT_REL, commit only
+-    that path, push it; the session ends."""
++    """After every model of the marker was claimed: write `result` (the TEST results, JSON values only) to RESULT_REL,
++    commit only that path, push it; the session ends."""
+     root = Path(repo_root) if repo_root is not None else fz.repo_root
+     if _LIVE.get(getattr(session, "session_id", None)) is not session:
+         raise _refuse("no TEST session of this process")
+-    left = [m for m in session.models if m not in session.evaluated]
++    marker, _ = _committed(root, MARKER_REL, "TEST marker")
++    left = [m for m in marker["models"] if m not in session.evaluated]
+     if left:
+         raise _refuse("models not evaluated on TEST: %s" % left)
+     if _git(root, "diff", "--cached", "--quiet").returncode != 0:
+-        raise _refuse("the git index holds staged changes; the result commit holds the result only")
++        raise _blocked("the git index holds staged changes; the result commit holds the result only")
+     path = root / RESULT_REL
+     path.write_text(json.dumps(dict(result, session_id=session.session_id, marker_commit=session.marker_commit),
+-                               ensure_ascii=False, indent=1, sort_keys=True, default=str) + "\n", encoding="utf-8")
+-    add = _git(root, "add", "--", RESULT_REL)
+-    if add.returncode != 0 or _git(root, "diff", "--cached", "--name-only").stdout.split() != [RESULT_REL]:
+-        raise ProtocolStop(None, "BLOCKED", "staging the TEST result failed; report to the Owner")
+-    c = _git(root, "commit", "-q", "-m", "metrix: E1-PILOT TEST evaluation result (section 8 step 8)")
+-    if c.returncode != 0:
+-        raise ProtocolStop(None, "BLOCKED", "committing the TEST result failed (%s); report to the Owner" % (
+-            (c.stdout + c.stderr).strip(),))
+-    head = _push(root, remote, branch, retries, sleep, "the TEST result")
++                               ensure_ascii=False, indent=1, sort_keys=True) + "\n", encoding="utf-8")
++    head = commit_paths(root, [RESULT_REL], "metrix: E1-PILOT TEST evaluation result (section 8 step 8)", remote,
++                        branch, "the TEST result", retries, sleep)
+     del _LIVE[session.session_id]
+     return head
+diff --git a/metrix/e1-pilot/tests/test_data_hashes.py b/metrix/e1-pilot/tests/test_data_hashes.py
+index 933203d..5501d8a 100644
+--- a/metrix/e1-pilot/tests/test_data_hashes.py
++++ b/metrix/e1-pilot/tests/test_data_hashes.py
+@@ -27,15 +27,12 @@ def test_four_frozen_hashes(fz, generated):
+     assert fz.check_data_dir(generated["dir"]) == got
+ 
+ 
+-def test_content_hashes_are_built_for_content_hash_keys(fz, generated, monkeypatch):
+-    """BE9 (DEFERRED_MINORS 1.26): Frozen.content_hashes returns exactly the keys of CONTENT_HASH_KEYS, in that order,
+-    and refuses when the two lists differ (here: the list changed under it)."""
+-    import pytest
+-    from metrix_e1.errors import ImplementationFail
+-    assert tuple(fz.content_hashes(generated["dir"])) == FZ.CONTENT_HASH_KEYS
+-    monkeypatch.setattr(FZ, "CONTENT_HASH_KEYS", FZ.CONTENT_HASH_KEYS[:3])
+-    with pytest.raises(ImplementationFail, match="content hash keys .* differ from CONTENT_HASH_KEYS"):
+-        fz.content_hashes(generated["dir"])
++def test_content_hashes_are_built_from_content_hash_keys(fz, generated, monkeypatch):
++    """BE9 (DEFERRED_MINORS 1.26): Frozen.content_hashes is built from CONTENT_HASH_KEYS (one serializer per key in
++    CONTENT_HASH_BYTES): its keys follow the list, here also when the list is changed under it."""
++    assert tuple(fz.content_hashes(generated["dir"])) == FZ.CONTENT_HASH_KEYS == tuple(FZ.CONTENT_HASH_BYTES)
++    monkeypatch.setattr(FZ, "CONTENT_HASH_KEYS", ("anchor_texts", "facts"))
++    assert fz.content_hashes(generated["dir"]) == {k: fz.data_hash(k) for k in ("anchor_texts", "facts")}
+ 
+ 
+ def test_files_are_canonical(generated):
+diff --git a/metrix/e1-pilot/tests/test_test_data.py b/metrix/e1-pilot/tests/test_test_data.py
+index 42a828e..c909a4f 100644
+--- a/metrix/e1-pilot/tests/test_test_data.py
++++ b/metrix/e1-pilot/tests/test_test_data.py
+@@ -199,14 +199,15 @@ def test_pending_interpretations_block_test(monkeypatch):
+ 
+ 
+ def test_interpretations_ruled_by_review_gate():
+-    """Review Gate 2026-11-24, stage-B ruling item 1: B1-B24 accepted; pending() is empty; every record names the
+-    ruling; B3 and B14 carry the ruling's notes; B19 no longer says it is to be ruled."""
++    """Review Gate 2026-11-24, stage-B ruling item 1: B1-B24 accepted; every record names the ruling; B3 and B14
++    carry the ruling's notes; B19 no longer says it is to be ruled. B25 (stage C) is pending and blocks TEST."""
+     from metrix_e1 import interpretations as INT
+-    assert [e["id"] for e in INT.ENTRIES] == ["B%d" % i for i in range(1, 25)]
+-    assert INT.pending() == [] and INT.pending_problem() is None
++    assert [e["id"] for e in INT.ENTRIES] == ["B%d" % i for i in range(1, 26)]
++    assert INT.pending() == ["B25"] and INT.pending_problem() == "interpretations not yet ruled by Review Gate: B25"
+     assert INT.ACCEPTED == "ACCEPTED（Review Gate 2026-11-24）"
+     recs = INT.as_records()
+-    assert all(r["status"] == INT.ACCEPTED and r["ruling"] == INT.RULING_REF for r in recs)
++    assert all(r["status"] == INT.ACCEPTED and r["ruling"] == INT.RULING_REF for r in recs[:24])
++    assert recs[24]["status"] == INT.PENDING and "ruling" not in recs[24]
+     assert "IMPL_C_REPORT.md「Review Gate 对阶段 B 的裁决」" in INT.RULING_REF
+     by_id = {r["id"]: r for r in recs}
+     assert "train_Y.jsonl" in by_id["B3"]["ruling_note"] and "需重新校准" in by_id["B14"]["ruling_note"]
+@@ -265,8 +266,8 @@ def test_verify_authorization_frozen_commit_comparisons(fz, contract, tmp_path,
+     other = copy.copy(fz)                                    # frozen files loaded for another frozen commit
+     other.record = dataclasses.replace(fz.record, commit="2" * 40)
+     g = _gate0(fz)
+-    sel = _selection(fz, contract, {k: fz.data_hash(k) for k in ("facts", "train_S", "candidates", "anchor_texts")},
+-                     _sha(g))
++    from metrix_e1 import frozen as FZ
++    sel = _selection(fz, contract, {k: fz.data_hash(k) for k in FZ.CONTENT_HASH_KEYS}, _sha(g))
+     root = _repo(tmp_path / "a", {G0: g, SEL: sel})
+     auth = lambda c: LK.TestAuthorization(c, _sha(g), _sha(sel))                       # noqa: E731
+     cases = [  # (authorization commit, frozen files, message)
+diff --git a/metrix/e1-pilot/tests/test_testgate.py b/metrix/e1-pilot/tests/test_testgate.py
+index 61f460c..0708a86 100644
+--- a/metrix/e1-pilot/tests/test_testgate.py
++++ b/metrix/e1-pilot/tests/test_testgate.py
+@@ -12,6 +12,7 @@ evaluation on the CPU is refused by evaluate.require_gpu, which is where a call
+ import copy
+ import dataclasses
+ import json
++import os
+ import re
+ import subprocess
+ 
+@@ -122,11 +123,26 @@ class Env:
+                                         sleep=lambda s: None, **kw)
+ 
+ 
++@pytest.fixture(autouse=True)
++def no_pending_interpretation(monkeypatch):
++    """The gates are tested independently of the current rulings (B25 is pending: every TEST path refuses until it
++    is ruled; that refusal is tested in test_test_data)."""
++    from metrix_e1 import interpretations as INT
++    monkeypatch.setattr(INT, "pending", lambda: [])
++
++
+ @pytest.fixture
+ def env(fz, contract, tmp_path):
+     return Env(fz, contract, tmp_path)
+ 
+ 
++def blocked(fn, *a, **k):
++    with pytest.raises(ProtocolStop) as e:
++        fn(*a, **k)
++    assert e.value.status == "BLOCKED" and e.value.stop is None
++    return str(e.value)
++
++
+ def refused(msg, fn, *a, **k):
+     with pytest.raises(ImplementationFail) as e:
+         fn(*a, **k)
+@@ -196,6 +212,15 @@ REFUSED = {
+ }
+ 
+ 
++@pytest.mark.parametrize("rel", [TG.ST10_RECORD_REL, TG.AUDITOR_L6_REL])
++def test_st10_check_refuses_a_record_that_is_not_an_object(env, rel):
++    """data-auditor C1 round 1, note (a): a committed JSON list is refused, not an AttributeError."""
++    env.st10()
++    (env.root / rel).write_text("[1, 2]", encoding="utf-8")
++    commit(env.root)
++    refused("%s is a JSON list, not an object$" % rel, TG.st10_check, env.fz, env.auth, env.hashes)
++
++
+ @pytest.mark.parametrize("case", sorted(REFUSED))
+ def test_st10_check_refuses(env, case):
+     kw, msg = REFUSED[case]
+@@ -235,7 +260,10 @@ def test_st10_stops_when_the_l6_counts_differ(env):
+ # ------------------------------------------------------------------------------------------------- TEST once
+ 
+ def test_begin_commits_and_pushes_the_marker_only(env):
++    """Also: no tag reaches the remote although an annotated tag is reachable and push.followTags is set."""
+     env.st10()
++    git(env.root, "tag", "-a", "-m", "a tag", "a-local-tag")
++    git(env.root, "config", "push.followTags", "true")
+     before = git(env.root, "rev-parse", "HEAD")
+     s = env.begin()
+     head = git(env.root, "rev-parse", "HEAD")
+@@ -246,18 +274,14 @@ def test_begin_commits_and_pushes_the_marker_only(env):
+     assert git(env.root, "status", "--porcelain") == ""
+     marker = json.loads(git(env.root, "show", "HEAD:%s" % TG.MARKER_REL))
+     assert marker["session_id"] == s.session_id and marker["checkpoints"] == dict(env.ck, N=env.base_sha)
+-    assert len(marker["checkpoints"]) == 31 and marker["models"] == s.models
+-    assert s.models[0] == "N" and len(s.models) == 16 and sorted(s.models[1:]) == sorted(
++    assert marker["remote"] == str(env.remote) and marker["branch"] == BRANCH
++    models = marker["models"]
++    assert len(marker["checkpoints"]) == 31 and models[0] == "N" and len(models) == 16 and sorted(models[1:]) == sorted(
+         [n for n in env.ck if n.startswith(("F-F3-", "L-L2-", "A-A5-", "S-", "Y-"))])
+     assert marker["test_files_sha256"] == env.hashes and marker["authorization"] == TG.auth_fields(env.auth)
+     assert (marker["st10_record_sha256"], marker["auditor_count_sha256"]) == TG.st10_check(env.fz, env.auth, env.hashes)
+ 
+ 
+-def blocked(fn, *a, **k):
+-    with pytest.raises(ProtocolStop) as e:
+-        fn(*a, **k)
+-    assert e.value.status == "BLOCKED" and e.value.stop is None
+-    return str(e.value)
+ 
+ 
+ def test_begin_twice_is_refused_as_already_started(env, tmp_path):
+@@ -299,6 +323,30 @@ def test_a_deleted_marker_refuses(env):
+     assert "commit " in blocked(env.begin)
+ 
+ 
++def test_a_marker_deleted_on_a_merged_side_branch_refuses(env):
++    """data-auditor C1 round 1, B05: the marker is committed and deleted on a side branch, merged back with --no-ff,
++    the side ref deleted. Without --full-history git log simplifies the side branch away."""
++    env.st10()
++    git(env.root, "checkout", "-q", "-b", "side")
++    write_json(env.root, TG.MARKER_REL, {"kind": "test_evaluation_marker"})
++    commit(env.root, "marker on side")
++    git(env.root, "rm", "-q", TG.MARKER_REL)
++    commit(env.root, "marker deleted on side")
++    git(env.root, "checkout", "-q", BRANCH)
++    git(env.root, "merge", "-q", "--no-ff", "-m", "merge side", "side")
++    git(env.root, "branch", "-q", "-D", "side")
++    assert not git(env.root, "log", "--all", "--format=%H", "--", TG.MARKER_REL)     # simplified away ...
++    assert "commit " in blocked(env.begin)                                            # ... found by the gate
++
++
++def test_a_result_without_a_marker_refuses(env):
++    env.st10()
++    write_json(env.root, TG.RESULT_REL, {"kind": "result"})
++    commit(env.root)
++    with pytest.raises(TG.TestAlreadyEvaluated, match="marker .* in nowhere; result .* in .*commit"):
++        env.begin()
++
++
+ def test_a_marker_only_on_the_remote_refuses(env):
+     """The local history is reset to before the pushed marker and the remote-tracking ref removed: the remote branch,
+     fetched by begin, still holds the marker."""
+@@ -312,6 +360,20 @@ def test_a_marker_only_on_the_remote_refuses(env):
+     assert "commit " in blocked(env.begin)
+ 
+ 
++def test_a_marker_on_another_remote_branch_refuses_a_lagging_clone(env, tmp_path):
++    """MAJOR 1 of the C1 code review: the marker is on another branch of the remote; a clone that tracks only the
++    pilot branch and lags behind still finds it (every branch of the remote is listed and fetched)."""
++    env.st10()
++    lag = tmp_path / "lagging"
++    git(tmp_path, "clone", "-q", "--single-branch", "-b", BRANCH, str(env.remote), str(lag))
++    git(env.root, "checkout", "-q", "-b", "elsewhere")
++    write_json(env.root, TG.MARKER_REL, {"kind": "test_evaluation_marker"})
++    commit(env.root, "marker on another branch")
++    git(env.root, "push", "-q", "origin", "HEAD:refs/heads/elsewhere")
++    TG.refuse_if_marker(lag)                            # nothing local in the lagging clone
++    assert "commit " in blocked(TG.refuse_if_marker, lag, "origin")
++
++
+ def test_the_fetched_remote_branch_is_searched_by_itself(env):
+     """With the remote given as a URL, fetching updates no remote-tracking ref: only FETCH_HEAD holds the remote
+     branch, and the marker there still refuses; without the remote nothing local holds it."""
+@@ -321,7 +383,7 @@ def test_the_fetched_remote_branch_is_searched_by_itself(env):
+     git(env.root, "update-ref", "-d", "refs/remotes/origin/%s" % BRANCH)
+     git(env.root, "reflog", "expire", "--expire=now", "--all")
+     TG.refuse_if_marker(env.root)                       # nothing local
+-    assert "commit " in blocked(TG.refuse_if_marker, env.root, str(env.remote), BRANCH)
++    assert "commit " in blocked(TG.refuse_if_marker, env.root, str(env.remote))
+     assert not git(env.root, "for-each-ref", "refs/remotes")
+ 
+ 
+@@ -329,7 +391,7 @@ def test_an_unreachable_remote_refuses_before_writing(env, tmp_path):
+     env.st10()
+     head = git(env.root, "rev-parse", "HEAD")
+     git(env.root, "remote", "set-url", "origin", str(tmp_path / "no-such-remote.git"))
+-    refused("cannot fetch origin main to look for a TEST marker there", env.begin)
++    assert "cannot list the branches of origin to look for TEST records there" in blocked(env.begin)
+     assert git(env.root, "rev-parse", "HEAD") == head and not (env.root / TG.MARKER_REL).exists()
+ 
+ 
+@@ -338,7 +400,8 @@ def test_marker_with_a_result_is_refused_as_evaluated(env):
+     write_json(env.root, TG.MARKER_REL, {"kind": "test_evaluation_marker"})
+     write_json(env.root, TG.RESULT_REL, {"kind": "result"})
+     commit(env.root)
+-    refused("TEST was already evaluated .*TEST is evaluated once$", env.begin)
++    with pytest.raises(TG.TestAlreadyEvaluated, match="TEST was already evaluated .*TEST is evaluated once$"):
++        env.begin()
+ 
+ 
+ def test_begin_refuses_before_writing_anything(env):
+@@ -348,7 +411,7 @@ def test_begin_refuses_before_writing_anything(env):
+     head = git(env.root, "rev-parse", "HEAD")
+     (env.root / "staged.txt").write_text("x", encoding="utf-8")
+     git(env.root, "add", "staged.txt")
+-    refused("the git index holds staged changes", env.begin)
++    assert "the git index holds staged changes; the marker commit holds the marker only" in blocked(env.begin)
+     git(env.root, "reset", "-q")
+     refused("base model hash 'x'", env.begin, base="x")
+     assert git(env.root, "rev-parse", "HEAD") == head and not (env.root / TG.MARKER_REL).exists()
+@@ -360,9 +423,31 @@ def test_begin_refuses_before_writing_anything(env):
+     git(env.root, "rm", "-q", TG.AUDITOR_L6_REL)
+     commit(env.root)
+     refused("data-auditor's L6 TEST count", env.begin)
++    env.st10()
++    (env.root / TG.CODE_PATHS[0]).mkdir(parents=True)
++    (env.root / TG.CODE_PATHS[0] / "x.py").write_text("", encoding="utf-8")
++    with pytest.raises(ImplementationFail, match="uncommitted changes in the code"):
++        env.begin()
++    (env.root / TG.CODE_PATHS[0] / "x.py").unlink()
+     assert not (env.root / TG.MARKER_REL).exists() and not git(env.root, "log", "--all", "--format=%H", "--", TG.MARKER_REL)
+ 
+ 
++def test_begin_refuses_without_a_committer_identity(env, monkeypatch):
++    """No identity (global and system configuration hidden, none in the repository, auto-detection off): BLOCKED
++    before anything is written."""
++    env.st10()
++    monkeypatch.setenv("GIT_CONFIG_GLOBAL", os.devnull)
++    monkeypatch.setenv("GIT_CONFIG_NOSYSTEM", "1")
++    for k in ("GIT_COMMITTER_NAME", "GIT_COMMITTER_EMAIL", "GIT_AUTHOR_NAME", "GIT_AUTHOR_EMAIL", "EMAIL"):
++        monkeypatch.delenv(k, raising=False)
++    for k in ("user.name", "user.email"):
++        git(env.root, "config", "--unset", k)
++    git(env.root, "config", "user.useConfigOnly", "true")
++    head = git(env.root, "rev-parse", "HEAD")
++    assert "no git committer identity" in blocked(env.begin)
++    assert git(env.root, "rev-parse", "HEAD") == head and not (env.root / TG.MARKER_REL).exists()
++
++
+ def test_a_push_that_fails_is_blocked_and_the_marker_refuses_later_runs(env):
+     env.st10()
+     hook = env.remote / "hooks" / "pre-receive"           # the remote refuses every push
+@@ -387,8 +472,31 @@ def test_a_rejected_non_fast_forward_push_is_blocked(env, tmp_path):
+     git(other, "commit", "-q", "--allow-empty", "-m", "diverging")
+     git(other, "push", "-q", "origin", "HEAD:refs/heads/%s" % BRANCH)
+     remote_head = git(other, "rev-parse", "HEAD")
+-    blocked(env.begin, retries=1)
++    head = git(env.root, "rev-parse", "HEAD")
++    assert "is not an ancestor of HEAD: the push would not be a fast-forward" in blocked(env.begin, retries=1)
+     assert git(env.root, "ls-remote", "origin", "refs/heads/%s" % BRANCH).split()[0] == remote_head   # not overwritten
++    assert git(env.root, "rev-parse", "HEAD") == head and not (env.root / TG.MARKER_REL).exists()   # nothing written
++
++
++def test_commit_paths_stages_exactly_the_named_paths(env):
++    """A named path without a change stages nothing: BLOCKED at the staging check (not later at the commit)."""
++    env.st10()
++    head = git(env.root, "rev-parse", "HEAD")
++    msg = blocked(TG.commit_paths, env.root, [TG.ST10_RECORD_REL], "m", "origin", BRANCH, "the unchanged record")
++    assert "staging the unchanged record failed" in msg and "staged [], expected ['%s']" % TG.ST10_RECORD_REL in msg
++    assert git(env.root, "rev-parse", "HEAD") == head
++
++
++def test_a_failing_commit_is_blocked(env):
++    """A commit that fails after the marker was written (here a pre-commit hook) is BLOCKED; the marker in the
++    working tree then refuses any later run."""
++    env.st10()
++    hook = env.root / ".git" / "hooks" / "pre-commit"
++    hook.write_text("#!/bin/sh\nexit 1\n", encoding="utf-8")
++    hook.chmod(0o755)
++    assert "committing the TEST marker (TEST not evaluated" in blocked(env.begin)
++    hook.unlink()
++    assert "already started" in blocked(env.begin)
+ 
+ 
+ # ------------------------------------------------------------------------------- evaluate_model(split="test")
+@@ -404,14 +512,18 @@ GPU_REFUSAL = "^IMPLEMENTATION_FAIL: formal mode evaluates only on the GPU"
+ 
+ def test_evaluate_model_passes_every_gate_then_stops_at_the_gpu_check(env):
+     """Control: with the session, the committed marker and ST10, the call reaches require_gpu (on this CPU host the
+-    formal evaluation itself is refused there). Each checkpoint once per session."""
++    formal evaluation itself is refused there) and nothing is claimed; each checkpoint is claimed once per session."""
+     env.st10()
+     s = env.begin()
+     for name, model in (("N", env.base_model), ("F-F3-seed101", env.f_model)):
+         with pytest.raises(ImplementationFail, match=GPU_REFUSAL):
+             evaluate(env, model, s, name)
+-        refused("%s was already evaluated on TEST in this session" % name, evaluate, env, model, s, name)
+-    assert s.evaluated == {"N", "F-F3-seed101"}
++    assert s.evaluated == set()                        # refused by the GPU check: nothing claimed
++    TG.claim_checkpoint(s, "N")
++    refused("N was already evaluated on TEST in this session", TG.claim_checkpoint, s, "N")
++    refused("N was already evaluated on TEST in this session", evaluate, env, env.base_model, s, "N")
++    refused("no TEST session of this process", TG.claim_checkpoint, copy.copy(s), "F-F3-seed101")
++    assert s.evaluated == {"N"}
+ 
+ 
+ def test_evaluate_model_refusals(env):
+@@ -426,6 +538,8 @@ def test_evaluate_model_refusals(env):
+     refused("are not the files of the marker", evaluate, env, env.base_model, s, "N", data=more)
+     refused("committed metrix/e1-pilot/results/selection_freeze_record.json has sha256",
+             evaluate, env, env.base_model, s, "N", auth=LK.TestAuthorization(env.auth.frozen_commit, env.g0_sha, "f" * 64))
++    refused(r"no rows for \['general_test.jsonl'\]", evaluate, env, env.base_model, s, "N",
++            data={"test_qa.jsonl": env.data["test_qa.jsonl"]})
+     assert s.evaluated == set()                        # nothing was claimed by a refused call
+     m = env.root / TG.MARKER_REL
+     blob = m.read_bytes()
+@@ -448,6 +562,19 @@ def test_evaluate_model_refuses_another_committed_marker(env):
+     refused("the committed TEST marker is not the one of this session", evaluate, env, env.base_model, s, "N")
+ 
+ 
++def test_evaluate_model_refuses_a_rewritten_marker_with_the_same_id(env):
++    """Same session id, other bytes (a checkpoint hash replaced, here by the f model's for N): not the session's
++    marker, although its own content would admit the f model as N."""
++    env.st10()
++    s = env.begin()
++    m = json.loads((env.root / TG.MARKER_REL).read_text(encoding="utf-8"))
++    m["checkpoints"]["N"] = T.state_sha256(env.f_model)
++    (env.root / TG.MARKER_REL).write_text(json.dumps(m, ensure_ascii=False, indent=1, sort_keys=True) + "\n",
++                                          encoding="utf-8")
++    commit(env.root, "rewritten marker")
++    refused("the committed TEST marker is not the one of this session", evaluate, env, env.f_model, s, "N")
++
++
+ def test_evaluate_model_refuses_an_authorization_other_than_the_markers(env):
+     """After begin, a changed freeze record is committed and an authorization for it passes verify_authorization; the
+     marker (and the ST10 record) are bound to the first one."""
+@@ -475,13 +602,25 @@ def test_finish_commits_the_result_after_every_model(env):
+     env.st10()
+     s = env.begin()
+     refused("models not evaluated on TEST", TG.finish_test_evaluation, env.fz, s, {}, "origin", BRANCH)
+-    for name in s.models:                              # the gate itself, with the marker's hashes
+-        TG.require_test_session(env.fz, env.auth, s, name, env.data, s.checkpoints[name])
++    marker = json.loads((env.root / TG.MARKER_REL).read_text(encoding="utf-8"))
++    for name in marker["models"]:                      # claimed as evaluate_model does after the GPU check
++        TG.claim_checkpoint(s, name)
++    (env.root / "staged.txt").write_text("x", encoding="utf-8")
++    git(env.root, "add", "staged.txt")
++    assert "the result commit holds the result only" in blocked(TG.finish_test_evaluation, env.fz, s, {}, "origin",
++                                                                BRANCH)
++    git(env.root, "reset", "-q")
++    (env.root / "staged.txt").unlink()
++    with pytest.raises(TypeError):                     # JSON values only (no default=str)
++        TG.finish_test_evaluation(env.fz, s, {"x": object()}, "origin", BRANCH)
++    assert not (env.root / TG.RESULT_REL).exists()
+     head = TG.finish_test_evaluation(env.fz, s, {"final_status": "NOT_TESTED"}, "origin", BRANCH, sleep=lambda x: None)
+     assert git(env.root, "show", "--name-only", "--format=", "HEAD").split() == [TG.RESULT_REL]
+     assert git(env.root, "ls-remote", "origin", "refs/heads/%s" % BRANCH).split()[0] == head
+-    refused("no TEST session of this process", TG.require_test_session, env.fz, env.auth, s, "N", env.data, env.base_sha)
+-    refused("TEST was already evaluated", env.begin)
++    refused("no TEST session of this process", TG.require_test_session, env.fz, env.auth, s, "N", env.data,
++            env.base_model)
++    with pytest.raises(TG.TestAlreadyEvaluated):
++        env.begin()
+ 
+ 
+ # ------------------------------------------------------------------------------ the step 8 TEST driver (main)
+@@ -518,3 +657,8 @@ def test_driver_writes_the_st10_record_and_judges_raw_counts(env, monkeypatch, c
+     with pytest.raises(ImplementationFail, match="st10_record.json exists \\(commit [0-9a-f]{40}\\)"):
+         TD.main(["--inputs", "unused", "--data", "unused", "--out", str(tmp_path / "driver_out3")])
+     assert generated == [] and not (tmp_path / "driver_out2").exists() and not (tmp_path / "driver_out3").exists()
++    (env.root / TG.CODE_PATHS[0]).mkdir(parents=True)
++    (env.root / TG.CODE_PATHS[0] / "x.py").write_text("", encoding="utf-8")
++    with pytest.raises(ImplementationFail, match="uncommitted changes in the code"):
++        TD.main(["--inputs", "unused", "--data", "unused", "--out", str(tmp_path / "driver_out4")])
++    assert generated == [] and not (tmp_path / "driver_out4").exists()

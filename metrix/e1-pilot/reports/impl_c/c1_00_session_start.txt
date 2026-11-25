@@ -1,0 +1,49 @@
+# Implementation stage C (second session), session start: git ls-remote (Owner stage-C item 5: replaces the push record of stage C's last push), local HEAD, compare user-level copies under /root/.claude/ with the branch files, frontmatter and tools line of each agent (metrix/CLAUDE.md section 5 item 6), environment. Executor, session_01J5mxaXeqjRSkJj9ZuGh8EJ, host vm (Anthropic cloud container, Claude Code on the web). Tue Nov 24 04:36:45 UTC 2026
+# Read-only commands; cwd /home/user/OpenMythos. stdout+stderr merged, unedited. Commands recorded by reports/round5/logrun.sh.
+$ git ls-remote origin refs/heads/metrix-e1-pilot-protocol-v1 refs/heads/wip/metrix-stage-c refs/tags/metrix-e1-pilot-frozen refs/tags/metrix-e1-pilot-frozen\^\{\} refs/tags/metrix-e1-pilot-frozen-v1.1 refs/tags/metrix-e1-pilot-frozen-v1.1\^\{\}
+eb05e42243b54b78cb400b40293ef56f67611852	refs/heads/metrix-e1-pilot-protocol-v1
+d7830c38be56f9456f61fa11b9b677b5ab0625c0	refs/heads/wip/metrix-stage-c
+4c023ec8e8c315c679e5c726dc45ba1d614a5f13	refs/tags/metrix-e1-pilot-frozen
+6a474e4a5defa23dfc71b2c6bca9e15a81b517aa	refs/tags/metrix-e1-pilot-frozen^{}
+6fd45fd14bdafa5a1d617482c664df29a85589dd	refs/tags/metrix-e1-pilot-frozen-v1.1
+87a244db28a901f9e89282b50df76778ab5c2887	refs/tags/metrix-e1-pilot-frozen-v1.1^{}
+exit=0
+$ git rev-parse HEAD origin/metrix-e1-pilot-protocol-v1 origin/wip/metrix-stage-c
+eb05e42243b54b78cb400b40293ef56f67611852
+eb05e42243b54b78cb400b40293ef56f67611852
+d7830c38be56f9456f61fa11b9b677b5ab0625c0
+exit=0
+$ git status --short --branch
+## metrix-e1-pilot-protocol-v1...origin/metrix-e1-pilot-protocol-v1
+?? metrix/e1-pilot/reports/impl_c/c1_00_session_start.txt
+?? metrix/e1-pilot/tasks/IMPL_C_OWNER_MESSAGE.md
+exit=0
+$ sha256sum metrix/CLAUDE.md /root/.claude/CLAUDE.md .claude/agents/code-reviewer.md /root/.claude/agents/code-reviewer.md .claude/agents/data-auditor.md /root/.claude/agents/data-auditor.md
+c20d1b7d05168d6b03ee262704ff896d19e0c678aed31024f255b0bf12ea76a5  metrix/CLAUDE.md
+c20d1b7d05168d6b03ee262704ff896d19e0c678aed31024f255b0bf12ea76a5  /root/.claude/CLAUDE.md
+e38d091494059227d8d95896aa50858adc32f4750a5512b45bec97dd368932c6  .claude/agents/code-reviewer.md
+e38d091494059227d8d95896aa50858adc32f4750a5512b45bec97dd368932c6  /root/.claude/agents/code-reviewer.md
+fd556e751947058c10a80b77a669615a62078251d7e36055f111d33cb838eae9  .claude/agents/data-auditor.md
+fd556e751947058c10a80b77a669615a62078251d7e36055f111d33cb838eae9  /root/.claude/agents/data-auditor.md
+exit=0
+$ cmp metrix/CLAUDE.md /root/.claude/CLAUDE.md
+exit=0
+$ cmp .claude/agents/code-reviewer.md /root/.claude/agents/code-reviewer.md
+exit=0
+$ cmp .claude/agents/data-auditor.md /root/.claude/agents/data-auditor.md
+exit=0
+$ bash -c for\ a\ in\ code-reviewer\ data-auditor\;\ do\ diff\ \<\(awk\ \"/\^---\\\$/\{n++\;\ print\;\ if\(n==2\)\ exit\;\ next\}\ n==1\{print\}\"\ .claude/agents/\$a.md\)\ \<\(awk\ \"/\^---\\\$/\{n++\;\ print\;\ if\(n==2\)\ exit\;\ next\}\ n==1\{print\}\"\ /root/.claude/agents/\$a.md\)\ \&\&\ echo\ \"\$a\ FRONTMATTER_IDENTICAL\"\;\ cmp\ \<\(grep\ \"\^tools:\"\ .claude/agents/\$a.md\)\ \<\(grep\ \"\^tools:\"\ /root/.claude/agents/\$a.md\)\ \&\&\ echo\ \"\$a\ TOOLS_LINE_IDENTICAL:\ \$\(grep\ \"\^tools:\"\ .claude/agents/\$a.md\)\"\;\ done
+code-reviewer FRONTMATTER_IDENTICAL
+code-reviewer TOOLS_LINE_IDENTICAL: tools: Read, Grep, Glob
+data-auditor FRONTMATTER_IDENTICAL
+data-auditor TOOLS_LINE_IDENTICAL: tools: Read, Grep, Glob, Write, Bash
+exit=0
+$ bash -c hostname\;\ nproc\;\ free\ -g\ \|\ head\ -2\;\ uptime\ -s\;\ ls\ /dev/nvidia\*\ 2\>\&1\;\ command\ -v\ nvidia-smi\ \|\|\ echo\ \"nvidia-smi:\ not\ found\"
+vm
+4
+               total        used        free      shared  buff/cache   available
+Mem:              15           0          14           0           1          15
+2026-11-24 04:28:42
+ls: cannot access '/dev/nvidia*': No such file or directory
+nvidia-smi: not found
+exit=0

@@ -1,0 +1,38 @@
+# Implementation stage C (second session), C1: environment and inputs. venv in the session scratchpad (/tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/venv, CPython 3.13.18); pip was first upgraded inside the venv (pip itself, not in the lock), then the lock was installed with --require-hashes --no-deps (full log /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/pip_install.log, last line 'EXIT 0'). Non-model inputs fetched (4 tokenizer files, parcae tokenizer.json, anchor parquet, eval_sets.jsonl) and config.json of the pinned revision (not a weight file). Host vm, Anthropic cloud container, no GPU. Tue Nov 24 04:44:34 UTC 2026
+# stdout+stderr merged, unedited. Commands recorded by reports/round5/logrun.sh.
+$ /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/venv/bin/python -m pip check
+No broken requirements found.
+exit=0
+$ /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/venv/bin/python -m pip --version
+pip 26.3 from /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/venv/lib/python3.13/site-packages/pip (python 3.13)
+exit=0
+$ /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/venv/bin/python -c import\ sys\,\ torch\,\ transformers\,\ tokenizers\;\ print\(sys.version\)\;\ print\(torch.__version__\,\ torch.version.cuda\,\ torch.cuda.is_available\(\)\)\;\ print\(transformers.__version__\,\ tokenizers.__version__\)
+3.13.18 (main, Oct 26 2026, 14:08:19) [Clang 23.1.3 ]
+2.11.0+cu130 13.0 False
+5.22.2 0.23.3
+exit=0
+$ /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/venv/bin/python -m metrix_e1.data fetch --inputs /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/inputs
+frozen: PROTOCOL_FROZEN v1.1, commit 87a244db28a901f9e89282b50df76778ab5c2887; four frozen files match by git cat-file
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+qwen:tokenizer.json          sha256 aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4 = frozen
+qwen:tokenizer_config.json   sha256 d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101 = frozen
+qwen:vocab.json              sha256 ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910 = frozen
+qwen:merges.txt              sha256 8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5 = frozen
+parcae_tokenizer             sha256 e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77 = frozen
+anchor_parquet               sha256 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22 = frozen
+RESULT: PASS
+exit=0
+$ /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/venv/bin/python -m metrix_e1.train fetch-config --inputs /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/inputs
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+config.json of Qwen/Qwen3-1.7B@70d244cc86ccca08cf5af4e1e306ecf908b1ad5e: /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/inputs/qwen_model/config.json sha256 1ddb5b89ebc90dcb417a45c213d818577e65976454d29385c8f6140771d95197 (not a weight file)
+RESULT: PASS
+exit=0
+$ bash -c cd\ /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/inputs\ \&\&\ find\ .\ -type\ f\ -not\ -path\ \'./\*/.cache/\*\'\ \|\ sort\ \|\ xargs\ sha256sum
+6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22  ./anchor_source/data/sample-100BT/train/shard_00000.parquet
+e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77  ./parcae_tokenizer/tokenizer.json
+1ddb5b89ebc90dcb417a45c213d818577e65976454d29385c8f6140771d95197  ./qwen_model/config.json
+8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5  ./qwen_tokenizer/merges.txt
+aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4  ./qwen_tokenizer/tokenizer.json
+d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101  ./qwen_tokenizer/tokenizer_config.json
+ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910  ./qwen_tokenizer/vocab.json
+exit=0

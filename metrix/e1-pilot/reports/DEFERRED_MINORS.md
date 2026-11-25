@@ -426,6 +426,89 @@ code-reviewer 结论 PASS,没有 BLOCKER(1 MAJOR、12 MINOR);data-auditor 结论
 | BE13 | MINOR | `reports/impl_b/mutate_fix3.py` | 变量 `SP` 未使用 | IBR-CR:103 | 登记,不改:该文件须与 `t12` 中运行的脚本逐字节相同(`t12` 末尾的 `cmp`) |
 | BE14 | 观察 | `leakage.verify_authorization` | 信任调用方传入的 `fz`:四个冻结值取自 `fz.record.data_sha256`,手工构造的 Frozen 可带入别的值(与手工构造 TestAuthorization 同一类约定;不是读取 TEST 的路径) | IBR-DA:338 | 登记;阶段 C 由 `run_pilot` 只用 `frozen.load()` 的结果调用 |
 
+### 1.27 Implementation 阶段 C:C1 工作提交第 1 轮审查(暂存树 `2408558f`;`reviews/tree-9be4df2a…/code-reviewer_round1.md` 记 `IC1-CR:n`,`data-auditor_round1.md` 记 `IC1-DA:n`)
+
+code-reviewer 结论 PASS(4 MAJOR、18 MINOR);data-auditor 结论 BLOCK(B05;仅作参考的状态,但 BLOCK 照规定修复后重审)。两份审查都因 HTTP 429 中断后续审完成(`interruption.txt`、`resume_message_*.txt`、`extract_log_round1.txt`)。第 1 轮的问题都在第 2 轮暂存树中处理,下表“处理”一列写的是第 2 轮的做法(C1 工作提交最终没有提交,见 1.29 节;各轮暂存树的代码在审查输入 `input*.diff` 中);第 2 轮审查对每一条的核对见同目录 `*_round2.md`。
+
+| # | 严重度 | 位置 | 问题 | 来源 | 处理 |
+|---|---|---|---|---|---|
+| CA1 | BLOCK | `testgate._ever_committed` | `git log` 没有 `--full-history`:标记在侧分支提交又删除、`--no-ff` 合并回来并删掉侧分支引用后,历史简化把它剪掉,begin 会写入第二个标记;ST10 记录与结果文件的检查同样受影响 | IC1-DA B05 | 已修:`--full-history`;测试 `test_a_marker_deleted_on_a_merged_side_branch_refuses`(断言不加该选项时 `git log` 找不到);变异“history: simplified”被测出 |
+| CA2 | 观察 | `testgate._committed` | 已提交的记录是 JSON 数组时抛 AttributeError,不是拒绝 | IC1-DA (a) | 已修:非对象拒绝,两份记录各有测试 |
+| CA3 | 观察 | `refuse_if_marker` | 远端其他分支上从未 fetch 的标记看不到(B11);只有结果文件、没有标记时不拒绝(B12) | IC1-DA (b) | 已修:远端全部分支 `ls-remote --heads` 后按名 fetch;结果文件存在即 TestAlreadyEvaluated;各有测试 |
+| CA4 | 观察 / MINOR | `test_data.main` | `code_commit` 在生成之后才检查,代码有未提交改动时 TEST 已生成 | IC1-DA (d);IC1-CR MINOR | 已修:生成之前检查,测试断言生成函数未被调用 |
+| CA5 | 观察 / MINOR | `leakage.run_test_part` 文档 | 引用不存在的 `testgate.st10_problem` | IC1-DA (e);IC1-CR MINOR | 已改为 `st10_check` |
+| CA6 | MAJOR | `refuse_if_marker`、`begin_test_evaluation` | 只 fetch 调用方给的一个远端分支;远端名与分支名是自由参数 | IC1-CR MAJOR 1 | 已修一部分:查远端全部分支;标记写入远端 URL 与分支;测试“单分支落后克隆、标记在远端另一分支”。远端名与分支名在 C2 的 `run_pilot` 中固定 |
+| CA7 | MAJOR | `record.selection_freeze_record`、`testgate` | checkpoint 哈希的定义(train.state_sha256)没有写明,也没有登记为解释 | IC1-CR MAJOR 2 | 文档写明;新增解释 B25(PENDING_REVIEW_GATE,交 Review Gate;裁决前所有 TEST 路径拒绝);C2 冒烟中保存、重载后核对 state_sha256 |
+| CA8 | MAJOR | `testgate._refuse` | 环境类拒绝与“已评测”用 IMPLEMENTATION_FAIL | IC1-CR MAJOR 3 | 环境类改为 BLOCKED;已评测改为不带状态的 TestAlreadyEvaluated;记录缺失或不绑定仍为 ImplementationFail;状态词交 Review Gate |
+| CA9 | MAJOR | `reports/impl_c/c1_gate_probe.py` | 给 data-auditor 用的黑盒探针含 Executor 的判断,是否算“Executor 的检查代码”不确定 | IC1-CR MAJOR 4 | 保留,交 Review Gate;auditor 用它的运行输出随报告提交入库 |
+| CA10 | MINOR | `evaluate.evaluate_model` | checkpoint 在 GPU 检查之前登记 | IC1-CR | 已修:`require_test_session` 不登记,`require_gpu` 之后 `claim_checkpoint` |
+| CA11 | MINOR | `begin_test_evaluation` | 提交与推送的前提在写标记之后才发现 | IC1-CR | 已修:身份、快进、`push --dry-run` 预检,失败 BLOCKED 且不写入;测试 |
+| CA12 | MINOR | `_push` | 没有 `--no-follow-tags` | IC1-CR | 已修;测试建注释标签并设 `push.followTags=true` |
+| CA13 | MINOR | `require_test_session` | 用内存中的 session.models / checkpoints | IC1-CR | 已修:用已提交标记中的值 |
+| CA14 | MINOR | `begin_test_evaluation` | 冻结记录重复读取,有不可达分支 | IC1-CR | 已修:`verify_authorization` 返回两份记录 |
+| CA15 | MINOR | `refuse_if_st10_record` | 不查远端 | IC1-CR | 已修:与标记相同;`test_data --remote`(默认 origin) |
+| CA16 | MINOR | `evaluated_models` | 魔法数字 5 | IC1-CR | 已修 |
+| CA17 | MINOR | `frozen.content_hashes` | 未按 BE9 由键列表组装 | IC1-CR | 已修:`CONTENT_HASH_BYTES`,测试用 `FZ.CONTENT_HASH_KEYS` |
+| CA18 | MINOR | `c1_mutate.py` | “ancestor always true” 变异实为 TypeError;`TD` 未用 | IC1-CR | `c1_mutate.py` 按运行时原样保留(c1_02 的记录);第 2 轮用 `c1_mutate_r2.py`(改正这两点) |
+| CA19 | MINOR | `testgate` 多处 | 若干闸门分支既无测试也不在变异中 | IC1-CR | 已补测试与变异(c1_04:58 个变异全部测出) |
+| CA20 | MINOR | `testgate`、`evaluate` | begin / finish 等尚无生产调用方 | IC1-CR | C2 的 `run_pilot` 接入,届时 data-auditor 复审 TEST 路径 |
+| CA21 | MINOR | `evaluate.evaluate_model` | 每次 TEST 调用先算 state_sha256 | IC1-CR | 已改为其余检查之后再算;正式运行的时间在 C2 的预检估算与 RUNBOOK 中说明 |
+| CA22 | MINOR | `finish_test_evaluation` | `default=str` | IC1-CR | 已去掉,有测试 |
+| CA23 | MINOR | `evaluate_model(split="dev")` | DEV 路径不核对行 | IC1-CR | C2:`run_pilot` 的数据每步由 ST12(`data.verify`)核对 |
+| CA24 | MINOR | `c1_02_checks.txt` | 被测代码与暂存内容的对应没有哈希 | IC1-CR | 第 2 轮:c1_04 末尾记录 `git diff HEAD -- src tests` 的 sha256,与暂存内容 `git diff --cached HEAD -- src tests` 的 sha256 相同(工作提交最终没有提交,没有提交前记录) |
+| CA25 | MINOR | `testgate`、`interpretations` | 行宽超过 120 | IC1-CR | testgate 已改;interpretations 中 B1–B24 的原有长行未改(内容未变) |
+
+### 1.28 Implementation 阶段 C:C1 工作提交第 2 轮审查(暂存树 `dc4f28df`;`reviews/tree-9be4df2a…/code-reviewer_round2.md` 记 `IC2-CR:n`,`data-auditor_round2.md` 记 `IC2-DA:n`)
+
+code-reviewer 结论 PASS(6 MAJOR、12 MINOR);data-auditor 结论 BLOCK(唯一原因:暂存的探针与接口不符;被审 src/ 的行为在修正副本下 214 项全部一致)。data-auditor 因 HTTP 429 中断后续审完成(`interruption_round2.txt`、`resume_message_data-auditor_round2.txt`;中断前发出的补充信息没有送达,内容在续审消息中重复,`info_message_data-auditor_round2.txt`)。下表“处理”一列是第 3 轮暂存树中的做法(未提交)。
+
+| # | 严重度 | 位置 | 问题 | 来源 | 处理 |
+|---|---|---|---|---|---|
+| CB1 | BLOCK | `reports/impl_c/c1_gate_probe.py` | 探针没有跟上接口:marker 操作参数个数错、begin 读已删除的 `session.models`;Executor 没有运行过它 | IC2-DA;IC2-CR MAJOR 3 | 已修;另加:拒绝在本仓库或 origin 为 CANONICAL_REPO 的克隆上运行;为临时仓库设 CANONICAL_REPO / PILOT_BRANCH 并打印;Executor 运行一次(`c1_probe_run.py`,输出在 c1_06) |
+| CB2 | MAJOR | `evaluate.evaluate_model` | 生产路径上的 `claim_checkpoint` 没有测试执行到 | IC2-CR | 已修:新测试替换 `require_gpu` 与打分函数;变异“claim removed” |
+| CB3 | MAJOR | `testgate.remote_url` 等 | 克隆 URL 中的令牌会写进标记并推送 | IC2-CR | 已修:`scrub` 去掉 user information(标记与报错);测试 |
+| CB4 | MAJOR | `testgate` | remote 与分支仍是自由参数,标记中的 URL 没有核对 | IC2-CR | 已修:`CANONICAL_REPO`、`PILOT_REMOTE`、`PILOT_BRANCH` 与 `check_remote`(仓库名、分支参数、检出分支、浅克隆);测试 |
+| CB5 | MAJOR | `interpretations.py`、`IMPL_C_REPORT.md` 第 17 行 | 裁决要求 `pending()` 为空,本提交新增待决的 B25;报告第 17 行与代码不符 | IC2-CR | 报告已改正;B25 列入本报告“待 Review Gate 决定” |
+| CB6 | MAJOR | `testgate` 各拒绝 | 拒绝状态的遗留(TEST 已生成、git log 失败、模型哈希不符、TestAlreadyEvaluated 不是 ProtocolStop) | IC2-CR | 模块文档列出各类拒绝的状态;列入本报告“待 Review Gate 决定” |
+| CB7 | MINOR | `finish_test_evaluation` | 没有核对已提交标记的字节 | IC2-CR | 已修,测试 |
+| CB8 | MINOR | `_ever_committed` 等 | reflog 中的标记、浅克隆、远端历史被改写 | IC2-CR | 已加 `--reflog`;浅克隆 BLOCKED;“远端分支受保护”的前提写入模块文档与 RUNBOOK |
+| CB9 | MINOR | `testgate` | 若干新分支没有测试(ST10 记录只在远端、fetch 失败、dry-run 失败) | IC2-CR | 已补测试与变异 |
+| CB10 | MINOR | `tests/test_testgate.py` | 检出标记的测试只断言 “commit ” | IC2-CR | 改为 `assert_started`(“already started”与“counts as evaluated”) |
+| CB11 | MINOR | `tests/test_testgate.py` | code commit 用例只用不存在的对象 | IC2-CR | 已补“另一分支上的真实提交” |
+| CB12 | MINOR | `remote_heads` 文档 | “no local ref written” 不准确 | IC2-CR | 已改 |
+| CB13 | MINOR | `record.committed_record` | 非对象 JSON 得到 AttributeError | IC2-CR | `record.committed_json` 抛 NotCommitted;`testgate._committed` 中重复的检查删去 |
+| CB14 | MINOR | `require_test_session`、`_is_ancestor` | 死代码(返回值、`of` 参数) | IC2-CR | 已删 |
+| CB15 | MINOR | `testgate.py:38`、测试空行、`evaluate` 中的 TG 导入 | 可读性 | IC2-CR | 已改 |
+| CB16 | MINOR | `IMPL_C_REPORT.md`、`interpretations.py` 文档 | 登记不充分 | IC2-CR | 本停止提交登记(1.27–1.29、`IMPL_C_REPORT.md` C1 节);`interpretations.py` 文档已改 |
+| CB17 | MINOR | 探针 | 没有防护(真实仓库、`--interpretations-ruled`) | IC2-CR | 拒绝在本仓库或 origin 为 CANONICAL_REPO 的克隆上运行(c1_06 中有拒绝的输出) |
+| CB18 | MINOR | `test_data.main` | ST10 记录靠操作员手工提交 | IC2-CR | `test_data.main` 用 `commit_paths` 提交并推送 |
+| CB19 | 观察 | data-auditor B13、B17 | 只在 reflog 中、只能从远端标签到达的标记 | IC2-DA | B13 已由 `--reflog` 覆盖;B17(远端只有标签)仍不检索,前提是远端历史不被改写(RUNBOOK) |
+
+### 1.29 Implementation 阶段 C:C1 工作提交第 3 轮审查(暂存树 `9be4df2a`;`reviews/tree-9be4df2a…/code-reviewer_round3.md` 记 `IC3-CR`,`data-auditor_round3.md` 记 `IC3-DA`)
+
+code-reviewer 结论 PASS(2 MAJOR、11 MINOR);data-auditor 结论 BLOCK(唯一原因:N1、N2 中 `marker` 操作为 ACCEPT,与 Executor 第 3 轮调用说明“检出分支不是 main 时 begin 与 marker 为 BLOCKED”不符;其余 251 项比对一致)。连续第 3 轮未 PASS,按 metrix/CLAUDE.md 第 5 节第 4 条停止:下表各项都没有在仓库中处理,“处理”一列写的是现状;修复方案列在 `IMPL_C_REPORT.md` C1 节“待 Review Gate 决定”。
+
+| # | 严重度 | 位置 | 问题 | 来源 | 处理 |
+|---|---|---|---|---|---|
+| CC1 | BLOCK | `testgate.check_remote`、`remote_heads`;模块文档“every look-up on a remote … checks … the branch”;`check_remote` 文档;第 3 轮调用说明 | 检出分支只在传入分支参数时检查;标记与 ST10 记录的检索(经 `remote_heads`)不传,所以在非 main 检出(N1)与分离 HEAD(N2)上 `refuse_if_marker` 为 ACCEPT。不绕过闸门:begin 写标记前、TEST 驱动生成前都检查检出分支 | IC3-DA 差异汇总;静态 k | 未处理;改代码 (a) 或改文档 (b) 交 Review Gate |
+| CC2 | MAJOR | `test_data.main` | 提交与推送的前提(没有暂存、提交者身份、HEAD 是远端分支的后代、`push --dry-run`)只在 `commit_paths` 中检查,即 TEST 已生成、ST10 记录已写入工作区之后;记录留在工作区后拒绝任何重跑,也没有补交的代码路径 | IC3-CR MAJOR 1;IC3-DA INFO 2 | 未处理 |
+| CC3 | MAJOR | 流程 | 第 3 轮在 worktree 中试跑变异(4 个未测出,是第 3 轮补测试的起因)的输出没有入库 | IC3-CR MAJOR 2 | 本停止提交入库:`impl_c/c1_04t_mutate_r3_trial.txt` 与当时的脚本 `c1_04t_mutate_r3_trial_script.py`(非证据,已被 `c1_06` 取代);第 9 节是否覆盖被取代的试跑,交 Review Gate |
+| CC4 | MINOR | `testgate.check_remote` | 只比较 fetch URL 的 owner/name:不比较主机(镜像、过期的本地镜像可通过),不看 push URL(pushurl 指向别处时标记写入后才 BLOCKED) | IC3-CR | 未处理 |
+| CC5 | MINOR | `reports/impl_c/c1_gate_probe.py` | 以本地路径克隆本仓库(origin 为本仓库路径)时探针不拒绝 | IC3-CR | 未处理 |
+| CC6 | MINOR | `tests/test_testgate.py` 凭据测试 | 只有标记一处的断言能区分有没有 scrub;没有以带凭据的 URL 作 remote 的拒绝用例;`_USERINFO` 不处理 userinfo 中未编码的 `/` | IC3-CR | 未处理 |
+| CC7 | MINOR | `c1_mutate_r3.py`;`c1_06` | `-x` 只记录第一个失败的测试:“st10 record: history / remote not searched”两个变异的测出是附带的 | IC3-CR | 未处理 |
+| CC8 | MINOR | `tests/test_testgate.py::test_evaluate_model_claims_after_the_gpu_check` | 只检验“GPU 检查之后登记”,没有检验“打分之前登记” | IC3-CR | 未处理 |
+| CC9 | MINOR | `testgate` 模块文档 | “远端分支受保护”与 metrix/CLAUDE.md 第 6 节“不直接推送到受保护分支”字面冲突;`push --dry-run` 不运行服务器端钩子与分支规则 | IC3-CR | 未处理;第 6 节措辞交 Review Gate |
+| CC10 | MINOR | `test_data.py` 文档第 21–25 行;`testgate.py` 文档第 15–16 行 | “提交与推送在命令之外”已过时;ST10 记录的检索范围没写 reflog | IC3-CR;IC3-DA INFO 1 | 未处理 |
+| CC11 | MINOR | `IMPL_C_REPORT.md`;`testgate.py` 文档第 52–53 行;`audit/` | 登记不在被审树中;auditor 的输出未跟踪 | IC3-CR | 本停止提交:本文件 1.27–1.29、`IMPL_C_REPORT.md` C1 节;`audit/` 第 1–3 轮输出入库 |
+| CC12 | MINOR | `testgate.remote_heads`、`_commit_preconditions` | ls-remote 输出的 HEX40 检查、预检中 ls-remote 的失败没有测试,也不在变异中 | IC3-CR | 未处理 |
+| CC13 | MINOR | `tests/test_testgate.py` | 两个测试声明了未用的 `monkeypatch` | IC3-CR | 未处理 |
+| CC14 | MINOR | `testgate.py`、`interpretations.py` | 超长行;断行使一行只剩半句 | IC3-CR | 未处理 |
+| CC15 | 观察 | `remote_heads` | 远端只有标签指向标记、没有分支(B17)时不检索 | IC3-DA INFO 3 | 同 CB19,前提为远端历史不被改写;交 Review Gate |
+| CC16 | 观察 | `testgate._ever_committed`、`code_commit` | 两处 raise 不经 scrub(内容是本地 `git log`、`git status` 的输出) | IC3-DA INFO 6 | 登记 |
+| CC17 | 观察 | 探针 `st10` 操作 | 不检查 B25,不读 Gate 0 与冻结记录;所有 TEST 路径先调用 `verify_authorization` | IC3-DA INFO 4 | 登记 |
+| CC18 | 观察 | 探针 | 探针把 CANONICAL_REPO 设为临时仓库的 origin,“另一个仓库”的拒绝无法黑盒测到 | IC3-DA INFO 5 | 登记;单元测试 `test_only_the_pilots_remote_and_branch` 覆盖 |
+
 ## 2. 已在第 5–7 轮解决(核对用)
 
 | 原条目 | 来源 | 处理 |

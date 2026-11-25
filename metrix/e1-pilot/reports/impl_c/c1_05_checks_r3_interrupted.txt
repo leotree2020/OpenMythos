@@ -1,0 +1,328 @@
+# Stage C, C1 work commit, round 3 (after the round-2 reviews: code-reviewer PASS with 6 MAJORs, data-auditor BLOCK on the probe; before the round-3 reviews; includes one run of the black-box probe by the Executor, c1_probe_run.py): working-tree state, data regenerated and verified (four frozen hashes), TEST generator refusal in the current state (black box), outside_metrix_check.py, full pytest, mutation check of the TEST gates and BE fixes (reports/impl_c/c1_mutate_r3.py). Host vm, Anthropic cloud container, CPU only. Tue Nov 24 23:58:17 UTC 2026
+# stdout+stderr merged, unedited. Commands recorded by reports/round5/logrun.sh. METRIX_INPUTS_DIR=/tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/inputs
+$ git rev-parse HEAD
+eb05e42243b54b78cb400b40293ef56f67611852
+exit=0
+$ git status --short --untracked-files=all
+AM metrix/e1-pilot/reports/IMPL_C_REPORT.md
+A  metrix/e1-pilot/reports/impl_c/c1_00_session_start.txt
+A  metrix/e1-pilot/reports/impl_c/c1_01_env_fetch.txt
+A  metrix/e1-pilot/reports/impl_c/c1_02_checks.txt
+A  metrix/e1-pilot/reports/impl_c/c1_03_checks_r2.txt
+A  metrix/e1-pilot/reports/impl_c/c1_04_checks_r2b.txt
+AM metrix/e1-pilot/reports/impl_c/c1_gate_probe.py
+A  metrix/e1-pilot/reports/impl_c/c1_mutate.py
+A  metrix/e1-pilot/reports/impl_c/c1_mutate_r2.py
+MM metrix/e1-pilot/src/metrix_e1/evaluate.py
+M  metrix/e1-pilot/src/metrix_e1/frozen.py
+M  metrix/e1-pilot/src/metrix_e1/gate.py
+MM metrix/e1-pilot/src/metrix_e1/interpretations.py
+M  metrix/e1-pilot/src/metrix_e1/leakage.py
+MM metrix/e1-pilot/src/metrix_e1/record.py
+M  metrix/e1-pilot/src/metrix_e1/stops.py
+MM metrix/e1-pilot/src/metrix_e1/test_data.py
+AM metrix/e1-pilot/src/metrix_e1/testgate.py
+A  metrix/e1-pilot/tasks/IMPL_C_OWNER_MESSAGE.md
+M  metrix/e1-pilot/tests/test_data_hashes.py
+M  metrix/e1-pilot/tests/test_evaluate.py
+M  metrix/e1-pilot/tests/test_gate.py
+M  metrix/e1-pilot/tests/test_stops.py
+MM metrix/e1-pilot/tests/test_test_data.py
+AM metrix/e1-pilot/tests/test_testgate.py
+?? metrix/e1-pilot/audit/ic2_01_gate_scenarios.py
+?? metrix/e1-pilot/audit/ic2_02_content_hashes.py
+?? metrix/e1-pilot/audit/ic2_03_static.py
+?? metrix/e1-pilot/audit/ic2_04_test_refusal.py
+?? metrix/e1-pilot/audit/ic2_run_logged.sh
+?? metrix/e1-pilot/audit/ic3_01_gate_scenarios.py
+?? metrix/e1-pilot/audit/ic3_02_content_hashes.py
+?? metrix/e1-pilot/audit/ic3_03_static.py
+?? metrix/e1-pilot/audit/ic3_04_test_refusal.py
+?? metrix/e1-pilot/audit/ic3_run_logged.sh
+?? metrix/e1-pilot/audit/stdout/impl_c/ic2_00_state.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic2_01_gate_scenarios.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic2_01b_B05_history.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic2_02_content_hashes.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic2_03_static.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic2_04_test_refusal.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic2_99_git_status_final.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic3_00_state.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic3_01_gate_scenarios_staged_probe.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic3_01b_gate_scenarios_corrected_probe.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic3_02_content_hashes.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic3_03_static.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic3_04_test_refusal.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic3_99_git_status_final.txt
+?? metrix/e1-pilot/reports/impl_c/c1_05_checks_r3.txt
+?? metrix/e1-pilot/reports/impl_c/c1_mutate_r3.py
+?? metrix/e1-pilot/reports/impl_c/c1_probe_run.py
+exit=0
+$ git diff --stat HEAD
+ metrix/e1-pilot/reports/IMPL_C_REPORT.md           |  44 ++
+ .../reports/impl_c/c1_00_session_start.txt         |  49 ++
+ metrix/e1-pilot/reports/impl_c/c1_01_env_fetch.txt |  38 +
+ metrix/e1-pilot/reports/impl_c/c1_02_checks.txt    | 244 +++++++
+ metrix/e1-pilot/reports/impl_c/c1_03_checks_r2.txt | 313 ++++++++
+ .../e1-pilot/reports/impl_c/c1_04_checks_r2b.txt   | 316 ++++++++
+ metrix/e1-pilot/reports/impl_c/c1_gate_probe.py    | 152 ++++
+ metrix/e1-pilot/reports/impl_c/c1_mutate.py        | 132 ++++
+ metrix/e1-pilot/reports/impl_c/c1_mutate_r2.py     | 171 +++++
+ metrix/e1-pilot/src/metrix_e1/evaluate.py          |  16 +-
+ metrix/e1-pilot/src/metrix_e1/frozen.py            |  29 +-
+ metrix/e1-pilot/src/metrix_e1/gate.py              |   5 +-
+ metrix/e1-pilot/src/metrix_e1/interpretations.py   | 100 ++-
+ metrix/e1-pilot/src/metrix_e1/leakage.py           |  32 +-
+ metrix/e1-pilot/src/metrix_e1/record.py            |  14 +-
+ metrix/e1-pilot/src/metrix_e1/stops.py             |  12 +-
+ metrix/e1-pilot/src/metrix_e1/test_data.py         |  59 +-
+ metrix/e1-pilot/src/metrix_e1/testgate.py          | 536 ++++++++++++++
+ metrix/e1-pilot/tasks/IMPL_C_OWNER_MESSAGE.md      |  31 +
+ metrix/e1-pilot/tests/test_data_hashes.py          |   8 +
+ metrix/e1-pilot/tests/test_evaluate.py             |  10 +-
+ metrix/e1-pilot/tests/test_gate.py                 |   6 +-
+ metrix/e1-pilot/tests/test_stops.py                |  17 +-
+ metrix/e1-pilot/tests/test_test_data.py            |  85 ++-
+ metrix/e1-pilot/tests/test_testgate.py             | 811 +++++++++++++++++++++
+ 25 files changed, 3122 insertions(+), 108 deletions(-)
+exit=0
+$ bash -c git\ ls-files\ -o\ --exclude-standard\ -z\ \|\ xargs\ -0\ sha256sum\;\ git\ diff\ HEAD\ --\ metrix/e1-pilot/src\ metrix/e1-pilot/tests\ \|\ sha256sum
+a0b5a8c6d7f40ff4a9be15b3e63faf6ff4c2181f0bba0f961a9538d09335c5b0  metrix/e1-pilot/audit/ic2_01_gate_scenarios.py
+017ec32e9ff0236fb2844d50a4efec41c73de555af27b42d1c6989cb0783b96e  metrix/e1-pilot/audit/ic2_02_content_hashes.py
+dcb224cc39fed51bf212b9baf962246365ff8a0aaaa887e86088a0494b6729be  metrix/e1-pilot/audit/ic2_03_static.py
+a6328a5adbcc068dcb6bb341b2d7dc12af1a21dc4da7db8dfa686820f7cfe102  metrix/e1-pilot/audit/ic2_04_test_refusal.py
+9fee1845d66f7f4ddd37d2587546bb17100a680bd0935b21eaf623df455dd950  metrix/e1-pilot/audit/ic2_run_logged.sh
+d33399c78e270cb4bfe457d1ceb88c0be586f81c69af2dc4515048073a642ba3  metrix/e1-pilot/audit/ic3_01_gate_scenarios.py
+cfc2a5cf7ab949465e59b60a6635514804287ada89136fc65a8ba24adc728bbb  metrix/e1-pilot/audit/ic3_02_content_hashes.py
+cd638d20438c94515d6902af530d01ace1ace4f8054a281e04a20a9027511e0b  metrix/e1-pilot/audit/ic3_03_static.py
+7f2ec94ab609964ca22080580b97a472f09542214eafaa3c9e83a000da235331  metrix/e1-pilot/audit/ic3_04_test_refusal.py
+eb839c554961ed0ea02a89c9ef3756131b26c24b265e3602e31016f3f947ff9d  metrix/e1-pilot/audit/ic3_run_logged.sh
+fdcd86e8cd61a350f4bbe8397ca13653f327f77c830346bc86fd8f2e8573881c  metrix/e1-pilot/audit/stdout/impl_c/ic2_00_state.txt
+5ca30f21c1f04c043bdfa5c0d28a4f50cabcf9471c0049474b1db9b9147e5a60  metrix/e1-pilot/audit/stdout/impl_c/ic2_01_gate_scenarios.txt
+e50eb6c202029717ba540f1464c41da2418a105b1365d05fa66687914de2a06c  metrix/e1-pilot/audit/stdout/impl_c/ic2_01b_B05_history.txt
+25be6771ed935ff77c02cd776e9ab2cf0abd8f0095e455aba00de64a00691f78  metrix/e1-pilot/audit/stdout/impl_c/ic2_02_content_hashes.txt
+974c21fe1b646f8d5085b03a5d2766c68f955792aa356f707567183f463c7e38  metrix/e1-pilot/audit/stdout/impl_c/ic2_03_static.txt
+aecdac874df6a437b55d6b525661c0d4149349d37fce9236e29740ea4ca3f08c  metrix/e1-pilot/audit/stdout/impl_c/ic2_04_test_refusal.txt
+f7d0c06db1125768b1123ab2a8423f4f271c6b69e27ddf695d3a37b72f3ea7a7  metrix/e1-pilot/audit/stdout/impl_c/ic2_99_git_status_final.txt
+cb58f17dd0cb4810e3a4c8fe2fd86aaeca17bf1661941eae9e30862e350f4d11  metrix/e1-pilot/audit/stdout/impl_c/ic3_00_state.txt
+9a1bc847be3eabfc6ab06492331338b85498fefa56876a26a1f145a9800a73c9  metrix/e1-pilot/audit/stdout/impl_c/ic3_01_gate_scenarios_staged_probe.txt
+d243b1b3111566d4ac1c1eb7c8a30d94b6651bda469c7c837ee89af801a31395  metrix/e1-pilot/audit/stdout/impl_c/ic3_01b_gate_scenarios_corrected_probe.txt
+7c7df92b8d04160b6a5dff7113107ac1bf9fee83196ddae5acc7d89fa0b17199  metrix/e1-pilot/audit/stdout/impl_c/ic3_02_content_hashes.txt
+9e41cff8ab6f18781e8f12e7f1a7ee3a2d02078312ef60a5f0e7582d0b93c409  metrix/e1-pilot/audit/stdout/impl_c/ic3_03_static.txt
+4eae0239e1c2b5ed28c3a08bf4fb392412f0490ef3c5407d8d79375e73ec9548  metrix/e1-pilot/audit/stdout/impl_c/ic3_04_test_refusal.txt
+72a15c61c4275fc6422bc7c23438fd5d342b75970031149a151311aa92605ed4  metrix/e1-pilot/audit/stdout/impl_c/ic3_99_git_status_final.txt
+43cde05ba8bc438366eae98276c97b59f694fd5dbb5b7fc35c2c6073767387b4  metrix/e1-pilot/reports/impl_c/c1_05_checks_r3.txt
+e658c7d0afd8b6b3793c7db50c161ccdfc6b07535add5e8e23ac577ed7450eef  metrix/e1-pilot/reports/impl_c/c1_mutate_r3.py
+5a1e7203750099c69961170335bf66abc9eb7573f0f99527b75d401e41a13900  metrix/e1-pilot/reports/impl_c/c1_probe_run.py
+4781575f4499c85edad8d5276dc9027758e6f445055f53eaadf3b4b9162a97d3  -
+exit=0
+$ env PYTHONPATH=metrix/e1-pilot/src /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/venv/bin/python -m metrix_e1.data generate --inputs /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/inputs --out /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/c1_data
+frozen: PROTOCOL_FROZEN v1.1, commit 87a244db28a901f9e89282b50df76778ab5c2887; four frozen files match by git cat-file
+python 3.13.18; libraries {"torch": "2.11.0", "transformers": "5.22.2"} (protocol section 0: {"torch": "2.11.0", "transformers": "5.22.2"})
+name generation per cell: [{"cell": "capital/natural", "entity_draws": 28, "target_pair": [3, 3], "answer_draws": 84}, {"cell": "capital/random", "entity_draws": 20, "target_pair": [5, 5], "answer_draws": 52}, {"cell": "currency/natural", "entity_draws": 31, "target_pair": [3, 3], "answer_draws": 82}, {"cell": "currency/random", "entity_draws": 20, "target_pair": [6, 6], "answer_draws": 46}, {"cell": "founder/natural", "entity_draws": 30, "target_pair": [3, 3], "answer_draws": 81}, {"cell": "founder/random", "entity_draws": 21, "target_pair": [5, 5], "answer_draws": 45}, {"cell": "river/natural", "entity_draws": 34, "target_pair": [3, 3], "answer_draws": 89}, {"cell": "river/random", "entity_draws": 20, "target_pair": [6, 6], "answer_draws": 42}]
+S derangement attempts per cell: {"capital/natural": 3, "capital/random": 5, "currency/natural": 1, "currency/random": 6, "founder/natural": 2, "founder/random": 1, "river/natural": 2, "river/random": 6}
+Y / F token ratio: F 1889, Y 2260, ratio 1.1964
+Y / F token ratio without <|endoftext|> (report only): F 1769, Y 2020, ratio 1.1419
+both ratios within [0.8, 1.25]: with True, without True
+eval_sets.jsonl rows by split (row prefix only): {'dev': 400, 'test': 800}; DEV rows decoded and parsed: 400; windows kept (decoded with the parcae tokenizer): 100
+facts.jsonl        rows  160  byte_sha256 e05561ac2d49dcc3c8f59743c5df64151983a540a32ae135fd1b10f5e0fdc828  canonical_sha256 e05561ac2d49dcc3c8f59743c5df64151983a540a32ae135fd1b10f5e0fdc828
+train_F.jsonl      rows  120  byte_sha256 3aa9ab3ca313c0a1113b91e927af51342c915e3e40dd2f20992f3d9e59b0e373  canonical_sha256 3aa9ab3ca313c0a1113b91e927af51342c915e3e40dd2f20992f3d9e59b0e373
+train_S.jsonl      rows  120  byte_sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e  canonical_sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e
+train_Y.jsonl      rows  240  byte_sha256 c7430cadb2b06dd5c144af381a8183d4c186f27f2b5acfa9d8d39da0b7626d15  canonical_sha256 c7430cadb2b06dd5c144af381a8183d4c186f27f2b5acfa9d8d39da0b7626d15
+dev_qa.jsonl       rows  320  byte_sha256 9761eb60d6c9155c2f56394aa228b1e9dfea0ae3926ab50cb21d903108bc7fde  canonical_sha256 9761eb60d6c9155c2f56394aa228b1e9dfea0ae3926ab50cb21d903108bc7fde
+candidates.json    rows  160  byte_sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705  canonical_sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705
+general_dev.jsonl  rows  100  byte_sha256 957666920c91ef5b9328984d26ed0628c8a80b439d461bea49b54c2235635e73  canonical_sha256 957666920c91ef5b9328984d26ed0628c8a80b439d461bea49b54c2235635e73
+anchor_text.jsonl  rows  512  byte_sha256 2089e656819d1fe0f6ececcc26e5cade09ee80a92c50e7c8f607fa4e0ef46da5  canonical_sha256 2089e656819d1fe0f6ececcc26e5cade09ee80a92c50e7c8f607fa4e0ef46da5
+frozen content hash facts        406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 = PROTOCOL_FROZEN (read back from /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/c1_data)
+frozen content hash train_S      686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e = PROTOCOL_FROZEN (read back from /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/c1_data)
+frozen content hash candidates   e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 = PROTOCOL_FROZEN (read back from /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/c1_data)
+frozen content hash anchor_texts 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 = PROTOCOL_FROZEN (read back from /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/c1_data)
+RESULT: PASS
+exit=0
+$ env PYTHONPATH=metrix/e1-pilot/src /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/venv/bin/python -m metrix_e1.data verify --inputs /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/inputs --data /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/c1_data
+frozen: PROTOCOL_FROZEN v1.1, commit 87a244db28a901f9e89282b50df76778ab5c2887; four frozen files match by git cat-file
+frozen content hash facts        406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 = PROTOCOL_FROZEN
+frozen content hash train_S      686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e = PROTOCOL_FROZEN
+frozen content hash candidates   e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 = PROTOCOL_FROZEN
+frozen content hash anchor_texts 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 = PROTOCOL_FROZEN
+all 8 data files byte-identical to their regeneration from the frozen inputs
+RESULT: PASS
+exit=0
+$ env PYTHONPATH=metrix/e1-pilot/src /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/venv/bin/python -m metrix_e1.test_data --inputs /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/inputs --data /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/c1_data --out /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/c1_test_out_r3
+TEST generator refused: metrix/e1-pilot/results/gate0_record.json is not committed at HEAD
+no TEST content was generated, read or written
+RESULT: FAIL
+exit=1
+$ bash -c ls\ -la\ /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/c1_test_out_r3\ 2\>\&1\;\ ls\ /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/c1_data\;\ git\ status\ --short\ --\ metrix/e1-pilot/results\ 2\>\&1\;\ ls\ metrix/e1-pilot/results\ 2\>\&1
+ls: cannot access '/tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/c1_test_out_r3': No such file or directory
+anchor_text.jsonl
+candidates.json
+dev_qa.jsonl
+facts.jsonl
+general_dev.jsonl
+train_F.jsonl
+train_S.jsonl
+train_Y.jsonl
+ls: cannot access 'metrix/e1-pilot/results': No such file or directory
+exit=2
+$ /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/venv/bin/python metrix/e1-pilot/reports/round3/outside_metrix_check.py
+changed outside metrix/ (base 61d3c767 .. HEAD):
+  A	.claude/agents/code-reviewer.md
+  A	.claude/agents/data-auditor.md
+  M	CLAUDE.md
+charter: base 3065 bytes, new 3586 bytes, base is exact prefix: True
+charter: appended 521 bytes; level-1/2 headings in appended part: ['## 6. Metrix 子项目(2026-11-13 负责人决定)']
+ignore rules below come from the working-tree .gitignore; identical to .gitignore at HEAD: True
+agent .claude/agents/code-reviewer.md: tracked at HEAD: True; ignore rule: .gitignore:14:.claude/	.claude/agents/code-reviewer.md
+agent .claude/agents/data-auditor.md: tracked at HEAD: True; ignore rule: .gitignore:14:.claude/	.claude/agents/data-auditor.md
+RESULT: PASS
+exit=0
+$ /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/venv/bin/python -m pytest -q -p no:cacheprovider metrix/e1-pilot/tests
+........................................................................ [ 26%]
+........................................................................ [ 52%]
+........................................................................ [ 78%]
+...........................................................              [100%]
+275 passed in 186.09s (0:03:06)
+exit=0
+$ /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/venv/bin/python metrix/e1-pilot/reports/impl_c/c1_probe_run.py /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/venv/bin/python
+$ c1_gate_probe.py /tmp/tmpf3y2l6c6/repo /tmp/tmpf3y2l6c6/synthetic_test_rows st10 marker tinysha:0 begin:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb eval:N:0
+probe: testgate.CANONICAL_REPO = 'tmpf3y2l6c6/remote' (REPO's origin), testgate.PILOT_BRANCH = 'main'
+st10 ACCEPT ['249aad2cb7368671a8168730fff0f1e2a6b2c70834d9f47e6182475573e2bc35', 'b21b033215395fca19862c2e14adbc8333100e8481a087a51e575965a15bd21a']
+marker ACCEPT no marker
+tinysha:0 ACCEPT a895622c8065094db612d950ad39d072c87a5894603950ddba98d44b524ee251
+begin:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb REFUSE IMPLEMENTATION_FAIL: TEST path refused: interpretations not yet ruled by Review Gate: B25
+eval:N:0 REFUSE IMPLEMENTATION_FAIL: TEST path refused: interpretations not yet ruled by Review Gate: B25
+{"repo_head": "d645aef25021412e0c573d7d87944b83933b570e"}
+exit=0
+$ c1_gate_probe.py --interpretations-ruled /tmp/tmpf3y2l6c6/repo /tmp/tmpf3y2l6c6/synthetic_test_rows st10 marker begin:a895622c8065094db612d950ad39d072c87a5894603950ddba98d44b524ee251 eval:N:0 eval:N:7 gate:N:a895622c8065094db612d950ad39d072c87a5894603950ddba98d44b524ee251 gate:N:a895622c8065094db612d950ad39d072c87a5894603950ddba98d44b524ee251 eval:N:0 marker
+probe: interpretations.pending replaced by a function returning [] (--interpretations-ruled)
+probe: testgate.CANONICAL_REPO = 'tmpf3y2l6c6/remote' (REPO's origin), testgate.PILOT_BRANCH = 'main'
+st10 ACCEPT ['249aad2cb7368671a8168730fff0f1e2a6b2c70834d9f47e6182475573e2bc35', 'b21b033215395fca19862c2e14adbc8333100e8481a087a51e575965a15bd21a']
+marker ACCEPT no marker
+begin:a895622c8065094db612d950ad39d072c87a5894603950ddba98d44b524ee251 ACCEPT marker commit 35fd3f78b1aa89823022933360a74c15ab798512 models 16
+eval:N:0 ACCEPT ACCEPTED-BY-GATES (stopped at require_gpu)
+eval:N:7 REFUSE IMPLEMENTATION_FAIL: TEST path refused: the model's state sha256 0aaed642c415613a084106be5aad9513ed5ae1a5a5a517d7775aae41cc38c34e is not the marker's a895622c8065094db612d950ad39d072c87a5894603950ddba98d44b524ee251 for N
+gate:N:a895622c8065094db612d950ad39d072c87a5894603950ddba98d44b524ee251 ACCEPT
+gate:N:a895622c8065094db612d950ad39d072c87a5894603950ddba98d44b524ee251 REFUSE IMPLEMENTATION_FAIL: TEST path refused: N was already evaluated on TEST in this session
+eval:N:0 REFUSE IMPLEMENTATION_FAIL: TEST path refused: N was already evaluated on TEST in this session
+marker STOP - BLOCKED BLOCKED: TEST evaluation was already started (marker metrix/e1-pilot/results/test_evaluation_marker.json in working tree, commit 35fd3f78b1aa89823022933360a74c15ab798512) and no result was committed: it counts as evaluated; no further TEST evaluation; report to the Owner
+{"repo_head": "35fd3f78b1aa89823022933360a74c15ab798512"}
+exit=0
+$ git -C <repo> log --format='%h %s' -3; ls-remote origin
+35fd3f7 metrix: E1-PILOT TEST evaluation marker (section 8 step 8: TEST is evaluated once; every checkpoint hash)
+d645aef ST10 record and the data-auditor's count
+e50dd05 records
+35fd3f78b1aa89823022933360a74c15ab798512	HEAD
+35fd3f78b1aa89823022933360a74c15ab798512	refs/heads/main
+$ c1_gate_probe.py /home/user/OpenMythos /tmp/tmpf3y2l6c6/synthetic_test_rows marker
+probe refused: /home/user/OpenMythos (origin leotree2020/OpenMythos) is the pilot's repository
+exit=1
+exit=0
+$ /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/venv/bin/python metrix/e1-pilot/reports/impl_c/c1_mutate_r3.py /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/venv/bin/python
+st10: authorization binding                      -> CAUGHT exit 1 | 1 failed, 24 passed in 28.23s
+       FAILED metrix/e1-pilot/tests/test_testgate.py::test_st10_check_refuses[unbound]
+st10: record frozen commit                       -> CAUGHT exit 1 | 1 failed, 20 passed in 24.16s
+       FAILED metrix/e1-pilot/tests/test_testgate.py::test_st10_check_refuses[frozen_commit]
+st10: record kind/mode                           -> CAUGHT exit 1 | 1 failed, 21 passed in 22.28s
+       FAILED metrix/e1-pilot/tests/test_testgate.py::test_st10_check_refuses[record_kind]
+st10: TEST file hashes                           -> CAUGHT exit 1 | 1 failed, 19 passed in 21.42s
+       FAILED metrix/e1-pilot/tests/test_testgate.py::test_st10_check_refuses[files]
+st10: code commit ancestor                       -> CAUGHT exit 1 | 1 failed, 9 passed in 13.46s
+       FAILED metrix/e1-pilot/tests/test_testgate.py::test_st10_check_refuses_a_code_commit_off_the_history
+st10: ancestor test always true                  -> CAUGHT exit 1 | 1 failed, 9 passed in 12.72s
+       FAILED metrix/e1-pilot/tests/test_testgate.py::test_st10_check_refuses_a_code_commit_off_the_history
+st10: counts are integers                        -> CAUGHT exit 1 | 1 failed, 16 passed in 19.28s
+       FAILED metrix/e1-pilot/tests/test_testgate.py::test_st10_check_refuses[count_bool]
+st10: auditor kind/commit                        -> CAUGHT exit 1 | 1 failed, 10 passed in 12.96s
+       FAILED metrix/e1-pilot/tests/test_testgate.py::test_st10_check_refuses[auditor_frozen_commit]
+st10: auditor counted the same file              -> CAUGHT exit 1 | 1 failed, 14 passed in 17.49s
+       FAILED metrix/e1-pilot/tests/test_testgate.py::test_st10_check_refuses[auditor_other_file]
+st10: auditor count is an integer                -> CAUGHT exit 1 | 1 failed, 13 passed in 17.07s
+       FAILED metrix/e1-pilot/tests/test_testgate.py::test_st10_check_refuses[auditor_not_int]
+st10: auditor count replaced by Executor's       -> CAUGHT exit 1 | 1 failed, 32 passed in 34.81s
+       FAILED metrix/e1-pilot/tests/test_testgate.py::test_st10_stops_when_the_l6_counts_differ
+stops.st10: no over-limit judgement              -> CAUGHT exit 1 | 1 failed, 11 passed in 3.13s
+       FAILED metrix/e1-pilot/tests/test_stops.py::test_st10 - Failed: DID NOT RAISE...
+record: counts read from flags                   -> CAUGHT exit 1 | 1 failed in 4.68s
+       FAILED metrix/e1-pilot/tests/test_testgate.py::test_st10_record_holds_raw_counts_hashes_and_code_commit
+record: no integer check                         -> CAUGHT exit 1 | 1 failed, 2 passed in 6.99s
+       FAILED metrix/e1-pilot/tests/test_testgate.py::test_st10_record_refuses_counts_that_are_not_integers[bad0]
+record: code paths not checked                   -> CAUGHT exit 1 | 1 failed, 1 passed in 4.95s
+       FAILED metrix/e1-pilot/tests/test_testgate.py::test_st10_record_refuses_uncommitted_code
+record: overwrite allowed                        -> CAUGHT exit 1 | 1 failed in 4.02s
+       FAILED metrix/e1-pilot/tests/test_testgate.py::test_st10_record_holds_raw_counts_hashes_and_code_commit
+st10 record: history not searched                -> CAUGHT exit 1 | 1 failed, 46 passed in 48.06s
+       FAILED metrix/e1-pilot/tests/test_testgate.py::test_only_the_pilots_remote_and_branch
+st10 record: remote not searched                 -> CAUGHT exit 1 | 1 failed, 46 passed in 48.07s
+       FAILED metrix/e1-pilot/tests/test_testgate.py::test_only_the_pilots_remote_and_branch
+history: simplified (no --full-history)          -> CAUGHT exit 1 | 1 failed, 38 passed in 38.19s
+       FAILED metrix/e1-pilot/tests/test_testgate.py::test_a_marker_deleted_on_a_merged_side_branch_refuses
+marker: working tree ignored                     -> CAUGHT exit 1 | 1 failed, 34 passed in 35.18s
+       FAILED metrix/e1-pilot/tests/test_testgate.py::test_begin_twice_is_refused_as_already_started
+marker: HEAD only, not --all                     -> CAUGHT exit 1 | 1 failed, 39 passed in 45.19s
+       FAILED metrix/e1-pilot/tests/test_testgate.py::test_a_marker_reachable_only_from_a_tag_refuses
+marker: reflog not searched                      -> CAUGHT exit 1 | 1 failed, 44 passed in 47.36s
+       FAILED metrix/e1-pilot/tests/test_testgate.py::test_a_marker_only_in_the_reflog_refuses
+marker: remote branches not searched             -> CAUGHT exit 1 | 1 failed, 41 passed in 42.65s
+       FAILED metrix/e1-pilot/tests/test_testgate.py::test_a_marker_only_on_the_remote_refuses
+remote: another repository accepted              -> CAUGHT exit 1 | 1 failed, 46 passed in 48.68s
+       FAILED metrix/e1-pilot/tests/test_testgate.py::test_only_the_pilots_remote_and_branch
+remote: another branch accepted                  -> CAUGHT exit 1 | 1 failed, 46 passed in 49.14s
+       FAILED metrix/e1-pilot/tests/test_testgate.py::test_only_the_pilots_remote_and_branch
+remote: checked-out branch not checked           -> CAUGHT exit 1 | 1 failed, 66 passed in 73.76s (0:01:13)
+       FAILED metrix/e1-pilot/tests/test_testgate.py::test_driver_writes_the_st10_record_and_judges_raw_counts
+remote: shallow clone accepted                   -> CAUGHT exit 1 | 1 failed, 45 passed in 48.93s
+       FAILED metrix/e1-pilot/tests/test_testgate.py::test_a_shallow_clone_is_blocked
+remote: no check before listing                  -> CAUGHT exit 1 | 1 failed, 45 passed in 48.62s
+       FAILED metrix/e1-pilot/tests/test_testgate.py::test_a_shallow_clone_is_blocked
+commit_paths: no remote check                    -> CAUGHT exit 1 | 1 failed, 46 passed in 51.77s
+       FAILED metrix/e1-pilot/tests/test_testgate.py::test_only_the_pilots_remote_and_branch
+credentials: not scrubbed                        -> CAUGHT exit 1 | 1 failed, 47 passed in 51.51s
+       FAILED metrix/e1-pilot/tests/test_testgate.py::test_credentials_in_the_remote_url_are_not_written
+remote: only the tips' refs, nothing fetched     -> CAUGHT exit 1 | 1 failed, 42 passed in 45.07s
+       FAILED metrix/e1-pilot/tests/test_testgate.py::test_a_marker_on_another_remote_branch_refuses_a_lagging_clone
+marker: result ignored                           -> CAUGHT exit 1 | 1 failed, 40 passed in 42.77s
+       FAILED metrix/e1-pilot/tests/test_testgate.py::test_a_result_without_a_marker_refuses
+begin: no marker check                           -> CAUGHT exit 1 | 1 failed, 34 passed in 37.64s
+       FAILED metrix/e1-pilot/tests/test_testgate.py::test_begin_twice_is_refused_as_already_started
+begin: staged changes allowed                    -> CAUGHT exit 1 | 1 failed, 52 passed in 54.59s
+       FAILED metrix/e1-pilot/tests/test_testgate.py::test_begin_refuses_before_writing_anything
+begin: no identity check                         -> CAUGHT exit 1 | 1 failed, 53 passed in 55.89s
+       FAILED metrix/e1-pilot/tests/test_testgate.py::test_begin_refuses_without_a_committer_identity
+begin: no fast-forward precheck                  -> CAUGHT exit 1 | 1 failed, 55 passed in 59.56s
+       FAILED metrix/e1-pilot/tests/test_testgate.py::test_a_rejected_non_fast_forward_push_is_blocked
+begin: no ST10 gate                              -> CAUGHT exit 1 | 1 failed, 33 passed in 37.22s
+       FAILED metrix/e1-pilot/tests/test_testgate.py::test_begin_commits_and_pushes_the_marker_only
+commit_paths: staged paths not checked           -> CAUGHT exit 1 | 1 failed, 56 passed in 60.03s (0:01:00)
+       FAILED metrix/e1-pilot/tests/test_testgate.py::test_commit_paths_stages_exactly_the_named_paths
+commit_paths: commit failure ignored             -> CAUGHT exit 1 | 1 failed, 57 passed in 62.02s (0:01:02)
+       FAILED metrix/e1-pilot/tests/test_testgate.py::test_a_failing_commit_is_blocked
+push: remote ref not checked                     -> CAUGHT exit 1 | 1 failed, 47 passed in 49.83s
+       FAILED metrix/e1-pilot/tests/test_testgate.py::test_credentials_in_the_remote_url_are_not_written
+push: tags followed                              -> CAUGHT exit 1 | 1 failed, 33 passed in 36.43s
+       FAILED metrix/e1-pilot/tests/test_testgate.py::test_begin_commits_and_pushes_the_marker_only
+session: not checked against this process        -> CAUGHT exit 1 | 1 failed, 60 passed in 66.06s (0:01:06)
+       FAILED metrix/e1-pilot/tests/test_testgate.py::test_evaluate_model_refusals
+session: marker bytes not checked                -> CAUGHT exit 1 | 1 failed, 61 passed in 65.45s (0:01:05)
+       FAILED metrix/e1-pilot/tests/test_testgate.py::test_evaluate_model_refuses_another_committed_marker
+session: marker bound to the authorization       -> CAUGHT exit 1 | 1 failed, 63 passed in 65.73s (0:01:05)
+       FAILED metrix/e1-pilot/tests/test_testgate.py::test_evaluate_model_refuses_an_authorization_other_than_the_markers
+session: rows not checked against marker         -> CAUGHT exit 1 | 1 failed, 60 passed in 64.10s (0:01:04)
+       FAILED metrix/e1-pilot/tests/test_testgate.py::test_evaluate_model_refusals
+session: ST10 change after marker allowed        -> CAUGHT exit 1 | 1 failed, 60 passed in 63.98s (0:01:03)
+       FAILED metrix/e1-pilot/tests/test_testgate.py::test_evaluate_model_refusals
+session: any model name                          -> CAUGHT exit 1 | 1 failed, 60 passed in 64.56s (0:01:04)
+       FAILED metrix/e1-pilot/tests/test_testgate.py::test_evaluate_model_refusals
+session: model hash not checked                  -> CAUGHT exit 1 | 1 failed, 60 passed in 63.43s (0:01:03)
+       FAILED metrix/e1-pilot/tests/test_testgate.py::test_evaluate_model_refusals
+claim: a model twice                             -> CAUGHT exit 1 | 1 failed, 58 passed in 61.68s (0:01:01)
+       FAILED metrix/e1-pilot/tests/test_testgate.py::test_evaluate_model_passes_every_gate_then_stops_at_the_gpu_check
+claim: any session                               -> CAUGHT exit 1 | 1 failed, 58 passed in 63.32s (0:01:03)
+       FAILED metrix/e1-pilot/tests/test_testgate.py::test_evaluate_model_passes_every_gate_then_stops_at_the_gpu_check
+finish: models left allowed                      -> CAUGHT exit 1 | 1 failed, 65 passed in 60.77s (0:01:00)
+       FAILED metrix/e1-pilot/tests/test_testgate.py::test_finish_commits_the_result_after_every_model
+finish: staged changes allowed                   -> CAUGHT exit 1 | 1 failed, 65 passed in 56.58s
+       FAILED metrix/e1-pilot/tests/test_testgate.py::test_finish_commits_the_result_after_every_model
+evaluate_model: no TEST session gate             -> CAUGHT exit 1 | 1 failed, 58 passed in 49.66s
+       FAILED metrix/e1-pilot/tests/test_testgate.py::test_evaluate_model_passes_every_gate_then_stops_at_the_gpu_check
+evaluate_model: claim before the GPU check       -> CAUGHT exit 1 | 1 failed, 58 passed in 50.35s
+       FAILED metrix/e1-pilot/tests/test_testgate.py::test_evaluate_model_passes_every_gate_then_stops_at_the_gpu_check

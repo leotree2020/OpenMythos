@@ -1,0 +1,245 @@
+# Data Auditor run (implementation stage C, C1 work commit, round 3). host vm, Anthropic cloud container, CPU only (no GPU device node: 0 nvidia entries), no model weights loaded (tokenizer files only; the probe's tiny models are random); 2026-11-25 01:39:33 UTC; cwd /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad
+# stdout and stderr merged, complete, unedited
+$ python3 -I -B /home/user/OpenMythos/metrix/e1-pilot/audit/ic4_01_gate_scenarios.py /home/user/OpenMythos /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/venv/bin/python /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/ic4_repos
+env: host vm | Linux-6.18.44-fc-v880-x86_64-with-glibc2.39 | python 3.13.18 (/usr/local/bin/python3) | installed {'transformers': 'not installed', 'tokenizers': 'not installed', 'pyarrow': 'not installed', 'huggingface_hub': 'not installed', 'torch': 'not installed'} | nvidia device nodes: []
+probe run: /home/user/OpenMythos/metrix/e1-pilot/reports/impl_c/c1_gate_probe.py sha256 11a77fc775dcc60f7fd9aa2fe1a7bd2eb2da34701bd6a9fad2d9c2ce5c569540 | staged probe (index) sha256 11a77fc775dcc60f7fd9aa2fe1a7bd2eb2da34701bd6a9fad2d9c2ce5c569540 | the probe run is the staged one: True | HEAD eb05e42243b54b78cb400b40293ef56f67611852 | staged tree 9be4df2ab398030ef0c9b5fbadc36f17022c4ef4
+frozen facts read by me: PROTOCOL_FROZEN metrix/e1-pilot/PROTOCOL_FROZEN sha256 3f8a3bbaaafa0b451483bb88baa012c77e8b106dd3b157a152ffa675856906ff | current version ['v1.1'] | frozen commit 87a244db28a901f9e89282b50df76778ab5c2887
+  content hashes (PROTOCOL_FROZEN table, my labels): {'facts': '406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97', 'train_S': '686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e', 'candidates': 'e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705', 'anchor_texts': '8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408'}
+  TEST-part limits (frozen-commit SPLIT_MANIFEST leakage_checks): {'L3a': 0, 'L3b': 0, 'L4': 0, 'L5': 0, 'L6': 0} | L6 test_part.limit 0 | protocol section 3 table last column: {'L3a': '0', 'L3b': '0', 'L4': '0', 'L5': '0', 'L6': '0'}
+my training plan: 30 runs | my TEST models: 16 ['N', 'F-F5-seed101', 'F-F5-seed202', 'F-F5-seed303', 'L-L4-seed101', 'L-L4-seed202', 'L-L4-seed303', 'A-A2-seed101', 'A-A2-seed202', 'A-A2-seed303', 'S-F5-seed101', 'S-F5-seed202', 'S-F5-seed303', 'Y-F5-seed101', 'Y-F5-seed202', 'Y-F5-seed303']
+synthetic TEST files (written by me, outside the repository): {'test_qa.jsonl': 'afeac7837c3708ddacd40f5512de1db1c85b15a0d5024f89d82ab2b34b31f46d', 'general_test.jsonl': '6b23a3297859b90c5870c74a2eac94efa739069af7730093690200e7cefc0521'}
+tiny model state hashes from the probe (random 2-layer models, seeds 0 1 4 7): {'0': 'a895622c8065094db612d950ad39d072c87a5894603950ddba98d44b524ee251', '1': '46da10034702b106d061e0e8eb16ee44a68240c05a8a71af5588eab23e235a1c', '4': '0eec839cc13a895a3921d9542236937da4a68f967a948df71f564c026b3c2bd7', '7': '0aaed642c415613a084106be5aad9513ed5ae1a5a5a517d7775aae41cc38c34e'}
+template repository: code commit ebb7e166ce5b7606c2f99de9b2675e85df5887e7 | gate0 sha256 e620de8bf72a96e2ae931cd723d841b36d5dc2e7006c9dcb683c0442402b4554 | freeze sha256 e60b3f33af3bb0725e69879ead0edcf7399584325430c676961ed477ea1416af
+
+== A. ST10 gate: op st10 and begin, one defect per scenario (fresh repository each; probe with --interpretations-ruled)
+ A00 record missing
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record: metrix/e1-pilot/results/st10_record.json is not committed at HEAD  (model: ST10 record not committed at HEAD)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record: metrix/e1-pilot/results/st10_record.json is not committed at HEAD  (model: ST10 record not committed at HEAD)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A01 record only in working tree (untracked)
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record: metrix/e1-pilot/results/st10_record.json is not committed at HEAD  (model: ST10 record not committed at HEAD)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record: metrix/e1-pilot/results/st10_record.json is not committed at HEAD  (model: ST10 record not committed at HEAD)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A02 record staged, not committed
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record: metrix/e1-pilot/results/st10_record.json is not committed at HEAD  (model: ST10 record not committed at HEAD)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record: metrix/e1-pilot/results/st10_record.json is not committed at HEAD  (model: ST10 record not committed at HEAD)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A03 record committed, working tree differs
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record: metrix/e1-pilot/results/st10_record.json in the working tree differs from its committed version  (model: ST10 record working tree differs from HEAD)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record: metrix/e1-pilot/results/st10_record.json in the working tree differs from its committed version  (model: ST10 record working tree differs from HEAD)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A04 record committed, deleted in working tree
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record: metrix/e1-pilot/results/st10_record.json in the working tree differs from its committed version  (model: ST10 record working tree differs from HEAD)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record: metrix/e1-pilot/results/st10_record.json in the working tree differs from its committed version  (model: ST10 record working tree differs from HEAD)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A05 record does not parse
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record: metrix/e1-pilot/results/st10_record.json does not parse: JSONDecodeError('Expecting property name enclosed in double quotes: line 1 column 2 (char 1)')  (model: ST10 record is not a JSON object)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record: metrix/e1-pilot/results/st10_record.json does not parse: JSONDecodeError('Expecting property name enclosed in double quotes: line 1 column 2 (char 1)')  (model: ST10 record is not a JSON object)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A06 record is a JSON array
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record: metrix/e1-pilot/results/st10_record.json is a JSON list, not an object  (model: ST10 record is not a JSON object)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record: metrix/e1-pilot/results/st10_record.json is a JSON list, not an object  (model: ST10 record is not a JSON object)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A06b record is a JSON string
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record: metrix/e1-pilot/results/st10_record.json is a JSON str, not an object  (model: ST10 record is not a JSON object)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record: metrix/e1-pilot/results/st10_record.json is a JSON str, not an object  (model: ST10 record is not a JSON object)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A07 kind not st10
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: metrix/e1-pilot/results/st10_record.json is not a formal-mode ST10 record (kind 'st10_record', mode 'formal', label None)  (model: not a formal st10 record)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: metrix/e1-pilot/results/st10_record.json is not a formal-mode ST10 record (kind 'st10_record', mode 'formal', label None)  (model: not a formal st10 record)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A08 mode smoke with label
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: metrix/e1-pilot/results/st10_record.json is not a formal-mode ST10 record (kind 'st10', mode 'smoke', label 'SMOKE')  (model: not a formal st10 record)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: metrix/e1-pilot/results/st10_record.json is not a formal-mode ST10 record (kind 'st10', mode 'smoke', label 'SMOKE')  (model: not a formal st10 record)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A09 bound to another authorization (gate0 sha)
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record is not bound to this authorization ({'gate0_record_sha256': 'eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', 'selection_record_sha256': 'e60b3f33af3bb0725e69879ead0edcf7399584325430c676961ed477ea1416af'}, authorization {'gate0_record_sha256': 'e620d  (model: bound to another authorization)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record is not bound to this authorization ({'gate0_record_sha256': 'eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', 'selection_record_sha256': 'e60b3f33af3bb0725e69879ead0edcf7399584325430c676961ed477ea1416af'}, authorization {'gate0_record_sha256': 'e620d  (model: bound to another authorization)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A10 bound to another authorization (freeze sha)
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record is not bound to this authorization ({'gate0_record_sha256': 'e620de8bf72a96e2ae931cd723d841b36d5dc2e7006c9dcb683c0442402b4554', 'selection_record_sha256': 'eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'}, authorization {'gate0_record_sha256': 'e620d  (model: bound to another authorization)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record is not bound to this authorization ({'gate0_record_sha256': 'e620de8bf72a96e2ae931cd723d841b36d5dc2e7006c9dcb683c0442402b4554', 'selection_record_sha256': 'eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'}, authorization {'gate0_record_sha256': 'e620d  (model: bound to another authorization)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A11 other frozen commit (v1 commit)
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record for frozen commit '6a474e4a5defa23dfc71b2c6bca9e15a81b517aa', authorization 87a244db28a901f9e89282b50df76778ab5c2887  (model: other frozen commit)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record for frozen commit '6a474e4a5defa23dfc71b2c6bca9e15a81b517aa', authorization 87a244db28a901f9e89282b50df76778ab5c2887  (model: other frozen commit)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A12 authorization field missing
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record is not bound to this authorization (None, authorization {'gate0_record_sha256': 'e620de8bf72a96e2ae931cd723d841b36d5dc2e7006c9dcb683c0442402b4554', 'selection_record_sha256': 'e60b3f33af3bb0725e69879ead0edcf7399584325430c676961ed477ea1416af'})  (model: bound to another authorization)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record is not bound to this authorization (None, authorization {'gate0_record_sha256': 'e620de8bf72a96e2ae931cd723d841b36d5dc2e7006c9dcb683c0442402b4554', 'selection_record_sha256': 'e60b3f33af3bb0725e69879ead0edcf7399584325430c676961ed477ea1416af'})  (model: bound to another authorization)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A13 Gate0+freeze records re-committed after the record (authorization changed)
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record is not bound to this authorization ({'gate0_record_sha256': 'e620de8bf72a96e2ae931cd723d841b36d5dc2e7006c9dcb683c0442402b4554', 'selection_record_sha256': 'e60b3f33af3bb0725e69879ead0edcf7399584325430c676961ed477ea1416af'}, authorization {'gate0_record_sha256': 'a2582  (model: bound to another authorization)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record is not bound to this authorization ({'gate0_record_sha256': 'e620de8bf72a96e2ae931cd723d841b36d5dc2e7006c9dcb683c0442402b4554', 'selection_record_sha256': 'e60b3f33af3bb0725e69879ead0edcf7399584325430c676961ed477ea1416af'}, authorization {'gate0_record_sha256': 'a2582  (model: bound to another authorization)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A14 test_qa.jsonl hash != TEST rows
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: TEST files of the ST10 record {'general_test.jsonl': '6b23a3297859b90c5870c74a2eac94efa739069af7730093690200e7cefc0521', 'test_qa.jsonl': 'dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd'} differ from the TEST rows given {'test_qa.jsonl': 'afeac7837c3708ddacd40f5  (model: TEST file hashes differ from the rows)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: TEST files of the ST10 record {'general_test.jsonl': '6b23a3297859b90c5870c74a2eac94efa739069af7730093690200e7cefc0521', 'test_qa.jsonl': 'dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd'} differ from the TEST rows given {'test_qa.jsonl': 'afeac7837c3708ddacd40f5  (model: TEST file hashes differ from the rows)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A15 general_test.jsonl hash != TEST rows (auditor names the same wrong hash)
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: TEST files of the ST10 record {'general_test.jsonl': '1c92c4155bdac334dca3ca03be73d73ece5265b250f519172c3f5d093391a61b', 'test_qa.jsonl': 'afeac7837c3708ddacd40f5512de1db1c85b15a0d5024f89d82ab2b34b31f46d'} differ from the TEST rows given {'test_qa.jsonl': 'afeac7837c3708ddacd40f5  (model: TEST file hashes differ from the rows)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: TEST files of the ST10 record {'general_test.jsonl': '1c92c4155bdac334dca3ca03be73d73ece5265b250f519172c3f5d093391a61b', 'test_qa.jsonl': 'afeac7837c3708ddacd40f5512de1db1c85b15a0d5024f89d82ab2b34b31f46d'} differ from the TEST rows given {'test_qa.jsonl': 'afeac7837c3708ddacd40f5  (model: TEST file hashes differ from the rows)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A16 test_files_sha256 has an extra file
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: TEST files of the ST10 record {'general_test.jsonl': '6b23a3297859b90c5870c74a2eac94efa739069af7730093690200e7cefc0521', 'test_qa.jsonl': 'afeac7837c3708ddacd40f5512de1db1c85b15a0d5024f89d82ab2b34b31f46d', 'x.jsonl': 'dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd  (model: TEST file hashes differ from the rows)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: TEST files of the ST10 record {'general_test.jsonl': '6b23a3297859b90c5870c74a2eac94efa739069af7730093690200e7cefc0521', 'test_qa.jsonl': 'afeac7837c3708ddacd40f5512de1db1c85b15a0d5024f89d82ab2b34b31f46d', 'x.jsonl': 'dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd  (model: TEST file hashes differ from the rows)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A17 code commit on another (orphan) branch
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: code commit 'b053a19c0d38444cb7540d2263d2100e2d9500ee' of the ST10 record is not an ancestor of HEAD  (model: code commit not HEAD or an ancestor)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: code commit 'b053a19c0d38444cb7540d2263d2100e2d9500ee' of the ST10 record is not an ancestor of HEAD  (model: code commit not HEAD or an ancestor)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A18 code commit does not exist
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: code commit '0123456789abcdef0123456789abcdef01234567' of the ST10 record is not an ancestor of HEAD  (model: code commit not HEAD or an ancestor)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: code commit '0123456789abcdef0123456789abcdef01234567' of the ST10 record is not an ancestor of HEAD  (model: code commit not HEAD or an ancestor)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A19 code commit null
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: code commit None of the ST10 record is not an ancestor of HEAD  (model: code commit not HEAD or an ancestor)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: code commit None of the ST10 record is not an ancestor of HEAD  (model: code commit not HEAD or an ancestor)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A20 code commit abbreviated (12 hex of an ancestor)
+  [INFO] st10                               expected INFO               observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: code commit 'ebb7e166ce5b' of the ST10 record is not an ancestor of HEAD  (model: code commit not HEAD or an ancestor)
+  [INFO] begin                              expected INFO               observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: code commit 'ebb7e166ce5b' of the ST10 record is not an ancestor of HEAD  (model: code commit not HEAD or an ancestor)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A2x count L3a is float 0.0
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record counts {'L3a': 0.0, 'L3b': 0, 'L4': 0, 'L5': 0, 'L6': 0} are not one non-negative integer per check ['L3a', 'L3b', 'L4', 'L5', 'L6']  (model: counts not five non-negative integers)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record counts {'L3a': 0.0, 'L3b': 0, 'L4': 0, 'L5': 0, 'L6': 0} are not one non-negative integer per check ['L3a', 'L3b', 'L4', 'L5', 'L6']  (model: counts not five non-negative integers)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A2x count L3b is string '0'
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record counts {'L3a': 0, 'L3b': '0', 'L4': 0, 'L5': 0, 'L6': 0} are not one non-negative integer per check ['L3a', 'L3b', 'L4', 'L5', 'L6']  (model: counts not five non-negative integers)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record counts {'L3a': 0, 'L3b': '0', 'L4': 0, 'L5': 0, 'L6': 0} are not one non-negative integer per check ['L3a', 'L3b', 'L4', 'L5', 'L6']  (model: counts not five non-negative integers)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A2x count L4 is bool false
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record counts {'L3a': 0, 'L3b': 0, 'L4': False, 'L5': 0, 'L6': 0} are not one non-negative integer per check ['L3a', 'L3b', 'L4', 'L5', 'L6']  (model: counts not five non-negative integers)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record counts {'L3a': 0, 'L3b': 0, 'L4': False, 'L5': 0, 'L6': 0} are not one non-negative integer per check ['L3a', 'L3b', 'L4', 'L5', 'L6']  (model: counts not five non-negative integers)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A2x count L5 is null
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record counts {'L3a': 0, 'L3b': 0, 'L4': 0, 'L5': None, 'L6': 0} are not one non-negative integer per check ['L3a', 'L3b', 'L4', 'L5', 'L6']  (model: counts not five non-negative integers)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record counts {'L3a': 0, 'L3b': 0, 'L4': 0, 'L5': None, 'L6': 0} are not one non-negative integer per check ['L3a', 'L3b', 'L4', 'L5', 'L6']  (model: counts not five non-negative integers)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A2x count L6 is negative -1
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record counts {'L3a': 0, 'L3b': 0, 'L4': 0, 'L5': 0, 'L6': -1} are not one non-negative integer per check ['L3a', 'L3b', 'L4', 'L5', 'L6']  (model: counts not five non-negative integers)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record counts {'L3a': 0, 'L3b': 0, 'L4': 0, 'L5': 0, 'L6': -1} are not one non-negative integer per check ['L3a', 'L3b', 'L4', 'L5', 'L6']  (model: counts not five non-negative integers)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A2x count L4 is float 1e0
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record counts {'L3a': 0, 'L3b': 0, 'L4': 1.0, 'L5': 0, 'L6': 0} are not one non-negative integer per check ['L3a', 'L3b', 'L4', 'L5', 'L6']  (model: counts not five non-negative integers)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record counts {'L3a': 0, 'L3b': 0, 'L4': 1.0, 'L5': 0, 'L6': 0} are not one non-negative integer per check ['L3a', 'L3b', 'L4', 'L5', 'L6']  (model: counts not five non-negative integers)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A30 count L5 missing
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record counts {'L3a': 0, 'L3b': 0, 'L4': 0, 'L6': 0} are not one non-negative integer per check ['L3a', 'L3b', 'L4', 'L5', 'L6']  (model: counts not five non-negative integers)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record counts {'L3a': 0, 'L3b': 0, 'L4': 0, 'L6': 0} are not one non-negative integer per check ['L3a', 'L3b', 'L4', 'L5', 'L6']  (model: counts not five non-negative integers)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A31 extra count L2
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record counts {'L2': 0, 'L3a': 0, 'L3b': 0, 'L4': 0, 'L5': 0, 'L6': 0} are not one non-negative integer per check ['L3a', 'L3b', 'L4', 'L5', 'L6']  (model: counts not five non-negative integers)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record counts {'L2': 0, 'L3a': 0, 'L3b': 0, 'L4': 0, 'L5': 0, 'L6': 0} are not one non-negative integer per check ['L3a', 'L3b', 'L4', 'L5', 'L6']  (model: counts not five non-negative integers)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A32 counts is a list
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record counts [0, 0, 0, 0, 0] are not one non-negative integer per check ['L3a', 'L3b', 'L4', 'L5', 'L6']  (model: counts not five non-negative integers)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record counts [0, 0, 0, 0, 0] are not one non-negative integer per check ['L3a', 'L3b', 'L4', 'L5', 'L6']  (model: counts not five non-negative integers)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A33 counts field missing
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record counts None are not one non-negative integer per check ['L3a', 'L3b', 'L4', 'L5', 'L6']  (model: counts not five non-negative integers)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record counts None are not one non-negative integer per check ['L3a', 'L3b', 'L4', 'L5', 'L6']  (model: counts not five non-negative integers)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A4x L3a = limit+1 (1), forged within_limit/result PASS
+  [same] st10                               expected STOP ST10 BLOCKED  observed STOP ST10 BLOCKED  ST10 -> BLOCKED: TEST part over limit ['L3a']; L6 TEST Executor 0, data-auditor 0 [停止;不评测 TEST;BLOCKED;报告 Owner]  (model: over ['L3a']; L6 Executor 0 auditor 0)
+  [same] begin                              expected STOP ST10 BLOCKED  observed STOP ST10 BLOCKED  ST10 -> BLOCKED: TEST part over limit ['L3a']; L6 TEST Executor 0, data-auditor 0 [停止;不评测 TEST;BLOCKED;报告 Owner]  (model: over ['L3a']; L6 Executor 0 auditor 0)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A4x L3b = limit+1 (1), forged within_limit/result PASS
+  [same] st10                               expected STOP ST10 BLOCKED  observed STOP ST10 BLOCKED  ST10 -> BLOCKED: TEST part over limit ['L3b']; L6 TEST Executor 0, data-auditor 0 [停止;不评测 TEST;BLOCKED;报告 Owner]  (model: over ['L3b']; L6 Executor 0 auditor 0)
+  [same] begin                              expected STOP ST10 BLOCKED  observed STOP ST10 BLOCKED  ST10 -> BLOCKED: TEST part over limit ['L3b']; L6 TEST Executor 0, data-auditor 0 [停止;不评测 TEST;BLOCKED;报告 Owner]  (model: over ['L3b']; L6 Executor 0 auditor 0)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A4x L4 = limit+1 (1), forged within_limit/result PASS
+  [same] st10                               expected STOP ST10 BLOCKED  observed STOP ST10 BLOCKED  ST10 -> BLOCKED: TEST part over limit ['L4']; L6 TEST Executor 0, data-auditor 0 [停止;不评测 TEST;BLOCKED;报告 Owner]  (model: over ['L4']; L6 Executor 0 auditor 0)
+  [same] begin                              expected STOP ST10 BLOCKED  observed STOP ST10 BLOCKED  ST10 -> BLOCKED: TEST part over limit ['L4']; L6 TEST Executor 0, data-auditor 0 [停止;不评测 TEST;BLOCKED;报告 Owner]  (model: over ['L4']; L6 Executor 0 auditor 0)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A4x L5 = limit+1 (1), forged within_limit/result PASS
+  [same] st10                               expected STOP ST10 BLOCKED  observed STOP ST10 BLOCKED  ST10 -> BLOCKED: TEST part over limit ['L5']; L6 TEST Executor 0, data-auditor 0 [停止;不评测 TEST;BLOCKED;报告 Owner]  (model: over ['L5']; L6 Executor 0 auditor 0)
+  [same] begin                              expected STOP ST10 BLOCKED  observed STOP ST10 BLOCKED  ST10 -> BLOCKED: TEST part over limit ['L5']; L6 TEST Executor 0, data-auditor 0 [停止;不评测 TEST;BLOCKED;报告 Owner]  (model: over ['L5']; L6 Executor 0 auditor 0)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A4x L6 = limit+1 (1), forged within_limit/result PASS
+  [same] st10                               expected STOP ST10 BLOCKED  observed STOP ST10 BLOCKED  ST10 -> BLOCKED: TEST part over limit ['L6']; L6 TEST Executor 1, data-auditor 1 [停止;不评测 TEST;BLOCKED;报告 Owner]  (model: over ['L6']; L6 Executor 1 auditor 1)
+  [same] begin                              expected STOP ST10 BLOCKED  observed STOP ST10 BLOCKED  ST10 -> BLOCKED: TEST part over limit ['L6']; L6 TEST Executor 1, data-auditor 1 [停止;不评测 TEST;BLOCKED;报告 Owner]  (model: over ['L6']; L6 Executor 1 auditor 1)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A46 L4 = 10**30 (no forged fields)
+  [same] st10                               expected STOP ST10 BLOCKED  observed STOP ST10 BLOCKED  ST10 -> BLOCKED: TEST part over limit ['L4']; L6 TEST Executor 0, data-auditor 0 [停止;不评测 TEST;BLOCKED;报告 Owner]  (model: over ['L4']; L6 Executor 0 auditor 0)
+  [same] begin                              expected STOP ST10 BLOCKED  observed STOP ST10 BLOCKED  ST10 -> BLOCKED: TEST part over limit ['L4']; L6 TEST Executor 0, data-auditor 0 [停止;不评测 TEST;BLOCKED;报告 Owner]  (model: over ['L4']; L6 Executor 0 auditor 0)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A47 L6 over limit, auditor differs
+  [same] st10                               expected STOP ST10 BLOCKED  observed STOP ST10 BLOCKED  ST10 -> BLOCKED: TEST part over limit ['L6']; L6 TEST Executor 2, data-auditor 0 [停止;不评测 TEST;BLOCKED;报告 Owner]  (model: over ['L6']; L6 Executor 2 auditor 0)
+  [same] begin                              expected STOP ST10 BLOCKED  observed STOP ST10 BLOCKED  ST10 -> BLOCKED: TEST part over limit ['L6']; L6 TEST Executor 2, data-auditor 0 [停止;不评测 TEST;BLOCKED;报告 Owner]  (model: over ['L6']; L6 Executor 2 auditor 0)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A50 auditor count missing
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: data-auditor's L6 TEST count: metrix/e1-pilot/audit/st10_l6_test_count.json is not committed at HEAD  (model: auditor count not committed at HEAD)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: data-auditor's L6 TEST count: metrix/e1-pilot/audit/st10_l6_test_count.json is not committed at HEAD  (model: auditor count not committed at HEAD)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A51 auditor count only in working tree
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: data-auditor's L6 TEST count: metrix/e1-pilot/audit/st10_l6_test_count.json is not committed at HEAD  (model: auditor count not committed at HEAD)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: data-auditor's L6 TEST count: metrix/e1-pilot/audit/st10_l6_test_count.json is not committed at HEAD  (model: auditor count not committed at HEAD)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A52 auditor count committed, working tree differs
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: data-auditor's L6 TEST count: metrix/e1-pilot/audit/st10_l6_test_count.json in the working tree differs from its committed version  (model: auditor count working tree differs from HEAD)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: data-auditor's L6 TEST count: metrix/e1-pilot/audit/st10_l6_test_count.json in the working tree differs from its committed version  (model: auditor count working tree differs from HEAD)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A53 auditor counted another general_test.jsonl
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: the data-auditor counted general_test.jsonl '1c92c4155bdac334dca3ca03be73d73ece5265b250f519172c3f5d093391a61b', the ST10 record names 6b23a3297859b90c5870c74a2eac94efa739069af7730093690200e7cefc0521  (model: auditor counted another general_test.jsonl)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: the data-auditor counted general_test.jsonl '1c92c4155bdac334dca3ca03be73d73ece5265b250f519172c3f5d093391a61b', the ST10 record names 6b23a3297859b90c5870c74a2eac94efa739069af7730093690200e7cefc0521  (model: auditor counted another general_test.jsonl)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A54 auditor count for another frozen commit
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: metrix/e1-pilot/audit/st10_l6_test_count.json is not the data-auditor's L6 TEST count for frozen commit 87a244db28a901f9e89282b50df76778ab5c2887 (kind 'st10_auditor_l6', frozen commit '6a474e4a5defa23dfc71b2c6bca9e15a81b517aa')  (model: auditor file kind / frozen commit)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: metrix/e1-pilot/audit/st10_l6_test_count.json is not the data-auditor's L6 TEST count for frozen commit 87a244db28a901f9e89282b50df76778ab5c2887 (kind 'st10_auditor_l6', frozen commit '6a474e4a5defa23dfc71b2c6bca9e15a81b517aa')  (model: auditor file kind / frozen commit)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A55 auditor file kind wrong
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: metrix/e1-pilot/audit/st10_l6_test_count.json is not the data-auditor's L6 TEST count for frozen commit 87a244db28a901f9e89282b50df76778ab5c2887 (kind 'l6', frozen commit '87a244db28a901f9e89282b50df76778ab5c2887')  (model: auditor file kind / frozen commit)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: metrix/e1-pilot/audit/st10_l6_test_count.json is not the data-auditor's L6 TEST count for frozen commit 87a244db28a901f9e89282b50df76778ab5c2887 (kind 'l6', frozen commit '87a244db28a901f9e89282b50df76778ab5c2887')  (model: auditor file kind / frozen commit)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A56 auditor count float 0.0
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: the data-auditor's l6_test_count 0.0 is not a non-negative integer  (model: auditor count not an integer)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: the data-auditor's l6_test_count 0.0 is not a non-negative integer  (model: auditor count not an integer)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A57 auditor count string '0'
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: the data-auditor's l6_test_count '0' is not a non-negative integer  (model: auditor count not an integer)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: the data-auditor's l6_test_count '0' is not a non-negative integer  (model: auditor count not an integer)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A58 auditor count null
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: the data-auditor's l6_test_count None is not a non-negative integer  (model: auditor count not an integer)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: the data-auditor's l6_test_count None is not a non-negative integer  (model: auditor count not an integer)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A58b auditor file is a JSON array
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: data-auditor's L6 TEST count: metrix/e1-pilot/audit/st10_l6_test_count.json is a JSON list, not an object  (model: auditor count is not a JSON object)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: data-auditor's L6 TEST count: metrix/e1-pilot/audit/st10_l6_test_count.json is a JSON list, not an object  (model: auditor count is not a JSON object)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A58c auditor file does not parse
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: data-auditor's L6 TEST count: metrix/e1-pilot/audit/st10_l6_test_count.json does not parse: JSONDecodeError('Expecting property name enclosed in double quotes: line 1 column 2 (char 1)')  (model: auditor count is not a JSON object)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: data-auditor's L6 TEST count: metrix/e1-pilot/audit/st10_l6_test_count.json does not parse: JSONDecodeError('Expecting property name enclosed in double quotes: line 1 column 2 (char 1)')  (model: auditor count is not a JSON object)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A59 auditor L6 1 != Executor L6 0
+  [same] st10                               expected STOP ST10 BLOCKED  observed STOP ST10 BLOCKED  ST10 -> BLOCKED: TEST part over limit []; L6 TEST Executor 0, data-auditor 1 [停止;不评测 TEST;BLOCKED;报告 Owner]  (model: over []; L6 Executor 0 auditor 1)
+  [same] begin                              expected STOP ST10 BLOCKED  observed STOP ST10 BLOCKED  ST10 -> BLOCKED: TEST part over limit []; L6 TEST Executor 0, data-auditor 1 [停止;不评测 TEST;BLOCKED;报告 Owner]  (model: over []; L6 Executor 0 auditor 1)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A60 auditor L6 0 != Executor L6 1 (both counts forged PASS)
+  [same] st10                               expected STOP ST10 BLOCKED  observed STOP ST10 BLOCKED  ST10 -> BLOCKED: TEST part over limit ['L6']; L6 TEST Executor 1, data-auditor 0 [停止;不评测 TEST;BLOCKED;报告 Owner]  (model: over ['L6']; L6 Executor 1 auditor 0)
+  [same] begin                              expected STOP ST10 BLOCKED  observed STOP ST10 BLOCKED  ST10 -> BLOCKED: TEST part over limit ['L6']; L6 TEST Executor 1, data-auditor 0 [停止;不评测 TEST;BLOCKED;报告 Owner]  (model: over ['L6']; L6 Executor 1 auditor 0)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A61 control: every count at its limit, all bound
+  [same] st10                               expected ACCEPT             observed ACCEPT             ['6942f5cabc7a40837a02e4b9ec80c341e94d0cd8197c49ab2203662718cebd13', 'af1c3bccac66d58a440b10dff357ed1a513c98e03d5f0dec6b3b45c155e1ef07']
+
+== C. every condition holds: begin, marker commit, evaluate / gate calls (one repository); K: other clones
+ C0 evaluate and gate before any begin (no session)
+  [same] eval:N:0                           expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: no TEST session of this process (begin_test_evaluation)  (model: no session of this process)
+  [same] gate:N:a895622c8065094db612d950ad3 expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: no TEST session of this process (begin_test_evaluation)  (model: no session of this process)
+ C1 begin + evaluate / gate calls in one process (stderr tail: '', exit 0)
+  [same] begin                              expected ACCEPT             observed ACCEPT             marker commit 8703274ee9fb1ce0ee665b1334376d8b29c23d9a models 16
+Traceback (most recent call last):
+  File "/home/user/OpenMythos/metrix/e1-pilot/audit/ia_common.py", line 102, in run
+    ok = main()
+  File "/home/user/OpenMythos/metrix/e1-pilot/audit/ic4_01_gate_scenarios.py", line 1657, in main
+    scen_main(ctx, B)
+    ~~~~~~~~~^^^^^^^^
+  File "/home/user/OpenMythos/metrix/e1-pilot/audit/ic4_01_gate_scenarios.py", line 806, in scen_main
+    mc = begin_result(B, "C1", repo, remote, h0, res[0], e_begin)
+  File "/home/user/OpenMythos/metrix/e1-pilot/audit/ic4_01_gate_scenarios.py", line 625, in begin_result
+    B.post("probe printed the marker commit and 'models 16' (%s)" % (m.groups() if m else None),
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+TypeError: not all arguments converted during string formatting
+RESULT: FAIL (exception)
+exit=2

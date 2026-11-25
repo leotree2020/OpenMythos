@@ -1,0 +1,145 @@
+# Stage C, C1 stop commit: pre-commit check (taken after staging every other path of this commit; this file is the only path added after it). Commands and output unedited.
+$ git rev-parse HEAD
+eb05e42243b54b78cb400b40293ef56f67611852
+$ git ls-remote origin refs/heads/metrix-e1-pilot-protocol-v1
+eb05e42243b54b78cb400b40293ef56f67611852	refs/heads/metrix-e1-pilot-protocol-v1
+$ git diff --cached --stat
+ metrix/e1-pilot/audit/ic2_01_gate_scenarios.py     |  964 ++++
+ metrix/e1-pilot/audit/ic2_02_content_hashes.py     |  160 +
+ metrix/e1-pilot/audit/ic2_03_static.py             |  275 ++
+ metrix/e1-pilot/audit/ic2_04_test_refusal.py       |  116 +
+ metrix/e1-pilot/audit/ic2_run_logged.sh            |   14 +
+ metrix/e1-pilot/audit/ic3_01_gate_scenarios.py     | 1286 ++++++
+ metrix/e1-pilot/audit/ic3_02_content_hashes.py     |  268 ++
+ metrix/e1-pilot/audit/ic3_03_static.py             |  419 ++
+ metrix/e1-pilot/audit/ic3_04_test_refusal.py       |  116 +
+ metrix/e1-pilot/audit/ic3_run_logged.sh            |   14 +
+ metrix/e1-pilot/audit/ic4_01_gate_scenarios.py     | 1683 +++++++
+ metrix/e1-pilot/audit/ic4_02_content_hashes.py     |  268 ++
+ metrix/e1-pilot/audit/ic4_03_static.py             |  594 +++
+ metrix/e1-pilot/audit/ic4_04_test_refusal.py       |  122 +
+ metrix/e1-pilot/audit/ic4_run_logged.sh            |   14 +
+ .../e1-pilot/audit/stdout/impl_c/ic2_00_state.txt  |   43 +
+ .../audit/stdout/impl_c/ic2_01_gate_scenarios.txt  |  380 ++
+ .../audit/stdout/impl_c/ic2_01b_B05_history.txt    |   25 +
+ .../audit/stdout/impl_c/ic2_02_content_hashes.txt  |   51 +
+ .../e1-pilot/audit/stdout/impl_c/ic2_03_static.txt |  138 +
+ .../audit/stdout/impl_c/ic2_04_test_refusal.txt    |   32 +
+ .../stdout/impl_c/ic2_99_git_status_final.txt      |   38 +
+ .../e1-pilot/audit/stdout/impl_c/ic3_00_state.txt  |   80 +
+ .../impl_c/ic3_01_gate_scenarios_staged_probe.txt  |  533 +++
+ .../ic3_01b_gate_scenarios_corrected_probe.txt     |  522 +++
+ .../audit/stdout/impl_c/ic3_02_content_hashes.txt  |   80 +
+ .../e1-pilot/audit/stdout/impl_c/ic3_03_static.txt |  196 +
+ .../audit/stdout/impl_c/ic3_04_test_refusal.txt    |   32 +
+ .../stdout/impl_c/ic3_99_git_status_final.txt      |   85 +
+ .../e1-pilot/audit/stdout/impl_c/ic4_00_state.txt  |  103 +
+ .../audit/stdout/impl_c/ic4_01_gate_scenarios.txt  |  739 +++
+ .../ic4_01_gate_scenarios_run1_script_error.txt    |  245 +
+ .../impl_c/ic4_01a_script_fix_after_run1.txt       |   14 +
+ .../audit/stdout/impl_c/ic4_02_content_hashes.txt  |   80 +
+ .../e1-pilot/audit/stdout/impl_c/ic4_03_static.txt |  239 +
+ .../audit/stdout/impl_c/ic4_04_test_refusal.txt    |   33 +
+ .../stdout/impl_c/ic4_99_git_status_final.txt      |   87 +
+ metrix/e1-pilot/reports/DEFERRED_MINORS.md         |   83 +
+ metrix/e1-pilot/reports/IMPL_C_REPORT.md           |  106 +
+ .../reports/impl_c/c1_00_session_start.txt         |   49 +
+ metrix/e1-pilot/reports/impl_c/c1_01_env_fetch.txt |   38 +
+ metrix/e1-pilot/reports/impl_c/c1_02_checks.txt    |  244 +
+ metrix/e1-pilot/reports/impl_c/c1_03_checks_r2.txt |  313 ++
+ .../e1-pilot/reports/impl_c/c1_04_checks_r2b.txt   |  316 ++
+ .../reports/impl_c/c1_04t_mutate_r3_trial.txt      |  142 +
+ .../impl_c/c1_04t_mutate_r3_trial_script.py        |  199 +
+ .../reports/impl_c/c1_05_checks_r3_interrupted.txt |  328 ++
+ .../reports/impl_c/c1_05b_restart_restore.txt      |   43 +
+ metrix/e1-pilot/reports/impl_c/c1_06_checks_r3.txt |  425 ++
+ metrix/e1-pilot/reports/impl_c/c1_gate_probe.py    |  152 +
+ metrix/e1-pilot/reports/impl_c/c1_mutate.py        |  132 +
+ metrix/e1-pilot/reports/impl_c/c1_mutate_r2.py     |  171 +
+ metrix/e1-pilot/reports/impl_c/c1_mutate_r3.py     |  198 +
+ metrix/e1-pilot/reports/impl_c/c1_probe_run.py     |   97 +
+ .../README.txt                                     |   24 +
+ .../check_messages.py                              |   26 +
+ .../code-reviewer_prompt.txt                       |   28 +
+ .../code-reviewer_prompt_round2.txt                |   19 +
+ .../code-reviewer_prompt_round3.txt                |   21 +
+ .../code-reviewer_round1.md                        |   94 +
+ .../code-reviewer_round1_transcript.jsonl          |  162 +
+ .../code-reviewer_round2.md                        |  142 +
+ .../code-reviewer_round2_transcript.jsonl          |  148 +
+ .../code-reviewer_round3.md                        |  133 +
+ .../code-reviewer_round3_transcript.jsonl          |  135 +
+ .../data-auditor_prompt.txt                        |   15 +
+ .../data-auditor_prompt_round2.txt                 |   18 +
+ .../data-auditor_prompt_round3.txt                 |   24 +
+ .../data-auditor_round1.md                         |  305 ++
+ .../data-auditor_round1_transcript.jsonl           |  203 +
+ .../data-auditor_round2.md                         |  441 ++
+ .../data-auditor_round2_transcript.jsonl           |  212 +
+ .../data-auditor_round3.md                         |  368 ++
+ .../data-auditor_round3_transcript.jsonl           |  267 ++
+ .../delta_round2.diff                              | 2014 ++++++++
+ .../delta_round3.diff                              | 1848 ++++++++
+ .../extract_log_round1.txt                         |    2 +
+ .../extract_log_round2.txt                         |    4 +
+ .../extract_log_round2_code-reviewer.txt           |    1 +
+ .../extract_log_round3.txt                         |    1 +
+ .../info_message_data-auditor_round2.txt           |    4 +
+ .../input.diff                                     | 2364 ++++++++++
+ .../input_round2.diff                              | 3497 ++++++++++++++
+ .../input_round3.diff                              | 4853 ++++++++++++++++++++
+ .../interruption.txt                               |   61 +
+ .../interruption_round2.txt                        |   39 +
+ .../preflight_tools_check.txt                      |   12 +
+ .../preflight_tools_check_round2.txt               |   12 +
+ .../preflight_tools_check_round3.txt               |   12 +
+ .../resume_message_code-reviewer.txt               |    3 +
+ .../resume_message_data-auditor.txt                |    3 +
+ .../resume_message_data-auditor_round2.txt         |    3 +
+ .../tree.txt                                       |    1 +
+ .../tree_round2.txt                                |    1 +
+ .../tree_round3.txt                                |    1 +
+ 95 files changed, 30645 insertions(+)
+$ git diff --cached --name-only | grep -v -E '^metrix/e1-pilot/(reports|reviews|audit)/' | wc -l   # staged paths outside reports/, reviews/, audit/
+0
+$ git diff --cached --name-only --diff-filter=DMR   # deleted, modified or renamed paths
+metrix/e1-pilot/reports/DEFERRED_MINORS.md
+$ git status --short --untracked-files=all -- metrix/e1-pilot/src metrix/e1-pilot/tests metrix/e1-pilot/tasks   # not committed
+ M metrix/e1-pilot/src/metrix_e1/evaluate.py
+ M metrix/e1-pilot/src/metrix_e1/frozen.py
+ M metrix/e1-pilot/src/metrix_e1/gate.py
+ M metrix/e1-pilot/src/metrix_e1/interpretations.py
+ M metrix/e1-pilot/src/metrix_e1/leakage.py
+ M metrix/e1-pilot/src/metrix_e1/record.py
+ M metrix/e1-pilot/src/metrix_e1/stops.py
+ M metrix/e1-pilot/src/metrix_e1/test_data.py
+ M metrix/e1-pilot/tests/test_data_hashes.py
+ M metrix/e1-pilot/tests/test_evaluate.py
+ M metrix/e1-pilot/tests/test_gate.py
+ M metrix/e1-pilot/tests/test_stops.py
+ M metrix/e1-pilot/tests/test_test_data.py
+?? metrix/e1-pilot/src/metrix_e1/testgate.py
+?? metrix/e1-pilot/tasks/IMPL_C_OWNER_MESSAGE.md
+?? metrix/e1-pilot/tests/test_testgate.py
+$ every file of the reviewed round-3 tree 9be4df2a under src/, tests/, tasks/ that differs from HEAD: working-tree blob == tree blob? (git ls-tree / git hash-object)
+same  e4b81ed0141179f8d418fc4be8497b9666d74660 metrix/e1-pilot/src/metrix_e1/evaluate.py
+same  9acd9b361bdbf7eea04ca3819086394ff0d496a3 metrix/e1-pilot/src/metrix_e1/frozen.py
+same  51a8cf6004a1e777e6577932adb2d5505e4342c7 metrix/e1-pilot/src/metrix_e1/gate.py
+same  98186bb45ec38f8079756c5cc24e714bcbd8546a metrix/e1-pilot/src/metrix_e1/interpretations.py
+same  884b934253ab8f91d3d58b14a9c729183cbf1019 metrix/e1-pilot/src/metrix_e1/leakage.py
+same  aa914ca8d3dafd420fab68cf42766ebe4dc7e216 metrix/e1-pilot/src/metrix_e1/record.py
+same  9c9e64bc7abb9417796c738f3b96f5b4bdce6e1e metrix/e1-pilot/src/metrix_e1/stops.py
+same  a41ba3410aed3b965696bf7bdc52d3885c75d39d metrix/e1-pilot/src/metrix_e1/test_data.py
+same  8ab9df400f2aaa8cff1db12fcbaf8486173771e9 metrix/e1-pilot/src/metrix_e1/testgate.py
+same  c8968ff0408dce731f49239c25aa0cbf4ae772ac metrix/e1-pilot/tasks/IMPL_C_OWNER_MESSAGE.md
+same  5501d8a8ec3a6b0f7f2b94564bd44d552cb58d6e metrix/e1-pilot/tests/test_data_hashes.py
+same  997521052485d86936b8d0088702024d34896c9c metrix/e1-pilot/tests/test_evaluate.py
+same  97fff917eff245fb76f83f1fee19cfe64704268d metrix/e1-pilot/tests/test_gate.py
+same  f2542efaef0d7e6127a980ef2ad8d4d978fffaec metrix/e1-pilot/tests/test_stops.py
+same  08cbe68e55d2d0a797a6cf6d0f067be8fc19e7b5 metrix/e1-pilot/tests/test_test_data.py
+same  26cdf10af21b7283cde53a661bc1af0959e98e2d metrix/e1-pilot/tests/test_testgate.py
+files differing from HEAD: 16; working tree differs from the reviewed tree: 0
+$ git worktree list   # scratch worktrees in the session temp directory, not in this commit
+/home/user/OpenMythos                                                         eb05e42 [metrix-e1-pilot-protocol-v1]
+/tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/wt   eb05e42 (detached HEAD)
+/tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/wt3  eb05e42 (detached HEAD)

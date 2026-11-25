@@ -1,0 +1,80 @@
+# Data Auditor run (implementation stage C, C1 work commit, round 2). host vm, Anthropic cloud container, CPU only (no GPU device node: 0 nvidia entries), no model weights loaded (tokenizer files only; the probe's tiny models are random); 2026-11-24 23:02:53 UTC; cwd /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad
+# stdout and stderr merged, complete, unedited
+$ bash -c cd\ /home/user/OpenMythos\ \&\&\ git\ rev-parse\ HEAD\ \&\&\ git\ write-tree\ \&\&\ cat\ /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/review_c1/tree_round2.txt\ \&\&\ \{\ git\ diff\ --cached\ --stat\;\ echo\;\ git\ diff\ --cached\;\ \}\ \|\ cmp\ -\ /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/review_c1/input_round2.diff\ \&\&\ echo\ INPUT_DIFF_IDENTICAL\;\ git\ diff\ 2408558f7e3b4703fa32ef6363871b3cf6833e5a\ \$\(git\ write-tree\)\ \|\ cmp\ -\ /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/review_c1/delta_round2.diff\ \&\&\ echo\ DELTA_DIFF_IDENTICAL\;\ git\ diff\ --quiet\ \&\&\ echo\ WORKTREE_EQUALS_INDEX\;\ git\ status\ --short\ --untracked-files=all\;\ sha256sum\ metrix/e1-pilot/reports/impl_c/c1_gate_probe.py\ /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/c1_gate_probe_fixed.py\ metrix/e1-pilot/PROTOCOL_FROZEN\ metrix/e1-pilot/src/metrix_e1/testgate.py\;\ echo\ \'---\ diff\ staged\ probe\ -\>\ corrected\ copy\ \(Executor\,\ session\ scratchpad\):\'\;\ diff\ metrix/e1-pilot/reports/impl_c/c1_gate_probe.py\ /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/c1_gate_probe_fixed.py\;\ /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/venv/bin/python\ -c\ \'import\ torch\,\ transformers\,\ sys\;\ print\(sys.version.split\(\)\[0\]\,\ torch.__version__\,\ transformers.__version__\,\ torch.cuda.is_available\(\)\)\'\;\ git\ --version\;\ ls\ -d\ /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/ic3_test_out_c1\ 2\>\&1\;\ ls\ metrix/e1-pilot/results\ 2\>\&1
+eb05e42243b54b78cb400b40293ef56f67611852
+dc4f28df108ac129120eae801de1ad02119c4c05
+dc4f28df108ac129120eae801de1ad02119c4c05
+INPUT_DIFF_IDENTICAL
+DELTA_DIFF_IDENTICAL
+WORKTREE_EQUALS_INDEX
+A  metrix/e1-pilot/reports/IMPL_C_REPORT.md
+A  metrix/e1-pilot/reports/impl_c/c1_00_session_start.txt
+A  metrix/e1-pilot/reports/impl_c/c1_01_env_fetch.txt
+A  metrix/e1-pilot/reports/impl_c/c1_02_checks.txt
+A  metrix/e1-pilot/reports/impl_c/c1_03_checks_r2.txt
+A  metrix/e1-pilot/reports/impl_c/c1_04_checks_r2b.txt
+A  metrix/e1-pilot/reports/impl_c/c1_gate_probe.py
+A  metrix/e1-pilot/reports/impl_c/c1_mutate.py
+A  metrix/e1-pilot/reports/impl_c/c1_mutate_r2.py
+M  metrix/e1-pilot/src/metrix_e1/evaluate.py
+M  metrix/e1-pilot/src/metrix_e1/frozen.py
+M  metrix/e1-pilot/src/metrix_e1/gate.py
+M  metrix/e1-pilot/src/metrix_e1/interpretations.py
+M  metrix/e1-pilot/src/metrix_e1/leakage.py
+M  metrix/e1-pilot/src/metrix_e1/record.py
+M  metrix/e1-pilot/src/metrix_e1/stops.py
+M  metrix/e1-pilot/src/metrix_e1/test_data.py
+A  metrix/e1-pilot/src/metrix_e1/testgate.py
+A  metrix/e1-pilot/tasks/IMPL_C_OWNER_MESSAGE.md
+M  metrix/e1-pilot/tests/test_data_hashes.py
+M  metrix/e1-pilot/tests/test_evaluate.py
+M  metrix/e1-pilot/tests/test_gate.py
+M  metrix/e1-pilot/tests/test_stops.py
+M  metrix/e1-pilot/tests/test_test_data.py
+A  metrix/e1-pilot/tests/test_testgate.py
+?? metrix/e1-pilot/audit/ic2_01_gate_scenarios.py
+?? metrix/e1-pilot/audit/ic2_02_content_hashes.py
+?? metrix/e1-pilot/audit/ic2_03_static.py
+?? metrix/e1-pilot/audit/ic2_04_test_refusal.py
+?? metrix/e1-pilot/audit/ic2_run_logged.sh
+?? metrix/e1-pilot/audit/ic3_01_gate_scenarios.py
+?? metrix/e1-pilot/audit/ic3_02_content_hashes.py
+?? metrix/e1-pilot/audit/ic3_03_static.py
+?? metrix/e1-pilot/audit/ic3_04_test_refusal.py
+?? metrix/e1-pilot/audit/ic3_run_logged.sh
+?? metrix/e1-pilot/audit/stdout/impl_c/ic2_00_state.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic2_01_gate_scenarios.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic2_01b_B05_history.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic2_02_content_hashes.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic2_03_static.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic2_04_test_refusal.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic2_99_git_status_final.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic3_00_state.txt
+dfcd9c33ed65adb273877d9e3ba319dcaff6fef2848a83b04e88006255255f81  metrix/e1-pilot/reports/impl_c/c1_gate_probe.py
+772b4dc3988a137db72321605ddaf5d1df77d924229e4a9c5ad9b0724e5ed8b1  /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/c1_gate_probe_fixed.py
+3f8a3bbaaafa0b451483bb88baa012c77e8b106dd3b157a152ffa675856906ff  metrix/e1-pilot/PROTOCOL_FROZEN
+8a3893d3bf7b7877f3d2c95dce41cb1af4e9dcb7298293ceab14b162dabda282  metrix/e1-pilot/src/metrix_e1/testgate.py
+--- diff staged probe -> corrected copy (Executor, session scratchpad):
+17c17
+<           marker               testgate.refuse_if_marker(REPO, "origin", "main")
+---
+>           marker               testgate.refuse_if_marker(REPO, "origin")
+38c38
+< PILOT = Path(__file__).resolve().parents[2]
+---
+> PILOT = Path("/home/user/OpenMythos/metrix/e1-pilot")     # fixed copy run from the session scratchpad
+101c101
+<                 TG.refuse_if_marker(repo, "origin", "main")
+---
+>                 TG.refuse_if_marker(repo, "origin")
+105c105,107
+<                 print("%s ACCEPT marker commit %s models %d" % (op, session.marker_commit, len(session.models)))
+---
+>                 models = json.loads(subprocess.run(["git", "-C", str(repo), "show", "HEAD:%s" % TG.MARKER_REL],
+>                                                    capture_output=True, text=True).stdout)["models"]
+>                 print("%s ACCEPT marker commit %s models %d" % (op, session.marker_commit, len(models)))
+3.13.18 2.11.0+cu130 5.22.2 False
+git version 2.43.0
+ls: cannot access '/tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/ic3_test_out_c1': No such file or directory
+ls: cannot access 'metrix/e1-pilot/results': No such file or directory
+exit=2

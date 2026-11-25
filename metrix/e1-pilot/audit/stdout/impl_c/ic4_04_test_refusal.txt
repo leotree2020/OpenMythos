@@ -1,0 +1,33 @@
+# Data Auditor run (implementation stage C, C1 work commit, round 3). host vm, Anthropic cloud container, CPU only (no GPU device node: 0 nvidia entries), no model weights loaded (tokenizer files only; the probe's tiny models are random); 2026-11-25 01:47:37 UTC; cwd /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/venv/bin/python -I -B /home/user/OpenMythos/metrix/e1-pilot/audit/ic4_04_test_refusal.py /home/user/OpenMythos /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/venv/bin/python /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/inputs /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/c1_data /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/ic4_test_out_c1
+env: host vm | Linux-6.18.44-fc-v880-x86_64-with-glibc2.39 | python 3.13.18 (/tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/venv/bin/python) | installed {'transformers': '5.22.2', 'tokenizers': '0.23.3', 'pyarrow': '26.0.1', 'huggingface_hub': '2.4.0', 'torch': '2.11.0'} | nvidia device nodes: []
+== before
+out_dir /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/ic4_test_out_c1 exists: False
+out_dir outside the repository /home/user/OpenMythos: True
+metrix/e1-pilot/results/gate0_record.json: in HEAD False | in working tree False | metrix/e1-pilot/results exists False
+data dir /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/c1_data files: ['anchor_text.jsonl', 'candidates.json', 'dev_qa.jsonl', 'facts.jsonl', 'general_dev.jsonl', 'train_F.jsonl', 'train_S.jsonl', 'train_Y.jsonl']
+test_qa.jsonl / general_test.jsonl in the data dir: []
+files under src (incl. __pycache__): 41 | files under inputs: 29
+
+== run (once)
+cwd /home/user/OpenMythos/metrix/e1-pilot/src
+$ /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/venv/bin/python -m metrix_e1.test_data --inputs /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/inputs --data /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/c1_data --out /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/ic4_test_out_c1
+----- generator stdout+stderr begin -----
+TEST generator refused: metrix/e1-pilot/results/gate0_record.json is not committed at HEAD
+no TEST content was generated, read or written
+RESULT: FAIL
+----- generator stdout+stderr end -----
+exit code 1 | killed by the auditor False
+refused (non-zero exit, last line RESULT: FAIL, refusal line present): True
+refusal line == the Executor's in c1_06_checks_r3.txt (['TEST generator refused: metrix/e1-pilot/results/gate0_record.json is not committed at HEAD']): True
+
+== after
+out_dir /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/ic4_test_out_c1 exists: False
+data dir unchanged (names, sizes, mtimes, sha256): True | test_qa.jsonl / general_test.jsonl in the data dir: []
+inputs unchanged: True | src tree unchanged (incl. __pycache__): True | git status --porcelain --ignored --untracked-files=all -- metrix unchanged: True
+results directory created: False
+metrix/e1-pilot/results/st10_record.json in the working tree or in any commit: False
+modules: torch imported=False | transformers modeling modules imported=[] | this script never calls a model class or from_pretrained on a model
+RESULT: PASS
+exit=0

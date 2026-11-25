@@ -1,0 +1,25 @@
+# Data Auditor run (implementation stage C, C1 work commit). host vm, Anthropic cloud container, CPU only (no GPU device node: 0 nvidia entries), no model weights loaded (tokenizer files only; the probe's tiny models are random); 2026-11-24 15:25:10 UTC; cwd /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad
+# stdout and stderr merged, complete, unedited
+$ bash -c cd\ /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/ic2_repos/s/B05/repo\ \&\&\ M=metrix/e1-pilot/results/test_evaluation_marker.json\ \&\&\ git\ log\ --graph\ --all\ --format=\'%h\ %s\'\ \&\&\ echo\ \'---\ git\ log\ --all\ --format=%H\ --\ \$M\ \ \(the\ form\ used\ by\ testgate._ever_committed\):\'\ \&\&\ git\ log\ --all\ --format=%H\ --\ \$M\ \&\&\ echo\ \'---\ the\ same\ with\ --full-history:\'\ \&\&\ git\ log\ --all\ --full-history\ --format=\'%H\ %s\'\ --\ \$M\ \&\&\ echo\ \'---\ every\ commit\ reachable\ from\ --all\ whose\ tree\ holds\ the\ marker\ \(rev-list\ +\ cat-file\ -e\):\'\ \&\&\ for\ c\ in\ \$\(git\ rev-list\ --all\)\;\ do\ git\ cat-file\ -e\ \$c:\$M\ 2\>/dev/null\ \&\&\ echo\ \$c\;\ done\;\ echo\ \'---\ remote\ main:\'\ \&\&\ git\ -C\ ../remote.git\ log\ --format=\'%h\ %s\'\ main\ \|\ head\ -3
+* a9e2535 metrix: E1-PILOT TEST evaluation marker (section 8 step 8: TEST is evaluated once; every checkpoint hash)
+*   8dbb532 merge side
+|\  
+| * 0c6a0c3 marker deleted on side
+| * 00bd2d2 marker on side
+|/  
+* 6114a73 ST10 record and the auditor's count
+* 1ff1691 code and records
+--- git log --all --format=%H -- $M  (the form used by testgate._ever_committed):
+a9e2535e615289576ba2290d5ec95a627c7cc482
+--- the same with --full-history:
+a9e2535e615289576ba2290d5ec95a627c7cc482 metrix: E1-PILOT TEST evaluation marker (section 8 step 8: TEST is evaluated once; every checkpoint hash)
+0c6a0c37bdea5e76916de2cbeb0564a40b3dc92b marker deleted on side
+00bd2d2a302bb1efcd650a91e728725de741f16c marker on side
+--- every commit reachable from --all whose tree holds the marker (rev-list + cat-file -e):
+a9e2535e615289576ba2290d5ec95a627c7cc482
+00bd2d2a302bb1efcd650a91e728725de741f16c
+--- remote main:
+a9e2535 metrix: E1-PILOT TEST evaluation marker (section 8 step 8: TEST is evaluated once; every checkpoint hash)
+8dbb532 merge side
+6114a73 ST10 record and the auditor's count
+exit=0

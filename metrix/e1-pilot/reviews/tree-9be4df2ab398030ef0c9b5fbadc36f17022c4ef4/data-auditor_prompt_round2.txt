@@ -1,0 +1,18 @@
+先读仓库中的 .claude/agents/data-auditor.md，以它为你的完整定义；它与你已加载的定义冲突时，以仓库文件为准。
+
+审计对象：METRIX E1-PILOT 阶段 C 第 1 段（C1）工作提交的第 2 轮，暂存区内容（尚未提交），父提交 eb05e42243b54b78cb400b40293ef56f67611852。你第 1 轮（暂存树 2408558f…）的结论是 BLOCK（B05：_ever_committed 的 git log 没有 --full-history），原文 /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/review_c1/data-auditor_round1.md。审查输入（同目录）：input_round2.diff（整个工作提交）、delta_round2.diff（第 1 轮暂存树到本轮暂存树的差异）、tree_round2.txt。任务、依据、限制与第 1 轮调用文字相同（同目录 data-auditor_prompt.txt）。Executor 本轮的原始输出：metrix/e1-pilot/reports/impl_c/c1_03_checks_r2.txt（2 个变异未测出）与修正后重跑的 c1_04_checks_r2b.txt。
+
+本轮改动（Executor 的说明，不作为证据）：
+- B05：--full-history；你的说明 (a) 非对象 JSON 拒绝；(b) 远端全部分支都查（ls-remote --heads 后按名 fetch），只有结果文件而没有标记时拒绝（TestAlreadyEvaluated）；(d) code_commit 移到 TEST 生成之前；(e) 文档。
+- code-reviewer 的 MAJOR/MINOR：环境类拒绝（远端无法列出或 fetch、索引有暂存、提交与推送前提）改为 STOP - BLOCKED；已评测改为单独的异常 TestAlreadyEvaluated（探针输出为 ERROR TestAlreadyEvaluated，不再是 REFUSE）；begin 写标记前预检提交者身份、快进（远端分支是 HEAD 的祖先）与 push --dry-run，失败为 BLOCKED 且不写入任何东西（所以第 1 轮 D2“远端已分叉”现在应在本地不留标记；D3 pre-receive 钩子拒收时 dry-run 不触发钩子，仍会在本地提交标记后 BLOCKED）；推送加 --no-follow-tags；标记新增 remote 与 branch 字段；evaluate_model 改为先过闸门、再 require_gpu、之后才登记 checkpoint（claim_checkpoint），所以在 CPU 上 eval 到达 require_gpu 时不登记，同一 checkpoint 再次 eval 仍为 ACCEPTED-BY-GATES；“同一 checkpoint 第二次”由 gate 操作（require_test_session 后 claim_checkpoint）检验。
+- 新增解释 B25（checkpoint 哈希 = train.state_sha256，PENDING_REVIEW_GATE）：裁决之前 TEST 生成器与所有 TEST 路径都拒绝（“interpretations not yet ruled by Review Gate: B25”）。探针新增 --interpretations-ruled（第一个参数），把 interpretations.pending 换成返回 [] 的函数，才能在 B25 待决期间探测其余闸门；不带此参数时 begin/eval 应因 B25 拒绝。探针的 gate:NAME:SHA 改为用一个只替换 state_sha256 的替身模型调用 require_test_session，再 claim_checkpoint。
+
+任务（脚本放在 metrix/e1-pilot/audit/，文件名前缀 ic3_，可沿用你的 ic2_ 脚本；完整 stdout 写入 metrix/e1-pilot/audit/stdout/impl_c/；不 import、不复制 Executor 的代码）：
+1. 用你的独立模型对本轮代码重跑第 1 轮的全部场景（探针带 --interpretations-ruled），并补：B05 及其在 ST10 记录（TEST 只生成一次）与结果文件上的同类情形；B11（远端其他分支、从未 fetch）；B12（只有结果文件）；远端分支落后的单分支克隆；无提交者身份；快进预检；--no-follow-tags（本地有注释标签且 push.followTags=true）；另加一个不带 --interpretations-ruled 的对照，确认 B25 待决时 begin 与 eval 拒绝。按本轮的语义更新预期（上面所列），预期须在运行探针之前由你的模型算出。
+2. 用你自己的脚本独立复算四个冻结内容哈希，对照 /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/c1_data（本轮由正式代码重新生成），并核对 frozen.content_hashes 改为由 CONTENT_HASH_KEYS 与 CONTENT_HASH_BYTES 组装之后，四个键的序列化与 HEAD 版本相同。
+3. 静态核对同第 1 轮第 3 项（含 test_data.main 中 code_commit 与 ST10 记录检查在生成之前）。
+4. 以黑盒方式运行一次 TEST 生成器（--data 为上述 c1_data，--out 为一个不存在的仓库外目录），确认拒绝且无产物。
+
+环境与限制同前：Python /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/venv/bin/python；非 TEST 输入 /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/inputs；临时仓库放在会话临时目录（例如 /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/ic3_repos）；禁止生成、读取或统计真实 TEST；不加载任何模型权重；不使用 GPU；只写入 metrix/e1-pilot/audit/。
+
+输出：按定义的输出格式给出每一项的命令、原始输出、与 Executor 是否一致；脚本路径与完整 stdout 路径；最后附 git status --short 原始输出；最后一行给出结论 PASS 或 BLOCK。

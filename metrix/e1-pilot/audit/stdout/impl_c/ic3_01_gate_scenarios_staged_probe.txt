@@ -1,0 +1,533 @@
+# Data Auditor run (implementation stage C, C1 work commit, round 2). host vm, Anthropic cloud container, CPU only (no GPU device node: 0 nvidia entries), no model weights loaded (tokenizer files only; the probe's tiny models are random); 2026-11-24 23:03:32 UTC; cwd /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad
+# stdout and stderr merged, complete, unedited
+$ python3 -I -B /home/user/OpenMythos/metrix/e1-pilot/audit/ic3_01_gate_scenarios.py /home/user/OpenMythos /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/venv/bin/python /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/ic3_repos_staged
+env: host vm | Linux-6.18.44-fc-v819-x86_64-with-glibc2.39 | python 3.13.18 (/usr/local/bin/python3) | installed {'transformers': 'not installed', 'tokenizers': 'not installed', 'pyarrow': 'not installed', 'huggingface_hub': 'not installed', 'torch': 'not installed'} | nvidia device nodes: []
+probe run: /home/user/OpenMythos/metrix/e1-pilot/reports/impl_c/c1_gate_probe.py sha256 dfcd9c33ed65adb273877d9e3ba319dcaff6fef2848a83b04e88006255255f81 | staged probe metrix/e1-pilot/reports/impl_c/c1_gate_probe.py sha256 dfcd9c33ed65adb273877d9e3ba319dcaff6fef2848a83b04e88006255255f81 | the probe run is the staged one: True | HEAD eb05e42243b54b78cb400b40293ef56f67611852 | staged tree dc4f28df108ac129120eae801de1ad02119c4c05
+frozen facts read by me: PROTOCOL_FROZEN metrix/e1-pilot/PROTOCOL_FROZEN sha256 3f8a3bbaaafa0b451483bb88baa012c77e8b106dd3b157a152ffa675856906ff | current version ['v1.1'] | frozen commit 87a244db28a901f9e89282b50df76778ab5c2887
+  content hashes (PROTOCOL_FROZEN table, my labels): {'facts': '406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97', 'train_S': '686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e', 'candidates': 'e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705', 'anchor_texts': '8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408'}
+  TEST-part limits (frozen-commit SPLIT_MANIFEST leakage_checks): {'L3a': 0, 'L3b': 0, 'L4': 0, 'L5': 0, 'L6': 0} | L6 test_part.limit 0 | protocol section 3 table last column: {'L3a': '0', 'L3b': '0', 'L4': '0', 'L5': '0', 'L6': '0'}
+my training plan: 30 runs | my TEST models: 16 ['N', 'F-F5-seed101', 'F-F5-seed202', 'F-F5-seed303', 'L-L4-seed101', 'L-L4-seed202', 'L-L4-seed303', 'A-A2-seed101', 'A-A2-seed202', 'A-A2-seed303', 'S-F5-seed101', 'S-F5-seed202', 'S-F5-seed303', 'Y-F5-seed101', 'Y-F5-seed202', 'Y-F5-seed303']
+synthetic TEST files (written by me, outside the repository): {'test_qa.jsonl': 'afeac7837c3708ddacd40f5512de1db1c85b15a0d5024f89d82ab2b34b31f46d', 'general_test.jsonl': '6b23a3297859b90c5870c74a2eac94efa739069af7730093690200e7cefc0521'}
+tiny model state hashes from the probe (random 2-layer models, seeds 0 1 4 7): {'0': 'a895622c8065094db612d950ad39d072c87a5894603950ddba98d44b524ee251', '1': '46da10034702b106d061e0e8eb16ee44a68240c05a8a71af5588eab23e235a1c', '4': '0eec839cc13a895a3921d9542236937da4a68f967a948df71f564c026b3c2bd7', '7': '0aaed642c415613a084106be5aad9513ed5ae1a5a5a517d7775aae41cc38c34e'}
+template repository: code commit a63ef6a318258a4942c691b1b3354acf1519c94e | gate0 sha256 e620de8bf72a96e2ae931cd723d841b36d5dc2e7006c9dcb683c0442402b4554 | freeze sha256 e60b3f33af3bb0725e69879ead0edcf7399584325430c676961ed477ea1416af
+
+== A. ST10 gate: op st10 and begin, one defect per scenario (fresh repository each; probe with --interpretations-ruled)
+ A00 record missing
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record: metrix/e1-pilot/results/st10_record.json is not committed at HEAD  (model: ST10 record not committed at HEAD)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record: metrix/e1-pilot/results/st10_record.json is not committed at HEAD  (model: ST10 record not committed at HEAD)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A01 record only in working tree (untracked)
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record: metrix/e1-pilot/results/st10_record.json is not committed at HEAD  (model: ST10 record not committed at HEAD)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record: metrix/e1-pilot/results/st10_record.json is not committed at HEAD  (model: ST10 record not committed at HEAD)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A02 record staged, not committed
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record: metrix/e1-pilot/results/st10_record.json is not committed at HEAD  (model: ST10 record not committed at HEAD)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record: metrix/e1-pilot/results/st10_record.json is not committed at HEAD  (model: ST10 record not committed at HEAD)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A03 record committed, working tree differs
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record: metrix/e1-pilot/results/st10_record.json in the working tree differs from its committed version  (model: ST10 record working tree differs from HEAD)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record: metrix/e1-pilot/results/st10_record.json in the working tree differs from its committed version  (model: ST10 record working tree differs from HEAD)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A04 record committed, deleted in working tree
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record: metrix/e1-pilot/results/st10_record.json in the working tree differs from its committed version  (model: ST10 record working tree differs from HEAD)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record: metrix/e1-pilot/results/st10_record.json in the working tree differs from its committed version  (model: ST10 record working tree differs from HEAD)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A05 record does not parse
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record: metrix/e1-pilot/results/st10_record.json does not parse: JSONDecodeError('Expecting property name enclosed in double quotes: line 1 column 2 (char   (model: ST10 record is not a JSON object)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record: metrix/e1-pilot/results/st10_record.json does not parse: JSONDecodeError('Expecting property name enclosed in double quotes: line 1 column 2 (char   (model: ST10 record is not a JSON object)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A06 record is a JSON array
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record: metrix/e1-pilot/results/st10_record.json is a JSON list, not an object  (model: ST10 record is not a JSON object)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record: metrix/e1-pilot/results/st10_record.json is a JSON list, not an object  (model: ST10 record is not a JSON object)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A06b record is a JSON string
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record: metrix/e1-pilot/results/st10_record.json is a JSON str, not an object  (model: ST10 record is not a JSON object)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record: metrix/e1-pilot/results/st10_record.json is a JSON str, not an object  (model: ST10 record is not a JSON object)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A07 kind not st10
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: metrix/e1-pilot/results/st10_record.json is not a formal-mode ST10 record (kind 'st10_record', mode 'formal', label None)  (model: not a formal st10 record)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: metrix/e1-pilot/results/st10_record.json is not a formal-mode ST10 record (kind 'st10_record', mode 'formal', label None)  (model: not a formal st10 record)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A08 mode smoke with label
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: metrix/e1-pilot/results/st10_record.json is not a formal-mode ST10 record (kind 'st10', mode 'smoke', label 'SMOKE')  (model: not a formal st10 record)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: metrix/e1-pilot/results/st10_record.json is not a formal-mode ST10 record (kind 'st10', mode 'smoke', label 'SMOKE')  (model: not a formal st10 record)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A09 bound to another authorization (gate0 sha)
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record is not bound to this authorization ({'gate0_record_sha256': 'eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', 'selection_record_sh  (model: bound to another authorization)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record is not bound to this authorization ({'gate0_record_sha256': 'eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', 'selection_record_sh  (model: bound to another authorization)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A10 bound to another authorization (freeze sha)
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record is not bound to this authorization ({'gate0_record_sha256': 'e620de8bf72a96e2ae931cd723d841b36d5dc2e7006c9dcb683c0442402b4554', 'selection_record_sh  (model: bound to another authorization)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record is not bound to this authorization ({'gate0_record_sha256': 'e620de8bf72a96e2ae931cd723d841b36d5dc2e7006c9dcb683c0442402b4554', 'selection_record_sh  (model: bound to another authorization)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A11 other frozen commit (v1 commit)
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record for frozen commit '6a474e4a5defa23dfc71b2c6bca9e15a81b517aa', authorization 87a244db28a901f9e89282b50df76778ab5c2887  (model: other frozen commit)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record for frozen commit '6a474e4a5defa23dfc71b2c6bca9e15a81b517aa', authorization 87a244db28a901f9e89282b50df76778ab5c2887  (model: other frozen commit)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A12 authorization field missing
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record is not bound to this authorization (None, authorization {'gate0_record_sha256': 'e620de8bf72a96e2ae931cd723d841b36d5dc2e7006c9dcb683c0442402b4554',   (model: bound to another authorization)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record is not bound to this authorization (None, authorization {'gate0_record_sha256': 'e620de8bf72a96e2ae931cd723d841b36d5dc2e7006c9dcb683c0442402b4554',   (model: bound to another authorization)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A13 Gate0+freeze records re-committed after the record (authorization changed)
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record is not bound to this authorization ({'gate0_record_sha256': 'e620de8bf72a96e2ae931cd723d841b36d5dc2e7006c9dcb683c0442402b4554', 'selection_record_sh  (model: bound to another authorization)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record is not bound to this authorization ({'gate0_record_sha256': 'e620de8bf72a96e2ae931cd723d841b36d5dc2e7006c9dcb683c0442402b4554', 'selection_record_sh  (model: bound to another authorization)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A14 test_qa.jsonl hash != TEST rows
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: TEST files of the ST10 record {'general_test.jsonl': '6b23a3297859b90c5870c74a2eac94efa739069af7730093690200e7cefc0521', 'test_qa.jsonl': 'ddddddddddddddddddddd  (model: TEST file hashes differ from the rows)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: TEST files of the ST10 record {'general_test.jsonl': '6b23a3297859b90c5870c74a2eac94efa739069af7730093690200e7cefc0521', 'test_qa.jsonl': 'ddddddddddddddddddddd  (model: TEST file hashes differ from the rows)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A15 general_test.jsonl hash != TEST rows (auditor names the same wrong hash)
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: TEST files of the ST10 record {'general_test.jsonl': '1c92c4155bdac334dca3ca03be73d73ece5265b250f519172c3f5d093391a61b', 'test_qa.jsonl': 'afeac7837c3708ddacd40  (model: TEST file hashes differ from the rows)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: TEST files of the ST10 record {'general_test.jsonl': '1c92c4155bdac334dca3ca03be73d73ece5265b250f519172c3f5d093391a61b', 'test_qa.jsonl': 'afeac7837c3708ddacd40  (model: TEST file hashes differ from the rows)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A16 test_files_sha256 has an extra file
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: TEST files of the ST10 record {'general_test.jsonl': '6b23a3297859b90c5870c74a2eac94efa739069af7730093690200e7cefc0521', 'test_qa.jsonl': 'afeac7837c3708ddacd40  (model: TEST file hashes differ from the rows)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: TEST files of the ST10 record {'general_test.jsonl': '6b23a3297859b90c5870c74a2eac94efa739069af7730093690200e7cefc0521', 'test_qa.jsonl': 'afeac7837c3708ddacd40  (model: TEST file hashes differ from the rows)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A17 code commit on another (orphan) branch
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: code commit 'e04fa672a2f3cbe591711c2e387244bc4f3c2da0' of the ST10 record is not an ancestor of HEAD  (model: code commit not HEAD or an ancestor)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: code commit 'e04fa672a2f3cbe591711c2e387244bc4f3c2da0' of the ST10 record is not an ancestor of HEAD  (model: code commit not HEAD or an ancestor)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A18 code commit does not exist
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: code commit '0123456789abcdef0123456789abcdef01234567' of the ST10 record is not an ancestor of HEAD  (model: code commit not HEAD or an ancestor)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: code commit '0123456789abcdef0123456789abcdef01234567' of the ST10 record is not an ancestor of HEAD  (model: code commit not HEAD or an ancestor)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A19 code commit null
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: code commit None of the ST10 record is not an ancestor of HEAD  (model: code commit not HEAD or an ancestor)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: code commit None of the ST10 record is not an ancestor of HEAD  (model: code commit not HEAD or an ancestor)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A20 code commit abbreviated (12 hex of an ancestor)
+  [INFO] st10                               expected INFO               observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: code commit 'a63ef6a31825' of the ST10 record is not an ancestor of HEAD  (model: code commit not HEAD or an ancestor)
+  [INFO] begin                              expected INFO               observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: code commit 'a63ef6a31825' of the ST10 record is not an ancestor of HEAD  (model: code commit not HEAD or an ancestor)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A2x count L3a is float 0.0
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record counts {'L3a': 0.0, 'L3b': 0, 'L4': 0, 'L5': 0, 'L6': 0} are not one non-negative integer per check ['L3a', 'L3b', 'L4', 'L5', 'L6']  (model: counts not five non-negative integers)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record counts {'L3a': 0.0, 'L3b': 0, 'L4': 0, 'L5': 0, 'L6': 0} are not one non-negative integer per check ['L3a', 'L3b', 'L4', 'L5', 'L6']  (model: counts not five non-negative integers)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A2x count L3b is string '0'
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record counts {'L3a': 0, 'L3b': '0', 'L4': 0, 'L5': 0, 'L6': 0} are not one non-negative integer per check ['L3a', 'L3b', 'L4', 'L5', 'L6']  (model: counts not five non-negative integers)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record counts {'L3a': 0, 'L3b': '0', 'L4': 0, 'L5': 0, 'L6': 0} are not one non-negative integer per check ['L3a', 'L3b', 'L4', 'L5', 'L6']  (model: counts not five non-negative integers)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A2x count L4 is bool false
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record counts {'L3a': 0, 'L3b': 0, 'L4': False, 'L5': 0, 'L6': 0} are not one non-negative integer per check ['L3a', 'L3b', 'L4', 'L5', 'L6']  (model: counts not five non-negative integers)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record counts {'L3a': 0, 'L3b': 0, 'L4': False, 'L5': 0, 'L6': 0} are not one non-negative integer per check ['L3a', 'L3b', 'L4', 'L5', 'L6']  (model: counts not five non-negative integers)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A2x count L5 is null
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record counts {'L3a': 0, 'L3b': 0, 'L4': 0, 'L5': None, 'L6': 0} are not one non-negative integer per check ['L3a', 'L3b', 'L4', 'L5', 'L6']  (model: counts not five non-negative integers)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record counts {'L3a': 0, 'L3b': 0, 'L4': 0, 'L5': None, 'L6': 0} are not one non-negative integer per check ['L3a', 'L3b', 'L4', 'L5', 'L6']  (model: counts not five non-negative integers)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A2x count L6 is negative -1
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record counts {'L3a': 0, 'L3b': 0, 'L4': 0, 'L5': 0, 'L6': -1} are not one non-negative integer per check ['L3a', 'L3b', 'L4', 'L5', 'L6']  (model: counts not five non-negative integers)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record counts {'L3a': 0, 'L3b': 0, 'L4': 0, 'L5': 0, 'L6': -1} are not one non-negative integer per check ['L3a', 'L3b', 'L4', 'L5', 'L6']  (model: counts not five non-negative integers)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A2x count L4 is float 1e0
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record counts {'L3a': 0, 'L3b': 0, 'L4': 1.0, 'L5': 0, 'L6': 0} are not one non-negative integer per check ['L3a', 'L3b', 'L4', 'L5', 'L6']  (model: counts not five non-negative integers)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record counts {'L3a': 0, 'L3b': 0, 'L4': 1.0, 'L5': 0, 'L6': 0} are not one non-negative integer per check ['L3a', 'L3b', 'L4', 'L5', 'L6']  (model: counts not five non-negative integers)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A30 count L5 missing
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record counts {'L3a': 0, 'L3b': 0, 'L4': 0, 'L6': 0} are not one non-negative integer per check ['L3a', 'L3b', 'L4', 'L5', 'L6']  (model: counts not five non-negative integers)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record counts {'L3a': 0, 'L3b': 0, 'L4': 0, 'L6': 0} are not one non-negative integer per check ['L3a', 'L3b', 'L4', 'L5', 'L6']  (model: counts not five non-negative integers)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A31 extra count L2
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record counts {'L2': 0, 'L3a': 0, 'L3b': 0, 'L4': 0, 'L5': 0, 'L6': 0} are not one non-negative integer per check ['L3a', 'L3b', 'L4', 'L5', 'L6']  (model: counts not five non-negative integers)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record counts {'L2': 0, 'L3a': 0, 'L3b': 0, 'L4': 0, 'L5': 0, 'L6': 0} are not one non-negative integer per check ['L3a', 'L3b', 'L4', 'L5', 'L6']  (model: counts not five non-negative integers)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A32 counts is a list
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record counts [0, 0, 0, 0, 0] are not one non-negative integer per check ['L3a', 'L3b', 'L4', 'L5', 'L6']  (model: counts not five non-negative integers)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record counts [0, 0, 0, 0, 0] are not one non-negative integer per check ['L3a', 'L3b', 'L4', 'L5', 'L6']  (model: counts not five non-negative integers)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A33 counts field missing
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record counts None are not one non-negative integer per check ['L3a', 'L3b', 'L4', 'L5', 'L6']  (model: counts not five non-negative integers)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record counts None are not one non-negative integer per check ['L3a', 'L3b', 'L4', 'L5', 'L6']  (model: counts not five non-negative integers)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A4x L3a = limit+1 (1), forged within_limit/result PASS
+  [same] st10                               expected STOP ST10 BLOCKED  observed STOP ST10 BLOCKED  ST10 -> BLOCKED: TEST part over limit ['L3a']; L6 TEST Executor 0, data-auditor 0 [停止;不评测 TEST;BLOCKED;报告 Owner]  (model: over ['L3a']; L6 Executor 0 auditor 0)
+  [same] begin                              expected STOP ST10 BLOCKED  observed STOP ST10 BLOCKED  ST10 -> BLOCKED: TEST part over limit ['L3a']; L6 TEST Executor 0, data-auditor 0 [停止;不评测 TEST;BLOCKED;报告 Owner]  (model: over ['L3a']; L6 Executor 0 auditor 0)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A4x L3b = limit+1 (1), forged within_limit/result PASS
+  [same] st10                               expected STOP ST10 BLOCKED  observed STOP ST10 BLOCKED  ST10 -> BLOCKED: TEST part over limit ['L3b']; L6 TEST Executor 0, data-auditor 0 [停止;不评测 TEST;BLOCKED;报告 Owner]  (model: over ['L3b']; L6 Executor 0 auditor 0)
+  [same] begin                              expected STOP ST10 BLOCKED  observed STOP ST10 BLOCKED  ST10 -> BLOCKED: TEST part over limit ['L3b']; L6 TEST Executor 0, data-auditor 0 [停止;不评测 TEST;BLOCKED;报告 Owner]  (model: over ['L3b']; L6 Executor 0 auditor 0)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A4x L4 = limit+1 (1), forged within_limit/result PASS
+  [same] st10                               expected STOP ST10 BLOCKED  observed STOP ST10 BLOCKED  ST10 -> BLOCKED: TEST part over limit ['L4']; L6 TEST Executor 0, data-auditor 0 [停止;不评测 TEST;BLOCKED;报告 Owner]  (model: over ['L4']; L6 Executor 0 auditor 0)
+  [same] begin                              expected STOP ST10 BLOCKED  observed STOP ST10 BLOCKED  ST10 -> BLOCKED: TEST part over limit ['L4']; L6 TEST Executor 0, data-auditor 0 [停止;不评测 TEST;BLOCKED;报告 Owner]  (model: over ['L4']; L6 Executor 0 auditor 0)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A4x L5 = limit+1 (1), forged within_limit/result PASS
+  [same] st10                               expected STOP ST10 BLOCKED  observed STOP ST10 BLOCKED  ST10 -> BLOCKED: TEST part over limit ['L5']; L6 TEST Executor 0, data-auditor 0 [停止;不评测 TEST;BLOCKED;报告 Owner]  (model: over ['L5']; L6 Executor 0 auditor 0)
+  [same] begin                              expected STOP ST10 BLOCKED  observed STOP ST10 BLOCKED  ST10 -> BLOCKED: TEST part over limit ['L5']; L6 TEST Executor 0, data-auditor 0 [停止;不评测 TEST;BLOCKED;报告 Owner]  (model: over ['L5']; L6 Executor 0 auditor 0)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A4x L6 = limit+1 (1), forged within_limit/result PASS
+  [same] st10                               expected STOP ST10 BLOCKED  observed STOP ST10 BLOCKED  ST10 -> BLOCKED: TEST part over limit ['L6']; L6 TEST Executor 1, data-auditor 1 [停止;不评测 TEST;BLOCKED;报告 Owner]  (model: over ['L6']; L6 Executor 1 auditor 1)
+  [same] begin                              expected STOP ST10 BLOCKED  observed STOP ST10 BLOCKED  ST10 -> BLOCKED: TEST part over limit ['L6']; L6 TEST Executor 1, data-auditor 1 [停止;不评测 TEST;BLOCKED;报告 Owner]  (model: over ['L6']; L6 Executor 1 auditor 1)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A46 L4 = 10**30 (no forged fields)
+  [same] st10                               expected STOP ST10 BLOCKED  observed STOP ST10 BLOCKED  ST10 -> BLOCKED: TEST part over limit ['L4']; L6 TEST Executor 0, data-auditor 0 [停止;不评测 TEST;BLOCKED;报告 Owner]  (model: over ['L4']; L6 Executor 0 auditor 0)
+  [same] begin                              expected STOP ST10 BLOCKED  observed STOP ST10 BLOCKED  ST10 -> BLOCKED: TEST part over limit ['L4']; L6 TEST Executor 0, data-auditor 0 [停止;不评测 TEST;BLOCKED;报告 Owner]  (model: over ['L4']; L6 Executor 0 auditor 0)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A47 L6 over limit, auditor differs
+  [same] st10                               expected STOP ST10 BLOCKED  observed STOP ST10 BLOCKED  ST10 -> BLOCKED: TEST part over limit ['L6']; L6 TEST Executor 2, data-auditor 0 [停止;不评测 TEST;BLOCKED;报告 Owner]  (model: over ['L6']; L6 Executor 2 auditor 0)
+  [same] begin                              expected STOP ST10 BLOCKED  observed STOP ST10 BLOCKED  ST10 -> BLOCKED: TEST part over limit ['L6']; L6 TEST Executor 2, data-auditor 0 [停止;不评测 TEST;BLOCKED;报告 Owner]  (model: over ['L6']; L6 Executor 2 auditor 0)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A50 auditor count missing
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: data-auditor's L6 TEST count: metrix/e1-pilot/audit/st10_l6_test_count.json is not committed at HEAD  (model: auditor count not committed at HEAD)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: data-auditor's L6 TEST count: metrix/e1-pilot/audit/st10_l6_test_count.json is not committed at HEAD  (model: auditor count not committed at HEAD)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A51 auditor count only in working tree
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: data-auditor's L6 TEST count: metrix/e1-pilot/audit/st10_l6_test_count.json is not committed at HEAD  (model: auditor count not committed at HEAD)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: data-auditor's L6 TEST count: metrix/e1-pilot/audit/st10_l6_test_count.json is not committed at HEAD  (model: auditor count not committed at HEAD)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A52 auditor count committed, working tree differs
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: data-auditor's L6 TEST count: metrix/e1-pilot/audit/st10_l6_test_count.json in the working tree differs from its committed version  (model: auditor count working tree differs from HEAD)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: data-auditor's L6 TEST count: metrix/e1-pilot/audit/st10_l6_test_count.json in the working tree differs from its committed version  (model: auditor count working tree differs from HEAD)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A53 auditor counted another general_test.jsonl
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: the data-auditor counted general_test.jsonl '1c92c4155bdac334dca3ca03be73d73ece5265b250f519172c3f5d093391a61b', the ST10 record names 6b23a3297859b90c5870c74a2e  (model: auditor counted another general_test.jsonl)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: the data-auditor counted general_test.jsonl '1c92c4155bdac334dca3ca03be73d73ece5265b250f519172c3f5d093391a61b', the ST10 record names 6b23a3297859b90c5870c74a2e  (model: auditor counted another general_test.jsonl)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A54 auditor count for another frozen commit
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: metrix/e1-pilot/audit/st10_l6_test_count.json is not the data-auditor's L6 TEST count for frozen commit 87a244db28a901f9e89282b50df76778ab5c2887 (kind 'st10_aud  (model: auditor file kind / frozen commit)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: metrix/e1-pilot/audit/st10_l6_test_count.json is not the data-auditor's L6 TEST count for frozen commit 87a244db28a901f9e89282b50df76778ab5c2887 (kind 'st10_aud  (model: auditor file kind / frozen commit)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A55 auditor file kind wrong
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: metrix/e1-pilot/audit/st10_l6_test_count.json is not the data-auditor's L6 TEST count for frozen commit 87a244db28a901f9e89282b50df76778ab5c2887 (kind 'l6', fro  (model: auditor file kind / frozen commit)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: metrix/e1-pilot/audit/st10_l6_test_count.json is not the data-auditor's L6 TEST count for frozen commit 87a244db28a901f9e89282b50df76778ab5c2887 (kind 'l6', fro  (model: auditor file kind / frozen commit)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A56 auditor count float 0.0
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: the data-auditor's l6_test_count 0.0 is not a non-negative integer  (model: auditor count not an integer)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: the data-auditor's l6_test_count 0.0 is not a non-negative integer  (model: auditor count not an integer)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A57 auditor count string '0'
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: the data-auditor's l6_test_count '0' is not a non-negative integer  (model: auditor count not an integer)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: the data-auditor's l6_test_count '0' is not a non-negative integer  (model: auditor count not an integer)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A58 auditor count null
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: the data-auditor's l6_test_count None is not a non-negative integer  (model: auditor count not an integer)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: the data-auditor's l6_test_count None is not a non-negative integer  (model: auditor count not an integer)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A58b auditor file is a JSON array
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: data-auditor's L6 TEST count: metrix/e1-pilot/audit/st10_l6_test_count.json is a JSON list, not an object  (model: auditor count is not a JSON object)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: data-auditor's L6 TEST count: metrix/e1-pilot/audit/st10_l6_test_count.json is a JSON list, not an object  (model: auditor count is not a JSON object)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A58c auditor file does not parse
+  [same] st10                               expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: data-auditor's L6 TEST count: metrix/e1-pilot/audit/st10_l6_test_count.json does not parse: JSONDecodeError('Expecting property name enclosed in double quotes:   (model: auditor count is not a JSON object)
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: data-auditor's L6 TEST count: metrix/e1-pilot/audit/st10_l6_test_count.json does not parse: JSONDecodeError('Expecting property name enclosed in double quotes:   (model: auditor count is not a JSON object)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A59 auditor L6 1 != Executor L6 0
+  [same] st10                               expected STOP ST10 BLOCKED  observed STOP ST10 BLOCKED  ST10 -> BLOCKED: TEST part over limit []; L6 TEST Executor 0, data-auditor 1 [停止;不评测 TEST;BLOCKED;报告 Owner]  (model: over []; L6 Executor 0 auditor 1)
+  [same] begin                              expected STOP ST10 BLOCKED  observed STOP ST10 BLOCKED  ST10 -> BLOCKED: TEST part over limit []; L6 TEST Executor 0, data-auditor 1 [停止;不评测 TEST;BLOCKED;报告 Owner]  (model: over []; L6 Executor 0 auditor 1)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A60 auditor L6 0 != Executor L6 1 (both counts forged PASS)
+  [same] st10                               expected STOP ST10 BLOCKED  observed STOP ST10 BLOCKED  ST10 -> BLOCKED: TEST part over limit ['L6']; L6 TEST Executor 1, data-auditor 0 [停止;不评测 TEST;BLOCKED;报告 Owner]  (model: over ['L6']; L6 Executor 1 auditor 0)
+  [same] begin                              expected STOP ST10 BLOCKED  observed STOP ST10 BLOCKED  ST10 -> BLOCKED: TEST part over limit ['L6']; L6 TEST Executor 1, data-auditor 0 [停止;不评测 TEST;BLOCKED;报告 Owner]  (model: over ['L6']; L6 Executor 1 auditor 0)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ A61 control: every count at its limit, all bound
+  [same] st10                               expected ACCEPT             observed ACCEPT             ['b519eabd1c37b2c37a1624800b2f57aa26c1752b17d13ed54b2959db84489246', 'af1c3bccac66d58a440b10dff357ed1a513c98e03d5f0dec6b3b45c155e1ef07']
+
+== C. every condition holds: begin, marker commit, evaluate / gate calls (one repository); K: other clones
+ C0 evaluate and gate before any begin (no session)
+  [same] eval:N:0                           expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: no TEST session of this process (begin_test_evaluation)  (model: no session of this process)
+  [same] gate:N:a895622c8065094db612d950ad3 expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: no TEST session of this process (begin_test_evaluation)  (model: no session of this process)
+ C1 begin + evaluate / gate calls in one process (stderr tail: '', exit 0)
+  [same*] begin                              expected ACCEPT             observed ACCEPT*            AttributeError: 'TestSession' object has no attribute 'models'
+    post-check ACCEPT*: begin returned (probe print failed); exactly one new commit adds the marker (['d523d20ec1cf']) and the remote branch holds it ok
+    post-check marker commit == local HEAD == remote refs/heads/main (ls-remote)                                    ok
+    post-check marker commit's only parent is the previous HEAD                                                     ok
+    post-check marker commit changes exactly [metrix/e1-pilot/results/test_evaluation_marker.json] (got ['metrix/e1-pilot/results/test_evaluation_marker.json']) ok
+    post-check fast-forward of the previous remote ref (no force)                                                   ok
+    post-check no tags on the remote nor in the repository                                                          ok
+    post-check marker keys ['auditor_count_sha256', 'authorization', 'branch', 'checkpoints', 'code_commit', 'frozen_commit', 'kind', 'mode', 'models', 'remote', 'session_id', 'st10_record_sha256', 'started_utc', 'test_files_sha256'] ok
+    post-check marker frozen_commit, authorization == mine                                                          ok
+    post-check marker remote == URL of origin (/tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/ic3_repos_staged/s/C_main/remote.git), branch == main ok
+    post-check marker test_files_sha256 == my sha256 of the synthetic TEST files                                    ok
+    post-check marker checkpoints == the 30 checkpoint hashes of the committed freeze record + N (31 entries)       ok
+    post-check marker models == my 16 TEST models (order differs)                                                   ok
+    post-check marker st10_record_sha256 / auditor_count_sha256 == sha256 of the committed files                    ok
+    post-check marker code_commit == HEAD before the marker commit                                                  ok
+    post-check no synthetic TEST content (question / text / ids strings) in the marker                              ok
+  [same] eval:N:7                           expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: the model's state sha256 0aaed642c415613a084106be5aad9513ed5ae1a5a5a517d7775aae41cc38c34e is not the marker's a895622c8065094db612d950ad39d072c87a5894603950ddba  (model: model hash != marker)
+  [same] eval:N:0                           expected ACCEPT             observed ACCEPT             ACCEPTED-BY-GATES (stopped at require_gpu)  (model: passes every gate; CPU stops at require_gpu)
+  [same] eval:N:0                           expected ACCEPT             observed ACCEPT             ACCEPTED-BY-GATES (stopped at require_gpu)  (model: passes every gate; CPU stops at require_gpu)
+  [same] eval:F-F5-seed202:1                expected ACCEPT             observed ACCEPT             ACCEPTED-BY-GATES (stopped at require_gpu)  (model: passes every gate; CPU stops at require_gpu)
+  [same] eval:F-F5-seed202:1                expected ACCEPT             observed ACCEPT             ACCEPTED-BY-GATES (stopped at require_gpu)  (model: passes every gate; CPU stops at require_gpu)
+  [same] eval:F-F1-seed101:4                expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: 'F-F1-seed101' is not a model TEST evaluates (['N', 'F-F5-seed101', 'L-L4-seed101', 'A-A2-seed101', 'F-F5-seed202', 'F-F5-seed303', 'L-L4-seed202', 'L-L4-seed30  (model: not one of the 16 TEST models)
+  [same] eval:Z-Z9-seed1:0                  expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: 'Z-Z9-seed1' is not a model TEST evaluates (['N', 'F-F5-seed101', 'L-L4-seed101', 'A-A2-seed101', 'F-F5-seed202', 'F-F5-seed303', 'L-L4-seed202', 'L-L4-seed303'  (model: not one of the 16 TEST models)
+  [same] eval:L-L4-seed303:1                expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: the model's state sha256 46da10034702b106d061e0e8eb16ee44a68240c05a8a71af5588eab23e235a1c is not the marker's d1412f28fb337d84b0f32cadb423f8abffcc496e1c507960f8  (model: model hash != marker)
+  [same] gate:F-F5-seed303:936a0e7111c17c14 expected ACCEPT             observed ACCEPT               (model: passes every gate; CPU stops at require_gpu, claimed)
+  [same] gate:F-F5-seed303:936a0e7111c17c14 expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: F-F5-seed303 was already evaluated on TEST in this session  (model: already claimed in this session)
+  [same] eval:F-F5-seed303:1                expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: F-F5-seed303 was already evaluated on TEST in this session  (model: already claimed in this session)
+  [same] gate:S-F5-seed101:ffffffffffffffff expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: the model's state sha256 ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff is not the marker's c260b6d7d2466571ebd8963bf4e1f7970467617fdd349564b1  (model: model hash != marker)
+  [same] gate:N:a895622c8065094db612d950ad3 expected ACCEPT             observed ACCEPT               (model: passes every gate; CPU stops at require_gpu, claimed)
+  [same] eval:N:0                           expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: N was already evaluated on TEST in this session  (model: already claimed in this session)
+  [same] gate:N:a895622c8065094db612d950ad3 expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: N was already evaluated on TEST in this session  (model: already claimed in this session)
+  [same] eval:F-F5-seed202:1                expected ACCEPT             observed ACCEPT             ACCEPTED-BY-GATES (stopped at require_gpu)  (model: passes every gate; CPU stops at require_gpu)
+    post-check evaluate / gate calls wrote nothing: HEAD == marker commit, working tree clean                       ok
+ C2 another process, same repository: the session of the earlier process is gone
+  [same] eval:N:0                           expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: no TEST session of this process (begin_test_evaluation)  (model: no session in this process)
+  [same] begin                              expected STOP - BLOCKED     observed STOP - BLOCKED     BLOCKED: TEST evaluation was already started (marker metrix/e1-pilot/results/test_evaluation_marker.json in working tree, commit d523d20ec1cf65d0041d1d4e4fb1650c092b4302) and no result was committed:   (model: marker without result in index, local commit d523d20ec1cf, remote commit d523d20ec1cf)
+  [same] eval:N:0                           expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: no TEST session of this process (begin_test_evaluation)  (model: begin refused: no session)
+  [PROBE-DEFECT] marker                             expected STOP - BLOCKED     observed PROBE-DEFECT       TypeError: refuse_if_marker() takes from 1 to 2 positional arguments but 3 were given  (model: marker without result in index, local commit d523d20ec1cf, remote commit d523d20ec1cf)
+    post-check HEAD and remote unchanged by C2                                                                      ok
+ K1 a fresh clone of the remote after the marker push
+  [PROBE-DEFECT] marker                             expected STOP - BLOCKED     observed PROBE-DEFECT       TypeError: refuse_if_marker() takes from 1 to 2 positional arguments but 3 were given  (model: marker without result in index, local commit d523d20ec1cf, remote commit d523d20ec1cf)
+  [same] begin                              expected STOP - BLOCKED     observed STOP - BLOCKED     BLOCKED: TEST evaluation was already started (marker metrix/e1-pilot/results/test_evaluation_marker.json in working tree, commit d523d20ec1cf65d0041d1d4e4fb1650c092b4302) and no result was committed:   (model: marker without result in index, local commit d523d20ec1cf, remote commit d523d20ec1cf)
+    post-check fresh clone: nothing committed                                                                       ok
+ K2 a clone made before the marker push (stale; the marker only on the remote)
+  [same] begin                              expected STOP - BLOCKED     observed STOP - BLOCKED     BLOCKED: TEST evaluation was already started (marker metrix/e1-pilot/results/test_evaluation_marker.json in commit d523d20ec1cf65d0041d1d4e4fb1650c092b4302) and no result was committed: it counts as e  (model: marker without result in remote commit d523d20ec1cf)
+    post-check stale clone: nothing committed, no marker file                                                       ok
+ K3 a --single-branch clone of main made before the marker push (its origin/main lags)
+  [same] begin                              expected STOP - BLOCKED     observed STOP - BLOCKED     BLOCKED: TEST evaluation was already started (marker metrix/e1-pilot/results/test_evaluation_marker.json in commit d523d20ec1cf65d0041d1d4e4fb1650c092b4302) and no result was committed: it counts as e  (model: marker without result in remote commit d523d20ec1cf)
+    post-check stale clone: nothing committed, no marker file                                                       ok
+
+== B. markers or results already present (ST10 holds in every scenario; ops marker and begin)
+ B01 marker only in the working tree (untracked)
+  [PROBE-DEFECT] marker                             expected STOP - BLOCKED     observed PROBE-DEFECT       TypeError: refuse_if_marker() takes from 1 to 2 positional arguments but 3 were given  (model: marker without result in working tree)
+  [same] begin                              expected STOP - BLOCKED     observed STOP - BLOCKED     BLOCKED: TEST evaluation was already started (marker metrix/e1-pilot/results/test_evaluation_marker.json in working tree) and no result was committed: it counts as evaluated; no further TEST evaluatio  (model: marker without result in working tree)
+    post-check nothing written: marker file as before, HEAD unchanged, remote main unchanged                        ok
+ B02 marker staged only
+  [PROBE-DEFECT] marker                             expected STOP - BLOCKED     observed PROBE-DEFECT       TypeError: refuse_if_marker() takes from 1 to 2 positional arguments but 3 were given  (model: marker without result in index, working tree)
+  [same] begin                              expected STOP - BLOCKED     observed STOP - BLOCKED     BLOCKED: TEST evaluation was already started (marker metrix/e1-pilot/results/test_evaluation_marker.json in working tree) and no result was committed: it counts as evaluated; no further TEST evaluatio  (model: marker without result in index, working tree)
+    post-check nothing written: marker file as before, HEAD unchanged, remote main unchanged                        ok
+ B03 marker committed on another local branch
+  [PROBE-DEFECT] marker                             expected STOP - BLOCKED     observed PROBE-DEFECT       TypeError: refuse_if_marker() takes from 1 to 2 positional arguments but 3 were given  (model: marker without result in local commit 26d62443b926)
+  [same] begin                              expected STOP - BLOCKED     observed STOP - BLOCKED     BLOCKED: TEST evaluation was already started (marker metrix/e1-pilot/results/test_evaluation_marker.json in commit 26d62443b926cc3f5246bec6b045ca2eaf98610e) and no result was committed: it counts as e  (model: marker without result in local commit 26d62443b926)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ B04 marker committed, then deleted (linear history)
+  [PROBE-DEFECT] marker                             expected STOP - BLOCKED     observed PROBE-DEFECT       TypeError: refuse_if_marker() takes from 1 to 2 positional arguments but 3 were given  (model: marker without result in local commit 6c9ade9b84a3, remote commit 6c9ade9b84a3)
+  [same] begin                              expected STOP - BLOCKED     observed STOP - BLOCKED     BLOCKED: TEST evaluation was already started (marker metrix/e1-pilot/results/test_evaluation_marker.json in commit 7f575514c8a06eb141e2f825e0318894f8f38f08, commit 6c9ade9b84a3045a180dd0a747739aa5b605  (model: marker without result in local commit 6c9ade9b84a3, remote commit 6c9ade9b84a3)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ B05 marker committed and deleted on a side branch merged --no-ff, side ref deleted
+  [PROBE-DEFECT] marker                             expected STOP - BLOCKED     observed PROBE-DEFECT       TypeError: refuse_if_marker() takes from 1 to 2 positional arguments but 3 were given  (model: marker without result in local commit 626381dc500e, remote commit 626381dc500e)
+  [same] begin                              expected STOP - BLOCKED     observed STOP - BLOCKED     BLOCKED: TEST evaluation was already started (marker metrix/e1-pilot/results/test_evaluation_marker.json in commit aa270bad753c0aa7ae03db2ade530e1a2dfb0e25, commit 626381dc500e373ce5e7f0ea282d85a3b042  (model: marker without result in local commit 626381dc500e, remote commit 626381dc500e)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ B05s marker on a side branch merged with -s ours (merge TREESAME to main), side ref deleted
+  [PROBE-DEFECT] marker                             expected STOP - BLOCKED     observed PROBE-DEFECT       TypeError: refuse_if_marker() takes from 1 to 2 positional arguments but 3 were given  (model: marker without result in local commit adf842bc23d8, remote commit adf842bc23d8)
+  [same] begin                              expected STOP - BLOCKED     observed STOP - BLOCKED     BLOCKED: TEST evaluation was already started (marker metrix/e1-pilot/results/test_evaluation_marker.json in commit 69e581dd704c1c773a8f4f5557f9c49ef41a49e5, commit adf842bc23d838c323902e689dfc1189b345  (model: marker without result in local commit adf842bc23d8, remote commit adf842bc23d8)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ B05r marker committed on main; result committed and deleted on a side branch merged --no-ff
+  [PROBE-DEFECT] marker                             expected EVALUATED          observed PROBE-DEFECT       TypeError: refuse_if_marker() takes from 1 to 2 positional arguments but 3 were given  (model: result in local commit fd88344e5232, remote commit fd88344e5232)
+  [same] begin                              expected EVALUATED          observed EVALUATED          TestAlreadyEvaluated: TEST was already evaluated (marker metrix/e1-pilot/results/test_evaluation_marker.json in working tree, commit c63015ed0630a7d730c07792cc3d83d6a4fe2f38; result metrix/e1-pilot/re  (model: result in local commit fd88344e5232, remote commit fd88344e5232)
+    post-check nothing written: marker file as before, HEAD unchanged, remote main unchanged                        ok
+ B05x no marker; result committed and deleted on a side branch merged --no-ff
+  [PROBE-DEFECT] marker                             expected EVALUATED          observed PROBE-DEFECT       TypeError: refuse_if_marker() takes from 1 to 2 positional arguments but 3 were given  (model: result in local commit 24a4e29f5a02, remote commit 24a4e29f5a02)
+  [same] begin                              expected EVALUATED          observed EVALUATED          TestAlreadyEvaluated: TEST was already evaluated (marker metrix/e1-pilot/results/test_evaluation_marker.json in nowhere; result metrix/e1-pilot/results/test_evaluation_result.json in commit aca75397b0  (model: result in local commit 24a4e29f5a02, remote commit 24a4e29f5a02)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ B05m marker and result committed and deleted on a side branch merged --no-ff
+  [PROBE-DEFECT] marker                             expected EVALUATED          observed PROBE-DEFECT       TypeError: refuse_if_marker() takes from 1 to 2 positional arguments but 3 were given  (model: result in local commit c9e2655841a1, remote commit c9e2655841a1)
+  [same] begin                              expected EVALUATED          observed EVALUATED          TestAlreadyEvaluated: TEST was already evaluated (marker metrix/e1-pilot/results/test_evaluation_marker.json in commit 42c523f17e7b200fcce9786e5198e12ea682a8b8, commit 0b522829d63ca36e38f786c58dae197f  (model: result in local commit c9e2655841a1, remote commit c9e2655841a1)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ B06 marker and result committed
+  [PROBE-DEFECT] marker                             expected EVALUATED          observed PROBE-DEFECT       TypeError: refuse_if_marker() takes from 1 to 2 positional arguments but 3 were given  (model: result in index, local commit fd257494dfb9, remote commit fd257494dfb9)
+  [same] begin                              expected EVALUATED          observed EVALUATED          TestAlreadyEvaluated: TEST was already evaluated (marker metrix/e1-pilot/results/test_evaluation_marker.json in working tree, commit fd257494dfb9c0b0599f983f33bff8ca8a4f461c; result metrix/e1-pilot/re  (model: result in index, local commit fd257494dfb9, remote commit fd257494dfb9)
+    post-check nothing written: marker file as before, HEAD unchanged, remote main unchanged                        ok
+ B07 marker committed, result only in the working tree
+  [PROBE-DEFECT] marker                             expected EVALUATED          observed PROBE-DEFECT       TypeError: refuse_if_marker() takes from 1 to 2 positional arguments but 3 were given  (model: result in working tree)
+  [same] begin                              expected EVALUATED          observed EVALUATED          TestAlreadyEvaluated: TEST was already evaluated (marker metrix/e1-pilot/results/test_evaluation_marker.json in working tree, commit adb4c93f3a12c9c60a97ecc7ee41eccd85f659e6; result metrix/e1-pilot/re  (model: result in working tree)
+    post-check nothing written: marker file as before, HEAD unchanged, remote main unchanged                        ok
+ B08 marker on a remote branch 'side', fetched (remote-tracking ref)
+  [PROBE-DEFECT] marker                             expected STOP - BLOCKED     observed PROBE-DEFECT       TypeError: refuse_if_marker() takes from 1 to 2 positional arguments but 3 were given  (model: marker without result in local commit 38fe8a138ce0, remote commit 38fe8a138ce0)
+  [same] begin                              expected STOP - BLOCKED     observed STOP - BLOCKED     BLOCKED: TEST evaluation was already started (marker metrix/e1-pilot/results/test_evaluation_marker.json in commit 38fe8a138ce0bd511b600da7dcb10403e408bb20) and no result was committed: it counts as e  (model: marker without result in local commit 38fe8a138ce0, remote commit 38fe8a138ce0)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ B09 marker on the remote branch main only (local not fetched)
+  [PROBE-DEFECT] marker                             expected STOP - BLOCKED     observed PROBE-DEFECT       TypeError: refuse_if_marker() takes from 1 to 2 positional arguments but 3 were given  (model: marker without result in remote commit 719169010b8e)
+  [same] begin                              expected STOP - BLOCKED     observed STOP - BLOCKED     BLOCKED: TEST evaluation was already started (marker metrix/e1-pilot/results/test_evaluation_marker.json in commit 719169010b8e3538e2ea85e3e685405956e5acb1) and no result was committed: it counts as e  (model: marker without result in remote commit 719169010b8e)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ B10 marker reachable only from a local tag
+  [PROBE-DEFECT] marker                             expected STOP - BLOCKED     observed PROBE-DEFECT       TypeError: refuse_if_marker() takes from 1 to 2 positional arguments but 3 were given  (model: marker without result in local commit 8ffddd375943)
+  [same] begin                              expected STOP - BLOCKED     observed STOP - BLOCKED     BLOCKED: TEST evaluation was already started (marker metrix/e1-pilot/results/test_evaluation_marker.json in commit 8ffddd3759431b2930ef71bf3ebf67b6066ed0fd) and no result was committed: it counts as e  (model: marker without result in local commit 8ffddd375943)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ B11 marker on a remote branch 'side', never fetched
+  [PROBE-DEFECT] marker                             expected STOP - BLOCKED     observed PROBE-DEFECT       TypeError: refuse_if_marker() takes from 1 to 2 positional arguments but 3 were given  (model: marker without result in remote commit cd7b624f4f0f)
+  [same] begin                              expected STOP - BLOCKED     observed STOP - BLOCKED     BLOCKED: TEST evaluation was already started (marker metrix/e1-pilot/results/test_evaluation_marker.json in commit cd7b624f4f0f6691d8612eb4f0232c484ac9b246) and no result was committed: it counts as e  (model: marker without result in remote commit cd7b624f4f0f)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ B12 result without any marker
+  [PROBE-DEFECT] marker                             expected EVALUATED          observed PROBE-DEFECT       TypeError: refuse_if_marker() takes from 1 to 2 positional arguments but 3 were given  (model: result in index, local commit 7a9c97668843, remote commit 7a9c97668843)
+  [same] begin                              expected EVALUATED          observed EVALUATED          TestAlreadyEvaluated: TEST was already evaluated (marker metrix/e1-pilot/results/test_evaluation_marker.json in nowhere; result metrix/e1-pilot/results/test_evaluation_result.json in working tree, com  (model: result in index, local commit 7a9c97668843, remote commit 7a9c97668843)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ B16 result only on a remote branch 'side', never fetched
+  [PROBE-DEFECT] marker                             expected EVALUATED          observed PROBE-DEFECT       TypeError: refuse_if_marker() takes from 1 to 2 positional arguments but 3 were given  (model: result in remote commit d0ad7c8f7217)
+  [same] begin                              expected EVALUATED          observed EVALUATED          TestAlreadyEvaluated: TEST was already evaluated (marker metrix/e1-pilot/results/test_evaluation_marker.json in nowhere; result metrix/e1-pilot/results/test_evaluation_result.json in commit d0ad7c8f72  (model: result in remote commit d0ad7c8f7217)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ B14 --single-branch clone of main; marker pushed to remote branch 'side' afterwards
+  [PROBE-DEFECT] marker                             expected STOP - BLOCKED     observed PROBE-DEFECT       TypeError: refuse_if_marker() takes from 1 to 2 positional arguments but 3 were given  (model: marker without result in remote commit ef7a87db449a)
+  [same] begin                              expected STOP - BLOCKED     observed STOP - BLOCKED     BLOCKED: TEST evaluation was already started (marker metrix/e1-pilot/results/test_evaluation_marker.json in commit ef7a87db449a5822e9c7ed90086252730d8318cd) and no result was committed: it counts as e  (model: marker without result in remote commit ef7a87db449a)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ B15 --single-branch clone of main, lagging: marker pushed to remote main afterwards
+  [PROBE-DEFECT] marker                             expected STOP - BLOCKED     observed PROBE-DEFECT       TypeError: refuse_if_marker() takes from 1 to 2 positional arguments but 3 were given  (model: marker without result in remote commit 068e3d1a7cfb)
+  [same] begin                              expected STOP - BLOCKED     observed STOP - BLOCKED     BLOCKED: TEST evaluation was already started (marker metrix/e1-pilot/results/test_evaluation_marker.json in commit 068e3d1a7cfb7af717861a75cfd007939d513701) and no result was committed: it counts as e  (model: marker without result in remote commit 068e3d1a7cfb)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ B13 marker commit reachable only from the reflog (reset --hard, never pushed)
+  [PROBE-DEFECT] marker                             expected INFO               observed PROBE-DEFECT       TypeError: refuse_if_marker() takes from 1 to 2 positional arguments but 3 were given
+  [INFO] begin                              expected INFO               observed ACCEPT*            AttributeError: 'TestSession' object has no attribute 'models'
+ B17 marker reachable on the remote only from a tag (no branch), never fetched
+  [PROBE-DEFECT] marker                             expected INFO               observed PROBE-DEFECT       TypeError: refuse_if_marker() takes from 1 to 2 positional arguments but 3 were given
+  [INFO] begin                              expected INFO               observed ACCEPT*            AttributeError: 'TestSession' object has no attribute 'models'
+
+== D. begin: twice in one process, fast-forward precheck, push refused by the remote, remote unreachable, staged changes, base hash, dirty tree, no identity, tags, empty remote
+ D1 begin twice in one process
+  [same*] begin                              expected ACCEPT             observed ACCEPT*            AttributeError: 'TestSession' object has no attribute 'models'
+    post-check ACCEPT*: begin returned (probe print failed); exactly one new commit adds the marker (['18454a9559b2']) and the remote branch holds it ok
+  [same] begin#2                            expected STOP - BLOCKED     observed STOP - BLOCKED     BLOCKED: TEST evaluation was already started (marker metrix/e1-pilot/results/test_evaluation_marker.json in working tree, commit 18454a9559b266323f3af47e3ad56bdcf7800dc6) and no result was committed:   (model: marker committed by begin#1, no result)
+    post-check one marker commit only                                                                               ok
+ D2 remote main diverged (another clone pushed a commit)
+  [same] begin                              expected STOP - BLOCKED     observed STOP - BLOCKED     BLOCKED: TEST path refused: origin main (092eac15db2f247cafb70d55c042478e46d09483) is not an ancestor of HEAD: the push would not be a fast-forward; report to the Owner  (model: push would not be a fast-forward)
+  [same] eval:N:0                           expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: no TEST session of this process (begin_test_evaluation)  (model: begin did not return a session)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+  [same] begin again                        expected STOP - BLOCKED     observed STOP - BLOCKED     BLOCKED: TEST path refused: origin main (092eac15db2f247cafb70d55c042478e46d09483) is not an ancestor of HEAD: the push would not be a fast-forward; report to the Owner  (model: push would not be a fast-forward)
+    post-check begin again wrote nothing                                                                            ok
+ D2b remote main ahead of HEAD (another clone pushed; HEAD is its ancestor)
+  [same] begin                              expected STOP - BLOCKED     observed STOP - BLOCKED     BLOCKED: TEST path refused: origin main (5787b010b35bdfee63ed597a4767f5bc2a5c492e) is not an ancestor of HEAD: the push would not be a fast-forward; report to the Owner  (model: push would not be a fast-forward)
+  [same] eval:N:0                           expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: no TEST session of this process (begin_test_evaluation)  (model: begin did not return a session)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+  [same] begin again                        expected STOP - BLOCKED     observed STOP - BLOCKED     BLOCKED: TEST path refused: origin main (5787b010b35bdfee63ed597a4767f5bc2a5c492e) is not an ancestor of HEAD: the push would not be a fast-forward; report to the Owner  (model: push would not be a fast-forward)
+    post-check begin again wrote nothing                                                                            ok
+ D3 remote pre-receive hook refuses every push
+  [same] begin                              expected STOP - BLOCKED     observed STOP - BLOCKED     BLOCKED: the TEST marker (TEST not evaluated; the marker refuses any later evaluation) is committed (bcd4b8a39b9dd2377659783396096a2df6706dbf) but was not pushed to origin main (remote: auditor: pushe  (model: remote refuses the push (seen only when pushing))
+  [same] eval:N:0                           expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: no TEST session of this process (begin_test_evaluation)  (model: begin did not return a session)
+    post-check marker committed locally on top of the previous HEAD (only the marker path), remote unchanged        ok
+  [same] begin again                        expected STOP - BLOCKED     observed STOP - BLOCKED     BLOCKED: TEST evaluation was already started (marker metrix/e1-pilot/results/test_evaluation_marker.json in working tree, commit bcd4b8a39b9dd2377659783396096a2df6706dbf) and no result was committed:   (model: marker without result in index, local commit bcd4b8a39b9d, working tree)
+    post-check begin again wrote nothing                                                                            ok
+ D4 remote unreachable
+  [PROBE-DEFECT] marker                             expected STOP - BLOCKED     observed PROBE-DEFECT       TypeError: refuse_if_marker() takes from 1 to 2 positional arguments but 3 were given  (model: remote not reachable: its content is unknown)
+  [same] begin                              expected STOP - BLOCKED     observed STOP - BLOCKED     BLOCKED: TEST path refused: cannot list the branches of origin to look for TEST records there: fatal: '/tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/ic3_repos_staged/s/no-su  (model: remote not reachable: its content is unknown)
+    post-check nothing written                                                                                      ok
+ D5 staged change in the index
+  [same] begin                              expected STOP - BLOCKED     observed STOP - BLOCKED     BLOCKED: TEST path refused: the git index holds staged changes; the marker commit holds the marker only; report to the Owner  (model: staged changes)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ D6 base model hash not 64 lower-case hex
+  [same] begin:xyz                          expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: base model hash 'xyz'  (model: base model hash)
+  [INFO] begin:AAAA..                       expected INFO               observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: base model hash 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'  (model: upper-case hex: no rule in the rulings)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ D7 unstaged modification and an untracked file outside the code paths
+  [same*] begin                              expected ACCEPT             observed ACCEPT*            AttributeError: 'TestSession' object has no attribute 'models'
+    post-check ACCEPT*: begin returned (probe print failed); exactly one new commit adds the marker (['245aa205c9f8']) and the remote branch holds it ok
+    post-check marker commit == local HEAD == remote refs/heads/main (ls-remote)                                    ok
+    post-check marker commit's only parent is the previous HEAD                                                     ok
+    post-check marker commit changes exactly [metrix/e1-pilot/results/test_evaluation_marker.json] (got ['metrix/e1-pilot/results/test_evaluation_marker.json']) ok
+    post-check fast-forward of the previous remote ref (no force)                                                   ok
+    post-check no tags on the remote nor in the repository                                                          ok
+    post-check marker keys ['auditor_count_sha256', 'authorization', 'branch', 'checkpoints', 'code_commit', 'frozen_commit', 'kind', 'mode', 'models', 'remote', 'session_id', 'st10_record_sha256', 'started_utc', 'test_files_sha256'] ok
+    post-check marker frozen_commit, authorization == mine                                                          ok
+    post-check marker remote == URL of origin (/tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/ic3_repos_staged/s/D7_dirty/remote.git), branch == main ok
+    post-check marker test_files_sha256 == my sha256 of the synthetic TEST files                                    ok
+    post-check marker checkpoints == the 30 checkpoint hashes of the committed freeze record + N (31 entries)       ok
+    post-check marker models == my 16 TEST models (order differs)                                                   ok
+    post-check marker st10_record_sha256 / auditor_count_sha256 == sha256 of the committed files                    ok
+    post-check marker code_commit == HEAD before the marker commit                                                  ok
+    post-check no synthetic TEST content (question / text / ids strings) in the marker                              ok
+    post-check modified and untracked files left as they were (not committed)                                       ok
+ D8 no committer identity (repository: user.useConfigOnly true, no user.name / user.email; empty global config)
+  [same] begin                              expected STOP - BLOCKED     observed STOP - BLOCKED     BLOCKED: TEST path refused: no git committer identity (user.name, user.email); report to the Owner  (model: no commit possible (Author identity unknown *** Please tell me who you are. Run git config --global user.email "you@example.com" git config --global user.name "Your Name" to set yo))
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ D9 push.followTags=true and an annotated tag on HEAD
+  [same*] begin                              expected ACCEPT             observed ACCEPT*            AttributeError: 'TestSession' object has no attribute 'models'
+    post-check ACCEPT*: begin returned (probe print failed); exactly one new commit adds the marker (['e975f7d26e6f']) and the remote branch holds it ok
+    post-check marker commit == local HEAD == remote refs/heads/main (ls-remote)                                    ok
+    post-check marker commit's only parent is the previous HEAD                                                     ok
+    post-check marker commit changes exactly [metrix/e1-pilot/results/test_evaluation_marker.json] (got ['metrix/e1-pilot/results/test_evaluation_marker.json']) ok
+    post-check fast-forward of the previous remote ref (no force)                                                   ok
+    post-check no tags on the remote                                                                                ok
+    post-check marker keys ['auditor_count_sha256', 'authorization', 'branch', 'checkpoints', 'code_commit', 'frozen_commit', 'kind', 'mode', 'models', 'remote', 'session_id', 'st10_record_sha256', 'started_utc', 'test_files_sha256'] ok
+    post-check marker frozen_commit, authorization == mine                                                          ok
+    post-check marker remote == URL of origin (/tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/ic3_repos_staged/s/D9_follow_tags/remote.git), branch == main ok
+    post-check marker test_files_sha256 == my sha256 of the synthetic TEST files                                    ok
+    post-check marker checkpoints == the 30 checkpoint hashes of the committed freeze record + N (31 entries)       ok
+    post-check marker models == my 16 TEST models (order differs)                                                   ok
+    post-check marker st10_record_sha256 / auditor_count_sha256 == sha256 of the committed files                    ok
+    post-check marker code_commit == HEAD before the marker commit                                                  ok
+    post-check no synthetic TEST content (question / text / ids strings) in the marker                              ok
+    post-check local annotated tag still there, remote has no tag (ls-remote --tags: '')                            ok
+ D10 the remote has no branch yet (empty bare repository)
+  [same*] begin                              expected ACCEPT             observed ACCEPT*            AttributeError: 'TestSession' object has no attribute 'models'
+    post-check ACCEPT*: begin returned (probe print failed); exactly one new commit adds the marker (['d2e7a54987ba']) and the remote branch holds it ok
+    post-check marker commit == local HEAD == remote refs/heads/main (ls-remote)                                    ok
+    post-check marker commit's only parent is the previous HEAD                                                     ok
+    post-check marker commit changes exactly [metrix/e1-pilot/results/test_evaluation_marker.json] (got ['metrix/e1-pilot/results/test_evaluation_marker.json']) ok
+    post-check fast-forward of the previous remote ref (no force)                                                   ok
+    post-check no tags on the remote nor in the repository                                                          ok
+    post-check marker keys ['auditor_count_sha256', 'authorization', 'branch', 'checkpoints', 'code_commit', 'frozen_commit', 'kind', 'mode', 'models', 'remote', 'session_id', 'st10_record_sha256', 'started_utc', 'test_files_sha256'] ok
+    post-check marker frozen_commit, authorization == mine                                                          ok
+    post-check marker remote == URL of origin (/tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/ic3_repos_staged/s/D10_empty_remote/empty_remote.git), branch == main ok
+    post-check marker test_files_sha256 == my sha256 of the synthetic TEST files                                    ok
+    post-check marker checkpoints == the 30 checkpoint hashes of the committed freeze record + N (31 entries)       ok
+    post-check marker models == my 16 TEST models (order differs)                                                   ok
+    post-check marker st10_record_sha256 / auditor_count_sha256 == sha256 of the committed files                    ok
+    post-check marker code_commit == HEAD before the marker commit                                                  ok
+    post-check no synthetic TEST content (question / text / ids strings) in the marker                              ok
+ D11 an untracked file under metrix/e1-pilot/src (the marker names the code commit)
+  [INFO] begin                              expected INFO               observed REFUSE             IMPLEMENTATION_FAIL: uncommitted changes in the code (metrix/e1-pilot/src, metrix/e1-pilot/run_pilot.py): ?? metrix/e1-pilot/src/untracked_code.py   (model: no ruling on the marker's code commit)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ D12 the results directory is ignored (.gitignore): the marker cannot be added
+  [same] begin                              expected STOP - BLOCKED     observed STOP - BLOCKED     BLOCKED: staging the TEST marker (TEST not evaluated; the marker refuses any later evaluation) failed (The following paths are ignored by one of your .gitignore files: metrix/e1-pilot/results hint: Us  (model: the marker path is ignored: the marker commit fails after the marker is written)
+    post-check nothing committed or pushed (HEAD, remote unchanged)                                                 ok
+  [same] begin again                        expected STOP - BLOCKED     observed STOP - BLOCKED     BLOCKED: TEST evaluation was already started (marker metrix/e1-pilot/results/test_evaluation_marker.json in working tree) and no result was committed: it counts as evaluated; no further TEST evaluatio  (model: marker without result in working tree)
+
+== E. changes between begin and evaluate in the same process (a pre-push hook of the temp repository acts once, when the commit being pushed holds the marker, i.e. during begin's real push after the marker commit)
+ E0 control: hook acts, changes nothing (hook log: ['pre-push invoked', 'pre-push invoked', 'acting on de9faaff335964302397e3cc3fe41c96d4c4db73'])
+  [same*] begin                              expected ACCEPT             observed ACCEPT*            AttributeError: 'TestSession' object has no attribute 'models'
+    post-check ACCEPT*: begin returned (probe print failed); exactly one new commit adds the marker (['de9faaff3359']) and the remote branch holds it ok
+  [same] eval:N:0                           expected ACCEPT             observed ACCEPT             ACCEPTED-BY-GATES (stopped at require_gpu)  (model: passes every gate; CPU stops at require_gpu)
+  [same] eval:F-F5-seed202:1                expected ACCEPT             observed ACCEPT             ACCEPTED-BY-GATES (stopped at require_gpu)  (model: passes every gate; CPU stops at require_gpu)
+  [same] gate:N:a895622c8065094db612d950ad3 expected ACCEPT             observed ACCEPT               (model: passes every gate; CPU stops at require_gpu, claimed)
+    post-check hook acted once, on the marker commit; remote main == marker commit; the change is none              ok
+ E1 ST10 record changed in the working tree after the marker (hook log: ['pre-push invoked', 'pre-push invoked', 'acting on 568b08de5f9e9350d5e180c92b8db5d575af271c'])
+  [same*] begin                              expected ACCEPT             observed ACCEPT*            AttributeError: 'TestSession' object has no attribute 'models'
+    post-check ACCEPT*: begin returned (probe print failed); exactly one new commit adds the marker (['568b08de5f9e']) and the remote branch holds it ok
+  [same] eval:N:0                           expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record: metrix/e1-pilot/results/st10_record.json in the working tree differs from its committed version  (model: ST10 record changed in the working tree after the marker after the marker)
+  [same] eval:F-F5-seed202:1                expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record: metrix/e1-pilot/results/st10_record.json in the working tree differs from its committed version  (model: ST10 record changed in the working tree after the marker after the marker)
+  [same] gate:N:a895622c8065094db612d950ad3 expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: ST10 record: metrix/e1-pilot/results/st10_record.json in the working tree differs from its committed version  (model: ST10 record changed in the working tree after the marker after the marker)
+    post-check hook acted once, on the marker commit; remote main == marker commit; the change is in place after the marker commit ok
+ E2 ST10 record changed and committed after the marker (still valid) (hook log: ['pre-push invoked', 'pre-push invoked', 'acting on 8e280b1bdcba0677c121b6a61f7196fb9d85a2a9'])
+  [same*] begin                              expected ACCEPT             observed ACCEPT*            AttributeError: 'TestSession' object has no attribute 'models'
+    post-check ACCEPT*: begin returned (probe print failed); exactly one new commit adds the marker (['8e280b1bdcba']) and the remote branch holds it ok
+  [same] eval:N:0                           expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: the ST10 record or the data-auditor's count changed after the marker  (model: ST10 record changed and committed after the marker (still valid) after the marker)
+  [same] eval:F-F5-seed202:1                expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: the ST10 record or the data-auditor's count changed after the marker  (model: ST10 record changed and committed after the marker (still valid) after the marker)
+  [same] gate:N:a895622c8065094db612d950ad3 expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: the ST10 record or the data-auditor's count changed after the marker  (model: ST10 record changed and committed after the marker (still valid) after the marker)
+    post-check hook acted once, on the marker commit; remote main == marker commit; the change is in place after the marker commit ok
+ E3 marker's TEST file hashes changed and committed (TEST rows != marker) (hook log: ['pre-push invoked', 'pre-push invoked', 'acting on 1abb9c962b4390736762484c58373df2f74d27c5'])
+  [same*] begin                              expected ACCEPT             observed ACCEPT*            AttributeError: 'TestSession' object has no attribute 'models'
+    post-check ACCEPT*: begin returned (probe print failed); exactly one new commit adds the marker (['1abb9c962b43']) and the remote branch holds it ok
+  [same] eval:N:0                           expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: the committed TEST marker is not the one of this session  (model: marker's TEST file hashes changed and committed (TEST rows != marker) after the marker)
+  [same] eval:F-F5-seed202:1                expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: the committed TEST marker is not the one of this session  (model: marker's TEST file hashes changed and committed (TEST rows != marker) after the marker)
+  [same] gate:N:a895622c8065094db612d950ad3 expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: the committed TEST marker is not the one of this session  (model: marker's TEST file hashes changed and committed (TEST rows != marker) after the marker)
+    post-check hook acted once, on the marker commit; remote main == marker commit; the change is in place after the marker commit ok
+ E4 auditor's count file changed and committed after the marker (hook log: ['pre-push invoked', 'pre-push invoked', 'acting on 34d05f7887ec18d34b338359f2b901e95d3b8c23'])
+  [same*] begin                              expected ACCEPT             observed ACCEPT*            AttributeError: 'TestSession' object has no attribute 'models'
+    post-check ACCEPT*: begin returned (probe print failed); exactly one new commit adds the marker (['34d05f7887ec']) and the remote branch holds it ok
+  [same] eval:N:0                           expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: the ST10 record or the data-auditor's count changed after the marker  (model: auditor's count file changed and committed after the marker after the marker)
+  [same] eval:F-F5-seed202:1                expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: the ST10 record or the data-auditor's count changed after the marker  (model: auditor's count file changed and committed after the marker after the marker)
+  [same] gate:N:a895622c8065094db612d950ad3 expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: the ST10 record or the data-auditor's count changed after the marker  (model: auditor's count file changed and committed after the marker after the marker)
+    post-check hook acted once, on the marker commit; remote main == marker commit; the change is in place after the marker commit ok
+
+== F. control without --interpretations-ruled (B25 pending): begin and evaluate refuse
+  [INFO] st10                               expected INFO               observed ACCEPT             ['b519eabd1c37b2c37a1624800b2f57aa26c1752b17d13ed54b2959db84489246', 'af1c3bccac66d58a440b10dff357ed1a513c98e03d5f0dec6b3b45c155e1ef07']  (model: ST10 gate alone: ACCEPT (no rule on whether it checks B25))
+  [same] begin                              expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: interpretations not yet ruled by Review Gate: B25  (model: interpretation B25 pending)
+    post-check begin refusal names B25: 'ATION_FAIL: TEST path refused: interpretations not yet ruled by Review Gate: B25' ok
+  [same] eval:N:0                           expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: interpretations not yet ruled by Review Gate: B25  (model: interpretation B25 pending)
+    post-check eval refusal names B25                                                                               ok
+  [same] gate:N:a895622c8065094db612d950ad3 expected REFUSE             observed REFUSE             IMPLEMENTATION_FAIL: TEST path refused: no TEST session of this process (begin_test_evaluation)  (model: interpretation B25 pending)
+    post-check nothing written: marker file absent, HEAD unchanged, remote main unchanged                           ok
+ F2 the same repository, probe with --interpretations-ruled (control of the control)
+  [same*] begin                              expected ACCEPT             observed ACCEPT*            AttributeError: 'TestSession' object has no attribute 'models'
+    post-check ACCEPT*: begin returned (probe print failed); exactly one new commit adds the marker (['fe12fd29585c']) and the remote branch holds it ok
+  [same] eval:N:0                           expected ACCEPT             observed ACCEPT             ACCEPTED-BY-GATES (stopped at require_gpu)  (model: passes every gate; CPU stops at require_gpu)
+
+== H. git level (not black box): the history search of 'TEST generated once' (ST10 record) and of the result file in a side branch merged back. refuse_if_st10_record has no probe operation and the TEST driver cannot be pointed at a temporary repository without generating real TEST; its search is the same _where / _ever_committed as the marker's (ic3_03 g), whose behaviour B05 / B05s / B05r / B05x / B05m test black box. Here: my rev-list + cat-file search vs the git command form the code uses (ic3_03 g: git log --full-history <revs> --format=%H -- <path>) vs the round-1 form without --full-history.
+ H1 st10_record.json, side branch merged (no-ff), side ref deleted: mine (commits whose tree holds it) ['374c54fb0487'] | git log --full-history ['5327468ea44f', '374c54fb0487'] | git log (no --full-history) []
+    post-check H1 found by the code's form iff found by mine (True / True)                                          ok
+ H2 st10_record.json, side branch merged (ours), side ref deleted: mine (commits whose tree holds it) ['ac86ed3cc4f0'] | git log --full-history ['2db41a70e9b2', 'ac86ed3cc4f0'] | git log (no --full-history) []
+    post-check H2 found by the code's form iff found by mine (True / True)                                          ok
+ H3 test_evaluation_result.json, side branch merged (no-ff), side ref deleted: mine (commits whose tree holds it) ['0042a3f39e82'] | git log --full-history ['b974d9b45da6', '0042a3f39e82'] | git log (no --full-history) []
+    post-check H3 found by the code's form iff found by mine (True / True)                                          ok
+ H4 test_evaluation_result.json, side branch merged (ours), side ref deleted: mine (commits whose tree holds it) ['0042a3f39e82'] | git log --full-history ['592d6b78ccf1', '0042a3f39e82'] | git log (no --full-history) []
+    post-check H4 found by the code's form iff found by mine (True / True)                                          ok
+ H5 test_evaluation_marker.json, side branch merged (ours), side ref deleted: mine (commits whose tree holds it) ['a9f4012b826c'] | git log --full-history ['2df3bc41d223', 'a9f4012b826c'] | git log (no --full-history) []
+    post-check H5 found by the code's form iff found by mine (True / True)                                          ok
+
+probe's first line is the --interpretations-ruled line exactly when the flag is given (every run): True
+
+summary: compared operations same 181 | DIFFERENT 0 | INFO (no expectation) 7 | PROBE DEFECT (op marker not comparable; begin same* = ACCEPT inferred from the repository) 35 | post-checks FAILED 0
+gates (my model vs the code through the probe, ACCEPT* counted as ACCEPT): consistent
+probe as delivered: DEFECTIVE (35 outcomes not printed as documented)
+modules: torch imported=False | transformers modeling modules imported=[] | this script never calls a model class or from_pretrained on a model
+RESULT: FAIL
+exit=1

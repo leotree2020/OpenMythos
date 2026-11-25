@@ -1,0 +1,19 @@
+先读仓库中的 .claude/agents/code-reviewer.md，以它为你的完整定义；它与你已加载的定义冲突时，以仓库文件为准。
+
+审查对象：METRIX E1-PILOT 阶段 C 第 1 段（C1）工作提交的第 2 轮，暂存区内容（尚未提交），父提交 eb05e42243b54b78cb400b40293ef56f67611852。第 1 轮被审的暂存树是 2408558f7e3b4703fa32ef6363871b3cf6833e5a：你的结论 PASS（4 MAJOR，多条 MINOR），data-auditor 的结论 BLOCK（B05）。两份第 1 轮原文：/tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/review_c1/code-reviewer_round1.md、data-auditor_round1.md（同目录）。指令、依据与第 1 轮的调用文字相同（同目录 code-reviewer_prompt.txt）。
+
+审查输入（同目录）：
+- input_round2.diff：git diff --cached --stat 与完整 diff，相对父提交 eb05e422（整个工作提交）；
+- delta_round2.diff：第 1 轮暂存树 2408558f 到本轮暂存树的差异（本轮的修复）；
+- tree_round2.txt：本轮暂存树 hash。暂存内容与工作区文件相同。
+- 本轮的原始输出：metrix/e1-pilot/reports/impl_c/c1_03_checks_r2.txt（工作区状态、数据重新生成与四个冻结哈希、TEST 生成器拒绝、outside_metrix_check、全部 pytest、c1_mutate_r2.py 的变异及前后 src/tests 哈希：59 个变异中 2 个未测出）；之后补了 commit_paths 暂存核对的测试、删去 require_test_session 中与字节哈希重复的会话 id 比较，重新运行于 c1_04_checks_r2b.txt（本轮被审的暂存内容即该次运行的代码）。第 1 轮的 c1_02_checks.txt 与 c1_mutate.py 保持原样。
+
+Executor 对第 1 轮各项的处理（说明不作为证据；请逐条核对：已修且正确 / 已修但有问题 / 未修；登记项是否充分）：
+data-auditor BLOCK B05：_ever_committed 的 git log 加 --full-history；新测试 test_a_marker_deleted_on_a_merged_side_branch_refuses（断言不加该选项时 git log 找不到、闸门找得到）。auditor 说明 (a)：_committed 对非对象 JSON 拒绝，有测试；(b) B11 远端其他分支：远端全部分支 ls-remote --heads 后按名 fetch，B12 只有结果文件：TestAlreadyEvaluated，有测试；(d) code_commit 移到生成之前；(e) 文档已改；(f) C2。
+你的 MAJOR 1（远端与分支）：refuse_if_marker / refuse_if_st10_record 查远端全部分支；标记写入远端 URL 与分支；测试：单分支落后克隆、标记在远端另一分支。远端名与分支名在 C2 的 run_pilot 中固定（尚未写）。
+MAJOR 2（checkpoint 哈希的定义）：record.selection_freeze_record 与 testgate 的文档写明 = train.state_sha256；新增解释 B25（PENDING_REVIEW_GATE，裁决前 TEST 生成器与所有 TEST 路径拒绝）；C2 冒烟中各臂保存、重载后核对 state_sha256。
+MAJOR 3（拒绝的状态语义）：环境类（远端无法列出或 fetch、索引有暂存、提交与推送前提）改为 BLOCKED；已评测改为 TestAlreadyEvaluated（不带第 9 节状态）；记录缺失或不绑定仍为 ImplementationFail（与 verify_authorization 一致）；交 Review Gate。
+MAJOR 4（探针）：保留，交 Review Gate；auditor 第 1 轮的运行输出将随报告提交入库；探针新增 --interpretations-ruled（B25 待决期间探测闸门），gate 操作改为替身模型（只替换其 state_sha256）后 claim。
+MINOR：claim 移到 require_gpu 之后（require_test_session 不再登记，claim_checkpoint 登记）；begin 写标记前预检身份、快进（远端分支是 HEAD 的祖先）与 push --dry-run，失败为 BLOCKED 且不写任何东西；推送加 --no-follow-tags，测试中建注释标签并设 push.followTags=true；模型名与哈希改用已提交标记中的值，TestSession 不再保存它们；去掉 begin 中重复的冻结记录读取（verify_authorization 返回两份记录）；test_data：生成前 code_commit 与带远端的 ST10 记录检查（--remote，默认 origin）；5 由 arms 推出；leakage 文档；BE9 改为由 CONTENT_HASH_KEYS 与 CONTENT_HASH_BYTES 组装，测试用 FZ.CONTENT_HASH_KEYS；变异脚本另存为 c1_mutate_r2.py（祖先变异改为 returncode >= 0，删去 TD，补新分支）；未测分支补测试（行缺文件、begin 时代码未提交、同 id 不同字节的标记、finish 时索引有暂存、提交失败（pre-commit 钩子）、无提交者身份）；state_sha256 放到最后计算；去掉 default=str（有测试）；DEV 路径核对与生产调用方在 C2；testgate 行宽。
+
+请：(1) 逐条核对上表；(2) 审查本轮改动本身有无新问题（重点：TEST 隔离、只评一次在跨机器与历史改写下是否成立、测试与变异是否真正检验所说内容）；(3) 整个工作提交（input_round2.diff）有无遗留问题。按定义的输出格式给出，每条注明“已验证/未验证”；原文即你的完整输出。最后一行给出结论 PASS 或 BLOCK。不要修改任何文件。

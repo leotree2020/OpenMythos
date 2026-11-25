@@ -1,0 +1,14 @@
+# Data Auditor run (implementation stage C, C1 work commit, round 3). host vm, Anthropic cloud container, CPU only (no GPU device node: 0 nvidia entries), no model weights loaded (tokenizer files only; the probe's tiny models are random); 2026-11-25 01:42:37 UTC; cwd /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad
+# stdout and stderr merged, complete, unedited
+$ bash -c sha256sum\ /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/ic4_01_pre_first_run.py\ /home/user/OpenMythos/metrix/e1-pilot/audit/ic4_01_gate_scenarios.py\;\ diff\ /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/ic4_01_pre_first_run.py\ /home/user/OpenMythos/metrix/e1-pilot/audit/ic4_01_gate_scenarios.py
+d57916461bcba7c2b44129712b81c5bc01a43ddcf349fd7157b8d50f0728e38c  /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/ic4_01_pre_first_run.py
+7d39c5191513b7648eec578d8b76fe8a6b8efa06d54e40f99628538d3d0845c2  /home/user/OpenMythos/metrix/e1-pilot/audit/ic4_01_gate_scenarios.py
+625c625
+<         B.post("probe printed the marker commit and 'models 16' (%s)" % (m.groups() if m else None),
+---
+>         B.post("probe printed the marker commit and 'models 16' (%s)" % ((m.groups() if m else None),),
+1452c1452
+<                    and SECRET.encode() not in mb and json.loads(mb).get("remote") == want_url_of(remote))
+---
+>                    and SECRET.encode() not in mb and (json.loads(mb).get("remote") if mb else None) == want_url_of(remote))
+exit=1

@@ -1,0 +1,28 @@
+先读仓库中的 .claude/agents/code-reviewer.md，以它为你的完整定义；它与你已加载的定义冲突时，以仓库文件为准。
+
+审查对象：METRIX E1-PILOT Implementation 阶段 C 第 1 段（C1：BE 修复、interpretations 标记、TEST 闸门）的工作提交，暂存区内容（尚未提交），父提交 eb05e42243b54b78cb400b40293ef56f67611852（origin/metrix-e1-pilot-protocol-v1）。仓库 /home/user/OpenMythos。暂存树与审查输入见：
+- 审查输入（git diff --cached --stat 与完整 diff，相对父提交）：/tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/review_c1/input.diff ；暂存树 hash 写在同目录 tree.txt。暂存内容与工作区文件相同。
+- 本次的上一轮尝试（另一个会话，代码未提交、已撤回）：你当时的结论是 BLOCK，原文在 metrix/e1-pilot/reviews/tree-65225a5afeaa119b9d89394b2d30cb2270342e26/code-reviewer_stage-c-commit1.jsonl（最后一条 assistant 消息）；data-auditor 也是 BLOCK（同目录 data-auditor_stage-c-commit1.jsonl 的 SubagentHandback）。本次是重写，不是在那份代码上修改；请也核对上次 BLOCKER 1–3 与 MAJOR 4–8 所指的问题在本次实现中是否还存在。
+
+依据：metrix/CLAUDE.md；metrix/e1-pilot/METRIX_E1_PROTOCOL.md（第 3 节 L6 与“读取 TEST 数据”的定义、第 8 节第 8 步、第 9 节、第 11 节 ST10、ST13）；metrix/e1-pilot/tasks/IMPLEMENTATION_TASK_ORDER_V1.md（第 2、5、6、9、11 节）；metrix/e1-pilot/tasks/IMPL_C_OWNER_MESSAGE.md（本次新增，Owner 消息原文：Review Gate 补充裁决 1–6；上次阶段 C 指令：对阶段 B 的裁决 1–5 与要求 6–10）；metrix/e1-pilot/reports/IMPL_B_REPORT.md；metrix/e1-pilot/reports/DEFERRED_MINORS.md 1.26 节（BE2、BE9、BE10、BE12、BE13、BE14）。
+
+本次改动的意图（Executor 的说明，不作为证据）：
+1. interpretations.py：B1–B24 的 status 都为「ACCEPTED（Review Gate 2026-11-24）」，pending() 为空；RULING_REF 指向 reports/IMPL_C_REPORT.md「Review Gate 对阶段 B 的裁决」第 1 项（补充裁决 2：不新建决定文件；该报告在本提交中是初稿，C1 节在下一个提交填写）；as_records() 每条带 ruling；B3、B14 带 ruling_note；B19 删去 “To be ruled before step 8 runs.”；新增 pending_problem()，test_data 与 leakage.verify_authorization 共用（BE9）。gate.RECALIBRATION_NOTE 改为「需重新校准」（B14 裁决）。
+2. BE2：verify_authorization 的三方比较改为两个比较、各自报错（PROTOCOL_FROZEN 对 fz；授权对 PROTOCOL_FROZEN），测试用完整报错文字区分四种情形（含“授权等于 fz、仓库中的 PROTOCOL_FROZEN 指向另一提交”）。BE9：Frozen.content_hashes 构造后断言键等于 CONTENT_HASH_KEYS。BE10：fz is None 分支的测试；LateNaNStub 断言 values 非空；对照改用 max_new_tokens。BE12：record.py 末尾空行。BE13：reports/impl_b/mutate_fix3.py 不改（须与 t12 中运行的脚本逐字节相同）。BE14：由 C2 的 run_pilot 只用 frozen.load() 的结果调用（本提交未涉及）。
+3. TEST 闸门（新模块 src/metrix_e1/testgate.py；补充裁决 3–5；上次指令第 7 项）：
+   - ST10 记录 results/st10_record.json 由第 8 步的 TEST 驱动代码（test_data.main）在生成 TEST 与 TEST 部分泄漏检查之后写入：L3a、L3b、L4、L5、L6 的原始计数（无上限、无标志、无结论词）、test_qa.jsonl 与 general_test.jsonl 的 sha256、代码 commit（src 与 run_pilot.py 无未提交改动），绑定授权。driver 的 --out 必须在仓库外；ST10 记录已存在（工作区或任何提交）即在生成之前拒绝。
+   - data-auditor 的独立计数文件 audit/st10_l6_test_count.json（kind、frozen_commit、general_test_sha256、l6_test_count）须已提交。
+   - st10_check：两份文件都须已提交（HEAD 与工作区相同）；记录绑定授权与将要评测的 TEST 行的哈希；code commit 是 HEAD 的祖先；计数为非负整数，由 stops.st10 以冻结上限（SPLIT_MANIFEST）从原始计数重新判定（stops.st10 改为接收计数与上限，不再读 within_limit/result）；auditor 计数针对同一 general_test.jsonl 且与 Executor 的 L6 计数相同。
+   - 只评一次：begin_test_evaluation 在标记存在于工作区、任何本地或远端跟踪分支的提交、或当前 fetch 到的远端分支时拒绝（有结果文件→已评测，拒绝；无结果文件→已开始未完成，视为已评，BLOCKED，报告 Owner）；否则重新核对授权与 ST10，写入标记（含冻结记录的全部 30 个 checkpoint 哈希加 N、要评测的 16 个模型、ST10 记录与 auditor 文件的 sha256、TEST 文件哈希、随机会话 id），只 add 标记一个路径、提交、推送（不带标签、不强推）并用 ls-remote 核对，之后才返回会话；推送失败为 BLOCKED。evaluate_model(split="test") 在 verify_authorization 之后调用 require_test_session：会话须由本进程的 begin 返回，已提交的标记带该会话 id 且绑定授权，TEST 行等于标记与 ST10 记录中的文件，ST10 记录与 auditor 文件在标记之后未变，checkpoint 名属于标记的模型且本会话未评过，模型的 state sha256 等于标记中的值。finish_test_evaluation 在全部模型评完后提交并推送结果文件。
+   - TEST 评测的实际驱动（加载 checkpoint、逐个调用 evaluate_model、T1–T3）在 C2 的 run_pilot.py 中加入，届时 data-auditor 复审 TEST 路径（上次指令第 7 项）。
+4. 测试：新增 tests/test_testgate.py（全部在临时 Git 仓库与裸远端上，用测试自己写的人造行；补充裁决 5）；修改 test_test_data、test_evaluate、test_stops、test_gate、test_data_hashes。
+
+本提交中的原始输出（metrix/e1-pilot/reports/impl_c/）：c1_00_session_start.txt（远端与标签、用户级副本比对、agent frontmatter）；c1_01_env_fetch.txt（环境与输入下载）；c1_02_checks.txt（工作区状态、数据重新生成与四个冻结哈希、TEST 生成器在当前状态拒绝、outside_metrix_check、全部 pytest、c1_mutate.py 的变异检查及其前后 src/tests 哈希）；c1_mutate.py。
+
+请重点检查：
+- 是否只有在 ST10 记录与 auditor 计数都已提交、从原始计数按冻结上限重新判定通过、文件哈希与授权和将要评测的行绑定、标记已提交且已推送、会话来自本进程、checkpoint 未评过且哈希相符时，TEST 评测才可能开始；有无绕过路径（含 evaluate_model 以外的入口、提交内容与工作区不一致、授权在标记之后更换、崩溃后重跑、另一台机器的克隆）。
+- 新测试是否真的测到所述分支（报错文字是否足以区分；c1_02 的变异检查是否覆盖了每个闸门分支，有无测试在错误实现下仍通过）。
+- 与协议、任务书、Owner 消息逐条一致；不改协议；不得写死协议数值；不读取 TEST（本审查不运行任何代码）。
+- 死代码、未使用的导入、可读性；正式模式与冒烟模式的隔离不受影响。
+
+输出：按定义的输出格式，每条注明“已验证/未验证”，给出 BLOCKER / MAJOR / MINOR 列表；原文即你的完整输出（不要摘要替代）。最后一行给出结论 PASS 或 BLOCK。不要修改任何文件。

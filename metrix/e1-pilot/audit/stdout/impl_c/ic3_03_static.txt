@@ -1,0 +1,196 @@
+# Data Auditor run (implementation stage C, C1 work commit, round 2). host vm, Anthropic cloud container, CPU only (no GPU device node: 0 nvidia entries), no model weights loaded (tokenizer files only; the probe's tiny models are random); 2026-11-24 23:03:44 UTC; cwd /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad
+# stdout and stderr merged, complete, unedited
+$ python3 -I -B /home/user/OpenMythos/metrix/e1-pilot/audit/ic3_03_static.py /home/user/OpenMythos /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/c1_gate_probe_fixed.py
+env: host vm | Linux-6.18.44-fc-v819-x86_64-with-glibc2.39 | python 3.13.18 (/usr/local/bin/python3) | installed {'transformers': 'not installed', 'tokenizers': 'not installed', 'pyarrow': 'not installed', 'huggingface_hub': 'not installed', 'torch': 'not installed'} | nvidia device nodes: []
+src/, tests/ and the probe status (tracked): 16 entries | working tree == index: True
+
+== a. functions of src/ naming TEST files / constants / eval_sets / TEST paths: HEAD vs now
+  data.py                      check_inputs               same    ['eval_sets']
+  data.py                      generate                   same    ['eval_sets']
+  data.py                      write                      same    ['TEST_FILES']
+  evaluate.py                  evaluate_model             NEW     ['claim_checkpoint', 'require_test_session']
+  leakage.py                   run_test_part              same    ['general_test', 'test_qa']
+  stops.py                     st13_scan                  same    ['TEST_FILES']
+  test_data.py                 generate_test              same    ['TEST_FILES', 'build_test_qa', 'eval_sets', 'general_test', 'general_test.jsonl', 'test_qa', 'test_qa.jsonl']
+  test_data.py                 main                       CHANGED ['TEST_FILES', 'general_test', 'generate_test', 'refuse_if_st10_record', 'run_test_part', 'test_qa', 'write_st10_record']
+  testgate.py                  auditor_count_record       NEW     ['general_test']
+  testgate.py                  begin_test_evaluation      NEW     ['refuse_if_marker', 'rows_hashes_of', 'st10_check']
+  testgate.py                  require_test_session       NEW     ['rows_hashes_of', 'st10_check']
+  testgate.py                  rows_hashes_of             NEW     ['TEST_FILES', 'rows_sha256']
+  testgate.py                  st10_check                 NEW     ['general_test', 'general_test.jsonl']
+  testgate.py                  st10_record                NEW     ['TEST_FILES']
+  testgate.py                  write_st10_record          NEW     ['st10_record']
+functions new or changed in this set: [('metrix/e1-pilot/src/metrix_e1/evaluate.py', 'evaluate_model'), ('metrix/e1-pilot/src/metrix_e1/test_data.py', 'main'), ('metrix/e1-pilot/src/metrix_e1/testgate.py', 'auditor_count_record'), ('metrix/e1-pilot/src/metrix_e1/testgate.py', 'begin_test_evaluation'), ('metrix/e1-pilot/src/metrix_e1/testgate.py', 'require_test_session'), ('metrix/e1-pilot/src/metrix_e1/testgate.py', 'rows_hashes_of'), ('metrix/e1-pilot/src/metrix_e1/testgate.py', 'st10_check'), ('metrix/e1-pilot/src/metrix_e1/testgate.py', 'st10_record'), ('metrix/e1-pilot/src/metrix_e1/testgate.py', 'write_st10_record')]
+  I/O-like calls of evaluate.py.evaluate_model: []
+  I/O-like calls of test_data.py.main: ['mkdir()', "write_text(json.dumps(report, ensure_ascii=False, indent=1, sort_keys=True) + '\\n')", 'write_bytes(blob)', 'exists()']
+  I/O-like calls of testgate.py.auditor_count_record: []
+  I/O-like calls of testgate.py.begin_test_evaluation: ['mkdir()', 'write_bytes(blob)', 'load(fz)', "_git(root, 'diff', '--cached', '--quiet')"]
+  I/O-like calls of testgate.py.require_test_session: ["_committed(root, MARKER_REL, 'TEST marker')"]
+  I/O-like calls of testgate.py.rows_hashes_of: []
+  I/O-like calls of testgate.py.st10_check: ["_committed(root, ST10_RECORD_REL, 'ST10 record')", '_committed(root, AUDITOR_L6_REL, "data-auditor\'s L6 TEST count")']
+  I/O-like calls of testgate.py.st10_record: []
+  I/O-like calls of testgate.py.write_st10_record: ['exists()', 'mkdir()', "write_text(json.dumps(rec, ensure_ascii=False, indent=1, sort_keys=True) + '\\n')"]
+
+== b. testgate.py: I/O-like calls per function; use of the TEST rows
+  _git                     ["run(['git', '-C', str(root), *args])"]
+  _is_ancestor             ["_git(root, 'merge-base', '--is-ancestor', commit, of)"]
+  _ever_committed          ["_git(root, 'log', '--full-history', *revs, '--format=%H', '--', rel)"]
+  remote_heads             ["_git(root, 'ls-remote', '--heads', remote)", "_git(root, 'fetch', '-q', '--no-tags', remote, *[ref for _, ref in heads])"]
+  _where                   ['exists()']
+  remote_url               ["_git(root, 'remote', 'get-url', remote)"]
+  _push                    ["_git(root, 'push', '--no-follow-tags', remote, 'HEAD:refs/heads/%s' % branch)", "_git(root, 'ls-remote', remote, 'refs/heads/%s' % branch)", "_git(root, 'rev-parse', 'HEAD')"]
+  commit_paths             ["_git(root, 'add', '--', *rels)", "_git(root, 'commit', '-q', '-m', message)", "_git(root, 'diff', '--cached', '--quiet')", "_git(root, 'diff', '--cached', '--name-only')"]
+  code_commit              ["_git(repo_root, 'status', '--porcelain', '--untracked-files=all', '--', *CODE_PATHS)", "_git(repo_root, 'rev-parse', '--verify', 'HEAD^{commit}')"]
+  write_st10_record        ['exists()', 'mkdir()', "write_text(json.dumps(rec, ensure_ascii=False, indent=1, sort_keys=True) + '\\n')"]
+  _committed               ['committed_json(root, rel)']
+  st10_check               ["_committed(root, ST10_RECORD_REL, 'ST10 record')", '_committed(root, AUDITOR_L6_REL, "data-auditor\'s L6 TEST count")']
+  _commit_preconditions    ["_git(root, 'ls-remote', remote, 'refs/heads/%s' % branch)", "_git(root, 'push', '--dry-run', '--no-follow-tags', remote, 'HEAD:refs/heads/%s' % branch)", "_git(root, 'var', 'GIT_COMMITTER_IDENT')"]
+  begin_test_evaluation    ['mkdir()', 'write_bytes(blob)', 'load(fz)', "_git(root, 'diff', '--cached', '--quiet')"]
+  require_test_session     ["_committed(root, MARKER_REL, 'TEST marker')"]
+  finish_test_evaluation   ["_committed(root, MARKER_REL, 'TEST marker')", 'write_text(json.dumps(dict(result, session_id=session.session_id, marker_commit=session.marker_commit), ensure_ascii=Fals)', "_git(root, 'diff', '--cached', '--quiet')"]
+file reads (open / read_*): []
+functions that load the name `data` (the TEST rows): ['begin_test_evaluation', 'require_test_session', 'rows_hashes_of']
+rows_hashes_of: ['missing = [n for n in D.TEST_FILES if n not in data]', "if missing:\n    raise _refuse('no rows for %s' % missing)", 'return {n: rows_sha256(data[n]) for n in D.TEST_FILES}']
+rows_sha256   : ['return FZ.sha256_hex(FZ.jsonl_bytes(rows))']
+calls receiving `data`: {'begin_test_evaluation': ['rows_hashes_of(data)'], 'require_test_session': ['rows_hashes_of(data)'], 'rows_hashes_of': []}
+the TEST rows only go to rows_hashes_of / rows_sha256 (hash of the canonical JSONL bytes): True
+_committed refuses a committed JSON that is not an object: True | used by ['finish_test_evaluation', 'require_test_session', 'st10_check']
+
+== c. test_data.main: order of the steps and the --out test
+statement index of each step: [('check_preconditions', 6), ('out.resolve() == root', 9), ('present = ', 10), ('TG.code_commit(root)', 12), ('refuse_if_st10_record', 13), ('generate_test(', 14), ('out.mkdir', 15), ('run_test_part', 17), ('leakage_test_report', 18), ('write_st10_record', 19)]
+ST10-record search call: ['TG.refuse_if_st10_record(root, a.remote)'] | code check: ['TG.code_commit(root)', "print('ST10 record written: %s (raw counts, TEST file sha256 %s, code commit %s); commit and push it' % (path, rec['test_files_sha256'], rec['code_commit']))"]
+--out test: ['root = fz.repo_root.resolve()'] | ["if out.resolve() == root or root in out.resolve().parents:\n    raise ImplementationFail('--out %s is inside the repository %s; TEST content is never committed' % (out, root))"]
+--remote argument: ["ap.add_argument('--remote', default='origin', help='remote whose branches are searched for an ST10 record')"]
+testgate.code_commit: ["_git(repo_root, 'status', '--porcelain', '--untracked-files=all', '--', *CODE_PATHS)", "_git(repo_root, 'rev-parse', '--verify', 'HEAD^{commit}')"]
+
+== d. ST10 record and marker contents
+  st10_record['kind'] = 'st10'
+  st10_record['mode'] = 'formal'
+  st10_record['label'] = None
+  st10_record['frozen_commit'] = authorization.frozen_commit
+  st10_record['authorization'] = auth_fields(authorization)
+  st10_record['test_files_sha256'] = {n: FZ.sha256_hex(test_files[n]) for n in D.TEST_FILES}
+  st10_record['code_commit'] = code_commit(root)
+  st10_record['counts'] = counts
+  counts = ["counts = {c: report['checks'][c]['value'] for c in LK.TEST_CHECKS}"]
+  constant subscripts used in st10_record: ["'checks'", "'value'"] ('detail' used: False)
+  marker['kind'] = 'test_evaluation_marker'
+  marker['mode'] = 'formal'
+  marker['frozen_commit'] = authorization.frozen_commit
+  marker['authorization'] = auth_fields(authorization)
+  marker['remote'] = remote_url(root, remote)
+  marker['branch'] = branch
+  marker['st10_record_sha256'] = st10_sha
+  marker['auditor_count_sha256'] = aud_sha
+  marker['test_files_sha256'] = rows_hashes
+  marker['checkpoints'] = checkpoints
+  marker['models'] = models
+  marker['code_commit'] = code_commit(root)
+  marker['session_id'] = session_id
+  marker['started_utc'] = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
+  finish_test_evaluation writes: ['write_text(json.dumps(dict(result, session_id=session.session_id, marker_commit=session.marker_commit), ensure_ascii=Fals)']  (the caller's `result`; content decided in C2)
+
+== e. evaluate.evaluate_model, split 'test': gate order
+  [(329, 'verify_authorization'), (331, 'require_test_session'), (332, 'require_gpu'), (334, 'claim_checkpoint'), (336, "data['candidates.json']"), (336, "data['facts.jsonl']"), (336, 'data[qa_file]'), (339, 'data[gen_file]'), (345, "data['train_S.jsonl']")]
+  claim_checkpoint guarded by: ["split == 'test'"]
+
+== f. tests/ and reports/impl_c scripts: TEST-path calls and the data they get
+  metrix/e1-pilot/tests/test_data_hashes.py (changed): 0 TEST-path calls; 'eval_sets' mentioned 4 times
+  metrix/e1-pilot/tests/test_evaluate.py (changed): 3 TEST-path calls; 'eval_sets' mentioned 0 times
+     test_test_split_needs_the_authorization:175 E.evaluate_model(tiny_model(), tok, data_rows, fz.templates, contract.evaluation, M.FORMAL_MODE, 'cpu', split='test', test_authorization=LK.TestAuthor
+     test_test_split_needs_the_authorization:171 E.evaluate_model(tiny_model(), tok, data_rows, fz.templates, contract.evaluation, M.FORMAL_MODE, 'cpu', split='test', test_authorization=auth, fz=fz)
+     test_test_split_needs_the_authorization:180 E.evaluate_model(tiny_model(), tok, data_rows, fz.templates, contract.evaluation, mode, 'cpu', split='test', test_authorization=None, fz=fz)
+  metrix/e1-pilot/tests/test_gate.py (changed): 0 TEST-path calls; 'eval_sets' mentioned 0 times
+  metrix/e1-pilot/tests/test_stops.py (changed): 0 TEST-path calls; 'eval_sets' mentioned 0 times
+  metrix/e1-pilot/tests/test_test_data.py (changed): 7 TEST-path calls; 'eval_sets' mentioned 1 times
+     test_refusal_never_parses_test_rows:63 TD.main(['--inputs', str(inputs_dir), '--data', str(generated['dir']), '--out', str(tmp_path / 'o')])
+     test_refuses_without_data:73 TD.main(['--inputs', str(inputs_dir), '--data', str(tmp_path / 'empty'), '--out', str(tmp_path / 'o')])
+     test_generation_needs_authorization:89 TD.generate_test(fz, None, inputs_dir, generated['dir'])
+     test_generation_needs_authorization:92 TD.generate_test(fz, LK.TestAuthorization(None, None, None), inputs_dir, generated['dir'])
+     test_generation_needs_authorization:94 TD.generate_test(fz, LK.TestAuthorization(fz.record.commit, 'a' * 64, 'b' * 64), inputs_dir, generated['dir'])
+     test_generation_needs_authorization:97 LK.run_test_part(fz, {}, [], [], None)
+     test_run_test_part_rechecks_the_committed_records:222 LK.run_test_part(fz, {}, [], [], auth, root)
+  metrix/e1-pilot/tests/test_testgate.py (changed): 11 TEST-path calls; 'eval_sets' mentioned 1 times
+     test_st10_record_holds_raw_counts_hashes_and_code_commit:157 TG.write_st10_record(env.fz, env.auth, env.report(L4=2, L6=7), env.files)
+     test_st10_record_holds_raw_counts_hashes_and_code_commit:167 TG.write_st10_record(env.fz, env.auth, env.report(), env.files)
+     evaluate:505 E.evaluate_model(model, None, data or env.data, None, env.contract.evaluation, M.FORMAL_MODE, 'cpu', split='test', test_authorization=auth or env.auth
+     test_finish_commits_the_result_after_every_model:617 TG.finish_test_evaluation(env.fz, s, {'final_status': 'NOT_TESTED'}, 'origin', BRANCH, sleep=lambda x: None)
+     test_finish_commits_the_result_after_every_model:615 TG.finish_test_evaluation(env.fz, s, {'x': object()}, 'origin', BRANCH)
+     test_driver_writes_the_st10_record_and_judges_raw_counts:640 TD.main(['--inputs', 'unused', '--data', 'unused', '--out', str(env.root / 'inside')])
+     test_driver_writes_the_st10_record_and_judges_raw_counts:644 TD.main(['--inputs', 'unused', '--data', 'unused', '--out', str(out)])
+     test_driver_writes_the_st10_record_and_judges_raw_counts:654 TD.main(['--inputs', 'unused', '--data', 'unused', '--out', str(tmp_path / 'driver_out2')])
+     test_driver_writes_the_st10_record_and_judges_raw_counts:658 TD.main(['--inputs', 'unused', '--data', 'unused', '--out', str(tmp_path / 'driver_out3')])
+     test_driver_writes_the_st10_record_and_judges_raw_counts:663 TD.main(['--inputs', 'unused', '--data', 'unused', '--out', str(tmp_path / 'driver_out4')])
+     begin:122 TG.begin_test_evaluation(self.fz, self.auth, self.data, kw.pop('base', self.base_sha), 'origin', BRANCH, sleep=lambda s: None, **kw)
+  metrix/e1-pilot/reports/impl_c/c1_gate_probe.py (changed): 2 TEST-path calls; 'eval_sets' mentioned 0 times
+     main:104 TG.begin_test_evaluation(fz, auth, data, arg, 'origin', 'main', retries=1, sleep=lambda s: None)
+     main:117 E.evaluate_model(tiny(int(seed)), None, data, None, contract_ev, M.FORMAL_MODE, 'cpu', split='test', test_authorization=auth, fz=fz, test_session=sess
+  metrix/e1-pilot/reports/impl_c/c1_mutate.py (changed): 0 TEST-path calls; 'eval_sets' mentioned 0 times
+  metrix/e1-pilot/reports/impl_c/c1_mutate_r2.py (changed): 0 TEST-path calls; 'eval_sets' mentioned 0 times
+  test_testgate.test_driver_writes_the_st10_record_and_judges_raw_counts: TD.main called 5 times; stubbed before the first call: ['TD.check_preconditions', 'TD.generate_test', 'TD.LK.load_data', 'TD.LK.run_test_part']; --inputs ["'unused'"]
+  test_test_data.py.test_check_preconditions_calls_the_interpretation_check calls TD.check_preconditions; stubs ['INT.pending', 'TD.STP.st12', 'TD.check_gate0_record', 'TD.check_selection_record']; TEST paths called in the same test: []
+  metrix/e1-pilot/tests/test_data_hashes.py: lines naming eval_sets HEAD 4 / now 4, identical: True
+  metrix/e1-pilot/tests/test_evaluate.py: lines naming eval_sets HEAD 0 / now 0, identical: True
+  metrix/e1-pilot/tests/test_gate.py: lines naming eval_sets HEAD 0 / now 0, identical: True
+  metrix/e1-pilot/tests/test_stops.py: lines naming eval_sets HEAD 0 / now 0, identical: True
+  metrix/e1-pilot/tests/test_test_data.py: lines naming eval_sets HEAD 1 / now 1, identical: True
+  metrix/e1-pilot/tests/test_testgate.py: lines naming eval_sets HEAD 0 / now 1, identical: False | new: ['generated, read or counted: the TEST generator is never run with an authorization, eval_sets.jsonl is never opened,']
+  metrix/e1-pilot/reports/impl_c/c1_gate_probe.py: lines naming eval_sets HEAD 0 / now 0, identical: True
+  metrix/e1-pilot/reports/impl_c/c1_mutate.py: lines naming eval_sets HEAD 0 / now 0, identical: True
+  metrix/e1-pilot/reports/impl_c/c1_mutate_r2.py: lines naming eval_sets HEAD 0 / now 0, identical: True
+  c1_gate_probe.py: TEST rows read from ['data = {n: FZ.read_jsonl(test_dir / n) for n in ("test_qa.jsonl", "general_test.jsonl")}']
+  test_testgate.py: autouse fixtures ['no_pending_interpretation'] (interpretations.pending -> [] for every test of the file); test functions taking the real inputs / generated data fixtures: []
+
+== g. history search of 'TEST once' / 'TEST generated once'
+  _ever_committed git call: ["_git(root, 'log', '--full-history', *revs, '--format=%H', '--', rel)"] | --full-history given: True
+  _where: ["return (['working tree'] if (Path(root) / rel).exists() else []) + ['commit %s' % c for c in _ever_committed(root, rel, revs)]"]
+  remote_heads git calls: ["_git(root, 'ls-remote', '--heads', remote)", "_git(root, 'fetch', '-q', '--no-tags', remote, *[ref for _, ref in heads])"]
+  remote_heads raises: [(158, "_blocked('cannot list the branches of %s to look for TEST records there: %s' % (remote, ls"), (165, "_blocked('cannot fetch the branches of %s to look for TEST records there: %s' % (remote, f"), (169, "_blocked('unexpected ls-remote output from %s: %r' % (remote, ls.stdout[:200]))")]
+  refuse_if_marker: ['remote_heads(root, remote)', '_where(root, MARKER_REL, revs)', '_where(root, RESULT_REL, revs)'] | ["revs = ['--all'] + remote_heads(root, remote)"]
+  refuse_if_st10_record: ["_where(root, ST10_RECORD_REL, ['--all'] + remote_heads(root, remote))", 'remote_heads(root, remote)'] | ["where = _where(root, ST10_RECORD_REL, ['--all'] + remote_heads(root, remote))"]
+  callers of _ever_committed: ['_where']
+
+== h. begin_test_evaluation: order; preconditions; BLOCKED vs refused
+  line of each step: [('refuse_if_marker', 405), ('verify_authorization', 406), ('st10_check', 408), ('base hash check', 409), ('staged check', 414), ('_commit_preconditions', 416), ('code_commit', 421), ('marker write_bytes', 426), ('commit_paths', 427), ('_LIVE registration', 431)]
+  _commit_preconditions git calls: ["_git(root, 'ls-remote', remote, 'refs/heads/%s' % branch)", "_git(root, 'push', '--dry-run', '--no-follow-tags', remote, 'HEAD:refs/heads/%s' % branch)", "_git(root, 'var', 'GIT_COMMITTER_IDENT')"]
+  _commit_preconditions raises: [(383, "_blocked('no git committer identity (user.name, user.email)')"), (386, "_blocked('cannot read %s %s: %s' % (remote, branch, ls.stderr.strip()))"), (389, "_blocked('%s %s (%s) is not an ancestor of HEAD: the push would not be a fast-forward' % ("), (393, "_blocked('a dry-run push to %s %s fails: %s' % (remote, branch, dry.stderr.strip()))")]
+  _push git calls: ["_git(root, 'push', '--no-follow-tags', remote, 'HEAD:refs/heads/%s' % branch)", "_git(root, 'ls-remote', remote, 'refs/heads/%s' % branch)", "_git(root, 'rev-parse', 'HEAD')"]
+  commit_paths raises: [(206, "_blocked('the git index holds staged changes; the commit of %s holds its own paths only' %"), (210, "ProtocolStop(None, 'BLOCKED', 'staging %s failed (%s; staged %s, expected %s); report to t"), (214, "ProtocolStop(None, 'BLOCKED', 'committing %s failed (%s); report to the Owner' % (what, (c")]
+  begin_test_evaluation raises: [(410, "_refuse('base model hash %r' % (base_model_sha256,))"), (415, "_blocked('the git index holds staged changes; the marker commit holds the marker only')")]
+  refuse_if_marker raises: [(348, "ProtocolStop(None, 'BLOCKED', 'TEST evaluation was already started (marker %s in %s) and n"), (344, "TestAlreadyEvaluated('TEST was already evaluated (marker %s in %s; result %s in %s): TEST ")]
+  refuse_if_marker tests in order: ['result', 'not where'] (a result anywhere is tested before the marker)
+
+== i. B25 and the interpretation gate
+  ids B1..B25 (25) | status of B25: (absent -> PENDING) | entries without status: ['B25']
+  verify_authorization calls pending_problem: True
+  test_data.py.generate_test calls verify_authorization: True
+  leakage.py.run_test_part calls verify_authorization: True
+  evaluate.py.evaluate_model calls verify_authorization: True
+  testgate.py.begin_test_evaluation calls verify_authorization: True
+  test_data.check_interpretations_ruled calls pending_problem: True
+
+static checks a-i: PASS
+
+== j. the probe against the round-2 testgate interface
+  TestSession fields: ['session_id', 'marker_commit', 'marker_sha256', 'evaluated']
+  staged probe: line 101 TG.refuse_if_marker(repo, 'origin', 'main') -> parameters ['repo_root', 'remote']: MISMATCH (3 positional for 2 parameters)
+  staged probe: line 104 TG.begin_test_evaluation(fz, auth, data, arg, 'origin', 'main', retries=1, sleep=lambda s: None) -> parameters ['fz', 'authorization', 'data', 'base_model_sha256', 'remote', 'branch', 'repo_root', 'retries', 'sleep']: ok
+  staged probe: line 108 TG.require_test_session(fz, auth, session, name, data, _ShaModel(sha)) -> parameters ['fz', 'authorization', 'session', 'checkpoint_name', 'data', 'model', 'repo_root']: ok
+  staged probe: line 109 TG.claim_checkpoint(session, name) -> parameters ['session', 'checkpoint_name']: ok
+  staged probe: line 99 TG.st10_check(fz, auth, TG.rows_hashes_of(data)) -> parameters ['fz', 'authorization', 'rows_hashes', 'repo_root']: ok
+  staged probe: line 99 TG.rows_hashes_of(data) -> parameters ['data']: ok
+  staged probe: line 105 session.marker_commit -> TestSession field: ok
+  staged probe: line 105 session.models -> TestSession field: MISSING
+  staged probe mismatches: ["line 101: TG.refuse_if_marker(repo, 'origin', 'main')", 'line 105: session.models']
+  corrected copy: line 101 TG.refuse_if_marker(repo, 'origin') -> parameters ['repo_root', 'remote']: ok
+  corrected copy: line 104 TG.begin_test_evaluation(fz, auth, data, arg, 'origin', 'main', retries=1, sleep=lambda s: None) -> parameters ['fz', 'authorization', 'data', 'base_model_sha256', 'remote', 'branch', 'repo_root', 'retries', 'sleep']: ok
+  corrected copy: line 110 TG.require_test_session(fz, auth, session, name, data, _ShaModel(sha)) -> parameters ['fz', 'authorization', 'session', 'checkpoint_name', 'data', 'model', 'repo_root']: ok
+  corrected copy: line 111 TG.claim_checkpoint(session, name) -> parameters ['session', 'checkpoint_name']: ok
+  corrected copy: line 99 TG.st10_check(fz, auth, TG.rows_hashes_of(data)) -> parameters ['fz', 'authorization', 'rows_hashes', 'repo_root']: ok
+  corrected copy: line 99 TG.rows_hashes_of(data) -> parameters ['data']: ok
+  corrected copy: line 107 session.marker_commit -> TestSession field: ok
+  corrected copy (/tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/c1_gate_probe_fixed.py) mismatches: []
+  -> the staged probe does NOT match the round-2 interface (op marker always raises TypeError; op begin raises AttributeError after a successful begin)
+modules: torch imported=False | transformers modeling modules imported=[] | this script never calls a model class or from_pretrained on a model
+RESULT: FAIL
+exit=1

@@ -1,0 +1,61 @@
+# C1 work commit, round 1: both reviews stopped by the API usage limit (HTTP 429, rate_limit, 'resets 8:30am (UTC)'); the worker process then restarted. Checks before resuming. Tue Nov 24 15:03:23 UTC 2026
+$ uptime -s
+2026-11-24 15:02:56
+$ git rev-parse HEAD
+eb05e42243b54b78cb400b40293ef56f67611852
+$ git write-tree; cat tree.txt
+2408558f7e3b4703fa32ef6363871b3cf6833e5a
+2408558f7e3b4703fa32ef6363871b3cf6833e5a
+$ { git diff --cached --stat; echo; git diff --cached; } | cmp - input.diff
+INPUT_DIFF_IDENTICAL
+$ git diff --quiet
+WORKTREE_EQUALS_INDEX
+$ git status --short --untracked-files=all
+A  metrix/e1-pilot/reports/IMPL_C_REPORT.md
+A  metrix/e1-pilot/reports/impl_c/c1_00_session_start.txt
+A  metrix/e1-pilot/reports/impl_c/c1_01_env_fetch.txt
+A  metrix/e1-pilot/reports/impl_c/c1_02_checks.txt
+A  metrix/e1-pilot/reports/impl_c/c1_gate_probe.py
+A  metrix/e1-pilot/reports/impl_c/c1_mutate.py
+M  metrix/e1-pilot/src/metrix_e1/evaluate.py
+M  metrix/e1-pilot/src/metrix_e1/frozen.py
+M  metrix/e1-pilot/src/metrix_e1/gate.py
+M  metrix/e1-pilot/src/metrix_e1/interpretations.py
+M  metrix/e1-pilot/src/metrix_e1/leakage.py
+M  metrix/e1-pilot/src/metrix_e1/record.py
+M  metrix/e1-pilot/src/metrix_e1/stops.py
+M  metrix/e1-pilot/src/metrix_e1/test_data.py
+A  metrix/e1-pilot/src/metrix_e1/testgate.py
+A  metrix/e1-pilot/tasks/IMPL_C_OWNER_MESSAGE.md
+M  metrix/e1-pilot/tests/test_data_hashes.py
+M  metrix/e1-pilot/tests/test_evaluate.py
+M  metrix/e1-pilot/tests/test_gate.py
+M  metrix/e1-pilot/tests/test_stops.py
+M  metrix/e1-pilot/tests/test_test_data.py
+A  metrix/e1-pilot/tests/test_testgate.py
+$ ls -la scratchpad (data-auditor wrote ic2_mydiff.txt there before the stop)
+drwx------ 8 root root   4096 Nov 24 05:42 .
+drwx------ 5 root root   4096 Nov 24 04:28 ..
+-rw-r--r-- 1 root root      5 Nov 24 05:39 c1_checks.done
+-rw-r--r-- 1 root root      0 Nov 24 05:15 c1_checks.log
+-rwxr-xr-x 1 root root   1938 Nov 24 05:15 c1_checks.sh
+drwxr-xr-x 2 root root   4096 Nov 24 05:16 c1_data
+-rw-r--r-- 1 root root   6554 Nov 24 05:17 c1_gate_probe.py
+drwxr-xr-x 2 root root   4096 Nov 24 05:42 c2
+-rw-r--r-- 1 root root 165603 Nov 24 05:41 ic2_mydiff.txt
+drwxr-xr-x 6 root root   4096 Nov 24 04:44 inputs
+-rw-r--r-- 1 root root  16858 Nov 24 04:43 pip_install.log
+drwxr-xr-x 5 root root   4096 Nov 24 05:39 probe_try
+-rw-r--r-- 1 root root  16228 Nov 24 04:52 pytest_full1.txt
+drwxr-xr-x 2 root root   4096 Nov 24 15:03 review_c1
+drwxr-xr-x 6 root root   4096 Nov 24 04:42 venv
+a357edd2e54deaaf41dd00b99ccecfb764b5ca1cf2bbb12d50cfbec0d4c4fe55  /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/ic2_mydiff.txt
+--- preflight (frontmatter / tools line) repeated:
+e38d091494059227d8d95896aa50858adc32f4750a5512b45bec97dd368932c6  .claude/agents/code-reviewer.md
+e38d091494059227d8d95896aa50858adc32f4750a5512b45bec97dd368932c6  /root/.claude/agents/code-reviewer.md
+code-reviewer FRONTMATTER_IDENTICAL
+code-reviewer TOOLS_LINE_IDENTICAL: tools: Read, Grep, Glob
+fd556e751947058c10a80b77a669615a62078251d7e36055f111d33cb838eae9  .claude/agents/data-auditor.md
+fd556e751947058c10a80b77a669615a62078251d7e36055f111d33cb838eae9  /root/.claude/agents/data-auditor.md
+data-auditor FRONTMATTER_IDENTICAL
+data-auditor TOOLS_LINE_IDENTICAL: tools: Read, Grep, Glob, Write, Bash

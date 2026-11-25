@@ -1,0 +1,138 @@
+# Data Auditor run (implementation stage C, C1 work commit). host vm, Anthropic cloud container, CPU only (no GPU device node: 0 nvidia entries), no model weights loaded (tokenizer files only; the probe's tiny models are random); 2026-11-24 15:25:18 UTC; cwd /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad
+# stdout and stderr merged, complete, unedited
+$ python3 -I -B /home/user/OpenMythos/metrix/e1-pilot/audit/ic2_03_static.py /home/user/OpenMythos
+env: host vm | Linux-6.18.44-fc-v819-x86_64-with-glibc2.39 | python 3.13.18 (/usr/local/bin/python3) | installed {'transformers': 'not installed', 'tokenizers': 'not installed', 'pyarrow': 'not installed', 'huggingface_hub': 'not installed', 'torch': 'not installed'} | nvidia device nodes: []
+src/ and tests/ status (tracked): ['M  metrix/e1-pilot/src/metrix_e1/evaluate.py', 'M  metrix/e1-pilot/src/metrix_e1/frozen.py', 'M  metrix/e1-pilot/src/metrix_e1/gate.py', 'M  metrix/e1-pilot/src/metrix_e1/interpretations.py', 'M  metrix/e1-pilot/src/metrix_e1/leakage.py', 'M  metrix/e1-pilot/src/metrix_e1/record.py', 'M  metrix/e1-pilot/src/metrix_e1/stops.py', 'M  metrix/e1-pilot/src/metrix_e1/test_data.py', 'A  metrix/e1-pilot/src/metrix_e1/testgate.py', 'M  metrix/e1-pilot/tests/test_data_hashes.py', 'M  metrix/e1-pilot/tests/test_evaluate.py', 'M  metrix/e1-pilot/tests/test_gate.py', 'M  metrix/e1-pilot/tests/test_stops.py', 'M  metrix/e1-pilot/tests/test_test_data.py', 'A  metrix/e1-pilot/tests/test_testgate.py'] | working tree == index: True
+
+== a. functions of src/ naming TEST files / constants / eval_sets / TEST paths: HEAD vs now
+  data.py                      check_inputs               same    ['eval_sets']
+  data.py                      generate                   same    ['eval_sets']
+  data.py                      write                      same    ['TEST_FILES']
+  evaluate.py                  evaluate_model             NEW     ['require_test_session']
+  leakage.py                   run_test_part              same    ['general_test', 'test_qa']
+  stops.py                     st13_scan                  same    ['TEST_FILES']
+  test_data.py                 generate_test              same    ['TEST_FILES', 'build_test_qa', 'eval_sets', 'general_test', 'general_test.jsonl', 'test_qa', 'test_qa.jsonl']
+  test_data.py                 main                       CHANGED ['TEST_FILES', 'general_test', 'generate_test', 'refuse_if_st10_record', 'run_test_part', 'test_qa', 'write_st10_record']
+  testgate.py                  auditor_count_record       NEW     ['general_test']
+  testgate.py                  begin_test_evaluation      NEW     ['refuse_if_marker', 'rows_hashes_of', 'st10_check']
+  testgate.py                  require_test_session       NEW     ['rows_hashes_of', 'st10_check']
+  testgate.py                  rows_hashes_of             NEW     ['TEST_FILES', 'rows_sha256']
+  testgate.py                  st10_check                 NEW     ['general_test', 'general_test.jsonl']
+  testgate.py                  st10_record                NEW     ['TEST_FILES']
+  testgate.py                  write_st10_record          NEW     ['st10_record']
+functions new or changed in this set: [('metrix/e1-pilot/src/metrix_e1/evaluate.py', 'evaluate_model'), ('metrix/e1-pilot/src/metrix_e1/test_data.py', 'main'), ('metrix/e1-pilot/src/metrix_e1/testgate.py', 'auditor_count_record'), ('metrix/e1-pilot/src/metrix_e1/testgate.py', 'begin_test_evaluation'), ('metrix/e1-pilot/src/metrix_e1/testgate.py', 'require_test_session'), ('metrix/e1-pilot/src/metrix_e1/testgate.py', 'rows_hashes_of'), ('metrix/e1-pilot/src/metrix_e1/testgate.py', 'st10_check'), ('metrix/e1-pilot/src/metrix_e1/testgate.py', 'st10_record'), ('metrix/e1-pilot/src/metrix_e1/testgate.py', 'write_st10_record')]
+  I/O-like calls of evaluate.py.evaluate_model: []
+  I/O-like calls of test_data.py.main: ['mkdir()', "write_text(json.dumps(report, ensure_ascii=False, indent=1, sort_keys=True) + '\\n')", 'write_bytes(blob)', 'exists()']
+  I/O-like calls of testgate.py.auditor_count_record: []
+  I/O-like calls of testgate.py.begin_test_evaluation: ['mkdir()', 'write_bytes(blob)', "_git(root, 'add', '--', MARKER_REL)", "_git(root, 'commit', '-q', '-m', 'metrix: E1-PILOT TEST evaluation marker (section 8 step 8: TEST is evaluated once)", "committed_record(root, R.SELECTION_FREEZE_REL, 'selection_freeze', authorization.frozen_commit)", 'load(fz)', "_git(root, 'diff', '--cached', '--quiet')", "_git(root, 'diff', '--cached', '--name-only')"]
+  I/O-like calls of testgate.py.require_test_session: ["_committed(root, MARKER_REL, 'TEST marker')"]
+  I/O-like calls of testgate.py.rows_hashes_of: []
+  I/O-like calls of testgate.py.st10_check: ["_committed(root, ST10_RECORD_REL, 'ST10 record')", '_committed(root, AUDITOR_L6_REL, "data-auditor\'s L6 TEST count")']
+  I/O-like calls of testgate.py.st10_record: []
+  I/O-like calls of testgate.py.write_st10_record: ['exists()', 'mkdir()', "write_text(json.dumps(rec, ensure_ascii=False, indent=1, sort_keys=True) + '\\n')"]
+
+== b. testgate.py: I/O-like calls per function; use of the TEST rows
+  _git                     ["run(['git', '-C', str(root), *args])"]
+  _is_ancestor             ["_git(root, 'merge-base', '--is-ancestor', commit, 'HEAD')"]
+  code_commit              ["_git(repo_root, 'status', '--porcelain', '--untracked-files=all', '--', *CODE_PATHS)", "_git(repo_root, 'rev-parse', '--verify', 'HEAD^{commit}')"]
+  refuse_if_st10_record    ['exists()']
+  write_st10_record        ['exists()', 'mkdir()', "write_text(json.dumps(rec, ensure_ascii=False, indent=1, sort_keys=True) + '\\n')"]
+  _committed               ['committed_json(root, rel)']
+  st10_check               ["_committed(root, ST10_RECORD_REL, 'ST10 record')", '_committed(root, AUDITOR_L6_REL, "data-auditor\'s L6 TEST count")']
+  _ever_committed          ["_git(root, 'log', *revs, '--format=%H', '--', rel)"]
+  refuse_if_marker         ["_git(root, 'fetch', '-q', '--no-tags', remote, 'refs/heads/%s' % branch)", 'exists()', 'exists()']
+  _push                    ["_git(root, 'push', remote, 'HEAD:refs/heads/%s' % branch)", "_git(root, 'ls-remote', remote, 'refs/heads/%s' % branch)", "_git(root, 'rev-parse', 'HEAD')"]
+  begin_test_evaluation    ['mkdir()', 'write_bytes(blob)', "_git(root, 'add', '--', MARKER_REL)", "_git(root, 'commit', '-q', '-m', 'metrix: E1-PILOT TEST evaluation marker (section 8 step 8: TEST is evaluated once)", "committed_record(root, R.SELECTION_FREEZE_REL, 'selection_freeze', authorization.frozen_commit)", 'load(fz)', "_git(root, 'diff', '--cached', '--quiet')", "_git(root, 'diff', '--cached', '--name-only')"]
+  require_test_session     ["_committed(root, MARKER_REL, 'TEST marker')"]
+  finish_test_evaluation   ['write_text(json.dumps(dict(result, session_id=session.session_id, marker_commit=session.marker_commit), ensure_ascii=Fals)', "_git(root, 'add', '--', RESULT_REL)", "_git(root, 'commit', '-q', '-m', 'metrix: E1-PILOT TEST evaluation result (section 8 step 8)')", "_git(root, 'diff', '--cached', '--quiet')", "_git(root, 'diff', '--cached', '--name-only')"]
+file reads (open / read_*): []
+functions that load the name `data` (the TEST rows): ['begin_test_evaluation', 'require_test_session', 'rows_hashes_of']
+rows_hashes_of: ['missing = [n for n in D.TEST_FILES if n not in data]', "if missing:\n    raise _refuse('no rows for %s' % missing)", 'return {n: rows_sha256(data[n]) for n in D.TEST_FILES}']
+rows_sha256   : ['return FZ.sha256_hex(FZ.jsonl_bytes(rows))']
+calls receiving `data`: {'begin_test_evaluation': ['rows_hashes_of(data)'], 'require_test_session': ['rows_hashes_of(data)'], 'rows_hashes_of': []}
+the TEST rows only go to rows_hashes_of / rows_sha256 (hash of the canonical JSONL bytes): True
+
+== c. test_data.main: order of the steps and the --out test
+statement index of each step: [('check_preconditions', 5), ('out.resolve() == root', 8), ('present = ', 9), ('refuse_if_st10_record', 11), ('generate_test(', 12), ('out.mkdir', 13), ('run_test_part', 15), ('leakage_test_report', 16), ('write_st10_record', 17)]
+--out test: ['root = fz.repo_root.resolve()'] | ["if out.resolve() == root or root in out.resolve().parents:\n    raise ImplementationFail('--out %s is inside the repository %s; TEST content is never committed' % (out, root))"]
+note: testgate.code_commit (uncommitted-code refusal) is reached through write_st10_record, i.e. after generate_test and run_test_part (statement order above)
+
+== d. ST10 record and marker contents
+  st10_record['kind'] = 'st10'
+  st10_record['mode'] = 'formal'
+  st10_record['label'] = None
+  st10_record['frozen_commit'] = authorization.frozen_commit
+  st10_record['authorization'] = auth_fields(authorization)
+  st10_record['test_files_sha256'] = {n: FZ.sha256_hex(test_files[n]) for n in D.TEST_FILES}
+  st10_record['code_commit'] = code_commit(root)
+  st10_record['counts'] = counts
+  counts = ["counts = {c: report['checks'][c]['value'] for c in LK.TEST_CHECKS}"]
+  constant subscripts used in st10_record: ["'checks'", "'value'"] ('detail' used: False)
+  marker['kind'] = 'test_evaluation_marker'
+  marker['mode'] = 'formal'
+  marker['frozen_commit'] = authorization.frozen_commit
+  marker['authorization'] = auth_fields(authorization)
+  marker['st10_record_sha256'] = st10_sha
+  marker['auditor_count_sha256'] = aud_sha
+  marker['test_files_sha256'] = rows_hashes
+  marker['checkpoints'] = checkpoints
+  marker['models'] = models
+  marker['code_commit'] = code_commit(root)
+  marker['session_id'] = session_id
+  marker['started_utc'] = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
+  finish_test_evaluation writes: ['write_text(json.dumps(dict(result, session_id=session.session_id, marker_commit=session.marker_commit), ensure_ascii=Fals)']  (the caller's `result`; content decided in C2)
+
+== e. evaluate.evaluate_model, split 'test': gate order
+  [(328, 'verify_authorization'), (330, 'require_test_session'), (331, 'require_gpu'), (333, "data['candidates.json']"), (333, "data['facts.jsonl']"), (333, 'data[qa_file]'), (336, 'data[gen_file]'), (342, "data['train_S.jsonl']")]
+
+== f. tests/ and reports/impl_c scripts: TEST-path calls and the data they get
+  metrix/e1-pilot/tests/test_data_hashes.py (changed): 0 TEST-path calls; 'eval_sets' mentioned 4 times
+  metrix/e1-pilot/tests/test_evaluate.py (changed): 3 TEST-path calls; 'eval_sets' mentioned 0 times
+     test_test_split_needs_the_authorization:175 E.evaluate_model(tiny_model(), tok, data_rows, fz.templates, contract.evaluation, M.FORMAL_MODE, 'cpu', split='test', test_authorization=LK.TestAuthor
+     test_test_split_needs_the_authorization:171 E.evaluate_model(tiny_model(), tok, data_rows, fz.templates, contract.evaluation, M.FORMAL_MODE, 'cpu', split='test', test_authorization=auth, fz=fz)
+     test_test_split_needs_the_authorization:180 E.evaluate_model(tiny_model(), tok, data_rows, fz.templates, contract.evaluation, mode, 'cpu', split='test', test_authorization=None, fz=fz)
+  metrix/e1-pilot/tests/test_gate.py (changed): 0 TEST-path calls; 'eval_sets' mentioned 0 times
+  metrix/e1-pilot/tests/test_stops.py (changed): 0 TEST-path calls; 'eval_sets' mentioned 0 times
+  metrix/e1-pilot/tests/test_test_data.py (changed): 7 TEST-path calls; 'eval_sets' mentioned 1 times
+     test_refusal_never_parses_test_rows:63 TD.main(['--inputs', str(inputs_dir), '--data', str(generated['dir']), '--out', str(tmp_path / 'o')])
+     test_refuses_without_data:73 TD.main(['--inputs', str(inputs_dir), '--data', str(tmp_path / 'empty'), '--out', str(tmp_path / 'o')])
+     test_generation_needs_authorization:89 TD.generate_test(fz, None, inputs_dir, generated['dir'])
+     test_generation_needs_authorization:92 TD.generate_test(fz, LK.TestAuthorization(None, None, None), inputs_dir, generated['dir'])
+     test_generation_needs_authorization:94 TD.generate_test(fz, LK.TestAuthorization(fz.record.commit, 'a' * 64, 'b' * 64), inputs_dir, generated['dir'])
+     test_generation_needs_authorization:97 LK.run_test_part(fz, {}, [], [], None)
+     test_run_test_part_rechecks_the_committed_records:221 LK.run_test_part(fz, {}, [], [], auth, root)
+  metrix/e1-pilot/tests/test_testgate.py (changed): 9 TEST-path calls; 'eval_sets' mentioned 1 times
+     test_st10_record_holds_raw_counts_hashes_and_code_commit:141 TG.write_st10_record(env.fz, env.auth, env.report(L4=2, L6=7), env.files)
+     test_st10_record_holds_raw_counts_hashes_and_code_commit:151 TG.write_st10_record(env.fz, env.auth, env.report(), env.files)
+     evaluate:397 E.evaluate_model(model, None, data or env.data, None, env.contract.evaluation, M.FORMAL_MODE, 'cpu', split='test', test_authorization=auth or env.auth
+     test_finish_commits_the_result_after_every_model:480 TG.finish_test_evaluation(env.fz, s, {'final_status': 'NOT_TESTED'}, 'origin', BRANCH, sleep=lambda x: None)
+     test_driver_writes_the_st10_record_and_judges_raw_counts:501 TD.main(['--inputs', 'unused', '--data', 'unused', '--out', str(env.root / 'inside')])
+     test_driver_writes_the_st10_record_and_judges_raw_counts:505 TD.main(['--inputs', 'unused', '--data', 'unused', '--out', str(out)])
+     test_driver_writes_the_st10_record_and_judges_raw_counts:515 TD.main(['--inputs', 'unused', '--data', 'unused', '--out', str(tmp_path / 'driver_out2')])
+     test_driver_writes_the_st10_record_and_judges_raw_counts:519 TD.main(['--inputs', 'unused', '--data', 'unused', '--out', str(tmp_path / 'driver_out3')])
+     begin:121 TG.begin_test_evaluation(self.fz, self.auth, self.data, kw.pop('base', self.base_sha), 'origin', BRANCH, sleep=lambda s: None, **kw)
+  metrix/e1-pilot/reports/impl_c/c1_gate_probe.py (changed): 2 TEST-path calls; 'eval_sets' mentioned 0 times
+     main:80 TG.begin_test_evaluation(fz, auth, data, arg, 'origin', 'main', retries=1, sleep=lambda s: None)
+     main:92 E.evaluate_model(tiny(int(seed)), None, data, None, contract_ev, M.FORMAL_MODE, 'cpu', split='test', test_authorization=auth, fz=fz, test_session=sess
+  metrix/e1-pilot/reports/impl_c/c1_mutate.py (changed): 0 TEST-path calls; 'eval_sets' mentioned 0 times
+  test_testgate.test_driver_writes_the_st10_record_and_judges_raw_counts: TD.main called 4 times; monkeypatched before the first call: ['TD.check_preconditions', 'TD.generate_test', 'TD.LK.load_data', 'TD.LK.run_test_part']; --inputs ["'unused'"]
+  test_testgate.py lines naming eval_sets / inputs_dir / a generated data dir / METRIX_INPUTS: ['generated, read or counted: the TEST generator is never run with an authorization, eval_sets.jsonl is never opened,']
+  metrix/e1-pilot/tests/test_data_hashes.py: lines naming eval_sets HEAD 4 / now 4, identical: True
+  metrix/e1-pilot/tests/test_evaluate.py: lines naming eval_sets HEAD 0 / now 0, identical: True
+  metrix/e1-pilot/tests/test_gate.py: lines naming eval_sets HEAD 0 / now 0, identical: True
+  metrix/e1-pilot/tests/test_stops.py: lines naming eval_sets HEAD 0 / now 0, identical: True
+  metrix/e1-pilot/tests/test_test_data.py: lines naming eval_sets HEAD 1 / now 1, identical: True
+  metrix/e1-pilot/tests/test_testgate.py: lines naming eval_sets HEAD 0 / now 1, identical: False
+     now: ['generated, read or counted: the TEST generator is never run with an authorization, eval_sets.jsonl is never opened,']
+  metrix/e1-pilot/reports/impl_c/c1_gate_probe.py: lines naming eval_sets HEAD 0 / now 0, identical: True
+  metrix/e1-pilot/reports/impl_c/c1_mutate.py: lines naming eval_sets HEAD 0 / now 0, identical: True
+  c1_gate_probe.py: TEST rows read from ['data = {n: FZ.read_jsonl(test_dir / n) for n in ("test_qa.jsonl", "general_test.jsonl")}']
+
+== g. history search of 'TEST once' / 'TEST generated once'
+  _ever_committed: ["r = _git(root, 'log', *revs, '--format=%H', '--', rel)", "if r.returncode != 0:\n    raise ImplementationFail('git log %s -- %s failed: %s' % (' '.join(revs), rel, r.stderr))", 'return r.stdout.split()']
+  git log arguments: ["_git(root, 'log', *revs, '--format=%H', '--', rel)"] | --full-history given: False
+  note: without --full-history, `git log <revs> -- <path>` applies the default history simplification: a side branch whose net change to <path> is nil is pruned at a merge that is TREESAME to its first parent, so a marker (or ST10 record, or result) added and removed on such a branch is not listed (see ic2_01 B05)
+  callers of _ever_committed: ['refuse_if_marker', 'refuse_if_st10_record']
+modules: torch imported=False | transformers modeling modules imported=[] | this script never calls a model class or from_pretrained on a model
+RESULT: PASS
+exit=0
