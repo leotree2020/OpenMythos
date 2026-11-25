@@ -72,7 +72,8 @@ DATA_TABLE_ROWS = {
 }
 
 HEX64 = re.compile(r"[0-9a-f]{64}")
-# Keys of the four content hashes of the generated data (Frozen.content_hashes, check_data_dir).
+# Keys of the four content hashes of the generated data (Frozen.content_hashes, check_data_dir); the bytes each one
+# hashes are CONTENT_HASH_BYTES[key](data directory), defined below the readers.
 CONTENT_HASH_KEYS = ("facts", "train_S", "candidates", "anchor_texts")
 
 
@@ -114,6 +115,22 @@ def read_jsonl(path):
     """Parse a JSONL file (file order of the lines)."""
     with open(path, "rb") as fh:
         return parse_jsonl(fh.read())
+
+
+def _json_file(path):
+    with open(path, encoding="utf-8") as fh:
+        return json.load(fh)
+
+
+# The serialized content behind each content hash (protocol 2.2 facts: canonical list of facts.jsonl rows; 2.6
+# train_S: JSONL rule; 2.5 candidates: canonical object; DATA_MANIFEST anchor_text.decoded_texts_hash_rule: canonical
+# list of the 512 texts in document order). One entry per CONTENT_HASH_KEYS key (DEFERRED_MINORS BE9).
+CONTENT_HASH_BYTES = {
+    "facts": lambda d: canonical_bytes(read_jsonl(d / "facts.jsonl")),
+    "train_S": lambda d: jsonl_bytes(read_jsonl(d / "train_S.jsonl")),
+    "candidates": lambda d: canonical_bytes(_json_file(d / "candidates.json")),
+    "anchor_texts": lambda d: canonical_bytes([r["text"] for r in read_jsonl(d / "anchor_text.jsonl")]),
+}
 
 
 def rng_rule(seed, purpose):
@@ -291,15 +308,7 @@ class Frozen:
         (2.5: canonical object), anchor texts (DATA_MANIFEST anchor_text.decoded_texts_hash_rule: list of the 512
         texts in document order)."""
         d = Path(data_dir)
-        anchor = read_jsonl(d / "anchor_text.jsonl")
-        with open(d / "candidates.json", encoding="utf-8") as fh:
-            cands = json.load(fh)
-        return {
-            "facts": sha256_hex(canonical_bytes(read_jsonl(d / "facts.jsonl"))),
-            "train_S": sha256_hex(jsonl_bytes(read_jsonl(d / "train_S.jsonl"))),
-            "candidates": sha256_hex(canonical_bytes(cands)),
-            "anchor_texts": sha256_hex(canonical_bytes([r["text"] for r in anchor])),
-        }
+        return {key: sha256_hex(CONTENT_HASH_BYTES[key](d)) for key in CONTENT_HASH_KEYS}    # DEFERRED_MINORS BE9
 
     def check_data_dir(self, data_dir):
         """ST12 range (1) for the generated data: the four content hashes against PROTOCOL_FROZEN."""

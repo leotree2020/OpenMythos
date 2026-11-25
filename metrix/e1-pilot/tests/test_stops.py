@@ -135,12 +135,17 @@ def test_st9(fz, tmp_path):
 
 
 def test_st10(fz):
-    test_leak = leak(["L4"])
-    e = raises("ST10", STP.st10, fz, test_leak, 0, 0)
-    assert e.status == "BLOCKED" and "不评测 TEST" in e.action
-    raises("ST10", STP.st10, fz, leak(), 0, 1)                      # Executor and data-auditor disagree
-    raises("ST10", STP.st10, fz, leak(), 0, None)                   # no data-auditor count
-    STP.st10(fz, leak(), 0, 0)
+    """Judged from raw counts against the frozen limits (no within-limit flag exists in the input)."""
+    from metrix_e1 import leakage as LK
+    limits = {c: v for c, v in LK._rules(fz.split_manifest)["limits"].items() if c in LK.TEST_CHECKS}
+    zero = {c: 0 for c in LK.TEST_CHECKS}
+    for c in LK.TEST_CHECKS:                                        # each check over its limit by one
+        e = raises("ST10", STP.st10, fz, dict(zero, **{c: limits[c] + 1}), limits, 0 if c != "L6" else limits[c] + 1)
+        assert e.status == "BLOCKED" and "不评测 TEST" in e.action and "over limit ['%s']" % c in str(e)
+    raises("ST10", STP.st10, fz, zero, limits, 1)                   # Executor and data-auditor disagree
+    raises("ST10", STP.st10, fz, zero, limits, None)                # no data-auditor count
+    raises("ST10", STP.st10, fz, {c: 0 for c in LK.TEST_CHECKS if c != "L6"}, limits, 0)   # no Executor L6 count
+    STP.st10(fz, zero, limits, 0)
 
 
 def test_st11(fz, contract):

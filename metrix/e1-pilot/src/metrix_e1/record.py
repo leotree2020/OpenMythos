@@ -147,8 +147,8 @@ class NotCommitted(Exception):
 
 
 def committed_json(repo_root, rel):
-    """(parsed JSON, SHA-256 of the committed bytes) of a file committed at HEAD whose working-tree bytes equal the
-    committed blob. Raises NotCommitted otherwise."""
+    """(parsed JSON object, SHA-256 of the committed bytes) of a file committed at HEAD whose working-tree bytes equal
+    the committed blob. Raises NotCommitted otherwise (also for JSON that is not an object)."""
     r = subprocess.run(["git", "-C", str(repo_root), "cat-file", "blob", "HEAD:%s" % rel], capture_output=True, check=False)
     if r.returncode != 0:
         raise NotCommitted("%s is not committed at HEAD" % rel)
@@ -156,9 +156,12 @@ def committed_json(repo_root, rel):
     if not wt.is_file() or wt.read_bytes() != r.stdout:
         raise NotCommitted("%s in the working tree differs from its committed version" % rel)
     try:
-        return json.loads(r.stdout), FZ.sha256_hex(r.stdout)
+        obj = json.loads(r.stdout)
     except ValueError as e:
         raise NotCommitted("%s does not parse: %r" % (rel, e)) from e
+    if not isinstance(obj, dict):
+        raise NotCommitted("%s is a JSON %s, not an object" % (rel, type(obj).__name__))
+    return obj, FZ.sha256_hex(r.stdout)
 
 
 def committed_record(repo_root, rel, kind, frozen_commit):
@@ -182,7 +185,9 @@ def gate0_record(fz, mode, gate0_result):
 
 def selection_freeze_record(fz, mode, selected, data_content_hashes, checkpoints, gate0_record_sha256):
     """The freeze record of section 8 step 8 (selected configurations, data hashes, checkpoint hashes), bound to the
-    committed Gate 0 record by its SHA-256; its committed form is precondition 3 of the TEST generator."""
+    committed Gate 0 record by its SHA-256; its committed form is precondition 3 of the TEST generator.
+    `checkpoints`: {run name: train.state_sha256 of the trained model} (interpretation B25: not a file-byte hash; TEST
+    evaluation recomputes it on the loaded checkpoint, testgate.require_test_session)."""
     return {"kind": "selection_freeze", "mode": mode.name, "label": mode.label, "frozen_commit": fz.record.commit,
             "selected": dict(selected), "data_content_hashes": dict(data_content_hashes), "checkpoints": dict(checkpoints),
             "gate0_record_sha256": gate0_record_sha256}
@@ -218,4 +223,3 @@ def freeze_record_problem(rec, contract, content_hashes, gate0_sha):
         return "not bound to the committed Gate 0 record (sha256 %r, committed %s)" % (rec.get("gate0_record_sha256"),
                                                                                        gate0_sha)
     return None
-

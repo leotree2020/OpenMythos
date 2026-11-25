@@ -107,7 +107,11 @@ def test_reasons_follow_section_9(contract):
     assert res["conditions"]["G0.5"]["note"] == G.TOO_HARD_NOTE               # seed-average < 0.40
     v = passing(contract)
     v["G0.3"]["acc_cb"] = 0.9
-    assert G.judge(v, contract, M.FORMAL_MODE)["conditions"]["G0.3"]["note"] == G.RECALIBRATION_NOTE
+    v["G0.9"]["acc_avg"] = 0.99
+    res = G.judge(v, contract, M.FORMAL_MODE)
+    for c in ("G0.3", "G0.9"):          # B14 as ruled by Review Gate 2026-11-24: reason null, note '需重新校准'
+        assert res["conditions"][c] == {"satisfied": False, "reason": None, "note": "需重新校准"}
+    assert G.RECALIBRATION_NOTE == "需重新校准"
 
 
 def test_smoke_mode_status_is_not_tested(contract):

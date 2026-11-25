@@ -22,7 +22,10 @@ REASON = {"G0.1": "IMPLEMENTATION_FAIL", "G0.2": "IMPLEMENTATION_FAIL", "G0.6": 
           "G0.5": "OPTIMIZATION_OR_CAPACITY_UNRESOLVED", "G0.3": None, "G0.9": None, "G0.10": None}
 TEST_CONDITIONS = ("T1", "T2", "T3")
 TEST_REASON = {"T1": "OPTIMIZATION_OR_CAPACITY_UNRESOLVED", "T2": "IMPLEMENTATION_FAIL", "T3": None}
-RECALIBRATION_NOTE = "越过 G0.3 或 G0.9 的界限不代表机制失败:它触发 benchmark 重新校准(新协议版本)"
+# Note of G0.3, G0.9 (and T3, B24) when not satisfied; their reason is null. Review Gate 2026-11-24 ruling on B14
+# (reports/IMPL_C_REPORT.md「Review Gate 对阶段 B 的裁决」第 1 项). Protocol section 8: "越过 G0.3 或 G0.9 的界限不代表机制失败:
+# 它触发 benchmark 重新校准(新协议版本)".
+RECALIBRATION_NOTE = "需重新校准"
 TOO_HARD_NOTE = "对该模型与该训练量过难"
 
 

@@ -115,11 +115,15 @@ def st9(fz, recorded_name, current_name):
                    void_pilot=True)
 
 
-def st10(fz, test_leakage_report, executor_l6, auditor_l6):
+def st10(fz, counts, limits, auditor_l6):
     """Step 8: any TEST part of L3-L6 over its limit, or the L6 TEST counts of Executor and data-auditor differ ->
-    stop; no TEST evaluation; BLOCKED; report to the Owner."""
-    over = sorted(c for c, x in test_leakage_report["checks"].items() if not x["within_limit"])
-    if over or test_leakage_report["result"] != "PASS" or auditor_l6 is None or executor_l6 != auditor_l6:
+    stop; no TEST evaluation; BLOCKED; report to the Owner. Judged from the raw counts of the TEST part (`counts`:
+    {check: count}, the Executor's; counts["L6"] is its L6 TEST count) against the frozen `limits` ({check: limit},
+    leakage._rules); no within-limit flag or result word is read (Review Gate 2026-11-24, supplementary ruling 3).
+    `auditor_l6`: the data-auditor's own L6 TEST count (None: none given)."""
+    over = sorted(c for c, v in counts.items() if v > limits[c])
+    executor_l6 = counts.get("L6")
+    if over or executor_l6 is None or auditor_l6 is None or executor_l6 != auditor_l6:
         raise Stop("ST10", "BLOCKED", action(fz, "ST10"), "TEST part over limit %s; L6 TEST Executor %r, data-auditor %r" % (
             over, executor_l6, auditor_l6))
 

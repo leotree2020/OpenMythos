@@ -304,14 +304,19 @@ SPLIT_FILES = {"dev": ("dev_qa.jsonl", "general_dev.jsonl"), "test": ("test_qa.j
 
 
 def evaluate_model(model, tok, data, templates, ev, mode, device, split="dev", with_em=True, with_s_mapping=False,
-                   batch_size=64, test_authorization=None, fz=None):
+                   batch_size=64, test_authorization=None, fz=None, test_session=None, checkpoint_name=None):
     """Section 5 evaluation of one model (parsed files of the data directory in `data`): QA scores of the split, the
     TRAIN closed book, EM on the split's questions, general-text NLL of the split; optionally (DEV) S's own-mapping
     accuracy. Output keys: <split>_qa, train_cb, general_<split>, em_<split>[, s_mapping_dev_qa, s_mapping_cb].
     split "test" needs test_qa.jsonl / general_test.jsonl in `data`, which only exist after the TEST generator's
     preconditions (test_data.py), and the TestAuthorization of those preconditions, checked with the frozen files `fz`
     (frozen.load) against the committed Gate 0 and freeze records before anything is evaluated
-    (leakage.verify_authorization). Formal and preflight modes evaluate on the GPU only (require_gpu)."""
+    (leakage.verify_authorization), then the two hard preconditions of TEST evaluation (testgate.require_test_session:
+    the TEST session begun by this process with the committed and pushed marker, the ST10 gate from the committed
+    records for these rows, `checkpoint_name` one of the marker's models not yet evaluated, and the model's state
+    sha256 equal to the marker's hash of that checkpoint). Formal and preflight modes evaluate on the GPU only
+    (require_gpu); a TEST checkpoint is claimed for the session only after that (testgate.claim_checkpoint), right
+    before it is evaluated."""
     if split not in SPLIT_FILES:
         raise ValueError("split %r" % (split,))
     if split == "test":
@@ -322,7 +327,12 @@ def evaluate_model(model, tok, data, templates, ev, mode, device, split="dev", w
         if fz is None:
             raise ImplementationFail("TEST path refused: the frozen files (fz) are needed to check the authorization")
         verify_authorization(test_authorization, fz)
-    require_gpu(mode, device)
+        from . import testgate as TG
+        TG.require_test_session(fz, test_authorization, test_session, checkpoint_name, data, model)
+        require_gpu(mode, device)
+        TG.claim_checkpoint(test_session, checkpoint_name)
+    else:
+        require_gpu(mode, device)
     qa_file, gen_file = SPLIT_FILES[split]
     facts, cands, qs = data["facts.jsonl"], data["candidates.json"], data[qa_file]
     out = {"%s_qa" % split: score_qa(model, tok, qs, cands, facts, ev, device, batch_size),

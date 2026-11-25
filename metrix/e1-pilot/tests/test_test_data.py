@@ -87,7 +87,8 @@ def test_generation_needs_authorization(fz, inputs_dir, generated, monkeypatch):
     monkeypatch.setattr(TD.FZ, "read_jsonl", lambda *a, **k: called.append("read_jsonl") or real_read(*a, **k))
     with pytest.raises(ImplementationFail):
         TD.generate_test(fz, None, inputs_dir, generated["dir"])
-    with pytest.raises(ImplementationFail, match="frozen commit"):     # a hand-made authorization is re-checked
+    with pytest.raises(ImplementationFail, match="^IMPLEMENTATION_FAIL: TEST path refused: authorization for frozen "
+                       "commit None, PROTOCOL_FROZEN names %s$" % fz.record.commit):   # a hand-made authorization
         TD.generate_test(fz, LK.TestAuthorization(None, None, None), inputs_dir, generated["dir"])
     with pytest.raises(ImplementationFail, match="not committed"):
         TD.generate_test(fz, LK.TestAuthorization(fz.record.commit, "a" * 64, "b" * 64), inputs_dir, generated["dir"])
@@ -98,13 +99,17 @@ def test_generation_needs_authorization(fz, inputs_dir, generated, monkeypatch):
 
 # ---------------------------------------------------------------- conditions 2 and 3 on throw-away repositories
 
-def _repo(tmp_path, files, dirty=None):
+def _repo(tmp_path, files, dirty=None, protocol_frozen_commit=None):
     root = tmp_path / "repo"
-    root.mkdir()
+    root.mkdir(parents=True)
     subprocess.run(["git", "-C", str(root), "init", "-q"], check=True)
-    pf = root / "metrix/e1-pilot/PROTOCOL_FROZEN"            # the real PROTOCOL_FROZEN (its frozen commit)
+    pf = root / "metrix/e1-pilot/PROTOCOL_FROZEN"            # the real PROTOCOL_FROZEN (its frozen commit) ...
     pf.parent.mkdir(parents=True, exist_ok=True)
-    pf.write_bytes((PILOT / "PROTOCOL_FROZEN").read_bytes())
+    blob = (PILOT / "PROTOCOL_FROZEN").read_bytes()
+    if protocol_frozen_commit is not None:                   # ... or one whose current section names another commit
+        from metrix_e1 import frozen as FZ
+        blob = blob.replace(FZ.parse_protocol_frozen(blob).commit.encode(), protocol_frozen_commit.encode())
+    pf.write_bytes(blob)
     for rel, obj in files.items():
         p = root / rel
         p.parent.mkdir(parents=True, exist_ok=True)
@@ -193,6 +198,65 @@ def test_pending_interpretations_block_test(monkeypatch):
     TD.check_interpretations_ruled()
 
 
+def test_interpretations_ruled_by_review_gate():
+    """Review Gate 2026-11-24, stage-B ruling item 1: B1-B24 accepted; every record names the ruling; B3 and B14
+    carry the ruling's notes; B19 no longer says it is to be ruled. Review Gate 2026-11-25, ruling on C1 item 3: B25
+    accepted (status and reference of that ruling); nothing is pending."""
+    from metrix_e1 import interpretations as INT
+    assert [e["id"] for e in INT.ENTRIES] == ["B%d" % i for i in range(1, 26)]
+    assert INT.pending() == [] and INT.pending_problem() is None
+    assert INT.ACCEPTED == "ACCEPTED（Review Gate 2026-11-24）"
+    assert INT.ACCEPTED_C1 == "ACCEPTED（Review Gate 2026-11-25）"
+    recs = INT.as_records()
+    assert all(r["status"] == INT.ACCEPTED and r["ruling"] == INT.RULING_REF for r in recs[:24])
+    assert recs[24]["status"] == INT.ACCEPTED_C1 and recs[24]["ruling"] == INT.RULING_REF_C1
+    assert "IMPL_C_REPORT.md「Review Gate 对阶段 B 的裁决」" in INT.RULING_REF
+    assert INT.RULING_REF_C1.startswith("tasks/IMPL_C1_RULING.md 第 3 项")
+    assert "3. B25 接受：checkpoint 哈希 = train.state_sha256。" in (PILOT / "tasks/IMPL_C1_RULING.md").read_text(
+        encoding="utf-8")
+    by_id = {r["id"]: r for r in recs}
+    assert "train_Y.jsonl" in by_id["B3"]["ruling_note"] and "需重新校准" in by_id["B14"]["ruling_note"]
+    assert "To be ruled" not in by_id["B19"]["text"]
+    report = (PILOT / "reports/IMPL_C_REPORT.md").read_text(encoding="utf-8")
+    assert report.count("## Review Gate 对阶段 B 的裁决") == 1 and report.count("## Review Gate 对 C1 的裁决") == 1
+
+
+def test_b25_definition_is_the_code_of_state_sha256():
+    """Review Gate's ruling on C1, item 3: the computation written in B25 (an independent implementation of its text
+    here) gives train.state_sha256 of a model (random tiny Qwen3 models; no weights)."""
+    import hashlib
+    import torch
+    from conftest import tiny_model
+    from metrix_e1 import interpretations as INT
+    from metrix_e1 import train as T
+    text = {e["id"]: e for e in INT.ENTRIES}["B25"]["text"]
+    assert "sorted order" in text and "str(t.dtype)" in text and "str(tuple(t.shape))" in text and "uint8" in text
+
+    def from_text(module):
+        h = hashlib.sha256()
+        sd = module.state_dict()
+        for k in sorted(sd):
+            t = sd[k].detach().to("cpu").contiguous()
+            h.update(k.encode("utf-8") + b"\0" + str(t.dtype).encode("utf-8") + b"\0"
+                     + str(tuple(t.shape)).encode("utf-8") + b"\0")
+            h.update(t.reshape(-1).view(torch.uint8).numpy().tobytes())
+        return h.hexdigest()
+
+    m = tiny_model(3)
+    assert T.state_sha256(m) == from_text(m) and len(T.state_sha256(m)) == 64
+    other = tiny_model(4)
+    assert T.state_sha256(other) != T.state_sha256(m)
+
+
+def test_a_committed_record_that_is_not_an_object_is_not_committed(fz, tmp_path):
+    """record.committed_json refuses JSON that is not an object (round-2 code review; data-auditor C1 round 1 (a))."""
+    root = _repo(tmp_path, {G0: [1, 2]})
+    with pytest.raises(R.NotCommitted, match="gate0_record.json is a JSON list, not an object$"):
+        R.committed_json(root, G0)
+    with pytest.raises(ImplementationFail, match="TEST path refused: .*gate0_record.json is a JSON list"):
+        LK.verify_authorization(LK.TestAuthorization(fz.record.commit, "a" * 64, "b" * 64), fz, root)
+
+
 def test_run_test_part_rechecks_the_committed_records(fz, tmp_path):
     auth = LK.TestAuthorization(fz.record.commit, "a" * 64, "b" * 64)
     root = _repo(tmp_path, {})
@@ -228,19 +292,45 @@ def test_verify_authorization_branches(fz, contract, generated, tmp_path, monkey
     sel = _selection(fz, contract, content, _sha(g))
     root = _repo(tmp_path, {G0: g, SEL: sel})
     LK.verify_authorization(LK.TestAuthorization(fz.record.commit, _sha(g), _sha(sel)), fz, root)   # all checks hold
-    with pytest.raises(ImplementationFail, match="authorization"):
+    with pytest.raises(ImplementationFail, match="^IMPLEMENTATION_FAIL: TEST path refused: committed %s has sha256 %s, "
+                       "authorization f{64}$" % (SEL, _sha(sel))):
         LK.verify_authorization(LK.TestAuthorization(fz.record.commit, _sha(g), "f" * 64), fz, root)
-    with pytest.raises(ImplementationFail, match="frozen commit"):
-        LK.verify_authorization(LK.TestAuthorization("0" * 40, _sha(g), _sha(sel)), fz, root)
+
+
+def test_verify_authorization_frozen_commit_comparisons(fz, contract, tmp_path, monkeypatch):
+    """BE2 (DEFERRED_MINORS 1.26): the three commits (authorization, PROTOCOL_FROZEN in the repository, the loaded
+    frozen files) are compared in two checks with their own messages; each case below is refused by a different one,
+    matched on the whole message."""
     import copy
     import dataclasses
+    _no_pending(monkeypatch)
+    real = fz.record.commit
     other = copy.copy(fz)                                    # frozen files loaded for another frozen commit
     other.record = dataclasses.replace(fz.record, commit="2" * 40)
-    with pytest.raises(ImplementationFail, match="the loaded frozen files 2{40}"):
-        LK.verify_authorization(LK.TestAuthorization(fz.record.commit, _sha(g), _sha(sel)), other, root)
+    g = _gate0(fz)
+    from metrix_e1 import frozen as FZ
+    sel = _selection(fz, contract, {k: fz.data_hash(k) for k in FZ.CONTENT_HASH_KEYS}, _sha(g))
+    root = _repo(tmp_path / "a", {G0: g, SEL: sel})
+    auth = lambda c: LK.TestAuthorization(c, _sha(g), _sha(sel))                       # noqa: E731
+    cases = [  # (authorization commit, frozen files, message)
+        ("0" * 40, fz, "authorization for frozen commit 0{40}, PROTOCOL_FROZEN names %s" % real),   # auth only
+        (real, other, "PROTOCOL_FROZEN names %s, the loaded frozen files 2{40}" % real),          # fz only
+        ("2" * 40, other, "PROTOCOL_FROZEN names %s, the loaded frozen files 2{40}" % real),      # auth = fz
+    ]
+    for commit, f, msg in cases:
+        with pytest.raises(ImplementationFail, match="^IMPLEMENTATION_FAIL: TEST path refused: %s$" % msg):
+            LK.verify_authorization(auth(commit), f, root)
+    # authorization = loaded frozen files, but the repository's PROTOCOL_FROZEN names another commit
+    root3 = _repo(tmp_path / "b", {G0: g, SEL: sel}, protocol_frozen_commit="3" * 40)
+    with pytest.raises(ImplementationFail, match="^IMPLEMENTATION_FAIL: TEST path refused: PROTOCOL_FROZEN names 3{40}, "
+                       "the loaded frozen files %s$" % real):
+        LK.verify_authorization(auth(real), fz, root3)
+    LK.verify_authorization(auth(real), fz, root)            # control: all three equal
 
 
-VERIFY_CASES = {"not_pass": "not PASS", "unbound": "not bound", "other_protocol_frozen": "PROTOCOL_FROZEN names",
+VERIFY_CASES = {"not_pass": "not PASS", "unbound": "not bound",
+                "authorization_other_commit": "^IMPLEMENTATION_FAIL: TEST path refused: authorization for frozen commit "
+                                              "1{40}, PROTOCOL_FROZEN names",
                 "bad_selection": "not configurations of SEARCH_SPACE", "S_selected": "not configurations of SEARCH_SPACE",
                 "checkpoint": "no checkpoint hash for 1 of the 30 runs", "checkpoint_not_hex": "no checkpoint hash",
                 "data_hashes": "data content hashes", "pending": "interpretations not yet ruled by Review Gate: B19$"}
@@ -252,7 +342,7 @@ def test_verify_authorization_rechecks_what_the_generator_checked(fz, contract, 
     otherwise correct committed records with matching hashes; verify_authorization refuses with that reason."""
     _no_pending(monkeypatch, ["B19"] if case == "pending" else [])
     content = fz.check_data_dir(generated["dir"])
-    commit = "1" * 40 if case == "other_protocol_frozen" else fz.record.commit
+    commit = "1" * 40 if case == "authorization_other_commit" else fz.record.commit
     g = dict(_gate0(fz, "NOT_TESTED" if case == "not_pass" else "PASS"), frozen_commit=commit)
     selected = {"bad_selection": {"F": "F9", "L": "L2", "A": "A5"},
                 "S_selected": {"F": "S1", "L": "L2", "A": "A5"}}.get(case, SELECTED)

@@ -170,6 +170,11 @@ def test_test_split_needs_the_authorization(contract, tok, data_rows, fz):
         with pytest.raises(ImplementationFail, match="TEST path"):
             E.evaluate_model(tiny_model(), tok, data_rows, fz.templates, contract.evaluation, M.FORMAL_MODE, "cpu",
                              split="test", test_authorization=auth, fz=fz)
+    with pytest.raises(ImplementationFail,
+                       match="^IMPLEMENTATION_FAIL: TEST path refused: the frozen files \\(fz\\) are needed"):
+        E.evaluate_model(tiny_model(), tok, data_rows, fz.templates, contract.evaluation, M.FORMAL_MODE, "cpu",
+                         split="test", test_authorization=LK.TestAuthorization(fz.record.commit, "a" * 64, "b" * 64),
+                         fz=None)                                     # BE10: the fz is None branch
     for mode in (M.smoke_mode(3), M.preflight_mode(contract)):           # TEST is evaluated in formal mode only
         with pytest.raises(ImplementationFail, match="formal mode only"):
             E.evaluate_model(tiny_model(), tok, data_rows, fz.templates, contract.evaluation, mode, "cpu",
@@ -196,5 +201,6 @@ def test_nonfinite_logits_stop_em_generation(contract):
     late = LateNaNStub(374)                                   # 374 is not a stop id: decoding goes on to step 2
     with pytest.raises(NonFinite) as e:
         E.greedy_generate(late, [[1, 2, 3]], contract.evaluation, "cpu")
-    assert late.calls == 2 and e.value.stop == "ST6" and all(v != v for v in e.value.values)
-    assert E.greedy_generate(Stub(374), [[1, 2, 3]], contract.evaluation, "cpu") == [[374] * 16]   # control: finite
+    assert late.calls == 2 and e.value.stop == "ST6" and e.value.values and all(v != v for v in e.value.values)
+    assert E.greedy_generate(Stub(374), [[1, 2, 3]], contract.evaluation, "cpu") == [
+        [374] * contract.evaluation.max_new_tokens]                                          # control: finite

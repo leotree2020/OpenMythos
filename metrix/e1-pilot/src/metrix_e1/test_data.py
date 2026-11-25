@@ -10,17 +10,29 @@ Implementation Task Order V1, section 5: before anything is generated, all three
      formal mode, committed; selected F, L, A configurations of SEARCH_SPACE.json; data content hashes equal to the
      ones just checked; a 64-hex checkpoint hash for every one of the 30 training runs of the plan; bound to the
      committed Gate 0 record by its SHA-256).
-  Beyond the task order (for Review Gate): every interpretation of interpretations.py has been ruled.
+  Beyond the task order (kept by Review Gate 2026-11-24): every interpretation of interpretations.py has been ruled.
 The two records are built by record.gate0_record and record.selection_freeze_record.
 If any condition fails: the reason is printed, then "RESULT: FAIL", exit 1; no directory or file is created and no
 TEST row is read (eval_sets.jsonl test rows are only parsed by generate_test(), after the checks).
 
 When all hold: test_qa.jsonl (every fact x the TEST templates of its relation) and general_test.jsonl (first windows
-per domain with the TEST split, as the DEV windows) are written to --out, and the TEST part of the leakage checks
-runs (leakage.run_test_part; its L6 count is the Executor's; the data-auditor's own count and the comparison of ST10
-follow outside this command). TEST is evaluated once afterwards (not by this module).
+per domain with the TEST split, as the DEV windows) are written to --out, which must lie outside the repository (no
+TEST content is committed), and the TEST part of the leakage checks runs (leakage.run_test_part; its L6 count is the
+Executor's). Then this command, the step 8 TEST driver, writes the ST10 record (testgate.write_st10_record:
+results/st10_record.json with the raw counts, the sha256 of the two TEST files and the code commit; Review Gate
+supplementary ruling 3), judges the counts against the frozen limits, and commits and pushes the record (that path
+only, testgate.commit_paths), so that another clone sees it before TEST could be generated there again. The
+data-auditor's own L6 count (testgate.AUDITOR_L6_REL) and the TEST evaluation (once: testgate.begin_test_evaluation)
+follow outside this command; the evaluation re-judges ST10 from the committed records.
 
   python -m metrix_e1.test_data --inputs DIR --data DIR --out DIR
+Before anything is generated: --out outside the repository, no TEST file in it, the code committed (the ST10 record's
+code commit, testgate.code_commit), the commit and push preconditions of the record
+(testgate.check_commit_preconditions: the pilot's checkout at the remote branch's latest commit, nothing staged, a
+committer identity, a dry-run push accepted), and no ST10 record (testgate.refuse_if_st10_record: the working tree and
+the remote branch's latest commit). A push the remote still refuses after generation is BLOCKED: TEST counts as
+generated, the record in the working tree refuses any further generation, and the Owner decides whether this one
+file is committed by hand (Review Gate's ruling on C1 of 2026-11-25, item 2; RUNBOOK_A100.md).
 """
 import argparse
 import dataclasses
@@ -35,6 +47,7 @@ from . import interpretations as INT
 from . import leakage as LK
 from . import record as R
 from . import stops as STP
+from . import testgate as TG
 from ._cli import run_guarded
 from .errors import ImplementationFail, ProtocolStop
 
@@ -75,12 +88,12 @@ def check_selection_record(fz, contract, repo_root, content_hashes, gate0_sha):
 
 
 def check_interpretations_ruled():
-    """Beyond the three conditions of the task order (listed for Review Gate): no TEST while an interpretation of
-    interpretations.py is still pending (B19 decides what the TEST part of the leakage checks counts; the others
-    decide how the runs whose checkpoints TEST evaluates were made)."""
-    open_ids = INT.pending()
-    if open_ids:
-        raise PreconditionFailed("interpretations not yet ruled by Review Gate: %s" % ", ".join(open_ids))
+    """Beyond the three conditions of the task order (kept by Review Gate 2026-11-24, stage-B ruling item 3): no TEST
+    while an interpretation of interpretations.py is still pending (B19 decides what the TEST part of the leakage
+    checks counts; the others decide how the runs whose checkpoints TEST evaluates were made)."""
+    problem = INT.pending_problem()
+    if problem:
+        raise PreconditionFailed(problem)
 
 
 def check_preconditions(repo_root, inputs_dir, data_dir):
@@ -152,9 +165,15 @@ def main(argv=None):
         print("RESULT: FAIL")
         sys.exit(1)
     out = Path(a.out)
+    root = fz.repo_root.resolve()
+    if out.resolve() == root or root in out.resolve().parents:
+        raise ImplementationFail("--out %s is inside the repository %s; TEST content is never committed" % (out, root))
     present = [n for n in D.TEST_FILES if (out / n).exists()]
     if present:
         raise ImplementationFail("%s already holds %s; TEST is generated once" % (out, present))
+    TG.code_commit(root)                                # the code that generates TEST is committed (ST10 record)
+    TG.check_commit_preconditions(root, "the ST10 record")
+    TG.refuse_if_st10_record(root)
     files, info = generate_test(fz, auth, a.inputs, a.data)
     out.mkdir(parents=True, exist_ok=True)
     for name, blob in files.items():
@@ -162,13 +181,25 @@ def main(argv=None):
         print("%-18s byte_sha256 %s" % (name, FZ.sha256_hex(blob)))
     report = LK.run_test_part(fz, LK.load_data(a.data), info["test_qa"], info["general_test"], auth)
     (out / "leakage_test_report.json").write_text(json.dumps(report, ensure_ascii=False, indent=1, sort_keys=True) + "\n",
-                                                  encoding="utf-8")
-    for c, v in report["checks"].items():
-        print("%-4s TEST part value %r limit %r %s" % (c, v["value"], v["limit"], "within limit" if v["within_limit"] else "OVER LIMIT"))
-    print("L6 TEST count (Executor): %d -- compare with the data-auditor's count before any TEST evaluation (ST10)"
-          % report["checks"]["L6"]["value"])
-    print("RESULT: %s" % report["result"])
-    sys.exit(0 if report["result"] == "PASS" else 1)
+                                                  encoding="utf-8")       # outside the repository: L4 details may quote TEST
+    path, rec = TG.write_st10_record(fz, auth, report, files)
+    limits = TG.test_limits(fz)
+    over = TG.over_limit(fz, rec["counts"])
+    for c in LK.TEST_CHECKS:
+        print("%-4s TEST part count %r frozen limit %r %s" % (c, rec["counts"][c], limits[c],
+                                                              "OVER LIMIT" if c in over else "within limit"))
+    head = TG.commit_paths(root, [TG.ST10_RECORD_REL], "metrix: E1-PILOT formal step 8 ST10 record (raw TEST-part "
+                           "counts, TEST file hashes, code commit)",
+                           "the ST10 record (TEST counts as generated: no second generation; the Owner decides whether "
+                           "this one file is committed by hand)")
+    print("ST10 record written, committed and pushed: %s, commit %s (raw counts, TEST file sha256 %s, code commit %s)"
+          % (path, head, rec["test_files_sha256"], rec["code_commit"]))
+    print("L6 TEST count (Executor): %d -- the data-auditor counts with its own script and commits %s before any TEST "
+          "evaluation (ST10)" % (rec["counts"]["L6"], TG.AUDITOR_L6_REL))
+    if over:
+        print("ST10: TEST part over limit %s -> stop; TEST is not evaluated; BLOCKED; report to the Owner" % over)
+    print("RESULT: %s" % ("FAIL" if over else "PASS"))
+    sys.exit(1 if over else 0)
 
 
 if __name__ == "__main__":

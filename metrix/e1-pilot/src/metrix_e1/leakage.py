@@ -21,8 +21,10 @@ no TEST question is instantiated).
 TEST part (section 8 step 8: L3-L5 on TEST after test_qa.jsonl exists; L6 anchor vs general_test.jsonl): run_test_part(),
 reachable only with a TestAuthorization, which only test_data.check_preconditions() creates after the three
 preconditions of the TEST generator hold (Implementation Task Order V1, section 5: "涉及 TEST 的部分只能由第 8 步调用");
-not reachable from this module's command line. What L3 and L5 count on TEST is interpretation B19 (pending). The
-counting functions below take in-memory lists and read no file, so the same functions serve both parts.
+not reachable from this module's command line. What L3 and L5 count on TEST is interpretation B19 (accepted by
+Review Gate 2026-11-24). The counting functions below take in-memory lists and read no file, so the same functions
+serve both parts. The raw counts of the TEST part go into the ST10 record (testgate.py), which is judged again from
+the counts and the frozen limits before any TEST evaluation.
 
 Command (protocol section 3 interface; also reachable as python -m metrix.e1_pilot.check_leakage):
   python -m metrix_e1.leakage --data <DATA_DIR> --split-manifest metrix/e1-pilot/SPLIT_MANIFEST.json \
@@ -203,17 +205,18 @@ def verify_authorization(authorization, fz, repo_root=None):
     first. From what is committed now, it re-checks everything an authorization stands for, with the TEST generator's
     own checks (record.gate0_record_problem, record.freeze_record_problem):
       - the frozen commit: the authorization's is the one of the PROTOCOL_FROZEN file now in the repository and of
-        the frozen files `fz` (frozen.load) the caller runs with;
+        the frozen files `fz` (frozen.load) the caller runs with (two comparisons, each with its own message:
+        PROTOCOL_FROZEN against `fz`, then the authorization against PROTOCOL_FROZEN; DEFERRED_MINORS BE2);
       - condition 2: the committed Gate 0 record (record.committed_record: formal mode, kind gate0, that frozen
         commit) has the SHA-256 the authorization carries and status PASS;
       - condition 3: the committed freeze record (formal mode, kind selection_freeze, that frozen commit) has the
         SHA-256 the authorization carries; its selected configurations form the training plan of the contract, it
         holds a 64-hex checkpoint hash for each of the 30 runs, its data content hashes are the frozen ones
         (PROTOCOL_FROZEN: facts, train_S, candidates, anchor_texts), and it is bound to that Gate 0 record;
-      - every interpretation of interpretations.py has been ruled.
+      - every interpretation of interpretations.py has been ruled (interpretations.pending_problem).
     Not re-checked here: condition 1 (ST12: the frozen files, input files and data directory against the frozen
     hashes), which the caller runs at every step start (stops.st12). `repo_root` (default fz.repo_root): where the
-    records and PROTOCOL_FROZEN are read."""
+    records and PROTOCOL_FROZEN are read. Returns the two committed records ({"gate0": ..., "selection_freeze": ...})."""
     if not isinstance(authorization, TestAuthorization):
         raise ImplementationFail("TEST paths run only after the TEST generator's preconditions (no TestAuthorization)")
     from . import contract as C
@@ -224,9 +227,12 @@ def verify_authorization(authorization, fz, repo_root=None):
         current = FZ.parse_protocol_frozen((root / FZ.PROTOCOL_FROZEN_REL).read_bytes()).commit
     except (OSError, ST12Error) as e:
         raise ImplementationFail("TEST path refused: cannot read PROTOCOL_FROZEN: %s" % e) from e
-    if not authorization.frozen_commit == current == fz.record.commit:
-        raise ImplementationFail("TEST path refused: authorization for frozen commit %s, PROTOCOL_FROZEN names %s, the "
-                                 "loaded frozen files %s" % (authorization.frozen_commit, current, fz.record.commit))
+    if current != fz.record.commit:
+        raise ImplementationFail("TEST path refused: PROTOCOL_FROZEN names %s, the loaded frozen files %s" % (
+            current, fz.record.commit))
+    if authorization.frozen_commit != current:          # with the check above: authorization == fz as well
+        raise ImplementationFail("TEST path refused: authorization for frozen commit %s, PROTOCOL_FROZEN names %s" % (
+            authorization.frozen_commit, current))
     recs = {}
     for rel, kind, want in ((R.GATE0_RECORD_REL, "gate0", authorization.gate0_record_sha256),
                             (R.SELECTION_FREEZE_REL, "selection_freeze", authorization.selection_record_sha256)):
@@ -242,9 +248,10 @@ def verify_authorization(authorization, fz, repo_root=None):
                                                                           authorization.gate0_record_sha256))):
         if problem:
             raise ImplementationFail("TEST path refused: committed %s: %s" % (rel, problem))
-    open_ids = INT.pending()
-    if open_ids:
-        raise ImplementationFail("TEST path refused: interpretations not yet ruled by Review Gate: %s" % ", ".join(open_ids))
+    problem = INT.pending_problem()
+    if problem:
+        raise ImplementationFail("TEST path refused: %s" % problem)
+    return recs
 
 
 def run_test_part(fz, data, test_qa, general_test, authorization, repo_root=None):
@@ -252,7 +259,8 @@ def run_test_part(fz, data, test_qa, general_test, authorization, repo_root=None
     L6 anchor_text vs general_test; L3a, L3b and L5 re-run as at Gate 0 (interpretation B19). `fz`: frozen.load();
     `data` as load_data(); `test_qa`, `general_test`: the TEST rows in memory. The authorization is checked again
     against the committed Gate 0 and freeze records (verify_authorization; `repo_root` as there). Returns the report
-    (same layout as run_gate0)."""
+    (same layout as run_gate0); its within_limit flags are for the printout only: the ST10 record keeps the raw
+    counts (testgate.st10_record) and the gate re-judges them against the frozen limits (testgate.st10_check)."""
     verify_authorization(authorization, fz, repo_root)
     split_manifest = fz.split_manifest
     gate0 = run_gate0(split_manifest, data)

@@ -27,6 +27,14 @@ def test_four_frozen_hashes(fz, generated):
     assert fz.check_data_dir(generated["dir"]) == got
 
 
+def test_content_hashes_are_built_from_content_hash_keys(fz, generated, monkeypatch):
+    """BE9 (DEFERRED_MINORS 1.26): Frozen.content_hashes is built from CONTENT_HASH_KEYS (one serializer per key in
+    CONTENT_HASH_BYTES): its keys follow the list, here also when the list is changed under it."""
+    assert tuple(fz.content_hashes(generated["dir"])) == FZ.CONTENT_HASH_KEYS == tuple(FZ.CONTENT_HASH_BYTES)
+    monkeypatch.setattr(FZ, "CONTENT_HASH_KEYS", ("anchor_texts", "facts"))
+    assert fz.content_hashes(generated["dir"]) == {k: fz.data_hash(k) for k in ("anchor_texts", "facts")}
+
+
 def test_files_are_canonical(generated):
     """Written in the canonical form of protocol section 0, so byte_sha256 == canonical_sha256 for every file."""
     for name, h in D.file_hashes(generated["dir"]).items():
