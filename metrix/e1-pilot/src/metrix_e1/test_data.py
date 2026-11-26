@@ -135,7 +135,8 @@ def build_test_qa(fz, facts, per_fact):
 def generate_test(fz, authorization, inputs_dir, data_dir):
     """test_qa.jsonl and general_test.jsonl in memory ({file name: bytes}, info). Only with a TestAuthorization whose
     hashes match the committed Gate 0 and freeze records (leakage.verify_authorization), checked before anything is
-    read."""
+    read. main() is the only caller: it checks the pilot's checkout, the commit and push preconditions and that no
+    ST10 record exists before it calls this (run_pilot.py runs main as a subprocess)."""
     LK.verify_authorization(authorization, fz)
     p = D.params(fz)
     paths = D.check_inputs(fz, p, inputs_dir)

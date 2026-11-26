@@ -50,7 +50,9 @@ TEST evaluated once, marker results/test_evaluation_marker.json:
     authorization, remote URL and branch, sha256 of the ST10 record and of the data-auditor's count, TEST file hashes,
     every checkpoint hash of the committed freeze record plus N, the models TEST evaluates, code commit, a random
     session id), commits that one path, pushes it, and only then returns the TestSession. A commit or push that fails
-    after the marker was written is BLOCKED.
+    after the marker was written is BLOCKED. After the push, the pushed commit must hold this marker's bytes and its
+    parent no marker; otherwise another begin ran at the same time (e.g. the same command started twice in one clone):
+    BLOCKED, it counts as evaluated (round-1 code review of the C1 second submission, MAJOR 2).
   - evaluate.evaluate_model(split="test") calls require_test_session (no claim), then evaluate.require_gpu, then
     claim_checkpoint, then the scorers. require_test_session: the session was returned by begin_test_evaluation in
     this process; PILOT_BRANCH is checked out at the marker commit, so the committed marker and records are the
@@ -106,6 +108,12 @@ class TestAlreadyEvaluated(Exception):
 
 def _git(root, *args):
     return subprocess.run(["git", "-C", str(root), *args], capture_output=True, text=True, check=False)
+
+
+def _blob(root, spec):
+    """The bytes of the blob `spec` (<commit>:<path>), or None when there is none."""
+    r = subprocess.run(["git", "-C", str(root), "cat-file", "blob", spec], capture_output=True, check=False)
+    return r.stdout if r.returncode == 0 else None
 
 
 def _refuse(message):
@@ -201,8 +209,9 @@ def check_checkout(repo_root):
     tip = _git(root, "rev-parse", "--verify", "-q", "FETCH_HEAD^{commit}").stdout.strip()
     head = _git(root, "rev-parse", "--verify", "-q", "HEAD^{commit}").stdout.strip()
     if not HEX40.fullmatch(tip) or head != tip:
-        raise _blocked("HEAD %s is not the latest commit %r of %s %s: bring the checkout to it (fast-forward pull, "
-                       "or push the local commits) first" % (head, tip, PILOT_REMOTE, PILOT_BRANCH))
+        raise _blocked("HEAD %s is not the latest commit %r of %s %s: bring the checkout to it by a fast-forward "
+                       "pull; a local commit made by a TEST path (ST10 record, TEST marker, TEST result) is pushed "
+                       "only on the Owner's decision" % (head, tip, PILOT_REMOTE, PILOT_BRANCH))
     return tip
 
 
@@ -231,7 +240,9 @@ def check_commit_preconditions(repo_root, what):
 
 def _push(root, retries, sleep, what):
     """Push HEAD to PILOT_REMOTE PILOT_BRANCH (a plain push: fast-forward only; --no-follow-tags) and check the remote
-    ref; retried `retries` times with 2, 4, 8, ... s pauses. BLOCKED when the remote ref is not HEAD at the end."""
+    ref; retried `retries` times with 2, 4, 8, ... s pauses (`sleep`, time.sleep when None). BLOCKED when the remote
+    ref is not HEAD at the end."""
+    sleep = time.sleep if sleep is None else sleep
     head = _git(root, "rev-parse", "HEAD").stdout.strip()
     last = ""
     for i in range(retries):
@@ -246,7 +257,7 @@ def _push(root, retries, sleep, what):
                                               "Owner" % (what, head, PILOT_REMOTE, PILOT_BRANCH, last)))
 
 
-def commit_paths(repo_root, rels, message, what, retries=4, sleep=time.sleep):
+def commit_paths(repo_root, rels, message, what, retries=4, sleep=None):
     """Commit exactly the repository paths `rels` and push them (the caller checked check_commit_preconditions before
     it wrote them): refused (BLOCKED) when anything is staged before; `git add --` of those paths only; the staged
     paths must be exactly them; commit; push and remote-ref check (_push). A staging, commit or push failure is
@@ -419,7 +430,7 @@ class TestSession:
 _LIVE = {}                  # session_id -> TestSession, only those returned by begin_test_evaluation in this process
 
 
-def begin_test_evaluation(fz, authorization, data, base_model_sha256, repo_root=None, retries=4, sleep=time.sleep):
+def begin_test_evaluation(fz, authorization, data, base_model_sha256, repo_root=None, retries=4, sleep=None):
     """Start the single TEST evaluation (Review Gate supplementary ruling 4): checks (no marker or result:
     refuse_if_marker; the authorization; the ST10 gate for the TEST rows in `data`; check_commit_preconditions),
     writes the marker with every checkpoint hash of the committed freeze record plus N (`base_model_sha256`,
@@ -450,6 +461,9 @@ def begin_test_evaluation(fz, authorization, data, base_model_sha256, repo_root=
     head = commit_paths(root, [MARKER_REL], "metrix: E1-PILOT TEST evaluation marker (section 8 step 8: TEST is "
                         "evaluated once; every checkpoint hash)",
                         "the TEST marker (TEST not evaluated; the marker refuses any later evaluation)", retries, sleep)
+    if _blob(root, "%s:%s" % (head, MARKER_REL)) != blob or _blob(root, "%s^:%s" % (head, MARKER_REL)) is not None:
+        raise _blocked("the pushed commit %s does not hold this TEST marker alone (another TEST evaluation began at "
+                       "the same time): it counts as evaluated; no TEST evaluation in this process" % head)
     session = TestSession(session_id, head)
     _LIVE[session_id] = session
     return session
@@ -493,19 +507,19 @@ def require_test_session(fz, authorization, session, checkpoint_name, data, mode
 def claim_checkpoint(session, checkpoint_name):
     """Right before the evaluation of `checkpoint_name` starts (after require_test_session and the GPU check): the
     checkpoint is evaluated at most once in the session."""
-    if _LIVE.get(getattr(session, "session_id", None)) is not session:
+    if not isinstance(session, TestSession) or _LIVE.get(session.session_id) is not session:
         raise _refuse("no TEST session of this process (begin_test_evaluation)")
     if checkpoint_name in session.evaluated:
         raise _refuse("%s was already evaluated on TEST in this session" % checkpoint_name)
     session.evaluated.add(checkpoint_name)
 
 
-def finish_test_evaluation(fz, session, result, repo_root=None, retries=4, sleep=time.sleep):
+def finish_test_evaluation(fz, session, result, repo_root=None, retries=4, sleep=None):
     """After every model of the marker was claimed (PILOT_BRANCH checked out at the marker commit) and the commit and
     push preconditions hold: write `result` (the TEST results, JSON values only) to RESULT_REL, commit only that path,
     push it; the session ends."""
     root = Path(repo_root) if repo_root is not None else fz.repo_root
-    if _LIVE.get(getattr(session, "session_id", None)) is not session:
+    if not isinstance(session, TestSession) or _LIVE.get(session.session_id) is not session:
         raise _refuse("no TEST session of this process")
     _check_session_checkout(root, session)
     marker, _ = _committed(root, MARKER_REL, "TEST marker")

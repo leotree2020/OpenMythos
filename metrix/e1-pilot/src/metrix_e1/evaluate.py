@@ -319,6 +319,8 @@ def evaluate_model(model, tok, data, templates, ev, mode, device, split="dev", w
     before it is evaluated."""
     if split not in SPLIT_FILES:
         raise ValueError("split %r" % (split,))
+    if with_s_mapping and split != "dev":           # checked before the TEST gate claims a checkpoint
+        raise ValueError("S's own-mapping accuracy is reported on DEV only (protocol section 8)")
     if split == "test":
         if not mode.formal:
             raise ImplementationFail("TEST is evaluated in formal mode only (%s mode; protocol section 8 step 8: TEST "
@@ -341,8 +343,6 @@ def evaluate_model(model, tok, data, templates, ev, mode, device, split="dev", w
     if with_em:
         out["em_%s" % split] = em(model, tok, qs, facts, ev, device, max(1, batch_size // 2))
     if with_s_mapping:
-        if split != "dev":
-            raise ValueError("S's own-mapping accuracy is reported on DEV only (protocol section 8)")
         qa, cb = score_s_mapping(model, tok, facts, cands, templates, qs, data["train_S.jsonl"], ev, device, batch_size)
         out["s_mapping_dev_qa"], out["s_mapping_cb"] = qa, cb
     return out

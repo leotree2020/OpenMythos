@@ -378,7 +378,7 @@ def test_marker_with_a_result_is_refused_as_evaluated(env):
         env.begin()
 
 
-def test_history_other_refs_and_the_reflog_are_not_searched(env):
+def test_a_marker_deleted_in_a_later_commit_is_not_searched(env):
     """Review Gate's ruling on C1, item 1: only the working tree and the remote branch's latest commit are searched.
     A marker committed and deleted again in a later commit (an act outside the gates' scope) is not found."""
     env.st10()
@@ -387,6 +387,54 @@ def test_history_other_refs_and_the_reflog_are_not_searched(env):
     git(env.root, "rm", "-q", TG.MARKER_REL)
     commit(env.root, "marker deleted")
     TG.refuse_if_marker(env.root)
+
+
+def test_a_second_begin_in_the_same_clone_is_blocked(env, monkeypatch):
+    """Round-1 code review of the C1 second submission, MAJOR 2: the same command started twice in one clone; the
+    second passed refuse_if_marker before the first wrote its marker. Its commit (parent: the first marker commit) is
+    pushed, then refused: BLOCKED, no second session; the first session is BLOCKED at its next call."""
+    env.st10()
+    s1 = env.begin()
+    real = TG.refuse_if_marker
+    monkeypatch.setattr(TG, "refuse_if_marker", lambda root: None)        # it looked before the first marker existed
+    msg = blocked(env.begin)
+    assert "does not hold this TEST marker alone (another TEST evaluation began at the same time)" in msg
+    monkeypatch.setattr(TG, "refuse_if_marker", real)
+    assert "at the TEST marker commit %s" % s1.marker_commit in blocked(evaluate, env, env.base_model, s1, "N")
+    assert_started(blocked(TG.refuse_if_marker, env.root))
+
+
+def test_a_commit_of_another_begin_between_commit_and_push_is_blocked(env, monkeypatch):
+    """The other begin commits its marker after this one's commit and before its push: the pushed commit holds the
+    other marker's bytes. BLOCKED, no session."""
+    env.st10()
+    real = TG._push
+
+    def other_commits_first(root, retries, sleep, what):
+        write_json(env.root, TG.MARKER_REL, {"kind": "test_evaluation_marker", "session_id": "other"})
+        git(env.root, "add", "--", TG.MARKER_REL)
+        git(env.root, "commit", "-q", "-m", "the other marker")
+        return real(root, retries, sleep, what)
+    monkeypatch.setattr(TG, "_push", other_commits_first)
+    msg = blocked(env.begin)
+    assert "does not hold this TEST marker alone" in msg
+    assert git(env.root, "ls-remote", "origin", "refs/heads/%s" % BRANCH).split()[0] == git(env.root, "rev-parse",
+                                                                                            "HEAD")
+
+
+def test_a_marker_file_overwritten_before_the_commit_is_blocked(env, monkeypatch):
+    """The other begin (same working tree) overwrites the marker file after this one wrote it and before it is staged:
+    the pushed commit's parent holds no marker, but the commit holds the other marker's bytes. BLOCKED, no session."""
+    env.st10()
+    real = TG.commit_paths
+
+    def overwritten_first(root, rels, message, what, retries=4, sleep=None):
+        write_json(env.root, TG.MARKER_REL, {"kind": "test_evaluation_marker", "session_id": "other"})
+        return real(root, rels, message, what, retries, sleep)
+    monkeypatch.setattr(TG, "commit_paths", overwritten_first)
+    head = git(env.root, "rev-parse", "HEAD")
+    assert "does not hold this TEST marker alone" in blocked(env.begin)
+    assert git(env.root, "rev-parse", "HEAD~1") == head                  # the parent holds no marker
 
 
 # ------------------------------------------------------------------------------- the pilot's checkout (ruling 1)
@@ -589,6 +637,7 @@ def test_evaluate_model_passes_every_gate_then_stops_at_the_gpu_check(env):
     refused("N was already evaluated on TEST in this session", TG.claim_checkpoint, s, "N")
     refused("N was already evaluated on TEST in this session", evaluate, env, env.base_model, s, "N")
     refused("no TEST session of this process", TG.claim_checkpoint, copy.copy(s), "F-F3-seed101")
+    refused("no TEST session of this process", TG.claim_checkpoint, None, "N")        # data-auditor, MINOR-1
     assert s.evaluated == {"N"}
 
 
@@ -649,6 +698,36 @@ MOVED = {
 }
 
 
+def test_evaluation_calls_do_not_fetch_finish_does(env, tmp_path, monkeypatch):
+    """Executor's reading of ruling 1 for the evaluation calls (round-1 code review, MAJOR 1 and MINOR): the remote
+    moves on after begin while this checkout stays at the marker commit; evaluation calls go on (no fetch), finish
+    fetches and is BLOCKED (the TEST result is not written; it counts as evaluated)."""
+    env.st10()
+    s = env.begin()
+    diverge(env, tmp_path)
+    monkeypatch.setattr(E, "require_gpu", lambda mode, device: None)
+    for name in ("score_qa", "score_cb", "general_nll", "em"):
+        monkeypatch.setattr(E, name, lambda *a, **k: [])
+    data = dict(env.data, **{"facts.jsonl": [], "candidates.json": {}})
+    evaluate(env, env.base_model, s, "N", data=data)        # no fetch: the call goes on although the remote moved
+    for name in json.loads(git(env.root, "show", "HEAD:%s" % TG.MARKER_REL))["models"][1:]:
+        TG.claim_checkpoint(s, name)
+    assert "N" in s.evaluated
+    assert "is not the latest commit" in blocked(TG.finish_test_evaluation, env.fz, s, {"x": 1})
+    assert not (env.root / TG.RESULT_REL).exists()
+
+
+def test_s_mapping_on_test_is_refused_before_the_gate(env):
+    """Round-1 code review, MINOR: with_s_mapping on TEST is refused before the TEST gate claims the checkpoint."""
+    env.st10()
+    s = env.begin()
+    with pytest.raises(ValueError, match="S's own-mapping accuracy is reported on DEV only"):
+        E.evaluate_model(env.base_model, None, env.data, None, env.contract.evaluation, M.FORMAL_MODE, "cpu",
+                         split="test", with_s_mapping=True, test_authorization=env.auth, fz=env.fz, test_session=s,
+                         checkpoint_name="N")
+    assert s.evaluated == set()
+
+
 @pytest.mark.parametrize("case", sorted(MOVED))
 def test_evaluate_and_finish_are_blocked_when_the_checkout_left_the_marker_commit(env, case):
     """After begin, the checkout must stay PILOT_BRANCH at the marker commit (so the committed marker and records
@@ -668,6 +747,8 @@ def test_evaluate_and_finish_are_blocked_when_the_checkout_left_the_marker_commi
 def test_finish_commits_the_result_after_every_model(env):
     env.st10()
     s = env.begin()
+    refused("no TEST session of this process", TG.finish_test_evaluation, env.fz, None, {})   # data-auditor, MINOR-1
+    refused("no TEST session of this process", TG.finish_test_evaluation, env.fz, copy.copy(s), {})
     refused("models not evaluated on TEST", TG.finish_test_evaluation, env.fz, s, {})
     marker = json.loads((env.root / TG.MARKER_REL).read_text(encoding="utf-8"))
     for name in marker["models"]:                      # claimed as evaluate_model does after the GPU check
@@ -792,7 +873,7 @@ def test_driver_push_refused_after_generation_counts_as_generated(env, monkeypat
     hook = env.remote / "hooks" / "pre-receive"
     hook.write_text("#!/bin/sh\nexit 1\n", encoding="utf-8")
     hook.chmod(0o755)
-    monkeypatch.setattr(TG.time, "sleep", lambda s: None)
+    monkeypatch.setattr(TG.time, "sleep", lambda s: None)                 # commit_paths reads time.sleep when called
     msg = blocked(run_driver, tmp_path, "o1")
     assert "the ST10 record (TEST counts as generated: no second generation; the Owner decides" in msg
     assert "is committed" in msg and "was not pushed" in msg and generated == [1]

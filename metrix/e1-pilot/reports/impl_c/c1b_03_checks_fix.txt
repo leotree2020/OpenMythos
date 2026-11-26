@@ -1,0 +1,427 @@
+# Stage C, C1, second submission, fix commit after the round-1 reviews of the work commit ae60e0f (before the reviews of the fix commit): the fix commit is staged (the index is what the reviews see; the working tree of src/ and tests/ equals it, checked below). Working-tree state, data regenerated and verified (four frozen hashes), TEST generator refusal in the current state (black box), outside_metrix_check.py, full pytest, one run of the black-box probe by the Executor (c1b_probe_run.py), mutation check (c1b_mutate_fix1.py). Host vm, Anthropic cloud container, CPU only. Wed Nov 25 11:15:33 UTC 2026
+# stdout+stderr merged, unedited. Commands recorded by reports/round5/logrun.sh. METRIX_INPUTS_DIR=/tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/inputs
+$ git rev-parse HEAD
+ae60e0f7ba699e5e7a25718108849ae36586f5f5
+exit=0
+$ git status --short --untracked-files=all
+A  metrix/e1-pilot/reports/impl_c/c1b_mutate_fix1.py
+M  metrix/e1-pilot/src/metrix_e1/evaluate.py
+M  metrix/e1-pilot/src/metrix_e1/test_data.py
+M  metrix/e1-pilot/src/metrix_e1/testgate.py
+M  metrix/e1-pilot/tests/test_testgate.py
+?? metrix/e1-pilot/audit/ic5_01_gate_scenarios.py
+?? metrix/e1-pilot/audit/ic5_02_content_hashes.py
+?? metrix/e1-pilot/audit/ic5_03_static.py
+?? metrix/e1-pilot/audit/ic5_04_b25.py
+?? metrix/e1-pilot/audit/ic5_05_test_refusal.py
+?? metrix/e1-pilot/audit/ic5_run_logged.sh
+?? metrix/e1-pilot/audit/stdout/impl_c/ic5_00_state.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic5_01_gate_scenarios.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic5_01_trial1_superseded.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic5_02_content_hashes.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic5_03_static.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic5_03_trial1_superseded.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic5_03_trial2_superseded.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic5_03_trial3_superseded.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic5_04_b25.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic5_04_trial1_superseded.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic5_05_test_refusal.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic5_0x_trials_and_script_fixes.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic5_99_git_status_final.txt
+?? metrix/e1-pilot/reports/impl_c/c1b_03_checks_fix.txt
+exit=0
+$ git write-tree
+74a3ff59b7af24596717416f25b611d8c700d65d
+exit=0
+$ bash -c git\ diff\ --quiet\ --\ metrix/e1-pilot/src\ metrix/e1-pilot/tests\ \&\&\ echo\ WORKTREE_EQUALS_INDEX_FOR_SRC_AND_TESTS\;\ git\ diff\ --cached\ HEAD\ --\ metrix/e1-pilot/src\ metrix/e1-pilot/tests\ \|\ sha256sum\;\ sha256sum\ metrix/e1-pilot/reports/impl_c/c1b_mutate_fix1.py\ metrix/e1-pilot/reports/impl_c/c1b_probe_run.py\ metrix/e1-pilot/reports/impl_c/c1b_gate_probe.py
+WORKTREE_EQUALS_INDEX_FOR_SRC_AND_TESTS
+607e767e865b7cd4b3ab196f437cb9686037c90c51ef3779993dcccadcb8f6cc  -
+0ba971c49b97ffff77c7a2943d9a90307145faf5e849d32cc487b6d6ca66fe77  metrix/e1-pilot/reports/impl_c/c1b_mutate_fix1.py
+987cab2944de7ce4d4c62735257a964b7051af92b2cd1c28fda11fb81e20cea4  metrix/e1-pilot/reports/impl_c/c1b_probe_run.py
+7a0cfbee7e9f8d315e1d08ed4b246186106f3ed20664477a347800c85a8a35f3  metrix/e1-pilot/reports/impl_c/c1b_gate_probe.py
+exit=0
+$ env PYTHONPATH=metrix/e1-pilot/src /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/venv/bin/python -m metrix_e1.data generate --inputs /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/inputs --out /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/c1_data
+frozen: PROTOCOL_FROZEN v1.1, commit 87a244db28a901f9e89282b50df76778ab5c2887; four frozen files match by git cat-file
+python 3.13.18; libraries {"torch": "2.11.0", "transformers": "5.22.2"} (protocol section 0: {"torch": "2.11.0", "transformers": "5.22.2"})
+name generation per cell: [{"cell": "capital/natural", "entity_draws": 28, "target_pair": [3, 3], "answer_draws": 84}, {"cell": "capital/random", "entity_draws": 20, "target_pair": [5, 5], "answer_draws": 52}, {"cell": "currency/natural", "entity_draws": 31, "target_pair": [3, 3], "answer_draws": 82}, {"cell": "currency/random", "entity_draws": 20, "target_pair": [6, 6], "answer_draws": 46}, {"cell": "founder/natural", "entity_draws": 30, "target_pair": [3, 3], "answer_draws": 81}, {"cell": "founder/random", "entity_draws": 21, "target_pair": [5, 5], "answer_draws": 45}, {"cell": "river/natural", "entity_draws": 34, "target_pair": [3, 3], "answer_draws": 89}, {"cell": "river/random", "entity_draws": 20, "target_pair": [6, 6], "answer_draws": 42}]
+S derangement attempts per cell: {"capital/natural": 3, "capital/random": 5, "currency/natural": 1, "currency/random": 6, "founder/natural": 2, "founder/random": 1, "river/natural": 2, "river/random": 6}
+Y / F token ratio: F 1889, Y 2260, ratio 1.1964
+Y / F token ratio without <|endoftext|> (report only): F 1769, Y 2020, ratio 1.1419
+both ratios within [0.8, 1.25]: with True, without True
+eval_sets.jsonl rows by split (row prefix only): {'dev': 400, 'test': 800}; DEV rows decoded and parsed: 400; windows kept (decoded with the parcae tokenizer): 100
+facts.jsonl        rows  160  byte_sha256 e05561ac2d49dcc3c8f59743c5df64151983a540a32ae135fd1b10f5e0fdc828  canonical_sha256 e05561ac2d49dcc3c8f59743c5df64151983a540a32ae135fd1b10f5e0fdc828
+train_F.jsonl      rows  120  byte_sha256 3aa9ab3ca313c0a1113b91e927af51342c915e3e40dd2f20992f3d9e59b0e373  canonical_sha256 3aa9ab3ca313c0a1113b91e927af51342c915e3e40dd2f20992f3d9e59b0e373
+train_S.jsonl      rows  120  byte_sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e  canonical_sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e
+train_Y.jsonl      rows  240  byte_sha256 c7430cadb2b06dd5c144af381a8183d4c186f27f2b5acfa9d8d39da0b7626d15  canonical_sha256 c7430cadb2b06dd5c144af381a8183d4c186f27f2b5acfa9d8d39da0b7626d15
+dev_qa.jsonl       rows  320  byte_sha256 9761eb60d6c9155c2f56394aa228b1e9dfea0ae3926ab50cb21d903108bc7fde  canonical_sha256 9761eb60d6c9155c2f56394aa228b1e9dfea0ae3926ab50cb21d903108bc7fde
+candidates.json    rows  160  byte_sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705  canonical_sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705
+general_dev.jsonl  rows  100  byte_sha256 957666920c91ef5b9328984d26ed0628c8a80b439d461bea49b54c2235635e73  canonical_sha256 957666920c91ef5b9328984d26ed0628c8a80b439d461bea49b54c2235635e73
+anchor_text.jsonl  rows  512  byte_sha256 2089e656819d1fe0f6ececcc26e5cade09ee80a92c50e7c8f607fa4e0ef46da5  canonical_sha256 2089e656819d1fe0f6ececcc26e5cade09ee80a92c50e7c8f607fa4e0ef46da5
+frozen content hash facts        406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 = PROTOCOL_FROZEN (read back from /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/c1_data)
+frozen content hash train_S      686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e = PROTOCOL_FROZEN (read back from /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/c1_data)
+frozen content hash candidates   e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 = PROTOCOL_FROZEN (read back from /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/c1_data)
+frozen content hash anchor_texts 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 = PROTOCOL_FROZEN (read back from /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/c1_data)
+RESULT: PASS
+exit=0
+$ env PYTHONPATH=metrix/e1-pilot/src /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/venv/bin/python -m metrix_e1.data verify --inputs /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/inputs --data /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/c1_data
+frozen: PROTOCOL_FROZEN v1.1, commit 87a244db28a901f9e89282b50df76778ab5c2887; four frozen files match by git cat-file
+frozen content hash facts        406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 = PROTOCOL_FROZEN
+frozen content hash train_S      686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e = PROTOCOL_FROZEN
+frozen content hash candidates   e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 = PROTOCOL_FROZEN
+frozen content hash anchor_texts 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 = PROTOCOL_FROZEN
+all 8 data files byte-identical to their regeneration from the frozen inputs
+RESULT: PASS
+exit=0
+$ env PYTHONPATH=metrix/e1-pilot/src /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/venv/bin/python -m metrix_e1.test_data --inputs /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/inputs --data /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/c1_data --out /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/c1b_test_out
+TEST generator refused: metrix/e1-pilot/results/gate0_record.json is not committed at HEAD
+no TEST content was generated, read or written
+RESULT: FAIL
+exit=1
+$ bash -c ls\ -la\ /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/c1b_test_out\ 2\>\&1\;\ ls\ /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/c1_data\;\ git\ status\ --short\ --\ metrix/e1-pilot/results\ 2\>\&1\;\ ls\ metrix/e1-pilot/results\ 2\>\&1
+ls: cannot access '/tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/c1b_test_out': No such file or directory
+anchor_text.jsonl
+candidates.json
+dev_qa.jsonl
+facts.jsonl
+general_dev.jsonl
+train_F.jsonl
+train_S.jsonl
+train_Y.jsonl
+ls: cannot access 'metrix/e1-pilot/results': No such file or directory
+exit=2
+$ /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/venv/bin/python metrix/e1-pilot/reports/round3/outside_metrix_check.py
+changed outside metrix/ (base 61d3c767 .. HEAD):
+  A	.claude/agents/code-reviewer.md
+  A	.claude/agents/data-auditor.md
+  M	CLAUDE.md
+charter: base 3065 bytes, new 3586 bytes, base is exact prefix: True
+charter: appended 521 bytes; level-1/2 headings in appended part: ['## 6. Metrix 子项目(2026-11-13 负责人决定)']
+ignore rules below come from the working-tree .gitignore; identical to .gitignore at HEAD: True
+agent .claude/agents/code-reviewer.md: tracked at HEAD: True; ignore rule: .gitignore:14:.claude/	.claude/agents/code-reviewer.md
+agent .claude/agents/data-auditor.md: tracked at HEAD: True; ignore rule: .gitignore:14:.claude/	.claude/agents/data-auditor.md
+RESULT: PASS
+exit=0
+$ /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/venv/bin/python -m pytest -q -p no:cacheprovider metrix/e1-pilot/tests
+........................................................................ [ 24%]
+........................................................................ [ 48%]
+........................................................................ [ 72%]
+........................................................................ [ 96%]
+.........                                                                [100%]
+297 passed in 173.56s (0:02:53)
+exit=0
+$ /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/venv/bin/python metrix/e1-pilot/reports/impl_c/c1b_probe_run.py /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/venv/bin/python
+$ c1b_gate_probe.py /tmp/tmprvklaeak/first/repo /tmp/tmprvklaeak/synthetic_test_rows tinysha:0
+probe: testgate.CANONICAL_REPO = 'first/remote' (REPO's origin), testgate.PILOT_BRANCH = 'main'
+tinysha:0 ACCEPT a895622c8065094db612d950ad39d072c87a5894603950ddba98d44b524ee251
+{"repo_head": "63334cb34662f34c6e776b2f8cb7af7dcf145fa9"}
+exit=0
+$ c1b_gate_probe.py /tmp/tmprvklaeak/first/repo /tmp/tmprvklaeak/synthetic_test_rows st10 st10rec marker pre begin:a895622c8065094db612d950ad39d072c87a5894603950ddba98d44b524ee251 eval:N:0 eval:N:7 gate:N:a895622c8065094db612d950ad39d072c87a5894603950ddba98d44b524ee251 gate:N:a895622c8065094db612d950ad39d072c87a5894603950ddba98d44b524ee251 eval:N:0 marker
+probe: testgate.CANONICAL_REPO = 'first/remote' (REPO's origin), testgate.PILOT_BRANCH = 'main'
+st10 ACCEPT ['8475990c9fe7292bbaebbf6abb38a831281bfa2ddcfcf630214479f55b2f1036', 'b21b033215395fca19862c2e14adbc8333100e8481a087a51e575965a15bd21a']
+st10rec REFUSE IMPLEMENTATION_FAIL: metrix/e1-pilot/results/st10_record.json exists (working tree, commit 63334cb34662f34c6e776b2f8cb7af7dcf145fa9): TEST is generated once
+marker ACCEPT no marker
+pre ACCEPT
+begin:a895622c8065094db612d950ad39d072c87a5894603950ddba98d44b524ee251 ACCEPT marker commit efa58262ac270f0af2b035d7cffb41bcdc857f36 models 16
+eval:N:0 ACCEPT ACCEPTED-BY-GATES (stopped at require_gpu)
+eval:N:7 REFUSE IMPLEMENTATION_FAIL: TEST path refused: the model's state sha256 0aaed642c415613a084106be5aad9513ed5ae1a5a5a517d7775aae41cc38c34e is not the marker's a895622c8065094db612d950ad39d072c87a5894603950ddba98d44b524ee251 for N
+gate:N:a895622c8065094db612d950ad39d072c87a5894603950ddba98d44b524ee251 ACCEPT
+gate:N:a895622c8065094db612d950ad39d072c87a5894603950ddba98d44b524ee251 REFUSE IMPLEMENTATION_FAIL: TEST path refused: N was already evaluated on TEST in this session
+eval:N:0 REFUSE IMPLEMENTATION_FAIL: TEST path refused: N was already evaluated on TEST in this session
+marker STOP - BLOCKED BLOCKED: TEST evaluation was already started (marker metrix/e1-pilot/results/test_evaluation_marker.json in working tree, commit efa58262ac270f0af2b035d7cffb41bcdc857f36) and no result was committed: it counts as evaluated; no further TEST evaluation; report to the Owner
+{"repo_head": "efa58262ac270f0af2b035d7cffb41bcdc857f36"}
+exit=0
+$ git -C <first repo> log --format='%h %s' -3; ls-remote origin
+efa5826 metrix: E1-PILOT TEST evaluation marker (section 8 step 8: TEST is evaluated once; every checkpoint hash)
+63334cb ST10 record and the data-auditor's count
+7f5287a records
+efa58262ac270f0af2b035d7cffb41bcdc857f36	HEAD
+efa58262ac270f0af2b035d7cffb41bcdc857f36	refs/heads/main
+$ c1b_gate_probe.py /tmp/tmprvklaeak/first/lagging /tmp/tmprvklaeak/synthetic_test_rows marker
+probe: testgate.CANONICAL_REPO = 'first/remote' (REPO's origin), testgate.PILOT_BRANCH = 'main'
+marker STOP - BLOCKED BLOCKED: TEST path refused: HEAD 63334cb34662f34c6e776b2f8cb7af7dcf145fa9 is not the latest commit 'efa58262ac270f0af2b035d7cffb41bcdc857f36' of origin main: bring the checkout to it by a fast-forward pull; a local commit made by a TEST path (ST10 record, TEST marker, TEST result) is pushed only on the Owner's decision; report to the Owner
+{"repo_head": "63334cb34662f34c6e776b2f8cb7af7dcf145fa9"}
+exit=0
+$ c1b_gate_probe.py /tmp/tmprvklaeak/second/repo /tmp/tmprvklaeak/synthetic_test_rows begin:a895622c8065094db612d950ad39d072c87a5894603950ddba98d44b524ee251 gate:N:a895622c8065094db612d950ad39d072c87a5894603950ddba98d44b524ee251 gate:A-A5-seed101:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa gate:A-A5-seed202:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa gate:A-A5-seed303:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa gate:F-F3-seed101:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa gate:F-F3-seed202:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa gate:F-F3-seed303:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa gate:L-L2-seed101:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa gate:L-L2-seed202:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa gate:L-L2-seed303:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa gate:S-F3-seed101:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa gate:S-F3-seed202:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa gate:S-F3-seed303:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa gate:Y-F3-seed101:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa gate:Y-F3-seed202:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa gate:Y-F3-seed303:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa finish marker
+probe: testgate.CANONICAL_REPO = 'second/remote' (REPO's origin), testgate.PILOT_BRANCH = 'main'
+begin:a895622c8065094db612d950ad39d072c87a5894603950ddba98d44b524ee251 ACCEPT marker commit 8dae8bdb2b2082a4595ae8b6ce0f8603721245ff models 16
+gate:N:a895622c8065094db612d950ad39d072c87a5894603950ddba98d44b524ee251 ACCEPT
+gate:A-A5-seed101:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ACCEPT
+gate:A-A5-seed202:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ACCEPT
+gate:A-A5-seed303:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ACCEPT
+gate:F-F3-seed101:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ACCEPT
+gate:F-F3-seed202:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ACCEPT
+gate:F-F3-seed303:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ACCEPT
+gate:L-L2-seed101:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ACCEPT
+gate:L-L2-seed202:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ACCEPT
+gate:L-L2-seed303:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ACCEPT
+gate:S-F3-seed101:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ACCEPT
+gate:S-F3-seed202:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ACCEPT
+gate:S-F3-seed303:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ACCEPT
+gate:Y-F3-seed101:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ACCEPT
+gate:Y-F3-seed202:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ACCEPT
+gate:Y-F3-seed303:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ACCEPT
+finish ACCEPT result commit 116d38659eb50939431528c3341aec9c16349f3f
+marker EVALUATED TEST was already evaluated (marker metrix/e1-pilot/results/test_evaluation_marker.json in working tree, commit 116d38659eb50939431528c3341aec9c16349f3f; result metrix/e1-pilot/results/test_evaluation_result.json in working tree, commit 116d38659eb50939431528c3341aec9c16349f3f): TEST is evaluated once
+{"repo_head": "116d38659eb50939431528c3341aec9c16349f3f"}
+exit=0
+$ git -C <second repo> show --name-only --format='%h %s' HEAD; ls-remote origin
+116d386 metrix: E1-PILOT TEST evaluation result (section 8 step 8)
+
+metrix/e1-pilot/results/test_evaluation_result.json
+116d38659eb50939431528c3341aec9c16349f3f	HEAD
+116d38659eb50939431528c3341aec9c16349f3f	refs/heads/main
+$ c1b_gate_probe.py /home/user/OpenMythos /tmp/tmprvklaeak/synthetic_test_rows marker
+probe refused: /home/user/OpenMythos (origin leotree2020/OpenMythos) is the pilot's repository
+exit=1
+$ c1b_gate_probe.py /tmp/tmprvklaeak/origin_by_name /tmp/tmprvklaeak/synthetic_test_rows
+probe refused: /tmp/tmprvklaeak/origin_by_name (origin leotree2020/OpenMythos) is the pilot's repository
+exit=1
+$ c1b_gate_probe.py /tmp/tmprvklaeak/origin_local_path /tmp/tmprvklaeak/synthetic_test_rows
+probe: testgate.CANONICAL_REPO = 'user/OpenMythos' (REPO's origin), testgate.PILOT_BRANCH = 'main'
+{"repo_head": "HEAD"}
+exit=0
+exit=0
+$ /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/venv/bin/python metrix/e1-pilot/reports/impl_c/c1b_mutate_fix1.py /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/venv/bin/python
+st10: authorization binding                      -> CAUGHT exit 1 | 1 failed in 5.59s
+       FAILED test_st10_check_refuses[unbound]
+st10: record frozen commit                       -> CAUGHT exit 1 | 1 failed in 5.81s
+       FAILED test_st10_check_refuses[frozen_commit]
+st10: record kind/mode                           -> CAUGHT exit 1 | 2 failed in 6.95s
+       FAILED test_st10_check_refuses[record_kind]
+       FAILED test_st10_check_refuses[record_smoke]
+st10: TEST file hashes                           -> CAUGHT exit 1 | 1 failed in 3.89s
+       FAILED test_st10_check_refuses[files]
+st10: code commit ancestor                       -> CAUGHT exit 1 | 2 failed in 4.89s
+       FAILED test_st10_check_refuses_a_code_commit_off_the_history
+       FAILED test_st10_check_refuses[code_commit]
+st10: ancestor test always true                  -> CAUGHT exit 1 | 1 failed in 4.12s
+       FAILED test_st10_check_refuses_a_code_commit_off_the_history
+st10: counts are integers                        -> CAUGHT exit 1 | 2 failed in 5.05s
+       FAILED test_st10_check_refuses[count_bool]
+       FAILED test_st10_check_refuses[count_missing]
+st10: auditor kind/commit                        -> CAUGHT exit 1 | 2 failed in 5.13s
+       FAILED test_st10_check_refuses[auditor_kind]
+       FAILED test_st10_check_refuses[auditor_frozen_commit]
+st10: auditor counted the same file              -> CAUGHT exit 1 | 1 failed in 4.22s
+       FAILED test_st10_check_refuses[auditor_other_file]
+st10: auditor count is an integer                -> CAUGHT exit 1 | 1 failed in 4.14s
+       FAILED test_st10_check_refuses[auditor_not_int]
+st10: auditor count replaced by Executor's       -> CAUGHT exit 1 | 1 failed in 4.13s
+       FAILED test_st10_stops_when_the_l6_counts_differ
+stops.st10: no over-limit judgement              -> CAUGHT exit 1 | 2 failed in 4.27s
+       FAILED test_st10
+       FAILED test_st10_stops_on_a_count_over_its_frozen_limit[L4]
+record: counts read from flags                   -> CAUGHT exit 1 | 2 failed in 4.89s
+       FAILED test_st10_record_holds_raw_counts_hashes_and_code_commit
+       FAILED test_driver_writes_the_st10_record_and_judges_raw_counts
+record: no integer check                         -> CAUGHT exit 1 | 2 failed in 4.82s
+       FAILED test_st10_record_refuses_counts_that_are_not_integers[bad0]
+       FAILED test_st10_record_refuses_counts_that_are_not_integers[bad1]
+record: code paths not checked                   -> CAUGHT exit 1 | 1 failed in 3.90s
+       FAILED test_st10_record_refuses_uncommitted_code
+record: overwrite allowed                        -> CAUGHT exit 1 | 1 failed in 3.93s
+       FAILED test_st10_record_holds_raw_counts_hashes_and_code_commit
+st10 record: existence ignored                   -> CAUGHT exit 1 | 1 failed in 4.27s
+       FAILED test_driver_writes_the_st10_record_and_judges_raw_counts
+st10 record: no checkout check                   -> CAUGHT exit 1 | 4 failed in 6.35s
+       FAILED test_every_test_path_needs_the_pilots_checkout_at_the_remote_tip[refuse_if_st10_record-ahead]
+       FAILED test_every_test_path_needs_the_pilots_checkout_at_the_remote_tip[refuse_if_st10_record-behind]
+       FAILED test_every_test_path_needs_the_pilots_checkout_at_the_remote_tip[refuse_if_st10_record-other_branch]
+       FAILED test_driver_writes_the_st10_record_and_judges_raw_counts
+where: working tree ignored                      -> CAUGHT exit 1 | 2 failed in 5.21s
+       FAILED test_marker_in_the_working_tree_only_refuses
+       FAILED test_a_failing_commit_is_blocked
+where: remote's latest commit ignored            -> CAUGHT exit 1 | 1 failed in 4.34s
+       FAILED test_a_marker_pushed_from_another_clone_refuses
+checkout: another repository accepted            -> CAUGHT exit 1 | 4 failed in 6.65s
+       FAILED test_every_test_path_needs_the_pilots_checkout_at_the_remote_tip[begin-other_repository]
+       FAILED test_every_test_path_needs_the_pilots_checkout_at_the_remote_tip[check_commit_preconditions-other_repository]
+       FAILED test_every_test_path_needs_the_pilots_checkout_at_the_remote_tip[refuse_if_marker-other_repository]
+       FAILED test_every_test_path_needs_the_pilots_checkout_at_the_remote_tip[refuse_if_st10_record-other_repository]
+checkout: another branch accepted                -> CAUGHT exit 1 | 8 failed in 10.29s
+       FAILED test_every_test_path_needs_the_pilots_checkout_at_the_remote_tip[begin-other_branch]
+       FAILED test_every_test_path_needs_the_pilots_checkout_at_the_remote_tip[begin-detached]
+       FAILED test_every_test_path_needs_the_pilots_checkout_at_the_remote_tip[check_commit_preconditions-other_branch]
+       FAILED test_every_test_path_needs_the_pilots_checkout_at_the_remote_tip[check_commit_preconditions-detached]
+       FAILED test_every_test_path_needs_the_pilots_checkout_at_the_remote_tip[refuse_if_marker-other_branch]
+       FAILED test_every_test_path_needs_the_pilots_checkout_at_the_remote_tip[refuse_if_marker-detached]
+       FAILED test_every_test_path_needs_the_pilots_checkout_at_the_remote_tip[refuse_if_st10_record-other_branch]
+       FAILED test_every_test_path_needs_the_pilots_checkout_at_the_remote_tip[refuse_if_st10_record-detached]
+checkout: shallow clone accepted                 -> CAUGHT exit 1 | 1 failed in 4.14s
+       FAILED test_a_shallow_clone_is_blocked
+checkout: fetch failure ignored                  -> CAUGHT exit 1 | 3 failed in 5.85s
+       FAILED test_a_remote_that_cannot_be_fetched_is_blocked
+       FAILED test_every_test_path_needs_the_pilots_checkout_at_the_remote_tip[begin-unreachable]
+       FAILED test_every_test_path_needs_the_pilots_checkout_at_the_remote_tip[refuse_if_marker-unreachable]
+checkout: HEAD not compared                      -> CAUGHT exit 1 | 10 failed in 13.39s
+       FAILED test_every_test_path_needs_the_pilots_checkout_at_the_remote_tip[begin-ahead]
+       FAILED test_every_test_path_needs_the_pilots_checkout_at_the_remote_tip[begin-behind]
+       FAILED test_every_test_path_needs_the_pilots_checkout_at_the_remote_tip[check_commit_preconditions-ahead]
+       FAILED test_every_test_path_needs_the_pilots_checkout_at_the_remote_tip[check_commit_preconditions-behind]
+       FAILED test_every_test_path_needs_the_pilots_checkout_at_the_remote_tip[refuse_if_marker-ahead]
+       FAILED test_every_test_path_needs_the_pilots_checkout_at_the_remote_tip[refuse_if_marker-behind]
+       FAILED test_every_test_path_needs_the_pilots_checkout_at_the_remote_tip[refuse_if_st10_record-ahead]
+       FAILED test_every_test_path_needs_the_pilots_checkout_at_the_remote_tip[refuse_if_st10_record-behind]
+       FAILED test_a_push_that_fails_is_blocked_and_the_marker_refuses_later_runs
+       FAILED test_driver_push_refused_after_generation_counts_as_generated
+checkout: tip from the local HEAD, no fetch      -> CAUGHT exit 1 | 5 failed in 8.25s
+       FAILED test_every_test_path_needs_the_pilots_checkout_at_the_remote_tip[begin-behind]
+       FAILED test_every_test_path_needs_the_pilots_checkout_at_the_remote_tip[check_commit_preconditions-behind]
+       FAILED test_every_test_path_needs_the_pilots_checkout_at_the_remote_tip[refuse_if_marker-behind]
+       FAILED test_every_test_path_needs_the_pilots_checkout_at_the_remote_tip[refuse_if_st10_record-behind]
+       FAILED test_a_marker_pushed_from_another_clone_refuses
+marker: no checkout check                        -> CAUGHT exit 1 | 3 failed in 5.93s
+       FAILED test_every_test_path_needs_the_pilots_checkout_at_the_remote_tip[refuse_if_marker-ahead]
+       FAILED test_every_test_path_needs_the_pilots_checkout_at_the_remote_tip[refuse_if_marker-behind]
+       FAILED test_every_test_path_needs_the_pilots_checkout_at_the_remote_tip[refuse_if_marker-other_branch]
+marker: result ignored                           -> CAUGHT exit 1 | 2 failed in 5.93s
+       FAILED test_a_result_without_a_marker_refuses
+       FAILED test_marker_with_a_result_is_refused_as_evaluated
+begin: no marker check                           -> CAUGHT exit 1 | 1 failed in 4.43s
+       FAILED test_begin_twice_is_refused_as_already_started
+begin: no ST10 gate                              -> CAUGHT exit 1 | 1 failed in 4.53s
+       FAILED test_begin_refuses_before_writing_anything
+preconditions: no checkout check                 -> CAUGHT exit 1 | 4 failed in 6.65s
+       FAILED test_every_test_path_needs_the_pilots_checkout_at_the_remote_tip[check_commit_preconditions-ahead]
+       FAILED test_every_test_path_needs_the_pilots_checkout_at_the_remote_tip[check_commit_preconditions-behind]
+       FAILED test_every_test_path_needs_the_pilots_checkout_at_the_remote_tip[check_commit_preconditions-other_branch]
+       FAILED test_driver_checks_the_commit_preconditions_before_generating
+preconditions: staged changes allowed            -> CAUGHT exit 1 | 3 failed in 6.18s
+       FAILED test_begin_refuses_before_writing_anything
+       FAILED test_driver_checks_the_commit_preconditions_before_generating
+       FAILED test_finish_commits_the_result_after_every_model
+preconditions: no identity check                 -> CAUGHT exit 1 | 2 failed in 5.22s
+       FAILED test_begin_refuses_without_a_committer_identity
+       FAILED test_driver_checks_the_commit_preconditions_before_generating
+preconditions: dry-run push not checked          -> CAUGHT exit 1 | 2 failed in 19.84s
+       FAILED test_a_failing_dry_run_push_is_blocked_before_writing
+       FAILED test_driver_checks_the_commit_preconditions_before_generating
+begin: preconditions not checked                 -> CAUGHT exit 1 | 2 failed in 5.42s
+       FAILED test_begin_refuses_before_writing_anything
+       FAILED test_begin_refuses_without_a_committer_identity
+finish: preconditions not checked                -> CAUGHT exit 1 | 1 failed in 4.40s
+       FAILED test_finish_commits_the_result_after_every_model
+driver: preconditions not checked                -> CAUGHT exit 1 | 1 failed in 4.41s
+       FAILED test_driver_checks_the_commit_preconditions_before_generating
+driver: preconditions after generation           -> CAUGHT exit 1 | 1 failed in 4.30s
+       FAILED test_driver_checks_the_commit_preconditions_before_generating
+begin: parent marker not checked                 -> CAUGHT exit 1 | 1 failed in 4.41s
+       FAILED test_a_second_begin_in_the_same_clone_is_blocked
+begin: pushed marker bytes not checked           -> NOT CAUGHT exit 0 | 1 passed in 4.36s
+       passed test_a_commit_of_another_begin_between_commit_and_push_is_blocked
+evaluate_model: s_mapping checked after the claim -> CAUGHT exit 1 | 1 failed in 4.55s
+       FAILED test_s_mapping_on_test_is_refused_before_the_gate
+commit_paths: staged changes allowed             -> CAUGHT exit 1 | 1 failed in 4.42s
+       FAILED test_commit_paths_stages_exactly_the_named_paths
+commit_paths: staged paths not checked           -> CAUGHT exit 1 | 1 failed in 4.12s
+       FAILED test_commit_paths_stages_exactly_the_named_paths
+commit_paths: commit failure ignored             -> CAUGHT exit 1 | 1 failed in 4.16s
+       FAILED test_a_failing_commit_is_blocked
+push: remote ref not checked                     -> CAUGHT exit 1 | 2 failed in 5.35s
+       FAILED test_a_push_that_fails_is_blocked_and_the_marker_refuses_later_runs
+       FAILED test_driver_push_refused_after_generation_counts_as_generated
+push: tags followed                              -> CAUGHT exit 1 | 1 failed in 4.35s
+       FAILED test_begin_commits_and_pushes_the_marker_only
+credentials: not scrubbed                        -> CAUGHT exit 1 | 1 failed in 4.35s
+       FAILED test_credentials_in_the_remote_url_are_not_written
+session: not checked against this process        -> CAUGHT exit 1 | 1 failed in 4.71s
+       FAILED test_evaluate_model_refusals
+session: checkout not checked                    -> CAUGHT exit 1 | 3 failed in 6.80s
+       FAILED test_evaluate_and_finish_are_blocked_when_the_checkout_left_the_marker_commit[a_commit_after_begin]
+       FAILED test_evaluate_and_finish_are_blocked_when_the_checkout_left_the_marker_commit[another_branch]
+       FAILED test_evaluate_and_finish_are_blocked_when_the_checkout_left_the_marker_commit[the_marker_rewritten]
+session checkout: branch only                    -> CAUGHT exit 1 | 2 failed in 5.78s
+       FAILED test_evaluate_and_finish_are_blocked_when_the_checkout_left_the_marker_commit[a_commit_after_begin]
+       FAILED test_evaluate_and_finish_are_blocked_when_the_checkout_left_the_marker_commit[the_marker_rewritten]
+session: rows not checked against marker         -> CAUGHT exit 1 | 1 failed in 4.68s
+       FAILED test_evaluate_model_refusals
+session: no ST10 gate                            -> CAUGHT exit 1 | 1 failed in 4.62s
+       FAILED test_evaluate_model_refusals
+session: any model name                          -> CAUGHT exit 1 | 1 failed in 4.36s
+       FAILED test_evaluate_model_refusals
+session: model hash not checked                  -> CAUGHT exit 1 | 1 failed in 4.53s
+       FAILED test_evaluate_model_refusals
+claim: a model twice                             -> CAUGHT exit 1 | 1 failed in 4.53s
+       FAILED test_evaluate_model_passes_every_gate_then_stops_at_the_gpu_check
+claim: any session                               -> CAUGHT exit 1 | 1 failed in 4.72s
+       FAILED test_evaluate_model_passes_every_gate_then_stops_at_the_gpu_check
+finish: any session                              -> CAUGHT exit 1 | 1 failed in 4.36s
+       FAILED test_finish_commits_the_result_after_every_model
+finish: checkout not checked                     -> CAUGHT exit 1 | 2 failed in 5.68s
+       FAILED test_evaluate_and_finish_are_blocked_when_the_checkout_left_the_marker_commit[a_commit_after_begin]
+       FAILED test_evaluate_and_finish_are_blocked_when_the_checkout_left_the_marker_commit[the_marker_rewritten]
+finish: models left allowed                      -> CAUGHT exit 1 | 1 failed in 4.49s
+       FAILED test_finish_commits_the_result_after_every_model
+evaluate_model: no TEST session gate             -> CAUGHT exit 1 | 1 failed in 4.61s
+       FAILED test_evaluate_model_passes_every_gate_then_stops_at_the_gpu_check
+evaluate_model: claim before the GPU check       -> CAUGHT exit 1 | 1 failed in 4.59s
+       FAILED test_evaluate_model_passes_every_gate_then_stops_at_the_gpu_check
+evaluate_model: claim removed                    -> CAUGHT exit 1 | 1 failed in 4.28s
+       FAILED test_evaluate_model_claims_after_the_gpu_check
+evaluate_model: claim after the scorers          -> CAUGHT exit 1 | 1 failed in 4.47s
+       FAILED test_evaluate_model_claims_after_the_gpu_check
+record.committed_json: no object check           -> CAUGHT exit 1 | 1 failed in 1.38s
+       FAILED test_a_committed_record_that_is_not_an_object_is_not_committed
+driver: --out inside the repository allowed      -> CAUGHT exit 1 | 1 failed in 4.43s
+       FAILED test_driver_writes_the_st10_record_and_judges_raw_counts
+driver: verdict from the report's flags          -> CAUGHT exit 1 | 1 failed in 4.29s
+       FAILED test_driver_writes_the_st10_record_and_judges_raw_counts
+driver: ST10 record existence not checked        -> CAUGHT exit 1 | 1 failed in 4.16s
+       FAILED test_driver_writes_the_st10_record_and_judges_raw_counts
+driver: ST10 record not committed and pushed     -> CAUGHT exit 1 | 2 failed in 5.11s
+       FAILED test_driver_writes_the_st10_record_and_judges_raw_counts
+       FAILED test_driver_push_refused_after_generation_counts_as_generated
+driver: code checked only after generation       -> CAUGHT exit 1 | 1 failed in 4.63s
+       FAILED test_driver_writes_the_st10_record_and_judges_raw_counts
+B25: pending again                               -> CAUGHT exit 1 | 1 failed in 1.33s
+       FAILED test_interpretations_ruled_by_review_gate
+B25: state_sha256 without the dtype              -> CAUGHT exit 1 | 1 failed in 3.90s
+       FAILED test_b25_definition_is_the_code_of_state_sha256
+ruling: one entry pending                        -> CAUGHT exit 1 | 1 failed in 1.25s
+       FAILED test_interpretations_ruled_by_review_gate
+BE2: PROTOCOL_FROZEN vs fz removed               -> CAUGHT exit 1 | 1 failed in 1.42s
+       FAILED test_verify_authorization_frozen_commit_comparisons
+BE2: authorization vs PROTOCOL_FROZEN removed    -> CAUGHT exit 1 | 1 failed in 5.21s
+       FAILED test_generation_needs_authorization
+BE9: pending_problem always None                 -> CAUGHT exit 1 | 1 failed in 1.35s
+       FAILED test_pending_interpretations_block_test
+BE9: content hashes from a literal key list      -> CAUGHT exit 1 | 1 failed in 4.70s
+       FAILED test_content_hashes_are_built_from_content_hash_keys
+BE10: fz is None check removed                   -> CAUGHT exit 1 | 1 failed in 7.17s
+       FAILED test_test_split_needs_the_authorization
+B14: note changed                                -> CAUGHT exit 1 | 1 failed in 0.07s
+       FAILED test_reasons_follow_section_9
+mutations 78, caught 77
+src+tests sha256 before 37264c985ac631ab3f22c5289397b82be29822d8c8e45eb6e8720c8fb5845e6d after 37264c985ac631ab3f22c5289397b82be29822d8c8e45eb6e8720c8fb5845e6d EQUAL
+RESULT: FAIL
+exit=0
+$ bash -c git\ status\ --short\ --untracked-files=all\;\ git\ write-tree\;\ git\ diff\ --quiet\ --\ metrix/e1-pilot/src\ metrix/e1-pilot/tests\ \&\&\ echo\ WORKTREE_EQUALS_INDEX_FOR_SRC_AND_TESTS\;\ git\ diff\ --cached\ HEAD\ --\ metrix/e1-pilot/src\ metrix/e1-pilot/tests\ \|\ sha256sum
+A  metrix/e1-pilot/reports/impl_c/c1b_mutate_fix1.py
+M  metrix/e1-pilot/src/metrix_e1/evaluate.py
+M  metrix/e1-pilot/src/metrix_e1/test_data.py
+M  metrix/e1-pilot/src/metrix_e1/testgate.py
+M  metrix/e1-pilot/tests/test_testgate.py
+?? metrix/e1-pilot/audit/ic5_01_gate_scenarios.py
+?? metrix/e1-pilot/audit/ic5_02_content_hashes.py
+?? metrix/e1-pilot/audit/ic5_03_static.py
+?? metrix/e1-pilot/audit/ic5_04_b25.py
+?? metrix/e1-pilot/audit/ic5_05_test_refusal.py
+?? metrix/e1-pilot/audit/ic5_run_logged.sh
+?? metrix/e1-pilot/audit/stdout/impl_c/ic5_00_state.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic5_01_gate_scenarios.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic5_01_trial1_superseded.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic5_02_content_hashes.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic5_03_static.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic5_03_trial1_superseded.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic5_03_trial2_superseded.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic5_03_trial3_superseded.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic5_04_b25.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic5_04_trial1_superseded.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic5_05_test_refusal.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic5_0x_trials_and_script_fixes.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic5_99_git_status_final.txt
+?? metrix/e1-pilot/reports/impl_c/c1b_03_checks_fix.txt
+74a3ff59b7af24596717416f25b611d8c700d65d
+WORKTREE_EQUALS_INDEX_FOR_SRC_AND_TESTS
+607e767e865b7cd4b3ab196f437cb9686037c90c51ef3779993dcccadcb8f6cc  -
+exit=0
