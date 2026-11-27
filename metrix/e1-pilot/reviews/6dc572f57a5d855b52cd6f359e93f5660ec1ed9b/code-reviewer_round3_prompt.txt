@@ -1,0 +1,22 @@
+先读仓库中的 .claude/agents/code-reviewer.md，以它为你的完整定义；它与你已加载的定义冲突时，以仓库文件为准。
+
+审查对象：METRIX E1-PILOT 阶段 C 第 3 段（C3：RUNBOOK_A100.md 与最终报告）的提交，第 3 轮。暂存区内容（尚未提交），暂存树 2d7f7bca79214fdce313f5d6a37c71e44d4afc7f，父提交 cc18466f8d327f37c6f6dd272b8e264d239ee386。第 2 轮被审暂存树 c9dfc4ac45e78e847cb5654a9cc0385d8b800d3d，你的第 2 轮原文（结论 PASS，10 个 MINOR）：/tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/review_c3/code-reviewer_round2.md；第 1 轮原文：/tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/review_c3/code-reviewer_round1.md（都尚未入库，随本提交之后的证据提交存入 reviews/<C3 提交>/）。第 2 轮之后 Executor 修改了文档（第 2 轮 MINOR 中，提交前确认不含 TEST 文字的范围涉及隔离，按 Task Order 第 9 节必须修；其余一并修正），所以送审的暂存树变了，须再审。仓库 /home/user/OpenMythos。Owner 的指令（tasks/IMPL_C2_OWNER_MESSAGE.md）：「然后执行 C3（RUNBOOK_A100.md 与最终报告），C3 只改文档时只需 code-reviewer。……阶段 C 全部验收通过后停下，状态写为 IMPLEMENTATION_READY。」
+
+Review Gate 对 C1 的裁决（tasks/IMPL_C1_RULING.md）中的防范对象，原文如下：
+防范对象：TEST 闸门要防的是「按规则办事的 Executor 在按 RUNBOOK 操作时，意外评测 TEST 两次，或在 ST10 不成立时评测 TEST」；不防有仓库写权限者的故意篡改（改写历史、伪造记录），这类风险由 GitHub 分支保护和审查记录承担。审查按此范围判定：范围外的边缘情况记为 MINOR 并登记，不作为 BLOCKER。调用两份审查时，把本段防范对象原文写进调用文字。
+
+Owner 本次转达的 Review Gate 裁决（tasks/IMPL_C2_OWNER_MESSAGE.md），原文如下：
+Review Gate 裁决（2026-11-27，作用范围：本阶段；记入 IMPL_C_REPORT.md）：
+1. TEST 评测调用不 fetch、只在 begin 与 finish 时 fetch：接受。RUNBOOK 写明「begin 到 finish 之间任何人不得推送本分支」。
+2. f8139f9 属于证据提交，不需补审。
+
+审查输入（目录 /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/review_c3/）：input.diff（git diff --cached --stat 与完整 diff，相对父提交 cc18466f）；input_round2_to_round3.diff（第 2 轮被审树 c9dfc4ac 到本次暂存树的 diff，只涉及 RUNBOOK_A100.md、reports/IMPL_C_REPORT.md、reports/DEFERRED_MINORS.md）；tree.txt（本次暂存树）。代码（src/、tests/、run_pilot.py）与 a0e04d1f 相同。
+依据同第 1、2 轮（调用文字：/tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/review_c3/code-reviewer_round1_prompt.txt、prompt_cr_round2.txt）。
+
+本次改动（Executor 的说明，不作为证据；第 2 轮各项与处理的对照表：reports/DEFERRED_MINORS.md 1.37 CK1–CK10，本次暂存；请逐条核对“已修且正确 / 已修但有问题 / 未修”）：
+- RUNBOOK：第 2 节 ST12 措辞（CK10）；第 3.0–3.3 节先 df -h 选分区再设 WORK、INPUTS，环境检查 tee 到 env.txt（CK5）；formal、test-generate、test-evaluate 的输出文件名带开始时间；formal 结束后按“第 1 步之后 / 之前”分两种处理命令输出（CK1）；3.7 的调用文字与提交前确认不含 TEST 文字（CK2）；3.8 之后写明输出两行的含义（CK6）；第 4 节补设置确定性本身失败的情形（CK9）；第 5 节手工提交的措辞、后备规则中 code-reviewer 的义务与推送时机、不再断言“本阶段”的范围（CK2、CK3、CK4）；第 6 节 A 的 1.5 倍与 FLOP 比、预检不含 A（CK7）。
+- 报告：C3 节审查表加第 2、3 轮；C3 待决第 2 项加入“本阶段”裁决在 A100 运行期间是否有效的问题（CK4）；“Owner 阶段 C 各项要求的落实”改为“第 1、6、7、9、10 项”并加第 1–5 项一行，补充裁决 1 一行注明只列一例（CK8）。
+- DEFERRED_MINORS 新增 1.37。
+- 运行环境：Claude Code on the web 云容器，hostname vm，只用 CPU；没有加载或下载权重，没有使用 GPU，没有生成、读取或统计 TEST。
+
+请：(1) 逐条核对 CK1–CK10 的处理；(2) 审查本次改动本身有无新问题（RUNBOOK 新命令序列能否照做、与代码与 metrix/CLAUDE.md 是否一致；TEST 路径是否可能让按 RUNBOOK 操作的 Executor 意外评测 TEST 两次、或在 ST10 不成立时评测 TEST；报告与 DEFERRED_MINORS 是否如实）。范围外的边缘情况记为 MINOR 并登记，不作为 BLOCKER。按定义的输出格式给出，每条注明“已验证/未验证”；原文即你的完整输出。最后一行给出结论 PASS 或 BLOCK。不要修改任何文件。

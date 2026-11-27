@@ -1,0 +1,24 @@
+先读仓库中的 .claude/agents/code-reviewer.md，以它为你的完整定义；它与你已加载的定义冲突时，以仓库文件为准。
+
+审查对象：METRIX E1-PILOT 阶段 C 第 3 段（C3：RUNBOOK_A100.md 与最终报告）的提交，第 2 轮。暂存区内容（尚未提交），暂存树 c9dfc4ac45e78e847cb5654a9cc0385d8b800d3d，父提交 cc18466f8d327f37c6f6dd272b8e264d239ee386。第 1 轮被审暂存树 d27b68da355debb5ff158077e6f2d8d79f07a6a1，你的第 1 轮原文（结论 BLOCK）：/tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/review_c3/code-reviewer_round1.md（尚未入库，随本提交之后的证据提交存入 reviews/<C3 提交>/）。仓库 /home/user/OpenMythos。Owner 的指令（tasks/IMPL_C2_OWNER_MESSAGE.md）：「然后执行 C3（RUNBOOK_A100.md 与最终报告），C3 只改文档时只需 code-reviewer。……阶段 C 全部验收通过后停下，状态写为 IMPLEMENTATION_READY。」本提交只改文档与证据，按此只送你一份审查。
+
+Review Gate 对 C1 的裁决（tasks/IMPL_C1_RULING.md）中的防范对象，原文如下：
+防范对象：TEST 闸门要防的是「按规则办事的 Executor 在按 RUNBOOK 操作时，意外评测 TEST 两次，或在 ST10 不成立时评测 TEST」；不防有仓库写权限者的故意篡改（改写历史、伪造记录），这类风险由 GitHub 分支保护和审查记录承担。审查按此范围判定：范围外的边缘情况记为 MINOR 并登记，不作为 BLOCKER。调用两份审查时，把本段防范对象原文写进调用文字。
+
+Owner 本次转达的 Review Gate 裁决（tasks/IMPL_C2_OWNER_MESSAGE.md），原文如下：
+Review Gate 裁决（2026-11-27，作用范围：本阶段；记入 IMPL_C_REPORT.md）：
+1. TEST 评测调用不 fetch、只在 begin 与 finish 时 fetch：接受。RUNBOOK 写明「begin 到 finish 之间任何人不得推送本分支」。
+2. f8139f9 属于证据提交，不需补审。
+
+审查输入（目录 /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/review_c3/）：input.diff（git diff --cached --stat 与完整 diff，相对父提交 cc18466f）；input_round1_to_round2.diff（第 1 轮被审树 d27b68da 到本次暂存树的 diff）；tree.txt（本次暂存树）。代码（src/、tests/、run_pilot.py）与 a0e04d1f 相同（git diff --quiet a0e04d1f c9dfc4ac45e78e847cb5654a9cc0385d8b800d3d -- 这三处 为真；可对 tree.txt 核对 blob）。
+依据同第 1 轮（调用文字：/tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/review_c3/code-reviewer_round1_prompt.txt），另加 tasks/IMPL_C_OWNER_MESSAGE.md（补充裁决 1–6、上次阶段 C 指令第 6–10 项）。
+
+本次改动（Executor 的说明，不作为证据；第 1 轮各项与处理的对照表：reports/DEFERRED_MINORS.md 1.36 CJ1–CJ20，本次暂存；请逐条核对“已修且正确 / 已修但有问题 / 未修”）：
+- BLOCKER（CJ1）：RUNBOOK 第 4 节新增“确定性模式下的 CUDA 算子报错”一段；报告新增“Owner 阶段 C 各项要求的落实”一节，逐项核对补充裁决 1–6 与上次阶段 C 指令第 6–10 项。
+- MAJOR：命令输出改为 <work>/command_output/<名称>.txt → results/command_output/<名称>.txt（CJ2；git check-ignore 的原始输出在 reports/impl_c/c3_02_runbook_hashes.txt 末尾）；第 6 节按依据重算 checkpoint 开销（26–77 分钟）与 GPU wall-clock（1.2–3.1 小时）、费用（CJ3）；第 6 节另列预检时 ST11 读到的 B17 预期（a_factor ≈ 6.75，约 1.2–3.0 小时）与 B17 + checkpoint 开销（约 1.6–4.2 小时，上端会触发 ST11），第 4 节写明 a_factor（CJ4）；第 3.7 节改为四步（frontmatter 比对与第一句、audit 脚本与 stdout、提交与 reviews/<提交>/、均在 3.8 之前），手工提交的审查方式列为 C3 待决第 2 项（租卡前）（CJ5）；RUNBOOK 开头写明与 metrix/CLAUDE.md 第 4 节的关系，列为 C3 待决第 1 项（租卡前）（CJ6）。
+- MINOR CJ7–CJ20：见 1.36 的处理列。新增原始输出 reports/impl_c/c3_02_runbook_hashes.txt 与 c3_03_hf_tree_logged.txt（录制脚本 c3_evidence.sh，用 reports/round5/logrun.sh；c3_03 从 Hugging Face API 重新获取文件树并解析，没有下载权重）。
+- 报告 C3 节重写：交付、“最终检查”（c3_01 录制时的写树 65b95aca、录制期间与之后只改文档、代码相同的依据）、提交与审查表、待 Review Gate 决定（C3）三项；验收第 6 项加入阶段 A、B 的工作提交与审查记录及 1435a74；“最终状态”改为请 Review Gate 确认、若裁决要求改代码则状态退回 C2。
+- c3_01_final_checks.txt 没有重录（第 1 轮之后只改文档与证据，代码不变）。
+- 运行环境：Claude Code on the web 云容器，hostname vm，只用 CPU；没有加载或下载权重，没有使用 GPU，没有生成、读取或统计 TEST。
+
+请：(1) 逐条核对第 1 轮各项的处理（CJ1–CJ20）；(2) 审查本次改动本身有无新问题，范围同第 1 轮的 (1)–(4)：RUNBOOK 与代码、协议、metrix/CLAUDE.md、Owner 阶段 C 各项要求是否一致；TEST 路径是否可能让按 RUNBOOK 操作的 Executor 意外评测 TEST 两次、或在 ST10 不成立时评测 TEST；第 6 节的数值与依据是否自洽；报告各项结论是否有原始输出支持，IMPLEMENTATION_READY 是否成立；DEFERRED_MINORS 1.35、1.36 是否如实。范围外的边缘情况记为 MINOR 并登记，不作为 BLOCKER。按定义的输出格式给出，每条注明“已验证/未验证”；原文即你的完整输出。最后一行给出结论 PASS 或 BLOCK。不要修改任何文件。

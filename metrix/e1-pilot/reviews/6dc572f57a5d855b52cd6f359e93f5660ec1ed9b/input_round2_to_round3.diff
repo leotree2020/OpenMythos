@@ -1,0 +1,230 @@
+diff --git a/metrix/e1-pilot/RUNBOOK_A100.md b/metrix/e1-pilot/RUNBOOK_A100.md
+index 5467ebe..4e7faac 100644
+--- a/metrix/e1-pilot/RUNBOOK_A100.md
++++ b/metrix/e1-pilot/RUNBOOK_A100.md
+@@ -31,7 +31,7 @@
+ 
+ ## 2. 需要下载的内容及其哈希
+ 
+-前 6 项由第 3.4 节的命令下载;第 7 项是仓库内文件。这 7 项是冻结值(`DATA_MANIFEST.json`),由代码核对(`metrix_e1.data` 的 generate / verify 与每一步开始时的 ST12),不一致即 ST12 BLOCKED。模型的 `config.json` 与两个 safetensors 不是冻结值,代码核对的是下载元数据中的 revision(`pilot.check_model_dir`),表中的哈希供人工复核。
++前 6 项由第 3.4 节的命令下载;第 7 项是仓库内文件。这 7 项是冻结值(`DATA_MANIFEST.json`),由代码核对:第 1 步由 `metrix_e1.data` 的 generate 核对输入,第 2 步起每一步开始时的 ST12(`data.verify`)再核对;不一致即 ST12 BLOCKED。模型的 `config.json` 与两个 safetensors 不是冻结值,代码核对的是下载元数据中的 revision(`pilot.check_model_dir`),表中的哈希供人工复核。
+ 
+ | 内容 | 位置 | SHA-256 | 核对方式 |
+ |---|---|---|---|
+@@ -41,7 +41,7 @@
+ | 同上 `merges.txt` | 同上 | `8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5` | 同上 |
+ | parcae 分词器 `SandyResearch/parcae-tokenizer@6247b5d0592876b73660f34c2dd16c9db9e9045c` 的 `tokenizer.json` | `<inputs>/parcae_tokenizer/` | `e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77` | 同上(DATA_MANIFEST.json general_text) |
+ | 锚文本 `SandyResearch/fineweb-edu-shuffled@4d1138c0e4d51d98813997ce3560e05a32bf91de` 的 `data/sample-100BT/train/shard_00000.parquet` | `<inputs>/anchor_source/…` | `6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22` | 同上(DATA_MANIFEST.json anchor_text) |
+-| 通用文本 `research/mini_mythos/stage1/results/r1/eval_sets.jsonl` | 仓库内(不下载) | `8816fe5a39d8b89e8c4203bf7d660e798faa471d2b72b5ce43c411cf5925a155` | `metrix_e1.data` 的 generate / verify 与每步的 ST12 核对(DATA_MANIFEST.json general_text) |
++| 通用文本 `research/mini_mythos/stage1/results/r1/eval_sets.jsonl` | 仓库内(不下载) | `8816fe5a39d8b89e8c4203bf7d660e798faa471d2b72b5ce43c411cf5925a155` | 第 1 步由 `metrix_e1.data` 的 generate 核对,第 2 步起每步开始时的 ST12(`data.verify`)核对(DATA_MANIFEST.json general_text) |
+ | 模型 `config.json` | `<inputs>/qwen_model/` | `1ddb5b89ebc90dcb417a45c213d818577e65976454d29385c8f6140771d95197` | `metrix_e1.train fetch-config` 打印实际值;表中的值是本阶段在 CPU 环境两次下载时打印的值(`reports/impl_c/c1_01_env_fetch.txt`、`c2_01_env_fetch.txt`),不是冻结值,代码不比对;下载元数据中的 revision 由 run_pilot 核对 |
+ | 模型 `model-00001-of-00002.safetensors`(3,441,185,608 字节) | `<inputs>/qwen_model/` | `169ad53ec313c3a34b06c0809216e4fc072cce444a5d4ff2b59690d064130ed5` | `run_pilot.py fetch-model` 打印实际值;run_pilot 核对每个 safetensors 的下载元数据 revision = 冻结 revision,并把实际 SHA-256 写入实验记录 |
+ | 模型 `model-00002-of-00002.safetensors`(622,329,984 字节) | 同上 | `912becff8d60672aa8628ef08c05898d9adf17c2ad4ae3caf99b065622fdeff9` | 同上 |
+@@ -50,30 +50,32 @@
+ 
+ ## 3. 执行命令(从克隆仓库到运行完毕)
+ 
+-以下 `<work>`、`<inputs>` 都在仓库之外(run_pilot 拒绝仓库内的 `--work`)。**整个 Pilot 只用这一个克隆、这一个 `<work>`**(formal、test-generate、data-auditor 的计数、test-evaluate 都在这里)。每条命令的完整输出用 `tee` 保存在 `<work>/command_output/<名称>.txt`,在第 5 节的时机提交。长命令在 tmux 会话中运行。
++以下 `<work>`、`<inputs>` 都在仓库之外(run_pilot 拒绝仓库内的 `--work`)。**整个 Pilot 只用这一个克隆、这一个 `<work>`**(formal、test-generate、data-auditor 的计数、test-evaluate 都在这里)。每条命令的完整输出用 `tee` 保存在 `<work>/command_output/` 下(formal、test-generate、test-evaluate 的文件名带开始时间,重跑时不覆盖),在第 5 节的时机提交。长命令在 tmux 会话中运行。
+ 
+ ```bash
+ # 3.0 先确认驱动(第 1 节):CUDA Version >= 13.0,一张 A100 80GB;否则停止、退租、报告 Owner
+ nvidia-smi
+ tmux new -s metrix            # 之后的命令都在这个 tmux 会话中运行
++df -h                         # 选一个至少 300 GB 可用的分区,<work> 与 <inputs> 放在那里
++export WORK=<该分区上的目录>/metrix-work INPUTS=<该分区上的目录>/metrix-inputs
++mkdir -p "$WORK/command_output"
++E="$WORK/command_output/env.txt"
++{ nvidia-smi; nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv; ldd --version | head -1; python3.13 --version; df -h "$WORK"; free -g; tmux -V; } 2>&1 | tee "$E"
++#     核对:CUDA Version >= 13.0、NVIDIA A100 80GB、Python 3.13.18(代码不核对 Python 的补丁版本)、可用空间 >= 300 GB;任一不满足即停下报告 Owner
+ 
+ # 3.1 仓库(非浅克隆)与身份
+ git clone https://github.com/leotree2020/OpenMythos.git && cd OpenMythos
+ git checkout metrix-e1-pilot-protocol-v1
+ git config user.name "<Executor 账户>" && git config user.email "<Executor 邮箱>"
+-git rev-parse HEAD            # 记下;所有命令在这个检出上运行
++{ git rev-parse HEAD; git config user.name; git config user.email; } 2>&1 | tee -a "$E"   # 所有命令在这个检出上运行
+ 
+ # 3.2 Python 与依赖(只用 requirements.lock;pip 本身固定为本阶段 CPU 环境所用的 26.3)
+ python3.13 -m venv ~/metrix-venv
+-~/metrix-venv/bin/python -m pip install pip==26.3
+-~/metrix-venv/bin/python -m pip install --require-hashes --no-deps -r metrix/e1-pilot/requirements.lock
+-~/metrix-venv/bin/python -m pip check
+ PY=~/metrix-venv/bin/python
+-export INPUTS=~/metrix-inputs WORK=~/metrix-work
+-mkdir -p "$WORK/command_output"
++{ $PY -m pip install pip==26.3 && $PY -m pip install --require-hashes --no-deps -r metrix/e1-pilot/requirements.lock && $PY -m pip check; } 2>&1 | tee -a "$E"
+ 
+ # 3.3 设备与库(只读)
+-$PY -c "import torch; print(torch.__version__, torch.version.cuda, torch.cuda.is_available(), torch.cuda.get_device_name(0), torch.cuda.get_device_properties(0).total_memory / 2**30)"
++$PY -c "import torch; print(torch.__version__, torch.version.cuda, torch.cuda.is_available(), torch.cuda.get_device_name(0), torch.cuda.get_device_properties(0).total_memory / 2**30)" 2>&1 | tee -a "$E"
+ 
+ # 3.4 下载(分词器、parquet、config、模型)
+ PYTHONPATH=metrix/e1-pilot/src $PY -m metrix_e1.data fetch --inputs "$INPUTS" 2>&1 | tee "$WORK/command_output/fetch.txt"
+@@ -81,26 +83,31 @@ PYTHONPATH=metrix/e1-pilot/src $PY -m metrix_e1.train fetch-config --inputs "$IN
+ $PY metrix/e1-pilot/run_pilot.py fetch-model --inputs "$INPUTS" 2>&1 | tee -a "$WORK/command_output/fetch.txt"
+ 
+ # 3.5 第 1-7 步与冻结记录(Gate 0 PASS 时)
+-$PY metrix/e1-pilot/run_pilot.py formal --inputs "$INPUTS" --work "$WORK" 2>&1 | tee "$WORK/command_output/formal.txt"
++$PY metrix/e1-pilot/run_pilot.py formal --inputs "$INPUTS" --work "$WORK" 2>&1 | tee "$WORK/command_output/formal_$(date -u +%Y%m%dT%H%M%SZ).txt"
+ ```
+ 
+ pip 不在锁定文件中;`--require-hashes --no-deps` 逐个核对所装包的哈希,pip 的版本不改变装入的内容。固定为 26.3 只是为了与 CPU 环境一致(`reports/impl_c/c2_01_env_fetch.txt`)。
+ 
+ `formal` 依次执行:设备检查(ST8)→ 代码已提交(记录写明代码 commit)与连续性检查 → 第 1 步(生成数据,四个冻结哈希,写入两个 manifest 的第 1 步字段并提交)→ 第 2 步(泄漏检查 L1–L6;预检)→ 第 3 步(N)→ 第 4 步(F 的 6 个配置,选定,阳性对照 ST3)→ 第 5 步(L、A 的搜索与选定)→ 第 6 步(F、L、A 的另两个种子;S、Y 各三个种子)→ 第 7 步(G0.8 复评,Gate 0 判定,Gate 0 记录)→ Gate 0 PASS 时提交冻结记录(选定配置、数据哈希、30 个 checkpoint 哈希)。每一步开始前执行 ST12,每一步的记录在该步结束时提交并推送;最后提交第 10 节的实验记录。最后一行 `RESULT: PASS` 表示 Gate 0 PASS 且冻结记录已推送。
+ 
+-`formal` 结束后:无论结果如何,停下,按第 5 节提交命令输出,把结果报告 Owner。Gate 0 不是 PASS 时到此为止(第 8 节:TEST 不生成、不评测)。
++`formal` 结束后:无论结果如何,停下,把结果报告 Owner。命令输出的处理分两种:
++
++- 第 1 步开始之后的结束或停止(实验记录在 `results/` 并已提交):按第 5 节提交 `env.txt`、`fetch.txt` 与这次的 `formal_<时间>.txt`。
++- 第 1 步开始之前的停止(输出中有 “the run stopped before step 1: not committed”,记录在 `<work>/experiment_record_formal_<开始时间>.json`):说明这台机器或这个检出不是 Pilot 的,不提交任何文件,连同 `<work>` 中的记录与命令输出报告 Owner。
++
++Gate 0 不是 PASS 时到此为止(第 8 节:TEST 不生成、不评测)。
+ 
+ ```bash
+ # 3.6 第 8 步:TEST 生成(Owner 批准之后)
+ git pull --ff-only
+-$PY metrix/e1-pilot/run_pilot.py test-generate --inputs "$INPUTS" --work "$WORK" 2>&1 | tee "$WORK/command_output/test_generate.txt"
++$PY metrix/e1-pilot/run_pilot.py test-generate --inputs "$INPUTS" --work "$WORK" 2>&1 | tee "$WORK/command_output/test_generate_$(date -u +%Y%m%dT%H%M%SZ).txt"
+ ```
+ 
+ `test-generate` 先核对代码已提交、`<work>` 是 formal 运行的那一个(其中有 `device_ledger.json`),再以子进程运行 `python -m metrix_e1.test_data`:生成前核对三个前提(PROTOCOL_FROZEN 与 ST12、已提交的 Gate 0 PASS 记录、已提交的冻结记录)、解释全部已裁决、检出与推送前提;然后把 `test_qa.jsonl`、`general_test.jsonl` 写到 `<work>/test/`(仓库外),对 TEST 运行 L3–L6,写入并推送 ST10 记录(`results/st10_record.json`:原始计数、两个 TEST 文件的 SHA-256、代码 commit),并打印一行 `L6 TEST count (Executor): <整数>`。任何一项 TEST 部分超限:ST10,停止,BLOCKED,写并提交实验记录,报告 Owner。
+ 
+ **3.7 data-auditor 的 L6 TEST 计数**(协议第 8 节第 8 步;ST10)。
+ 
+-1. 调用前按 metrix/CLAUDE.md 第 5 节第 6 条比对仓库中 `.claude/agents/data-auditor.md` 与已加载定义的 frontmatter;tools 行不一致即停下,报告 Owner。调用文字第一句固定为「先读仓库中的 .claude/agents/data-auditor.md，以它为你的完整定义；它与你已加载的定义冲突时，以仓库文件为准。」,并写明“执行协议第 8 节第 8 步 L6 TEST 部分,只输出计数”与 C1 裁决的防范对象原文。
++1. 调用前按 metrix/CLAUDE.md 第 5 节第 6 条比对仓库中 `.claude/agents/data-auditor.md` 与已加载定义的 frontmatter;tools 行不一致即停下,报告 Owner。调用文字第一句固定为「先读仓库中的 .claude/agents/data-auditor.md，以它为你的完整定义；它与你已加载的定义冲突时，以仓库文件为准。」,并写明“执行协议第 8 节第 8 步 L6 TEST 部分,只输出计数”、C1 裁决的防范对象原文,以及:不得用 Read、cat 等任何会显示 TEST 文件内容的方式打开 TEST 文件,脚本只打印计数、哈希与行数,不打印任何行的文字。
+ 2. data-auditor 用自写脚本,以 `<work>/data/anchor_text.jsonl` 与 `<work>/test/general_test.jsonl` 按协议第 3 节 L6 的口径计数,脚本放在 `metrix/e1-pilot/audit/`,完整 stdout 放在 `metrix/e1-pilot/audit/stdout/`(metrix/CLAUDE.md 第 9 节),并写出 `metrix/e1-pilot/audit/st10_l6_test_count.json`:
+ 
+ ```json
+@@ -108,20 +115,22 @@ $PY metrix/e1-pilot/run_pilot.py test-generate --inputs "$INPUTS" --work "$WORK"
+  "general_test_sha256": "<它计数的 general_test.jsonl 的 SHA-256>", "l6_test_count": <整数>}
+ ```
+ 
+-3. Executor 提交计数文件、audit 脚本与完整 stdout(只 `git add` 这些明确路径,提交前 `git diff --cached --stat` 只含 `metrix/e1-pilot/audit/` 下的路径)并推送;data-auditor 的原始输出、调用文字与 frontmatter 核对存入 `metrix/e1-pilot/reviews/<该提交>/`,作为下一个提交推送。两者都在第 3.8 节之前完成(begin 到 finish 之间不得推送)。这些提交的审查方式见第 5 节。
+-4. Executor 比较 `command_output/test_generate.txt` 中 `L6 TEST count (Executor)` 一行与计数文件的 `l6_test_count`。不同:ST10,BLOCKED,不运行第 3.8 节,报告 Owner(这次停止的实验记录如何写,见 C3 待决)。相同:报告 Owner,等待 TEST 评测的批准。
++3. 提交之前,Executor 逐行查看 audit 的完整 stdout、data-auditor 的原文与转录,确认不含 TEST 题目、答案或通用文本的文字;有疑问不提交,报告 Owner。然后提交计数文件、audit 脚本与完整 stdout(只 `git add` 这些明确路径,提交前 `git diff --cached --stat` 只含 `metrix/e1-pilot/audit/` 下的路径)并推送;data-auditor 的原始输出、调用文字与 frontmatter 核对存入 `metrix/e1-pilot/reviews/<该提交>/`,作为下一个提交推送。两者都在第 3.8 节之前完成(begin 到 finish 之间不得推送)。这些提交的审查方式见第 5 节。
++4. Executor 比较 `command_output/test_generate_<时间>.txt` 中 `L6 TEST count (Executor)` 一行与计数文件的 `l6_test_count`。不同:ST10,BLOCKED,不运行第 3.8 节,报告 Owner(这次停止的实验记录如何写,见 C3 待决)。相同:报告 Owner,等待 TEST 评测的批准。
+ 
+ ```bash
+ # 3.8 第 8 步:TEST 评测,只评一次(Owner 批准之后)
+ git pull --ff-only
+-$PY metrix/e1-pilot/run_pilot.py test-evaluate --inputs "$INPUTS" --work "$WORK" 2>&1 | tee "$WORK/command_output/test_evaluate.txt"
++$PY metrix/e1-pilot/run_pilot.py test-evaluate --inputs "$INPUTS" --work "$WORK" 2>&1 | tee "$WORK/command_output/test_evaluate_$(date -u +%Y%m%dT%H%M%SZ).txt"
+ ```
+ 
+ `test-evaluate` 的顺序(`pilot.test_evaluate`):代码已提交、`<work>` 是 formal 运行的那一个(连续性检查);TEST 尚未评过(只看工作区与 HEAD:已有 TEST 结果则拒绝,TestAlreadyEvaluated;已有标记而没有结果则 BLOCKED;都不写记录);再次核对生成器的前提(ST12、两个已提交记录)得到授权;设备检查(ST8);核对 15 个 checkpoint 文件与各自训练记录中的文件 SHA-256(不符则 BLOCKED,此时还没有写标记,TEST 未评);ST9 与 ST7(按整个 TEST 评测做事前判断);加载基座模型,核对其 `state_sha256` 与第 3 步记录中 N 的相同(不符则 BLOCKED,TEST 未评);`begin`(fetch,核对 ST10 记录与 data-auditor 计数,写入并推送标记 `results/test_evaluation_marker.json`,含全部 checkpoint 哈希与 N 的哈希);N 与 15 个 checkpoint 各评测一次(每个模型评测前重新计算 `state_sha256` 与标记比对);T1–T3;`finish`(fetch 核对后提交并推送 `results/test_evaluation_result.json`:聚合值与每个 fact 的分数,不含题目文字;逐题明细留在 `<work>/test_details/`,不提交);最后提交实验记录。
+ 
+ **begin 到 finish 之间任何人不得推送本分支**(本分支即 `metrix-e1-pilot-protocol-v1`;Review Gate 2026-11-27 裁决第 1 项)。评测调用只在本地核对“检出本分支且 HEAD 等于标记提交”,不 fetch;begin 与 finish 会 fetch。期间若有推送,finish 判为 BLOCKED,TEST 视为已评。期间不要提交命令输出或其它文件,也不要在本克隆中做任何 git 操作。
+ 
+-标记一旦存在,TEST 就视为已评:不得重跑 test-evaluate(第二次运行被拒绝:有标记无结果为 BLOCKED,有结果为 TestAlreadyEvaluated)。
++输出的倒数第二行 `test-evaluate completed: <状态>` 表示 TEST 已评完、结果已推送,`<状态>` 是第 9 节的最终状态;最后一行 `RESULT` 只表示该状态是否为 PASS(例如 HYPOTHESIS_FAIL 时为 `RESULT: FAIL`),不表示评测失败。`test-evaluate stopped or refused: …` 表示停止或拒绝。
++
++标记一旦存在,TEST 就视为已评:无论结果如何,不得重跑 test-evaluate(第二次运行被拒绝:有标记无结果为 BLOCKED,有结果为 TestAlreadyEvaluated)。
+ 
+ ## 4. 预检(ST11)与停止条件出现时的操作
+ 
+@@ -133,7 +142,7 @@ $PY metrix/e1-pilot/run_pilot.py test-evaluate --inputs "$INPUTS" --work "$WORK"
+ - `test-generate`:生成之前的拒绝不写记录;只在 ST10 超限时写 BLOCKED 记录并提交;成功时不写实验记录(ST10 记录即其输出;是否另写实验记录见 C2 待决第 1 项)。
+ - `test-evaluate` 在本进程写入标记之前:没有停止码的拒绝(TEST 已评或已开始、生成器的前提、连续性检查、已提交记录或文件缺失、checkpoint 文件或 N 的哈希不符、begin 中的检出与提交前提)不写记录(TEST 未评),带停止码的协议停止(ST7、ST8、ST9、ST10、ST12)写记录并提交;本进程写入标记之后的任何停止或崩溃都写记录并提交(BLOCKED)。
+ 
+-**确定性模式下的 CUDA 算子报错**(上次阶段 C 指令第 9 项):run_pilot 在 CUDA 初始化之前设置协议第 0 节的确定性(`torch.use_deterministic_algorithms(True)`、关闭 TF32、`CUBLAS_WORKSPACE_CONFIG` 取冻结值;`compute.set_determinism`),并把设置写入实验记录。某个算子在确定性模式下报错(例如 `RuntimeError: ... does not have a deterministic implementation`,或要求设置 `CUBLAS_WORKSPACE_CONFIG`):**立即停下,报告 Owner。不得关闭确定性,不得修改 `CUBLAS_WORKSPACE_CONFIG`、TF32、cuDNN 设置或环境变量,不得改代码、换算子、换库版本,不得重跑。** run_pilot 按崩溃处理:`formal` 写 NOT_TESTED 实验记录并提交(第 1 步开始之后),原样抛出;`test-evaluate` 在本进程写入标记之后为 BLOCKED 记录,TEST 视为已评,之前则不写记录。Executor 把命令输出(含回溯)与提交号报告 Owner,由 Review Gate 决定如何处理。
++**确定性模式下的 CUDA 算子报错**(上次阶段 C 指令第 9 项):run_pilot 在 CUDA 初始化之前设置协议第 0 节的确定性(`torch.use_deterministic_algorithms(True)`、关闭 TF32、`CUBLAS_WORKSPACE_CONFIG` 取冻结值;`compute.set_determinism`),并把设置写入实验记录。某个算子在确定性模式下报错(例如 `RuntimeError: ... does not have a deterministic implementation`,或要求设置 `CUBLAS_WORKSPACE_CONFIG`):**立即停下,报告 Owner。不得关闭确定性,不得修改 `CUBLAS_WORKSPACE_CONFIG`、TF32、cuDNN 设置或环境变量,不得改代码、换算子、换库版本,不得重跑。** run_pilot 按崩溃处理:`formal` 写 NOT_TESTED 实验记录并提交(第 1 步开始之后),原样抛出;`test-evaluate` 在本进程写入标记之后为 BLOCKED 记录,TEST 视为已评,之前则不写记录。Executor 把命令输出(含回溯)与提交号报告 Owner,由 Review Gate 决定如何处理。设置确定性本身失败(`compute.set_determinism` 在 `Pilot()` 中运行,可能报 “CUDA already initialised …” 或 “determinism settings did not take effect”)时,与 `Pilot()` 的 ST12 一样没有实验记录,run_pilot.py 以回溯退出;同样停下,不得改设置,连同命令输出报告 Owner。
+ 
+ **重跑与恢复**:一次 Pilot 是同一台机器、同一个 `<work>` 上的一串命令。formal 已提交步记录之后,`<work>` 中没有设备记录(`device_ledger.json`)的 formal 与 test-evaluate 被拒绝;冻结记录提交之后 formal 被拒绝;同一个 `<work>` 中已有某次训练的 checkpoint 时,该次训练拒绝再训。崩溃或停止之后是否、从哪一步重新开始,由 Owner 决定(ST9 的“从第 8 节第 3 步重新开始”同样需要 Owner 指令),Executor 不自行重跑。Executor 不重跑、不修补、不换机器,把 `<work>/command_output/` 中该命令的完整输出与提交号报告 Owner。
+ 
+@@ -163,10 +172,10 @@ $PY metrix/e1-pilot/run_pilot.py test-evaluate --inputs "$INPUTS" --work "$WORK"
+ 
+ - **由 run_pilot 自动提交并推送**(`testgate.commit_paths`:只提交该步的路径,快进推送,不推送标签,核对远端分支):两个 manifest 的第 1 步字段;`metrix/e1-pilot/results/` 下每一步的记录 `stepN_record.json`、每次训练的记录 `training_runs/<run>.json`(含训练日志、算力、checkpoint 的 `state_sha256` 与文件 SHA-256、DEV 汇总)、DEV 逐题明细 `details/`、Gate 0 记录、冻结记录、ST10 记录、TEST 标记与结果、实验记录 `experiment_record_<命令>_<开始时间>.json/.txt`。每次提交前核对:本分支的检出、HEAD 等于远端最新提交、暂存区为空、有提交者身份、`push --dry-run` 通过。
+ - **由 Executor 手工提交**:
+-  - `<work>/command_output/` 中的命令输出,复制到 `metrix/e1-pilot/results/command_output/<名称>.txt`(该路径与 `.txt` 扩展名不被仓库的 `.gitignore` 忽略;不要用 `logs/` 目录或 `.log` 扩展名,它们被忽略),只 `git add` 这些明确路径,提交前 `git diff --cached --stat` 核对。时机:`formal` 结束后、`test-generate` 之前一次;`test-generate` 之后、第 3.8 节之前一次;`test-evaluate` 结束后一次。**不在 begin 与 finish 之间提交。**
+-  - 提交 `test_generate.txt`、`test_evaluate.txt` 之前逐行查看,确认不含 TEST 题目、答案或通用文本的文字(异常回溯可能带出行内容);有疑问不提交,报告 Owner。
++  - `<work>/command_output/` 中的命令输出(第 1 步开始之前停止的 formal 除外,见第 3.5 节之后),复制到 `metrix/e1-pilot/results/command_output/<名称>.txt`(该路径与 `.txt` 扩展名不被仓库的 `.gitignore` 忽略;不要用 `logs/` 目录或 `.log` 扩展名,它们被忽略),只 `git add` 这些明确路径,提交前 `git diff --cached --stat` 核对。时机:`formal` 结束后、`test-generate` 之前一次;`test-generate` 之后、第 3.8 节之前一次;`test-evaluate` 结束后一次。**不在 begin 与 finish 之间提交。**
++  - 提交 `test_generate_<时间>.txt`、`test_evaluate_<时间>.txt`,以及第 3.7 节 data-auditor 的 stdout、原文与转录之前,逐行查看,确认不含 TEST 题目、答案或通用文本的文字(异常回溯或工具结果可能带出行内容);有疑问不提交,报告 Owner。
+   - data-auditor 的计数文件、audit 脚本与 stdout,及其原始输出(第 3.7 节)。
+-  - 这些手工提交只含输出、不含代码。它们是否按证据提交处理(不经 code-reviewer;补充裁决 1 的作用范围是阶段 C),须由 Review Gate 在租卡前裁决(C3 待决);未裁决时按 metrix/CLAUDE.md 第 5 节第 1 条,每次提交前调用 code-reviewer。
++  - 这些手工提交不含 `src/`、`tests/`、`run_pilot.py`,只含输出与 data-auditor 的审计脚本。它们是否按证据提交处理(不经 code-reviewer),须由 Review Gate 在租卡前裁决(C3 待决第 2 项;补充裁决 1 与本手册依赖的其他“作用范围:本阶段”的裁决在 A100 运行期间是否有效,一并请 Review Gate 说明)。未裁决时按 metrix/CLAUDE.md 第 5 节:每次提交前调用 code-reviewer(调用前比对 frontmatter,tools 行不一致即停;调用文字第一句固定为「先读仓库中的 .claude/agents/code-reviewer.md，以它为你的完整定义；它与你已加载的定义冲突时，以仓库文件为准。」);审查原文存入 `metrix/e1-pilot/reviews/<提交>/` 并推送;所有这些推送都不在 begin 与 finish 之间。
+ - **不提交**:模型权重、checkpoint(`<work>/checkpoints/`)、数据目录、`<work>/test/` 下的所有文件(TEST 文件与 `leakage_test_report.json`,后者的 L4 明细可能引用 TEST)、TEST 逐题明细(`<work>/test_details/`)。这些都在 `<work>` 中;`<work>` 在仓库之外。checkpoint 在 Pilot 结束之前不删(删除需 Owner 指令)。
+ - 全部结束后,Executor 写阶段报告,调用审查,按 metrix/CLAUDE.md 第 5、9 节提交。
+ 
+@@ -175,7 +184,7 @@ $PY metrix/e1-pilot/run_pilot.py test-evaluate --inputs "$INPUTS" --work "$WORK"
+ 单价按 A100 80GB **每小时 1.8 美元**(Implementation Task Order V1 第 8 节)。
+ 
+ **依据**(实际 wall-clock 的规划估计):
+-- 训练:每次 300 步(Y 也是 300 步),每步 8 条(Y 16 条)短句,每条约 16 个 token(F 语料共 1,889 token,协议第 2.6 节),一次训练的事实 token 约 3.8 万。按协议第 10 节的 6·P·T,一次训练约 6 × 1.72e9 × 3.8e4 ≈ 3.9e14 FLOPs,在 A100 上计算本身只需数秒;每步的耗时主要来自 1.72e9 个 float32 参数的 AdamW 更新、bf16 autocast 的权重转换与梯度裁剪(每步读写约 50–70 GB 显存),按 0.1–0.3 秒/步估计。A 另有每步 4 篇锚文档(约 512 token)在两个模型上的前向与 KL;它们的计算量相对于每步的参数更新很小,实际 wall-clock 按 1.5 倍计。30 次训练约 34 个“普通训练”当量 × 300 步 × 0.1–0.3 秒 ≈ 17–51 分钟。
++- 训练:每次 300 步(Y 也是 300 步),每步 8 条(Y 16 条)短句,每条约 16 个 token(F 语料共 1,889 token,协议第 2.6 节),一次训练的事实 token 约 3.8 万。按协议第 10 节的 6·P·T,一次训练约 6 × 1.72e9 × 3.8e4 ≈ 3.9e14 FLOPs,在 A100 上计算本身只需数秒;每步的耗时主要来自 1.72e9 个 float32 参数的 AdamW 更新、bf16 autocast 的权重转换与梯度裁剪(每步读写约 50–70 GB 显存),按 0.1–0.3 秒/步估计。A 另有每步 4 篇锚文档(约 512 token)在两个模型上的前向与 KL;按 FLOP 计,锚文本部分约为事实部分的 5.75 倍(即 a_factor − 1),但在每步由参数更新主导、bf16 autocast 的吞吐下,实际 wall-clock 按约 1.5 倍估计(未实测)。预检只测 F1,不含 A;A 的实际步时在第 5 步第一次 A 训练的记录中才可见,ST7 的事前判断与 ST11 都按 a_factor 放大 A(偏保守)。30 次训练约 34 个“普通训练”当量 × 300 步 × 0.1–0.3 秒 ≈ 17–51 分钟。
+ - 评测:一次 DEV 评测为 1,280 个候选序列、480 个 TRAIN 闭卷序列、320 个贪心生成(至多 16 个新 token)、100 个通用窗口(至多 256 token),float32、不用 TF32,约 0.5–1 分钟;解释 B17 计 58 个 DEV 评测单位(N、30 次训练、G0.8 的 3 次复评;TEST 的 16 个模型按 1.5 倍),约 29–58 分钟。
+ - checkpoint 开销(计数见 `pilot.evaluation_plan`):基座模型加载 32 次(N、每次训练、TEST 的 N);30 个 checkpoint 各保存一次、保存后重载一次、`state_sha256` 两次、文件 SHA-256 一次;另外的 checkpoint 重载 18 次(G0.8 的 3 次、TEST 的 15 次);TEST 的 `state_sha256` 17 次与 checkpoint 文件 SHA-256 15 次(后者在 GPU 计时开始之前)。合计 80 次加载、77 次 `state_sha256`、45 次文件 SHA-256、30 次保存,每次处理约 6.9 GB;按加载 10–20 秒、哈希与保存各 5–20 秒估计:80 × (10–20) + 152 × (5–20) 秒 ≈ 26–77 分钟,其中 GPU 计时之内约 25–72 分钟。
+ - 预检约 3–5 分钟。
+diff --git a/metrix/e1-pilot/reports/DEFERRED_MINORS.md b/metrix/e1-pilot/reports/DEFERRED_MINORS.md
+index 9823ca3..ad962a9 100644
+--- a/metrix/e1-pilot/reports/DEFERRED_MINORS.md
++++ b/metrix/e1-pilot/reports/DEFERRED_MINORS.md
+@@ -679,6 +679,23 @@ code-reviewer 结论 BLOCK(1 BLOCKER、5 MAJOR、14 MINOR)。C3 只改文档;各
+ | CJ19 | MINOR | 报告验收第 6 项 | 只列阶段 C;没有引用阶段 A、B 的审查记录;没有提 `1435a74` | C3R1-CR | 已修 |
+ | CJ20 | MINOR | 报告“最终状态” | “不阻碍 IMPLEMENTATION_READY”是 Executor 的判断 | C3R1-CR | 已修:写明请 Review Gate 确认;若裁决要求改代码,状态退回 C2 |
+ 
++### 1.37 Implementation 阶段 C:C3 提交第 2 轮审查(暂存树 `c9dfc4ac`;`reviews/<C3 提交>/code-reviewer_round2.md` 记 `C3R2-CR`)
++
++code-reviewer 结论 PASS(没有 BLOCKER、MAJOR;10 个 MINOR;第 1 轮 CJ1–CJ20 逐条“已修”)。CK2(提交前确认不含 TEST 文字的范围)涉及隔离,按 Task Order 第 9 节必须修;其余也只涉及文档,一并修正后送第 3 轮。
++
++| # | 严重度 | 位置 | 问题 | 来源 | 处理 |
++|---|---|---|---|---|---|
++| CK1 | MINOR | RUNBOOK 第 3.5 节之后、第 4 节 | “无论结果如何都提交命令输出”与“第 1 步之前的停止不写入仓库”矛盾;同名输出重跑时被覆盖 | C3R2-CR | 已修:分两种情况(第 1 步之后提交;第 1 步之前不提交任何文件,连同记录报告 Owner);formal、test-generate、test-evaluate 的输出文件名带开始时间 |
++| CK2 | MINOR | RUNBOOK 第 3.7、5 节 | 不含 TEST 文字的确认只覆盖两个命令输出,不含 data-auditor 的 stdout、原文与转录 | C3R2-CR | 已修:确认范围扩展到这些文件;3.7 的调用文字要求不以任何会显示内容的方式打开 TEST 文件,脚本只打印计数、哈希与行数 |
++| CK3 | MINOR | RUNBOOK 第 5 节 | 后备规则没有写 code-reviewer 的义务(frontmatter、第一句、原文入库、推送时机);“不含代码”不准确 | C3R2-CR | 已修 |
++| CK4 | MINOR | RUNBOOK 第 5 节;报告 C3 待决第 2 项 | 断言“补充裁决 1 的作用范围是阶段 C”,而手册依赖的其他“本阶段”裁决读法不一 | C3R2-CR | 已修:不作断言;C3 待决第 2 项请 Review Gate 一并说明这些裁决在 A100 运行期间是否有效 |
++| CK5 | MINOR | RUNBOOK 第 3.0–3.3 节 | 第 1 节的检查命令多数不在命令序列中、没有入库的输出;`<work>` 写死在家目录 | C3R2-CR | 已修:先 `df -h` 选分区再设 `WORK`、`INPUTS`;各项检查 tee 到 `env.txt`,与 `fetch.txt` 一起提交;写明代码不核对 Python 补丁版本 |
++| CK6 | MINOR | RUNBOOK 第 3.8 节 | 没有说明 `RESULT: FAIL` 在评测完成但最终状态不是 PASS 时的含义 | C3R2-CR | 已修:写明 `test-evaluate completed: <状态>` 与 `RESULT` 的含义;无论结果如何不得重跑 |
++| CK7 | MINOR | RUNBOOK 第 6 节 | “锚文本的计算量相对很小”在 FLOP 意义上不成立;预检不含 A | C3R2-CR | 已修:写明 FLOP 比约 5.75、1.5 倍是未实测的吞吐估计、预检不含 A、ST7 与 ST11 按 a_factor 偏保守 |
++| CK8 | MINOR | 报告“Owner 阶段 C 各项要求的落实” | Owner 写的是“第 1、6、7、9、10 项”,表中没有第 1 项;补充裁决 1 一行的证据写“等” | C3R2-CR | 已修:加一行上次指令第 1–5 项;范围措辞改正;补充裁决 1 一行注明只列一例 |
++| CK9 | MINOR | RUNBOOK 第 4 节 | 没有写设置确定性本身失败的情形(没有实验记录) | C3R2-CR | 已修 |
++| CK10 | MINOR | RUNBOOK 第 2 节 | “每一步开始时的 ST12”核对输入不准确(第 1 步由 generate 核对) | C3R2-CR | 已修 |
++
+ ## 2. 已在第 5–7 轮解决(核对用)
+ 
+ | 原条目 | 来源 | 处理 |
+diff --git a/metrix/e1-pilot/reports/IMPL_C_REPORT.md b/metrix/e1-pilot/reports/IMPL_C_REPORT.md
+index fd6aca1..5a64b6c 100644
+--- a/metrix/e1-pilot/reports/IMPL_C_REPORT.md
++++ b/metrix/e1-pilot/reports/IMPL_C_REPORT.md
+@@ -233,7 +233,7 @@ C1 节“待 Review Gate 决定”第 3 项(C2 的时间)由本次指令回答:C
+ 
+ ## C3:A100 操作手册与最终报告
+ 
+-- 指令:Owner 本次消息(“然后执行 C3(RUNBOOK_A100.md 与最终报告),C3 只改文档时只需 code-reviewer”);Task Order 第 8、11、13 节;Owner 下达阶段 C 的消息(`tasks/IMPL_C_OWNER_MESSAGE.md`)中的补充裁决 1–6 与上次阶段 C 指令第 6、7、9、10 项。
++- 指令:Owner 本次消息(“然后执行 C3(RUNBOOK_A100.md 与最终报告),C3 只改文档时只需 code-reviewer”);Task Order 第 8、11、13 节;Owner 下达阶段 C 的消息(`tasks/IMPL_C_OWNER_MESSAGE.md`)中的补充裁决 1–6 与“其余按上次阶段 C 指令的第 1、6、7、9、10 项执行”。
+ - 交付:`RUNBOOK_A100.md`(Task Order 第 8 节第 1–6 项:环境要求与检查命令、下载内容及其 SHA-256、从克隆到运行完毕的命令序列、预检与停止条件的操作、结果的提交、时长与费用;另含补充裁决 6 的租用条件、上次阶段 C 指令第 9 项的磁盘规划与确定性报错的处理、C1 裁决第 6 项的 GitHub 设置、2026-11-27 裁决第 1 项);本报告;`DEFERRED_MINORS.md` 1.35、1.36;原始输出 `impl_c/c3_01_final_checks.txt`(最终检查)、`c3_02_runbook_hashes.txt`(RUNBOOK 中每个哈希与 `DATA_MANIFEST.json` 或所引原始输出的对照)、`c3_hf_tree_70d244cc.txt` 与 `c3_03_hf_tree_logged.txt`(Hugging Face API 中 `Qwen/Qwen3-1.7B@70d244cc` 的文件树与 LFS 元数据;后者用 `logrun.sh` 重新获取并解析,与前者相同;没有下载权重)。录制脚本 `c3_checks.sh`、`c3_evidence.sh`。代码(`src/`、`tests/`、`run_pilot.py`)与第三个修复提交 `a0e04d1f` 相同,没有改动。
+ - RUNBOOK 中的数值:门槛、超参、种子、哈希由代码从冻结文件读取,RUNBOOK 只列下载后人工核对用的哈希:前 7 项是 `DATA_MANIFEST.json` 中的冻结值;模型的 `config.json` 与两个 safetensors 不是冻结值(冻结的是 revision),分别取自本阶段 CPU 环境下载时打印的值(`impl_c/c1_01_env_fetch.txt`、`c2_01_env_fetch.txt`)与 Hugging Face API 的元数据;对照的原始输出 `c3_02`。时长与费用按 Task Order 第 8 节第 6 项的 1.8 美元/小时,分别给出实际 GPU wall-clock(ST7 读)、预检时 ST11 读到的 B17 估算、B17 与 checkpoint 开销之和三个区间及其依据,写明以预检为准。手册不指定租用平台。
+ 
+@@ -246,24 +246,26 @@ C1 节“待 Review Gate 决定”第 3 项(C2 的时间)由本次指令回答:C
+ | 轮 | 被审暂存树 | code-reviewer | 处理 |
+ |---|---|---|---|
+ | 1 | `d27b68da` | BLOCK(1 BLOCKER、5 MAJOR、14 MINOR) | 全部处理,见 `DEFERRED_MINORS.md` 1.36 |
+-| 2 | 见 `reviews/<C3 提交>/` | 见该目录 | — |
++| 2 | `c9dfc4ac` | PASS(没有 BLOCKER、MAJOR;10 MINOR) | 全部在文档中修正(其中提交前确认不含 TEST 文字的范围涉及隔离,按 Task Order 第 9 节必须修),见 `DEFERRED_MINORS.md` 1.37 |
++| 3 | 见 `reviews/<C3 提交>/` | 见该目录 | — |
+ 
+ - 按 Owner 指令只送 code-reviewer(调用文字第一句按 metrix/CLAUDE.md 第 5 节第 6 条,含防范对象原文与 2026-11-27 裁决原文)。各轮的调用文字、调用前的 tools 行核对、审查输入、原始转录与原文在其后的证据提交的 `reviews/<C3 提交>/`;推送记录 `impl_c/c3_push_commit.txt` 在同一证据提交中。
+-- 第 1 轮的 BLOCKER:RUNBOOK 没有写上次阶段 C 指令第 9 项的“确定性模式下 CUDA 算子报错时的处理(停下报告,不得关闭确定性)”。已在 RUNBOOK 第 4 节补写;并在下文“Owner 阶段 C 各项要求的落实”中逐项核对补充裁决 1–6 与上次阶段 C 指令第 6–10 项,以免再漏。
++- 第 1 轮的 BLOCKER:RUNBOOK 没有写上次阶段 C 指令第 9 项的“确定性模式下 CUDA 算子报错时的处理(停下报告,不得关闭确定性)”。已在 RUNBOOK 第 4 节补写;并在下文“Owner 阶段 C 各项要求的落实”中逐项核对补充裁决 1–6 与上次阶段 C 指令第 1、6、7、9、10 项,以免再漏。
+ - 本报告写于各轮审查之前。按 metrix/CLAUDE.md 第 5 节,审查为 PASS 才提交本提交(BLOCK 则修复后重审;连续 3 轮未 PASS 则停止),所以本提交存在即表示 C3 的 code-reviewer 在最后一轮为 PASS;最后一轮的新 MAJOR / MINOR 若不改文档,登记写入其后的证据提交。
+ 
+ ### 待 Review Gate 决定(C3)
+ 
+ 1. **租卡前:A100 上的环境安装与下载(1.36 CJ6)。** metrix/CLAUDE.md 第 4 节写“环境、下载、冒烟测试先在 CPU 环境完成;租卡后只跑正式流程”。依赖锁定、输入文件的下载与哈希核对、冒烟都已在 CPU 环境完成;A100 主机是另一台机器,须重新安装依赖、下载输入并由代码再次核对,模型权重只能在 A100 主机下载(Task Order 红线 2)。RUNBOOK 第 3.1–3.4 节因此在租用的机器上执行(约 0.5 小时,计入租用时长)。请确认。
+-2. **租卡前:运行期间手工提交的审查方式(1.36 CJ5)。** 命令输出(`results/command_output/`)、data-auditor 的计数文件与 audit 输出、审查原文的提交只含输出、不含代码。补充裁决 1 的“证据提交”只限 `reports/`、`reviews/`、`audit/`,作用范围是阶段 C。请决定这些提交是否按证据提交处理(不经 code-reviewer);未裁决时 RUNBOOK 第 5 节按 metrix/CLAUDE.md 第 5 节第 1 条,每次提交前调用 code-reviewer。
++2. **租卡前:运行期间手工提交的审查方式(1.36 CJ5)。** 命令输出(`results/command_output/`)、data-auditor 的计数文件与 audit 输出、审查原文的提交只含输出、不含代码。补充裁决 1 的“证据提交”只限 `reports/`、`reviews/`、`audit/`,作用范围是阶段 C。请决定这些提交是否按证据提交处理(不经 code-reviewer);未裁决时 RUNBOOK 第 5 节按 metrix/CLAUDE.md 第 5 节,每次提交前调用 code-reviewer(frontmatter 比对、固定第一句、原文入 `reviews/<提交>/`,都不在 begin 与 finish 之间推送)。另请一并说明:补充裁决 1,以及 RUNBOOK 依赖的其他“作用范围:本阶段”的裁决(C1 裁决第 2、6 项,2026-11-27 裁决第 1 项),在 A100 运行期间是否仍然有效(“本阶段”指 Implementation 阶段 C 还是 metrix/CLAUDE.md 第 2 节的 E1 Pilot;1.37 CK4)。
+ 3. **两份 L6 计数不同时的实验记录(1.36 CJ11)。** RUNBOOK 第 3.7 节:Executor 比较两份计数,不同则 ST10、BLOCKED、不运行 test-evaluate、报告 Owner。这次停止没有 run_pilot 写的实验记录(协议第 10 节)。可选:由 Owner 批准运行 test-evaluate,让 begin 在写标记之前判 ST10 并写 BLOCKED 记录;或 Executor 手写一份记录。请决定。
+ 
+ ## Owner 阶段 C 各项要求的落实
+ 
+ | 要求(`tasks/IMPL_C_OWNER_MESSAGE.md`) | 落实 | 证据 |
+ |---|---|---|
+-| 补充裁决 1:证据提交只 `git add` 明确路径,只涉及 `reports/`、`reviews/`、`audit/` | 各证据提交均如此 | 各提交的 `git diff --cached --stat`;`impl_c/c1_07_stop_commit_precheck.txt` 等 |
++| 补充裁决 1:证据提交只 `git add` 明确路径,只涉及 `reports/`、`reviews/`、`audit/` | 各证据提交均如此 | 只列一例:`impl_c/c1_07_stop_commit_precheck.txt`;其余证据提交可由 `git show --stat <提交>` 核对 |
+ | 补充裁决 2:ACCEPTED 标记引用本报告“Review Gate 对阶段 B 的裁决” | C1 | 本报告该节第 1 项落实 |
++| 上次指令第 1–5 项(对阶段 B 的裁决:B1–B24 与 B3、B14;UTF-8 解码;生成器第 4 个前提;B19;推送记录) | C1;B3 的 manifest 写入在 C2 的第 1 步 | 本报告“Review Gate 对阶段 B 的裁决”一节;C2 节“交付” |
+ | 补充裁决 3:ST10 记录与闸门 | C1(`testgate`、`test_data`) | C1 节;`tests/test_testgate.py` |
+ | 补充裁决 4:TEST 只评一次(标记) | C1;C2 的 test-evaluate 为生产调用方 | C1、C2 节;`tests/test_run_pilot.py::test_test_evaluate_end_to_end_once` 等 |
+ | 补充裁决 5:用人造 TEST 行在临时仓库中测试 | C1、C2 | 同上 |

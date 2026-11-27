@@ -1,0 +1,508 @@
+diff --git a/metrix/e1-pilot/RUNBOOK_A100.md b/metrix/e1-pilot/RUNBOOK_A100.md
+index 7e2762b..5467ebe 100644
+--- a/metrix/e1-pilot/RUNBOOK_A100.md
++++ b/metrix/e1-pilot/RUNBOOK_A100.md
+@@ -1,121 +1,141 @@
+ # METRIX · E1-PILOT · A100 操作手册(RUNBOOK_A100.md)
+ 
+-依据:`tasks/IMPLEMENTATION_TASK_ORDER_V1.md` 第 8 节;协议 v1.1(冻结提交 `87a244db28a901f9e89282b50df76778ab5c2887`,`PROTOCOL_FROZEN`)第 0、7、8、10、11 节;Review Gate 对 C1 的裁决(2026-11-25,`tasks/IMPL_C1_RULING.md`)第 2、6 项;Review Gate 2026-11-27 的裁决(`reports/IMPL_C_REPORT.md`)第 1 项。
++依据:`tasks/IMPLEMENTATION_TASK_ORDER_V1.md` 第 8 节;协议 v1.1(冻结提交 `87a244db28a901f9e89282b50df76778ab5c2887`,`PROTOCOL_FROZEN`)第 0、7、8、10、11 节;Owner 下达阶段 C 的消息(`tasks/IMPL_C_OWNER_MESSAGE.md`:补充裁决 6,上次阶段 C 指令第 9 项);Review Gate 对 C1 的裁决(2026-11-25,`tasks/IMPL_C1_RULING.md`)第 2、6 项;Review Gate 2026-11-27 的裁决(`reports/IMPL_C_REPORT.md`)第 1 项。
+ 
+ 本手册只写怎样执行。门槛、超参、种子、哈希一律由代码从冻结文件读取,手册中出现的哈希只用于下载后的人工核对。手册不指定租用平台,由 Owner 选择。
+ 
+-**开始之前必须有 Owner 的指令**:租用 GPU(metrix/CLAUDE.md 第 7 节)。第 4 节的 TEST 生成与 TEST 评测各需 Owner 另行批准。
++**开始之前必须有 Owner 的指令**:租用 GPU(metrix/CLAUDE.md 第 7 节)。第 3.6 节的 TEST 生成与第 3.8 节的 TEST 评测各需 Owner 另行批准。`reports/IMPL_C_REPORT.md` C3 节“待 Review Gate 决定(C3)”中标明“租卡前”的事项,须在租卡前裁决。
++
++**与 metrix/CLAUDE.md 第 4 节的关系**(“环境、下载、冒烟测试先在 CPU 环境完成;租卡后只跑正式流程”):依赖锁定与按锁定文件安装、分词器 / 锚文本 parquet / 模型 `config.json` 的下载与哈希核对、数据生成与四个冻结哈希、CPU 冒烟测试都已在 CPU 环境完成(`reports/IMPL_A_REPORT.md`、`IMPL_C_REPORT.md`)。A100 主机是另一台机器,依赖与输入文件须在该机器上重新安装、下载并由代码再次核对;模型权重只能在 A100 主机下载(Task Order 红线 2;`run_pilot.py fetch-model` 先做设备检查 ST8)。所以第 3.1–3.4 节在租用的机器上执行,不改动任何冻结内容。这一做法请 Review Gate 确认(C3 待决,租卡前)。
+ 
+ ---
+ 
+ ## 1. 环境要求
+ 
++**只租 `nvidia-smi` 显示 CUDA ≥ 13.0(驱动 580 系列及以上)的单张 A100 80GB 机器**(Review Gate 补充裁决 6)。租用前查看平台给出的驱动版本;开机后第一条命令是下面的 `nvidia-smi` 检查,不满足即停止、退租,报告 Owner(不装驱动、不换 CUDA 构建)。
++
+ | 项 | 要求 | 检查命令 |
+ |---|---|---|
+ | GPU | 一张 NVIDIA A100 80GB:`torch.cuda.get_device_name(0)` 以 `NVIDIA A100` 开头,且 `total_memory ≥ 79 GiB`(协议第 7 节;不满足由 run_pilot.py 判为 ST8 BLOCKED) | `nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv` |
++| 驱动与 CUDA | `requirements.lock` 中的 torch 2.11.0(PyPI 的 Linux wheel)基于 CUDA 13.0(`cuda-toolkit 13.0.2`、`nvidia-*-cu13`),主机驱动须支持 CUDA 13.0:`nvidia-smi` 右上角的 “CUDA Version” ≥ 13.0(驱动 580 系列及以上;以 NVIDIA CUDA 13.0 Release Notes 的最低驱动表为准)。不另装 CUDA toolkit,由 wheel 提供(补充裁决 6:不另锁 CUDA 12.x 构建) | `nvidia-smi`;安装后 `python -c "import torch; print(torch.version.cuda, torch.cuda.is_available())"` 应为 `13.0 True` |
+ | 同一台机器 | 从第一次加载模型到 TEST 评测结束都在同一张卡上:设备全名在第一次加载模型时写入 `<work>/device_ledger.json`,此后每次训练或评测开始时比对(ST9,整批作废)。formal 与 test-evaluate 之间不要换机器;checkpoint 也只在这台机器上 | — |
+-| 驱动与 CUDA | `requirements.lock` 中的 torch 2.11.0(PyPI 的 Linux wheel)基于 CUDA 13.0(`cuda-toolkit 13.0.2`、`nvidia-*-cu13`),主机驱动须支持 CUDA 13.0:`nvidia-smi` 右上角的 “CUDA Version” ≥ 13.0(驱动 580 系列及以上;以 NVIDIA CUDA 13.0 Release Notes 的最低驱动表为准)。不另装 CUDA toolkit,由 wheel 提供(Review Gate 补充裁决 6:不另锁 CUDA 12.x 构建) | `nvidia-smi`;安装后 `python -c "import torch; print(torch.version.cuda, torch.cuda.is_available())"` 应为 `13.0 True` |
+ | 系统 | Linux x86_64,glibc ≥ 2.28(锁定文件按 manylinux_2_28 解析) | `ldd --version` |
+-| Python | CPython **3.13.18**(锁定文件第 2 行;`tests/test_environment.py` 核对) | `python3.13 --version` |
+-| 磁盘 | `<work>` 所在分区至少 **300 GB** 可用:30 个最终 checkpoint 各约 6.9 GB(float32 全部参数,约 207 GB;一个都不删,metrix/CLAUDE.md 第 7 节)+ 预检 checkpoint 6.9 GB + 模型 4.1 GB + 依赖约 6 GB | `df -h <work>` |
++| Python | CPython **3.13.18**(锁定文件第 2 行;`tests/test_environment.py` 核对)。主机须预装;没有则停下报告 Owner,不用其他版本 | `python3.13 --version` |
++| 磁盘 | `<work>` 所在分区至少 **300 GB** 可用:30 个最终 checkpoint 各约 6.9 GB(FP32 全模型,约 207 GB;一个都不删,metrix/CLAUDE.md 第 7 节)+ 预检 checkpoint 6.9 GB + 模型 4.1 GB + 依赖约 6 GB | `df -h <work>` |
+ | 内存 | 建议 ≥ 64 GB(加载模型与 checkpoint 时在 CPU 上暂存一份 float32 权重) | `free -g` |
+ | 网络 | github.com(克隆、推送)、huggingface.co(分词器、锚文本 parquet、模型)、pypi.org / files.pythonhosted.org(依赖) | — |
+ | Git | 非浅克隆;能向 `leotree2020/OpenMythos` 的 `metrix-e1-pilot-protocol-v1` 直接推送(快进)的凭据;提交者身份 `user.name`、`user.email` | `git config user.name; git config user.email` |
++| 终端 | 长命令在 `tmux`(或 `screen`)会话中运行:SSH 断开时前台进程会被 SIGHUP 结束,不会写实验记录 | `tmux -V` |
+ 
+ **GitHub 上的分支设置(C1 裁决第 6 项)**:Owner 已为 `metrix-e1-pilot-protocol-v1` 设置禁止 force push、禁止删除、允许直接推送。TEST 闸门的“只评一次”以此为前提(远端分支不丢提交)。开始前 Owner 确认该设置仍在。metrix/CLAUDE.md 第 6 节的“受保护分支”指 main;在本分支直接快进推送是既定做法。
+ 
+ ## 2. 需要下载的内容及其哈希
+ 
+-全部由命令下载。前 7 项是冻结值(`DATA_MANIFEST.json`),由代码核对,不一致即 ST12 BLOCKED;模型的 `config.json` 与两个 safetensors 不是冻结值,代码核对的是下载元数据中的 revision,表中的哈希供人工复核。
++前 6 项由第 3.4 节的命令下载;第 7 项是仓库内文件。这 7 项是冻结值(`DATA_MANIFEST.json`),由代码核对(`metrix_e1.data` 的 generate / verify 与每一步开始时的 ST12),不一致即 ST12 BLOCKED。模型的 `config.json` 与两个 safetensors 不是冻结值,代码核对的是下载元数据中的 revision(`pilot.check_model_dir`),表中的哈希供人工复核。
+ 
+ | 内容 | 位置 | SHA-256 | 核对方式 |
+ |---|---|---|---|
+-| Qwen/Qwen3-1.7B @ `70d244cc86ccca08cf5af4e1e306ecf908b1ad5e` 的 `tokenizer.json` | `<inputs>/qwen_tokenizer/` | `aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4` | `metrix_e1.data fetch`(DATA_MANIFEST.json model.tokenizer) |
++| Qwen/Qwen3-1.7B @ `70d244cc86ccca08cf5af4e1e306ecf908b1ad5e` 的 `tokenizer.json` | `<inputs>/qwen_tokenizer/` | `aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4` | `metrix_e1.data fetch` 下载并核对(DATA_MANIFEST.json model.tokenizer) |
+ | 同上 `tokenizer_config.json`(含 chat template) | 同上 | `d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101` | 同上 |
+ | 同上 `vocab.json` | 同上 | `ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910` | 同上 |
+ | 同上 `merges.txt` | 同上 | `8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5` | 同上 |
+ | parcae 分词器 `SandyResearch/parcae-tokenizer@6247b5d0592876b73660f34c2dd16c9db9e9045c` 的 `tokenizer.json` | `<inputs>/parcae_tokenizer/` | `e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77` | 同上(DATA_MANIFEST.json general_text) |
+ | 锚文本 `SandyResearch/fineweb-edu-shuffled@4d1138c0e4d51d98813997ce3560e05a32bf91de` 的 `data/sample-100BT/train/shard_00000.parquet` | `<inputs>/anchor_source/…` | `6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22` | 同上(DATA_MANIFEST.json anchor_text) |
+-| 通用文本 `research/mini_mythos/stage1/results/r1/eval_sets.jsonl` | 仓库内 | `8816fe5a39d8b89e8c4203bf7d660e798faa471d2b72b5ce43c411cf5925a155` | 同上 |
++| 通用文本 `research/mini_mythos/stage1/results/r1/eval_sets.jsonl` | 仓库内(不下载) | `8816fe5a39d8b89e8c4203bf7d660e798faa471d2b72b5ce43c411cf5925a155` | `metrix_e1.data` 的 generate / verify 与每步的 ST12 核对(DATA_MANIFEST.json general_text) |
+ | 模型 `config.json` | `<inputs>/qwen_model/` | `1ddb5b89ebc90dcb417a45c213d818577e65976454d29385c8f6140771d95197` | `metrix_e1.train fetch-config` 打印实际值;表中的值是本阶段在 CPU 环境两次下载时打印的值(`reports/impl_c/c1_01_env_fetch.txt`、`c2_01_env_fetch.txt`),不是冻结值,代码不比对;下载元数据中的 revision 由 run_pilot 核对 |
+ | 模型 `model-00001-of-00002.safetensors`(3,441,185,608 字节) | `<inputs>/qwen_model/` | `169ad53ec313c3a34b06c0809216e4fc072cce444a5d4ff2b59690d064130ed5` | `run_pilot.py fetch-model` 打印实际值;run_pilot 核对每个 safetensors 的下载元数据 revision = 冻结 revision,并把实际 SHA-256 写入实验记录 |
+ | 模型 `model-00002-of-00002.safetensors`(622,329,984 字节) | 同上 | `912becff8d60672aa8628ef08c05898d9adf17c2ad4ae3caf99b065622fdeff9` | 同上 |
+ 
+-两个 safetensors 的值取自 Hugging Face API 中该 revision 的 LFS 元数据(`reports/impl_c/c3_hf_tree_70d244cc.txt`,没有下载权重)。`config.json` 与两个 safetensors 都不是冻结值,冻结的是 revision。下载后与上表不同:停下报告 Owner,不运行。
++两个 safetensors 的值取自 Hugging Face API 中该 revision 的 LFS 元数据(`reports/impl_c/c3_hf_tree_70d244cc.txt`;录制 `c3_03_hf_tree_logged.txt`;没有下载权重)。`config.json` 与两个 safetensors 都不是冻结值,冻结的是 revision。下载后与上表不同:停下报告 Owner,不运行。表中 7 个冻结值与 `DATA_MANIFEST.json` 的核对:`reports/impl_c/c3_02_runbook_hashes.txt`。
+ 
+ ## 3. 执行命令(从克隆仓库到运行完毕)
+ 
+-以下 `<work>`、`<inputs>` 都在仓库之外(run_pilot 拒绝仓库内的 `--work`)。每条命令的完整输出用 `tee` 保存在 `<work>/logs/`,在第 5 节的时机提交。
++以下 `<work>`、`<inputs>` 都在仓库之外(run_pilot 拒绝仓库内的 `--work`)。**整个 Pilot 只用这一个克隆、这一个 `<work>`**(formal、test-generate、data-auditor 的计数、test-evaluate 都在这里)。每条命令的完整输出用 `tee` 保存在 `<work>/command_output/<名称>.txt`,在第 5 节的时机提交。长命令在 tmux 会话中运行。
+ 
+ ```bash
++# 3.0 先确认驱动(第 1 节):CUDA Version >= 13.0,一张 A100 80GB;否则停止、退租、报告 Owner
++nvidia-smi
++tmux new -s metrix            # 之后的命令都在这个 tmux 会话中运行
++
+ # 3.1 仓库(非浅克隆)与身份
+ git clone https://github.com/leotree2020/OpenMythos.git && cd OpenMythos
+ git checkout metrix-e1-pilot-protocol-v1
+ git config user.name "<Executor 账户>" && git config user.email "<Executor 邮箱>"
+ git rev-parse HEAD            # 记下;所有命令在这个检出上运行
+ 
+-# 3.2 Python 与依赖(只用 requirements.lock)
++# 3.2 Python 与依赖(只用 requirements.lock;pip 本身固定为本阶段 CPU 环境所用的 26.3)
+ python3.13 -m venv ~/metrix-venv
+-~/metrix-venv/bin/python -m pip install --upgrade pip
++~/metrix-venv/bin/python -m pip install pip==26.3
+ ~/metrix-venv/bin/python -m pip install --require-hashes --no-deps -r metrix/e1-pilot/requirements.lock
+ ~/metrix-venv/bin/python -m pip check
+ PY=~/metrix-venv/bin/python
+ export INPUTS=~/metrix-inputs WORK=~/metrix-work
+-mkdir -p "$WORK/logs"
++mkdir -p "$WORK/command_output"
+ 
+ # 3.3 设备与库(只读)
+-nvidia-smi
+ $PY -c "import torch; print(torch.__version__, torch.version.cuda, torch.cuda.is_available(), torch.cuda.get_device_name(0), torch.cuda.get_device_properties(0).total_memory / 2**30)"
+ 
+ # 3.4 下载(分词器、parquet、config、模型)
+-PYTHONPATH=metrix/e1-pilot/src $PY -m metrix_e1.data fetch --inputs "$INPUTS" 2>&1 | tee "$WORK/logs/fetch.log"
+-PYTHONPATH=metrix/e1-pilot/src $PY -m metrix_e1.train fetch-config --inputs "$INPUTS" 2>&1 | tee -a "$WORK/logs/fetch.log"
+-$PY metrix/e1-pilot/run_pilot.py fetch-model --inputs "$INPUTS" 2>&1 | tee -a "$WORK/logs/fetch.log"
++PYTHONPATH=metrix/e1-pilot/src $PY -m metrix_e1.data fetch --inputs "$INPUTS" 2>&1 | tee "$WORK/command_output/fetch.txt"
++PYTHONPATH=metrix/e1-pilot/src $PY -m metrix_e1.train fetch-config --inputs "$INPUTS" 2>&1 | tee -a "$WORK/command_output/fetch.txt"
++$PY metrix/e1-pilot/run_pilot.py fetch-model --inputs "$INPUTS" 2>&1 | tee -a "$WORK/command_output/fetch.txt"
+ 
+ # 3.5 第 1-7 步与冻结记录(Gate 0 PASS 时)
+-$PY metrix/e1-pilot/run_pilot.py formal --inputs "$INPUTS" --work "$WORK" 2>&1 | tee "$WORK/logs/formal.log"
++$PY metrix/e1-pilot/run_pilot.py formal --inputs "$INPUTS" --work "$WORK" 2>&1 | tee "$WORK/command_output/formal.txt"
+ ```
+ 
+-`formal` 依次执行:设备检查(ST8)→ 代码已提交(记录写明代码 commit)→ 第 1 步(生成数据,四个冻结哈希,写入两个 manifest 的第 1 步字段并提交)→ 第 2 步(泄漏检查 L1–L6;预检)→ 第 3 步(N)→ 第 4 步(F 的 6 个配置,选定,阳性对照 ST3)→ 第 5 步(L、A 的搜索与选定)→ 第 6 步(F、L、A 的另两个种子;S、Y 各三个种子)→ 第 7 步(G0.8 复评,Gate 0 判定,Gate 0 记录)→ Gate 0 PASS 时提交冻结记录(选定配置、数据哈希、30 个 checkpoint 哈希)。每一步开始前执行 ST12,每一步的记录在该步结束时提交并推送;最后提交第 10 节的实验记录。最后一行 `RESULT: PASS` 表示 Gate 0 PASS 且冻结记录已推送。
++pip 不在锁定文件中;`--require-hashes --no-deps` 逐个核对所装包的哈希,pip 的版本不改变装入的内容。固定为 26.3 只是为了与 CPU 环境一致(`reports/impl_c/c2_01_env_fetch.txt`)。
+ 
+-`formal` 结束后:无论结果如何,停下,把结果报告 Owner。Gate 0 不是 PASS 时到此为止(第 8 节:TEST 不生成、不评测)。
++`formal` 依次执行:设备检查(ST8)→ 代码已提交(记录写明代码 commit)与连续性检查 → 第 1 步(生成数据,四个冻结哈希,写入两个 manifest 的第 1 步字段并提交)→ 第 2 步(泄漏检查 L1–L6;预检)→ 第 3 步(N)→ 第 4 步(F 的 6 个配置,选定,阳性对照 ST3)→ 第 5 步(L、A 的搜索与选定)→ 第 6 步(F、L、A 的另两个种子;S、Y 各三个种子)→ 第 7 步(G0.8 复评,Gate 0 判定,Gate 0 记录)→ Gate 0 PASS 时提交冻结记录(选定配置、数据哈希、30 个 checkpoint 哈希)。每一步开始前执行 ST12,每一步的记录在该步结束时提交并推送;最后提交第 10 节的实验记录。最后一行 `RESULT: PASS` 表示 Gate 0 PASS 且冻结记录已推送。
++
++`formal` 结束后:无论结果如何,停下,按第 5 节提交命令输出,把结果报告 Owner。Gate 0 不是 PASS 时到此为止(第 8 节:TEST 不生成、不评测)。
+ 
+ ```bash
+ # 3.6 第 8 步:TEST 生成(Owner 批准之后)
+ git pull --ff-only
+-$PY metrix/e1-pilot/run_pilot.py test-generate --inputs "$INPUTS" --work "$WORK" 2>&1 | tee "$WORK/logs/test_generate.log"
++$PY metrix/e1-pilot/run_pilot.py test-generate --inputs "$INPUTS" --work "$WORK" 2>&1 | tee "$WORK/command_output/test_generate.txt"
+ ```
+ 
+-`test-generate` 先核对代码已提交、`<work>` 是 formal 运行的那一个(其中有 `device_ledger.json`),再以子进程运行 `python -m metrix_e1.test_data`:生成前核对三个前提(PROTOCOL_FROZEN 与 ST12、已提交的 Gate 0 PASS 记录、已提交的冻结记录)、解释全部已裁决、检出与推送前提;然后把 `test_qa.jsonl`、`general_test.jsonl` 写到 `<work>/test/`(仓库外),对 TEST 运行 L3–L6,写入并推送 ST10 记录(`results/st10_record.json`:原始计数、两个 TEST 文件的 SHA-256、代码 commit)。任何一项 TEST 部分超限:ST10,停止,BLOCKED,报告 Owner。
++`test-generate` 先核对代码已提交、`<work>` 是 formal 运行的那一个(其中有 `device_ledger.json`),再以子进程运行 `python -m metrix_e1.test_data`:生成前核对三个前提(PROTOCOL_FROZEN 与 ST12、已提交的 Gate 0 PASS 记录、已提交的冻结记录)、解释全部已裁决、检出与推送前提;然后把 `test_qa.jsonl`、`general_test.jsonl` 写到 `<work>/test/`(仓库外),对 TEST 运行 L3–L6,写入并推送 ST10 记录(`results/st10_record.json`:原始计数、两个 TEST 文件的 SHA-256、代码 commit),并打印一行 `L6 TEST count (Executor): <整数>`。任何一项 TEST 部分超限:ST10,停止,BLOCKED,写并提交实验记录,报告 Owner。
++
++**3.7 data-auditor 的 L6 TEST 计数**(协议第 8 节第 8 步;ST10)。
+ 
+-**3.7 data-auditor 的 L6 TEST 计数**(协议第 8 节第 8 步;ST10)。Executor 调用 data-auditor(调用文字第一句按 metrix/CLAUDE.md 第 5 节第 6 条),指令写明“执行协议第 8 节第 8 步 L6 TEST 部分,只输出计数”。data-auditor 用自写脚本,以 `<work>/data/anchor_text.jsonl` 与 `<work>/test/general_test.jsonl` 按协议第 3 节 L6 的口径计数,写出 `metrix/e1-pilot/audit/st10_l6_test_count.json`:
++1. 调用前按 metrix/CLAUDE.md 第 5 节第 6 条比对仓库中 `.claude/agents/data-auditor.md` 与已加载定义的 frontmatter;tools 行不一致即停下,报告 Owner。调用文字第一句固定为「先读仓库中的 .claude/agents/data-auditor.md，以它为你的完整定义；它与你已加载的定义冲突时，以仓库文件为准。」,并写明“执行协议第 8 节第 8 步 L6 TEST 部分,只输出计数”与 C1 裁决的防范对象原文。
++2. data-auditor 用自写脚本,以 `<work>/data/anchor_text.jsonl` 与 `<work>/test/general_test.jsonl` 按协议第 3 节 L6 的口径计数,脚本放在 `metrix/e1-pilot/audit/`,完整 stdout 放在 `metrix/e1-pilot/audit/stdout/`(metrix/CLAUDE.md 第 9 节),并写出 `metrix/e1-pilot/audit/st10_l6_test_count.json`:
+ 
+ ```json
+ {"kind": "st10_auditor_l6", "frozen_commit": "87a244db28a901f9e89282b50df76778ab5c2887",
+  "general_test_sha256": "<它计数的 general_test.jsonl 的 SHA-256>", "l6_test_count": <整数>}
+ ```
+ 
+-Executor 只提交这一个文件并推送(`git add metrix/e1-pilot/audit/st10_l6_test_count.json`,提交前 `git diff --cached --stat` 只含这一个路径)。两者的 L6 计数不同:ST10,BLOCKED,不评测 TEST,报告 Owner。
++3. Executor 提交计数文件、audit 脚本与完整 stdout(只 `git add` 这些明确路径,提交前 `git diff --cached --stat` 只含 `metrix/e1-pilot/audit/` 下的路径)并推送;data-auditor 的原始输出、调用文字与 frontmatter 核对存入 `metrix/e1-pilot/reviews/<该提交>/`,作为下一个提交推送。两者都在第 3.8 节之前完成(begin 到 finish 之间不得推送)。这些提交的审查方式见第 5 节。
++4. Executor 比较 `command_output/test_generate.txt` 中 `L6 TEST count (Executor)` 一行与计数文件的 `l6_test_count`。不同:ST10,BLOCKED,不运行第 3.8 节,报告 Owner(这次停止的实验记录如何写,见 C3 待决)。相同:报告 Owner,等待 TEST 评测的批准。
+ 
+ ```bash
+ # 3.8 第 8 步:TEST 评测,只评一次(Owner 批准之后)
+ git pull --ff-only
+-$PY metrix/e1-pilot/run_pilot.py test-evaluate --inputs "$INPUTS" --work "$WORK" 2>&1 | tee "$WORK/logs/test_evaluate.log"
++$PY metrix/e1-pilot/run_pilot.py test-evaluate --inputs "$INPUTS" --work "$WORK" 2>&1 | tee "$WORK/command_output/test_evaluate.txt"
+ ```
+ 
+-`test-evaluate`:先核对代码已提交、`<work>` 是 formal 运行的那一个、TEST 尚未评过(已有 TEST 结果则拒绝,TestAlreadyEvaluated;已有标记而没有结果则 BLOCKED,都不写记录);再次核对生成器的前提(ST12、两个已提交记录)得到授权;设备检查(ST8、ST9);核对 15 个 checkpoint 文件与各自训练记录中的文件 SHA-256(不符则 BLOCKED,此时还没有写标记,TEST 未评);按整个 TEST 评测做 ST7 的事前判断;加载基座模型,核对其 `state_sha256` 与第 3 步记录中 N 的相同(不符则 BLOCKED,TEST 未评);`begin`(fetch,核对 ST10 记录与 data-auditor 计数,写入并推送标记 `results/test_evaluation_marker.json`,含全部 checkpoint 哈希与 N 的哈希);N 与 15 个 checkpoint 各评测一次(每个模型评测前重新计算 `state_sha256` 与标记比对);T1–T3;`finish`(fetch 核对后提交并推送 `results/test_evaluation_result.json`:聚合值与每个 fact 的分数,不含题目文字;逐题明细留在 `<work>/test_details/`,不提交);最后提交实验记录。
++`test-evaluate` 的顺序(`pilot.test_evaluate`):代码已提交、`<work>` 是 formal 运行的那一个(连续性检查);TEST 尚未评过(只看工作区与 HEAD:已有 TEST 结果则拒绝,TestAlreadyEvaluated;已有标记而没有结果则 BLOCKED;都不写记录);再次核对生成器的前提(ST12、两个已提交记录)得到授权;设备检查(ST8);核对 15 个 checkpoint 文件与各自训练记录中的文件 SHA-256(不符则 BLOCKED,此时还没有写标记,TEST 未评);ST9 与 ST7(按整个 TEST 评测做事前判断);加载基座模型,核对其 `state_sha256` 与第 3 步记录中 N 的相同(不符则 BLOCKED,TEST 未评);`begin`(fetch,核对 ST10 记录与 data-auditor 计数,写入并推送标记 `results/test_evaluation_marker.json`,含全部 checkpoint 哈希与 N 的哈希);N 与 15 个 checkpoint 各评测一次(每个模型评测前重新计算 `state_sha256` 与标记比对);T1–T3;`finish`(fetch 核对后提交并推送 `results/test_evaluation_result.json`:聚合值与每个 fact 的分数,不含题目文字;逐题明细留在 `<work>/test_details/`,不提交);最后提交实验记录。
+ 
+-**从 begin 到 finish 之间,任何人不得向 `metrix-e1-pilot-protocol-v1` 推送**(Review Gate 2026-11-27 裁决第 1 项)。评测调用只在本地核对“检出本分支且 HEAD 等于标记提交”,不 fetch;begin 与 finish 会 fetch。期间若有推送,finish 判为 BLOCKED,TEST 视为已评。期间不要提交日志或其它文件,也不要在本克隆中做任何 git 操作。
++**begin 到 finish 之间任何人不得推送本分支**(本分支即 `metrix-e1-pilot-protocol-v1`;Review Gate 2026-11-27 裁决第 1 项)。评测调用只在本地核对“检出本分支且 HEAD 等于标记提交”,不 fetch;begin 与 finish 会 fetch。期间若有推送,finish 判为 BLOCKED,TEST 视为已评。期间不要提交命令输出或其它文件,也不要在本克隆中做任何 git 操作。
+ 
+ 标记一旦存在,TEST 就视为已评:不得重跑 test-evaluate(第二次运行被拒绝:有标记无结果为 BLOCKED,有结果为 TestAlreadyEvaluated)。
+ 
+ ## 4. 预检(ST11)与停止条件出现时的操作
+ 
+-**预检**在 `formal` 的第 2 步自动进行:第一个配置(F1,种子 101)的前 20 步(协议给定的步数),记录每步耗时、tokens/s、峰值显存;另测一次 DEV 评测、一次模型加载、一次 `state_sha256`、一次 checkpoint 保存、重载与文件哈希。ST11 读解释 B17 的估算(`b17_estimate_hours`):超过 3.5 小时即停止,BLOCKED,报告 Owner(不得删减步骤或改配置来压缩时间)。第 2 步记录另列 checkpoint 开销(`pilot.py` 模块说明的公式)与两者之和,只报告;是否让 ST11 读和,待 Review Gate 决定(`reports/IMPL_C_REPORT.md`)。预检测得的耗时还用于 ST7 的事前判断:每次训练前按“训练 + 保存、重载、哈希 + 一次 DEV 评测”,每次评测前按“加载 + 评测”,TEST 评测开始之前按整个 TEST 评测(16 个模型的加载、哈希与评测)判断累计 GPU 时间是否会超过 4 小时;会超过即 ST7,TEST 不开始。
++**预检**在 `formal` 的第 2 步自动进行:第一个配置(F1,种子 101)的前 20 步(协议给定的步数),记录每步耗时、tokens/s、峰值显存;另测一次 DEV 评测、一次模型加载、一次 `state_sha256`、一次 checkpoint 保存、重载与文件哈希。ST11 读解释 B17 的估算(`b17_estimate_hours`;A 的每步时间按 FLOP 比例 `a_factor` 放大,本数据约 6.75):超过 3.5 小时即停止,BLOCKED,报告 Owner(不得删减步骤或改配置来压缩时间)。第 2 步记录另列 checkpoint 开销(`pilot.checkpoint_overhead_seconds`)与两者之和,只报告;是否让 ST11 读和,待 Review Gate 决定(C2 待决第 2 项;第 6 节给出两者的预期区间)。预检测得的耗时还用于 ST7 的事前判断:每次训练前按“训练 + 保存、重载、哈希 + 一次 DEV 评测”,每次评测前按“加载 + 评测”,TEST 评测开始之前按整个 TEST 评测(16 个模型的加载、哈希与评测)判断累计 GPU 时间是否会超过 4 小时;会超过即 ST7,TEST 不开始。
++
++**一般规则**:除下列情形外,任何停止都由 run_pilot 写出实验记录(`results/experiment_record_<命令>_<开始时间>.json` 与 `.txt`,状态为停止条件规定的状态),最后一行 `RESULT: FAIL`。一步之中的停止先写并提交该步的记录(含该步算出的数值);停止时已写出未提交的记录随实验记录一起提交。第 1 步开始之后的停止,记录提交并推送到 `results/`。例外:
++
++- `formal` 在第 1 步开始之前停止(设备检查 ST8、代码有未提交的改动、连续性检查、第 1 步开始时的 ST12 / ST13 或提交前提不成立),说明这台机器或这个检出不是 Pilot 的:记录只写在 `<work>/experiment_record_formal_<开始时间>.json` 与 `.txt`,不写入仓库、不推送,由 Executor 连同命令输出报告 Owner。`Pilot()` 本身的 ST12(读冻结文件时)没有记录,run_pilot.py 以回溯退出。
++- `test-generate`:生成之前的拒绝不写记录;只在 ST10 超限时写 BLOCKED 记录并提交;成功时不写实验记录(ST10 记录即其输出;是否另写实验记录见 C2 待决第 1 项)。
++- `test-evaluate` 在本进程写入标记之前:没有停止码的拒绝(TEST 已评或已开始、生成器的前提、连续性检查、已提交记录或文件缺失、checkpoint 文件或 N 的哈希不符、begin 中的检出与提交前提)不写记录(TEST 未评),带停止码的协议停止(ST7、ST8、ST9、ST10、ST12)写记录并提交;本进程写入标记之后的任何停止或崩溃都写记录并提交(BLOCKED)。
+ 
+-**一般规则**:任何停止都由 run_pilot 写出实验记录(`results/experiment_record_<命令>_<开始时间>.json` 与 `.txt`,状态为停止条件规定的状态),最后一行 `RESULT: FAIL`。一步之中的停止先写并提交该步的记录(含该步算出的数值);停止时已写出未提交的记录随实验记录一起提交。第 1 步开始之后的停止,记录提交并推送到 `results/`;`formal` 在第 1 步开始之前停止(设备检查 ST8、代码有未提交的改动、第 1 步的提交前提不成立),说明这台机器或这个检出不是 Pilot 的,记录只写在 `<work>/experiment_record_formal.json`,不写入仓库、不推送,由 Executor 连同日志报告 Owner;`test-generate` 因 ST10 停止时写并提交记录;`test-evaluate` 在本进程写入标记之前:没有停止码的拒绝(TEST 已评或已开始、生成器的前提、连续性检查、已提交记录或文件缺失、checkpoint 文件或 N 的哈希不符、begin 中的检出与提交前提)不写记录(TEST 未评),带停止码的协议停止(ST7、ST8、ST9、ST10、ST12)写记录并提交;本进程写入标记之后的任何停止或崩溃都写记录并提交(BLOCKED)。
++**确定性模式下的 CUDA 算子报错**(上次阶段 C 指令第 9 项):run_pilot 在 CUDA 初始化之前设置协议第 0 节的确定性(`torch.use_deterministic_algorithms(True)`、关闭 TF32、`CUBLAS_WORKSPACE_CONFIG` 取冻结值;`compute.set_determinism`),并把设置写入实验记录。某个算子在确定性模式下报错(例如 `RuntimeError: ... does not have a deterministic implementation`,或要求设置 `CUBLAS_WORKSPACE_CONFIG`):**立即停下,报告 Owner。不得关闭确定性,不得修改 `CUBLAS_WORKSPACE_CONFIG`、TF32、cuDNN 设置或环境变量,不得改代码、换算子、换库版本,不得重跑。** run_pilot 按崩溃处理:`formal` 写 NOT_TESTED 实验记录并提交(第 1 步开始之后),原样抛出;`test-evaluate` 在本进程写入标记之后为 BLOCKED 记录,TEST 视为已评,之前则不写记录。Executor 把命令输出(含回溯)与提交号报告 Owner,由 Review Gate 决定如何处理。
+ 
+-**重跑与恢复**:一次 Pilot 是同一台机器、同一个 `<work>` 上的一串命令。formal 已提交步记录之后,`<work>` 中没有设备记录(`device_ledger.json`)的 formal 与 test-evaluate 被拒绝;冻结记录提交之后 formal 被拒绝;同一个 `<work>` 中已有某次训练的 checkpoint 时,该次训练拒绝再训。崩溃或停止之后是否、从哪一步重新开始,由 Owner 决定(ST9 的“从第 8 节第 3 步重新开始”同样需要 Owner 指令),Executor 不自行重跑。Executor 不重跑、不修补、不换机器,把 `<work>/logs/` 中该命令的完整输出与提交号报告 Owner。
++**重跑与恢复**:一次 Pilot 是同一台机器、同一个 `<work>` 上的一串命令。formal 已提交步记录之后,`<work>` 中没有设备记录(`device_ledger.json`)的 formal 与 test-evaluate 被拒绝;冻结记录提交之后 formal 被拒绝;同一个 `<work>` 中已有某次训练的 checkpoint 时,该次训练拒绝再训。崩溃或停止之后是否、从哪一步重新开始,由 Owner 决定(ST9 的“从第 8 节第 3 步重新开始”同样需要 Owner 指令),Executor 不自行重跑。Executor 不重跑、不修补、不换机器,把 `<work>/command_output/` 中该命令的完整输出与提交号报告 Owner。
+ 
+ | 停止 | 何时出现 | 动作(协议第 11 节)与操作 |
+ |---|---|---|
+@@ -124,8 +144,8 @@ $PY metrix/e1-pilot/run_pilot.py test-evaluate --inputs "$INPUTS" --work "$WORK"
+ | ST3 | 第 4 步 F 选定配置(种子 101)的阳性对照未过 | 停;不跑 L、A、S、Y。报告 Owner |
+ | ST4 / ST5 | 第 7 步 Y 不满足 G0.7 / S 不满足 G0.6 | Gate 0 记录照常提交;停;不生成 TEST。报告 Owner |
+ | ST6 | 任一次训练或评测出现非有限值 | 搜索中的非选定配置:该配置从选择中剔除,运行继续(记入第 6 步记录 `excluded`);选定配置或对照:IMPLEMENTATION_FAIL,停。报告 Owner |
+-| ST7 | 累计 GPU wall-clock 超过 4 小时,或下一次训练会超过 | 停并报告进度;延长上限、换硬件或降级由 Owner 决定。GPU 时间记在 `<work>/gpu_clock.json`(跨进程累计;进程异常退出时,下一个进程把未关闭的一段计到当时为止) |
+-| ST8 | 设备或库版本不满足第 0 节 | BLOCKED,run_pilot 在第 1 步之前就停下。检查第 1 节各项 |
++| ST7 | 累计 GPU wall-clock 超过 4 小时,或下一次训练 / 评测会超过 | 停并报告进度;延长上限、换硬件或降级由 Owner 决定。GPU 时间记在 `<work>/gpu_clock.json`(跨进程累计;进程异常退出时,下一个进程把未关闭的一段计到当时为止) |
++| ST8 | 设备或库版本不满足第 0 节 | BLOCKED,`formal` 在第 1 步之前就停下。检查第 1 节各项 |
+ | ST9 | 某次运行开始时设备全名与首次记录不同 | 整批作废,BLOCKED。由 Owner 决定:在设备全名一致的机器上从第 8 节第 3 步重新开始 |
+ | ST10 | TEST 部分超限,或两份 L6 计数不同 | 停止;不评测 TEST;BLOCKED;报告 Owner |
+ | ST11 | 预检预估 > 3.5 小时 | 停止;BLOCKED;报告 Owner |
+@@ -136,30 +156,36 @@ $PY metrix/e1-pilot/run_pilot.py test-evaluate --inputs "$INPUTS" --work "$WORK"
+ 
+ - `test-generate` 生成 TEST 之后推送 ST10 记录被拒:TEST 视为已生成,禁止重跑,BLOCKED,报告 Owner;由 Owner 决定是否批准把 ST10 记录这一个文件手工提交。
+ - `test-generate` 在写出 TEST 文件之后、写入 ST10 记录之前崩溃:同样按 BLOCKED 报告 Owner,不得换 `--out` 或换机器再次生成。
+-- `test-evaluate` 在本进程写出标记之后的任何失败(推送失败、崩溃、Ctrl-C、某个模型的哈希与标记不符、finish 被拒):TEST 视为已评,实验记录 BLOCKED 并提交,报告 Owner。begin 之前带停止码的协议停止(ST7、ST8、ST9、ST10、ST12)也写记录;是否如此,与 formal 第 1 步之前只写 `<work>` 的做法一起待 Review Gate 决定。
++- `test-evaluate` 在本进程写出标记之后的任何失败(推送失败、崩溃、Ctrl-C、某个模型的哈希与标记不符、finish 被拒):TEST 视为已评,实验记录 BLOCKED 并提交,报告 Owner。SSH 断开导致进程被结束时不会写记录,所以第 3.8 节必须在 tmux 中运行。
+ - 推送被拒时 run_pilot 不会自动重做;本地留下的提交(ST10 记录、标记、结果)只在 Owner 决定后推送。
+ 
+ ## 5. 结果与记录如何提交回仓库
+ 
+-- **由 run_pilot 自动提交并推送**(`testgate.commit_paths`:只提交该步的路径,快进推送,不推送标签,核对远端分支):两个 manifest 的第 1 步字段;`metrix/e1-pilot/results/` 下每一步的记录 `stepN_record.json`、每次训练的记录 `training_runs/<run>.json`(含训练日志、算力、checkpoint 的 `state_sha256` 与文件 SHA-256、DEV 汇总)、DEV 逐题明细 `details/`、Gate 0 记录、冻结记录、ST10 记录、TEST 标记与结果、实验记录 `experiment_record_<command>.json/.txt`。每次提交前核对:本分支的检出、HEAD 等于远端最新提交、暂存区为空、有提交者身份、`push --dry-run` 通过。
+-- **由 Executor 手工提交**:`<work>/logs/` 中的命令输出(`git add` 明确路径,复制到 `metrix/e1-pilot/results/logs/`;在 `formal` 结束后、`test-generate` 之前提交一次,在 `test-evaluate` 结束后提交一次,**不在 begin 与 finish 之间**);data-auditor 的计数文件(3.7)。
+-- **不提交**:模型权重、checkpoint(`<work>/checkpoints/`)、数据目录、TEST 文件(`<work>/test/`)与 TEST 逐题明细(`<work>/test_details/`)。这些都在 `<work>` 中;`<work>` 在仓库之外。checkpoint 在 Pilot 结束之前不删(删除需 Owner 指令)。
++- **由 run_pilot 自动提交并推送**(`testgate.commit_paths`:只提交该步的路径,快进推送,不推送标签,核对远端分支):两个 manifest 的第 1 步字段;`metrix/e1-pilot/results/` 下每一步的记录 `stepN_record.json`、每次训练的记录 `training_runs/<run>.json`(含训练日志、算力、checkpoint 的 `state_sha256` 与文件 SHA-256、DEV 汇总)、DEV 逐题明细 `details/`、Gate 0 记录、冻结记录、ST10 记录、TEST 标记与结果、实验记录 `experiment_record_<命令>_<开始时间>.json/.txt`。每次提交前核对:本分支的检出、HEAD 等于远端最新提交、暂存区为空、有提交者身份、`push --dry-run` 通过。
++- **由 Executor 手工提交**:
++  - `<work>/command_output/` 中的命令输出,复制到 `metrix/e1-pilot/results/command_output/<名称>.txt`(该路径与 `.txt` 扩展名不被仓库的 `.gitignore` 忽略;不要用 `logs/` 目录或 `.log` 扩展名,它们被忽略),只 `git add` 这些明确路径,提交前 `git diff --cached --stat` 核对。时机:`formal` 结束后、`test-generate` 之前一次;`test-generate` 之后、第 3.8 节之前一次;`test-evaluate` 结束后一次。**不在 begin 与 finish 之间提交。**
++  - 提交 `test_generate.txt`、`test_evaluate.txt` 之前逐行查看,确认不含 TEST 题目、答案或通用文本的文字(异常回溯可能带出行内容);有疑问不提交,报告 Owner。
++  - data-auditor 的计数文件、audit 脚本与 stdout,及其原始输出(第 3.7 节)。
++  - 这些手工提交只含输出、不含代码。它们是否按证据提交处理(不经 code-reviewer;补充裁决 1 的作用范围是阶段 C),须由 Review Gate 在租卡前裁决(C3 待决);未裁决时按 metrix/CLAUDE.md 第 5 节第 1 条,每次提交前调用 code-reviewer。
++- **不提交**:模型权重、checkpoint(`<work>/checkpoints/`)、数据目录、`<work>/test/` 下的所有文件(TEST 文件与 `leakage_test_report.json`,后者的 L4 明细可能引用 TEST)、TEST 逐题明细(`<work>/test_details/`)。这些都在 `<work>` 中;`<work>` 在仓库之外。checkpoint 在 Pilot 结束之前不删(删除需 Owner 指令)。
+ - 全部结束后,Executor 写阶段报告,调用审查,按 metrix/CLAUDE.md 第 5、9 节提交。
+ 
+ ## 6. 预计时长与费用(规划估计,正式数值以预检为准)
+ 
+ 单价按 A100 80GB **每小时 1.8 美元**(Implementation Task Order V1 第 8 节)。
+ 
+-**依据**:
+-- 训练:每次 300 步(Y 也是 300 步),每步 8 条(Y 16 条)短句,每条约 16 个 token(F 语料共 1,889 token,协议第 2.6 节),一次训练的事实 token 约 3.8 万。按协议第 10 节的 6·P·T,一次训练约 6 × 1.72e9 × 3.8e4 ≈ 3.9e14 FLOPs,在 A100 上计算本身只需数秒;每步的耗时主要来自 1.72e9 个 float32 参数的 AdamW 更新、bf16 autocast 的权重转换与梯度裁剪(每步读写约 50–70 GB 显存),按 0.1–0.3 秒/步估计,一次训练约 0.5–1.5 分钟;A 另有每步 4 篇锚文档在两个模型上的前向与 KL,按 1.5 倍计。30 次训练约 20–50 分钟。
+-- 评测:一次 DEV 评测为 1,280 个候选序列、480 个 TRAIN 闭卷序列、320 个贪心生成(至多 16 个新 token)、100 个通用窗口(至多 256 token),float32、不用 TF32,约 0.5–1 分钟;解释 B17 计 58 个 DEV 评测单位(N、30 次训练、G0.8 的 3 次复评;TEST 的 16 个模型按 1.5 倍),约 30–60 分钟。
+-- checkpoint 开销(计数见 `pilot.evaluation_plan`):基座模型加载 32 次(N、每次训练、TEST 的 N);30 个 checkpoint 各保存一次、保存后重载一次、`state_sha256` 两次、文件 SHA-256 一次;另外的 checkpoint 重载 18 次(G0.8 的 3 次、TEST 的 15 次);TEST 的 `state_sha256` 17 次与 checkpoint 文件 SHA-256 15 次(后者在 GPU 计时开始之前)。合计约 80 次加载、77 次 `state_sha256`、45 次文件 SHA-256、30 次保存,每次处理约 6.9 GB,按加载 10–20 秒、哈希与保存各 5–20 秒估计,约 25–50 分钟。
++**依据**(实际 wall-clock 的规划估计):
++- 训练:每次 300 步(Y 也是 300 步),每步 8 条(Y 16 条)短句,每条约 16 个 token(F 语料共 1,889 token,协议第 2.6 节),一次训练的事实 token 约 3.8 万。按协议第 10 节的 6·P·T,一次训练约 6 × 1.72e9 × 3.8e4 ≈ 3.9e14 FLOPs,在 A100 上计算本身只需数秒;每步的耗时主要来自 1.72e9 个 float32 参数的 AdamW 更新、bf16 autocast 的权重转换与梯度裁剪(每步读写约 50–70 GB 显存),按 0.1–0.3 秒/步估计。A 另有每步 4 篇锚文档(约 512 token)在两个模型上的前向与 KL;它们的计算量相对于每步的参数更新很小,实际 wall-clock 按 1.5 倍计。30 次训练约 34 个“普通训练”当量 × 300 步 × 0.1–0.3 秒 ≈ 17–51 分钟。
++- 评测:一次 DEV 评测为 1,280 个候选序列、480 个 TRAIN 闭卷序列、320 个贪心生成(至多 16 个新 token)、100 个通用窗口(至多 256 token),float32、不用 TF32,约 0.5–1 分钟;解释 B17 计 58 个 DEV 评测单位(N、30 次训练、G0.8 的 3 次复评;TEST 的 16 个模型按 1.5 倍),约 29–58 分钟。
++- checkpoint 开销(计数见 `pilot.evaluation_plan`):基座模型加载 32 次(N、每次训练、TEST 的 N);30 个 checkpoint 各保存一次、保存后重载一次、`state_sha256` 两次、文件 SHA-256 一次;另外的 checkpoint 重载 18 次(G0.8 的 3 次、TEST 的 15 次);TEST 的 `state_sha256` 17 次与 checkpoint 文件 SHA-256 15 次(后者在 GPU 计时开始之前)。合计 80 次加载、77 次 `state_sha256`、45 次文件 SHA-256、30 次保存,每次处理约 6.9 GB;按加载 10–20 秒、哈希与保存各 5–20 秒估计:80 × (10–20) + 152 × (5–20) 秒 ≈ 26–77 分钟,其中 GPU 计时之内约 25–72 分钟。
+ - 预检约 3–5 分钟。
+ 
+ | 项 | 估计 |
+ |---|---|
+-| 协议意义上的累计 GPU wall-clock(第一次加载模型到 TEST 评测结束) | 约 1.3–2.8 小时(ST7 上限 4 小时;ST11 在预估超过 3.5 小时时停止) |
+-| 租用时长(另加环境安装与下载约 0.5 小时、等待 Owner 两次批准与 data-auditor 计数的时间) | 约 2–4.5 小时 |
+-| 费用(1.8 美元/小时) | GPU wall-clock 部分约 2.3–5.0 美元;按租用时长约 3.6–8.1 美元;等待批准期间机器不能退租(checkpoint 与设备全名都在这台机器上),等待时间按小时计费 |
++| 协议意义上的累计 GPU wall-clock(第一次加载模型到 TEST 评测结束;ST7 读这个量) | 17–51 + 29–58 + 25–72 + 3–5 分钟 ≈ **1.2–3.1 小时**(ST7 上限 4 小时) |
++| 预检时 ST11 读到的 B17 估算 | B17 = 每步时间 × 300 × (22 + 8 × a_factor) + DEV 评测时间 × 58 + 已用 GPU 时间;a_factor ≈ 6.75(本数据的锚文本与事实 token 数,冒烟记录 `c2d_smoke_records/step2_record.json`),即 76 个“普通训练”当量。按上面的单项区间:0.63–1.90 + 0.48–0.97 + 0.05–0.08 小时 ≈ **1.2–3.0 小时**(ST11 上限 3.5 小时)。它按 FLOP 比例放大 A,高于上一行中训练部分的实际估计 |
++| B17 + checkpoint 开销(只报告;C2 待决第 2 项) | checkpoint 开销按代码公式 0.43–1.29 小时,两者之和 ≈ **1.6–4.2 小时**。若 Review Gate 决定 ST11 读这个和,在单项区间的上端会触发 ST11 |
++| 租用时长(另加环境安装与下载约 0.5 小时、等待 Owner 两次批准与 data-auditor 计数的时间) | 约 2–5 小时 |
++| 费用(1.8 美元/小时) | GPU wall-clock 部分约 2.2–5.6 美元;按租用时长约 3.6–9.0 美元;等待批准期间机器不能退租(checkpoint 与设备全名都在这台机器上),等待时间按小时计费 |
+ 
+-预检之后若预估超出上表区间,以预检为准;超过 3.5 小时即 ST11。
++预检之后,以第 2 步记录中的实测值为准:ST11 读 `b17_estimate_hours`(与第二行比较);`b17_plus_checkpoint_overhead_hours_report_only` 与第三行比较;实际 GPU wall-clock 记在 `<work>/gpu_clock.json`(与第一行比较)。B17 超过 3.5 小时即 ST11。
+diff --git a/metrix/e1-pilot/reports/DEFERRED_MINORS.md b/metrix/e1-pilot/reports/DEFERRED_MINORS.md
+index 8e01afc..9823ca3 100644
+--- a/metrix/e1-pilot/reports/DEFERRED_MINORS.md
++++ b/metrix/e1-pilot/reports/DEFERRED_MINORS.md
+@@ -642,16 +642,43 @@ code-reviewer 结论 PASS(没有 BLOCKER、没有 MAJOR;8 个 MINOR);data-audito
+ |---|---|---|---|---|---|
+ | CI1 | MINOR | `refuse_if_test_evaluated`;`test_test_evaluate_begin_wiring[crash_after_begin]` | “有标记无结果”一支没有测试能单独测出(删去后,再运行走到 begin 的 `refuse_if_marker`,结果同样是不写记录的 BLOCKED);也没有对应变异。同类:e2e 的 ST7 注入只覆盖有结果的情形;`device_check` 在夹具中被替换 | IC10-CR | 登记。防范对象之外(begin 中的完整检查仍拒绝,不会评两次);data-auditor 的驱动 `ic10_04f` 观察到运行 B 在 `refuse_if_test_evaluated` 处拒绝、之前只有 1 条 git 命令。下次改代码时:crash_after_begin 再运行前把 before_run 换成抛 ST7 的函数,并加变异 |
+ | CI2 | MINOR | `begun_by_this_process` | 第三个条件(标记现在存在)没有变异,只有 `refused_inside_begin` 能测出 | IC10-CR | 登记;下次录制时加变异 |
+-| CI3 | MINOR | `test_evaluate` 的说明文字 | 没有随新顺序更新(仍先写生成器前提;没有提到已评检查与标志重置) | IC10-CR | 登记;`RUNBOOK_A100.md` 第 3.8 节按代码的实际顺序写 |
++| CI3 | MINOR | `test_evaluate` 的说明文字 | 没有随新顺序更新(仍先写生成器前提;没有提到已评检查与标志重置) | IC10-CR | 登记;`RUNBOOK_A100.md` 第 3.8 节按代码的实际顺序写(C3 第 2 轮起;第 1 轮的写法把 ST9 放错了位置,见 1.36 CJ9) |
+ | CI4 | MINOR | `pilot.py` 模块说明的 CHECKPOINT_OVERHEAD 公式 | 没有随 CH12 更新(仍写 loads x load,缺 further reloads x reload);一处断行残留 | IC10-CR | 登记;代码(`checkpoint_overhead_seconds`)正确,data-auditor 三方相等(`ic10_04e`、`ic10_06`);`RUNBOOK_A100.md` 第 6 节按 `evaluation_plan` 写 |
+ | CI5 | MINOR | 第 3 步的事前估计 | CH5 加上的 hash_s 没有测试或变异;“预检之前”的处理与 `eval_seconds` 重复 | IC10-CR | 登记 |
+-| CI6 | MINOR | `refuse_if_test_evaluated` 与 `testgate.refuse_if_marker` | 判定分写在两处,参照点不同(HEAD 对 fetch 后的 tip);检出落后于远端时,begin 之前带停止码的停止写记录,但 `final_record` 的提交前提因 HEAD ≠ tip 失败,记录只留在工作区 | IC10-CR;IC10-DA 观察 1 | 登记。防范对象之外;与 2026-11-27 裁决第 1 项一致;RUNBOOK 第 3.8 节要求先 `git pull --ff-only` 并只用一个克隆 |
++| CI6 | MINOR | `refuse_if_test_evaluated` 与 `testgate.refuse_if_marker` | 判定分写在两处,参照点不同(HEAD 对 fetch 后的 tip);检出落后于远端时,begin 之前带停止码的停止写记录,但 `final_record` 的提交前提因 HEAD ≠ tip 失败,记录只留在工作区 | IC10-CR;IC10-DA 观察 1 | 登记。防范对象之外;与 2026-11-27 裁决第 1 项一致;RUNBOOK 第 3.8 节要求先 `git pull --ff-only`,第 3 节开头要求整个 Pilot 只用一个克隆(C3 第 2 轮起,1.36 CJ9) |
+ | CI7 | MINOR | `c2d_01`、`c2d_02` 首行;`c2d_checks.sh` 第 9 行 | 父提交写成 “2665ab17”,应为 `2665ab10` | IC10-CR | 不改录制;在 `IMPL_C_REPORT.md` C2 节“本节执行中出现的问题”第 5 项更正 |
+ | CI8 | MINOR | `IMPL_C_REPORT.md` | C2 节与 2026-11-27 裁决尚未写入(CH11);新增的一类不写记录的拒绝(TEST 已开始或已评之后再运行)是否算协议第 10 节的“一次运行” | IC10-CR | C3 提交写入 C2 节与裁决;这一路径与 CH6 并入 C2 节“待 Review Gate 决定”第 1 项 |
+ | CI9 | MINOR | `checkpoint_overhead_seconds`(只报告) | 没有计入第 3 步对 N 的 1 次 `state_sha256`,与第 3 步的事前估计口径不一致 | IC10-DA IC10-M1 | 登记。不影响 ST11(读 B17);RUNBOOK 第 6 节的规划估计按 `evaluation_plan` 的计数写 |
+ | CI10 | 观察 | `final_record` | 也会 fetch(`check_commit_preconditions`),在评测结束或停止之后 | IC10-DA 观察 2 | 与裁决第 1 项的意图不冲突;不处理 |
+ | CI11 | 观察 | `c2d_02` | 首尾没有记录两个脚本的 sha256(说明写“同样记录”不完全准确) | IC10-DA 观察 3 | 两个脚本的 sha256 在 `c2d_01` 首尾有记录;`c2d_02` 运行的命令只用 `run_pilot.py`;不处理 |
+ 
++### 1.36 Implementation 阶段 C:C3 提交第 1 轮审查(暂存树 `d27b68da`;`reviews/<C3 提交>/code-reviewer_round1.md` 记 `C3R1-CR`)
++
++code-reviewer 结论 BLOCK(1 BLOCKER、5 MAJOR、14 MINOR)。C3 只改文档;各项都在文档或证据中处理(没有改代码),理由与位置如下。第 2 轮核对这些处理。
++
++| # | 严重度 | 位置 | 问题 | 来源 | 处理 |
++|---|---|---|---|---|---|
++| CJ1 | BLOCKER | RUNBOOK 第 4 节;报告验收 | 没有写上次阶段 C 指令第 9 项的“确定性模式下 CUDA 算子报错时的处理(停下报告,不得关闭确定性)”;验收没有逐项核对 Owner 的阶段 C 要求 | C3R1-CR | 已修:RUNBOOK 第 4 节新增一段(立即停下;不得关闭确定性、改 `CUBLAS_WORKSPACE_CONFIG` / TF32 / cuDNN、改代码、换算子或库、重跑;run_pilot 按崩溃处理;报告 Owner);报告新增“Owner 阶段 C 各项要求的落实”一节(补充裁决 1–6、上次指令第 6–10 项) |
++| CJ2 | MAJOR | RUNBOOK 第 5 节 | 日志复制到 `results/logs/*.log`,被 `.gitignore`(`logs`、`*.log`)忽略 | C3R1-CR | 已修:命令输出 tee 到 `<work>/command_output/<名称>.txt`,复制到 `results/command_output/<名称>.txt`(`git check-ignore` 的原始输出在 `impl_c/c3_02_runbook_hashes.txt` 末尾);写明不用 `logs/` 与 `.log` |
++| CJ3 | MAJOR | RUNBOOK 第 6 节;报告验收第 8 项 | checkpoint 开销区间的上界与其依据不符(应约 77 分钟) | C3R1-CR | 已修:按依据重算为 26–77 分钟(GPU 计时之内 25–72 分钟);GPU wall-clock 1.2–3.1 小时,费用 2.2–5.6 美元(租用 3.6–9.0 美元) |
++| CJ4 | MAJOR | RUNBOOK 第 4、6 节 | ST11 读的 B17 按 FLOP 比例放大 A(a_factor ≈ 6.75),与手册的 1.5 倍口径不同;没有给出 ST11 的预期与“读和”时的风险 | C3R1-CR | 已修:第 6 节另列预检时 B17 的预期(约 1.2–3.0 小时)与 B17 + checkpoint 开销(约 1.6–4.2 小时,上端会触发 ST11),写明与实际 wall-clock 的区别;第 4 节写明 a_factor;报告“最终状态”写明这一风险 |
++| CJ5 | MAJOR | RUNBOOK 第 3.7、5 节 | data-auditor 调用的义务(frontmatter 比对、审查原文的存放、audit 脚本与 stdout 入库及时机)没有写;运行期间手工提交是否需 code-reviewer 没有写 | C3R1-CR | 已修第 3.7 节(四步:比对与第一句、脚本与 stdout 的位置、提交与 `reviews/<提交>/`、都在 3.8 之前);手工提交的审查方式列为 C3 待决第 2 项(租卡前),未裁决时按第 5 节第 1 条调用 code-reviewer |
++| CJ6 | MAJOR | RUNBOOK 第 3.1–3.4 节 | 在租用的 A100 上安装与下载,与 metrix/CLAUDE.md 第 4 节的关系没有说明,也没有请 Review Gate 确认 | C3R1-CR | 已修:RUNBOOK 开头写明 CPU 环境已完成的部分与 A100 上仍须重做的理由;列为 C3 待决第 1 项(租卡前) |
++| CJ7 | MINOR | RUNBOOK 开头 | “第 4 节的 TEST 生成与 TEST 评测”应为第 3.6、3.8 节 | C3R1-CR | 已修 |
++| CJ8 | MINOR | RUNBOOK 第 2 节 | `eval_sets.jsonl` 在仓库内、不由 `data fetch` 核对 | C3R1-CR | 已修:该行写“仓库内(不下载)”,核对方式为 generate / verify 与每步的 ST12 |
++| CJ9 | MINOR | RUNBOOK 第 3.8 节;1.35 CI3、CI6 | ST9 写在设备检查处,实际在核对 checkpoint 文件之后的 before_run 中;CI3、CI6 的处理说明与 RUNBOOK 不符 | C3R1-CR | 已修:顺序改为 ST8 → checkpoint 文件 → ST9 与 ST7 → N 的哈希 → begin;第 3 节开头写明整个 Pilot 只用一个克隆;CI3、CI6 的处理说明已更正 |
++| CJ10 | MINOR | RUNBOOK 第 4、5 节 | 实验记录文件名漏了开始时间;“任何停止都写记录”与随后的例外矛盾;第 1 步之前停止的列举不全 | C3R1-CR | 已修:文件名 `experiment_record_<命令>_<开始时间>`;一般规则改为“除下列情形外”,例外逐条列出(含连续性检查、第 1 步开始时的 ST12 / ST13、`Pilot()` 的 ST12) |
++| CJ11 | MINOR | RUNBOOK 第 3.7 节;报告待决 | 两份 L6 计数由谁、何时比较,不同时怎样写记录;test-generate 成功时不写实验记录,待决第 1 项没有列出 | C3R1-CR | 已修第 3.7 节第 4 步(比较 `L6 TEST count (Executor)` 一行与计数文件;不同则不运行 3.8);记录的写法列为 C3 待决第 3 项;test-generate 一项并入 C2 待决第 1 项 |
++| CJ12 | MINOR | RUNBOOK 第 3.8 节;报告裁决节 | 没有照录裁决原句,报告却说“写明这句话” | C3R1-CR | 已修:RUNBOOK 照录原句并注明本分支名;报告措辞随之更正 |
++| CJ13 | MINOR | RUNBOOK 第 1、3.2 节 | 升级 pip 不在锁定文件中;没有 CPython 3.13.18 时怎么办 | C3R1-CR | 已修:pip 固定为 CPU 环境所用的 26.3 并写明理由(`--require-hashes --no-deps` 逐个核对所装包;`c2_01_env_fetch.txt`);Python 须预装,没有则停下报告 Owner |
++| CJ14 | MINOR | RUNBOOK 第 3 节 | 长命令没有要求在 tmux / screen 中运行(SIGHUP 不写记录) | C3R1-CR | 已修:第 1 节表与第 3.0 节;第 4 节 TEST 特殊情况再次提醒 |
++| CJ15 | MINOR | RUNBOOK 第 1 节 | 补充裁决 6 的“只租”“租用前检查”没有明文 | C3R1-CR | 已修:第 1 节开头与第 3.0 节 |
++| CJ16 | MINOR | RUNBOOK 第 5 节 | 提交 TEST 相关命令输出前没有要求确认不含 TEST 文字;`<work>/test/leakage_test_report.json` 没有提到 | C3R1-CR | 已修:提交前逐行查看;`<work>/test/` 下所有文件(含该报告)不提交 |
++| CJ17 | MINOR | 报告 C3 节 | `c3_01` 不是送审树上的录制(写树 `65b95aca`,录制期间改了文档) | C3R1-CR | 已修:C3 节“最终检查”写明录制时的写树、之后只改文档、代码相同的依据 |
++| CJ18 | MINOR | 报告 C3 节;`c3_hf_tree` | “逐个 grep 核对”没有原始输出;`c3_hf_tree` 不是 logrun 录制 | C3R1-CR | 已补:`impl_c/c3_evidence.sh` 录制 `c3_02_runbook_hashes.txt`(每个哈希对照 `DATA_MANIFEST.json` 或所引原始输出)与 `c3_03_hf_tree_logged.txt`(重新获取并解析 HF API 文件树,与 `c3_hf_tree` 相同);原文件保留 |
++| CJ19 | MINOR | 报告验收第 6 项 | 只列阶段 C;没有引用阶段 A、B 的审查记录;没有提 `1435a74` | C3R1-CR | 已修 |
++| CJ20 | MINOR | 报告“最终状态” | “不阻碍 IMPLEMENTATION_READY”是 Executor 的判断 | C3R1-CR | 已修:写明请 Review Gate 确认;若裁决要求改代码,状态退回 C2 |
++
+ ## 2. 已在第 5–7 轮解决(核对用)
+ 
+ | 原条目 | 来源 | 处理 |
+diff --git a/metrix/e1-pilot/reports/IMPL_C_REPORT.md b/metrix/e1-pilot/reports/IMPL_C_REPORT.md
+index ebf6a3d..fd6aca1 100644
+--- a/metrix/e1-pilot/reports/IMPL_C_REPORT.md
++++ b/metrix/e1-pilot/reports/IMPL_C_REPORT.md
+@@ -63,7 +63,7 @@ Owner 在下达 C2、C3 时转达,原文连同首段入库为 `tasks/IMPL_C2_OWN
+ 
+ 1. 「TEST 评测调用不 fetch、只在 begin 与 finish 时 fetch：接受。RUNBOOK 写明「begin 到 finish 之间任何人不得推送本分支」。」
+ 
+-   落实:C1 节“待 Review Gate 决定”第 1 项(1.30 CD1、1.31 CE1)由此结案;`testgate` 不改。`RUNBOOK_A100.md` 第 3.8 节写明这句话,并写明期间不得提交日志或在本克隆中做任何 git 操作;第 5 节写明日志在 begin 与 finish 之间不提交。`pilot.py` 模块说明引用本项。
++   落实:C1 节“待 Review Gate 决定”第 1 项(1.30 CD1、1.31 CE1)由此结案;`testgate` 不改。`RUNBOOK_A100.md` 第 3.8 节照录这句话(其后注明本分支即 `metrix-e1-pilot-protocol-v1`),并写明期间不得提交命令输出或在本克隆中做任何 git 操作;第 5 节写明命令输出在 begin 与 finish 之间不提交。`pilot.py` 模块说明引用本项。
+ 2. 「f8139f9 属于证据提交，不需补审。」
+ 
+    落实:C1 节“待 Review Gate 决定”第 2 项结案;`f8139f9` 不补审。
+@@ -190,7 +190,7 @@ C1 节“待 Review Gate 决定”第 3 项(C2 的时间)由本次指令回答:C
+ 
+ ### 待 Review Gate 决定(C2)
+ 
+-1. **第 10 节“每次运行(含被停止的)提交一份”的范围(1.32 CF1、CF30;1.33 CG5)。** 现行做法:formal 在第 1 步开始之前停止(设备检查 ST8、代码未提交、连续性检查、第 1 步开始时的 ST12/ST13)时,实验记录只写到 `<work>`,不写入仓库、不推送;`Pilot()` 本身的 ST12 没有记录。理由是 c2_02 的事故:开发容器上的检出同样能通过远端与分支检查,误在别的机器上运行 formal 会把一份 BLOCKED 记录推送到本分支。test-evaluate 在本进程写入标记之前、没有停止码的拒绝不写记录(TEST 未评),其中包括第三个修复提交新增的一类:TEST 已开始或已评之后再运行,在任何带停止码的检查之前拒绝(1.34 CH1;1.35 CI8);带停止码的协议停止(ST7、ST8、ST9、ST10、ST12)写记录并推送,其中 ST8 与 formal 第 1 步之前只写 `<work>` 的做法不一致(1.34 CH6)。协议第 10 节“每次运行(含被停止的)提交一份”是否涵盖这些不写记录的拒绝,请确认,或指示区分“非 Pilot 机器”与“Pilot 机器上的第 1 步之前停止”。
++1. **第 10 节“每次运行(含被停止的)提交一份”的范围(1.32 CF1、CF30;1.33 CG5)。** 现行做法:formal 在第 1 步开始之前停止(设备检查 ST8、代码未提交、连续性检查、第 1 步开始时的 ST12/ST13)时,实验记录只写到 `<work>`,不写入仓库、不推送;`Pilot()` 本身的 ST12 没有记录。理由是 c2_02 的事故:开发容器上的检出同样能通过远端与分支检查,误在别的机器上运行 formal 会把一份 BLOCKED 记录推送到本分支。test-evaluate 在本进程写入标记之前、没有停止码的拒绝不写记录(TEST 未评),其中包括第三个修复提交新增的一类:TEST 已开始或已评之后再运行,在任何带停止码的检查之前拒绝(1.34 CH1;1.35 CI8);带停止码的协议停止(ST7、ST8、ST9、ST10、ST12)写记录并推送,其中 ST8 与 formal 第 1 步之前只写 `<work>` 的做法不一致(1.34 CH6)。test-generate 成功时不写实验记录(ST10 记录即其输出),只在 ST10 超限时写(1.36 CJ11)。协议第 10 节“每次运行(含被停止的)提交一份”是否涵盖这些不写记录的拒绝,请确认,或指示区分“非 Pilot 机器”与“Pilot 机器上的第 1 步之前停止”。
+ 2. **ST11 与 ST7 的估计量(1.32 CF10;1.33 CG2)。** ST11 读 B17 的估算(原样);checkpoint 开销(模型加载、`state_sha256`、保存、重载、文件哈希)与两者之和只报告,另用于 ST7 的事前判断(每次训练、每次评测之前;TEST 开始之前按整个 TEST 评测)。是否让 ST11 读两者之和,TEST 的事前估计是否加余量,请决定。
+ 3. **G0.2 与 ST6 剔除的配置(1.32 CF7)。** 读法:第 7 节“出现非有限损失或分数的配置剔除”,剔除的配置不算“用到”,G0.2 不因它不满足;剔除的运行保存停止时的状态并记录其哈希,冻结记录有 30 个哈希。请确认。
+ 4. **预检中的非有限值(1.32 CF6;1.33 CG21)。** 没有预估就不能判 ST11;现按 ST6 的“选定配置或对照”处理为 IMPLEMENTATION_FAIL。请确认或指定状态。
+@@ -233,32 +233,62 @@ C1 节“待 Review Gate 决定”第 3 项(C2 的时间)由本次指令回答:C
+ 
+ ## C3:A100 操作手册与最终报告
+ 
+-- 指令:Owner 本次消息(“然后执行 C3(RUNBOOK_A100.md 与最终报告),C3 只改文档时只需 code-reviewer”);Task Order 第 8、11、13 节。
+-- 交付:`RUNBOOK_A100.md`(Task Order 第 8 节第 1–6 项:环境要求与检查命令、下载内容及其 SHA-256、从克隆到运行完毕的命令序列、预检与停止条件的操作、结果的提交、时长与费用);`reports/impl_c/c3_hf_tree_70d244cc.txt`(Hugging Face API 中 `Qwen/Qwen3-1.7B@70d244cc` 的文件树与 LFS 元数据的原始输出,RUNBOOK 表中两个 safetensors 的 SHA-256 与字节数的出处;没有下载权重);`impl_c/c3_01_final_checks.txt`(C3 提交被审暂存树上的最终检查);本报告。代码(`src/`、`tests/`、`run_pilot.py`)与第三个修复提交相同,没有改动。
+-- RUNBOOK 中的数值:门槛、超参、种子、哈希由代码从冻结文件读取,RUNBOOK 只列下载后人工核对用的哈希:前 7 项与 `DATA_MANIFEST.json` 中的冻结值相同(Executor 逐个 grep 核对);模型的 `config.json` 与两个 safetensors 不是冻结值(冻结的是 revision),分别取自本阶段 CPU 环境下载时打印的值(`impl_c/c1_01_env_fetch.txt`、`c2_01_env_fetch.txt`)与 Hugging Face API 的元数据。时长与费用按 Task Order 第 8 节第 6 项的 1.8 美元/小时,给出依据与区间,写明以预检为准。手册不指定租用平台。
+-- 审查:按指令只送 code-reviewer(C3 只改文档与报告)。结果见下文“提交与审查(C3)”。
++- 指令:Owner 本次消息(“然后执行 C3(RUNBOOK_A100.md 与最终报告),C3 只改文档时只需 code-reviewer”);Task Order 第 8、11、13 节;Owner 下达阶段 C 的消息(`tasks/IMPL_C_OWNER_MESSAGE.md`)中的补充裁决 1–6 与上次阶段 C 指令第 6、7、9、10 项。
++- 交付:`RUNBOOK_A100.md`(Task Order 第 8 节第 1–6 项:环境要求与检查命令、下载内容及其 SHA-256、从克隆到运行完毕的命令序列、预检与停止条件的操作、结果的提交、时长与费用;另含补充裁决 6 的租用条件、上次阶段 C 指令第 9 项的磁盘规划与确定性报错的处理、C1 裁决第 6 项的 GitHub 设置、2026-11-27 裁决第 1 项);本报告;`DEFERRED_MINORS.md` 1.35、1.36;原始输出 `impl_c/c3_01_final_checks.txt`(最终检查)、`c3_02_runbook_hashes.txt`(RUNBOOK 中每个哈希与 `DATA_MANIFEST.json` 或所引原始输出的对照)、`c3_hf_tree_70d244cc.txt` 与 `c3_03_hf_tree_logged.txt`(Hugging Face API 中 `Qwen/Qwen3-1.7B@70d244cc` 的文件树与 LFS 元数据;后者用 `logrun.sh` 重新获取并解析,与前者相同;没有下载权重)。录制脚本 `c3_checks.sh`、`c3_evidence.sh`。代码(`src/`、`tests/`、`run_pilot.py`)与第三个修复提交 `a0e04d1f` 相同,没有改动。
++- RUNBOOK 中的数值:门槛、超参、种子、哈希由代码从冻结文件读取,RUNBOOK 只列下载后人工核对用的哈希:前 7 项是 `DATA_MANIFEST.json` 中的冻结值;模型的 `config.json` 与两个 safetensors 不是冻结值(冻结的是 revision),分别取自本阶段 CPU 环境下载时打印的值(`impl_c/c1_01_env_fetch.txt`、`c2_01_env_fetch.txt`)与 Hugging Face API 的元数据;对照的原始输出 `c3_02`。时长与费用按 Task Order 第 8 节第 6 项的 1.8 美元/小时,分别给出实际 GPU wall-clock(ST7 读)、预检时 ST11 读到的 B17 估算、B17 与 checkpoint 开销之和三个区间及其依据,写明以预检为准。手册不指定租用平台。
++
++### 最终检查(`impl_c/c3_01_final_checks.txt`)
++
++在第 1 轮送审之前录制。录制开始时的暂存树为 `65b95aca`;录制期间 Executor 在工作区修改了 RUNBOOK 第 2 节与本报告(末尾 `git status` 的 `AM` / `MM`),录制之后暂存了它们与 `c3_01` 本身;第 2 轮之前又只修改了文档与证据(见下)。代码部分不变:首尾都有 `INDEX_EQUALS_a0e04d1f…_FOR_SRC_TESTS_RUN_PILOT`,各轮送审树中 `src/`、`tests/`、`run_pilot.py` 的 blob 与 `a0e04d1f` 的树相同(审查输入 `tree.txt`)。内容:数据重新生成并 verify(四个冻结哈希 PASS)、TEST 生成器拒绝(`--out` 未创建)、`outside_metrix_check.py` PASS、全部 pytest `324 passed`。
+ 
+ ### 提交与审查(C3)
+ 
+-- C3 提交(本报告所在的提交,父提交 `cc18466f`)只改文档与证据:`RUNBOOK_A100.md`、本报告、`DEFERRED_MINORS.md` 1.35、`impl_c/c3_checks.sh`、`impl_c/c3_01_final_checks.txt`、`impl_c/c3_hf_tree_70d244cc.txt`。代码与第三个修复提交 `a0e04d1f` 相同(`c3_01` 首尾的 `INDEX_EQUALS_a0e04d1f…` 行)。
+-- 按 Owner 指令只送 code-reviewer(第 1 轮;调用文字第一句按 metrix/CLAUDE.md 第 5 节第 6 条,含防范对象原文与 2026-11-27 裁决原文)。审查原文、调用文字、调用前的 tools 行核对、审查输入与原始转录在其后的证据提交的 `reviews/<C3 提交>/`;推送记录 `impl_c/c3_push_commit.txt` 在同一证据提交中。
+-- 本报告写于审查之前。按 metrix/CLAUDE.md 第 5 节,审查为 PASS 才提交本提交(BLOCK 则修复后重审),所以本提交存在即表示 C3 的 code-reviewer 为 PASS;审查提出的 MAJOR / MINOR 若需修改文档,修改后重审,登记项写入其后的证据提交。
++| 轮 | 被审暂存树 | code-reviewer | 处理 |
++|---|---|---|---|
++| 1 | `d27b68da` | BLOCK(1 BLOCKER、5 MAJOR、14 MINOR) | 全部处理,见 `DEFERRED_MINORS.md` 1.36 |
++| 2 | 见 `reviews/<C3 提交>/` | 见该目录 | — |
++
++- 按 Owner 指令只送 code-reviewer(调用文字第一句按 metrix/CLAUDE.md 第 5 节第 6 条,含防范对象原文与 2026-11-27 裁决原文)。各轮的调用文字、调用前的 tools 行核对、审查输入、原始转录与原文在其后的证据提交的 `reviews/<C3 提交>/`;推送记录 `impl_c/c3_push_commit.txt` 在同一证据提交中。
++- 第 1 轮的 BLOCKER:RUNBOOK 没有写上次阶段 C 指令第 9 项的“确定性模式下 CUDA 算子报错时的处理(停下报告,不得关闭确定性)”。已在 RUNBOOK 第 4 节补写;并在下文“Owner 阶段 C 各项要求的落实”中逐项核对补充裁决 1–6 与上次阶段 C 指令第 6–10 项,以免再漏。
++- 本报告写于各轮审查之前。按 metrix/CLAUDE.md 第 5 节,审查为 PASS 才提交本提交(BLOCK 则修复后重审;连续 3 轮未 PASS 则停止),所以本提交存在即表示 C3 的 code-reviewer 在最后一轮为 PASS;最后一轮的新 MAJOR / MINOR 若不改文档,登记写入其后的证据提交。
++
++### 待 Review Gate 决定(C3)
++
++1. **租卡前:A100 上的环境安装与下载(1.36 CJ6)。** metrix/CLAUDE.md 第 4 节写“环境、下载、冒烟测试先在 CPU 环境完成;租卡后只跑正式流程”。依赖锁定、输入文件的下载与哈希核对、冒烟都已在 CPU 环境完成;A100 主机是另一台机器,须重新安装依赖、下载输入并由代码再次核对,模型权重只能在 A100 主机下载(Task Order 红线 2)。RUNBOOK 第 3.1–3.4 节因此在租用的机器上执行(约 0.5 小时,计入租用时长)。请确认。
++2. **租卡前:运行期间手工提交的审查方式(1.36 CJ5)。** 命令输出(`results/command_output/`)、data-auditor 的计数文件与 audit 输出、审查原文的提交只含输出、不含代码。补充裁决 1 的“证据提交”只限 `reports/`、`reviews/`、`audit/`,作用范围是阶段 C。请决定这些提交是否按证据提交处理(不经 code-reviewer);未裁决时 RUNBOOK 第 5 节按 metrix/CLAUDE.md 第 5 节第 1 条,每次提交前调用 code-reviewer。
++3. **两份 L6 计数不同时的实验记录(1.36 CJ11)。** RUNBOOK 第 3.7 节:Executor 比较两份计数,不同则 ST10、BLOCKED、不运行 test-evaluate、报告 Owner。这次停止没有 run_pilot 写的实验记录(协议第 10 节)。可选:由 Owner 批准运行 test-evaluate,让 begin 在写标记之前判 ST10 并写 BLOCKED 记录;或 Executor 手写一份记录。请决定。
++
++## Owner 阶段 C 各项要求的落实
++
++| 要求(`tasks/IMPL_C_OWNER_MESSAGE.md`) | 落实 | 证据 |
++|---|---|---|
++| 补充裁决 1:证据提交只 `git add` 明确路径,只涉及 `reports/`、`reviews/`、`audit/` | 各证据提交均如此 | 各提交的 `git diff --cached --stat`;`impl_c/c1_07_stop_commit_precheck.txt` 等 |
++| 补充裁决 2:ACCEPTED 标记引用本报告“Review Gate 对阶段 B 的裁决” | C1 | 本报告该节第 1 项落实 |
++| 补充裁决 3:ST10 记录与闸门 | C1(`testgate`、`test_data`) | C1 节;`tests/test_testgate.py` |
++| 补充裁决 4:TEST 只评一次(标记) | C1;C2 的 test-evaluate 为生产调用方 | C1、C2 节;`tests/test_run_pilot.py::test_test_evaluate_end_to_end_once` 等 |
++| 补充裁决 5:用人造 TEST 行在临时仓库中测试 | C1、C2 | 同上 |
++| 补充裁决 6:只租 CUDA ≥ 13.0(驱动 ≥ 580)的机器,写明租用前的检查命令 | RUNBOOK 第 1 节开头与第 3.0 节 | `RUNBOOK_A100.md` |
++| 上次指令第 6 项:BE2、BE9、BE10、BE12、BE13 | C1 | C1 节 |
++| 上次指令第 7 项:TEST 评测的两个硬性前提及测试;调用方加入后 data-auditor 复审 TEST 路径 | C1;C2 中 data-auditor 复审(`audit/ic7_*`–`ic10_*` 的 e2e 驱动) | C1、C2 节 |
++| 上次指令第 8 项:已由补充裁决 6 取代 | — | — |
++| 上次指令第 9 项:RUNBOOK 写明磁盘规划(约 6.9 GB/个)与确定性报错的处理 | RUNBOOK 第 1 节“磁盘”、第 4 节“确定性模式下的 CUDA 算子报错” | `RUNBOOK_A100.md` |
++| 上次指令第 10 项:冒烟小模型由 config.json 构造时写明其 SHA-256 | `1ddb5b89…`,写在冒烟记录 `smoke_report.json` 的 `small_model.config_json_sha256` 与本报告 C2 节 | `impl_c/c2d_smoke_records/smoke_report.json` |
+ 
+ ## 阶段 C 验收(Task Order 第 11 节)
+ 
+ | # | 验收项 | 结果 | 证据(原始输出) |
+ |---|---|---|---|
+-| 1 | 单元测试全部通过,原始输出入库 | 满足 | 第三个修复提交的被审暂存树:`impl_c/c2d_01_checks.txt`(`324 passed`);C3 提交的被审暂存树(代码相同):`impl_c/c3_01_final_checks.txt`(`324 passed`;首尾 `INDEX_EQUALS_a0e04d1f…`) |
+-| 2 | 四个冻结哈希由正式代码重新生成,完全一致;data-auditor 独立复算一致 | 满足(data-auditor 的结论仅作参考,metrix/CLAUDE.md 第 10 节) | `c2d_01`、`c3_01`:`metrix_e1.data generate` 与 `verify`;冒烟第 1 步(`c2d_02`);data-auditor:`audit/stdout/impl_c/ic10_*`(以及 `ic7_*`–`ic9_*`) |
+-| 3 | `run_pilot.py --smoke` 从第 1 步跑到第 7 步无中断,30 次训练全部完成,冒烟报告完整 | 满足(入口为子命令 `run_pilot.py smoke --steps 3`,待 Review Gate 决定第 7 项) | `impl_c/c2d_02_smoke.txt`:第 1–8 步各一行 “done”,30 行训练(每行 “unchanged after reload”),冒烟报告(每步耗时、峰值内存、文件数,G0.1–G0.10 的冒烟值,`trainings completed: 30`),work 目录文件清单与标签;记录副本 `impl_c/c2d_smoke_records/` |
++| 1 | 单元测试全部通过,原始输出入库 | 满足 | 第三个修复提交的被审暂存树:`impl_c/c2d_01_checks.txt`(`324 passed`);C3 的暂存树(代码相同):`impl_c/c3_01_final_checks.txt`(`324 passed`;首尾 `INDEX_EQUALS_a0e04d1f…`) |
++| 2 | 四个冻结哈希由正式代码重新生成,完全一致;data-auditor 独立复算一致 | 满足(data-auditor 的结论仅作参考,metrix/CLAUDE.md 第 10 节) | `c2d_01`、`c3_01`:`metrix_e1.data generate` 与 `verify`;冒烟第 1 步(`c2d_02`);data-auditor:`audit/stdout/impl_c/ic10_01_hashes.txt`(以及 `ic7_*`–`ic9_*`) |
++| 3 | `run_pilot.py --smoke` 从第 1 步跑到第 7 步无中断,30 次训练全部完成,冒烟报告完整 | 满足(入口为子命令 `run_pilot.py smoke --steps 3`,C2 待决第 7 项) | `impl_c/c2d_02_smoke.txt`:第 1–8 步各一行 “done”,30 行训练(每行 “unchanged after reload”),冒烟报告(每步耗时、峰值内存、文件数,G0.1–G0.10 的冒烟值,`trainings completed: 30`),work 目录文件清单与标签;记录副本 `impl_c/c2d_smoke_records/` |
+ | 4 | TEST 生成器在当前状态下拒绝运行;全程没有任何 TEST 内容产生 | 满足 | `c2d_01`、`c3_01`:`metrix_e1.test_data` 退出码 1、`RESULT: FAIL`、`--out` 未创建;冒烟第 8 步以子进程运行生成器,拒绝,work 下没有 TEST 文件(`c2d_02`);测试中的 TEST 行都是测试自写的人造行,在临时仓库中 |
+ | 5 | 正式模式下无法使用冒烟的缩减参数(有测试证明) | 满足 | `tests/test_run_pilot.py::test_formal_commands_have_no_step_option`、`test_only_smoke_builds_a_shortened_mode`;变异 “formal takes a step count” 等被测出(`c2d_01` 变异段) |
+-| 6 | 每个工作提交的 code-reviewer 为 PASS 且无 BLOCKER | 满足 | 阶段 C 的代码提交 `ae60e0f7`、`b48fe842`(C1),`5219ff77`、`49fc9a35`、`dd65a361`、`a0e04d1f`(C2),C3 提交(只改文档):code-reviewer 均 PASS、无 BLOCKER(`reviews/<提交>/code-reviewer_round1.md`)。C1 第一次送审的 3 轮未 PASS 没有提交代码(停止提交 `5f5cd51e`) |
+-| 7 | `outside_metrix_check.py` 通过 | 满足 | `c2d_01`、`c3_01`:`reports/round3/outside_metrix_check.py` 输出 PASS |
+-| 8 | `RUNBOOK_A100.md` 完整,含时长与费用估算 | 满足(C3 提交在 code-reviewer PASS 之后才提交,见 C3 节) | `RUNBOOK_A100.md` 第 1–6 节对应 Task Order 第 8 节第 1–6 项;第 6 节:GPU wall-clock 约 1.3–2.8 小时,费用约 2.3–5.0 美元(按租用时长约 3.6–8.1 美元) |
++| 6 | 每个工作提交的 code-reviewer 为 PASS 且无 BLOCKER | 满足 | 阶段 A:工作提交 `602a39e8`、修复提交 `219c4a60`(`reports/IMPL_A_REPORT.md`;`reviews/602a39e8…/code-reviewer_round1.md`、`_round2.md`,`reviews/219c4a60…/code-reviewer.md`)。阶段 B:`74a4d444`、`fdbb9def`、`493d7f9c`(`reports/IMPL_B_REPORT.md`;`reviews/74a4d444…/code-reviewer_round1.md`、`_round2.md`,`reviews/fdbb9def…/`、`reviews/493d7f9c…/code-reviewer.md`)。阶段 C:`ae60e0f7`、`b48fe842`(C1),`5219ff77`、`49fc9a35`、`dd65a361`、`a0e04d1f`(C2),各 `reviews/<提交>/code-reviewer_round1.md`;C3 提交(只改文档,最后一轮 PASS 才提交,见 C3 节)。另:第一次阶段 C 尝试中误入代码的 `1435a74` 已向前撤回并由补充裁决 1 追认(本报告开头);C1 第一次送审的 3 轮未 PASS 没有提交代码(停止提交 `5f5cd51e`) |
++| 7 | `outside_metrix_check.py` 通过 | 满足 | `c2d_01`、`c3_01`:`reports/round3/outside_metrix_check.py` 输出 `RESULT: PASS` |
++| 8 | `RUNBOOK_A100.md` 完整,含时长与费用估算 | 满足(C3 提交在 code-reviewer PASS 之后才提交) | `RUNBOOK_A100.md` 第 1–6 节对应 Task Order 第 8 节第 1–6 项;第 6 节:实际 GPU wall-clock 约 1.2–3.1 小时,GPU 部分费用约 2.2–5.6 美元(按租用时长约 3.6–9.0 美元);另列预检时 ST11 读到的 B17 估算约 1.2–3.0 小时 |
+ 
+ ## 最终状态
+ 
+ **IMPLEMENTATION_READY**(Task Order 第 13 节)。之后由 Owner 决定是否租用 A100 并执行正式运行;正式运行另发运行指令。
+ 
+-租卡之前请 Review Gate 决定的事项(不阻碍 IMPLEMENTATION_READY,但影响正式运行时的操作):C2 节“待 Review Gate 决定”第 1–7 项;其中第 1 项(第 1 步之前停止的记录写到哪里)、第 2 项(ST11 是否读含 checkpoint 开销的和、TEST 的事前估计是否加余量)、第 6 项(重跑与恢复)直接影响 RUNBOOK 第 4 节的操作。
++尚待 Review Gate 决定的事项:C2 节“待 Review Gate 决定”第 1–7 项与 C3 节第 1–3 项。其中 C3 第 1、2 项须在租卡前裁决(RUNBOOK 开头);C2 第 1 项(不写记录的停止与拒绝)、第 2 项(ST11 是否读含 checkpoint 开销的和:按 RUNBOOK 第 6 节的区间,上端会触发 ST11;TEST 的事前估计是否加余量)、第 6 项(重跑与恢复)直接影响 RUNBOOK 第 4 节的操作。Executor 认为这些事项不阻碍 IMPLEMENTATION_READY,请 Review Gate 确认;若某项裁决要求修改代码,状态退回 C2,修改后重新送审与验收。
+diff --git a/metrix/e1-pilot/reports/impl_c/c3_02_runbook_hashes.txt b/metrix/e1-pilot/reports/impl_c/c3_02_runbook_hashes.txt
+new file mode 100644
+index 0000000..4ef5560
+--- /dev/null
++++ b/metrix/e1-pilot/reports/impl_c/c3_02_runbook_hashes.txt
+@@ -0,0 +1,54 @@
++# Stage C, C3: the hashes of RUNBOOK_A100.md section 2 against DATA_MANIFEST.json and the cited raw outputs. Executor, host vm (Anthropic cloud container). Fri Nov 27 11:17:07 UTC 2026
++# stdout+stderr merged, unedited. Commands recorded by reports/round5/logrun.sh.
++$ git rev-parse HEAD
++cc18466f8d327f37c6f6dd272b8e264d239ee386
++exit=0
++$ bash -c grep\ -c\ aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4\ metrix/e1-pilot/RUNBOOK_A100.md\;\ grep\ -n\ aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4\ metrix/e1-pilot/DATA_MANIFEST.json
++1
++20:        "tokenizer.json": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4",
++exit=0
++$ bash -c grep\ -c\ d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101\ metrix/e1-pilot/RUNBOOK_A100.md\;\ grep\ -n\ d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101\ metrix/e1-pilot/DATA_MANIFEST.json
++1
++21:        "tokenizer_config.json": "d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101",
++exit=0
++$ bash -c grep\ -c\ ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910\ metrix/e1-pilot/RUNBOOK_A100.md\;\ grep\ -n\ ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910\ metrix/e1-pilot/DATA_MANIFEST.json
++1
++22:        "vocab.json": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910",
++exit=0
++$ bash -c grep\ -c\ 8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5\ metrix/e1-pilot/RUNBOOK_A100.md\;\ grep\ -n\ 8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5\ metrix/e1-pilot/DATA_MANIFEST.json
++1
++23:        "merges.txt": "8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5"
++exit=0
++$ bash -c grep\ -c\ e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77\ metrix/e1-pilot/RUNBOOK_A100.md\;\ grep\ -n\ e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77\ metrix/e1-pilot/DATA_MANIFEST.json
++1
++230:    "decode_tokenizer_json_sha256": "e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77",
++exit=0
++$ bash -c grep\ -c\ 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22\ metrix/e1-pilot/RUNBOOK_A100.md\;\ grep\ -n\ 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22\ metrix/e1-pilot/DATA_MANIFEST.json
++1
++237:    "source": "SandyResearch/fineweb-edu-shuffled@4d1138c0e4d51d98813997ce3560e05a32bf91de, data/sample-100BT/train/shard_00000.parquet (sha256 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22)",
++exit=0
++$ bash -c grep\ -c\ 8816fe5a39d8b89e8c4203bf7d660e798faa471d2b72b5ce43c411cf5925a155\ metrix/e1-pilot/RUNBOOK_A100.md\;\ grep\ -n\ 8816fe5a39d8b89e8c4203bf7d660e798faa471d2b72b5ce43c411cf5925a155\ metrix/e1-pilot/DATA_MANIFEST.json
++1
++228:    "source_file_sha256": "8816fe5a39d8b89e8c4203bf7d660e798faa471d2b72b5ce43c411cf5925a155",
++exit=0
++$ bash -c grep\ -c\ 1ddb5b89ebc90dcb417a45c213d818577e65976454d29385c8f6140771d95197\ metrix/e1-pilot/RUNBOOK_A100.md\;\ grep\ -n\ 1ddb5b89ebc90dcb417a45c213d818577e65976454d29385c8f6140771d95197\ metrix/e1-pilot/reports/impl_c/c1_01_env_fetch.txt\ metrix/e1-pilot/reports/impl_c/c2_01_env_fetch.txt\ metrix/e1-pilot/DATA_MANIFEST.json
++1
++metrix/e1-pilot/reports/impl_c/c1_01_env_fetch.txt:27:config.json of Qwen/Qwen3-1.7B@70d244cc86ccca08cf5af4e1e306ecf908b1ad5e: /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/inputs/qwen_model/config.json sha256 1ddb5b89ebc90dcb417a45c213d818577e65976454d29385c8f6140771d95197 (not a weight file)
++metrix/e1-pilot/reports/impl_c/c1_01_env_fetch.txt:33:1ddb5b89ebc90dcb417a45c213d818577e65976454d29385c8f6140771d95197  ./qwen_model/config.json
++metrix/e1-pilot/reports/impl_c/c2_01_env_fetch.txt:26:config.json of Qwen/Qwen3-1.7B@70d244cc86ccca08cf5af4e1e306ecf908b1ad5e: /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/inputs/qwen_model/config.json sha256 1ddb5b89ebc90dcb417a45c213d818577e65976454d29385c8f6140771d95197 (not a weight file)
++metrix/e1-pilot/reports/impl_c/c2_01_env_fetch.txt:32:1ddb5b89ebc90dcb417a45c213d818577e65976454d29385c8f6140771d95197  ./qwen_model/config.json
++exit=0
++$ bash -c grep\ -c\ 169ad53ec313c3a34b06c0809216e4fc072cce444a5d4ff2b59690d064130ed5\ metrix/e1-pilot/RUNBOOK_A100.md\;\ grep\ -o\ \'\{\[\^\{\}\]\*\{\[\^\{\}\]\*169ad53ec313c3a34b06c0809216e4fc072cce444a5d4ff2b59690d064130ed5\[\^\{\}\]\*\}\[\^\{\}\]\*\}\'\ metrix/e1-pilot/reports/impl_c/c3_hf_tree_70d244cc.txt\ \|\ head\ -1
++1
++{"type":"file","oid":"1414f1bda72e17b63551d847c05c68e3396ba717","size":3441185608,"lfs":{"oid":"169ad53ec313c3a34b06c0809216e4fc072cce444a5d4ff2b59690d064130ed5","size":3441185608,"pointerSize":135},"xetHash":"17a41bb52c7f7ac39f0060f9d12213e0448696767d13dfddc10fc00f79a84a9d","path":"model-00001-of-00002.safetensors"}
++exit=0
++$ bash -c grep\ -c\ 912becff8d60672aa8628ef08c05898d9adf17c2ad4ae3caf99b065622fdeff9\ metrix/e1-pilot/RUNBOOK_A100.md\;\ grep\ -o\ \'\{\[\^\{\}\]\*\{\[\^\{\}\]\*912becff8d60672aa8628ef08c05898d9adf17c2ad4ae3caf99b065622fdeff9\[\^\{\}\]\*\}\[\^\{\}\]\*\}\'\ metrix/e1-pilot/reports/impl_c/c3_hf_tree_70d244cc.txt\ \|\ head\ -1
++1
++{"type":"file","oid":"4aab3b30a4b8c6c1d0437a2576e0bea08507f12c","size":622329984,"lfs":{"oid":"912becff8d60672aa8628ef08c05898d9adf17c2ad4ae3caf99b065622fdeff9","size":622329984,"pointerSize":134},"xetHash":"e2a9405ede2b482e4d566aadf8bf470bd4e42542ef327709edadf724e1950d47","path":"model-00002-of-00002.safetensors"}
++exit=0
++$ bash -c for\ f\ in\ metrix/e1-pilot/results/command_output/formal.txt\ metrix/e1-pilot/results/command_output/test_evaluate.txt\ metrix/e1-pilot/results/logs/formal.log\ metrix/e1-pilot/results/command_output/x.log\;\ do\ git\ check-ignore\ -v\ \$f\ \|\|\ echo\ NOT_IGNORED\ \$f\;\ done
++NOT_IGNORED metrix/e1-pilot/results/command_output/formal.txt
++NOT_IGNORED metrix/e1-pilot/results/command_output/test_evaluate.txt
++.gitignore:65:logs	metrix/e1-pilot/results/logs/formal.log
++.gitignore:141:*.log	metrix/e1-pilot/results/command_output/x.log
++exit=0
+diff --git a/metrix/e1-pilot/reports/impl_c/c3_03_hf_tree_logged.txt b/metrix/e1-pilot/reports/impl_c/c3_03_hf_tree_logged.txt
+new file mode 100644
+index 0000000..651004d
+--- /dev/null
++++ b/metrix/e1-pilot/reports/impl_c/c3_03_hf_tree_logged.txt
+@@ -0,0 +1,24 @@
++# Stage C, C3: the file list of Qwen/Qwen3-1.7B at the frozen revision 70d244cc86ccca08cf5af4e1e306ecf908b1ad5e from the Hugging Face API, fetched again and parsed (metadata only; no weight file downloaded). Replaces nothing: c3_hf_tree_70d244cc.txt was not recorded by logrun.sh. Executor, host vm. Fri Nov 27 11:17:07 UTC 2026
++# stdout+stderr merged, unedited. Commands recorded by reports/round5/logrun.sh.
++$ curl -sS --max-time 60 -o /tmp/tmp.G4fWo2A9N6/tree.json https://huggingface.co/api/models/Qwen/Qwen3-1.7B/tree/70d244cc86ccca08cf5af4e1e306ecf908b1ad5e
++exit=0
++$ sha256sum /tmp/tmp.G4fWo2A9N6/tree.json
++1800b39aa206402db2d81f61122d957ca57247b0a5cf065854e25b0109ec36e2  /tmp/tmp.G4fWo2A9N6/tree.json
++exit=0
++$ python3 -I -c import\ json\,sys\;\ \[print\(e\[\'path\'\]\,\ e\[\'size\'\]\,\ \(e.get\(\'lfs\'\)\ or\ \{\}\).get\(\'oid\'\)\)\ for\ e\ in\ json.load\(open\(sys.argv\[1\]\)\)\] /tmp/tmp.G4fWo2A9N6/tree.json
++.gitattributes 1570 None
++LICENSE 11343 None
++README.md 13963 None
++config.json 726 None
++generation_config.json 239 None
++merges.txt 1671853 None
++model-00001-of-00002.safetensors 3441185608 169ad53ec313c3a34b06c0809216e4fc072cce444a5d4ff2b59690d064130ed5
++model-00002-of-00002.safetensors 622329984 912becff8d60672aa8628ef08c05898d9adf17c2ad4ae3caf99b065622fdeff9
++model.safetensors.index.json 25605 None
++tokenizer.json 11422654 aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4
++tokenizer_config.json 9732 None
++vocab.json 2776833 None
++exit=0
++$ python3 -I -c import\ json\,re\,sys\;\ a=json.load\(open\(sys.argv\[1\]\)\)\;\ s=open\(sys.argv\[2\]\,encoding=\'utf-8\'\).read\(\)\;\ b=json.loads\(re.search\(r\'\^\\\[.\*\\\]\$\'\,\ s\,\ re.M\).group\(0\)\)\;\ print\(\'same\ as\ c3_hf_tree_70d244cc.txt:\'\,\ a==b\) /tmp/tmp.G4fWo2A9N6/tree.json metrix/e1-pilot/reports/impl_c/c3_hf_tree_70d244cc.txt
++same as c3_hf_tree_70d244cc.txt: True
++exit=0
+diff --git a/metrix/e1-pilot/reports/impl_c/c3_evidence.sh b/metrix/e1-pilot/reports/impl_c/c3_evidence.sh
+new file mode 100644
+index 0000000..2d0c6c6
+--- /dev/null
++++ b/metrix/e1-pilot/reports/impl_c/c3_evidence.sh
+@@ -0,0 +1,27 @@
++#!/usr/bin/env bash
++# Stage C, C3 round 2: raw evidence for RUNBOOK_A100.md section 2, recorded unedited (stdout+stderr merged) by
++# reports/round5/logrun.sh. Run from the repository root.
++#   bash metrix/e1-pilot/reports/impl_c/c3_evidence.sh
++# c3_02: each hash in the RUNBOOK table looked up in DATA_MANIFEST.json (the 7 frozen values) or in the raw outputs it
++# cites (config.json: c1_01/c2_01; the safetensors: c3_hf_tree). c3_03: the Hugging Face API file list of the frozen
++# revision fetched again (metadata only, no weight file) and parsed (path, size, LFS sha256).
++set -u
++L=metrix/e1-pilot/reports/round5/logrun.sh
++D=metrix/e1-pilot
++O=$D/reports/impl_c/c3_02_runbook_hashes.txt
++{ echo "# Stage C, C3: the hashes of RUNBOOK_A100.md section 2 against DATA_MANIFEST.json and the cited raw outputs. Executor, host $(hostname) (Anthropic cloud container). $(date -u)"; echo "# stdout+stderr merged, unedited. Commands recorded by reports/round5/logrun.sh."; } > $O
++bash $L $O git rev-parse HEAD
++for h in aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4 d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101 ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910 8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5 e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22 8816fe5a39d8b89e8c4203bf7d660e798faa471d2b72b5ce43c411cf5925a155; do
++  bash $L $O bash -c "grep -c $h $D/RUNBOOK_A100.md; grep -n $h $D/DATA_MANIFEST.json"
++done
++bash $L $O bash -c "grep -c 1ddb5b89ebc90dcb417a45c213d818577e65976454d29385c8f6140771d95197 $D/RUNBOOK_A100.md; grep -n 1ddb5b89ebc90dcb417a45c213d818577e65976454d29385c8f6140771d95197 $D/reports/impl_c/c1_01_env_fetch.txt $D/reports/impl_c/c2_01_env_fetch.txt $D/DATA_MANIFEST.json"
++for h in 169ad53ec313c3a34b06c0809216e4fc072cce444a5d4ff2b59690d064130ed5 912becff8d60672aa8628ef08c05898d9adf17c2ad4ae3caf99b065622fdeff9; do
++  bash $L $O bash -c "grep -c $h $D/RUNBOOK_A100.md; grep -o '{[^{}]*{[^{}]*$h[^{}]*}[^{}]*}' $D/reports/impl_c/c3_hf_tree_70d244cc.txt | head -1"
++done
++O=$D/reports/impl_c/c3_03_hf_tree_logged.txt
++{ echo "# Stage C, C3: the file list of Qwen/Qwen3-1.7B at the frozen revision 70d244cc86ccca08cf5af4e1e306ecf908b1ad5e from the Hugging Face API, fetched again and parsed (metadata only; no weight file downloaded). Replaces nothing: c3_hf_tree_70d244cc.txt was not recorded by logrun.sh. Executor, host $(hostname). $(date -u)"; echo "# stdout+stderr merged, unedited. Commands recorded by reports/round5/logrun.sh."; } > $O
++T=$(mktemp -d)
++bash $L $O curl -sS --max-time 60 -o $T/tree.json https://huggingface.co/api/models/Qwen/Qwen3-1.7B/tree/70d244cc86ccca08cf5af4e1e306ecf908b1ad5e
++bash $L $O sha256sum $T/tree.json
++bash $L $O python3 -I -c "import json,sys; [print(e['path'], e['size'], (e.get('lfs') or {}).get('oid')) for e in json.load(open(sys.argv[1]))]" $T/tree.json
++bash $L $O python3 -I -c "import json,re,sys; a=json.load(open(sys.argv[1])); s=open(sys.argv[2],encoding='utf-8').read(); b=json.loads(re.search(r'^\[.*\]$', s, re.M).group(0)); print('same as c3_hf_tree_70d244cc.txt:', a==b)" $T/tree.json $D/reports/impl_c/c3_hf_tree_70d244cc.txt

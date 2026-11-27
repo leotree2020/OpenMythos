@@ -1,0 +1,23 @@
+先读仓库中的 .claude/agents/code-reviewer.md，以它为你的完整定义；它与你已加载的定义冲突时，以仓库文件为准。
+
+审查对象：METRIX E1-PILOT 阶段 C 第 3 段（C3：RUNBOOK_A100.md 与最终报告）的提交，第 1 轮。暂存区内容（尚未提交），暂存树 d27b68da355debb5ff158077e6f2d8d79f07a6a1，父提交 cc18466f8d327f37c6f6dd272b8e264d239ee386（C2 第三个修复提交 a0e04d1f 之后的证据提交，已推送）。仓库 /home/user/OpenMythos。Owner 的指令（tasks/IMPL_C2_OWNER_MESSAGE.md）：「然后执行 C3（RUNBOOK_A100.md 与最终报告），C3 只改文档时只需 code-reviewer。……阶段 C 全部验收通过后停下，状态写为 IMPLEMENTATION_READY。」本提交只改文档与证据，按此只送你一份审查。
+
+Review Gate 对 C1 的裁决（tasks/IMPL_C1_RULING.md）中的防范对象，原文如下：
+防范对象：TEST 闸门要防的是「按规则办事的 Executor 在按 RUNBOOK 操作时，意外评测 TEST 两次，或在 ST10 不成立时评测 TEST」；不防有仓库写权限者的故意篡改（改写历史、伪造记录），这类风险由 GitHub 分支保护和审查记录承担。审查按此范围判定：范围外的边缘情况记为 MINOR 并登记，不作为 BLOCKER。调用两份审查时，把本段防范对象原文写进调用文字。
+
+Owner 本次转达的 Review Gate 裁决（tasks/IMPL_C2_OWNER_MESSAGE.md），原文如下：
+Review Gate 裁决（2026-11-27，作用范围：本阶段；记入 IMPL_C_REPORT.md）：
+1. TEST 评测调用不 fetch、只在 begin 与 finish 时 fetch：接受。RUNBOOK 写明「begin 到 finish 之间任何人不得推送本分支」。
+2. f8139f9 属于证据提交，不需补审。
+
+审查输入（目录 /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/review_c3/）：input.diff（git diff --cached --stat 与完整 diff，相对父提交 cc18466f）；tree.txt（本次暂存树 d27b68da355debb5ff158077e6f2d8d79f07a6a1）。
+依据：tasks/IMPLEMENTATION_TASK_ORDER_V1.md（第 7、8、9、11、13 节）；metrix/e1-pilot/METRIX_E1_PROTOCOL.md（第 0、7、8、10、11 节）；tasks/IMPL_C1_RULING.md；metrix/CLAUDE.md（第 4、5、7、9、10 节）；代码 metrix/e1-pilot/run_pilot.py、src/metrix_e1/pilot.py、testgate.py、test_data.py、train.py、data.py（均为 a0e04d1f 的版本，本提交不改代码）；DATA_MANIFEST.json。
+
+本次改动（Executor 的说明，不作为证据；请对照文件与原始输出核对）：
+- 新增 metrix/e1-pilot/RUNBOOK_A100.md：Task Order 第 8 节第 1–6 项（环境要求与检查命令；下载内容及其 SHA-256；从克隆到运行完毕的命令序列，含 formal、test-generate、data-auditor 的 L6 TEST 计数、test-evaluate；预检 ST11 与停止条件 ST1–ST13 的操作、重跑与恢复、TEST 路径上的特殊情况；结果与记录的提交；时长与费用，A100 80GB 每小时 1.8 美元）。写明 C1 裁决第 6 项的 GitHub 分支设置与 2026-11-27 裁决第 1 项「begin 到 finish 之间任何人不得推送本分支」。前 7 个哈希是 DATA_MANIFEST.json 中的冻结值；模型 config.json 的哈希取自本阶段 CPU 环境下载时打印的值（reports/impl_c/c1_01_env_fetch.txt、c2_01_env_fetch.txt），两个 safetensors 的哈希与字节数取自 Hugging Face API 元数据（新增证据 reports/impl_c/c3_hf_tree_70d244cc.txt，没有下载权重）；这三者都不是冻结值，代码核对的是 revision（pilot.check_model_dir）。
+- reports/IMPL_C_REPORT.md：状态改为 IMPLEMENTATION_READY；新增“Review Gate 裁决(2026-11-27)”一节（逐字照录与落实）；新增 C2 节（起点、交付、待 Review Gate 决定 7 项、提交与审查表、执行中出现的问题、冒烟结果）、C3 节、“阶段 C 验收”（Task Order 第 11 节第 1–8 项逐项写出结果与证据）、“最终状态”。C3 节写明：本报告写于审查之前，审查为 PASS 才提交。
+- reports/DEFERRED_MINORS.md 1.35：a0e04d1f 第 1 轮两份审查（reviews/a0e04d1f3e2be4df30ff700a79ae9af88154ee6a/code-reviewer_round1.md、data-auditor_round1.md，你的上一轮原文在其中）的各项与处理（CI1–CI11，全部登记，理由写在段首）。
+- reports/impl_c/c3_checks.sh 与 c3_01_final_checks.txt：在本提交的暂存树上（代码 = a0e04d1f）重新生成数据并 verify、TEST 生成器拒绝、outside_metrix_check、全部 pytest（324 passed）；首尾 INDEX_EQUALS_a0e04d1f…。c3_01 中记录的写树 65b95aca 是录制开始时的暂存树；录制之后 Executor 修改了 RUNBOOK 第 2 节（config.json 哈希的说明：原写“全部由代码核对”，与代码不符）与报告（填入 pytest 结果、几处措辞），并暂存了 c3_01 本身，所以送审树为 d27b68da355debb5ff158077e6f2d8d79f07a6a1；代码部分不变（可对 tree.txt 核对 src/、tests/、run_pilot.py 的 blob 与 c3_01 首尾一致）。c3_01 末尾 git status 中的 AM/MM 即这些录制期间的工作区修改。
+- 运行环境：Claude Code on the web 云容器，hostname vm，只用 CPU；没有加载或下载权重，没有使用 GPU，没有生成、读取或统计 TEST。
+
+请：(1) RUNBOOK 是否完整覆盖 Task Order 第 8 节第 1–6 项；每条命令、每个检查与停止的操作是否与代码的实际行为（入口参数、检查顺序、记录写在哪里、何时提交与推送）和协议第 11 节的动作一致；TEST 路径（test-generate、data-auditor 的 L6 计数、test-evaluate）的操作是否可能让按 RUNBOOK 操作的 Executor 意外评测 TEST 两次、或在 ST10 不成立时评测 TEST；哈希与 DATA_MANIFEST.json、证据文件是否一致；时长与费用的依据与区间是否自洽（计数与 pilot.evaluation_plan 一致）；有无与 metrix/CLAUDE.md 冲突的指示（租卡、删除文件、push 方式）。(2) 报告：2026-11-27 裁决是否逐字照录；C2 节与提交、审查原文、原始输出是否一致；阶段 C 验收各项的结论是否有原始输出支持，IMPLEMENTATION_READY 是否成立；待 Review Gate 决定的各项是否如实。(3) DEFERRED_MINORS 1.35 是否如实反映两份审查原文、处理是否符合 Task Order 第 9 节。(4) c3_checks.sh 与 c3_01 是否支持所说内容。范围外的边缘情况记为 MINOR 并登记，不作为 BLOCKER。按定义的输出格式给出，每条注明“已验证/未验证”；原文即你的完整输出。最后一行给出结论 PASS 或 BLOCK。不要修改任何文件。

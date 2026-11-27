@@ -696,6 +696,21 @@ code-reviewer 结论 PASS(没有 BLOCKER、MAJOR;10 个 MINOR;第 1 轮 CJ1–CJ
 | CK9 | MINOR | RUNBOOK 第 4 节 | 没有写设置确定性本身失败的情形(没有实验记录) | C3R2-CR | 已修 |
 | CK10 | MINOR | RUNBOOK 第 2 节 | “每一步开始时的 ST12”核对输入不准确(第 1 步由 generate 核对) | C3R2-CR | 已修 |
 
+### 1.38 Implementation 阶段 C:C3 提交 `6dc572f5` 第 3 轮审查(暂存树 `2d7f7bca`,即该提交的树;`reviews/6dc572f5…/code-reviewer_round3.md` 记 `C3R3-CR`)
+
+code-reviewer 结论 PASS(没有 BLOCKER、MAJOR;8 个 MINOR;第 2 轮 CK1–CK10 中 CK3、CK4 在 RUNBOOK 中已修、在报告 C3 待决第 2 项中有残留,其余已修且正确)。8 个 MINOR 都在防范对象之外,只涉及措辞、操作细节与报告的如实性,不影响协议一致性、数据、指标或隔离(Task Order 第 9 节),登记,不再改文档(本节写入 C3 提交之后的证据提交)。租卡前若 Review Gate 要求,在正式运行指令之前一并修正 RUNBOOK。
+
+| # | 严重度 | 位置 | 问题 | 来源 | 处理 |
+|---|---|---|---|---|---|
+| CL1 | MINOR | `IMPL_C_REPORT.md` C3 待决第 2 项;1.37 CK3、CK4 | 仍写“只含输出、不含代码”与“作用范围是阶段 C”,与同一项后半句的问题及已改的 RUNBOOK 第 5 节矛盾;因此 1.37 的 CK3、CK4“已修”与审查表“全部在文档中修正”不完全如实 | C3R3-CR | 登记并更正如下:以 RUNBOOK 第 5 节为准——这些手工提交不含 `src/`、`tests/`、`run_pilot.py`,只含输出与 data-auditor 的审计脚本;补充裁决 1 的作用范围原文为“本阶段”,其含义(阶段 C 还是 E1 Pilot)正是 C3 待决第 2 项请 Review Gate 说明的问题。CK3、CK4 在 RUNBOOK 中已修,在报告中未修 |
+| CL2 | MINOR | RUNBOOK 第 1、3.0–3.4 节 | venv 与 pip 缓存仍在家目录,磁盘表却把依赖算在 `<work>` 分区;核对清单没有 glibc;`env.txt`、`fetch.txt` 不带时间,重跑会覆盖 | C3R3-CR | 登记;正式运行指令之前修正(venv 放在所选分区、`--no-cache-dir` 或写明家目录分区留约 15 GB;加 glibc;两文件带时间或写明不得重跑) |
+| CL3 | MINOR | RUNBOOK 第 3.5 节之后 | `Pilot()` 内的失败(冻结文件的 ST12、设置确定性失败、`--work` 在仓库内)只有回溯,两种处理都不适用 | C3R3-CR | 登记;处理应为:以回溯退出且 `results/` 中没有本次的实验记录时,不提交,报告 Owner |
+| CL4 | MINOR | RUNBOOK 第 3.8 节 | 输出说明没有覆盖以回溯结束的三种情况(TestAlreadyEvaluated、标记之后崩溃或 Ctrl-C、finish 之后实验记录提交失败) | C3R3-CR | 登记;处理应为:以回溯结束时看 `results/` 中是否已有标记或结果,有则 TEST 视为已评,不得重跑,报告 Owner(代码同样拒绝第二次运行) |
+| CL5 | MINOR | RUNBOOK 第 3.7、5 节 | 要求逐行查看 data-auditor 的“原文与转录”,但第 3.7 节列出的 `reviews/<该提交>/` 内容没有转录 | C3R3-CR | 登记;本阶段惯例是转录入库(`reviews/<提交>/*_transcript.jsonl`),第 3.7 节应列入 |
+| CL6 | MINOR | RUNBOOK 第 4 节一般规则 | formal 被 Ctrl-C(或 SIGHUP)结束时没有实验记录(`run_gate` 只捕获 Exception) | C3R3-CR | 登记;应补入例外:没有实验记录,不得重跑,连同命令输出报告 Owner |
+| CL7 | MINOR | RUNBOOK 第 5 节后备规则 | 存放审查原文的提交按同一规则也要先审(递归);没有写运行期间审查 BLOCK 时怎么办 | C3R3-CR | 登记;并入 C3 待决第 2 项请 Review Gate 一并裁决。在裁决之前的读法:存放审查原文的提交按本阶段先例视为证据提交;BLOCK 时停下,不修改输出,不运行 3.8,报告 Owner |
+| CL8 | MINOR | `IMPL_C_REPORT.md` C3 节“交付” | 只列 1.35、1.36,没有列 1.37 | C3R3-CR | 登记(应为 1.35–1.38) |
+
 ## 2. 已在第 5–7 轮解决(核对用)
 
 | 原条目 | 来源 | 处理 |
