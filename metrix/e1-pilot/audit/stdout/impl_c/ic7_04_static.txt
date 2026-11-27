@@ -1,0 +1,61 @@
+# Data Auditor run (implementation stage C, C2 work commit, staged tree b80c9062134db0d950cd9786209862f69ffda06c, parent f8139f9, round 1). host vm, Anthropic cloud container, CPU only (no GPU device node: 0 nvidia entries), no model weights loaded (tokenizer files only; smoke checkpoints are hashed as file bytes, never loaded; the Executor's e2e test builds random tiny models in memory); 2026-11-27 04:16:47 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/venv/bin/python -I -B ic7_04_static.py /home/user/OpenMythos
+env: host vm | Linux-6.18.44-fc-v880-x86_64-with-glibc2.39 | python 3.13.18 (/tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/venv/bin/python) | installed {'transformers': '5.22.2', 'tokenizers': '0.23.3', 'pyarrow': '26.0.1', 'huggingface_hub': '2.4.0', 'torch': '2.11.0'} | nvidia device nodes: []
+== a. pilot.test_evaluate, order of the TEST path (staged blob, source lines)
+  line 990   formal-mode check (raise when not p.mode.formal)
+  line 992   TD.check_preconditions
+  line 998   TEST files read (FZ.read_jsonl)
+  line 1006  checkpoint file sha256 (FZ.file_sha256)
+  line 1012  TG.begin_test_evaluation
+  line 1021  p.evaluate(split='test')
+  line 1037  G.compute_test_values
+  line 1038  G.judge_test
+  line 1039  G.report_comparisons
+  line 1043  TG.finish_test_evaluation
+all present and in this order: True
+checkpoint check: one loop over models[1:] with FZ.file_sha256 and raise ProtocolStop(..., 'BLOCKED', ...): True
+models = ['TG.evaluated_models(p.contract, selected)']
+evaluation calls in test_evaluate 1, inside the single loop over `models` 1: ['p.evaluate'] | split='test' test_session=session checkpoint_name=name | ok True
+report_comparisons split argument: ["'test'"]
+begin calls 1, finish calls 1, begin inside a loop: False
+
+== b. pilot.run_test_evaluate
+test_evaluate inside the try: True | handler catches (ProtocolStop, TD.PreconditionFailed) | 'if not <marker exists>: ... return' without final_record in the handler: True | final_record called in the handler: False | final_record after the try: True
+class bases: TestAlreadyEvaluated ['Exception'] | PreconditionFailed ['Exception'] | ImplementationFail ['ProtocolStop'] | ST12Error ['ProtocolStop']
+=> after the marker: a ProtocolStop (incl. ImplementationFail, ST12Error) or PreconditionFailed is recorded (final_record); TestAlreadyEvaluated and any other exception type (e.g. RuntimeError, an out-of-memory error) propagate without an experiment record
+
+== c. CD13: what finish_test_evaluation commits
+result = plain({...}) keys ["'kind'", "'frozen_commit'", "'values'", "'final'", "'comparisons'", "'summaries'"] | summaries value ['{m: _summary_record(s) for m, s in summaries.items()}'] | finish called with ['result']
+_summary_record body: return {k: v for k, v in summ.items() if not k.startswith('general_')}
+details directory: ['summaries, details = ({}, p.work / TEST_DETAILS_DIR)']
+Pilot.__init__ raises when the work directory is not outside the repository: True
+
+== d. CD5 / CE5: TEST generation
+run_test_generate calls: ['ImplementationFail', 'test_generate_command', 'p.log', "' '.join", 'subprocess.run', 'str', '_subprocess_env']
+test_generate_command returns [sys.executable, '-m', 'metrix_e1.test_data', '--inputs', str(p.inputs), '--data', str(p.data_dir), '--out', str(out)]
+step8_smoke_refusal runs subprocess.run(test_generate_command(...)): True
+call sites of generate_test: ['test_data.py:178 in main']
+call sites of run_test_part: ['test_data.py:183 in main']
+call sites of begin_test_evaluation: ['pilot.py:1012 in test_evaluate']
+call sites of finish_test_evaluation: ['pilot.py:1043 in test_evaluate']
+attributes of test_data (TD.*) used in pilot.py: ['TD.PreconditionFailed', 'TD.check_preconditions']
+
+== e. CA20: production callers of begin / finish
+begin only in pilot.test_evaluate: True | finish only in pilot.test_evaluate: True
+
+== f. fetch: begin / finish yes, the per-call checks no (ruling 2026-11-27 item 1)
+check_checkout runs git fetch: True
+begin_test_evaluation calls refuse_if_marker True, check_commit_preconditions True | refuse_if_marker calls check_checkout True | check_commit_preconditions calls check_checkout True | finish calls check_commit_preconditions True
+  require_test_session     calls check_checkout / check_commit_preconditions / refuse_if_marker: [] | 'fetch' literal: False
+  _check_session_checkout  calls check_checkout / check_commit_preconditions / refuse_if_marker: [] | 'fetch' literal: False
+  claim_checkpoint         calls check_checkout / check_commit_preconditions / refuse_if_marker: [] | 'fetch' literal: False
+
+== g. run_pilot.py
+--steps added 1 time(s), on ['a']
+the smoke sub-parser is assigned to ['a']
+build_mode: return M.smoke_mode(args.steps) if args.cmd == 'smoke' else M.FORMAL_MODE
+main calls P.run_test_generate True, P.run_test_evaluate True
+modules: torch imported=False | transformers modeling modules imported=[] | this script never calls a model class or from_pretrained on a model
+RESULT: PASS
+exit=0

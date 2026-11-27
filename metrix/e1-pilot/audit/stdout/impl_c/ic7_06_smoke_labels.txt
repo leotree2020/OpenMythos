@@ -1,0 +1,19 @@
+# Data Auditor run (implementation stage C, C2 work commit, staged tree b80c9062134db0d950cd9786209862f69ffda06c, parent f8139f9, round 1). host vm, Anthropic cloud container, CPU only (no GPU device node: 0 nvidia entries), no model weights loaded (tokenizer files only; smoke checkpoints are hashed as file bytes, never loaded; the Executor's e2e test builds random tiny models in memory); 2026-11-27 04:18:27 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/venv/bin/python -I -B ic7_06_smoke_labels.py /home/user/OpenMythos /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/c2_smoke_final
+env: host vm | Linux-6.18.44-fc-v880-x86_64-with-glibc2.39 | python 3.13.18 (/tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/venv/bin/python) | installed {'transformers': '5.22.2', 'tokenizers': '0.23.3', 'pyarrow': '26.0.1', 'huggingface_hub': '2.4.0', 'torch': '2.11.0'} | nvidia device nodes: []
+JSON records 76, without the SMOKE label or mode smoke: [] | text records 1 ['experiment_record_smoke.txt'], first line not the label: []
+  data/LABEL.txt 'SMOKE — NOT A RESULT\n'
+  checkpoints/LABEL.txt 'SMOKE — NOT A RESULT\n'
+  preflight/LABEL.txt 'SMOKE — NOT A RESULT\n'
+gate0_status 'NOT_TESTED' note '冒烟测试，不构成结论' | conditions ['G0.1', 'G0.2', 'G0.3', 'G0.4', 'G0.5', 'G0.6', 'G0.7', 'G0.8', 'G0.9', 'G0.10']
+experiment record Status 'NOT_TESTED' Interpretation '冒烟测试，不构成结论' | template fields 20
+device note: step1_record 'smoke: device check skipped' | smoke_report 'smoke: device check skipped'
+frozen protocol: | ST3 | 第 4 步 F 选定配置(种子 101)的 `Acc_CB` < 0.90,或 `Acc(F, DEV-QA, learned)` < 0.70 | 阳性对照未过:停;不跑 L、A、S、Y |
+                 | ST11 | 第 8 节第 2 步预检的预估总时长超过 3.5 小时 | 停止;报告 Owner |
+  -> ST3 bounds Acc_CB 0.9, Acc 0.7 | ST11 hours 3.5
+positive control acc_cb 0.25 acc_dev_learned 0.25 (step4 st3 'smoke: would stop') | preflight estimate 7.305 h (step2 st11 'smoke: would stop') | G0.3 True G0.6 True G0.7 True
+recorded 'would stop' ['ST11', 'ST3'] == expected from the recorded values ['ST11', 'ST3']: True | every entry labelled: True
+modules: torch imported=False | transformers modeling modules imported=[] | this script never calls a model class or from_pretrained on a model
+RESULT: PASS
+exit=0

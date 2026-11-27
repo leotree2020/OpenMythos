@@ -1,0 +1,209 @@
+# Data Auditor run (implementation stage C, C2 work commit, staged tree b80c9062134db0d950cd9786209862f69ffda06c, parent f8139f9, round 1). host vm, Anthropic cloud container, CPU only (no GPU device node: 0 nvidia entries), no model weights loaded (tokenizer files only; smoke checkpoints are hashed as file bytes, never loaded; the Executor's e2e test builds random tiny models in memory); 2026-11-27 04:10:57 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/venv/bin/python -I -B ic7_04_e2e.py /home/user/OpenMythos /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/venv/bin/python /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/inputs /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/ic7_e2e_crash_after_marker_r2 crash_after_marker
+env: host vm | Linux-6.18.44-fc-v880-x86_64-with-glibc2.39 | python 3.13.18 (/tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/venv/bin/python) | installed {'transformers': '5.22.2', 'tokenizers': '0.23.3', 'pyarrow': '26.0.1', 'huggingface_hub': '2.4.0', 'torch': '2.11.0'} | nvidia device nodes: []
+test file: SELECTED line 'SELECTED = {"F": "F3", "L": "L2", "A": "A5"}' present: True
+
+== my expectations (written before the run; mode crash_after_marker)
+  - models TEST evaluates (my list, set): ['A-A5-seed101', 'A-A5-seed202', 'A-A5-seed303', 'F-F3-seed101', 'F-F3-seed202', 'F-F3-seed303', 'L-L2-seed101', 'L-L2-seed202', 'L-L2-seed303', 'N', 'S-F3-seed101', 'S-F3-seed202', 'S-F3-seed303', 'Y-F3-seed101', 'Y-F3-seed202', 'Y-F3-seed303']
+  - run 1 (checkpoint file of the fixture's models[1] changed by the test): check_preconditions once; exactly 1 checkpoint file hashed (that one); no begin, no evaluate_model(split=test), no commit_paths, no final_record; returns (False, 'BLOCKED'); no marker
+  - run 2: begin once; evaluate_model(split=test) entered 3 times, the 3rd raises the injected RuntimeError; no finish; NO final_record; run_test_evaluate raises RuntimeError (pytest exit 1)
+  - remote after the fixture: exactly 1 commit (the marker); no result, no experiment record on the remote or in the clone's working tree (a crash after the marker leaves no section 10 record: MINOR finding)
+
+== driver run (once): cwd /home/user/OpenMythos
+$ IC7_FAULT=crash_after_marker /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/venv/bin/python -B -m pytest -q -p no:cacheprovider -p ic7_04_trace_plugin --basetemp=/tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/ic7_e2e_crash_after_marker_r2/basetemp metrix/e1-pilot/tests/test_run_pilot.py::test_test_evaluate_end_to_end_once
+----- pytest stdout+stderr begin -----
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______________________ test_test_evaluate_end_to_end_once ______________________
+
+eval_clone = {'p': <metrix_e1.pilot.Pilot object at 0x7f10569892b0>, 'root': PosixPath('/tmp/claude-0/-home-user/14ee74de-5799-5f8c...emote.git'), 'models': ['N', 'F-F3-seed101', 'L-L2-seed101', 'A-A5-seed101', 'F-F3-seed202', 'F-F3-seed303', ...], ...}
+
+    def test_test_evaluate_end_to_end_once(eval_clone):
+        c = eval_clone
+        p, root, remote = c["p"], c["root"], c["remote"]
+        ckpt = p.ckpt_dir / ("%s.pt" % c["models"][1])
+        good = ckpt.read_bytes()
+        ckpt.write_bytes(good + b"x")                      # a changed checkpoint file: refused before the marker
+        assert P.run_test_evaluate(p) == (False, "BLOCKED")
+        assert not (root / TG.MARKER_REL).exists() and git(remote, "ls-tree", "-r", "--name-only", "main").count(
+            "test_evaluation_marker") == 0
+        assert not (root / R.FORMAL_RESULTS_REL / "experiment_record_test-evaluate.json").exists()
+        ckpt.write_bytes(good)
+>       ok, status = P.run_test_evaluate(p)
+                     ^^^^^^^^^^^^^^^^^^^^^^
+
+metrix/e1-pilot/tests/test_run_pilot.py:359: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+metrix/e1-pilot/audit/ic7_04_trace_plugin.py:66: in wrapper
+    r = orig(*a, **k)
+        ^^^^^^^^^^^^^
+metrix/e1-pilot/src/metrix_e1/pilot.py:1060: in run_test_evaluate
+    status, actual = test_evaluate(p)
+                     ^^^^^^^^^^^^^^^^
+metrix/e1-pilot/audit/ic7_04_trace_plugin.py:66: in wrapper
+    r = orig(*a, **k)
+        ^^^^^^^^^^^^^
+metrix/e1-pilot/src/metrix_e1/pilot.py:1021: in test_evaluate
+    ev = p.evaluate(model, split="test", with_em=True, test_authorization=auth, fz=fz, test_session=session,
+metrix/e1-pilot/src/metrix_e1/pilot.py:395: in evaluate
+    return E.evaluate_model(model, self.tok, self.rows, self.fz.templates, self.contract.evaluation, self.mode,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+a = (Qwen3ForCausalLM(
+  (model): Qwen3Model(
+    (embed_tokens): Embedding(151936, 64)
+    (layers): ModuleList(
+      (0..._ids=(151645, 151643), think_open_id=151667, think_close_id=151668), RunMode(name='formal', shortened_steps=None), ...)
+k = {'split': 'test', 'with_em': True, 'test_authorization': <metrix_e1.leakage.TestAuthorization object at 0x7f1053240550... 'counts': {'search_runs': 18, 'extra_seed_runs_F_L_A': 6, 'S_runs': 3, 'Y_runs': 3, 'total_training_runs': 30}}), ...}
+
+    def wrapper(*a, **k):
+        if only is not None and not only(a, k):
+            return orig(*a, **k)
+        info = describe(a, k) if describe else {}
+        _log(dict({"call": name, "phase": "enter"}, **info))
+        if name == "evaluate_model" and k.get("split") == "test":
+            _STATE["test_evals"] += 1
+            if FAULT and _STATE["test_evals"] == 3:
+                if FAULT == "stop_after_marker":
+                    from metrix_e1.errors import ProtocolStop
+                    exc = ProtocolStop(None, "BLOCKED", "auditor-injected stop after the TEST marker (ic7 fault "
+                                       "injection, 3rd TEST evaluation)")
+                else:
+                    exc = RuntimeError("auditor-injected crash after the TEST marker (ic7 fault injection, 3rd TEST "
+                                       "evaluation)")
+                _log({"call": name, "phase": "injected", "fault": FAULT, "exc": type(exc).__name__})
+>               raise exc
+E               RuntimeError: auditor-injected crash after the TEST marker (ic7 fault injection, 3rd TEST evaluation)
+
+metrix/e1-pilot/audit/ic7_04_trace_plugin.py:64: RuntimeError
+----------------------------- Captured stdout call -----------------------------
+[2026-11-27T04:11:14Z] TEST evaluation refused before the TEST marker was written (nothing evaluated): BLOCKED: checkpoint F-F3-seed101: file sha256 bb1085c7c7de39d4e8cea96571297026589258a76ce39be2d690ddd142231069, run record 23b3632731a3b20bf1aeedfadb6541dbae5f4fa74cec6e1648524f8b96a189d3 / freeze record differs; TEST not started; report to the Owner
+[2026-11-27T04:11:18Z] TEST marker committed and pushed (5e7ebda9b7dcf9ab255dafa74ae87a4f916ca31f); evaluating 16 models once
+[2026-11-27T04:11:29Z] TEST N: acc_test_learned 0.2417
+[2026-11-27T04:11:41Z] TEST F-F3-seed101: acc_test_learned 0.2417
+=========================== short test summary info ============================
+FAILED metrix/e1-pilot/tests/test_run_pilot.py::test_test_evaluate_end_to_end_once
+1 failed in 43.29s
+----- pytest stdout+stderr end ----- exit 1, 45 s
+pytest exit code 1, expected 1: True
+
+== trace (90 events, complete)
+  {"call": "plugin", "phase": "installed", "fault": "crash_after_marker", "seq": 1}
+  {"call": "file_sha256", "phase": "enter", "file": "F-F3-seed101.pt", "seq": 2}
+  {"call": "file_sha256", "phase": "return", "sha256": "23b3632731a3b20bf1aeedfadb6541dbae5f4fa74cec6e1648524f8b96a189d3", "seq": 3}
+  {"call": "file_sha256", "phase": "enter", "file": "L-L2-seed101.pt", "seq": 4}
+  {"call": "file_sha256", "phase": "return", "sha256": "2e927077b4ecaf40d65c35f020bee6d135017ddc692432e56662d29232c25827", "seq": 5}
+  {"call": "file_sha256", "phase": "enter", "file": "A-A5-seed101.pt", "seq": 6}
+  {"call": "file_sha256", "phase": "return", "sha256": "bef8c08d61bf89ac7883927f4f933e9de0eafd28e0515a4ee146952898bcea16", "seq": 7}
+  {"call": "file_sha256", "phase": "enter", "file": "F-F3-seed202.pt", "seq": 8}
+  {"call": "file_sha256", "phase": "return", "sha256": "bc54ed9b0e14d4c400419c6c8be649aef2434e18dc8c7fb450fa968e0869b63b", "seq": 9}
+  {"call": "file_sha256", "phase": "enter", "file": "F-F3-seed303.pt", "seq": 10}
+  {"call": "file_sha256", "phase": "return", "sha256": "b79a4415595feb3851aa01ddde8a990192e420de2836fd00b1418c76c2c64b01", "seq": 11}
+  {"call": "file_sha256", "phase": "enter", "file": "L-L2-seed202.pt", "seq": 12}
+  {"call": "file_sha256", "phase": "return", "sha256": "edc3256e5fff14d00bcbc2f9de73514e1e5886b8965970d64c6abdd6427871e0", "seq": 13}
+  {"call": "file_sha256", "phase": "enter", "file": "L-L2-seed303.pt", "seq": 14}
+  {"call": "file_sha256", "phase": "return", "sha256": "62fb0b9b6cdd0f3debcacf84dd82fb23c60f17527d18341f3faef95798112c46", "seq": 15}
+  {"call": "file_sha256", "phase": "enter", "file": "A-A5-seed202.pt", "seq": 16}
+  {"call": "file_sha256", "phase": "return", "sha256": "63482f90ef522e1b076ceceab353fa5ed3e306617b6bc3bf5198df07ceb00511", "seq": 17}
+  {"call": "file_sha256", "phase": "enter", "file": "A-A5-seed303.pt", "seq": 18}
+  {"call": "file_sha256", "phase": "return", "sha256": "dc6914a74357a9db2727a0fdb4da2d7d3008e6cf24e77b32406c45beeda47ae4", "seq": 19}
+  {"call": "file_sha256", "phase": "enter", "file": "S-F3-seed101.pt", "seq": 20}
+  {"call": "file_sha256", "phase": "return", "sha256": "2d11895d66e1a1459b17e404afcdb9070b0231c2be00e3f62a4355d83df7603b", "seq": 21}
+  {"call": "file_sha256", "phase": "enter", "file": "S-F3-seed202.pt", "seq": 22}
+  {"call": "file_sha256", "phase": "return", "sha256": "5e88c226be2f5ee03ce86ff258415d7b8dbf058f5a848f8defc44104d9f68fc0", "seq": 23}
+  {"call": "file_sha256", "phase": "enter", "file": "S-F3-seed303.pt", "seq": 24}
+  {"call": "file_sha256", "phase": "return", "sha256": "ec8a3b482280e0c8ab3b4f73f64608c8ce733712b85647ef403ad7f4bab5042c", "seq": 25}
+  {"call": "file_sha256", "phase": "enter", "file": "Y-F3-seed101.pt", "seq": 26}
+  {"call": "file_sha256", "phase": "return", "sha256": "d73f709d8b5e814313e50ab25ec524cb61edd40c3305f8716851120b1fb92076", "seq": 27}
+  {"call": "file_sha256", "phase": "enter", "file": "Y-F3-seed202.pt", "seq": 28}
+  {"call": "file_sha256", "phase": "return", "sha256": "424231d1276dbc7f1b4571bb51bd55b067b3648ac860f0feb9109bf3e2ffe4b8", "seq": 29}
+  {"call": "file_sha256", "phase": "enter", "file": "Y-F3-seed303.pt", "seq": 30}
+  {"call": "file_sha256", "phase": "return", "sha256": "a435963586f565c62bde6f4e1aa42fd39809b80de54c87ae85fce2dcf6d68a6a", "seq": 31}
+  {"call": "test", "phase": "start", "root": "/tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/ic7_e2e_crash_after_marker_r2/basetemp/test_test_evaluate_end_to_end_0/repo", "remote": "/tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/ic7_e2e_crash_after_marker_r2/basetemp/test_test_evaluate_end_to_end_0/remote.git", "work": "/tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/ic7_e2e_crash_after_marker_r2/basetemp/test_test_evaluate_end_to_end_0/work", "models": ["N", "F-F3-seed101", "L-L2-seed101", "A-A5-seed101", "F-F3-seed202", "F-F3-seed303", "L-L2-seed202", "L-L2-seed303", "A-A5-seed202", "A-A5-seed303", "S-F3-seed101", "S-F3-seed202", "S-F3-seed303", "Y-F3-seed101", "Y-F3-seed202", "Y-F3-seed303"], "remote_tip_after_fixture": "719c152b6900e875a2873c85a57f3adc6df423d3", "synthetic_question_example": "Synthetic question 0 (not a TEST row)?", "seq": 32}
+  {"call": "run_test_evaluate", "phase": "enter", "seq": 33}
+  {"call": "test_evaluate", "phase": "enter", "seq": 34}
+  {"call": "check_preconditions", "phase": "enter", "seq": 35}
+  {"call": "check_preconditions", "phase": "return", "seq": 36}
+  {"call": "file_sha256", "phase": "enter", "file": "F-F3-seed101.pt", "seq": 37}
+  {"call": "file_sha256", "phase": "return", "sha256": "bb1085c7c7de39d4e8cea96571297026589258a76ce39be2d690ddd142231069", "seq": 38}
+  {"call": "test_evaluate", "phase": "raise", "exc": "ProtocolStop", "msg": "BLOCKED: checkpoint F-F3-seed101: file sha256 bb1085c7c7de39d4e8cea96571297026589258a76ce39be2d690ddd142231069, run record 23b3632731a3b20bf1aeedfadb6541dbae5f4fa74cec6e1648524f8b96a189d3 / freeze record differs; TEST not started; report to the Owner", "seq": 39}
+  {"call": "run_test_evaluate", "phase": "return", "result": "(False, 'BLOCKED')", "seq": 40}
+  {"call": "run_test_evaluate", "phase": "enter", "seq": 41}
+  {"call": "test_evaluate", "phase": "enter", "seq": 42}
+  {"call": "check_preconditions", "phase": "enter", "seq": 43}
+  {"call": "check_preconditions", "phase": "return", "seq": 44}
+  {"call": "file_sha256", "phase": "enter", "file": "F-F3-seed101.pt", "seq": 45}
+  {"call": "file_sha256", "phase": "return", "sha256": "23b3632731a3b20bf1aeedfadb6541dbae5f4fa74cec6e1648524f8b96a189d3", "seq": 46}
+  {"call": "file_sha256", "phase": "enter", "file": "L-L2-seed101.pt", "seq": 47}
+  {"call": "file_sha256", "phase": "return", "sha256": "2e927077b4ecaf40d65c35f020bee6d135017ddc692432e56662d29232c25827", "seq": 48}
+  {"call": "file_sha256", "phase": "enter", "file": "A-A5-seed101.pt", "seq": 49}
+  {"call": "file_sha256", "phase": "return", "sha256": "bef8c08d61bf89ac7883927f4f933e9de0eafd28e0515a4ee146952898bcea16", "seq": 50}
+  {"call": "file_sha256", "phase": "enter", "file": "F-F3-seed202.pt", "seq": 51}
+  {"call": "file_sha256", "phase": "return", "sha256": "bc54ed9b0e14d4c400419c6c8be649aef2434e18dc8c7fb450fa968e0869b63b", "seq": 52}
+  {"call": "file_sha256", "phase": "enter", "file": "F-F3-seed303.pt", "seq": 53}
+  {"call": "file_sha256", "phase": "return", "sha256": "b79a4415595feb3851aa01ddde8a990192e420de2836fd00b1418c76c2c64b01", "seq": 54}
+  {"call": "file_sha256", "phase": "enter", "file": "L-L2-seed202.pt", "seq": 55}
+  {"call": "file_sha256", "phase": "return", "sha256": "edc3256e5fff14d00bcbc2f9de73514e1e5886b8965970d64c6abdd6427871e0", "seq": 56}
+  {"call": "file_sha256", "phase": "enter", "file": "L-L2-seed303.pt", "seq": 57}
+  {"call": "file_sha256", "phase": "return", "sha256": "62fb0b9b6cdd0f3debcacf84dd82fb23c60f17527d18341f3faef95798112c46", "seq": 58}
+  {"call": "file_sha256", "phase": "enter", "file": "A-A5-seed202.pt", "seq": 59}
+  {"call": "file_sha256", "phase": "return", "sha256": "63482f90ef522e1b076ceceab353fa5ed3e306617b6bc3bf5198df07ceb00511", "seq": 60}
+  {"call": "file_sha256", "phase": "enter", "file": "A-A5-seed303.pt", "seq": 61}
+  {"call": "file_sha256", "phase": "return", "sha256": "dc6914a74357a9db2727a0fdb4da2d7d3008e6cf24e77b32406c45beeda47ae4", "seq": 62}
+  {"call": "file_sha256", "phase": "enter", "file": "S-F3-seed101.pt", "seq": 63}
+  {"call": "file_sha256", "phase": "return", "sha256": "2d11895d66e1a1459b17e404afcdb9070b0231c2be00e3f62a4355d83df7603b", "seq": 64}
+  {"call": "file_sha256", "phase": "enter", "file": "S-F3-seed202.pt", "seq": 65}
+  {"call": "file_sha256", "phase": "return", "sha256": "5e88c226be2f5ee03ce86ff258415d7b8dbf058f5a848f8defc44104d9f68fc0", "seq": 66}
+  {"call": "file_sha256", "phase": "enter", "file": "S-F3-seed303.pt", "seq": 67}
+  {"call": "file_sha256", "phase": "return", "sha256": "ec8a3b482280e0c8ab3b4f73f64608c8ce733712b85647ef403ad7f4bab5042c", "seq": 68}
+  {"call": "file_sha256", "phase": "enter", "file": "Y-F3-seed101.pt", "seq": 69}
+  {"call": "file_sha256", "phase": "return", "sha256": "d73f709d8b5e814313e50ab25ec524cb61edd40c3305f8716851120b1fb92076", "seq": 70}
+  {"call": "file_sha256", "phase": "enter", "file": "Y-F3-seed202.pt", "seq": 71}
+  {"call": "file_sha256", "phase": "return", "sha256": "424231d1276dbc7f1b4571bb51bd55b067b3648ac860f0feb9109bf3e2ffe4b8", "seq": 72}
+  {"call": "file_sha256", "phase": "enter", "file": "Y-F3-seed303.pt", "seq": 73}
+  {"call": "file_sha256", "phase": "return", "sha256": "a435963586f565c62bde6f4e1aa42fd39809b80de54c87ae85fce2dcf6d68a6a", "seq": 74}
+  {"call": "begin_test_evaluation", "phase": "enter", "seq": 75}
+  {"call": "commit_paths", "phase": "enter", "rels": ["metrix/e1-pilot/results/test_evaluation_marker.json"], "seq": 76}
+  {"call": "commit_paths", "phase": "return", "head": "5e7ebda9b7dcf9ab255dafa74ae87a4f916ca31f", "seq": 77}
+  {"call": "begin_test_evaluation", "phase": "return", "marker_commit": "5e7ebda9b7dcf9ab255dafa74ae87a4f916ca31f", "seq": 78}
+  {"call": "evaluate_model", "phase": "enter", "split": "test", "checkpoint": "N", "seq": 79}
+  {"call": "claim_checkpoint", "phase": "enter", "checkpoint": "N", "seq": 80}
+  {"call": "claim_checkpoint", "phase": "return", "seq": 81}
+  {"call": "evaluate_model", "phase": "return", "seq": 82}
+  {"call": "evaluate_model", "phase": "enter", "split": "test", "checkpoint": "F-F3-seed101", "seq": 83}
+  {"call": "claim_checkpoint", "phase": "enter", "checkpoint": "F-F3-seed101", "seq": 84}
+  {"call": "claim_checkpoint", "phase": "return", "seq": 85}
+  {"call": "evaluate_model", "phase": "return", "seq": 86}
+  {"call": "evaluate_model", "phase": "enter", "split": "test", "checkpoint": "L-L2-seed101", "seq": 87}
+  {"call": "evaluate_model", "phase": "injected", "fault": "crash_after_marker", "exc": "RuntimeError", "seq": 88}
+  {"call": "test_evaluate", "phase": "raise", "exc": "RuntimeError", "msg": "auditor-injected crash after the TEST marker (ic7 fault injection, 3rd TEST evaluation)", "seq": 89}
+  {"call": "run_test_evaluate", "phase": "raise", "exc": "RuntimeError", "msg": "auditor-injected crash after the TEST marker (ic7 fault injection, 3rd TEST evaluation)", "seq": 90}
+
+fixture models as a set == my list: True | fixture order (the order compared below): ['N', 'F-F3-seed101', 'L-L2-seed101', 'A-A5-seed101', 'F-F3-seed202', 'F-F3-seed303', 'L-L2-seed202', 'L-L2-seed303', 'A-A5-seed202', 'A-A5-seed303', 'S-F3-seed101', 'S-F3-seed202', 'S-F3-seed303', 'Y-F3-seed101', 'Y-F3-seed202', 'Y-F3-seed303']
+run_test_evaluate calls: 2 (expected 2)
+
+== run 1 (refusal before the marker)
+observed {'check_preconditions': 1, 'pt_hashes': ['F-F3-seed101.pt'], 'begin': 0, 'evaluate_test': 0, 'commit_paths': 0, 'final_record': 0, 'end': ('return', "(False, 'BLOCKED')")}
+expected {'check_preconditions': 1, 'pt_hashes': ['F-F3-seed101.pt'], 'begin': 0, 'evaluate_test': 0, 'commit_paths': 0, 'final_record': 0, 'end': ('return', "(False, 'BLOCKED')")} | equal True
+
+== run 2 (the evaluation)
+check_preconditions once, then 15 checkpoint files hashed (set = models[1:]), all before begin: True (hashed 15: ['A-A5-seed101.pt', 'A-A5-seed202.pt', 'A-A5-seed303.pt', 'F-F3-seed101.pt', 'F-F3-seed202.pt', 'F-F3-seed303.pt', 'L-L2-seed101.pt', 'L-L2-seed202.pt', 'L-L2-seed303.pt', 'S-F3-seed101.pt', 'S-F3-seed202.pt', 'S-F3-seed303.pt', 'Y-F3-seed101.pt', 'Y-F3-seed202.pt', 'Y-F3-seed303.pt'])
+begin entered 1 time(s); returned marker commit 5e7ebda9b7dcf9ab255dafa74ae87a4f916ca31f; commit_paths inside begin [['metrix/e1-pilot/results/test_evaluation_marker.json']]
+marker models (remote blob) == the fixture's list, same order: True
+evaluate_model(split=test) entered 3 (['N', 'F-F3-seed101', 'L-L2-seed101']) | injected [('crash_after_marker', 'RuntimeError')] | claims ['N', 'F-F3-seed101'] | finish 0 | final_record []
+final_record expected none; commit_paths after begin [] (expected []); run 2 ends raise RuntimeError (expected raise RuntimeError)
+
+== the bare remote (git only)
+  commit 5e7ebda9b7dc parent 719c152b6900: ['A'] ['metrix/e1-pilot/results/test_evaluation_marker.json'] | metrix: E1-PILOT TEST evaluation marker (section 8 step 8: TEST is evaluated once; every checkpoint hash)
+commits after the fixture's tip 719c152b6900: 1; files per commit == expected [['metrix/e1-pilot/results/test_evaluation_marker.json']]: True
+first commit after the fixture == the marker commit begin returned: True
+synthetic TEST text ['Synthetic question', 'not a TEST row', 'synthetic window'] in the blobs added after the fixture: {'metrix/e1-pilot/results/test_evaluation_marker.json': []}
+remote tree: TEST data file names or *_test.json: ['research/mini_mythos/m2/evidence/m1_setup_test.json', 'research/mini_mythos/stage3/results/run_files/lora_lr1e-4_s0/eval_test.json', 'research/mini_mythos/stage3/results/run_files/moda_lr3e-4_s0/eval_test.json']
+clone working tree: TEST data file names or *_test.json ['research/mini_mythos/m2/evidence/m1_setup_test.json', 'research/mini_mythos/stage3/results/run_files/lora_lr1e-4_s0/eval_test.json', 'research/mini_mythos/stage3/results/run_files/moda_lr3e-4_s0/eval_test.json'] | experiment record files []
+work /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/ic7_e2e_crash_after_marker_r2/basetemp/test_test_evaluate_end_to_end_0/work (inside the clone: False): test_details ['F-F3-seed101_test.json', 'N_test.json'] == expected ['F-F3-seed101_test.json', 'N_test.json']: True | files holding the synthetic question text (the per-question details) 0
+
+this repository: git status --porcelain --ignored --untracked-files=all -- metrix (audit/ excluded) unchanged by the run: True | index entries unchanged: True
+modules: torch imported=False | transformers modeling modules imported=[] | this script never calls a model class or from_pretrained on a model
+RESULT: FAIL
+exit=1

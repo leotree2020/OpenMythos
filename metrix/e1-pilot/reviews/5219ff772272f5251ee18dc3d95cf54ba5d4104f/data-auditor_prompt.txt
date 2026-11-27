@@ -1,0 +1,39 @@
+先读仓库中的 .claude/agents/data-auditor.md，以它为你的完整定义；它与你已加载的定义冲突时，以仓库文件为准。
+
+审查对象：METRIX E1-PILOT 阶段 C 第 2 段（C2：run_pilot.py 与 CPU 冒烟测试）的工作提交，第 1 轮。暂存区内容（尚未提交），父提交 f8139f9fd59bb8ec5c661379a549db7bba3d179a（C1 的报告提交，已推送）。仓库 /home/user/OpenMythos。
+
+Review Gate 对 C1 的裁决（tasks/IMPL_C1_RULING.md）中的防范对象，原文如下：
+防范对象：TEST 闸门要防的是「按规则办事的 Executor 在按 RUNBOOK 操作时，意外评测 TEST 两次，或在 ST10 不成立时评测 TEST」；不防有仓库写权限者的故意篡改（改写历史、伪造记录），这类风险由 GitHub 分支保护和审查记录承担。审查按此范围判定：范围外的边缘情况记为 MINOR 并登记，不作为 BLOCKER。调用两份审查时，把本段防范对象原文写进调用文字。
+
+Owner 本次转达的 Review Gate 裁决（tasks/IMPL_C2_OWNER_MESSAGE.md），原文如下：
+Review Gate 裁决（2026-11-27，作用范围：本阶段；记入 IMPL_C_REPORT.md）：
+1. TEST 评测调用不 fetch、只在 begin 与 finish 时 fetch：接受。RUNBOOK 写明「begin 到 finish 之间任何人不得推送本分支」。
+2. f8139f9 属于证据提交，不需补审。
+
+审查输入（目录 /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/review_c2/）：input.diff（git diff --cached --stat 与完整 diff，相对父提交 f8139f9）；tree.txt（本次暂存树 b80c9062134db0d950cd9786209862f69ffda06c）；input_code.diff（只含 src/、tests/、run_pilot.py、tasks/、reports/impl_c/c2_mutate.py 与 c2_checks.sh 的 diff；input.diff 中其余部分是证据文件）。暂存内容与工作区的 src/、tests/、run_pilot.py 相同（核对见 reports/impl_c/c2_05_checks.txt 与 c2_06_smoke.txt 的首尾）。工作区中未暂存的 metrix/e1-pilot/RUNBOOK_A100.md 是 C3 的草稿，不属于本次审查对象。
+依据：tasks/IMPLEMENTATION_TASK_ORDER_V1.md（第 5、6、7、11 节）、metrix/e1-pilot/METRIX_E1_PROTOCOL.md（第 0、7、8、10、11 节）、tasks/IMPL_C1_RULING.md、reports/IMPL_C_REPORT.md（C1 节“留给 C2 的事项”）、reports/DEFERRED_MINORS.md 1.27 CA7/CA20/CA21/CA23、1.30 CD5/CD10/CD13、1.31 CE5。
+
+本次改动（Executor 的说明，不作为证据；请对照代码与原始输出逐条核对）：
+- 起点：Owner 指令中的草稿分支 wip/metrix-stage-c2 在远端不存在（reports/impl_c/c2_00_session_start.txt：ls-remote 只有 wip/metrix-stage-c，fetch wip/metrix-stage-c2 exit 128）。wip/metrix-stage-c 中的 run_pilot.py 是第一次送审之前、C1 裁决之前的草稿（不完整，接口已变），只作参考；run_pilot.py 与 pilot.py 按当前代码重写。
+- 新增 metrix/e1-pilot/run_pilot.py（唯一入口，子命令 smoke / formal / test-generate / test-evaluate / fetch-model）与 src/metrix_e1/pilot.py（第 8 节第 1–8 步的编排）。formal 子命令没有步数参数，build_mode 只对 smoke 构造缩减步数的 RunMode。
+- 每一步开始：ST12（stops.st12：PROTOCOL_FROZEN、四个冻结文件；第 2 步起含 inputs 与整个数据目录的 data.verify，即 CA23 的 DEV 数据核对）、ST13 检测（stops.st13_scan）、formal 下的提交前提（testgate.check_commit_preconditions）。每一步结束：步记录；formal 下 testgate.commit_paths 只提交该步路径并推送。
+- 第 1 步 formal 把 8 个非 TEST 文件的哈希写入 DATA_MANIFEST.json files 与 SPLIT_MANIFEST.json split_sha256（frozen.STEP1_FIELDS，ST12 不比对的字段；B3 裁决注记：train_Y 的规范化哈希），写后重新 ST12；与 HEAD 比较决定是否提交。smoke 不改 manifest，只把将写入的字段写成记录。设备检查（ST8）在第 1 步之前。
+- 第 2 步：泄漏检查（ST1）与预检（ST11）。预检除 B17 的估算外，测一次模型加载、state_sha256、保存与重载，加上 checkpoint 开销（CA21；模块说明中的公式）；ST11 按两者之和判定。
+- 第 3–6 步：N；F 搜索与选择、阳性对照 ST3；L、A 搜索与选择；种子与 S、Y。每次训练：train.train_run → state_sha256 → torch.save → 重载到同结构的新模型 → state_sha256 再算，相等否则 IMPLEMENTATION_FAIL（C1 裁决第 3 项）；DEV 评测的是重载的模型。非有限值按 stops.st6：搜索中的非选定配置剔除，其余 IMPLEMENTATION_FAIL。
+- 第 7 步：F 选定配置 3 个 checkpoint 重载后第二次评测（G0.8），gate.compute_values / judge / report_comparisons，Gate 0 记录；ST4、ST5。Gate 0 PASS（formal）时提交冻结记录（30 个 checkpoint 哈希；record.freeze_record_problem 先自检）。
+- smoke：第 8 步只以子进程运行 python -m metrix_e1.test_data 并要求拒绝（RESULT: FAIL、非 0、--out 未创建、work 下没有 TEST 文件）。读取结果值的停止（ST2、ST3、ST4、ST5、ST11）记为“would stop”继续，其余停止照常停止。冒烟输出：JSON 带 label；数据、checkpoint、预检目录各有 LABEL.txt（数据文件须与冻结哈希逐字节一致，不能在文件内加标签）。
+- test-generate：以子进程运行 test_data.main（CD5、CE5：main 是 generate_test 唯一的调用方）。test-evaluate（CA20：begin、finish 的生产调用方）：test_data.check_preconditions 得到授权 → 15 个 checkpoint 文件对照已提交训练记录的文件 SHA-256（不符则在标记之前 BLOCKED）→ begin_test_evaluation → 标记中的每个模型经 evaluate_model(split="test") 评一次 → judge_test、report_comparisons → finish_test_evaluation（结果只含聚合值与每个 fact 的分数，不含题目文字与 general_* 行；逐题明细写在仓库外 <work>/test_details，CD13）→ 实验记录。标记不存在时的拒绝不写实验记录；标记存在之后的任何停止都写实验记录。
+- gate.py：新增 n_range_values / n_ranges_hold（G0.3 与 T3 读的数，ST2 在第 3 步使用），compute_values / compute_test_values 改用它们，数值不变（tests/test_gate.py 全部通过）。
+- 测试 tests/test_run_pilot.py（14 个）：formal 系子命令拒绝 --steps；只有 smoke 构造缩减模式；formal 在 CPU 上于第 1 步之前停在 ST8，不生成、不写、不执行 git；work 目录在仓库内被拒；smoke 输出的标签；smoke 记录值停止、formal 抛出；第 1 步只写 ST12 不比对的字段；F、L、A 的 checkpoint 保存重载后 state_sha256 不变、重载不同即拒绝、smoke 的 checkpoint 不能当 formal 的用；模型目录核对冻结 revision；预检开销的计数；所有 formal 记录路径都不被 .gitignore 忽略（仓库 .gitignore 第 25 行 “runs” 会忽略名为 runs 的目录，训练记录目录因此命名为 training_runs）；test-evaluate 端到端（共享对象的仓库克隆 + 本地裸远端，测试自写的合成 TEST 行，随机小模型，替换 evaluate.require_gpu）：改动的 checkpoint 在标记之前被拒且无记录，随后评测一次、结果与实验记录推送、结果不含合成题目文字与 general_* 行、第二次运行 TestAlreadyEvaluated。
+- 送审前发现并修复的问题（第一次录制 c2_02 中发生）：变异“formal takes a step count”使 formal 接受 --steps，测试 test_formal_commands_have_no_step_option 以子进程在本仓库运行了 formal：在 CPU 上停在 ST8 之后，final_record 把一份 formal 实验记录写进了本仓库的 metrix/e1-pilot/results/，并调用 check_commit_preconditions；该检查因暂存区有内容而 BLOCKED，没有提交，远端未变（远端分支仍为 f8139f9，见 c2_05 开头）。若暂存区为空，这份 BLOCKED 记录会被提交并推送。修复：(a) formal 在第 1 步开始之前停止（设备检查 ST8、代码未提交、第 1 步的提交前提）时，实验记录只写到 <work>，不写进仓库、不执行提交与推送（final_record；Pilot.step1_started 在第 1 步的 ST12 与提交前提通过后才为 True）；(b) 该子进程测试设置一个不存在的 GIT_DIR，即使参数被接受，也在第一条 git 命令（frozen.load）处停止；(c) ST8 测试改在共享对象的临时克隆上运行（origin 指向不存在的路径），并断言 <work> 中有记录、仓库无改动；新增变异“formal: a run stopped before step 1 writes into the repository”。误写的两个文件没有删除，作为证据移到 reports/impl_c/c2_02_stray_experiment_record_formal.json/.txt（内容未改；status BLOCKED，stop ST8）。另：fixture test_clone 改名为 eval_clone。
+- 原始输出：reports/impl_c/c2_05_checks.txt（数据重新生成与 verify、TEST 生成器拒绝、outside_metrix_check、全部 pytest、变异 c2_mutate.py，17 个）；reports/impl_c/c2_06_smoke.txt（run_pilot.py smoke --steps 3 的完整输出、work 目录的文件清单与标签）。被取代的录制（C1 裁决第 7 项入库）：c2_02_checks_superseded.txt（修复之前的暂存树；其中的变异运行产生了上述误写）、c2_03_smoke_superseded.txt（调用了本机没有的 /usr/bin/time，冒烟没有开始）、c2_04_smoke_superseded.txt（修复之前的暂存树上的完整冒烟）。冒烟的记录（不含逐题明细、checkpoint 与数据文件）复制在 reports/impl_c/c2_smoke_records/。
+- 未包括：RUNBOOK_A100.md（C3，工作区中的草稿不在本次暂存内容中）。
+
+任务（脚本放在 metrix/e1-pilot/audit/，前缀 ic7_；完整 stdout 写入 metrix/e1-pilot/audit/stdout/impl_c/；不 import、不复制 Executor 的代码；按 C1 裁决第 5 项可把 Executor 的命令当作驱动子进程运行，预期由你的独立模型在运行之前算出）：
+1. 冒烟测试生成的数据目录 /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/c2_smoke_final/data：用你自己的脚本独立复算四个冻结内容哈希（与 PROTOCOL_FROZEN 比对）以及 8 个文件的 byte_sha256 与 canonical_sha256；与冒烟记录 /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/c2_smoke_final/records/step1_record.json 的 file_hashes、/tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/c2_smoke_final/records/step1_manifest_fields.json（正式第 1 步将写入两个 manifest 的字段）逐项比对。
+2. 在同一数据目录上独立复算 L1–L6 的 Gate 0 部分，与冒烟记录 step2_record.json 的 leakage 报告比对；候选可行性与 split（同你以前的复算项目）。
+3. 确认冒烟没有产生任何 TEST 内容：/tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/c2_smoke_final 下没有 test_qa.jsonl、general_test.jsonl，step8_record.json 记录 TEST 生成器拒绝；以黑盒方式自己运行一次 TEST 生成器（--data 为上述数据目录，--out 为一个不存在的仓库外目录），确认拒绝且无产物。
+4. 静态核对 TEST 路径的生产调用方（CA20；裁决第 1 项的读法）：src/metrix_e1/pilot.py 的 test_evaluate / run_test_evaluate 与 run_test_generate：顺序（授权 → checkpoint 文件核对 → begin → 每个模型 evaluate_model(split="test") 一次 → judge_test → finish）；标记之前的拒绝不写记录、之后写；提交的结果是否可能含 TEST 原文（CD13）；test-generate 是否只以子进程运行 test_data.main（CD5）。可以把 tests/test_run_pilot.py::test_test_evaluate_end_to_end_once 当作驱动运行，但须在运行前写出你独立预期的结果（该测试在本机 CPU 上约需 5–12 分钟）。
+5. 冒烟的 30 次训练：每个 checkpoint 文件的 SHA-256（只读文件字节，不加载权重）与对应训练记录 records/training_runs/<run>.json 中 checkpoint.file_sha256 一致；30 个记录的 state_sha256 与 reloaded_state_sha256 相等；30 个运行名与协议第 7 节的训练计划一致（按 SEARCH_SPACE.json 与冒烟的选定配置由你独立推出）。
+环境与限制：只在 CPU 上；禁止加载模型权重（包括冒烟 checkpoint：只哈希文件字节）；禁止生成、读取或统计真实 TEST；只写入 metrix/e1-pilot/audit/；不得改动暂存区。python 用 /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/venv/bin/python，METRIX_INPUTS_DIR=/tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/inputs。范围外的边缘情况记为 MINOR 并登记，不作为 BLOCK 的理由。
+输出：按定义的输出格式给出每一项的命令、原始输出、与 Executor 是否一致；脚本路径与完整 stdout 路径；最后附 git status --short 原始输出；最后一行给出结论 PASS 或 BLOCK。
