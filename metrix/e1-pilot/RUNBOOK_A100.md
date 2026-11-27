@@ -1,6 +1,6 @@
 # METRIX · E1-PILOT · A100 操作手册(RUNBOOK_A100.md)
 
-依据:`tasks/IMPLEMENTATION_TASK_ORDER_V1.md` 第 8 节;协议 v1.1(冻结提交 `87a244db28a901f9e89282b50df76778ab5c2887`,`PROTOCOL_FROZEN`)第 0、7、8、10、11 节;Owner 下达阶段 C 的消息(`tasks/IMPL_C_OWNER_MESSAGE.md`:补充裁决 6,上次阶段 C 指令第 9 项);Review Gate 对 C1 的裁决(2026-11-25,`tasks/IMPL_C1_RULING.md`)第 2、6 项;Review Gate 2026-11-27 的裁决(`tasks/IMPL_C2_OWNER_MESSAGE.md`,记入 `reports/IMPL_C_REPORT.md`)第 1 项;Review Gate 2026-11-27 对 C2、C3 报告所列事项的裁决(`tasks/IMPL_C4_RULING.md`,作用范围:E1 Pilot 直至结束;下称“C4 裁决”)第 1、3–7 项。
+依据:`tasks/IMPLEMENTATION_TASK_ORDER_V1.md` 第 8 节;协议 v1.1(冻结提交 `87a244db28a901f9e89282b50df76778ab5c2887`,`PROTOCOL_FROZEN`)第 0、7、8、10、11 节;Owner 下达阶段 C 的消息(`tasks/IMPL_C_OWNER_MESSAGE.md`:补充裁决 6,上次阶段 C 指令第 9 项);Review Gate 对 C1 的裁决(2026-11-25,`tasks/IMPL_C1_RULING.md`)第 2、6 项;Review Gate 2026-11-27 的裁决(`tasks/IMPL_C2_OWNER_MESSAGE.md`,记入 `reports/IMPL_C_REPORT.md`)第 1 项;Review Gate 2026-11-27 对 C2、C3 报告所列事项的裁决(`tasks/IMPL_C4_RULING.md`,作用范围:E1 Pilot 直至结束;下称“C4 裁决”)第 1、3–7 项;Review Gate 2026-11-28 的裁决(`tasks/IMPL_C5_RULING.md`,作用范围:E1 Pilot 直至结束;下称“C5 裁决”)第 2、3 项(按 `reports/DEFERRED_MINORS.md` 1.38 CL2–CL6、1.42 CP1–CP5 的处理修正,第 4 节总则)。
 
 本手册只写怎样执行。门槛、超参、种子、哈希一律由代码从冻结文件读取,手册中出现的哈希只用于下载后的人工核对。手册不指定租用平台,由 Owner 选择。
 
@@ -22,8 +22,8 @@
 | 驱动与 CUDA | `requirements.lock` 中的 torch 2.11.0(PyPI 的 Linux wheel)基于 CUDA 13.0(`cuda-toolkit 13.0.2`、`nvidia-*-cu13`),主机驱动须支持 CUDA 13.0:`nvidia-smi` 右上角的 “CUDA Version” ≥ 13.0(驱动 580 系列及以上;以 NVIDIA CUDA 13.0 Release Notes 的最低驱动表为准)。不另装 CUDA toolkit,由 wheel 提供(补充裁决 6:不另锁 CUDA 12.x 构建) | `nvidia-smi`;安装后 `python -c "import torch; print(torch.version.cuda, torch.cuda.is_available())"` 应为 `13.0 True` |
 | 同一台机器 | 从第一次加载模型到 TEST 评测结束都在同一张卡上:设备全名在第一次加载模型时写入 `<work>/device_ledger.json`,此后每次训练或评测开始时比对(ST9,整批作废)。formal 与 test-evaluate 之间不要换机器;checkpoint 也只在这台机器上 | — |
 | 系统 | Linux x86_64,glibc ≥ 2.28(锁定文件按 manylinux_2_28 解析) | `ldd --version` |
-| Python | CPython **3.13.18**(锁定文件第 2 行;`tests/test_environment.py` 核对)。主机没有这个精确版本时,用 uv 安装它(C4 裁决第 6 项;第 3.2 节的 3.2a);uv 装不到即停下报告 Owner,不用其他版本 | `python3.13 --version`;没有时见 3.2a |
-| 磁盘 | `<work>` 所在分区至少 **300 GB** 可用:30 个最终 checkpoint 各约 6.9 GB(FP32 全模型,约 207 GB;一个都不删,metrix/CLAUDE.md 第 7 节)+ 预检 checkpoint 6.9 GB + 模型 4.1 GB + 依赖约 6 GB | `df -h <work>` |
+| Python | CPython **3.13.18**(锁定文件第 2 行;`tests/test_environment.py` 核对)。主机没有这个精确版本,或有而不能建 venv(缺 ensurepip)时,用 uv 安装它(C4 裁决第 6 项;后一种情形由 C5 裁决第 3 项确认;第 3.2 节的 3.2a);uv 装不到即停下报告 Owner,不用其他版本 | `python3.13 --version`;不是 3.13.18 或不能建 venv 时见 3.2a |
+| 磁盘 | `<work>` 所在分区(第 3.0 节:`<work>`、`<inputs>` 与 venv 都放在这里)至少 **300 GB** 可用:30 个最终 checkpoint 各约 6.9 GB(FP32 全模型,约 207 GB;一个都不删,metrix/CLAUDE.md 第 7 节)+ 预检 checkpoint 6.9 GB + 模型 4.1 GB + 依赖约 6 GB(venv;pip 不用缓存,安装时的临时文件也放在该分区,第 3.2 节)。家目录只放变量文件,以及 3.2a 走 uv 分支时的 uv 与它装的解释器 | `df -h <work>` |
 | 内存 | 建议 ≥ 64 GB(加载模型与 checkpoint 时在 CPU 上暂存一份 float32 权重) | `free -g` |
 | 网络 | github.com(克隆、推送)、huggingface.co(分词器、锚文本 parquet、模型)、pypi.org / files.pythonhosted.org(依赖;3.2a 的 uv);只在 3.2a 时:uv 下载 CPython 3.13.18 的主机(`uv python list 3.13.18 --only-downloads --show-urls` 显示;本阶段为 releases.astral.sh)及其重定向目标。Claude Code 本身所需的网络另见下文 | — |
 | Git | 非浅克隆;能向 `leotree2020/OpenMythos` 的 `metrix-e1-pilot-protocol-v1` 直接推送(快进)的凭据;提交者身份 `user.name`、`user.email` | `git config user.name; git config user.email` |
@@ -36,8 +36,8 @@
 - 前提:Claude Code 已在该主机安装并登录(由 Owner 完成;它本身所需的网络以 Claude Code 的文档为准,不在上表“网络”一行之内)。
 - 顺序:由 Owner(或 Owner 指定的人)在 `tmux new -s metrix` 建立的 tmux 会话中做第 3.0 节(含建立变量文件 `~/metrix-vars.sh`)与第 3.1 节的克隆、检出和提交者身份;然后在同一个 tmux 会话中 `source ~/metrix-vars.sh && cd "$REPO"`,启动 Claude Code。Claude Code 若是在别的目录或别的分支上启动的,退出后按此重新启动(agent 定义只在会话开始时加载)。
 - 启动后先核对并把输出追加到 `env.txt`:`pwd` 与 `git rev-parse --show-toplevel` 相同,`git branch --show-current` 为 `metrix-e1-pilot-protocol-v1`,`ls .claude/agents/` 列出两个文件;两个 agent 出现在会话的 agent 列表中,其 tools 行与仓库文件 frontmatter 的 tools 行相同。不一致即停下,报告 Owner。每次调用审查 subagent 之前仍按 metrix/CLAUDE.md 第 5 节第 6 条比对 frontmatter,调用文字第一句用固定句。
-- 变量:第 3 节的命令用到的 `WORK`、`INPUTS`、`E`、`REPO`、`PY313`、`PY` 都写在 `~/metrix-vars.sh` 中(第 3.0–3.2 节逐步追加)。不依赖上一条命令留下的 shell 状态:Claude Code 的每一次命令调用、每个 tmux 窗口中的命令,都以 `source ~/metrix-vars.sh && cd "$REPO" && ` 开头(第 3.1 节追加 `REPO` 之前只 `source`)。
-- 长命令:可能超过工具超时的命令(第 3.2 节整段,含 3.2a;第 3.4 节的下载;`formal`、`test-generate`、`test-evaluate`)不作为有超时的前台命令运行,而在 tmux 的单独窗口中运行。不把含引号或多行的命令拼进 `send-keys`:先把要运行的命令原样写入脚本文件 `$WORK/command_output/<名称>.sh`,第一行为 `set -o pipefail; source ~/metrix-vars.sh && cd "$REPO" || exit 1`;再只发送一行,例如 `source ~/metrix-vars.sh && tmux new-window -d -t metrix -n <名称> -c "$REPO" && tmux send-keys -t metrix:<名称> "bash $WORK/command_output/<名称>.sh; echo exit=\$? >> $WORK/command_output/<名称>.end" Enter`。`<名称>` 各不相同(如 `s3_2`、`s3_4`、`formal`、`test_generate`、`test_evaluate`)。Claude Code 读取 `tee` 写出的输出文件(第 3.2 节写在 `env.txt`)跟踪进度,也可 `tmux capture-pane -p -t metrix:<名称>`;`<名称>.end` 出现才表示命令已结束,其中是脚本的退出码(`pipefail` 下即被 `tee` 的命令的退出码)。`.end` 不存在时视为仍在运行或状态不明。每个长命令只发送一次;中断、失败或状态不明之后是否重发,都由 Owner 决定,Executor 不自行重发;`test-generate` 与 `test-evaluate` 不得重跑(第 4 节)。
+- 变量:第 3 节的命令用到的 `WORK`、`INPUTS`、`VENV`、`E`、`REPO`、`PY313`、`PY` 都写在 `~/metrix-vars.sh` 中(第 3.0–3.2 节逐步追加)。不依赖上一条命令留下的 shell 状态:Claude Code 的每一次命令调用、每个 tmux 窗口中的命令,都以 `source ~/metrix-vars.sh && cd "$REPO" && ` 开头(第 3.1 节追加 `REPO` 之前只 `source`)。
+- 长命令:可能超过工具超时的命令不作为有超时的前台命令运行,而在 tmux 的单独窗口中运行。第 3 节把它们逐条标为“长命令 `<窗口名>`”,共 8 条,依次为 `s3_2a`、`s3_2`、`s3_4_data`、`s3_4_config`、`s3_4_model`、`formal`、`test_generate`、`test_evaluate`;每条长命令单用一个 `<窗口名>`、一个脚本、一个窗口。不把含引号或多行的命令拼进 `send-keys`:先把该条长命令在第 3 节中的各行原样写入脚本文件 `$WORK/command_output/<窗口名>.sh`,第一行为 `set -o pipefail; source ~/metrix-vars.sh && cd "$REPO" || exit 1`;再只发送一行,例如 `source ~/metrix-vars.sh && tmux new-window -d -t metrix -n <窗口名> -c "$REPO" && tmux send-keys -t metrix:<窗口名> "bash $WORK/command_output/<窗口名>.sh; echo exit=\$? >> $WORK/command_output/<窗口名>.end" Enter`(这一行要求 `$WORK` 的路径不含空格,窗口中的 shell 认识 `$?`,如 bash)。Claude Code 读取 `tee` 写出的输出文件(第 3.2 节写在 `env.txt`)跟踪进度,也可 `tmux capture-pane -p -t metrix:<窗口名>`;`<窗口名>.end` 出现才表示命令已结束,其中只有脚本最后一行的退出码(`pipefail` 下即被 `tee` 的命令的退出码;脚本没有 `set -e`,前面的行失败不会使脚本停下),所以每个脚本只放一条长命令,并按第 3 节在 `.end` 之外核对输出。`.end` 不存在时视为仍在运行或状态不明。前一条长命令的 `.end` 为 `exit=0` 且第 3 节的核对通过,才发送下一条。第 3.6、3.8 节的 `git pull --ff-only` 不写进脚本,在 Claude Code 中前台运行,成功后再发送该节的长命令。每个长命令只发送一次;中断、失败或状态不明之后是否重发,由 Owner 决定,Executor 不自行重发(第 4 节总则);Owner 决定重发时用新的 `<窗口名>`(如 `formal_2`),不覆盖原来的脚本与 `.end`。`test-generate` 写出 TEST 文件之后、`test-evaluate` 写出标记之后不得重跑;此前的拒绝是否重发由 Owner 决定(第 3.8、4 节)。
 
 ## 2. 需要下载的内容及其哈希
 
@@ -60,33 +60,35 @@
 
 ## 3. 执行命令(从克隆仓库到运行完毕)
 
-以下 `<work>`、`<inputs>` 都在仓库之外(run_pilot 拒绝仓库内的 `--work`)。**整个 Pilot 只用这一个克隆、这一个 `<work>`**(formal、test-generate、data-auditor 的计数、test-evaluate 都在这里)。每条命令的完整输出用 `tee` 保存在 `<work>/command_output/` 下(formal、test-generate、test-evaluate 的文件名带开始时间,重跑时不覆盖),在第 5 节的时机提交。长命令在 tmux 会话中运行。
+以下 `<work>`、`<inputs>` 都在仓库之外(run_pilot 拒绝仓库内的 `--work`)。**整个 Pilot 只用这一个克隆、这一个 `<work>`**(formal、test-generate、data-auditor 的计数、test-evaluate 都在这里)。每条命令的完整输出用 `tee` 保存在 `<work>/command_output/` 下(formal、test-generate、test-evaluate 的文件名带开始时间;`env.txt`、`fetch.txt` 只用 `tee -a` 追加,每段以 `date -u` 开头;都不覆盖),在第 5 节的时机提交。标为“长命令 `<窗口名>`”的按第 1 节在 tmux 窗口中运行,其余在 tmux 会话中或由 Claude Code 前台运行。命令不自行重跑(第 4 节总则)。
 
 ```bash
 # 3.0 先确认驱动(第 1 节):CUDA Version >= 13.0,一张 A100 80GB;否则停止、退租、报告 Owner
 nvidia-smi
 tmux new -s metrix            # 之后的命令都在这个 tmux 会话中运行
-df -h                         # 选一个至少 300 GB 可用的分区,<work> 与 <inputs> 放在那里
+df -h                         # 选一个至少 300 GB 可用的分区,<work>、<inputs> 与 venv 都放在那里(目录路径不含空格)
 # 变量文件(第 1 节“在 A100 主机上运行 Claude Code”):之后每条命令先 source 它。尖括号处换成所选分区上的目录
 cat > ~/metrix-vars.sh <<'EOF'
-export WORK=<该分区上的目录>/metrix-work INPUTS=<该分区上的目录>/metrix-inputs
+export WORK=<该分区上的目录>/metrix-work INPUTS=<该分区上的目录>/metrix-inputs VENV=<该分区上的目录>/metrix-venv
 export E="$WORK/command_output/env.txt"
 EOF
 source ~/metrix-vars.sh
 mkdir -p "$WORK/command_output"
-{ nvidia-smi; nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv; ldd --version | head -1; python3.13 --version; df -h "$WORK"; free -g; tmux -V; } 2>&1 | tee "$E"
-#     核对:CUDA Version >= 13.0、NVIDIA A100 80GB、可用空间 >= 300 GB;任一不满足即停下报告 Owner
-#     Python:不是 3.13.18(或没有 python3.13)时不停,第 3.2 节的 3.2a 用 uv 安装(代码不核对 Python 的补丁版本)
+{ date -u; nvidia-smi; nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv; ldd --version | head -1; python3.13 --version; df -h "$WORK"; free -g; tmux -V; } 2>&1 | tee -a "$E"
+#     核对:CUDA Version >= 13.0、NVIDIA A100 80GB、glibc >= 2.28(ldd 一行)、可用空间 >= 300 GB;任一不满足即停下报告 Owner
+#     Python:不是 3.13.18、没有 python3.13,或有而不能建 venv(缺 ensurepip)时不停,第 3.2 节的 3.2a 用 uv 安装
+#     (C4 裁决第 6 项;C5 裁决第 3 项;代码不核对 Python 的补丁版本)
 
 # 3.1 仓库(非浅克隆)与身份
 git clone https://github.com/leotree2020/OpenMythos.git && cd OpenMythos
 git checkout metrix-e1-pilot-protocol-v1
 echo "export REPO=$(pwd)" >> ~/metrix-vars.sh
 git config user.name "<Executor 账户>" && git config user.email "<Executor 邮箱>"
-{ git rev-parse HEAD; git config user.name; git config user.email; } 2>&1 | tee -a "$E"   # 所有命令在这个检出上运行
+{ date -u; git rev-parse HEAD; git config user.name; git config user.email; } 2>&1 | tee -a "$E"   # 所有命令在这个检出上运行
 
-# 3.2 Python 与依赖(只用 requirements.lock;pip 本身固定为本阶段 CPU 环境所用的 26.3)
-# 3.2a(C4 裁决第 6 项)主机没有 CPython 3.13.18 时,用 uv 安装这个精确版本。uv 固定为本阶段核对过的 0.13.10
+# 3.2 Python 与依赖(只用 requirements.lock;pip 本身固定为本阶段 CPU 环境所用的 26.3)。两条长命令,依次发送
+# 3.2a 长命令 s3_2a(C4 裁决第 6 项;C5 裁决第 3 项)主机没有 CPython 3.13.18,或有而不能建 venv(缺 ensurepip)时,
+#      用 uv 安装这个精确版本。uv 固定为本阶段核对过的 0.13.10
 #      (reports/impl_c/c4_04_uv_check.txt:容器预装的 uv 0.11.32 不列出 3.13.18,0.13.10 列出、下载并装成)。uv 只装
 #      解释器;依赖仍由下面的 pip 按 requirements.lock 逐个核对哈希安装。主机已有 3.13.18 且能建 venv(有 ensurepip)
 #      时只记下它的路径;否则用 uv 装。UV_* 变量只记名字,不记值(env.txt 会提交)
@@ -98,41 +100,48 @@ else
   && echo "export PY313=$(~/uv-tool/bin/uv python find --managed-python 3.13.18)" >> ~/metrix-vars.sh
 fi
 source ~/metrix-vars.sh
-{ echo "PY313=$PY313"; "$PY313" -c 'import platform, sys; print(platform.python_implementation(), platform.python_version()); print(sys.version)'; } 2>&1 | tee -a "$E"
-#      核对:倒数第二行必须是 “CPython 3.13.18”。任一步失败、uv 的列表中没有 3.13.18 或版本不符:停下报告 Owner(不用
-#      其他版本,不从源码编译)。主机缺少 venv 模块(python3 -m venv 失败)同样停下报告。uv 下载的主机以 --show-urls
-#      显示的为准(本阶段为 releases.astral.sh;没有设置 UV_PYTHON_INSTALL_MIRROR,c4_04)
-# 3.2 续
-"$PY313" -m venv ~/metrix-venv
-echo 'export PY=~/metrix-venv/bin/python' >> ~/metrix-vars.sh && source ~/metrix-vars.sh
-{ $PY -m pip install pip==26.3 && $PY -m pip install --require-hashes --no-deps -r metrix/e1-pilot/requirements.lock && $PY -m pip check; } 2>&1 | tee -a "$E"
+{ date -u; echo "PY313=$PY313"; "$PY313" -c 'import platform, sys; print(platform.python_implementation(), platform.python_version()); print(sys.version)'; } 2>&1 | tee -a "$E"
+#      s3_2a 结束后核对:.end 为 exit=0,且 env.txt 中最后一个 “PY313=” 行的下一行是 “CPython 3.13.18”。任一步失败、
+#      uv 的列表中没有 3.13.18 或版本不符:停下报告 Owner(不用其他版本,不从源码编译),不发送 s3_2。主机缺少 venv 模块
+#      (python3 -m venv 失败)同样停下报告。uv 下载的主机以 --show-urls 显示的为准(本阶段为 releases.astral.sh;
+#      没有设置 UV_PYTHON_INSTALL_MIRROR,c4_04)
+# 3.2 续 长命令 s3_2(s3_2a 的核对通过之后发送):venv 在所选分区($VENV);pip 不用缓存,安装时的临时文件放在 $VENV.tmp
+"$PY313" -m venv "$VENV" 2>&1 | tee -a "$E"
+echo 'export PY="$VENV/bin/python"' >> ~/metrix-vars.sh && source ~/metrix-vars.sh
+mkdir -p "$VENV.tmp" && { date -u; $PY -m pip install --no-cache-dir pip==26.3 && TMPDIR="$VENV.tmp" $PY -m pip install --no-cache-dir --require-hashes --no-deps -r metrix/e1-pilot/requirements.lock && $PY -m pip check; } 2>&1 | tee -a "$E"
+#      s3_2 结束后核对:.end 为 exit=0,且 env.txt 的最后一行是 pip check 的 “No broken requirements found.”;否则停下报告 Owner
 
-# 3.3 设备与库(只读)
-$PY -c "import torch; print(torch.__version__, torch.version.cuda, torch.cuda.is_available(), torch.cuda.get_device_name(0), torch.cuda.get_device_properties(0).total_memory / 2**30)" 2>&1 | tee -a "$E"
+# 3.3 设备与库(只读;前台)
+{ date -u; $PY -c "import torch; print(torch.__version__, torch.version.cuda, torch.cuda.is_available(), torch.cuda.get_device_name(0), torch.cuda.get_device_properties(0).total_memory / 2**30)"; } 2>&1 | tee -a "$E"
 
-# 3.4 下载(分词器、parquet、config、模型)
-PYTHONPATH=metrix/e1-pilot/src $PY -m metrix_e1.data fetch --inputs "$INPUTS" 2>&1 | tee "$WORK/command_output/fetch.txt"
-PYTHONPATH=metrix/e1-pilot/src $PY -m metrix_e1.train fetch-config --inputs "$INPUTS" 2>&1 | tee -a "$WORK/command_output/fetch.txt"
-$PY metrix/e1-pilot/run_pilot.py fetch-model --inputs "$INPUTS" 2>&1 | tee -a "$WORK/command_output/fetch.txt"
+# 3.4 下载(分词器、parquet、config、模型):三条长命令,依次发送,前一条的 .end 为 exit=0 才发送下一条
+# 长命令 s3_4_data
+{ date -u; PYTHONPATH=metrix/e1-pilot/src $PY -m metrix_e1.data fetch --inputs "$INPUTS"; } 2>&1 | tee -a "$WORK/command_output/fetch.txt"
+# 长命令 s3_4_config
+{ date -u; PYTHONPATH=metrix/e1-pilot/src $PY -m metrix_e1.train fetch-config --inputs "$INPUTS"; } 2>&1 | tee -a "$WORK/command_output/fetch.txt"
+# 长命令 s3_4_model
+{ date -u; $PY metrix/e1-pilot/run_pilot.py fetch-model --inputs "$INPUTS"; } 2>&1 | tee -a "$WORK/command_output/fetch.txt"
 
-# 3.5 第 1-7 步与冻结记录(Gate 0 PASS 时)
+# 3.5 第 1-7 步与冻结记录(Gate 0 PASS 时)。长命令 formal
 $PY metrix/e1-pilot/run_pilot.py formal --inputs "$INPUTS" --work "$WORK" 2>&1 | tee "$WORK/command_output/formal_$(date -u +%Y%m%dT%H%M%SZ).txt"
 ```
 
-pip 不在锁定文件中;`--require-hashes --no-deps` 逐个核对所装包的哈希,pip 的版本不改变装入的内容。固定为 26.3 只是为了与 CPU 环境一致(`reports/impl_c/c2_01_env_fetch.txt`)。
+pip 不在锁定文件中;`--require-hashes --no-deps` 逐个核对所装包的哈希,pip 的版本不改变装入的内容。固定为 26.3 只是为了与 CPU 环境一致(`reports/impl_c/c2_01_env_fetch.txt`)。`--no-cache-dir` 与 `TMPDIR` 只改变下载文件暂存的位置,不改变装入的内容。
 
 `formal` 依次执行:设备检查(ST8)→ 代码已提交(记录写明代码 commit)与连续性检查 → 第 1 步(生成数据,四个冻结哈希,写入两个 manifest 的第 1 步字段并提交)→ 第 2 步(泄漏检查 L1–L6;预检)→ 第 3 步(N)→ 第 4 步(F 的 6 个配置,选定,阳性对照 ST3)→ 第 5 步(L、A 的搜索与选定)→ 第 6 步(F、L、A 的另两个种子;S、Y 各三个种子)→ 第 7 步(G0.8 复评,Gate 0 判定,Gate 0 记录)→ Gate 0 PASS 时提交冻结记录(选定配置、数据哈希、30 个 checkpoint 哈希)。每一步开始前执行 ST12,每一步的记录在该步结束时提交并推送;最后提交第 10 节的实验记录。最后一行 `RESULT: PASS` 表示 Gate 0 PASS 且冻结记录已推送。
 
 `formal` 结束后:无论结果如何,停下,把结果报告 Owner。命令输出的处理分两种:
 
-- 第 1 步开始之后的结束或停止(实验记录在 `results/` 并已提交):按第 5 节提交 `env.txt`、`fetch.txt` 与这次的 `formal_<时间>.txt`。
+- 第 1 步开始之后的结束或停止(实验记录在 `results/` 并已提交):按第 5 节提交 `env.txt`、`fetch.txt`、这次的 `formal_<时间>.txt`,以及到此为止各长命令的脚本与 `.end`。
 - 第 1 步开始之前的停止(输出中有 “the run stopped before step 1: not committed”,记录在 `<work>/experiment_record_formal_<开始时间>.json`):说明这台机器或这个检出不是 Pilot 的,不提交任何文件,连同 `<work>` 中的记录与命令输出报告 Owner。
+- 以回溯退出(输出中有 Python 的 Traceback,末行 `RESULT: FAIL`,没有 “formal completed: …” 或 “formal stopped: …” 一行,也没有上面那一行),且工作区的 `metrix/e1-pilot/results/` 中没有本次的实验记录(`experiment_record_formal_<开始时间>.json`,开始时间不早于 `formal_<时间>.txt` 文件名中的时间):例如 `Pilot()` 中读冻结文件时的 ST12、设置确定性失败、`--work` 在仓库内,或 formal 被 Ctrl-C 结束(第 4 节)。不提交任何文件,连同命令输出报告 Owner。
 
 Gate 0 不是 PASS 时到此为止(第 8 节:TEST 不生成、不评测)。
 
 ```bash
-# 3.6 第 8 步:TEST 生成(Owner 批准之后)
+# 3.6 第 8 步:TEST 生成(Owner 批准之后)。git pull 在 Claude Code 中前台运行,成功后再发送长命令 test_generate(第 1 节)
 git pull --ff-only
+# 长命令 test_generate
 $PY metrix/e1-pilot/run_pilot.py test-generate --inputs "$INPUTS" --work "$WORK" 2>&1 | tee "$WORK/command_output/test_generate_$(date -u +%Y%m%dT%H%M%SZ).txt"
 ```
 
@@ -148,7 +157,7 @@ $PY metrix/e1-pilot/run_pilot.py test-generate --inputs "$INPUTS" --work "$WORK"
  "general_test_sha256": "<它计数的 general_test.jsonl 的 SHA-256>", "l6_test_count": <整数>}
 ```
 
-3. 提交之前,Executor 逐行查看 audit 的完整 stdout、data-auditor 的原文与转录,确认不含 TEST 题目、答案或通用文本的文字;有疑问不提交,报告 Owner。然后提交计数文件、audit 脚本与完整 stdout(只 `git add` 这些明确路径,提交前 `git diff --cached --stat` 只含 `metrix/e1-pilot/audit/` 下的路径)并推送;data-auditor 的原始输出、调用文字与 frontmatter 核对存入 `metrix/e1-pilot/reviews/<该提交>/`,作为下一个提交推送。两者都在第 3.8 节之前完成(begin 到 finish 之间不得推送)。这些提交的审查方式见第 5 节。
+3. 提交之前,Executor 逐行查看 audit 的完整 stdout、data-auditor 的原文与转录,确认不含 TEST 题目、答案或通用文本的文字;有疑问不提交,报告 Owner。然后提交计数文件、audit 脚本与完整 stdout(只 `git add` 这些明确路径,提交前 `git diff --cached --stat` 只含 `metrix/e1-pilot/audit/` 下的路径)并推送;data-auditor 的原始输出、转录(`data-auditor_transcript.jsonl`,本阶段惯例:`reviews/<提交>/*_transcript.jsonl`)、调用文字与 frontmatter 核对存入 `metrix/e1-pilot/reviews/<该提交>/`,作为下一个提交推送。两者都在第 3.8 节之前完成(begin 到 finish 之间不得推送)。这些提交的审查方式见第 5 节。
 4. Executor 比较 `command_output/test_generate_<时间>.txt` 中 `L6 TEST count (Executor)` 一行与计数文件的 `l6_test_count`。相同:报告 Owner,等待 TEST 评测的批准。不同:ST10,BLOCKED,不运行第 3.8 节(C4 裁决第 5 项);Executor 按第 5 项手写实验记录,作为证据提交并推送,报告 Owner。
 5. **两份计数不同时的实验记录**(C4 裁决第 5 项)。run_pilot 不写这次停止的记录,由 Executor 按协议第 10 节模板手写一份,路径 `metrix/e1-pilot/results/experiment_record_l6-compare_<比较时的 UTC 时间,格式同 date -u +%Y%m%dT%H%M%SZ>.txt`。20 个字段一个不减、顺序同模板,每个字段一行 `字段: 值`(与 run_pilot 写的 `.txt` 相同);内容只有计数、哈希、提交号、设备名与路径,不含 TEST 题目、答案或通用文本的文字。尖括号处照实填写:
 
@@ -175,12 +184,13 @@ Non-claims: 协议第 1 节 Non-claims;本记录不含 TEST 内容
 Next (single): 报告 Owner;不运行 test-evaluate
 ```
 
-   累计 GPU 秒数(与代码 `compute.GpuClock.used()` 同一口径:已关闭的段之和,有未关闭的段时计到当时):`source ~/metrix-vars.sh && cd "$REPO" && PYTHONPATH=metrix/e1-pilot/src "$PY" -c "import sys; from metrix_e1.compute import GpuClock; c = GpuClock(sys.argv[1]); print(c.used(), c._state()['open'])" "$WORK/gpu_clock.json"`。第二个值应为 `None`;不是时(有进程异常退出留下未关闭的段)在记录中照实写明“含自 <open> 起未关闭的一段,计到 <时间>”,并报告 Owner。
+   累计 GPU 秒数(与代码 `compute.GpuClock.used()` 同一口径:已关闭的段之和,有未关闭的段时计到当时;“当时”是命令中的 `t = time.time()`,经构造参数 `now` 传给 `GpuClock`,并一同打印):`source ~/metrix-vars.sh && cd "$REPO" && PYTHONPATH=metrix/e1-pilot/src "$PY" -c "import json, sys, time; from metrix_e1.compute import GpuClock; t = time.time(); p = sys.argv[1]; print(GpuClock(p, now=lambda: t).used(), json.load(open(p, encoding='utf-8'))['open'], t, time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime(t)))" "$WORK/gpu_clock.json"`。打印四个值:累计秒数、未关闭的段的开始(`open`)、`t`(Unix 秒)与 `t` 的 UTC 时间。第二个值应为 `None`;不是时(有进程异常退出留下未关闭的段)在记录中照实写明“含自 <open> 起未关闭的一段,计到 <t 的 UTC 时间>(t = <t>)”,并报告 Owner。
    提交:只 `git add` 这一个路径,提交前 `git diff --cached --stat` 只含这一个文件;按证据提交处理,不经 code-reviewer(C4 裁决第 4、5 项;第 5 节)。
 
 ```bash
-# 3.8 第 8 步:TEST 评测,只评一次(Owner 批准之后)
+# 3.8 第 8 步:TEST 评测,只评一次(Owner 批准之后)。git pull 在 Claude Code 中前台运行,成功后再发送长命令 test_evaluate(第 1 节)
 git pull --ff-only
+# 长命令 test_evaluate
 $PY metrix/e1-pilot/run_pilot.py test-evaluate --inputs "$INPUTS" --work "$WORK" 2>&1 | tee "$WORK/command_output/test_evaluate_$(date -u +%Y%m%dT%H%M%SZ).txt"
 ```
 
@@ -190,21 +200,26 @@ $PY metrix/e1-pilot/run_pilot.py test-evaluate --inputs "$INPUTS" --work "$WORK"
 
 输出的倒数第二行 `test-evaluate completed: <状态>` 表示 TEST 已评完、结果已推送,`<状态>` 是第 9 节的最终状态;最后一行 `RESULT` 只表示该状态是否为 PASS(例如 HYPOTHESIS_FAIL 时为 `RESULT: FAIL`),不表示评测失败。`test-evaluate stopped or refused: …` 表示停止或拒绝。
 
+以回溯结束(输出以 Python 的 Traceback 与 `RESULT: FAIL` 结束,没有上面两种行)有三种情况:TestAlreadyEvaluated(已有 TEST 结果,拒绝);本进程写出标记之后崩溃或被 Ctrl-C 结束(先写并提交 BLOCKED 实验记录,再抛出);finish 已推送结果,但实验记录的提交失败。此时看工作区的 `metrix/e1-pilot/results/` 中是否已有 `test_evaluation_marker.json` 或 `test_evaluation_result.json`(`ls`):有则 TEST 视为已评,不得重跑(代码同样拒绝第二次运行),连同命令输出报告 Owner;都没有时同样不重跑,报告 Owner(第 4 节总则)。
+
 标记一旦存在,TEST 就视为已评:无论结果如何,不得重跑 test-evaluate(第二次运行被拒绝:有标记无结果为 BLOCKED,有结果为 TestAlreadyEvaluated)。
 
 ## 4. 预检(ST11)与停止条件出现时的操作
+
+**总则**(C5 裁决第 2 项):「任何命令以回溯或非 0 退出码结束，或出现本手册没有写到的情况：不重跑、不修补，保留输出，报告 Owner。」本手册对某种结束已写明的其余处理(如第 3.5 节之后与第 5 节的提交输出、第 3.7 节第 5 项的手写记录)照做;“保留输出”指不删除、不改动 `<work>/command_output/` 中的文件。
 
 **预检**在 `formal` 的第 2 步自动进行:第一个配置(F1,种子 101)的前 20 步(协议给定的步数),记录每步耗时、tokens/s、峰值显存;另测一次 DEV 评测、一次模型加载、一次 `state_sha256`、一次 checkpoint 保存、重载与文件哈希。ST11 读解释 B17 的估算(`b17_estimate_hours`;A 的每步时间按 FLOP 比例 `a_factor` 放大,本数据约 6.75)与 checkpoint 开销(`preflight.checkpoint_overhead.seconds`,`pilot.checkpoint_overhead_seconds`)之和,即第 2 步记录中的 `preflight.st11_estimate_hours`(C4 裁决第 1 项;B17 已相应修订):超过 3.5 小时即停止,BLOCKED,报告 Owner(不得删减步骤或改配置来压缩时间;第 6 节给出预期区间)。预检测得的耗时还用于 ST7 的事前判断(C4 裁决第 1 项:不变):每次训练前按“基座模型加载 + 训练 + 两次 `state_sha256`、保存、文件哈希、重载 + 一次 DEV 评测”,每次评测前按“加载 + 评测”,TEST 评测开始之前按整个 TEST 评测(16 个模型的加载、哈希与评测,不加余量)判断累计 GPU 时间是否会超过 4 小时;会超过即 ST7,TEST 不开始。
 
 **一般规则**:除下列情形外,任何停止都由 run_pilot 写出实验记录(`results/experiment_record_<命令>_<开始时间>.json` 与 `.txt`,状态为停止条件规定的状态),最后一行 `RESULT: FAIL`。一步之中的停止先写并提交该步的记录(含该步算出的数值);停止时已写出未提交的记录随实验记录一起提交。第 1 步开始之后的停止,记录提交并推送到 `results/`。例外(现行实现;C4 裁决第 2 项接受):
 
-- `formal` 在第 1 步开始之前停止(设备检查 ST8、代码有未提交的改动、连续性检查、第 1 步开始时的 ST12 / ST13 或提交前提不成立),说明这台机器或这个检出不是 Pilot 的:记录只写在 `<work>/experiment_record_formal_<开始时间>.json` 与 `.txt`,不写入仓库、不推送,由 Executor 连同命令输出报告 Owner。`Pilot()` 本身的 ST12(读冻结文件时)没有记录,run_pilot.py 以回溯退出。
+- `formal` 在第 1 步开始之前停止(设备检查 ST8、代码有未提交的改动、连续性检查、第 1 步开始时的 ST12 / ST13 或提交前提不成立),说明这台机器或这个检出不是 Pilot 的:记录只写在 `<work>/experiment_record_formal_<开始时间>.json` 与 `.txt`,不写入仓库、不推送,由 Executor 连同命令输出报告 Owner。`Pilot()` 本身的 ST12(读冻结文件时)没有记录,run_pilot.py 以回溯退出(第 3.5 节之后第三种情况)。
+- `formal` 被 Ctrl-C 或 SIGHUP 结束(现行实现;按 `DEFERRED_MINORS.md` 1.38 CL6 写入,C5 裁决第 2 项):`run_gate` 只捕获 Exception,所以没有实验记录(此前已提交的步记录留在 `results/`)。不得重跑,不提交,连同命令输出报告 Owner(与第 3.5 节之后第三种情况相同;SIGHUP 结束时输出中可能没有回溯)。SSH 断开会发出 SIGHUP,所以长命令都在 tmux 中运行(第 1 节)。
 - `test-generate`:生成之前的拒绝不写记录;只在 ST10 超限时写 BLOCKED 记录并提交;成功时不写实验记录(ST10 记录即其输出)。两份 L6 计数不同的 ST10 由 Executor 手写记录(第 3.7 节第 5 项)。
 - `test-evaluate` 在本进程写入标记之前:没有停止码的拒绝(TEST 已评或已开始、生成器的前提、连续性检查、已提交记录或文件缺失、checkpoint 文件或 N 的哈希不符、begin 中的检出与提交前提)不写记录(TEST 未评),带停止码的协议停止(ST7、ST8、ST9、ST10、ST12)写记录并提交;本进程写入标记之后的任何停止或崩溃都写记录并提交(BLOCKED)。
 
 **确定性模式下的 CUDA 算子报错**(上次阶段 C 指令第 9 项):run_pilot 在 CUDA 初始化之前设置协议第 0 节的确定性(`torch.use_deterministic_algorithms(True)`、关闭 TF32、`CUBLAS_WORKSPACE_CONFIG` 取冻结值;`compute.set_determinism`),并把设置写入实验记录。某个算子在确定性模式下报错(例如 `RuntimeError: ... does not have a deterministic implementation`,或要求设置 `CUBLAS_WORKSPACE_CONFIG`):**立即停下,报告 Owner。不得关闭确定性,不得修改 `CUBLAS_WORKSPACE_CONFIG`、TF32、cuDNN 设置或环境变量,不得改代码、换算子、换库版本,不得重跑。** run_pilot 按崩溃处理:`formal` 写 NOT_TESTED 实验记录并提交(第 1 步开始之后),原样抛出;`test-evaluate` 在本进程写入标记之后为 BLOCKED 记录,TEST 视为已评,之前则不写记录。Executor 把命令输出(含回溯)与提交号报告 Owner,由 Review Gate 决定如何处理。设置确定性本身失败(`compute.set_determinism` 在 `Pilot()` 中运行,可能报 “CUDA already initialised …” 或 “determinism settings did not take effect”)时,与 `Pilot()` 的 ST12 一样没有实验记录,run_pilot.py 以回溯退出;同样停下,不得改设置,连同命令输出报告 Owner。
 
-**重跑与恢复**:一次 Pilot 是同一台机器、同一个 `<work>` 上的一串命令。formal 已提交步记录之后,`<work>` 中没有设备记录(`device_ledger.json`)的 formal 与 test-evaluate 被拒绝;冻结记录提交之后 formal 被拒绝;同一个 `<work>` 中已有某次训练的 checkpoint 时,该次训练拒绝再训。崩溃或停止之后是否、从哪一步重新开始,由 Owner 决定(ST9 的“从第 8 节第 3 步重新开始”同样需要 Owner 指令),Executor 不自行重跑。Executor 不重跑、不修补、不换机器,把 `<work>/command_output/` 中该命令的完整输出与提交号报告 Owner。
+**重跑与恢复**:一次 Pilot 是同一台机器、同一个 `<work>` 上的一串命令。formal 已提交步记录之后,`<work>` 中没有设备记录(`device_ledger.json`)的 formal 与 test-evaluate 被拒绝;冻结记录提交之后 formal 被拒绝;同一个 `<work>` 中已有某次训练的 checkpoint 时,该次训练拒绝再训。崩溃或停止之后是否、从哪一步重新开始,由 Owner 决定(ST9 的“从第 8 节第 3 步重新开始”同样需要 Owner 指令),Executor 不自行重跑。Executor 不重跑、不修补、不换机器(总则),把 `<work>/command_output/` 中该命令的完整输出与提交号报告 Owner。
 
 | 停止 | 何时出现 | 动作(协议第 11 节)与操作 |
 |---|---|---|
@@ -232,9 +247,9 @@ $PY metrix/e1-pilot/run_pilot.py test-evaluate --inputs "$INPUTS" --work "$WORK"
 
 - **由 run_pilot 自动提交并推送**(`testgate.commit_paths`:只提交该步的路径,快进推送,不推送标签,核对远端分支):两个 manifest 的第 1 步字段;`metrix/e1-pilot/results/` 下每一步的记录 `stepN_record.json`、每次训练的记录 `training_runs/<run>.json`(含训练日志、算力、checkpoint 的 `state_sha256` 与文件 SHA-256、DEV 汇总)、DEV 逐题明细 `details/`、Gate 0 记录、冻结记录、ST10 记录、TEST 标记与结果、实验记录 `experiment_record_<命令>_<开始时间>.json/.txt`。每次提交前核对:本分支的检出、HEAD 等于远端最新提交、暂存区为空、有提交者身份、`push --dry-run` 通过。
 - **由 Executor 手工提交**:
-  - `<work>/command_output/` 中的命令输出(第 1 步开始之前停止的 formal 除外,见第 3.5 节之后),复制到 `metrix/e1-pilot/results/command_output/<名称>.txt`(该路径与 `.txt` 扩展名不被仓库的 `.gitignore` 忽略;不要用 `logs/` 目录或 `.log` 扩展名,它们被忽略),只 `git add` 这些明确路径,提交前 `git diff --cached --stat` 核对。时机:`formal` 结束后、`test-generate` 之前一次;`test-generate` 之后、第 3.8 节之前一次;`test-evaluate` 结束后一次。**不在 begin 与 finish 之间提交。**
+  - `<work>/command_output/` 中的命令输出与长命令的记录(第 3.5 节之后写明不提交的两种情况除外):命令输出 `<输出文件名>`(`env.txt`、`fetch.txt`、`formal_<时间>.txt`、`test_generate_<时间>.txt`、`test_evaluate_<时间>.txt`)复制到 `metrix/e1-pilot/results/command_output/<输出文件名>`;每条长命令(第 1 节)的脚本 `<窗口名>.sh` 与结束标记 `<窗口名>.end` 复制为 `metrix/e1-pilot/results/command_output/<窗口名>.sh.txt`、`<窗口名>.end.txt`(实际运行的命令与退出码)。该路径与这些文件名不被仓库的 `.gitignore` 忽略(不要用 `logs/` 目录或 `.log` 扩展名,它们被忽略);提交前 `git check-ignore -v <这些路径>` 应无输出、退出码为 1(本阶段对四种文件名的核对:`reports/impl_c/c5_01_runbook_sim.txt`)。只 `git add` 这些明确路径,提交前 `git diff --cached --stat` 核对。时机:`formal` 结束后、`test-generate` 之前一次;`test-generate` 之后、第 3.8 节之前一次;`test-evaluate` 结束后一次。**不在 begin 与 finish 之间提交。**
   - 提交 `test_generate_<时间>.txt`、`test_evaluate_<时间>.txt`,以及第 3.7 节 data-auditor 的 stdout、原文与转录之前,逐行查看,确认不含 TEST 题目、答案或通用文本的文字(异常回溯或工具结果可能带出行内容);有疑问不提交,报告 Owner。
-  - data-auditor 的计数文件、audit 脚本与 stdout,及其原始输出(第 3.7 节)。
+  - data-auditor 的计数文件、audit 脚本与 stdout,及其原始输出与转录(第 3.7 节)。
   - 两份 L6 计数不同时 Executor 手写的实验记录(第 3.7 节第 5 项)。
   - **审查方式**(C4 裁决第 4、5 项):这些手工提交只含输出(`results/command_output/`、`audit/`、`reviews/`,以及上一项的手写记录),不含 `src/`、`tests/`、`run_pilot.py`,按证据提交处理,不经 code-reviewer。只 `git add` 明确路径,提交前 `git diff --cached --stat` 核对只含这些路径;含其他路径的提交不是证据提交,按 metrix/CLAUDE.md 第 5 节送审。所有这些推送都不在 begin 与 finish 之间。
 - **不提交**:模型权重、checkpoint(`<work>/checkpoints/`)、数据目录、`<work>/test/` 下的所有文件(TEST 文件与 `leakage_test_report.json`,后者的 L4 明细可能引用 TEST)、TEST 逐题明细(`<work>/test_details/`)。这些都在 `<work>` 中;`<work>` 在仓库之外。checkpoint 在 Pilot 结束之前不删(删除需 Owner 指令)。

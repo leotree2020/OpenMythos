@@ -1,6 +1,6 @@
 # E1-PILOT Implementation 阶段 C 报告
 
-**状态:IMPLEMENTATION_READY(Implementation Task Order V1 第 13 节;阶段 C 验收见文末“阶段 C 验收”)。** C4 按 Review Gate 2026-11-27 对 C2、C3 待决事项的裁决(`tasks/IMPL_C4_RULING.md`)完成:代码提交 `a09e154e`(ST11 读 B17 估算 + checkpoint 开销,B17 修订)与文档提交(RUNBOOK 等),见 C4 节;状态仍为 IMPLEMENTATION_READY。C1 完成(第二次送审通过:工作提交 `ae60e0f7`、修复提交 `b48fe842`);C2 完成(工作提交 `5219ff77`,修复提交 `49fc9a35`、`dd65a361`、`a0e04d1f`,见 C2 节);C3 完成(`RUNBOOK_A100.md` 与本报告,见 C3 节)。C1 结束时曾因审查额度用尽在 C1 与 C2 之间停下;Owner 2026-11-27 的指令(`tasks/IMPL_C2_OWNER_MESSAGE.md`)之后,C2、C3 在第三个阶段 C 会话中执行(C2 节开头)。C1 的第一次送审在连续 3 轮未 PASS 后停止(`5f5cd51e`,只提交了证据);Review Gate 对 C1 的裁决(2026-11-25,`tasks/IMPL_C1_RULING.md`)之后按裁决修改、重新送审,见 C1 节“第二次送审(按裁决修改)”。C1 节其余各小节记录第一次送审,保持原样。以下开头各项是 C1(第二个阶段 C 会话)的情况;C2、C3 的会话与运行环境见 C2 节开头。
+**状态:IMPLEMENTATION_READY(Implementation Task Order V1 第 13 节;阶段 C 验收见文末“阶段 C 验收”)。** C5 按 Review Gate 2026-11-28 对 C4 待决事项的裁决(`tasks/IMPL_C5_RULING.md`)只修正 RUNBOOK(一次纯文档提交,没有改代码),见 C5 节;状态仍为 IMPLEMENTATION_READY。C4 按 Review Gate 2026-11-27 对 C2、C3 待决事项的裁决(`tasks/IMPL_C4_RULING.md`)完成:代码提交 `a09e154e`(ST11 读 B17 估算 + checkpoint 开销,B17 修订)与文档提交(RUNBOOK 等),见 C4 节;状态仍为 IMPLEMENTATION_READY。C1 完成(第二次送审通过:工作提交 `ae60e0f7`、修复提交 `b48fe842`);C2 完成(工作提交 `5219ff77`,修复提交 `49fc9a35`、`dd65a361`、`a0e04d1f`,见 C2 节);C3 完成(`RUNBOOK_A100.md` 与本报告,见 C3 节)。C1 结束时曾因审查额度用尽在 C1 与 C2 之间停下;Owner 2026-11-27 的指令(`tasks/IMPL_C2_OWNER_MESSAGE.md`)之后,C2、C3 在第三个阶段 C 会话中执行(C2 节开头)。C1 的第一次送审在连续 3 轮未 PASS 后停止(`5f5cd51e`,只提交了证据);Review Gate 对 C1 的裁决(2026-11-25,`tasks/IMPL_C1_RULING.md`)之后按裁决修改、重新送审,见 C1 节“第二次送审(按裁决修改)”。C1 节其余各小节记录第一次送审,保持原样。以下开头各项是 C1(第二个阶段 C 会话)的情况;C2、C3 的会话与运行环境见 C2 节开头。
 
 - 指令:`tasks/IMPLEMENTATION_TASK_ORDER_V1.md` 第 10 节表中 C 行、第 7、8、11 节;Owner 下达阶段 C 的消息原文 `tasks/IMPL_C_OWNER_MESSAGE.md`(两段:本会话开头的消息,含 Review Gate 补充裁决 1–6;上次阶段 C 指令原文,含 Review Gate 对阶段 B 的裁决 1–5 与阶段 C 的要求 6–10)。阶段 C 分 C1、C2、C3 三段,每段结束提交、推送、写入本报告。
 - 执行会话:session_01J5mxaXeqjRSkJj9ZuGh8EJ(第二个阶段 C 会话;上一个会话 session_01J5mxaXE1WCWBQiUWaFsd9w 在第一个代码提交的两份审查 BLOCK 后停止,代码已撤回,见 `reviews/tree-65225a5a…/` 与 `1435a74..eb05e42`)。本地分支 `metrix-e1-pilot-protocol-v1` 设为 `origin/metrix-e1-pilot-protocol-v1`(`eb05e422`)后在其上工作;会话分支 `claude/brave-meitner-436eh9` 没有使用。
@@ -95,6 +95,26 @@ Owner 转达,原文连同首段入库为 `tasks/IMPL_C4_RULING.md`(下称“C4 �
 7. 「RUNBOOK 按 1、3–6 更新，删去「待 Review Gate 决定」的措辞，时长表改为 ST11 读两者之和；另写明在 A100 主机上运行 Claude Code 的前提（从仓库根目录、本分支启动，使两个 agent 定义直接加载）。」
 
    落实(C4 文档提交):RUNBOOK 开头与第 1、3、4、5、6 节;第 1 节新增“在 A100 主机上运行 Claude Code”。RUNBOOK 中不再有“待 Review Gate 决定”或“待决”的措辞。
+
+## Review Gate 对 C4 待决事项的裁决(2026-11-28,作用范围:E1 Pilot 直至结束)
+
+Owner 转达,原文连同首段入库为 `tasks/IMPL_C5_RULING.md`(下称“C5 裁决”)。以下逐字照录第 1–5 项,每项后写明落实情况;执行见“C5”节。
+
+1. 「pilot.py 中 4 处过时注释：不改，登记。正式运行之前不再提交任何代码改动。」
+
+   落实:C4 节“待 Review Gate 决定(C4)”第 1 项与 `DEFERRED_MINORS.md` 1.39 CM3 结案:不改,登记(CM3 的处理列与 1.39 首段)。1.39 中写着“下一个代码提交”的 CM4、CM5、CM6、CM8、CM10 在正式运行之前不会改,保持登记(1.39 首段)。C5 没有改 `src/`、`tests/`、`run_pilot.py`。
+2. 「做一次纯文档提交，按 DEFERRED_MINORS 中各条「处理应为」修正 RUNBOOK：CL2、CL3、CL4、CL5、CL6、CP1、CP2、CP3、CP4。另在 RUNBOOK 第 4 节加一条总则：「任何命令以回溯或非 0 退出码结束，或出现本手册没有写到的情况：不重跑、不修补，保留输出，报告 Owner。」」
+
+   落实(C5 文档提交):C4 节“待 Review Gate 决定(C4)”第 2 项结案。九项逐项见“C5”节“交付”,`DEFERRED_MINORS.md` 1.38、1.42 各行处理列末尾记“已修(C5 文档提交)”。总则原文写在 RUNBOOK 第 4 节开头。
+3. 「CP5：确认。主机有 CPython 3.13.18 但不能建 venv（缺 ensurepip）时，同样用 uv 安装该精确版本；第 1 节与 3.0 的说明同步。」
+
+   落实(C5 文档提交):3.2a 的条件不变;第 1 节 Python 一行、第 3.0 节的说明与 3.2a 的注释改为“没有 CPython 3.13.18,或有而不能建 venv(缺 ensurepip)”时用 uv,并引用本项;`DEFERRED_MINORS.md` 1.42 CP5 结案。
+4. 「本次提交只送 code-reviewer 一轮：有 BLOCKER 则修复后再送，否则直接提交；新的 MAJOR、MINOR 只登记。不改 src/、tests/、run_pilot.py。」
+
+   落实:见“C5”节“提交与审查(C5)”。
+5. 「完成后状态仍为 IMPLEMENTATION_READY，停下。」
+
+   落实:见“最终状态”。
 
 ## C1:BE 修复、interpretations 标记、TEST 闸门
 
@@ -338,12 +358,72 @@ Owner 转达,原文连同首段入库为 `tasks/IMPL_C4_RULING.md`(下称“C4 �
 5. **模拟脚本的第一次运行。** `c4_runbook_sim.sh` 在 `cd` 之后以相对路径读 RUNBOOK,第一次运行失败(`c4_07_runbook_sim_trial1_script_error.txt`,按 C1 裁决第 7 项保留);改为传绝对路径后重跑为 `c4_07`,脚本本身没有改。
 6. **会话中删除的文件。** 只有会话临时目录中的文件(过早提取时复制的转录副本、模拟的临时目录);没有删除任何受跟踪或作为证据的文件。
 
-### 待 Review Gate 决定(C4)
+### 待 Review Gate 决定(C4;第 1、2 项已由 2026-11-28 的裁决回答,见“Review Gate 对 C4 待决事项的裁决”;第 3 项仍待 Owner 确认,转列于 C5 节)
 
 1. **只改注释是否属于“不改代码”(1.39 CM3)。** C2 待决第 1、3、5 项已按现行实现接受,但 `pilot.py` 中 4 处注释或文档字符串仍写 “is for Review Gate”;冒烟实验记录的 “Next (single)” 为 “Review Gate reviews the smoke report (C2)”(只出现在冒烟记录中)。Executor 按裁决第 2 项的字面没有改动。请指示:允许时,在下一个代码提交中只改这些措辞为“按现行实现接受(`tasks/IMPL_C4_RULING.md` 第 2 项)”,送两份审查。
 2. **1.38 中 RUNBOOK 的操作细节(CL2–CL6)。** C3 第 3 轮登记、处理列写“正式运行指令之前修正”的几项(venv 与 pip 缓存的分区、glibc、`env.txt` 与 `fetch.txt` 带时间;`Pilot()` 内失败、以回溯结束的 test-evaluate、Ctrl-C 结束的 formal 怎样处理;第 3.7 节列入转录)不在 C4 裁决第 7 项所列的修改之内,本提交没有改。请指示是否在下达正式运行指令之前,以只改文档的提交修正(送 code-reviewer)。
 3. **RUNBOOK 中的分工(1.41 CO6)。** RUNBOOK 第 1 节写为:Claude Code 在 A100 主机上的安装与登录,以及第 3.0–3.1 节(驱动检查、tmux 会话、变量文件、克隆与检出),由 Owner 或 Owner 指定的人完成,之后由 Claude Code 接手。C4 裁决第 7 项只要求写明前提,没有指定由谁做。请 Owner 确认这一分工,或指定其他做法。
 4. **提请注意(不需裁决):** 按 RUNBOOK 第 6 节的规划区间,ST11 读到的和约 1.6–4.2 小时,区间上端超过 3.5 小时。若 A100 上实测落在上端,`formal` 会在第 2 步以 ST11 停止(BLOCKED),此时已用掉环境安装、下载与预检的租用时间(约 0.6 小时)。
+
+## C5:按 Review Gate 2026-11-28 裁决(`tasks/IMPL_C5_RULING.md`)的 RUNBOOK 修正
+
+- 指令:Owner 本次消息(`tasks/IMPL_C5_RULING.md`,首段与裁决第 1–5 项):直接在 `metrix-e1-pilot-protocol-v1` 上工作,只做快进推送,不推送标签,不经 PR;一次纯文档提交,只送 code-reviewer 一轮(有 BLOCKER 则修复后再送,否则直接提交;新的 MAJOR、MINOR 只登记);不改 `src/`、`tests/`、`run_pilot.py`;完成后状态仍为 IMPLEMENTATION_READY,停下。
+- 执行会话:session_01J5mxaWUR9DL7AWpZWbGZsH(第五个阶段 C 会话)。本地分支 `metrix-e1-pilot-protocol-v1` 设为 `origin/metrix-e1-pilot-protocol-v1`(`377bc736`)后在其上工作;会话分支 `claude/c5-ruling-runbook-update-sikcvi` 没有使用。
+- 运行环境:Claude Code on the web 云容器,hostname `vm`,4 CPU,15 GiB 内存,没有 nvidia 设备与 `nvidia-smi`;系统 Python 3.13.18(`/usr/local/bin/python3.13`,有 ensurepip)(`impl_c/c5_00_session_start.txt`)。RUNBOOK 命令的模拟按 s3_2 把 `requirements.lock` 装入会话临时目录中的 venv,并按 s3_4_data、s3_4_config 下载分词器、锚文本 parquet 与固定 revision 的 `config.json`(`impl_c/c5_01_runbook_sim.txt`);没有下载或加载任何权重,没有使用 GPU,没有生成、读取或统计 TEST。
+
+### 交付
+
+- 裁决原文 `tasks/IMPL_C5_RULING.md`(本次消息全文)。
+- `RUNBOOK_A100.md`(C5 裁决第 2、3 项;逐项与 `DEFERRED_MINORS.md` 各行处理列末尾的“已修(C5 文档提交)”对应):
+  - CL2:变量文件加 `VENV`(所选分区上的 `metrix-venv`),3.2 的 venv 建在 `$VENV`;两次 pip 加 `--no-cache-dir`,锁定文件的安装以 `TMPDIR=$VENV.tmp` 运行;第 1 节磁盘一行写明 venv 与安装时的临时文件在该分区、家目录只放变量文件(及 3.2a 走 uv 分支时的 uv 与解释器);第 3.0 节核对加 glibc ≥ 2.28;`env.txt`、`fetch.txt` 只用 `tee -a` 追加、每段以 `date -u` 开头,命令不自行重跑。
+  - CL3:第 3.5 节之后加第三种情况:以回溯退出且工作区 `results/` 中没有本次的实验记录(开始时间不早于 `formal_<时间>.txt` 的时间)时,不提交,连同命令输出报告 Owner。
+  - CL4:第 3.8 节加一段:以回溯结束的三种情况;`results/` 中已有标记或结果则 TEST 视为已评、不得重跑,报告 Owner;都没有时同样不重跑,报告 Owner。
+  - CL5:第 3.7 节第 3 项列入 data-auditor 的转录(`data-auditor_transcript.jsonl`),第 5 节同步。
+  - CL6:第 4 节例外加一条:`formal` 被 Ctrl-C 或 SIGHUP 结束时没有实验记录,不得重跑,不提交,报告 Owner。
+  - CP1:第 3 节把 8 条长命令逐条标出窗口名(`s3_2a`、`s3_2`、`s3_4_data`、`s3_4_config`、`s3_4_model`、`formal`、`test_generate`、`test_evaluate`),每个脚本只放一条长命令;第 1 节写明 `.end` 只有脚本最后一行的退出码、前一条 `exit=0` 且第 3 节的核对通过才发送下一条;3.6、3.8 的 `git pull --ff-only` 在 Claude Code 中前台运行,成功后再发送;s3_2a 之后核对 `env.txt` 中最后一个 `PY313=` 行的下一行为 `CPython 3.13.18`,s3_2 之后核对末行为 pip check 的 “No broken requirements found.”;send 一行的前提(`$WORK` 不含空格、窗口 shell 认识 `$?`)写明。
+  - CP2:第 5 节列入长命令的 `<窗口名>.sh.txt`、`<窗口名>.end.txt`,提交前 `git check-ignore -v` 应无输出、退出码 1;占位符分为 `<窗口名>` 与 `<输出文件名>`。
+  - CP3:第 1 节改为“test-generate 写出 TEST 文件之后、test-evaluate 写出标记之后不得重跑;此前的拒绝是否重发由 Owner 决定”;Owner 决定重发时用新的窗口名。
+  - CP4:GPU 秒数的命令取 `t = time.time()`,经 `GpuClock` 的构造参数 `now` 传入,打印累计秒数、`open`、`t` 与其 UTC 时间;不再调用私有方法 `_state()`。
+  - CP5(裁决第 3 项):第 1 节 Python 一行、第 3.0 节说明与 3.2a 注释同步为“没有 CPython 3.13.18,或有而不能建 venv(缺 ensurepip)”时用 uv。
+  - 总则(裁决第 2 项):第 4 节开头照录原文,后接一句:本手册对某种结束已写明的其余处理(提交输出、手写记录)照做,“保留输出”指不删除、不改动 `<work>/command_output/` 中的文件(见下文“待 Review Gate 决定(C5)”第 2 项)。各处“不自行重跑”引用总则。
+  - 开头“依据”加 C5 裁决。
+- `DEFERRED_MINORS.md`:1.38 首段与 CL2–CL6、1.39 首段与 CM3(裁决第 1 项)、1.42 首段与 CP1–CP5 的处理列;第 3 节加 C5 一条。
+- 本报告:开头、“Review Gate 对 C4 待决事项的裁决”、C4 节“待 Review Gate 决定(C4)”的标题、本节、验收第 8 项与“最终状态”。
+- 证据:`impl_c/c5_00_session_start.txt`;RUNBOOK 命令的模拟 `impl_c/c5_runbook_sim.sh` → `c5_01_runbook_sim.txt`;文档检查 `impl_c/c5_docs_checks.sh` → `c5_02_docs_checks.txt`(被取代的第一次运行 `c5_docs_checks_trial1.sh` → `c5_02_docs_checks_trial1_script_error.txt`,见下文“本节执行中出现的问题”第 2 项)。
+
+### 检查(本节开头的运行环境)
+
+| 项 | 结果 | 位置 |
+|---|---|---|
+| 3.0 的变量文件与 `env.txt` 一行、3.1 的 REPO 与身份两行(从 RUNBOOK 原样取出,占位符换成会话临时目录中的“分区”,在 `env -i` 的 shell 中运行) | 退出码 0;变量文件含 `VENV`;`env.txt` 各段以 `date -u` 开头,只追加 | `impl_c/c5_01_runbook_sim.txt` |
+| 长命令 `s3_2a`:按第 1 节写脚本(第一行 + RUNBOOK 中的各行),用第 1 节的 send 一行在 `env -i` 的 shell 中发送 | `s3_2a.end` 为 `exit=0`;`env.txt` 中 `PY313=/usr/local/bin/python3.13` 的下一行是 `CPython 3.13.18`(主机分支;uv 分支没有运行,c4_08 运行过) | `c5_01` |
+| 长命令 `s3_2`:venv 在 `$VENV`,两次 pip `--no-cache-dir`,锁定文件的安装以 `TMPDIR=$VENV.tmp` | `exit=0`;`env.txt` 末行 `No broken requirements found.`;安装期间 `$VENV.tmp` 最大约 2.6 GiB(每 2 秒取样,180 次),结束后 4 KiB;HOME 下没有 `.cache`;venv 4.8 GB | `c5_01` |
+| 长命令 `s3_4_data`、`s3_4_config`(各用一个窗口名,写入同一个 `fetch.txt`) | 都是 `exit=0`;6 个冻结输入的 SHA-256 与冻结值相同,`config.json` 为 `1ddb5b89…`;`fetch.txt` 两段各以 `date -u` 开头 | `c5_01` |
+| 3.7 的 GPU 秒数命令(两个人造 `gpu_clock.json`) | 只有已关闭的段:`15.5 None <t> <UTC>`;有未关闭的段(开始于 t₀):`111.108… <t₀> <t> <UTC>`,即 10 + (t − t₀) | `c5_01` |
+| 第 5 节的文件名(`env.txt`、`formal_<时间>.txt`、`formal.sh.txt`、`formal.end.txt`)与 `.gitignore` | `git check-ignore -v` 无输出,退出码 1 | `c5_01` |
+| 文档检查:暂存路径的 blob 与 diff 的 sha256(首尾);`src/`、`tests/`、`run_pilot.py` 与父提交相同;暂存路径都在 `metrix/e1-pilot/` 下;总则原文在 RUNBOOK 中;旧占位符、私有方法、家目录 venv、待决措辞不再出现;8 条长命令都有标注;`env.txt`、`fetch.txt` 没有不带 `-a` 的 `tee`;3.7 的手写记录模板与协议第 10 节的 20 个字段一致;`outside_metrix_check` | 见 `c5_02`(本报告写于其运行之前;任一项不符则不送审、不提交) | `impl_c/c5_02_docs_checks.txt` |
+
+没有覆盖:3.3(要 CUDA)、`s3_4_model`(权重只在 A100 主机下载)、`formal`、`test-generate`、`test-evaluate`,以及 3.2a 的 uv 分支。模拟中 tmux 服务器由模拟脚本的 shell 启动,使窗口带上本容器的 HTTPS 代理设置(A100 主机上没有);send 一行本身在 `env -i` 的 shell 中运行。
+
+### 提交与审查(C5)
+
+| 提交 | 内容 | 被审暂存树 | code-reviewer | data-auditor |
+|---|---|---|---|---|
+| 本提交(文档),唯一一轮 | 见“交付” | 见 `reviews/<本提交>/` | 见该目录 | 不送(只改文档;裁决第 4 项) |
+
+- 只送 code-reviewer 一轮(裁决第 4 项):调用文字第一句按 metrix/CLAUDE.md 第 5 节第 6 条,含 C1 裁决的防范对象原文与 `tasks/IMPL_C5_RULING.md` 全文;调用前核对仓库文件与已加载定义的 tools 行。本报告写于审查之前;审查有 BLOCKER 则修复后再送,没有才提交,所以本提交存在即表示最后一轮没有 BLOCKER。调用文字、核对、输入、转录与原文,本提交的推送记录,以及本轮新的 MAJOR、MINOR 的登记(`DEFERRED_MINORS.md` 1.43),在其后的证据提交中。
+
+### 本节执行中出现的问题(都已记录)
+
+1. **两个空目录。** 用 `git check-ignore` 核对第 5 节的文件名时,先建了 `metrix/e1-pilot/results/` 与其下的 `command_output/`,随即删除(都是本会话所建,其中从来没有文件;`git check-ignore` 不需要路径存在,`c5_01` 中的核对是在它们不存在时运行的)。没有删除任何受跟踪或作为证据的文件;会话临时目录中的模拟目录不入库。
+2. **文档检查的第一次运行。** `c5_docs_checks.sh` 第一次运行时,“总则原文在 RUNBOOK 中”一项用 `grep -o` 的多字节括号表达式取原文;本容器的 locale 为 POSIX,表达式没有匹配,取到空串,`grep -c` 于是数出 RUNBOOK 的全部 275 行,退出码仍为 0,这一项的结果无效(其余各项不受影响)。按 C1 裁决第 7 项保留:输出 `impl_c/c5_02_docs_checks_trial1_script_error.txt`,当时的脚本 `c5_docs_checks_trial1.sh`(sha256 与该输出中记录的 `31d7bc5d…` 相同)。改为用 Python 以 UTF-8 读两个文件、原文为空或在 RUNBOOK 中不是恰好一次即失败,重跑为 `c5_02`。
+
+### 待 Review Gate 决定(C5)
+
+1. **RUNBOOK 中的分工(1.41 CO6,转自 C4 第 3 项,C5 裁决没有涉及)。** RUNBOOK 第 1 节写为:Claude Code 在 A100 主机上的安装与登录,以及第 3.0–3.1 节,由 Owner 或 Owner 指定的人完成,之后由 Claude Code 接手。请 Owner 确认这一分工,或指定其他做法。
+2. **提请注意:总则之后的一句。** 总则原文之后,Executor 加了一句说明它与已写处理的关系(第 3.5 节之后与第 5 节的提交输出、第 3.7 节第 5 项的手写记录照做;“保留输出”指不删除、不改动输出文件)。这是 Executor 的读法:总则的四个动作(不重跑、不修补、保留输出、报告 Owner)与提交输出不冲突。若 Review Gate 认为总则之下这些提交也应等 Owner 指示,请指示,RUNBOOK 删去该句并相应修改。
+3. **提请注意:处理列之外的两处补充。** (a) CL2 的处理列写的是 venv 放在所选分区与 `--no-cache-dir`;Executor 另让锁定文件的安装以 `TMPDIR=$VENV.tmp` 运行,因为 pip 不用缓存时仍把下载的 wheel 暂存在 `TMPDIR`(默认 `/tmp`,常在根分区),不改变装入的内容(`c5_01` 记录了安装期间 `$VENV.tmp` 的大小)。(b) CP1 的问题列含 send 一行的两个前提(`$WORK` 不含空格、shell 认识 `$?`),处理列没有列;Executor 在第 1 节与第 3.0 节写明了这两个前提,没有改 send 一行本身。
+4. **提请注意(不需裁决,同 C4 第 4 项):** ST11 读到的和的规划区间上端超过 3.5 小时。
 
 ## Owner 阶段 C 各项要求的落实
 
@@ -373,10 +453,12 @@ Owner 转达,原文连同首段入库为 `tasks/IMPL_C4_RULING.md`(下称“C4 �
 | 5 | 正式模式下无法使用冒烟的缩减参数(有测试证明) | 满足 | `tests/test_run_pilot.py::test_formal_commands_have_no_step_option`、`test_only_smoke_builds_a_shortened_mode`;变异 “formal takes a step count” 等被测出(`c2d_01` 变异段) |
 | 6 | 每个工作提交的 code-reviewer 为 PASS 且无 BLOCKER | 满足 | 阶段 A:工作提交 `602a39e8`、修复提交 `219c4a60`(`reports/IMPL_A_REPORT.md`;`reviews/602a39e8…/code-reviewer_round1.md`、`_round2.md`,`reviews/219c4a60…/code-reviewer.md`)。阶段 B:`74a4d444`、`fdbb9def`、`493d7f9c`(`reports/IMPL_B_REPORT.md`;`reviews/74a4d444…/code-reviewer_round1.md`、`_round2.md`,`reviews/fdbb9def…/`、`reviews/493d7f9c…/code-reviewer.md`)。阶段 C:`ae60e0f7`、`b48fe842`(C1),`5219ff77`、`49fc9a35`、`dd65a361`、`a0e04d1f`(C2),各 `reviews/<提交>/code-reviewer_round1.md`;C3 提交(只改文档,最后一轮 PASS 才提交,见 C3 节);C4 代码提交 `a09e154e`(`reviews/a09e154e…/code-reviewer_round1.md`)与 C4 文档提交(见 C4 节)。另:第一次阶段 C 尝试中误入代码的 `1435a74` 已向前撤回并由补充裁决 1 追认(本报告开头);C1 第一次送审的 3 轮未 PASS 没有提交代码(停止提交 `5f5cd51e`) |
 | 7 | `outside_metrix_check.py` 通过 | 满足 | `c2d_01`、`c3_01`、`c4_02`、`c4_05`:`reports/round3/outside_metrix_check.py` 输出 `RESULT: PASS` |
-| 8 | `RUNBOOK_A100.md` 完整,含时长与费用估算 | 满足(C3 提交在 code-reviewer PASS 之后才提交) | `RUNBOOK_A100.md` 第 1–6 节对应 Task Order 第 8 节第 1–6 项;第 6 节:实际 GPU wall-clock 约 1.2–3.1 小时,GPU 部分费用约 2.2–5.6 美元(按租用时长约 3.6–9.0 美元);另列预检时 ST11 读到的估算(B17 估算 + checkpoint 开销,C4 裁决第 1 项)约 1.6–4.2 小时,区间上端超过 3.5 小时会触发 ST11。C4 文档提交按 C4 裁决第 7 项更新 |
+| 8 | `RUNBOOK_A100.md` 完整,含时长与费用估算 | 满足(C3 提交在 code-reviewer PASS 之后才提交) | `RUNBOOK_A100.md` 第 1–6 节对应 Task Order 第 8 节第 1–6 项;第 6 节:实际 GPU wall-clock 约 1.2–3.1 小时,GPU 部分费用约 2.2–5.6 美元(按租用时长约 3.6–9.0 美元);另列预检时 ST11 读到的估算(B17 估算 + checkpoint 开销,C4 裁决第 1 项)约 1.6–4.2 小时,区间上端超过 3.5 小时会触发 ST11。C4 文档提交按 C4 裁决第 7 项更新;C5 文档提交按 C5 裁决第 2、3 项修正操作细节(C5 节) |
 
 ## 最终状态
 
 **IMPLEMENTATION_READY**(Task Order 第 13 节)。之后由 Owner 决定是否租用 A100 并执行正式运行;正式运行另发运行指令。
 
 C2 节“待 Review Gate 决定”第 1–7 项与 C3 节第 1–3 项已由 Review Gate 2026-11-27 的裁决(`tasks/IMPL_C4_RULING.md`)回答:第 2 项(ST11)改了代码并经两份审查(C4 代码提交 `a09e154e`),其余按现行实现接受或只改 RUNBOOK(C4 文档提交)。新的待决事项见 C4 节“待 Review Gate 决定(C4)”:只改注释是否允许(第 1 项),1.38 中 RUNBOOK 操作细节的修正时机(第 2 项),RUNBOOK 中第 3.0–3.1 节与 Claude Code 安装的分工(第 3 项,请 Owner 确认)。Executor 认为这些都不阻碍 IMPLEMENTATION_READY。
+
+C4 节的第 1、2 项与 1.42 CP5 已由 Review Gate 2026-11-28 的裁决(`tasks/IMPL_C5_RULING.md`)回答:注释不改,登记;RUNBOOK 的操作细节由 C5 文档提交修正(只改文档,只送 code-reviewer 一轮);CP5 确认。正式运行之前不再提交代码改动。尚待回答的见 C5 节“待 Review Gate 决定(C5)”(第 1 项分工请 Owner 确认;第 2、3 项提请注意)。状态仍为 **IMPLEMENTATION_READY**,停下,等待 Owner 的下一步指令。

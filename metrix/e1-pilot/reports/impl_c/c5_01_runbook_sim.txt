@@ -1,0 +1,306 @@
+# C5 RUNBOOK simulation, start Fri Nov 27 15:17:16 UTC 2026
+scratch /tmp/claude-0/-home-user/307aad45-73e9-5051-90eb-46f88bd6bab7/scratchpad/c5sim; RUNBOOK sha256 7759d721e758cf1aa941b57e361313ab65accda26c601f30b6f3973ad81ec065; repo HEAD 377bc736e32f19ec003813db8a431da25ef9f660
+host vm; python3.13 Python 3.13.18 at /usr/local/bin/python3.13
+
+== 3.0 (variable file, env.txt), placeholder <该分区上的目录> -> /tmp/claude-0/-home-user/307aad45-73e9-5051-90eb-46f88bd6bab7/scratchpad/c5sim/part
+  | cat > ~/metrix-vars.sh <<'EOF'
+  | export WORK=/tmp/claude-0/-home-user/307aad45-73e9-5051-90eb-46f88bd6bab7/scratchpad/c5sim/part/metrix-work INPUTS=/tmp/claude-0/-home-user/307aad45-73e9-5051-90eb-46f88bd6bab7/scratchpad/c5sim/part/metrix-inputs VENV=/tmp/claude-0/-home-user/307aad45-73e9-5051-90eb-46f88bd6bab7/scratchpad/c5sim/part/metrix-venv
+  | export E="$WORK/command_output/env.txt"
+  | EOF
+  | source ~/metrix-vars.sh
+  | mkdir -p "$WORK/command_output"
+  | { date -u; nvidia-smi; nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv; ldd --version | head -1; python3.13 --version; df -h "$WORK"; free -g; tmux -V; } 2>&1 | tee -a "$E"
+  exit=0
+  > Fri Nov 27 15:17:16 UTC 2026
+  > bash: line 7: nvidia-smi: command not found
+  > bash: line 7: nvidia-smi: command not found
+  > ldd (Ubuntu GLIBC 2.39-0ubuntu8.12) 2.39
+  > Python 3.13.18
+  > Filesystem      Size  Used Avail Use% Mounted on
+  > /dev/vda        252G  9.1G   60G  14% /
+  >                total        used        free      shared  buff/cache   available
+  > Mem:              15           0          15           0           0          15
+  > Swap:              0           0           0
+  > tmux 3.4
+  tmux session (detached; the RUNBOOK's 'tmux new -s metrix' is interactive): metrix: 1 windows (created Fri Nov 27 15:17:16 2026)
+
+== 3.1 (REPO line and identity line, run in the repo root /home/user/OpenMythos; no clone here)
+  | echo "export REPO=$(pwd)" >> ~/metrix-vars.sh
+  | source ~/metrix-vars.sh
+  | { date -u; git rev-parse HEAD; git config user.name; git config user.email; } 2>&1 | tee -a "$E"   # 所有命令在这个检出上运行
+  exit=0
+  > Fri Nov 27 15:17:16 UTC 2026
+  > 377bc736e32f19ec003813db8a431da25ef9f660
+  ~/metrix-vars.sh now:
+  : export WORK=/tmp/claude-0/-home-user/307aad45-73e9-5051-90eb-46f88bd6bab7/scratchpad/c5sim/part/metrix-work INPUTS=/tmp/claude-0/-home-user/307aad45-73e9-5051-90eb-46f88bd6bab7/scratchpad/c5sim/part/metrix-inputs VENV=/tmp/claude-0/-home-user/307aad45-73e9-5051-90eb-46f88bd6bab7/scratchpad/c5sim/part/metrix-venv
+  : export E="$WORK/command_output/env.txt"
+  : export REPO=/home/user/OpenMythos
+
+== section 1: script first line and send line (from the RUNBOOK)
+  | set -o pipefail; source ~/metrix-vars.sh && cd "$REPO" || exit 1
+  | source ~/metrix-vars.sh && tmux new-window -d -t metrix -n <窗口名> -c "$REPO" && tmux send-keys -t metrix:<窗口名> "bash $WORK/command_output/<窗口名>.sh; echo exit=\$? >> $WORK/command_output/<窗口名>.end" Enter
+
+== long command s3_2a: /tmp/claude-0/-home-user/307aad45-73e9-5051-90eb-46f88bd6bab7/scratchpad/c5sim/part/metrix-work/command_output/s3_2a.sh
+  | set -o pipefail; source ~/metrix-vars.sh && cd "$REPO" || exit 1
+  | if [ "$(python3.13 --version 2>&1)" = "Python 3.13.18" ] && python3.13 -c 'import ensurepip, venv' 2>/dev/null; then
+  |   echo "export PY313=$(command -v python3.13)" >> ~/metrix-vars.sh
+  | else
+  |   python3 -m venv ~/uv-tool && ~/uv-tool/bin/python -m pip install uv==0.13.10 \
+  |   && { ~/uv-tool/bin/uv --version; env | grep '^UV_' | sed 's/=.*/=<set>/'; ~/uv-tool/bin/uv python list 3.13.18 --only-downloads --show-urls; ~/uv-tool/bin/uv python install 3.13.18; } 2>&1 | tee -a "$E" \
+  |   && echo "export PY313=$(~/uv-tool/bin/uv python find --managed-python 3.13.18)" >> ~/metrix-vars.sh
+  | fi
+  | source ~/metrix-vars.sh
+  | { date -u; echo "PY313=$PY313"; "$PY313" -c 'import platform, sys; print(platform.python_implementation(), platform.python_version()); print(sys.version)'; } 2>&1 | tee -a "$E"
+  send exit=0  15:17:16
+  s3_2a.end (15:17:21): exit=0
+  check after s3_2a: the line after the last PY313= line of env.txt:
+  > PY313=/usr/local/bin/python3.13
+  > CPython 3.13.18
+
+== long command s3_2: /tmp/claude-0/-home-user/307aad45-73e9-5051-90eb-46f88bd6bab7/scratchpad/c5sim/part/metrix-work/command_output/s3_2.sh
+  | set -o pipefail; source ~/metrix-vars.sh && cd "$REPO" || exit 1
+  | "$PY313" -m venv "$VENV" 2>&1 | tee -a "$E"
+  | echo 'export PY="$VENV/bin/python"' >> ~/metrix-vars.sh && source ~/metrix-vars.sh
+  | mkdir -p "$VENV.tmp" && { date -u; $PY -m pip install --no-cache-dir pip==26.3 && TMPDIR="$VENV.tmp" $PY -m pip install --no-cache-dir --require-hashes --no-deps -r metrix/e1-pilot/requirements.lock && $PY -m pip check; } 2>&1 | tee -a "$E"
+  send exit=0  15:17:21
+  s3_2.end (15:23:26): exit=0
+  check after s3_2: last line of env.txt: No broken requirements found.
+  $VENV.tmp during the install (du -sk samples every 2 s): 180 samples, max 2752668 KiB; now: 4 KiB
+  pip cache under HOME: ls: cannot access '/tmp/claude-0/-home-user/307aad45-73e9-5051-90eb-46f88bd6bab7/scratchpad/c5sim/home/.cache': No such file or directory 
+  venv size: 4.8G; PY line in ~/metrix-vars.sh: export PY="$VENV/bin/python"
+
+== long command s3_4_data: /tmp/claude-0/-home-user/307aad45-73e9-5051-90eb-46f88bd6bab7/scratchpad/c5sim/part/metrix-work/command_output/s3_4_data.sh
+  | set -o pipefail; source ~/metrix-vars.sh && cd "$REPO" || exit 1
+  | { date -u; PYTHONPATH=metrix/e1-pilot/src $PY -m metrix_e1.data fetch --inputs "$INPUTS"; } 2>&1 | tee -a "$WORK/command_output/fetch.txt"
+  send exit=0  15:23:26
+  s3_4_data.end (15:23:36): exit=0
+
+== long command s3_4_config: /tmp/claude-0/-home-user/307aad45-73e9-5051-90eb-46f88bd6bab7/scratchpad/c5sim/part/metrix-work/command_output/s3_4_config.sh
+  | set -o pipefail; source ~/metrix-vars.sh && cd "$REPO" || exit 1
+  | { date -u; PYTHONPATH=metrix/e1-pilot/src $PY -m metrix_e1.train fetch-config --inputs "$INPUTS"; } 2>&1 | tee -a "$WORK/command_output/fetch.txt"
+  send exit=0  15:23:36
+  s3_4_config.end (15:23:41): exit=0
+
+== 3.7 GPU-seconds command (from the RUNBOOK), on two hand-made /tmp/claude-0/-home-user/307aad45-73e9-5051-90eb-46f88bd6bab7/scratchpad/c5sim/part/metrix-work/gpu_clock.json
+  | source ~/metrix-vars.sh && cd "$REPO" && PYTHONPATH=metrix/e1-pilot/src "$PY" -c "import json, sys, time; from metrix_e1.compute import GpuClock; t = time.time(); p = sys.argv[1]; print(GpuClock(p, now=lambda: t).used(), json.load(open(p, encoding='utf-8'))['open'], t, time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime(t)))" "$WORK/gpu_clock.json"
+  (a) closed segments only (10 + 5.5 s), file: {"segments": [[1000.0, 1010.0], [2000.0, 2005.5]], "open": null}
+  > 15.5 None 1795793023.127306 2026-11-27T15:23:43Z
+  (b) one closed segment (10 s) and one open since now-100 s, file: {"segments": [[1000.0, 1010.0]], "open": 1795792923.439}
+  > 111.10839796066284 1795792923.439 1795793024.5473979 2026-11-27T15:23:44Z
+  expected for (b): 10 + (t - open), with t the third value printed
+
+== section 5: git check-ignore -v on the copied file names (no output and exit 1 = none ignored)
+  check-ignore exit=1
+
+== files under /tmp/claude-0/-home-user/307aad45-73e9-5051-90eb-46f88bd6bab7/scratchpad/c5sim/part/metrix-work/command_output
+  total 56
+  -rw-r--r-- 1 root root 16833 Nov 27 15:23 env.txt
+  -rw-r--r-- 1 root root  1425 Nov 27 15:23 fetch.txt
+  -rw-r--r-- 1 root root     7 Nov 27 15:23 s3_2.end
+  -rw-r--r-- 1 root root   433 Nov 27 15:17 s3_2.sh
+  -rw-r--r-- 1 root root     7 Nov 27 15:17 s3_2a.end
+  -rw-r--r-- 1 root root   848 Nov 27 15:17 s3_2a.sh
+  -rw-r--r-- 1 root root     7 Nov 27 15:23 s3_4_config.end
+  -rw-r--r-- 1 root root   212 Nov 27 15:23 s3_4_config.sh
+  -rw-r--r-- 1 root root     7 Nov 27 15:23 s3_4_data.end
+  -rw-r--r-- 1 root root   204 Nov 27 15:23 s3_4_data.sh
+
+== /tmp/claude-0/-home-user/307aad45-73e9-5051-90eb-46f88bd6bab7/scratchpad/c5sim/part/metrix-work/command_output/env.txt
+  | Fri Nov 27 15:17:16 UTC 2026
+  | bash: line 7: nvidia-smi: command not found
+  | bash: line 7: nvidia-smi: command not found
+  | ldd (Ubuntu GLIBC 2.39-0ubuntu8.12) 2.39
+  | Python 3.13.18
+  | Filesystem      Size  Used Avail Use% Mounted on
+  | /dev/vda        252G  9.1G   60G  14% /
+  |                total        used        free      shared  buff/cache   available
+  | Mem:              15           0          15           0           0          15
+  | Swap:              0           0           0
+  | tmux 3.4
+  | Fri Nov 27 15:17:16 UTC 2026
+  | 377bc736e32f19ec003813db8a431da25ef9f660
+  | Fri Nov 27 15:17:16 UTC 2026
+  | PY313=/usr/local/bin/python3.13
+  | CPython 3.13.18
+  | 3.13.18 (main, Oct 26 2026, 14:08:19) [Clang 23.1.3 ]
+  | Fri Nov 27 15:17:24 UTC 2026
+  | Collecting pip==26.3
+  |   Downloading pip-26.3-py3-none-any.whl.metadata (4.6 kB)
+  | Downloading pip-26.3-py3-none-any.whl (2.0 MB)
+  |    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.0/2.0 MB 32.9 MB/s  0:00:00
+  | Installing collected packages: pip
+  |   Attempting uninstall: pip
+  |     Found existing installation: pip 26.2.2
+  |     Uninstalling pip-26.2.2:
+  |       Successfully uninstalled pip-26.2.2
+  | Successfully installed pip-26.3
+  | Collecting annotated-doc==0.0.5 (from -r metrix/e1-pilot/requirements.lock (line 19))
+  |   Downloading annotated_doc-0.0.5-py3-none-any.whl (5.3 kB)
+  | Collecting anyio==4.16.0 (from -r metrix/e1-pilot/requirements.lock (line 23))
+  |   Downloading anyio-4.16.0-py3-none-any.whl (134 kB)
+  | Collecting click==8.5.1 (from -r metrix/e1-pilot/requirements.lock (line 27))
+  |   Downloading click-8.5.1-py3-none-any.whl (126 kB)
+  | Collecting cuda-bindings==13.5.0 (from -r metrix/e1-pilot/requirements.lock (line 31))
+  |   Downloading cuda_bindings-13.5.0-cp313-cp313-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl (8.4 MB)
+  |      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 8.4/8.4 MB 80.5 MB/s  0:00:00
+  | Collecting cuda-pathfinder==1.8.6 (from -r metrix/e1-pilot/requirements.lock (line 61))
+  |   Downloading cuda_pathfinder-1.8.6-py3-none-any.whl (62 kB)
+  | Collecting cuda-toolkit==13.0.2 (from -r metrix/e1-pilot/requirements.lock (line 64))
+  |   Downloading cuda_toolkit-13.0.2-py2.py3-none-any.whl (2.4 kB)
+  | Collecting filelock==4.2.9 (from -r metrix/e1-pilot/requirements.lock (line 67))
+  |   Downloading filelock-4.2.9-py3-none-any.whl (164 kB)
+  | Collecting fsspec==2026.9.0 (from -r metrix/e1-pilot/requirements.lock (line 73))
+  |   Downloading fsspec-2026.9.0-py3-none-any.whl (221 kB)
+  | Collecting h11==0.16.0 (from -r metrix/e1-pilot/requirements.lock (line 79))
+  |   Downloading h11-0.16.0-py3-none-any.whl (37 kB)
+  | Collecting hf-xet==1.8.0 (from -r metrix/e1-pilot/requirements.lock (line 83))
+  |   Downloading hf_xet-1.8.0-cp38-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (4.3 MB)
+  |      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.3/4.3 MB 70.8 MB/s  0:00:00
+  | Collecting httpcore2==2.16.0 (from -r metrix/e1-pilot/requirements.lock (line 102))
+  |   Downloading httpcore2-2.16.0-py3-none-any.whl (85 kB)
+  | Collecting httpx2==2.16.0 (from -r metrix/e1-pilot/requirements.lock (line 106))
+  |   Downloading httpx2-2.16.0-py3-none-any.whl (97 kB)
+  | Collecting huggingface-hub==2.4.0 (from -r metrix/e1-pilot/requirements.lock (line 110))
+  |   Downloading huggingface_hub-2.4.0-py3-none-any.whl (857 kB)
+  |      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 857.0/857.0 kB 82.2 MB/s  0:00:00
+  | Collecting idna==3.20 (from -r metrix/e1-pilot/requirements.lock (line 117))
+  |   Downloading idna-3.20-py3-none-any.whl (69 kB)
+  | Collecting iniconfig==2.3.1 (from -r metrix/e1-pilot/requirements.lock (line 123))
+  |   Downloading iniconfig-2.3.1-py3-none-any.whl (7.6 kB)
+  | Collecting jinja2==3.1.6 (from -r metrix/e1-pilot/requirements.lock (line 127))
+  |   Downloading jinja2-3.1.6-py3-none-any.whl (134 kB)
+  | Collecting markdown-it-py==4.2.0 (from -r metrix/e1-pilot/requirements.lock (line 133))
+  |   Downloading markdown_it_py-4.2.0-py3-none-any.whl (91 kB)
+  | Collecting markupsafe==3.0.4 (from -r metrix/e1-pilot/requirements.lock (line 137))
+  |   Downloading markupsafe-3.0.4-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (23 kB)
+  | Collecting mdurl==0.1.2 (from -r metrix/e1-pilot/requirements.lock (line 290))
+  |   Downloading mdurl-0.1.2-py3-none-any.whl (10.0 kB)
+  | Collecting mpmath==1.3.0 (from -r metrix/e1-pilot/requirements.lock (line 294))
+  |   Downloading mpmath-1.3.0-py3-none-any.whl (536 kB)
+  |      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 536.2/536.2 kB 82.9 MB/s  0:00:00
+  | Collecting networkx==3.7 (from -r metrix/e1-pilot/requirements.lock (line 298))
+  |   Downloading networkx-3.7-py3-none-any.whl (2.1 MB)
+  |      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.1/2.1 MB 72.6 MB/s  0:00:00
+  | Collecting numpy==2.5.4 (from -r metrix/e1-pilot/requirements.lock (line 302))
+  |   Downloading numpy-2.5.4-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl (16.7 MB)
+  |      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 16.7/16.7 MB 70.6 MB/s  0:00:00
+  | Collecting nvidia-cublas==13.1.0.3 (from -r metrix/e1-pilot/requirements.lock (line 370))
+  |   Downloading nvidia_cublas-13.1.0.3-py3-none-manylinux_2_27_x86_64.whl (423.1 MB)
+  |      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 423.1/423.1 MB 14.2 MB/s  0:00:21
+  | Collecting nvidia-cuda-cupti==13.0.85 (from -r metrix/e1-pilot/requirements.lock (line 378))
+  |   Downloading nvidia_cuda_cupti-13.0.85-py3-none-manylinux_2_25_x86_64.whl (10.7 MB)
+  |      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 10.7/10.7 MB 13.4 MB/s  0:00:00
+  | Collecting nvidia-cuda-nvrtc==13.0.88 (from -r metrix/e1-pilot/requirements.lock (line 383))
+  |   Downloading nvidia_cuda_nvrtc-13.0.88-py3-none-manylinux2010_x86_64.manylinux_2_12_x86_64.whl (90.2 MB)
+  |      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 90.2/90.2 MB 9.3 MB/s  0:00:09
+  | Collecting nvidia-cuda-runtime==13.0.96 (from -r metrix/e1-pilot/requirements.lock (line 388))
+  |   Downloading nvidia_cuda_runtime-13.0.96-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (2.2 MB)
+  |      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.2/2.2 MB 15.3 MB/s  0:00:00
+  | Collecting nvidia-cudnn-cu13==9.19.0.56 (from -r metrix/e1-pilot/requirements.lock (line 393))
+  |   Downloading nvidia_cudnn_cu13-9.19.0.56-py3-none-manylinux_2_27_x86_64.whl (366.1 MB)
+  |      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 366.1/366.1 MB 7.1 MB/s  0:00:48
+  | Collecting nvidia-cufft==12.0.0.61 (from -r metrix/e1-pilot/requirements.lock (line 398))
+  |   Downloading nvidia_cufft-12.0.0.61-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (214.1 MB)
+  |      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 214.1/214.1 MB 6.5 MB/s  0:00:32
+  | Collecting nvidia-cufile==1.15.1.6 (from -r metrix/e1-pilot/requirements.lock (line 403))
+  |   Downloading nvidia_cufile-1.15.1.6-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (1.2 MB)
+  |      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.2/1.2 MB 16.1 MB/s  0:00:00
+  | Collecting nvidia-curand==10.4.0.35 (from -r metrix/e1-pilot/requirements.lock (line 407))
+  |   Downloading nvidia_curand-10.4.0.35-py3-none-manylinux_2_27_x86_64.whl (59.5 MB)
+  |      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 59.5/59.5 MB 7.2 MB/s  0:00:08
+  | Collecting nvidia-cusolver==12.0.4.66 (from -r metrix/e1-pilot/requirements.lock (line 412))
+  |   Downloading nvidia_cusolver-12.0.4.66-py3-none-manylinux_2_27_x86_64.whl (200.9 MB)
+  |      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 200.9/200.9 MB 9.3 MB/s  0:00:21
+  | Collecting nvidia-cusparse==12.6.3.3 (from -r metrix/e1-pilot/requirements.lock (line 417))
+  |   Downloading nvidia_cusparse-12.6.3.3-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (145.9 MB)
+  |      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 145.9/145.9 MB 7.2 MB/s  0:00:20
+  | Collecting nvidia-cusparselt-cu13==0.8.0 (from -r metrix/e1-pilot/requirements.lock (line 424))
+  |   Downloading nvidia_cusparselt_cu13-0.8.0-py3-none-manylinux2014_x86_64.whl (169.9 MB)
+  |      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 169.9/169.9 MB 13.3 MB/s  0:00:12
+  | Collecting nvidia-nccl-cu13==2.28.9 (from -r metrix/e1-pilot/requirements.lock (line 429))
+  |   Downloading nvidia_nccl_cu13-2.28.9-py3-none-manylinux_2_18_x86_64.whl (196.5 MB)
+  |      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 196.5/196.5 MB 8.9 MB/s  0:00:22
+  | Collecting nvidia-nvjitlink==13.0.88 (from -r metrix/e1-pilot/requirements.lock (line 433))
+  |   Downloading nvidia_nvjitlink-13.0.88-py3-none-manylinux2010_x86_64.manylinux_2_12_x86_64.whl (40.7 MB)
+  |      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 40.7/40.7 MB 7.2 MB/s  0:00:05
+  | Collecting nvidia-nvshmem-cu13==3.4.5 (from -r metrix/e1-pilot/requirements.lock (line 442))
+  |   Downloading nvidia_nvshmem_cu13-3.4.5-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (60.4 MB)
+  |      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 60.4/60.4 MB 10.8 MB/s  0:00:05
+  | Collecting nvidia-nvtx==13.0.85 (from -r metrix/e1-pilot/requirements.lock (line 446))
+  |   Downloading nvidia_nvtx-13.0.85-py3-none-manylinux1_x86_64.manylinux_2_5_x86_64.whl (148 kB)
+  | Collecting packaging==26.3 (from -r metrix/e1-pilot/requirements.lock (line 451))
+  |   Downloading packaging-26.3-py3-none-any.whl (129 kB)
+  | Collecting pluggy==1.7.0 (from -r metrix/e1-pilot/requirements.lock (line 458))
+  |   Downloading pluggy-1.7.0-py3-none-any.whl (27 kB)
+  | Collecting pyarrow==26.0.1 (from -r metrix/e1-pilot/requirements.lock (line 462))
+  |   Downloading pyarrow-26.0.1-cp313-cp313-manylinux_2_28_x86_64.whl (55.0 MB)
+  |      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 55.0/55.0 MB 13.5 MB/s  0:00:04
+  | Collecting pygments==2.21.0 (from -r metrix/e1-pilot/requirements.lock (line 514))
+  |   Downloading pygments-2.21.0-py3-none-any.whl (1.3 MB)
+  |      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.3/1.3 MB 35.5 MB/s  0:00:00
+  | Collecting pytest==9.2.0 (from -r metrix/e1-pilot/requirements.lock (line 520))
+  |   Downloading pytest-9.2.0-py3-none-any.whl (411 kB)
+  | Collecting pyyaml==6.0.3 (from -r metrix/e1-pilot/requirements.lock (line 524))
+  |   Downloading pyyaml-6.0.3-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (801 kB)
+  |      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 801.6/801.6 kB 39.4 MB/s  0:00:00
+  | Collecting regex==2026.11.7 (from -r metrix/e1-pilot/requirements.lock (line 601))
+  |   Downloading regex-2026.11.7-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (808 kB)
+  |      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 808.5/808.5 kB 40.6 MB/s  0:00:00
+  | Collecting rich==15.0.0 (from -r metrix/e1-pilot/requirements.lock (line 717))
+  |   Downloading rich-15.0.0-py3-none-any.whl (310 kB)
+  | Collecting safetensors==0.8.0 (from -r metrix/e1-pilot/requirements.lock (line 721))
+  |   Downloading safetensors-0.8.0-cp310-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (516 kB)
+  | Collecting setuptools==81.0.0 (from -r metrix/e1-pilot/requirements.lock (line 740))
+  |   Downloading setuptools-81.0.0-py3-none-any.whl (1.1 MB)
+  |      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.1/1.1 MB 48.4 MB/s  0:00:00
+  | Collecting shellingham==1.5.4 (from -r metrix/e1-pilot/requirements.lock (line 744))
+  |   Downloading shellingham-1.5.4-py2.py3-none-any.whl (9.8 kB)
+  | Collecting sympy==1.14.0 (from -r metrix/e1-pilot/requirements.lock (line 748))
+  |   Downloading sympy-1.14.0-py3-none-any.whl (6.3 MB)
+  |      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.3/6.3 MB 34.9 MB/s  0:00:00
+  | Collecting tokenizers==0.23.3 (from -r metrix/e1-pilot/requirements.lock (line 752))
+  |   Downloading tokenizers-0.23.3-cp310-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (3.4 MB)
+  |      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.4/3.4 MB 49.1 MB/s  0:00:00
+  | Collecting torch==2.11.0 (from -r metrix/e1-pilot/requirements.lock (line 780))
+  |   Downloading torch-2.11.0-cp313-cp313-manylinux_2_28_x86_64.whl (530.7 MB)
+  |      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 530.7/530.7 MB 6.1 MB/s  0:01:22
+  | Collecting tqdm==4.70.1 (from -r metrix/e1-pilot/requirements.lock (line 810))
+  |   Downloading tqdm-4.70.1-py3-none-any.whl (80 kB)
+  | Collecting transformers==5.22.2 (from -r metrix/e1-pilot/requirements.lock (line 816))
+  |   Downloading transformers-5.22.2-py3-none-any.whl (13.1 MB)
+  |      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 13.1/13.1 MB 10.3 MB/s  0:00:01
+  | Collecting triton==3.6.0 (from -r metrix/e1-pilot/requirements.lock (line 820))
+  |   Downloading triton-3.6.0-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl (188.3 MB)
+  |      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 188.3/188.3 MB 9.5 MB/s  0:00:19
+  | Collecting truststore==0.10.5 (from -r metrix/e1-pilot/requirements.lock (line 836))
+  |   Downloading truststore-0.10.5-py3-none-any.whl (19 kB)
+  | Collecting typer==0.28.0 (from -r metrix/e1-pilot/requirements.lock (line 842))
+  |   Downloading typer-0.28.0-py3-none-any.whl (123 kB)
+  | Collecting typing-extensions==4.16.0 (from -r metrix/e1-pilot/requirements.lock (line 846))
+  |   Downloading typing_extensions-4.16.0-py3-none-any.whl (45 kB)
+  | Installing collected packages: nvidia-cusparselt-cu13, mpmath, cuda-toolkit, typing-extensions, typer, truststore, triton, transformers, tqdm, torch, tokenizers, sympy, shellingham, setuptools, safetensors, rich, regex, pyyaml, pytest, pygments, pyarrow, pluggy, packaging, nvidia-nvtx, nvidia-nvshmem-cu13, nvidia-nvjitlink, nvidia-nccl-cu13, nvidia-cusparse, nvidia-cusolver, nvidia-curand, nvidia-cufile, nvidia-cufft, nvidia-cudnn-cu13, nvidia-cuda-runtime, nvidia-cuda-nvrtc, nvidia-cuda-cupti, nvidia-cublas, numpy, networkx, mdurl, markupsafe, markdown-it-py, jinja2, iniconfig, idna, huggingface-hub, httpx2, httpcore2, hf-xet, h11, fsspec, filelock, cuda-pathfinder, cuda-bindings, click, anyio, annotated-doc
+  | 
+  | Successfully installed annotated-doc-0.0.5 anyio-4.16.0 click-8.5.1 cuda-bindings-13.5.0 cuda-pathfinder-1.8.6 cuda-toolkit-13.0.2 filelock-4.2.9 fsspec-2026.9.0 h11-0.16.0 hf-xet-1.8.0 httpcore2-2.16.0 httpx2-2.16.0 huggingface-hub-2.4.0 idna-3.20 iniconfig-2.3.1 jinja2-3.1.6 markdown-it-py-4.2.0 markupsafe-3.0.4 mdurl-0.1.2 mpmath-1.3.0 networkx-3.7 numpy-2.5.4 nvidia-cublas-13.1.0.3 nvidia-cuda-cupti-13.0.85 nvidia-cuda-nvrtc-13.0.88 nvidia-cuda-runtime-13.0.96 nvidia-cudnn-cu13-9.19.0.56 nvidia-cufft-12.0.0.61 nvidia-cufile-1.15.1.6 nvidia-curand-10.4.0.35 nvidia-cusolver-12.0.4.66 nvidia-cusparse-12.6.3.3 nvidia-cusparselt-cu13-0.8.0 nvidia-nccl-cu13-2.28.9 nvidia-nvjitlink-13.0.88 nvidia-nvshmem-cu13-3.4.5 nvidia-nvtx-13.0.85 packaging-26.3 pluggy-1.7.0 pyarrow-26.0.1 pygments-2.21.0 pytest-9.2.0 pyyaml-6.0.3 regex-2026.11.7 rich-15.0.0 safetensors-0.8.0 setuptools-81.0.0 shellingham-1.5.4 sympy-1.14.0 tokenizers-0.23.3 torch-2.11.0 tqdm-4.70.1 transformers-5.22.2 triton-3.6.0 truststore-0.10.5 typer-0.28.0 typing-extensions-4.16.0
+  | No broken requirements found.
+
+== /tmp/claude-0/-home-user/307aad45-73e9-5051-90eb-46f88bd6bab7/scratchpad/c5sim/part/metrix-work/command_output/fetch.txt
+  | Fri Nov 27 15:23:26 UTC 2026
+  | frozen: PROTOCOL_FROZEN v1.1, commit 87a244db28a901f9e89282b50df76778ab5c2887; four frozen files match by git cat-file
+  | Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+  | qwen:tokenizer.json          sha256 aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4 = frozen
+  | qwen:tokenizer_config.json   sha256 d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101 = frozen
+  | qwen:vocab.json              sha256 ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910 = frozen
+  | qwen:merges.txt              sha256 8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5 = frozen
+  | parcae_tokenizer             sha256 e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77 = frozen
+  | anchor_parquet               sha256 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22 = frozen
+  | RESULT: PASS
+  | Fri Nov 27 15:23:36 UTC 2026
+  | Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+  | config.json of Qwen/Qwen3-1.7B@70d244cc86ccca08cf5af4e1e306ecf908b1ad5e: /tmp/claude-0/-home-user/307aad45-73e9-5051-90eb-46f88bd6bab7/scratchpad/c5sim/part/metrix-inputs/qwen_model/config.json sha256 1ddb5b89ebc90dcb417a45c213d818577e65976454d29385c8f6140771d95197 (not a weight file)
+  | RESULT: PASS
+== s3_2.end: exit=0
+== s3_2a.end: exit=0
+== s3_4_config.end: exit=0
+== s3_4_data.end: exit=0
+
+# end Fri Nov 27 15:23:44 UTC 2026

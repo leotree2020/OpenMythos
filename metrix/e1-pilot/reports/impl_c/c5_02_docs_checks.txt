@@ -1,0 +1,143 @@
+# Stage C, C5 documentation commit (staged; parent 377bc736e32f19ec003813db8a431da25ef9f660): checks on the staged tree. Executor, host vm (Anthropic cloud container, CPU only, no GPU). Fri Nov 27 15:25:00 UTC 2026
+# stdout+stderr merged, unedited. Commands recorded by reports/round5/logrun.sh.
+$ git ls-remote origin refs/heads/metrix-e1-pilot-protocol-v1
+377bc736e32f19ec003813db8a431da25ef9f660	refs/heads/metrix-e1-pilot-protocol-v1
+exit=0
+$ git status --short --untracked-files=all
+M  metrix/e1-pilot/RUNBOOK_A100.md
+M  metrix/e1-pilot/reports/DEFERRED_MINORS.md
+M  metrix/e1-pilot/reports/IMPL_C_REPORT.md
+A  metrix/e1-pilot/reports/impl_c/c5_00_session_start.txt
+A  metrix/e1-pilot/reports/impl_c/c5_01_runbook_sim.txt
+A  metrix/e1-pilot/reports/impl_c/c5_02_docs_checks_trial1_script_error.txt
+A  metrix/e1-pilot/reports/impl_c/c5_docs_checks.sh
+A  metrix/e1-pilot/reports/impl_c/c5_docs_checks_trial1.sh
+A  metrix/e1-pilot/reports/impl_c/c5_runbook_sim.sh
+A  metrix/e1-pilot/tasks/IMPL_C5_RULING.md
+?? metrix/e1-pilot/reports/impl_c/c5_02_docs_checks.txt
+exit=0
+$ bash -c git\ rev-parse\ HEAD\;\ git\ write-tree\;\ git\ diff\ --quiet\ --\ metrix/e1-pilot/src\ metrix/e1-pilot/tests\ metrix/e1-pilot/run_pilot.py\ \&\&\ echo\ WORKTREE_EQUALS_INDEX_FOR_SRC_TESTS_RUN_PILOT\;\ git\ diff\ --cached\ --quiet\ HEAD\ --\ metrix/e1-pilot/src\ metrix/e1-pilot/tests\ metrix/e1-pilot/run_pilot.py\ \&\&\ echo\ INDEX_EQUALS_HEAD_FOR_SRC_TESTS_RUN_PILOT\;\ git\ diff\ --cached\ --stat\ HEAD\;\ sha256sum\ metrix/e1-pilot/reports/impl_c/c5_docs_checks.sh\;\ git\ diff\ --cached\ --name-only\ HEAD\ \|\ xargs\ git\ ls-files\ -s\ --\;\ git\ diff\ --cached\ HEAD\ \|\ sha256sum
+377bc736e32f19ec003813db8a431da25ef9f660
+f8991273c51dbc4fa4f4e09eda5b9a4ffc99d1c6
+WORKTREE_EQUALS_INDEX_FOR_SRC_TESTS_RUN_PILOT
+INDEX_EQUALS_HEAD_FOR_SRC_TESTS_RUN_PILOT
+ metrix/e1-pilot/RUNBOOK_A100.md                    |  99 ++++---
+ metrix/e1-pilot/reports/DEFERRED_MINORS.md         |  29 +-
+ metrix/e1-pilot/reports/IMPL_C_REPORT.md           |  88 +++++-
+ .../reports/impl_c/c5_00_session_start.txt         |  21 ++
+ .../e1-pilot/reports/impl_c/c5_01_runbook_sim.txt  | 306 +++++++++++++++++++++
+ .../c5_02_docs_checks_trial1_script_error.txt      | 132 +++++++++
+ metrix/e1-pilot/reports/impl_c/c5_docs_checks.sh   |  49 ++++
+ .../reports/impl_c/c5_docs_checks_trial1.sh        |  39 +++
+ metrix/e1-pilot/reports/impl_c/c5_runbook_sim.sh   |  91 ++++++
+ metrix/e1-pilot/tasks/IMPL_C5_RULING.md            |   8 +
+ 10 files changed, 803 insertions(+), 59 deletions(-)
+cf0c39e8325d8d2429235e6c74557faefdaa04c38acfb381a8c3c2a32e20efe8  metrix/e1-pilot/reports/impl_c/c5_docs_checks.sh
+100644 fc29a124e501accd3bf8ac12b53bffd0d8592264 0	metrix/e1-pilot/RUNBOOK_A100.md
+100644 08d58efbb29d40fd808d9a9b852ef7c922ea135d 0	metrix/e1-pilot/reports/DEFERRED_MINORS.md
+100644 4f4fa404c0019de3efa5c35851d21435efa2ecf8 0	metrix/e1-pilot/reports/IMPL_C_REPORT.md
+100644 1d52b291205dea273c4428959b2b559132de38b0 0	metrix/e1-pilot/reports/impl_c/c5_00_session_start.txt
+100644 c2913d72776e93d0a667642a496678b268683c10 0	metrix/e1-pilot/reports/impl_c/c5_01_runbook_sim.txt
+100644 0d7ef9330f7324baaaacd2854b984ec9433956d7 0	metrix/e1-pilot/reports/impl_c/c5_02_docs_checks_trial1_script_error.txt
+100644 62056c509790e7e753084cf46d37f5cd74205300 0	metrix/e1-pilot/reports/impl_c/c5_docs_checks.sh
+100644 7000694f932223d1d031ccd411b850c3297174de 0	metrix/e1-pilot/reports/impl_c/c5_docs_checks_trial1.sh
+100644 59f61f038958ffb03638e8b7789955942d492219 0	metrix/e1-pilot/reports/impl_c/c5_runbook_sim.sh
+100644 f0a75e482fb8d71893888e556e826a2eb643892d 0	metrix/e1-pilot/tasks/IMPL_C5_RULING.md
+834be83449f2952571da8a3565963a5e838e3abb7dbb0857e3cfac690c4c670d  -
+exit=0
+$ bash -c echo\ \'staged\ paths\ outside\ metrix/e1-pilot/\ \(expected\ none\):\'\;\ git\ diff\ --cached\ --name-only\ HEAD\ \|\ grep\ -v\ \'\^metrix/e1-pilot/\'\;\ echo\ \"grep\ exit\ \$\?\"
+staged paths outside metrix/e1-pilot/ (expected none):
+grep exit 1
+exit=0
+$ python3 -c $'\nimport re, sys\nru = open(\'metrix/e1-pilot/tasks/IMPL_C5_RULING.md\', encoding=\'utf-8\').read(); rb = open(\'metrix/e1-pilot/RUNBOOK_A100.md\', encoding=\'utf-8\').read()\nm = re.search(\'\346\200\273\345\210\231\357\274\232(\343\200\214[^\343\200\215]*\343\200\215)\', ru)\nr = m.group(1) if m else \'\'\nprint(\'general rule of ruling item 2 (from the ruling file):\', r)\nprint(\'characters:\', len(r), \'| occurrences in the RUNBOOK:\', rb.count(r) if r else 0)\nsys.exit(0 if r and rb.count(r) == 1 else 1)'
+general rule of ruling item 2 (from the ruling file): 「任何命令以回溯或非 0 退出码结束，或出现本手册没有写到的情况：不重跑、不修补，保留输出，报告 Owner。」
+characters: 56 | occurrences in the RUNBOOK: 1
+exit=0
+$ bash -c $'echo \'old placeholders, private method, home venv, pending wording in the RUNBOOK (expected none):\'; grep -n \'<\345\220\215\347\247\260>\\|_state()\\|~/metrix-venv\\|\345\276\205 Review Gate\\|\345\276\205\345\206\263\\|report_only\\|b17_plus\' metrix/e1-pilot/RUNBOOK_A100.md; echo "grep exit $?"'
+old placeholders, private method, home venv, pending wording in the RUNBOOK (expected none):
+grep exit 1
+exit=0
+$ bash -c $'echo \'long commands labelled in section 3 (name: count of lines "\351\225\277\345\221\275\344\273\244 <name>"):\'; for n in s3_2a s3_2 s3_4_data s3_4_config s3_4_model formal test_generate test_evaluate; do echo "$n: $(grep -cE "\351\225\277\345\221\275\344\273\244 $n(\\$|[^a-z0-9_])" metrix/e1-pilot/RUNBOOK_A100.md)"; done; echo \'listed in section 1:\'; grep -o \'\345\205\261 8 \346\235\241,\344\276\235\346\254\241\344\270\272[^;]*\' metrix/e1-pilot/RUNBOOK_A100.md'
+long commands labelled in section 3 (name: count of lines "长命令 <name>"):
+s3_2a: 1
+s3_2: 1
+s3_4_data: 1
+s3_4_config: 1
+s3_4_model: 1
+formal: 1
+test_generate: 2
+test_evaluate: 2
+listed in section 1:
+共 8 条,依次为 `s3_2a`、`s3_2`、`s3_4_data`、`s3_4_config`、`s3_4_model`、`formal`、`test_generate`、`test_evaluate`
+exit=0
+$ bash -c echo\ \'tee\ without\ -a\ on\ env.txt\ /\ fetch.txt\ \(expected\ none\):\'\;\ grep\ -n\ \'tee\ \"\$E\"\\\|tee\ \"\$WORK/command_output/fetch.txt\"\'\ metrix/e1-pilot/RUNBOOK_A100.md\;\ echo\ \"grep\ exit\ \$\?\"
+tee without -a on env.txt / fetch.txt (expected none):
+grep exit 1
+exit=0
+$ bash -c $'echo \'CP5 wording (section 1 Python row, 3.0 note, 3.2a note):\'; grep -n \'\344\270\215\350\203\275\345\273\272 venv\' metrix/e1-pilot/RUNBOOK_A100.md | cut -c1-160'
+CP5 wording (section 1 Python row, 3.0 note, 3.2a note):
+25:| Python | CPython **3.13.18**(锁定文件第 2 行;`tests/test_environment.py` 核对)。主机没有这个精确版本,或有而不能建 venv(缺 ensurep
+79:#     Python:不是 3.13.18、没有 python3.13,或有而不能建 venv(缺 ensurepip)时不停,第 3.2 节的 3.2a 用 uv 安装
+90:# 3.2a 长命令 s3_2a(C4 裁决第 6 项;C5 裁决第 3 项)主机没有 CPython 3.13.18,或有而不能建 venv(缺 ensurepip)时,
+exit=0
+$ env PYTHONPATH=metrix/e1-pilot/src /tmp/claude-0/-home-user/307aad45-73e9-5051-90eb-46f88bd6bab7/scratchpad/c5sim/part/metrix-venv/bin/python -c $'\nimport re, sys\nfrom metrix_e1 import frozen as FZ, record as R\nfields = R.template_fields(FZ.load().protocol_text)\nrb = open(\'metrix/e1-pilot/RUNBOOK_A100.md\', encoding=\'utf-8\').read()\nblock = re.search(r\'\\n```\\n(Experiment ID: METRIX-E1-PILOT-l6-compare-.*?)\\n```\\n\', rb, flags=re.S).group(1).split(\'\\n\')\nnames = [ln.split(\': \', 1)[0] for ln in block]\nprint(\'protocol section 10 fields\', len(fields), \'| RUNBOOK 3.7 item 5 template lines\', len(block))\nprint(\'same names in the same order:\', names == fields)\nsys.exit(0 if names == fields else 1)'
+protocol section 10 fields 20 | RUNBOOK 3.7 item 5 template lines 20
+same names in the same order: True
+exit=0
+$ /tmp/claude-0/-home-user/307aad45-73e9-5051-90eb-46f88bd6bab7/scratchpad/c5sim/part/metrix-venv/bin/python metrix/e1-pilot/reports/round3/outside_metrix_check.py
+changed outside metrix/ (base 61d3c767 .. HEAD):
+  A	.claude/agents/code-reviewer.md
+  A	.claude/agents/data-auditor.md
+  M	CLAUDE.md
+charter: base 3065 bytes, new 3586 bytes, base is exact prefix: True
+charter: appended 521 bytes; level-1/2 headings in appended part: ['## 6. Metrix 子项目(2026-11-13 负责人决定)']
+ignore rules below come from the working-tree .gitignore; identical to .gitignore at HEAD: True
+agent .claude/agents/code-reviewer.md: tracked at HEAD: True; ignore rule: .gitignore:14:.claude/	.claude/agents/code-reviewer.md
+agent .claude/agents/data-auditor.md: tracked at HEAD: True; ignore rule: .gitignore:14:.claude/	.claude/agents/data-auditor.md
+RESULT: PASS
+exit=0
+$ sha256sum metrix/e1-pilot/tasks/IMPL_C5_RULING.md
+70f8d369aef6dcd95f4a9ba1c36555899e217f68d9db007ee197be2cabcd5eeb  metrix/e1-pilot/tasks/IMPL_C5_RULING.md
+exit=0
+$ git status --short --untracked-files=all
+M  metrix/e1-pilot/RUNBOOK_A100.md
+M  metrix/e1-pilot/reports/DEFERRED_MINORS.md
+M  metrix/e1-pilot/reports/IMPL_C_REPORT.md
+A  metrix/e1-pilot/reports/impl_c/c5_00_session_start.txt
+A  metrix/e1-pilot/reports/impl_c/c5_01_runbook_sim.txt
+A  metrix/e1-pilot/reports/impl_c/c5_02_docs_checks_trial1_script_error.txt
+A  metrix/e1-pilot/reports/impl_c/c5_docs_checks.sh
+A  metrix/e1-pilot/reports/impl_c/c5_docs_checks_trial1.sh
+A  metrix/e1-pilot/reports/impl_c/c5_runbook_sim.sh
+A  metrix/e1-pilot/tasks/IMPL_C5_RULING.md
+?? metrix/e1-pilot/reports/impl_c/c5_02_docs_checks.txt
+exit=0
+$ bash -c git\ rev-parse\ HEAD\;\ git\ write-tree\;\ git\ diff\ --quiet\ --\ metrix/e1-pilot/src\ metrix/e1-pilot/tests\ metrix/e1-pilot/run_pilot.py\ \&\&\ echo\ WORKTREE_EQUALS_INDEX_FOR_SRC_TESTS_RUN_PILOT\;\ git\ diff\ --cached\ --quiet\ HEAD\ --\ metrix/e1-pilot/src\ metrix/e1-pilot/tests\ metrix/e1-pilot/run_pilot.py\ \&\&\ echo\ INDEX_EQUALS_HEAD_FOR_SRC_TESTS_RUN_PILOT\;\ git\ diff\ --cached\ --stat\ HEAD\;\ sha256sum\ metrix/e1-pilot/reports/impl_c/c5_docs_checks.sh\;\ git\ diff\ --cached\ --name-only\ HEAD\ \|\ xargs\ git\ ls-files\ -s\ --\;\ git\ diff\ --cached\ HEAD\ \|\ sha256sum
+377bc736e32f19ec003813db8a431da25ef9f660
+f8991273c51dbc4fa4f4e09eda5b9a4ffc99d1c6
+WORKTREE_EQUALS_INDEX_FOR_SRC_TESTS_RUN_PILOT
+INDEX_EQUALS_HEAD_FOR_SRC_TESTS_RUN_PILOT
+ metrix/e1-pilot/RUNBOOK_A100.md                    |  99 ++++---
+ metrix/e1-pilot/reports/DEFERRED_MINORS.md         |  29 +-
+ metrix/e1-pilot/reports/IMPL_C_REPORT.md           |  88 +++++-
+ .../reports/impl_c/c5_00_session_start.txt         |  21 ++
+ .../e1-pilot/reports/impl_c/c5_01_runbook_sim.txt  | 306 +++++++++++++++++++++
+ .../c5_02_docs_checks_trial1_script_error.txt      | 132 +++++++++
+ metrix/e1-pilot/reports/impl_c/c5_docs_checks.sh   |  49 ++++
+ .../reports/impl_c/c5_docs_checks_trial1.sh        |  39 +++
+ metrix/e1-pilot/reports/impl_c/c5_runbook_sim.sh   |  91 ++++++
+ metrix/e1-pilot/tasks/IMPL_C5_RULING.md            |   8 +
+ 10 files changed, 803 insertions(+), 59 deletions(-)
+cf0c39e8325d8d2429235e6c74557faefdaa04c38acfb381a8c3c2a32e20efe8  metrix/e1-pilot/reports/impl_c/c5_docs_checks.sh
+100644 fc29a124e501accd3bf8ac12b53bffd0d8592264 0	metrix/e1-pilot/RUNBOOK_A100.md
+100644 08d58efbb29d40fd808d9a9b852ef7c922ea135d 0	metrix/e1-pilot/reports/DEFERRED_MINORS.md
+100644 4f4fa404c0019de3efa5c35851d21435efa2ecf8 0	metrix/e1-pilot/reports/IMPL_C_REPORT.md
+100644 1d52b291205dea273c4428959b2b559132de38b0 0	metrix/e1-pilot/reports/impl_c/c5_00_session_start.txt
+100644 c2913d72776e93d0a667642a496678b268683c10 0	metrix/e1-pilot/reports/impl_c/c5_01_runbook_sim.txt
+100644 0d7ef9330f7324baaaacd2854b984ec9433956d7 0	metrix/e1-pilot/reports/impl_c/c5_02_docs_checks_trial1_script_error.txt
+100644 62056c509790e7e753084cf46d37f5cd74205300 0	metrix/e1-pilot/reports/impl_c/c5_docs_checks.sh
+100644 7000694f932223d1d031ccd411b850c3297174de 0	metrix/e1-pilot/reports/impl_c/c5_docs_checks_trial1.sh
+100644 59f61f038958ffb03638e8b7789955942d492219 0	metrix/e1-pilot/reports/impl_c/c5_runbook_sim.sh
+100644 f0a75e482fb8d71893888e556e826a2eb643892d 0	metrix/e1-pilot/tasks/IMPL_C5_RULING.md
+834be83449f2952571da8a3565963a5e838e3abb7dbb0857e3cfac690c4c670d  -
+exit=0
