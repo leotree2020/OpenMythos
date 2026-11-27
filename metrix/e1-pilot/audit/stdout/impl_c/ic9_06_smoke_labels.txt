@@ -1,0 +1,36 @@
+# Data Auditor run (implementation stage C, C2 second fix commit, staged tree a6ce8a0ea0aeff1e86443a2a22a2a4eb349bcc50, parent 0cbee197, round 1). host vm, Anthropic cloud container, CPU only (no GPU device node: 0 nvidia entries), no model weights loaded (tokenizer files only; smoke checkpoints are hashed as file bytes, never loaded; the Executor's e2e test builds random tiny models in memory); 2026-11-27 08:19:56 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/venv/bin/python -I -B ic9_06_smoke_labels.py /home/user/OpenMythos /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/c2c_smoke
+env: host vm | Linux-6.18.44-fc-v880-x86_64-with-glibc2.39 | python 3.13.18 (/tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/venv/bin/python) | installed {'transformers': '5.22.2', 'tokenizers': '0.23.3', 'pyarrow': '26.0.1', 'huggingface_hub': '2.4.0', 'torch': '2.11.0'} | nvidia device nodes: []
+== A. labels
+JSON records 76, without the SMOKE label or mode smoke: [] | text records 1 ['experiment_record_smoke_20261127T070352Z.txt'], first line not the label: []
+  data/LABEL.txt 'SMOKE — NOT A RESULT\n'
+  checkpoints/LABEL.txt 'SMOKE — NOT A RESULT\n'
+  preflight/LABEL.txt 'SMOKE — NOT A RESULT\n'
+experiment records ['experiment_record_smoke_20261127T070352Z.json'] ['experiment_record_smoke_20261127T070352Z.txt'] | one pair named with the start time: True
+
+== B. no Gate 0 conclusion
+gate0_status 'NOT_TESTED' note '冒烟测试，不构成结论' | conditions ['G0.1', 'G0.2', 'G0.3', 'G0.4', 'G0.5', 'G0.6', 'G0.7', 'G0.8', 'G0.9', 'G0.10']
+experiment record Status 'NOT_TESTED' Interpretation '冒烟测试，不构成结论' | template fields 20 | Experiment ID 'METRIX-E1-PILOT-smoke-20261127T070352Z'
+device note: step1_record 'smoke: device check skipped' | smoke_report 'smoke: device check skipped'
+
+== C. would-stop entries and step records
+frozen protocol: | ST3 | 第 4 步 F 选定配置(种子 101)的 `Acc_CB` < 0.90,或 `Acc(F, DEV-QA, learned)` < 0.70 | 阳性对照未过:停;不跑 L、A、S、Y |
+                 | ST11 | 第 8 节第 2 步预检的预估总时长超过 3.5 小时 | 停止;报告 Owner |
+  -> ST3 bounds Acc_CB 0.9, Acc 0.7 | ST11 hours 3.5
+positive control acc_cb 0.25 acc_dev_learned 0.25 (step4 st3 'smoke: would stop') | preflight st11_reads 'b17_estimate_hours', b17_estimate_hours 1.7730 h (step2 st11 'within bound') | G0.3 True G0.6 True G0.7 True (step3 st2 'not triggered')
+recorded 'would stop' ['ST3'] == expected from the recorded values ['ST3']: True | every entry labelled: True
+step records 1-8 present; kinds ['step1', 'step2', 'step3', 'step4', 'step5', 'step6', 'step7', 'step8'] | 'stopped' fields {} (expected none)
+step7 smoke_stops ['ST3'] | excluded [] | experiment record Stop Conditions stop None, smoke_recorded ['ST3']
+
+== D. preflight (my recomputation from the recorded timing)
+my counts {'loads': 50, 'checkpoints': 30, 'test_state_hashes': 17, 'test_file_hashes': 15, 'test_models': 16} | recorded {'checkpoints': 30, 'loads': 50, 'test_file_hashes': 15, 'test_models': 16, 'test_state_hashes': 17} | equal True
+overhead seconds mine 33.024732316 | recorded 33.024732316 | |diff| 0
+B17 parts {'a_factor': 6.752434456928839, 'a_runs': 8, 'eval_seconds': 1753.234155161983, 'evaluation_units': 58.0, 'other_runs': 22, 'train_seconds': 4629.56585000569, 'used_seconds': 0.0} | train_seconds mine 4629.565850 (recorded 4629.565850) | eval_seconds mine 1753.234155 (recorded 1753.234155) | total from the parts 1.773000001 h == b17_estimate_hours 1.773000001 h: True
+report-only sum mine 1.782173538 h | recorded 1.782173538 h | equal True
+questions per fact from the frozen templates: DEV {'capital': 2, 'currency': 2, 'founder': 2, 'river': 2} TEST {'capital': 3, 'currency': 3, 'founder': 3, 'river': 3}
+TEST look-ahead with this (smoke) timing, informational: 731.066 s = 0.2031 h
+timing block keys ['a_factor', 'dev_evaluation_seconds', 'file_hash_s', 'hash_s', 'load_s', 'mean_step_s', 'reload_s', 'save_s']
+modules: torch imported=False | transformers modeling modules imported=[] | this script never calls a model class or from_pretrained on a model
+RESULT: PASS
+exit=0

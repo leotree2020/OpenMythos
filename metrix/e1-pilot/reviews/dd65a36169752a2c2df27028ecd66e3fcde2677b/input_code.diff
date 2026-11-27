@@ -1,0 +1,800 @@
+diff --git a/metrix/e1-pilot/reports/impl_c/c2_mutate_fix2.py b/metrix/e1-pilot/reports/impl_c/c2_mutate_fix2.py
+new file mode 100644
+index 0000000..854eedd
+--- /dev/null
++++ b/metrix/e1-pilot/reports/impl_c/c2_mutate_fix2.py
+@@ -0,0 +1,166 @@
++"""Stage C, C2 second fix commit (after the round-1 reviews of the fix commit 49fc9a35): mutation check of run_pilot.py
++and metrix_e1.pilot; c2_mutate_fix1.py is kept as it ran for c2b_03; this copy follows the changed code and adds the
++mutations of the second fix (the runner is the one of c1b_mutate_fix1.py; every mutation is one replacement). Each
++mutation removes or weakens one check in the working tree (exact replacements), runs the tests named for it (no -x:
++every named test runs) and restores the file (byte-for-byte, checked). A mutation is "caught" when every named test
++fails; the outcome of each named test is printed.
++Run from the repository root:
++    METRIX_INPUTS_DIR=DIR python metrix/e1-pilot/reports/impl_c/c2_mutate_fix2.py PYTHON
++Prints one block per mutation and, at the end, the sha256 of src/, tests/ and run_pilot.py before and after (must be
++equal).
++"""
++import hashlib
++import subprocess
++import sys
++from pathlib import Path
++
++PY = sys.argv[1]
++PI = Path("metrix/e1-pilot/src/metrix_e1/pilot.py")
++RP = Path("metrix/e1-pilot/run_pilot.py")
++T = "tests/test_run_pilot.py::"
++E2E = T + "test_test_evaluate_end_to_end_once"
++CKPT = T + "test_every_checkpoint_reloads_with_the_same_state_hash"
++CKPT_BAD = T + "test_a_checkpoint_that_does_not_reload_identically_is_refused"
++STOPS = T + "test_smoke_records_the_value_stops_and_formal_raises_them"
++CHAIN = T + "test_formal_commit_chain_through_the_freeze_record"
++RECORDS = T + "test_test_evaluate_records_after_the_marker_and_for_st10"
++CONT = T + "test_continuity_checks_before_anything"
++STOPCRASH = T + "test_formal_stop_and_crash_commit_what_was_written[%s]"
++GEN = T + "test_test_generate_records_an_st10_stop_of_its_own_run"
++LOOK = T + "test_st7_look_ahead_of_a_run"
++OVER = T + "test_preflight_overhead_counts"
++
++MUTS = [
++    ("checkpoint: reload hash not compared", PI, "        if again != sha:\n", "        if False:\n", CKPT_BAD),
++    ("checkpoint: label not checked", PI, 'if ck.get("run") != spec.name or ck.get("label") != self.mode.label:',
++     'if ck.get("run") != spec.name:', CKPT_BAD),
++    ("checkpoint: an existing file overwritten", PI,
++     '        if path.exists():\n            raise ImplementationFail("checkpoint %s exists', '        if False:\n'
++     '            raise ImplementationFail("checkpoint %s exists', CKPT),
++    ("work directory inside the repository", PI, "        if not outside(self.work, self.root):\n",
++     "        if False:\n", T + "test_work_directory_inside_the_repository_is_refused"),
++    ("formal records value stops as smoke", PI, "            if self.mode.smoke and e.stop in SMOKE_RECORDED_STOPS:",
++     "            if e.stop in SMOKE_RECORDED_STOPS:", STOPS),
++    ("smoke records ST1", PI, 'SMOKE_RECORDED_STOPS = ("ST2", "ST3", "ST4", "ST5", "ST11")',
++     'SMOKE_RECORDED_STOPS = ("ST1", "ST2", "ST3", "ST4", "ST5", "ST11")', STOPS),
++    ("formal: no device check before step 1", PI, "        p.device_info_record = p.device_check()\n        if p.mode.formal:",
++     '        p.device_info_record = "skipped"\n        if p.mode.formal:',
++     T + "test_formal_on_the_cpu_stops_with_st8_before_anything"),
++    ("step 1: manifest change outside the step-1 field", PI,
++     "        if FZ.strip_step1_fields(rel, json.loads(blob)) != FZ.strip_step1_fields(rel, json.loads(fz.blobs[rel])):",
++     "        if False:", T + "test_step1_writes_only_the_fields_st12_leaves_out"),
++    ("step 1: split_sha256 not written", PI,
++     '            sm["split_sha256"][name] = file_hashes[name]["canonical_sha256"]',
++     '            sm["split_sha256"][name] = sm["split_sha256"][name]',
++     T + "test_step1_writes_only_the_fields_st12_leaves_out"),
++    ("model directory: revision not compared", PI, "        if got != rev:\n", "        if False:\n",
++     T + "test_model_directory_against_the_frozen_revision"),
++    ("smoke records without their label", PI, "rec = dict(plain(obj), mode=self.mode.name, label=self.mode.label)",
++     "rec = dict(plain(obj), mode=self.mode.name, label=None)",
++     T + "test_smoke_outputs_are_labelled_and_stay_in_the_work_directory"),
++    ("run records under 'runs' (git-ignored)", PI, 'RUNS_DIR, DETAILS_DIR = "training_runs", "details"',
++     'RUNS_DIR, DETAILS_DIR = "runs", "details"', T + "test_no_formal_record_path_is_ignored_by_git " + E2E),
++    ("formal takes a step count", RP,
++     '        x = a if name == "smoke" else sub.add_parser(name)\n',
++     '        x = a if name == "smoke" else sub.add_parser(name)\n        if name != "smoke":\n'
++     '            x.add_argument("--steps", type=int)\n',
++     T + "test_formal_commands_have_no_step_option"),
++    ("TEST: checkpoint files not checked before the marker", PI,
++     '            if (got != run_rec["checkpoint"]["file_sha256"]\n'
++     '                    or run_rec["checkpoint"]["state_sha256"] != freeze["checkpoints"][name]):',
++     "            if False:", E2E),
++    ("TEST: general-text rows in the committed result", PI,
++     '"summaries": {m: _summary_record(s) for m, s in summaries.items()}})',
++     '"summaries": {m: s for m, s in summaries.items()}})', E2E),
++    ("formal: a run stopped before step 1 writes into the repository", PI,
++     '    if p.mode.formal and command == "formal" and not p.step1_started:', "    if False:",
++     T + "test_formal_on_the_cpu_stops_with_st8_before_anything"),
++    ("TEST: a refusal before the begin writes a record", PI,
++     "        if not begun and code is None:\n", "        if False:\n", E2E + " " + RECORDS),
++    ("TEST: a protocol stop before the begin not recorded", PI, "        if not begun and code is None:\n",
++     "        if not begun:\n", RECORDS),
++    ("TEST: a crash after the begin not recorded", PI,
++     "        if not begun_by_this_process(p):\n            raise\n        crash = e\n", "        raise\n", RECORDS),
++    ("TEST: begun read from the marker file alone", PI,
++     "    return p.begin_called and not p.marker_before_begin and (p.root / TG.MARKER_REL).exists()",
++     "    return (p.root / TG.MARKER_REL).exists()", RECORDS + " " + E2E),
++    ("TEST: no ST7 look-ahead before the begin", PI, "        p.before_run(look_ahead)", "        p.before_run()", E2E),
++    ("TEST: N's hash not compared before the begin", PI, "        if base_sha != n_sha:\n", "        if False:\n", E2E),
++    ("TEST look-ahead: checkpoints counted as base loads", PI,
++     'n["test_file_hashes"] * pre["reload_s"]', 'n["test_file_hashes"] * pre["load_s"]', OVER),
++    ("run look-ahead: A factor for every arm", PI, 'factor = q["a_factor"] if spec.arm == "A" else 1.0',
++     'factor = q["a_factor"]', LOOK),
++    ("run look-ahead not passed to before_run", PI, "    p.before_run(p.run_seconds(spec))", "    p.before_run()", CHAIN),
++    ("test-generate: no ST10 record", PI, "    if over:\n        stop = {", "    if False:\n        stop = {", GEN),
++    ("test-generate: an earlier run's ST10 record counted", PI,
++     "    over = st10_over_limit(p) if before is None else []", "    over = st10_over_limit(p)", GEN),
++    ("a stop inside a step: step record not written first", PI,
++     '                self.step_end(k, rec, paths, "metrix: E1-PILOT formal step %d record (stop %s)" % (k, e.stop))',
++     "                pass", T + "test_a_stop_inside_a_step_writes_the_step_record_first " + STOPCRASH % "st3"),
++    ("stopped run: written records not committed", PI, "        left = [x for x in p.uncommitted if x not in paths]",
++     "        left = []", STOPCRASH % "crash"),
++    ("continuity: a --work with checkpoints accepted", PI,
++     '        if command == "formal" and self.ckpt_dir.is_dir() and any(self.ckpt_dir.glob("*.pt")):',
++     "        if False:", CONT),
++    ("continuity: no device ledger accepted", PI,
++     'if TG._blob(self.root, "HEAD:%s" % STEP1_RECORD_REL) is not None and not self.ledger.path.exists():',
++     "if False:", CONT + " " + CHAIN),
++    ("continuity: formal runs again after the freeze", PI,
++     'if command == "formal" and TG._blob(self.root, "HEAD:%s" % R.SELECTION_FREEZE_REL) is not None:',
++     "if False:", CONT + " " + CHAIN),
++    ("smoke step 8 started on a checkout with formal records", PI,
++     "    if formal:                          # there the generator's", "    if False:                           # there the generator's",
++     T + "test_smoke_step8_refuses_where_formal_records_exist"),
++    ("excluded run without a checkpoint hash", PI,
++     '            return {"spec": spec, "finite": False, "state_sha256": ck["state_sha256"],',
++     '            return {"spec": spec, "finite": False,', CHAIN),
++    ("unchanged paths committed", PI,
++     '        changed = [r for r in rels if TG._blob(self.root, "HEAD:%s" % r) != (self.root / r).read_bytes()]',
++     "        changed = rels", CHAIN),
++]
++
++
++def tree_sha():
++    h = hashlib.sha256()
++    files = (sorted(Path("metrix/e1-pilot/src").rglob("*.py")) + sorted(Path("metrix/e1-pilot/tests").rglob("*.py"))
++             + [RP])
++    for p in files:
++        h.update(str(p).encode() + b"\0" + p.read_bytes())
++    return h.hexdigest()
++
++
++def parse(m):
++    name, path, old, new, tests = m
++    return name, path, [(old, new)], ["metrix/e1-pilot/" + t for t in tests.split()]
++
++
++if __name__ == "__main__":
++    before = tree_sha()
++    caught = 0
++    for m in MUTS:
++        name, path, pairs, nodes = parse(m)
++        orig = path.read_bytes()
++        s = orig.decode("utf-8")
++        bad = [s.count(old) for old, _ in pairs if s.count(old) != 1]
++        if bad:
++            print("%-48s -> MUTATION NOT APPLICABLE (%s matches)" % (name, bad))
++            continue
++        for old, new in pairs:
++            s = s.replace(old, new)
++        path.write_text(s, encoding="utf-8")
++        try:
++            r = subprocess.run([PY, "-m", "pytest", "-q", "-p", "no:cacheprovider", "-rf"] + nodes, capture_output=True,
++                               text=True)
++            last = r.stdout.strip().split("\n")[-1]
++            failed = {ln.split(" ")[1] for ln in r.stdout.split("\n") if ln.startswith("FAILED ")}
++            ok = r.returncode == 1 and all(n in failed for n in nodes)
++            caught += ok
++            print("%-48s -> %s exit %d | %s" % (name, "CAUGHT" if ok else "NOT CAUGHT", r.returncode, last))
++            for n in nodes:
++                print("       %s %s" % ("FAILED" if n in failed else "passed", n.split("::", 1)[1]))
++        finally:
++            path.write_bytes(orig)
++    after = tree_sha()
++    print("mutations %d, caught %d" % (len(MUTS), caught))
++    print("src+tests+run_pilot sha256 before %s after %s %s" % (before, after, "EQUAL" if before == after else "DIFFERENT"))
++    print("RESULT: %s" % ("PASS" if caught == len(MUTS) and before == after else "FAIL"))
+diff --git a/metrix/e1-pilot/reports/impl_c/c2_mutate_fix2b.py b/metrix/e1-pilot/reports/impl_c/c2_mutate_fix2b.py
+new file mode 100644
+index 0000000..dc0ae61
+--- /dev/null
++++ b/metrix/e1-pilot/reports/impl_c/c2_mutate_fix2b.py
+@@ -0,0 +1,83 @@
++"""Stage C, C2 second fix commit: the one mutation of c2_mutate_fix2.py that c2c_03 reported NOT CAUGHT because its
++test list also named test_test_evaluate_end_to_end_once, which does not reach the case (the records test did fail:
++c2c_03_checks.txt); here it names the records test only. c2_mutate_fix2.py is kept as it ran. Same runner. Each
++mutation removes or weakens one check in the working tree (exact replacements), runs the tests named for it (no -x:
++every named test runs) and restores the file (byte-for-byte, checked). A mutation is "caught" when every named test
++fails; the outcome of each named test is printed.
++Run from the repository root:
++    METRIX_INPUTS_DIR=DIR python metrix/e1-pilot/reports/impl_c/c2_mutate_fix2b.py PYTHON
++Prints one block per mutation and, at the end, the sha256 of src/, tests/ and run_pilot.py before and after (must be
++equal).
++"""
++import hashlib
++import subprocess
++import sys
++from pathlib import Path
++
++PY = sys.argv[1]
++PI = Path("metrix/e1-pilot/src/metrix_e1/pilot.py")
++RP = Path("metrix/e1-pilot/run_pilot.py")
++T = "tests/test_run_pilot.py::"
++E2E = T + "test_test_evaluate_end_to_end_once"
++CKPT = T + "test_every_checkpoint_reloads_with_the_same_state_hash"
++CKPT_BAD = T + "test_a_checkpoint_that_does_not_reload_identically_is_refused"
++STOPS = T + "test_smoke_records_the_value_stops_and_formal_raises_them"
++CHAIN = T + "test_formal_commit_chain_through_the_freeze_record"
++RECORDS = T + "test_test_evaluate_records_after_the_marker_and_for_st10"
++CONT = T + "test_continuity_checks_before_anything"
++STOPCRASH = T + "test_formal_stop_and_crash_commit_what_was_written[%s]"
++GEN = T + "test_test_generate_records_an_st10_stop_of_its_own_run"
++LOOK = T + "test_st7_look_ahead_of_a_run"
++OVER = T + "test_preflight_overhead_counts"
++
++MUTS = [
++    ("TEST: begun read from the marker file alone", PI,
++     "    return p.begin_called and not p.marker_before_begin and (p.root / TG.MARKER_REL).exists()",
++     "    return (p.root / TG.MARKER_REL).exists()", RECORDS),
++]
++
++
++def tree_sha():
++    h = hashlib.sha256()
++    files = (sorted(Path("metrix/e1-pilot/src").rglob("*.py")) + sorted(Path("metrix/e1-pilot/tests").rglob("*.py"))
++             + [RP])
++    for p in files:
++        h.update(str(p).encode() + b"\0" + p.read_bytes())
++    return h.hexdigest()
++
++
++def parse(m):
++    name, path, old, new, tests = m
++    return name, path, [(old, new)], ["metrix/e1-pilot/" + t for t in tests.split()]
++
++
++if __name__ == "__main__":
++    before = tree_sha()
++    caught = 0
++    for m in MUTS:
++        name, path, pairs, nodes = parse(m)
++        orig = path.read_bytes()
++        s = orig.decode("utf-8")
++        bad = [s.count(old) for old, _ in pairs if s.count(old) != 1]
++        if bad:
++            print("%-48s -> MUTATION NOT APPLICABLE (%s matches)" % (name, bad))
++            continue
++        for old, new in pairs:
++            s = s.replace(old, new)
++        path.write_text(s, encoding="utf-8")
++        try:
++            r = subprocess.run([PY, "-m", "pytest", "-q", "-p", "no:cacheprovider", "-rf"] + nodes, capture_output=True,
++                               text=True)
++            last = r.stdout.strip().split("\n")[-1]
++            failed = {ln.split(" ")[1] for ln in r.stdout.split("\n") if ln.startswith("FAILED ")}
++            ok = r.returncode == 1 and all(n in failed for n in nodes)
++            caught += ok
++            print("%-48s -> %s exit %d | %s" % (name, "CAUGHT" if ok else "NOT CAUGHT", r.returncode, last))
++            for n in nodes:
++                print("       %s %s" % ("FAILED" if n in failed else "passed", n.split("::", 1)[1]))
++        finally:
++            path.write_bytes(orig)
++    after = tree_sha()
++    print("mutations %d, caught %d" % (len(MUTS), caught))
++    print("src+tests+run_pilot sha256 before %s after %s %s" % (before, after, "EQUAL" if before == after else "DIFFERENT"))
++    print("RESULT: %s" % ("PASS" if caught == len(MUTS) and before == after else "FAIL"))
+diff --git a/metrix/e1-pilot/reports/impl_c/c2c_checks.sh b/metrix/e1-pilot/reports/impl_c/c2c_checks.sh
+new file mode 100644
+index 0000000..a17dcee
+--- /dev/null
++++ b/metrix/e1-pilot/reports/impl_c/c2c_checks.sh
+@@ -0,0 +1,24 @@
++#!/usr/bin/env bash
++# Stage C, C2 second fix commit: the checks of the staged tree, recorded unedited (stdout+stderr merged) by reports/round5/logrun.sh.
++#   bash metrix/e1-pilot/reports/impl_c/c2c_checks.sh OUTFILE PYTHON INPUTS SCRATCH
++# Run from the repository root. SCRATCH is a directory outside the repository (data and the refused TEST --out).
++set -u
++O="$1"; PY="$2"; IN="$3"; SC="$4"
++L=metrix/e1-pilot/reports/round5/logrun.sh
++E="env PYTHONPATH=metrix/e1-pilot/src METRIX_INPUTS_DIR=$IN"
++{ echo "# Stage C, C2 second fix commit (staged; parent 0cbee197, the evidence commit after the fix commit 49fc9a35): checks on the staged tree (the working tree of src/, tests/ and run_pilot.py equals the index, checked first and last). Executor, host $(hostname) (Anthropic cloud container, CPU only). $(date -u)"
++  echo "# stdout+stderr merged, unedited. Commands recorded by reports/round5/logrun.sh. METRIX_INPUTS_DIR=$IN"; } > "$O"
++STATE='git diff --quiet -- metrix/e1-pilot/src metrix/e1-pilot/tests metrix/e1-pilot/run_pilot.py && echo WORKTREE_EQUALS_INDEX_FOR_SRC_TESTS_RUN_PILOT; git diff --cached HEAD -- metrix/e1-pilot/src metrix/e1-pilot/tests metrix/e1-pilot/run_pilot.py | sha256sum; git write-tree; git ls-files -s -- metrix/e1-pilot/src metrix/e1-pilot/tests metrix/e1-pilot/run_pilot.py'
++bash $L "$O" git ls-remote origin refs/heads/metrix-e1-pilot-protocol-v1
++bash $L "$O" git rev-parse HEAD
++bash $L "$O" git status --short --untracked-files=all
++bash $L "$O" bash -c "$STATE"
++bash $L "$O" $E $PY -m metrix_e1.data generate --inputs "$IN" --out "$SC/c2c_data"
++bash $L "$O" $E $PY -m metrix_e1.data verify --inputs "$IN" --data "$SC/c2c_data"
++bash $L "$O" $E $PY -m metrix_e1.test_data --inputs "$IN" --data "$SC/c2c_data" --out "$SC/c2c_test_out"
++bash $L "$O" bash -c "ls -la $SC/c2c_test_out 2>&1; ls $SC/c2c_data; git status --short -- metrix/e1-pilot/results 2>&1; ls metrix/e1-pilot/results 2>&1"
++bash $L "$O" $PY metrix/e1-pilot/reports/round3/outside_metrix_check.py
++bash $L "$O" $E $PY -m pytest -q -p no:cacheprovider --durations=8 metrix/e1-pilot/tests
++bash $L "$O" $E $PY metrix/e1-pilot/reports/impl_c/c2_mutate_fix2.py $PY
++bash $L "$O" git status --short --untracked-files=all
++bash $L "$O" bash -c "$STATE"
+diff --git a/metrix/e1-pilot/src/metrix_e1/pilot.py b/metrix/e1-pilot/src/metrix_e1/pilot.py
+index a6633d1..219292a 100644
+--- a/metrix/e1-pilot/src/metrix_e1/pilot.py
++++ b/metrix/e1-pilot/src/metrix_e1/pilot.py
+@@ -183,14 +183,15 @@ def checkpoint_overhead_seconds(contract, load_s, hash_s, save_s, reload_s, file
+ 
+ 
+ def test_evaluation_seconds(contract, pre):
+-    """ST7 look-ahead before the TEST evaluation begins: every TEST model loaded and hashed (twice for N), the 15
+-    checkpoint files hashed, each model evaluated once on TEST (a DEV evaluation scaled by test / dev questions per
+-    fact, as B17). `pre`: the timing block of the committed step 2 record."""
++    """ST7 look-ahead before the TEST evaluation begins: N loaded (load_s) and the 15 checkpoints loaded
++    (load_checkpoint: reload_s), the state hashes (N twice), the 15 checkpoint files hashed, each model evaluated once
++    on TEST (a DEV evaluation scaled by test / dev questions per fact, as B17). No margin is added (for Review Gate,
++    reports/IMPL_C_REPORT.md). `pre`: the timing block of the committed step 2 record."""
+     n = evaluation_plan(contract)
+     acc = contract.accounting
+     per_eval = pre["dev_evaluation_seconds"] * acc.test_questions_per_fact / acc.dev_questions_per_fact
+-    return (n["test_models"] * (pre["load_s"] + per_eval) + n["test_state_hashes"] * pre["hash_s"]
+-            + n["test_file_hashes"] * pre["file_hash_s"])
++    return (pre["load_s"] + n["test_file_hashes"] * pre["reload_s"] + n["test_models"] * per_eval
++            + n["test_state_hashes"] * pre["hash_s"] + n["test_file_hashes"] * pre["file_hash_s"])
+ 
+ 
+ # --------------------------------------------------------------------------------------------------- the pilot
+@@ -234,6 +235,8 @@ class Pilot:
+         self.steps = {}
+         self.written = []
+         self.uncommitted = []                       # formal records written and not yet committed
++        self.begin_called = False                   # test_evaluate called testgate.begin_test_evaluation
++        self.marker_before_begin = None
+ 
+     # -- output
+     def label_dir(self, d):
+@@ -265,14 +268,14 @@ class Pilot:
+             return None
+         rels = [self.rel(x) for x in paths]
+         changed = [r for r in rels if TG._blob(self.root, "HEAD:%s" % r) != (self.root / r).read_bytes()]
+-        for x in paths:
++        head = TG.commit_paths(self.root, changed, message, what) if changed else None
++        for x in paths:                             # after a successful commit (or nothing to commit) only
+             if x in self.uncommitted:
+                 self.uncommitted.remove(x)
+-        if not changed:
++        if head is None:
+             self.log("%s: equal to the committed version, nothing to commit" % what)
+-            return None
+-        head = TG.commit_paths(self.root, changed, message, what)
+-        self.log("committed and pushed %s: %s" % (what, head))
++        else:
++            self.log("committed and pushed %s: %s" % (what, head))
+         return head
+ 
+     def precommit(self, what):
+@@ -314,24 +317,34 @@ class Pilot:
+             return
+         if TG._blob(self.root, "HEAD:%s" % STEP1_RECORD_REL) is not None and not self.ledger.path.exists():
+             raise ProtocolStop(None, "BLOCKED", "a formal run has committed step records (%s) but --work %s holds no "
+-                               "device ledger: continue only with that run's --work; a restart is the Owner's "
+-                               "decision" % (STEP1_RECORD_REL, self.work))
++                               "device ledger: either this is not that run's --work, or that run stopped before its "
++                               "first model load (step 2); a restart is the Owner's decision" % (
++                                   STEP1_RECORD_REL, self.work))
+         if command == "formal" and TG._blob(self.root, "HEAD:%s" % R.SELECTION_FREEZE_REL) is not None:
+             raise ProtocolStop(None, "BLOCKED", "a freeze record is committed (%s): Gate 0 passed and the "
+                                "configurations are frozen; formal is not run again" % R.SELECTION_FREEZE_REL)
+-
+-    def run_seconds(self):
+-        """ST7 look-ahead of a training run: the preflight's per-step time x the contract's steps x the A factor
+-        (B17), one save, reload and two hashes, one DEV evaluation (0 before the preflight)."""
++        if command == "formal" and self.ckpt_dir.is_dir() and any(self.ckpt_dir.glob("*.pt")):
++            raise ProtocolStop(None, "BLOCKED", "--work %s already holds checkpoints of a formal run: each run is "
++                               "trained once; a restart is the Owner's decision" % self.work)
++
++    def run_seconds(self, spec):
++        """ST7 look-ahead of a training run: the base model loaded, the preflight's per-step time x the contract's
++        steps (x the A factor for arm A only, as B17), the checkpoint hashed, saved, file-hashed, reloaded and hashed,
++        one DEV evaluation (0 before the preflight)."""
+         if self.pre is None:
+             return 0.0
+         q = self.pre
+-        return (q["mean_step_s"] * self.contract.training.total_steps * q["a_factor"] + 2 * q["hash_s"] + q["save_s"]
+-                + q["reload_s"] + q["load_s"] + q["dev_evaluation_seconds"])
++        factor = q["a_factor"] if spec.arm == "A" else 1.0
++        return (q["load_s"] + q["mean_step_s"] * self.contract.training.total_steps * factor + 2 * q["hash_s"]
++                + q["save_s"] + q["file_hash_s"] + q["reload_s"] + q["dev_evaluation_seconds"])
+ 
+-    def eval_seconds(self):
+-        """ST7 look-ahead of one DEV evaluation of a loaded model (0 before the preflight)."""
+-        return 0.0 if self.pre is None else self.pre["load_s"] + self.pre["dev_evaluation_seconds"]
++    def eval_seconds(self, load):
++        """ST7 look-ahead of one DEV evaluation (0 before the preflight); `load`: "load" (the base model loaded
++        first), "reload" (a checkpoint loaded first, load_checkpoint) or None (the model is in memory)."""
++        if self.pre is None:
++            return 0.0
++        return {"load": self.pre["load_s"], "reload": self.pre["reload_s"], None: 0.0}[load] + \
++            self.pre["dev_evaluation_seconds"]
+ 
+     def step_start(self, k):
+         """ST12 before every step (Implementation Task Order V1 section 5): PROTOCOL_FROZEN, the four frozen files,
+@@ -634,7 +647,7 @@ def preflight(p):
+ def step3(p):
+     """Section 8 step 3: N on TRAIN closed book, DEV-QA, general DEV; ST2 on G0.3."""
+     p.step_start(3)
+-    p.before_run(p.eval_seconds())
++    p.before_run(p.eval_seconds("load"))
+     model = p.base_model()
+     p.base_sha = T.state_sha256(model)
+     ev = control_evaluation(p, model, "N on DEV", with_em=True)
+@@ -673,7 +686,7 @@ def train_and_evaluate(p, spec, n_general, selected_or_control):
+     """One training run (protocol sections 4, 7) and the DEV evaluation of its saved final checkpoint. A non-finite
+     value (ST6): outside the selected configurations and the controls the configuration is excluded from selection
+     (returns a result with finite False); otherwise IMPLEMENTATION_FAIL (the stop propagates)."""
+-    p.before_run(p.run_seconds())
++    p.before_run(p.run_seconds(spec))
+     model = p.base_model()                              # train.train_run sets up the arm (LoRA for L)
+     rec = {"kind": "training_run", "run": spec.name, "arm": spec.arm, "config_id": spec.config_id,
+            "config": spec.cfg, "seed": spec.seed, "phase": spec.phase, "device_name": p.device_name}
+@@ -684,7 +697,7 @@ def train_and_evaluate(p, spec, n_general, selected_or_control):
+         reloaded, ck = p.save_checkpoint(spec, model)
+         del model
+         model = None
+-        p.before_run(p.eval_seconds())
++        p.before_run(p.eval_seconds(None))
+         ev = p.evaluate(reloaded, with_em=True, with_s_mapping=spec.arm == "S")
+     except T.NonFinite as e:
+         try:
+@@ -789,7 +802,7 @@ def step7(p, runs, n, leakage, selected):
+     repro, files = {}, []
+     for seed in seeds:
+         spec = runs[_name("F", selected["F"], seed)]["spec"]
+-        p.before_run(p.eval_seconds())
++        p.before_run(p.eval_seconds("reload"))
+         model = p.load_checkpoint(spec, p.ckpt_dir / ("%s.pt" % spec.name))
+         ev2 = control_evaluation(p, model, "G0.8 second evaluation of %s" % spec.name, with_em=False)
+         del model
+@@ -1072,10 +1085,7 @@ def smoke_report(p, runs, actual):
+ 
+ 
+ def smoke_model_config(p):
+-    from transformers import AutoConfig
+-    cfg = AutoConfig.from_pretrained(str(p.model_dir), local_files_only=True)
+-    for k, v in SMOKE_MODEL_OVERRIDES.items():
+-        setattr(cfg, k, v)
++    cfg = smoke_config(p.model_dir)
+     return {"config_json_sha256": FZ.file_sha256(p.model_dir / "config.json"), "overrides": SMOKE_MODEL_OVERRIDES,
+             "init_seed": SMOKE_INIT_SEED, "config": cfg.to_dict()}
+ 
+@@ -1105,10 +1115,13 @@ def run_test_generate(p):
+     experiment record (BLOCKED, ST10) is written and committed. A refusal before generation leaves no record."""
+     if not p.mode.formal:
+         raise ImplementationFail("TEST is generated in formal mode only")
++    p.code_commit = TG.code_commit(p.root)
++    p.start_checks("test-generate")                 # the same --work as the formal run (device ledger)
++    before = TG._blob(p.root, "HEAD:%s" % TG.ST10_RECORD_REL)
+     cmd = test_generate_command(p, p.work / TEST_DIR)
+     p.log("running %s" % " ".join(cmd))
+     r = subprocess.run(cmd, cwd=str(p.root), check=False, env=_subprocess_env())
+-    over = st10_over_limit(p)
++    over = st10_over_limit(p) if before is None else []       # only an ST10 record committed by this run
+     if over:
+         stop = {"code": "ST10", "status": "BLOCKED", "message": "TEST part over limit %s (committed %s)" % (
+             over, TG.ST10_RECORD_REL)}
+@@ -1153,10 +1166,10 @@ def test_evaluate(p):
+     p.code_commit = TG.code_commit(p.root)
+     p.start_checks("test-evaluate")
+     p.device_info_record = p.device_check()
+-    p.load_data()
+-    tdir = p.work / TEST_DIR
+-    data = dict(p.rows, **{n: FZ.read_jsonl(tdir / n) for n in D.TEST_FILES})
+     try:
++        p.load_data()
++        tdir = p.work / TEST_DIR
++        data = dict(p.rows, **{n: FZ.read_jsonl(tdir / n) for n in D.TEST_FILES})
+         freeze, _ = R.committed_record(p.root, R.SELECTION_FREEZE_REL, "selection_freeze", fz.record.commit)
+         gate0, _ = R.committed_record(p.root, R.GATE0_RECORD_REL, "gate0", fz.record.commit)
+         step2, _ = R.committed_json(p.root, "%s/step2_record.json" % R.FORMAL_RESULTS_REL)
+@@ -1174,9 +1187,9 @@ def test_evaluate(p):
+                                        name, got, run_rec["checkpoint"]["file_sha256"]))
+         look_ahead = test_evaluation_seconds(p.contract, step2["preflight"]["timing"])
+         n_sha = step3["N"]["state_sha256"]
+-    except (R.NotCommitted, KeyError, OSError, TypeError) as e:
+-        raise ProtocolStop(None, "BLOCKED", "TEST not started: a committed record or a checkpoint file is missing or "
+-                           "incomplete (%r); report to the Owner" % (e,)) from e
++    except (R.NotCommitted, KeyError, OSError, TypeError, ValueError) as e:
++        raise ProtocolStop(None, "BLOCKED", "TEST not started: a committed record, a TEST file or a checkpoint file is "
++                           "missing or incomplete (%r); report to the Owner" % (e,)) from e
+     head = None
+     try:
+         p.before_run(look_ahead)                    # ST7: the whole TEST evaluation must fit before it begins
+@@ -1185,6 +1198,8 @@ def test_evaluate(p):
+         if base_sha != n_sha:
+             raise ProtocolStop(None, "BLOCKED", "the base model's state sha256 %s is not N's %s of the step 3 record; "
+                                "TEST not started; report to the Owner" % (base_sha, n_sha))
++        p.marker_before_begin = (p.root / TG.MARKER_REL).exists()
++        p.begin_called = True                       # run_test_evaluate: TEST counts as begun by this process
+         session = TG.begin_test_evaluation(fz, auth, data, base_sha)
+         p.log("TEST marker committed and pushed (%s); evaluating %d models once" % (session.marker_commit, len(models)))
+         p.rows = data
+@@ -1225,13 +1240,20 @@ def test_evaluate(p):
+     return final["final_status"], actual
+ 
+ 
++def begun_by_this_process(p):
++    """TEST counts as begun by this process: begin_test_evaluation was called, the marker did not exist before and
++    exists now (it may have raised after writing it: commit, push or the pushed-bytes check)."""
++    return p.begin_called and not p.marker_before_begin and (p.root / TG.MARKER_REL).exists()
++
++
+ def run_test_evaluate(p):
+-    """The command test-evaluate. A refusal before the TEST marker exists (a precondition of the generator, the
+-    continuity checks, a checkpoint file, a committed record, ST7, the commit preconditions checked by begin) leaves
+-    no experiment record: nothing was evaluated; an ST10 stop (begin's ST10 gate) is a protocol stop and gets one.
+-    Once the marker exists TEST counts as evaluated, and the experiment record is written and committed whatever
+-    happens after, a crash included (BLOCKED; the exception is raised again). Returns (completed without a stop,
+-    final status or the stop's status)."""
++    """The command test-evaluate. Before this process began the TEST evaluation (begun_by_this_process), a refusal
++    without a stop code (a precondition of the generator, the continuity checks, a committed record or a file, the
++    checkout and commit preconditions in begin) leaves no experiment record: nothing was evaluated; a protocol stop
++    (ST7 look-ahead, ST8, ST9, ST10, ST12) gets one. TestAlreadyEvaluated (TEST was evaluated by an earlier run) writes
++    nothing and is raised: the pilot's status is the one of its result. Once this process began the evaluation, the
++    experiment record (BLOCKED for a stop or a crash, KeyboardInterrupt included) is written and committed whatever
++    happens; the exception is raised again. Returns (completed without a stop, final status or the stop's status)."""
+     from . import test_data as TD
+     crash = None
+     try:
+@@ -1240,20 +1262,25 @@ def run_test_evaluate(p):
+     except (ProtocolStop, TD.PreconditionFailed) as e:
+         p.close_clock()
+         code = getattr(e, "stop", None)
+-        if not (p.root / TG.MARKER_REL).exists() and code != "ST10":
+-            p.log("TEST evaluation refused before the TEST marker was written (nothing evaluated): %s" % e)
++        begun = begun_by_this_process(p)
++        if not begun and code is None:
++            p.log("TEST evaluation refused before it began (nothing evaluated): %s" % e)
+             return False, getattr(e, "status", None)
+         status = getattr(e, "status", None) or "BLOCKED"
+-        actual, nxt = {"stopped": str(e)}, "report to the Owner (stop %s)" % code
++        actual, nxt = {"stopped": str(e), "test_begun": begun}, "report to the Owner (stop %s)" % code
+         stop = {"code": code, "status": getattr(e, "status", None), "message": str(e)}
+-        p.log("STOP (%s): %s" % ("after the TEST marker: TEST counts as evaluated" if code != "ST10" or
+-                                 (p.root / TG.MARKER_REL).exists() else "ST10, TEST not evaluated", e))
+-    except Exception as e:           # noqa: BLE001 -- a crash after the marker is recorded, then raised again
++        p.log("STOP (%s): %s" % ("after this process began TEST: TEST counts as evaluated" if begun
++                                 else "before TEST began, a protocol stop", e))
++    except TG.TestAlreadyEvaluated:
++        p.close_clock()
++        raise
++    except BaseException as e:       # noqa: BLE001 -- a crash or interrupt after the begin is recorded, then raised
+         p.close_clock()
+-        if not (p.root / TG.MARKER_REL).exists():
++        if not begun_by_this_process(p):
+             raise
+         crash = e
+-        status, actual, nxt = "BLOCKED", {"crashed": repr(e)}, "report to the Owner (crash after the TEST marker)"
++        status, actual, nxt = "BLOCKED", {"crashed": repr(e), "test_begun": True}, ("report to the Owner (crash after "
++                                                                                    "the TEST marker)")
+         stop = {"code": None, "status": "BLOCKED", "message": "crash after the TEST marker: %r" % (e,)}
+         p.log("CRASH after the TEST marker (TEST counts as evaluated): %r" % (e,))
+     final_record(p, "test-evaluate", status, actual, nxt, None, stop)
+diff --git a/metrix/e1-pilot/tests/test_run_pilot.py b/metrix/e1-pilot/tests/test_run_pilot.py
+index b435d76..7ee1819 100644
+--- a/metrix/e1-pilot/tests/test_run_pilot.py
++++ b/metrix/e1-pilot/tests/test_run_pilot.py
+@@ -263,8 +263,22 @@ def test_preflight_overhead_counts(contract):
+                  "test_models": 16}
+     seconds, counts = P.checkpoint_overhead_seconds(contract, 1.0, 2.0, 3.0, 4.0, 5.0)
+     assert counts == n and seconds == 50 * 1.0 + 30 * (2 * 2.0 + 3.0 + 4.0 + 5.0) + 17 * 2.0 + 15 * 5.0
+-    pre = {"dev_evaluation_seconds": 10.0, "load_s": 1.0, "hash_s": 2.0, "file_hash_s": 5.0}
+-    assert P.test_evaluation_seconds(contract, pre) == 16 * (1.0 + 10.0 * 3 / 2) + 17 * 2.0 + 15 * 5.0
++    pre = {"dev_evaluation_seconds": 10.0, "load_s": 1.0, "reload_s": 3.0, "hash_s": 2.0, "file_hash_s": 5.0}
++    assert P.test_evaluation_seconds(contract, pre) == 1.0 + 15 * 3.0 + 16 * 10.0 * 3 / 2 + 17 * 2.0 + 15 * 5.0
++
++
++def test_st7_look_ahead_of_a_run(inputs_dir, tmp_path, contract):
++    """run_seconds: the A factor only for arm A (B17); eval_seconds by what is loaded first (code-reviewer MAJOR 1 of
++    the fix commit's round 1)."""
++    p = P.Pilot(M.FORMAL_MODE, inputs_dir, tmp_path / "w", "cpu")
++    f, a = T.search_runs(contract, "F")[0], T.search_runs(contract, "A")[0]
++    assert p.run_seconds(f) == 0.0 and p.eval_seconds("load") == 0.0           # before the preflight
++    p.pre = {"mean_step_s": 0.1, "a_factor": 5.0, "dev_evaluation_seconds": 7.0, "load_s": 1.0, "hash_s": 2.0,
++             "save_s": 3.0, "reload_s": 4.0, "file_hash_s": 6.0}
++    rest = 1.0 + 2 * 2.0 + 3.0 + 6.0 + 4.0 + 7.0
++    assert p.run_seconds(f) == pytest.approx(0.1 * 300 + rest)
++    assert p.run_seconds(a) == pytest.approx(0.1 * 300 * 5.0 + rest)
++    assert (p.eval_seconds("load"), p.eval_seconds("reload"), p.eval_seconds(None)) == (8.0, 11.0, 7.0)
+ 
+ 
+ # ------------------------------------------------------------------------------- TEST evaluation end to end
+@@ -368,6 +382,10 @@ def eval_clone(fz, inputs_dir, generated, tmp_path, monkeypatch):
+ def test_test_evaluate_end_to_end_once(eval_clone):
+     c = eval_clone
+     p, root, remote = c["p"], c["root"], c["remote"]
++    real_base = p.base_model
++    p.base_model = lambda: tiny_model(1)               # not N's weights of the step 3 record: refused before the marker
++    assert P.run_test_evaluate(p) == (False, "BLOCKED") and not (root / TG.MARKER_REL).exists()
++    p.base_model = real_base
+     ckpt = p.ckpt_dir / ("%s.pt" % c["models"][1])
+     good = ckpt.read_bytes()
+     ckpt.write_bytes(good + b"x")                      # a changed checkpoint file: refused before the marker
+@@ -376,7 +394,11 @@ def test_test_evaluate_end_to_end_once(eval_clone):
+         "test_evaluation_marker") == 0
+     assert not list((root / R.FORMAL_RESULTS_REL).glob("experiment_record_test-evaluate_*"))
+     ckpt.write_bytes(good)
++    looks = []
++    p.before_run = lambda next_seconds=0.0: looks.append(next_seconds)
+     ok, status = P.run_test_evaluate(p)
++    timing = json.loads((root / R.FORMAL_RESULTS_REL / "step2_record.json").read_text(encoding="utf-8"))
++    assert looks[0] == P.test_evaluation_seconds(p.contract, timing["preflight"]["timing"]) > 0    # before the begin
+     assert ok and status in ("PASS", "PIPELINE_NOT_QUALIFIED")
+     tree = git(remote, "ls-tree", "-r", "--name-only", "main").split("\n")
+     assert TG.MARKER_REL in tree and TG.RESULT_REL in tree
+@@ -395,8 +417,10 @@ def test_test_evaluate_end_to_end_once(eval_clone):
+     assert sorted(x.name for x in (p.work / P.TEST_DETAILS_DIR).iterdir()) == sorted(
+         "%s_test.json" % m for m in c["models"])
+     git(root, "pull", "-q", "--ff-only", "origin", "main")
++    tip = git(remote, "rev-parse", "main")
+     with pytest.raises(TG.TestAlreadyEvaluated):       # TEST is evaluated once
+         P.run_test_evaluate(p)
++    assert git(remote, "rev-parse", "main") == tip     # and that refusal writes no record
+ 
+ 
+ def test_test_evaluate_refuses_outside_formal_mode(inputs_dir, tmp_path):
+@@ -438,6 +462,12 @@ def test_continuity_checks_before_anything(fz, inputs_dir, tmp_path):
+     p.ledger.path.parent.mkdir(parents=True)
+     p.ledger.record_first("test device")
+     p.start_checks("formal")
++    q = P.Pilot(M.FORMAL_MODE, inputs_dir, tmp_path / "work2", "cpu", repo_root=root)
++    q.ckpt_dir.mkdir(parents=True)
++    q.ledger.record_first("test device")
++    (q.ckpt_dir / "F-F1-seed101.pt").write_bytes(b"a checkpoint of an earlier run")
++    with pytest.raises(ProtocolStop, match="already holds checkpoints"):    # no freeze record yet
++        q.start_checks("formal")
+     write(root, R.SELECTION_FREEZE_REL, {"kind": "selection_freeze"})
+     git(root, "add", "-A")
+     git(root, "commit", "-q", "-m", "a freeze record")
+@@ -474,12 +504,14 @@ def test_test_evaluate_records_after_the_marker_and_for_st10(fz, inputs_dir, tmp
+ 
+     def run(exc, with_marker):
+         def fake(p_):
+-            if with_marker:
++            if with_marker:                             # as test_evaluate: begin called, the marker written
++                p_.marker_before_begin, p_.begin_called = False, True
+                 marker.parent.mkdir(parents=True, exist_ok=True)
+                 marker.write_text("{}", encoding="utf-8")
+             raise exc
+         monkeypatch.setattr(P, "test_evaluate", fake)
+         seen.clear()
++        p.begin_called, p.marker_before_begin = False, None
+         try:
+             return P.run_test_evaluate(p)
+         finally:
+@@ -495,6 +527,33 @@ def test_test_evaluate_records_after_the_marker_and_for_st10(fz, inputs_dir, tmp
+     with pytest.raises(RuntimeError):
+         run(RuntimeError("injected crash"), True)
+     assert seen[0][1] == "BLOCKED" and "injected crash" in seen[0][2]["message"]
++    with pytest.raises(KeyboardInterrupt):
++        run(KeyboardInterrupt(), True)
++    assert seen[0][1] == "BLOCKED"
++    assert run(STP.Stop("ST7", "BLOCKED", "a", "injected ST7 look-ahead"), False) == (False, "BLOCKED")
++    assert seen[0][2]["code"] == "ST7"                  # a protocol stop before the begin is recorded
++
++    def already(p_):                                    # an earlier run evaluated TEST: the marker was there before
++        p_.marker_before_begin, p_.begin_called = True, True
++        marker.parent.mkdir(parents=True, exist_ok=True)
++        marker.write_text("{}", encoding="utf-8")
++        raise TG.TestAlreadyEvaluated("evaluated")
++    monkeypatch.setattr(P, "test_evaluate", already)
++    seen.clear()
++    with pytest.raises(TG.TestAlreadyEvaluated):
++        P.run_test_evaluate(p)
++    assert seen == []
++    marker.unlink()
++
++    def started_earlier(p_):                            # an earlier run began TEST and left no result: begin refuses
++        p_.marker_before_begin, p_.begin_called = True, True        # (BLOCKED, no stop code); this run began nothing
++        marker.parent.mkdir(parents=True, exist_ok=True)
++        marker.write_text("{}", encoding="utf-8")
++        raise ProtocolStop(None, "BLOCKED", "TEST evaluation was already started and no result was committed")
++    monkeypatch.setattr(P, "test_evaluate", started_earlier)
++    seen.clear()
++    assert P.run_test_evaluate(p) == (False, "BLOCKED") and seen == []
++    marker.unlink()
+ 
+ 
+ def test_formal_commit_chain_through_the_freeze_record(fz, inputs_dir, generated, tmp_path, monkeypatch):
+@@ -518,7 +577,8 @@ def test_formal_commit_chain_through_the_freeze_record(fz, inputs_dir, generated
+     p.contract = dataclasses.replace(p.contract, arms=dataclasses.replace(p.contract.arms, lora_layers=2))
+     p.device_check = lambda: {"name": "test (CPU)", "total_memory": 0}
+     p.first_load = lambda: None
+-    p.before_run = lambda next_seconds=0.0: None
++    looks = []
++    p.before_run = lambda next_seconds=0.0: looks.append(next_seconds)
+     p.base_model = s.base_model
+     calls = itertools.count()
+ 
+@@ -548,6 +608,11 @@ def test_formal_commit_chain_through_the_freeze_record(fz, inputs_dir, generated
+     ok, status = P.run_gate(p, "formal")
+     assert (ok, status) == (True, "PASS")
+     assert git(root, "status", "--porcelain") == "" and git(root, "rev-parse", "HEAD") == git(remote, "rev-parse", "main")
++    plan = T.training_plan(p.contract, {"F": "F1", "L": "L1", "A": "A1"})
++    expected = [p.run_seconds(sp) for sp in plan if sp.phase == "search" and sp.arm == "F"]
++    assert p.pre is not None and expected[0] > 0 and expected[0] in looks      # the ST7 look-ahead reaches before_run
++    a_look = p.run_seconds(T.search_runs(p.contract, "A")[0])
++    assert a_look in looks and a_look > expected[0]
+     tree = git(remote, "ls-tree", "-r", "--name-only", "main").split("\n")
+     res = R.FORMAL_RESULTS_REL
+     for k in range(1, 9):
+@@ -570,3 +635,100 @@ def test_formal_commit_chain_through_the_freeze_record(fz, inputs_dir, generated
+     p.ledger.record_first("test device")
+     with pytest.raises(ProtocolStop, match="freeze record"):
+         p.start_checks("formal")
++
++
++def _formal_on_clone(fz, inputs_dir, generated, tmp_path, monkeypatch):
++    """The replacements of test_formal_commit_chain_through_the_freeze_record (device, model, 1 smoke step, copies of
++    one real evaluation, Gate 0 verdict); the stops that read result values are left to the caller."""
++    import copy
++    import itertools
++    import random
++    remote, root = clone_with_remote(fz, tmp_path, monkeypatch)
++    s = P.Pilot(M.smoke_mode(1), inputs_dir, tmp_path / "smoke_work", "cpu")
++    D.write(generated["files"], s.data_dir)
++    s.load_data()
++    base_ev = s.evaluate(s.base_model(), with_em=True)
++    p = P.Pilot(M.FORMAL_MODE, inputs_dir, tmp_path / "work", "cpu", repo_root=root)
++    p.contract = dataclasses.replace(p.contract, arms=dataclasses.replace(p.contract.arms, lora_layers=2))
++    p.device_check = lambda: {"name": "test (CPU)", "total_memory": 0}
++    p.first_load = lambda: None
++    p.before_run = lambda next_seconds=0.0: None
++    p.base_model = s.base_model
++    calls = itertools.count()
++
++    def fake_eval(model, tok, data, templates, ev, mode, device, split="dev", with_em=True, with_s_mapping=False, **kw):
++        out = copy.deepcopy(base_ev)
++        rng = random.Random(next(calls))
++        for row in out["dev_qa"]:
++            row["correct"] = rng.random() < 0.5
++        return out
++    monkeypatch.setattr(E, "evaluate_model", fake_eval)
++    return remote, root, p
++
++
++@pytest.mark.parametrize("how", ["st3", "crash"])
++def test_formal_stop_and_crash_commit_what_was_written(fz, inputs_dir, generated, tmp_path, monkeypatch, how):
++    """Formal on a clone with a bare remote (code-reviewer MAJOR 4 of the fix commit's round 1): ST3 at step 4 (the real
++    stop: the small model's positive control fails) commits the step 4 record with the stop and the six F runs; a crash
++    in the third F run commits the two finished runs' records with the experiment record (Pilot.uncommitted). The
++    clone is left clean and the remote holds everything."""
++    remote, root, p = _formal_on_clone(fz, inputs_dir, generated, tmp_path, monkeypatch)
++    monkeypatch.setattr(STP, "st2", lambda *a, **k: None)
++    real_train = T.train_run
++
++    def train(model, tok, data, spec, contract, mode, device, log_fn=None):
++        if how == "crash" and spec.name == "F-F3-seed101":
++            raise RuntimeError("injected crash")
++        return real_train(model, tok, data, spec, contract, M.smoke_mode(1), device, log_fn)
++    monkeypatch.setattr(T, "train_run", train)
++    res = R.FORMAL_RESULTS_REL
++    if how == "st3":
++        assert P.run_gate(p, "formal") == (False, "PIPELINE_NOT_QUALIFIED")
++    else:
++        with pytest.raises(RuntimeError, match="injected crash"):
++            P.run_gate(p, "formal")
++    assert git(root, "status", "--porcelain") == "" and git(root, "rev-parse", "HEAD") == git(remote, "rev-parse", "main")
++    tree = git(remote, "ls-tree", "-r", "--name-only", "main").split("\n")
++    runs = sorted(x.rsplit("/", 1)[1] for x in tree if x.startswith("%s/%s/" % (res, P.RUNS_DIR)))
++    (exp,) = [x for x in tree if x.startswith(res + "/experiment_record_formal_") and x.endswith(".json")]
++    rec = json.loads(git(remote, "show", "main:%s" % exp))
++    if how == "st3":
++        step4 = json.loads(git(remote, "show", "main:%s/step4_record.json" % res))
++        assert step4["stopped"]["code"] == "ST3" and "acc_cb" in step4["positive_control"]
++        assert runs == ["F-F%d-seed101.json" % i for i in range(1, 7)]
++        assert rec["template"]["Stop Conditions"]["stop"]["code"] == "ST3"
++    else:
++        assert "%s/step4_record.json" % res not in tree
++        assert runs == ["F-F1-seed101.json", "F-F2-seed101.json"]
++        assert "%s/%s/F-F2-seed101_dev.json" % (res, P.DETAILS_DIR) in tree
++        assert "injected crash" in rec["template"]["Stop Conditions"]["stop"]["message"]
++
++
++def test_test_generate_records_an_st10_stop_of_its_own_run(fz, inputs_dir, tmp_path, monkeypatch):
++    """run_test_generate (code-reviewer MAJOR 2 of round 1, MINOR of the fix commit): an over-limit ST10 record
++    committed by this run gives an experiment record (BLOCKED, ST10); one already committed before the run, or none,
++    gives none. pilot's subprocess module is replaced (the generator is not started; nothing is generated)."""
++    import types
++    remote, root = clone_with_remote(fz, tmp_path, monkeypatch)
++    p = P.Pilot(M.FORMAL_MODE, inputs_dir, tmp_path / "work", "cpu", repo_root=root)
++    seen = []
++    monkeypatch.setattr(P, "final_record", lambda p_, command, status, actual, nxt, runs, stop: seen.append(
++        (command, status, stop)))
++    over = {"kind": "st10", "counts": {c: 0 for c in LK.TEST_CHECKS}}
++    over["counts"]["L4"] = 1
++
++    def generator(commits):
++        def run(cmd, **kw):
++            if commits:
++                write(root, TG.ST10_RECORD_REL, over)
++                commit_all(root, "ST10 record (test)")
++            return types.SimpleNamespace(returncode=1)
++        return run
++    monkeypatch.setattr(P, "subprocess", types.SimpleNamespace(run=generator(False)))
++    assert P.run_test_generate(p) == 1 and seen == []
++    monkeypatch.setattr(P, "subprocess", types.SimpleNamespace(run=generator(True)))
++    assert P.run_test_generate(p) == 1
++    assert seen[0][:2] == ("test-generate", "BLOCKED") and seen[0][2]["code"] == "ST10"
++    seen.clear()
++    monkeypatch.setattr(P, "subprocess", types.SimpleNamespace(run=generator(False)))
++    assert P.run_test_generate(p) == 1 and seen == []       # the earlier run's ST10 record is not this run's stop

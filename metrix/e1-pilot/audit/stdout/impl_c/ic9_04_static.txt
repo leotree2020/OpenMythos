@@ -1,0 +1,117 @@
+# Data Auditor run (implementation stage C, C2 second fix commit, staged tree a6ce8a0ea0aeff1e86443a2a22a2a4eb349bcc50, parent 0cbee197, round 1). host vm, Anthropic cloud container, CPU only (no GPU device node: 0 nvidia entries), no model weights loaded (tokenizer files only; smoke checkpoints are hashed as file bytes, never loaded; the Executor's e2e test builds random tiny models in memory); 2026-11-27 08:34:36 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/venv/bin/python -I -B ic9_04_static.py /home/user/OpenMythos
+env: host vm | Linux-6.18.44-fc-v880-x86_64-with-glibc2.39 | python 3.13.18 (/tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/venv/bin/python) | installed {'transformers': '5.22.2', 'tokenizers': '0.23.3', 'pyarrow': '26.0.1', 'huggingface_hub': '2.4.0', 'torch': '2.11.0'} | nvidia device nodes: []
+== a. pilot.test_evaluate (staged blob, source lines)
+committed record reads: {'R.SELECTION_FREEZE_REL': 1173, 'R.GATE0_RECORD_REL': 1174, "'%s/step2_record.json' % R.FORMAL_RESULTS_REL": 1175, "'%s/step3_record.json' % R.FORMAL_RESULTS_REL": 1176, "'%s/%s/%s.json' % (R.FORMAL_RESULTS_REL, RUNS_DIR, name)": 1181}
+  line 1162  formal-mode check (raise when not p.mode.formal)
+  line 1164  TD.check_preconditions
+  line 1166  TG.code_commit
+  line 1167  p.start_checks('test-evaluate')
+  line 1168  p.device_check
+  line 1170  p.load_data
+  line 1172  TEST files read (FZ.read_jsonl)
+  line 1173  committed freeze record
+  line 1174  committed Gate 0 record
+  line 1175  committed step 2 record
+  line 1176  committed step 3 record
+  line 1182  checkpoint file sha256 (FZ.file_sha256)
+  line 1188  test_evaluation_seconds(p.contract, step2['preflight']['timing'])
+  line 1195  p.before_run(look_ahead) (ST7)
+  line 1196  p.base_model
+  line 1197  T.state_sha256(base)
+  line 1198  if base_sha != n_sha: raise ProtocolStop BLOCKED
+  line 1201  p.marker_before_begin = (p.root / TG.MARKER_REL).exists()
+  line 1202  p.begin_called = True
+  line 1203  TG.begin_test_evaluation(fz, auth, data, base_sha)
+  line 1211  the evaluation call
+  line 1227  G.compute_test_values
+  line 1228  G.judge_test
+  line 1229  G.report_comparisons
+  line 1233  TG.finish_test_evaluation
+all present and in this order (every pre-marker check before begin): True
+statement before `p.begin_called = True`: 'p.marker_before_begin = (p.root / TG.MARKER_REL).exists()' | statement after it: 'session = TG.begin_test_evaluation(fz, auth, data, base_sha)'
+assignments to .begin_called / .marker_before_begin in pilot.py (function, statement): [('__init__', 'self.begin_called = False'), ('__init__', 'self.marker_before_begin = None'), ('test_evaluate', 'p.begin_called = True'), ('test_evaluate', 'p.marker_before_begin = (p.root / TG.MARKER_REL).exists()')]
+n_sha = ["step3['N']['state_sha256']"] | look_ahead = ["test_evaluation_seconds(p.contract, step2['preflight']['timing'])"]
+checkpoint check: one loop over models[1:] with FZ.file_sha256 vs run_rec['checkpoint']['file_sha256'] and freeze['checkpoints'][name], raise ProtocolStop(..., 'BLOCKED', ...): True
+pre-marker reads inside a try whose single handler (R.NotCommitted, KeyError, OSError, TypeError, ValueError) raises ProtocolStop BLOCKED: True | inside that try: {'p.load_data': True, 'FZ.read_jsonl': True, 'R.committed_record': True, 'R.committed_json': True, 'FZ.file_sha256': True, 'test_evaluation_seconds': True}
+one try / finally p.close_clock() holding before_run(look_ahead), base_model, begin, the evaluations and finish: True
+evaluation calls in test_evaluate 1 ['control_evaluation'], inside the single loop over `models` (after begin) 1 | split='test' test_session=session checkpoint_name=name | ok True
+control_evaluation: evaluation calls ['p.evaluate(model, split=split, **kw)'], split and **kw passed through, loops 0, NonFinite -> st6 handler: True
+begin calls 1, finish calls 1, begin inside a loop: False | report_comparisons split ["'test'"]
+test_evaluation_seconds: n = evaluation_plan(contract) | acc = contract.accounting | per_eval = pre['dev_evaluation_seconds'] * acc.test_questions_per_fact / acc.dev_questions_per_fact | return pre['load_s'] + n['test_file_hashes'] * pre['reload_s'] + n['test_models'] * per_eval + n['test_state_hashes'] * pre['hash_s'] + n['test_file_hashes'] * pre['file_hash_s']
+
+== b. pilot.begun_by_this_process and pilot.run_test_evaluate
+begun_by_this_process returns ['return p.begin_called and (not p.marker_before_begin) and (p.root / TG.MARKER_REL).exists()']
+handlers (in order) ['(ProtocolStop, TD.PreconditionFailed)', 'TG.TestAlreadyEvaluated', 'BaseException']
+handler 1: code = e.stop; begun = begun_by_this_process(p); if 'not begun and code is None' -> return without final_record: True
+handler 1 otherwise: ["status = getattr(e, 'status', None) or 'BLOCKED'", "actual, nxt = ({'stopped': str(e), 'test_begun': begun}, 'report to the Owner (stop %s)' % code)", "stop = {'code': code, 'status': getattr(e, 'status', None), 'message': str(e)}"]
+handler 2 (TG.TestAlreadyEvaluated) body: ['p.close_clock()', 'raise']
+handler 3 (BaseException): 'not begun_by_this_process(p)' -> bare raise: True | else crash = e, status 'BLOCKED', test_begun True: True
+after the try: ["final_record(p, 'test-evaluate', status, actual, nxt, None, stop)", 'if crash is not None:\n    raise crash', 'return (stop is None, status)']
+class bases: TestAlreadyEvaluated ['Exception'] | PreconditionFailed ['Exception'] | ProtocolStop ['Exception'] | stops.Stop ['ProtocolStop']
+TestAlreadyEvaluated raised in testgate functions ['refuse_if_marker'] | refuse_if_marker called by ['begin_test_evaluation'] | begin: refuse_if_marker at line 440, the marker written (path.write_bytes) at line 460; begin's first statements ['from . import contract as C', 'root = Path(repo_root) if repo_root is not None else fz.repo_root', 'refuse_if_marker(root)'] (refuse_if_marker the first check)
+TestAlreadyEvaluated docstring: "TEST was evaluated (marker and result exist): any further TEST evaluation is refused. Carries no section 9\nstatus: the pilot's status is the one of its result."
+=> before this process began TEST (not begun_by_this_process): a ProtocolStop / PreconditionFailed without a stop code -> no record; with a stop code (ST7, ST8, ST9, ST10, ST12) -> record; TestAlreadyEvaluated -> no record, raised; any other BaseException -> raised, no record. After this process wrote the marker: every stop -> record (BLOCKED or its status); any other BaseException (KeyboardInterrupt included) -> record BLOCKED 'crash after the TEST marker', then re-raised
+
+== c. CD13: what finish_test_evaluation commits
+result = plain({...}) keys ["'kind'", "'frozen_commit'", "'values'", "'final'", "'comparisons'", "'summaries'"] | summaries value ['{m: _summary_record(s) for m, s in summaries.items()}'] | finish called with ['result']
+_summary_record body: return {k: v for k, v in summ.items() if not k.startswith('general_')}
+details directory: ['summaries, details = ({}, p.work / TEST_DETAILS_DIR)']
+Pilot.__init__ raises when the work directory is not outside the repository: True
+experiment record's Actual of test_evaluate: ["actual = {'final': final, 'values': values, 'result_commit': head, 'interpretation': {'reasons': final.get('reasons'), 'notes': {c: x['note'] for c, x in final['conditions'].items() if x['note']}}}"]
+
+== d. CD5 / CE5 / MAJOR 2: TEST generation
+run_test_generate calls (source order): ['ImplementationFail', 'TG.code_commit', 'p.start_checks', 'TG._blob', 'test_generate_command', 'p.log', "' '.join", 'subprocess.run', 'str', '_subprocess_env', 'st10_over_limit', 'final_record']
+over = ['st10_over_limit(p) if before is None else []'] (after subprocess.run: True) | final_record calls 1, all inside `if over:` True | its status ["'BLOCKED'"] | stop ["{'code': 'ST10', 'status': 'BLOCKED', 'message': 'TEST part over limit %s (committed %s)' % (over, TG.ST10_RECORD_REL)}"]
+run_test_generate: formal check line 1116 | TG.code_commit line 1118 | p.start_checks('test-generate') line 1119 | before = [(1120, "TG._blob(p.root, 'HEAD:%s' % TG.ST10_RECORD_REL)")] | subprocess.run line 1123
+st10_over_limit: committed record (R.committed_json), [] when not committed, TG.over_limit on its counts: True
+test_generate_command returns [sys.executable, '-m', 'metrix_e1.test_data', '--inputs', str(p.inputs), '--data', str(p.data_dir), '--out', str(out)]
+call sites of generate_test: ['test_data.py:178 in main']
+call sites of run_test_part: ['test_data.py:183 in main']
+call sites of begin_test_evaluation: ['pilot.py:1203 in test_evaluate']
+call sites of finish_test_evaluation: ['pilot.py:1233 in test_evaluate']
+attributes of test_data (TD.*) used in pilot.py: ['TD.PreconditionFailed', 'TD.check_preconditions']
+
+== e. MAJOR 9: smoke step 8
+formal = ["[rel for rel in (R.GATE0_RECORD_REL, R.SELECTION_FREEZE_REL, TG.ST10_RECORD_REL) if TG._blob(p.root, 'HEAD:%s' % rel) is not None or (p.root / rel).exists()]"]
+`if formal: raise ImplementationFail` at line 867 before subprocess.run(test_generate_command(...)) at line 870; formal names the Gate 0, freeze and ST10 records in HEAD or the working tree: True
+
+== f. CA20: production callers of begin / finish
+begin only in pilot.test_evaluate: True | finish only in pilot.test_evaluate: True
+
+== g. fetch: begin / finish yes, the per-call checks no (ruling 2026-11-27 item 1)
+check_checkout runs git fetch True; begin -> refuse_if_marker -> check_checkout, finish -> check_commit_preconditions -> check_checkout: True
+  require_test_session     calls check_checkout / check_commit_preconditions / refuse_if_marker: [] | 'fetch' literal: False
+  _check_session_checkout  calls check_checkout / check_commit_preconditions / refuse_if_marker: [] | 'fetch' literal: False
+  claim_checkpoint         calls check_checkout / check_commit_preconditions / refuse_if_marker: [] | 'fetch' literal: False
+
+== h. run_pilot.py
+--steps added 1 time(s), on ['a'] | smoke sub-parser ['a']
+build_mode: return M.smoke_mode(args.steps) if args.cmd == 'smoke' else M.FORMAL_MODE
+main calls P.run_test_generate True, P.run_test_evaluate True
+P.Pilot(...) constructed 1 time(s), in main: ['main'] | loops in main 1 (['for name, sha in P.fetch_model(FZ.load(), a.inputs).items():']); Pilot / run_* calls inside a loop: [] (one Pilot, one command per process)
+
+== i. ST7 look-ahead of the runs (run_seconds, eval_seconds) and every p.before_run call site
+run_seconds(self, spec): ['if self.pre is None:\n    return 0.0', 'q = self.pre', "factor = q['a_factor'] if spec.arm == 'A' else 1.0", "return q['load_s'] + q['mean_step_s'] * self.contract.training.total_steps * factor + 2 * q['hash_s'] + q['save_s'] + q['file_hash_s'] + q['reload_s'] + q['dev_evaluation_seconds']"]
+eval_seconds(self, load): ['if self.pre is None:\n    return 0.0', "return {'load': self.pre['load_s'], 'reload': self.pre['reload_s'], None: 0.0}[load] + self.pre['dev_evaluation_seconds']"]
+  preflight            line 590   p.before_run()                           next statement: t0 = time.perf_counter()
+  step3                line 650   p.before_run(p.eval_seconds('load'))     next statement: model = p.base_model()
+  train_and_evaluate   line 689   p.before_run(p.run_seconds(spec))        next statement: model = p.base_model()
+  train_and_evaluate   line 700   p.before_run(p.eval_seconds(None))       next statement: ev = p.evaluate(reloaded, with_em=True, with_s_mapping=spec.arm == 'S')
+  step7                line 805   p.before_run(p.eval_seconds('reload'))   next statement: model = p.load_checkpoint(spec, p.ckpt_dir / ('%s.pt' % spec.name))
+  test_evaluate        line 1195  p.before_run(look_ahead)                 next statement: base = p.base_model()
+  test_evaluate        line 1209  p.before_run()                           next statement: model = base if name == TG.BASE_MODEL else p.load_checkpoint(specs[name], p.ckpt_dir / ('%s.pt' % name))
+call sites == expected (function, call, next statement): True
+all run_seconds / eval_seconds calls: [('step3', "p.eval_seconds('load')"), ('step7', "p.eval_seconds('reload')"), ('train_and_evaluate', 'p.eval_seconds(None)'), ('train_and_evaluate', 'p.run_seconds(spec)')]
+
+== j. test_evaluation_seconds and evaluation_plan
+test_evaluation_seconds: ['n = evaluation_plan(contract)', 'acc = contract.accounting', "per_eval = pre['dev_evaluation_seconds'] * acc.test_questions_per_fact / acc.dev_questions_per_fact", "return pre['load_s'] + n['test_file_hashes'] * pre['reload_s'] + n['test_models'] * per_eval + n['test_state_hashes'] * pre['hash_s'] + n['test_file_hashes'] * pre['file_hash_s']"]
+evaluation_plan: ['seeds = len(contract.training.training_seeds)', "runs = contract.arms.counts['total_training_runs']", 'test_models = 1 + len(T.ARMS_TRAINED) * seeds', "return {'loads': 1 + runs + seeds + test_models, 'checkpoints': runs, 'test_state_hashes': test_models + 1, 'test_file_hashes': test_models - 1, 'test_models': test_models}"]
+
+== k. Pilot.commit and Pilot.start_checks
+commit: TG.commit_paths statement #4, removal from self.uncommitted statement #5 (removal after the commit: True)
+start_checks conditions in order: ['not self.mode.formal', "TG._blob(self.root, 'HEAD:%s' % STEP1_RECORD_REL) is not None and (not self.ledger.path.exists())", "command == 'formal' and TG._blob(self.root, 'HEAD:%s' % R.SELECTION_FREEZE_REL) is not None", "command == 'formal' and self.ckpt_dir.is_dir() and any(self.ckpt_dir.glob('*.pt'))"]
+modules: torch imported=False | transformers modeling modules imported=[] | this script never calls a model class or from_pretrained on a model
+RESULT: PASS
+exit=0

@@ -1,0 +1,33 @@
+# Data Auditor run (implementation stage C, C2 second fix commit, staged tree a6ce8a0ea0aeff1e86443a2a22a2a4eb349bcc50, parent 0cbee197, round 1). host vm, Anthropic cloud container, CPU only (no GPU device node: 0 nvidia entries), no model weights loaded (tokenizer files only; smoke checkpoints are hashed as file bytes, never loaded; the Executor's e2e test builds random tiny models in memory); 2026-11-27 08:19:11 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/venv/bin/python -I -B ic9_04e_lookahead.py /home/user/OpenMythos /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/venv/bin/python /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/inputs /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/c2c_smoke /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/ic9_04e
+env: host vm | Linux-6.18.44-fc-v880-x86_64-with-glibc2.39 | python 3.13.18 (/tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/venv/bin/python) | installed {'transformers': '5.22.2', 'tokenizers': '0.23.3', 'pyarrow': '26.0.1', 'huggingface_hub': '2.4.0', 'torch': '2.11.0'} | nvidia device nodes: []
+smoke step 2 timing block: {"a_factor": 6.752434456928839, "dev_evaluation_seconds": 30.228175088999706, "file_hash_s": 0.03179251899928204, "hash_s": 0.0958688329992583, "load_s": 0.3169027770018147, "mean_step_s": 0.20299911349866306, "reload_s": 0.21110606400179677, "save_s": 0.06779493499925593}
+frozen: total_steps 300 | training seeds [101, 202, 303] (search seed 101) | questions per fact DEV 2 TEST 3 | TEST models 16, checkpoint files 15, state hashes 17
+selected (smoke step 6 record) {'A': 'A1', 'F': 'F2', 'L': 'L6'} | my 30 run names (plan order) == step 6 training_plan: True
+
+== my values (before the probe runs)
+TEST look-ahead: 0.317 + 15 x 0.211 + 16 x 30.228175 x 3/2 + 17 x 0.095869 + 15 x 0.031793 = 731.066353819 s (0.2031 h)
+  (the formula of the previous round, every model at load_s: 732.653304514 s; difference 1.586951 s)
+training run look-ahead: non-A 91.947243100 s | A 442.268971664 s (a_factor 6.752434) | runs with the A factor: 8
+DEV evaluation look-ahead: {"None": 30.228175088999706, "load": 30.54507786600152, "reload": 30.439281153001502}
+sum of my 30 per-run training terms 4629.565850006 s | B17 train_seconds recorded 4629.565850006 s (other_runs 22, a_runs 8) | equal True
+
+== probe (driver subprocess, cwd /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/ic9_04e)
+$ PYTHONPATH=/home/user/OpenMythos/metrix/e1-pilot/src /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/venv/bin/python -B /home/user/OpenMythos/metrix/e1-pilot/audit/ic9_04e_probe.py /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/inputs /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/ic9_04e/timing.json /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/ic9_04e/pilot_work {"A": "A1", "F": "F2", "L": "L6"}
+----- probe stdout+stderr begin -----
+PROBE {"before_preflight": {"run_seconds_F1": 0.0, "eval_seconds_load": 0.0}, "test_evaluation_seconds": 731.0663538189983, "runs": [{"name": "F-F1-seed101", "arm": "F", "run_seconds": 91.94724309959929}, {"name": "F-F2-seed101", "arm": "F", "run_seconds": 91.94724309959929}, {"name": "F-F3-seed101", "arm": "F", "run_seconds": 91.94724309959929}, {"name": "F-F4-seed101", "arm": "F", "run_seconds": 91.94724309959929}, {"name": "F-F5-seed101", "arm": "F", "run_seconds": 91.94724309959929}, {"name": "F-F6-seed101", "arm": "F", "run_seconds": 91.94724309959929}, {"name": "L-L1-seed101", "arm": "L", "run_seconds": 91.94724309959929}, {"name": "L-L2-seed101", "arm": "L", "run_seconds": 91.94724309959929}, {"name": "L-L3-seed101", "arm": "L", "run_seconds": 91.94724309959929}, {"name": "L-L4-seed101", "arm": "L", "run_seconds": 91.94724309959929}, {"name": "L-L5-seed101", "arm": "L", "run_seconds": 91.94724309959929}, {"name": "L-L6-seed101", "arm": "L", "run_seconds": 91.94724309959929}, {"name": "A-A1-seed101", "arm": "A", "run_seconds": 442.26897166431456}, {"name": "A-A2-seed101", "arm": "A", "run_seconds": 442.26897166431456}, {"name": "A-A3-seed101", "arm": "A", "run_seconds": 442.26897166431456}, {"name": "A-A4-seed101", "arm": "A", "run_seconds": 442.26897166431456}, {"name": "A-A5-seed101", "arm": "A", "run_seconds": 442.26897166431456}, {"name": "A-A6-seed101", "arm": "A", "run_seconds": 442.26897166431456}, {"name": "F-F2-seed202", "arm": "F", "run_seconds": 91.94724309959929}, {"name": "F-F2-seed303", "arm": "F", "run_seconds": 91.94724309959929}, {"name": "L-L6-seed202", "arm": "L", "run_seconds": 91.94724309959929}, {"name": "L-L6-seed303", "arm": "L", "run_seconds": 91.94724309959929}, {"name": "A-A1-seed202", "arm": "A", "run_seconds": 442.26897166431456}, {"name": "A-A1-seed303", "arm": "A", "run_seconds": 442.26897166431456}, {"name": "S-F2-seed101", "arm": "S", "run_seconds": 91.94724309959929}, {"name": "S-F2-seed202", "arm": "S", "run_seconds": 91.94724309959929}, {"name": "S-F2-seed303", "arm": "S", "run_seconds": 91.94724309959929}, {"name": "Y-F2-seed101", "arm": "Y", "run_seconds": 91.94724309959929}, {"name": "Y-F2-seed202", "arm": "Y", "run_seconds": 91.94724309959929}, {"name": "Y-F2-seed303", "arm": "Y", "run_seconds": 91.94724309959929}], "eval_seconds": {"load": 30.54507786600152, "reload": 30.439281153001502, "None": 30.228175088999706}}
+----- probe end ----- exit 0
+
+== comparison
+before the preflight: {'run_seconds_F1': 0.0, 'eval_seconds_load': 0.0} (expected both 0.0): True
+test_evaluation_seconds: code 731.066353819 | mine 731.066353819 | equal (rel. tol 1e-09) True
+probe's training_plan names == mine: True
+run_seconds per arm (code, distinct values): {'A': [442.268971664], 'F': [91.9472431], 'L': [91.9472431], 'S': [91.9472431], 'Y': [91.9472431]}
+run_seconds differing from mine: []
+eval_seconds code {"None": 30.228175088999706, "load": 30.54507786600152, "reload": 30.439281153001502} | mine {"None": 30.228175088999706, "load": 30.54507786600152, "reload": 30.439281153001502} | equal {'load': True, 'reload': True, 'None': True}
+
+this repository unchanged by the probe (git status, audit/ excluded): True | the probe's work directory created: False
+modules: torch imported=False | transformers modeling modules imported=[] | this script never calls a model class or from_pretrained on a model
+RESULT: PASS
+exit=0

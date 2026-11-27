@@ -1,0 +1,26 @@
+先读仓库中的 .claude/agents/code-reviewer.md，以它为你的完整定义；它与你已加载的定义冲突时，以仓库文件为准。
+
+审查对象：METRIX E1-PILOT 阶段 C 第 2 段（C2）的第二个修复提交，第 1 轮。暂存区内容（尚未提交），父提交 0cbee1978a76c82691e48516ddf97549e361fc2c（修复提交 49fc9a35 之后的证据提交，已推送；49fc9a35 的暂存树 b40224e6 就是你第 1 轮审查的对象）。仓库 /home/user/OpenMythos。
+
+Review Gate 对 C1 的裁决（tasks/IMPL_C1_RULING.md）中的防范对象，原文如下：
+防范对象：TEST 闸门要防的是「按规则办事的 Executor 在按 RUNBOOK 操作时，意外评测 TEST 两次，或在 ST10 不成立时评测 TEST」；不防有仓库写权限者的故意篡改（改写历史、伪造记录），这类风险由 GitHub 分支保护和审查记录承担。审查按此范围判定：范围外的边缘情况记为 MINOR 并登记，不作为 BLOCKER。调用两份审查时，把本段防范对象原文写进调用文字。
+
+Owner 本次转达的 Review Gate 裁决（tasks/IMPL_C2_OWNER_MESSAGE.md），原文如下：
+Review Gate 裁决（2026-11-27，作用范围：本阶段；记入 IMPL_C_REPORT.md）：
+1. TEST 评测调用不 fetch、只在 begin 与 finish 时 fetch：接受。RUNBOOK 写明「begin 到 finish 之间任何人不得推送本分支」。
+2. f8139f9 属于证据提交，不需补审。
+
+审查输入（目录 /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/review_c2c/）：input.diff（git diff --cached --stat 与完整 diff，相对父提交 0cbee197）；input_code.diff（只含 src/、tests/、reports/impl_c/c2_mutate_fix2.py、c2_mutate_fix2b.py 与 c2c_checks.sh 的 diff）；tree.txt（本次暂存树 a6ce8a0ea0aeff1e86443a2a22a2a4eb349bcc50）。暂存内容与工作区的 src/、tests/、run_pilot.py 相同（核对见 reports/impl_c/c2c_03_checks.txt、c2c_04_mutate_fix2b.txt 与 c2c_02_smoke.txt 的首尾：写树、代码 diff 的 sha256 与 git ls-files -s）。工作区中未暂存的 metrix/e1-pilot/RUNBOOK_A100.md 与 reports/impl_c/c3_hf_tree_70d244cc.txt 是 C3 的草稿，不属于本次审查对象。
+依据同前两轮（调用文字：metrix/e1-pilot/reviews/5219ff772272f5251ee18dc3d95cf54ba5d4104f/、reviews/49fc9a35e62581f148ebf098c57c77fe6ea5539a/ 中的 *_prompt.txt）。
+
+本次改动（Executor 的说明，不作为证据；请逐条核对“已修且正确 / 已修但有问题 / 未修”）。两份第 1 轮原文（修复提交 49fc9a35）：metrix/e1-pilot/reviews/49fc9a35e62581f148ebf098c57c77fe6ea5539a/code-reviewer_round1.md、data-auditor_round1.md。各项与处理的对照表：reports/DEFERRED_MINORS.md 1.33（CG1–CG22，本次暂存；段首另有对 1.32 CF28、CF29 两处文字的更正）。
+- MAJOR 1 / IC8-M4（A 因子）：Pilot.run_seconds(spec) 只对 arm A 乘 a_factor；另计基座加载、file_hash_s；eval_seconds(load) 按先加载什么计（"load" 第 3 步 N、"reload" 第 7 步 G0.8、None 训练后已在内存）。测试 test_st7_look_ahead_of_a_run；变异。
+- MAJOR 2（TEST 估计）：test_evaluation_seconds 中 N 计 load_s，15 个 checkpoint 计 reload_s；不加余量（交 Review Gate）。test_preflight_overhead_counts 核对；变异。
+- MAJOR 3 / IC8-M1（TestAlreadyEvaluated 被记成崩溃）：begun_by_this_process(p)——本进程调用了 begin（p.begin_called，在调用 begin 之前设置）、调用前没有标记（p.marker_before_begin）、现在有标记。run_test_evaluate 只在此条件下把停止或崩溃记为“已开始”；TestAlreadyEvaluated 单独捕获、不写记录、原样抛出；begin 之前带停止码的协议停止（ST7、ST8、ST9、ST10、ST12）写记录，没有停止码的拒绝不写；begin 之后捕获 BaseException（含 KeyboardInterrupt），写记录后原样抛出。e2e 测试最后一步断言该次拒绝之后远端没有新提交；test_test_evaluate_records_after_the_marker_and_for_st10 增加 KeyboardInterrupt、begin 之前的 ST7、TestAlreadyEvaluated 三种情形；变异。
+- MAJOR 4（测试）：新测试 test_formal_stop_and_crash_commit_what_was_written[st3]（真实的 ST3：小模型的阳性对照不过；断言第 4 步记录带 stopped、6 个 F 训练记录、实验记录都已推送，克隆干净）与 [crash]（第 3 个 F 训练注入崩溃；断言前两个训练记录与明细随实验记录推送、第 4 步记录不存在）；test_test_generate_records_an_st10_stop_of_its_own_run（替换 pilot 自己的 subprocess 引用；本次提交的超限 ST10 记录写记录，之前已有的不写）；提交链测试断言 before_run 收到的 next_seconds 中有 F 与 A 的 run_seconds（A 更大）；e2e 断言 begin 之前第一次 before_run 收到的值等于 test_evaluation_seconds(第 2 步记录的 timing)，并新增“N 的哈希与第 3 步记录不符 → 标记之前 BLOCKED”。变异。
+- MINOR：run_test_generate 设 code_commit、做 start_checks（device ledger：同一个 --work）、只在本次运行之前 HEAD 没有 ST10 记录时写记录；start_checks 的 ledger 消息写明两种可能；formal 在 --work 已有 checkpoint 时于第 1 步之前拒绝（检查顺序：ledger、冻结记录、checkpoint）；smoke_model_config 用 smoke_config；Pilot.commit 提交成功之后才从 uncommitted 移除；test_evaluate 的 load_data 与 TEST 文件读取进 try（转为 BLOCKED）。登记不改：CG12、CG14、CG19、CG21。
+- 新的录制脚本 c2c_checks.sh（用法行改正；STATE 增加 git ls-files -s 的代码条目）；变异 c2_mutate_fix2.py（35 个，每个一处替换；parse 的成对分支删去）。c2b_checks.sh 与 c2_mutate_fix1.py 保持运行时的版本。
+- 原始输出：reports/impl_c/c2c_03_checks.txt（数据、TEST 生成器拒绝、outside_metrix_check、全部 pytest、变异；首尾记录写树、代码 diff 的 sha256 与 git ls-files -s）；c2c_02_smoke.txt（修复后的冒烟，单独运行，首尾同样记录）；冒烟记录副本 reports/impl_c/c2c_smoke_records/。被取代的录制：c2c_01_checks_superseded.txt——变异“TEST: begun read from the marker file alone”未测出（34/35，RESULT: FAIL）：没有测试走到“本次运行之前标记已存在（之前的运行开始了 TEST 而没有结果）、begin 以没有停止码的 BLOCKED 拒绝”这一情形；test_test_evaluate_records_after_the_marker_and_for_st10 补上该情形（不写记录），之后重录为 c2c_03。c2c_03 中该变异仍记为 NOT CAUGHT（34/35），原因是变异脚本的测试清单同时指名了 e2e 测试，而 e2e 不经过这一情形（records 测试已失败）；c2_mutate_fix2.py 保持运行时的版本，c2_mutate_fix2b.py 只含这一个变异、只指名 records 测试，c2c_04_mutate_fix2b.txt 记录其运行（CAUGHT；首尾 STATE 与 c2c_03 相同）。c2c_02 冒烟在 c2c_01 的树上运行；此后只改了 tests/test_run_pilot.py，src/ 与 run_pilot.py 不变（比较 c2c_02 与 c2c_03 中 git ls-files -s 的各行）。
+- 未包括：RUNBOOK_A100.md 与 reports/impl_c/c3_hf_tree_70d244cc.txt（C3，工作区中的草稿）。
+
+请：(1) 逐条核对上面各项（“已修且正确 / 已修但有问题 / 未修”）；(2) 审查本次改动本身有无新问题（重点：begun_by_this_process 的三个条件在 begin 的各种失败方式下（写标记之前拒绝、提交或推送失败、推送后字节核对失败、TestAlreadyEvaluated）是否得出正确的“是否已开始”；begin 之前写记录的协议停止与不写记录的拒绝的划分；ST7 事前估计的各组成部分；连续性检查的顺序）；(3) 新测试与变异是否真正检验所说内容。范围外的边缘情况记为 MINOR 并登记，不作为 BLOCKER。按定义的输出格式给出，每条注明“已验证/未验证”；原文即你的完整输出。最后一行给出结论 PASS 或 BLOCK。不要修改任何文件。

@@ -1,0 +1,19 @@
+# Data Auditor note (implementation stage C, C2 second fix commit, staged tree a6ce8a0ea0aeff1e86443a2a22a2a4eb349bcc50, parent 0cbee197, round 1).
+# Trial runs of my own scripts made before the recorded runs; their stdout went to my terminal only and was NOT saved
+# (stated here instead of a copy). Every recorded run in this directory (ic9_*.txt) was made after the last fix below,
+# on the same staged tree. No trial touched anything outside my scratch directory and metrix/e1-pilot/audit/.
+
+1. ic9_04_static.py, trial 1 (RESULT: FAIL, script error): section h required "no loop in run_pilot.main"; main has
+   one loop, over P.fetch_model(...) in the fetch-model branch, which neither constructs a Pilot nor runs a command.
+   Fix: the check now requires that no P.Pilot / P.run_gate / P.run_test_generate / P.run_test_evaluate call sits
+   inside a loop of main (the loop is printed).
+2. ic9_04_static.py, trial 2 (RESULT: FAIL, script error): I compared begin_test_evaluation's SECOND statement with
+   "refuse_if_marker(root)"; its first two statements are the import of contract and `root = ...`. Fix: the first three
+   statements are compared (import, root, refuse_if_marker(root)).
+3. ic9_04_static.py, trial 3 (RESULT: FAIL, script error): my expected text for begun_by_this_process lacked the leading
+   "return " that ast.unparse of a Return statement prints. Found with a settrace helper in my scratch directory
+   (scratchpad/dbg_trace.py: reports the line at which `ok` turned False; not part of the audit). Fix: "return "
+   added. Trial 4 = PASS; the recorded run is ic9_04_static.txt.
+4. ic9_07_mutation_remnants.py, trial 1 (RESULT: PASS): the replacement-text column printed "CHECK" for two mutations
+   whose replacement ("p.before_run()") also occurs elsewhere in pilot.py (preflight, the TEST loop); only the wording
+   of that column was changed to "(informational)". The recorded run is ic9_07_mutation_remnants.txt.
