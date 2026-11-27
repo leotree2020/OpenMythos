@@ -1,0 +1,33 @@
+# Stage C, C2 work commit (staged; parent f8139f9): the CPU smoke test (Implementation Task Order V1 section 7) on the staged code, 3 optimizer steps per training run; work directory outside the repository. Executor, host vm (Anthropic cloud container, CPU only, no GPU). Fri Nov 27 02:20:12 UTC 2026
+# stdout+stderr merged, unedited. Commands recorded by reports/round5/logrun.sh.
+$ bash -c git\ rev-parse\ HEAD\;\ git\ write-tree\;\ git\ diff\ --quiet\ --\ metrix/e1-pilot/src\ metrix/e1-pilot/tests\ metrix/e1-pilot/run_pilot.py\ \&\&\ echo\ WORKTREE_EQUALS_INDEX_FOR_SRC_TESTS_RUN_PILOT
+f8139f9fd59bb8ec5c661379a549db7bba3d179a
+9f6601c1f1733d85b70168b5fffa6d157fccfac1
+WORKTREE_EQUALS_INDEX_FOR_SRC_TESTS_RUN_PILOT
+exit=0
+$ /usr/bin/time -v /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/venv/bin/python metrix/e1-pilot/run_pilot.py smoke --steps 3 --inputs /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/inputs --work /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/c2_smoke
+metrix/e1-pilot/reports/round5/logrun.sh: line 9: /usr/bin/time: No such file or directory
+exit=127
+$ bash -c cd\ /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/c2_smoke\ \&\&\ find\ .\ -type\ f\ \|\ sort\ \|\ xargs\ ls\ -l\ \|\ awk\ \'\{print\ \$5\,\ \$9\}\'
+bash: line 1: cd: /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/c2_smoke: No such file or directory
+exit=1
+$ bash -c cd\ /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/c2_smoke\ \&\&\ find\ .\ -name\ test_qa.jsonl\ -o\ -name\ general_test.jsonl\ \|\ wc\ -l\;\ cat\ checkpoints/LABEL.txt\ data/LABEL.txt\ preflight/LABEL.txt
+bash: line 1: cd: /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/c2_smoke: No such file or directory
+cat: checkpoints/LABEL.txt: No such file or directory
+cat: data/LABEL.txt: No such file or directory
+cat: preflight/LABEL.txt: No such file or directory
+exit=1
+$ bash -c git\ status\ --short\ --untracked-files=all\;\ git\ write-tree
+A  metrix/e1-pilot/reports/impl_c/c2_00_session_start.txt
+A  metrix/e1-pilot/reports/impl_c/c2_01_env_fetch.txt
+A  metrix/e1-pilot/reports/impl_c/c2_checks.sh
+A  metrix/e1-pilot/reports/impl_c/c2_mutate.py
+A  metrix/e1-pilot/run_pilot.py
+M  metrix/e1-pilot/src/metrix_e1/gate.py
+A  metrix/e1-pilot/src/metrix_e1/pilot.py
+A  metrix/e1-pilot/tasks/IMPL_C2_OWNER_MESSAGE.md
+A  metrix/e1-pilot/tests/test_run_pilot.py
+?? metrix/e1-pilot/RUNBOOK_A100.md
+?? metrix/e1-pilot/reports/impl_c/c2_03_smoke.txt
+9f6601c1f1733d85b70168b5fffa6d157fccfac1
+exit=0

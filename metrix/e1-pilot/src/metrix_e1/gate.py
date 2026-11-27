@@ -116,10 +116,7 @@ def compute_values(inp, contract):
     v["G0.1"] = {"leakage_result": inp["leakage"]["result"],
                  "over_limit": sorted(k for k, x in inp["leakage"]["checks"].items() if not x["within_limit"])}
     v["G0.2"] = {"all_finite": bool(inp["all_finite"]), "nonfinite": list(inp.get("nonfinite", []))}
-    v["G0.3"] = {"acc_dev_learned": float(N["acc_dev_learned"]), "acc_dev_unread": float(N["acc_dev_unread"]),
-                 "acc_cb": float(N["acc_cb"])}
-    for s_ in st.strata:
-        v["G0.3"]["acc_dev_learned:%s" % s_] = float(N["acc_dev_learned:%s" % s_])
+    v["G0.3"] = n_range_values(N, st.strata, "dev")
     v["G0.4"] = {"acc_cb_by_seed": {s: float(inp["F"][s]["acc_cb"]) for s in c.seeds}}
     v["G0.5"] = {"acc_avg": float(S.acc(c.scores("F", "avg"), learned)), "delta_avg": c.cmp("F", "N", "avg"),
                  "delta_by_seed": {s: c.cmp("F", "N", s)["point"] for s in c.seeds}}
@@ -152,14 +149,27 @@ def compute_test_values(inp, contract):
     for arm in ("S", "Y"):
         d = c.cmp(arm, "N", "avg")
         v["T2"][arm] = {"point": d["point"], "ci_high": d["ci_high"], "delta_avg": d}
-    v["T3"] = {"acc_test_learned": float(N["acc_test_learned"]), "acc_test_unread": float(N["acc_test_unread"]),
-               "acc_cb": float(N["acc_cb"])}
-    for s_ in c.st.strata:
-        v["T3"]["acc_test_learned:%s" % s_] = float(N["acc_test_learned:%s" % s_])
+    v["T3"] = n_range_values(N, c.st.strata, "test")
+    return v
+
+
+def n_range_values(N, strata, split):
+    """The numbers G0.3 (split "dev") or T3 (split "test") reads from N's evaluation summary: Acc(N, split, learned),
+    the same per stratum, Acc(N, split, unread), Acc_CB(N). Also read by stop ST2 at section 8 step 3 (run_pilot)."""
+    v = {"acc_%s_learned" % split: float(N["acc_%s_learned" % split]),
+         "acc_%s_unread" % split: float(N["acc_%s_unread" % split]), "acc_cb": float(N["acc_cb"])}
+    for s_ in strata:
+        v["acc_%s_learned:%s" % (split, s_)] = float(N["acc_%s_learned:%s" % (split, s_)])
     return v
 
 
 # ------------------------------------------------------------------------------------------------- judge
+
+def n_ranges_hold(values, contract, split):
+    """G0.3 (split "dev") or T3 (split "test") on n_range_values(): every range of the condition holds (B22, B24).
+    judge() and judge_test() use the same test; ST2 (section 8 step 3) reads it before any training."""
+    return _g3_ranges(values, contract.gate, split)
+
 
 def _g3_ranges(x, g, split):
     return (_in(x["acc_%s_learned" % split], g.g3_learned) and _in(x["acc_%s_unread" % split], g.g3_unread)
