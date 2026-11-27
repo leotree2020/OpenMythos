@@ -1,0 +1,713 @@
+# Data Auditor run (implementation stage C, C2 fix commit, staged tree b40224e68d1d42f9b4dc886fe9e159f9d99162b1, parent 1900b1fe, round 1). host vm, Anthropic cloud container, CPU only (no GPU device node: 0 nvidia entries), no model weights loaded (tokenizer files only; smoke checkpoints are hashed as file bytes, never loaded; the Executor's e2e test builds random tiny models in memory); 2026-11-27 05:56:43 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/venv/bin/python -I -B ic8_04_e2e.py /home/user/OpenMythos /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/venv/bin/python /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/inputs /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/ic8_e2e_normal normal
+env: host vm | Linux-6.18.44-fc-v880-x86_64-with-glibc2.39 | python 3.13.18 (/tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/venv/bin/python) | installed {'transformers': '5.22.2', 'tokenizers': '0.23.3', 'pyarrow': '26.0.1', 'huggingface_hub': '2.4.0', 'torch': '2.11.0'} | nvidia device nodes: []
+test file: SELECTED line present: True | the fixture's step 2 timing text present: True
+
+== my expectations (written before the run; mode normal)
+  - models TEST evaluates (my list, set): ['A-A5-seed101', 'A-A5-seed202', 'A-A5-seed303', 'F-F3-seed101', 'F-F3-seed202', 'F-F3-seed303', 'L-L2-seed101', 'L-L2-seed202', 'L-L2-seed303', 'N', 'S-F3-seed101', 'S-F3-seed202', 'S-F3-seed303', 'Y-F3-seed101', 'Y-F3-seed202', 'Y-F3-seed303']
+  - run 1 (models[1]'s checkpoint file changed by the test): check_preconditions once, start_checks once, the committed freeze / Gate 0 / step 2 / step 3 records read, exactly 1 checkpoint file hashed (that one); no test_evaluation_seconds, no before_run, no state hash, no begin, no evaluation, no commit_paths, no final_record; returns (False, 'BLOCKED'); no marker
+  - run 2: check_preconditions once, start_checks('test-evaluate') once, committed reads freeze < Gate 0 < step 2 < step 3 before the checkpoint loop, the 15 checkpoint files (set = models[1:]) hashed, test_evaluation_seconds once with the fixture's timing returning 43.200000 s, before_run(next_seconds=43.200000) once, T.state_sha256 once (the base model) -- all before begin; that hash == begin's base-model argument == the marker's N hash == N.state_sha256 of the committed step 3 record; then 16 x (before_run(0.0), evaluate_model(split=test) with one state hash and one claim) in the marker's model order, no DEV evaluation; compute_test_values, judge_test, report_comparisons(test) once each after the last evaluation; finish (commit_paths [result] inside); final_record('test-evaluate', 'PIPELINE_NOT_QUALIFIED', stop None) writing experiment_record_test-evaluate_<start>.json/.txt, commit_paths [those two]; returns (True, 'PIPELINE_NOT_QUALIFIED')
+  - run 3: check_preconditions once, start_checks('test-evaluate') once, committed reads freeze < Gate 0 < step 2 < step 3 before the checkpoint loop, the 15 checkpoint files (set = models[1:]) hashed, test_evaluation_seconds once with the fixture's timing returning 43.200000 s, before_run(next_seconds=43.200000) once, T.state_sha256 once (the base model) -- all before begin; that hash == begin's base-model argument == the marker's N hash == N.state_sha256 of the committed step 3 record; begin raises TestAlreadyEvaluated; no evaluation; final_record('test-evaluate', 'BLOCKED', stop code None / status BLOCKED / message 'crash after the TEST marker: TestAlreadyEvaluated(...)'), the same two file names as run 2 (same Pilot, same start time), commit_paths [those two]; run_test_evaluate raises TestAlreadyEvaluated (the test passes, pytest exit 0)
+  - remote after the fixture: exactly 4 commits, oldest first: marker only (A), result only (A), experiment record json + txt (A), experiment record json + txt (M); the third commit's record Status PIPELINE_NOT_QUALIFIED with stop null, the tip's Status BLOCKED with the crash message naming TestAlreadyEvaluated; result.marker_commit = the marker commit
+  - work: test_details/ holds 16 files <model>_test.json; the clone is clean and at the remote's tip
+  - no added blob holds the synthetic TEST text ['Synthetic question', 'not a TEST row', 'synthetic window', 'SYNTHETIC_T', 'synthetic-']; the result and the experiment records have no key starting with 'general_test' and no per-question / per-window row key ['answer_index', 'doc_id', 'generated_ids', 'ids', 'normalized', 'output', 'prediction', 'question', 'scores', 'top2_gap']; no TEST data file in the clone or the remote; this repository unchanged
+
+== driver run (once): cwd /home/user/OpenMythos
+$ IC8_FAULT= /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/venv/bin/python -B -m pytest -q -p no:cacheprovider -p ic8_04_trace_plugin --basetemp=/tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/ic8_e2e_normal/basetemp metrix/e1-pilot/tests/test_run_pilot.py::test_test_evaluate_end_to_end_once
+----- pytest stdout+stderr begin -----
+.                                                                        [100%]
+1 passed in 208.69s (0:03:28)
+----- pytest stdout+stderr end ----- exit 0, 210 s
+pytest exit code 0, expected 0: True
+
+== trace (692 events; events of the fixture before the test start omitted: 63)
+  {"call": "test", "phase": "start", "root": "/tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/ic8_e2e_normal/basetemp/test_test_evaluate_end_to_end_0/repo", "remote": "/tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/ic8_e2e_normal/basetemp/test_test_evaluate_end_to_end_0/remote.git", "work": "/tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/ic8_e2e_normal/basetemp/test_test_evaluate_end_to_end_0/work", "models": ["N", "F-F3-seed101", "L-L2-seed101", "A-A5-seed101", "F-F3-seed202", "F-F3-seed303", "L-L2-seed202", "L-L2-seed303", "A-A5-seed202", "A-A5-seed303", "S-F3-seed101", "S-F3-seed202", "S-F3-seed303", "Y-F3-seed101", "Y-F3-seed202", "Y-F3-seed303"], "remote_tip_after_fixture": "51f6dc0a1cb543d9a8f58a7bd39d87a5b6e9befb", "started": "20261127T055652Z", "seq": 64}
+  {"call": "run_test_evaluate", "phase": "enter", "seq": 65}
+  {"call": "test_evaluate", "phase": "enter", "seq": 66}
+  {"call": "check_preconditions", "phase": "enter", "seq": 67}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 68}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 69}
+  {"call": "R.committed_json", "phase": "return", "seq": 70}
+  {"call": "R.committed_record", "phase": "return", "seq": 71}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 72}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 73}
+  {"call": "R.committed_json", "phase": "return", "seq": 74}
+  {"call": "R.committed_record", "phase": "return", "seq": 75}
+  {"call": "check_preconditions", "phase": "return", "seq": 76}
+  {"call": "Pilot.start_checks", "phase": "enter", "command": "test-evaluate", "seq": 77}
+  {"call": "Pilot.start_checks", "phase": "return", "seq": 78}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 79}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 80}
+  {"call": "R.committed_json", "phase": "return", "seq": 81}
+  {"call": "R.committed_record", "phase": "return", "seq": 82}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 83}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 84}
+  {"call": "R.committed_json", "phase": "return", "seq": 85}
+  {"call": "R.committed_record", "phase": "return", "seq": 86}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/step2_record.json", "seq": 87}
+  {"call": "R.committed_json", "phase": "return", "seq": 88}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/step3_record.json", "seq": 89}
+  {"call": "R.committed_json", "phase": "return", "seq": 90}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/F-F3-seed101.json", "seq": 91}
+  {"call": "R.committed_json", "phase": "return", "seq": 92}
+  {"call": "file_sha256", "phase": "enter", "file": "F-F3-seed101.pt", "seq": 93}
+  {"call": "file_sha256", "phase": "return", "sha256": "bb1085c7c7de39d4e8cea96571297026589258a76ce39be2d690ddd142231069", "seq": 94}
+  {"call": "test_evaluate", "phase": "raise", "exc": "ProtocolStop", "msg": "BLOCKED: checkpoint F-F3-seed101: file sha256 bb1085c7c7de39d4e8cea96571297026589258a76ce39be2d690ddd142231069, run record 23b3632731a3b20bf1aeedfadb6541dbae5f4fa74cec6e1648524f8b96a189d3 / freeze record differs; TEST not started; report to the Owner", "seq": 95}
+  {"call": "run_test_evaluate", "phase": "return", "result": "(False, 'BLOCKED')", "seq": 96}
+  {"call": "run_test_evaluate", "phase": "enter", "seq": 97}
+  {"call": "test_evaluate", "phase": "enter", "seq": 98}
+  {"call": "check_preconditions", "phase": "enter", "seq": 99}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 100}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 101}
+  {"call": "R.committed_json", "phase": "return", "seq": 102}
+  {"call": "R.committed_record", "phase": "return", "seq": 103}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 104}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 105}
+  {"call": "R.committed_json", "phase": "return", "seq": 106}
+  {"call": "R.committed_record", "phase": "return", "seq": 107}
+  {"call": "check_preconditions", "phase": "return", "seq": 108}
+  {"call": "Pilot.start_checks", "phase": "enter", "command": "test-evaluate", "seq": 109}
+  {"call": "Pilot.start_checks", "phase": "return", "seq": 110}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 111}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 112}
+  {"call": "R.committed_json", "phase": "return", "seq": 113}
+  {"call": "R.committed_record", "phase": "return", "seq": 114}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 115}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 116}
+  {"call": "R.committed_json", "phase": "return", "seq": 117}
+  {"call": "R.committed_record", "phase": "return", "seq": 118}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/step2_record.json", "seq": 119}
+  {"call": "R.committed_json", "phase": "return", "seq": 120}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/step3_record.json", "seq": 121}
+  {"call": "R.committed_json", "phase": "return", "seq": 122}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/F-F3-seed101.json", "seq": 123}
+  {"call": "R.committed_json", "phase": "return", "seq": 124}
+  {"call": "file_sha256", "phase": "enter", "file": "F-F3-seed101.pt", "seq": 125}
+  {"call": "file_sha256", "phase": "return", "sha256": "23b3632731a3b20bf1aeedfadb6541dbae5f4fa74cec6e1648524f8b96a189d3", "seq": 126}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/L-L2-seed101.json", "seq": 127}
+  {"call": "R.committed_json", "phase": "return", "seq": 128}
+  {"call": "file_sha256", "phase": "enter", "file": "L-L2-seed101.pt", "seq": 129}
+  {"call": "file_sha256", "phase": "return", "sha256": "2e927077b4ecaf40d65c35f020bee6d135017ddc692432e56662d29232c25827", "seq": 130}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/A-A5-seed101.json", "seq": 131}
+  {"call": "R.committed_json", "phase": "return", "seq": 132}
+  {"call": "file_sha256", "phase": "enter", "file": "A-A5-seed101.pt", "seq": 133}
+  {"call": "file_sha256", "phase": "return", "sha256": "bef8c08d61bf89ac7883927f4f933e9de0eafd28e0515a4ee146952898bcea16", "seq": 134}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/F-F3-seed202.json", "seq": 135}
+  {"call": "R.committed_json", "phase": "return", "seq": 136}
+  {"call": "file_sha256", "phase": "enter", "file": "F-F3-seed202.pt", "seq": 137}
+  {"call": "file_sha256", "phase": "return", "sha256": "bc54ed9b0e14d4c400419c6c8be649aef2434e18dc8c7fb450fa968e0869b63b", "seq": 138}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/F-F3-seed303.json", "seq": 139}
+  {"call": "R.committed_json", "phase": "return", "seq": 140}
+  {"call": "file_sha256", "phase": "enter", "file": "F-F3-seed303.pt", "seq": 141}
+  {"call": "file_sha256", "phase": "return", "sha256": "b79a4415595feb3851aa01ddde8a990192e420de2836fd00b1418c76c2c64b01", "seq": 142}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/L-L2-seed202.json", "seq": 143}
+  {"call": "R.committed_json", "phase": "return", "seq": 144}
+  {"call": "file_sha256", "phase": "enter", "file": "L-L2-seed202.pt", "seq": 145}
+  {"call": "file_sha256", "phase": "return", "sha256": "edc3256e5fff14d00bcbc2f9de73514e1e5886b8965970d64c6abdd6427871e0", "seq": 146}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/L-L2-seed303.json", "seq": 147}
+  {"call": "R.committed_json", "phase": "return", "seq": 148}
+  {"call": "file_sha256", "phase": "enter", "file": "L-L2-seed303.pt", "seq": 149}
+  {"call": "file_sha256", "phase": "return", "sha256": "62fb0b9b6cdd0f3debcacf84dd82fb23c60f17527d18341f3faef95798112c46", "seq": 150}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/A-A5-seed202.json", "seq": 151}
+  {"call": "R.committed_json", "phase": "return", "seq": 152}
+  {"call": "file_sha256", "phase": "enter", "file": "A-A5-seed202.pt", "seq": 153}
+  {"call": "file_sha256", "phase": "return", "sha256": "63482f90ef522e1b076ceceab353fa5ed3e306617b6bc3bf5198df07ceb00511", "seq": 154}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/A-A5-seed303.json", "seq": 155}
+  {"call": "R.committed_json", "phase": "return", "seq": 156}
+  {"call": "file_sha256", "phase": "enter", "file": "A-A5-seed303.pt", "seq": 157}
+  {"call": "file_sha256", "phase": "return", "sha256": "dc6914a74357a9db2727a0fdb4da2d7d3008e6cf24e77b32406c45beeda47ae4", "seq": 158}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/S-F3-seed101.json", "seq": 159}
+  {"call": "R.committed_json", "phase": "return", "seq": 160}
+  {"call": "file_sha256", "phase": "enter", "file": "S-F3-seed101.pt", "seq": 161}
+  {"call": "file_sha256", "phase": "return", "sha256": "2d11895d66e1a1459b17e404afcdb9070b0231c2be00e3f62a4355d83df7603b", "seq": 162}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/S-F3-seed202.json", "seq": 163}
+  {"call": "R.committed_json", "phase": "return", "seq": 164}
+  {"call": "file_sha256", "phase": "enter", "file": "S-F3-seed202.pt", "seq": 165}
+  {"call": "file_sha256", "phase": "return", "sha256": "5e88c226be2f5ee03ce86ff258415d7b8dbf058f5a848f8defc44104d9f68fc0", "seq": 166}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/S-F3-seed303.json", "seq": 167}
+  {"call": "R.committed_json", "phase": "return", "seq": 168}
+  {"call": "file_sha256", "phase": "enter", "file": "S-F3-seed303.pt", "seq": 169}
+  {"call": "file_sha256", "phase": "return", "sha256": "ec8a3b482280e0c8ab3b4f73f64608c8ce733712b85647ef403ad7f4bab5042c", "seq": 170}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/Y-F3-seed101.json", "seq": 171}
+  {"call": "R.committed_json", "phase": "return", "seq": 172}
+  {"call": "file_sha256", "phase": "enter", "file": "Y-F3-seed101.pt", "seq": 173}
+  {"call": "file_sha256", "phase": "return", "sha256": "d73f709d8b5e814313e50ab25ec524cb61edd40c3305f8716851120b1fb92076", "seq": 174}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/Y-F3-seed202.json", "seq": 175}
+  {"call": "R.committed_json", "phase": "return", "seq": 176}
+  {"call": "file_sha256", "phase": "enter", "file": "Y-F3-seed202.pt", "seq": 177}
+  {"call": "file_sha256", "phase": "return", "sha256": "424231d1276dbc7f1b4571bb51bd55b067b3648ac860f0feb9109bf3e2ffe4b8", "seq": 178}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/Y-F3-seed303.json", "seq": 179}
+  {"call": "R.committed_json", "phase": "return", "seq": 180}
+  {"call": "file_sha256", "phase": "enter", "file": "Y-F3-seed303.pt", "seq": 181}
+  {"call": "file_sha256", "phase": "return", "sha256": "a435963586f565c62bde6f4e1aa42fd39809b80de54c87ae85fce2dcf6d68a6a", "seq": 182}
+  {"call": "test_evaluation_seconds", "phase": "enter", "timing": {"a_factor": 1.0, "dev_evaluation_seconds": 1.0, "file_hash_s": 0.1, "hash_s": 0.1, "load_s": 1.0, "mean_step_s": 0.1, "reload_s": 0.1, "save_s": 0.1}, "seq": 183}
+  {"call": "test_evaluation_seconds", "phase": "return", "seconds": 43.2, "seq": 184}
+  {"call": "p.before_run", "phase": "enter", "next_seconds": 43.2, "seq": 185}
+  {"call": "T.state_sha256", "phase": "enter", "seq": 186}
+  {"call": "T.state_sha256", "phase": "return", "sha256": "a895622c8065094db612d950ad39d072c87a5894603950ddba98d44b524ee251", "seq": 187}
+  {"call": "begin_test_evaluation", "phase": "enter", "base_sha256": "a895622c8065094db612d950ad39d072c87a5894603950ddba98d44b524ee251", "seq": 188}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 189}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 190}
+  {"call": "R.committed_json", "phase": "return", "seq": 191}
+  {"call": "R.committed_record", "phase": "return", "seq": 192}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 193}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 194}
+  {"call": "R.committed_json", "phase": "return", "seq": 195}
+  {"call": "R.committed_record", "phase": "return", "seq": 196}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/st10_record.json", "seq": 197}
+  {"call": "R.committed_json", "phase": "return", "seq": 198}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/audit/st10_l6_test_count.json", "seq": 199}
+  {"call": "R.committed_json", "phase": "return", "seq": 200}
+  {"call": "commit_paths", "phase": "enter", "rels": ["metrix/e1-pilot/results/test_evaluation_marker.json"], "seq": 201}
+  {"call": "commit_paths", "phase": "return", "head": "f95a0f07aae9e92fca85627ab738ea2319c21e80", "seq": 202}
+  {"call": "begin_test_evaluation", "phase": "return", "marker_commit": "f95a0f07aae9e92fca85627ab738ea2319c21e80", "seq": 203}
+  {"call": "p.before_run", "phase": "enter", "next_seconds": 0.0, "seq": 204}
+  {"call": "control_evaluation", "phase": "enter", "what": "TEST evaluation of N", "split": "test", "seq": 205}
+  {"call": "evaluate_model", "phase": "enter", "split": "test", "checkpoint": "N", "seq": 206}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 207}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 208}
+  {"call": "R.committed_json", "phase": "return", "seq": 209}
+  {"call": "R.committed_record", "phase": "return", "seq": 210}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 211}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 212}
+  {"call": "R.committed_json", "phase": "return", "seq": 213}
+  {"call": "R.committed_record", "phase": "return", "seq": 214}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/test_evaluation_marker.json", "seq": 215}
+  {"call": "R.committed_json", "phase": "return", "seq": 216}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/st10_record.json", "seq": 217}
+  {"call": "R.committed_json", "phase": "return", "seq": 218}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/audit/st10_l6_test_count.json", "seq": 219}
+  {"call": "R.committed_json", "phase": "return", "seq": 220}
+  {"call": "T.state_sha256", "phase": "enter", "seq": 221}
+  {"call": "T.state_sha256", "phase": "return", "sha256": "a895622c8065094db612d950ad39d072c87a5894603950ddba98d44b524ee251", "seq": 222}
+  {"call": "claim_checkpoint", "phase": "enter", "checkpoint": "N", "seq": 223}
+  {"call": "claim_checkpoint", "phase": "return", "seq": 224}
+  {"call": "evaluate_model", "phase": "return", "seq": 225}
+  {"call": "control_evaluation", "phase": "return", "seq": 226}
+  {"call": "p.before_run", "phase": "enter", "next_seconds": 0.0, "seq": 227}
+  {"call": "control_evaluation", "phase": "enter", "what": "TEST evaluation of F-F3-seed101", "split": "test", "seq": 228}
+  {"call": "evaluate_model", "phase": "enter", "split": "test", "checkpoint": "F-F3-seed101", "seq": 229}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 230}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 231}
+  {"call": "R.committed_json", "phase": "return", "seq": 232}
+  {"call": "R.committed_record", "phase": "return", "seq": 233}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 234}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 235}
+  {"call": "R.committed_json", "phase": "return", "seq": 236}
+  {"call": "R.committed_record", "phase": "return", "seq": 237}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/test_evaluation_marker.json", "seq": 238}
+  {"call": "R.committed_json", "phase": "return", "seq": 239}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/st10_record.json", "seq": 240}
+  {"call": "R.committed_json", "phase": "return", "seq": 241}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/audit/st10_l6_test_count.json", "seq": 242}
+  {"call": "R.committed_json", "phase": "return", "seq": 243}
+  {"call": "T.state_sha256", "phase": "enter", "seq": 244}
+  {"call": "T.state_sha256", "phase": "return", "sha256": "9137683704306a59be571301f75bb3a466fba336dca00f0f2d9bca04d6cb01fb", "seq": 245}
+  {"call": "claim_checkpoint", "phase": "enter", "checkpoint": "F-F3-seed101", "seq": 246}
+  {"call": "claim_checkpoint", "phase": "return", "seq": 247}
+  {"call": "evaluate_model", "phase": "return", "seq": 248}
+  {"call": "control_evaluation", "phase": "return", "seq": 249}
+  {"call": "p.before_run", "phase": "enter", "next_seconds": 0.0, "seq": 250}
+  {"call": "control_evaluation", "phase": "enter", "what": "TEST evaluation of L-L2-seed101", "split": "test", "seq": 251}
+  {"call": "evaluate_model", "phase": "enter", "split": "test", "checkpoint": "L-L2-seed101", "seq": 252}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 253}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 254}
+  {"call": "R.committed_json", "phase": "return", "seq": 255}
+  {"call": "R.committed_record", "phase": "return", "seq": 256}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 257}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 258}
+  {"call": "R.committed_json", "phase": "return", "seq": 259}
+  {"call": "R.committed_record", "phase": "return", "seq": 260}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/test_evaluation_marker.json", "seq": 261}
+  {"call": "R.committed_json", "phase": "return", "seq": 262}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/st10_record.json", "seq": 263}
+  {"call": "R.committed_json", "phase": "return", "seq": 264}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/audit/st10_l6_test_count.json", "seq": 265}
+  {"call": "R.committed_json", "phase": "return", "seq": 266}
+  {"call": "T.state_sha256", "phase": "enter", "seq": 267}
+  {"call": "T.state_sha256", "phase": "return", "sha256": "d98573f05c43bd3333b5f951febebbc5a24f2c7bd052d6b5ee6fe6fe1c129745", "seq": 268}
+  {"call": "claim_checkpoint", "phase": "enter", "checkpoint": "L-L2-seed101", "seq": 269}
+  {"call": "claim_checkpoint", "phase": "return", "seq": 270}
+  {"call": "evaluate_model", "phase": "return", "seq": 271}
+  {"call": "control_evaluation", "phase": "return", "seq": 272}
+  {"call": "p.before_run", "phase": "enter", "next_seconds": 0.0, "seq": 273}
+  {"call": "control_evaluation", "phase": "enter", "what": "TEST evaluation of A-A5-seed101", "split": "test", "seq": 274}
+  {"call": "evaluate_model", "phase": "enter", "split": "test", "checkpoint": "A-A5-seed101", "seq": 275}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 276}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 277}
+  {"call": "R.committed_json", "phase": "return", "seq": 278}
+  {"call": "R.committed_record", "phase": "return", "seq": 279}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 280}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 281}
+  {"call": "R.committed_json", "phase": "return", "seq": 282}
+  {"call": "R.committed_record", "phase": "return", "seq": 283}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/test_evaluation_marker.json", "seq": 284}
+  {"call": "R.committed_json", "phase": "return", "seq": 285}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/st10_record.json", "seq": 286}
+  {"call": "R.committed_json", "phase": "return", "seq": 287}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/audit/st10_l6_test_count.json", "seq": 288}
+  {"call": "R.committed_json", "phase": "return", "seq": 289}
+  {"call": "T.state_sha256", "phase": "enter", "seq": 290}
+  {"call": "T.state_sha256", "phase": "return", "sha256": "f7234109360eee2c6008474ddcb6d027cff07380e0b3e10f21a113b8fe664b73", "seq": 291}
+  {"call": "claim_checkpoint", "phase": "enter", "checkpoint": "A-A5-seed101", "seq": 292}
+  {"call": "claim_checkpoint", "phase": "return", "seq": 293}
+  {"call": "evaluate_model", "phase": "return", "seq": 294}
+  {"call": "control_evaluation", "phase": "return", "seq": 295}
+  {"call": "p.before_run", "phase": "enter", "next_seconds": 0.0, "seq": 296}
+  {"call": "control_evaluation", "phase": "enter", "what": "TEST evaluation of F-F3-seed202", "split": "test", "seq": 297}
+  {"call": "evaluate_model", "phase": "enter", "split": "test", "checkpoint": "F-F3-seed202", "seq": 298}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 299}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 300}
+  {"call": "R.committed_json", "phase": "return", "seq": 301}
+  {"call": "R.committed_record", "phase": "return", "seq": 302}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 303}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 304}
+  {"call": "R.committed_json", "phase": "return", "seq": 305}
+  {"call": "R.committed_record", "phase": "return", "seq": 306}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/test_evaluation_marker.json", "seq": 307}
+  {"call": "R.committed_json", "phase": "return", "seq": 308}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/st10_record.json", "seq": 309}
+  {"call": "R.committed_json", "phase": "return", "seq": 310}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/audit/st10_l6_test_count.json", "seq": 311}
+  {"call": "R.committed_json", "phase": "return", "seq": 312}
+  {"call": "T.state_sha256", "phase": "enter", "seq": 313}
+  {"call": "T.state_sha256", "phase": "return", "sha256": "b9d5c5d88dd8bb2e50d834207f28f86bbadb322e1d2bca1731071583246a38e4", "seq": 314}
+  {"call": "claim_checkpoint", "phase": "enter", "checkpoint": "F-F3-seed202", "seq": 315}
+  {"call": "claim_checkpoint", "phase": "return", "seq": 316}
+  {"call": "evaluate_model", "phase": "return", "seq": 317}
+  {"call": "control_evaluation", "phase": "return", "seq": 318}
+  {"call": "p.before_run", "phase": "enter", "next_seconds": 0.0, "seq": 319}
+  {"call": "control_evaluation", "phase": "enter", "what": "TEST evaluation of F-F3-seed303", "split": "test", "seq": 320}
+  {"call": "evaluate_model", "phase": "enter", "split": "test", "checkpoint": "F-F3-seed303", "seq": 321}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 322}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 323}
+  {"call": "R.committed_json", "phase": "return", "seq": 324}
+  {"call": "R.committed_record", "phase": "return", "seq": 325}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 326}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 327}
+  {"call": "R.committed_json", "phase": "return", "seq": 328}
+  {"call": "R.committed_record", "phase": "return", "seq": 329}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/test_evaluation_marker.json", "seq": 330}
+  {"call": "R.committed_json", "phase": "return", "seq": 331}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/st10_record.json", "seq": 332}
+  {"call": "R.committed_json", "phase": "return", "seq": 333}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/audit/st10_l6_test_count.json", "seq": 334}
+  {"call": "R.committed_json", "phase": "return", "seq": 335}
+  {"call": "T.state_sha256", "phase": "enter", "seq": 336}
+  {"call": "T.state_sha256", "phase": "return", "sha256": "3b049fccb6b2b84fb56e2cb3ea872c2f8a3e2dc3fdaa55d0421e611f38b54d1a", "seq": 337}
+  {"call": "claim_checkpoint", "phase": "enter", "checkpoint": "F-F3-seed303", "seq": 338}
+  {"call": "claim_checkpoint", "phase": "return", "seq": 339}
+  {"call": "evaluate_model", "phase": "return", "seq": 340}
+  {"call": "control_evaluation", "phase": "return", "seq": 341}
+  {"call": "p.before_run", "phase": "enter", "next_seconds": 0.0, "seq": 342}
+  {"call": "control_evaluation", "phase": "enter", "what": "TEST evaluation of L-L2-seed202", "split": "test", "seq": 343}
+  {"call": "evaluate_model", "phase": "enter", "split": "test", "checkpoint": "L-L2-seed202", "seq": 344}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 345}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 346}
+  {"call": "R.committed_json", "phase": "return", "seq": 347}
+  {"call": "R.committed_record", "phase": "return", "seq": 348}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 349}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 350}
+  {"call": "R.committed_json", "phase": "return", "seq": 351}
+  {"call": "R.committed_record", "phase": "return", "seq": 352}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/test_evaluation_marker.json", "seq": 353}
+  {"call": "R.committed_json", "phase": "return", "seq": 354}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/st10_record.json", "seq": 355}
+  {"call": "R.committed_json", "phase": "return", "seq": 356}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/audit/st10_l6_test_count.json", "seq": 357}
+  {"call": "R.committed_json", "phase": "return", "seq": 358}
+  {"call": "T.state_sha256", "phase": "enter", "seq": 359}
+  {"call": "T.state_sha256", "phase": "return", "sha256": "a9c63daa9f0ecbd495816261e261e1deb2382d93ad23632459bba9ba3cc61e2c", "seq": 360}
+  {"call": "claim_checkpoint", "phase": "enter", "checkpoint": "L-L2-seed202", "seq": 361}
+  {"call": "claim_checkpoint", "phase": "return", "seq": 362}
+  {"call": "evaluate_model", "phase": "return", "seq": 363}
+  {"call": "control_evaluation", "phase": "return", "seq": 364}
+  {"call": "p.before_run", "phase": "enter", "next_seconds": 0.0, "seq": 365}
+  {"call": "control_evaluation", "phase": "enter", "what": "TEST evaluation of L-L2-seed303", "split": "test", "seq": 366}
+  {"call": "evaluate_model", "phase": "enter", "split": "test", "checkpoint": "L-L2-seed303", "seq": 367}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 368}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 369}
+  {"call": "R.committed_json", "phase": "return", "seq": 370}
+  {"call": "R.committed_record", "phase": "return", "seq": 371}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 372}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 373}
+  {"call": "R.committed_json", "phase": "return", "seq": 374}
+  {"call": "R.committed_record", "phase": "return", "seq": 375}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/test_evaluation_marker.json", "seq": 376}
+  {"call": "R.committed_json", "phase": "return", "seq": 377}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/st10_record.json", "seq": 378}
+  {"call": "R.committed_json", "phase": "return", "seq": 379}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/audit/st10_l6_test_count.json", "seq": 380}
+  {"call": "R.committed_json", "phase": "return", "seq": 381}
+  {"call": "T.state_sha256", "phase": "enter", "seq": 382}
+  {"call": "T.state_sha256", "phase": "return", "sha256": "558a64db4c0b8e303c3c706cfd559b010647ab81717c2dd50e5d74ac8b03d784", "seq": 383}
+  {"call": "claim_checkpoint", "phase": "enter", "checkpoint": "L-L2-seed303", "seq": 384}
+  {"call": "claim_checkpoint", "phase": "return", "seq": 385}
+  {"call": "evaluate_model", "phase": "return", "seq": 386}
+  {"call": "control_evaluation", "phase": "return", "seq": 387}
+  {"call": "p.before_run", "phase": "enter", "next_seconds": 0.0, "seq": 388}
+  {"call": "control_evaluation", "phase": "enter", "what": "TEST evaluation of A-A5-seed202", "split": "test", "seq": 389}
+  {"call": "evaluate_model", "phase": "enter", "split": "test", "checkpoint": "A-A5-seed202", "seq": 390}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 391}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 392}
+  {"call": "R.committed_json", "phase": "return", "seq": 393}
+  {"call": "R.committed_record", "phase": "return", "seq": 394}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 395}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 396}
+  {"call": "R.committed_json", "phase": "return", "seq": 397}
+  {"call": "R.committed_record", "phase": "return", "seq": 398}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/test_evaluation_marker.json", "seq": 399}
+  {"call": "R.committed_json", "phase": "return", "seq": 400}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/st10_record.json", "seq": 401}
+  {"call": "R.committed_json", "phase": "return", "seq": 402}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/audit/st10_l6_test_count.json", "seq": 403}
+  {"call": "R.committed_json", "phase": "return", "seq": 404}
+  {"call": "T.state_sha256", "phase": "enter", "seq": 405}
+  {"call": "T.state_sha256", "phase": "return", "sha256": "0b3269dcb438cb846389ddc4c0b91dab9ed2f9402e8f44f53fabb104a5a17bc9", "seq": 406}
+  {"call": "claim_checkpoint", "phase": "enter", "checkpoint": "A-A5-seed202", "seq": 407}
+  {"call": "claim_checkpoint", "phase": "return", "seq": 408}
+  {"call": "evaluate_model", "phase": "return", "seq": 409}
+  {"call": "control_evaluation", "phase": "return", "seq": 410}
+  {"call": "p.before_run", "phase": "enter", "next_seconds": 0.0, "seq": 411}
+  {"call": "control_evaluation", "phase": "enter", "what": "TEST evaluation of A-A5-seed303", "split": "test", "seq": 412}
+  {"call": "evaluate_model", "phase": "enter", "split": "test", "checkpoint": "A-A5-seed303", "seq": 413}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 414}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 415}
+  {"call": "R.committed_json", "phase": "return", "seq": 416}
+  {"call": "R.committed_record", "phase": "return", "seq": 417}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 418}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 419}
+  {"call": "R.committed_json", "phase": "return", "seq": 420}
+  {"call": "R.committed_record", "phase": "return", "seq": 421}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/test_evaluation_marker.json", "seq": 422}
+  {"call": "R.committed_json", "phase": "return", "seq": 423}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/st10_record.json", "seq": 424}
+  {"call": "R.committed_json", "phase": "return", "seq": 425}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/audit/st10_l6_test_count.json", "seq": 426}
+  {"call": "R.committed_json", "phase": "return", "seq": 427}
+  {"call": "T.state_sha256", "phase": "enter", "seq": 428}
+  {"call": "T.state_sha256", "phase": "return", "sha256": "339edd999913b0f829b35e3b54c7222cdc8dfe4361a3ba81310991e29be90cb9", "seq": 429}
+  {"call": "claim_checkpoint", "phase": "enter", "checkpoint": "A-A5-seed303", "seq": 430}
+  {"call": "claim_checkpoint", "phase": "return", "seq": 431}
+  {"call": "evaluate_model", "phase": "return", "seq": 432}
+  {"call": "control_evaluation", "phase": "return", "seq": 433}
+  {"call": "p.before_run", "phase": "enter", "next_seconds": 0.0, "seq": 434}
+  {"call": "control_evaluation", "phase": "enter", "what": "TEST evaluation of S-F3-seed101", "split": "test", "seq": 435}
+  {"call": "evaluate_model", "phase": "enter", "split": "test", "checkpoint": "S-F3-seed101", "seq": 436}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 437}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 438}
+  {"call": "R.committed_json", "phase": "return", "seq": 439}
+  {"call": "R.committed_record", "phase": "return", "seq": 440}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 441}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 442}
+  {"call": "R.committed_json", "phase": "return", "seq": 443}
+  {"call": "R.committed_record", "phase": "return", "seq": 444}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/test_evaluation_marker.json", "seq": 445}
+  {"call": "R.committed_json", "phase": "return", "seq": 446}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/st10_record.json", "seq": 447}
+  {"call": "R.committed_json", "phase": "return", "seq": 448}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/audit/st10_l6_test_count.json", "seq": 449}
+  {"call": "R.committed_json", "phase": "return", "seq": 450}
+  {"call": "T.state_sha256", "phase": "enter", "seq": 451}
+  {"call": "T.state_sha256", "phase": "return", "sha256": "ba2dfaf8cf49babfc1edfe3a093beb98df691fad2969f8d04c1d904530be7c7c", "seq": 452}
+  {"call": "claim_checkpoint", "phase": "enter", "checkpoint": "S-F3-seed101", "seq": 453}
+  {"call": "claim_checkpoint", "phase": "return", "seq": 454}
+  {"call": "evaluate_model", "phase": "return", "seq": 455}
+  {"call": "control_evaluation", "phase": "return", "seq": 456}
+  {"call": "p.before_run", "phase": "enter", "next_seconds": 0.0, "seq": 457}
+  {"call": "control_evaluation", "phase": "enter", "what": "TEST evaluation of S-F3-seed202", "split": "test", "seq": 458}
+  {"call": "evaluate_model", "phase": "enter", "split": "test", "checkpoint": "S-F3-seed202", "seq": 459}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 460}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 461}
+  {"call": "R.committed_json", "phase": "return", "seq": 462}
+  {"call": "R.committed_record", "phase": "return", "seq": 463}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 464}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 465}
+  {"call": "R.committed_json", "phase": "return", "seq": 466}
+  {"call": "R.committed_record", "phase": "return", "seq": 467}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/test_evaluation_marker.json", "seq": 468}
+  {"call": "R.committed_json", "phase": "return", "seq": 469}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/st10_record.json", "seq": 470}
+  {"call": "R.committed_json", "phase": "return", "seq": 471}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/audit/st10_l6_test_count.json", "seq": 472}
+  {"call": "R.committed_json", "phase": "return", "seq": 473}
+  {"call": "T.state_sha256", "phase": "enter", "seq": 474}
+  {"call": "T.state_sha256", "phase": "return", "sha256": "12a2400cf9e8ca363af737a4372795f15bcda1d19c3314387b6569245de88316", "seq": 475}
+  {"call": "claim_checkpoint", "phase": "enter", "checkpoint": "S-F3-seed202", "seq": 476}
+  {"call": "claim_checkpoint", "phase": "return", "seq": 477}
+  {"call": "evaluate_model", "phase": "return", "seq": 478}
+  {"call": "control_evaluation", "phase": "return", "seq": 479}
+  {"call": "p.before_run", "phase": "enter", "next_seconds": 0.0, "seq": 480}
+  {"call": "control_evaluation", "phase": "enter", "what": "TEST evaluation of S-F3-seed303", "split": "test", "seq": 481}
+  {"call": "evaluate_model", "phase": "enter", "split": "test", "checkpoint": "S-F3-seed303", "seq": 482}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 483}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 484}
+  {"call": "R.committed_json", "phase": "return", "seq": 485}
+  {"call": "R.committed_record", "phase": "return", "seq": 486}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 487}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 488}
+  {"call": "R.committed_json", "phase": "return", "seq": 489}
+  {"call": "R.committed_record", "phase": "return", "seq": 490}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/test_evaluation_marker.json", "seq": 491}
+  {"call": "R.committed_json", "phase": "return", "seq": 492}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/st10_record.json", "seq": 493}
+  {"call": "R.committed_json", "phase": "return", "seq": 494}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/audit/st10_l6_test_count.json", "seq": 495}
+  {"call": "R.committed_json", "phase": "return", "seq": 496}
+  {"call": "T.state_sha256", "phase": "enter", "seq": 497}
+  {"call": "T.state_sha256", "phase": "return", "sha256": "8d6a57fda15cc40de0bbe10253b38596d66f8debcffdb9168d7cf20ba173f3d5", "seq": 498}
+  {"call": "claim_checkpoint", "phase": "enter", "checkpoint": "S-F3-seed303", "seq": 499}
+  {"call": "claim_checkpoint", "phase": "return", "seq": 500}
+  {"call": "evaluate_model", "phase": "return", "seq": 501}
+  {"call": "control_evaluation", "phase": "return", "seq": 502}
+  {"call": "p.before_run", "phase": "enter", "next_seconds": 0.0, "seq": 503}
+  {"call": "control_evaluation", "phase": "enter", "what": "TEST evaluation of Y-F3-seed101", "split": "test", "seq": 504}
+  {"call": "evaluate_model", "phase": "enter", "split": "test", "checkpoint": "Y-F3-seed101", "seq": 505}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 506}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 507}
+  {"call": "R.committed_json", "phase": "return", "seq": 508}
+  {"call": "R.committed_record", "phase": "return", "seq": 509}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 510}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 511}
+  {"call": "R.committed_json", "phase": "return", "seq": 512}
+  {"call": "R.committed_record", "phase": "return", "seq": 513}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/test_evaluation_marker.json", "seq": 514}
+  {"call": "R.committed_json", "phase": "return", "seq": 515}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/st10_record.json", "seq": 516}
+  {"call": "R.committed_json", "phase": "return", "seq": 517}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/audit/st10_l6_test_count.json", "seq": 518}
+  {"call": "R.committed_json", "phase": "return", "seq": 519}
+  {"call": "T.state_sha256", "phase": "enter", "seq": 520}
+  {"call": "T.state_sha256", "phase": "return", "sha256": "6a73a75eda4544a14d53e73ed0fd6840a609684a100d91920ff2502c829d272b", "seq": 521}
+  {"call": "claim_checkpoint", "phase": "enter", "checkpoint": "Y-F3-seed101", "seq": 522}
+  {"call": "claim_checkpoint", "phase": "return", "seq": 523}
+  {"call": "evaluate_model", "phase": "return", "seq": 524}
+  {"call": "control_evaluation", "phase": "return", "seq": 525}
+  {"call": "p.before_run", "phase": "enter", "next_seconds": 0.0, "seq": 526}
+  {"call": "control_evaluation", "phase": "enter", "what": "TEST evaluation of Y-F3-seed202", "split": "test", "seq": 527}
+  {"call": "evaluate_model", "phase": "enter", "split": "test", "checkpoint": "Y-F3-seed202", "seq": 528}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 529}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 530}
+  {"call": "R.committed_json", "phase": "return", "seq": 531}
+  {"call": "R.committed_record", "phase": "return", "seq": 532}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 533}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 534}
+  {"call": "R.committed_json", "phase": "return", "seq": 535}
+  {"call": "R.committed_record", "phase": "return", "seq": 536}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/test_evaluation_marker.json", "seq": 537}
+  {"call": "R.committed_json", "phase": "return", "seq": 538}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/st10_record.json", "seq": 539}
+  {"call": "R.committed_json", "phase": "return", "seq": 540}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/audit/st10_l6_test_count.json", "seq": 541}
+  {"call": "R.committed_json", "phase": "return", "seq": 542}
+  {"call": "T.state_sha256", "phase": "enter", "seq": 543}
+  {"call": "T.state_sha256", "phase": "return", "sha256": "0e17682ee3eced67c3da124c227e78e8f937c00c4d164a680eaf11b2358235a5", "seq": 544}
+  {"call": "claim_checkpoint", "phase": "enter", "checkpoint": "Y-F3-seed202", "seq": 545}
+  {"call": "claim_checkpoint", "phase": "return", "seq": 546}
+  {"call": "evaluate_model", "phase": "return", "seq": 547}
+  {"call": "control_evaluation", "phase": "return", "seq": 548}
+  {"call": "p.before_run", "phase": "enter", "next_seconds": 0.0, "seq": 549}
+  {"call": "control_evaluation", "phase": "enter", "what": "TEST evaluation of Y-F3-seed303", "split": "test", "seq": 550}
+  {"call": "evaluate_model", "phase": "enter", "split": "test", "checkpoint": "Y-F3-seed303", "seq": 551}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 552}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 553}
+  {"call": "R.committed_json", "phase": "return", "seq": 554}
+  {"call": "R.committed_record", "phase": "return", "seq": 555}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 556}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 557}
+  {"call": "R.committed_json", "phase": "return", "seq": 558}
+  {"call": "R.committed_record", "phase": "return", "seq": 559}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/test_evaluation_marker.json", "seq": 560}
+  {"call": "R.committed_json", "phase": "return", "seq": 561}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/st10_record.json", "seq": 562}
+  {"call": "R.committed_json", "phase": "return", "seq": 563}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/audit/st10_l6_test_count.json", "seq": 564}
+  {"call": "R.committed_json", "phase": "return", "seq": 565}
+  {"call": "T.state_sha256", "phase": "enter", "seq": 566}
+  {"call": "T.state_sha256", "phase": "return", "sha256": "36e0c6ca5bdda7edc97e154b3ca8f09d0b04b0d0d4e6443f7a9863ff642859c5", "seq": 567}
+  {"call": "claim_checkpoint", "phase": "enter", "checkpoint": "Y-F3-seed303", "seq": 568}
+  {"call": "claim_checkpoint", "phase": "return", "seq": 569}
+  {"call": "evaluate_model", "phase": "return", "seq": 570}
+  {"call": "control_evaluation", "phase": "return", "seq": 571}
+  {"call": "compute_test_values", "phase": "enter", "seq": 572}
+  {"call": "compute_test_values", "phase": "return", "seq": 573}
+  {"call": "judge_test", "phase": "enter", "seq": 574}
+  {"call": "judge_test", "phase": "return", "final_status": "PIPELINE_NOT_QUALIFIED", "seq": 575}
+  {"call": "report_comparisons", "phase": "enter", "split": "test", "seq": 576}
+  {"call": "report_comparisons", "phase": "return", "seq": 577}
+  {"call": "finish_test_evaluation", "phase": "enter", "seq": 578}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/test_evaluation_marker.json", "seq": 579}
+  {"call": "R.committed_json", "phase": "return", "seq": 580}
+  {"call": "commit_paths", "phase": "enter", "rels": ["metrix/e1-pilot/results/test_evaluation_result.json"], "seq": 581}
+  {"call": "commit_paths", "phase": "return", "head": "a13beb4ce5b2bf6f42b1902fbd6c35d1cca036c8", "seq": 582}
+  {"call": "finish_test_evaluation", "phase": "return", "head": "a13beb4ce5b2bf6f42b1902fbd6c35d1cca036c8", "seq": 583}
+  {"call": "test_evaluate", "phase": "return", "result": "'PIPELINE_NOT_QUALIFIED'", "seq": 584}
+  {"call": "final_record", "phase": "enter", "command": "test-evaluate", "status": "PIPELINE_NOT_QUALIFIED", "stop": null, "seq": 585}
+  {"call": "write_experiment_record", "phase": "enter", "seq": 586}
+  {"call": "write_experiment_record", "phase": "return", "paths": ["experiment_record_test-evaluate_20261127T055652Z.json", "experiment_record_test-evaluate_20261127T055652Z.txt"], "seq": 587}
+  {"call": "commit_paths", "phase": "enter", "rels": ["metrix/e1-pilot/results/experiment_record_test-evaluate_20261127T055652Z.json", "metrix/e1-pilot/results/experiment_record_test-evaluate_20261127T055652Z.txt"], "seq": 588}
+  {"call": "commit_paths", "phase": "return", "head": "9da3a55f49bb46e5b381a5dff6dfc0a50ebff6d2", "seq": 589}
+  {"call": "final_record", "phase": "return", "seq": 590}
+  {"call": "run_test_evaluate", "phase": "return", "result": "(True, 'PIPELINE_NOT_QUALIFIED')", "seq": 591}
+  {"call": "run_test_evaluate", "phase": "enter", "seq": 592}
+  {"call": "test_evaluate", "phase": "enter", "seq": 593}
+  {"call": "check_preconditions", "phase": "enter", "seq": 594}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 595}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 596}
+  {"call": "R.committed_json", "phase": "return", "seq": 597}
+  {"call": "R.committed_record", "phase": "return", "seq": 598}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 599}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 600}
+  {"call": "R.committed_json", "phase": "return", "seq": 601}
+  {"call": "R.committed_record", "phase": "return", "seq": 602}
+  {"call": "check_preconditions", "phase": "return", "seq": 603}
+  {"call": "Pilot.start_checks", "phase": "enter", "command": "test-evaluate", "seq": 604}
+  {"call": "Pilot.start_checks", "phase": "return", "seq": 605}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 606}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 607}
+  {"call": "R.committed_json", "phase": "return", "seq": 608}
+  {"call": "R.committed_record", "phase": "return", "seq": 609}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 610}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 611}
+  {"call": "R.committed_json", "phase": "return", "seq": 612}
+  {"call": "R.committed_record", "phase": "return", "seq": 613}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/step2_record.json", "seq": 614}
+  {"call": "R.committed_json", "phase": "return", "seq": 615}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/step3_record.json", "seq": 616}
+  {"call": "R.committed_json", "phase": "return", "seq": 617}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/F-F3-seed101.json", "seq": 618}
+  {"call": "R.committed_json", "phase": "return", "seq": 619}
+  {"call": "file_sha256", "phase": "enter", "file": "F-F3-seed101.pt", "seq": 620}
+  {"call": "file_sha256", "phase": "return", "sha256": "23b3632731a3b20bf1aeedfadb6541dbae5f4fa74cec6e1648524f8b96a189d3", "seq": 621}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/L-L2-seed101.json", "seq": 622}
+  {"call": "R.committed_json", "phase": "return", "seq": 623}
+  {"call": "file_sha256", "phase": "enter", "file": "L-L2-seed101.pt", "seq": 624}
+  {"call": "file_sha256", "phase": "return", "sha256": "2e927077b4ecaf40d65c35f020bee6d135017ddc692432e56662d29232c25827", "seq": 625}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/A-A5-seed101.json", "seq": 626}
+  {"call": "R.committed_json", "phase": "return", "seq": 627}
+  {"call": "file_sha256", "phase": "enter", "file": "A-A5-seed101.pt", "seq": 628}
+  {"call": "file_sha256", "phase": "return", "sha256": "bef8c08d61bf89ac7883927f4f933e9de0eafd28e0515a4ee146952898bcea16", "seq": 629}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/F-F3-seed202.json", "seq": 630}
+  {"call": "R.committed_json", "phase": "return", "seq": 631}
+  {"call": "file_sha256", "phase": "enter", "file": "F-F3-seed202.pt", "seq": 632}
+  {"call": "file_sha256", "phase": "return", "sha256": "bc54ed9b0e14d4c400419c6c8be649aef2434e18dc8c7fb450fa968e0869b63b", "seq": 633}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/F-F3-seed303.json", "seq": 634}
+  {"call": "R.committed_json", "phase": "return", "seq": 635}
+  {"call": "file_sha256", "phase": "enter", "file": "F-F3-seed303.pt", "seq": 636}
+  {"call": "file_sha256", "phase": "return", "sha256": "b79a4415595feb3851aa01ddde8a990192e420de2836fd00b1418c76c2c64b01", "seq": 637}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/L-L2-seed202.json", "seq": 638}
+  {"call": "R.committed_json", "phase": "return", "seq": 639}
+  {"call": "file_sha256", "phase": "enter", "file": "L-L2-seed202.pt", "seq": 640}
+  {"call": "file_sha256", "phase": "return", "sha256": "edc3256e5fff14d00bcbc2f9de73514e1e5886b8965970d64c6abdd6427871e0", "seq": 641}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/L-L2-seed303.json", "seq": 642}
+  {"call": "R.committed_json", "phase": "return", "seq": 643}
+  {"call": "file_sha256", "phase": "enter", "file": "L-L2-seed303.pt", "seq": 644}
+  {"call": "file_sha256", "phase": "return", "sha256": "62fb0b9b6cdd0f3debcacf84dd82fb23c60f17527d18341f3faef95798112c46", "seq": 645}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/A-A5-seed202.json", "seq": 646}
+  {"call": "R.committed_json", "phase": "return", "seq": 647}
+  {"call": "file_sha256", "phase": "enter", "file": "A-A5-seed202.pt", "seq": 648}
+  {"call": "file_sha256", "phase": "return", "sha256": "63482f90ef522e1b076ceceab353fa5ed3e306617b6bc3bf5198df07ceb00511", "seq": 649}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/A-A5-seed303.json", "seq": 650}
+  {"call": "R.committed_json", "phase": "return", "seq": 651}
+  {"call": "file_sha256", "phase": "enter", "file": "A-A5-seed303.pt", "seq": 652}
+  {"call": "file_sha256", "phase": "return", "sha256": "dc6914a74357a9db2727a0fdb4da2d7d3008e6cf24e77b32406c45beeda47ae4", "seq": 653}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/S-F3-seed101.json", "seq": 654}
+  {"call": "R.committed_json", "phase": "return", "seq": 655}
+  {"call": "file_sha256", "phase": "enter", "file": "S-F3-seed101.pt", "seq": 656}
+  {"call": "file_sha256", "phase": "return", "sha256": "2d11895d66e1a1459b17e404afcdb9070b0231c2be00e3f62a4355d83df7603b", "seq": 657}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/S-F3-seed202.json", "seq": 658}
+  {"call": "R.committed_json", "phase": "return", "seq": 659}
+  {"call": "file_sha256", "phase": "enter", "file": "S-F3-seed202.pt", "seq": 660}
+  {"call": "file_sha256", "phase": "return", "sha256": "5e88c226be2f5ee03ce86ff258415d7b8dbf058f5a848f8defc44104d9f68fc0", "seq": 661}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/S-F3-seed303.json", "seq": 662}
+  {"call": "R.committed_json", "phase": "return", "seq": 663}
+  {"call": "file_sha256", "phase": "enter", "file": "S-F3-seed303.pt", "seq": 664}
+  {"call": "file_sha256", "phase": "return", "sha256": "ec8a3b482280e0c8ab3b4f73f64608c8ce733712b85647ef403ad7f4bab5042c", "seq": 665}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/Y-F3-seed101.json", "seq": 666}
+  {"call": "R.committed_json", "phase": "return", "seq": 667}
+  {"call": "file_sha256", "phase": "enter", "file": "Y-F3-seed101.pt", "seq": 668}
+  {"call": "file_sha256", "phase": "return", "sha256": "d73f709d8b5e814313e50ab25ec524cb61edd40c3305f8716851120b1fb92076", "seq": 669}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/Y-F3-seed202.json", "seq": 670}
+  {"call": "R.committed_json", "phase": "return", "seq": 671}
+  {"call": "file_sha256", "phase": "enter", "file": "Y-F3-seed202.pt", "seq": 672}
+  {"call": "file_sha256", "phase": "return", "sha256": "424231d1276dbc7f1b4571bb51bd55b067b3648ac860f0feb9109bf3e2ffe4b8", "seq": 673}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/Y-F3-seed303.json", "seq": 674}
+  {"call": "R.committed_json", "phase": "return", "seq": 675}
+  {"call": "file_sha256", "phase": "enter", "file": "Y-F3-seed303.pt", "seq": 676}
+  {"call": "file_sha256", "phase": "return", "sha256": "a435963586f565c62bde6f4e1aa42fd39809b80de54c87ae85fce2dcf6d68a6a", "seq": 677}
+  {"call": "test_evaluation_seconds", "phase": "enter", "timing": {"a_factor": 1.0, "dev_evaluation_seconds": 1.0, "file_hash_s": 0.1, "hash_s": 0.1, "load_s": 1.0, "mean_step_s": 0.1, "reload_s": 0.1, "save_s": 0.1}, "seq": 678}
+  {"call": "test_evaluation_seconds", "phase": "return", "seconds": 43.2, "seq": 679}
+  {"call": "p.before_run", "phase": "enter", "next_seconds": 43.2, "seq": 680}
+  {"call": "T.state_sha256", "phase": "enter", "seq": 681}
+  {"call": "T.state_sha256", "phase": "return", "sha256": "a895622c8065094db612d950ad39d072c87a5894603950ddba98d44b524ee251", "seq": 682}
+  {"call": "begin_test_evaluation", "phase": "enter", "base_sha256": "a895622c8065094db612d950ad39d072c87a5894603950ddba98d44b524ee251", "seq": 683}
+  {"call": "begin_test_evaluation", "phase": "raise", "exc": "TestAlreadyEvaluated", "msg": "TEST was already evaluated (marker metrix/e1-pilot/results/test_evaluation_marker.json in working tree, commit 9da3a55f49bb46e5b381a5dff6dfc0a50ebff6d2; result metrix/e1-pilot/results/test_evaluation_result.json in working tree, commit 9da3a55f49bb46e5b381a5dff6dfc0a50ebff6d2): TEST is evaluated once", "seq": 684}
+  {"call": "test_evaluate", "phase": "raise", "exc": "TestAlreadyEvaluated", "msg": "TEST was already evaluated (marker metrix/e1-pilot/results/test_evaluation_marker.json in working tree, commit 9da3a55f49bb46e5b381a5dff6dfc0a50ebff6d2; result metrix/e1-pilot/results/test_evaluation_result.json in working tree, commit 9da3a55f49bb46e5b381a5dff6dfc0a50ebff6d2): TEST is evaluated once", "seq": 685}
+  {"call": "final_record", "phase": "enter", "command": "test-evaluate", "status": "BLOCKED", "stop": {"code": null, "status": "BLOCKED", "message": "crash after the TEST marker: TestAlreadyEvaluated('TEST was already evaluated (marker metrix/e1-pilot/results/test_evaluation_marker.json in working tree, commit 9da3a55f49bb46e5b381a5dff6dfc0a50ebff6d2; result metrix/e1-pilot/results/test_evaluation_result.json in working tree, commit 9da3a55f49bb46e5b381a5dff6dfc0a50ebff6d2): TEST is evaluated once')"}, "seq": 686}
+  {"call": "write_experiment_record", "phase": "enter", "seq": 687}
+  {"call": "write_experiment_record", "phase": "return", "paths": ["experiment_record_test-evaluate_20261127T055652Z.json", "experiment_record_test-evaluate_20261127T055652Z.txt"], "seq": 688}
+  {"call": "commit_paths", "phase": "enter", "rels": ["metrix/e1-pilot/results/experiment_record_test-evaluate_20261127T055652Z.json", "metrix/e1-pilot/results/experiment_record_test-evaluate_20261127T055652Z.txt"], "seq": 689}
+  {"call": "commit_paths", "phase": "return", "head": "4d97061dc1cb90e7bcd92a9a0d136f44cda1b385", "seq": 690}
+  {"call": "final_record", "phase": "return", "seq": 691}
+  {"call": "run_test_evaluate", "phase": "raise", "exc": "TestAlreadyEvaluated", "msg": "TEST was already evaluated (marker metrix/e1-pilot/results/test_evaluation_marker.json in working tree, commit 9da3a55f49bb46e5b381a5dff6dfc0a50ebff6d2; result metrix/e1-pilot/results/test_evaluation_result.json in working tree, commit 9da3a55f49bb46e5b381a5dff6dfc0a50ebff6d2): TEST is evaluated once", "seq": 692}
+
+fixture models as a set == my list: True | fixture order: ['N', 'F-F3-seed101', 'L-L2-seed101', 'A-A5-seed101', 'F-F3-seed202', 'F-F3-seed303', 'L-L2-seed202', 'L-L2-seed303', 'A-A5-seed202', 'A-A5-seed303', 'S-F3-seed101', 'S-F3-seed202', 'S-F3-seed303', 'Y-F3-seed101', 'Y-F3-seed202', 'Y-F3-seed303'] | Pilot start time 20261127T055652Z -> experiment record ['metrix/e1-pilot/results/experiment_record_test-evaluate_20261127T055652Z.json', 'metrix/e1-pilot/results/experiment_record_test-evaluate_20261127T055652Z.txt']
+remote at the fixture's tip: step 2 timing == the fixture's True | step 3 N.state_sha256 a895622c8065094db612d950ad39d072c87a5894603950ddba98d44b524ee251
+run_test_evaluate calls: 3 (expected 3)
+
+== run 1 (refusal before the marker)
+observed {'check_preconditions': 1, 'start_checks': ['test-evaluate'], 'four_records_read_in_order_before_the_checkpoint_loop': False, 'pt_hashes': ['F-F3-seed101.pt'], 'test_evaluation_seconds': [], "timing_argument_is_the_fixture's": [], 'before_run': [], 'state_hashes': [], 'base_hash_equals_step3_N': [], 'begin': False, 'evaluate_test': 0, 'commit_paths': 0, 'final_record': 0, 'end': ('return', "(False, 'BLOCKED')")}
+expected {'check_preconditions': 1, 'start_checks': ['test-evaluate'], 'four_records_read_in_order_before_the_checkpoint_loop': True, 'pt_hashes': ['F-F3-seed101.pt'], 'test_evaluation_seconds': [], "timing_argument_is_the_fixture's": [], 'before_run': [], 'state_hashes': [], 'base_hash_equals_step3_N': [], 'begin': False, 'evaluate_test': 0, 'commit_paths': 0, 'final_record': 0, 'end': ('return', "(False, 'BLOCKED')")}
+equal False
+
+== run 2 (the evaluation)
+before begin: observed {'check_preconditions': 1, 'start_checks': ['test-evaluate'], 'four_records_read_in_order_before_the_checkpoint_loop': False, 'pt_hashes': ['A-A5-seed101.pt', 'A-A5-seed202.pt', 'A-A5-seed303.pt', 'F-F3-seed101.pt', 'F-F3-seed202.pt', 'F-F3-seed303.pt', 'L-L2-seed101.pt', 'L-L2-seed202.pt', 'L-L2-seed303.pt', 'S-F3-seed101.pt', 'S-F3-seed202.pt', 'S-F3-seed303.pt', 'Y-F3-seed101.pt', 'Y-F3-seed202.pt', 'Y-F3-seed303.pt'], 'test_evaluation_seconds': [43.2], "timing_argument_is_the_fixture's": [True], 'before_run': [43.2], 'state_hashes': ['a895622c8065094db612d950ad39d072c87a5894603950ddba98d44b524ee251'], 'base_hash_equals_step3_N': [True]}
+              expected {'check_preconditions': 1, 'start_checks': ['test-evaluate'], 'four_records_read_in_order_before_the_checkpoint_loop': True, 'pt_hashes': ['A-A5-seed101.pt', 'A-A5-seed202.pt', 'A-A5-seed303.pt', 'F-F3-seed101.pt', 'F-F3-seed202.pt', 'F-F3-seed303.pt', 'L-L2-seed101.pt', 'L-L2-seed202.pt', 'L-L2-seed303.pt', 'S-F3-seed101.pt', 'S-F3-seed202.pt', 'S-F3-seed303.pt', 'Y-F3-seed101.pt', 'Y-F3-seed202.pt', 'Y-F3-seed303.pt'], 'test_evaluation_seconds': [43.2], "timing_argument_is_the_fixture's": [True], 'before_run': [43.2], 'state_hashes': ['a895622c8065094db612d950ad39d072c87a5894603950ddba98d44b524ee251'], 'base_hash_equals_step3_N': [True]}
+              equal False
+begin entered 1 time(s) with base hash ['a895622c8065094db612d950ad39d072c87a5894603950ddba98d44b524ee251'] (== step 3 N: [True]); returned marker commit f95a0f07aae9e92fca85627ab738ea2319c21e80; commit_paths inside begin [['metrix/e1-pilot/results/test_evaluation_marker.json']]
+marker models (remote blob) == the fixture's list, same order: True | marker checkpoints['N'] == step 3 N: True
+after begin: evaluate_model(split=test) 16 in order == marker models True | DEV evaluations 0 | claims == marker models True | state hashes after begin 16 | before_run after begin [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0] | control_evaluation 16 (split ['test'])
+once each {'compute_test_values': 1, 'judge_test': 1, 'report_comparisons': 1, 'finish_test_evaluation': 1, 'final_record': 1} | order compute < judge < report < finish < final_record, after the last evaluation: True | commit_paths inside finish [['metrix/e1-pilot/results/test_evaluation_result.json']] | final_record [('test-evaluate', 'PIPELINE_NOT_QUALIFIED', None)] | write_experiment_record returned [['experiment_record_test-evaluate_20261127T055652Z.json', 'experiment_record_test-evaluate_20261127T055652Z.txt']] | commit_paths after finish [['metrix/e1-pilot/results/experiment_record_test-evaluate_20261127T055652Z.json', 'metrix/e1-pilot/results/experiment_record_test-evaluate_20261127T055652Z.txt']]
+run 2 ends return (True, 'PIPELINE_NOT_QUALIFIED') (expected return (True, 'PIPELINE_NOT_QUALIFIED'))
+
+== run 3 (second evaluation attempt)
+before begin: observed {'check_preconditions': 1, 'start_checks': ['test-evaluate'], 'four_records_read_in_order_before_the_checkpoint_loop': False, 'pt_hashes': ['A-A5-seed101.pt', 'A-A5-seed202.pt', 'A-A5-seed303.pt', 'F-F3-seed101.pt', 'F-F3-seed202.pt', 'F-F3-seed303.pt', 'L-L2-seed101.pt', 'L-L2-seed202.pt', 'L-L2-seed303.pt', 'S-F3-seed101.pt', 'S-F3-seed202.pt', 'S-F3-seed303.pt', 'Y-F3-seed101.pt', 'Y-F3-seed202.pt', 'Y-F3-seed303.pt'], 'test_evaluation_seconds': [43.2], "timing_argument_is_the_fixture's": [True], 'before_run': [43.2], 'state_hashes': ['a895622c8065094db612d950ad39d072c87a5894603950ddba98d44b524ee251'], 'base_hash_equals_step3_N': [True]}
+              equal to the expected pre-marker part False
+observed {'begin': 1, 'begin_raised': ['TestAlreadyEvaluated'], 'evaluate': 0, 'final_record': [('test-evaluate', 'BLOCKED')], 'stop_code_status': None, 'stop_status': 'BLOCKED', 'stop_message_crash_TestAlreadyEvaluated': True, 'write_experiment_record': [['experiment_record_test-evaluate_20261127T055652Z.json', 'experiment_record_test-evaluate_20261127T055652Z.txt']], 'commit_paths': [['metrix/e1-pilot/results/experiment_record_test-evaluate_20261127T055652Z.json', 'metrix/e1-pilot/results/experiment_record_test-evaluate_20261127T055652Z.txt']], 'end': ('raise', 'TestAlreadyEvaluated')}
+expected {'begin': 1, 'begin_raised': ['TestAlreadyEvaluated'], 'evaluate': 0, 'final_record': [('test-evaluate', 'BLOCKED')], 'stop_code_status': None, 'stop_status': 'BLOCKED', 'stop_message_crash_TestAlreadyEvaluated': True, 'write_experiment_record': [['experiment_record_test-evaluate_20261127T055652Z.json', 'experiment_record_test-evaluate_20261127T055652Z.txt']], 'commit_paths': [['metrix/e1-pilot/results/experiment_record_test-evaluate_20261127T055652Z.json', 'metrix/e1-pilot/results/experiment_record_test-evaluate_20261127T055652Z.txt']], 'end': ('raise', 'TestAlreadyEvaluated')}
+equal True
+stop of run 3's record: {'code': None, 'status': 'BLOCKED', 'message': "crash after the TEST marker: TestAlreadyEvaluated('TEST was already evaluated (marker metrix/e1-pilot/results/test_evaluation_marker.json in working tree, commit 9da3a55f49bb46e5b381a5dff6dfc0a50ebff6d2; result metrix/e1-pilot/results/test_evaluation_result.json in working tree, commit 9da3a55f49bb46e5b381a5dff6dfc0a50ebff6d2): TEST is evaluated once')"}
+
+== the bare remote (git only)
+  commit f95a0f07aae9 parent 51f6dc0a1cb5: ['A'] ['metrix/e1-pilot/results/test_evaluation_marker.json'] | metrix: E1-PILOT TEST evaluation marker (section 8 step 8: TEST is evaluated once; every checkpoint hash)
+  commit a13beb4ce5b2 parent f95a0f07aae9: ['A'] ['metrix/e1-pilot/results/test_evaluation_result.json'] | metrix: E1-PILOT TEST evaluation result (section 8 step 8)
+  commit 9da3a55f49bb parent a13beb4ce5b2: ['A'] ['metrix/e1-pilot/results/experiment_record_test-evaluate_20261127T055652Z.json', 'metrix/e1-pilot/results/experiment_record_test-evaluate_20261127T055652Z.txt'] | metrix: E1-PILOT formal test-evaluate experiment record (status PIPELINE_NOT_QUALIFIED)
+  commit 4d97061dc1cb parent 9da3a55f49bb: ['M'] ['metrix/e1-pilot/results/experiment_record_test-evaluate_20261127T055652Z.json', 'metrix/e1-pilot/results/experiment_record_test-evaluate_20261127T055652Z.txt'] | metrix: E1-PILOT formal test-evaluate experiment record (status BLOCKED)
+commits after the fixture's tip 51f6dc0a1cb5: 4; (change kind, files) per commit == expected [('A', ['metrix/e1-pilot/results/test_evaluation_marker.json']), ('A', ['metrix/e1-pilot/results/test_evaluation_result.json']), ('A', ['metrix/e1-pilot/results/experiment_record_test-evaluate_20261127T055652Z.json', 'metrix/e1-pilot/results/experiment_record_test-evaluate_20261127T055652Z.txt']), ('M', ['metrix/e1-pilot/results/experiment_record_test-evaluate_20261127T055652Z.json', 'metrix/e1-pilot/results/experiment_record_test-evaluate_20261127T055652Z.txt'])]: True
+first commit after the fixture == the marker commit begin returned: True
+synthetic TEST text in the blobs added after the fixture: {'f95a0f07 metrix/e1-pilot/results/test_evaluation_marker.json': [], 'a13beb4c metrix/e1-pilot/results/test_evaluation_result.json': [], '9da3a55f metrix/e1-pilot/results/experiment_record_test-evaluate_20261127T055652Z.json': [], '9da3a55f metrix/e1-pilot/results/experiment_record_test-evaluate_20261127T055652Z.txt': [], '4d97061d metrix/e1-pilot/results/experiment_record_test-evaluate_20261127T055652Z.json': [], '4d97061d metrix/e1-pilot/results/experiment_record_test-evaluate_20261127T055652Z.txt': []}
+remote tree: TEST data file names, or *_test.json under metrix/e1-pilot/: []
+  a13beb4c metrix/e1-pilot/results/test_evaluation_result.json: keys starting with 'general_test' [] | per-question / per-window row keys []
+  result: marker_commit == marker commit True | summaries == the 16 models True | final_status 'PIPELINE_NOT_QUALIFIED'
+  9da3a55f metrix/e1-pilot/results/experiment_record_test-evaluate_20261127T055652Z.json: keys starting with 'general_test' [] | per-question / per-window row keys []
+  experiment record in 9da3a55f: Status 'PIPELINE_NOT_QUALIFIED' | stop None | Actual keys ['final', 'interpretation', 'result_commit', 'values'] | Experiment ID 'METRIX-E1-PILOT-test-evaluate-20261127T055652Z'
+  4d97061d metrix/e1-pilot/results/experiment_record_test-evaluate_20261127T055652Z.json: keys starting with 'general_test' [] | per-question / per-window row keys []
+  experiment record in 4d97061d: Status 'BLOCKED' | stop {'code': None, 'message': "crash after the TEST marker: TestAlreadyEvaluated('TEST was already evaluated (marker metrix/e1-pilot/results/test_evaluation_marker.json in working tree, commit 9da3a55f49bb46e5b381a5dff6dfc0a50ebff6d2; result metrix/e1-pilot/results/test_evaluation_result.json in working tree, commit 9da3a55f49bb46e5b381a5dff6dfc0a50ebff6d2): TEST is evaluated once')", 'status': 'BLOCKED'} | Actual keys ['crashed'] | Experiment ID 'METRIX-E1-PILOT-test-evaluate-20261127T055652Z'
+experiment records (Status, stop, Actual keys) oldest first [('PIPELINE_NOT_QUALIFIED', None, None, None, ['final', 'interpretation', 'result_commit', 'values']), ('BLOCKED', None, 'BLOCKED', 'crash after the TEST marker: TestAlreadyEvaluated(', ['crashed'])] | expected [('PIPELINE_NOT_QUALIFIED', None, None, None, ['final', 'interpretation', 'result_commit', 'values']), ('BLOCKED', None, 'BLOCKED', 'crash after the TEST marker: TestAlreadyEvaluated(', ['crashed'])] | equal True
+Experiment IDs ['METRIX-E1-PILOT-test-evaluate-20261127T055652Z', 'METRIX-E1-PILOT-test-evaluate-20261127T055652Z'] (one start time per Pilot)
+clone: TEST data file names or *_test.json under metrix/e1-pilot/: [] | git status --porcelain '' | HEAD == remote main: True
+work /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/ic8_e2e_normal/basetemp/test_test_evaluate_end_to_end_0/work (inside the clone: False): test_details ['A-A5-seed101_test.json', 'A-A5-seed202_test.json', 'A-A5-seed303_test.json', 'F-F3-seed101_test.json', 'F-F3-seed202_test.json', 'F-F3-seed303_test.json', 'L-L2-seed101_test.json', 'L-L2-seed202_test.json', 'L-L2-seed303_test.json', 'N_test.json', 'S-F3-seed101_test.json', 'S-F3-seed202_test.json', 'S-F3-seed303_test.json', 'Y-F3-seed101_test.json', 'Y-F3-seed202_test.json', 'Y-F3-seed303_test.json'] == expected: True
+
+this repository: git status --porcelain --ignored --untracked-files=all -- metrix (audit/ excluded) unchanged by the run: True | index entries unchanged: True
+modules: torch imported=False | transformers modeling modules imported=[] | this script never calls a model class or from_pretrained on a model
+RESULT: FAIL
+exit=1
+# Data Auditor note (appended after the run, 2026-11-27): superseded trial, an error of MY analysis script, not of the
+# Executor's code. record.committed_record calls record.committed_json, and my plugin wraps both, so each freeze /
+# Gate 0 read appears twice in the trace (seq 79-86 of run 1: committed_record + nested committed_json). My predicate
+# "four_records_read_in_order_before_the_checkpoint_loop" compared the list WITH these nested duplicates to
+# [freeze, Gate 0, step 2, step 3] and so printed False although the order in the trace is exactly freeze < Gate 0 <
+# step 2 < step 3 < run record < checkpoint file. Every other observation equals my prediction. Fixed in ic8_04_e2e.py
+# (a committed_json nested in a committed_record of the same path is not counted again); rerun with a new scratch
+# directory as ic8_04a_e2e_normal.txt.

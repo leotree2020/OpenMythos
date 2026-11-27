@@ -1,0 +1,55 @@
+# Data Auditor run (implementation stage C, C2 fix commit, staged tree b40224e68d1d42f9b4dc886fe9e159f9d99162b1, parent 1900b1fe, round 1). host vm, Anthropic cloud container, CPU only (no GPU device node: 0 nvidia entries), no model weights loaded (tokenizer files only; smoke checkpoints are hashed as file bytes, never loaded; the Executor's e2e test builds random tiny models in memory); 2026-11-27 05:48:22 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/venv/bin/python -I -B ic8_00_state.py /home/user/OpenMythos /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/review_c2b /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/c2b_smoke
+env: host vm | Linux-6.18.44-fc-v880-x86_64-with-glibc2.39 | python 3.13.18 (/tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/venv/bin/python) | installed {'transformers': '5.22.2', 'tokenizers': '0.23.3', 'pyarrow': '26.0.1', 'huggingface_hub': '2.4.0', 'torch': '2.11.0'} | nvidia device nodes: []
+a. HEAD 1900b1fe3fc1c24f0d3b6b15c3ba3cb7e5069f46 == parent 1900b1fe3fc1c24f0d3b6b15c3ba3cb7e5069f46: True
+   index entries 6620 | tree b40224e6 entries 6620 | identical (mode, blob, path): True
+   review_c2b/tree.txt names b40224e68d1d42f9b4dc886fe9e159f9d99162b1: True
+   staged diff vs HEAD: 892581 bytes, sha256 503cf86e7e2c2a3920bf4bba2fab3540aff5b7b9d47c0b73048826d413acfc5d | contained in input.diff (896213 bytes) as its tail: True
+   input_code.diff sha256 df2492a68a151bfe483edefa804c447c78c78fb5d35696a4f465ec6333391a4e == git diff --cached HEAD -- ['metrix/e1-pilot/src', 'metrix/e1-pilot/tests', 'metrix/e1-pilot/reports/impl_c/c2_mutate_fix1.py', 'metrix/e1-pilot/reports/impl_c/c2b_checks.sh'] (sha256 df2492a68a151bfe483edefa804c447c78c78fb5d35696a4f465ec6333391a4e): True
+   staged paths 54: ['A', 'M']
+     M	metrix/e1-pilot/reports/DEFERRED_MINORS.md
+     A	metrix/e1-pilot/reports/impl_c/c2_mutate_fix1.py
+     A	metrix/e1-pilot/reports/impl_c/c2b_01_checks_superseded_oom.txt
+     A	metrix/e1-pilot/reports/impl_c/c2b_01b_restore_after_kill.txt
+     A	metrix/e1-pilot/reports/impl_c/c2b_02_smoke_superseded_oom.txt
+     A	metrix/e1-pilot/reports/impl_c/c2b_03_checks.txt
+     A	metrix/e1-pilot/reports/impl_c/c2b_04_smoke.txt
+     A	metrix/e1-pilot/reports/impl_c/c2b_checks.sh
+     A	metrix/e1-pilot/reports/impl_c/c2b_smoke_records/LABEL.txt
+     A	metrix/e1-pilot/reports/impl_c/c2b_smoke_records/experiment_record_smoke_20261127T052340Z.json
+     A	metrix/e1-pilot/reports/impl_c/c2b_smoke_records/experiment_record_smoke_20261127T052340Z.txt
+     A	metrix/e1-pilot/reports/impl_c/c2b_smoke_records/gate0_record.json
+     A	metrix/e1-pilot/reports/impl_c/c2b_smoke_records/smoke_report.json
+     A	metrix/e1-pilot/reports/impl_c/c2b_smoke_records/step1_manifest_fields.json
+     A	metrix/e1-pilot/reports/impl_c/c2b_smoke_records/step1_record.json
+     A	metrix/e1-pilot/reports/impl_c/c2b_smoke_records/step2_record.json
+     A	metrix/e1-pilot/reports/impl_c/c2b_smoke_records/step3_record.json
+     A	metrix/e1-pilot/reports/impl_c/c2b_smoke_records/step4_record.json
+     A	metrix/e1-pilot/reports/impl_c/c2b_smoke_records/step5_record.json
+     A	metrix/e1-pilot/reports/impl_c/c2b_smoke_records/step6_record.json
+     A	metrix/e1-pilot/reports/impl_c/c2b_smoke_records/step7_record.json
+     A	metrix/e1-pilot/reports/impl_c/c2b_smoke_records/step8_record.json
+     M	metrix/e1-pilot/src/metrix_e1/pilot.py
+     M	metrix/e1-pilot/tests/test_run_pilot.py
+     (+ 30 files under metrix/e1-pilot/reports/impl_c/c2b_smoke_records/training_runs/)
+   staged paths outside metrix/e1-pilot/: []
+   staged code paths (src/, tests/, run_pilot.py): ['metrix/e1-pilot/src/metrix_e1/pilot.py', 'metrix/e1-pilot/tests/test_run_pilot.py']
+
+b. working tree == index for ['metrix/e1-pilot/src', 'metrix/e1-pilot/tests', 'metrix/e1-pilot/run_pilot.py']: True (git diff --quiet exit 0)
+   sha256 of git diff --cached HEAD -- ['metrix/e1-pilot/src', 'metrix/e1-pilot/tests', 'metrix/e1-pilot/run_pilot.py']: 3920af52f4d3bfd7269d7fa280599137ac315d74f2117e28168fe88d9cd1e33d | == 3920af52 (c2b_03, c2b_04): True
+   c2b_03_checks.txt: code diff sha256 lines ['3920af52', '3920af52'] | 40-hex lines ['1900b1fe', '6071ea72', '6071ea72']
+   c2b_04_smoke.txt: code diff sha256 lines ['3920af52', '3920af52'] | 40-hex lines ['1900b1fe', '6071ea72', '1900b1fe', '6071ea72']
+
+c. smoke tree 6071ea72: 40 code entries | staged tree: 40 | identical: True
+
+d. staged copies under metrix/e1-pilot/reports/impl_c/c2b_smoke_records/: 44 | byte-identical to /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/c2b_smoke/records: 43 | different [] | not in the smoke's records ['LABEL.txt']
+   LABEL.txt of the copy directory: 'SMOKE — NOT A RESULT\n'
+   smoke records not copied (expected: the per-question details only): 34, all under details/: True
+
+e. metrix/e1-pilot/RUNBOOK_A100.md status ['?? metrix/e1-pilot/RUNBOOK_A100.md'] | in the index False (expected untracked '??', not staged)
+
+e. metrix/e1-pilot/reports/impl_c/c3_hf_tree_70d244cc.txt status ['?? metrix/e1-pilot/reports/impl_c/c3_hf_tree_70d244cc.txt'] | in the index False (expected untracked '??', not staged)
+modules: torch imported=False | transformers modeling modules imported=[] | this script never calls a model class or from_pretrained on a model
+RESULT: PASS
+exit=0

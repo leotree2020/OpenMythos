@@ -1,0 +1,86 @@
+# Data Auditor run (implementation stage C, C2 fix commit, staged tree b40224e68d1d42f9b4dc886fe9e159f9d99162b1, parent 1900b1fe, round 1). host vm, Anthropic cloud container, CPU only (no GPU device node: 0 nvidia entries), no model weights loaded (tokenizer files only; smoke checkpoints are hashed as file bytes, never loaded; the Executor's e2e test builds random tiny models in memory); 2026-11-27 05:52:37 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/venv/bin/python -I -B ic8_04_static.py /home/user/OpenMythos
+env: host vm | Linux-6.18.44-fc-v880-x86_64-with-glibc2.39 | python 3.13.18 (/tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/venv/bin/python) | installed {'transformers': '5.22.2', 'tokenizers': '0.23.3', 'pyarrow': '26.0.1', 'huggingface_hub': '2.4.0', 'torch': '2.11.0'} | nvidia device nodes: []
+== a. pilot.test_evaluate (staged blob, source lines)
+committed record reads: {'R.SELECTION_FREEZE_REL': 1160, 'R.GATE0_RECORD_REL': 1161, "'%s/step2_record.json' % R.FORMAL_RESULTS_REL": 1162, "'%s/step3_record.json' % R.FORMAL_RESULTS_REL": 1163, "'%s/%s/%s.json' % (R.FORMAL_RESULTS_REL, RUNS_DIR, name)": 1168}
+  line 1149  formal-mode check (raise when not p.mode.formal)
+  line 1151  TD.check_preconditions
+  line 1153  TG.code_commit
+  line 1154  p.start_checks('test-evaluate')
+  line 1155  p.device_check
+  line 1156  p.load_data
+  line 1158  TEST files read (FZ.read_jsonl)
+  line 1160  committed freeze record
+  line 1161  committed Gate 0 record
+  line 1162  committed step 2 record
+  line 1163  committed step 3 record
+  line 1169  checkpoint file sha256 (FZ.file_sha256)
+  line 1175  test_evaluation_seconds(p.contract, step2['preflight']['timing'])
+  line 1182  p.before_run(look_ahead) (ST7)
+  line 1183  p.base_model
+  line 1184  T.state_sha256(base)
+  line 1185  if base_sha != n_sha: raise ProtocolStop BLOCKED
+  line 1188  TG.begin_test_evaluation(fz, auth, data, base_sha)
+  line 1196  the evaluation call
+  line 1212  G.compute_test_values
+  line 1213  G.judge_test
+  line 1214  G.report_comparisons
+  line 1218  TG.finish_test_evaluation
+all present and in this order (every pre-marker check before begin): True
+n_sha = ["step3['N']['state_sha256']"] | look_ahead = ["test_evaluation_seconds(p.contract, step2['preflight']['timing'])"]
+checkpoint check: one loop over models[1:] with FZ.file_sha256 vs run_rec['checkpoint']['file_sha256'] and freeze['checkpoints'][name], raise ProtocolStop(..., 'BLOCKED', ...): True
+pre-marker reads inside a try whose single handler (R.NotCommitted, KeyError, OSError, TypeError) raises ProtocolStop BLOCKED: True
+one try / finally p.close_clock() holding before_run(look_ahead), base_model, begin, the evaluations and finish: True
+evaluation calls in test_evaluate 1 ['control_evaluation'], inside the single loop over `models` (after begin) 1 | split='test' test_session=session checkpoint_name=name | ok True
+control_evaluation: evaluation calls ['p.evaluate(model, split=split, **kw)'], split and **kw passed through, loops 0, NonFinite -> st6 handler: True
+begin calls 1, finish calls 1, begin inside a loop: False | report_comparisons split ["'test'"]
+test_evaluation_seconds: n = evaluation_plan(contract) | acc = contract.accounting | per_eval = pre['dev_evaluation_seconds'] * acc.test_questions_per_fact / acc.dev_questions_per_fact | return n['test_models'] * (pre['load_s'] + per_eval) + n['test_state_hashes'] * pre['hash_s'] + n['test_file_hashes'] * pre['file_hash_s']
+
+== b. pilot.run_test_evaluate
+handlers ['(ProtocolStop, TD.PreconditionFailed)', 'Exception']
+handler 1: "not (p.root / TG.MARKER_REL).exists() and code != 'ST10'" -> return without final_record: True
+handler 2: 'not (p.root / TG.MARKER_REL).exists()' -> bare raise: True | else crash = e, status 'BLOCKED': True
+after the try: ["final_record(p, 'test-evaluate', status, actual, nxt, None, stop)", 'if crash is not None:\n    raise crash', 'return (stop is None, status)']
+class bases: TestAlreadyEvaluated ['Exception'] | PreconditionFailed ['Exception']
+TestAlreadyEvaluated docstring: "TEST was evaluated (marker and result exist): any further TEST evaluation is refused. Carries no section 9\nstatus: the pilot's status is the one of its result."
+=> before the marker exists: ProtocolStop / PreconditionFailed -> no record, except code ST10 -> record; any other exception propagates without a record. Once the marker file exists in the working tree: every ProtocolStop / PreconditionFailed -> record (status of the stop or BLOCKED); any other exception, TestAlreadyEvaluated included, -> record with status BLOCKED, message 'crash after the TEST marker', then re-raised
+
+== c. CD13: what finish_test_evaluation commits
+result = plain({...}) keys ["'kind'", "'frozen_commit'", "'values'", "'final'", "'comparisons'", "'summaries'"] | summaries value ['{m: _summary_record(s) for m, s in summaries.items()}'] | finish called with ['result']
+_summary_record body: return {k: v for k, v in summ.items() if not k.startswith('general_')}
+details directory: ['summaries, details = ({}, p.work / TEST_DETAILS_DIR)']
+Pilot.__init__ raises when the work directory is not outside the repository: True
+experiment record's Actual of test_evaluate: ["actual = {'final': final, 'values': values, 'result_commit': head, 'interpretation': {'reasons': final.get('reasons'), 'notes': {c: x['note'] for c, x in final['conditions'].items() if x['note']}}}"]
+
+== d. CD5 / CE5 / MAJOR 2: TEST generation
+run_test_generate calls (source order): ['ImplementationFail', 'test_generate_command', 'p.log', "' '.join", 'subprocess.run', 'str', '_subprocess_env', 'st10_over_limit', 'final_record']
+over = ['st10_over_limit(p)'] (after subprocess.run: True) | final_record calls 1, all inside `if over:` True | its status ["'BLOCKED'"] | stop ["{'code': 'ST10', 'status': 'BLOCKED', 'message': 'TEST part over limit %s (committed %s)' % (over, TG.ST10_RECORD_REL)}"]
+st10_over_limit: committed record (R.committed_json), [] when not committed, TG.over_limit on its counts: True
+test_generate_command returns [sys.executable, '-m', 'metrix_e1.test_data', '--inputs', str(p.inputs), '--data', str(p.data_dir), '--out', str(out)]
+call sites of generate_test: ['test_data.py:178 in main']
+call sites of run_test_part: ['test_data.py:183 in main']
+call sites of begin_test_evaluation: ['pilot.py:1188 in test_evaluate']
+call sites of finish_test_evaluation: ['pilot.py:1218 in test_evaluate']
+attributes of test_data (TD.*) used in pilot.py: ['TD.PreconditionFailed', 'TD.check_preconditions']
+
+== e. MAJOR 9: smoke step 8
+formal = ["[rel for rel in (R.GATE0_RECORD_REL, R.SELECTION_FREEZE_REL, TG.ST10_RECORD_REL) if TG._blob(p.root, 'HEAD:%s' % rel) is not None or (p.root / rel).exists()]"]
+`if formal: raise ImplementationFail` at line 854 before subprocess.run(test_generate_command(...)) at line 857; formal names the Gate 0, freeze and ST10 records in HEAD or the working tree: True
+
+== f. CA20: production callers of begin / finish
+begin only in pilot.test_evaluate: True | finish only in pilot.test_evaluate: True
+
+== g. fetch: begin / finish yes, the per-call checks no (ruling 2026-11-27 item 1)
+check_checkout runs git fetch True; begin -> refuse_if_marker -> check_checkout, finish -> check_commit_preconditions -> check_checkout: True
+  require_test_session     calls check_checkout / check_commit_preconditions / refuse_if_marker: [] | 'fetch' literal: False
+  _check_session_checkout  calls check_checkout / check_commit_preconditions / refuse_if_marker: [] | 'fetch' literal: False
+  claim_checkpoint         calls check_checkout / check_commit_preconditions / refuse_if_marker: [] | 'fetch' literal: False
+
+== h. run_pilot.py
+--steps added 1 time(s), on ['a'] | smoke sub-parser ['a']
+build_mode: return M.smoke_mode(args.steps) if args.cmd == 'smoke' else M.FORMAL_MODE
+main calls P.run_test_generate True, P.run_test_evaluate True
+modules: torch imported=False | transformers modeling modules imported=[] | this script never calls a model class or from_pretrained on a model
+RESULT: PASS
+exit=0

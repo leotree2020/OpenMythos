@@ -1,0 +1,57 @@
+# Data Auditor run (implementation stage C, C2 fix commit, staged tree b40224e68d1d42f9b4dc886fe9e159f9d99162b1, parent 1900b1fe, round 1). host vm, Anthropic cloud container, CPU only (no GPU device node: 0 nvidia entries), no model weights loaded (tokenizer files only; smoke checkpoints are hashed as file bytes, never loaded; the Executor's e2e test builds random tiny models in memory); 2026-11-27 05:49:07 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/venv/bin/python -I -B ic8_02_data_recheck.py /home/user/OpenMythos /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/inputs/qwen_tokenizer /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/c2b_smoke
+env: host vm | Linux-6.18.44-fc-v880-x86_64-with-glibc2.39 | python 3.13.18 (/tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/venv/bin/python) | installed {'transformers': '5.22.2', 'tokenizers': '0.23.3', 'pyarrow': '26.0.1', 'huggingface_hub': '2.4.0', 'torch': '2.11.0'} | nvidia device nodes: []
+limits (frozen-commit SPLIT_MANIFEST): {'L1': 0, 'L2': 0.25, 'L3a': 0, 'L3b': 0, 'L4': 0, 'L5': 0, 'L6': 0}
+
+== L1-L6 (Gate 0 part), mine
+anchor: decode(ids) == text for 512 of 512 | general DEV: decode(ids) == text for 100 of 100
+L2 maximum 0.2 at [('capital.TRAIN.1', 'capital.DEV.1')] | L4 case-insensitive 0 | L6 token-id 13-grams shared (report only) 0 | template sets {'TRAIN': 4, 'DEV': 8, 'TEST': 12, 'Y': 8}
+
+== comparison with the smoke's step2_record.json leakage report and my stage-A record
+step2_record mode 'smoke' label 'SMOKE — NOT A RESULT' | report part 'gate0' result 'PASS'
+  L1   mine 0      | smoke report value 0      limit 0     within_limit True  | my stage-A 0      | equal True | limit (frozen) 0, within True
+  L2   mine 0.2    | smoke report value 0.2    limit 0.25  within_limit True  | my stage-A 0.2    | equal True | limit (frozen) 0.25, within True
+  L3a  mine 0      | smoke report value 0      limit 0     within_limit True  | my stage-A 0      | equal True | limit (frozen) 0, within True
+  L3b  mine 0      | smoke report value 0      limit 0     within_limit True  | my stage-A 0      | equal True | limit (frozen) 0, within True
+  L4   mine 0      | smoke report value 0      limit 0     within_limit True  | my stage-A 0      | equal True | limit (frozen) 0, within True
+  L5   mine 0      | smoke report value 0      limit 0     within_limit True  | my stage-A 0      | equal True | limit (frozen) 0, within True
+  L6   mine 0      | smoke report value 0      limit 0     within_limit True  | my stage-A 0      | equal True | limit (frozen) 0, within True
+  L1   detail (report) {'shared_hashes': []} | mine {'shared_hashes': []} | equal True
+  L2   detail {'n': 4, 'pair': ['capital.TRAIN.1', 'capital.DEV.1']} | the report's pair ['capital.TRAIN.1', 'capital.DEV.1'] is one of my maximal pairs: True
+  L3a  detail (report) {'strings': 80, 'found': {}, 'corpora': ['anchor_text', 'train_F', 'train_S', 'train_Y']} | mine {'strings': 80, 'found': {}, 'corpora': ['anchor_text', 'train_F', 'train_S', 'train_Y']} | equal True
+  L3b  detail (report) {'strings': 120, 'found': {}} | mine {'strings': 120, 'found': {}} | equal True
+  L4   detail (report) {'questions': 320, 'found': {}, 'corpora': ['anchor_text', 'train_F', 'train_S', 'train_Y'], 'part': 'DEV'} | mine {'questions': 320, 'found': {}, 'corpora': ['anchor_text', 'train_F', 'train_S', 'train_Y'], 'part': 'DEV'} | equal True
+  L5   detail (report) {'duplicate_strings': 0, 'fact_id_overlap': 0, 'learned': 120, 'unread': 40, 'strings': 320} | mine {'duplicate_strings': 0, 'fact_id_overlap': 0, 'learned': 120, 'unread': 40, 'strings': 320} | equal True
+  L6   detail (report) {'anchor_documents': 512, 'windows': 100, 'n': 13, 'report_only_token_id_ngrams': 0, 'examples': []} | mine {'anchor_documents': 512, 'windows': 100, 'n': 13, 'report_only_token_id_ngrams': 0, 'examples': []} | equal True
+  report result PASS and every check within its limit: True
+  frozen authoring_result L2 {'max': 0.2, 'pair': ['capital.TRAIN.1', 'capital.DEV.1']} (max == mine: True)
+
+== candidate feasibility (four constraints)
+  capital/natural/learned  n 15 (K_st, K_qa) {(3, 3): 15}   min available 15 min pool 14
+  capital/natural/unread   n  5 (K_st, K_qa) {(3, 3): 5}    min available  5 min pool  4
+  capital/random/learned   n 15 (K_st, K_qa) {(5, 5): 15}   min available 15 min pool 14
+  capital/random/unread    n  5 (K_st, K_qa) {(5, 5): 5}    min available  5 min pool  4
+  currency/natural/learned n 15 (K_st, K_qa) {(3, 3): 15}   min available 15 min pool 14
+  currency/natural/unread  n  5 (K_st, K_qa) {(3, 3): 5}    min available  5 min pool  4
+  currency/random/learned  n 15 (K_st, K_qa) {(6, 6): 15}   min available 15 min pool 14
+  currency/random/unread   n  5 (K_st, K_qa) {(6, 6): 5}    min available  5 min pool  4
+  founder/natural/learned  n 15 (K_st, K_qa) {(3, 3): 15}   min available 15 min pool 14
+  founder/natural/unread   n  5 (K_st, K_qa) {(3, 3): 5}    min available  5 min pool  4
+  founder/random/learned   n 15 (K_st, K_qa) {(5, 5): 15}   min available 15 min pool 14
+  founder/random/unread    n  5 (K_st, K_qa) {(5, 5): 5}    min available  5 min pool  4
+  river/natural/learned    n 15 (K_st, K_qa) {(3, 3): 15}   min available 15 min pool 14
+  river/natural/unread     n  5 (K_st, K_qa) {(3, 3): 5}    min available  5 min pool  4
+  river/random/learned     n 15 (K_st, K_qa) {(6, 6): 15}   min available 15 min pool 14
+  river/random/unread      n  5 (K_st, K_qa) {(6, 6): 5}    min available  5 min pool  4
+minimum available 5 (stage-A record 5) | minimum pool 4 (stage-A record 4) | cells with available < 4: [] | cells with pool < 4: []
+candidates.json: 160 lists | violating the four constraints: 0 [] | position of the true answer {0: 41, 1: 38, 2: 45, 3: 36}
+
+== split
+facts 160 distinct 160 | learned 120 unread 40 | learned & unread 0 | id format True | letter / relation / stratum consistent True | 8 cells x (15 + 5) True | frozen DATA_MANIFEST facts {'total': 160, 'learned': 120, 'unread': 40}
+TRAIN train_F 120 train_S 120 train_Y 240 | unread fact_ids in TRAIN [] | F, S once, S answer same cell not itself once, Y twice (Y_ENTITY + Y_ANSWER): True
+DEV dev_qa 320, every fact twice, once per DEV template of its relation: True | candidates keys == fact_ids True | general DEV 100 per domain {'books': 25, 'c4': 25, 'fineweb': 25, 'wikitext': 25} | anchor 512
+data dir listing ['LABEL.txt', 'anchor_text.jsonl', 'candidates.json', 'dev_qa.jsonl', 'facts.jsonl', 'general_dev.jsonl', 'train_F.jsonl', 'train_S.jsonl', 'train_Y.jsonl'] | names with 'test': []
+modules: torch imported=True | transformers modeling modules imported=['torch', 'transformers.modeling_rope_utils', 'transformers.models.auto.modeling_auto'] | this script never calls a model class or from_pretrained on a model
+RESULT: PASS
+exit=0
