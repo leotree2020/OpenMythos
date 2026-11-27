@@ -1,0 +1,24 @@
+# Stage C, C3: the file list of Qwen/Qwen3-1.7B at the frozen revision 70d244cc86ccca08cf5af4e1e306ecf908b1ad5e from the Hugging Face API, fetched again and parsed (metadata only; no weight file downloaded). Replaces nothing: c3_hf_tree_70d244cc.txt was not recorded by logrun.sh. Executor, host vm. Fri Nov 27 11:17:07 UTC 2026
+# stdout+stderr merged, unedited. Commands recorded by reports/round5/logrun.sh.
+$ curl -sS --max-time 60 -o /tmp/tmp.G4fWo2A9N6/tree.json https://huggingface.co/api/models/Qwen/Qwen3-1.7B/tree/70d244cc86ccca08cf5af4e1e306ecf908b1ad5e
+exit=0
+$ sha256sum /tmp/tmp.G4fWo2A9N6/tree.json
+1800b39aa206402db2d81f61122d957ca57247b0a5cf065854e25b0109ec36e2  /tmp/tmp.G4fWo2A9N6/tree.json
+exit=0
+$ python3 -I -c import\ json\,sys\;\ \[print\(e\[\'path\'\]\,\ e\[\'size\'\]\,\ \(e.get\(\'lfs\'\)\ or\ \{\}\).get\(\'oid\'\)\)\ for\ e\ in\ json.load\(open\(sys.argv\[1\]\)\)\] /tmp/tmp.G4fWo2A9N6/tree.json
+.gitattributes 1570 None
+LICENSE 11343 None
+README.md 13963 None
+config.json 726 None
+generation_config.json 239 None
+merges.txt 1671853 None
+model-00001-of-00002.safetensors 3441185608 169ad53ec313c3a34b06c0809216e4fc072cce444a5d4ff2b59690d064130ed5
+model-00002-of-00002.safetensors 622329984 912becff8d60672aa8628ef08c05898d9adf17c2ad4ae3caf99b065622fdeff9
+model.safetensors.index.json 25605 None
+tokenizer.json 11422654 aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4
+tokenizer_config.json 9732 None
+vocab.json 2776833 None
+exit=0
+$ python3 -I -c import\ json\,re\,sys\;\ a=json.load\(open\(sys.argv\[1\]\)\)\;\ s=open\(sys.argv\[2\]\,encoding=\'utf-8\'\).read\(\)\;\ b=json.loads\(re.search\(r\'\^\\\[.\*\\\]\$\'\,\ s\,\ re.M\).group\(0\)\)\;\ print\(\'same\ as\ c3_hf_tree_70d244cc.txt:\'\,\ a==b\) /tmp/tmp.G4fWo2A9N6/tree.json metrix/e1-pilot/reports/impl_c/c3_hf_tree_70d244cc.txt
+same as c3_hf_tree_70d244cc.txt: True
+exit=0

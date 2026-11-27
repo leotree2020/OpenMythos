@@ -1,0 +1,125 @@
+# Stage C, C3 commit (staged; code of a0e04d1f3e2be4df30ff700a79ae9af88154ee6a): final checks on the staged tree. Executor, host vm (Anthropic cloud container, CPU only, no GPU). Fri Nov 27 10:46:00 UTC 2026
+# stdout+stderr merged, unedited. Commands recorded by reports/round5/logrun.sh. METRIX_INPUTS_DIR=/tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/inputs
+$ git ls-remote origin refs/heads/metrix-e1-pilot-protocol-v1
+cc18466f8d327f37c6f6dd272b8e264d239ee386	refs/heads/metrix-e1-pilot-protocol-v1
+exit=0
+$ git status --short --untracked-files=all
+A  metrix/e1-pilot/RUNBOOK_A100.md
+M  metrix/e1-pilot/reports/DEFERRED_MINORS.md
+M  metrix/e1-pilot/reports/IMPL_C_REPORT.md
+A  metrix/e1-pilot/reports/impl_c/c3_checks.sh
+A  metrix/e1-pilot/reports/impl_c/c3_hf_tree_70d244cc.txt
+?? metrix/e1-pilot/reports/impl_c/c3_01_final_checks.txt
+exit=0
+$ bash -c git\ rev-parse\ HEAD\;\ git\ write-tree\;\ git\ diff\ --quiet\ --\ metrix/e1-pilot/src\ metrix/e1-pilot/tests\ metrix/e1-pilot/run_pilot.py\ \&\&\ echo\ WORKTREE_EQUALS_INDEX_FOR_SRC_TESTS_RUN_PILOT\;\ git\ diff\ --cached\ --quiet\ a0e04d1f3e2be4df30ff700a79ae9af88154ee6a\ --\ metrix/e1-pilot/src\ metrix/e1-pilot/tests\ metrix/e1-pilot/run_pilot.py\ \&\&\ echo\ INDEX_EQUALS_a0e04d1f3e2be4df30ff700a79ae9af88154ee6a_FOR_SRC_TESTS_RUN_PILOT\;\ git\ diff\ --cached\ --stat\ HEAD\;\ sha256sum\ metrix/e1-pilot/reports/impl_c/c3_checks.sh
+cc18466f8d327f37c6f6dd272b8e264d239ee386
+65b95aca0f17bb12c6d1d976ee1c35c73cb8614a
+WORKTREE_EQUALS_INDEX_FOR_SRC_TESTS_RUN_PILOT
+INDEX_EQUALS_a0e04d1f3e2be4df30ff700a79ae9af88154ee6a_FOR_SRC_TESTS_RUN_PILOT
+ metrix/e1-pilot/RUNBOOK_A100.md                    | 165 +++++++++++++++++++++
+ metrix/e1-pilot/reports/DEFERRED_MINORS.md         |  18 +++
+ metrix/e1-pilot/reports/IMPL_C_REPORT.md           | 108 +++++++++++++-
+ metrix/e1-pilot/reports/impl_c/c3_checks.sh        |  25 ++++
+ .../reports/impl_c/c3_hf_tree_70d244cc.txt         |  16 ++
+ 5 files changed, 331 insertions(+), 1 deletion(-)
+ebd346796eb0609cc9a1686527985452bf18f1c66cd4177e552a0b1c332e1e9a  metrix/e1-pilot/reports/impl_c/c3_checks.sh
+exit=0
+$ env PYTHONPATH=metrix/e1-pilot/src METRIX_INPUTS_DIR=/tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/inputs /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/venv/bin/python -m metrix_e1.data generate --inputs /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/inputs --out /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/c3_data
+frozen: PROTOCOL_FROZEN v1.1, commit 87a244db28a901f9e89282b50df76778ab5c2887; four frozen files match by git cat-file
+python 3.13.18; libraries {"torch": "2.11.0", "transformers": "5.22.2"} (protocol section 0: {"torch": "2.11.0", "transformers": "5.22.2"})
+name generation per cell: [{"cell": "capital/natural", "entity_draws": 28, "target_pair": [3, 3], "answer_draws": 84}, {"cell": "capital/random", "entity_draws": 20, "target_pair": [5, 5], "answer_draws": 52}, {"cell": "currency/natural", "entity_draws": 31, "target_pair": [3, 3], "answer_draws": 82}, {"cell": "currency/random", "entity_draws": 20, "target_pair": [6, 6], "answer_draws": 46}, {"cell": "founder/natural", "entity_draws": 30, "target_pair": [3, 3], "answer_draws": 81}, {"cell": "founder/random", "entity_draws": 21, "target_pair": [5, 5], "answer_draws": 45}, {"cell": "river/natural", "entity_draws": 34, "target_pair": [3, 3], "answer_draws": 89}, {"cell": "river/random", "entity_draws": 20, "target_pair": [6, 6], "answer_draws": 42}]
+S derangement attempts per cell: {"capital/natural": 3, "capital/random": 5, "currency/natural": 1, "currency/random": 6, "founder/natural": 2, "founder/random": 1, "river/natural": 2, "river/random": 6}
+Y / F token ratio: F 1889, Y 2260, ratio 1.1964
+Y / F token ratio without <|endoftext|> (report only): F 1769, Y 2020, ratio 1.1419
+both ratios within [0.8, 1.25]: with True, without True
+eval_sets.jsonl rows by split (row prefix only): {'dev': 400, 'test': 800}; DEV rows decoded and parsed: 400; windows kept (decoded with the parcae tokenizer): 100
+facts.jsonl        rows  160  byte_sha256 e05561ac2d49dcc3c8f59743c5df64151983a540a32ae135fd1b10f5e0fdc828  canonical_sha256 e05561ac2d49dcc3c8f59743c5df64151983a540a32ae135fd1b10f5e0fdc828
+train_F.jsonl      rows  120  byte_sha256 3aa9ab3ca313c0a1113b91e927af51342c915e3e40dd2f20992f3d9e59b0e373  canonical_sha256 3aa9ab3ca313c0a1113b91e927af51342c915e3e40dd2f20992f3d9e59b0e373
+train_S.jsonl      rows  120  byte_sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e  canonical_sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e
+train_Y.jsonl      rows  240  byte_sha256 c7430cadb2b06dd5c144af381a8183d4c186f27f2b5acfa9d8d39da0b7626d15  canonical_sha256 c7430cadb2b06dd5c144af381a8183d4c186f27f2b5acfa9d8d39da0b7626d15
+dev_qa.jsonl       rows  320  byte_sha256 9761eb60d6c9155c2f56394aa228b1e9dfea0ae3926ab50cb21d903108bc7fde  canonical_sha256 9761eb60d6c9155c2f56394aa228b1e9dfea0ae3926ab50cb21d903108bc7fde
+candidates.json    rows  160  byte_sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705  canonical_sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705
+general_dev.jsonl  rows  100  byte_sha256 957666920c91ef5b9328984d26ed0628c8a80b439d461bea49b54c2235635e73  canonical_sha256 957666920c91ef5b9328984d26ed0628c8a80b439d461bea49b54c2235635e73
+anchor_text.jsonl  rows  512  byte_sha256 2089e656819d1fe0f6ececcc26e5cade09ee80a92c50e7c8f607fa4e0ef46da5  canonical_sha256 2089e656819d1fe0f6ececcc26e5cade09ee80a92c50e7c8f607fa4e0ef46da5
+frozen content hash facts        406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 = PROTOCOL_FROZEN (read back from /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/c3_data)
+frozen content hash train_S      686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e = PROTOCOL_FROZEN (read back from /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/c3_data)
+frozen content hash candidates   e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 = PROTOCOL_FROZEN (read back from /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/c3_data)
+frozen content hash anchor_texts 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 = PROTOCOL_FROZEN (read back from /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/c3_data)
+RESULT: PASS
+exit=0
+$ env PYTHONPATH=metrix/e1-pilot/src METRIX_INPUTS_DIR=/tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/inputs /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/venv/bin/python -m metrix_e1.data verify --inputs /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/inputs --data /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/c3_data
+frozen: PROTOCOL_FROZEN v1.1, commit 87a244db28a901f9e89282b50df76778ab5c2887; four frozen files match by git cat-file
+frozen content hash facts        406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 = PROTOCOL_FROZEN
+frozen content hash train_S      686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e = PROTOCOL_FROZEN
+frozen content hash candidates   e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 = PROTOCOL_FROZEN
+frozen content hash anchor_texts 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 = PROTOCOL_FROZEN
+all 8 data files byte-identical to their regeneration from the frozen inputs
+RESULT: PASS
+exit=0
+$ env PYTHONPATH=metrix/e1-pilot/src METRIX_INPUTS_DIR=/tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/inputs /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/venv/bin/python -m metrix_e1.test_data --inputs /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/inputs --data /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/c3_data --out /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/c3_test_out
+TEST generator refused: metrix/e1-pilot/results/gate0_record.json is not committed at HEAD
+no TEST content was generated, read or written
+RESULT: FAIL
+exit=1
+$ bash -c ls\ -la\ /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/c3_test_out\ 2\>\&1\;\ ls\ /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/c3_data\;\ git\ status\ --short\ --\ metrix/e1-pilot/results\ 2\>\&1\;\ ls\ metrix/e1-pilot/results\ 2\>\&1
+ls: cannot access '/tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/c3_test_out': No such file or directory
+anchor_text.jsonl
+candidates.json
+dev_qa.jsonl
+facts.jsonl
+general_dev.jsonl
+train_F.jsonl
+train_S.jsonl
+train_Y.jsonl
+ls: cannot access 'metrix/e1-pilot/results': No such file or directory
+exit=2
+$ /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/venv/bin/python metrix/e1-pilot/reports/round3/outside_metrix_check.py
+changed outside metrix/ (base 61d3c767 .. HEAD):
+  A	.claude/agents/code-reviewer.md
+  A	.claude/agents/data-auditor.md
+  M	CLAUDE.md
+charter: base 3065 bytes, new 3586 bytes, base is exact prefix: True
+charter: appended 521 bytes; level-1/2 headings in appended part: ['## 6. Metrix 子项目(2026-11-13 负责人决定)']
+ignore rules below come from the working-tree .gitignore; identical to .gitignore at HEAD: True
+agent .claude/agents/code-reviewer.md: tracked at HEAD: True; ignore rule: .gitignore:14:.claude/	.claude/agents/code-reviewer.md
+agent .claude/agents/data-auditor.md: tracked at HEAD: True; ignore rule: .gitignore:14:.claude/	.claude/agents/data-auditor.md
+RESULT: PASS
+exit=0
+$ env PYTHONPATH=metrix/e1-pilot/src METRIX_INPUTS_DIR=/tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/inputs /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/venv/bin/python -m pytest -q -p no:cacheprovider --durations=8 metrix/e1-pilot/tests
+........................................................................ [ 22%]
+........................................................................ [ 44%]
+........................................................................ [ 66%]
+........................................................................ [ 88%]
+....................................                                     [100%]
+============================= slowest 8 durations ==============================
+204.87s call     metrix/e1-pilot/tests/test_run_pilot.py::test_test_evaluate_end_to_end_once
+122.40s call     metrix/e1-pilot/tests/test_run_pilot.py::test_formal_commit_chain_through_the_freeze_record
+67.93s call     metrix/e1-pilot/tests/test_run_pilot.py::test_formal_stop_and_crash_commit_what_was_written[st3]
+62.34s call     metrix/e1-pilot/tests/test_run_pilot.py::test_formal_stop_and_crash_commit_what_was_written[crash]
+20.04s call     metrix/e1-pilot/tests/test_run_pilot.py::test_test_evaluate_begin_wiring[crash_after_begin]
+13.33s setup    metrix/e1-pilot/tests/test_run_pilot.py::test_test_evaluate_begin_wiring[crash_after_begin]
+13.27s setup    metrix/e1-pilot/tests/test_run_pilot.py::test_test_evaluate_begin_wiring[wrong_work]
+13.10s setup    metrix/e1-pilot/tests/test_run_pilot.py::test_test_evaluate_begin_wiring[refused_inside_begin]
+324 passed in 744.03s (0:12:24)
+exit=0
+$ git status --short --untracked-files=all
+AM metrix/e1-pilot/RUNBOOK_A100.md
+M  metrix/e1-pilot/reports/DEFERRED_MINORS.md
+MM metrix/e1-pilot/reports/IMPL_C_REPORT.md
+A  metrix/e1-pilot/reports/impl_c/c3_checks.sh
+A  metrix/e1-pilot/reports/impl_c/c3_hf_tree_70d244cc.txt
+?? metrix/e1-pilot/reports/impl_c/c3_01_final_checks.txt
+exit=0
+$ bash -c git\ rev-parse\ HEAD\;\ git\ write-tree\;\ git\ diff\ --quiet\ --\ metrix/e1-pilot/src\ metrix/e1-pilot/tests\ metrix/e1-pilot/run_pilot.py\ \&\&\ echo\ WORKTREE_EQUALS_INDEX_FOR_SRC_TESTS_RUN_PILOT\;\ git\ diff\ --cached\ --quiet\ a0e04d1f3e2be4df30ff700a79ae9af88154ee6a\ --\ metrix/e1-pilot/src\ metrix/e1-pilot/tests\ metrix/e1-pilot/run_pilot.py\ \&\&\ echo\ INDEX_EQUALS_a0e04d1f3e2be4df30ff700a79ae9af88154ee6a_FOR_SRC_TESTS_RUN_PILOT\;\ git\ diff\ --cached\ --stat\ HEAD\;\ sha256sum\ metrix/e1-pilot/reports/impl_c/c3_checks.sh
+cc18466f8d327f37c6f6dd272b8e264d239ee386
+65b95aca0f17bb12c6d1d976ee1c35c73cb8614a
+WORKTREE_EQUALS_INDEX_FOR_SRC_TESTS_RUN_PILOT
+INDEX_EQUALS_a0e04d1f3e2be4df30ff700a79ae9af88154ee6a_FOR_SRC_TESTS_RUN_PILOT
+ metrix/e1-pilot/RUNBOOK_A100.md                    | 165 +++++++++++++++++++++
+ metrix/e1-pilot/reports/DEFERRED_MINORS.md         |  18 +++
+ metrix/e1-pilot/reports/IMPL_C_REPORT.md           | 108 +++++++++++++-
+ metrix/e1-pilot/reports/impl_c/c3_checks.sh        |  25 ++++
+ .../reports/impl_c/c3_hf_tree_70d244cc.txt         |  16 ++
+ 5 files changed, 331 insertions(+), 1 deletion(-)
+ebd346796eb0609cc9a1686527985452bf18f1c66cd4177e552a0b1c332e1e9a  metrix/e1-pilot/reports/impl_c/c3_checks.sh
+exit=0

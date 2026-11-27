@@ -1,6 +1,6 @@
 # E1-PILOT Implementation 阶段 C 报告
 
-**状态:C1 完成(第二次送审通过:工作提交 `ae60e0f7`、修复提交 `b48fe842`);因审查额度用尽(恢复时间 2026-11-29 17:00 UTC),在 C1 与 C2 之间停下。** 第一次送审在连续 3 轮未 PASS 后停止(`5f5cd51e`,只提交了证据);Review Gate 对 C1 的裁决(2026-11-25,`tasks/IMPL_C1_RULING.md`)之后按裁决修改、重新送审,见 C1 节“第二次送审(按裁决修改)”。C1 节其余各小节记录第一次送审,保持原样。
+**状态:IMPLEMENTATION_READY(Implementation Task Order V1 第 13 节;阶段 C 验收见文末“阶段 C 验收”)。** C1 完成(第二次送审通过:工作提交 `ae60e0f7`、修复提交 `b48fe842`);C2 完成(工作提交 `5219ff77`,修复提交 `49fc9a35`、`dd65a361`、`a0e04d1f`,见 C2 节);C3 完成(`RUNBOOK_A100.md` 与本报告,见 C3 节)。C1 结束时曾因审查额度用尽在 C1 与 C2 之间停下;Owner 2026-11-27 的指令(`tasks/IMPL_C2_OWNER_MESSAGE.md`)之后,C2、C3 在第三个阶段 C 会话中执行(C2 节开头)。C1 的第一次送审在连续 3 轮未 PASS 后停止(`5f5cd51e`,只提交了证据);Review Gate 对 C1 的裁决(2026-11-25,`tasks/IMPL_C1_RULING.md`)之后按裁决修改、重新送审,见 C1 节“第二次送审(按裁决修改)”。C1 节其余各小节记录第一次送审,保持原样。以下开头各项是 C1(第二个阶段 C 会话)的情况;C2、C3 的会话与运行环境见 C2 节开头。
 
 - 指令:`tasks/IMPLEMENTATION_TASK_ORDER_V1.md` 第 10 节表中 C 行、第 7、8、11 节;Owner 下达阶段 C 的消息原文 `tasks/IMPL_C_OWNER_MESSAGE.md`(两段:本会话开头的消息,含 Review Gate 补充裁决 1–6;上次阶段 C 指令原文,含 Review Gate 对阶段 B 的裁决 1–5 与阶段 C 的要求 6–10)。阶段 C 分 C1、C2、C3 三段,每段结束提交、推送、写入本报告。
 - 执行会话:session_01J5mxaXeqjRSkJj9ZuGh8EJ(第二个阶段 C 会话;上一个会话 session_01J5mxaXE1WCWBQiUWaFsd9w 在第一个代码提交的两份审查 BLOCK 后停止,代码已撤回,见 `reviews/tree-65225a5a…/` 与 `1435a74..eb05e42`)。本地分支 `metrix-e1-pilot-protocol-v1` 设为 `origin/metrix-e1-pilot-protocol-v1`(`eb05e422`)后在其上工作;会话分支 `claude/brave-meitner-436eh9` 没有使用。
@@ -56,6 +56,19 @@ Owner 转达,原文连同首段入库为 `tasks/IMPL_C1_RULING.md`。以下逐�
 7. 被取代的试跑输出按现行方式入库：接受。
 8. 停止提交属于证据提交，不需补审。
 9. C1 按上述修改后重新送两份审查，轮次从 1 重新计。DEFERRED_MINORS 1.29 中属于防范对象以外的项登记，不修。
+
+## Review Gate 裁决(2026-11-27,作用范围:本阶段)
+
+Owner 在下达 C2、C3 时转达,原文连同首段入库为 `tasks/IMPL_C2_OWNER_MESSAGE.md`。以下逐字照录,每项后写明落实情况。
+
+1. 「TEST 评测调用不 fetch、只在 begin 与 finish 时 fetch：接受。RUNBOOK 写明「begin 到 finish 之间任何人不得推送本分支」。」
+
+   落实:C1 节“待 Review Gate 决定”第 1 项(1.30 CD1、1.31 CE1)由此结案;`testgate` 不改。`RUNBOOK_A100.md` 第 3.8 节照录这句话(其后注明本分支即 `metrix-e1-pilot-protocol-v1`),并写明期间不得提交命令输出或在本克隆中做任何 git 操作;第 5 节写明命令输出在 begin 与 finish 之间不提交。`pilot.py` 模块说明引用本项。
+2. 「f8139f9 属于证据提交，不需补审。」
+
+   落实:C1 节“待 Review Gate 决定”第 2 项结案;`f8139f9` 不补审。
+
+C1 节“待 Review Gate 决定”第 3 项(C2 的时间)由本次指令回答:C2、C3 在本会话执行。
 
 ## C1:BE 修复、interpretations 标记、TEST 闸门
 
@@ -156,3 +169,128 @@ Owner 转达,原文连同首段入库为 `tasks/IMPL_C1_RULING.md`。以下逐�
 7. **被取代的试跑输出(1.29 CC3)** 是否属于第 9 节“原始输出一律写入仓库”:本提交已入库 `impl_c/c1_04t_*`。
 8. **本停止提交**(本报告与 `DEFERRED_MINORS.md` 的文字)没有经过审查;是否补审。
 9. **下一步。** 裁决之后,C1 工作提交按裁决修改,处理 1.29 的各项,重新送两份审查(轮次是否重新计数由 Review Gate 定);C2、C3 在 C1 提交之后进行。留给 C2 的事项不变:冒烟中保存并重载 checkpoint 后核对 `state_sha256`(1.27 CA7);begin、finish 的生产调用方(CA20),接入后 data-auditor 复审 TEST 路径(阶段 B 裁决之后的阶段 C 要求第 7 项);`state_sha256` 的耗时计入预检估算(CA21);DEV 路径的数据核对(CA23);finish 写入的结果不得含 TEST 内容。
+
+## C2:run_pilot.py 与 CPU 冒烟测试
+
+- 指令:Owner 本次消息(`tasks/IMPL_C2_OWNER_MESSAGE.md`);Implementation Task Order V1 第 4、5、7、11 节;C1 裁决第 3 项(冒烟中保存并重载 checkpoint,证明 `state_sha256` 不变);C1 节“留给 C2 的事项”(CA7、CA20、CA21、CA23;CD5、CD13、CE5)。
+- 执行会话:session_01J5mxaVbRYj7wxzW5sZcUYh(第三个阶段 C 会话)。本地分支 `metrix-e1-pilot-protocol-v1` 设为 `origin/metrix-e1-pilot-protocol-v1`(`f8139f9`)后在其上工作;会话分支 `claude/metrix-c2-c3-pilot-4nwq50` 没有使用。
+- 运行环境:Claude Code on the web 云容器,hostname `vm`,4 CPU,15 GiB 内存,没有 nvidia 设备与 `nvidia-smi`(`impl_c/c2_00_session_start.txt`);Python 3.13.18,依赖按 `requirements.lock` 以 `--require-hashes --no-deps` 装入会话临时目录的 venv(pip 本身先升级),`pip check` 通过,torch `2.11.0+cu130`(`torch.cuda.is_available()` False),transformers 5.22.2(`impl_c/c2_01_env_fetch.txt`)。下载的只有 4 个分词器文件、parcae `tokenizer.json`、锚文本 parquet 与固定 revision 的 `config.json`;没有下载或加载任何权重,没有使用 GPU,没有生成、读取或统计 TEST。
+- **起点**:指令所说的草稿分支 `wip/metrix-stage-c2` 在远端不存在(`c2_00`:`ls-remote` 只列出 `wip/metrix-stage-c`;`git fetch origin wip/metrix-stage-c2` 退出码 128)。`wip/metrix-stage-c` 中的 `run_pilot.py` 是第一次送审之前(C1 裁决之前)的草稿,接口已变且不完整,只作参考;`run_pilot.py` 与 `src/metrix_e1/pilot.py` 按当前代码重写。上一会话的 C2 草稿(报告 C1 节第 3 项“只在会话临时目录中”)随容器回收丢失。
+
+### 交付
+
+- `run_pilot.py`(唯一入口):子命令 `smoke --steps N`、`formal`、`test-generate`、`test-evaluate`、`fetch-model`。Task Order 第 7、11 节写的 `run_pilot.py --smoke` 实现为子命令 `smoke`(1.32 CF21);formal 系子命令没有步数参数。
+- `src/metrix_e1/pilot.py`:第 8 节第 1–8 步的编排(模块说明逐项写明)。每步开始 ST12(第 2 步起含整个数据目录的 `data.verify`,CA23)、ST13 检测、formal 下的提交前提;每步结束写步记录,formal 下只提交该步路径并推送(只提交与 HEAD 不同的路径)。一步之中的停止先写并提交该步记录。
+- checkpoint(C1 裁决第 3 项、B25):每次训练 `state_sha256` → `torch.save` → 重载到同结构的新模型 → 再算 `state_sha256`,相等否则 IMPLEMENTATION_FAIL;DEV 评测的是重载的模型;30 个 checkpoint 一个都不删(metrix/CLAUDE.md 第 7 节)。
+- 第 1 步 formal 把 8 个非 TEST 文件的哈希写入 `DATA_MANIFEST.json files` 与 `SPLIT_MANIFEST.json split_sha256`(B3 裁决注记:train_Y 的规范化哈希),写后再 ST12;冒烟不改 manifest,只把将写入的字段写成记录。
+- 预检:ST11 读 B17 的估算(原样);checkpoint 开销(CA21)与两者之和只报告,并用于 ST7 的事前判断。
+- test-generate 以子进程运行 `test_data.main`(CD5、CE5);test-evaluate 是 begin / finish 的生产调用方(CA20),结果只含聚合值与每个 fact 的分数(CD13)。
+- `gate.py`:新增 `n_range_values`、`n_ranges_hold`(G0.3 / T3 读的数,ST2 使用),数值不变。
+- 测试 `tests/test_run_pilot.py`(23 个测试函数,参数化后 26 项;全部测试由 C1 结束时的 298 项增至 324 项),变异 `reports/impl_c/c2_mutate.py`(工作提交,17 个)、`c2_mutate_fix1.py`(修复提交,25 个)、`c2_mutate_fix2.py` 与 `c2_mutate_fix2b.py`(第二个修复提交,35 + 1 个)、`c2_mutate_fix3.py`(第三个修复提交,43 个)。
+
+### 待 Review Gate 决定(C2)
+
+1. **第 10 节“每次运行(含被停止的)提交一份”的范围(1.32 CF1、CF30;1.33 CG5)。** 现行做法:formal 在第 1 步开始之前停止(设备检查 ST8、代码未提交、连续性检查、第 1 步开始时的 ST12/ST13)时,实验记录只写到 `<work>`,不写入仓库、不推送;`Pilot()` 本身的 ST12 没有记录。理由是 c2_02 的事故:开发容器上的检出同样能通过远端与分支检查,误在别的机器上运行 formal 会把一份 BLOCKED 记录推送到本分支。test-evaluate 在本进程写入标记之前、没有停止码的拒绝不写记录(TEST 未评),其中包括第三个修复提交新增的一类:TEST 已开始或已评之后再运行,在任何带停止码的检查之前拒绝(1.34 CH1;1.35 CI8);带停止码的协议停止(ST7、ST8、ST9、ST10、ST12)写记录并推送,其中 ST8 与 formal 第 1 步之前只写 `<work>` 的做法不一致(1.34 CH6)。test-generate 成功时不写实验记录(ST10 记录即其输出),只在 ST10 超限时写(1.36 CJ11)。协议第 10 节“每次运行(含被停止的)提交一份”是否涵盖这些不写记录的拒绝,请确认,或指示区分“非 Pilot 机器”与“Pilot 机器上的第 1 步之前停止”。
+2. **ST11 与 ST7 的估计量(1.32 CF10;1.33 CG2)。** ST11 读 B17 的估算(原样);checkpoint 开销(模型加载、`state_sha256`、保存、重载、文件哈希)与两者之和只报告,另用于 ST7 的事前判断(每次训练、每次评测之前;TEST 开始之前按整个 TEST 评测)。是否让 ST11 读两者之和,TEST 的事前估计是否加余量,请决定。
+3. **G0.2 与 ST6 剔除的配置(1.32 CF7)。** 读法:第 7 节“出现非有限损失或分数的配置剔除”,剔除的配置不算“用到”,G0.2 不因它不满足;剔除的运行保存停止时的状态并记录其哈希,冻结记录有 30 个哈希。请确认。
+4. **预检中的非有限值(1.32 CF6;1.33 CG21)。** 没有预估就不能判 ST11;现按 ST6 的“选定配置或对照”处理为 IMPLEMENTATION_FAIL。请确认或指定状态。
+5. **状态词(1.32 CF13、CF27)。** formal 在 Gate 0 PASS、提交冻结记录后结束时,实验记录 Status 为 NOT_TESTED(第 9 节 PASS 要求 T1–T3;Actual 写 Gate 0 PASS);formal 崩溃为 NOT_TESTED;test-evaluate 在 begin 之后的停止或崩溃为 BLOCKED。请确认。
+6. **重跑与恢复(1.32 CF11;1.33 CG8、CG9)。** 代码只拒绝不安全的重跑(没有 device ledger 的 `--work`、冻结之后的 formal、已有 checkpoint 的 `--work`);何时、从哪一步重来由 Owner 决定(RUNBOOK 第 4 节)。
+7. **入口的形式(1.32 CF21)。** Task Order 写 `run_pilot.py --smoke`,实现为子命令 `run_pilot.py smoke --steps N`(formal 系子命令没有步数参数)。请确认。
+
+### 提交与审查
+
+| 提交 | 内容 | 被审暂存树 | code-reviewer | data-auditor(仅作参考) | Executor 的原始输出 |
+|---|---|---|---|---|---|
+| `5219ff77` 工作提交 | run_pilot.py、pilot.py、gate.py 辅助函数、测试 14 个、变异 17 个 | `b80c9062` | PASS(12 MAJOR、22 MINOR) | PASS(2 MINOR) | `impl_c/c2_05_checks.txt`(312 passed;17/17)、`c2_06_smoke.txt`;被取代:`c2_02`、`c2_03`、`c2_04` |
+| `49fc9a35` 修复提交 | 1.32 的修复;测试 19 个;变异 25 个 | `b40224e6` | PASS(4 MAJOR、18 MINOR) | PASS(4 MINOR) | `impl_c/c2b_03_checks.txt`(317 passed;25/25)、`c2b_04_smoke.txt`;被取代:`c2b_01`、`c2b_02`(内存不足被杀)、`c2b_01b`(恢复记录) |
+| `dd65a361` 第二个修复提交 | 1.33 的修复;测试 23 个;变异 35 + 1 个 | `a6ce8a0e` | PASS(3 MAJOR、9 MINOR) | PASS(2 MINOR) | `impl_c/c2c_03_checks.txt`(321 passed;34/35,未测出的一个因测试清单误指)、`c2c_04_mutate_fix2b.txt`(该变异 CAUGHT)、`c2c_02_smoke.txt`;被取代:`c2c_01` |
+| `a0e04d1f` 第三个修复提交 | 1.34 的修复;测试 26 个;变异 43 个 | `c7869d35` | PASS(没有 MAJOR;8 MINOR) | PASS(1 MINOR、3 条观察) | `impl_c/c2d_01_checks.txt`(324 passed;43/43)、`c2d_02_smoke.txt` |
+
+- 审查原文、调用文字(第一句按 metrix/CLAUDE.md 第 5 节第 6 条,含防范对象原文与 2026-11-27 裁决原文)、调用前的 tools 行核对、审查输入、原始转录:`reviews/<提交>/`(各有 `README.txt`)。data-auditor 的脚本与完整 stdout:`audit/ic7_*`、`ic8_*`、`ic9_*`、`ic10_*`,stdout 在 `audit/stdout/impl_c/`。每个提交之后的证据提交(`1900b1fe`、`0cbee197`、`2665ab10`、`cc18466f`)只含 `reports/`、`reviews/`、`audit/`,按 Review Gate 2026-11-27 裁决第 2 项的同类处理不另送审。推送记录:`impl_c/c2_push_work_commit.txt`、`c2b_push_fix_commit.txt`、`c2c_push_fix2_commit.txt`、`c2d_push_fix3_commit.txt`;所有推送都是快进,没有推送标签。
+- 问题与处理:`DEFERRED_MINORS.md` 1.32(CF1–CF30)、1.33(CG1–CG22,段首更正 1.32 的 CF28、CF29)、1.34(CH1–CH12)、1.35(CI1–CI11,第三个修复提交;没有 MAJOR,都登记)。按 Task Order 第 9 节,影响协议一致性、数据、指标或隔离的 MAJOR 都已修;协议读法交 Review Gate(下文“待 Review Gate 决定”);其余登记。
+- 所有轮次都没有 BLOCKER;连续 3 轮未 PASS 的情形没有出现(metrix/CLAUDE.md 第 5 节第 4 条)。data-auditor 的信任状态仍为「待验证」(第 10 节)。
+
+### 本节执行中出现的问题(都已记录,证据入库)
+
+1. **测试在本仓库运行了 formal(`c2_02`)。** 变异“formal takes a step count”使子进程测试真的以 formal 运行:在 CPU 上停在 ST8 后,把一份 formal 实验记录写进了本仓库的 `results/`,并尝试提交;因暂存区有内容,提交前提 BLOCKED,没有提交,远端未变(`c2_05` 第一行的 ls-remote)。若暂存区为空,这份记录会被推送。处理:第 1 步之前停止的 formal 记录只写 `<work>`(交 Review Gate);子进程测试设无效的 `GIT_DIR`;相关测试改在临时克隆上运行。误写的两个文件作为证据保存在 `impl_c/c2_02_stray_experiment_record_formal.*`(没有删除)。
+2. **`/usr/bin/time` 不存在(`c2_03`)。** 冒烟没有开始;重录为 `c2_04`。
+3. **并行录制被内核以内存不足杀掉(`c2b_01`、`c2b_02`)。** 杀掉后 Executor 停止仍在运行的变异,被杀的变异进程没有走到恢复文件的 `finally`,工作区 `pilot.py` 留下了一个变异(`if False:`);`c2b_01b_restore_after_kill.txt` 记录了 diff、从暂存区恢复与恢复后的核对;之后录制都单独、依次运行。data-auditor 在 `ic8_07`、`ic9_07` 中核对没有残留。
+4. **变异暴露的测试缺口(`c2c_01`)与变异脚本的误指(`c2c_03`)。** `c2c_01` 按 C1 裁决第 7 项保留为被取代的记录;`c2c_03` 中因测试清单误指而未测出的一个变异由 `c2c_04` 补测(CAUGHT),见上表。
+5. **笔误。** `c2d_checks.sh` 与 `c2d_01`、`c2d_02` 首行写的父提交 “2665ab17” 应为 `2665ab10`(STATE 中 `git rev-parse HEAD` 一行为准)。
+6. **会话中删除的文件。** 只有 Executor 自己导入变异脚本时在 `reports/impl_c/` 下生成的 `__pycache__`(被 `.gitignore` 忽略)与一个空的 `results/` 目录(误写的两个文件移走之后);没有删除任何受跟踪或作为证据的文件。
+
+### 冒烟测试的结果(冒烟值,不构成结论)
+
+最终一次(`impl_c/c2d_02_smoke.txt`,记录副本 `impl_c/c2d_smoke_records/`,不含逐题明细、checkpoint 与数据文件)。冒烟报告(`run_pilot.py smoke --steps 3`,标签 `SMOKE — NOT A RESULT`,运行环境同本节开头,只用 CPU):
+
+- 模型:Qwen3-1.7B 的 `config.json`(SHA-256 `1ddb5b89…`)缩成 2 层、hidden 64 的随机初始化同构小模型(`pilot.SMOKE_MODEL_OVERRIDES`,种子 0;冒烟记录 `small_model`);没有加载权重。设备检查跳过并记录 “smoke: device check skipped”。
+- 第 1–8 步都完成,没有中断(`c2d_02` 中每步一行 “done”):第 1 步 3.7 s、第 2 步 33.2 s、第 3 步 31.1 s、第 4 步 196.1 s、第 5 步 417.7 s、第 6 步 455.8 s、第 7 步 90.9 s、第 8 步 5.1 s;进程峰值常驻内存 8278 MiB(CPU);记录 74 个文件(各步的文件清单见 `smoke_report.json` 的 `steps`,work 目录的完整清单与字节数在 `c2d_02` 末尾)。
+- 30 次训练全部完成,每次 3 步(`trainings completed: 30; steps per run [3]`);30 行 “state sha256 … (unchanged after reload)”:每个 checkpoint 保存、重载到同结构的新模型后 `state_sha256` 不变(C1 裁决第 3 项)。
+- G0.1–G0.10 的冒烟值(`smoke_report.json` 的 `g0_values_smoke`,判定在 `gate0_record.json`):G0.4、G0.5 不满足,其余满足;Gate 0 状态固定为 NOT_TESTED,“冒烟测试，不构成结论”。读取结果值的停止中,第 4 步的 ST3(阳性对照未过)记为 would stop 后继续(`step4_record.json`、`step7_record.json`);随机小模型训练 3 步,这些数值没有意义。
+- 第 8 步:以子进程运行 TEST 生成器,退出码 1、`RESULT: FAIL`、`--out` 未创建,work 下没有 TEST 文件(`TEST files: 0`)。
+- 冒烟结束后本仓库 `metrix/e1-pilot/results/` 不存在(`c2d_02` 末行),冒烟输出全部在仓库之外的 work 目录;数据、checkpoint、预检目录各有 `LABEL.txt`。
+
+## C3:A100 操作手册与最终报告
+
+- 指令:Owner 本次消息(“然后执行 C3(RUNBOOK_A100.md 与最终报告),C3 只改文档时只需 code-reviewer”);Task Order 第 8、11、13 节;Owner 下达阶段 C 的消息(`tasks/IMPL_C_OWNER_MESSAGE.md`)中的补充裁决 1–6 与“其余按上次阶段 C 指令的第 1、6、7、9、10 项执行”。
+- 交付:`RUNBOOK_A100.md`(Task Order 第 8 节第 1–6 项:环境要求与检查命令、下载内容及其 SHA-256、从克隆到运行完毕的命令序列、预检与停止条件的操作、结果的提交、时长与费用;另含补充裁决 6 的租用条件、上次阶段 C 指令第 9 项的磁盘规划与确定性报错的处理、C1 裁决第 6 项的 GitHub 设置、2026-11-27 裁决第 1 项);本报告;`DEFERRED_MINORS.md` 1.35、1.36;原始输出 `impl_c/c3_01_final_checks.txt`(最终检查)、`c3_02_runbook_hashes.txt`(RUNBOOK 中每个哈希与 `DATA_MANIFEST.json` 或所引原始输出的对照)、`c3_hf_tree_70d244cc.txt` 与 `c3_03_hf_tree_logged.txt`(Hugging Face API 中 `Qwen/Qwen3-1.7B@70d244cc` 的文件树与 LFS 元数据;后者用 `logrun.sh` 重新获取并解析,与前者相同;没有下载权重)。录制脚本 `c3_checks.sh`、`c3_evidence.sh`。代码(`src/`、`tests/`、`run_pilot.py`)与第三个修复提交 `a0e04d1f` 相同,没有改动。
+- RUNBOOK 中的数值:门槛、超参、种子、哈希由代码从冻结文件读取,RUNBOOK 只列下载后人工核对用的哈希:前 7 项是 `DATA_MANIFEST.json` 中的冻结值;模型的 `config.json` 与两个 safetensors 不是冻结值(冻结的是 revision),分别取自本阶段 CPU 环境下载时打印的值(`impl_c/c1_01_env_fetch.txt`、`c2_01_env_fetch.txt`)与 Hugging Face API 的元数据;对照的原始输出 `c3_02`。时长与费用按 Task Order 第 8 节第 6 项的 1.8 美元/小时,分别给出实际 GPU wall-clock(ST7 读)、预检时 ST11 读到的 B17 估算、B17 与 checkpoint 开销之和三个区间及其依据,写明以预检为准。手册不指定租用平台。
+
+### 最终检查(`impl_c/c3_01_final_checks.txt`)
+
+在第 1 轮送审之前录制。录制开始时的暂存树为 `65b95aca`;录制期间 Executor 在工作区修改了 RUNBOOK 第 2 节与本报告(末尾 `git status` 的 `AM` / `MM`),录制之后暂存了它们与 `c3_01` 本身;第 2 轮之前又只修改了文档与证据(见下)。代码部分不变:首尾都有 `INDEX_EQUALS_a0e04d1f…_FOR_SRC_TESTS_RUN_PILOT`,各轮送审树中 `src/`、`tests/`、`run_pilot.py` 的 blob 与 `a0e04d1f` 的树相同(审查输入 `tree.txt`)。内容:数据重新生成并 verify(四个冻结哈希 PASS)、TEST 生成器拒绝(`--out` 未创建)、`outside_metrix_check.py` PASS、全部 pytest `324 passed`。
+
+### 提交与审查(C3)
+
+| 轮 | 被审暂存树 | code-reviewer | 处理 |
+|---|---|---|---|
+| 1 | `d27b68da` | BLOCK(1 BLOCKER、5 MAJOR、14 MINOR) | 全部处理,见 `DEFERRED_MINORS.md` 1.36 |
+| 2 | `c9dfc4ac` | PASS(没有 BLOCKER、MAJOR;10 MINOR) | 全部在文档中修正(其中提交前确认不含 TEST 文字的范围涉及隔离,按 Task Order 第 9 节必须修),见 `DEFERRED_MINORS.md` 1.37 |
+| 3 | 见 `reviews/<C3 提交>/` | 见该目录 | — |
+
+- 按 Owner 指令只送 code-reviewer(调用文字第一句按 metrix/CLAUDE.md 第 5 节第 6 条,含防范对象原文与 2026-11-27 裁决原文)。各轮的调用文字、调用前的 tools 行核对、审查输入、原始转录与原文在其后的证据提交的 `reviews/<C3 提交>/`;推送记录 `impl_c/c3_push_commit.txt` 在同一证据提交中。
+- 第 1 轮的 BLOCKER:RUNBOOK 没有写上次阶段 C 指令第 9 项的“确定性模式下 CUDA 算子报错时的处理(停下报告,不得关闭确定性)”。已在 RUNBOOK 第 4 节补写;并在下文“Owner 阶段 C 各项要求的落实”中逐项核对补充裁决 1–6 与上次阶段 C 指令第 1、6、7、9、10 项,以免再漏。
+- 本报告写于各轮审查之前。按 metrix/CLAUDE.md 第 5 节,审查为 PASS 才提交本提交(BLOCK 则修复后重审;连续 3 轮未 PASS 则停止),所以本提交存在即表示 C3 的 code-reviewer 在最后一轮为 PASS;最后一轮的新 MAJOR / MINOR 若不改文档,登记写入其后的证据提交。
+
+### 待 Review Gate 决定(C3)
+
+1. **租卡前:A100 上的环境安装与下载(1.36 CJ6)。** metrix/CLAUDE.md 第 4 节写“环境、下载、冒烟测试先在 CPU 环境完成;租卡后只跑正式流程”。依赖锁定、输入文件的下载与哈希核对、冒烟都已在 CPU 环境完成;A100 主机是另一台机器,须重新安装依赖、下载输入并由代码再次核对,模型权重只能在 A100 主机下载(Task Order 红线 2)。RUNBOOK 第 3.1–3.4 节因此在租用的机器上执行(约 0.5 小时,计入租用时长)。请确认。
+2. **租卡前:运行期间手工提交的审查方式(1.36 CJ5)。** 命令输出(`results/command_output/`)、data-auditor 的计数文件与 audit 输出、审查原文的提交只含输出、不含代码。补充裁决 1 的“证据提交”只限 `reports/`、`reviews/`、`audit/`,作用范围是阶段 C。请决定这些提交是否按证据提交处理(不经 code-reviewer);未裁决时 RUNBOOK 第 5 节按 metrix/CLAUDE.md 第 5 节,每次提交前调用 code-reviewer(frontmatter 比对、固定第一句、原文入 `reviews/<提交>/`,都不在 begin 与 finish 之间推送)。另请一并说明:补充裁决 1,以及 RUNBOOK 依赖的其他“作用范围:本阶段”的裁决(C1 裁决第 2、6 项,2026-11-27 裁决第 1 项),在 A100 运行期间是否仍然有效(“本阶段”指 Implementation 阶段 C 还是 metrix/CLAUDE.md 第 2 节的 E1 Pilot;1.37 CK4)。
+3. **两份 L6 计数不同时的实验记录(1.36 CJ11)。** RUNBOOK 第 3.7 节:Executor 比较两份计数,不同则 ST10、BLOCKED、不运行 test-evaluate、报告 Owner。这次停止没有 run_pilot 写的实验记录(协议第 10 节)。可选:由 Owner 批准运行 test-evaluate,让 begin 在写标记之前判 ST10 并写 BLOCKED 记录;或 Executor 手写一份记录。请决定。
+
+## Owner 阶段 C 各项要求的落实
+
+| 要求(`tasks/IMPL_C_OWNER_MESSAGE.md`) | 落实 | 证据 |
+|---|---|---|
+| 补充裁决 1:证据提交只 `git add` 明确路径,只涉及 `reports/`、`reviews/`、`audit/` | 各证据提交均如此 | 只列一例:`impl_c/c1_07_stop_commit_precheck.txt`;其余证据提交可由 `git show --stat <提交>` 核对 |
+| 补充裁决 2:ACCEPTED 标记引用本报告“Review Gate 对阶段 B 的裁决” | C1 | 本报告该节第 1 项落实 |
+| 上次指令第 1–5 项(对阶段 B 的裁决:B1–B24 与 B3、B14;UTF-8 解码;生成器第 4 个前提;B19;推送记录) | C1;B3 的 manifest 写入在 C2 的第 1 步 | 本报告“Review Gate 对阶段 B 的裁决”一节;C2 节“交付” |
+| 补充裁决 3:ST10 记录与闸门 | C1(`testgate`、`test_data`) | C1 节;`tests/test_testgate.py` |
+| 补充裁决 4:TEST 只评一次(标记) | C1;C2 的 test-evaluate 为生产调用方 | C1、C2 节;`tests/test_run_pilot.py::test_test_evaluate_end_to_end_once` 等 |
+| 补充裁决 5:用人造 TEST 行在临时仓库中测试 | C1、C2 | 同上 |
+| 补充裁决 6:只租 CUDA ≥ 13.0(驱动 ≥ 580)的机器,写明租用前的检查命令 | RUNBOOK 第 1 节开头与第 3.0 节 | `RUNBOOK_A100.md` |
+| 上次指令第 6 项:BE2、BE9、BE10、BE12、BE13 | C1 | C1 节 |
+| 上次指令第 7 项:TEST 评测的两个硬性前提及测试;调用方加入后 data-auditor 复审 TEST 路径 | C1;C2 中 data-auditor 复审(`audit/ic7_*`–`ic10_*` 的 e2e 驱动) | C1、C2 节 |
+| 上次指令第 8 项:已由补充裁决 6 取代 | — | — |
+| 上次指令第 9 项:RUNBOOK 写明磁盘规划(约 6.9 GB/个)与确定性报错的处理 | RUNBOOK 第 1 节“磁盘”、第 4 节“确定性模式下的 CUDA 算子报错” | `RUNBOOK_A100.md` |
+| 上次指令第 10 项:冒烟小模型由 config.json 构造时写明其 SHA-256 | `1ddb5b89…`,写在冒烟记录 `smoke_report.json` 的 `small_model.config_json_sha256` 与本报告 C2 节 | `impl_c/c2d_smoke_records/smoke_report.json` |
+
+## 阶段 C 验收(Task Order 第 11 节)
+
+| # | 验收项 | 结果 | 证据(原始输出) |
+|---|---|---|---|
+| 1 | 单元测试全部通过,原始输出入库 | 满足 | 第三个修复提交的被审暂存树:`impl_c/c2d_01_checks.txt`(`324 passed`);C3 的暂存树(代码相同):`impl_c/c3_01_final_checks.txt`(`324 passed`;首尾 `INDEX_EQUALS_a0e04d1f…`) |
+| 2 | 四个冻结哈希由正式代码重新生成,完全一致;data-auditor 独立复算一致 | 满足(data-auditor 的结论仅作参考,metrix/CLAUDE.md 第 10 节) | `c2d_01`、`c3_01`:`metrix_e1.data generate` 与 `verify`;冒烟第 1 步(`c2d_02`);data-auditor:`audit/stdout/impl_c/ic10_01_hashes.txt`(以及 `ic7_*`–`ic9_*`) |
+| 3 | `run_pilot.py --smoke` 从第 1 步跑到第 7 步无中断,30 次训练全部完成,冒烟报告完整 | 满足(入口为子命令 `run_pilot.py smoke --steps 3`,C2 待决第 7 项) | `impl_c/c2d_02_smoke.txt`:第 1–8 步各一行 “done”,30 行训练(每行 “unchanged after reload”),冒烟报告(每步耗时、峰值内存、文件数,G0.1–G0.10 的冒烟值,`trainings completed: 30`),work 目录文件清单与标签;记录副本 `impl_c/c2d_smoke_records/` |
+| 4 | TEST 生成器在当前状态下拒绝运行;全程没有任何 TEST 内容产生 | 满足 | `c2d_01`、`c3_01`:`metrix_e1.test_data` 退出码 1、`RESULT: FAIL`、`--out` 未创建;冒烟第 8 步以子进程运行生成器,拒绝,work 下没有 TEST 文件(`c2d_02`);测试中的 TEST 行都是测试自写的人造行,在临时仓库中 |
+| 5 | 正式模式下无法使用冒烟的缩减参数(有测试证明) | 满足 | `tests/test_run_pilot.py::test_formal_commands_have_no_step_option`、`test_only_smoke_builds_a_shortened_mode`;变异 “formal takes a step count” 等被测出(`c2d_01` 变异段) |
+| 6 | 每个工作提交的 code-reviewer 为 PASS 且无 BLOCKER | 满足 | 阶段 A:工作提交 `602a39e8`、修复提交 `219c4a60`(`reports/IMPL_A_REPORT.md`;`reviews/602a39e8…/code-reviewer_round1.md`、`_round2.md`,`reviews/219c4a60…/code-reviewer.md`)。阶段 B:`74a4d444`、`fdbb9def`、`493d7f9c`(`reports/IMPL_B_REPORT.md`;`reviews/74a4d444…/code-reviewer_round1.md`、`_round2.md`,`reviews/fdbb9def…/`、`reviews/493d7f9c…/code-reviewer.md`)。阶段 C:`ae60e0f7`、`b48fe842`(C1),`5219ff77`、`49fc9a35`、`dd65a361`、`a0e04d1f`(C2),各 `reviews/<提交>/code-reviewer_round1.md`;C3 提交(只改文档,最后一轮 PASS 才提交,见 C3 节)。另:第一次阶段 C 尝试中误入代码的 `1435a74` 已向前撤回并由补充裁决 1 追认(本报告开头);C1 第一次送审的 3 轮未 PASS 没有提交代码(停止提交 `5f5cd51e`) |
+| 7 | `outside_metrix_check.py` 通过 | 满足 | `c2d_01`、`c3_01`:`reports/round3/outside_metrix_check.py` 输出 `RESULT: PASS` |
+| 8 | `RUNBOOK_A100.md` 完整,含时长与费用估算 | 满足(C3 提交在 code-reviewer PASS 之后才提交) | `RUNBOOK_A100.md` 第 1–6 节对应 Task Order 第 8 节第 1–6 项;第 6 节:实际 GPU wall-clock 约 1.2–3.1 小时,GPU 部分费用约 2.2–5.6 美元(按租用时长约 3.6–9.0 美元);另列预检时 ST11 读到的 B17 估算约 1.2–3.0 小时 |
+
+## 最终状态
+
+**IMPLEMENTATION_READY**(Task Order 第 13 节)。之后由 Owner 决定是否租用 A100 并执行正式运行;正式运行另发运行指令。
+
+尚待 Review Gate 决定的事项:C2 节“待 Review Gate 决定”第 1–7 项与 C3 节第 1–3 项。其中 C3 第 1、2 项须在租卡前裁决(RUNBOOK 开头);C2 第 1 项(不写记录的停止与拒绝)、第 2 项(ST11 是否读含 checkpoint 开销的和:按 RUNBOOK 第 6 节的区间,上端会触发 ST11;TEST 的事前估计是否加余量)、第 6 项(重跑与恢复)直接影响 RUNBOOK 第 4 节的操作。Executor 认为这些事项不阻碍 IMPLEMENTATION_READY,请 Review Gate 确认;若某项裁决要求修改代码,状态退回 C2,修改后重新送审与验收。

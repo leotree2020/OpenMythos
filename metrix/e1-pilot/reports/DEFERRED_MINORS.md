@@ -634,6 +634,68 @@ code-reviewer 结论 PASS(3 MAJOR、9 MINOR);data-auditor 结论 PASS(仅作参�
 | CH11 | MINOR | IMPL_C_REPORT | C2 节与 2026-11-27 裁决尚未写入 | IC9-CR | 修复提交之后的报告提交写入 |
 | CH12 | MINOR | `checkpoint_overhead_seconds` | 50 次加载都按 load_s,与 TEST 估计的 reload_s 不一致(只报告) | IC9-DA IC9-M2 | 已修:基座加载按 load_s,checkpoint 重载按 reload_s |
 
+### 1.35 Implementation 阶段 C:C2 第三个修复提交 `a0e04d1f`(暂存树 `c7869d35`)的第 1 轮审查(`reviews/a0e04d1f…/code-reviewer_round1.md` 记 `IC10-CR`,`data-auditor_round1.md` 记 `IC10-DA`)
+
+code-reviewer 结论 PASS(没有 BLOCKER、没有 MAJOR;8 个 MINOR);data-auditor 结论 PASS(仅作参考;IC10-M1 与 3 条观察)。处理原则同 1.32:按 Task Order 第 9 节,影响协议一致性、数据、指标或隔离的必须修;以下各项都不影响这四者(测试的检出能力、文档、只报告的数值、报告文字),登记。C3 只改文档,代码(`src/`、`tests/`、`run_pilot.py`)保持 `a0e04d1f`,所以以下各项都没有在 C3 中改代码;下一次改动代码时一并处理。
+
+| # | 严重度 | 位置 | 问题 | 来源 | 处理 |
+|---|---|---|---|---|---|
+| CI1 | MINOR | `refuse_if_test_evaluated`;`test_test_evaluate_begin_wiring[crash_after_begin]` | “有标记无结果”一支没有测试能单独测出(删去后,再运行走到 begin 的 `refuse_if_marker`,结果同样是不写记录的 BLOCKED);也没有对应变异。同类:e2e 的 ST7 注入只覆盖有结果的情形;`device_check` 在夹具中被替换 | IC10-CR | 登记。防范对象之外(begin 中的完整检查仍拒绝,不会评两次);data-auditor 的驱动 `ic10_04f` 观察到运行 B 在 `refuse_if_test_evaluated` 处拒绝、之前只有 1 条 git 命令。下次改代码时:crash_after_begin 再运行前把 before_run 换成抛 ST7 的函数,并加变异 |
+| CI2 | MINOR | `begun_by_this_process` | 第三个条件(标记现在存在)没有变异,只有 `refused_inside_begin` 能测出 | IC10-CR | 登记;下次录制时加变异 |
+| CI3 | MINOR | `test_evaluate` 的说明文字 | 没有随新顺序更新(仍先写生成器前提;没有提到已评检查与标志重置) | IC10-CR | 登记;`RUNBOOK_A100.md` 第 3.8 节按代码的实际顺序写(C3 第 2 轮起;第 1 轮的写法把 ST9 放错了位置,见 1.36 CJ9) |
+| CI4 | MINOR | `pilot.py` 模块说明的 CHECKPOINT_OVERHEAD 公式 | 没有随 CH12 更新(仍写 loads x load,缺 further reloads x reload);一处断行残留 | IC10-CR | 登记;代码(`checkpoint_overhead_seconds`)正确,data-auditor 三方相等(`ic10_04e`、`ic10_06`);`RUNBOOK_A100.md` 第 6 节按 `evaluation_plan` 写 |
+| CI5 | MINOR | 第 3 步的事前估计 | CH5 加上的 hash_s 没有测试或变异;“预检之前”的处理与 `eval_seconds` 重复 | IC10-CR | 登记 |
+| CI6 | MINOR | `refuse_if_test_evaluated` 与 `testgate.refuse_if_marker` | 判定分写在两处,参照点不同(HEAD 对 fetch 后的 tip);检出落后于远端时,begin 之前带停止码的停止写记录,但 `final_record` 的提交前提因 HEAD ≠ tip 失败,记录只留在工作区 | IC10-CR;IC10-DA 观察 1 | 登记。防范对象之外;与 2026-11-27 裁决第 1 项一致;RUNBOOK 第 3.8 节要求先 `git pull --ff-only`,第 3 节开头要求整个 Pilot 只用一个克隆(C3 第 2 轮起,1.36 CJ9) |
+| CI7 | MINOR | `c2d_01`、`c2d_02` 首行;`c2d_checks.sh` 第 9 行 | 父提交写成 “2665ab17”,应为 `2665ab10` | IC10-CR | 不改录制;在 `IMPL_C_REPORT.md` C2 节“本节执行中出现的问题”第 5 项更正 |
+| CI8 | MINOR | `IMPL_C_REPORT.md` | C2 节与 2026-11-27 裁决尚未写入(CH11);新增的一类不写记录的拒绝(TEST 已开始或已评之后再运行)是否算协议第 10 节的“一次运行” | IC10-CR | C3 提交写入 C2 节与裁决;这一路径与 CH6 并入 C2 节“待 Review Gate 决定”第 1 项 |
+| CI9 | MINOR | `checkpoint_overhead_seconds`(只报告) | 没有计入第 3 步对 N 的 1 次 `state_sha256`,与第 3 步的事前估计口径不一致 | IC10-DA IC10-M1 | 登记。不影响 ST11(读 B17);RUNBOOK 第 6 节的规划估计按 `evaluation_plan` 的计数写 |
+| CI10 | 观察 | `final_record` | 也会 fetch(`check_commit_preconditions`),在评测结束或停止之后 | IC10-DA 观察 2 | 与裁决第 1 项的意图不冲突;不处理 |
+| CI11 | 观察 | `c2d_02` | 首尾没有记录两个脚本的 sha256(说明写“同样记录”不完全准确) | IC10-DA 观察 3 | 两个脚本的 sha256 在 `c2d_01` 首尾有记录;`c2d_02` 运行的命令只用 `run_pilot.py`;不处理 |
+
+### 1.36 Implementation 阶段 C:C3 提交第 1 轮审查(暂存树 `d27b68da`;`reviews/<C3 提交>/code-reviewer_round1.md` 记 `C3R1-CR`)
+
+code-reviewer 结论 BLOCK(1 BLOCKER、5 MAJOR、14 MINOR)。C3 只改文档;各项都在文档或证据中处理(没有改代码),理由与位置如下。第 2 轮核对这些处理。
+
+| # | 严重度 | 位置 | 问题 | 来源 | 处理 |
+|---|---|---|---|---|---|
+| CJ1 | BLOCKER | RUNBOOK 第 4 节;报告验收 | 没有写上次阶段 C 指令第 9 项的“确定性模式下 CUDA 算子报错时的处理(停下报告,不得关闭确定性)”;验收没有逐项核对 Owner 的阶段 C 要求 | C3R1-CR | 已修:RUNBOOK 第 4 节新增一段(立即停下;不得关闭确定性、改 `CUBLAS_WORKSPACE_CONFIG` / TF32 / cuDNN、改代码、换算子或库、重跑;run_pilot 按崩溃处理;报告 Owner);报告新增“Owner 阶段 C 各项要求的落实”一节(补充裁决 1–6、上次指令第 6–10 项) |
+| CJ2 | MAJOR | RUNBOOK 第 5 节 | 日志复制到 `results/logs/*.log`,被 `.gitignore`(`logs`、`*.log`)忽略 | C3R1-CR | 已修:命令输出 tee 到 `<work>/command_output/<名称>.txt`,复制到 `results/command_output/<名称>.txt`(`git check-ignore` 的原始输出在 `impl_c/c3_02_runbook_hashes.txt` 末尾);写明不用 `logs/` 与 `.log` |
+| CJ3 | MAJOR | RUNBOOK 第 6 节;报告验收第 8 项 | checkpoint 开销区间的上界与其依据不符(应约 77 分钟) | C3R1-CR | 已修:按依据重算为 26–77 分钟(GPU 计时之内 25–72 分钟);GPU wall-clock 1.2–3.1 小时,费用 2.2–5.6 美元(租用 3.6–9.0 美元) |
+| CJ4 | MAJOR | RUNBOOK 第 4、6 节 | ST11 读的 B17 按 FLOP 比例放大 A(a_factor ≈ 6.75),与手册的 1.5 倍口径不同;没有给出 ST11 的预期与“读和”时的风险 | C3R1-CR | 已修:第 6 节另列预检时 B17 的预期(约 1.2–3.0 小时)与 B17 + checkpoint 开销(约 1.6–4.2 小时,上端会触发 ST11),写明与实际 wall-clock 的区别;第 4 节写明 a_factor;报告“最终状态”写明这一风险 |
+| CJ5 | MAJOR | RUNBOOK 第 3.7、5 节 | data-auditor 调用的义务(frontmatter 比对、审查原文的存放、audit 脚本与 stdout 入库及时机)没有写;运行期间手工提交是否需 code-reviewer 没有写 | C3R1-CR | 已修第 3.7 节(四步:比对与第一句、脚本与 stdout 的位置、提交与 `reviews/<提交>/`、都在 3.8 之前);手工提交的审查方式列为 C3 待决第 2 项(租卡前),未裁决时按第 5 节第 1 条调用 code-reviewer |
+| CJ6 | MAJOR | RUNBOOK 第 3.1–3.4 节 | 在租用的 A100 上安装与下载,与 metrix/CLAUDE.md 第 4 节的关系没有说明,也没有请 Review Gate 确认 | C3R1-CR | 已修:RUNBOOK 开头写明 CPU 环境已完成的部分与 A100 上仍须重做的理由;列为 C3 待决第 1 项(租卡前) |
+| CJ7 | MINOR | RUNBOOK 开头 | “第 4 节的 TEST 生成与 TEST 评测”应为第 3.6、3.8 节 | C3R1-CR | 已修 |
+| CJ8 | MINOR | RUNBOOK 第 2 节 | `eval_sets.jsonl` 在仓库内、不由 `data fetch` 核对 | C3R1-CR | 已修:该行写“仓库内(不下载)”,核对方式为 generate / verify 与每步的 ST12 |
+| CJ9 | MINOR | RUNBOOK 第 3.8 节;1.35 CI3、CI6 | ST9 写在设备检查处,实际在核对 checkpoint 文件之后的 before_run 中;CI3、CI6 的处理说明与 RUNBOOK 不符 | C3R1-CR | 已修:顺序改为 ST8 → checkpoint 文件 → ST9 与 ST7 → N 的哈希 → begin;第 3 节开头写明整个 Pilot 只用一个克隆;CI3、CI6 的处理说明已更正 |
+| CJ10 | MINOR | RUNBOOK 第 4、5 节 | 实验记录文件名漏了开始时间;“任何停止都写记录”与随后的例外矛盾;第 1 步之前停止的列举不全 | C3R1-CR | 已修:文件名 `experiment_record_<命令>_<开始时间>`;一般规则改为“除下列情形外”,例外逐条列出(含连续性检查、第 1 步开始时的 ST12 / ST13、`Pilot()` 的 ST12) |
+| CJ11 | MINOR | RUNBOOK 第 3.7 节;报告待决 | 两份 L6 计数由谁、何时比较,不同时怎样写记录;test-generate 成功时不写实验记录,待决第 1 项没有列出 | C3R1-CR | 已修第 3.7 节第 4 步(比较 `L6 TEST count (Executor)` 一行与计数文件;不同则不运行 3.8);记录的写法列为 C3 待决第 3 项;test-generate 一项并入 C2 待决第 1 项 |
+| CJ12 | MINOR | RUNBOOK 第 3.8 节;报告裁决节 | 没有照录裁决原句,报告却说“写明这句话” | C3R1-CR | 已修:RUNBOOK 照录原句并注明本分支名;报告措辞随之更正 |
+| CJ13 | MINOR | RUNBOOK 第 1、3.2 节 | 升级 pip 不在锁定文件中;没有 CPython 3.13.18 时怎么办 | C3R1-CR | 已修:pip 固定为 CPU 环境所用的 26.3 并写明理由(`--require-hashes --no-deps` 逐个核对所装包;`c2_01_env_fetch.txt`);Python 须预装,没有则停下报告 Owner |
+| CJ14 | MINOR | RUNBOOK 第 3 节 | 长命令没有要求在 tmux / screen 中运行(SIGHUP 不写记录) | C3R1-CR | 已修:第 1 节表与第 3.0 节;第 4 节 TEST 特殊情况再次提醒 |
+| CJ15 | MINOR | RUNBOOK 第 1 节 | 补充裁决 6 的“只租”“租用前检查”没有明文 | C3R1-CR | 已修:第 1 节开头与第 3.0 节 |
+| CJ16 | MINOR | RUNBOOK 第 5 节 | 提交 TEST 相关命令输出前没有要求确认不含 TEST 文字;`<work>/test/leakage_test_report.json` 没有提到 | C3R1-CR | 已修:提交前逐行查看;`<work>/test/` 下所有文件(含该报告)不提交 |
+| CJ17 | MINOR | 报告 C3 节 | `c3_01` 不是送审树上的录制(写树 `65b95aca`,录制期间改了文档) | C3R1-CR | 已修:C3 节“最终检查”写明录制时的写树、之后只改文档、代码相同的依据 |
+| CJ18 | MINOR | 报告 C3 节;`c3_hf_tree` | “逐个 grep 核对”没有原始输出;`c3_hf_tree` 不是 logrun 录制 | C3R1-CR | 已补:`impl_c/c3_evidence.sh` 录制 `c3_02_runbook_hashes.txt`(每个哈希对照 `DATA_MANIFEST.json` 或所引原始输出)与 `c3_03_hf_tree_logged.txt`(重新获取并解析 HF API 文件树,与 `c3_hf_tree` 相同);原文件保留 |
+| CJ19 | MINOR | 报告验收第 6 项 | 只列阶段 C;没有引用阶段 A、B 的审查记录;没有提 `1435a74` | C3R1-CR | 已修 |
+| CJ20 | MINOR | 报告“最终状态” | “不阻碍 IMPLEMENTATION_READY”是 Executor 的判断 | C3R1-CR | 已修:写明请 Review Gate 确认;若裁决要求改代码,状态退回 C2 |
+
+### 1.37 Implementation 阶段 C:C3 提交第 2 轮审查(暂存树 `c9dfc4ac`;`reviews/<C3 提交>/code-reviewer_round2.md` 记 `C3R2-CR`)
+
+code-reviewer 结论 PASS(没有 BLOCKER、MAJOR;10 个 MINOR;第 1 轮 CJ1–CJ20 逐条“已修”)。CK2(提交前确认不含 TEST 文字的范围)涉及隔离,按 Task Order 第 9 节必须修;其余也只涉及文档,一并修正后送第 3 轮。
+
+| # | 严重度 | 位置 | 问题 | 来源 | 处理 |
+|---|---|---|---|---|---|
+| CK1 | MINOR | RUNBOOK 第 3.5 节之后、第 4 节 | “无论结果如何都提交命令输出”与“第 1 步之前的停止不写入仓库”矛盾;同名输出重跑时被覆盖 | C3R2-CR | 已修:分两种情况(第 1 步之后提交;第 1 步之前不提交任何文件,连同记录报告 Owner);formal、test-generate、test-evaluate 的输出文件名带开始时间 |
+| CK2 | MINOR | RUNBOOK 第 3.7、5 节 | 不含 TEST 文字的确认只覆盖两个命令输出,不含 data-auditor 的 stdout、原文与转录 | C3R2-CR | 已修:确认范围扩展到这些文件;3.7 的调用文字要求不以任何会显示内容的方式打开 TEST 文件,脚本只打印计数、哈希与行数 |
+| CK3 | MINOR | RUNBOOK 第 5 节 | 后备规则没有写 code-reviewer 的义务(frontmatter、第一句、原文入库、推送时机);“不含代码”不准确 | C3R2-CR | 已修 |
+| CK4 | MINOR | RUNBOOK 第 5 节;报告 C3 待决第 2 项 | 断言“补充裁决 1 的作用范围是阶段 C”,而手册依赖的其他“本阶段”裁决读法不一 | C3R2-CR | 已修:不作断言;C3 待决第 2 项请 Review Gate 一并说明这些裁决在 A100 运行期间是否有效 |
+| CK5 | MINOR | RUNBOOK 第 3.0–3.3 节 | 第 1 节的检查命令多数不在命令序列中、没有入库的输出;`<work>` 写死在家目录 | C3R2-CR | 已修:先 `df -h` 选分区再设 `WORK`、`INPUTS`;各项检查 tee 到 `env.txt`,与 `fetch.txt` 一起提交;写明代码不核对 Python 补丁版本 |
+| CK6 | MINOR | RUNBOOK 第 3.8 节 | 没有说明 `RESULT: FAIL` 在评测完成但最终状态不是 PASS 时的含义 | C3R2-CR | 已修:写明 `test-evaluate completed: <状态>` 与 `RESULT` 的含义;无论结果如何不得重跑 |
+| CK7 | MINOR | RUNBOOK 第 6 节 | “锚文本的计算量相对很小”在 FLOP 意义上不成立;预检不含 A | C3R2-CR | 已修:写明 FLOP 比约 5.75、1.5 倍是未实测的吞吐估计、预检不含 A、ST7 与 ST11 按 a_factor 偏保守 |
+| CK8 | MINOR | 报告“Owner 阶段 C 各项要求的落实” | Owner 写的是“第 1、6、7、9、10 项”,表中没有第 1 项;补充裁决 1 一行的证据写“等” | C3R2-CR | 已修:加一行上次指令第 1–5 项;范围措辞改正;补充裁决 1 一行注明只列一例 |
+| CK9 | MINOR | RUNBOOK 第 4 节 | 没有写设置确定性本身失败的情形(没有实验记录) | C3R2-CR | 已修 |
+| CK10 | MINOR | RUNBOOK 第 2 节 | “每一步开始时的 ST12”核对输入不准确(第 1 步由 generate 核对) | C3R2-CR | 已修 |
+
 ## 2. 已在第 5–7 轮解决(核对用)
 
 | 原条目 | 来源 | 处理 |
