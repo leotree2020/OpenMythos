@@ -615,6 +615,25 @@ code-reviewer 结论 PASS(4 MAJOR、18 MINOR);data-auditor 结论 PASS(仅作参
 | CG21 | MINOR | 预检的非有限值 | 记为 IMPLEMENTATION_FAIL | IC8-CR | 交 Review Gate(待决第 4 项) |
 | CG22 | MINOR | `run_test_generate` | 不做 start_checks | IC8-CR | 已修:检查 device ledger(同一个 --work) |
 
+### 1.34 Implementation 阶段 C:C2 第二个修复提交 `dd65a361`(暂存树 `a6ce8a0e`)的第 1 轮审查(`reviews/dd65a361…/code-reviewer_round1.md` 记 `IC9-CR`,`data-auditor_round1.md` 记 `IC9-DA`)
+
+code-reviewer 结论 PASS(3 MAJOR、9 MINOR);data-auditor 结论 PASS(仅作参考;IC9-M1、IC9-M2)。处理原则同 1.32。
+
+| # | 严重度 | 位置 | 问题 | 来源 | 处理 |
+|---|---|---|---|---|---|
+| CH1 | MAJOR | `test_evaluate` | TEST 评过之后再运行,begin 之前的 ST7/ST8/ST9 写并推送 BLOCKED 记录 | IC9-CR | 已修:`refuse_if_test_evaluated` 在任何带停止码的检查之前只读检查:有结果则 TestAlreadyEvaluated,有标记无结果则没有停止码的 BLOCKED,都不写记录;e2e 在 before_run 抛 ST7 时断言远端不变;变异 |
+| CH2 | MAJOR | `test_evaluate` | 错误的 --work 先被 check_preconditions 的 ST12 停下,写并推送 ST12 记录 | IC9-CR | 已修:code_commit、start_checks、已评检查移到 check_preconditions 之前;测试 `test_test_evaluate_begin_wiring[wrong_work]`;变异 |
+| CH3 | MAJOR | `test_evaluate` 的两个标志 | 真实的设置没有测试执行 | IC9-CR | 已补:`test_test_evaluate_begin_wiring[crash_after_begin]`(真实 begin 之后第 2 次评测崩溃:记录 test_begun true 并推送;同一 Pilot 再运行:没有停止码的拒绝、远端不变)、`[refused_inside_begin]`(begin 中写标记之前拒绝:不写记录);对两行与重置各一个变异 |
+| CH4 | MINOR | `test_evaluation_seconds` | 15 个文件哈希在 GPU 时钟打开之前,不应计入;计数名借用 | IC9-CR | 已修:去掉文件哈希;加载次数为 test_models − 1 |
+| CH5 | MINOR | 第 3 步、S 的估计 | N 的哈希、S 的 s_mapping 漏计 | IC9-CR | 第 3 步加 hash_s;S 登记(与 B17 同口径) |
+| CH6 | MINOR | test-evaluate 的 ST8 | 推送记录,与 formal 第 1 步之前的处理不一致 | IC9-CR | 交 Review Gate(待决第 1 项一并) |
+| CH7 | MINOR | 标志 | test_evaluate 开头不重置 | IC9-CR;IC9-DA IC9-M1 | 已修;变异 |
+| CH8 | MINOR | `run_test_generate` | code_commit、start_checks 没有测试 | IC9-CR | 已补断言与拒绝情形;变异 |
+| CH9 | MINOR | 测试 | `_formal_on_clone` 文档;records 测试文档;300 写死;提交链用 training_plan 筛 | IC9-CR | 已改 |
+| CH10 | MINOR | `c2_mutate_fix2.py`、`fix2b`、`c2c_04` | fix2 中该变异仍指名 E2E;fix2b 有未用常量;fix2b 的字节没有被输出绑定 | IC9-CR | 保持原样(已运行);`c2_mutate_fix3.py` 只指名能到达的测试;`c2d_checks.sh` 的 STATE 记录所运行脚本的 sha256 |
+| CH11 | MINOR | IMPL_C_REPORT | C2 节与 2026-11-27 裁决尚未写入 | IC9-CR | 修复提交之后的报告提交写入 |
+| CH12 | MINOR | `checkpoint_overhead_seconds` | 50 次加载都按 load_s,与 TEST 估计的 reload_s 不一致(只报告) | IC9-DA IC9-M2 | 已修:基座加载按 load_s,checkpoint 重载按 reload_s |
+
 ## 2. 已在第 5–7 轮解决(核对用)
 
 | 原条目 | 来源 | 处理 |

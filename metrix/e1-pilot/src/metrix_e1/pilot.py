@@ -53,8 +53,9 @@ unchanged. The preflight also measures one model load, one state_sha256, one che
 hash of the first configuration's model (DEFERRED_MINORS 1.27 CA21) and reports, beside B17's estimate,
   CHECKPOINT_OVERHEAD = loads x load + runs x (2 hashes + save + reload + file hash)
                         + TEST state hashes x hash + TEST checkpoint files x file hash
-(evaluation_plan: loads of N, the 30 runs, the G0.8 re-evaluations and the 16 TEST models; the TEST models' state
-hashes in testgate.require_test_session plus N's in begin; the 15 TEST checkpoint files) and the sum; whether ST11
+(evaluation_plan: base loads of N, the 30 runs and N at TEST; reloads of the G0.8 checkpoints and the 15 TEST
+checkpoints; the TEST models' state hashes in testgate.require_test_session plus N's in begin; the 15 TEST checkpoint
+files) and the sum; whether ST11
 should read the sum is for Review Gate (reports/IMPL_C_REPORT.md). The measured times also give the ST7 look-ahead
 (next_seconds): before a training run its training, save and DEV evaluation; before an evaluation the evaluation; before
 the TEST evaluation begins, the whole TEST evaluation (test_evaluation_seconds), so that ST7 does not stop it half-way.
@@ -166,32 +167,38 @@ def step1_manifests(fz, current, file_hashes):
 
 
 def evaluation_plan(contract):
-    """Counts of the checkpoint overhead: model loads (N, the 30 runs, one G0.8 re-evaluation per training seed, N and
-    the 15 TEST checkpoints), checkpoints saved (30), state hashes at TEST (the 16 models in require_test_session and
-    N's once more in begin), TEST checkpoint files hashed before the marker (15)."""
+    """Counts of the checkpoint overhead: base-model loads (N, one per training run, N at TEST), checkpoints saved and
+    reloaded (30), further checkpoint reloads (one G0.8 re-evaluation per training seed, the 15 TEST checkpoints),
+    state hashes at TEST (the 16 models in require_test_session and N's once more in begin), TEST checkpoint files
+    hashed before the marker (15)."""
     seeds = len(contract.training.training_seeds)
     runs = contract.arms.counts["total_training_runs"]
     test_models = 1 + len(T.ARMS_TRAINED) * seeds
-    return {"loads": 1 + runs + seeds + test_models, "checkpoints": runs, "test_state_hashes": test_models + 1,
-            "test_file_hashes": test_models - 1, "test_models": test_models}
+    return {"base_loads": 1 + runs + 1, "checkpoints": runs, "checkpoint_reloads": seeds + test_models - 1,
+            "test_state_hashes": test_models + 1, "test_file_hashes": test_models - 1, "test_models": test_models}
 
 
 def checkpoint_overhead_seconds(contract, load_s, hash_s, save_s, reload_s, file_hash_s):
+    """Report only (ST11 reads B17's estimate): base loads x load_s, every checkpoint hashed twice, saved, reloaded and
+    file-hashed, the further reloads x reload_s, the TEST state hashes and the TEST checkpoint file hashes."""
     n = evaluation_plan(contract)
-    return (n["loads"] * load_s + n["checkpoints"] * (2 * hash_s + save_s + reload_s + file_hash_s)
-            + n["test_state_hashes"] * hash_s + n["test_file_hashes"] * file_hash_s), n
+    return (n["base_loads"] * load_s + n["checkpoints"] * (2 * hash_s + save_s + reload_s + file_hash_s)
+            + n["checkpoint_reloads"] * reload_s + n["test_state_hashes"] * hash_s
+            + n["test_file_hashes"] * file_hash_s), n
 
 
 def test_evaluation_seconds(contract, pre):
-    """ST7 look-ahead before the TEST evaluation begins: N loaded (load_s) and the 15 checkpoints loaded
-    (load_checkpoint: reload_s), the state hashes (N twice), the 15 checkpoint files hashed, each model evaluated once
-    on TEST (a DEV evaluation scaled by test / dev questions per fact, as B17). No margin is added (for Review Gate,
-    reports/IMPL_C_REPORT.md). `pre`: the timing block of the committed step 2 record."""
+    """ST7 look-ahead before the TEST evaluation begins, for the GPU time from that check on: N loaded (load_s) and the
+    15 checkpoints loaded (load_checkpoint: reload_s), the state hashes (N twice), each model evaluated once on TEST (a
+    DEV evaluation scaled by test / dev questions per fact, as B17). The 15 checkpoint file hashes happen before the
+    GPU clock opens and are not counted. No margin is added (for Review Gate, reports/IMPL_C_REPORT.md C2). `pre`: the
+    timing block of the committed step 2 record."""
     n = evaluation_plan(contract)
     acc = contract.accounting
     per_eval = pre["dev_evaluation_seconds"] * acc.test_questions_per_fact / acc.dev_questions_per_fact
-    return (pre["load_s"] + n["test_file_hashes"] * pre["reload_s"] + n["test_models"] * per_eval
-            + n["test_state_hashes"] * pre["hash_s"] + n["test_file_hashes"] * pre["file_hash_s"])
+    checkpoints = n["test_models"] - 1
+    return (pre["load_s"] + checkpoints * pre["reload_s"] + n["test_models"] * per_eval
+            + n["test_state_hashes"] * pre["hash_s"])
 
 
 # --------------------------------------------------------------------------------------------------- the pilot
@@ -647,7 +654,7 @@ def preflight(p):
 def step3(p):
     """Section 8 step 3: N on TRAIN closed book, DEV-QA, general DEV; ST2 on G0.3."""
     p.step_start(3)
-    p.before_run(p.eval_seconds("load"))
+    p.before_run(p.eval_seconds("load") + (p.pre["hash_s"] if p.pre else 0.0))     # N is also hashed
     model = p.base_model()
     p.base_sha = T.state_sha256(model)
     ev = control_evaluation(p, model, "N on DEV", with_em=True)
@@ -1161,10 +1168,12 @@ def test_evaluate(p):
     from . import test_data as TD
     if not p.mode.formal:
         raise ImplementationFail("TEST is evaluated in formal mode only")
+    p.begin_called, p.marker_before_begin = False, None
+    p.code_commit = TG.code_commit(p.root)
+    p.start_checks("test-evaluate")             # before anything that can stop with a code: a wrong --work is refused
+    refuse_if_test_evaluated(p)                 # read-only, before any stop with a code (ST7, ST8, ST9, ST12)
     fz, auth = TD.check_preconditions(p.root, p.inputs, p.data_dir)
     p.fz = fz
-    p.code_commit = TG.code_commit(p.root)
-    p.start_checks("test-evaluate")
     p.device_info_record = p.device_check()
     try:
         p.load_data()
@@ -1238,6 +1247,20 @@ def test_evaluate(p):
               "interpretation": {"reasons": final.get("reasons"),
                                  "notes": {c: x["note"] for c, x in final["conditions"].items() if x["note"]}}}
     return final["final_status"], actual
+
+
+def refuse_if_test_evaluated(p):
+    """Before test-evaluate does anything that can stop with a stop code: TEST was evaluated (a TEST result in the
+    working tree or at HEAD) -> TestAlreadyEvaluated; an earlier run began it (a marker without a result) -> BLOCKED
+    without a stop code. Neither writes a record (run_test_evaluate). Read-only and without fetching: begin repeats the
+    full check (testgate.refuse_if_marker) after fetching."""
+    def present(rel):
+        return (p.root / rel).exists() or TG._blob(p.root, "HEAD:%s" % rel) is not None
+    if present(TG.RESULT_REL):
+        raise TG.TestAlreadyEvaluated("TEST was evaluated (%s exists): no further TEST evaluation" % TG.RESULT_REL)
+    if present(TG.MARKER_REL):
+        raise ProtocolStop(None, "BLOCKED", "TEST evaluation was already started (%s) and no result was committed: it "
+                           "counts as evaluated; no further TEST evaluation; report to the Owner" % TG.MARKER_REL)
 
 
 def begun_by_this_process(p):
