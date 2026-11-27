@@ -1,0 +1,233 @@
+# Data Auditor run (implementation stage C, C1 second submission, round 1). host vm, Anthropic cloud container, CPU only (no GPU device node: 0 nvidia entries), no model weights loaded (tokenizer files only; tiny models are random-initialised in memory); 2026-11-25 11:03:58 UTC; cwd /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/venv/bin/python -I -B /home/user/OpenMythos/metrix/e1-pilot/audit/ic5_03_static.py /home/user/OpenMythos
+env: host vm | Linux-6.18.44-fc-v880-x86_64-with-glibc2.39 | python 3.13.18 (/tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/venv/bin/python) | installed {'transformers': '5.22.2', 'tokenizers': '0.23.3', 'pyarrow': '26.0.1', 'huggingface_hub': '2.4.0', 'torch': '2.11.0'} | nvidia device nodes: []
+package modules read (working tree == index for every one and for the probe: True): ['__init__', '_cli', 'compute', 'contract', 'data', 'errors', 'evaluate', 'frozen', 'gate', 'interpretations', 'leakage', 'mode', 'record', 'stats', 'stops', 'test_data', 'testgate', 'train']
+
+== a. test_data.main: top-level statements in order (line: statement)
+   155: ap = argparse.ArgumentParser(prog='python -m metrix_e1.test_data')
+   156: ap.add_argument('--inputs', required=True)
+   157: ap.add_argument('--data', required=True)
+   158: ap.add_argument('--out', required=True)
+   159: a = ap.parse_args(argv)
+   160: try:
+   167: out = Path(a.out)
+   168: root = fz.repo_root.resolve()
+   169: if out.resolve() == root or root in out.resolve().parents:
+   171: present = [n for n in D.TEST_FILES if (out / n).exists()]
+   172: if present:
+   174: TG.code_commit(root)
+   175: TG.check_commit_preconditions(root, 'the ST10 record')
+   176: TG.refuse_if_st10_record(root)
+   177: files, info = generate_test(fz, auth, a.inputs, a.data)
+   178: out.mkdir(parents=True, exist_ok=True)
+   179: for name, blob in files.items():
+   182: report = LK.run_test_part(fz, LK.load_data(a.data), info['test_qa'], info['general_test'], auth)
+   183: (out / 'leakage_test_report.json').write_text(json.dumps(report, ensure_ascii=False, indent=1, sort_keys=True) + '\n', encoding='u
+   185: path, rec = TG.write_st10_record(fz, auth, report, files)
+   186: limits = TG.test_limits(fz)
+   187: over = TG.over_limit(fz, rec['counts'])
+   188: for c in LK.TEST_CHECKS:
+   191: head = TG.commit_paths(root, [TG.ST10_RECORD_REL], 'metrix: E1-PILOT formal step 8 ST10 record (raw TEST-part counts, TEST file ha
+   195: print('ST10 record written, committed and pushed: %s, commit %s (raw counts, TEST file sha256 %s, code commit %s)' % (path, head, 
+   197: print('L6 TEST count (Executor): %d -- the data-auditor counts with its own script and commits %s before any TEST evaluation (ST10
+   199: if over:
+   201: print('RESULT: %s' % ('FAIL' if over else 'PASS'))
+   202: sys.exit(1 if over else 0)
+  calls: {'check_preconditions': [(161, False)], 'code_commit': [(174, False)], 'check_commit_preconditions': [(175, False)], 'refuse_if_st10_record': [(176, False)], 'generate_test': [(177, False)], 'run_test_part': [(182, False)], 'write_st10_record': [(185, False)], 'commit_paths': [(191, False)]}
+  check_commit_preconditions call: ["TG.check_commit_preconditions(root, 'the ST10 record')"]
+  generate_test called by other package functions: []
+  a: check_preconditions, code_commit, check_commit_preconditions and refuse_if_st10_record come before generate_test, as unconditional top-level statements of main; generate_test called once: True
+
+== b. what the ST10 record, the marker and the result hold
+  testgate.st10_record returns:
+    kind                 <- 'st10'
+    mode                 <- 'formal'
+    label                <- None
+    frozen_commit        <- authorization.frozen_commit
+    authorization        <- auth_fields(authorization)
+    test_files_sha256    <- {n: FZ.sha256_hex(test_files[n]) for n in D.TEST_FILES}
+    code_commit          <- code_commit(root)
+    counts               <- counts
+  reads of `report` in st10_record (outermost subscript chains): ["report['checks']", "report['checks'][c]['value']"] (3 occurrences of the name)
+  counts are report['checks'][c]['value'] and nothing else of the report is read (report['checks'] only for its keys): True; test_files_sha256 is FZ.sha256_hex of the file bytes: True
+  testgate.begin_test_evaluation marker:
+    kind                   <- 'test_evaluation_marker'
+    mode                   <- 'formal'
+    frozen_commit          <- authorization.frozen_commit
+    authorization          <- auth_fields(authorization)
+    remote                 <- remote_url(root, PILOT_REMOTE)
+    branch                 <- PILOT_BRANCH
+    st10_record_sha256     <- st10_sha
+    auditor_count_sha256   <- aud_sha
+    test_files_sha256      <- rows_hashes
+    checkpoints            <- checkpoints
+    models                 <- models
+    code_commit            <- code_commit(root)
+    session_id             <- session_id
+    started_utc            <- time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
+  statements of begin_test_evaluation that read `data`: ['rows_hashes = rows_hashes_of(data)']
+  rows_hashes_of: missing = [n for n in D.TEST_FILES if n not in data] | if missing:
+    raise _refuse('no rows for %s' % missing) | return {n: rows_sha256(data[n]) for n in D.TEST_FILES}
+  rows_sha256: return FZ.sha256_hex(FZ.jsonl_bytes(rows))
+  finish_test_evaluation writes: ["path.write_text(json.dumps(dict(result, session_id=session.session_id, marker_commit=session.marker_commit), ensure_ascii=False, indent=1, sort_keys=True) + '\\n', encoding='utf-8')"]
+  -> the result file is the caller's `result` with session_id and marker_commit; its content is the caller's (run_pilot.py, C2): no TEST row is added by testgate; whether the caller's result holds TEST text is for C2
+  testgate functions with a parameter `data`: ['begin_test_evaluation', 'require_test_session', 'rows_hashes_of']; each passes it only to rows_hashes_of: True
+  b: True
+
+== c. TEST paths and the checkout
+  check_checkout (lines 185-206):
+     | root = Path(repo_root)
+     | got = repo_id(remote_url(root, PILOT_REMOTE))
+     | if got != CANONICAL_REPO:
+     |     raise _blocked("remote %s is repository %r, not the pilot's %r" % (PILOT_REMOTE, got, CANONICAL_REPO))
+     | local = _git(root, 'rev-parse', '--abbrev-ref', 'HEAD').stdout.strip()
+     | if local != PILOT_BRANCH:
+     |     raise _blocked("the checked-out branch %r is not the pilot's %r" % (local, PILOT_BRANCH))
+     | if _git(root, 'rev-parse', '--is-shallow-repository').stdout.strip() == 'true':
+     |     raise _blocked('the clone is shallow')
+     | f = _git(root, 'fetch', '-q', '--no-tags', PILOT_REMOTE, 'refs/heads/%s' % PILOT_BRANCH)
+     | if f.returncode != 0:
+     |     raise _blocked('cannot fetch %s %s: %s' % (PILOT_REMOTE, PILOT_BRANCH, f.stderr.strip()))
+     | tip = _git(root, 'rev-parse', '--verify', '-q', 'FETCH_HEAD^{commit}').stdout.strip()
+     | head = _git(root, 'rev-parse', '--verify', '-q', 'HEAD^{commit}').stdout.strip()
+     | if not HEX40.fullmatch(tip) or head != tip:
+     |     raise _blocked('HEAD %s is not the latest commit %r of %s %s: bring the checkout to it (fast-forward pull, or push the local commits) first' % (head, tip, PILOT_REMOTE, PILOT_BRANCH))
+     | return tip
+  _where (lines 209-214):
+     | found = ['working tree'] if (Path(root) / rel).exists() else []
+     | if _git(root, 'cat-file', '-e', '%s:%s' % (tip, rel)).returncode == 0:
+     |     found.append('commit %s' % tip)
+     | return found
+  check_commit_preconditions (lines 217-229):
+     | root = Path(repo_root)
+     | check_checkout(root)
+     | if _git(root, 'diff', '--cached', '--quiet').returncode != 0:
+     |     raise _blocked('the git index holds staged changes; the commit of %s holds that path only' % what)
+     | if _git(root, 'var', 'GIT_COMMITTER_IDENT').returncode != 0:
+     |     raise _blocked('no git committer identity (user.name, user.email)')
+     | dry = _git(root, 'push', '--dry-run', '--no-follow-tags', PILOT_REMOTE, 'HEAD:refs/heads/%s' % PILOT_BRANCH)
+     | if dry.returncode != 0:
+     |     raise _blocked('a dry-run push to %s %s fails: %s' % (PILOT_REMOTE, PILOT_BRANCH, dry.stderr.strip()))
+  _check_session_checkout (lines 458-465):
+     | local = _git(root, 'rev-parse', '--abbrev-ref', 'HEAD').stdout.strip()
+     | head = _git(root, 'rev-parse', '--verify', '-q', 'HEAD^{commit}').stdout.strip()
+     | if local != PILOT_BRANCH or head != session.marker_commit:
+     |     raise _blocked("the checkout is %r at %s, not the pilot's %r at the TEST marker commit %s" % (local, head, PILOT_BRANCH, session.marker_commit))
+  commit_paths (lines 249-266):
+     | root = Path(repo_root)
+     | if _git(root, 'diff', '--cached', '--quiet').returncode != 0:
+     |     raise _blocked('the git index holds staged changes; the commit of %s holds its own paths only' % what)
+     | add = _git(root, 'add', '--', *rels)
+     | staged = sorted(_git(root, 'diff', '--cached', '--name-only').stdout.split())
+     | if add.returncode != 0 or staged != sorted(rels):
+     |     raise ProtocolStop(None, 'BLOCKED', scrub('staging %s failed (%s; staged %s, expected %s); report to the Owner' % (what, add.stderr.strip(), staged, sorted(rels))))
+     | c = _git(root, 'commit', '-q', '-m', message)
+     | if c.returncode != 0:
+     |     raise ProtocolStop(None, 'BLOCKED', scrub('committing %s failed (%s); report to the Owner' % (what, (c.stdout + c.stderr).strip())))
+     | return _push(root, retries, sleep, what)
+  _push (lines 232-246):
+     | head = _git(root, 'rev-parse', 'HEAD').stdout.strip()
+     | last = ''
+     | for i in range(retries):
+     |     r = _git(root, 'push', '--no-follow-tags', PILOT_REMOTE, 'HEAD:refs/heads/%s' % PILOT_BRANCH)
+     |     ls = _git(root, 'ls-remote', PILOT_REMOTE, 'refs/heads/%s' % PILOT_BRANCH)
+     |     if r.returncode == 0 and ls.returncode == 0 and (ls.stdout.split()[:1] == [head]):
+     |         return head
+     |     last = (r.stderr + ls.stderr).strip()
+     |     if 
+     | raise ProtocolStop(None, 'BLOCKED', scrub('%s is committed (%s) but was not pushed to %s %s (%s); report to the Owner' % (what, head, PILOT_REMOTE, PILOT_BRANCH, last)))
+  check_checkout: origin's repository == CANONICAL_REPO, branch == PILOT_BRANCH, not shallow, fetch refs/heads/PILOT_BRANCH (no tags) works, HEAD == FETCH_HEAD; every failure _blocked: missing pieces []; raises ['_blocked("re', '_blocked("th', "_blocked('th", "_blocked('ca", "_blocked('HE"]
+  _where looks at: the working tree (Path(root) / rel).exists() and `git cat-file -e <tip>:<rel>` only: True
+  _check_session_checkout: branch == PILOT_BRANCH and HEAD == session.marker_commit, else _blocked; no fetch: True
+  check_commit_preconditions: first statement after root is check_checkout(root): True; then staged, identity (git var GIT_COMMITTER_IDENT), dry run (push --dry-run --no-follow-tags origin HEAD:refs/heads/<branch>): [True, True, True]
+  commit_paths: no remote / branch check of its own (no check_checkout, remote_url, rev-parse --abbrev-ref): True
+  _push: plain push --no-follow-tags (no --force, no +refspec) and ls-remote of the one ref: True
+  call graph (testgate functions reached, transitively):
+    refuse_if_marker             -> ['_blocked', '_git', '_where', 'check_checkout', 'remote_url', 'repo_id', 'scrub']
+    refuse_if_st10_record        -> ['_blocked', '_git', '_where', 'check_checkout', 'remote_url', 'repo_id', 'scrub']
+    check_commit_preconditions   -> ['_blocked', '_git', 'check_checkout', 'remote_url', 'repo_id', 'scrub']
+    begin_test_evaluation        -> ['_blocked', '_committed', '_count', '_counts_ok', '_git', '_is_ancestor', '_push', '_refuse', '_where', 'auth_fields', 'check_checkout', 'check_commit_preconditions', 'code_commit', 'commit_paths', 'evaluated_models', 'refuse_if_marker', 'remote_url', 'repo_id', 'rows_hashes_of', 'rows_sha256', 'scrub', 'st10_check', 'test_limits']
+    require_test_session         -> ['_blocked', '_check_session_checkout', '_committed', '_count', '_counts_ok', '_git', '_is_ancestor', '_refuse', 'auth_fields', 'rows_hashes_of', 'rows_sha256', 'scrub', 'st10_check', 'test_limits']
+    claim_checkpoint             -> ['_refuse']
+    finish_test_evaluation       -> ['_blocked', '_check_session_checkout', '_committed', '_git', '_push', '_refuse', 'check_checkout', 'check_commit_preconditions', 'commit_paths', 'remote_url', 'repo_id', 'scrub']
+    st10_check                   -> ['_committed', '_count', '_counts_ok', '_git', '_is_ancestor', '_refuse', 'auth_fields', 'test_limits']
+    commit_paths                 -> ['_blocked', '_git', '_push', 'scrub']
+  require_test_session reaches check_checkout / fetch: False (Executor's reading: the calls do not fetch)
+  finish_test_evaluation reaches check_checkout (through check_commit_preconditions): True
+  begin_test_evaluation call lines: {'refuse_if_marker': 429, 'verify_authorization': 430, 'st10_check': 432, 'check_commit_preconditions': 438, 'write_bytes': 449, 'commit_paths': 450}
+  finish_test_evaluation call lines: {'_check_session_checkout': 510, '_committed': 511, 'check_commit_preconditions': 515, 'write_text': 517, 'commit_paths': 519}
+  require_test_session call lines: {'_check_session_checkout': 476, '_committed': 477, 'st10_check': 482, 'state_sha256': 487}
+  evaluate.evaluate_model call lines (TEST branch, then the scoring): {'verify_authorization': 329, 'require_test_session': 331, 'require_gpu': 332, 'claim_checkpoint': 333, 'score_qa': 338}
+  package functions calling begin / require_test_session / claim_checkpoint / finish: [('evaluate', 'evaluate_model')]
+  package callers of the TEST generation steps (generate_test, build_test_qa, run_test_part, write_st10_record): [('test_data', 'generate_test', 'build_test_qa'), ('test_data', 'main', 'generate_test'), ('test_data', 'main', 'run_test_part'), ('test_data', 'main', 'write_st10_record')]
+  session guards: require_test_session `not isinstance(session, TestSession) or _LIVE.get(session.session_id) is not session` | claim_checkpoint `_LIVE.get(getattr(session, 'session_id', None)) is not session` | finish_test_evaluation `_LIVE.get(getattr(session, 'session_id', None)) is not session`
+  -> for session None: getattr(None, 'session_id', None) is None, _LIVE.get(None) is None, and `None is not None` is False: the guards of claim_checkpoint and finish_test_evaluation let None through (the next statement reads session.evaluated / session.marker_commit: AttributeError); require_test_session's guard starts with isinstance(session, TestSession) and refuses None
+  c: True
+
+== d. the probe against the interfaces
+    line  90 TG.repo_id(TG.remote_url(repo, 'origin'))                    params ['url']: ok
+    line  97 LK.TestAuthorization(fz.record.commit, committed_sha(repo, R params ['frozen_commit', 'gate0_record_sha256', 'selection_record_sha256']: ok
+    line  90 TG.remote_url(repo, 'origin')                                params ['root', 'remote']: ok
+    line  96 FZ.load()                                                    params ['repo_root', 'protocol_frozen_path', 'check_working_tree']: ok
+    line  99 FZ.read_jsonl(test_dir / n)                                  params ['path']: ok
+    line 108 TG.refuse_if_st10_record(repo)                               params ['repo_root']: ok
+    line 111 TG.refuse_if_marker(repo)                                    params ['repo_root']: ok
+    line 114 TG.check_commit_preconditions(repo, "the probe's record")    params ['repo_root', 'what']: ok
+    line 106 TG.st10_check(fz, auth, TG.rows_hashes_of(data))             params ['fz', 'authorization', 'rows_hashes', 'repo_root']: ok
+    line 117 TG.begin_test_evaluation(fz, auth, data, arg, retries=1, sle params ['fz', 'authorization', 'data', 'base_model_sha256', 'repo_root', 'retries', 'sleep']: ok
+    line 106 TG.rows_hashes_of(data)                                      params ['data']: ok
+    line 123 TG.require_test_session(fz, auth, session, name, data, _ShaM params ['fz', 'authorization', 'session', 'checkpoint_name', 'data', 'model', 'repo_root']: ok
+    line 124 TG.claim_checkpoint(session, name)                           params ['session', 'checkpoint_name']: ok
+    line 132 E.evaluate_model(tiny(int(seed)), None, data, None, contract params ['model', 'tok', 'data', 'templates', 'ev', 'mode', 'device', 'split', 'with_em', 'with_s_mapping', 'batch_size', 'test_authorization', 'fz', 'test_session', 'checkpoint_name']: ok
+    line 141 TG.finish_test_evaluation(fz, session, {'probe': 'synthetic  params ['fz', 'session', 'result', 'repo_root', 'retries', 'sleep']: ok
+  module attributes the probe reads or assigns: ['E.evaluate_model', 'FZ.load', 'FZ.read_jsonl', 'LK.TestAuthorization', 'M.FORMAL_MODE', 'R.GATE0_RECORD_REL', 'R.SELECTION_FREEZE_REL', 'TG.CANONICAL_REPO', 'TG.MARKER_REL', 'TG.PILOT_BRANCH', 'TG.TestAlreadyEvaluated', 'TG.begin_test_evaluation', 'TG.check_commit_preconditions', 'TG.claim_checkpoint', 'TG.finish_test_evaluation', 'TG.refuse_if_marker', 'TG.refuse_if_st10_record', 'TG.remote_url', 'TG.repo_id', 'TG.require_test_session', 'TG.rows_hashes_of', 'TG.st10_check'] | missing in the package: []
+  TestSession fields ['session_id', 'marker_commit', 'evaluated'] | the probe reads session.['marker_commit']
+  probe guard line 91 < override of CANONICAL_REPO / PILOT_BRANCH line 93 < first operation (loop) line 102: True
+  operations the probe implements: ['begin', 'eval', 'finish', 'gate', 'marker', 'pre', 'st10', 'st10rec', 'tinysha']
+  d: True
+
+== e. the searches the ruling removed: occurrences in src/metrix_e1/*.py and in the probe
+  remote_heads     []
+  --all\b          []
+  --reflog         []
+  --full-history   []
+  rev-list         []
+  --heads          []
+  _ever_committed  []
+  [\"']log[\"']    []
+  refs/tags        []
+  for-each-ref     []
+  show-ref         []
+  ls-remote        ['testgate:239: ls = _git(root, "ls-remote", PILOT_REMOTE, "refs/heads/%s" % PILOT_BRANCH)']
+  e: no removed search left; the one ls-remote is _push's pushed-ref check: True
+
+== f. B25 and pending()
+  entries 25 (B1..B25); statuses: ['ACCEPTED（Review Gate 2026-11-24）', 'ACCEPTED（Review Gate 2026-11-25）']
+  B25 status 'ACCEPTED（Review Gate 2026-11-25）' ruling 'tasks/IMPL_C1_RULING.md 第 3 项(reports/IMPL_C_REPORT.md「Review Gate 对 C1 的裁决」)'
+  B25 text: A run's checkpoint hash is train.state_sha256 of the trained model (for arm L the LoRA-wrapped model, base weights and adapters; N's is the loaded base model's). It is not a file-byte hash. Computation: h = SHA-256(); for each key k of module.state_dict() in sorted order (Python string order), with t = the tensor detached, moved to the CPU and made contiguous: h.update(UTF-8 bytes of k + b'\0' + str(t.dtype) + b'\0' + str(tuple(t.shape)) + b'\0'), then h.update(the raw bytes of t, flattened and viewed as uint8, in the host's byte order); the hash is h.hexdigest() (64 lowercase hex). TEST evaluation recomputes it on the model loaded from the saved checkpoint and requires equality with the freeze record (through the TEST marker) before the model is evaluated.
+  pending(): return [e['id'] for e in ENTRIES if e.get('status', PENDING) == PENDING] -> my reading of its result: []
+  pending_problem callers: [('leakage', 'verify_authorization'), ('test_data', 'check_interpretations_ruled')]
+  f: True
+
+== g. refusal kinds per testgate function (raise sites)
+  check_checkout               ['_blocked', '_blocked', '_blocked', '_blocked', '_blocked']
+  check_commit_preconditions   ['_blocked', '_blocked', '_blocked']
+  _push                        ['ProtocolStop']
+  commit_paths                 ['_blocked', 'ProtocolStop', 'ProtocolStop']
+  refuse_if_st10_record        ['ImplementationFail']
+  refuse_if_marker             ['ProtocolStop', 'TestAlreadyEvaluated']
+  st10_check                   ['_refuse', '_refuse', '_refuse', '_refuse', '_refuse', '_refuse', '_refuse', '_refuse', '_refuse']
+  _committed                   ['_refuse']
+  begin_test_evaluation        ['_refuse']
+  _check_session_checkout      ['_blocked']
+  require_test_session         ['_refuse', '_refuse', '_refuse', '_refuse', '_refuse']
+  claim_checkpoint             ['_refuse', '_refuse']
+  finish_test_evaluation       ['_refuse', '_refuse']
+  code_commit                  ['ImplementationFail', 'ImplementationFail']
+
+== h. the threat-model paragraph
+  metrix/e1-pilot/tasks/IMPL_C1_RULING.md holds the paragraph of the instruction verbatim: True
+modules: torch imported=False | transformers modeling modules imported=[] | this script never calls a model class or from_pretrained on a model
+RESULT: PASS
+exit=0

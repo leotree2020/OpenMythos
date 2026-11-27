@@ -1,0 +1,44 @@
+# Data Auditor run (implementation stage C, C1 second submission, fix commit (staged tree ae5fcb2f, parent ae60e0f), round 1). host vm, Anthropic cloud container, CPU only (no GPU device node: 0 nvidia entries), no model weights loaded (tokenizer files only; tiny models are random-initialised in memory); 2026-11-26 03:06:02 UTC; cwd /home/user/OpenMythos
+# stdout and stderr merged, complete, unedited
+$ bash -c cd\ /home/user/OpenMythos/metrix/e1-pilot/reports/impl_c\ \&\&\ echo\ \"---\ mutation\ result\ lines:\ c1b_02\ \(work\ commit\)\ vs\ c1b_04\ \(fix\ commit\)\,\ names\ only\,\ sorted\ \(diff\ old\ new\)\"\;\ diff\ \<\(grep\ -oE\ \"\^\[a-zA-Z0-9_\ :/\(\)+.-\]+\ +-\>\ \"\ c1b_02_checks.txt\ \|\ sed\ \"s/\ \*-\>\ \\\$//\"\ \|\ sort\)\ \<\(grep\ -oE\ \"\^\[a-zA-Z0-9_\ :/\(\)+.-\]+\ +-\>\ \"\ c1b_04_checks_fix.txt\ \|\ sed\ \"s/\ \*-\>\ \\\$//\"\ \|\ sort\)\;\ echo\ \"---\ counts\"\;\ grep\ -h\ \"\^mutations\ \"\ c1b_02_checks.txt\ c1b_03_checks_fix.txt\ c1b_04_checks_fix.txt\;\ echo\ \"---\ c1b_03\ not\ caught\"\;\ grep\ -n\ -A1\ \"NOT\ CAUGHT\"\ c1b_03_checks_fix.txt\;\ echo\ \"---\ c1b_mutate.py\ vs\ c1b_mutate_fix1.py\ \(diff\ of\ the\ mutation\ tables\)\"\;\ diff\ c1b_mutate.py\ c1b_mutate_fix1.py\ \|\ sed\ -n\ \"/\^\[0-9\]\*a144/\,\\\$p\"
+--- mutation result lines: c1b_02 (work commit) vs c1b_04 (fix commit), names only, sorted (diff old new)
+10a11
+> begin: parent marker not checked
+11a13
+> begin: pushed marker bytes not checked
+32a35,36
+> evaluate_model: s_mapping checked after the claim
+> finish: any session
+--- counts
+mutations 74, caught 74
+mutations 78, caught 77
+mutations 78, caught 78
+--- c1b_03 not caught
+310:begin: pushed marker bytes not checked           -> NOT CAUGHT exit 0 | 1 passed in 4.36s
+311-       passed test_a_commit_of_another_begin_between_commit_and_push_is_blocked
+--- c1b_mutate.py vs c1b_mutate_fix1.py (diff of the mutation tables)
+141a144,156
+>     ("begin: parent marker not checked", G,
+>      'if _blob(root, "%s:%s" % (head, MARKER_REL)) != blob or _blob(root, "%s^:%s" % (head, MARKER_REL)) is not None:',
+>      'if _blob(root, "%s:%s" % (head, MARKER_REL)) != blob:', T + "test_a_second_begin_in_the_same_clone_is_blocked"),
+>     ("begin: pushed marker bytes not checked", G,
+>      'if _blob(root, "%s:%s" % (head, MARKER_REL)) != blob or _blob(root, "%s^:%s" % (head, MARKER_REL)) is not None:',
+>      'if _blob(root, "%s^:%s" % (head, MARKER_REL)) is not None:',
+>      T + "test_a_marker_file_overwritten_before_the_commit_is_blocked"),
+>     ("evaluate_model: s_mapping checked after the claim", EV, [
+>         ('    if with_s_mapping and split != "dev":           # checked before the TEST gate claims a checkpoint\n'
+>          '        raise ValueError("S\'s own-mapping accuracy is reported on DEV only (protocol section 8)")\n', ""),
+>         ("    if with_s_mapping:\n        qa, cb = score_s_mapping(",
+>          "    if with_s_mapping:\n        if split != \"dev\":\n            raise ValueError(\"S's own-mapping accuracy is "
+>          "reported on DEV only\")\n        qa, cb = score_s_mapping(")], T + "test_s_mapping_on_test_is_refused_before_the_gate"),
+180c195
+<     ("claim: any session", G, '''    if _LIVE.get(getattr(session, "session_id", None)) is not session:
+---
+>     ("claim: any session", G, '''    if not isinstance(session, TestSession) or _LIVE.get(session.session_id) is not session:
+184a200,204
+>     ("finish: any session", G, '''    if not isinstance(session, TestSession) or _LIVE.get(session.session_id) is not session:
+>         raise _refuse("no TEST session of this process")
+>     _check_session_checkout''', '''    if not isinstance(session, TestSession):
+>         raise _refuse("no TEST session of this process")
+>     _check_session_checkout''', FINISH),
+exit=0

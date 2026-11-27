@@ -1,0 +1,80 @@
+# Data Auditor run (implementation stage C, C1 second submission, round 1). host vm, Anthropic cloud container, CPU only (no GPU device node: 0 nvidia entries), no model weights loaded (tokenizer files only; tiny models are random-initialised in memory); 2026-11-25 11:03:54 UTC; cwd /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/venv/bin/python -I -B /home/user/OpenMythos/metrix/e1-pilot/audit/ic5_02_content_hashes.py /home/user/OpenMythos /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/inputs/qwen_tokenizer /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/c1_data
+/home/user/OpenMythos/metrix/e1-pilot/audit/ic5_02_content_hashes.py:171: DeprecationWarning: datetime.datetime.utcfromtimestamp() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.fromtimestamp(timestamp, datetime.UTC).
+  print("  %-18s size %7d mtime %s UTC" % (n, st.st_size, datetime.datetime.utcfromtimestamp(st.st_mtime).strftime("%Y-%m-%d %H:%M:%S")))
+env: host vm | Linux-6.18.44-fc-v880-x86_64-with-glibc2.39 | python 3.13.18 (/tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/venv/bin/python) | installed {'transformers': '5.22.2', 'tokenizers': '0.23.3', 'pyarrow': '26.0.1', 'huggingface_hub': '2.4.0', 'torch': '2.11.0'} | nvidia device nodes: []
+== A. PROTOCOL_FROZEN, my own reading
+metrix/e1-pilot/PROTOCOL_FROZEN sha256 3f8a3bbaaafa0b451483bb88baa012c77e8b106dd3b157a152ffa675856906ff | == HEAD blob True | == index blob True
+current version ['v1.1'] | frozen commit 87a244db28a901f9e89282b50df76778ab5c2887 | == 87a244db28a901f9e89282b50df76778ab5c2887: True
+table rows with a 64-hex value: 12
+  facts        row 'fact(160 条)' -> 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 | definition names '协议第 2.2 节': True | frozen-commit DATA_MANIFEST.json: name_generation.expected_facts_canonical_sha256 == value: True
+  train_S      row '`train_S.jsonl`' -> 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e | definition names '协议第 2.6 节': True | frozen-commit DATA_MANIFEST.json: s_permutation.expected_train_S_canonical_sha256 == value: True
+  candidates   row '`candidates.json`' -> e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | definition names '协议第 2.5 节': True | frozen-commit SPLIT_MANIFEST.json: candidates.candidate_mapping_sha256 == value: True
+  anchor_texts row '锚文本(512 篇解码文本)' -> 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 | definition names 'JSON 列表': True | frozen-commit DATA_MANIFEST.json: anchor_text.decoded_texts_canonical_sha256 == value: True
+
+== B. recomputed from /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/c1_data by the protocol rules
+  facts.jsonl        size   21489 mtime 2026-11-25 10:31:51 UTC
+  train_F.jsonl      size   14073 mtime 2026-11-25 10:31:51 UTC
+  train_S.jsonl      size   15033 mtime 2026-11-25 10:31:51 UTC
+  train_Y.jsonl      size   28203 mtime 2026-11-25 10:31:51 UTC
+  dev_qa.jsonl       size   37176 mtime 2026-11-25 10:31:51 UTC
+  candidates.json    size   10453 mtime 2026-11-25 10:31:51 UTC
+  general_dev.jsonl  size  233241 mtime 2026-11-25 10:31:51 UTC
+  anchor_text.jsonl  size  639712 mtime 2026-11-25 10:31:51 UTC
+facts.jsonl 160 lines (each exactly the 6 fields: True) | train_S.jsonl 120 rows | candidates.json 160 facts | anchor_text.jsonl 512 rows (doc == line index: True)
+anchor texts from my decode of the stored ids (pinned Qwen tokenizer): 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 | every decoded text == stored text: True
+Executor's values from metrix/e1-pilot/reports/impl_c/c1b_02_checks.txt: generation 4 lines, verify 4 lines
+  facts        mine 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 | PROTOCOL_FROZEN 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 | Executor generate 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 | Executor verify 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 | ALL EQUAL True
+  train_S      mine 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e | PROTOCOL_FROZEN 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e | Executor generate 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e | Executor verify 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e | ALL EQUAL True
+  candidates   mine e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | PROTOCOL_FROZEN e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | Executor generate e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | Executor verify e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | ALL EQUAL True
+  anchor_texts mine 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 | PROTOCOL_FROZEN 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 | Executor generate 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 | Executor verify 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 | ALL EQUAL True
+
+== C. byte sha256 of the data files
+  facts.jsonl        now e05561ac2d49dcc3c8f59743c5df64151983a540a32ae135fd1b10f5e0fdc828 | my stage-B record e05561ac2d49dcc3c8f59743c5df64151983a540a32ae135fd1b10f5e0fdc828 | Executor listing (c1b_02) e05561ac2d49dcc3c8f59743c5df64151983a540a32ae135fd1b10f5e0fdc828 | equal True
+  train_F.jsonl      now 3aa9ab3ca313c0a1113b91e927af51342c915e3e40dd2f20992f3d9e59b0e373 | my stage-B record 3aa9ab3ca313c0a1113b91e927af51342c915e3e40dd2f20992f3d9e59b0e373 | Executor listing (c1b_02) 3aa9ab3ca313c0a1113b91e927af51342c915e3e40dd2f20992f3d9e59b0e373 | equal True
+  train_S.jsonl      now 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e | my stage-B record 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e | Executor listing (c1b_02) 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e | equal True
+  train_Y.jsonl      now c7430cadb2b06dd5c144af381a8183d4c186f27f2b5acfa9d8d39da0b7626d15 | my stage-B record c7430cadb2b06dd5c144af381a8183d4c186f27f2b5acfa9d8d39da0b7626d15 | Executor listing (c1b_02) c7430cadb2b06dd5c144af381a8183d4c186f27f2b5acfa9d8d39da0b7626d15 | equal True
+  dev_qa.jsonl       now 9761eb60d6c9155c2f56394aa228b1e9dfea0ae3926ab50cb21d903108bc7fde | my stage-B record 9761eb60d6c9155c2f56394aa228b1e9dfea0ae3926ab50cb21d903108bc7fde | Executor listing (c1b_02) 9761eb60d6c9155c2f56394aa228b1e9dfea0ae3926ab50cb21d903108bc7fde | equal True
+  candidates.json    now e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | my stage-B record e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | Executor listing (c1b_02) e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | equal True
+  general_dev.jsonl  now 957666920c91ef5b9328984d26ed0628c8a80b439d461bea49b54c2235635e73 | my stage-B record 957666920c91ef5b9328984d26ed0628c8a80b439d461bea49b54c2235635e73 | Executor listing (c1b_02) 957666920c91ef5b9328984d26ed0628c8a80b439d461bea49b54c2235635e73 | equal True
+  anchor_text.jsonl  now 2089e656819d1fe0f6ececcc26e5cade09ee80a92c50e7c8f607fa4e0ef46da5 | my stage-B record 2089e656819d1fe0f6ececcc26e5cade09ee80a92c50e7c8f607fa4e0ef46da5 | Executor listing (c1b_02) 2089e656819d1fe0f6ececcc26e5cade09ee80a92c50e7c8f607fa4e0ef46da5 | equal True
+  files in data_d: ['anchor_text.jsonl', 'candidates.json', 'dev_qa.jsonl', 'facts.jsonl', 'general_dev.jsonl', 'train_F.jsonl', 'train_S.jsonl', 'train_Y.jsonl'] | test_qa.jsonl / general_test.jsonl present: []
+
+== D. static: Frozen.content_hashes at HEAD (5f5cd51e, src/ before C1) vs now (working tree == index)
+working tree == index for metrix/e1-pilot/src/metrix_e1/frozen.py: True
+HEAD content_hashes statements:
+   | d = Path(data_dir)
+   | anchor = read_jsonl(d / 'anchor_text.jsonl')
+   | with open(d / 'candidates.json', encoding='utf-8') as fh:
+   |     cands = json.load(fh)
+   | return {'facts': sha256_hex(canonical_bytes(read_jsonl(d / 'facts.jsonl'))), 'train_S': sha256_hex(jsonl_bytes(read_jsonl(d / 'train_S.jsonl'))), 'candidates': sha256_hex(canonical_bytes(cands)), 'anchor_texts': sha256_hex(canonical_bytes([r['text'] for r in anchor]))}
+now content_hashes statements:
+   | d = Path(data_dir)
+   | return {key: sha256_hex(CONTENT_HASH_BYTES[key](d)) for key in CONTENT_HASH_KEYS}
+HEAD local names substituted: ['d = Path(data_dir)', "anchor = read_jsonl(d / 'anchor_text.jsonl')", "cands = JSONFILE(d / 'candidates.json')  [with open(..., encoding='utf-8') as fh: json.load(fh)]"]
+HEAD binds d = Path(data_dir) | now: exactly 'd = Path(data_dir)' and 'return {key: sha256_hex(CONTENT_HASH_BYTES[key](d)) for key in CONTENT_HASH_KEYS}': True
+now _json_file(path) is exactly 'with open(path, encoding="utf-8") as fh: return json.load(fh)': True
+CONTENT_HASH_BYTES entries are lambdas of one parameter d: True
+CONTENT_HASH_KEYS HEAD ('facts', 'train_S', 'candidates', 'anchor_texts') | now ('facts', 'train_S', 'candidates', 'anchor_texts') | HEAD dict key order ['facts', 'train_S', 'candidates', 'anchor_texts'] | CONTENT_HASH_BYTES key order ['facts', 'train_S', 'candidates', 'anchor_texts']
+  facts        HEAD  canonical_bytes(read_jsonl(d / 'facts.jsonl'))
+               now   canonical_bytes(read_jsonl(d / 'facts.jsonl'))
+               identical: True
+  train_S      HEAD  jsonl_bytes(read_jsonl(d / 'train_S.jsonl'))
+               now   jsonl_bytes(read_jsonl(d / 'train_S.jsonl'))
+               identical: True
+  candidates   HEAD  canonical_bytes(JSONFILE(d / 'candidates.json'))
+               now   canonical_bytes(JSONFILE(d / 'candidates.json'))
+               identical: True
+  anchor_texts HEAD  canonical_bytes([r['text'] for r in read_jsonl(d / 'anchor_text.jsonl')])
+               now   canonical_bytes([r['text'] for r in read_jsonl(d / 'anchor_text.jsonl')])
+               identical: True
+  helper canonical_bytes  identical at HEAD and now: True
+  helper jsonl_bytes      identical at HEAD and now: True
+  helper read_jsonl       identical at HEAD and now: True
+  helper parse_jsonl      identical at HEAD and now: True
+  helper sha256_hex       identical at HEAD and now: True
+conclusion: the four serialized byte expressions, their key order and the helpers are unchanged, so content_hashes returns the same {key: sha256} as at HEAD for any data directory
+modules: torch imported=True | transformers modeling modules imported=['torch', 'transformers.modeling_rope_utils', 'transformers.models.auto.modeling_auto'] | this script never calls a model class or from_pretrained on a model
+RESULT: PASS
+exit=0

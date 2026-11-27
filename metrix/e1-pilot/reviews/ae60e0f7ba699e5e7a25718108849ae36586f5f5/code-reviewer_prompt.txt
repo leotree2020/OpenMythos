@@ -1,0 +1,27 @@
+先读仓库中的 .claude/agents/code-reviewer.md，以它为你的完整定义；它与你已加载的定义冲突时，以仓库文件为准。
+
+审查对象：METRIX E1-PILOT Implementation 阶段 C 第 1 段（C1）工作提交的第二次送审，第 1 轮（Review Gate 对 C1 的裁决第 9 项：按裁决修改后重新送两份审查，轮次从 1 重新计）。暂存区内容（尚未提交），父提交 5f5cd51e83d8f637ca6252dc1ba71c32818bf19b（origin/metrix-e1-pilot-protocol-v1，C1 停止时的证据提交）。仓库 /home/user/OpenMythos。
+
+Review Gate 对 C1 的裁决（2026-11-25，原文 metrix/e1-pilot/tasks/IMPL_C1_RULING.md，本次暂存）中的防范对象，原文如下：
+防范对象：TEST 闸门要防的是「按规则办事的 Executor 在按 RUNBOOK 操作时，意外评测 TEST 两次，或在 ST10 不成立时评测 TEST」；不防有仓库写权限者的故意篡改（改写历史、伪造记录），这类风险由 GitHub 分支保护和审查记录承担。审查按此范围判定：范围外的边缘情况记为 MINOR 并登记，不作为 BLOCKER。调用两份审查时，把本段防范对象原文写进调用文字。
+
+审查输入（目录 /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/review_c1b/）：
+- input.diff：git diff --cached --stat 与完整 diff，相对父提交 5f5cd51e（整个工作提交）；
+- delta_from_round3.diff：第一次送审第 3 轮的暂存树 9be4df2a 到本次暂存树的差异（代码部分），便于对照；
+- tree.txt：本次暂存树 hash。暂存内容与工作区文件相同（src/ 与 tests/ 的核对见 c1b_02）。
+- 第一次送审的三轮审查原文与登记：metrix/e1-pilot/reviews/tree-9be4df2ab398030ef0c9b5fbadc36f17022c4ef4/（*_round1.md、*_round2.md、*_round3.md）；metrix/e1-pilot/reports/DEFERRED_MINORS.md 1.27–1.29；reports/IMPL_C_REPORT.md C1 节“待 Review Gate 决定”（裁决所答的问题）。
+- 本次的原始输出（暂存，metrix/e1-pilot/reports/impl_c/）：c1b_02_checks.txt（正式记录：工作区状态与暂存树、数据重新生成与四个冻结哈希、TEST 生成器在当前状态拒绝、outside_metrix_check、全部 pytest、Executor 运行探针一次 c1b_probe_run.py、变异 c1b_mutate.py 及前后 src/tests 哈希）；c1b_01_checks.txt（第一次完整录制：变异 74 个中 1 个“未测出”，原因是该变异在 c1b_mutate.py 中多指名了 3 个本不应失败的 begin 用例——begin 在写标记前经 check_commit_preconditions 再查一次检出；改正指名后完整重跑为 c1b_02；c1b_01 按裁决第 7 项作为被取代的记录入库，不作为证据）。
+
+依据：metrix/CLAUDE.md；metrix/e1-pilot/METRIX_E1_PROTOCOL.md（第 3 节、第 8 节第 8 步、第 9 节、第 11 节 ST10）；tasks/IMPLEMENTATION_TASK_ORDER_V1.md；tasks/IMPL_C_OWNER_MESSAGE.md（补充裁决 1–6；对阶段 B 的裁决与阶段 C 要求）；tasks/IMPL_C1_RULING.md（对 C1 的裁决，含上面的防范对象与第 1–9 项）。
+
+本轮改动（Executor 的说明，不作为证据；请逐条对照裁决原文 tasks/IMPL_C1_RULING.md 核对）：
+- 裁决第 1 项（采用 (a)）：testgate.check_checkout：PILOT_REMOTE（"origin"）的 fetch URL 的 owner/name 等于 CANONICAL_REPO（不比主机，裁决第 6 项）；检出分支等于 PILOT_BRANCH（分离 HEAD 为 "HEAD"，不等）；不是浅克隆；git fetch --no-tags origin refs/heads/PILOT_BRANCH 成功；HEAD 等于 FETCH_HEAD。任一不满足为 BLOCKED。标记、结果文件与 ST10 记录的“存在”只查两处：工作区，以及该最新提交的文件树（_where：git cat-file -e <tip>:<path>）。删去了 remote_heads（远端全部分支）、--all、--reflog、--full-history 的检索，以及 remote、branch 参数（固定为 PILOT_REMOTE、PILOT_BRANCH）。refuse_if_marker、refuse_if_st10_record、check_commit_preconditions（因而 begin、finish、TEST 驱动）都先做 check_checkout。
+- 评测调用（evaluate_model(split="test") → require_test_session）不再 fetch：它检查检出分支仍是 PILOT_BRANCH 且 HEAD 等于本会话的标记提交（begin 写标记之前 fetch 并比较过，推送后用 ls-remote 核对过远端引用）；finish 同样先做这项本地检查，再做 check_commit_preconditions（含 fetch）。这是 Executor 对裁决第 1 项“所有 TEST 路径”在逐个评测调用上的读法：每次评测调用都 fetch，网络中断就会在评测中途 BLOCKED（按补充裁决 4 视为已评），而 HEAD 等于标记提交已保证所读的标记与记录就是 begin 核对过的那些。请判断这一读法是否符合裁决；不符合时请按严重度给出。
+- 因为 HEAD 必须等于标记提交，原 require_test_session 中“已提交标记的字节等于本会话所写”“标记绑定授权”“ST10 记录与 auditor 计数在标记之后未变”三项比较、finish 中的标记字节比较，以及 TestSession.marker_sha256 已不可能失败或不再使用，已删去（st10_check 本身在每次评测调用前仍重新运行；工作区与 HEAD 不一致的记录仍由 record.committed_json 拒绝）。
+- 裁决第 2 项：check_commit_preconditions(repo_root, what)：检出（同上）、没有暂存、提交者身份、git push --dry-run 通过；begin 在写标记之前、finish 在写结果之前、test_data.main 在 generate_test 之前调用。之后真实推送仍被拒绝（dry-run 不运行服务器端钩子）：commit_paths 报 BLOCKED；对 ST10 记录，what 写明“TEST counts as generated: no second generation; the Owner decides whether this one file is committed by hand”；再次运行在生成之前被拒绝（本地记录提交领先远端 → check_checkout BLOCKED；提交本身失败时工作区中的记录 → refuse_if_st10_record）。commit_paths 不再检查远端与分支（调用方已经检查），只保留“没有暂存 → add 指定路径 → 暂存的恰为这些路径 → 提交 → 推送并核对远端引用”。
+- 裁决第 3 项：interpretations.B25 的 status 为 ACCEPTED_C1 =「ACCEPTED（Review Gate 2026-11-25）」，ruling 为 RULING_REF_C1（tasks/IMPL_C1_RULING.md 第 3 项）；text 写明计算定义；pending() 为 []。新测试 test_b25_definition_is_the_code_of_state_sha256 按文字独立实现一遍并与 train.state_sha256 比较。“C2 冒烟中保存并重载 checkpoint、证明哈希不变”在 C2 做。由于 pending() 为空，TEST 生成器在当前状态的拒绝原因是 Gate 0 记录未提交（见 c1b_01）。
+- 裁决第 4–8 项：状态词不变（模块文档列出）；探针 c1b_gate_probe.py（接口改变：无 remote/branch 参数、去掉 --interpretations-ruled，新增 st10rec、pre、finish 操作与 EVALUATED 输出）；远端保护写入模块文档（RUNBOOK 在 C3）。
+- 裁决第 9 项：DEFERRED_MINORS 1.29 中，CC1、CC2 按裁决第 1、2 项处理；CC8（打分之前登记）补了测试与变异；CC9（措辞）按裁决第 6 项改文档；CC10（文档与代码不一致）随文档重写改正；CC12（ls-remote 输出与预检读远端分支的测试）因相应代码删去而不存在；CC13、CC14（未用参数、行宽）在改写的测试与模块中改正；CC7（-x）在新的变异脚本中改为每个变异指名应当失败的测试、不用 -x。CC4（主机、push URL）、CC5（探针对本地路径克隆不拒绝）、CC6（凭据测试的区分度）、CC15–CC18 属防范对象以外，登记不修（登记在本提交之后的报告提交中写入）。
+- 报告：reports/IMPL_C_REPORT.md 只新增「Review Gate 对 C1 的裁决」一节（照录防范对象与第 1–9 项），C1 节的落实情况在审查之后的报告提交中写。tasks/IMPL_C1_RULING.md 为 Owner 消息原文。
+
+请：(1) 逐条核对实现是否符合裁决第 1–9 项（含上面 Executor 对评测调用不 fetch 的读法）；(2) 在防范对象的范围内找出能让按规则办事的 Executor 按 RUNBOOK 操作时意外评测 TEST 两次、或在 ST10 不成立时评测 TEST 的路径（含崩溃后重跑、另一台机器、推送失败、生成之后推送被拒）；(3) 测试与变异是否真正检验所说内容（c1b_mutate.py 为每个变异指名应当失败的测试，不用 -x）；(4) 与协议、任务书、Owner 消息一致；不改协议；不写死协议数值；不读取 TEST；死代码、可读性；正式与冒烟模式的隔离不受影响。范围外的边缘情况记为 MINOR 并登记，不作为 BLOCKER。按定义的输出格式给出，每条注明“已验证/未验证”；原文即你的完整输出。最后一行给出结论 PASS 或 BLOCK。不要修改任何文件。

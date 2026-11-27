@@ -1,0 +1,24 @@
+# Data-auditor trial runs before the recorded runs (C1 second submission, round 1). host vm, Anthropic cloud container, CPU only.
+# The *_superseded.txt files are the complete outputs of these trials (stdout+stderr merged, unedited); they are superseded by the
+# recorded runs ic5_01..ic5_05 and kept as records. The TEST generator (ic5_05) was not run in any trial: it ran once, in the recorded run.
+# Commands (cwd the session scratchpad; S = /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad):
+#   ic5_01_trial1_superseded.txt  $S/venv/bin/python -I -B audit/ic5_01_gate_scenarios.py /home/user/OpenMythos $S/venv/bin/python $S/ic5_trial_repos
+#   ic5_03_trial{1,2,3}_superseded.txt  $S/venv/bin/python -I -B audit/ic5_03_static.py /home/user/OpenMythos
+#   ic5_04_trial1_superseded.txt  $S/venv/bin/python -I -B audit/ic5_04_b25.py /home/user/OpenMythos $S/venv/bin/python $S/ic5_b25_trial
+#
+# Changes made to my scripts after the trials (no change of the model's expectations; harness and checker defects only):
+# ic5_01 after trial 1 (summary there: same 326 | DIFFERENT 2 | INFO 22 | ERROR 2 | post-checks FAILED 5):
+#   1. nothing_written() asserted "no result file" also in W04, W06, W07, W08, where I had planted a result file in the working
+#      tree before the run (4 FAILED post-checks): it now compares the result file's presence with the state before the run
+#      (parameter result_before), as it already did for the marker file.
+#   2. begin_result() looked for the commit that adds the marker between the previous HEAD and HEAD; in E5 the hook resets HEAD to
+#      the commit before the marker after begin returned, so the search found nothing (1 FAILED post-check): it now searches
+#      between the previous HEAD and the marker commit the probe printed.
+#   The 2 DIFFERENT lines of trial 1 (op finish without a session: expected REFUSE, observed ERROR AttributeError) are a finding
+#   about the code, not the harness; the model and those scenarios were left unchanged.
+# ic5_03 after trial 1: my check that st10_record reads nothing of `report` except report["checks"][c]["value"] counted the text
+#   "report[" in the unparsed body (3 occurrences, 2 expected) -> replaced by a structural check of the outermost subscript chains.
+#   After trial 2 (PASS): added the callers of the TEST generation steps and the printout of the three session guards (finding of
+#   ic5_01 trial 1); trial 3 PASS.
+# ic5_04 after trial 1 (PASS): added one line stating that the script builds random-initialised models in memory (the generic
+#   'modules' line of ia_common says no model class is called, which is not true for this script).

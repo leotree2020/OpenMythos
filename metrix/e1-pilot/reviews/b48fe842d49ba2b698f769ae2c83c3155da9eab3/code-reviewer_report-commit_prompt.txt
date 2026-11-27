@@ -1,0 +1,14 @@
+先读仓库中的 .claude/agents/code-reviewer.md，以它为你的完整定义；它与你已加载的定义冲突时，以仓库文件为准。
+
+审查对象：METRIX E1-PILOT 阶段 C 第 1 段（C1）的报告提交，暂存区内容（尚未提交），父提交 b48fe842d49ba2b698f769ae2c83c3155da9eab3（C1 修复提交，已推送）。暂存树 23df2e0920975eec21d88a70a2687bb8d54b93c4。只含 reports/、reviews/、audit/（Review Gate 补充裁决 1；git diff --cached --name-only 中没有其他路径，没有删除或改名）。不改代码。
+
+Review Gate 对 C1 的裁决中的防范对象（原文）：TEST 闸门要防的是「按规则办事的 Executor 在按 RUNBOOK 操作时，意外评测 TEST 两次，或在 ST10 不成立时评测 TEST」；不防有仓库写权限者的故意篡改（改写历史、伪造记录），这类风险由 GitHub 分支保护和审查记录承担。审查按此范围判定：范围外的边缘情况记为 MINOR 并登记，不作为 BLOCKER。调用两份审查时，把本段防范对象原文写进调用文字。
+
+审查输入（目录 /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/review_c1_report/）：input.diff（git diff --cached --stat 全部 69 个路径，及报告、DEFERRED_MINORS、impl_c 推送记录、两个 README 的完整 diff；其余为原样复制的审查记录与 data-auditor 输出）。
+内容：
+- reports/IMPL_C_REPORT.md：状态行；C1 节新增“第二次送审(按裁决修改)”（结果、审查表、裁决各项的落实、检查、待 Review Gate 决定）；第一次送审各小节改名标注为第一次送审，内容不变；对阶段 B 裁决一节补一句 B25 已接受。
+- reports/DEFERRED_MINORS.md：1.29 的处理列按裁决更新；新增 1.30（工作提交 ae60e0f7 第 1 轮）、1.31（修复提交 b48fe842 第 1 轮）。
+- reports/impl_c/c1b_push_work_commit.txt、c1b_push_fix_commit.txt：两次推送的记录（前者的两行推送输出是从本会话中该命令的输出抄录，文件头写明）。
+- reviews/ae60e0f7…/、reviews/b48fe842…/：两次审查的调用文字、输入、转录、提取的原文、中断与续审记录、README。
+- audit/ic5_*、ic6_*：data-auditor 两轮的脚本与完整 stdout（原样）。
+请核对：报告与登记是否与审查原文（reviews/…/*_round1.md）、原始输出（reports/impl_c/c1b_02_checks.txt、c1b_04_checks_fix.txt、c1b_01、c1b_03）和裁决原文（tasks/IMPL_C1_RULING.md）一致；有无不实、遗漏或夸大；第一次送审的记录是否保持原样；你在修复提交第 1 轮所列的 MINOR（报告引用、c1b_01/c1b_03 标明被取代、登记各项）是否已处理。按定义的输出格式给出，每条注明“已验证/未验证”；原文即你的完整输出。最后一行给出结论 PASS 或 BLOCK。不要修改任何文件。

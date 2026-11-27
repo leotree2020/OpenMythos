@@ -1,0 +1,317 @@
+ metrix/e1-pilot/audit/ic5_01_gate_scenarios.py     | 1702 +++++++++
+ metrix/e1-pilot/audit/ic5_02_content_hashes.py     |  269 ++
+ metrix/e1-pilot/audit/ic5_03_static.py             |  415 +++
+ metrix/e1-pilot/audit/ic5_04_b25.py                |  160 +
+ metrix/e1-pilot/audit/ic5_05_test_refusal.py       |  133 +
+ metrix/e1-pilot/audit/ic5_run_logged.sh            |   16 +
+ metrix/e1-pilot/audit/ic6_01_gate_scenarios.py     | 2002 +++++++++++
+ metrix/e1-pilot/audit/ic6_02_content_hashes.py     |  160 +
+ metrix/e1-pilot/audit/ic6_03_static.py             |  614 ++++
+ metrix/e1-pilot/audit/ic6_05_test_refusal.py       |  133 +
+ metrix/e1-pilot/audit/ic6_06_data_recheck.py       |  220 ++
+ metrix/e1-pilot/audit/ic6_run_logged.sh            |   16 +
+ .../e1-pilot/audit/stdout/impl_c/ic5_00_state.txt  |   63 +
+ .../audit/stdout/impl_c/ic5_01_gate_scenarios.txt  | 1431 ++++++++
+ .../stdout/impl_c/ic5_01_trial1_superseded.txt     | 1428 ++++++++
+ .../audit/stdout/impl_c/ic5_02_content_hashes.txt  |   80 +
+ .../e1-pilot/audit/stdout/impl_c/ic5_03_static.txt |  233 ++
+ .../stdout/impl_c/ic5_03_trial1_superseded.txt     |  225 ++
+ .../stdout/impl_c/ic5_03_trial2_superseded.txt     |  226 ++
+ .../stdout/impl_c/ic5_03_trial3_superseded.txt     |  229 ++
+ metrix/e1-pilot/audit/stdout/impl_c/ic5_04_b25.txt |   40 +
+ .../stdout/impl_c/ic5_04_trial1_superseded.txt     |   35 +
+ .../audit/stdout/impl_c/ic5_05_test_refusal.txt    |   34 +
+ .../impl_c/ic5_0x_trials_and_script_fixes.txt      |   24 +
+ .../stdout/impl_c/ic5_99_git_status_final.txt      |   96 +
+ .../e1-pilot/audit/stdout/impl_c/ic6_00_state.txt  |   72 +
+ .../audit/stdout/impl_c/ic6_01_gate_scenarios.txt  | 1662 +++++++++
+ .../audit/stdout/impl_c/ic6_02_content_hashes.txt  |   54 +
+ .../e1-pilot/audit/stdout/impl_c/ic6_03_static.txt |  278 ++
+ .../audit/stdout/impl_c/ic6_05_test_refusal.txt    |   34 +
+ .../stdout/impl_c/ic6_06_attempt_superseded.txt    |   27 +
+ .../audit/stdout/impl_c/ic6_06_data_recheck.txt    |   47 +
+ .../audit/stdout/impl_c/ic6_07_mutation_names.txt  |   44 +
+ .../stdout/impl_c/ic6_99_git_status_final.txt      |   51 +
+ metrix/e1-pilot/reports/DEFERRED_MINORS.md         |   78 +-
+ metrix/e1-pilot/reports/IMPL_C_REPORT.md           |   45 +-
+ .../reports/impl_c/c1b_push_fix_commit.txt         |   10 +
+ .../reports/impl_c/c1b_push_work_commit.txt        |    9 +
+ .../README.txt                                     |   15 +
+ .../code-reviewer_prompt.txt                       |   27 +
+ .../code-reviewer_round1.md                        |   97 +
+ .../code-reviewer_round1_transcript.jsonl          |  117 +
+ .../common_notes.txt                               |    9 +
+ .../data-auditor_prompt.txt                        |   40 +
+ .../data-auditor_round1.md                         |  240 ++
+ .../data-auditor_round1_transcript.jsonl           |  250 ++
+ .../data-auditor_tasks.txt                         |   14 +
+ .../delta_from_round3.diff                         | 1517 ++++++++
+ .../extract_log_round1.txt                         |    2 +
+ .../input.diff                                     | 3717 ++++++++++++++++++++
+ .../preflight_tools_check.txt                      |    7 +
+ .../threat_model.txt                               |    1 +
+ .../tree.txt                                       |    1 +
+ .../README.txt                                     |   10 +
+ .../code-reviewer_prompt.txt                       |   23 +
+ .../code-reviewer_round1.md                        |  116 +
+ .../code-reviewer_round1_transcript.jsonl          |   86 +
+ .../data-auditor_prompt.txt                        |   28 +
+ .../data-auditor_round1.md                         |  244 ++
+ .../data-auditor_round1_transcript.jsonl           |  226 ++
+ .../extract_log_round1.txt                         |    2 +
+ .../head.txt                                       |   19 +
+ .../input.diff                                     | 1455 ++++++++
+ .../interruption.txt                               |    4 +
+ .../notes.txt                                      |   11 +
+ .../preflight_tools_check.txt                      |    7 +
+ .../resume_message_code-reviewer.txt               |    7 +
+ .../resume_message_data-auditor.txt                |    7 +
+ .../tree.txt                                       |    1 +
+ 69 files changed, 20670 insertions(+), 25 deletions(-)
+diff --git a/metrix/e1-pilot/reports/DEFERRED_MINORS.md b/metrix/e1-pilot/reports/DEFERRED_MINORS.md
+index e09c180..2cbdd0f 100644
+--- a/metrix/e1-pilot/reports/DEFERRED_MINORS.md
++++ b/metrix/e1-pilot/reports/DEFERRED_MINORS.md
+@@ -486,28 +486,68 @@ code-reviewer 结论 PASS(6 MAJOR、12 MINOR);data-auditor 结论 BLOCK(唯一
+ 
+ ### 1.29 Implementation 阶段 C:C1 工作提交第 3 轮审查(暂存树 `9be4df2a`;`reviews/tree-9be4df2a…/code-reviewer_round3.md` 记 `IC3-CR`,`data-auditor_round3.md` 记 `IC3-DA`)
+ 
+-code-reviewer 结论 PASS(2 MAJOR、11 MINOR);data-auditor 结论 BLOCK(唯一原因:N1、N2 中 `marker` 操作为 ACCEPT,与 Executor 第 3 轮调用说明“检出分支不是 main 时 begin 与 marker 为 BLOCKED”不符;其余 251 项比对一致)。连续第 3 轮未 PASS,按 metrix/CLAUDE.md 第 5 节第 4 条停止:下表各项都没有在仓库中处理,“处理”一列写的是现状;修复方案列在 `IMPL_C_REPORT.md` C1 节“待 Review Gate 决定”。
++code-reviewer 结论 PASS(2 MAJOR、11 MINOR);data-auditor 结论 BLOCK(唯一原因:N1、N2 中 `marker` 操作为 ACCEPT,与 Executor 第 3 轮调用说明“检出分支不是 main 时 begin 与 marker 为 BLOCKED”不符;其余 251 项比对一致)。连续第 3 轮未 PASS,按 metrix/CLAUDE.md 第 5 节第 4 条停止(`5f5cd51`)。Review Gate 对 C1 的裁决(2026-11-25,`tasks/IMPL_C1_RULING.md`)之后,“处理”一列改为按裁决的处理(第二次送审,工作提交 `ae60e0f`;防范对象以外的项按裁决第 9 项登记不修)。
+ 
+ | # | 严重度 | 位置 | 问题 | 来源 | 处理 |
+ |---|---|---|---|---|---|
+-| CC1 | BLOCK | `testgate.check_remote`、`remote_heads`;模块文档“every look-up on a remote … checks … the branch”;`check_remote` 文档;第 3 轮调用说明 | 检出分支只在传入分支参数时检查;标记与 ST10 记录的检索(经 `remote_heads`)不传,所以在非 main 检出(N1)与分离 HEAD(N2)上 `refuse_if_marker` 为 ACCEPT。不绕过闸门:begin 写标记前、TEST 驱动生成前都检查检出分支 | IC3-DA 差异汇总;静态 k | 未处理;改代码 (a) 或改文档 (b) 交 Review Gate |
+-| CC2 | MAJOR | `test_data.main` | 提交与推送的前提(没有暂存、提交者身份、HEAD 是远端分支的后代、`push --dry-run`)只在 `commit_paths` 中检查,即 TEST 已生成、ST10 记录已写入工作区之后;记录留在工作区后拒绝任何重跑,也没有补交的代码路径 | IC3-CR MAJOR 1;IC3-DA INFO 2 | 未处理 |
+-| CC3 | MAJOR | 流程 | 第 3 轮在 worktree 中试跑变异(4 个未测出,是第 3 轮补测试的起因)的输出没有入库 | IC3-CR MAJOR 2 | 本停止提交入库:`impl_c/c1_04t_mutate_r3_trial.txt` 与当时的脚本 `c1_04t_mutate_r3_trial_script.py`(非证据,已被 `c1_06` 取代);第 9 节是否覆盖被取代的试跑,交 Review Gate |
+-| CC4 | MINOR | `testgate.check_remote` | 只比较 fetch URL 的 owner/name:不比较主机(镜像、过期的本地镜像可通过),不看 push URL(pushurl 指向别处时标记写入后才 BLOCKED) | IC3-CR | 未处理 |
+-| CC5 | MINOR | `reports/impl_c/c1_gate_probe.py` | 以本地路径克隆本仓库(origin 为本仓库路径)时探针不拒绝 | IC3-CR | 未处理 |
+-| CC6 | MINOR | `tests/test_testgate.py` 凭据测试 | 只有标记一处的断言能区分有没有 scrub;没有以带凭据的 URL 作 remote 的拒绝用例;`_USERINFO` 不处理 userinfo 中未编码的 `/` | IC3-CR | 未处理 |
+-| CC7 | MINOR | `c1_mutate_r3.py`;`c1_06` | `-x` 只记录第一个失败的测试:“st10 record: history / remote not searched”两个变异的测出是附带的 | IC3-CR | 未处理 |
+-| CC8 | MINOR | `tests/test_testgate.py::test_evaluate_model_claims_after_the_gpu_check` | 只检验“GPU 检查之后登记”,没有检验“打分之前登记” | IC3-CR | 未处理 |
+-| CC9 | MINOR | `testgate` 模块文档 | “远端分支受保护”与 metrix/CLAUDE.md 第 6 节“不直接推送到受保护分支”字面冲突;`push --dry-run` 不运行服务器端钩子与分支规则 | IC3-CR | 未处理;第 6 节措辞交 Review Gate |
+-| CC10 | MINOR | `test_data.py` 文档第 21–25 行;`testgate.py` 文档第 15–16 行 | “提交与推送在命令之外”已过时;ST10 记录的检索范围没写 reflog | IC3-CR;IC3-DA INFO 1 | 未处理 |
+-| CC11 | MINOR | `IMPL_C_REPORT.md`;`testgate.py` 文档第 52–53 行;`audit/` | 登记不在被审树中;auditor 的输出未跟踪 | IC3-CR | 本停止提交:本文件 1.27–1.29、`IMPL_C_REPORT.md` C1 节;`audit/` 第 1–3 轮输出入库 |
+-| CC12 | MINOR | `testgate.remote_heads`、`_commit_preconditions` | ls-remote 输出的 HEX40 检查、预检中 ls-remote 的失败没有测试,也不在变异中 | IC3-CR | 未处理 |
+-| CC13 | MINOR | `tests/test_testgate.py` | 两个测试声明了未用的 `monkeypatch` | IC3-CR | 未处理 |
+-| CC14 | MINOR | `testgate.py`、`interpretations.py` | 超长行;断行使一行只剩半句 | IC3-CR | 未处理 |
+-| CC15 | 观察 | `remote_heads` | 远端只有标签指向标记、没有分支(B17)时不检索 | IC3-DA INFO 3 | 同 CB19,前提为远端历史不被改写;交 Review Gate |
+-| CC16 | 观察 | `testgate._ever_committed`、`code_commit` | 两处 raise 不经 scrub(内容是本地 `git log`、`git status` 的输出) | IC3-DA INFO 6 | 登记 |
+-| CC17 | 观察 | 探针 `st10` 操作 | 不检查 B25,不读 Gate 0 与冻结记录;所有 TEST 路径先调用 `verify_authorization` | IC3-DA INFO 4 | 登记 |
+-| CC18 | 观察 | 探针 | 探针把 CANONICAL_REPO 设为临时仓库的 origin,“另一个仓库”的拒绝无法黑盒测到 | IC3-DA INFO 5 | 登记;单元测试 `test_only_the_pilots_remote_and_branch` 覆盖 |
++| CC1 | BLOCK | `testgate.check_remote`、`remote_heads`;模块文档“every look-up on a remote … checks … the branch”;`check_remote` 文档;第 3 轮调用说明 | 检出分支只在传入分支参数时检查;标记与 ST10 记录的检索(经 `remote_heads`)不传,所以在非 main 检出(N1)与分离 HEAD(N2)上 `refuse_if_marker` 为 ACCEPT。不绕过闸门:begin 写标记前、TEST 驱动生成前都检查检出分支 | IC3-DA 差异汇总;静态 k | 裁决第 1 项采用 (a):所有 TEST 路径要求 Pilot 分支检出且 HEAD 等于 fetch 后的远端最新提交;只查工作区与该提交的文件树(`ae60e0f`) |
++| CC2 | MAJOR | `test_data.main` | 提交与推送的前提(没有暂存、提交者身份、HEAD 是远端分支的后代、`push --dry-run`)只在 `commit_paths` 中检查,即 TEST 已生成、ST10 记录已写入工作区之后;记录留在工作区后拒绝任何重跑,也没有补交的代码路径 | IC3-CR MAJOR 1;IC3-DA INFO 2 | 裁决第 2 项:`check_commit_preconditions` 由 begin、finish、驱动共用,在生成 TEST 之前检查;生成之后推送被拒视为已生成、BLOCKED、由 Owner 决定(`ae60e0f`) |
++| CC3 | MAJOR | 流程 | 第 3 轮在 worktree 中试跑变异(4 个未测出,是第 3 轮补测试的起因)的输出没有入库 | IC3-CR MAJOR 2 | 已入库(`5f5cd51`);裁决第 7 项接受 |
++| CC4 | MINOR | `testgate.check_remote` | 只比较 fetch URL 的 owner/name:不比较主机(镜像、过期的本地镜像可通过),不看 push URL(pushurl 指向别处时标记写入后才 BLOCKED) | IC3-CR | 主机名比对:裁决第 6 项不处理;push URL:防范对象以外,登记不修(裁决第 9 项) |
++| CC5 | MINOR | `reports/impl_c/c1_gate_probe.py` | 以本地路径克隆本仓库(origin 为本仓库路径)时探针不拒绝 | IC3-CR | 防范对象以外,登记不修(裁决第 9 项) |
++| CC6 | MINOR | `tests/test_testgate.py` 凭据测试 | 只有标记一处的断言能区分有没有 scrub;没有以带凭据的 URL 作 remote 的拒绝用例;`_USERINFO` 不处理 userinfo 中未编码的 `/` | IC3-CR | 防范对象以外,登记不修(裁决第 9 项) |
++| CC7 | MINOR | `c1_mutate_r3.py`;`c1_06` | `-x` 只记录第一个失败的测试:“st10 record: history / remote not searched”两个变异的测出是附带的 | IC3-CR | 新的变异脚本为每个变异指名应当失败的测试,不用 -x(`ae60e0f` 的 `c1b_mutate.py`) |
++| CC8 | MINOR | `tests/test_testgate.py::test_evaluate_model_claims_after_the_gpu_check` | 只检验“GPU 检查之后登记”,没有检验“打分之前登记” | IC3-CR | 已补测试与变异(`ae60e0f`) |
++| CC9 | MINOR | `testgate` 模块文档 | “远端分支受保护”与 metrix/CLAUDE.md 第 6 节“不直接推送到受保护分支”字面冲突;`push --dry-run` 不运行服务器端钩子与分支规则 | IC3-CR | 裁决第 6 项:第 6 节的“受保护分支”指 main;模块文档改为写明 GitHub 设置(`ae60e0f`);RUNBOOK 在 C3 |
++| CC10 | MINOR | `test_data.py` 文档第 21–25 行;`testgate.py` 文档第 15–16 行 | “提交与推送在命令之外”已过时;ST10 记录的检索范围没写 reflog | IC3-CR;IC3-DA INFO 1 | 随模块文档改写改正(`ae60e0f`) |
++| CC11 | MINOR | `IMPL_C_REPORT.md`;`testgate.py` 文档第 52–53 行;`audit/` | 登记不在被审树中;auditor 的输出未跟踪 | IC3-CR | 已登记(`5f5cd51`);audit/ 第 1–3 轮输出已入库 |
++| CC12 | MINOR | `testgate.remote_heads`、`_commit_preconditions` | ls-remote 输出的 HEX40 检查、预检中 ls-remote 的失败没有测试,也不在变异中 | IC3-CR | 相应代码(`remote_heads`、预检中读远端分支)已删去(`ae60e0f`) |
++| CC13 | MINOR | `tests/test_testgate.py` | 两个测试声明了未用的 `monkeypatch` | IC3-CR | 已改(`ae60e0f`) |
++| CC14 | MINOR | `testgate.py`、`interpretations.py` | 超长行;断行使一行只剩半句 | IC3-CR | 已改(`ae60e0f`) |
++| CC15 | 观察 | `remote_heads` | 远端只有标签指向标记、没有分支(B17)时不检索 | IC3-DA INFO 3 | 裁决第 6 项:只能经标签到达的标记不处理 |
++| CC16 | 观察 | `testgate._ever_committed`、`code_commit` | 两处 raise 不经 scrub(内容是本地 `git log`、`git status` 的输出) | IC3-DA INFO 6 | 防范对象以外,登记不修 |
++| CC17 | 观察 | 探针 `st10` 操作 | 不检查 B25,不读 Gate 0 与冻结记录;所有 TEST 路径先调用 `verify_authorization` | IC3-DA INFO 4 | 登记;B25 已裁决(裁决第 3 项),`pending()` 为空 |
++| CC18 | 观察 | 探针 | 探针把 CANONICAL_REPO 设为临时仓库的 origin,“另一个仓库”的拒绝无法黑盒测到 | IC3-DA INFO 5 | 登记;裁决第 5 项:探针可作为驱动子进程运行 |
++
++### 1.30 Implementation 阶段 C:C1 第二次送审,工作提交 `ae60e0f7`(暂存树 `365960a0`)的第 1 轮审查(`reviews/ae60e0f7…/code-reviewer_round1.md` 记 `IC4-CR`,`data-auditor_round1.md` 记 `IC4-DA`)
++
++按 Review Gate 对 C1 的裁决(`tasks/IMPL_C1_RULING.md`)修改后重新送审,轮次从 1 计。code-reviewer 结论 PASS(2 MAJOR、9 MINOR);data-auditor 结论 PASS(仅作参考,metrix/CLAUDE.md 第 10 节;1 MINOR、1 个交 Review Gate 的读法、2 条提示)。两份结论都是 PASS,工作提交按被审的暂存树提交;下表的代码项在修复提交中处理(“处理”一列),其审查见 1.31。
++
++| # | 严重度 | 位置 | 问题 | 来源 | 处理 |
++|---|---|---|---|---|---|
++| CD1 | MAJOR | `testgate.require_test_session`、`_check_session_checkout` | 评测调用不 fetch,与裁决第 1 项字面不同;唯一的实际差别:begin 之后有人向远端推送时,剩余模型仍会评完,到 finish 才 BLOCKED | IC4-CR MAJOR 1;IC4-DA MINOR-2 | 读法不变,交 Review Gate 确认(`IMPL_C_REPORT.md` C1 节“待 Review Gate 决定”);补测试 `test_evaluation_calls_do_not_fetch_finish_does`;RUNBOOK 写明 begin 到 finish 之间任何人不得向该分支推送 |
++| CD2 | MAJOR | `testgate.begin_test_evaluation` | 同一克隆中两个并发的 begin 可以都拿到会话(第二个在第一个写标记之前通过 `refuse_if_marker`;或另一提交落在本次提交与推送之间) | IC4-CR MAJOR 2 | 已修:推送之后核对推送的提交含本会话标记的字节、其父提交不含标记,否则 BLOCKED(视为已评);三个测试、两个变异 |
++| CD3 | MINOR | `evaluate.evaluate_model` | `split="test"` 且 `with_s_mapping` 时,参数检查在登记与打分之后,白白用掉唯一一次 TEST 评测 | IC4-CR | 已修:移到函数开头、TEST 闸门之前;测试与变异 |
++| CD4 | MINOR | `testgate.commit_paths` 等 | `sleep=time.sleep` 默认值在定义时绑定,驱动测试真实睡眠 | IC4-CR | 已修:默认 None,调用时取 `time.sleep` |
++| CD5 | MINOR | `test_data.generate_test`、`leakage.run_test_part` | 库函数本身不做检出检查,只靠 main 先调用 | IC4-CR | 文档写明 main 是唯一调用方(run_pilot.py 以子进程运行 main);C2 审查时核对 |
++| CD6 | MINOR | `testgate.check_checkout` | BLOCKED 文字建议 “push the local commits”,与裁决第 2 项(由 Owner 决定)不符 | IC4-CR | 已改:TEST 路径产生的本地提交只在 Owner 决定后推送 |
++| CD7 | MINOR | `tests/test_testgate.py` | “评测调用不 fetch” 没有测试固定 | IC4-CR | 已补(同 CD1) |
++| CD8 | MINOR | `testgate._where` | `git cat-file -e` 的任何失败都当作“不存在” | IC4-CR | 登记不修(防范对象以外;tip 刚经 rev-parse 验证) |
++| CD9 | MINOR | `tests/test_testgate.py` | 测试名与内容不符(只构造“较早提交中删去”一种情形) | IC4-CR | 已改名 `test_a_marker_deleted_in_a_later_commit_is_not_searched` |
++| CD10 | MINOR | `test_data.main` | TEST 文件写出之后、ST10 记录写入之前崩溃,可换 --out 或换机器再次生成(内容相同) | IC4-CR | 登记不修(防范对象以外,不涉及评测);RUNBOOK 写明按 BLOCKED 报告 Owner |
++| CD11 | MINOR | `IMPL_C_REPORT.md`、`c1b_01_checks.txt`、本文件 1.29 | 引用的 C1 小节不存在;c1b_01 未标明被取代;1.29 的处理列未更新 | IC4-CR | 本报告提交:写入小节、标明 c1b_01 与 c1b_03 被取代、更新 1.29 |
++| CD12 | MINOR | `testgate.finish_test_evaluation`、`claim_checkpoint` | session 为 None 时抛 AttributeError,不是拒绝 | IC4-DA MINOR-1 | 已修:守卫以 `isinstance(session, TestSession)` 开头;测试与变异 |
++| CD13 | 提示 | C2 | 结果文件的内容由调用方决定,须不含 TEST 原文 | IC4-DA | C2:`pilot.test_evaluate` 只写聚合指标与每个 fact 的分数(不含题目文字;general_* 行不写;逐题明细在仓库外);C2 审查核对 |
++| CD14 | 提示 | 检索范围 | 只在 index 中的标记或 ST10 记录不在检索范围内,但 begin 与驱动被“有暂存”挡住 | IC4-DA | 登记 |
++| CD15 | 观察 | data-auditor | 生成之后真实推送被拒的路径无法黑盒复现(需要真实 TEST) | IC4-DA | 登记;单元测试 `test_driver_push_refused_after_generation_counts_as_generated` 用替身覆盖 |
++
++### 1.31 Implementation 阶段 C:C1 修复提交 `b48fe842`(暂存树 `ae5fcb2f`)的第 1 轮审查(`reviews/b48fe842…/code-reviewer_round1.md` 记 `IC5-CR`,`data-auditor_round1.md` 记 `IC5-DA`)
++
++code-reviewer 结论 PASS(1.30 CD1 的 MAJOR 沿用、交 Review Gate;6 MINOR);data-auditor 结论 PASS(仅作参考;MINOR 与提示)。两份审查都因 HTTP 429 中断,本会话进程重启后续审完成(`interruption.txt`、`resume_message_*.txt`)。1.30 中各项的核对见两份原文第一节。下表为本轮新提出的项;都不改代码(防范对象以外、只涉及描述或测试区分度),代码项随 C2 或之后的提交在必要时处理。
++
++| # | 严重度 | 位置 | 问题 | 来源 | 处理 |
++|---|---|---|---|---|---|
++| CE1 | MAJOR | `testgate.require_test_session` | 同 CD1(评测调用不 fetch),沿用,待 Review Gate 确认 | IC5-CR | 交 Review Gate(`IMPL_C_REPORT.md` C1 节“待 Review Gate 决定”);RUNBOOK 写明 begin 到 finish 之间不得向该分支推送 |
++| CE2 | MINOR | `tests/test_testgate.py::test_a_commit_of_another_begin_between_commit_and_push_is_blocked` | 该情形两项检查都会触发,单独不能检验任何一项;文档只写“字节不同” | IC5-CR | 登记;单项由另外两个测试区分(`c1b_04`) |
++| CE3 | MINOR | `testgate._blob`、begin 的父提交检查 | `git cat-file blob` 的任何失败都当作“没有标记”,父提交检查因此偏向放行 | IC5-CR | 防范对象以外,登记不修(与 CD8 同类) |
++| CE4 | MINOR | `tests/test_testgate.py::test_s_mapping_on_test_is_refused_before_the_gate` | 在 CPU 上靠 GPU 检查先拒绝测出变异,没有让“先登记再丢弃”真的发生 | IC5-CR | 登记;检查位于 require_gpu 之前,结论成立 |
++| CE5 | MINOR | `test_data.generate_test` 文档 | 把“run_pilot.py 以子进程运行 main”写成现状,而 run_pilot.py 在 C2 才加入 | IC5-CR | C2 提交加入 run_pilot.py 后成为现状;C2 审查核对 |
++| CE6 | MINOR | `tests/test_testgate.py::test_driver_checks_the_commit_preconditions_before_generating` | 没有替换 sleep,变异运行时真实睡 14 s | IC5-CR | 登记(只影响变异运行的耗时) |
++| CE7 | MINOR | 报告、`c1b_01`、`c1b_03`、本文件 | 同 CD11 | IC5-CR | 本报告提交 |
++| CE8 | MINOR | begin 的字节比较 | 标记路径上有 git clean filter 或换行转换时,提交的 blob 与写入的字节不同,BLOCKED 文字归因为“另一个 begin” | IC5-DA MINOR-A | 防范对象以外,登记不修(结果安全:没有评测,按已评处理,由 Owner 决定) |
++| CE9 | MAJOR(读法) | 同 CE1 | 评测调用不 fetch | IC5-DA MINOR-2 | 同 CE1 |
++| CE10 | 描述 | Executor 的修复说明 | 写“新增 3 个变异”,实为 4 个变异名(含 `finish: any session`),总数 78 无误 | IC5-DA MINOR-C | 登记 |
++| CE11 | 提示 | `evaluate_model` | with_s_mapping 的新顺序无法用探针黑盒验证(探针没有这个参数) | IC5-DA | 登记;静态核对与测试、变异覆盖 |
+ 
+ ## 2. 已在第 5–7 轮解决(核对用)
+ 
+diff --git a/metrix/e1-pilot/reports/IMPL_C_REPORT.md b/metrix/e1-pilot/reports/IMPL_C_REPORT.md
+index 7c300ac..d656762 100644
+--- a/metrix/e1-pilot/reports/IMPL_C_REPORT.md
++++ b/metrix/e1-pilot/reports/IMPL_C_REPORT.md
+@@ -1,11 +1,11 @@
+ # E1-PILOT Implementation 阶段 C 报告
+ 
+-**状态:C1 停止,等待 Review Gate。** C1 工作提交经三轮审查,data-auditor 三轮均为 BLOCK(code-reviewer 三轮均为 PASS)。按 metrix/CLAUDE.md 第 5 节第 4 条“连续 3 轮未 PASS:停止,提交当前状态与全部审查原始输出,等待 Review Gate”,代码(`src/`、`tests/`)与 `tasks/IMPL_C_OWNER_MESSAGE.md` 没有提交;本提交只含 `reports/`、`reviews/`、`audit/`(补充裁决 1)。下文各处“落实”写的是第 3 轮被审暂存树 `9be4df2a` 中的做法,该树相对父提交 `eb05e422` 的完整 diff(含 `tasks/IMPL_C_OWNER_MESSAGE.md` 全文)在 `reviews/tree-9be4df2a…/input_round3.diff`。C2、C3 没有提交。
++**状态:C1 完成(第二次送审通过:工作提交 `ae60e0f7`、修复提交 `b48fe842`);C2、C3 进行中。** 第一次送审在连续 3 轮未 PASS 后停止(`5f5cd51e`,只提交了证据);Review Gate 对 C1 的裁决(2026-11-25,`tasks/IMPL_C1_RULING.md`)之后按裁决修改、重新送审,见 C1 节“第二次送审(按裁决修改)”。C1 节其余各小节记录第一次送审,保持原样。
+ 
+ - 指令:`tasks/IMPLEMENTATION_TASK_ORDER_V1.md` 第 10 节表中 C 行、第 7、8、11 节;Owner 下达阶段 C 的消息原文 `tasks/IMPL_C_OWNER_MESSAGE.md`(两段:本会话开头的消息,含 Review Gate 补充裁决 1–6;上次阶段 C 指令原文,含 Review Gate 对阶段 B 的裁决 1–5 与阶段 C 的要求 6–10)。阶段 C 分 C1、C2、C3 三段,每段结束提交、推送、写入本报告。
+ - 执行会话:session_01J5mxaXeqjRSkJj9ZuGh8EJ(第二个阶段 C 会话;上一个会话 session_01J5mxaXE1WCWBQiUWaFsd9w 在第一个代码提交的两份审查 BLOCK 后停止,代码已撤回,见 `reviews/tree-65225a5a…/` 与 `1435a74..eb05e42`)。本地分支 `metrix-e1-pilot-protocol-v1` 设为 `origin/metrix-e1-pilot-protocol-v1`(`eb05e422`)后在其上工作;会话分支 `claude/brave-meitner-436eh9` 没有使用。
+ - 运行环境:Claude Code on the web 云容器,hostname `vm`,4 CPU,15 GiB 内存,没有 nvidia 设备、没有 `nvidia-smi`,`torch.cuda.is_available()` 为 False(`impl_c/c1_00_session_start.txt`、`c1_01_env_fetch.txt`)。Python 3.13.18;依赖按 `requirements.lock` 以 `--require-hashes --no-deps` 安装到会话临时目录的 venv(安装前在 venv 内升级了 pip 本身,pip 不在锁定文件中),`pip check` 通过;torch `2.11.0+cu130`,transformers 5.22.2。
+-- 上次阶段 C 指令的原文不在仓库中,本会话也没有上次的对话记录;Executor 询问后 Owner 粘贴了原文,与本会话开头的消息一起原样写入 `tasks/IMPL_C_OWNER_MESSAGE.md`(在被审暂存树中,未提交;全文见 `reviews/tree-9be4df2a…/input_round3.diff`)。
++- 上次阶段 C 指令的原文不在仓库中,本会话也没有上次的对话记录;Executor 询问后 Owner 粘贴了原文,与本会话开头的消息一起原样写入 `tasks/IMPL_C_OWNER_MESSAGE.md`(第一次送审未提交;随工作提交 `ae60e0f7` 入库)。
+ - 没有加载任何模型权重、没有下载权重文件(下载的是 4 个分词器文件、parcae `tokenizer.json`、锚文本 parquet 与固定 revision 的 `config.json`)、没有使用 GPU。没有生成、读取或统计 TEST:TEST 闸门的测试全部用测试自己写的人造行,在临时 Git 仓库中运行(补充裁决 5)。
+ 
+ ## Review Gate 对阶段 B 的裁决
+@@ -16,7 +16,7 @@ Owner 在下达阶段 C 时转达(原文见 `tasks/IMPL_C_OWNER_MESSAGE.md` 第
+    - 「B3：正式运行第 8 节第 1 步，把 train_Y.jsonl 的规范化哈希写入 manifest。」
+    - 「B14：G0.3、G0.9 原因为 null，附「需重新校准」注记，与 Task Order V1.2 §15.8 一致。」
+ 
+-   落实(C1):B1–B24 的 `status` 都是 `ACCEPTED（Review Gate 2026-11-24）`;`as_records()` 写入实验记录时每条带 `ruling`(`interpretations.RULING_REF`,指向本节第 1 项);B3、B14 带 `ruling_note`。与裁决“使 pending() 为空”的字面不一致之处:C1 第 1 轮审查后新增了解释 B25(checkpoint 哈希的定义,PENDING_REVIEW_GATE),所以 `pending()` 现为 `["B25"]`;B25 裁决之前 TEST 生成器与所有 TEST 路径都拒绝。B25 列于“待 Review Gate 决定”,须在租卡前裁决,否则第 8 步必然被拒。B14:`gate.RECALIBRATION_NOTE` 改为「需重新校准」,G0.3、G0.9(以及按 B24 同样处理的 T3)不满足时原因为 null、注记为「需重新校准」(`tests/test_gate.py::test_reasons_follow_section_9`)。B3 的 manifest 写入属于第 1 步的编排,在 C2 的 `run_pilot.py` 中实现。Task Order V1.2 不在仓库中,“与 §15.8 一致”一句 Executor 无法核对,照录。
++   落实(C1):B1–B24 的 `status` 都是 `ACCEPTED（Review Gate 2026-11-24）`;`as_records()` 写入实验记录时每条带 `ruling`(`interpretations.RULING_REF`,指向本节第 1 项);B3、B14 带 `ruling_note`。与裁决“使 pending() 为空”的字面不一致之处:C1 第 1 轮审查后新增了解释 B25(checkpoint 哈希的定义,PENDING_REVIEW_GATE),所以 `pending()` 现为 `["B25"]`;B25 裁决之前 TEST 生成器与所有 TEST 路径都拒绝。B25 列于“待 Review Gate 决定”,须在租卡前裁决,否则第 8 步必然被拒。B14:`gate.RECALIBRATION_NOTE` 改为「需重新校准」,G0.3、G0.9(以及按 B24 同样处理的 T3)不满足时原因为 null、注记为「需重新校准」(`tests/test_gate.py::test_reasons_follow_section_9`)。B3 的 manifest 写入属于第 1 步的编排,在 C2 的 `run_pilot.py` 中实现。Task Order V1.2 不在仓库中,“与 §15.8 一致”一句 Executor 无法核对,照录。第二次送审(`ae60e0f7`):B25 已接受(Review Gate 对 C1 的裁决第 3 项,status「ACCEPTED（Review Gate 2026-11-25）」),`pending()` 为空,上述不一致已消除。
+ 2. 「「UTF-8 解码 test 行」不属于读取 TEST：协议第 3 节把解析 split 字段排除在外，而解析必须先解码字节，所以「解码内容」指读取或使用 test 行的文字本身（分词、解析内容、用于计算）。已发生的运行都没有使用 test 行内容，不触发 ST13，Pilot 有效。保留按字节读取的现行做法。这是执行解释，不改协议文本。」
+ 
+    落实:`data.build_general_dev` 仍按字节读取,没有改动。
+@@ -59,7 +59,40 @@ Owner 转达,原文连同首段入库为 `tasks/IMPL_C1_RULING.md`。以下逐
+ 
+ ## C1:BE 修复、interpretations 标记、TEST 闸门
+ 
+-### 结果:停止(连续 3 轮未 PASS),代码未提交
++### 第二次送审(按裁决修改)
++
++结果:C1 完成。工作提交 `ae60e0f7`(树 `365960a0`)与修复提交 `b48fe842`(树 `ae5fcb2f`)各经两份审查(按裁决第 9 项,轮次从 1 重新计),都在第 1 轮 PASS,已快进推送(推送记录 `impl_c/c1b_push_work_commit.txt`、`c1b_push_fix_commit.txt`)。
++
++| 提交 | 被审暂存树 | code-reviewer | data-auditor(仅作参考) | Executor 的原始输出 |
++|---|---|---|---|---|
++| `ae60e0f7` 工作提交 | `365960a0` | PASS(2 MAJOR、9 MINOR) | PASS(1 MINOR;评测调用不 fetch 交 Review Gate) | `impl_c/c1b_02_checks.txt`(`c1b_01` 已被取代) |
++| `b48fe842` 修复提交 | `ae5fcb2f` | PASS(沿用的 MAJOR 交 Review Gate;6 MINOR) | PASS(MINOR 与提示,均在防范对象以外或只涉及描述) | `impl_c/c1b_04_checks_fix.txt`(`c1b_03` 已被取代) |
++
++- 审查原文(`*_round1.md`)、调用文字(含防范对象原文)、调用前的 frontmatter 核对、审查输入、原始转录:`reviews/ae60e0f7…/`、`reviews/b48fe842…/`(各有 `README.txt`)。修复提交的两份审查因 API 额度上限(HTTP 429)中断,本会话进程随后重启,用固定首句续审完成(`reviews/b48fe842…/interruption.txt`、`resume_message_*.txt`)。
++- data-auditor 的脚本与完整 stdout:`audit/ic5_*`(工作提交)、`audit/ic6_*`(修复提交),均在 `audit/stdout/impl_c/`。
++- 问题与处理:`DEFERRED_MINORS.md` 1.30(工作提交)、1.31(修复提交);第一次送审各项按裁决的处理写入 1.29 的处理列。
++
++裁决各项的落实:
++
++1. 第 1 项:`testgate.check_checkout`(origin 的 fetch URL 的 owner/name 为 `leotree2020/OpenMythos`、检出 `metrix-e1-pilot-protocol-v1`、不是浅克隆、fetch 成功、HEAD 等于 FETCH_HEAD,否则 BLOCKED);标记、结果文件与 ST10 记录只查工作区与远端最新提交的文件树;删去 reflog、`--all`、远端全部分支的检索与 remote、branch 参数。评测调用的读法见下文“待 Review Gate 决定”第 1 项。
++2. 第 2 项:`check_commit_preconditions` 由 begin、finish 与 TEST 驱动共用,驱动在生成 TEST 之前检查;生成之后真实推送被拒为 BLOCKED,提示 TEST 视为已生成、由 Owner 决定是否手工提交这一个文件(测试 `test_driver_push_refused_after_generation_counts_as_generated`)。修复提交另加:同一克隆中两个并发的 begin 至多一个拿到会话(推送的提交须含本会话标记的字节、父提交不含标记)。
++3. 第 3 项:B25 为「ACCEPTED（Review Gate 2026-11-25）」,text 写明计算定义,测试按文字独立实现并与 `train.state_sha256` 比较;`pending()` 为空。“冒烟中保存并重载 checkpoint、证明哈希不变”在 C2。
++4. 第 4 项:各类拒绝的状态词写在 testgate 模块文档。
++5. 第 5 项:data-auditor 以子进程运行 `impl_c/c1b_gate_probe.py`,每个预期由其模型在运行前算出(`ic5_01`、`ic6_01`)。
++6. 第 6 项:模块文档写明 GitHub 设置;不比较主机名,不检索只能经标签到达的标记;RUNBOOK 在 C3。
++7. 第 7 项:被取代的记录照现行方式入库:`impl_c/c1b_01_checks.txt` 被 `c1b_02` 取代(`c1b_mutate.py` 中一个变异多指名了 3 个本不该失败的 begin 用例,74 个变异记为测出 73;两次所测的 src/tests 哈希相同 `adfeb518…`);`impl_c/c1b_03_checks_fix.txt` 被 `c1b_04` 取代(新增的“推送字节”变异所指名的测试中,父提交检查先拦下,记为 77/78;补测试 `test_a_marker_file_overwritten_before_the_commit_is_blocked` 后重跑,78/78)。
++8. 第 8 项:停止提交 `5f5cd51e` 不补审。
++9. 第 9 项:按裁决修改后重新送审,轮次从 1 计;1.29 中防范对象以外的项登记不修(见 1.29 处理列)。
++
++检查(修复提交,`impl_c/c1b_04_checks_fix.txt`):数据重新生成并核对、四个冻结内容哈希 PASS;TEST 生成器在当前状态拒绝(原因现为 Gate 0 记录未提交),没有产物;outside_metrix_check PASS;全部 pytest 298 passed;Executor 运行探针一次(`c1b_probe_run.py`);变异 78 个全部测出,前后 src/tests 哈希相同。data-auditor 独立复算四个冻结哈希、L1–L6、候选可行性与 split,均 PASS(`ic6_02`、`ic6_06`);闸门黑盒比对 376 项一致、0 处不同,包括同一克隆中两个进程并发 begin 的四种交错(`ic6_01` R 组)。
++
++待 Review Gate 决定(C1 第二次送审):
++
++1. **评测调用不 fetch(1.30 CD1、1.31 CE1)。** `evaluate_model(split="test")` 每次调用只在本地核对“检出 Pilot 分支且 HEAD 等于本会话的标记提交”,不 fetch;begin(写标记之前)与 finish 会 fetch。理由:每次调用都 fetch 时,网络中断会让评测中途 BLOCKED,按补充裁决 4 视为已评;而 HEAD 等于标记提交已保证所读的标记与记录就是 begin 核对过的那些。实际差别:begin 之后若有人向该分支推送,剩余模型仍会评完,到 finish 才 BLOCKED(视为已评)。两份审查都认为在防范对象内不产生“评两次”或“ST10 不成立仍评”的路径。请确认这一读法;确认之前 RUNBOOK(C3)写明 begin 到 finish 之间任何人不得向该分支推送。
++
++以下各小节记录第一次送审。
++
++### 第一次送审:停止(连续 3 轮未 PASS),代码未提交
+ 
+ | 轮 | 被审暂存树 | code-reviewer | data-auditor | Executor 的原始输出 |
+ |---|---|---|---|---|
+@@ -97,7 +130,7 @@ Owner 转达,原文连同首段入库为 `tasks/IMPL_C1_RULING.md`。以下逐
+ 
+ - 第 3 轮正式记录之前,在会话临时目录的 worktree 中试跑过一次变异:4 个未测出,是第 3 轮补测试的起因。试跑输出与当时的脚本按 code-reviewer 第 3 轮 MAJOR 2 入库为 `impl_c/c1_04t_mutate_r3_trial.txt`、`c1_04t_mutate_r3_trial_script.py`;它们不是证据,已被 `c1_06` 取代(试跑的被测树没有记录树哈希,只有输出末尾的 src+tests 哈希 `2b86f92d…`)。
+ 
+-### 中断
++### 中断(第一次送审)
+ 
+ - HTTP 429:第 1 轮两份审查、第 2 轮 data-auditor 中断,用第 5 节第 6 条的固定首句续审完成;中断、续审消息与送达核对在 `reviews/tree-9be4df2a…/`。
+ - 容器重启:第 3 轮第一次录制(`c1_05`)中断,变异脚本当时的变异(“claim removed”)留在工作区;发现、恢复与逐文件核对见 `c1_05b_restart_restore.txt`,之后完整重跑为 `c1_06`。
+@@ -109,7 +142,7 @@ Owner 转达,原文连同首段入库为 `tasks/IMPL_C1_RULING.md`。以下逐
+ - 推送记录:按 Review Gate 对阶段 B 的裁决第 5 项,由下一次会话第 0 步的 `git ls-remote` 代替。
+ - 没有提交的:代码与 `tasks/IMPL_C_OWNER_MESSAGE.md`(以 `input_round3.diff` 为准);会话临时目录中的 C2 编排与冒烟试跑、C3 RUNBOOK 草稿、第 3 轮问题的修复草稿。它们都没有送审,不支撑本报告的任何结论,容器回收后丢失。
+ 
+-### 待 Review Gate 决定
++### 待 Review Gate 决定(第一次送审;已由 2026-11-25 的裁决回答,见“Review Gate 对 C1 的裁决”)
+ 
+ 1. **data-auditor 第 3 轮的 BLOCK(1.29 CC1)。** 检出分支只在传入分支参数时检查,标记与 ST10 记录的检索不传,所以在非 main 检出上 `refuse_if_marker` 为 ACCEPT;文档与 Executor 的调用说明写的是 BLOCKED。不绕过闸门:begin 写标记之前、TEST 驱动生成之前都检查检出分支。二选一:(a) `check_remote` 不论有无分支参数都核对检出分支,TEST 路径的所有 git 操作都要求在 Pilot 分支的检出上运行;(b) 只改文档与说明。Executor 倾向 (a):规则更简单,与文档一致;代价是在别的检出上不能只读地查询标记。
+ 2. **code-reviewer 第 3 轮 MAJOR 1(1.29 CC2)。** 提交与推送的前提应在生成 TEST 之前检查。Executor 的方案:公开的 `check_commit_preconditions`(Pilot 远端与分支、没有暂存、提交者身份、HEAD 是远端分支的后代、`push --dry-run`),由 begin、finish 与 TEST 驱动共用;补测试(暂存、没有身份、落后、dry-run 失败时 BLOCKED,生成函数没有被调用、`--out` 不存在、没有记录)与变异。之后仍可能失败的情形(服务器端拒绝真实推送):ST10 记录留在工作区,拒绝任何重跑,BLOCKED。这时如何恢复,须由 Review Gate 定:例如 Owner 批准后只把这一个路径手工提交并推送(记录只含计数、哈希与提交号),或视为 TEST 已生成、本次 Pilot BLOCKED。
+diff --git a/metrix/e1-pilot/reports/impl_c/c1b_push_fix_commit.txt b/metrix/e1-pilot/reports/impl_c/c1b_push_fix_commit.txt
+new file mode 100644
+index 0000000..fde7d3e
+--- /dev/null
++++ b/metrix/e1-pilot/reports/impl_c/c1b_push_fix_commit.txt
+@@ -0,0 +1,10 @@
++# push of the C1 fix commit, 2026-11-26T03:07Z; stdout+stderr of the commands as run, unedited
++$ git push --no-follow-tags origin HEAD:refs/heads/metrix-e1-pilot-protocol-v1
++To https://github.com/leotree2020/OpenMythos
++   ae60e0f..b48fe84  HEAD -> metrix-e1-pilot-protocol-v1
++exit=0
++$ git ls-remote origin refs/heads/metrix-e1-pilot-protocol-v1
++b48fe842d49ba2b698f769ae2c83c3155da9eab3	refs/heads/metrix-e1-pilot-protocol-v1
++$ git rev-parse HEAD HEAD^{tree}
++b48fe842d49ba2b698f769ae2c83c3155da9eab3
++ae5fcb2f7e2ea844c6ee04e7ecb8e3157efde08c
+diff --git a/metrix/e1-pilot/reports/impl_c/c1b_push_work_commit.txt b/metrix/e1-pilot/reports/impl_c/c1b_push_work_commit.txt
+new file mode 100644
+index 0000000..0362221
+--- /dev/null
++++ b/metrix/e1-pilot/reports/impl_c/c1b_push_work_commit.txt
+@@ -0,0 +1,9 @@
++# push of the C1 work commit ae60e0f, 2026-11-25T11:13Z. The two push lines are copied from the push command's output in this session (not re-run); ls-remote and rev-parse were run when this file was written.
++$ git push --no-follow-tags origin HEAD:refs/heads/metrix-e1-pilot-protocol-v1
++To https://github.com/leotree2020/OpenMythos
++   5f5cd51..ae60e0f  HEAD -> metrix-e1-pilot-protocol-v1
++$ git ls-remote origin refs/heads/metrix-e1-pilot-protocol-v1
++ae60e0f7ba699e5e7a25718108849ae36586f5f5	refs/heads/metrix-e1-pilot-protocol-v1
++$ git rev-parse HEAD HEAD^{tree}
++ae60e0f7ba699e5e7a25718108849ae36586f5f5
++365960a0e2c5cc28869be9ed44a08d4170389633
+diff --git a/metrix/e1-pilot/reviews/ae60e0f7ba699e5e7a25718108849ae36586f5f5/README.txt b/metrix/e1-pilot/reviews/ae60e0f7ba699e5e7a25718108849ae36586f5f5/README.txt
+new file mode 100644
+index 0000000..de67f2c
+--- /dev/null
++++ b/metrix/e1-pilot/reviews/ae60e0f7ba699e5e7a25718108849ae36586f5f5/README.txt
+@@ -0,0 +1,15 @@
++C1 second submission (after Review Gate's ruling on C1 of 2026-11-25, tasks/IMPL_C1_RULING.md), work commit ae60e0f7,
++reviewed as the staged tree 365960a0e2c5cc28869be9ed44a08d4170389633 (tree.txt), parent 5f5cd51e. Round 1 (rounds
++counted from 1 again, ruling item 9): code-reviewer PASS, data-auditor PASS (reference only). The commit is that tree.
++  threat_model.txt            the ruling's "防范对象" paragraph, quoted in both invocation texts (checked verbatim
++                              against tasks/IMPL_C1_RULING.md)
++  common_notes.txt, data-auditor_tasks.txt   parts the invocation texts were assembled from
++  code-reviewer_prompt.txt, data-auditor_prompt.txt   the invocation texts (first sentence fixed, metrix/CLAUDE.md 5.6);
++                              the Agent call itself pointed to these files and repeated the first sentence and the
++                              threat model
++  preflight_tools_check.txt   tools line of the repository agent files vs the loaded definitions, before the calls
++  input.diff                  git diff --cached --stat and full diff against 5f5cd51e (the reviewed tree)
++  delta_from_round3.diff      the first submission's round-3 tree 9be4df2a -> 365960a0 (code part)
++  *_round1_transcript.jsonl   raw subagent transcripts; *_round1.md the final reports, extracted unchanged by
++                              reports/round6/review_extract.py (extract_log_round1.txt)
++Executor's raw outputs: reports/impl_c/c1b_02_checks.txt (c1b_01 superseded); data-auditor: audit/ic5_*.
+diff --git a/metrix/e1-pilot/reviews/b48fe842d49ba2b698f769ae2c83c3155da9eab3/README.txt b/metrix/e1-pilot/reviews/b48fe842d49ba2b698f769ae2c83c3155da9eab3/README.txt
+new file mode 100644
+index 0000000..26bf171
+--- /dev/null
++++ b/metrix/e1-pilot/reviews/b48fe842d49ba2b698f769ae2c83c3155da9eab3/README.txt
+@@ -0,0 +1,10 @@
++C1 fix commit b48fe842 (after the round-1 reviews of ae60e0f7), reviewed as the staged tree
++ae5fcb2f7e2ea844c6ee04e7ecb8e3157efde08c (tree.txt), parent ae60e0f7. Round 1: code-reviewer PASS, data-auditor PASS
++(reference only). The commit is that tree. Both reviews stopped on HTTP 429 (usage limit) and the session's worker
++restarted; both were resumed with the fixed first sentence (interruption.txt, resume_message_*.txt).
++  notes.txt, head.txt         parts the invocation texts were assembled from (head.txt holds the threat model quote)
++  code-reviewer_prompt.txt, data-auditor_prompt.txt   the invocation texts
++  preflight_tools_check.txt   tools lines compared before the calls
++  input.diff                  git diff --cached --stat and full diff against ae60e0f7
++  *_round1_transcript.jsonl   raw transcripts; *_round1.md final reports extracted unchanged (extract_log_round1.txt)
++Executor's raw outputs: reports/impl_c/c1b_04_checks_fix.txt (c1b_03 superseded); data-auditor: audit/ic6_*.

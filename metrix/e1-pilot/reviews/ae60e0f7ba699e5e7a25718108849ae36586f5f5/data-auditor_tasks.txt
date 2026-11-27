@@ -1,0 +1,14 @@
+任务（脚本放在 metrix/e1-pilot/audit/，文件名前缀 ic5_，可改写你的 ic4_ 脚本；完整 stdout 写入 metrix/e1-pilot/audit/stdout/impl_c/；不 import、不复制 Executor 的代码。按裁决第 5 项，你可以把 reports/impl_c/c1b_gate_probe.py 当作驱动子进程运行，但每个预期结果须由你的独立模型在运行探针之前算出）：
+1. 闸门场景：按新语义更新你的独立模型（裁决第 1、2 项；本说明第 1–4 条），在临时仓库中比对探针输出。至少包括：
+   (a) 检出：另一分支、分离 HEAD、HEAD 领先远端（本地未推送的提交）、HEAD 落后远端（另一克隆推送）、origin 为另一仓库名、远端不可达或分支不存在、浅克隆——对 marker、st10rec、pre、begin 都为 BLOCKED 且不写入；
+   (b) 标记与结果的两处检索：只在工作区、只在远端最新提交的文件树（工作区副本已删）、两处都有；结果文件（有或无标记）为 EVALUATED；只在更早历史中（后来的提交删去）、只在其他分支、只在 reflog、只能由标签到达的标记，按裁决第 1 项不再检索（预期 ACCEPT），请把这一组标为“按裁决不检索”；ST10 记录同样；
+   (c) 第 2 轮以来的 ST10 场景（A 组）与 begin/eval/gate/finish 序列；finish 之后 marker 为 EVALUATED；begin 之后 HEAD 再提交（推送或不推送）、或切到另一分支时，eval 与 finish 为 BLOCKED；
+   (d) 提交与推送前提：有暂存、没有身份、dry-run 失败（push URL 不可推送）时 pre 与 begin 为 BLOCKED 且不写入；钩子只拒绝真实推送时 begin 为 BLOCKED、本地留下标记提交，之后 marker 为 BLOCKED。
+2. 用你自己的脚本独立复算四个冻结内容哈希，对照 /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/c1_data（本轮由正式代码重新生成，见 c1b_01）。
+3. 静态核对：test_data.main 中 check_commit_preconditions 与 refuse_if_st10_record 都在 generate_test 之前；ST10 记录、标记与结果的内容不含 TEST 行；所有 TEST 路径（test_data.main、begin、evaluate_model(split="test") 的 require_test_session、finish）都经过 check_checkout 或本地的标记提交检查；探针与 testgate 接口一致；删去的检索（remote_heads、--all、--reflog、--full-history）在代码中已无残留调用。
+4. B25（裁决第 3 项）：按 interpretations.B25 的文字自写实现，在随机初始化的小 Qwen3 模型上（不加载任何权重）与探针 tinysha 的输出比对。
+5. 以黑盒方式运行一次 TEST 生成器（--data 为上述 c1_data，--out 为一个不存在的仓库外目录），确认拒绝且无产物（现在 pending() 为空，拒绝原因应为 Gate 0 记录未提交）。
+
+环境与限制：Python /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/venv/bin/python；非 TEST 输入 /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/inputs；临时仓库放在会话临时目录（例如 /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/ic5_repos）；禁止生成、读取或统计真实 TEST；不加载任何模型权重；不使用 GPU；只写入 metrix/e1-pilot/audit/；不得改动仓库的暂存区与其他文件。
+
+输出：按定义的输出格式给出每一项的命令、原始输出、与 Executor 是否一致；脚本路径与完整 stdout 路径；最后附 git status --short 原始输出；最后一行给出结论 PASS 或 BLOCK。范围外（防范对象以外）的边缘情况记为 MINOR 并登记，不作为 BLOCK 的理由。

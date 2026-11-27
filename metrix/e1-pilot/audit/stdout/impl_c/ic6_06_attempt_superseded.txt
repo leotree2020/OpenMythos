@@ -1,0 +1,27 @@
+# Data-auditor attempts before ic6_06 (C1 second submission, fix commit, round 1). host vm, Anthropic cloud container, CPU only. Not run through ic6_run_logged.sh; complete stdout+stderr copied unedited from the session scratchpad ($S = /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad).
+# Both of my stage-A scripts need my own independent stage-A generation (<my_out_dir>: facts.json etc.), which is not in this session; with <my_out_dir> = c1_data they stop with FileNotFoundError before any check. Nothing was read but the start of the script's inputs; no TEST file exists or was read. ic6_06_data_recheck.py replaces them for this round.
+$ cd audit && PYTHONDONTWRITEBYTECODE=1 GIT_OPTIONAL_LOCKS=0 timeout 600 $S/venv/bin/python -I -B ia_09_split.py /home/user/OpenMythos $S/c1_data $S/c1_data
+env: host vm | Linux-6.18.44-fc-v880-x86_64-with-glibc2.39 | python 3.13.18 (/tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/venv/bin/python) | installed {'transformers': '5.22.2', 'tokenizers': '0.23.3', 'pyarrow': '26.0.1', 'huggingface_hub': '2.4.0', 'torch': '2.11.0'} | nvidia device nodes: []
+freeze-commit facts: {'total': 160, 'learned': 120, 'unread': 40, 'per_cell': {'cell': 'relation x stratum (8 cells)', 'learned': 15, 'unread': 5}}
+freeze-commit SPLIT_MANIFEST fact_ids: {'learned': 'E1P-L-*: 120 facts, each with exactly one TRAIN statement', 'unread': 'E1P-U-*: 40 facts, no training text in any arm', 'assignment': 'within a cell, generated facts 01-15 are learned and 16-20 (written as U 01-05) are unread; no fact changes class'}
+freeze-commit DATA_MANIFEST files contents: {'facts.jsonl': 'all 160 facts', 'train_F.jsonl': '120 TRAIN statements (arms F, L, A)', 'train_S.jsonl': '120 statements with permuted answers (arm S)', 'train_Y.jsonl': '240 style-only sentences (arm Y)', 'dev_qa.jsonl': 'DEV questions: 160 facts x 2 templates', 'candidates.json': 'candidate lists of all 160 facts', 'general_dev.jsonl': '100 general-text windows (25 per domain)', 'anchor_text.jsonl': '512 anchor documents', 'test_qa.jsonl': 'TEST questions: 160 facts x 3 templates', 'general_test.jsonl': '100 general-text windows of the Stage 1 test split (25 per domain)'}
+Traceback (most recent call last):
+  File "/home/user/OpenMythos/metrix/e1-pilot/audit/ia_common.py", line 102, in run
+    ok = main()
+  File "/home/user/OpenMythos/metrix/e1-pilot/audit/ia_09_split.py", line 75, in main
+    facts = json.load(open(os.path.join(mine, "facts.json"), encoding="utf-8"))
+                      ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/c1_data/facts.json'
+RESULT: FAIL (exception)
+exit=2
+$ cd audit && PYTHONDONTWRITEBYTECODE=1 GIT_OPTIONAL_LOCKS=0 timeout 900 $S/venv/bin/python -I -B ia_08_feasibility.py $S/inputs/qwen_tokenizer $S/c1_data $S/c1_data
+env: host vm | Linux-6.18.44-fc-v880-x86_64-with-glibc2.39 | python 3.13.18 (/tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/venv/bin/python) | installed {'transformers': '5.22.2', 'tokenizers': '0.23.3', 'pyarrow': '26.0.1', 'huggingface_hub': '2.4.0', 'torch': '2.11.0'} | nvidia device nodes: []
+Traceback (most recent call last):
+  File "/home/user/OpenMythos/metrix/e1-pilot/audit/ia_common.py", line 102, in run
+    ok = main()
+  File "/home/user/OpenMythos/metrix/e1-pilot/audit/ia_08_feasibility.py", line 25, in main
+    facts = json.load(open(os.path.join(mine, "facts.json"), encoding="utf-8"))
+                      ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/c1_data/facts.json'
+RESULT: FAIL (exception)
+exit=2

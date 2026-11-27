@@ -1,0 +1,96 @@
+# Data Auditor run (implementation stage C, C1 second submission, round 1). host vm, Anthropic cloud container, CPU only (no GPU device node: 0 nvidia entries), no model weights loaded (tokenizer files only; tiny models are random-initialised in memory); 2026-11-25 11:09:35 UTC; cwd /home/user/OpenMythos
+# stdout and stderr merged, complete, unedited
+$ bash -c cd\ /home/user/OpenMythos\ \&\&\ git\ rev-parse\ HEAD\ \&\&\ git\ write-tree\ \&\&\ git\ diff\ --quiet\ \&\&\ echo\ WORKTREE_EQUALS_INDEX_FOR_TRACKED_FILES\;\ echo\ \"---\ git\ status\ --short\"\;\ git\ status\ --short\;\ echo\ \"---\ git\ status\ --short\ --untracked-files=all\"\;\ git\ status\ --short\ --untracked-files=all\;\ echo\ \"---\ staged\ paths\ outside\ audit/\ unchanged\ vs\ the\ review\ input\ \(git\ diff\ --cached\ --name-only\):\"\;\ git\ diff\ --cached\ --name-only\ \|\ sha256sum\;\ ls\ metrix/e1-pilot/results\ 2\>\&1
+5f5cd51e83d8f637ca6252dc1ba71c32818bf19b
+365960a0e2c5cc28869be9ed44a08d4170389633
+WORKTREE_EQUALS_INDEX_FOR_TRACKED_FILES
+--- git status --short
+M  metrix/e1-pilot/reports/IMPL_C_REPORT.md
+A  metrix/e1-pilot/reports/impl_c/c1b_01_checks.txt
+A  metrix/e1-pilot/reports/impl_c/c1b_02_checks.txt
+A  metrix/e1-pilot/reports/impl_c/c1b_gate_probe.py
+A  metrix/e1-pilot/reports/impl_c/c1b_mutate.py
+A  metrix/e1-pilot/reports/impl_c/c1b_probe_run.py
+M  metrix/e1-pilot/src/metrix_e1/evaluate.py
+M  metrix/e1-pilot/src/metrix_e1/frozen.py
+M  metrix/e1-pilot/src/metrix_e1/gate.py
+M  metrix/e1-pilot/src/metrix_e1/interpretations.py
+M  metrix/e1-pilot/src/metrix_e1/leakage.py
+M  metrix/e1-pilot/src/metrix_e1/record.py
+M  metrix/e1-pilot/src/metrix_e1/stops.py
+M  metrix/e1-pilot/src/metrix_e1/test_data.py
+A  metrix/e1-pilot/src/metrix_e1/testgate.py
+A  metrix/e1-pilot/tasks/IMPL_C1_RULING.md
+A  metrix/e1-pilot/tasks/IMPL_C_OWNER_MESSAGE.md
+M  metrix/e1-pilot/tests/test_data_hashes.py
+M  metrix/e1-pilot/tests/test_evaluate.py
+M  metrix/e1-pilot/tests/test_gate.py
+M  metrix/e1-pilot/tests/test_stops.py
+M  metrix/e1-pilot/tests/test_test_data.py
+A  metrix/e1-pilot/tests/test_testgate.py
+?? metrix/e1-pilot/audit/ic5_01_gate_scenarios.py
+?? metrix/e1-pilot/audit/ic5_02_content_hashes.py
+?? metrix/e1-pilot/audit/ic5_03_static.py
+?? metrix/e1-pilot/audit/ic5_04_b25.py
+?? metrix/e1-pilot/audit/ic5_05_test_refusal.py
+?? metrix/e1-pilot/audit/ic5_run_logged.sh
+?? metrix/e1-pilot/audit/stdout/impl_c/ic5_00_state.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic5_01_gate_scenarios.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic5_01_trial1_superseded.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic5_02_content_hashes.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic5_03_static.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic5_03_trial1_superseded.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic5_03_trial2_superseded.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic5_03_trial3_superseded.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic5_04_b25.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic5_04_trial1_superseded.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic5_05_test_refusal.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic5_0x_trials_and_script_fixes.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic5_99_git_status_final.txt
+--- git status --short --untracked-files=all
+M  metrix/e1-pilot/reports/IMPL_C_REPORT.md
+A  metrix/e1-pilot/reports/impl_c/c1b_01_checks.txt
+A  metrix/e1-pilot/reports/impl_c/c1b_02_checks.txt
+A  metrix/e1-pilot/reports/impl_c/c1b_gate_probe.py
+A  metrix/e1-pilot/reports/impl_c/c1b_mutate.py
+A  metrix/e1-pilot/reports/impl_c/c1b_probe_run.py
+M  metrix/e1-pilot/src/metrix_e1/evaluate.py
+M  metrix/e1-pilot/src/metrix_e1/frozen.py
+M  metrix/e1-pilot/src/metrix_e1/gate.py
+M  metrix/e1-pilot/src/metrix_e1/interpretations.py
+M  metrix/e1-pilot/src/metrix_e1/leakage.py
+M  metrix/e1-pilot/src/metrix_e1/record.py
+M  metrix/e1-pilot/src/metrix_e1/stops.py
+M  metrix/e1-pilot/src/metrix_e1/test_data.py
+A  metrix/e1-pilot/src/metrix_e1/testgate.py
+A  metrix/e1-pilot/tasks/IMPL_C1_RULING.md
+A  metrix/e1-pilot/tasks/IMPL_C_OWNER_MESSAGE.md
+M  metrix/e1-pilot/tests/test_data_hashes.py
+M  metrix/e1-pilot/tests/test_evaluate.py
+M  metrix/e1-pilot/tests/test_gate.py
+M  metrix/e1-pilot/tests/test_stops.py
+M  metrix/e1-pilot/tests/test_test_data.py
+A  metrix/e1-pilot/tests/test_testgate.py
+?? metrix/e1-pilot/audit/ic5_01_gate_scenarios.py
+?? metrix/e1-pilot/audit/ic5_02_content_hashes.py
+?? metrix/e1-pilot/audit/ic5_03_static.py
+?? metrix/e1-pilot/audit/ic5_04_b25.py
+?? metrix/e1-pilot/audit/ic5_05_test_refusal.py
+?? metrix/e1-pilot/audit/ic5_run_logged.sh
+?? metrix/e1-pilot/audit/stdout/impl_c/ic5_00_state.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic5_01_gate_scenarios.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic5_01_trial1_superseded.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic5_02_content_hashes.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic5_03_static.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic5_03_trial1_superseded.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic5_03_trial2_superseded.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic5_03_trial3_superseded.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic5_04_b25.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic5_04_trial1_superseded.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic5_05_test_refusal.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic5_0x_trials_and_script_fixes.txt
+?? metrix/e1-pilot/audit/stdout/impl_c/ic5_99_git_status_final.txt
+--- staged paths outside audit/ unchanged vs the review input (git diff --cached --name-only):
+6d35b9a885afb439a3e13794803e17d1a67f8e663cb39115e7740fb905f3cdbf  -
+ls: cannot access 'metrix/e1-pilot/results': No such file or directory
+exit=2

@@ -1,0 +1,23 @@
+先读仓库中的 .claude/agents/code-reviewer.md，以它为你的完整定义；它与你已加载的定义冲突时，以仓库文件为准。
+
+审查对象：METRIX E1-PILOT 阶段 C 第 1 段（C1）第二次送审的修复提交，第 1 轮。暂存区内容（尚未提交），父提交 ae60e0f7ba699e5e7a25718108849ae36586f5f5（C1 工作提交，已推送；它的暂存树 365960a0 就是你们第 1 轮审查的对象）。仓库 /home/user/OpenMythos。
+
+Review Gate 对 C1 的裁决（tasks/IMPL_C1_RULING.md）中的防范对象，原文如下：
+防范对象：TEST 闸门要防的是「按规则办事的 Executor 在按 RUNBOOK 操作时，意外评测 TEST 两次，或在 ST10 不成立时评测 TEST」；不防有仓库写权限者的故意篡改（改写历史、伪造记录），这类风险由 GitHub 分支保护和审查记录承担。审查按此范围判定：范围外的边缘情况记为 MINOR 并登记，不作为 BLOCKER。调用两份审查时，把本段防范对象原文写进调用文字。
+
+审查输入（目录 /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/review_c1b_fix/）：input.diff（git diff --cached --stat 与完整 diff，相对父提交 ae60e0f）；tree.txt（本次暂存树 ae5fcb2f7e2ea844c6ee04e7ecb8e3157efde08c）。暂存内容与工作区文件相同（src/、tests/ 的核对见 c1b_04）。
+依据同第 1 轮（调用文字：/tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/review_c1b/code-reviewer_prompt.txt、data-auditor_prompt.txt）。
+
+本次改动（Executor 的说明，不作为证据；请逐条核对“已修且正确 / 已修但有问题 / 未修”）。两份第 1 轮原文：/tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/review_c1b/code-reviewer_round1.md、data-auditor_round1.md。
+- code-reviewer MAJOR 2（同一克隆中两个并发的 begin）：begin 在 commit_paths 返回之后核对推送的提交 <head>:MARKER_REL 的字节等于本会话写的 blob，且 <head>^ 中没有标记（testgate._blob 读 blob 字节）；否则 BLOCKED（“another TEST evaluation began at the same time: it counts as evaluated”），不返回会话。情形一（第二个 begin 在第一个推送之后提交）：第二个的提交父提交含标记 → BLOCKED；第一个会话下次调用因 HEAD 不再是其标记提交而 BLOCKED。情形二（另一提交落在本次提交与推送之间）：推送的提交含另一份标记 → BLOCKED。新测试 test_a_second_begin_in_the_same_clone_is_blocked、test_a_commit_of_another_begin_between_commit_and_push_is_blocked（父提交含标记）、test_a_marker_file_overwritten_before_the_commit_is_blocked（同一工作区中标记文件在 add 之前被另一个 begin 覆盖：父提交无标记，提交的是对方的字节）；变异两个，各指名一个只由该项检查拦下的测试。没有另加 require_test_session/finish 的 session_id 比较：begin 的两项核对通过时，会话的标记提交上的标记就是本会话的，那项比较不可能失败。
+- code-reviewer MAJOR 1（评测调用不 fetch）：读法不变，交 Review Gate 确认（报告提交中列入“待 Review Gate 决定”，RUNBOOK 在 C3 写明 begin 到 finish 之间任何人不得向该分支推送）；补测试 test_evaluation_calls_do_not_fetch_finish_does（远端在 begin 之后被另一克隆推进，本地仍在标记提交：评测调用继续，finish fetch 后 BLOCKED，不写结果）。
+- MINOR（with_s_mapping 与 split 的检查在登记之后）：移到 evaluate_model 开头、TEST 闸门之前；测试 test_s_mapping_on_test_is_refused_before_the_gate；变异。
+- MINOR（sleep 默认值在定义时绑定）：commit_paths、begin、finish 的 sleep 默认 None，_push 内取 time.sleep。
+- MINOR（generate_test 不做检出检查）：文档写明 main 是唯一调用方（run_pilot.py 以子进程运行 main），C2 审查时核对。
+- MINOR（BLOCKED 文字建议“push the local commits”）：改为“fast-forward pull；TEST 路径产生的本地提交（ST10 记录、标记、结果）只在 Owner 决定后推送”。
+- MINOR（测试名）：改为 test_a_marker_deleted_in_a_later_commit_is_not_searched。
+- data-auditor MINOR-1（session 为 None 时 finish、claim_checkpoint 抛 AttributeError）：两处守卫改为 isinstance(session, TestSession) 开头；测试（None 与 copy.copy 的会话）；变异“finish: any session”。
+- 登记、不修（防范对象以外，或交 Review Gate；在报告提交中写入 DEFERRED_MINORS 与 IMPL_C_REPORT）：_where 把 cat-file 的任何失败当作不存在；TEST 文件写出之后、ST10 记录写入之前崩溃时可再次生成（RUNBOOK 写明按 BLOCKED 报告）；报告与登记的引用（报告提交）。
+- 变异脚本：c1b_mutate.py 是工作提交 ae60e0f 中、c1b_02 运行时的版本，保持不动；本次用新文件 c1b_mutate_fix1.py（新增 3 个变异，跟随改动后的会话守卫，共 78 个）。原始输出 c1b_04_checks_fix.txt（正式记录）；c1b_03_checks_fix.txt 是第一次完整录制：78 个变异中“begin: pushed marker bytes not checked”未测出，原因是它指名的测试中另一提交的父提交就是本次标记提交，“父提交含标记”已先拦下；补了上述第三个测试并改正指名后完整重跑为 c1b_04；c1b_03 按裁决第 7 项作为被取代的记录入库。
+
+请：(1) 逐条核对上面各项；(2) 审查本次改动本身有无新问题（重点：并发 begin 的两项核对是否覆盖你第 1 轮所述两种情形，有无仍可让同一克隆中的两个进程都拿到会话的交错；守卫改动；evaluate_model 参数检查提前后的行为）；(3) 测试与变异是否真正检验所说内容。范围外的边缘情况记为 MINOR 并登记，不作为 BLOCKER。按定义的输出格式给出，每条注明“已验证/未验证”；原文即你的完整输出。最后一行给出结论 PASS 或 BLOCK。不要修改任何文件。

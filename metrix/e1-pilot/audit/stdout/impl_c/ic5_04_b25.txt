@@ -1,0 +1,40 @@
+# Data Auditor run (implementation stage C, C1 second submission, round 1). host vm, Anthropic cloud container, CPU only (no GPU device node: 0 nvidia entries), no model weights loaded (tokenizer files only; tiny models are random-initialised in memory); 2026-11-25 11:03:58 UTC; cwd /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/venv/bin/python -I -B /home/user/OpenMythos/metrix/e1-pilot/audit/ic5_04_b25.py /home/user/OpenMythos /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/venv/bin/python /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/ic5_b25
+env: host vm | Linux-6.18.44-fc-v880-x86_64-with-glibc2.39 | python 3.13.18 (/tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/venv/bin/python) | installed {'transformers': '5.22.2', 'tokenizers': '0.23.3', 'pyarrow': '26.0.1', 'huggingface_hub': '2.4.0', 'torch': '2.11.0'} | nvidia device nodes: []
+interpretations.B25 (read with ast): status 'ACCEPTED（Review Gate 2026-11-25）' | ruling 'tasks/IMPL_C1_RULING.md 第 3 项(reports/IMPL_C_REPORT.md「Review Gate 对 C1 的裁决」)' | where 'record.selection_freeze_record, testgate.require_test_session, train.state_sha256'
+text: A run's checkpoint hash is train.state_sha256 of the trained model (for arm L the LoRA-wrapped model, base weights and adapters; N's is the loaded base model's). It is not a file-byte hash. Computation: h = SHA-256(); for each key k of module.state_dict() in sorted order (Python string order), with t = the tensor detached, moved to the CPU and made contiguous: h.update(UTF-8 bytes of k + b'\0' + str(t.dtype) + b'\0' + str(tuple(t.shape)) + b'\0'), then h.update(the raw bytes of t, flattened and viewed as uint8, in the host's byte order); the hash is h.hexdigest() (64 lowercase hex). TEST evaluation recomputes it on the model loaded from the saved checkpoint and requires equality with the freeze record (through the TEST marker) before the model is evaluated.
+the text states every element my implementation follows ['sorted order', 'str(t.dtype)', 'str(tuple(t.shape))', "b'\\0'", 'viewed as uint8', 'hexdigest', 'detached, moved to the CPU and made contiguous', 'not a file-byte hash']: True
+torch 2.11.0+cu130 | numpy 2.5.4 | host byte order little
+tiny configuration (the values the probe's tinysha uses): {'vocab_size': 151936, 'hidden_size': 64, 'intermediate_size': 128, 'num_hidden_layers': 2, 'num_attention_heads': 4, 'num_key_value_heads': 2, 'head_dim': 16, 'tie_word_embeddings': True}
+seed 0: 25 state_dict keys; first ['lm_head.weight', 'model.embed_tokens.weight', 'model.layers.0.input_layernorm.weight']; last ['model.layers.1.self_attn.v_proj.weight', 'model.norm.weight']
+  dtypes ['torch.float32'] | lm_head.weight and model.embed_tokens.weight both keys: True, same storage: True
+  named buffers ['model.rotary_emb.inv_freq', 'model.rotary_emb.original_inv_freq']; in state_dict: []
+  same hash in train() mode: True | one element changed -> hash changes: True | restored -> same: True | bfloat16 copy hashes (mine) d46997e2f44deaba3d345eca5e0aa6e6ac7691b646f9ed1587af992c555e616b
+my B25 hashes (computed before the probe runs):
+  seed 0      a895622c8065094db612d950ad39d072c87a5894603950ddba98d44b524ee251
+  seed 1      46da10034702b106d061e0e8eb16ee44a68240c05a8a71af5588eab23e235a1c
+  seed 4      0eec839cc13a895a3921d9542236937da4a68f967a948df71f564c026b3c2bd7
+  seed 7      0aaed642c415613a084106be5aad9513ed5ae1a5a5a517d7775aae41cc38c34e
+  seed 12345  aef393f79628a706a0e2342f6da0023e93df3969f523acf4d1788f30b326d65c
+$ /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/venv/bin/python -I -B /home/user/OpenMythos/metrix/e1-pilot/reports/impl_c/c1b_gate_probe.py /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/ic5_b25/repo /tmp/claude-0/-home-user/8645aeea-5a45-5281-b238-3e6075410a17/scratchpad/ic5_b25/test_dir tinysha:0 tinysha:1 tinysha:4 tinysha:7 tinysha:12345
+----- probe stdout+stderr -----
+probe: testgate.CANONICAL_REPO = 'origin' (REPO's origin), testgate.PILOT_BRANCH = 'main'
+tinysha:0 ACCEPT a895622c8065094db612d950ad39d072c87a5894603950ddba98d44b524ee251
+tinysha:1 ACCEPT 46da10034702b106d061e0e8eb16ee44a68240c05a8a71af5588eab23e235a1c
+tinysha:4 ACCEPT 0eec839cc13a895a3921d9542236937da4a68f967a948df71f564c026b3c2bd7
+tinysha:7 ACCEPT 0aaed642c415613a084106be5aad9513ed5ae1a5a5a517d7775aae41cc38c34e
+tinysha:12345 ACCEPT aef393f79628a706a0e2342f6da0023e93df3969f523acf4d1788f30b326d65c
+{"repo_head": "HEAD"}
+----- exit 0 -----
+  seed 0      mine a895622c8065094db612d950ad39d072c87a5894603950ddba98d44b524ee251 | probe (train.state_sha256) ACCEPT a895622c8065094db612d950ad39d072c87a5894603950ddba98d44b524ee251 | equal True
+  seed 1      mine 46da10034702b106d061e0e8eb16ee44a68240c05a8a71af5588eab23e235a1c | probe (train.state_sha256) ACCEPT 46da10034702b106d061e0e8eb16ee44a68240c05a8a71af5588eab23e235a1c | equal True
+  seed 4      mine 0eec839cc13a895a3921d9542236937da4a68f967a948df71f564c026b3c2bd7 | probe (train.state_sha256) ACCEPT 0eec839cc13a895a3921d9542236937da4a68f967a948df71f564c026b3c2bd7 | equal True
+  seed 7      mine 0aaed642c415613a084106be5aad9513ed5ae1a5a5a517d7775aae41cc38c34e | probe (train.state_sha256) ACCEPT 0aaed642c415613a084106be5aad9513ed5ae1a5a5a517d7775aae41cc38c34e | equal True
+  seed 12345  mine aef393f79628a706a0e2342f6da0023e93df3969f523acf4d1788f30b326d65c | probe (train.state_sha256) ACCEPT aef393f79628a706a0e2342f6da0023e93df3969f523acf4d1788f30b326d65c | equal True
+distinct hashes over the seeds: 5 of 5
+{"b25_matches_probe": true}
+note: this script constructs random-initialised Qwen3ForCausalLM(config) models in memory (no from_pretrained, no weight file read, no download); the generic 'modules' line below comes from ia_common.run
+modules: torch imported=True | transformers modeling modules imported=['torch', 'transformers.modeling_flash_attention_utils', 'transformers.modeling_layers', 'transformers.modeling_outputs', 'transformers.modeling_rope_utils', 'transformers.modeling_utils', 'transformers.models.auto.modeling_auto', 'transformers.models.qwen3.modeling_qwen3'] | this script never calls a model class or from_pretrained on a model
+RESULT: PASS
+exit=0
