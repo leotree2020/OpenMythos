@@ -768,6 +768,20 @@ code-reviewer 结论 PASS(没有 BLOCKER、MAJOR;12 个 MINOR,都在防范对象
 | CO11 | MINOR | `impl_c/c4_04_uv_check.txt` | 第 2 轮追加的命令没有时间;结论只排除了环境变量,没有排除 uv 的配置文件 | C4D2-CR | 已修:追加一条带时间的说明(第 2 轮追加的时间与结论的范围);RUNBOOK 以 `--show-urls` 为准 |
 | CO12 | MINOR | `impl_c/c4_06_docs_checks_r2.txt` | blob 与 diff 的 sha256 只覆盖 11 个暂存路径中的 6 个 | C4D2-CR | 已修:第 3 轮的检查(`c4_docs_checks_r3.sh` → `c4_09_docs_checks_r3.txt`)记录 `git diff --cached --name-only HEAD` 的全部路径 |
 
+### 1.42 Implementation 阶段 C:C4 文档提交 `6726bac0` 第 3 轮审查(暂存树 `9d628690`,即该提交的树;`reviews/6726bac0…/code-reviewer_round3.md` 记 `C4D3-CR`)
+
+code-reviewer 结论 PASS(没有 BLOCKER、MAJOR;7 个 MINOR,都在防范对象之外;第 2 轮 CO2、CO4、CO5、CO8、CO11、CO12 已修且正确,CO1、CO3、CO7、CO10 已修但带出下列问题,CO6、CO9 照实登记)。按 C3 的先例,本节写入 C4 文档提交之后的证据提交,不再改文档;RUNBOOK 中的项与 1.38 CL2–CL6 一并,在下达正式运行指令之前以只改文档的提交修正(`IMPL_C_REPORT.md` C4 节“待 Review Gate 决定(C4)”第 2 项),CP5 请 Review Gate 确认。
+
+| # | 严重度 | 位置 | 问题 | 来源 | 处理 |
+|---|---|---|---|---|---|
+| CP1 | MINOR | RUNBOOK 第 1 节长命令;第 3.2、3.4、3.6、3.8 节 | `<名称>.end` 只有脚本最后一条命令的退出码(没有 `set -e`):3.4 的三条下载、写进同一脚本的 `git pull --ff-only`、3.2 整段中前面的失败会被掩盖;3.2 的“倒数第二行”在整段作为脚本时不再指版本行;send 一行假定窗口 shell 认识 `$?`,`$WORK` 没有加引号 | C4D3-CR 1 | 登记;处理应为:每条长命令单用一个 `<名称>`(3.4 拆成三个),`git pull --ff-only` 在 Claude Code 中前台运行、成功后再发送长命令,3.2 改为“结束后核对 env.txt 中 `PY313=` 的下一行为 CPython 3.13.18”。后果都由代码在后面的步骤拦下(ST12、begin 的 HEAD 核对),只浪费租用时间 |
+| CP2 | MINOR | RUNBOOK 第 5 节 | `<名称>.sh` 与 `<名称>.end` 不在提交清单中;同一占位符 `<名称>` 在第 1 节与第 5 节含义不同 | C4D3-CR 2 | 登记;处理应为:复制为 `results/command_output/<名称>.sh.txt`、`<名称>.end.txt` 一并提交(先 `git check-ignore` 核对),两处占位符改名 |
+| CP3 | MINOR | RUNBOOK 第 1 节 | “test-generate 与 test-evaluate 不得重跑”是无条件的,比第 3.8、4 节(写出 TEST 文件或标记之后不得重跑)更严 | C4D3-CR 3 | 登记(方向偏安全);处理应为:“test-generate 写出 TEST 文件之后、test-evaluate 写出标记之后不得重跑;此前的拒绝是否重发由 Owner 决定” |
+| CP4 | MINOR | RUNBOOK 第 3.7 节第 5 项 | GPU 秒数的命令调用私有方法 `_state()`;有未关闭的段时 `used()` 所用的时间没有打印 | C4D3-CR 4 | 登记;处理应为:命令同时打印 `time.time()`,记录中的“计到 <时间>”取该值 |
+| CP5 | MINOR | RUNBOOK 3.2a 的条件;第 1 节 Python 一行、3.0 的说明 | 主机“有 3.13.18 但缺 ensurepip”时也走 uv 分支,比 C4 裁决第 6 项的字面(“主机没有 CPython 3.13.18 时”)宽;第 1 节与 3.0 的说明没有同步 | C4D3-CR 5 | 登记,请 Review Gate 确认这一读法(装出的是同一个精确版本,之后有版本核对);不确认时改为“缺 ensurepip 时停下报告”。确认时第 1 节与 3.0 补“或不能建 venv” |
+| CP6 | MINOR | `impl_c/c4_runbook_sim_r3.sh` | 只靠 `TMUX_TMPDIR` 隔离;若在 tmux 会话内运行,`TMUX` 优先,会在真实服务器上建会话并 `kill-server` | C4D3-CR 6 | 登记;`c4_08` 不是在 tmux 中录制的,结果不受影响。脚本保持运行时的样子;日后重跑先 `unset TMUX` |
+| CP7 | MINOR | `DEFERRED_MINORS.md` 1.40、1.41;`IMPL_C_REPORT.md` C4 节 | 措辞夸大或过时:(a) 1.41 首段 “会在租用机器上造成实际问题” 应为“可能”;(b) 1.40 CN2、CN6、CN10 的处理列描述的是第 3 轮已替换的文字;(c) 报告的交付清单只列 1.39、1.40,没有 1.41 与 c4_04 的第 3 轮说明;(d) 报告 C4 表 “除 CO6、CO9 外在文档中修正” 应为“除 CO6、CO9 与 CO10 第四处外”;(e) 报告第 4 条只提 c4_07 的主机分支取到 `/root/.local/bin/python3.13`,`c4_08` 也是如此 | C4D3-CR 7 | 登记并更正如下:(a) 为“可能”;(b) CN2、CN6、CN10 在第 3 轮分别改为 1.41 CO2(以 `.end` 判断)、CO4(`UV_*` 只记名字)、CO5(`GpuClock.used()`);(c) 交付另含 1.41 与 `c4_04` 末尾第 3 轮追加的说明;(d) 为“除 CO6、CO9 与 CO10 第四处(`c4_docs_checks_r2.sh` 的说明)外”;(e) `c4_08` 的主机分支同样取到该链接 |
+
 ## 2. 已在第 5–7 轮解决(核对用)
 
 | 原条目 | 来源 | 处理 |
@@ -800,4 +814,4 @@ code-reviewer 结论 PASS(没有 BLOCKER、MAJOR;12 个 MINOR,都在防范对象
 - Implementation 阶段 A:1.18 节 AA1、AA2、AA6、AA7,1.19 节 AB1、AB2 须由 Review Gate 决定;AA9(命令路径)、AA11(记录字段)、L4 的语料含 `anchor_text`、1.21 节 AD14(修复提交没有调用 data-auditor)请 Review Gate 备案。都列于 `IMPL_A_REPORT.md`“待 Review Gate 决定”(第 1–8 项)。
 - Implementation 阶段 B:1.22 节 BA1–BA3、BA7、BA9,1.23 节 BB2、BB4、BB6,1.24 节 BC1 须由 Review Gate 决定;1.25 节 BD10 请 Review Gate 备案。都列于 `IMPL_B_REPORT.md`“待 Review Gate 决定”(第 1–5 项)。BB1 / BC2 / BD8(ST10 凭据与“TEST 只评一次”)是阶段 C 的硬性前提。
 - Implementation 阶段 B 报告提交:1.26 节 BE1(待决第 3 项的运行清单)与 BE6(推送记录的证据提交不经审查,待决第 6 项)请 Review Gate 决定或确认。
-- Implementation 阶段 C(C4):1.39 节 CM3(只改注释是否属于“不改代码”)、1.38 节 CL2–CL6(RUNBOOK 操作细节的修正时机)与 1.41 节 CO6(RUNBOOK 中的分工,请 Owner 确认)列于 `IMPL_C_REPORT.md` C4 节“待 Review Gate 决定(C4)”第 1–3 项。1.38 节 CL7 由 Review Gate 2026-11-27 的裁决(`tasks/IMPL_C4_RULING.md`)第 4 项回答。
+- Implementation 阶段 C(C4):1.39 节 CM3(只改注释是否属于“不改代码”)、1.38 节 CL2–CL6(RUNBOOK 操作细节的修正时机)与 1.41 节 CO6(RUNBOOK 中的分工,请 Owner 确认)列于 `IMPL_C_REPORT.md` C4 节“待 Review Gate 决定(C4)”第 1–3 项。1.42 节 CP5(缺 ensurepip 时也用 uv,比裁决第 6 项的字面宽)请 Review Gate 确认;1.42 节其余 RUNBOOK 项与 1.38 CL2–CL6 一并修正(同一第 2 项)。1.38 节 CL7 由 Review Gate 2026-11-27 的裁决(`tasks/IMPL_C4_RULING.md`)第 4 项回答。

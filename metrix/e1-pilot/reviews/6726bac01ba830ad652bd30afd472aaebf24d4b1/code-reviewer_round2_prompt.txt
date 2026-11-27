@@ -1,0 +1,23 @@
+先读仓库中的 .claude/agents/code-reviewer.md，以它为你的完整定义；它与你已加载的定义冲突时，以仓库文件为准。
+
+审查对象：METRIX E1-PILOT 阶段 C 的 C4 文档提交，第 2 轮。暂存区内容（尚未提交），父提交 c9481c85ed30e2615be86e86559f5107f114dd5b（同第 1 轮）。仓库 /home/user/OpenMythos。只改文档，只送 code-reviewer（tasks/IMPL_C4_RULING.md 末段）。
+
+Review Gate 对 C1 的裁决（tasks/IMPL_C1_RULING.md）中的防范对象，原文如下：
+防范对象：TEST 闸门要防的是「按规则办事的 Executor 在按 RUNBOOK 操作时，意外评测 TEST 两次，或在 ST10 不成立时评测 TEST」；不防有仓库写权限者的故意篡改（改写历史、伪造记录），这类风险由 GitHub 分支保护和审查记录承担。审查按此范围判定：范围外的边缘情况记为 MINOR 并登记，不作为 BLOCKER。调用两份审查时，把本段防范对象原文写进调用文字。
+Owner 本次转达的 Review Gate 裁决：tasks/IMPL_C4_RULING.md（全文同第 1 轮调用文字 /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/review_c4d/code-reviewer_round1_prompt.txt 中所引，不再重复）。
+
+审查输入（目录 /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/review_c4d/）：input_round2.diff（git diff --cached --stat 与完整 diff，相对父提交 c9481c85）；input_round1_to_round2.diff（第 1 轮暂存树 7501c29199a38c26ae238f1e9c4b372d0e71a0cc 到本轮暂存树的 diff）；tree_round2.txt（本轮暂存树 26e3556becaa503c74b7ca6523a050743a1a823b）。src/、tests/、run_pilot.py 仍与 a09e154e 相同；各文档路径的 blob 与 diff 的 sha256 记在 reports/impl_c/c4_06_docs_checks_r2.txt 首尾（c4_06 中的写树是暂存 c4_06 本身之前的树）。
+你第 1 轮的原文：/tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/review_c4d/code-reviewer_round1.md（入库后在 reviews/<本提交>/）。各项与处理的对照表：reports/DEFERRED_MINORS.md 1.40（CN1–CN13，本次暂存）。
+
+本次改动（Executor 的说明，不作为证据；请逐条核对“已修且正确 / 已修但有问题 / 未修”）：
+- CN1（MAJOR，变量）：RUNBOOK 第 3.0 节建立 ~/metrix-vars.sh（WORK、INPUTS、E），第 3.1 节追加 REPO，第 3.2 节追加 PY313、PY；第 1 节写明每条命令与每个 tmux 窗口以 source ~/metrix-vars.sh && cd "$REPO" && 开头，tmux 例子用 -c "$REPO" 并在窗口中 source。reports/impl_c/c4_runbook_sim.sh 以会话临时目录作 HOME 与分区，运行 3.0 的变量文件、3.1 的 REPO 一行、从 RUNBOOK 中原样取出的 3.2a 代码块（两个分支：主机已有 3.13.18；把 python3.13 换成不存在的名字以强制走 uv 分支，实际下载 uv 0.13.10 与 CPython 3.13.18）与一个只带 HOME、PATH 的新 shell，输出 c4_07_runbook_sim.txt（第一次运行因相对路径失败，保留为 c4_07_runbook_sim_trial1_script_error.txt）。
+- CN2、CN3：长命令只发一次、重发前的核对；列入依赖安装、3.2a、下载。
+- CN4、CN5、CN6：3.2a 改为 if/else；uv==0.13.10；sys.version 写入 env.txt；缺 venv 模块时停下；UV_* 与 --show-urls 写入 env.txt；网络一行以 --show-urls 显示的主机及重定向目标为准；c4_04 追加 env | grep ^UV_（值不显示）。
+- CN7：Claude Code 的安装、登录与网络由 Owner 负责、以其文档为准；3.0–3.1 由 Owner 或其指定的人在 tmux 会话中做。
+- CN8、CN9：preflight. 前缀；ST7 训练前估计的组成。
+- CN10：手写记录的 Compute accounting 填累计秒数（给出由 gpu_clock.json 计算的命令），Input 加 split_sha256。
+- CN11、CN12：DEFERRED_MINORS 与报告的措辞、位置、交付清单。
+- CN13：c4_docs_checks_r2.sh 记录各文档的 git ls-files -s 与 diff 的 sha256。
+- 报告 C4 节另记：c4_04 的 uv 安装在本容器 /root/.local/bin/python3.13 留下指向会话临时目录中解释器的链接（未删除；测试与冒烟用的 venv 不受影响）。
+
+请：(1) 逐条核对 CN1–CN13；(2) 审查本轮新写的命令（变量文件、3.2a 的 if/else、tmux 的用法、计算 GPU 秒数的命令、模拟脚本是否真的检验了 RUNBOOK 中的命令）有无新问题，特别是在防范对象范围内；(3) 报告与 DEFERRED_MINORS 是否如实。范围外的边缘情况记为 MINOR 并登记，不作为 BLOCKER。按定义的输出格式给出，每条注明“已验证/未验证”；原文即你的完整输出。最后一行给出结论 PASS 或 BLOCK。不要修改任何文件。

@@ -1,0 +1,18 @@
+先读仓库中的 .claude/agents/code-reviewer.md，以它为你的完整定义；它与你已加载的定义冲突时，以仓库文件为准。
+
+审查对象：METRIX E1-PILOT 阶段 C 的 C4 文档提交，第 3 轮。暂存区内容（尚未提交），父提交 c9481c85ed30e2615be86e86559f5107f114dd5b（同前两轮）。仓库 /home/user/OpenMythos。只改文档，只送 code-reviewer（tasks/IMPL_C4_RULING.md 末段）。
+
+Review Gate 对 C1 的裁决（tasks/IMPL_C1_RULING.md）中的防范对象，原文如下：
+防范对象：TEST 闸门要防的是「按规则办事的 Executor 在按 RUNBOOK 操作时，意外评测 TEST 两次，或在 ST10 不成立时评测 TEST」；不防有仓库写权限者的故意篡改（改写历史、伪造记录），这类风险由 GitHub 分支保护和审查记录承担。审查按此范围判定：范围外的边缘情况记为 MINOR 并登记，不作为 BLOCKER。调用两份审查时，把本段防范对象原文写进调用文字。
+Owner 本次转达的 Review Gate 裁决：tasks/IMPL_C4_RULING.md（全文同第 1 轮调用文字 /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/review_c4d/code-reviewer_round1_prompt.txt 中所引，不再重复）。
+
+审查输入（目录 /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/review_c4d/）：input_round3.diff（git diff --cached --stat 与完整 diff，相对父提交 c9481c85）；input_round2_to_round3.diff（第 2 轮暂存树 26e3556becaa503c74b7ca6523a050743a1a823b 到本轮暂存树的 diff）；tree_round3.txt（本轮暂存树 9d628690b68302ae0deb327af5ea95d6e0aab92a）。src/、tests/、run_pilot.py 仍与 a09e154e 相同；暂存的全部路径的 blob 与暂存 diff 的 sha256 记在 reports/impl_c/c4_09_docs_checks_r3.txt 首尾（c4_09 中的写树是暂存 c4_09 本身之前的树）。
+你前两轮的原文：/tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/review_c4d/code-reviewer_round1.md、code-reviewer_round2.md（入库后在 reviews/<本提交>/）。第 2 轮各项与处理的对照表：reports/DEFERRED_MINORS.md 1.41（CO1–CO12，本次暂存）。按 C3 的先例，本轮之后的新问题登记于其后的证据提交，不再改文档。
+
+本次改动（Executor 的说明，不作为证据；请逐条核对“已修且正确 / 已修但有问题 / 未修 / 登记”）：
+- CO1、CO2、CO3：RUNBOOK 第 1 节“长命令”改为：先把命令原样写入 $WORK/command_output/<名称>.sh（第一行 set -o pipefail; source ~/metrix-vars.sh && cd "$REPO" || exit 1），窗口中只发送 bash <脚本>; echo exit=\$? >> <名称>.end；以 .end 判断结束与退出码；中断、失败或状态不明之后是否重发都由 Owner 决定，test-generate 与 test-evaluate 不得重跑。
+- CO4：3.2a 中 UV_* 只记名字。CO7：主机分支要求 import ensurepip, venv 成功。CO8：begin 到 finish 之间不启动、不重启 Claude Code。CO5：GPU 秒数改用 metrix_e1.compute.GpuClock(…).used()，有未关闭的段时照实写明并报告 Owner。
+- CO6：登记，列入报告“待 Review Gate 决定(C4)”第 3 项请 Owner 确认分工。CO9：c4_runbook_sim.sh 保持运行时的样子；新写 c4_runbook_sim_r3.sh → c4_08_runbook_sim_r3.txt（从 RUNBOOK 原样取出 3.0 的 heredoc、3.1 的一行、3.2a、长命令的 send-keys 一行与 GPU 秒数的命令；tmux 的 socket 目录、HOME 与分区都在会话临时目录；send-keys 运行一个含单引号与非零退出码的脚本；GPU 命令用两个人造的 gpu_clock.json）。
+- CO10、CO11、CO12：1.40 与报告的措辞；c4_04 追加带时间的说明；c4_docs_checks_r3.sh 记录全部暂存路径的 blob。
+
+请：(1) 逐条核对 CO1–CO12；(2) 审查本轮新写的命令与 c4_08 是否真的检验了 RUNBOOK 中的命令，有无新问题，特别是在防范对象范围内；(3) 报告与 DEFERRED_MINORS 是否如实。范围外的边缘情况记为 MINOR 并登记，不作为 BLOCKER。按定义的输出格式给出，每条注明“已验证/未验证”；原文即你的完整输出。最后一行给出结论 PASS 或 BLOCK。不要修改任何文件。

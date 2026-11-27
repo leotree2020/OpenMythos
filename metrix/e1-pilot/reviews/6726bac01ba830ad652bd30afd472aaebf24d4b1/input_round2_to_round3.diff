@@ -1,0 +1,491 @@
+diff --git a/metrix/e1-pilot/RUNBOOK_A100.md b/metrix/e1-pilot/RUNBOOK_A100.md
+index f414840..37c95e9 100644
+--- a/metrix/e1-pilot/RUNBOOK_A100.md
++++ b/metrix/e1-pilot/RUNBOOK_A100.md
+@@ -37,7 +37,7 @@
+ - 顺序:由 Owner(或 Owner 指定的人)在 `tmux new -s metrix` 建立的 tmux 会话中做第 3.0 节(含建立变量文件 `~/metrix-vars.sh`)与第 3.1 节的克隆、检出和提交者身份;然后在同一个 tmux 会话中 `source ~/metrix-vars.sh && cd "$REPO"`,启动 Claude Code。Claude Code 若是在别的目录或别的分支上启动的,退出后按此重新启动(agent 定义只在会话开始时加载)。
+ - 启动后先核对并把输出追加到 `env.txt`:`pwd` 与 `git rev-parse --show-toplevel` 相同,`git branch --show-current` 为 `metrix-e1-pilot-protocol-v1`,`ls .claude/agents/` 列出两个文件;两个 agent 出现在会话的 agent 列表中,其 tools 行与仓库文件 frontmatter 的 tools 行相同。不一致即停下,报告 Owner。每次调用审查 subagent 之前仍按 metrix/CLAUDE.md 第 5 节第 6 条比对 frontmatter,调用文字第一句用固定句。
+ - 变量:第 3 节的命令用到的 `WORK`、`INPUTS`、`E`、`REPO`、`PY313`、`PY` 都写在 `~/metrix-vars.sh` 中(第 3.0–3.2 节逐步追加)。不依赖上一条命令留下的 shell 状态:Claude Code 的每一次命令调用、每个 tmux 窗口中的命令,都以 `source ~/metrix-vars.sh && cd "$REPO" && ` 开头(第 3.1 节追加 `REPO` 之前只 `source`)。
+-- 长命令:可能超过工具超时的命令(第 3.2 节的依赖安装与 3.2a、第 3.4 节的下载、`formal`、`test-generate`、`test-evaluate`)不作为有超时的前台命令运行,而在 tmux 的单独窗口中运行,例如 `source ~/metrix-vars.sh && tmux new-window -d -t metrix -n formal -c "$REPO" && tmux send-keys -t metrix:formal 'source ~/metrix-vars.sh && cd "$REPO" && <第 3.5 节的命令>' Enter`;Claude Code 读取 `tee` 写出的输出文件跟踪进度。每个长命令只发送一次,窗口名各不相同;认为它已结束或想重发之前,先用 `tmux list-windows -t metrix`、`pgrep -af run_pilot.py` 确认它不在运行,并看输出文件的最后几行。不确定时不重发,报告 Owner(`formal` 与 `test-evaluate` 的重跑由 Owner 决定,第 4 节)。
++- 长命令:可能超过工具超时的命令(第 3.2 节整段,含 3.2a;第 3.4 节的下载;`formal`、`test-generate`、`test-evaluate`)不作为有超时的前台命令运行,而在 tmux 的单独窗口中运行。不把含引号或多行的命令拼进 `send-keys`:先把要运行的命令原样写入脚本文件 `$WORK/command_output/<名称>.sh`,第一行为 `set -o pipefail; source ~/metrix-vars.sh && cd "$REPO" || exit 1`;再只发送一行,例如 `source ~/metrix-vars.sh && tmux new-window -d -t metrix -n <名称> -c "$REPO" && tmux send-keys -t metrix:<名称> "bash $WORK/command_output/<名称>.sh; echo exit=\$? >> $WORK/command_output/<名称>.end" Enter`。`<名称>` 各不相同(如 `s3_2`、`s3_4`、`formal`、`test_generate`、`test_evaluate`)。Claude Code 读取 `tee` 写出的输出文件(第 3.2 节写在 `env.txt`)跟踪进度,也可 `tmux capture-pane -p -t metrix:<名称>`;`<名称>.end` 出现才表示命令已结束,其中是脚本的退出码(`pipefail` 下即被 `tee` 的命令的退出码)。`.end` 不存在时视为仍在运行或状态不明。每个长命令只发送一次;中断、失败或状态不明之后是否重发,都由 Owner 决定,Executor 不自行重发;`test-generate` 与 `test-evaluate` 不得重跑(第 4 节)。
+ 
+ ## 2. 需要下载的内容及其哈希
+ 
+@@ -88,12 +88,13 @@ git config user.name "<Executor 账户>" && git config user.email "<Executor 邮
+ # 3.2 Python 与依赖(只用 requirements.lock;pip 本身固定为本阶段 CPU 环境所用的 26.3)
+ # 3.2a(C4 裁决第 6 项)主机没有 CPython 3.13.18 时,用 uv 安装这个精确版本。uv 固定为本阶段核对过的 0.13.10
+ #      (reports/impl_c/c4_04_uv_check.txt:容器预装的 uv 0.11.32 不列出 3.13.18,0.13.10 列出、下载并装成)。uv 只装
+-#      解释器;依赖仍由下面的 pip 按 requirements.lock 逐个核对哈希安装。主机已有 3.13.18 时只记下它的路径
+-if [ "$(python3.13 --version 2>&1)" = "Python 3.13.18" ]; then
++#      解释器;依赖仍由下面的 pip 按 requirements.lock 逐个核对哈希安装。主机已有 3.13.18 且能建 venv(有 ensurepip)
++#      时只记下它的路径;否则用 uv 装。UV_* 变量只记名字,不记值(env.txt 会提交)
++if [ "$(python3.13 --version 2>&1)" = "Python 3.13.18" ] && python3.13 -c 'import ensurepip, venv' 2>/dev/null; then
+   echo "export PY313=$(command -v python3.13)" >> ~/metrix-vars.sh
+ else
+   python3 -m venv ~/uv-tool && ~/uv-tool/bin/python -m pip install uv==0.13.10 \
+-  && { ~/uv-tool/bin/uv --version; env | grep '^UV_'; ~/uv-tool/bin/uv python list 3.13.18 --only-downloads --show-urls; ~/uv-tool/bin/uv python install 3.13.18; } 2>&1 | tee -a "$E" \
++  && { ~/uv-tool/bin/uv --version; env | grep '^UV_' | sed 's/=.*/=<set>/'; ~/uv-tool/bin/uv python list 3.13.18 --only-downloads --show-urls; ~/uv-tool/bin/uv python install 3.13.18; } 2>&1 | tee -a "$E" \
+   && echo "export PY313=$(~/uv-tool/bin/uv python find --managed-python 3.13.18)" >> ~/metrix-vars.sh
+ fi
+ source ~/metrix-vars.sh
+@@ -174,7 +175,7 @@ Non-claims: 协议第 1 节 Non-claims;本记录不含 TEST 内容
+ Next (single): 报告 Owner;不运行 test-evaluate
+ ```
+ 
+-   累计 GPU 秒数:`source ~/metrix-vars.sh && "$PY" -c "import json, sys; s = json.load(open(sys.argv[1])); print(sum(b - a for a, b in s['segments']), s['open'])" "$WORK/gpu_clock.json"`(第二个值应为 `None`;不是时照实写入)。
++   累计 GPU 秒数(与代码 `compute.GpuClock.used()` 同一口径:已关闭的段之和,有未关闭的段时计到当时):`source ~/metrix-vars.sh && cd "$REPO" && PYTHONPATH=metrix/e1-pilot/src "$PY" -c "import sys; from metrix_e1.compute import GpuClock; c = GpuClock(sys.argv[1]); print(c.used(), c._state()['open'])" "$WORK/gpu_clock.json"`。第二个值应为 `None`;不是时(有进程异常退出留下未关闭的段)在记录中照实写明“含自 <open> 起未关闭的一段,计到 <时间>”,并报告 Owner。
+    提交:只 `git add` 这一个路径,提交前 `git diff --cached --stat` 只含这一个文件;按证据提交处理,不经 code-reviewer(C4 裁决第 4、5 项;第 5 节)。
+ 
+ ```bash
+@@ -185,7 +186,7 @@ $PY metrix/e1-pilot/run_pilot.py test-evaluate --inputs "$INPUTS" --work "$WORK"
+ 
+ `test-evaluate` 的顺序(`pilot.test_evaluate`):代码已提交、`<work>` 是 formal 运行的那一个(连续性检查);TEST 尚未评过(只看工作区与 HEAD:已有 TEST 结果则拒绝,TestAlreadyEvaluated;已有标记而没有结果则 BLOCKED;都不写记录);再次核对生成器的前提(ST12、两个已提交记录)得到授权;设备检查(ST8);核对 15 个 checkpoint 文件与各自训练记录中的文件 SHA-256(不符则 BLOCKED,此时还没有写标记,TEST 未评);ST9 与 ST7(按整个 TEST 评测做事前判断);加载基座模型,核对其 `state_sha256` 与第 3 步记录中 N 的相同(不符则 BLOCKED,TEST 未评);`begin`(fetch,核对 ST10 记录与 data-auditor 计数,写入并推送标记 `results/test_evaluation_marker.json`,含全部 checkpoint 哈希与 N 的哈希);N 与 15 个 checkpoint 各评测一次(每个模型评测前重新计算 `state_sha256` 与标记比对);T1–T3;`finish`(fetch 核对后提交并推送 `results/test_evaluation_result.json`:聚合值与每个 fact 的分数,不含题目文字;逐题明细留在 `<work>/test_details/`,不提交);最后提交实验记录。
+ 
+-**begin 到 finish 之间任何人不得推送本分支**(本分支即 `metrix-e1-pilot-protocol-v1`;Review Gate 2026-11-27 的裁决第 1 项,`tasks/IMPL_C2_OWNER_MESSAGE.md`)。评测调用只在本地核对“检出本分支且 HEAD 等于标记提交”,不 fetch;begin 与 finish 会 fetch。期间若有推送,finish 判为 BLOCKED,TEST 视为已评。期间不要提交命令输出或其它文件,也不要在本克隆中做任何 git 操作。
++**begin 到 finish 之间任何人不得推送本分支**(本分支即 `metrix-e1-pilot-protocol-v1`;Review Gate 2026-11-27 的裁决第 1 项,`tasks/IMPL_C2_OWNER_MESSAGE.md`)。评测调用只在本地核对“检出本分支且 HEAD 等于标记提交”,不 fetch;begin 与 finish 会 fetch。期间若有推送,finish 判为 BLOCKED,TEST 视为已评。期间不要提交命令输出或其它文件,也不要在本克隆中做任何 git 操作;不启动、不重启 Claude Code(它在会话开始时会读取仓库的 git 状态),需要重启时等 test-evaluate 结束。
+ 
+ 输出的倒数第二行 `test-evaluate completed: <状态>` 表示 TEST 已评完、结果已推送,`<状态>` 是第 9 节的最终状态;最后一行 `RESULT` 只表示该状态是否为 PASS(例如 HYPOTHESIS_FAIL 时为 `RESULT: FAIL`),不表示评测失败。`test-evaluate stopped or refused: …` 表示停止或拒绝。
+ 
+diff --git a/metrix/e1-pilot/reports/DEFERRED_MINORS.md b/metrix/e1-pilot/reports/DEFERRED_MINORS.md
+index 902187f..b415f67 100644
+--- a/metrix/e1-pilot/reports/DEFERRED_MINORS.md
++++ b/metrix/e1-pilot/reports/DEFERRED_MINORS.md
+@@ -731,11 +731,11 @@ code-reviewer PASS(没有 BLOCKER、MAJOR;10 个 MINOR);data-auditor PASS(仅作
+ 
+ ### 1.40 Implementation 阶段 C:C4 文档提交第 1 轮审查(暂存树 `7501c291`;`reviews/<C4 文档提交>/code-reviewer_round1.md` 记 `C4D1-CR`)
+ 
+-code-reviewer 结论 PASS(没有 BLOCKER;1 个 MAJOR、12 个 MINOR,MAJOR 在防范对象之外)。都只涉及文档与操作,不影响代码;MAJOR 会使 RUNBOOK 照做时在租用机器上失败,按 C3 的先例全部在文档中修正,第 2 轮送审。
++code-reviewer 结论 PASS(没有 BLOCKER;1 个 MAJOR、12 个 MINOR,MAJOR 在防范对象之外)。都只涉及文档与操作,不影响代码;MAJOR 可能使 RUNBOOK 照做时在租用机器上失败(原文标为未验证),按 C3 的先例全部在文档中修正,第 2 轮送审。
+ 
+ | # | 严重度 | 位置 | 问题 | 来源 | 处理 |
+ |---|---|---|---|---|---|
+-| CN1 | MAJOR | RUNBOOK 第 1 节 Claude Code 一段、第 3.0–3.2 节 | `E`、`PY`、`PY313`、`UV` 没有 export,`WORK`、`INPUTS` 在 `tmux new` 之后才 export;新的 tmux 窗口或 Claude Code 的下一次命令调用可能拿不到这些变量 | C4D1-CR | 已修:变量写入 `~/metrix-vars.sh`(3.0 建立,3.1 追加 `REPO`,3.2 追加 `PY313`、`PY`),每条命令与每个 tmux 窗口以 `source ~/metrix-vars.sh && cd "$REPO" &&` 开头;tmux 例子用 `-c "$REPO"` 并在窗口中 source。在会话临时目录中模拟了 3.0–3.2 与一个新 shell(`impl_c/c4_07_runbook_sim.txt`) |
++| CN1 | MAJOR | RUNBOOK 第 1 节 Claude Code 一段、第 3.0–3.2 节 | `E`、`PY`、`PY313`、`UV` 没有 export,`WORK`、`INPUTS` 在 `tmux new` 之后才 export;新的 tmux 窗口或 Claude Code 的下一次命令调用可能拿不到这些变量 | C4D1-CR | 已修:变量写入 `~/metrix-vars.sh`(3.0 建立,3.1 追加 `REPO`,3.2 追加 `PY313`、`PY`),每条命令与每个 tmux 窗口以 `source ~/metrix-vars.sh && cd "$REPO" &&` 开头;tmux 例子用 `-c "$REPO"` 并在窗口中 source。在会话临时目录中模拟了 3.0 的变量文件(重写的等价 heredoc)、3.1 的 REPO 一行、从 RUNBOOK 原样取出的 3.2a(两个分支)与一个新 shell(`impl_c/c4_07_runbook_sim.txt`;没有运行依赖安装与 tmux 一行;第 3 轮的 `c4_08` 覆盖更多,见 1.41) |
+ | CN2 | MINOR | RUNBOOK 第 1 节 | 没有写长命令只发送一次、重发前怎样确认它不在运行 | C4D1-CR | 已修:每个长命令只发送一次、窗口名各不相同;重发前 `tmux list-windows`、`pgrep -af run_pilot.py` 与输出文件;不确定时不重发,报告 Owner |
+ | CN3 | MINOR | RUNBOOK 第 1 节 | 长命令只列了 formal、test-generate、test-evaluate | C4D1-CR | 已修:加入第 3.2 节依赖安装与 3.2a、第 3.4 节下载 |
+ | CN4 | MINOR | RUNBOOK 3.2a | “仅当没有 3.13.18”只在注释中,代码块无条件执行 | C4D1-CR | 已修:改为 `if [ "$(python3.13 --version 2>&1)" = "Python 3.13.18" ]; then … else … fi`(两个分支都在模拟中运行) |
+@@ -749,6 +749,25 @@ code-reviewer 结论 PASS(没有 BLOCKER;1 个 MAJOR、12 个 MINOR,MAJOR 在防
+ | CN12 | MINOR | `IMPL_C_REPORT.md` C4 节 | 注释位置写得不准(剔除配置的注释在 `step7`);交付清单没有列 `c4_docs_checks.sh` | C4D1-CR | 已修 |
+ | CN13 | MINOR | `impl_c/c4_05_docs_checks.txt` | 只有 stat,没有文档的 blob,不能证明被审树的内容与录制时相同 | C4D1-CR | 已修:第 2 轮的检查(`c4_docs_checks_r2.sh`、`c4_06_docs_checks_r2.txt`)首尾记录各文档路径的 `git ls-files -s` 与暂存 diff 的 sha256 |
+ 
++### 1.41 Implementation 阶段 C:C4 文档提交第 2 轮审查(暂存树 `26e3556b`;`reviews/<C4 文档提交>/code-reviewer_round2.md` 记 `C4D2-CR`)
++
++code-reviewer 结论 PASS(没有 BLOCKER、MAJOR;12 个 MINOR,都在防范对象之外;第 1 轮 CN1–CN13 都已处理)。其中 CO4(`env.txt` 会记下 `UV_*` 变量的值并推送)与 CO1(含引号的命令拼进 `send-keys` 会断开)会在租用机器上造成实际问题,按 C3 的先例在文档中修正,第 3 轮送审;第 3 轮之后的新问题登记,不再改文档。
++
++| # | 严重度 | 位置 | 问题 | 来源 | 处理 |
++|---|---|---|---|---|---|
++| CO1 | MINOR | RUNBOOK 第 1 节长命令 | 照例子把第 3.2 节的命令放进单引号交给 `send-keys`,命令自带的单引号会断开;venv、uv 的输出不经 `tee` | C4D2-CR | 已修:长命令先原样写入 `$WORK/command_output/<名称>.sh`(第一行 `set -o pipefail; source … && cd "$REPO" || exit 1`),窗口中只发送 `bash <脚本>; echo exit=\$? >> <名称>.end`;进度看输出文件或 `tmux capture-pane`。`c4_08` 中以含单引号的脚本按 RUNBOOK 原文运行,输出与退出码正确 |
++| CO2 | MINOR | RUNBOOK 第 1 节 | `pgrep -af run_pilot.py` 可能自匹配、查不到 3.2 与 3.4;`tmux list-windows` 不能说明命令是否在运行;输出文件没有结束标记与退出码 | C4D2-CR | 已修:以 `<名称>.end`(含退出码,`pipefail`)判断结束;不存在即视为仍在运行或状态不明 |
++| CO3 | MINOR | RUNBOOK 第 1 节 | “不确定时不重发”读来像确认后可自行重发;括号漏了 test-generate | C4D2-CR | 已修:中断、失败或状态不明之后是否重发都由 Owner 决定;test-generate 与 test-evaluate 不得重跑 |
++| CO4 | MINOR | RUNBOOK 3.2a | `env | grep '^UV_'` 把值写入要提交的 `env.txt`,可能含凭据 | C4D2-CR | 已修:只记变量名(`sed 's/=.*/=<set>/'`) |
++| CO5 | MINOR | RUNBOOK 第 3.7 节第 5 项 | 累计 GPU 秒数的命令只加已关闭的段,与代码口径不同 | C4D2-CR | 已修:改用 `metrix_e1.compute.GpuClock(…).used()`;有未关闭的段时照实写明并报告 Owner。`c4_08` 用两个人造的 `gpu_clock.json` 运行了 RUNBOOK 中的命令 |
++| CO6 | MINOR | RUNBOOK 第 1 节 | Claude Code 的安装、登录与第 3.0–3.1 节由 Owner 做,仓库中没有 Owner 接受这项分工的记录 | C4D2-CR | 登记;列入 `IMPL_C_REPORT.md` C4 节“待 Review Gate 决定(C4)”第 3 项,请 Owner 确认 |
++| CO7 | MINOR | RUNBOOK 3.2a | 主机分支不核对能否建 venv(可能缺 ensurepip) | C4D2-CR | 已修:主机分支的条件同时要求 `python3.13 -c 'import ensurepip, venv'` 成功,否则走 uv 分支 |
++| CO8 | MINOR | RUNBOOK 第 3.8 节 | begin 到 finish 之间重启 Claude Code 可能与 finish 争用 git 的 index.lock | C4D2-CR | 已修:期间不启动、不重启 Claude Code |
++| CO9 | MINOR | `impl_c/c4_runbook_sim.sh` | 不建 HOME 目录(第一次运行前由没有录制的步骤建好);只有 3.2a 是从 RUNBOOK 原样取出;最后的变量文件没有 PY313 | C4D2-CR | 登记;脚本保持运行时的样子。第 3 轮的 `c4_runbook_sim_r3.sh`(`c4_08`)自己建目录,从 RUNBOOK 原样取出 3.0 的 heredoc、3.1 的一行、3.2a、长命令的 `send-keys` 一行与 GPU 秒数的命令,保留主机分支的 PY313 并在新 shell 中核对 |
++| CO10 | MINOR | `DEFERRED_MINORS.md` 1.40;`IMPL_C_REPORT.md` C4 节;`c4_docs_checks_r2.sh` 的说明 | “会使…失败”把原文的“可能”写成肯定;“模拟了 3.0–3.2”宽于实际;报告仍写“从 PyPI 新装 uv”;脚本说明没有 1.40 | C4D2-CR | 已修前三处(1.40 与报告);脚本保持运行时的样子 |
++| CO11 | MINOR | `impl_c/c4_04_uv_check.txt` | 第 2 轮追加的命令没有时间;结论只排除了环境变量,没有排除 uv 的配置文件 | C4D2-CR | 已修:追加一条带时间的说明(第 2 轮追加的时间与结论的范围);RUNBOOK 以 `--show-urls` 为准 |
++| CO12 | MINOR | `impl_c/c4_06_docs_checks_r2.txt` | blob 与 diff 的 sha256 只覆盖 11 个暂存路径中的 6 个 | C4D2-CR | 已修:第 3 轮的检查(`c4_docs_checks_r3.sh` → `c4_09_docs_checks_r3.txt`)记录 `git diff --cached --name-only HEAD` 的全部路径 |
++
+ ## 2. 已在第 5–7 轮解决(核对用)
+ 
+ | 原条目 | 来源 | 处理 |
+@@ -781,4 +800,4 @@ code-reviewer 结论 PASS(没有 BLOCKER;1 个 MAJOR、12 个 MINOR,MAJOR 在防
+ - Implementation 阶段 A:1.18 节 AA1、AA2、AA6、AA7,1.19 节 AB1、AB2 须由 Review Gate 决定;AA9(命令路径)、AA11(记录字段)、L4 的语料含 `anchor_text`、1.21 节 AD14(修复提交没有调用 data-auditor)请 Review Gate 备案。都列于 `IMPL_A_REPORT.md`“待 Review Gate 决定”(第 1–8 项)。
+ - Implementation 阶段 B:1.22 节 BA1–BA3、BA7、BA9,1.23 节 BB2、BB4、BB6,1.24 节 BC1 须由 Review Gate 决定;1.25 节 BD10 请 Review Gate 备案。都列于 `IMPL_B_REPORT.md`“待 Review Gate 决定”(第 1–5 项)。BB1 / BC2 / BD8(ST10 凭据与“TEST 只评一次”)是阶段 C 的硬性前提。
+ - Implementation 阶段 B 报告提交:1.26 节 BE1(待决第 3 项的运行清单)与 BE6(推送记录的证据提交不经审查,待决第 6 项)请 Review Gate 决定或确认。
+-- Implementation 阶段 C(C4):1.39 节 CM3(只改注释是否属于“不改代码”)与 1.38 节 CL2–CL6(RUNBOOK 操作细节的修正时机)列于 `IMPL_C_REPORT.md` C4 节“待 Review Gate 决定(C4)”第 1、2 项。1.38 节 CL7 由 Review Gate 2026-11-27 的裁决(`tasks/IMPL_C4_RULING.md`)第 4 项回答。
++- Implementation 阶段 C(C4):1.39 节 CM3(只改注释是否属于“不改代码”)、1.38 节 CL2–CL6(RUNBOOK 操作细节的修正时机)与 1.41 节 CO6(RUNBOOK 中的分工,请 Owner 确认)列于 `IMPL_C_REPORT.md` C4 节“待 Review Gate 决定(C4)”第 1–3 项。1.38 节 CL7 由 Review Gate 2026-11-27 的裁决(`tasks/IMPL_C4_RULING.md`)第 4 项回答。
+diff --git a/metrix/e1-pilot/reports/IMPL_C_REPORT.md b/metrix/e1-pilot/reports/IMPL_C_REPORT.md
+index 08d5915..9f2fb8c 100644
+--- a/metrix/e1-pilot/reports/IMPL_C_REPORT.md
++++ b/metrix/e1-pilot/reports/IMPL_C_REPORT.md
+@@ -301,7 +301,7 @@ Owner 转达,原文连同首段入库为 `tasks/IMPL_C4_RULING.md`(下称“C4 
+   - 变异 `impl_c/c4_mutate.py` 9 个(ST11 只读 B17、不加开销、开销按分钟、预检只取 B17、在上限处即停、B17 的 status 或 text 未修订、TEST 事前估计加 10% 余量、ST7 的训练事前估计少算保存),全部测出。
+   - 裁决原文 `tasks/IMPL_C4_RULING.md`(本次消息全文)随该提交入库。
+ - **裁决第 2 项**:没有改代码。`pilot.py` 中仍写着这些事项 “is for Review Gate” 的注释与文档字符串(`step7` 中 G0.2 对剔除配置的读法、`gate_steps` 中 Gate 0 PASS 的状态词、`run_gate` 中崩溃的状态词、`final_record` 中第 1 步之前停止的记录是否入库)按“不改代码”的字面保留,登记为 `DEFERRED_MINORS.md` 1.39 CM3,见下文“待 Review Gate 决定(C4)”第 1 项。
+-- **文档提交(本提交)**:`RUNBOOK_A100.md`(C4 裁决第 1、3–7 项,逐项见“Review Gate 对 C2、C3 待决事项的裁决”的落实;第 2 轮按第 1 轮审查修改,见下文);本报告;`DEFERRED_MINORS.md` 1.39、1.40;`impl_c/c4_04_uv_check.txt`(第 6 项的 uv 路径核对,第 2 轮追加 `UV_*` 变量);检查脚本与输出 `impl_c/c4_docs_checks.sh` → `c4_05_docs_checks.txt`(第 1 轮)、`c4_docs_checks_r2.sh` → `c4_06_docs_checks_r2.txt`(第 2 轮);RUNBOOK 第 3.0–3.2 节的模拟 `impl_c/c4_runbook_sim.sh` → `c4_07_runbook_sim.txt`(被取代的第一次运行 `c4_07_runbook_sim_trial1_script_error.txt`)。
++- **文档提交(本提交)**:`RUNBOOK_A100.md`(C4 裁决第 1、3–7 项,逐项见“Review Gate 对 C2、C3 待决事项的裁决”的落实;第 2 轮按第 1 轮审查修改,见下文);本报告;`DEFERRED_MINORS.md` 1.39、1.40;`impl_c/c4_04_uv_check.txt`(第 6 项的 uv 路径核对,第 2 轮追加 `UV_*` 变量);检查脚本与输出 `impl_c/c4_docs_checks.sh` → `c4_05_docs_checks.txt`(第 1 轮)、`c4_docs_checks_r2.sh` → `c4_06_docs_checks_r2.txt`(第 2 轮)、`c4_docs_checks_r3.sh` → `c4_09_docs_checks_r3.txt`(第 3 轮);RUNBOOK 命令的模拟:`impl_c/c4_runbook_sim.sh` → `c4_07_runbook_sim.txt`(第 2 轮:3.0 的变量文件、3.1 的 REPO 一行、3.2a 两个分支与一个新 shell;被取代的第一次运行 `c4_07_runbook_sim_trial1_script_error.txt`),`c4_runbook_sim_r3.sh` → `c4_08_runbook_sim_r3.txt`(第 3 轮:另加长命令的 `send-keys` 一行与 GPU 秒数的命令,都从 RUNBOOK 原样取出;都不含依赖安装、下载与 run_pilot.py)。
+ 
+ ### 检查(代码提交的被审暂存树;运行环境见本节开头)
+ 
+@@ -322,17 +322,18 @@ Owner 转达,原文连同首段入库为 `tasks/IMPL_C4_RULING.md`(下称“C4 
+ | `a09e154e` 代码提交 | 见“交付” | `63121c79` | PASS(没有 BLOCKER、MAJOR;10 MINOR) | PASS(3 MINOR、1 条说明) |
+ | `c9481c85` 证据提交 | `reviews/a09e154e…/`、`audit/ic11_*` 与其 stdout、推送记录 `impl_c/c4_push_code_commit.txt` | 不送审(只含 `reports/`、`reviews/`、`audit/`,补充裁决 1) | — | — |
+ | 本提交(文档),第 1 轮 | 见“交付” | `7501c291` | PASS(没有 BLOCKER;1 MAJOR、12 MINOR) | 不送(只改文档;C4 裁决末段) |
+-| 本提交(文档),第 2 轮 | 第 1 轮的问题全部在文档中修正(`DEFERRED_MINORS.md` 1.40) | 见 `reviews/<本提交>/` | 见该目录 | 不送 |
++| 本提交(文档),第 2 轮 | 第 1 轮的问题全部在文档中修正(`DEFERRED_MINORS.md` 1.40) | `26e3556b` | PASS(没有 BLOCKER、MAJOR;12 MINOR) | 不送 |
++| 本提交(文档),第 3 轮 | 第 2 轮的问题除 CO6、CO9 外在文档中修正(`DEFERRED_MINORS.md` 1.41) | 见 `reviews/<本提交>/` | 见该目录 | 不送 |
+ 
+ - 代码提交的两份审查:调用文字第一句按 metrix/CLAUDE.md 第 5 节第 6 条,含 C1 裁决的防范对象原文与 `tasks/IMPL_C4_RULING.md` 全文;调用前的 tools 行核对、审查输入、原始转录与原文在 `reviews/a09e154e…/`(`README.txt`、`notes.txt`)。data-auditor 独立复算了冒烟第 2 步的 B17 估算、checkpoint 开销与两者之和(与记录相同)、以新测试的两个参数为驱动的预期(运行前写出,与结果相同)、冒烟数据与 30 次训练(`audit/stdout/impl_c/ic11_*`)。
+ - 文档提交只送 code-reviewer(C4 裁决末段)。本报告写于审查之前;按 metrix/CLAUDE.md 第 5 节,审查为 PASS 才提交,所以本提交存在即表示最后一轮为 PASS;各轮的调用文字、核对、输入、转录与原文,以及本提交的推送记录,在其后的证据提交的 `reviews/<本提交>/` 与 `impl_c/` 中。
+-- 问题与处理:`DEFERRED_MINORS.md` 1.39(代码提交两份审查的 MINOR)、1.40(文档提交第 1 轮,MAJOR CN1 为 RUNBOOK 中的变量在新的 tmux 窗口或命令调用中可能为空,已修并在会话临时目录中模拟)。按 Task Order 第 9 节,影响协议一致性、数据、指标或隔离的已修;其中 RUNBOOK 与代码不一致(CM1)由本提交修正,其余登记。
++- 问题与处理:`DEFERRED_MINORS.md` 1.39(代码提交两份审查的 MINOR)、1.40(文档提交第 1 轮,MAJOR CN1 为 RUNBOOK 中的变量在新的 tmux 窗口或命令调用中可能为空,已修并在会话临时目录中模拟)、1.41(文档提交第 2 轮)。第 3 轮之后的新问题登记于其后的证据提交,不再改文档(C3 的先例)。按 Task Order 第 9 节,影响协议一致性、数据、指标或隔离的已修;其中 RUNBOOK 与代码不一致(CM1)由本提交修正,其余登记。
+ 
+ ### 本节执行中出现的问题(都已记录)
+ 
+ 1. **过早的提取。** 等待 data-auditor 时,Executor 的等待条件匹配到转录中的工具名 “SubagentHandback”(不是调用),提取脚本提前运行,取到一条 50 字的中间文字。该结果作废,保存为 `reviews/a09e154e…/premature_extract_data-auditor_discarded.md`;正式原文是 data-auditor 交回之后重新提取的(`extract_log_round1.txt`,`notes.txt`)。
+ 2. **会话进程重启。** 等待 data-auditor 期间本会话的工作进程重启过一次;重启后核对暂存树仍为 `63121c79`、HEAD 为 `3bc761ea`,再提交(`impl_c/c4_push_code_commit.txt` 中 `HEAD^{tree}` 为 `63121c79`)。
+-3. **uv 的版本。** 容器预装的 uv 0.11.32 不列出 CPython 3.13.18 的下载,PyPI 上的 uv 0.13.10 列出并装成(`c4_04`)。RUNBOOK 的 3.2a 因此写为从 PyPI 新装 uv,网络一行加入 `releases.astral.sh`(只在 3.2a 时)。没有在 uv 装的解释器上安装依赖或运行测试。
++3. **uv 的版本。** 容器预装的 uv 0.11.32 不列出 CPython 3.13.18 的下载,PyPI 上的 uv 0.13.10 列出并装成(`c4_04`)。RUNBOOK 的 3.2a 因此从 PyPI 安装 uv(第 2 轮起固定为 0.13.10),网络一行以 `--show-urls` 显示的主机及其重定向目标为准(本阶段为 `releases.astral.sh`,只在 3.2a 时)。没有在 uv 装的解释器上安装依赖或运行测试。
+ 4. **uv 在容器中留下的链接。** `c4_04` 中的 `uv python install`(安装目录设在会话临时目录)另在 `/root/.local/bin/python3.13` 建了指向该解释器的链接(12:47),此后本容器中 `python3.13` 先解析到它(同为 CPython 3.13.18)。所有测试、冒烟与 data-auditor 的运行都用会话开始时由 `/usr/local/bin/python3.13` 建的 venv,不受影响;`c4_07` 模拟中“主机已有 3.13.18”的分支取到的是这个链接(版本核对同样通过)。该链接在会话临时目录之外,没有删除(metrix/CLAUDE.md 第 7 节)。
+ 5. **模拟脚本的第一次运行。** `c4_runbook_sim.sh` 在 `cd` 之后以相对路径读 RUNBOOK,第一次运行失败(`c4_07_runbook_sim_trial1_script_error.txt`,按 C1 裁决第 7 项保留);改为传绝对路径后重跑为 `c4_07`,脚本本身没有改。
+ 6. **会话中删除的文件。** 只有会话临时目录中的文件(过早提取时复制的转录副本、模拟的临时目录);没有删除任何受跟踪或作为证据的文件。
+@@ -341,7 +342,8 @@ Owner 转达,原文连同首段入库为 `tasks/IMPL_C4_RULING.md`(下称“C4 
+ 
+ 1. **只改注释是否属于“不改代码”(1.39 CM3)。** C2 待决第 1、3、5 项已按现行实现接受,但 `pilot.py` 中 4 处注释或文档字符串仍写 “is for Review Gate”;冒烟实验记录的 “Next (single)” 为 “Review Gate reviews the smoke report (C2)”(只出现在冒烟记录中)。Executor 按裁决第 2 项的字面没有改动。请指示:允许时,在下一个代码提交中只改这些措辞为“按现行实现接受(`tasks/IMPL_C4_RULING.md` 第 2 项)”,送两份审查。
+ 2. **1.38 中 RUNBOOK 的操作细节(CL2–CL6)。** C3 第 3 轮登记、处理列写“正式运行指令之前修正”的几项(venv 与 pip 缓存的分区、glibc、`env.txt` 与 `fetch.txt` 带时间;`Pilot()` 内失败、以回溯结束的 test-evaluate、Ctrl-C 结束的 formal 怎样处理;第 3.7 节列入转录)不在 C4 裁决第 7 项所列的修改之内,本提交没有改。请指示是否在下达正式运行指令之前,以只改文档的提交修正(送 code-reviewer)。
+-3. **提请注意(不需裁决):** 按 RUNBOOK 第 6 节的规划区间,ST11 读到的和约 1.6–4.2 小时,区间上端超过 3.5 小时。若 A100 上实测落在上端,`formal` 会在第 2 步以 ST11 停止(BLOCKED),此时已用掉环境安装、下载与预检的租用时间(约 0.6 小时)。
++3. **RUNBOOK 中的分工(1.41 CO6)。** RUNBOOK 第 1 节写为:Claude Code 在 A100 主机上的安装与登录,以及第 3.0–3.1 节(驱动检查、tmux 会话、变量文件、克隆与检出),由 Owner 或 Owner 指定的人完成,之后由 Claude Code 接手。C4 裁决第 7 项只要求写明前提,没有指定由谁做。请 Owner 确认这一分工,或指定其他做法。
++4. **提请注意(不需裁决):** 按 RUNBOOK 第 6 节的规划区间,ST11 读到的和约 1.6–4.2 小时,区间上端超过 3.5 小时。若 A100 上实测落在上端,`formal` 会在第 2 步以 ST11 停止(BLOCKED),此时已用掉环境安装、下载与预检的租用时间(约 0.6 小时)。
+ 
+ ## Owner 阶段 C 各项要求的落实
+ 
+@@ -377,4 +379,4 @@ Owner 转达,原文连同首段入库为 `tasks/IMPL_C4_RULING.md`(下称“C4 
+ 
+ **IMPLEMENTATION_READY**(Task Order 第 13 节)。之后由 Owner 决定是否租用 A100 并执行正式运行;正式运行另发运行指令。
+ 
+-C2 节“待 Review Gate 决定”第 1–7 项与 C3 节第 1–3 项已由 Review Gate 2026-11-27 的裁决(`tasks/IMPL_C4_RULING.md`)回答:第 2 项(ST11)改了代码并经两份审查(C4 代码提交 `a09e154e`),其余按现行实现接受或只改 RUNBOOK(C4 文档提交)。新的待决事项见 C4 节“待 Review Gate 决定(C4)”:只改注释是否允许(第 1 项),1.38 中 RUNBOOK 操作细节的修正时机(第 2 项)。Executor 认为两者都不阻碍 IMPLEMENTATION_READY。
++C2 节“待 Review Gate 决定”第 1–7 项与 C3 节第 1–3 项已由 Review Gate 2026-11-27 的裁决(`tasks/IMPL_C4_RULING.md`)回答:第 2 项(ST11)改了代码并经两份审查(C4 代码提交 `a09e154e`),其余按现行实现接受或只改 RUNBOOK(C4 文档提交)。新的待决事项见 C4 节“待 Review Gate 决定(C4)”:只改注释是否允许(第 1 项),1.38 中 RUNBOOK 操作细节的修正时机(第 2 项),RUNBOOK 中第 3.0–3.1 节与 Claude Code 安装的分工(第 3 项,请 Owner 确认)。Executor 认为这些都不阻碍 IMPLEMENTATION_READY。
+diff --git a/metrix/e1-pilot/reports/impl_c/c4_04_uv_check.txt b/metrix/e1-pilot/reports/impl_c/c4_04_uv_check.txt
+index f849053..7ffd4f8 100644
+--- a/metrix/e1-pilot/reports/impl_c/c4_04_uv_check.txt
++++ b/metrix/e1-pilot/reports/impl_c/c4_04_uv_check.txt
+@@ -41,3 +41,7 @@ $ bash -c env\ \|\ grep\ \'\^UV_\'\ \|\ sed\ \'s/=.\*/=\<set\;\ value\ not\ show
+ UV_NATIVE_TLS=<set; value not shown>
+ UV_* variables listed above; no UV_PYTHON_INSTALL_MIRROR among them means the URL shown by --show-urls is uv's default download location
+ exit=0
++$ bash -c date\ -u\;\ echo\ \'Note\ added\ in\ round\ 3\ of\ the\ C4\ documentation\ commit:\ the\ env\ \|\ grep\ \^UV_\ command\ above\ was\ appended\ in\ round\ 2\ \(about\ 14:20\ UTC\)\,\ after\ the\ header\ time\ of\ this\ file.\ Its\ conclusion\ covers\ environment\ variables\ only:\ no\ UV_PYTHON_INSTALL_MIRROR\ is\ set\ in\ the\ environment\;\ uv\ configuration\ files\ \(uv.toml\)\ were\ not\ inspected.\ The\ RUNBOOK\ takes\ the\ host\ shown\ by\ --show-urls\ as\ authoritative.\'
++Fri Nov 27 14:35:00 UTC 2026
++Note added in round 3 of the C4 documentation commit: the env | grep ^UV_ command above was appended in round 2 (about 14:20 UTC), after the header time of this file. Its conclusion covers environment variables only: no UV_PYTHON_INSTALL_MIRROR is set in the environment; uv configuration files (uv.toml) were not inspected. The RUNBOOK takes the host shown by --show-urls as authoritative.
++exit=0
+diff --git a/metrix/e1-pilot/reports/impl_c/c4_08_runbook_sim_r3.txt b/metrix/e1-pilot/reports/impl_c/c4_08_runbook_sim_r3.txt
+new file mode 100644
+index 0000000..9847a53
+--- /dev/null
++++ b/metrix/e1-pilot/reports/impl_c/c4_08_runbook_sim_r3.txt
+@@ -0,0 +1,77 @@
++# Stage C, C4 documentation commit, round 3: simulation of RUNBOOK commands (see the script's header for what is and is not covered). Executor, host vm (Anthropic cloud container, CPU only). Fri Nov 27 14:34:34 UTC 2026
++# stdout+stderr merged, unedited. Commands recorded by reports/round5/logrun.sh.
++$ bash metrix/e1-pilot/reports/impl_c/c4_runbook_sim_r3.sh /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/runbook_sim3 /home/user/OpenMythos/metrix/e1-pilot/RUNBOOK_A100.md /home/user/OpenMythos /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/venv/bin/python
++--- 3.0 variable file (heredoc from the RUNBOOK, placeholder replaced):
++cat > ~/metrix-vars.sh <<'EOF'
++export WORK=<该分区上的目录>/metrix-work INPUTS=<该分区上的目录>/metrix-inputs
++export E="$WORK/command_output/env.txt"
++EOF
++E=/tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/runbook_sim3/part/metrix-work/command_output/env.txt
++--- 3.1 REPO line (from the RUNBOOK):
++echo "export REPO=$(pwd)" >> ~/metrix-vars.sh
++--- 3.2a block from the RUNBOOK:
++if [ "$(python3.13 --version 2>&1)" = "Python 3.13.18" ] && python3.13 -c 'import ensurepip, venv' 2>/dev/null; then
++  echo "export PY313=$(command -v python3.13)" >> ~/metrix-vars.sh
++else
++  python3 -m venv ~/uv-tool && ~/uv-tool/bin/python -m pip install uv==0.13.10 \
++  && { ~/uv-tool/bin/uv --version; env | grep '^UV_' | sed 's/=.*/=<set>/'; ~/uv-tool/bin/uv python list 3.13.18 --only-downloads --show-urls; ~/uv-tool/bin/uv python install 3.13.18; } 2>&1 | tee -a "$E" \
++  && echo "export PY313=$(~/uv-tool/bin/uv python find --managed-python 3.13.18)" >> ~/metrix-vars.sh
++fi
++=== branch host
++PY313=/root/.local/bin/python3.13
++CPython 3.13.18
++3.13.18 (main, Nov 24 2026, 16:58:49) [Clang 23.1.3 ]
++venv ok
++=== branch uv
++Collecting uv==0.13.10
++  Downloading uv-0.13.10-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (11 kB)
++Downloading uv-0.13.10-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (17.7 MB)
++   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 17.7/17.7 MB 30.8 MB/s  0:00:00
++Installing collected packages: uv
++Successfully installed uv-0.13.10
++
++[notice] A new release of pip is available: 26.2.2 -> 26.3
++[notice] To update, run: /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/runbook_sim3/home/uv-tool/bin/python -m pip install --upgrade pip
++uv 0.13.10 (x86_64-unknown-linux-gnu)
++UV_NATIVE_TLS=<set>
++warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
++cpython-3.13.18-linux-x86_64-gnu    https://releases.astral.sh/github/python-build-standalone/releases/download/20261124/cpython-3.13.18%2B20261124-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz
++warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
++Downloading cpython-3.13.18-linux-x86_64-gnu (download) (34.0MiB)
++ Downloaded cpython-3.13.18-linux-x86_64-gnu (download)
++Installed Python 3.13.18 in 1.41s
++ + cpython-3.13.18-linux-x86_64-gnu (python3.13)
++warning: `/tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/runbook_sim3/home/.local/bin` is not on your PATH. To use installed Python executables, run `export PATH="/tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/runbook_sim3/home/.local/bin:$PATH"` or `uv python update-shell`.
++warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
++PY313=/tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/runbook_sim3/home/.local/share/uv/python/cpython-3.13.18-linux-x86_64-gnu/bin/python3.13
++CPython 3.13.18
++3.13.18 (main, Nov 24 2026, 16:58:49) [Clang 23.1.3 ]
++venv ok
++--- ~/metrix-vars.sh:
++export WORK=/tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/runbook_sim3/part/metrix-work INPUTS=/tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/runbook_sim3/part/metrix-inputs
++export E="$WORK/command_output/env.txt"
++export REPO=/home/user/OpenMythos
++export PY313=/root/.local/bin/python3.13
++export PY=/tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/venv/bin/python
++--- a fresh shell after source:
++WORK=/tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/runbook_sim3/part/metrix-work INPUTS=/tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/runbook_sim3/part/metrix-inputs E=/tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/runbook_sim3/part/metrix-work/command_output/env.txt REPO=/home/user/OpenMythos PY313=/root/.local/bin/python3.13 PY=/tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/venv/bin/python
++/home/user/OpenMythos
++Python 3.13.18
++--- long command (section 1) with a script containing single quotes:
++source ~/metrix-vars.sh && tmux new-window -d -t metrix -n s_test -c "$REPO" && tmux send-keys -t metrix:s_test "bash $WORK/command_output/s_test.sh; echo exit=\$? >> $WORK/command_output/s_test.end" Enter
++s_test.txt:
++quoted ok (3, 13, 18) ['a b']
++s_test.end:
++exit=3
++capture-pane (last lines):
++.sh; echo exit=$? >> /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea6280
++9e/scratchpad/runbook_sim3/part/metrix-work/command_output/s_test.end
++quoted ok (3, 13, 18) ['a b']
++root@vm:/home/user/OpenMythos#
++--- GPU seconds command (3.7 item 5) from the RUNBOOK:
++source ~/metrix-vars.sh && cd "$REPO" && PYTHONPATH=metrix/e1-pilot/src "$PY" -c "import sys; from metrix_e1.compute import GpuClock; c = GpuClock(sys.argv[1]); print(c.used(), c._state()['open'])" "$WORK/gpu_clock.json"
++closed only (expected 15.0 None):
++15.0 None
++with an open segment started 100 s ago (expected about 110.5 and a timestamp):
++111.76449942588806 1795789991.1158764
++exit=0
+diff --git a/metrix/e1-pilot/reports/impl_c/c4_09_docs_checks_r3.txt b/metrix/e1-pilot/reports/impl_c/c4_09_docs_checks_r3.txt
+new file mode 100644
+index 0000000..b8dbf2b
+--- /dev/null
++++ b/metrix/e1-pilot/reports/impl_c/c4_09_docs_checks_r3.txt
+@@ -0,0 +1,139 @@
++# Stage C, C4 documentation commit, round 3 (staged; parent c9481c85ed30e2615be86e86559f5107f114dd5b; code of a09e154ee8808663a894e1930c83c25b8bc46c0d): checks on the staged tree. Executor, host vm (Anthropic cloud container, CPU only, no GPU). Fri Nov 27 14:35:55 UTC 2026
++# stdout+stderr merged, unedited. Commands recorded by reports/round5/logrun.sh. METRIX_INPUTS_DIR=/tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/inputs
++$ git ls-remote origin refs/heads/metrix-e1-pilot-protocol-v1
++c9481c85ed30e2615be86e86559f5107f114dd5b	refs/heads/metrix-e1-pilot-protocol-v1
++exit=0
++$ git status --short --untracked-files=all
++M  metrix/e1-pilot/RUNBOOK_A100.md
++M  metrix/e1-pilot/reports/DEFERRED_MINORS.md
++M  metrix/e1-pilot/reports/IMPL_C_REPORT.md
++A  metrix/e1-pilot/reports/impl_c/c4_04_uv_check.txt
++A  metrix/e1-pilot/reports/impl_c/c4_05_docs_checks.txt
++A  metrix/e1-pilot/reports/impl_c/c4_06_docs_checks_r2.txt
++A  metrix/e1-pilot/reports/impl_c/c4_07_runbook_sim.txt
++A  metrix/e1-pilot/reports/impl_c/c4_07_runbook_sim_trial1_script_error.txt
++A  metrix/e1-pilot/reports/impl_c/c4_08_runbook_sim_r3.txt
++A  metrix/e1-pilot/reports/impl_c/c4_docs_checks.sh
++A  metrix/e1-pilot/reports/impl_c/c4_docs_checks_r2.sh
++A  metrix/e1-pilot/reports/impl_c/c4_docs_checks_r3.sh
++A  metrix/e1-pilot/reports/impl_c/c4_runbook_sim.sh
++A  metrix/e1-pilot/reports/impl_c/c4_runbook_sim_r3.sh
++?? metrix/e1-pilot/reports/impl_c/c4_09_docs_checks_r3.txt
++exit=0
++$ bash -c git\ rev-parse\ HEAD\;\ git\ write-tree\;\ git\ diff\ --quiet\ --\ metrix/e1-pilot/src\ metrix/e1-pilot/tests\ metrix/e1-pilot/run_pilot.py\ \&\&\ echo\ WORKTREE_EQUALS_INDEX_FOR_SRC_TESTS_RUN_PILOT\;\ git\ diff\ --cached\ --quiet\ a09e154ee8808663a894e1930c83c25b8bc46c0d\ --\ metrix/e1-pilot/src\ metrix/e1-pilot/tests\ metrix/e1-pilot/run_pilot.py\ \&\&\ echo\ INDEX_EQUALS_a09e154ee8808663a894e1930c83c25b8bc46c0d_FOR_SRC_TESTS_RUN_PILOT\;\ git\ diff\ --cached\ --stat\ HEAD\;\ sha256sum\ metrix/e1-pilot/reports/impl_c/c4_docs_checks_r3.sh\;\ git\ diff\ --cached\ --name-only\ HEAD\ \|\ xargs\ git\ ls-files\ -s\ --\;\ git\ diff\ --cached\ HEAD\ \|\ sha256sum
++c9481c85ed30e2615be86e86559f5107f114dd5b
++c388686ac0c9a9308aa33e7a1d87ab540cd6cb82
++WORKTREE_EQUALS_INDEX_FOR_SRC_TESTS_RUN_PILOT
++INDEX_EQUALS_a09e154ee8808663a894e1930c83c25b8bc46c0d_FOR_SRC_TESTS_RUN_PILOT
++ metrix/e1-pilot/RUNBOOK_A100.md                    | 100 +++++++++++++++----
++ metrix/e1-pilot/reports/DEFERRED_MINORS.md         |  60 +++++++++++-
++ metrix/e1-pilot/reports/IMPL_C_REPORT.md           | 108 ++++++++++++++++++---
++ metrix/e1-pilot/reports/impl_c/c4_04_uv_check.txt  |  47 +++++++++
++ .../e1-pilot/reports/impl_c/c4_05_docs_checks.txt  |  72 ++++++++++++++
++ .../reports/impl_c/c4_06_docs_checks_r2.txt        | 106 ++++++++++++++++++++
++ .../e1-pilot/reports/impl_c/c4_07_runbook_sim.txt  |  52 ++++++++++
++ .../c4_07_runbook_sim_trial1_script_error.txt      |  11 +++
++ .../reports/impl_c/c4_08_runbook_sim_r3.txt        |  77 +++++++++++++++
++ metrix/e1-pilot/reports/impl_c/c4_docs_checks.sh   |  33 +++++++
++ .../e1-pilot/reports/impl_c/c4_docs_checks_r2.sh   |  34 +++++++
++ .../e1-pilot/reports/impl_c/c4_docs_checks_r3.sh   |  33 +++++++
++ metrix/e1-pilot/reports/impl_c/c4_runbook_sim.sh   |  30 ++++++
++ .../e1-pilot/reports/impl_c/c4_runbook_sim_r3.sh   |  57 +++++++++++
++ 14 files changed, 788 insertions(+), 32 deletions(-)
++9aa09df2fc86c597211c046093ee3fa8ee554a42735b7134fa121a100d099b61  metrix/e1-pilot/reports/impl_c/c4_docs_checks_r3.sh
++100644 37c95e91005c92b13cf55625878dc4131e7ba35b 0	metrix/e1-pilot/RUNBOOK_A100.md
++100644 b415f6791682a2d8db7b6eb6a294c47b28752092 0	metrix/e1-pilot/reports/DEFERRED_MINORS.md
++100644 9f2fb8c53c26c31442b665356e69dbd12b0c1551 0	metrix/e1-pilot/reports/IMPL_C_REPORT.md
++100644 7ffd4f8f39a4c223ef1d9d12b62d2b9a6a74c348 0	metrix/e1-pilot/reports/impl_c/c4_04_uv_check.txt
++100644 494247c23e734784e651c3881c8d4d181a0e8972 0	metrix/e1-pilot/reports/impl_c/c4_05_docs_checks.txt
++100644 19bde04463c7d7c69944afc7d117a5f23717cd7d 0	metrix/e1-pilot/reports/impl_c/c4_06_docs_checks_r2.txt
++100644 e208bfaa70133eb136f49a5633a8214e9ddbc435 0	metrix/e1-pilot/reports/impl_c/c4_07_runbook_sim.txt
++100644 03c00a9ace3d42a35adbdca9010349884884adde 0	metrix/e1-pilot/reports/impl_c/c4_07_runbook_sim_trial1_script_error.txt
++100644 9847a53f3b24631a191977f0c9afc8a29bd558c0 0	metrix/e1-pilot/reports/impl_c/c4_08_runbook_sim_r3.txt
++100644 3d9b5abaafe7773b1c3884988ca6fcc38c4fa5b6 0	metrix/e1-pilot/reports/impl_c/c4_docs_checks.sh
++100644 c415e2f4303fe1b4057c779560fe91f0b2b4a8fd 0	metrix/e1-pilot/reports/impl_c/c4_docs_checks_r2.sh
++100644 8a1cb36b418f8f89f792bdd3545298b65a24a84a 0	metrix/e1-pilot/reports/impl_c/c4_docs_checks_r3.sh
++100644 7b77e4e469ddafea7b6e1c1a2ece72ad71369da8 0	metrix/e1-pilot/reports/impl_c/c4_runbook_sim.sh
++100644 2f685faa696ecef71cb8150a1148e1607f1c193c 0	metrix/e1-pilot/reports/impl_c/c4_runbook_sim_r3.sh
++6cc59b4cd2546f2fbc4f7ee49ea9c4aef021e2b37cd318bdbfa98b9972913697  -
++exit=0
++$ bash -c $'echo \'pending wording and old field names in the RUNBOOK (expected none):\'; grep -n \'\345\276\205 Review Gate\\|\345\276\205\345\206\263\\|report_only\\|b17_plus\' metrix/e1-pilot/RUNBOOK_A100.md; echo "grep exit $?"; echo \'UV_ values written unmasked (expected none):\'; grep -n "grep \'^UV_\'" metrix/e1-pilot/RUNBOOK_A100.md | grep -v "sed \'s/=.\\*/=<set>/\'"; echo "grep exit $?"'
++pending wording and old field names in the RUNBOOK (expected none):
++grep exit 1
++UV_ values written unmasked (expected none):
++grep exit 1
++exit=0
++$ env PYTHONPATH=metrix/e1-pilot/src METRIX_INPUTS_DIR=/tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/inputs /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/venv/bin/python -c $'\nimport re, sys\nfrom metrix_e1 import frozen as FZ, record as R\nfields = R.template_fields(FZ.load().protocol_text)\nrb = open(\'metrix/e1-pilot/RUNBOOK_A100.md\', encoding=\'utf-8\').read()\nblock = re.search(r\'\\n```\\n(Experiment ID: METRIX-E1-PILOT-l6-compare-.*?)\\n```\\n\', rb, flags=re.S).group(1).split(\'\\n\')\nnames = [ln.split(\': \', 1)[0] for ln in block]\nprint(\'protocol section 10 fields\', len(fields), \'| RUNBOOK 3.7 item 5 template lines\', len(block))\nprint(\'same names in the same order:\', names == fields)\nsys.exit(0 if names == fields else 1)'
++protocol section 10 fields 20 | RUNBOOK 3.7 item 5 template lines 20
++same names in the same order: True
++exit=0
++$ /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/venv/bin/python metrix/e1-pilot/reports/round3/outside_metrix_check.py
++changed outside metrix/ (base 61d3c767 .. HEAD):
++  A	.claude/agents/code-reviewer.md
++  A	.claude/agents/data-auditor.md
++  M	CLAUDE.md
++charter: base 3065 bytes, new 3586 bytes, base is exact prefix: True
++charter: appended 521 bytes; level-1/2 headings in appended part: ['## 6. Metrix 子项目(2026-11-13 负责人决定)']
++ignore rules below come from the working-tree .gitignore; identical to .gitignore at HEAD: True
++agent .claude/agents/code-reviewer.md: tracked at HEAD: True; ignore rule: .gitignore:14:.claude/	.claude/agents/code-reviewer.md
++agent .claude/agents/data-auditor.md: tracked at HEAD: True; ignore rule: .gitignore:14:.claude/	.claude/agents/data-auditor.md
++RESULT: PASS
++exit=0
++$ env PYTHONPATH=metrix/e1-pilot/src METRIX_INPUTS_DIR=/tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/inputs /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/venv/bin/python -m pytest -q -p no:cacheprovider metrix/e1-pilot/tests/test_test_data.py::test_interpretations_ruled_by_review_gate metrix/e1-pilot/tests/test_environment.py
++....                                                                     [100%]
++4 passed in 1.32s
++exit=0
++$ git status --short --untracked-files=all
++M  metrix/e1-pilot/RUNBOOK_A100.md
++M  metrix/e1-pilot/reports/DEFERRED_MINORS.md
++M  metrix/e1-pilot/reports/IMPL_C_REPORT.md
++A  metrix/e1-pilot/reports/impl_c/c4_04_uv_check.txt
++A  metrix/e1-pilot/reports/impl_c/c4_05_docs_checks.txt
++A  metrix/e1-pilot/reports/impl_c/c4_06_docs_checks_r2.txt
++A  metrix/e1-pilot/reports/impl_c/c4_07_runbook_sim.txt
++A  metrix/e1-pilot/reports/impl_c/c4_07_runbook_sim_trial1_script_error.txt
++A  metrix/e1-pilot/reports/impl_c/c4_08_runbook_sim_r3.txt
++A  metrix/e1-pilot/reports/impl_c/c4_docs_checks.sh
++A  metrix/e1-pilot/reports/impl_c/c4_docs_checks_r2.sh
++A  metrix/e1-pilot/reports/impl_c/c4_docs_checks_r3.sh
++A  metrix/e1-pilot/reports/impl_c/c4_runbook_sim.sh
++A  metrix/e1-pilot/reports/impl_c/c4_runbook_sim_r3.sh
++?? metrix/e1-pilot/reports/impl_c/c4_09_docs_checks_r3.txt
++exit=0
++$ bash -c git\ rev-parse\ HEAD\;\ git\ write-tree\;\ git\ diff\ --quiet\ --\ metrix/e1-pilot/src\ metrix/e1-pilot/tests\ metrix/e1-pilot/run_pilot.py\ \&\&\ echo\ WORKTREE_EQUALS_INDEX_FOR_SRC_TESTS_RUN_PILOT\;\ git\ diff\ --cached\ --quiet\ a09e154ee8808663a894e1930c83c25b8bc46c0d\ --\ metrix/e1-pilot/src\ metrix/e1-pilot/tests\ metrix/e1-pilot/run_pilot.py\ \&\&\ echo\ INDEX_EQUALS_a09e154ee8808663a894e1930c83c25b8bc46c0d_FOR_SRC_TESTS_RUN_PILOT\;\ git\ diff\ --cached\ --stat\ HEAD\;\ sha256sum\ metrix/e1-pilot/reports/impl_c/c4_docs_checks_r3.sh\;\ git\ diff\ --cached\ --name-only\ HEAD\ \|\ xargs\ git\ ls-files\ -s\ --\;\ git\ diff\ --cached\ HEAD\ \|\ sha256sum
++c9481c85ed30e2615be86e86559f5107f114dd5b
++c388686ac0c9a9308aa33e7a1d87ab540cd6cb82
++WORKTREE_EQUALS_INDEX_FOR_SRC_TESTS_RUN_PILOT
++INDEX_EQUALS_a09e154ee8808663a894e1930c83c25b8bc46c0d_FOR_SRC_TESTS_RUN_PILOT
++ metrix/e1-pilot/RUNBOOK_A100.md                    | 100 +++++++++++++++----
++ metrix/e1-pilot/reports/DEFERRED_MINORS.md         |  60 +++++++++++-
++ metrix/e1-pilot/reports/IMPL_C_REPORT.md           | 108 ++++++++++++++++++---
++ metrix/e1-pilot/reports/impl_c/c4_04_uv_check.txt  |  47 +++++++++
++ .../e1-pilot/reports/impl_c/c4_05_docs_checks.txt  |  72 ++++++++++++++
++ .../reports/impl_c/c4_06_docs_checks_r2.txt        | 106 ++++++++++++++++++++
++ .../e1-pilot/reports/impl_c/c4_07_runbook_sim.txt  |  52 ++++++++++
++ .../c4_07_runbook_sim_trial1_script_error.txt      |  11 +++
++ .../reports/impl_c/c4_08_runbook_sim_r3.txt        |  77 +++++++++++++++
++ metrix/e1-pilot/reports/impl_c/c4_docs_checks.sh   |  33 +++++++
++ .../e1-pilot/reports/impl_c/c4_docs_checks_r2.sh   |  34 +++++++
++ .../e1-pilot/reports/impl_c/c4_docs_checks_r3.sh   |  33 +++++++
++ metrix/e1-pilot/reports/impl_c/c4_runbook_sim.sh   |  30 ++++++
++ .../e1-pilot/reports/impl_c/c4_runbook_sim_r3.sh   |  57 +++++++++++
++ 14 files changed, 788 insertions(+), 32 deletions(-)
++9aa09df2fc86c597211c046093ee3fa8ee554a42735b7134fa121a100d099b61  metrix/e1-pilot/reports/impl_c/c4_docs_checks_r3.sh
++100644 37c95e91005c92b13cf55625878dc4131e7ba35b 0	metrix/e1-pilot/RUNBOOK_A100.md
++100644 b415f6791682a2d8db7b6eb6a294c47b28752092 0	metrix/e1-pilot/reports/DEFERRED_MINORS.md
++100644 9f2fb8c53c26c31442b665356e69dbd12b0c1551 0	metrix/e1-pilot/reports/IMPL_C_REPORT.md
++100644 7ffd4f8f39a4c223ef1d9d12b62d2b9a6a74c348 0	metrix/e1-pilot/reports/impl_c/c4_04_uv_check.txt
++100644 494247c23e734784e651c3881c8d4d181a0e8972 0	metrix/e1-pilot/reports/impl_c/c4_05_docs_checks.txt
++100644 19bde04463c7d7c69944afc7d117a5f23717cd7d 0	metrix/e1-pilot/reports/impl_c/c4_06_docs_checks_r2.txt
++100644 e208bfaa70133eb136f49a5633a8214e9ddbc435 0	metrix/e1-pilot/reports/impl_c/c4_07_runbook_sim.txt
++100644 03c00a9ace3d42a35adbdca9010349884884adde 0	metrix/e1-pilot/reports/impl_c/c4_07_runbook_sim_trial1_script_error.txt
++100644 9847a53f3b24631a191977f0c9afc8a29bd558c0 0	metrix/e1-pilot/reports/impl_c/c4_08_runbook_sim_r3.txt
++100644 3d9b5abaafe7773b1c3884988ca6fcc38c4fa5b6 0	metrix/e1-pilot/reports/impl_c/c4_docs_checks.sh
++100644 c415e2f4303fe1b4057c779560fe91f0b2b4a8fd 0	metrix/e1-pilot/reports/impl_c/c4_docs_checks_r2.sh
++100644 8a1cb36b418f8f89f792bdd3545298b65a24a84a 0	metrix/e1-pilot/reports/impl_c/c4_docs_checks_r3.sh
++100644 7b77e4e469ddafea7b6e1c1a2ece72ad71369da8 0	metrix/e1-pilot/reports/impl_c/c4_runbook_sim.sh
++100644 2f685faa696ecef71cb8150a1148e1607f1c193c 0	metrix/e1-pilot/reports/impl_c/c4_runbook_sim_r3.sh
++6cc59b4cd2546f2fbc4f7ee49ea9c4aef021e2b37cd318bdbfa98b9972913697  -
++exit=0
+diff --git a/metrix/e1-pilot/reports/impl_c/c4_docs_checks_r3.sh b/metrix/e1-pilot/reports/impl_c/c4_docs_checks_r3.sh
+new file mode 100644
+index 0000000..8a1cb36
+--- /dev/null
++++ b/metrix/e1-pilot/reports/impl_c/c4_docs_checks_r3.sh
+@@ -0,0 +1,33 @@
++#!/usr/bin/env bash
++# Stage C, C4 documentation commit, round 3 (RUNBOOK_A100.md per tasks/IMPL_C4_RULING.md items 1 and 3-7, IMPL_C_REPORT.md,
++# DEFERRED_MINORS.md 1.39-1.41): checks of the staged tree, recorded unedited (stdout+stderr merged) by
++# reports/round5/logrun.sh. The blobs of every staged path and the sha256 of the staged diff are recorded first and last.
++#   bash metrix/e1-pilot/reports/impl_c/c4_docs_checks_r3.sh OUTFILE PYTHON INPUTS CODE_COMMIT
++# Run from the repository root.
++set -u
++O="$1"; PY="$2"; IN="$3"; CC="$4"
++L=metrix/e1-pilot/reports/round5/logrun.sh
++E="env PYTHONPATH=metrix/e1-pilot/src METRIX_INPUTS_DIR=$IN"
++C="metrix/e1-pilot/src metrix/e1-pilot/tests metrix/e1-pilot/run_pilot.py"
++RB=metrix/e1-pilot/RUNBOOK_A100.md
++{ echo "# Stage C, C4 documentation commit, round 3 (staged; parent $(git rev-parse HEAD); code of $CC): checks on the staged tree. Executor, host $(hostname) (Anthropic cloud container, CPU only, no GPU). $(date -u)"
++  echo "# stdout+stderr merged, unedited. Commands recorded by reports/round5/logrun.sh. METRIX_INPUTS_DIR=$IN"; } > "$O"
++STATE="git rev-parse HEAD; git write-tree; git diff --quiet -- $C && echo WORKTREE_EQUALS_INDEX_FOR_SRC_TESTS_RUN_PILOT; git diff --cached --quiet $CC -- $C && echo INDEX_EQUALS_${CC}_FOR_SRC_TESTS_RUN_PILOT; git diff --cached --stat HEAD; sha256sum metrix/e1-pilot/reports/impl_c/c4_docs_checks_r3.sh; git diff --cached --name-only HEAD | xargs git ls-files -s --; git diff --cached HEAD | sha256sum"
++bash $L "$O" git ls-remote origin refs/heads/metrix-e1-pilot-protocol-v1
++bash $L "$O" git status --short --untracked-files=all
++bash $L "$O" bash -c "$STATE"
++bash $L "$O" bash -c "echo 'pending wording and old field names in the RUNBOOK (expected none):'; grep -n '待 Review Gate\|待决\|report_only\|b17_plus' $RB; echo \"grep exit \$?\"; echo 'UV_ values written unmasked (expected none):'; grep -n \"grep '^UV_'\" $RB | grep -v \"sed 's/=.\*/=<set>/'\"; echo \"grep exit \$?\""
++bash $L "$O" $E $PY -c "
++import re, sys
++from metrix_e1 import frozen as FZ, record as R
++fields = R.template_fields(FZ.load().protocol_text)
++rb = open('$RB', encoding='utf-8').read()
++block = re.search(r'\n\`\`\`\n(Experiment ID: METRIX-E1-PILOT-l6-compare-.*?)\n\`\`\`\n', rb, flags=re.S).group(1).split('\n')
++names = [ln.split(': ', 1)[0] for ln in block]
++print('protocol section 10 fields', len(fields), '| RUNBOOK 3.7 item 5 template lines', len(block))
++print('same names in the same order:', names == fields)
++sys.exit(0 if names == fields else 1)"
++bash $L "$O" $PY metrix/e1-pilot/reports/round3/outside_metrix_check.py
++bash $L "$O" $E $PY -m pytest -q -p no:cacheprovider metrix/e1-pilot/tests/test_test_data.py::test_interpretations_ruled_by_review_gate metrix/e1-pilot/tests/test_environment.py
++bash $L "$O" git status --short --untracked-files=all
++bash $L "$O" bash -c "$STATE"
+diff --git a/metrix/e1-pilot/reports/impl_c/c4_runbook_sim_r3.sh b/metrix/e1-pilot/reports/impl_c/c4_runbook_sim_r3.sh
+new file mode 100644
+index 0000000..2f685fa
+--- /dev/null
++++ b/metrix/e1-pilot/reports/impl_c/c4_runbook_sim_r3.sh
+@@ -0,0 +1,57 @@
++#!/usr/bin/env bash
++# Stage C, C4 documentation commit, round 3: simulation of RUNBOOK commands with HOME, the partition and the tmux socket
++# directory in a scratch directory. Covered: the 3.0 variable file (heredoc text taken from the RUNBOOK, placeholder
++# replaced), the 3.1 REPO line, the 3.2a if/else block taken from the RUNBOOK (both branches; the uv branch forced by
++# renaming python3.13 in the version test), a fresh shell after source, the long-command send-keys line of section 1
++# taken from the RUNBOOK (<名称> replaced) with a script that contains single quotes, and the GPU-seconds command of 3.7
++# item 5 taken from the RUNBOOK on two synthetic gpu_clock.json files. Not covered: the pip install of the lock, the
++# downloads, run_pilot.py. Usage: c4_runbook_sim_r3.sh SCRATCH RUNBOOK(absolute) REPO PYTHON_WITH_TORCH
++set -u
++mkdir -p "$1/home" "$1/part" "$1/tmux"
++export HOME="$1/home" TMUX_TMPDIR="$1/tmux"; P="$1/part"; RB="$2"; REPO_DIR="$3"; TORCH_PY="$4"
++cd "$1"
++echo "--- 3.0 variable file (heredoc from the RUNBOOK, placeholder replaced):"
++heredoc=$(awk '/^cat > ~\/metrix-vars.sh <<.EOF.$/{f=1} f{print} /^EOF$/{if(f) exit}' "$RB")
++echo "$heredoc"
++eval "${heredoc//<该分区上的目录>/$P}"
++source ~/metrix-vars.sh; mkdir -p "$WORK/command_output"; echo "E=$E"
++echo "--- 3.1 REPO line (from the RUNBOOK):"
++line31=$(grep -m1 '^echo "export REPO=$(pwd)" >> ~/metrix-vars.sh$' "$RB"); echo "$line31"
++(cd "$REPO_DIR" && eval "$line31")
++block=$(awk '/^if \[ "\$\(python3.13 --version/{f=1} f{print} /^fi$/{if(f) exit}' "$RB")
++echo "--- 3.2a block from the RUNBOOK:"; echo "$block"
++for branch in host uv; do
++  cp ~/metrix-vars.sh ~/vars.base
++  if [ $branch = uv ]; then b=${block//python3.13 --version/python3.13-absent --version}; else b=$block; fi
++  echo "=== branch $branch"; eval "$b"
++  source ~/metrix-vars.sh
++  { echo "PY313=$PY313"; "$PY313" -c 'import platform, sys; print(platform.python_implementation(), platform.python_version()); print(sys.version)'; } 2>&1 | tee -a "$E"
++  "$PY313" -m venv ~/metrix-venv-$branch && echo "venv ok"
++  [ $branch = host ] && cp ~/metrix-vars.sh ~/vars.host
++  cp ~/vars.base ~/metrix-vars.sh
++done
++cp ~/vars.host ~/metrix-vars.sh
++echo "export PY=$TORCH_PY" >> ~/metrix-vars.sh      # stands for ~/metrix-venv/bin/python (torch needed below)
++echo "--- ~/metrix-vars.sh:"; cat ~/metrix-vars.sh
++echo "--- a fresh shell after source:"
++env -i HOME="$HOME" PATH="/usr/bin:/bin:/usr/local/bin" bash -c 'source ~/metrix-vars.sh && cd "$REPO" && echo "WORK=$WORK INPUTS=$INPUTS E=$E REPO=$REPO PY313=$PY313 PY=$PY" && pwd && "$PY313" --version'
++echo "--- long command (section 1) with a script containing single quotes:"
++cat > "$WORK/command_output/s_test.sh" <<'EOF'
++set -o pipefail; source ~/metrix-vars.sh && cd "$REPO" || exit 1
++"$PY313" -c 'import sys; print("quoted ok", sys.version_info[:3], sys.argv[1:])' 'a b' 2>&1 | tee -a "$WORK/command_output/s_test.txt"
++python3 -c 'import sys; sys.exit(3)' | tee -a "$WORK/command_output/s_test.txt"
++EOF
++send=$(grep -m1 -o 'source ~/metrix-vars.sh && tmux new-window[^`]*' "$RB"); send=${send//<名称>/s_test}
++echo "$send"
++tmux new-session -d -s metrix -c "$REPO_DIR"
++env -i HOME="$HOME" TMUX_TMPDIR="$TMUX_TMPDIR" PATH="/usr/bin:/bin:/usr/local/bin" bash -c "$send"
++for i in $(seq 1 60); do [ -f "$WORK/command_output/s_test.end" ] && break; sleep 1; done
++echo "s_test.txt:"; cat "$WORK/command_output/s_test.txt"; echo "s_test.end:"; cat "$WORK/command_output/s_test.end"
++echo "capture-pane (last lines):"; tmux capture-pane -p -t metrix:s_test | grep -v '^$' | tail -4
++tmux kill-server
++echo "--- GPU seconds command (3.7 item 5) from the RUNBOOK:"
++gpu=$(grep -m1 -o 'source ~/metrix-vars.sh && cd "$REPO" && PYTHONPATH=metrix/e1-pilot/src "$PY" -c "import sys; from metrix_e1.compute import GpuClock[^`]*' "$RB"); echo "$gpu"
++echo '{"segments": [[1000.0, 1010.5], [2000.0, 2004.5]], "open": null}' > "$WORK/gpu_clock.json"; echo "closed only (expected 15.0 None):"
++env -i HOME="$HOME" PATH="/usr/bin:/bin:/usr/local/bin" bash -c "$gpu"
++python3 -c 'import json, time; json.dump({"segments": [[1000.0, 1010.5]], "open": time.time() - 100}, open("'"$WORK"'/gpu_clock.json", "w"))'; echo "with an open segment started 100 s ago (expected about 110.5 and a timestamp):"
++env -i HOME="$HOME" PATH="/usr/bin:/bin:/usr/local/bin" bash -c "$gpu"
