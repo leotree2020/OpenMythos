@@ -1,0 +1,78 @@
+# Data Auditor run (implementation stage C, C4 code commit, staged tree 63121c792654e53fce2bb1418b6413b3a275c126, parent 3bc761ea1d1cb7a1bf5a7a89d4084055e4ca83d1, round 1). host vm, Anthropic cloud container, CPU only (no GPU device node: 0 nvidia entries), no model weights loaded (tokenizer files only; smoke checkpoints are hashed as file bytes, never loaded; the Executor's tests build random tiny models in memory); 2026-11-27 13:34:50 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/venv/bin/python -I -B ic11_05_static.py /home/user/OpenMythos
+env: host vm | Linux-6.18.44-fc-v880-x86_64-with-glibc2.39 | python 3.13.18 (/tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/venv/bin/python) | installed {'transformers': '5.22.2', 'tokenizers': '0.23.3', 'pyarrow': '26.0.1', 'huggingface_hub': '2.4.0', 'torch': '2.11.0'} | nvidia device nodes: []
+== A. changed definitions (HEAD -> index)
+  pilot.py             bytes identical False | module docstring changed True | added ['st11_estimate_hours'] | removed [] | code changed ['preflight', 'step2'] | docstring-only changed ['checkpoint_overhead_seconds', 'test_evaluation_seconds']
+  stops.py             bytes identical True | module docstring changed False | added [] | removed [] | code changed [] | docstring-only changed []
+  compute.py           bytes identical True | module docstring changed False | added [] | removed [] | code changed [] | docstring-only changed []
+  interpretations.py   bytes identical False | module docstring changed True | added ['=ACCEPTED_C4', '=RULING_REF_C4'] | removed [] | code changed ['=ENTRIES'] | docstring-only changed []
+
+== B. step2: the ST11 call
+  HEAD  p.stop_in_step(2, dict(rec, _files=list(files)), [], STP.st11, p.fz, p.contract, pre['b17_estimate_hours']) | last argument pre['b17_estimate_hours']
+  index p.stop_in_step(2, dict(rec, _files=list(files)), [], STP.st11, p.fz, p.contract, pre['st11_estimate_hours']) | last argument pre['st11_estimate_hours']
+  references to an attribute named st11 in the staged src/ and run_pilot.py: [('pilot.py', 593, 'STP.st11')]
+  step2 assignments: ['report = LK.run_gate0(p.fz.split_manifest, LK.load_data(p.data_dir))', 'pre = preflight(p)', "files = pre.pop('_files')", "rec = {'leakage': report, 'preflight': pre, '_files': files}", "ok = p.stop_in_step(2, dict(rec, _files=list(files)), [], STP.st11, p.fz, p.contract, pre['st11_estimate_hours'])", "pre['st11'] = 'within bound' if ok else 'smoke: would stop'"]
+
+== C. st11_estimate_hours and preflight
+  def st11_estimate_hours(b17_hours, overhead_seconds): ['return b17_hours + overhead_seconds / 3600.0']
+  callers in src/ and run_pilot.py: [('pilot.py', 'preflight', 'st11_estimate_hours(hours, overhead)')]
+  preflight: hours assigned by ["hours, parts = CP.estimate_total_hours(p.contract, summ['mean_seconds_per_step_excluding_first'], fact_per_step, anchor_per_step, eval_s, used)"]
+  preflight: overhead assigned by ['overhead, counts = checkpoint_overhead_seconds(p.contract, load_s, hash_s, save_s, reload_s, file_hash_s)']
+  preflight: counts assigned by ['overhead, counts = checkpoint_overhead_seconds(p.contract, load_s, hash_s, save_s, reload_s, file_hash_s)']
+  preflight: st11_hours assigned by ['st11_hours = st11_estimate_hours(hours, overhead)']
+  out['b17_estimate_hours'] = hours
+  out['checkpoint_overhead'] = {'seconds': overhead, 'counts': counts}
+  out['st11_estimate_hours'] = st11_hours
+  out['st11_reads'] = 'b17_estimate_hours + checkpoint_overhead.seconds / 3600'
+  out['st11_bound_hours'] = p.contract.stops.st11_hours
+  out['timing'] = p.pre
+  preflight log call(s): ["p.log('preflight (%s): %.4f s/step, DEV evaluation %.1f s, B17 estimate %.3f h + checkpoint overhead %.3f h = %.3f h (ST11, bound %g h)' % (pmode.name, p.pre['mean_step_s'], eval_s, hours, overhead / 3600.0, st11_hours, p.contract.stops.st11_hours))"]
+
+== D. stops.st11
+  condition ['not math.isfinite(estimate_hours) or estimate_hours > contract.stops.st11_hours'] | raise ["Stop('ST11', 'BLOCKED', action(fz, 'ST11'), 'preflight estimate %.3f h > %g h' % (estimate_hours, contract.stops.st11_hours))"] | identical to HEAD: True
+
+== E. ST7 look-ahead and the plan, docstrings removed, HEAD vs index
+  pilot.Pilot.run_seconds            code identical: True | docstring identical: True
+  pilot.Pilot.eval_seconds           code identical: True | docstring identical: True
+  pilot.test_evaluation_seconds      code identical: True | docstring identical: False
+  pilot.evaluation_plan              code identical: True | docstring identical: True
+  pilot.checkpoint_overhead_seconds  code identical: True | docstring identical: False
+  pilot.Pilot.before_run             code identical: True | docstring identical: True
+  pilot.Pilot.stop_in_step           code identical: True | docstring identical: True
+  pilot.Pilot.stop_check             code identical: True | docstring identical: True
+  test_evaluation_seconds body (docstring aside): ['n = evaluation_plan(contract)', 'acc = contract.accounting', "per_eval = pre['dev_evaluation_seconds'] * acc.test_questions_per_fact / acc.dev_questions_per_fact", "checkpoints = n['test_models'] - 1", "return pre['load_s'] + checkpoints * pre['reload_s'] + n['test_models'] * per_eval + n['test_state_hashes'] * pre['hash_s']"]
+  its docstring now: 'ST7 look-ahead before the TEST evaluation begins, for the GPU time from that check on: N loaded (load_s) and the\n15 checkpoints loaded (load_checkpoint: reload_s), the state hashes (N twice), each model evaluated once on TEST (a\nDEV evaluation scaled by test / dev questions per fact, as B17). The 15 checkpoint file hashes happen before the\nGPU clock opens and are not counted. No margin is added (Review Gate 2026-11-27, tasks/IMPL_C4_RULING.md item 1).\n`pre`: the timing block of the committed step 2 record.'
+
+== F. the renamed record fields and the readers of the step 2 record
+  string constants naming the old fields in staged src/, tests/, run_pilot.py: []
+  string constants with 'step2_record' in src/: [('pilot.py', 'test_evaluate', 1193, '%s/step2_record.json')]
+  ['preflight'] / .get('preflight') in src/: [('pilot.py', 'test_evaluate', 1206, "step2['preflight']")]
+  test_evaluate reads from step2: ["step2['preflight']['timing']"]
+
+== G. B17
+  ids ['B1', 'B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8', 'B9', 'B10', 'B11', 'B12', 'B13', 'B14', 'B15', 'B16', 'B17', 'B18', 'B19', 'B20', 'B21', 'B22', 'B23', 'B24', 'B25']
+  entries different from HEAD: ['B17']
+  B17 status 'ACCEPTED（Review Gate 2026-11-27 修订）' ruling 'tasks/IMPL_C4_RULING.md 第 1 项' | keys ['id', 'protocol', 'ruling', 'status', 'text', 'where']
+  IMPL_C4_RULING.md item 1: ['1. ST11 改为读「B17 估算 + checkpoint 开销」之和，超过 3.5 小时即停。B17 的解释文字相应修订，status 记为 ACCEPTED（Review Gate 2026-11-27 修订）。ST7 的事前判断不变，TEST 的事前估计不加余量。补测试与变异。']
+  B17 where 'compute.estimate_total_hours, compute.evaluation_units, pilot.evaluation_plan, pilot.checkpoint_overhead_seconds, pilot.st11_estimate_hours, pilot.preflight, pilot.step2'
+  B17 text: Preflight estimate (the value ST11 compares with 3.5 hours; Review Gate 2026-11-27 revision) = B17's estimate + the checkpoint overhead. B17's estimate = (measured mean seconds per step of the first configuration's first 20 steps, the first step excluded as warm-up, CUDA synchronised before each timestamp) x sum over the 30 runs of 300 steps x the run's FLOP factor (F, S, Y, L: 1; A: 1 + (2 + 6) * anchor tokens / (6 * fact tokens) per step, section 10 coefficients) + (measured seconds of one float32 DEV evaluation, timed in the preflight) x evaluation units (N, 30 runs and the 3 G0.8 re-evaluations on DEV; N and the 15 final checkpoints of the 5 arms x 3 seeds on TEST, at test / dev questions per fact = 1.5) + the GPU time already used. Checkpoint overhead = load x 32 base-model loads (N, the 30 runs, N at TEST) + 30 checkpoints x (2 x hash + save + reload + file hash) + reload x 18 further checkpoint reloads (the 3 G0.8 re-evaluations, the 15 TEST checkpoints) + hash x 17 TEST state hashes (the 16 TEST models and N once more at the TEST begin) + file hash x 15 TEST checkpoint files, with load, hash (state_sha256, B25), save (torch.save), reload (torch.load into a fresh model) and file hash (SHA-256 of the checkpoint file) each measured once in the preflight on the first configuration's model. Both parts and their sum are written into the step 2 record. The ST7 look-ahead is not changed by this revision; the look-ahead before the TEST evaluation adds no margin.
+    True  Preflight estimate \(the value ST11 compares with 3\.5 hours; Review Gate 2026-11-27 revision\) = B17's estimate \+ the checkpoint overhead\.
+    True  load x 32 base-model loads \(N, the 30 runs, N at TEST\)
+    True  \+ 30 checkpoints x \(2 x hash \+ save \+ reload \+ file hash\)
+    True  \+ reload x 18 further checkpoint reloads \(the 3 G0\.8 re-evaluations, the 15 TEST checkpoints\)
+    True  \+ hash x 17 TEST state hashes \(the 16 TEST models and N once more at the TEST begin\)
+    True  \+ file hash x 15 TEST checkpoint files
+    True  The ST7 look-ahead is not changed by this revision; the look-ahead before the TEST evaluation adds no margin\.
+  B17's own formula: the parent's text after 'Preflight estimate = ' == the new text after "B17's estimate = " up to 'the GPU time already used.': True
+  parent B17 status 'ACCEPTED（Review Gate 2026-11-24）' (ruling None)
+
+== H. 'for Review Gate' phrases left in pilot.py (informational)
+  pilot.py:833 (line present in HEAD: True) # reads an excluded configuration is for Review Gate (reports/IMPL_C_REPORT.md).
+  pilot.py:1007 (line present in HEAD: True) return judged["gate0_status"], actual, "Review Gate reviews the smoke report (C2)", runs
+  pilot.py:1011 (line present in HEAD: True) # (Gate 0 PASS is in Actual; the word for this field is for Review Gate, reports/IMPL_C_REPORT.md).
+  pilot.py:1036 (line present in HEAD: True) crash = e                    # (NOT_TESTED: the word for a crash is for Review Gate, reports/IMPL_C_REPORT.md)
+  pilot.py:1067 (line present in HEAD: True) belongs in the repository is for Review Gate (protocol section 10; reports/IMPL_C_REPORT.md).
+modules: torch imported=False | transformers modeling modules imported=[] | this script never calls a model class or from_pretrained on a model
+RESULT: PASS
+exit=0

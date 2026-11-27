@@ -1,0 +1,75 @@
+# Data Auditor run (implementation stage C, C4 code commit, staged tree 63121c792654e53fce2bb1418b6413b3a275c126, parent 3bc761ea1d1cb7a1bf5a7a89d4084055e4ca83d1, round 1). host vm, Anthropic cloud container, CPU only (no GPU device node: 0 nvidia entries), no model weights loaded (tokenizer files only; smoke checkpoints are hashed as file bytes, never loaded; the Executor's tests build random tiny models in memory); 2026-11-27 13:39:33 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/venv/bin/python -I -B ic11_06_st11_tests.py /home/user/OpenMythos /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/venv/bin/python /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/inputs /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/ic11_06b sum_at_bound
+env: host vm | Linux-6.18.44-fc-v880-x86_64-with-glibc2.39 | python 3.13.18 (/tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/venv/bin/python) | installed {'transformers': '5.22.2', 'tokenizers': '0.23.3', 'pyarrow': '26.0.1', 'huggingface_hub': '2.4.0', 'torch': '2.11.0'} | nvidia device nodes: []
+== my expectation for [sum_at_bound] (before the run)
+{
+ "estimate": 3.5,
+ "experiment_status": "NOT_TESTED",
+ "experiment_stop_code": null,
+ "run_gate": "raises RuntimeError('injected after step 2')",
+ "st11_triggers": false,
+ "step2_st11_field": "within bound",
+ "step2_stopped": null,
+ "step3_record": false,
+ "stop_message_contains": null
+}
+   estimate repr 3.5; > 3.5: False
+
+$ (cwd /home/user/OpenMythos) PYTHONPATH=/home/user/OpenMythos/metrix/e1-pilot/src:/home/user/OpenMythos/metrix/e1-pilot/audit /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/venv/bin/python -B -m pytest -q -p no:cacheprovider -p ic11_06_plugin -rA --basetemp=/tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/ic11_06b/basetemp 'metrix/e1-pilot/tests/test_run_pilot.py::test_formal_st11_reads_b17_plus_the_checkpoint_overhead[sum_at_bound]'
+----- pytest stdout+stderr begin -----
+.                                                                        [100%]
+==================================== PASSES ====================================
+____ test_formal_st11_reads_b17_plus_the_checkpoint_overhead[sum_at_bound] _____
+----------------------------- Captured stdout call -----------------------------
+[2026-11-27T13:40:18Z] step 1: ST12 passed (frozen files)
+[2026-11-27T13:40:21Z] committed and pushed the step 1 record: b0ddf5c9c188b15802fd7a2620f23f7fb0d413a2
+[2026-11-27T13:40:21Z] step 1 done in 3.7 s
+[2026-11-27T13:40:24Z] step 2: ST12 passed (frozen files, inputs, data)
+[2026-11-27T13:40:25Z] step 2: leakage L1-L6 (Gate 0 part) PASS
+[2026-11-27T13:40:26Z] preflight (preflight): 0.4384 s/step, DEV evaluation 0.0 s, B17 estimate 3.000 h + checkpoint overhead 0.500 h = 3.500 h (ST11, bound 3.5 h)
+[2026-11-27T13:40:27Z] committed and pushed the step 2 record: 2dd5795b43dfcb3c341b26928b2f264a5f920ad7
+[2026-11-27T13:40:27Z] step 2 done in 2.2 s
+[2026-11-27T13:40:27Z] experiment record: /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/ic11_06b/basetemp/test_formal_st11_reads_b17_plu0/repo/metrix/e1-pilot/results/experiment_record_formal_20261127T134018Z.json (status NOT_TESTED)
+[2026-11-27T13:40:27Z] committed and pushed the experiment record: 4cc4fd3fa107c9036483a3cbdc500835bb1ab631
+=========================== short test summary info ============================
+PASSED metrix/e1-pilot/tests/test_run_pilot.py::test_formal_st11_reads_b17_plus_the_checkpoint_overhead[sum_at_bound]
+1 passed in 53.51s
+----- pytest stdout+stderr end ----- exit 0
+
+== trace (my plugin)
+  {"event": "setup", "node": "metrix/e1-pilot/tests/test_run_pilot.py::test_formal_st11_reads_b17_plus_the_checkpoint_overhead[sum_at_bound]"}
+  {"args": ["'formal'"], "call": "run_gate", "node": "metrix/e1-pilot/tests/test_run_pilot.py::test_formal_st11_reads_b17_plus_the_checkpoint_overhead[sum_at_bound]", "root": "/tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/ic11_06b/basetemp/test_formal_st11_reads_b17_plu0/repo", "work": "/tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/ic11_06b/basetemp/test_formal_st11_reads_b17_plu0/work"}
+  {"b17_hours": 3.0, "call": "st11_estimate_hours", "node": "metrix/e1-pilot/tests/test_run_pilot.py::test_formal_st11_reads_b17_plus_the_checkpoint_overhead[sum_at_bound]", "overhead_seconds": 1800.0, "result": 3.5, "result_repr": "3.5"}
+  {"bound": 3.5, "call": "stops.st11", "estimate_hours": 3.5, "estimate_repr": "3.5", "node": "metrix/e1-pilot/tests/test_run_pilot.py::test_formal_st11_reads_b17_plus_the_checkpoint_overhead[sum_at_bound]", "returned": null}
+  {"call": "run_gate", "message": "injected after step 2", "node": "metrix/e1-pilot/tests/test_run_pilot.py::test_formal_st11_reads_b17_plus_the_checkpoint_overhead[sum_at_bound]", "raised": "RuntimeError"}
+  st11_estimate_hours calls 1, args/result [(3.0, 1800.0, '3.5')] | expected one call (3.0, 1800.0) -> 3.5
+  stops.st11 calls 1: [('3.5', 3.5, None, None, None, None)]
+  run_gate outcome [{'call': 'run_gate', 'raised': 'RuntimeError', 'message': 'injected after step 2', 'node': 'metrix/e1-pilot/tests/test_run_pilot.py::test_formal_st11_reads_b17_plus_the_checkpoint_overhead[sum_at_bound]'}]
+
+== the test's bare remote and clone (my git reading)
+  bare remotes under basetemp: ['/tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/ic11_06b/basetemp/test_formal_st11_reads_b17_plu0/remote.git']
+  git log --name-status <this repository's HEAD>..main (remote; the commits made in the test):
+    4cc4fd3 metrix: E1-PILOT formal formal experiment record (status NOT_TESTED)
+    
+    A	metrix/e1-pilot/results/experiment_record_formal_20261127T134018Z.json
+    A	metrix/e1-pilot/results/experiment_record_formal_20261127T134018Z.txt
+    2dd5795 metrix: E1-PILOT formal step 2 record
+    
+    A	metrix/e1-pilot/results/step2_record.json
+    b0ddf5c metrix: E1-PILOT formal step 1 (non-TEST data hashes written into the manifests)
+    
+    M	metrix/e1-pilot/DATA_MANIFEST.json
+    M	metrix/e1-pilot/SPLIT_MANIFEST.json
+    A	metrix/e1-pilot/results/step1_record.json
+  files under metrix/e1-pilot/results at the remote's main: ['metrix/e1-pilot/results/experiment_record_formal_20261127T134018Z.json', 'metrix/e1-pilot/results/experiment_record_formal_20261127T134018Z.txt', 'metrix/e1-pilot/results/step1_record.json', 'metrix/e1-pilot/results/step2_record.json']
+  step2 record: b17_estimate_hours 3.0 | checkpoint_overhead.seconds 1800.0 | st11_estimate_hours 3.5 (my sum 3.5, equal True) | st11_bound_hours 3.5 | st11 'within bound' | st11_reads 'b17_estimate_hours + checkpoint_overhead.seconds / 3600' | stopped None
+  checkpoint_overhead.counts {"base_loads": 32, "checkpoint_reloads": 18, "checkpoints": 30, "test_file_hashes": 15, "test_models": 16, "test_state_hashes": 17}
+  experiment records (json) ['metrix/e1-pilot/results/experiment_record_formal_20261127T134018Z.json'] | step3 record present False
+  experiment record Status 'NOT_TESTED' | Stop Conditions stop {"code": null, "message": "crash: RuntimeError('injected after step 2')", "status": null}
+  clone /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/ic11_06b/basetemp/test_formal_st11_reads_b17_plu0/repo: status --porcelain '' | HEAD 4cc4fd3fa107 == remote main 4cc4fd3fa107: True
+
+this repository unchanged (git status audit/ excluded, index, HEAD): True True True
+modules: torch imported=False | transformers modeling modules imported=[] | this script never calls a model class or from_pretrained on a model
+RESULT: PASS
+exit=0

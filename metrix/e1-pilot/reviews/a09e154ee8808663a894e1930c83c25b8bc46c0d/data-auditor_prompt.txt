@@ -1,0 +1,39 @@
+先读仓库中的 .claude/agents/data-auditor.md，以它为你的完整定义；它与你已加载的定义冲突时，以仓库文件为准。
+
+审查对象：METRIX E1-PILOT 阶段 C 按 Review Gate 2026-11-27 裁决（tasks/IMPL_C4_RULING.md）所做的代码提交（下称 C4 代码提交），第 1 轮。暂存区内容（尚未提交），父提交 3bc761ea1d1cb7a1bf5a7a89d4084055e4ca83d1（C3 提交 6dc572f5 之后的证据提交，已推送）。仓库 /home/user/OpenMythos。
+
+Review Gate 对 C1 的裁决（tasks/IMPL_C1_RULING.md）中的防范对象，原文如下：
+防范对象：TEST 闸门要防的是「按规则办事的 Executor 在按 RUNBOOK 操作时，意外评测 TEST 两次，或在 ST10 不成立时评测 TEST」；不防有仓库写权限者的故意篡改（改写历史、伪造记录），这类风险由 GitHub 分支保护和审查记录承担。审查按此范围判定：范围外的边缘情况记为 MINOR 并登记，不作为 BLOCKER。调用两份审查时，把本段防范对象原文写进调用文字。
+Owner 本次转达的 Review Gate 裁决（tasks/IMPL_C4_RULING.md，本次暂存，全文含首段），原文如下：
+读 metrix/CLAUDE.md、tasks/IMPL_C1_RULING.md、reports/IMPL_C_REPORT.md、RUNBOOK_A100.md。直接在 metrix-e1-pilot-protocol-v1 上工作，只做快进推送，不推送标签，不经 PR。本段原文入库为 tasks/IMPL_C4_RULING.md。
+
+Review Gate 裁决（2026-11-27，作用范围：E1 Pilot 直至结束）：
+1. ST11 改为读「B17 估算 + checkpoint 开销」之和，超过 3.5 小时即停。B17 的解释文字相应修订，status 记为 ACCEPTED（Review Gate 2026-11-27 修订）。ST7 的事前判断不变，TEST 的事前估计不加余量。补测试与变异。
+2. C2 待决第 1、3、4、5、6、7 项：全部按现行实现接受，不改代码。
+3. A100 上的依赖安装、输入与权重下载属于正式流程；metrix/CLAUDE.md 第 4 节「租卡后只跑正式流程」指不在租用机器上开发调试。
+4. 正式运行期间只含输出的手工提交（results/command_output/、audit/、reviews/）按证据提交处理，不经 code-reviewer；此前各项「本阶段」裁决在 A100 运行期间继续有效。
+5. 两份 L6 计数不同：ST10，不运行 test-evaluate；Executor 按协议第 10 节模板手写一份 BLOCKED 实验记录，作为证据提交。
+6. 主机没有 CPython 3.13.18 时，允许用 uv 安装该精确版本；装不到即停下报告 Owner。
+7. RUNBOOK 按 1、3–6 更新，删去「待 Review Gate 决定」的措辞，时长表改为 ST11 读两者之和；另写明在 A100 主机上运行 Claude Code 的前提（从仓库根目录、本分支启动，使两个 agent 定义直接加载）。
+
+代码提交送两份审查，调用文字写入 IMPL_C1_RULING.md 的防范对象原文；只改文档的提交只送 code-reviewer。完成后状态仍为 IMPLEMENTATION_READY，停下。
+审查输入（目录 /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/review_c4/）：input.diff（git diff --cached --stat 与完整 diff，相对父提交 3bc761ea）；input_code.diff（只含 src/、tests/ 与 reports/impl_c/c4_mutate.py、c4_checks.sh、c4_smoke.sh 的 diff）；tree.txt（本次暂存树 63121c792654e53fce2bb1418b6413b3a275c126）。暂存内容与工作区的 src/、tests/、run_pilot.py 相同（核对见 reports/impl_c/c4_02_checks.txt 与 c4_03_smoke.txt 的首尾：写树、代码 diff 的 sha256 e8df1988…、git ls-files -s）。两份录制中的写树是暂存录制与冒烟记录副本之前的树；之后只增加了这些证据文件，代码部分相同（可对 tree.txt 与 input.diff 核对）。工作区中未暂存的文件（如有）不属于本次审查对象。
+依据：裁决第 1、2 项；协议 metrix/e1-pilot/METRIX_E1_PROTOCOL.md 第 8 节第 2 步、第 11 节 ST7、ST11；此前的调用文字 metrix/e1-pilot/reviews/a0e04d1f3e2be4df30ff700a79ae9af88154ee6a/*_prompt.txt。C2 节“待 Review Gate 决定”第 2 项（reports/IMPL_C_REPORT.md）即本次裁决第 1 项所答之事。
+
+本次改动（Executor 的说明，不作为证据）：
+- 裁决第 1 项：新增 pilot.st11_estimate_hours(b17_hours, overhead_seconds) = b17_hours + overhead_seconds / 3600。preflight 计算它并写入第 2 步记录：st11_estimate_hours、st11_reads（文字说明）、checkpoint_overhead {seconds, counts}；原来的 checkpoint_overhead_report_only 与 b17_plus_checkpoint_overhead_hours_report_only 两个字段由这些字段取代；日志一行随之改写。step2 的 ST11 改读 st11_estimate_hours。stops.st11 不变（超过 3.5 小时停止，等于不停）。checkpoint_overhead_seconds 与 evaluation_plan 的计算不变；ST7 的事前判断（run_seconds、eval_seconds、test_evaluation_seconds）不变，只改文档字符串（TEST 的事前估计不加余量，引用裁决）。pilot 模块文档相应改写。
+- B17：text 改为 ST11 读“B17 估算 + checkpoint 开销”，并写明 checkpoint 开销的组成（32 次基座加载、30 个 checkpoint 各 2 次哈希与保存、重载、文件哈希、另 18 次重载、17 次 TEST 状态哈希、15 次 TEST 文件哈希）；status ACCEPTED_C4 =「ACCEPTED（Review Gate 2026-11-27 修订）」，ruling RULING_REF_C4 =「tasks/IMPL_C4_RULING.md 第 1 项」；where 增加 pilot 中的函数。interpretations 模块文档相应改写。
+- 测试：test_preflight_overhead_counts 增加 st11_estimate_hours 的数值断言（并注明 TEST 事前估计不加余量）；新增 test_formal_st11_reads_b17_plus_the_checkpoint_overhead[sum_over_bound / sum_at_bound]：formal 在带裸远端的临时克隆上（_formal_on_clone 的替换），真实的 preflight（train_run 1 个冒烟步），B17 估算设为 3.0 h、开销设为 1801 s / 1800 s：前者 ST11、BLOCKED、第 2 步记录带停止并已推送、没有第 3 步记录、实验记录 BLOCKED；后者正好 3.5 h，不停，第 3 步被替换为注入的崩溃（实验记录 NOT_TESTED）。test_interpretations_ruled_by_review_gate 改为 B17 的状态与引用、裁决文件原文的断言。
+- 裁决第 2 项（C2 待决第 1、3、4、5、6、7 项按现行实现接受，不改代码）：Executor 没有改动这些项涉及的代码，包括其中仍写着 “for Review Gate” 的注释与文档字符串（pilot.py 中 run_gate、final_record、gate_steps 与第 6 步附近几处）；这些措辞在之后的报告中登记。请判断这样处理是否可接受。
+- 变异 reports/impl_c/c4_mutate.py（9 个，运行器同 c2_mutate_fix3.py）。
+- 原始输出：reports/impl_c/c4_01_env_fetch.txt（会话开始、环境与输入下载）、c4_02_checks.txt（数据重新生成与 verify、TEST 生成器拒绝、outside_metrix_check、全部 pytest、变异；首尾记录写树、代码 diff 的 sha256、git ls-files -s 与脚本 sha256）、c4_03_smoke.txt（单独运行的冒烟，3 步；首尾同样记录）；冒烟记录副本 reports/impl_c/c4_smoke_records/。
+- 未包括：RUNBOOK_A100.md、IMPL_C_REPORT.md、DEFERRED_MINORS.md 的修改（裁决第 3–7 项与本提交的记录），在之后只改文档的提交中，只送 code-reviewer。
+
+任务（脚本放在 metrix/e1-pilot/audit/，前缀 ic11_，可改写你的 ic10_ 脚本；完整 stdout 写入 metrix/e1-pilot/audit/stdout/impl_c/；不 import、不复制 Executor 的代码；按 C1 裁决第 5 项可把 Executor 的命令或测试当作驱动子进程运行，预期由你的独立模型在运行之前算出）：
+1. ST11 的估计量（裁决第 1 项）：从本次冒烟第 2 步记录（/tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/c4_smoke/records/step2_record.json）的 timing、fact_tokens_per_step、anchor_tokens_per_step、dev_evaluation_seconds 与协议第 7、8、10 节的计数，用你自己的公式独立算出 B17 估算、checkpoint 开销（按修订后的 B17 文字：32 次基座加载、30 个 checkpoint 各 2 次哈希与保存、重载、文件哈希各 1 次、另 18 次重载、17 次 TEST 状态哈希、15 次 TEST 文件哈希）与两者之和，与记录中的 b17_estimate_hours、checkpoint_overhead.seconds、st11_estimate_hours 比对；核对 st11 字段与“和是否超过 3.5 小时”一致（冒烟值，不构成结论）。
+2. 静态核对：step2 中 STP.st11 的实参是 st11_estimate_hours；st11_estimate_hours 的定义；stops.st11 的比较仍是“> 上限停止”；run_seconds、eval_seconds、test_evaluation_seconds（ST7）与父提交相同（只改文档字符串）；第 2 步记录中被改名的两个字段在 src/ 中没有其他读取方（test_evaluate 只读 timing）；B17 的 text、status、ruling 与 tasks/IMPL_C4_RULING.md 第 1 项一致。
+3. 以 tests/test_run_pilot.py::test_formal_st11_reads_b17_plus_the_checkpoint_overhead 的两个参数作驱动（一次只运行一个），在运行前写出你的预期（ST11 是否触发、run_gate 的返回或异常、第 2 步记录是否带 stopped 及其停止码与状态、实验记录的 Status、是否有第 3 步记录），再运行并比对。
+4. 冒烟数据目录 /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/c4_smoke/data：同前几轮（四个冻结内容哈希、8 个文件哈希、第 1 步 manifest 字段、L1–L6 Gate 0 部分、候选可行性、split），与 /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/c4_smoke/records/ 中的记录比对；冒烟没有产生 TEST 内容，TEST 生成器黑盒拒绝。
+5. 冒烟的 30 次训练：同前几轮（文件 SHA-256 与记录、state_sha256 与 reloaded_state_sha256、30 个运行名与训练计划）。
+环境与限制同前几轮（只在 CPU 上；禁止加载模型权重；禁止生成、读取或统计真实 TEST；只写入 metrix/e1-pilot/audit/；不得改动暂存区与工作区的其他文件；python 用 /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/venv/bin/python，METRIX_INPUTS_DIR=/tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/inputs；一次只运行一个驱动或测试进程，避免内存不足）。范围外的边缘情况记为 MINOR 并登记，不作为 BLOCK 的理由。
+输出：按定义的输出格式给出每一项的命令、原始输出、与 Executor 是否一致；脚本路径与完整 stdout 路径；最后附 git status --short 原始输出；最后一行给出结论 PASS 或 BLOCK。

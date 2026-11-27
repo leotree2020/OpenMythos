@@ -1,0 +1,18 @@
+
+审查对象：METRIX E1-PILOT 阶段 C 按 Review Gate 2026-11-27 裁决（tasks/IMPL_C4_RULING.md）所做的代码提交（下称 C4 代码提交），第 1 轮。暂存区内容（尚未提交），父提交 3bc761ea1d1cb7a1bf5a7a89d4084055e4ca83d1（C3 提交 6dc572f5 之后的证据提交，已推送）。仓库 /home/user/OpenMythos。
+
+Review Gate 对 C1 的裁决（tasks/IMPL_C1_RULING.md）中的防范对象，原文如下：
+__THREAT__
+Owner 本次转达的 Review Gate 裁决（tasks/IMPL_C4_RULING.md，本次暂存，全文含首段），原文如下：
+__RULING__
+审查输入（目录 __DIR__/）：input.diff（git diff --cached --stat 与完整 diff，相对父提交 3bc761ea）；input_code.diff（只含 src/、tests/ 与 reports/impl_c/c4_mutate.py、c4_checks.sh、c4_smoke.sh 的 diff）；tree.txt（本次暂存树 __TREE__）。暂存内容与工作区的 src/、tests/、run_pilot.py 相同（核对见 reports/impl_c/c4_02_checks.txt 与 c4_03_smoke.txt 的首尾：写树、代码 diff 的 sha256 e8df1988…、git ls-files -s）。两份录制中的写树是暂存录制与冒烟记录副本之前的树；之后只增加了这些证据文件，代码部分相同（可对 tree.txt 与 input.diff 核对）。工作区中未暂存的文件（如有）不属于本次审查对象。
+依据：裁决第 1、2 项；协议 metrix/e1-pilot/METRIX_E1_PROTOCOL.md 第 8 节第 2 步、第 11 节 ST7、ST11；此前的调用文字 metrix/e1-pilot/reviews/a0e04d1f3e2be4df30ff700a79ae9af88154ee6a/*_prompt.txt。C2 节“待 Review Gate 决定”第 2 项（reports/IMPL_C_REPORT.md）即本次裁决第 1 项所答之事。
+
+本次改动（Executor 的说明，不作为证据）：
+- 裁决第 1 项：新增 pilot.st11_estimate_hours(b17_hours, overhead_seconds) = b17_hours + overhead_seconds / 3600。preflight 计算它并写入第 2 步记录：st11_estimate_hours、st11_reads（文字说明）、checkpoint_overhead {seconds, counts}；原来的 checkpoint_overhead_report_only 与 b17_plus_checkpoint_overhead_hours_report_only 两个字段由这些字段取代；日志一行随之改写。step2 的 ST11 改读 st11_estimate_hours。stops.st11 不变（超过 3.5 小时停止，等于不停）。checkpoint_overhead_seconds 与 evaluation_plan 的计算不变；ST7 的事前判断（run_seconds、eval_seconds、test_evaluation_seconds）不变，只改文档字符串（TEST 的事前估计不加余量，引用裁决）。pilot 模块文档相应改写。
+- B17：text 改为 ST11 读“B17 估算 + checkpoint 开销”，并写明 checkpoint 开销的组成（32 次基座加载、30 个 checkpoint 各 2 次哈希与保存、重载、文件哈希、另 18 次重载、17 次 TEST 状态哈希、15 次 TEST 文件哈希）；status ACCEPTED_C4 =「ACCEPTED（Review Gate 2026-11-27 修订）」，ruling RULING_REF_C4 =「tasks/IMPL_C4_RULING.md 第 1 项」；where 增加 pilot 中的函数。interpretations 模块文档相应改写。
+- 测试：test_preflight_overhead_counts 增加 st11_estimate_hours 的数值断言（并注明 TEST 事前估计不加余量）；新增 test_formal_st11_reads_b17_plus_the_checkpoint_overhead[sum_over_bound / sum_at_bound]：formal 在带裸远端的临时克隆上（_formal_on_clone 的替换），真实的 preflight（train_run 1 个冒烟步），B17 估算设为 3.0 h、开销设为 1801 s / 1800 s：前者 ST11、BLOCKED、第 2 步记录带停止并已推送、没有第 3 步记录、实验记录 BLOCKED；后者正好 3.5 h，不停，第 3 步被替换为注入的崩溃（实验记录 NOT_TESTED）。test_interpretations_ruled_by_review_gate 改为 B17 的状态与引用、裁决文件原文的断言。
+- 裁决第 2 项（C2 待决第 1、3、4、5、6、7 项按现行实现接受，不改代码）：Executor 没有改动这些项涉及的代码，包括其中仍写着 “for Review Gate” 的注释与文档字符串（pilot.py 中 run_gate、final_record、gate_steps 与第 6 步附近几处）；这些措辞在之后的报告中登记。请判断这样处理是否可接受。
+- 变异 reports/impl_c/c4_mutate.py（9 个，运行器同 c2_mutate_fix3.py）。
+- 原始输出：reports/impl_c/c4_01_env_fetch.txt（会话开始、环境与输入下载）、c4_02_checks.txt（数据重新生成与 verify、TEST 生成器拒绝、outside_metrix_check、全部 pytest、变异；首尾记录写树、代码 diff 的 sha256、git ls-files -s 与脚本 sha256）、c4_03_smoke.txt（单独运行的冒烟，3 步；首尾同样记录）；冒烟记录副本 reports/impl_c/c4_smoke_records/。
+- 未包括：RUNBOOK_A100.md、IMPL_C_REPORT.md、DEFERRED_MINORS.md 的修改（裁决第 3–7 项与本提交的记录），在之后只改文档的提交中，只送 code-reviewer。

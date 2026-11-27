@@ -1,0 +1,51 @@
+# Data Auditor run (implementation stage C, C4 code commit, staged tree 63121c792654e53fce2bb1418b6413b3a275c126, parent 3bc761ea1d1cb7a1bf5a7a89d4084055e4ca83d1, round 1). host vm, Anthropic cloud container, CPU only (no GPU device node: 0 nvidia entries), no model weights loaded (tokenizer files only; smoke checkpoints are hashed as file bytes, never loaded; the Executor's tests build random tiny models in memory); 2026-11-27 13:33:27 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/venv/bin/python -I -B ic11_04_st11.py /home/user/OpenMythos /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/c4_smoke
+env: host vm | Linux-6.18.44-fc-v880-x86_64-with-glibc2.39 | python 3.13.18 (/tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/venv/bin/python) | installed {'transformers': '5.22.2', 'tokenizers': '0.23.3', 'pyarrow': '26.0.1', 'huggingface_hub': '2.4.0', 'torch': '2.11.0'} | nvidia device nodes: []
+== counts read from the frozen protocol (commit 87a244db)
+  protocol search                                       'F、L、A 各 \\*\\*(\\d+)\\*\\* 个配置,共 \\*\\*(\\d+)\\*\\* 次搜索训练' -> [('6', '18')]
+  protocol extra seeds F, L, A                          'F、L、A 用种子 ([\\d、]+) 各再训练一次' -> ['202、303']
+  protocol S, Y seeds                                   'S、Y 各训练 (\\d+) 个种子' -> ['3']
+  protocol total runs                                   '\\*\\*训练总次数 (\\d+)。\\*\\*' -> ['30']
+  protocol steps per run                                '每遍 \\d+ 步;共 (\\d+) 步' -> ['300']
+  protocol Y steps                                      'batch 16,同为 (\\d+) 步' -> ['300']
+  protocol G0.8 row (table)                             '\\| G0\\.8 \\| 复现：对 F 选定配置的 (\\d+) 个 checkpoint 各评测两次' -> ['3']
+  protocol section 10                                   '训练 FLOPs ≈ (\\d+) · P · T,前向 FLOPs ≈ (\\d+) · P · T' -> [('6', '2')]
+  protocol ST11 row '| ST11 | 第 8 节第 2 步预检的预估总时长超过 3.5 小时 | 停止;报告 Owner |' -> bound 3.5 h
+  my runs 30 (search 18 + 6 + 6) == protocol total 30 == SEARCH_SPACE counts {'search_runs': 18, 'extra_seed_runs_F_L_A': 6, 'S_runs': 3, 'Y_runs': 3, 'total_training_runs': 30}: True | A runs 8, other 22 | steps 300 (Y 300) == SEARCH_SPACE total_steps 300
+  questions per fact from the frozen templates: DEV {'capital': 2, 'currency': 2, 'founder': 2, 'river': 2} TEST {'capital': 3, 'currency': 3, 'founder': 3, 'river': 3}
+  evaluation units: DEV 34 (N + 30 runs + 3 G0.8) + TEST 16 models x 1.5 = 58 | overhead counts {"base_loads": 32, "checkpoint_reloads": 18, "checkpoints": 30, "test_file_hashes": 15, "test_models": 16, "test_state_hashes": 17}
+
+== inputs from the smoke's step 2 record
+  seconds_per_step [0.2567639900000813, 0.21234315699985018, 0.2559727059999659] -> my mean without the first 0.234157931499908 | recorded summary 0.234157931499908, timing.mean_step_s 0.234157931499908
+  fact_tokens_per_step 118.66666666666667 anchor_tokens_per_step 511.96666666666664 dev_evaluation_seconds 32.59302436400003 (timing 32.59302436400003) | timing {"load_s": 0.37778776000004655, "hash_s": 0.121143451999842, "save_s": 0.04988005800009887, "reload_s": 0.25833912500002043, "file_hash_s": 0.03296495800009325}
+  device ledger files under the smoke's work directory: [] -> GPU seconds already used = 0
+
+== my values
+  A factor 1 + (2 + 6) x 511.966667 / (6 x 118.666667) = 6.752434456929
+  training 0.234158 x 300 x (22 + 8 x 6.752434) = 5340.168951955 s | evaluation 58 x 32.593024364 = 1890.395413112 s | used 0
+  B17 estimate 2.008490101407 h
+  checkpoint overhead 32 x 0.377787760 + 30 x (2 x 0.121143452 + 0.049880058 + 0.258339125 + 0.032964958) + 18 x 0.258339125 + 17 x 0.121143452 + 15 x 0.032964958 = 36.797356974 s (0.010221488 h)
+  ST11 estimate = B17 + overhead / 3600 = 2.018711589456 h | bound 3.5 h | ST11 triggers (estimate > bound): False | B17 alone > bound: False
+
+== comparison with the record
+  A factor (b17_parts / timing)  mine 6.752434456929 | recorded 6.752434456929 | equal (rel. tol 1e-09) True
+  A factor timing                mine 6.752434456929 | recorded 6.752434456929 | equal (rel. tol 1e-09) True
+  train_seconds                  mine 5340.168951954982 | recorded 5340.168951954982 | equal (rel. tol 1e-09) True
+  eval_seconds                   mine 1890.395413112002 | recorded 1890.395413112002 | equal (rel. tol 1e-09) True
+  evaluation_units               mine 58.000000000000 | recorded 58.000000000000 | equal (rel. tol 1e-09) True
+  used_seconds                   mine 0.000000000000 | recorded 0.000000000000 | equal (rel. tol 1e-09) True
+  b17_estimate_hours             mine 2.008490101407 | recorded 2.008490101407 | equal (rel. tol 1e-09) True
+  checkpoint_overhead.seconds    mine 36.797356973997 | recorded 36.797356973997 | equal (rel. tol 1e-09) True
+  st11_estimate_hours            mine 2.018711589456 | recorded 2.018711589456 | equal (rel. tol 1e-09) True
+  a_runs 8 other_runs 22 (mine 8, 22) | checkpoint_overhead.counts {"base_loads": 32, "checkpoint_reloads": 18, "checkpoints": 30, "test_file_hashes": 15, "test_models": 16, "test_state_hashes": 17} == mine: True
+  st11 'within bound' (expected from my sum: 'within bound') | st11_bound_hours 3.5 (== 3.5) | st11_reads 'b17_estimate_hours + checkpoint_overhead.seconds / 3600'
+  the two renamed fields still present in the record: [] | preflight keys ['anchor_tokens_per_step', 'b17_estimate_hours', 'b17_parts', 'checkpoint_file', 'checkpoint_overhead', 'dev_evaluation_seconds', 'fact_tokens_per_step', 'label', 'mode', 'run', 'st11', 'st11_bound_hours', 'st11_estimate_hours', 'st11_reads', 'steps', 'summary', 'timing']
+  smoke_report smoke_recorded_stops ST11 entries [] (expected none)
+
+== the smoke recording (reports/impl_c/c4_03_smoke.txt)
+  log line: [2026-11-27T13:05:21Z] preflight (smoke): 0.2342 s/step, DEV evaluation 32.6 s, B17 estimate 2.008 h + checkpoint overhead 0.010 h = 2.019 h (ST11, bound 3.5 h)
+  log values ('2.008', '0.010', '2.019', '3.5') == my values at 3 decimals ('2.008', '0.010', '2.019', '3.5'): True
+modules: torch imported=False | transformers modeling modules imported=[] | this script never calls a model class or from_pretrained on a model
+RESULT: PASS
+exit=0

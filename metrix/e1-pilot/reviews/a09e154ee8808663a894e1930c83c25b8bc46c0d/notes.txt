@@ -1,0 +1,13 @@
+Notes on the C4 code commit's review records (Executor).
+- The invocation texts were assembled from head_<name>.txt + common.txt + asks_<name>.txt with __THREAT__ (threat_model.txt,
+  the 防范对象 paragraph of tasks/IMPL_C1_RULING.md, verbatim), __RULING__ (ruling_c4.txt = tasks/IMPL_C4_RULING.md),
+  __DIR__, __TREE__ and the scratch paths filled in; the results are *_prompt.txt, sent unchanged.
+- Both were launched in parallel in the background at the time in launch_time.txt, after preflight_tools_check.txt.
+- premature_extract_data-auditor_discarded.md: while the data-auditor was still running, the Executor's wait loop matched
+  the string "SubagentHandback" in the transcript (the tool's name, not a call of it) and review_extract.py was run too
+  early: it found no SubagentHandback call and took the last assistant text (50 characters, an intermediate remark).
+  That output and its transcript copy were discarded and its line removed from extract_log_round1.txt; after the real
+  hand-back the transcript was copied again and extracted (extract_log_round1.txt, second line). Kept here because it was
+  produced; it is not a review result.
+- The data-auditor ran `git write-tree` once in the repository (its report); the index tree stayed 63121c79, which is the
+  commit's tree (reports/impl_c/c4_push_code_commit.txt).

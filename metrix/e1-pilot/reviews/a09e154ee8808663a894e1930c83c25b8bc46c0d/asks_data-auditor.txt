@@ -1,0 +1,8 @@
+任务（脚本放在 metrix/e1-pilot/audit/，前缀 ic11_，可改写你的 ic10_ 脚本；完整 stdout 写入 metrix/e1-pilot/audit/stdout/impl_c/；不 import、不复制 Executor 的代码；按 C1 裁决第 5 项可把 Executor 的命令或测试当作驱动子进程运行，预期由你的独立模型在运行之前算出）：
+1. ST11 的估计量（裁决第 1 项）：从本次冒烟第 2 步记录（__SMOKE__/records/step2_record.json）的 timing、fact_tokens_per_step、anchor_tokens_per_step、dev_evaluation_seconds 与协议第 7、8、10 节的计数，用你自己的公式独立算出 B17 估算、checkpoint 开销（按修订后的 B17 文字：32 次基座加载、30 个 checkpoint 各 2 次哈希与保存、重载、文件哈希各 1 次、另 18 次重载、17 次 TEST 状态哈希、15 次 TEST 文件哈希）与两者之和，与记录中的 b17_estimate_hours、checkpoint_overhead.seconds、st11_estimate_hours 比对；核对 st11 字段与“和是否超过 3.5 小时”一致（冒烟值，不构成结论）。
+2. 静态核对：step2 中 STP.st11 的实参是 st11_estimate_hours；st11_estimate_hours 的定义；stops.st11 的比较仍是“> 上限停止”；run_seconds、eval_seconds、test_evaluation_seconds（ST7）与父提交相同（只改文档字符串）；第 2 步记录中被改名的两个字段在 src/ 中没有其他读取方（test_evaluate 只读 timing）；B17 的 text、status、ruling 与 tasks/IMPL_C4_RULING.md 第 1 项一致。
+3. 以 tests/test_run_pilot.py::test_formal_st11_reads_b17_plus_the_checkpoint_overhead 的两个参数作驱动（一次只运行一个），在运行前写出你的预期（ST11 是否触发、run_gate 的返回或异常、第 2 步记录是否带 stopped 及其停止码与状态、实验记录的 Status、是否有第 3 步记录），再运行并比对。
+4. 冒烟数据目录 __SMOKE__/data：同前几轮（四个冻结内容哈希、8 个文件哈希、第 1 步 manifest 字段、L1–L6 Gate 0 部分、候选可行性、split），与 __SMOKE__/records/ 中的记录比对；冒烟没有产生 TEST 内容，TEST 生成器黑盒拒绝。
+5. 冒烟的 30 次训练：同前几轮（文件 SHA-256 与记录、state_sha256 与 reloaded_state_sha256、30 个运行名与训练计划）。
+环境与限制同前几轮（只在 CPU 上；禁止加载模型权重；禁止生成、读取或统计真实 TEST；只写入 metrix/e1-pilot/audit/；不得改动暂存区与工作区的其他文件；python 用 __PY__，METRIX_INPUTS_DIR=__INPUTS__；一次只运行一个驱动或测试进程，避免内存不足）。范围外的边缘情况记为 MINOR 并登记，不作为 BLOCK 的理由。
+输出：按定义的输出格式给出每一项的命令、原始输出、与 Executor 是否一致；脚本路径与完整 stdout 路径；最后附 git status --short 原始输出；最后一行给出结论 PASS 或 BLOCK。

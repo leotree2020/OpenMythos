@@ -1,0 +1,23 @@
+# Data Auditor run (implementation stage C, C4 code commit, staged tree 63121c792654e53fce2bb1418b6413b3a275c126, parent 3bc761ea1d1cb7a1bf5a7a89d4084055e4ca83d1, round 1). host vm, Anthropic cloud container, CPU only (no GPU device node: 0 nvidia entries), no model weights loaded (tokenizer files only; smoke checkpoints are hashed as file bytes, never loaded; the Executor's tests build random tiny models in memory); 2026-11-27 13:33:18 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/venv/bin/python -I -B ic11_04_st11.py /home/user/OpenMythos /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/c4_smoke
+env: host vm | Linux-6.18.44-fc-v880-x86_64-with-glibc2.39 | python 3.13.18 (/tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/venv/bin/python) | installed {'transformers': '5.22.2', 'tokenizers': '0.23.3', 'pyarrow': '26.0.1', 'huggingface_hub': '2.4.0', 'torch': '2.11.0'} | nvidia device nodes: []
+== counts read from the frozen protocol (commit 87a244db)
+  protocol search                                       'F、L、A 各 \\*\\*(\\d+)\\*\\* 个配置,共 \\*\\*(\\d+)\\*\\* 次搜索训练' -> [('6', '18')]
+  protocol extra seeds F, L, A                          'F、L、A 用种子 ([\\d、]+) 各再训练一次' -> ['202、303']
+  protocol S, Y seeds                                   'S、Y 各训练 (\\d+) 个种子' -> ['3']
+  protocol total runs                                   '\\*\\*训练总次数 (\\d+)。\\*\\*' -> ['30']
+  protocol steps per run                                '每遍 \\d+ 步;共 (\\d+) 步' -> ['300']
+  protocol Y steps                                      'batch 16,同为 (\\d+) 步' -> ['300']
+  protocol G0.8 re-evaluations                          '对 F 选定配置的 (\\d+) 个 checkpoint 各评测两次' -> ['3', '3', '3']
+Traceback (most recent call last):
+  File "/home/user/OpenMythos/metrix/e1-pilot/audit/ia_common.py", line 102, in run
+    ok = main()
+  File "/home/user/OpenMythos/metrix/e1-pilot/audit/ic11_04_st11.py", line 60, in main
+    g08 = int(one(r"对 F 选定配置的 (\d+) 个 checkpoint 各评测两次", prot, "G0.8 re-evaluations"))
+              ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/user/OpenMythos/metrix/e1-pilot/audit/ic11_04_st11.py", line 43, in one
+    raise ValueError("%s: %d matches" % (what, len(m)))
+ValueError: G0.8 re-evaluations: 3 matches
+RESULT: FAIL (exception)
+exit=2

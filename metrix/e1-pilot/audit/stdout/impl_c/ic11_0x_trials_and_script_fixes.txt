@@ -1,0 +1,19 @@
+Data Auditor, implementation stage C, C4 code commit (staged tree 63121c79, parent 3bc761ea), round 1: trial runs and
+script fixes of this audit (every output file listed is kept unedited under audit/stdout/impl_c/).
+
+1. ic11_04_st11_trial1_script_error.txt: my regex for the G0.8 count ("对 F 选定配置的 (\d+) 个 checkpoint 各评测两次")
+   matched 3 lines of the frozen protocol (the G0.8 table row and two change-log rows); my helper requires exactly one
+   match and raised. Fix: the regex is anchored to the table row ("| G0.8 | 复现：..."). ic11_04_st11.txt is the run
+   after the fix (PASS). The Executor's code and records were not involved.
+2. ic11_06a_st11_sum_over_bound_trial1_script_error.txt: the test itself passed and the trace matched my expectation,
+   but my glob for the bare remote found it twice (pytest's "<name>current" symlink to the same directory). Fix:
+   de-duplicate by realpath. Rerun in a new scratch directory.
+3. ic11_06a_st11_sum_over_bound_run2_superseded_full_history_log.txt: complete PASS run after fix 2, but my
+   `git log --name-status main` of the test's remote printed the whole repository history (790 KB). Fix: the log is
+   limited to <this repository's HEAD>..main (the test's own commits). ic11_06a_st11_sum_over_bound.txt is the run after
+   this fix (PASS; same outcome as run2). ic11_06b_st11_sum_at_bound.txt was run once, with the final script.
+4. Before writing any script I ran `git write-tree` once in /home/user/OpenMythos (output
+   63121c792654e53fce2bb1418b6413b3a275c126, the staged tree named in review_c4/tree.txt). The tree object and the
+   index already existed: `stat` afterwards showed .git/index and .git/objects/63/121c79... both with mtime
+   2026-11-27 13:26:42 UTC, before my command (about 13:28 UTC); the index entries are unchanged (ic11_00 a, ic11_00b).
+   None of my scripts calls write-tree.
