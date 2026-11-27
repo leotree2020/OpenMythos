@@ -201,19 +201,29 @@ def test_pending_interpretations_block_test(monkeypatch):
 def test_interpretations_ruled_by_review_gate():
     """Review Gate 2026-11-24, stage-B ruling item 1: B1-B24 accepted; every record names the ruling; B3 and B14
     carry the ruling's notes; B19 no longer says it is to be ruled. Review Gate 2026-11-25, ruling on C1 item 3: B25
-    accepted (status and reference of that ruling); nothing is pending."""
+    accepted (status and reference of that ruling). Review Gate 2026-11-27, tasks/IMPL_C4_RULING.md item 1: B17
+    revised (ST11 reads B17's estimate plus the checkpoint overhead), status and reference of that ruling. Nothing is
+    pending."""
     from metrix_e1 import interpretations as INT
     assert [e["id"] for e in INT.ENTRIES] == ["B%d" % i for i in range(1, 26)]
     assert INT.pending() == [] and INT.pending_problem() is None
     assert INT.ACCEPTED == "ACCEPTED（Review Gate 2026-11-24）"
     assert INT.ACCEPTED_C1 == "ACCEPTED（Review Gate 2026-11-25）"
+    assert INT.ACCEPTED_C4 == "ACCEPTED（Review Gate 2026-11-27 修订）"
     recs = INT.as_records()
-    assert all(r["status"] == INT.ACCEPTED and r["ruling"] == INT.RULING_REF for r in recs[:24])
+    assert all(r["status"] == INT.ACCEPTED and r["ruling"] == INT.RULING_REF for r in recs[:24] if r["id"] != "B17")
+    assert recs[16]["id"] == "B17" and recs[16]["status"] == INT.ACCEPTED_C4 and recs[16]["ruling"] == INT.RULING_REF_C4
     assert recs[24]["status"] == INT.ACCEPTED_C1 and recs[24]["ruling"] == INT.RULING_REF_C1
     assert "IMPL_C_REPORT.md「Review Gate 对阶段 B 的裁决」" in INT.RULING_REF
     assert INT.RULING_REF_C1.startswith("tasks/IMPL_C1_RULING.md 第 3 项")
     assert "3. B25 接受：checkpoint 哈希 = train.state_sha256。" in (PILOT / "tasks/IMPL_C1_RULING.md").read_text(
         encoding="utf-8")
+    assert INT.RULING_REF_C4 == "tasks/IMPL_C4_RULING.md 第 1 项"
+    c4 = (PILOT / "tasks/IMPL_C4_RULING.md").read_text(encoding="utf-8")
+    assert "1. ST11 改为读「B17 估算 + checkpoint 开销」之和，超过 3.5 小时即停。" in c4
+    assert "status 记为 ACCEPTED（Review Gate 2026-11-27 修订）" in c4
+    assert "B17's estimate + the checkpoint overhead" in recs[16]["text"]
+    assert "pilot.st11_estimate_hours" in recs[16]["where"]
     by_id = {r["id"]: r for r in recs}
     assert "train_Y.jsonl" in by_id["B3"]["ruling_note"] and "需重新校准" in by_id["B14"]["ruling_note"]
     assert "To be ruled" not in by_id["B19"]["text"]

@@ -25,6 +25,7 @@ import pytest
 import torch
 
 from conftest import PILOT, tiny_model
+from metrix_e1 import compute as CP
 from metrix_e1 import data as D
 from metrix_e1 import evaluate as E
 from metrix_e1 import frozen as FZ
@@ -264,7 +265,10 @@ def test_preflight_overhead_counts(contract):
     seconds, counts = P.checkpoint_overhead_seconds(contract, 1.0, 2.0, 3.0, 4.0, 5.0)
     assert counts == n and seconds == 32 * 1.0 + 30 * (2 * 2.0 + 3.0 + 4.0 + 5.0) + 18 * 4.0 + 17 * 2.0 + 15 * 5.0
     pre = {"dev_evaluation_seconds": 10.0, "load_s": 1.0, "reload_s": 3.0, "hash_s": 2.0, "file_hash_s": 5.0}
-    assert P.test_evaluation_seconds(contract, pre) == 1.0 + 15 * 3.0 + 16 * 10.0 * 3 / 2 + 17 * 2.0
+    assert P.test_evaluation_seconds(contract, pre) == 1.0 + 15 * 3.0 + 16 * 10.0 * 3 / 2 + 17 * 2.0   # no margin
+    # ST11's estimate (tasks/IMPL_C4_RULING.md item 1): B17's hours plus the overhead's seconds in hours
+    assert P.st11_estimate_hours(3.0, 1800.0) == 3.5 and P.st11_estimate_hours(1.25, 0.0) == 1.25
+    assert P.st11_estimate_hours(0.0, seconds) == seconds / 3600
 
 
 def test_st7_look_ahead_of_a_run(inputs_dir, tmp_path, contract):
@@ -713,6 +717,56 @@ def test_formal_stop_and_crash_commit_what_was_written(fz, inputs_dir, generated
         assert runs == ["F-F1-seed101.json", "F-F2-seed101.json"]
         assert "%s/%s/F-F2-seed101_dev.json" % (res, P.DETAILS_DIR) in tree
         assert "injected crash" in rec["template"]["Stop Conditions"]["stop"]["message"]
+
+
+@pytest.mark.parametrize("over", [True, False], ids=["sum_over_bound", "sum_at_bound"])
+def test_formal_st11_reads_b17_plus_the_checkpoint_overhead(fz, inputs_dir, generated, tmp_path, monkeypatch, over):
+    """Review Gate 2026-11-27, tasks/IMPL_C4_RULING.md item 1 (B17 revised): ST11 compares B17's estimate plus the
+    checkpoint overhead with its bound (3.5 hours; stop above it). Formal on a clone with a bare remote and the real
+    preflight (the replacements of _formal_on_clone; train.train_run with 1 smoke step), except that B17's estimate is
+    set to 3.0 h and the checkpoint overhead to 1801 s (sum above 3.5 h: ST11, BLOCKED, the step 2 record with the stop
+    committed, step 3 not reached) or 1800 s (sum exactly 3.5 h: within the bound; step 3 is replaced by an injected
+    crash). B17's estimate alone is within the bound in both cases."""
+    remote, root, p = _formal_on_clone(fz, inputs_dir, generated, tmp_path, monkeypatch)
+    real_train, real_b17, real_overhead = T.train_run, CP.estimate_total_hours, P.checkpoint_overhead_seconds
+    overhead = 1801.0 if over else 1800.0
+
+    def train(model, tok, data, spec, contract, mode, device, log_fn=None):
+        return real_train(model, tok, data, spec, contract, M.smoke_mode(1), device, log_fn)
+
+    def step3(p):
+        raise RuntimeError("injected after step 2")
+    monkeypatch.setattr(T, "train_run", train)
+    monkeypatch.setattr(CP, "estimate_total_hours", lambda *a, **k: (3.0, real_b17(*a, **k)[1]))
+    monkeypatch.setattr(P, "checkpoint_overhead_seconds", lambda *a, **k: (overhead, real_overhead(*a, **k)[1]))
+    monkeypatch.setattr(P, "step3", step3)
+    if over:
+        assert P.run_gate(p, "formal") == (False, "BLOCKED")
+    else:
+        with pytest.raises(RuntimeError, match="injected after step 2"):
+            P.run_gate(p, "formal")
+    assert git(root, "status", "--porcelain") == "" and git(root, "rev-parse", "HEAD") == git(remote, "rev-parse", "main")
+    res = R.FORMAL_RESULTS_REL
+    step2 = json.loads(git(remote, "show", "main:%s/step2_record.json" % res))
+    pre = step2["preflight"]
+    assert pre["b17_estimate_hours"] == 3.0 and pre["checkpoint_overhead"]["seconds"] == overhead
+    assert pre["checkpoint_overhead"]["counts"] == P.evaluation_plan(p.contract)
+    assert pre["st11_estimate_hours"] == 3.0 + overhead / 3600 and pre["st11_bound_hours"] == 3.5
+    assert pre["st11_reads"] == "b17_estimate_hours + checkpoint_overhead.seconds / 3600"
+    assert p.pre is not None and p.pre["a_factor"] > 1.0          # the timing block (ST7) is the preflight's own
+    tree = git(remote, "ls-tree", "-r", "--name-only", "main").split("\n")
+    assert "%s/step3_record.json" % res not in tree
+    (exp,) = [x for x in tree if x.startswith(res + "/experiment_record_formal_") and x.endswith(".json")]
+    rec = json.loads(git(remote, "show", "main:%s" % exp))
+    if over:
+        assert step2["stopped"]["code"] == "ST11" and step2["stopped"]["status"] == "BLOCKED"
+        assert "%.3f h > 3.5 h" % (3.0 + overhead / 3600) in step2["stopped"]["message"]
+        assert rec["template"]["Status"] == "BLOCKED"
+        assert rec["template"]["Stop Conditions"]["stop"]["code"] == "ST11"
+    else:
+        assert "stopped" not in step2 and pre["st11"] == "within bound"
+        assert rec["template"]["Status"] == "NOT_TESTED"
+        assert "injected after step 2" in rec["template"]["Stop Conditions"]["stop"]["message"]
 
 
 def test_test_generate_records_an_st10_stop_of_its_own_run(fz, inputs_dir, tmp_path, monkeypatch):

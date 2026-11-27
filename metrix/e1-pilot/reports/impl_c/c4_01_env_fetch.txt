@@ -1,0 +1,52 @@
+# Stage C, C4 (Review Gate ruling of 2026-11-27, tasks/IMPL_C4_RULING.md): session start, environment and the pinned non-model inputs. Executor, host vm (Anthropic cloud container, CPU only, no GPU). Fri Nov 27 12:39:51 UTC 2026
+# stdout+stderr merged, unedited. Commands recorded by reports/round5/logrun.sh.
+$ git ls-remote origin refs/heads/metrix-e1-pilot-protocol-v1
+3bc761ea1d1cb7a1bf5a7a89d4084055e4ca83d1	refs/heads/metrix-e1-pilot-protocol-v1
+exit=0
+$ git rev-parse HEAD
+3bc761ea1d1cb7a1bf5a7a89d4084055e4ca83d1
+exit=0
+$ git status --short --untracked-files=all
+ M metrix/e1-pilot/src/metrix_e1/interpretations.py
+ M metrix/e1-pilot/src/metrix_e1/pilot.py
+ M metrix/e1-pilot/tests/test_run_pilot.py
+ M metrix/e1-pilot/tests/test_test_data.py
+?? metrix/e1-pilot/reports/impl_c/c4_01_env_fetch.txt
+?? metrix/e1-pilot/tasks/IMPL_C4_RULING.md
+exit=0
+$ bash -c hostname\;\ nproc\;\ free\ -g\;\ uname\ -a\;\ ls\ /dev/nvidia\*\ 2\>\&1\;\ which\ nvidia-smi\ 2\>\&1\;\ python3.13\ --version
+vm
+4
+               total        used        free      shared  buff/cache   available
+Mem:              15           0           7           0           8          15
+Swap:              0           0           0
+Linux vm 6.18.44-fc-v880 #1 SMP PREEMPT_DYNAMIC @0 x86_64 x86_64 x86_64 GNU/Linux
+ls: cannot access '/dev/nvidia*': No such file or directory
+Python 3.13.18
+exit=0
+$ /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/venv/bin/python -m pip --version
+pip 26.3 from /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/venv/lib/python3.13/site-packages/pip (python 3.13)
+exit=0
+$ /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/venv/bin/python -m pip check
+No broken requirements found.
+exit=0
+$ /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/venv/bin/python -c import\ torch\,\ transformers\,\ sys\;\ print\(sys.version\)\;\ print\(torch.__version__\,\ torch.version.cuda\,\ torch.cuda.is_available\(\)\,\ transformers.__version__\)
+3.13.18 (main, Oct 26 2026, 14:08:19) [Clang 23.1.3 ]
+2.11.0+cu130 13.0 False 5.22.2
+exit=0
+$ env PYTHONPATH=metrix/e1-pilot/src /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/venv/bin/python -m metrix_e1.data fetch --inputs /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/inputs
+frozen: PROTOCOL_FROZEN v1.1, commit 87a244db28a901f9e89282b50df76778ab5c2887; four frozen files match by git cat-file
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+qwen:tokenizer.json          sha256 aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4 = frozen
+qwen:tokenizer_config.json   sha256 d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101 = frozen
+qwen:vocab.json              sha256 ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910 = frozen
+qwen:merges.txt              sha256 8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5 = frozen
+parcae_tokenizer             sha256 e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77 = frozen
+anchor_parquet               sha256 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22 = frozen
+RESULT: PASS
+exit=0
+$ env PYTHONPATH=metrix/e1-pilot/src /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/venv/bin/python -m metrix_e1.train fetch-config --inputs /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/inputs
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+config.json of Qwen/Qwen3-1.7B@70d244cc86ccca08cf5af4e1e306ecf908b1ad5e: /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/inputs/qwen_model/config.json sha256 1ddb5b89ebc90dcb417a45c213d818577e65976454d29385c8f6140771d95197 (not a weight file)
+RESULT: PASS
+exit=0

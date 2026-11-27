@@ -48,17 +48,17 @@ structure and hashed again; the two hashes must be equal, and the reloaded model
 evaluation reads the saved checkpoint. All 30 are kept (none is deleted: metrix/CLAUDE.md section 7); the RUNBOOK
 gives the disk size.
 
-Preflight (section 8 step 2, ST11; interpretation B17). ST11 reads B17's estimate (compute.estimate_total_hours)
-unchanged. The preflight also measures one model load, one state_sha256, one checkpoint save, one reload and one file
-hash of the first configuration's model (DEFERRED_MINORS 1.27 CA21) and reports, beside B17's estimate,
-  CHECKPOINT_OVERHEAD = loads x load + runs x (2 hashes + save + reload + file hash)
-                        + TEST state hashes x hash + TEST checkpoint files x file hash
+Preflight (section 8 step 2, ST11; interpretation B17 as revised by Review Gate on 2026-11-27, tasks/IMPL_C4_RULING.md
+item 1). ST11 reads the sum of B17's estimate (compute.estimate_total_hours) and the checkpoint overhead
+(st11_estimate_hours) and stops above 3.5 hours. The preflight measures one model load, one state_sha256, one checkpoint
+save, one reload and one file hash of the first configuration's model (DEFERRED_MINORS 1.27 CA21):
+  CHECKPOINT_OVERHEAD = base loads x load + checkpoints x (2 hashes + save + reload + file hash)
+                        + further reloads x reload + TEST state hashes x hash + TEST checkpoint files x file hash
 (evaluation_plan: base loads of N, the 30 runs and N at TEST; reloads of the G0.8 checkpoints and the 15 TEST
 checkpoints; the TEST models' state hashes in testgate.require_test_session plus N's in begin; the 15 TEST checkpoint
-files) and the sum; whether ST11
-should read the sum is for Review Gate (reports/IMPL_C_REPORT.md). The measured times also give the ST7 look-ahead
-(next_seconds): before a training run its training, save and DEV evaluation; before an evaluation the evaluation; before
-the TEST evaluation begins, the whole TEST evaluation (test_evaluation_seconds), so that ST7 does not stop it half-way.
+files). The measured times also give the ST7 look-ahead (next_seconds; unchanged by that ruling): before a training run
+its training, save and DEV evaluation; before an evaluation the evaluation; before the TEST evaluation begins, the whole
+TEST evaluation without a margin (test_evaluation_seconds), so that ST7 does not stop it half-way.
 """
 import dataclasses
 import gc
@@ -179,20 +179,28 @@ def evaluation_plan(contract):
 
 
 def checkpoint_overhead_seconds(contract, load_s, hash_s, save_s, reload_s, file_hash_s):
-    """Report only (ST11 reads B17's estimate): base loads x load_s, every checkpoint hashed twice, saved, reloaded and
-    file-hashed, the further reloads x reload_s, the TEST state hashes and the TEST checkpoint file hashes."""
+    """The checkpoint overhead of B17 (part of ST11's estimate, st11_estimate_hours): base loads x load_s, every
+    checkpoint hashed twice, saved, reloaded and file-hashed, the further reloads x reload_s, the TEST state hashes and
+    the TEST checkpoint file hashes. Seconds, and the counts (evaluation_plan)."""
     n = evaluation_plan(contract)
     return (n["base_loads"] * load_s + n["checkpoints"] * (2 * hash_s + save_s + reload_s + file_hash_s)
             + n["checkpoint_reloads"] * reload_s + n["test_state_hashes"] * hash_s
             + n["test_file_hashes"] * file_hash_s), n
 
 
+def st11_estimate_hours(b17_hours, overhead_seconds):
+    """The preflight estimate ST11 compares with its bound (Review Gate 2026-11-27, tasks/IMPL_C4_RULING.md item 1;
+    B17): B17's estimate (hours, compute.estimate_total_hours) plus the checkpoint overhead (seconds,
+    checkpoint_overhead_seconds). Hours."""
+    return b17_hours + overhead_seconds / 3600.0
+
+
 def test_evaluation_seconds(contract, pre):
     """ST7 look-ahead before the TEST evaluation begins, for the GPU time from that check on: N loaded (load_s) and the
     15 checkpoints loaded (load_checkpoint: reload_s), the state hashes (N twice), each model evaluated once on TEST (a
     DEV evaluation scaled by test / dev questions per fact, as B17). The 15 checkpoint file hashes happen before the
-    GPU clock opens and are not counted. No margin is added (for Review Gate, reports/IMPL_C_REPORT.md C2). `pre`: the
-    timing block of the committed step 2 record."""
+    GPU clock opens and are not counted. No margin is added (Review Gate 2026-11-27, tasks/IMPL_C4_RULING.md item 1).
+    `pre`: the timing block of the committed step 2 record."""
     n = evaluation_plan(contract)
     acc = contract.accounting
     per_eval = pre["dev_evaluation_seconds"] * acc.test_questions_per_fact / acc.dev_questions_per_fact
@@ -582,16 +590,16 @@ def step2(p):
     pre = preflight(p)
     files = pre.pop("_files")
     rec = {"leakage": report, "preflight": pre, "_files": files}
-    ok = p.stop_in_step(2, dict(rec, _files=list(files)), [], STP.st11, p.fz, p.contract, pre["b17_estimate_hours"])
+    ok = p.stop_in_step(2, dict(rec, _files=list(files)), [], STP.st11, p.fz, p.contract, pre["st11_estimate_hours"])
     pre["st11"] = "within bound" if ok else "smoke: would stop"
     p.step_end(2, rec)
     return report
 
 
 def preflight(p):
-    """Section 8 step 2 (ST11; B17 plus the checkpoint overhead, see the module docstring): the first configuration
-    for the protocol's preflight steps (formal: preflight mode on the A100; smoke: smoke mode on the CPU, its numbers
-    are smoke values). Its outputs are timing only."""
+    """Section 8 step 2 (ST11 reads B17's estimate plus the checkpoint overhead, see the module docstring): the first
+    configuration for the protocol's preflight steps (formal: preflight mode on the A100; smoke: smoke mode on the CPU,
+    its numbers are smoke values). Its outputs are timing only."""
     pmode = M.preflight_mode(p.contract) if p.mode.formal else p.mode
     spec = T.search_runs(p.contract, "F")[0]
     p.before_run()
@@ -635,19 +643,20 @@ def preflight(p):
     hours, parts = CP.estimate_total_hours(p.contract, summ["mean_seconds_per_step_excluding_first"], fact_per_step,
                                            anchor_per_step, eval_s, used)
     overhead, counts = checkpoint_overhead_seconds(p.contract, load_s, hash_s, save_s, reload_s, file_hash_s)
+    st11_hours = st11_estimate_hours(hours, overhead)
     p.pre = {"mean_step_s": summ["mean_seconds_per_step_excluding_first"], "a_factor": parts["a_factor"],
              "dev_evaluation_seconds": eval_s, "load_s": load_s, "hash_s": hash_s, "save_s": save_s,
              "reload_s": reload_s, "file_hash_s": file_hash_s}
     out = {"label": pmode.label, "mode": pmode.name, "run": spec.name, "steps": res.steps_run, "summary": summ,
            "dev_evaluation_seconds": eval_s, "fact_tokens_per_step": fact_per_step,
            "anchor_tokens_per_step": anchor_per_step, "b17_estimate_hours": hours, "b17_parts": parts,
-           "st11_reads": "b17_estimate_hours", "st11_bound_hours": p.contract.stops.st11_hours,
-           "checkpoint_overhead_report_only": {"seconds": overhead, "counts": counts},
-           "b17_plus_checkpoint_overhead_hours_report_only": hours + overhead / 3600.0,
+           "checkpoint_overhead": {"seconds": overhead, "counts": counts},
+           "st11_estimate_hours": st11_hours, "st11_reads": "b17_estimate_hours + checkpoint_overhead.seconds / 3600",
+           "st11_bound_hours": p.contract.stops.st11_hours,
            "timing": p.pre, "checkpoint_file": str(path), "_files": [path]}
-    p.log("preflight (%s): %.4f s/step, DEV evaluation %.1f s, B17 estimate %.3f h (ST11); checkpoint overhead %.3f h "
-          "(report only; sum %.3f h)" % (pmode.name, p.pre["mean_step_s"], eval_s, hours, overhead / 3600.0,
-                                        hours + overhead / 3600.0))
+    p.log("preflight (%s): %.4f s/step, DEV evaluation %.1f s, B17 estimate %.3f h + checkpoint overhead %.3f h = "
+          "%.3f h (ST11, bound %g h)" % (pmode.name, p.pre["mean_step_s"], eval_s, hours, overhead / 3600.0,
+                                         st11_hours, p.contract.stops.st11_hours))
     return out
 
 

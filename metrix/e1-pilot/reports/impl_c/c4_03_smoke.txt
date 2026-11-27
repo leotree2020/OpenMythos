@@ -1,0 +1,335 @@
+# Stage C, C4 code commit (staged; parent 3bc761ea1d1cb7a1bf5a7a89d4084055e4ca83d1): the CPU smoke test on the staged code, 3 optimizer steps per training run; work directory outside the repository; run alone, after c4_02. Executor, host vm (Anthropic cloud container, CPU only, no GPU). Fri Nov 27 13:04:37 UTC 2026
+# stdout+stderr merged, unedited. Commands recorded by reports/round5/logrun.sh.
+$ bash -c git\ rev-parse\ HEAD\;\ git\ write-tree\;\ git\ diff\ --quiet\ --\ metrix/e1-pilot/src\ metrix/e1-pilot/tests\ metrix/e1-pilot/run_pilot.py\ \&\&\ echo\ WORKTREE_EQUALS_INDEX_FOR_SRC_TESTS_RUN_PILOT\;\ git\ diff\ --cached\ HEAD\ --\ metrix/e1-pilot/src\ metrix/e1-pilot/tests\ metrix/e1-pilot/run_pilot.py\ \|\ sha256sum\;\ git\ ls-files\ -s\ --\ metrix/e1-pilot/src\ metrix/e1-pilot/tests\ metrix/e1-pilot/run_pilot.py\;\ sha256sum\ metrix/e1-pilot/reports/impl_c/c4_smoke.sh
+3bc761ea1d1cb7a1bf5a7a89d4084055e4ca83d1
+178c9a2f42a0598b1baa27bfbc4c5084ba2bdbac
+WORKTREE_EQUALS_INDEX_FOR_SRC_TESTS_RUN_PILOT
+e8df198872e911601f0d71aa009b2f649965e4898fd3bd236bb659a43f50d44a  -
+100644 3ee2e0b43e4d763e5758f7658a36109733ec3363 0	metrix/e1-pilot/run_pilot.py
+100644 3e5469f54da836a3efc2d48c05e3b6e6e5918c96 0	metrix/e1-pilot/src/metrix/e1_pilot/__init__.py
+100644 8bb2c5dc888ab9fbab41f0ce62a4f9440a21d386 0	metrix/e1-pilot/src/metrix/e1_pilot/check_leakage.py
+100644 5c5d9cdca67e6e02c62c47a60f8609d4691365b3 0	metrix/e1-pilot/src/metrix_e1/__init__.py
+100644 7458503748e724c250eadba2caa302acd063b51a 0	metrix/e1-pilot/src/metrix_e1/_cli.py
+100644 771cc28e1de02e78b0afddc133ee0a987741b968 0	metrix/e1-pilot/src/metrix_e1/compute.py
+100644 98315baa6a68b7aed2c38bc392331ea64fcf91d8 0	metrix/e1-pilot/src/metrix_e1/contract.py
+100644 ac9c65c798887192775fd8ca76d34b2c17538889 0	metrix/e1-pilot/src/metrix_e1/data.py
+100644 4c4eb1ec6408f726d36b35ef7533d1a13b3af2b9 0	metrix/e1-pilot/src/metrix_e1/errors.py
+100644 8ee841488de640ddbde27acf84827967b7704f04 0	metrix/e1-pilot/src/metrix_e1/evaluate.py
+100644 9acd9b361bdbf7eea04ca3819086394ff0d496a3 0	metrix/e1-pilot/src/metrix_e1/frozen.py
+100644 3874499a870f13510262843bcb6c6f2e8da344af 0	metrix/e1-pilot/src/metrix_e1/gate.py
+100644 a0eeb882df9e6c888223e989e2b8f679de5b1108 0	metrix/e1-pilot/src/metrix_e1/interpretations.py
+100644 884b934253ab8f91d3d58b14a9c729183cbf1019 0	metrix/e1-pilot/src/metrix_e1/leakage.py
+100644 3e865297f2ed9d3114e7525dea8493c29fdb726f 0	metrix/e1-pilot/src/metrix_e1/mode.py
+100644 e74baae71c33b7bb68a9b7f2a51386abc9ccc817 0	metrix/e1-pilot/src/metrix_e1/pilot.py
+100644 aa914ca8d3dafd420fab68cf42766ebe4dc7e216 0	metrix/e1-pilot/src/metrix_e1/record.py
+100644 37999e59bec1dd6de76fdc9b4f7262218ef741b9 0	metrix/e1-pilot/src/metrix_e1/stats.py
+100644 9c9e64bc7abb9417796c738f3b96f5b4bdce6e1e 0	metrix/e1-pilot/src/metrix_e1/stops.py
+100644 ce354d7444d5cfa86100ea4c7548e08f61ed2714 0	metrix/e1-pilot/src/metrix_e1/test_data.py
+100644 14a03a16c3c83727a204e6dd5849b93980843776 0	metrix/e1-pilot/src/metrix_e1/testgate.py
+100644 635d9b431000ca1c9a3da51d0ad2f760f4904d98 0	metrix/e1-pilot/src/metrix_e1/train.py
+100644 0d05dda468216eac845a96b72c3d179684a88672 0	metrix/e1-pilot/tests/conftest.py
+100644 41d80624f9256977c8f6728b2de4e570b1a7069a 0	metrix/e1-pilot/tests/test_arm_a.py
+100644 fffa474e2a7e40c9830708353808440cf4c811d4 0	metrix/e1-pilot/tests/test_contract.py
+100644 5501d8a8ec3a6b0f7f2b94564bd44d552cb58d6e 0	metrix/e1-pilot/tests/test_data_hashes.py
+100644 28340bcf5bb22815b28549c3d35beae9830e6b7a 0	metrix/e1-pilot/tests/test_environment.py
+100644 997521052485d86936b8d0088702024d34896c9c 0	metrix/e1-pilot/tests/test_evaluate.py
+100644 97fff917eff245fb76f83f1fee19cfe64704268d 0	metrix/e1-pilot/tests/test_gate.py
+100644 548d43602937d5110af431e1d31939711b41ac04 0	metrix/e1-pilot/tests/test_leakage.py
+100644 3c80f23a99f2e0e3d3e70df71ce9e11c9fe03c15 0	metrix/e1-pilot/tests/test_lora.py
+100644 da6f7b17ebed2d8e09e06a1a806bbeb1d795da52 0	metrix/e1-pilot/tests/test_record.py
+100644 e038d1690a34ec185c9c7c3b48fdea188dde04ea 0	metrix/e1-pilot/tests/test_run_pilot.py
+100644 800bc5d047ad1e650b9641769c5b9ae6d7c63f03 0	metrix/e1-pilot/tests/test_scoring.py
+100644 7b599e2b2871778e8ecd27319197b4d9330f4bfb 0	metrix/e1-pilot/tests/test_st12.py
+100644 dc7d581d20a7be217d17305b64015f146c6a60c1 0	metrix/e1-pilot/tests/test_stats.py
+100644 f2542efaef0d7e6127a980ef2ad8d4d978fffaec 0	metrix/e1-pilot/tests/test_stops.py
+100644 b11d08ad4ed887986cd9bf6f1eb8bf4e904037c0 0	metrix/e1-pilot/tests/test_test_data.py
+100644 123148c05eb3944cd610487ac5911e11a8ab17ca 0	metrix/e1-pilot/tests/test_testgate.py
+100644 fe03f85fa089089cd811e90fc5f93d0d5bffea14 0	metrix/e1-pilot/tests/test_train.py
+2e91d65d02a550159ea77c04749429c3bd59650846e98eb4670f9b5f425d576c  metrix/e1-pilot/reports/impl_c/c4_smoke.sh
+exit=0
+$ /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/venv/bin/python metrix/e1-pilot/run_pilot.py smoke --steps 3 --inputs /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/inputs --work /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/c4_smoke
+[2026-11-27T13:04:39Z] step 1: ST12 passed (frozen files)
+[2026-11-27T13:04:43Z] step 1 done in 4.2 s
+[2026-11-27T13:04:45Z] step 2: ST12 passed (frozen files, inputs, data)
+[2026-11-27T13:04:46Z] step 2: leakage L1-L6 (Gate 0 part) PASS
+[2026-11-27T13:05:21Z] preflight (smoke): 0.2342 s/step, DEV evaluation 32.6 s, B17 estimate 2.008 h + checkpoint overhead 0.010 h = 2.019 h (ST11, bound 3.5 h)
+[2026-11-27T13:05:21Z] step 2 done in 35.2 s
+[2026-11-27T13:05:23Z] step 3: ST12 passed (frozen files, inputs, data)
+[2026-11-27T13:05:58Z] step 3: N acc_dev_learned 0.2500 acc_dev_unread 0.2250 acc_cb 0.2500; G0.3 ranges hold
+[2026-11-27T13:05:58Z] step 3 done in 35.3 s
+[2026-11-27T13:06:01Z] step 4: ST12 passed (frozen files, inputs, data)
+[2026-11-27T13:06:36Z] F-F1-seed101: 3 steps, acc_dev_learned 0.2500 acc_cb 0.2500 dNLL 0.00000, state sha256 8a4b04d9818d6b72 (unchanged after reload)
+[2026-11-27T13:07:11Z] F-F2-seed101: 3 steps, acc_dev_learned 0.2500 acc_cb 0.2500 dNLL 0.00000, state sha256 b1621636fa0b6be0 (unchanged after reload)
+[2026-11-27T13:07:47Z] F-F3-seed101: 3 steps, acc_dev_learned 0.2500 acc_cb 0.2500 dNLL 0.00001, state sha256 2cb8cc3b022c9c01 (unchanged after reload)
+[2026-11-27T13:08:23Z] F-F4-seed101: 3 steps, acc_dev_learned 0.2500 acc_cb 0.2500 dNLL 0.00001, state sha256 a8e6d6b2515f829e (unchanged after reload)
+[2026-11-27T13:08:59Z] F-F5-seed101: 3 steps, acc_dev_learned 0.2500 acc_cb 0.2500 dNLL 0.00002, state sha256 fed3bc7654a2a942 (unchanged after reload)
+[2026-11-27T13:09:36Z] F-F6-seed101: 3 steps, acc_dev_learned 0.2500 acc_cb 0.2500 dNLL 0.00002, state sha256 745994fe528178a0 (unchanged after reload)
+[2026-11-27T13:09:36Z] selection F: F2 (ranking ['F2', 'F1', 'F4', 'F3', 'F6', 'F5'])
+[2026-11-27T13:09:36Z] smoke: ST3 would stop here (smoke value, not a result): ST3 -> PIPELINE_NOT_QUALIFIED: positive control: Acc_CB 0.2500 (min 0.9), Acc(F, DEV-QA, learned) 0.2500 (min 0.7) [阳性对照未过:停;不跑 L、A、S、Y] reason OPTIMIZATION_FAIL
+[2026-11-27T13:09:36Z] step 4 done in 215.1 s
+[2026-11-27T13:09:38Z] step 5: ST12 passed (frozen files, inputs, data)
+[2026-11-27T13:10:15Z] L-L1-seed101: 3 steps, acc_dev_learned 0.2500 acc_cb 0.2500 dNLL -0.00000, state sha256 1842be3d53a228e8 (unchanged after reload)
+[2026-11-27T13:10:50Z] L-L2-seed101: 3 steps, acc_dev_learned 0.2500 acc_cb 0.2500 dNLL -0.00000, state sha256 c832d4bb4daf88c3 (unchanged after reload)
+[2026-11-27T13:11:27Z] L-L3-seed101: 3 steps, acc_dev_learned 0.2500 acc_cb 0.2500 dNLL -0.00000, state sha256 7d8ff34a6fee299b (unchanged after reload)
+[2026-11-27T13:12:02Z] L-L4-seed101: 3 steps, acc_dev_learned 0.2500 acc_cb 0.2500 dNLL -0.00000, state sha256 de6c110400d51af0 (unchanged after reload)
+[2026-11-27T13:12:37Z] L-L5-seed101: 3 steps, acc_dev_learned 0.2542 acc_cb 0.2500 dNLL -0.00001, state sha256 e1c26d40a68b8157 (unchanged after reload)
+[2026-11-27T13:13:13Z] L-L6-seed101: 3 steps, acc_dev_learned 0.2542 acc_cb 0.2500 dNLL -0.00001, state sha256 0e26b07622e9fb0e (unchanged after reload)
+[2026-11-27T13:13:13Z] selection L: L6 (ranking ['L6', 'L5', 'L4', 'L3', 'L2', 'L1'])
+[2026-11-27T13:13:52Z] A-A1-seed101: 3 steps, acc_dev_learned 0.2500 acc_cb 0.2500 dNLL 0.00001, state sha256 3665d81a0832a7e3 (unchanged after reload)
+[2026-11-27T13:14:32Z] A-A2-seed101: 3 steps, acc_dev_learned 0.2500 acc_cb 0.2500 dNLL 0.00001, state sha256 c531862a86d10608 (unchanged after reload)
+[2026-11-27T13:15:10Z] A-A3-seed101: 3 steps, acc_dev_learned 0.2500 acc_cb 0.2500 dNLL 0.00001, state sha256 17b589fb78cac84c (unchanged after reload)
+[2026-11-27T13:15:49Z] A-A4-seed101: 3 steps, acc_dev_learned 0.2500 acc_cb 0.2500 dNLL 0.00002, state sha256 130e9eed5dce56dd (unchanged after reload)
+[2026-11-27T13:16:28Z] A-A5-seed101: 3 steps, acc_dev_learned 0.2500 acc_cb 0.2500 dNLL 0.00002, state sha256 8db118b9c425885d (unchanged after reload)
+[2026-11-27T13:17:05Z] A-A6-seed101: 3 steps, acc_dev_learned 0.2500 acc_cb 0.2500 dNLL 0.00003, state sha256 3a63473ce6f37273 (unchanged after reload)
+[2026-11-27T13:17:05Z] selection A: A1 (ranking ['A1', 'A2', 'A3', 'A4', 'A5', 'A6'])
+[2026-11-27T13:17:05Z] step 5 done in 446.7 s
+[2026-11-27T13:17:07Z] step 6: ST12 passed (frozen files, inputs, data)
+[2026-11-27T13:17:41Z] F-F2-seed202: 3 steps, acc_dev_learned 0.2500 acc_cb 0.2500 dNLL 0.00000, state sha256 eedea03c43dcf79b (unchanged after reload)
+[2026-11-27T13:18:16Z] F-F2-seed303: 3 steps, acc_dev_learned 0.2500 acc_cb 0.2500 dNLL 0.00000, state sha256 3fd9ed3e8166cfc8 (unchanged after reload)
+[2026-11-27T13:18:51Z] L-L6-seed202: 3 steps, acc_dev_learned 0.2458 acc_cb 0.2417 dNLL 0.00007, state sha256 42fe3f50e05e1b6e (unchanged after reload)
+[2026-11-27T13:19:25Z] L-L6-seed303: 3 steps, acc_dev_learned 0.2542 acc_cb 0.2417 dNLL -0.00010, state sha256 934fdcf5d9e50a7a (unchanged after reload)
+[2026-11-27T13:20:00Z] A-A1-seed202: 3 steps, acc_dev_learned 0.2500 acc_cb 0.2500 dNLL 0.00001, state sha256 744c22fe1254945b (unchanged after reload)
+[2026-11-27T13:20:37Z] A-A1-seed303: 3 steps, acc_dev_learned 0.2500 acc_cb 0.2500 dNLL 0.00001, state sha256 6cd155ddc31bee53 (unchanged after reload)
+[2026-11-27T13:21:24Z] S-F2-seed101: 3 steps, acc_dev_learned 0.2500 acc_cb 0.2500 dNLL 0.00000, state sha256 4e547ae21b92e89d (unchanged after reload)
+[2026-11-27T13:22:12Z] S-F2-seed202: 3 steps, acc_dev_learned 0.2500 acc_cb 0.2500 dNLL 0.00000, state sha256 4a7cdc844d7cad81 (unchanged after reload)
+[2026-11-27T13:23:00Z] S-F2-seed303: 3 steps, acc_dev_learned 0.2500 acc_cb 0.2500 dNLL 0.00000, state sha256 3c28d73975f7265f (unchanged after reload)
+[2026-11-27T13:23:33Z] Y-F2-seed101: 3 steps, acc_dev_learned 0.2500 acc_cb 0.2500 dNLL 0.00000, state sha256 d674ac99241e2804 (unchanged after reload)
+[2026-11-27T13:24:07Z] Y-F2-seed202: 3 steps, acc_dev_learned 0.2500 acc_cb 0.2500 dNLL 0.00000, state sha256 a847d2414774ed6f (unchanged after reload)
+[2026-11-27T13:24:42Z] Y-F2-seed303: 3 steps, acc_dev_learned 0.2500 acc_cb 0.2500 dNLL 0.00001, state sha256 3373badc5f18f96e (unchanged after reload)
+[2026-11-27T13:24:42Z] step 6 done in 455.2 s
+[2026-11-27T13:24:45Z] step 7: ST12 passed (frozen files, inputs, data)
+[2026-11-27T13:26:13Z] Gate 0: NOT_TESTED 冒烟测试，不构成结论
+[2026-11-27T13:26:13Z] step 7 done in 88.0 s
+[2026-11-27T13:26:16Z] step 8: ST12 passed (frozen files, inputs, data)
+[2026-11-27T13:26:21Z] step 8 (smoke): TEST generator exit 1, last line ['RESULT: FAIL'], --out created False, TEST files []
+[2026-11-27T13:26:21Z] step 8 done in 5.4 s
+[2026-11-27T13:26:21Z] experiment record: /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/c4_smoke/records/experiment_record_smoke_20261127T130439Z.json (status NOT_TESTED)
+[2026-11-27T13:26:21Z] SMOKE REPORT (SMOKE — NOT A RESULT)
+[2026-11-27T13:26:21Z]   step 1: 4.2 s, peak memory 1079.0 MiB (peak resident set size of the process so far (CPU)), 8 files
+[2026-11-27T13:26:21Z]   step 2: 35.2 s, peak memory 8420.9 MiB (peak resident set size of the process so far (CPU)), 1 files
+[2026-11-27T13:26:21Z]   step 3: 35.3 s, peak memory 8420.9 MiB (peak resident set size of the process so far (CPU)), 1 files
+[2026-11-27T13:26:21Z]   step 4: 215.1 s, peak memory 8420.9 MiB (peak resident set size of the process so far (CPU)), 12 files
+[2026-11-27T13:26:21Z]   step 5: 446.7 s, peak memory 8492.3 MiB (peak resident set size of the process so far (CPU)), 24 files
+[2026-11-27T13:26:21Z]   step 6: 455.2 s, peak memory 8532.8 MiB (peak resident set size of the process so far (CPU)), 24 files
+[2026-11-27T13:26:21Z]   step 7: 88.0 s, peak memory 8532.8 MiB (peak resident set size of the process so far (CPU)), 4 files
+[2026-11-27T13:26:21Z]   step 8: 5.4 s, peak memory 8532.8 MiB (peak resident set size of the process so far (CPU)), 0 files
+[2026-11-27T13:26:21Z]   G0.1 satisfied (smoke value) True
+[2026-11-27T13:26:21Z]   G0.2 satisfied (smoke value) True
+[2026-11-27T13:26:21Z]   G0.3 satisfied (smoke value) True
+[2026-11-27T13:26:21Z]   G0.4 satisfied (smoke value) False
+[2026-11-27T13:26:21Z]   G0.5 satisfied (smoke value) False
+[2026-11-27T13:26:21Z]   G0.6 satisfied (smoke value) True
+[2026-11-27T13:26:21Z]   G0.7 satisfied (smoke value) True
+[2026-11-27T13:26:21Z]   G0.8 satisfied (smoke value) True
+[2026-11-27T13:26:21Z]   G0.9 satisfied (smoke value) True
+[2026-11-27T13:26:21Z]   G0.10 satisfied (smoke value) True
+[2026-11-27T13:26:21Z]   Gate 0 status NOT_TESTED (冒烟测试，不构成结论)
+[2026-11-27T13:26:21Z]   trainings completed: 30; steps per run [3]
+smoke completed: NOT_TESTED
+RESULT: PASS
+exit=0
+$ bash -c cd\ /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/c4_smoke\ \&\&\ find\ .\ -type\ f\ \|\ sort\ \|\ xargs\ ls\ -l\ \|\ awk\ \'\{print\ \$5\,\ \$9\}\'
+39202289 ./checkpoints/A-A1-seed101.pt
+39202289 ./checkpoints/A-A1-seed202.pt
+39202289 ./checkpoints/A-A1-seed303.pt
+39202289 ./checkpoints/A-A2-seed101.pt
+39202289 ./checkpoints/A-A3-seed101.pt
+39202289 ./checkpoints/A-A4-seed101.pt
+39202289 ./checkpoints/A-A5-seed101.pt
+39202289 ./checkpoints/A-A6-seed101.pt
+39202289 ./checkpoints/F-F1-seed101.pt
+39202289 ./checkpoints/F-F2-seed101.pt
+39202289 ./checkpoints/F-F2-seed202.pt
+39202289 ./checkpoints/F-F2-seed303.pt
+39202289 ./checkpoints/F-F3-seed101.pt
+39202289 ./checkpoints/F-F4-seed101.pt
+39202289 ./checkpoints/F-F5-seed101.pt
+39202289 ./checkpoints/F-F6-seed101.pt
+39277673 ./checkpoints/L-L1-seed101.pt
+39474281 ./checkpoints/L-L2-seed101.pt
+39277673 ./checkpoints/L-L3-seed101.pt
+39474281 ./checkpoints/L-L4-seed101.pt
+39277673 ./checkpoints/L-L5-seed101.pt
+39474281 ./checkpoints/L-L6-seed101.pt
+39474281 ./checkpoints/L-L6-seed202.pt
+39474281 ./checkpoints/L-L6-seed303.pt
+23 ./checkpoints/LABEL.txt
+39202289 ./checkpoints/S-F2-seed101.pt
+39202289 ./checkpoints/S-F2-seed202.pt
+39202289 ./checkpoints/S-F2-seed303.pt
+39202289 ./checkpoints/Y-F2-seed101.pt
+39202289 ./checkpoints/Y-F2-seed202.pt
+39202289 ./checkpoints/Y-F2-seed303.pt
+23 ./data/LABEL.txt
+639712 ./data/anchor_text.jsonl
+10453 ./data/candidates.json
+37176 ./data/dev_qa.jsonl
+21489 ./data/facts.jsonl
+233241 ./data/general_dev.jsonl
+14073 ./data/train_F.jsonl
+15033 ./data/train_S.jsonl
+28203 ./data/train_Y.jsonl
+23 ./preflight/LABEL.txt
+39202401 ./preflight/preflight_checkpoint.pt
+350871 ./records/details/A-A1-seed101_dev.json
+350817 ./records/details/A-A1-seed202_dev.json
+350923 ./records/details/A-A1-seed303_dev.json
+350904 ./records/details/A-A2-seed101_dev.json
+350896 ./records/details/A-A3-seed101_dev.json
+350815 ./records/details/A-A4-seed101_dev.json
+350848 ./records/details/A-A5-seed101_dev.json
+350760 ./records/details/A-A6-seed101_dev.json
+350936 ./records/details/F-F1-seed101_dev.json
+350974 ./records/details/F-F2-seed101_dev.json
+192955 ./records/details/F-F2-seed101_dev_g08.json
+350872 ./records/details/F-F2-seed202_dev.json
+192911 ./records/details/F-F2-seed202_dev_g08.json
+350961 ./records/details/F-F2-seed303_dev.json
+192928 ./records/details/F-F2-seed303_dev_g08.json
+350884 ./records/details/F-F3-seed101_dev.json
+350849 ./records/details/F-F4-seed101_dev.json
+350816 ./records/details/F-F5-seed101_dev.json
+350808 ./records/details/F-F6-seed101_dev.json
+350925 ./records/details/L-L1-seed101_dev.json
+351096 ./records/details/L-L2-seed101_dev.json
+350975 ./records/details/L-L3-seed101_dev.json
+351473 ./records/details/L-L4-seed101_dev.json
+351147 ./records/details/L-L5-seed101_dev.json
+351883 ./records/details/L-L6-seed101_dev.json
+351485 ./records/details/L-L6-seed202_dev.json
+352494 ./records/details/L-L6-seed303_dev.json
+350946 ./records/details/N_dev.json
+499394 ./records/details/S-F2-seed101_dev.json
+499521 ./records/details/S-F2-seed202_dev.json
+499615 ./records/details/S-F2-seed303_dev.json
+350986 ./records/details/Y-F2-seed101_dev.json
+350880 ./records/details/Y-F2-seed202_dev.json
+350875 ./records/details/Y-F2-seed303_dev.json
+62360 ./records/experiment_record_smoke_20261127T130439Z.json
+35420 ./records/experiment_record_smoke_20261127T130439Z.txt
+1128 ./records/gate0_record.json
+31442 ./records/smoke_report.json
+3732 ./records/step1_manifest_fields.json
+27530 ./records/step1_record.json
+3586 ./records/step2_record.json
+15584 ./records/step3_record.json
+2862 ./records/step4_record.json
+5368 ./records/step5_record.json
+4558 ./records/step6_record.json
+15337 ./records/step7_record.json
+1041 ./records/step8_record.json
+16961 ./records/training_runs/A-A1-seed101.json
+16955 ./records/training_runs/A-A1-seed202.json
+16959 ./records/training_runs/A-A1-seed303.json
+16961 ./records/training_runs/A-A2-seed101.json
+16959 ./records/training_runs/A-A3-seed101.json
+16996 ./records/training_runs/A-A4-seed101.json
+16993 ./records/training_runs/A-A5-seed101.json
+16997 ./records/training_runs/A-A6-seed101.json
+16492 ./records/training_runs/F-F1-seed101.json
+16491 ./records/training_runs/F-F2-seed101.json
+16487 ./records/training_runs/F-F2-seed202.json
+16491 ./records/training_runs/F-F2-seed303.json
+16440 ./records/training_runs/F-F3-seed101.json
+16443 ./records/training_runs/F-F4-seed101.json
+16474 ./records/training_runs/F-F5-seed101.json
+16473 ./records/training_runs/F-F6-seed101.json
+16696 ./records/training_runs/L-L1-seed101.json
+16706 ./records/training_runs/L-L2-seed101.json
+16707 ./records/training_runs/L-L3-seed101.json
+16709 ./records/training_runs/L-L4-seed101.json
+16707 ./records/training_runs/L-L5-seed101.json
+16706 ./records/training_runs/L-L6-seed101.json
+16733 ./records/training_runs/L-L6-seed202.json
+16721 ./records/training_runs/L-L6-seed303.json
+16563 ./records/training_runs/S-F2-seed101.json
+16558 ./records/training_runs/S-F2-seed202.json
+16560 ./records/training_runs/S-F2-seed303.json
+16704 ./records/training_runs/Y-F2-seed101.json
+16708 ./records/training_runs/Y-F2-seed202.json
+16713 ./records/training_runs/Y-F2-seed303.json
+exit=0
+$ bash -c cd\ /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/c4_smoke\ \&\&\ echo\ TEST\ files:\ \$\(find\ .\ -name\ test_qa.jsonl\ -o\ -name\ general_test.jsonl\ \|\ wc\ -l\)\;\ cat\ checkpoints/LABEL.txt\ data/LABEL.txt\ preflight/LABEL.txt
+TEST files: 0
+SMOKE — NOT A RESULT
+SMOKE — NOT A RESULT
+SMOKE — NOT A RESULT
+exit=0
+$ /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/venv/bin/python -c import\ json\,sys\;\ r=json.load\(open\(sys.argv\[1\]\)\)\;\ pre=r\[\'preflight\'\]\;\ print\(json.dumps\(\{k:\ pre.get\(k\)\ for\ k\ in\ \(\'b17_estimate_hours\'\,\'checkpoint_overhead\'\,\'st11_estimate_hours\'\,\'st11_reads\'\,\'st11_bound_hours\'\,\'st11\'\,\'timing\'\)\}\,\ indent=1\,\ sort_keys=True\)\) /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/c4_smoke/records/step2_record.json
+{
+ "b17_estimate_hours": 2.0084901014074954,
+ "checkpoint_overhead": {
+  "counts": {
+   "base_loads": 32,
+   "checkpoint_reloads": 18,
+   "checkpoints": 30,
+   "test_file_hashes": 15,
+   "test_models": 16,
+   "test_state_hashes": 17
+  },
+  "seconds": 36.797356973997466
+ },
+ "st11": "within bound",
+ "st11_bound_hours": 3.5,
+ "st11_estimate_hours": 2.018711589455828,
+ "st11_reads": "b17_estimate_hours + checkpoint_overhead.seconds / 3600",
+ "timing": {
+  "a_factor": 6.752434456928839,
+  "dev_evaluation_seconds": 32.59302436400003,
+  "file_hash_s": 0.03296495800009325,
+  "hash_s": 0.121143451999842,
+  "load_s": 0.37778776000004655,
+  "mean_step_s": 0.23415793149990805,
+  "reload_s": 0.25833912500002043,
+  "save_s": 0.04988005800009887
+ }
+}
+exit=0
+$ bash -c git\ rev-parse\ HEAD\;\ git\ write-tree\;\ git\ diff\ --quiet\ --\ metrix/e1-pilot/src\ metrix/e1-pilot/tests\ metrix/e1-pilot/run_pilot.py\ \&\&\ echo\ WORKTREE_EQUALS_INDEX_FOR_SRC_TESTS_RUN_PILOT\;\ git\ diff\ --cached\ HEAD\ --\ metrix/e1-pilot/src\ metrix/e1-pilot/tests\ metrix/e1-pilot/run_pilot.py\ \|\ sha256sum\;\ git\ ls-files\ -s\ --\ metrix/e1-pilot/src\ metrix/e1-pilot/tests\ metrix/e1-pilot/run_pilot.py\;\ sha256sum\ metrix/e1-pilot/reports/impl_c/c4_smoke.sh\;\ ls\ metrix/e1-pilot/results\ 2\>\&1
+3bc761ea1d1cb7a1bf5a7a89d4084055e4ca83d1
+178c9a2f42a0598b1baa27bfbc4c5084ba2bdbac
+WORKTREE_EQUALS_INDEX_FOR_SRC_TESTS_RUN_PILOT
+e8df198872e911601f0d71aa009b2f649965e4898fd3bd236bb659a43f50d44a  -
+100644 3ee2e0b43e4d763e5758f7658a36109733ec3363 0	metrix/e1-pilot/run_pilot.py
+100644 3e5469f54da836a3efc2d48c05e3b6e6e5918c96 0	metrix/e1-pilot/src/metrix/e1_pilot/__init__.py
+100644 8bb2c5dc888ab9fbab41f0ce62a4f9440a21d386 0	metrix/e1-pilot/src/metrix/e1_pilot/check_leakage.py
+100644 5c5d9cdca67e6e02c62c47a60f8609d4691365b3 0	metrix/e1-pilot/src/metrix_e1/__init__.py
+100644 7458503748e724c250eadba2caa302acd063b51a 0	metrix/e1-pilot/src/metrix_e1/_cli.py
+100644 771cc28e1de02e78b0afddc133ee0a987741b968 0	metrix/e1-pilot/src/metrix_e1/compute.py
+100644 98315baa6a68b7aed2c38bc392331ea64fcf91d8 0	metrix/e1-pilot/src/metrix_e1/contract.py
+100644 ac9c65c798887192775fd8ca76d34b2c17538889 0	metrix/e1-pilot/src/metrix_e1/data.py
+100644 4c4eb1ec6408f726d36b35ef7533d1a13b3af2b9 0	metrix/e1-pilot/src/metrix_e1/errors.py
+100644 8ee841488de640ddbde27acf84827967b7704f04 0	metrix/e1-pilot/src/metrix_e1/evaluate.py
+100644 9acd9b361bdbf7eea04ca3819086394ff0d496a3 0	metrix/e1-pilot/src/metrix_e1/frozen.py
+100644 3874499a870f13510262843bcb6c6f2e8da344af 0	metrix/e1-pilot/src/metrix_e1/gate.py
+100644 a0eeb882df9e6c888223e989e2b8f679de5b1108 0	metrix/e1-pilot/src/metrix_e1/interpretations.py
+100644 884b934253ab8f91d3d58b14a9c729183cbf1019 0	metrix/e1-pilot/src/metrix_e1/leakage.py
+100644 3e865297f2ed9d3114e7525dea8493c29fdb726f 0	metrix/e1-pilot/src/metrix_e1/mode.py
+100644 e74baae71c33b7bb68a9b7f2a51386abc9ccc817 0	metrix/e1-pilot/src/metrix_e1/pilot.py
+100644 aa914ca8d3dafd420fab68cf42766ebe4dc7e216 0	metrix/e1-pilot/src/metrix_e1/record.py
+100644 37999e59bec1dd6de76fdc9b4f7262218ef741b9 0	metrix/e1-pilot/src/metrix_e1/stats.py
+100644 9c9e64bc7abb9417796c738f3b96f5b4bdce6e1e 0	metrix/e1-pilot/src/metrix_e1/stops.py
+100644 ce354d7444d5cfa86100ea4c7548e08f61ed2714 0	metrix/e1-pilot/src/metrix_e1/test_data.py
+100644 14a03a16c3c83727a204e6dd5849b93980843776 0	metrix/e1-pilot/src/metrix_e1/testgate.py
+100644 635d9b431000ca1c9a3da51d0ad2f760f4904d98 0	metrix/e1-pilot/src/metrix_e1/train.py
+100644 0d05dda468216eac845a96b72c3d179684a88672 0	metrix/e1-pilot/tests/conftest.py
+100644 41d80624f9256977c8f6728b2de4e570b1a7069a 0	metrix/e1-pilot/tests/test_arm_a.py
+100644 fffa474e2a7e40c9830708353808440cf4c811d4 0	metrix/e1-pilot/tests/test_contract.py
+100644 5501d8a8ec3a6b0f7f2b94564bd44d552cb58d6e 0	metrix/e1-pilot/tests/test_data_hashes.py
+100644 28340bcf5bb22815b28549c3d35beae9830e6b7a 0	metrix/e1-pilot/tests/test_environment.py
+100644 997521052485d86936b8d0088702024d34896c9c 0	metrix/e1-pilot/tests/test_evaluate.py
+100644 97fff917eff245fb76f83f1fee19cfe64704268d 0	metrix/e1-pilot/tests/test_gate.py
+100644 548d43602937d5110af431e1d31939711b41ac04 0	metrix/e1-pilot/tests/test_leakage.py
+100644 3c80f23a99f2e0e3d3e70df71ce9e11c9fe03c15 0	metrix/e1-pilot/tests/test_lora.py
+100644 da6f7b17ebed2d8e09e06a1a806bbeb1d795da52 0	metrix/e1-pilot/tests/test_record.py
+100644 e038d1690a34ec185c9c7c3b48fdea188dde04ea 0	metrix/e1-pilot/tests/test_run_pilot.py
+100644 800bc5d047ad1e650b9641769c5b9ae6d7c63f03 0	metrix/e1-pilot/tests/test_scoring.py
+100644 7b599e2b2871778e8ecd27319197b4d9330f4bfb 0	metrix/e1-pilot/tests/test_st12.py
+100644 dc7d581d20a7be217d17305b64015f146c6a60c1 0	metrix/e1-pilot/tests/test_stats.py
+100644 f2542efaef0d7e6127a980ef2ad8d4d978fffaec 0	metrix/e1-pilot/tests/test_stops.py
+100644 b11d08ad4ed887986cd9bf6f1eb8bf4e904037c0 0	metrix/e1-pilot/tests/test_test_data.py
+100644 123148c05eb3944cd610487ac5911e11a8ab17ca 0	metrix/e1-pilot/tests/test_testgate.py
+100644 fe03f85fa089089cd811e90fc5f93d0d5bffea14 0	metrix/e1-pilot/tests/test_train.py
+2e91d65d02a550159ea77c04749429c3bd59650846e98eb4670f9b5f425d576c  metrix/e1-pilot/reports/impl_c/c4_smoke.sh
+ls: cannot access 'metrix/e1-pilot/results': No such file or directory
+exit=2

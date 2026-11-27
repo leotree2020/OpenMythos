@@ -9,14 +9,18 @@ that ran.
 Review Gate accepted all of B1-B24 on 2026-11-24 (scope: this stage). The ruling is recorded in RULING_REF (no
 separate decision file: Owner's stage-C message, tasks/IMPL_C_OWNER_MESSAGE.md); those entries carry the status
 ACCEPTED and that reference. B3 and B14 carry the ruling's notes. Review Gate accepted B25 on 2026-11-25 (ruling on
-C1, item 3, tasks/IMPL_C1_RULING.md): status ACCEPTED_C1, reference RULING_REF_C1. pending() returns the entries not
-yet ruled (the TEST generator and every TEST path refuse while it is not empty: pending_problem()); it is empty.
+C1, item 3, tasks/IMPL_C1_RULING.md): status ACCEPTED_C1, reference RULING_REF_C1. Review Gate revised B17 on
+2026-11-27 (tasks/IMPL_C4_RULING.md item 1: ST11 reads B17's estimate plus the checkpoint overhead): status
+ACCEPTED_C4, reference RULING_REF_C4. pending() returns the entries not yet ruled (the TEST generator and every TEST
+path refuse while it is not empty: pending_problem()); it is empty.
 """
 PENDING = "PENDING_REVIEW_GATE"
 ACCEPTED = "ACCEPTED（Review Gate 2026-11-24）"
 RULING_REF = "reports/IMPL_C_REPORT.md「Review Gate 对阶段 B 的裁决」第 1 项"
 ACCEPTED_C1 = "ACCEPTED（Review Gate 2026-11-25）"
 RULING_REF_C1 = "tasks/IMPL_C1_RULING.md 第 3 项(reports/IMPL_C_REPORT.md「Review Gate 对 C1 的裁决」)"
+ACCEPTED_C4 = "ACCEPTED（Review Gate 2026-11-27 修订）"
+RULING_REF_C4 = "tasks/IMPL_C4_RULING.md 第 1 项"
 
 ENTRIES = (
     {"id": "B1", "status": ACCEPTED, "where": "train.step_numbers (used by train.batch_schedule), train.anchor_docs", "protocol": "2.7, 4, 7",
@@ -98,13 +102,25 @@ ENTRIES = (
              "with reason IMPLEMENTATION_FAIL (section 9 for G0.6, G0.7); ST6 outside the selected configurations and "
              "the controls -> that configuration is excluded from selection (section 7), no pilot status; ST7, ST11 "
              "-> BLOCKED (resources)."},
-    {"id": "B17", "status": ACCEPTED, "where": "compute.estimate_total_hours, compute.evaluation_units", "protocol": "8 step 2 (preflight), 11 ST11",
-     "text": "Preflight estimate = (measured mean seconds per step of the first configuration's first 20 steps, the "
-             "first step excluded as warm-up, CUDA synchronised before each timestamp) x sum over the 30 runs of 300 "
-             "steps x the run's FLOP factor (F, S, Y, L: 1; A: 1 + (2 + 6) * anchor tokens / (6 * fact tokens) per "
-             "step, section 10 coefficients) + (measured seconds of one float32 DEV evaluation, timed in the preflight) "
-             "x evaluation units (N, 30 runs and the 3 G0.8 re-evaluations on DEV; N and the 15 final checkpoints of the "
-             "5 arms x 3 seeds on TEST, at test / dev questions per fact = 1.5) + the GPU time already used."},
+    {"id": "B17", "status": ACCEPTED_C4, "ruling": RULING_REF_C4,
+     "where": "compute.estimate_total_hours, compute.evaluation_units, pilot.evaluation_plan, "
+              "pilot.checkpoint_overhead_seconds, pilot.st11_estimate_hours, pilot.preflight, pilot.step2",
+     "protocol": "8 step 2 (preflight), 11 ST11",
+     "text": "Preflight estimate (the value ST11 compares with 3.5 hours; Review Gate 2026-11-27 revision) = B17's "
+             "estimate + the checkpoint overhead. B17's estimate = (measured mean seconds per step of the first "
+             "configuration's first 20 steps, the first step excluded as warm-up, CUDA synchronised before each "
+             "timestamp) x sum over the 30 runs of 300 steps x the run's FLOP factor (F, S, Y, L: 1; A: 1 + (2 + 6) * "
+             "anchor tokens / (6 * fact tokens) per step, section 10 coefficients) + (measured seconds of one float32 "
+             "DEV evaluation, timed in the preflight) x evaluation units (N, 30 runs and the 3 G0.8 re-evaluations on "
+             "DEV; N and the 15 final checkpoints of the 5 arms x 3 seeds on TEST, at test / dev questions per fact = "
+             "1.5) + the GPU time already used. Checkpoint overhead = load x 32 base-model loads (N, the 30 runs, N at "
+             "TEST) + 30 checkpoints x (2 x hash + save + reload + file hash) + reload x 18 further checkpoint reloads "
+             "(the 3 G0.8 re-evaluations, the 15 TEST checkpoints) + hash x 17 TEST state hashes (the 16 TEST models "
+             "and N once more at the TEST begin) + file hash x 15 TEST checkpoint files, with load, hash (state_sha256, "
+             "B25), save (torch.save), reload (torch.load into a fresh model) and file hash (SHA-256 of the checkpoint "
+             "file) each measured once in the preflight on the first configuration's model. Both parts and their sum "
+             "are written into the step 2 record. The ST7 look-ahead is not changed by this revision; the look-ahead "
+             "before the TEST evaluation adds no margin."},
     {"id": "B18", "status": ACCEPTED, "where": "compute.flops", "protocol": "10 (compute accounting)",
      "text": "P = parameters taking part in the forward pass (for L: base plus adapters); T = non-padding tokens fed "
              "(training: fact tokens of the batch; anchor: anchor tokens). Arm A's anchor compute is listed "
