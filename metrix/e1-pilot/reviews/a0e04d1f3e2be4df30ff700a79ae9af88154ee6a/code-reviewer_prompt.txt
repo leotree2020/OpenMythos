@@ -1,0 +1,26 @@
+先读仓库中的 .claude/agents/code-reviewer.md，以它为你的完整定义；它与你已加载的定义冲突时，以仓库文件为准。
+
+审查对象：METRIX E1-PILOT 阶段 C 第 2 段（C2）的第三个修复提交，第 1 轮。暂存区内容（尚未提交），父提交 2665ab1036b66180ef1dee6b869135a45efefaa5（第二个修复提交 dd65a361 之后的证据提交，已推送；dd65a361 的暂存树 a6ce8a0e 就是你第 1 轮审查的对象）。仓库 /home/user/OpenMythos。
+
+Review Gate 对 C1 的裁决（tasks/IMPL_C1_RULING.md）中的防范对象，原文如下：
+防范对象：TEST 闸门要防的是「按规则办事的 Executor 在按 RUNBOOK 操作时，意外评测 TEST 两次，或在 ST10 不成立时评测 TEST」；不防有仓库写权限者的故意篡改（改写历史、伪造记录），这类风险由 GitHub 分支保护和审查记录承担。审查按此范围判定：范围外的边缘情况记为 MINOR 并登记，不作为 BLOCKER。调用两份审查时，把本段防范对象原文写进调用文字。
+
+Owner 本次转达的 Review Gate 裁决（tasks/IMPL_C2_OWNER_MESSAGE.md），原文如下：
+Review Gate 裁决（2026-11-27，作用范围：本阶段；记入 IMPL_C_REPORT.md）：
+1. TEST 评测调用不 fetch、只在 begin 与 finish 时 fetch：接受。RUNBOOK 写明「begin 到 finish 之间任何人不得推送本分支」。
+2. f8139f9 属于证据提交，不需补审。
+
+审查输入（目录 /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/review_c2d/）：input.diff（git diff --cached --stat 与完整 diff，相对父提交 2665ab10）；input_code.diff（只含 src/、tests/、reports/impl_c/c2_mutate_fix3.py 与 c2d_checks.sh 的 diff）；tree.txt（本次暂存树 c7869d358c4adf6677d0f9843937bb6f3009b67b）。暂存内容与工作区的 src/、tests/、run_pilot.py 相同（核对见 reports/impl_c/c2d_01_checks.txt 与 c2d_02_smoke.txt 的首尾：写树、代码 diff 的 sha256、git ls-files -s 与脚本 sha256）。两份录制中的写树 da82a1e1 是暂存这两份录制与冒烟记录副本（reports/impl_c/c2d_smoke_records/）之前的树；之后只增加了这些证据文件，代码部分相同（两份录制首尾的代码 diff sha256 都是 b0a72366…，可对 tree.txt 与 input.diff 核对）。工作区中未暂存的 metrix/e1-pilot/RUNBOOK_A100.md、reports/impl_c/c3_hf_tree_70d244cc.txt 与 reports/impl_c/c3_checks.sh 是 C3 的草稿，不属于本次审查对象。
+依据同前几轮（调用文字：metrix/e1-pilot/reviews/ 下 5219ff77…、49fc9a35…、dd65a361… 中的 *_prompt.txt）。
+
+本次改动（Executor 的说明，不作为证据；请逐条核对“已修且正确 / 已修但有问题 / 未修”）。两份第 1 轮原文（第二个修复提交 dd65a361）：metrix/e1-pilot/reviews/dd65a36169752a2c2df27028ecd66e3fcde2677b/code-reviewer_round1.md、data-auditor_round1.md。各项与处理的对照表：reports/DEFERRED_MINORS.md 1.34（CH1–CH12，本次暂存）。
+- MAJOR 1（TEST 评过之后再运行，begin 之前带停止码的停止写记录）：新增 refuse_if_test_evaluated(p)，在 test_evaluate 中位于任何可能带停止码停止的检查之前（只读、不 fetch）：HEAD 或工作区有 TEST 结果 → TestAlreadyEvaluated；有标记无结果 → 没有停止码的 BLOCKED；两者都不写记录。begin 中的 refuse_if_marker 仍在 fetch 之后做完整检查。e2e 最后一次运行把 before_run 换成抛 ST7 的函数，断言 TestAlreadyEvaluated、远端不变。
+- MAJOR 2（错误的 --work 写 ST12 记录）：test_evaluate 的顺序改为 重置标志 → code_commit → start_checks → refuse_if_test_evaluated → check_preconditions → device_check → …；测试 test_test_evaluate_begin_wiring[wrong_work]（另一个没有 device ledger 的 --work：没有停止码的拒绝、不写记录、远端不变）。eval_clone 夹具因此提交第 1 步记录并写 device ledger。
+- MAJOR 3（两个标志的真实设置没有测试）：test_test_evaluate_begin_wiring[crash_after_begin]（真实的 test_evaluate：第 2 次 TEST 评测注入崩溃 → 记录 BLOCKED、test_begun true、已推送、原样抛出；同一个 Pilot 再运行 → 有标记无结果的拒绝、不写记录、远端不变）与 [refused_inside_begin]（begin 中写标记之前的提交前提失败 → 不写记录、远端不变，p.begin_called 为 True、p.marker_before_begin 为 False）。变异：begin_called 不设、marker_before_begin 恒为 True、不重置标志，各由 crash_after_begin 测出。
+- MINOR：test_evaluate 开头重置两个标志（IC9-M1）；test_evaluation_seconds 去掉 15 个文件哈希（在 GPU 时钟打开之前），加载次数用 test_models − 1；第 3 步的事前估计加上 N 的哈希；evaluation_plan / checkpoint_overhead_seconds（只报告）改为基座加载按 load_s、checkpoint 重载按 reload_s（IC9-M2）；run_test_generate 的 code_commit 与 start_checks 有了断言与拒绝情形；测试文档与可读性（_formal_on_clone、records 测试、contract.training.total_steps、search_runs）。登记不改：S 的 s_mapping 估计（CH5）、test-evaluate 的 ST8 与 formal 第 1 步之前处理不一致（CH6，交 Review Gate）。
+- 录制脚本 c2d_checks.sh（STATE 增加 c2_mutate_fix3.py 与 c2d_checks.sh 的 sha256）；变异 c2_mutate_fix3.py（43 个：沿用的跟随改动并只指名能到达的测试，新增 8 个）。c2c_checks.sh、c2_mutate_fix2.py、c2_mutate_fix2b.py 保持运行时的版本。
+- 原始输出：reports/impl_c/c2d_01_checks.txt（数据、TEST 生成器拒绝、outside_metrix_check、全部 pytest、变异；首尾记录写树、代码 diff 的 sha256、git ls-files -s 与脚本 sha256）；c2d_02_smoke.txt（单独运行的冒烟，首尾同样记录）；冒烟记录副本 reports/impl_c/c2d_smoke_records/。
+- 未包括：RUNBOOK_A100.md 与 reports/impl_c/c3_hf_tree_70d244cc.txt（C3，工作区中的草稿）；IMPL_C_REPORT.md 的 C2 节与 2026-11-27 裁决在本提交之后的报告提交中写入（CH11）。
+- 录制文件首行与 c2d_checks.sh 第 9 行写的父提交 “2665ab17” 是 Executor 的笔误，正确值是 2665ab1036b66180ef1dee6b869135a45efefaa5（两份录制中 STATE 的 git rev-parse HEAD 一行给出）；c2d_checks.sh 已按运行时的版本暂存，没有改动。
+
+请：(1) 逐条核对上面各项（“已修且正确 / 已修但有问题 / 未修”）；(2) 审查本次改动本身有无新问题（重点：refuse_if_test_evaluated 与 begin 中 refuse_if_marker 的关系，是否会在防范对象内造成“评两次”或误拒正常的第一次评测；test_evaluate 新顺序下各种拒绝与停止是否写记录；测试替换的范围）；(3) 新测试与变异是否真正检验所说内容。范围外的边缘情况记为 MINOR 并登记，不作为 BLOCKER。按定义的输出格式给出，每条注明“已验证/未验证”；原文即你的完整输出。最后一行给出结论 PASS 或 BLOCK。不要修改任何文件。

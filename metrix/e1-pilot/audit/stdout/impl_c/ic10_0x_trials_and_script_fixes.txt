@@ -1,0 +1,37 @@
+# Data Auditor, implementation stage C, C2 third fix commit (staged tree c7869d35, parent 2665ab10), round 1:
+# trial runs and fixes of MY scripts (none concerns the Executor's code). Every trial stdout that was logged is kept
+# next to this file under the name given below; the final stdout files are the ones without a suffix.
+
+1. ic10_00_state.py, trial 1 (ic10_00_state_trial1_script_error.txt, RESULT: FAIL)
+   My script compared the listing in review_c2d/tree.txt with `git ls-tree -r` of the WHOLE staged tree (6812 entries);
+   the listing covers metrix/e1-pilot only (1223 entries; its first two lines name write-tree c7869d35 and HEAD
+   2665ab10). Every other check of that trial passed. Fix: compare with `git ls-tree -r c7869d35 -- metrix/e1-pilot`
+   (equal) and keep the separate full comparison index == tree c7869d35 (6812 entries, equal).
+
+2. ic10_04_static.py: one trial run directly on the terminal (not logged) printed RESULT: PASS; I then removed an unused
+   variable (`used_by`) and simplified the file_hash_s check of test_evaluation_seconds to "any string constant
+   'file_hash_s' in the function" (same result), and ran it logged: ic10_04_static.txt (RESULT: PASS).
+
+3. ic10_04_e2e.py normal, trial 1 (ic10_04a_e2e_normal_trial1_script_error.txt, RESULT: FAIL)
+   Run 3: my expected list of the first entered calls omitted the traced test_evaluate itself
+   (observed ['test_evaluate', 'TG.code_commit', 'Pilot.start_checks'], my expectation started at TG.code_commit).
+   Every other observation of that trial, run 3 included (TestAlreadyEvaluated from refuse_if_test_evaluated, no git
+   command, no before_run, no record, remote unchanged), equalled my expectation. Fix: compare the first four entered
+   calls with ['test_evaluate', 'TG.code_commit', 'Pilot.start_checks', 'refuse_if_test_evaluated'].
+
+4. ic10_04_e2e.py st7_before_begin, trial 1 (ic10_04e2_e2e_st7_before_begin_trial1_script_error.txt, RESULT: FAIL)
+   Without a begin my "before begin" window ran to the end of the run and so counted the fetch / push of final_record
+   (after the injected ST7) as network commands before begin. Fix: without a begin, the window ends at final_record's
+   entry. All other observations equalled my expectation.
+
+5. ic10_04d_branch_tests.py, trial 1 (ic10_04d_branch_tests_trial1_script_error.txt, RESULT: PASS but not the
+   intended script): my edit step stopped on its own over-strict assertion before writing, so the copy ran unchanged
+   (my previous round's 9 tests and plugin name; 9 passed on this staged tree). Redone with this round's 6 tests:
+   ic10_04d_branch_tests.txt.
+
+6. Superseded first runs (all RESULT: PASS), kept as *_run1_superseded_plugin_change.txt:
+   ic10_04a_e2e_normal, ic10_04b_e2e_stop_after_marker, ic10_04c_e2e_crash_after_marker,
+   ic10_04e2_e2e_st7_before_begin. After them I added to ic10_04_trace_plugin.py pass-through wrappers of the class
+   methods Pilot.device_check / before_run / base_model (needed by ic10_04f_wiring.py for the wrong_work Pilot, which
+   does not replace them) and made fix 4 above; all e2e modes were then run again, one at a time, with the final
+   scripts: ic10_04a, ic10_04b, ic10_04c, ic10_04e2 (and the supplementary ic10_04d_e2e_interrupt_after_marker).

@@ -1,0 +1,67 @@
+# Data Auditor run (implementation stage C, C2 third fix commit, staged tree c7869d358c4adf6677d0f9843937bb6f3009b67b, parent 2665ab1036b66180ef1dee6b869135a45efefaa5, round 1). host vm, Anthropic cloud container, CPU only (no GPU device node: 0 nvidia entries), no model weights loaded (tokenizer files only; smoke checkpoints are hashed as file bytes, never loaded; the Executor's tests build random tiny models in memory); 2026-11-27 10:05:19 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/venv/bin/python -I -B ic10_01_hashes.py /home/user/OpenMythos /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/inputs/qwen_tokenizer /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/c2d_smoke /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/c2d_data
+env: host vm | Linux-6.18.44-fc-v880-x86_64-with-glibc2.39 | python 3.13.18 (/tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/venv/bin/python) | installed {'transformers': '5.22.2', 'tokenizers': '0.23.3', 'pyarrow': '26.0.1', 'huggingface_hub': '2.4.0', 'torch': '2.11.0'} | nvidia device nodes: []
+== A. PROTOCOL_FROZEN, my own reading
+metrix/e1-pilot/PROTOCOL_FROZEN sha256 3f8a3bbaaafa0b451483bb88baa012c77e8b106dd3b157a152ffa675856906ff | == HEAD blob True | == index blob True
+current version ['v1.1'] | frozen commit 87a244db28a901f9e89282b50df76778ab5c2887 | == 87a244db28a901f9e89282b50df76778ab5c2887: True
+table rows with a 64-hex value: 12
+  facts        row 'fact(160 条)' -> 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 | frozen-commit DATA_MANIFEST.json: name_generation.expected_facts_canonical_sha256 == value: True
+  train_S      row '`train_S.jsonl`' -> 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e | frozen-commit DATA_MANIFEST.json: s_permutation.expected_train_S_canonical_sha256 == value: True
+  candidates   row '`candidates.json`' -> e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | frozen-commit SPLIT_MANIFEST.json: candidates.candidate_mapping_sha256 == value: True
+  anchor_texts row '锚文本(512 篇解码文本)' -> 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 | frozen-commit DATA_MANIFEST.json: anchor_text.decoded_texts_canonical_sha256 == value: True
+  template_set row '模板集合(32 个)' -> 2b52411326c218e9c51d947b2f4e0d77b0cdd5d6237f9ce25b57a872c48ce28f | frozen-commit SPLIT_MANIFEST.json: template_freeze.template_set_sha256 == value: True
+
+== B. the four content hashes recomputed from /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/c2d_smoke/data
+facts.jsonl 160 lines (each exactly the 6 fields: True) | train_S.jsonl 120 | candidates.json 160 facts | anchor_text.jsonl 512 (doc == line index: True)
+anchor texts from my decode of the stored ids: 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 | decoded == stored text for all 512: True
+  facts        mine 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 | PROTOCOL_FROZEN 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 | smoke step1_record content_hashes 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 | ALL EQUAL True
+  train_S      mine 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e | PROTOCOL_FROZEN 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e | smoke step1_record content_hashes 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e | ALL EQUAL True
+  candidates   mine e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | PROTOCOL_FROZEN e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | smoke step1_record content_hashes e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | ALL EQUAL True
+  anchor_texts mine 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 | PROTOCOL_FROZEN 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 | smoke step1_record content_hashes 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 | ALL EQUAL True
+  step1_record content_hashes keys ['anchor_texts', 'candidates', 'facts', 'train_S'] (expected exactly the four)
+  step1_record mode 'smoke' label 'SMOKE — NOT A RESULT'
+
+== C. the 8 files: byte_sha256 and canonical_sha256
+  facts.jsonl        byte e05561ac2d49dcc3c8f59743c5df64151983a540a32ae135fd1b10f5e0fdc828 canonical e05561ac2d49dcc3c8f59743c5df64151983a540a32ae135fd1b10f5e0fdc828 | step1_record True | my stage-B True | Executor c2d_01 listing True | == c2d_data bytes True
+  train_F.jsonl      byte 3aa9ab3ca313c0a1113b91e927af51342c915e3e40dd2f20992f3d9e59b0e373 canonical 3aa9ab3ca313c0a1113b91e927af51342c915e3e40dd2f20992f3d9e59b0e373 | step1_record True | my stage-B True | Executor c2d_01 listing True | == c2d_data bytes True
+  train_S.jsonl      byte 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e canonical 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e | step1_record True | my stage-B True | Executor c2d_01 listing True | == c2d_data bytes True
+  train_Y.jsonl      byte c7430cadb2b06dd5c144af381a8183d4c186f27f2b5acfa9d8d39da0b7626d15 canonical c7430cadb2b06dd5c144af381a8183d4c186f27f2b5acfa9d8d39da0b7626d15 | step1_record True | my stage-B True | Executor c2d_01 listing True | == c2d_data bytes True
+  dev_qa.jsonl       byte 9761eb60d6c9155c2f56394aa228b1e9dfea0ae3926ab50cb21d903108bc7fde canonical 9761eb60d6c9155c2f56394aa228b1e9dfea0ae3926ab50cb21d903108bc7fde | step1_record True | my stage-B True | Executor c2d_01 listing True | == c2d_data bytes True
+  candidates.json    byte e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 canonical e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | step1_record True | my stage-B True | Executor c2d_01 listing True | == c2d_data bytes True
+  general_dev.jsonl  byte 957666920c91ef5b9328984d26ed0628c8a80b439d461bea49b54c2235635e73 canonical 957666920c91ef5b9328984d26ed0628c8a80b439d461bea49b54c2235635e73 | step1_record True | my stage-B True | Executor c2d_01 listing True | == c2d_data bytes True
+  anchor_text.jsonl  byte 2089e656819d1fe0f6ececcc26e5cade09ee80a92c50e7c8f607fa4e0ef46da5 canonical 2089e656819d1fe0f6ececcc26e5cade09ee80a92c50e7c8f607fa4e0ef46da5 | step1_record True | my stage-B True | Executor c2d_01 listing True | == c2d_data bytes True
+  step1_record file_hashes names == the 8 files: True
+
+== D. step1_manifest_fields.json vs my construction from the frozen manifests
+record kind 'step1_manifest_fields' mode 'smoke' label 'SMOKE — NOT A RESULT' | field paths ['metrix/e1-pilot/DATA_MANIFEST.json', 'metrix/e1-pilot/SPLIT_MANIFEST.json']
+DATA_MANIFEST.json files == mine: True | SPLIT_MANIFEST.json split_sha256 == mine: True
+  files.facts.jsonl        {"status": "GENERATED", "byte_sha256": "e05561ac2d49dcc3c8f59743c5df64151983a540a32ae135fd1b10f5e0fdc828", "canonical_sha256": "e05561ac2d49dcc3c8f59743c5df64151983a540a32ae135fd1b10f5e0fdc828"}
+  files.train_F.jsonl      {"status": "GENERATED", "byte_sha256": "3aa9ab3ca313c0a1113b91e927af51342c915e3e40dd2f20992f3d9e59b0e373", "canonical_sha256": "3aa9ab3ca313c0a1113b91e927af51342c915e3e40dd2f20992f3d9e59b0e373"}
+  files.train_S.jsonl      {"status": "GENERATED", "byte_sha256": "686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e", "canonical_sha256": "686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e"}
+  files.train_Y.jsonl      {"status": "GENERATED", "byte_sha256": "c7430cadb2b06dd5c144af381a8183d4c186f27f2b5acfa9d8d39da0b7626d15", "canonical_sha256": "c7430cadb2b06dd5c144af381a8183d4c186f27f2b5acfa9d8d39da0b7626d15"}
+  files.dev_qa.jsonl       {"status": "GENERATED", "byte_sha256": "9761eb60d6c9155c2f56394aa228b1e9dfea0ae3926ab50cb21d903108bc7fde", "canonical_sha256": "9761eb60d6c9155c2f56394aa228b1e9dfea0ae3926ab50cb21d903108bc7fde"}
+  files.candidates.json    {"status": "GENERATED", "byte_sha256": "e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705", "canonical_sha256": "e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705"}
+  files.general_dev.jsonl  {"status": "GENERATED", "byte_sha256": "957666920c91ef5b9328984d26ed0628c8a80b439d461bea49b54c2235635e73", "canonical_sha256": "957666920c91ef5b9328984d26ed0628c8a80b439d461bea49b54c2235635e73"}
+  files.anchor_text.jsonl  {"status": "GENERATED", "byte_sha256": "2089e656819d1fe0f6ececcc26e5cade09ee80a92c50e7c8f607fa4e0ef46da5", "canonical_sha256": "2089e656819d1fe0f6ececcc26e5cade09ee80a92c50e7c8f607fa4e0ef46da5"}
+  files.test_qa.jsonl      {"status": "NOT_GENERATED", "byte_sha256": null, "canonical_sha256": null}
+  files.general_test.jsonl {"status": "NOT_GENERATED", "byte_sha256": null, "canonical_sha256": null}
+  split_sha256 {"dev_qa.jsonl": "9761eb60d6c9155c2f56394aa228b1e9dfea0ae3926ab50cb21d903108bc7fde", "test_qa.jsonl": null, "train_F.jsonl": "3aa9ab3ca313c0a1113b91e927af51342c915e3e40dd2f20992f3d9e59b0e373", "train_S.jsonl": "686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e", "train_Y.jsonl": "c7430cadb2b06dd5c144af381a8183d4c186f27f2b5acfa9d8d39da0b7626d15"}
+  TEST entries unchanged from the frozen manifests: files True | split_sha256 test_qa.jsonl None
+  train_Y.jsonl canonical in split_sha256 (B3 ruling note): True
+  metrix/e1-pilot/DATA_MANIFEST.json: working tree == frozen True | index == frozen True
+  metrix/e1-pilot/SPLIT_MANIFEST.json: working tree == frozen True | index == frozen True
+  step1_record manifests_changed ['metrix/e1-pilot/DATA_MANIFEST.json', 'metrix/e1-pilot/SPLIT_MANIFEST.json'] (vs HEAD: the frozen manifests have null fields, so both would change) | manifests_already_written False
+
+== E. templates (SPLIT_MANIFEST normalization)
+templates 32 | normalized text or normalized_sha256 differing from the manifest: [] | template_set_sha256 mine 2b52411326c218e9c51d947b2f4e0d77b0cdd5d6237f9ce25b57a872c48ce28f | manifest 2b52411326c218e9c51d947b2f4e0d77b0cdd5d6237f9ce25b57a872c48ce28f | PROTOCOL_FROZEN 2b52411326c218e9c51d947b2f4e0d77b0cdd5d6237f9ce25b57a872c48ce28f | equal True
+
+== G. the bytes formal step 1 would write (my construction; repository layout)
+  metrix/e1-pilot/DATA_MANIFEST.json: frozen bytes are json.dumps(indent=2, ensure_ascii=False) + newline: True | new bytes 16596 (frozen 15636), sha256 907383ae9a229eeddf15b65d9b208fd3e6e03e6a1d1d7fc17eb36a51751433dd | everything outside 'files' unchanged: True
+  metrix/e1-pilot/SPLIT_MANIFEST.json: frozen bytes are json.dumps(indent=2, ensure_ascii=False) + newline: True | new bytes 18005 (frozen 17757), sha256 184dc7b134574c9ef9ab35e0c71675dbfd276e3282b801ee3e1038d55c332c81 | everything outside 'split_sha256' unchanged: True
+
+== F. data directory listing
+listing ['LABEL.txt', 'anchor_text.jsonl', 'candidates.json', 'dev_qa.jsonl', 'facts.jsonl', 'general_dev.jsonl', 'train_F.jsonl', 'train_S.jsonl', 'train_Y.jsonl'] | == the 8 files + LABEL.txt: True | LABEL.txt 'SMOKE — NOT A RESULT\n' | TEST file names present: []
+modules: torch imported=True | transformers modeling modules imported=['torch', 'transformers.modeling_rope_utils', 'transformers.models.auto.modeling_auto'] | this script never calls a model class or from_pretrained on a model
+RESULT: PASS
+exit=0

@@ -1,0 +1,545 @@
+# Data Auditor run (implementation stage C, C2 third fix commit, staged tree c7869d358c4adf6677d0f9843937bb6f3009b67b, parent 2665ab1036b66180ef1dee6b869135a45efefaa5, round 1). host vm, Anthropic cloud container, CPU only (no GPU device node: 0 nvidia entries), no model weights loaded (tokenizer files only; smoke checkpoints are hashed as file bytes, never loaded; the Executor's tests build random tiny models in memory); 2026-11-27 10:24:43 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit
+# stdout and stderr merged, complete, unedited
+$ /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/venv/bin/python -I -B ic10_04f_wiring.py /home/user/OpenMythos /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/venv/bin/python /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/inputs /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/ic10_04f
+env: host vm | Linux-6.18.44-fc-v880-x86_64-with-glibc2.39 | python 3.13.18 (/tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/venv/bin/python) | installed {'transformers': '5.22.2', 'tokenizers': '0.23.3', 'pyarrow': '26.0.1', 'huggingface_hub': '2.4.0', 'torch': '2.11.0'} | nvidia device nodes: []
+test file: the parametrize line of test_test_evaluate_begin_wiring present: True
+
+== my expectations: see this script's docstring (written before the run), printed here
+ (per parameter; "pre" = the pre-marker part of a run: TG.code_commit < start_checks('test-evaluate') <
+refuse_if_test_evaluated returning after [cat-file blob HEAD:<result>, cat-file blob HEAD:<marker>] < check_preconditions
+< the device check < the four committed records < 15 checkpoint files < test_evaluation_seconds 28.2 <
+before_run(28.2) < base_model < one state hash == step 3 N; no fetch / push before begin):
+  crash_after_begin   2 run_test_evaluate calls on the fixture's Pilot.
+    run A: pre; begin entered once with (base == N, begin_called True, marker_before_begin False, no marker file) and
+      returns; control_evaluation entered twice, the 2nd raises RuntimeError (the test's crash_second raises before
+      the real evaluate_model, so my evaluate_model wrapper sees only N); 1 claim (N); begun_by_this_process -> [True];
+      final_record('test-evaluate', 'BLOCKED', Actual keys ['crashed', 'test_begun'], test_begun True, stop code None,
+      status BLOCKED, message "crash after the TEST marker: RuntimeError('injected crash in the second TEST
+      evaluation')"); commit_paths [record json, txt]; run_test_evaluate raises RuntimeError; flags after (True, False).
+    run B (same Pilot, evaluate_model restored): code_commit, start_checks, then refuse_if_test_evaluated raises
+      ProtocolStop (no stop code; "already started") after exactly ONE git command, cat-file blob HEAD:<result> (the
+      marker file is in the working tree, so its HEAD blob is not read); no check_preconditions, no device check, no
+      record read, no checkpoint hash, no look-ahead, no before_run, no base_model, no begin; begun_by_this_process ->
+      [False]; no final_record, no commit_paths, no fetch / push; returns (False, 'BLOCKED'); flags after (False, None).
+    remote after the fixture: exactly 2 commits: marker (A), experiment record json + txt (A; Status BLOCKED, stop code
+      None, Actual ['crashed', 'test_begun'], test_begun True); no result; the clone clean at the remote's tip.
+  refused_inside_begin  1 run_test_evaluate call.
+    pre; begin entered once with (True, True, False, False); begin raises ProtocolStop("... injected: a dry-run push to
+      origin fails") (the test's check_commit_preconditions for "the TEST marker"); network git commands of the run:
+      only fetch, at least one, all inside begin (refuse_if_marker's check_checkout before the refused precondition);
+      no push; no evaluation; begun_by_this_process -> [False]; no final_record, no commit_paths; returns (False,
+      'BLOCKED'); flags after (True, False). Remote: 0 commits after the fixture; no marker file in the clone.
+  wrong_work  1 run_test_evaluate call, on the test's own Pilot q (--work .../another_work, no device ledger).
+    TG.code_commit once, then start_checks('test-evaluate') raises ProtocolStop ("device ledger"); refuse_if_test_evaluated
+    not called; no check_preconditions, no device check (Pilot.device_check class method not called), no before_run,
+    no base_model, no begin; begun_by_this_process -> [False]; no final_record, no commit_paths, no git fetch / push;
+    returns (False, 'BLOCKED'); flags after (False, None) on q, whose work directory ends with another_work. Remote: 0
+    commits after the fixture.
+  pytest: "3 passed", exit 0; this repository unchanged.
+
+== driver run (once): cwd /home/user/OpenMythos
+$ /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/venv/bin/python -B -m pytest -q -p no:cacheprovider -p ic10_04_trace_plugin --basetemp=/tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/ic10_04f/basetemp 'metrix/e1-pilot/tests/test_run_pilot.py::test_test_evaluate_begin_wiring[crash_after_begin]' 'metrix/e1-pilot/tests/test_run_pilot.py::test_test_evaluate_begin_wiring[refused_inside_begin]' 'metrix/e1-pilot/tests/test_run_pilot.py::test_test_evaluate_begin_wiring[wrong_work]'
+----- pytest stdout+stderr begin -----
+...                                                                      [100%]
+3 passed in 63.08s (0:01:03)
+----- pytest stdout+stderr end ----- exit 0, 68 s
+3 passed, exit 0: True
+
+== trace: 509 events, 3 test starts ['crash_after_begin]', 'refused_inside_begin]', 'wrong_work]']
+
+== crash_after_begin (246 events)
+  {"call": "run_test_evaluate", "phase": "enter", "seq": 67}
+  {"call": "test_evaluate", "phase": "enter", "seq": 68}
+  {"call": "TG.code_commit", "phase": "enter", "seq": 69}
+  {"call": "TG.code_commit", "phase": "return", "head": "d926adbebcf1c9ffa7bf395c49955a99464f06b6", "seq": 70}
+  {"call": "Pilot.start_checks", "phase": "enter", "command": "test-evaluate", "seq": 71}
+  {"call": "Pilot.start_checks", "phase": "return", "seq": 72}
+  {"call": "refuse_if_test_evaluated", "phase": "enter", "seq": 73}
+  {"call": "git", "phase": "run", "args": ["cat-file", "blob", "HEAD:metrix/e1-pilot/results/test_evaluation_result.json"], "stack": ["run_test_evaluate", "test_evaluate", "refuse_if_test_evaluated"], "seq": 74}
+  {"call": "git", "phase": "run", "args": ["cat-file", "blob", "HEAD:metrix/e1-pilot/results/test_evaluation_marker.json"], "stack": ["run_test_evaluate", "test_evaluate", "refuse_if_test_evaluated"], "seq": 75}
+  {"call": "refuse_if_test_evaluated", "phase": "return", "seq": 76}
+  {"call": "check_preconditions", "phase": "enter", "seq": 77}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 78}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 79}
+  {"call": "R.committed_json", "phase": "return", "seq": 80}
+  {"call": "R.committed_record", "phase": "return", "seq": 81}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 82}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 83}
+  {"call": "R.committed_json", "phase": "return", "seq": 84}
+  {"call": "R.committed_record", "phase": "return", "seq": 85}
+  {"call": "check_preconditions", "phase": "return", "seq": 86}
+  {"call": "p.device_check", "phase": "enter", "seq": 87}
+  {"call": "p.device_check", "phase": "return", "seq": 88}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 89}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 90}
+  {"call": "R.committed_json", "phase": "return", "seq": 91}
+  {"call": "R.committed_record", "phase": "return", "seq": 92}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 93}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 94}
+  {"call": "R.committed_json", "phase": "return", "seq": 95}
+  {"call": "R.committed_record", "phase": "return", "seq": 96}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/step2_record.json", "seq": 97}
+  {"call": "R.committed_json", "phase": "return", "seq": 98}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/step3_record.json", "seq": 99}
+  {"call": "R.committed_json", "phase": "return", "seq": 100}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/F-F3-seed101.json", "seq": 101}
+  {"call": "R.committed_json", "phase": "return", "seq": 102}
+  {"call": "file_sha256", "phase": "enter", "file": "F-F3-seed101.pt", "seq": 103}
+  {"call": "file_sha256", "phase": "return", "sha256": "23b3632731a3b20bf1aeedfadb6541dbae5f4fa74cec6e1648524f8b96a189d3", "seq": 104}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/L-L2-seed101.json", "seq": 105}
+  {"call": "R.committed_json", "phase": "return", "seq": 106}
+  {"call": "file_sha256", "phase": "enter", "file": "L-L2-seed101.pt", "seq": 107}
+  {"call": "file_sha256", "phase": "return", "sha256": "2e927077b4ecaf40d65c35f020bee6d135017ddc692432e56662d29232c25827", "seq": 108}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/A-A5-seed101.json", "seq": 109}
+  {"call": "R.committed_json", "phase": "return", "seq": 110}
+  {"call": "file_sha256", "phase": "enter", "file": "A-A5-seed101.pt", "seq": 111}
+  {"call": "file_sha256", "phase": "return", "sha256": "bef8c08d61bf89ac7883927f4f933e9de0eafd28e0515a4ee146952898bcea16", "seq": 112}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/F-F3-seed202.json", "seq": 113}
+  {"call": "R.committed_json", "phase": "return", "seq": 114}
+  {"call": "file_sha256", "phase": "enter", "file": "F-F3-seed202.pt", "seq": 115}
+  {"call": "file_sha256", "phase": "return", "sha256": "bc54ed9b0e14d4c400419c6c8be649aef2434e18dc8c7fb450fa968e0869b63b", "seq": 116}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/F-F3-seed303.json", "seq": 117}
+  {"call": "R.committed_json", "phase": "return", "seq": 118}
+  {"call": "file_sha256", "phase": "enter", "file": "F-F3-seed303.pt", "seq": 119}
+  {"call": "file_sha256", "phase": "return", "sha256": "b79a4415595feb3851aa01ddde8a990192e420de2836fd00b1418c76c2c64b01", "seq": 120}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/L-L2-seed202.json", "seq": 121}
+  {"call": "R.committed_json", "phase": "return", "seq": 122}
+  {"call": "file_sha256", "phase": "enter", "file": "L-L2-seed202.pt", "seq": 123}
+  {"call": "file_sha256", "phase": "return", "sha256": "edc3256e5fff14d00bcbc2f9de73514e1e5886b8965970d64c6abdd6427871e0", "seq": 124}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/L-L2-seed303.json", "seq": 125}
+  {"call": "R.committed_json", "phase": "return", "seq": 126}
+  {"call": "file_sha256", "phase": "enter", "file": "L-L2-seed303.pt", "seq": 127}
+  {"call": "file_sha256", "phase": "return", "sha256": "62fb0b9b6cdd0f3debcacf84dd82fb23c60f17527d18341f3faef95798112c46", "seq": 128}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/A-A5-seed202.json", "seq": 129}
+  {"call": "R.committed_json", "phase": "return", "seq": 130}
+  {"call": "file_sha256", "phase": "enter", "file": "A-A5-seed202.pt", "seq": 131}
+  {"call": "file_sha256", "phase": "return", "sha256": "63482f90ef522e1b076ceceab353fa5ed3e306617b6bc3bf5198df07ceb00511", "seq": 132}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/A-A5-seed303.json", "seq": 133}
+  {"call": "R.committed_json", "phase": "return", "seq": 134}
+  {"call": "file_sha256", "phase": "enter", "file": "A-A5-seed303.pt", "seq": 135}
+  {"call": "file_sha256", "phase": "return", "sha256": "dc6914a74357a9db2727a0fdb4da2d7d3008e6cf24e77b32406c45beeda47ae4", "seq": 136}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/S-F3-seed101.json", "seq": 137}
+  {"call": "R.committed_json", "phase": "return", "seq": 138}
+  {"call": "file_sha256", "phase": "enter", "file": "S-F3-seed101.pt", "seq": 139}
+  {"call": "file_sha256", "phase": "return", "sha256": "2d11895d66e1a1459b17e404afcdb9070b0231c2be00e3f62a4355d83df7603b", "seq": 140}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/S-F3-seed202.json", "seq": 141}
+  {"call": "R.committed_json", "phase": "return", "seq": 142}
+  {"call": "file_sha256", "phase": "enter", "file": "S-F3-seed202.pt", "seq": 143}
+  {"call": "file_sha256", "phase": "return", "sha256": "5e88c226be2f5ee03ce86ff258415d7b8dbf058f5a848f8defc44104d9f68fc0", "seq": 144}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/S-F3-seed303.json", "seq": 145}
+  {"call": "R.committed_json", "phase": "return", "seq": 146}
+  {"call": "file_sha256", "phase": "enter", "file": "S-F3-seed303.pt", "seq": 147}
+  {"call": "file_sha256", "phase": "return", "sha256": "ec8a3b482280e0c8ab3b4f73f64608c8ce733712b85647ef403ad7f4bab5042c", "seq": 148}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/Y-F3-seed101.json", "seq": 149}
+  {"call": "R.committed_json", "phase": "return", "seq": 150}
+  {"call": "file_sha256", "phase": "enter", "file": "Y-F3-seed101.pt", "seq": 151}
+  {"call": "file_sha256", "phase": "return", "sha256": "d73f709d8b5e814313e50ab25ec524cb61edd40c3305f8716851120b1fb92076", "seq": 152}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/Y-F3-seed202.json", "seq": 153}
+  {"call": "R.committed_json", "phase": "return", "seq": 154}
+  {"call": "file_sha256", "phase": "enter", "file": "Y-F3-seed202.pt", "seq": 155}
+  {"call": "file_sha256", "phase": "return", "sha256": "424231d1276dbc7f1b4571bb51bd55b067b3648ac860f0feb9109bf3e2ffe4b8", "seq": 156}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/Y-F3-seed303.json", "seq": 157}
+  {"call": "R.committed_json", "phase": "return", "seq": 158}
+  {"call": "file_sha256", "phase": "enter", "file": "Y-F3-seed303.pt", "seq": 159}
+  {"call": "file_sha256", "phase": "return", "sha256": "a435963586f565c62bde6f4e1aa42fd39809b80de54c87ae85fce2dcf6d68a6a", "seq": 160}
+  {"call": "test_evaluation_seconds", "phase": "enter", "timing": {"a_factor": 1.0, "dev_evaluation_seconds": 1.0, "file_hash_s": 0.1, "hash_s": 0.1, "load_s": 1.0, "mean_step_s": 0.1, "reload_s": 0.1, "save_s": 0.1}, "seq": 161}
+  {"call": "test_evaluation_seconds", "phase": "return", "seconds": 28.2, "seq": 162}
+  {"call": "p.before_run", "phase": "enter", "next_seconds": 28.2, "seq": 163}
+  {"call": "p.before_run", "phase": "return", "seq": 164}
+  {"call": "p.base_model", "phase": "enter", "seq": 165}
+  {"call": "p.base_model", "phase": "return", "seq": 166}
+  {"call": "T.state_sha256", "phase": "enter", "seq": 167}
+  {"call": "T.state_sha256", "phase": "return", "sha256": "a895622c8065094db612d950ad39d072c87a5894603950ddba98d44b524ee251", "seq": 168}
+  {"call": "begin_test_evaluation", "phase": "enter", "base_sha256": "a895622c8065094db612d950ad39d072c87a5894603950ddba98d44b524ee251", "begin_called": true, "marker_before_begin": false, "marker_in_worktree": false, "seq": 169}
+  {"call": "git", "phase": "run", "args": ["fetch", "-q", "--no-tags", "origin", "refs/heads/main"], "stack": ["run_test_evaluate", "test_evaluate", "begin_test_evaluation"], "seq": 170}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 171}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 172}
+  {"call": "R.committed_json", "phase": "return", "seq": 173}
+  {"call": "R.committed_record", "phase": "return", "seq": 174}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 175}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 176}
+  {"call": "R.committed_json", "phase": "return", "seq": 177}
+  {"call": "R.committed_record", "phase": "return", "seq": 178}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/st10_record.json", "seq": 179}
+  {"call": "R.committed_json", "phase": "return", "seq": 180}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/audit/st10_l6_test_count.json", "seq": 181}
+  {"call": "R.committed_json", "phase": "return", "seq": 182}
+  {"call": "git", "phase": "run", "args": ["fetch", "-q", "--no-tags", "origin", "refs/heads/main"], "stack": ["run_test_evaluate", "test_evaluate", "begin_test_evaluation"], "seq": 183}
+  {"call": "git", "phase": "run", "args": ["push", "--dry-run", "--no-follow-tags", "origin", "HEAD:refs/heads/main"], "stack": ["run_test_evaluate", "test_evaluate", "begin_test_evaluation"], "seq": 184}
+  {"call": "TG.code_commit", "phase": "enter", "seq": 185}
+  {"call": "TG.code_commit", "phase": "return", "head": "d926adbebcf1c9ffa7bf395c49955a99464f06b6", "seq": 186}
+  {"call": "commit_paths", "phase": "enter", "rels": ["metrix/e1-pilot/results/test_evaluation_marker.json"], "seq": 187}
+  {"call": "git", "phase": "run", "args": ["push", "--no-follow-tags", "origin", "HEAD:refs/heads/main"], "stack": ["run_test_evaluate", "test_evaluate", "begin_test_evaluation", "commit_paths"], "seq": 188}
+  {"call": "git", "phase": "run", "args": ["ls-remote", "origin", "refs/heads/main"], "stack": ["run_test_evaluate", "test_evaluate", "begin_test_evaluation", "commit_paths"], "seq": 189}
+  {"call": "commit_paths", "phase": "return", "head": "9201ba5d0f36a9b4b0414277b63811a0a904a0ed", "seq": 190}
+  {"call": "begin_test_evaluation", "phase": "return", "marker_commit": "9201ba5d0f36a9b4b0414277b63811a0a904a0ed", "seq": 191}
+  {"call": "p.before_run", "phase": "enter", "next_seconds": 0.0, "seq": 192}
+  {"call": "p.before_run", "phase": "return", "seq": 193}
+  {"call": "control_evaluation", "phase": "enter", "what": "TEST evaluation of N", "split": "test", "seq": 194}
+  {"call": "evaluate_model", "phase": "enter", "split": "test", "checkpoint": "N", "seq": 195}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 196}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 197}
+  {"call": "R.committed_json", "phase": "return", "seq": 198}
+  {"call": "R.committed_record", "phase": "return", "seq": 199}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 200}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 201}
+  {"call": "R.committed_json", "phase": "return", "seq": 202}
+  {"call": "R.committed_record", "phase": "return", "seq": 203}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/test_evaluation_marker.json", "seq": 204}
+  {"call": "R.committed_json", "phase": "return", "seq": 205}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/st10_record.json", "seq": 206}
+  {"call": "R.committed_json", "phase": "return", "seq": 207}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/audit/st10_l6_test_count.json", "seq": 208}
+  {"call": "R.committed_json", "phase": "return", "seq": 209}
+  {"call": "T.state_sha256", "phase": "enter", "seq": 210}
+  {"call": "T.state_sha256", "phase": "return", "sha256": "a895622c8065094db612d950ad39d072c87a5894603950ddba98d44b524ee251", "seq": 211}
+  {"call": "claim_checkpoint", "phase": "enter", "checkpoint": "N", "seq": 212}
+  {"call": "claim_checkpoint", "phase": "return", "seq": 213}
+  {"call": "evaluate_model", "phase": "return", "seq": 214}
+  {"call": "control_evaluation", "phase": "return", "seq": 215}
+  {"call": "p.before_run", "phase": "enter", "next_seconds": 0.0, "seq": 216}
+  {"call": "p.before_run", "phase": "return", "seq": 217}
+  {"call": "p.base_model", "phase": "enter", "seq": 218}
+  {"call": "p.base_model", "phase": "return", "seq": 219}
+  {"call": "control_evaluation", "phase": "enter", "what": "TEST evaluation of F-F3-seed101", "split": "test", "seq": 220}
+  {"call": "control_evaluation", "phase": "raise", "exc": "RuntimeError", "msg": "injected crash in the second TEST evaluation", "seq": 221}
+  {"call": "test_evaluate", "phase": "raise", "exc": "RuntimeError", "msg": "injected crash in the second TEST evaluation", "seq": 222}
+  {"call": "begun_by_this_process", "phase": "enter", "seq": 223}
+  {"call": "begun_by_this_process", "phase": "return", "result": true, "seq": 224}
+  {"call": "final_record", "phase": "enter", "command": "test-evaluate", "status": "BLOCKED", "actual_keys": ["crashed", "test_begun"], "test_begun": true, "stop": {"code": null, "status": "BLOCKED", "message": "crash after the TEST marker: RuntimeError('injected crash in the second TEST evaluation')"}, "seq": 225}
+  {"call": "write_experiment_record", "phase": "enter", "seq": 226}
+  {"call": "write_experiment_record", "phase": "return", "paths": ["experiment_record_test-evaluate_20261127T102452Z.json", "experiment_record_test-evaluate_20261127T102452Z.txt"], "seq": 227}
+  {"call": "git", "phase": "run", "args": ["fetch", "-q", "--no-tags", "origin", "refs/heads/main"], "stack": ["run_test_evaluate", "final_record"], "seq": 228}
+  {"call": "git", "phase": "run", "args": ["push", "--dry-run", "--no-follow-tags", "origin", "HEAD:refs/heads/main"], "stack": ["run_test_evaluate", "final_record"], "seq": 229}
+  {"call": "commit_paths", "phase": "enter", "rels": ["metrix/e1-pilot/results/experiment_record_test-evaluate_20261127T102452Z.json", "metrix/e1-pilot/results/experiment_record_test-evaluate_20261127T102452Z.txt"], "seq": 230}
+  {"call": "git", "phase": "run", "args": ["push", "--no-follow-tags", "origin", "HEAD:refs/heads/main"], "stack": ["run_test_evaluate", "final_record", "commit_paths"], "seq": 231}
+  {"call": "git", "phase": "run", "args": ["ls-remote", "origin", "refs/heads/main"], "stack": ["run_test_evaluate", "final_record", "commit_paths"], "seq": 232}
+  {"call": "commit_paths", "phase": "return", "head": "1916bbe4cb7fd24cef014bb300a2b3bea4c551cf", "seq": 233}
+  {"call": "final_record", "phase": "return", "seq": 234}
+  {"call": "run_test_evaluate", "phase": "raise", "exc": "RuntimeError", "msg": "injected crash in the second TEST evaluation", "begin_called": true, "marker_before_begin": false, "work": "/tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/ic10_04f/basetemp/test_test_evaluate_begin_wirin0/work", "seq": 235}
+  {"call": "run_test_evaluate", "phase": "enter", "seq": 236}
+  {"call": "test_evaluate", "phase": "enter", "seq": 237}
+  {"call": "TG.code_commit", "phase": "enter", "seq": 238}
+  {"call": "TG.code_commit", "phase": "return", "head": "1916bbe4cb7fd24cef014bb300a2b3bea4c551cf", "seq": 239}
+  {"call": "Pilot.start_checks", "phase": "enter", "command": "test-evaluate", "seq": 240}
+  {"call": "Pilot.start_checks", "phase": "return", "seq": 241}
+  {"call": "refuse_if_test_evaluated", "phase": "enter", "seq": 242}
+  {"call": "git", "phase": "run", "args": ["cat-file", "blob", "HEAD:metrix/e1-pilot/results/test_evaluation_result.json"], "stack": ["run_test_evaluate", "test_evaluate", "refuse_if_test_evaluated"], "seq": 243}
+  {"call": "refuse_if_test_evaluated", "phase": "raise", "exc": "ProtocolStop", "msg": "BLOCKED: TEST evaluation was already started (metrix/e1-pilot/results/test_evaluation_marker.json) and no result was committed: it counts as evaluated; no further TEST evaluation; report to the Owner", "seq": 244}
+  {"call": "test_evaluate", "phase": "raise", "exc": "ProtocolStop", "msg": "BLOCKED: TEST evaluation was already started (metrix/e1-pilot/results/test_evaluation_marker.json) and no result was committed: it counts as evaluated; no further TEST evaluation; report to the Owner", "seq": 245}
+  {"call": "begun_by_this_process", "phase": "enter", "seq": 246}
+  {"call": "begun_by_this_process", "phase": "return", "result": false, "seq": 247}
+  {"call": "run_test_evaluate", "phase": "return", "result": "(False, 'BLOCKED')", "begin_called": false, "marker_before_begin": null, "work": "/tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/ic10_04f/basetemp/test_test_evaluate_begin_wirin0/work", "seq": 248}
+  {"call": "T.state_sha256", "phase": "enter", "seq": 249}
+  {"call": "T.state_sha256", "phase": "return", "sha256": "9137683704306a59be571301f75bb3a466fba336dca00f0f2d9bca04d6cb01fb", "seq": 250}
+  {"call": "file_sha256", "phase": "enter", "file": "F-F3-seed101.pt", "seq": 251}
+  {"call": "file_sha256", "phase": "return", "sha256": "23b3632731a3b20bf1aeedfadb6541dbae5f4fa74cec6e1648524f8b96a189d3", "seq": 252}
+  {"call": "T.state_sha256", "phase": "enter", "seq": 253}
+  {"call": "T.state_sha256", "phase": "return", "sha256": "d98573f05c43bd3333b5f951febebbc5a24f2c7bd052d6b5ee6fe6fe1c129745", "seq": 254}
+  {"call": "file_sha256", "phase": "enter", "file": "L-L2-seed101.pt", "seq": 255}
+  {"call": "file_sha256", "phase": "return", "sha256": "2e927077b4ecaf40d65c35f020bee6d135017ddc692432e56662d29232c25827", "seq": 256}
+  {"call": "T.state_sha256", "phase": "enter", "seq": 257}
+  {"call": "T.state_sha256", "phase": "return", "sha256": "f7234109360eee2c6008474ddcb6d027cff07380e0b3e10f21a113b8fe664b73", "seq": 258}
+  {"call": "file_sha256", "phase": "enter", "file": "A-A5-seed101.pt", "seq": 259}
+  {"call": "file_sha256", "phase": "return", "sha256": "bef8c08d61bf89ac7883927f4f933e9de0eafd28e0515a4ee146952898bcea16", "seq": 260}
+  {"call": "T.state_sha256", "phase": "enter", "seq": 261}
+  {"call": "T.state_sha256", "phase": "return", "sha256": "b9d5c5d88dd8bb2e50d834207f28f86bbadb322e1d2bca1731071583246a38e4", "seq": 262}
+  {"call": "file_sha256", "phase": "enter", "file": "F-F3-seed202.pt", "seq": 263}
+  {"call": "file_sha256", "phase": "return", "sha256": "bc54ed9b0e14d4c400419c6c8be649aef2434e18dc8c7fb450fa968e0869b63b", "seq": 264}
+  {"call": "T.state_sha256", "phase": "enter", "seq": 265}
+  {"call": "T.state_sha256", "phase": "return", "sha256": "3b049fccb6b2b84fb56e2cb3ea872c2f8a3e2dc3fdaa55d0421e611f38b54d1a", "seq": 266}
+  {"call": "file_sha256", "phase": "enter", "file": "F-F3-seed303.pt", "seq": 267}
+  {"call": "file_sha256", "phase": "return", "sha256": "b79a4415595feb3851aa01ddde8a990192e420de2836fd00b1418c76c2c64b01", "seq": 268}
+  {"call": "T.state_sha256", "phase": "enter", "seq": 269}
+  {"call": "T.state_sha256", "phase": "return", "sha256": "a9c63daa9f0ecbd495816261e261e1deb2382d93ad23632459bba9ba3cc61e2c", "seq": 270}
+  {"call": "file_sha256", "phase": "enter", "file": "L-L2-seed202.pt", "seq": 271}
+  {"call": "file_sha256", "phase": "return", "sha256": "edc3256e5fff14d00bcbc2f9de73514e1e5886b8965970d64c6abdd6427871e0", "seq": 272}
+  {"call": "T.state_sha256", "phase": "enter", "seq": 273}
+  {"call": "T.state_sha256", "phase": "return", "sha256": "558a64db4c0b8e303c3c706cfd559b010647ab81717c2dd50e5d74ac8b03d784", "seq": 274}
+  {"call": "file_sha256", "phase": "enter", "file": "L-L2-seed303.pt", "seq": 275}
+  {"call": "file_sha256", "phase": "return", "sha256": "62fb0b9b6cdd0f3debcacf84dd82fb23c60f17527d18341f3faef95798112c46", "seq": 276}
+  {"call": "T.state_sha256", "phase": "enter", "seq": 277}
+  {"call": "T.state_sha256", "phase": "return", "sha256": "0b3269dcb438cb846389ddc4c0b91dab9ed2f9402e8f44f53fabb104a5a17bc9", "seq": 278}
+  {"call": "file_sha256", "phase": "enter", "file": "A-A5-seed202.pt", "seq": 279}
+  {"call": "file_sha256", "phase": "return", "sha256": "63482f90ef522e1b076ceceab353fa5ed3e306617b6bc3bf5198df07ceb00511", "seq": 280}
+  {"call": "T.state_sha256", "phase": "enter", "seq": 281}
+  {"call": "T.state_sha256", "phase": "return", "sha256": "339edd999913b0f829b35e3b54c7222cdc8dfe4361a3ba81310991e29be90cb9", "seq": 282}
+  {"call": "file_sha256", "phase": "enter", "file": "A-A5-seed303.pt", "seq": 283}
+  {"call": "file_sha256", "phase": "return", "sha256": "dc6914a74357a9db2727a0fdb4da2d7d3008e6cf24e77b32406c45beeda47ae4", "seq": 284}
+  {"call": "T.state_sha256", "phase": "enter", "seq": 285}
+  {"call": "T.state_sha256", "phase": "return", "sha256": "ba2dfaf8cf49babfc1edfe3a093beb98df691fad2969f8d04c1d904530be7c7c", "seq": 286}
+  {"call": "file_sha256", "phase": "enter", "file": "S-F3-seed101.pt", "seq": 287}
+  {"call": "file_sha256", "phase": "return", "sha256": "2d11895d66e1a1459b17e404afcdb9070b0231c2be00e3f62a4355d83df7603b", "seq": 288}
+  {"call": "T.state_sha256", "phase": "enter", "seq": 289}
+  {"call": "T.state_sha256", "phase": "return", "sha256": "12a2400cf9e8ca363af737a4372795f15bcda1d19c3314387b6569245de88316", "seq": 290}
+  {"call": "file_sha256", "phase": "enter", "file": "S-F3-seed202.pt", "seq": 291}
+  {"call": "file_sha256", "phase": "return", "sha256": "5e88c226be2f5ee03ce86ff258415d7b8dbf058f5a848f8defc44104d9f68fc0", "seq": 292}
+  {"call": "T.state_sha256", "phase": "enter", "seq": 293}
+  {"call": "T.state_sha256", "phase": "return", "sha256": "8d6a57fda15cc40de0bbe10253b38596d66f8debcffdb9168d7cf20ba173f3d5", "seq": 294}
+  {"call": "file_sha256", "phase": "enter", "file": "S-F3-seed303.pt", "seq": 295}
+  {"call": "file_sha256", "phase": "return", "sha256": "ec8a3b482280e0c8ab3b4f73f64608c8ce733712b85647ef403ad7f4bab5042c", "seq": 296}
+  {"call": "T.state_sha256", "phase": "enter", "seq": 297}
+  {"call": "T.state_sha256", "phase": "return", "sha256": "6a73a75eda4544a14d53e73ed0fd6840a609684a100d91920ff2502c829d272b", "seq": 298}
+  {"call": "file_sha256", "phase": "enter", "file": "Y-F3-seed101.pt", "seq": 299}
+  {"call": "file_sha256", "phase": "return", "sha256": "d73f709d8b5e814313e50ab25ec524cb61edd40c3305f8716851120b1fb92076", "seq": 300}
+  {"call": "T.state_sha256", "phase": "enter", "seq": 301}
+  {"call": "T.state_sha256", "phase": "return", "sha256": "0e17682ee3eced67c3da124c227e78e8f937c00c4d164a680eaf11b2358235a5", "seq": 302}
+  {"call": "file_sha256", "phase": "enter", "file": "Y-F3-seed202.pt", "seq": 303}
+  {"call": "file_sha256", "phase": "return", "sha256": "424231d1276dbc7f1b4571bb51bd55b067b3648ac860f0feb9109bf3e2ffe4b8", "seq": 304}
+  {"call": "T.state_sha256", "phase": "enter", "seq": 305}
+  {"call": "T.state_sha256", "phase": "return", "sha256": "36e0c6ca5bdda7edc97e154b3ca8f09d0b04b0d0d4e6443f7a9863ff642859c5", "seq": 306}
+  {"call": "file_sha256", "phase": "enter", "file": "Y-F3-seed303.pt", "seq": 307}
+  {"call": "file_sha256", "phase": "return", "sha256": "a435963586f565c62bde6f4e1aa42fd39809b80de54c87ae85fce2dcf6d68a6a", "seq": 308}
+  {"call": "T.state_sha256", "phase": "enter", "seq": 309}
+  {"call": "T.state_sha256", "phase": "return", "sha256": "a895622c8065094db612d950ad39d072c87a5894603950ddba98d44b524ee251", "seq": 310}
+  {"call": "TG.code_commit", "phase": "enter", "seq": 311}
+  {"call": "TG.code_commit", "phase": "return", "head": "ad4634836426c1e0189c6ac0e427db1e512c2818", "seq": 312}
+fixture: Pilot flags at the test start (False, None) | step 3 N a895622c8065094db612d950ad39d072c87a5894603950ddba98d44b524ee251
+run_test_evaluate calls 2 (expected 2)
+run A pre-marker: observed {'order': True, 'refuse': [('return', None)], 'refuse_git': [['cat-file', 'blob', 'HEAD:metrix/e1-pilot/results/test_evaluation_result.json'], ['cat-file', 'blob', 'HEAD:metrix/e1-pilot/results/test_evaluation_marker.json']], 'network_before_begin': [], 'code_commit': 1, 'start_checks': ['test-evaluate'], 'device_check': 1, 'check_preconditions': 1, 'four_records': True, 'pt_hashes': 15, 'look_ahead': [28.2], 'before_run': [28.2], 'base_model': 1, 'state_hash_eq_N': [True]}
+                  expected {'order': True, 'refuse': [('return', None)], 'refuse_git': [['cat-file', 'blob', 'HEAD:metrix/e1-pilot/results/test_evaluation_result.json'], ['cat-file', 'blob', 'HEAD:metrix/e1-pilot/results/test_evaluation_marker.json']], 'network_before_begin': [], 'code_commit': 1, 'start_checks': ['test-evaluate'], 'device_check': 1, 'check_preconditions': 1, 'four_records': True, 'pt_hashes': 15, 'look_ahead': [28.2], 'before_run': [28.2], 'base_model': 1, 'state_hash_eq_N': [True]}
+                  equal True
+run A after: observed {'begin': [(True, False, False)], 'begin_end': [('return', None)], 'control_evaluation': 2, 'control_evaluation_raised': ['RuntimeError'], 'evaluate_model': ['N'], 'claims': ['N'], 'begun_by_this_process': [True], 'final_record': [('test-evaluate', 'BLOCKED', ['crashed', 'test_begun'], True, None, 'BLOCKED')], 'commit_paths_after_begin': 1, 'end': ('raise', 'RuntimeError'), 'flags_after': (True, False)}
+             expected {'begin': [(True, False, False)], 'begin_end': [('return', None)], 'control_evaluation': 2, 'control_evaluation_raised': ['RuntimeError'], 'evaluate_model': ['N'], 'claims': ['N'], 'begun_by_this_process': [True], 'final_record': [('test-evaluate', 'BLOCKED', ['crashed', 'test_begun'], True, None, 'BLOCKED')], 'commit_paths_after_begin': 1, 'end': ('raise', 'RuntimeError'), 'flags_after': (True, False)}
+             equal True
+run A network git (verb, inside begin, inside final_record): [('fetch', False, True), ('fetch', True, False), ('ls-remote', False, True), ('ls-remote', True, False), ('push', False, True), ('push', True, False)]
+run A stop passed to final_record: {'code': None, 'status': 'BLOCKED', 'message': "crash after the TEST marker: RuntimeError('injected crash in the second TEST evaluation')"}
+run B: observed {'order': False, 'refuse': [('raise', 'ProtocolStop')], 'refuse_git': [['cat-file', 'blob', 'HEAD:metrix/e1-pilot/results/test_evaluation_result.json']], 'network_before_begin': [], 'code_commit': 1, 'start_checks': ['test-evaluate'], 'device_check': 0, 'check_preconditions': 0, 'four_records': False, 'pt_hashes': 0, 'look_ahead': [], 'before_run': [], 'base_model': 0, 'state_hash_eq_N': []}
+       expected {'order': False, 'refuse': [('raise', 'ProtocolStop')], 'refuse_git': [['cat-file', 'blob', 'HEAD:metrix/e1-pilot/results/test_evaluation_result.json']], 'network_before_begin': [], 'code_commit': 1, 'start_checks': ['test-evaluate'], 'device_check': 0, 'check_preconditions': 0, 'four_records': False, 'pt_hashes': 0, 'look_ahead': [], 'before_run': [], 'base_model': 0, 'state_hash_eq_N': []}
+       equal True
+run B after: observed {'begin': [], 'control_evaluation': 0, 'begun_by_this_process': [False], 'final_record': [], 'network': [], 'end': ('return', "(False, 'BLOCKED')"), 'flags_after': (False, None)}
+             expected {'begin': [], 'control_evaluation': 0, 'begun_by_this_process': [False], 'final_record': [], 'network': [], 'end': ('return', "(False, 'BLOCKED')"), 'flags_after': (False, None)}
+             equal True
+run B refuse_if_test_evaluated raised: ['BLOCKED: TEST evaluation was already started (metrix/e1-pilot/results/test_evaluation_marker.json) and no result was committed: it counts as evaluated; no further TEST evaluation; report to the Owner']
+  remote commit 9201ba5d0f36: ('A', ['metrix/e1-pilot/results/test_evaluation_marker.json']) | metrix: E1-PILOT TEST evaluation marker (section 8 step 8: TEST is evaluated once; every checkpoint hash)
+  remote commit 1916bbe4cb7f: ('A', ['metrix/e1-pilot/results/experiment_record_test-evaluate_20261127T102452Z.json', 'metrix/e1-pilot/results/experiment_record_test-evaluate_20261127T102452Z.txt']) | metrix: E1-PILOT formal test-evaluate experiment record (status BLOCKED)
+remote commits after the fixture's tip d926adbebcf1: 2 == expected [('A', ['metrix/e1-pilot/results/test_evaluation_marker.json']), ('A', ['metrix/e1-pilot/results/experiment_record_test-evaluate_20261127T102452Z.json', 'metrix/e1-pilot/results/experiment_record_test-evaluate_20261127T102452Z.txt'])]: True
+record: Status 'BLOCKED' | stop code None status 'BLOCKED' | Actual keys ['crashed', 'test_begun'] test_begun True | message mentions the injected crash: True
+remote: marker True result False | clone: marker file True, git status '', HEAD == remote main True
+
+== refused_inside_begin (185 events)
+  {"call": "run_test_evaluate", "phase": "enter", "seq": 314}
+  {"call": "test_evaluate", "phase": "enter", "seq": 315}
+  {"call": "TG.code_commit", "phase": "enter", "seq": 316}
+  {"call": "TG.code_commit", "phase": "return", "head": "9d728e38483f815e6062afec401430954bfa97c4", "seq": 317}
+  {"call": "Pilot.start_checks", "phase": "enter", "command": "test-evaluate", "seq": 318}
+  {"call": "Pilot.start_checks", "phase": "return", "seq": 319}
+  {"call": "refuse_if_test_evaluated", "phase": "enter", "seq": 320}
+  {"call": "git", "phase": "run", "args": ["cat-file", "blob", "HEAD:metrix/e1-pilot/results/test_evaluation_result.json"], "stack": ["run_test_evaluate", "test_evaluate", "refuse_if_test_evaluated"], "seq": 321}
+  {"call": "git", "phase": "run", "args": ["cat-file", "blob", "HEAD:metrix/e1-pilot/results/test_evaluation_marker.json"], "stack": ["run_test_evaluate", "test_evaluate", "refuse_if_test_evaluated"], "seq": 322}
+  {"call": "refuse_if_test_evaluated", "phase": "return", "seq": 323}
+  {"call": "check_preconditions", "phase": "enter", "seq": 324}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 325}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 326}
+  {"call": "R.committed_json", "phase": "return", "seq": 327}
+  {"call": "R.committed_record", "phase": "return", "seq": 328}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 329}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 330}
+  {"call": "R.committed_json", "phase": "return", "seq": 331}
+  {"call": "R.committed_record", "phase": "return", "seq": 332}
+  {"call": "check_preconditions", "phase": "return", "seq": 333}
+  {"call": "p.device_check", "phase": "enter", "seq": 334}
+  {"call": "p.device_check", "phase": "return", "seq": 335}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 336}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 337}
+  {"call": "R.committed_json", "phase": "return", "seq": 338}
+  {"call": "R.committed_record", "phase": "return", "seq": 339}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 340}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 341}
+  {"call": "R.committed_json", "phase": "return", "seq": 342}
+  {"call": "R.committed_record", "phase": "return", "seq": 343}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/step2_record.json", "seq": 344}
+  {"call": "R.committed_json", "phase": "return", "seq": 345}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/step3_record.json", "seq": 346}
+  {"call": "R.committed_json", "phase": "return", "seq": 347}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/F-F3-seed101.json", "seq": 348}
+  {"call": "R.committed_json", "phase": "return", "seq": 349}
+  {"call": "file_sha256", "phase": "enter", "file": "F-F3-seed101.pt", "seq": 350}
+  {"call": "file_sha256", "phase": "return", "sha256": "23b3632731a3b20bf1aeedfadb6541dbae5f4fa74cec6e1648524f8b96a189d3", "seq": 351}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/L-L2-seed101.json", "seq": 352}
+  {"call": "R.committed_json", "phase": "return", "seq": 353}
+  {"call": "file_sha256", "phase": "enter", "file": "L-L2-seed101.pt", "seq": 354}
+  {"call": "file_sha256", "phase": "return", "sha256": "2e927077b4ecaf40d65c35f020bee6d135017ddc692432e56662d29232c25827", "seq": 355}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/A-A5-seed101.json", "seq": 356}
+  {"call": "R.committed_json", "phase": "return", "seq": 357}
+  {"call": "file_sha256", "phase": "enter", "file": "A-A5-seed101.pt", "seq": 358}
+  {"call": "file_sha256", "phase": "return", "sha256": "bef8c08d61bf89ac7883927f4f933e9de0eafd28e0515a4ee146952898bcea16", "seq": 359}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/F-F3-seed202.json", "seq": 360}
+  {"call": "R.committed_json", "phase": "return", "seq": 361}
+  {"call": "file_sha256", "phase": "enter", "file": "F-F3-seed202.pt", "seq": 362}
+  {"call": "file_sha256", "phase": "return", "sha256": "bc54ed9b0e14d4c400419c6c8be649aef2434e18dc8c7fb450fa968e0869b63b", "seq": 363}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/F-F3-seed303.json", "seq": 364}
+  {"call": "R.committed_json", "phase": "return", "seq": 365}
+  {"call": "file_sha256", "phase": "enter", "file": "F-F3-seed303.pt", "seq": 366}
+  {"call": "file_sha256", "phase": "return", "sha256": "b79a4415595feb3851aa01ddde8a990192e420de2836fd00b1418c76c2c64b01", "seq": 367}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/L-L2-seed202.json", "seq": 368}
+  {"call": "R.committed_json", "phase": "return", "seq": 369}
+  {"call": "file_sha256", "phase": "enter", "file": "L-L2-seed202.pt", "seq": 370}
+  {"call": "file_sha256", "phase": "return", "sha256": "edc3256e5fff14d00bcbc2f9de73514e1e5886b8965970d64c6abdd6427871e0", "seq": 371}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/L-L2-seed303.json", "seq": 372}
+  {"call": "R.committed_json", "phase": "return", "seq": 373}
+  {"call": "file_sha256", "phase": "enter", "file": "L-L2-seed303.pt", "seq": 374}
+  {"call": "file_sha256", "phase": "return", "sha256": "62fb0b9b6cdd0f3debcacf84dd82fb23c60f17527d18341f3faef95798112c46", "seq": 375}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/A-A5-seed202.json", "seq": 376}
+  {"call": "R.committed_json", "phase": "return", "seq": 377}
+  {"call": "file_sha256", "phase": "enter", "file": "A-A5-seed202.pt", "seq": 378}
+  {"call": "file_sha256", "phase": "return", "sha256": "63482f90ef522e1b076ceceab353fa5ed3e306617b6bc3bf5198df07ceb00511", "seq": 379}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/A-A5-seed303.json", "seq": 380}
+  {"call": "R.committed_json", "phase": "return", "seq": 381}
+  {"call": "file_sha256", "phase": "enter", "file": "A-A5-seed303.pt", "seq": 382}
+  {"call": "file_sha256", "phase": "return", "sha256": "dc6914a74357a9db2727a0fdb4da2d7d3008e6cf24e77b32406c45beeda47ae4", "seq": 383}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/S-F3-seed101.json", "seq": 384}
+  {"call": "R.committed_json", "phase": "return", "seq": 385}
+  {"call": "file_sha256", "phase": "enter", "file": "S-F3-seed101.pt", "seq": 386}
+  {"call": "file_sha256", "phase": "return", "sha256": "2d11895d66e1a1459b17e404afcdb9070b0231c2be00e3f62a4355d83df7603b", "seq": 387}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/S-F3-seed202.json", "seq": 388}
+  {"call": "R.committed_json", "phase": "return", "seq": 389}
+  {"call": "file_sha256", "phase": "enter", "file": "S-F3-seed202.pt", "seq": 390}
+  {"call": "file_sha256", "phase": "return", "sha256": "5e88c226be2f5ee03ce86ff258415d7b8dbf058f5a848f8defc44104d9f68fc0", "seq": 391}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/S-F3-seed303.json", "seq": 392}
+  {"call": "R.committed_json", "phase": "return", "seq": 393}
+  {"call": "file_sha256", "phase": "enter", "file": "S-F3-seed303.pt", "seq": 394}
+  {"call": "file_sha256", "phase": "return", "sha256": "ec8a3b482280e0c8ab3b4f73f64608c8ce733712b85647ef403ad7f4bab5042c", "seq": 395}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/Y-F3-seed101.json", "seq": 396}
+  {"call": "R.committed_json", "phase": "return", "seq": 397}
+  {"call": "file_sha256", "phase": "enter", "file": "Y-F3-seed101.pt", "seq": 398}
+  {"call": "file_sha256", "phase": "return", "sha256": "d73f709d8b5e814313e50ab25ec524cb61edd40c3305f8716851120b1fb92076", "seq": 399}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/Y-F3-seed202.json", "seq": 400}
+  {"call": "R.committed_json", "phase": "return", "seq": 401}
+  {"call": "file_sha256", "phase": "enter", "file": "Y-F3-seed202.pt", "seq": 402}
+  {"call": "file_sha256", "phase": "return", "sha256": "424231d1276dbc7f1b4571bb51bd55b067b3648ac860f0feb9109bf3e2ffe4b8", "seq": 403}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/training_runs/Y-F3-seed303.json", "seq": 404}
+  {"call": "R.committed_json", "phase": "return", "seq": 405}
+  {"call": "file_sha256", "phase": "enter", "file": "Y-F3-seed303.pt", "seq": 406}
+  {"call": "file_sha256", "phase": "return", "sha256": "a435963586f565c62bde6f4e1aa42fd39809b80de54c87ae85fce2dcf6d68a6a", "seq": 407}
+  {"call": "test_evaluation_seconds", "phase": "enter", "timing": {"a_factor": 1.0, "dev_evaluation_seconds": 1.0, "file_hash_s": 0.1, "hash_s": 0.1, "load_s": 1.0, "mean_step_s": 0.1, "reload_s": 0.1, "save_s": 0.1}, "seq": 408}
+  {"call": "test_evaluation_seconds", "phase": "return", "seconds": 28.2, "seq": 409}
+  {"call": "p.before_run", "phase": "enter", "next_seconds": 28.2, "seq": 410}
+  {"call": "p.before_run", "phase": "return", "seq": 411}
+  {"call": "p.base_model", "phase": "enter", "seq": 412}
+  {"call": "p.base_model", "phase": "return", "seq": 413}
+  {"call": "T.state_sha256", "phase": "enter", "seq": 414}
+  {"call": "T.state_sha256", "phase": "return", "sha256": "a895622c8065094db612d950ad39d072c87a5894603950ddba98d44b524ee251", "seq": 415}
+  {"call": "begin_test_evaluation", "phase": "enter", "base_sha256": "a895622c8065094db612d950ad39d072c87a5894603950ddba98d44b524ee251", "begin_called": true, "marker_before_begin": false, "marker_in_worktree": false, "seq": 416}
+  {"call": "git", "phase": "run", "args": ["fetch", "-q", "--no-tags", "origin", "refs/heads/main"], "stack": ["run_test_evaluate", "test_evaluate", "begin_test_evaluation"], "seq": 417}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 418}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/gate0_record.json", "seq": 419}
+  {"call": "R.committed_json", "phase": "return", "seq": 420}
+  {"call": "R.committed_record", "phase": "return", "seq": 421}
+  {"call": "R.committed_record", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 422}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/selection_freeze_record.json", "seq": 423}
+  {"call": "R.committed_json", "phase": "return", "seq": 424}
+  {"call": "R.committed_record", "phase": "return", "seq": 425}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/results/st10_record.json", "seq": 426}
+  {"call": "R.committed_json", "phase": "return", "seq": 427}
+  {"call": "R.committed_json", "phase": "enter", "rel": "metrix/e1-pilot/audit/st10_l6_test_count.json", "seq": 428}
+  {"call": "R.committed_json", "phase": "return", "seq": 429}
+  {"call": "begin_test_evaluation", "phase": "raise", "exc": "ProtocolStop", "msg": "BLOCKED: injected: a dry-run push to origin fails", "seq": 430}
+  {"call": "test_evaluate", "phase": "raise", "exc": "ProtocolStop", "msg": "BLOCKED: injected: a dry-run push to origin fails", "seq": 431}
+  {"call": "begun_by_this_process", "phase": "enter", "seq": 432}
+  {"call": "begun_by_this_process", "phase": "return", "result": false, "seq": 433}
+  {"call": "run_test_evaluate", "phase": "return", "result": "(False, 'BLOCKED')", "begin_called": true, "marker_before_begin": false, "work": "/tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/ic10_04f/basetemp/test_test_evaluate_begin_wirin1/work", "seq": 434}
+  {"call": "T.state_sha256", "phase": "enter", "seq": 435}
+  {"call": "T.state_sha256", "phase": "return", "sha256": "9137683704306a59be571301f75bb3a466fba336dca00f0f2d9bca04d6cb01fb", "seq": 436}
+  {"call": "file_sha256", "phase": "enter", "file": "F-F3-seed101.pt", "seq": 437}
+  {"call": "file_sha256", "phase": "return", "sha256": "23b3632731a3b20bf1aeedfadb6541dbae5f4fa74cec6e1648524f8b96a189d3", "seq": 438}
+  {"call": "T.state_sha256", "phase": "enter", "seq": 439}
+  {"call": "T.state_sha256", "phase": "return", "sha256": "d98573f05c43bd3333b5f951febebbc5a24f2c7bd052d6b5ee6fe6fe1c129745", "seq": 440}
+  {"call": "file_sha256", "phase": "enter", "file": "L-L2-seed101.pt", "seq": 441}
+  {"call": "file_sha256", "phase": "return", "sha256": "2e927077b4ecaf40d65c35f020bee6d135017ddc692432e56662d29232c25827", "seq": 442}
+  {"call": "T.state_sha256", "phase": "enter", "seq": 443}
+  {"call": "T.state_sha256", "phase": "return", "sha256": "f7234109360eee2c6008474ddcb6d027cff07380e0b3e10f21a113b8fe664b73", "seq": 444}
+  {"call": "file_sha256", "phase": "enter", "file": "A-A5-seed101.pt", "seq": 445}
+  {"call": "file_sha256", "phase": "return", "sha256": "bef8c08d61bf89ac7883927f4f933e9de0eafd28e0515a4ee146952898bcea16", "seq": 446}
+  {"call": "T.state_sha256", "phase": "enter", "seq": 447}
+  {"call": "T.state_sha256", "phase": "return", "sha256": "b9d5c5d88dd8bb2e50d834207f28f86bbadb322e1d2bca1731071583246a38e4", "seq": 448}
+  {"call": "file_sha256", "phase": "enter", "file": "F-F3-seed202.pt", "seq": 449}
+  {"call": "file_sha256", "phase": "return", "sha256": "bc54ed9b0e14d4c400419c6c8be649aef2434e18dc8c7fb450fa968e0869b63b", "seq": 450}
+  {"call": "T.state_sha256", "phase": "enter", "seq": 451}
+  {"call": "T.state_sha256", "phase": "return", "sha256": "3b049fccb6b2b84fb56e2cb3ea872c2f8a3e2dc3fdaa55d0421e611f38b54d1a", "seq": 452}
+  {"call": "file_sha256", "phase": "enter", "file": "F-F3-seed303.pt", "seq": 453}
+  {"call": "file_sha256", "phase": "return", "sha256": "b79a4415595feb3851aa01ddde8a990192e420de2836fd00b1418c76c2c64b01", "seq": 454}
+  {"call": "T.state_sha256", "phase": "enter", "seq": 455}
+  {"call": "T.state_sha256", "phase": "return", "sha256": "a9c63daa9f0ecbd495816261e261e1deb2382d93ad23632459bba9ba3cc61e2c", "seq": 456}
+  {"call": "file_sha256", "phase": "enter", "file": "L-L2-seed202.pt", "seq": 457}
+  {"call": "file_sha256", "phase": "return", "sha256": "edc3256e5fff14d00bcbc2f9de73514e1e5886b8965970d64c6abdd6427871e0", "seq": 458}
+  {"call": "T.state_sha256", "phase": "enter", "seq": 459}
+  {"call": "T.state_sha256", "phase": "return", "sha256": "558a64db4c0b8e303c3c706cfd559b010647ab81717c2dd50e5d74ac8b03d784", "seq": 460}
+  {"call": "file_sha256", "phase": "enter", "file": "L-L2-seed303.pt", "seq": 461}
+  {"call": "file_sha256", "phase": "return", "sha256": "62fb0b9b6cdd0f3debcacf84dd82fb23c60f17527d18341f3faef95798112c46", "seq": 462}
+  {"call": "T.state_sha256", "phase": "enter", "seq": 463}
+  {"call": "T.state_sha256", "phase": "return", "sha256": "0b3269dcb438cb846389ddc4c0b91dab9ed2f9402e8f44f53fabb104a5a17bc9", "seq": 464}
+  {"call": "file_sha256", "phase": "enter", "file": "A-A5-seed202.pt", "seq": 465}
+  {"call": "file_sha256", "phase": "return", "sha256": "63482f90ef522e1b076ceceab353fa5ed3e306617b6bc3bf5198df07ceb00511", "seq": 466}
+  {"call": "T.state_sha256", "phase": "enter", "seq": 467}
+  {"call": "T.state_sha256", "phase": "return", "sha256": "339edd999913b0f829b35e3b54c7222cdc8dfe4361a3ba81310991e29be90cb9", "seq": 468}
+  {"call": "file_sha256", "phase": "enter", "file": "A-A5-seed303.pt", "seq": 469}
+  {"call": "file_sha256", "phase": "return", "sha256": "dc6914a74357a9db2727a0fdb4da2d7d3008e6cf24e77b32406c45beeda47ae4", "seq": 470}
+  {"call": "T.state_sha256", "phase": "enter", "seq": 471}
+  {"call": "T.state_sha256", "phase": "return", "sha256": "ba2dfaf8cf49babfc1edfe3a093beb98df691fad2969f8d04c1d904530be7c7c", "seq": 472}
+  {"call": "file_sha256", "phase": "enter", "file": "S-F3-seed101.pt", "seq": 473}
+  {"call": "file_sha256", "phase": "return", "sha256": "2d11895d66e1a1459b17e404afcdb9070b0231c2be00e3f62a4355d83df7603b", "seq": 474}
+  {"call": "T.state_sha256", "phase": "enter", "seq": 475}
+  {"call": "T.state_sha256", "phase": "return", "sha256": "12a2400cf9e8ca363af737a4372795f15bcda1d19c3314387b6569245de88316", "seq": 476}
+  {"call": "file_sha256", "phase": "enter", "file": "S-F3-seed202.pt", "seq": 477}
+  {"call": "file_sha256", "phase": "return", "sha256": "5e88c226be2f5ee03ce86ff258415d7b8dbf058f5a848f8defc44104d9f68fc0", "seq": 478}
+  {"call": "T.state_sha256", "phase": "enter", "seq": 479}
+  {"call": "T.state_sha256", "phase": "return", "sha256": "8d6a57fda15cc40de0bbe10253b38596d66f8debcffdb9168d7cf20ba173f3d5", "seq": 480}
+  {"call": "file_sha256", "phase": "enter", "file": "S-F3-seed303.pt", "seq": 481}
+  {"call": "file_sha256", "phase": "return", "sha256": "ec8a3b482280e0c8ab3b4f73f64608c8ce733712b85647ef403ad7f4bab5042c", "seq": 482}
+  {"call": "T.state_sha256", "phase": "enter", "seq": 483}
+  {"call": "T.state_sha256", "phase": "return", "sha256": "6a73a75eda4544a14d53e73ed0fd6840a609684a100d91920ff2502c829d272b", "seq": 484}
+  {"call": "file_sha256", "phase": "enter", "file": "Y-F3-seed101.pt", "seq": 485}
+  {"call": "file_sha256", "phase": "return", "sha256": "d73f709d8b5e814313e50ab25ec524cb61edd40c3305f8716851120b1fb92076", "seq": 486}
+  {"call": "T.state_sha256", "phase": "enter", "seq": 487}
+  {"call": "T.state_sha256", "phase": "return", "sha256": "0e17682ee3eced67c3da124c227e78e8f937c00c4d164a680eaf11b2358235a5", "seq": 488}
+  {"call": "file_sha256", "phase": "enter", "file": "Y-F3-seed202.pt", "seq": 489}
+  {"call": "file_sha256", "phase": "return", "sha256": "424231d1276dbc7f1b4571bb51bd55b067b3648ac860f0feb9109bf3e2ffe4b8", "seq": 490}
+  {"call": "T.state_sha256", "phase": "enter", "seq": 491}
+  {"call": "T.state_sha256", "phase": "return", "sha256": "36e0c6ca5bdda7edc97e154b3ca8f09d0b04b0d0d4e6443f7a9863ff642859c5", "seq": 492}
+  {"call": "file_sha256", "phase": "enter", "file": "Y-F3-seed303.pt", "seq": 493}
+  {"call": "file_sha256", "phase": "return", "sha256": "a435963586f565c62bde6f4e1aa42fd39809b80de54c87ae85fce2dcf6d68a6a", "seq": 494}
+  {"call": "T.state_sha256", "phase": "enter", "seq": 495}
+  {"call": "T.state_sha256", "phase": "return", "sha256": "a895622c8065094db612d950ad39d072c87a5894603950ddba98d44b524ee251", "seq": 496}
+  {"call": "TG.code_commit", "phase": "enter", "seq": 497}
+  {"call": "TG.code_commit", "phase": "return", "head": "54ed9f37e38d6ec8c7e899cf537812e1fe3efac8", "seq": 498}
+fixture: Pilot flags at the test start (False, None) | step 3 N a895622c8065094db612d950ad39d072c87a5894603950ddba98d44b524ee251
+run_test_evaluate calls 1 (expected 1)
+pre-marker: observed {'order': True, 'refuse': [('return', None)], 'refuse_git': [['cat-file', 'blob', 'HEAD:metrix/e1-pilot/results/test_evaluation_result.json'], ['cat-file', 'blob', 'HEAD:metrix/e1-pilot/results/test_evaluation_marker.json']], 'network_before_begin': [], 'code_commit': 1, 'start_checks': ['test-evaluate'], 'device_check': 1, 'check_preconditions': 1, 'four_records': True, 'pt_hashes': 15, 'look_ahead': [28.2], 'before_run': [28.2], 'base_model': 1, 'state_hash_eq_N': [True]}
+            expected {'order': True, 'refuse': [('return', None)], 'refuse_git': [['cat-file', 'blob', 'HEAD:metrix/e1-pilot/results/test_evaluation_result.json'], ['cat-file', 'blob', 'HEAD:metrix/e1-pilot/results/test_evaluation_marker.json']], 'network_before_begin': [], 'code_commit': 1, 'start_checks': ['test-evaluate'], 'device_check': 1, 'check_preconditions': 1, 'four_records': True, 'pt_hashes': 15, 'look_ahead': [28.2], 'before_run': [28.2], 'base_model': 1, 'state_hash_eq_N': [True]}
+            equal True
+after: observed {'begin': [(True, False, False)], 'begin_end': [('raise', 'ProtocolStop')], 'control_evaluation': 0, 'evaluate_model': [], 'claims': [], 'begun_by_this_process': [False], 'final_record': [], 'end': ('return', "(False, 'BLOCKED')"), 'flags_after': (True, False)}
+       expected {'begin': [(True, False, False)], 'begin_end': [('raise', 'ProtocolStop')], 'control_evaluation': 0, 'evaluate_model': [], 'claims': [], 'begun_by_this_process': [False], 'final_record': [], 'end': ('return', "(False, 'BLOCKED')"), 'flags_after': (True, False)}
+       equal True
+network git (verb, inside begin, inside final_record): [('fetch', True, False)]
+begin raised: ['BLOCKED: injected: a dry-run push to origin fails']
+remote commits after the fixture's tip 9d728e38483f: 0 == expected []: True
+remote: marker False result False | clone: marker file False, git status '', HEAD == remote main True
+
+== wrong_work (10 events)
+  {"call": "run_test_evaluate", "phase": "enter", "seq": 500}
+  {"call": "test_evaluate", "phase": "enter", "seq": 501}
+  {"call": "TG.code_commit", "phase": "enter", "seq": 502}
+  {"call": "TG.code_commit", "phase": "return", "head": "9e89e6d0b11d23917220d9361ba765cfd10f87f4", "seq": 503}
+  {"call": "Pilot.start_checks", "phase": "enter", "command": "test-evaluate", "seq": 504}
+  {"call": "Pilot.start_checks", "phase": "raise", "exc": "ProtocolStop", "msg": "BLOCKED: a formal run has committed step records (metrix/e1-pilot/results/step1_record.json) but --work /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/ic10_04f/basetemp/test_test_evaluate_begin_wirin2/another_work holds no device ledger: either this is not that run's --work, or that run stopped before its first model load (step 2); a restart is the Owner's decision", "seq": 505}
+  {"call": "test_evaluate", "phase": "raise", "exc": "ProtocolStop", "msg": "BLOCKED: a formal run has committed step records (metrix/e1-pilot/results/step1_record.json) but --work /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/ic10_04f/basetemp/test_test_evaluate_begin_wirin2/another_work holds no device ledger: either this is not that run's --work, or that run stopped before its first model load (step 2); a restart is the Owner's decision", "seq": 506}
+  {"call": "begun_by_this_process", "phase": "enter", "seq": 507}
+  {"call": "begun_by_this_process", "phase": "return", "result": false, "seq": 508}
+  {"call": "run_test_evaluate", "phase": "return", "result": "(False, 'BLOCKED')", "begin_called": false, "marker_before_begin": null, "work": "/tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/ic10_04f/basetemp/test_test_evaluate_begin_wirin2/another_work", "seq": 509}
+fixture: Pilot flags at the test start (False, None) | step 3 N a895622c8065094db612d950ad39d072c87a5894603950ddba98d44b524ee251
+run_test_evaluate calls 1 (expected 1)
+observed {'order': False, 'refuse': [], 'refuse_git': [], 'network_before_begin': [], 'code_commit': 1, 'start_checks': ['test-evaluate'], 'device_check': 0, 'check_preconditions': 0, 'four_records': False, 'pt_hashes': 0, 'look_ahead': [], 'before_run': [], 'base_model': 0, 'state_hash_eq_N': []}
+expected {'order': False, 'refuse': [], 'refuse_git': [], 'network_before_begin': [], 'code_commit': 1, 'start_checks': ['test-evaluate'], 'device_check': 0, 'check_preconditions': 0, 'four_records': False, 'pt_hashes': 0, 'look_ahead': [], 'before_run': [], 'base_model': 0, 'state_hash_eq_N': []}
+equal True
+after: observed {'begin': [], 'control_evaluation': 0, 'begun_by_this_process': [False], 'final_record': [], 'network': [], 'end': ('return', "(False, 'BLOCKED')"), 'flags_after': (False, None)}
+       expected {'begin': [], 'control_evaluation': 0, 'begun_by_this_process': [False], 'final_record': [], 'network': [], 'end': ('return', "(False, 'BLOCKED')"), 'flags_after': (False, None)}
+       equal True
+start_checks raised: ["BLOCKED: a formal run has committed step records (metrix/e1-pilot/results/step1_record.json) but --work /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/ic10_04f/basetemp/test_test_evaluate_begin_wirin2/another_work holds no device ledger: either this is not that run's --work, or that run stopped before its first model load (step 2); a restart is the Owner's decision"] | run on work /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/ic10_04f/basetemp/test_test_evaluate_begin_wirin2/another_work (another_work: True)
+remote commits after the fixture's tip 9e89e6d0b11d: 0 == expected []: True
+remote: marker False result False | clone: marker file False, git status '', HEAD == remote main True
+
+this repository unchanged (git status audit/ excluded, index): True True
+modules: torch imported=False | transformers modeling modules imported=[] | this script never calls a model class or from_pretrained on a model
+RESULT: PASS
+exit=0
