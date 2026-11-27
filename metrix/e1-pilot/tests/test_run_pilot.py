@@ -35,7 +35,7 @@ from metrix_e1 import record as R
 from metrix_e1 import stops as STP
 from metrix_e1 import testgate as TG
 from metrix_e1 import train as T
-from metrix_e1.errors import ImplementationFail, ST12Error
+from metrix_e1.errors import ImplementationFail, ProtocolStop, ST12Error
 
 RUN_PILOT = PILOT / "run_pilot.py"
 
@@ -103,10 +103,11 @@ def test_formal_on_the_cpu_stops_with_st8_before_anything(fz, inputs_dir, tmp_pa
     before = {rel: (p.root / rel).read_bytes() for rel in (FZ.DATA_MANIFEST_REL, FZ.SPLIT_MANIFEST_REL)}
     ok, status = P.run_gate(p, "formal")
     assert (ok, status) == (False, "BLOCKED")
-    rec = json.loads((p.work / "experiment_record_formal.json").read_text(encoding="utf-8"))
+    (path,) = p.work.glob("experiment_record_formal_*.json")
+    rec = json.loads(path.read_text(encoding="utf-8"))
     assert rec["mode"] == "formal" and rec["template"]["Status"] == "BLOCKED"
     assert rec["template"]["Stop Conditions"]["stop"]["code"] == "ST8"
-    assert (p.work / "experiment_record_formal.txt").is_file()
+    assert path.with_suffix(".txt").is_file()
     assert not p.data_dir.exists() and not (p.root / R.FORMAL_RESULTS_REL).exists()
     assert {rel: (p.root / rel).read_bytes() for rel in before} == before
     assert git(p.root, "status", "--porcelain") == ""
@@ -120,7 +121,9 @@ def test_no_formal_record_path_is_ignored_by_git(fz, contract):
     rels = ([FZ.DATA_MANIFEST_REL, FZ.SPLIT_MANIFEST_REL, R.GATE0_RECORD_REL, R.SELECTION_FREEZE_REL, TG.ST10_RECORD_REL,
              TG.AUDITOR_L6_REL, TG.MARKER_REL, TG.RESULT_REL]
             + ["%s/step%d_record.json" % (res, k) for k in range(1, 9)]
-            + ["%s/experiment_record_%s.%s" % (res, c, x) for c in ("formal", "test-evaluate") for x in ("json", "txt")]
+            + ["%s/experiment_record_%s_20261127T000000Z.%s" % (res, c, x) for c in ("formal", "test-generate",
+                                                                                       "test-evaluate")
+               for x in ("json", "txt")]
             + ["%s/%s/%s.json" % (res, P.RUNS_DIR, n) for n in names]
             + ["%s/%s/%s_dev%s.json" % (res, P.DETAILS_DIR, n, x) for n in names for x in ("", "_g08")])
     r = subprocess.run(["git", "-C", str(fz.repo_root), "check-ignore", "--no-index", "--", *rels], capture_output=True,
@@ -143,8 +146,10 @@ def test_smoke_outputs_are_labelled_and_stay_in_the_work_directory(inputs_dir, t
     p.label_dir(p.data_dir)
     assert (p.data_dir / P.LABEL_FILE).read_text(encoding="utf-8").strip() == M.SMOKE_LABEL
     assert p.commit([path], "message", "what") is None
+    other = tmp_path / "other_repo"                    # a repository root of the test's own: nothing written here
     with pytest.raises(ImplementationFail):            # the formal results directory refuses smoke records
-        R.write_record(dict(rec), p.root / R.FORMAL_RESULTS_REL / "x.json", p.root)
+        R.write_record(dict(rec), other / R.FORMAL_RESULTS_REL / "x.json", other)
+    assert not other.exists()
 
 
 def test_smoke_records_the_value_stops_and_formal_raises_them(inputs_dir, tmp_path):
@@ -254,9 +259,12 @@ def test_model_directory_against_the_frozen_revision(fz, tmp_path):
 
 def test_preflight_overhead_counts(contract):
     n = P.evaluation_plan(contract)
-    assert n == {"loads": 1 + 30 + 3 + 16, "checkpoints": 30, "test_hashes": 16}
-    seconds, counts = P.checkpoint_overhead_seconds(contract, 1.0, 2.0, 3.0, 4.0)
-    assert counts == n and seconds == 50 * 1.0 + 30 * (2 * 2.0 + 3.0 + 4.0) + 16 * 2.0
+    assert n == {"loads": 1 + 30 + 3 + 16, "checkpoints": 30, "test_state_hashes": 17, "test_file_hashes": 15,
+                 "test_models": 16}
+    seconds, counts = P.checkpoint_overhead_seconds(contract, 1.0, 2.0, 3.0, 4.0, 5.0)
+    assert counts == n and seconds == 50 * 1.0 + 30 * (2 * 2.0 + 3.0 + 4.0 + 5.0) + 17 * 2.0 + 15 * 5.0
+    pre = {"dev_evaluation_seconds": 10.0, "load_s": 1.0, "hash_s": 2.0, "file_hash_s": 5.0}
+    assert P.test_evaluation_seconds(contract, pre) == 16 * (1.0 + 10.0 * 3 / 2) + 17 * 2.0 + 15 * 5.0
 
 
 # ------------------------------------------------------------------------------- TEST evaluation end to end
@@ -288,12 +296,9 @@ def commit_all(root, msg):
     return git(root, "rev-parse", "HEAD")
 
 
-@pytest.fixture
-def eval_clone(fz, inputs_dir, generated, tmp_path, monkeypatch):
-    """A clone of this repository (objects shared, so the frozen commit is there) whose origin is a throw-away bare
-    repository standing for the pilot's remote, branch main standing for the pilot's branch; a formal Pilot on it
-    with the generated data, tiny models, committed Gate 0 / freeze / run records, checkpoints, synthetic TEST rows,
-    the ST10 record and an auditor count."""
+def clone_with_remote(fz, tmp_path, monkeypatch):
+    """shared_clone on branch main with a throw-away bare repository as origin; the bare repository stands for the
+    pilot's remote and main for the pilot's branch (testgate.CANONICAL_REPO, PILOT_BRANCH)."""
     remote = tmp_path / "remote.git"
     git(tmp_path, "init", "-q", "--bare", "-b", "main", str(remote))
     root = shared_clone(fz, tmp_path)
@@ -304,6 +309,16 @@ def eval_clone(fz, inputs_dir, generated, tmp_path, monkeypatch):
     git(root, "push", "-q", "origin", "HEAD:refs/heads/main")
     monkeypatch.setattr(TG, "CANONICAL_REPO", TG.repo_id(str(remote)))
     monkeypatch.setattr(TG, "PILOT_BRANCH", "main")
+    return remote, root
+
+
+@pytest.fixture
+def eval_clone(fz, inputs_dir, generated, tmp_path, monkeypatch):
+    """A clone of this repository (objects shared, so the frozen commit is there) whose origin is a throw-away bare
+    repository standing for the pilot's remote, branch main standing for the pilot's branch; a formal Pilot on it
+    with the generated data, tiny models, committed Gate 0 / freeze / run records, checkpoints, synthetic TEST rows,
+    the ST10 record and an auditor count."""
+    remote, root = clone_with_remote(fz, tmp_path, monkeypatch)
     monkeypatch.setattr(E, "require_gpu", lambda mode, device: None)
     p = P.Pilot(M.FORMAL_MODE, inputs_dir, tmp_path / "work", "cpu", repo_root=root)
     p.contract = dataclasses.replace(p.contract, arms=dataclasses.replace(p.contract.arms, lora_layers=2))
@@ -329,6 +344,11 @@ def eval_clone(fz, inputs_dir, generated, tmp_path, monkeypatch):
         write(root, "%s/%s/%s.json" % (R.FORMAL_RESULTS_REL, P.RUNS_DIR, spec.name), {
             "kind": "training_run", "mode": "formal", "label": None, "run": spec.name,
             "checkpoint": {"state_sha256": sha, "file_sha256": FZ.file_sha256(path)}})
+    write(root, "%s/step2_record.json" % R.FORMAL_RESULTS_REL, {"kind": "step2", "mode": "formal", "label": None,
+          "preflight": {"timing": {"mean_step_s": 0.1, "a_factor": 1.0, "dev_evaluation_seconds": 1.0, "load_s": 1.0,
+                                   "hash_s": 0.1, "save_s": 0.1, "reload_s": 0.1, "file_hash_s": 0.1}}})
+    write(root, "%s/step3_record.json" % R.FORMAL_RESULTS_REL, {"kind": "step3", "mode": "formal", "label": None,
+          "N": {"state_sha256": T.state_sha256(tiny_model(0))}})
     g0_sha = write(root, R.GATE0_RECORD_REL, R.gate0_record(p.fz, M.FORMAL_MODE, {"gate0_status": "PASS"}))
     content = p.fz.check_data_dir(p.data_dir)
     sel_sha = write(root, R.SELECTION_FREEZE_REL, R.selection_freeze_record(p.fz, M.FORMAL_MODE, SELECTED, content,
@@ -354,13 +374,16 @@ def test_test_evaluate_end_to_end_once(eval_clone):
     assert P.run_test_evaluate(p) == (False, "BLOCKED")
     assert not (root / TG.MARKER_REL).exists() and git(remote, "ls-tree", "-r", "--name-only", "main").count(
         "test_evaluation_marker") == 0
-    assert not (root / R.FORMAL_RESULTS_REL / "experiment_record_test-evaluate.json").exists()
+    assert not list((root / R.FORMAL_RESULTS_REL).glob("experiment_record_test-evaluate_*"))
     ckpt.write_bytes(good)
     ok, status = P.run_test_evaluate(p)
     assert ok and status in ("PASS", "PIPELINE_NOT_QUALIFIED")
     tree = git(remote, "ls-tree", "-r", "--name-only", "main").split("\n")
-    for rel in (TG.MARKER_REL, TG.RESULT_REL, R.FORMAL_RESULTS_REL + "/experiment_record_test-evaluate.json"):
-        assert rel in tree
+    assert TG.MARKER_REL in tree and TG.RESULT_REL in tree
+    (exp,) = [x for x in tree if x.startswith(R.FORMAL_RESULTS_REL + "/experiment_record_test-evaluate_")
+              and x.endswith(".json")]
+    exp_blob = git(remote, "show", "main:%s" % exp)
+    assert "Synthetic question" not in exp_blob and "synthetic window" not in exp_blob
     blob = git(remote, "show", "main:%s" % TG.RESULT_REL)
     result = json.loads(blob)
     assert sorted(result["summaries"]) == sorted(c["models"]) and result["final"]["final_status"] == status
@@ -382,3 +405,168 @@ def test_test_evaluate_refuses_outside_formal_mode(inputs_dir, tmp_path):
         P.test_evaluate(p)
     with pytest.raises(ImplementationFail):
         P.run_test_generate(p)
+
+
+# ------------------------------------------------------------------------------- round-1 review of 5219ff77
+
+def test_a_stop_inside_a_step_writes_the_step_record_first(inputs_dir, tmp_path, generated):
+    """Pilot.stop_in_step: a stop that propagates (ST1 also stops a smoke run) writes the step's record with what the
+    step computed and the stop, then raises again (code-reviewer MAJOR 3 of round 1)."""
+    p = P.Pilot(M.smoke_mode(1), inputs_dir, tmp_path / "w", "cpu")
+    D.write(generated["files"], p.data_dir)
+    p.step_start(2)
+    leak = {"checks": {"L1": {"within_limit": False}}, "result": "FAIL"}
+    with pytest.raises(STP.Stop):
+        p.stop_in_step(2, {"leakage": leak}, [], STP.st1, p.fz, leak)
+    rec = json.loads((p.records / "step2_record.json").read_text(encoding="utf-8"))
+    assert rec["stopped"]["code"] == "ST1" and rec["leakage"] == leak and rec["label"] == M.SMOKE_LABEL
+
+
+def test_continuity_checks_before_anything(fz, inputs_dir, tmp_path):
+    """start_checks: a --work without the device ledger after a formal run committed step records, and formal after a
+    freeze record, are refused (BLOCKED) before anything is written."""
+    root = shared_clone(fz, tmp_path)
+    for k, v in (("user.name", "metrix-test"), ("user.email", "metrix-test@invalid"), ("commit.gpgsign", "false")):
+        git(root, "config", k, v)
+    p = P.Pilot(M.FORMAL_MODE, inputs_dir, tmp_path / "work", "cpu", repo_root=root)
+    p.start_checks("formal")                            # nothing committed yet: passes
+    write(root, P.STEP1_RECORD_REL, {"kind": "step1"})
+    git(root, "add", "-A")
+    git(root, "commit", "-q", "-m", "a step 1 record")
+    with pytest.raises(ProtocolStop, match="device ledger"):
+        p.start_checks("test-evaluate")
+    p.ledger.path.parent.mkdir(parents=True)
+    p.ledger.record_first("test device")
+    p.start_checks("formal")
+    write(root, R.SELECTION_FREEZE_REL, {"kind": "selection_freeze"})
+    git(root, "add", "-A")
+    git(root, "commit", "-q", "-m", "a freeze record")
+    with pytest.raises(ProtocolStop, match="freeze record"):
+        p.start_checks("formal")
+    p.start_checks("test-evaluate")                     # TEST evaluation follows the freeze
+
+
+def test_smoke_step8_refuses_where_formal_records_exist(fz, inputs_dir, generated, tmp_path):
+    """On a checkout holding a Gate 0, freeze or ST10 record the generator's preconditions may hold: the smoke run's
+    refusal test does not start the generator there (code-reviewer MAJOR 9 of round 1)."""
+    root = shared_clone(fz, tmp_path)
+    for k, v in (("user.name", "metrix-test"), ("user.email", "metrix-test@invalid"), ("commit.gpgsign", "false")):
+        git(root, "config", k, v)
+    write(root, R.GATE0_RECORD_REL, {"kind": "gate0"})
+    git(root, "add", "-A")
+    git(root, "commit", "-q", "-m", "a Gate 0 record")
+    p = P.Pilot(M.smoke_mode(1), inputs_dir, tmp_path / "w", "cpu", repo_root=root)
+    D.write(generated["files"], p.data_dir)
+    with pytest.raises(ImplementationFail, match="formal records"):
+        P.step8_smoke_refusal(p)
+    assert not (p.work / "step8_refused_out").exists()
+
+
+def test_test_evaluate_records_after_the_marker_and_for_st10(fz, inputs_dir, tmp_path, monkeypatch):
+    """run_test_evaluate: before the marker a refusal writes no record (ST10 excepted); after it every stop and a
+    crash write one (BLOCKED) and a crash is raised again (code-reviewer MAJOR 2, 4; data-auditor IC7-M1)."""
+    root = shared_clone(fz, tmp_path)
+    p = P.Pilot(M.FORMAL_MODE, inputs_dir, tmp_path / "work", "cpu", repo_root=root)
+    seen = []
+    monkeypatch.setattr(P, "final_record", lambda p_, command, status, actual, nxt, runs, stop: seen.append(
+        (command, status, stop)))
+    marker = root / TG.MARKER_REL
+
+    def run(exc, with_marker):
+        def fake(p_):
+            if with_marker:
+                marker.parent.mkdir(parents=True, exist_ok=True)
+                marker.write_text("{}", encoding="utf-8")
+            raise exc
+        monkeypatch.setattr(P, "test_evaluate", fake)
+        seen.clear()
+        try:
+            return P.run_test_evaluate(p)
+        finally:
+            if marker.exists():
+                marker.unlink()
+    assert run(ProtocolStop(None, "BLOCKED", "refused"), False) == (False, "BLOCKED") and seen == []
+    with pytest.raises(RuntimeError):
+        run(RuntimeError("injected crash"), False)
+    assert seen == []
+    assert run(STP.Stop("ST10", "BLOCKED", "a", "injected ST10"), False) == (False, "BLOCKED")
+    assert seen[0][0] == "test-evaluate" and seen[0][2]["code"] == "ST10"
+    assert run(ProtocolStop(None, "BLOCKED", "after the marker"), True) == (False, "BLOCKED") and len(seen) == 1
+    with pytest.raises(RuntimeError):
+        run(RuntimeError("injected crash"), True)
+    assert seen[0][1] == "BLOCKED" and "injected crash" in seen[0][2]["message"]
+
+
+def test_formal_commit_chain_through_the_freeze_record(fz, inputs_dir, generated, tmp_path, monkeypatch):
+    """The formal command's own paths (code-reviewer MAJOR 12 of round 1) on a clone with a bare remote: steps 1-8 commit
+    and push their records, the manifests get the step-1 fields, the freeze record is committed and the TEST
+    generator's preconditions then hold (test_data.check_preconditions; nothing is generated). Replaced: the device
+    (CPU), the model (the smoke run's small model), train.train_run (1 smoke step in place of the formal steps; one
+    search run made non-finite: ST6 excludes it and its stop state is hashed), evaluate.evaluate_model (copies of one
+    real evaluation with random correctness), the stops that read result values and Gate 0's verdict (PASS)."""
+    import copy
+    import itertools
+    import random
+    from metrix_e1 import gate as G
+    from metrix_e1 import test_data as TD
+    remote, root = clone_with_remote(fz, tmp_path, monkeypatch)
+    s = P.Pilot(M.smoke_mode(1), inputs_dir, tmp_path / "smoke_work", "cpu")
+    D.write(generated["files"], s.data_dir)
+    s.load_data()
+    base_ev = s.evaluate(s.base_model(), with_em=True)
+    p = P.Pilot(M.FORMAL_MODE, inputs_dir, tmp_path / "work", "cpu", repo_root=root)
+    p.contract = dataclasses.replace(p.contract, arms=dataclasses.replace(p.contract.arms, lora_layers=2))
+    p.device_check = lambda: {"name": "test (CPU)", "total_memory": 0}
+    p.first_load = lambda: None
+    p.before_run = lambda next_seconds=0.0: None
+    p.base_model = s.base_model
+    calls = itertools.count()
+
+    def fake_eval(model, tok, data, templates, ev, mode, device, split="dev", with_em=True, with_s_mapping=False, **kw):
+        out = copy.deepcopy(base_ev)
+        rng = random.Random(next(calls))
+        for row in out["dev_qa"]:
+            row["correct"] = rng.random() < 0.5
+        if not with_em:
+            del out["em_dev"]
+        if with_s_mapping:
+            out["s_mapping_dev_qa"], out["s_mapping_cb"] = copy.deepcopy(out["dev_qa"]), copy.deepcopy(out["train_cb"])
+        return out
+    monkeypatch.setattr(E, "evaluate_model", fake_eval)
+    real_train = T.train_run
+
+    def train(model, tok, data, spec, contract, mode, device, log_fn=None):
+        if spec.name == "F-F6-seed101" and mode.formal:
+            raise T.NonFinite("injected for the test", [float("nan")])
+        return real_train(model, tok, data, spec, contract, M.smoke_mode(1), device, log_fn)
+    monkeypatch.setattr(T, "train_run", train)
+    for name in ("st2", "st3", "st4", "st5"):
+        monkeypatch.setattr(STP, name, lambda *a, **k: None)
+    monkeypatch.setattr(G, "judge", lambda values, contract, mode: {
+        "conditions": {c: {"satisfied": True, "reason": None, "note": None} for c in G.CONDITIONS},
+        "gate0_status": "PASS", "reasons": [], "note": None})
+    ok, status = P.run_gate(p, "formal")
+    assert (ok, status) == (True, "PASS")
+    assert git(root, "status", "--porcelain") == "" and git(root, "rev-parse", "HEAD") == git(remote, "rev-parse", "main")
+    tree = git(remote, "ls-tree", "-r", "--name-only", "main").split("\n")
+    res = R.FORMAL_RESULTS_REL
+    for k in range(1, 9):
+        assert "%s/step%d_record.json" % (res, k) in tree
+    runs = [x for x in tree if x.startswith("%s/%s/" % (res, P.RUNS_DIR))]
+    assert len(runs) == 30 and R.GATE0_RECORD_REL in tree and R.SELECTION_FREEZE_REL in tree
+    (exp,) = [x for x in tree if x.startswith(res + "/experiment_record_formal_") and x.endswith(".json")]
+    assert json.loads(git(remote, "show", "main:%s" % exp))["template"]["Status"] == "NOT_TESTED"
+    dm = json.loads(git(remote, "show", "main:%s" % FZ.DATA_MANIFEST_REL))
+    assert all(dm["files"][n]["status"] == P.GENERATED for n in D.DATA_FILES)
+    freeze = json.loads(git(remote, "show", "main:%s" % R.SELECTION_FREEZE_REL))
+    f6 = json.loads(git(remote, "show", "main:%s/%s/F-F6-seed101.json" % (res, P.RUNS_DIR)))
+    assert f6["finite"] is False and freeze["checkpoints"]["F-F6-seed101"] == f6["checkpoint"]["state_sha256"]
+    assert freeze["selected"]["F"] != "F6" and len(freeze["checkpoints"]) == 30
+    fz2, auth = TD.check_preconditions(root, inputs_dir, p.data_dir)      # the TEST generator's preconditions hold
+    assert auth.selection_record_sha256 == FZ.sha256_hex((root / R.SELECTION_FREEZE_REL).read_bytes())
+    assert p.commit([root / P.STEP1_RECORD_REL], "unchanged", "an unchanged record") is None
+    with pytest.raises(ProtocolStop, match="device ledger"):        # first_load was replaced: no ledger was written
+        p.start_checks("formal")
+    p.ledger.record_first("test device")
+    with pytest.raises(ProtocolStop, match="freeze record"):
+        p.start_checks("formal")

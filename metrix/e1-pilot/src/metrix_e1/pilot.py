@@ -4,8 +4,8 @@ Implementation Task Order V1 section 5 (run_pilot.py: steps 1-8 in order, ST12 b
 committed at its end), section 7 (smoke mode), section 11 (acceptance). Protocol sections 7 (search, selection,
 training contract), 8 (steps; Gate 0; TEST), 10 (experiment record), 11 (stops). Review Gate's ruling on C1 of
 2026-11-25 (tasks/IMPL_C1_RULING.md): item 3 (checkpoint hash = train.state_sha256; the smoke test saves and reloads
-every checkpoint and shows the hash unchanged). Review Gate's ruling of 2026-11-27 (reports/IMPL_C_REPORT.md): item 1
-(TEST evaluation calls do not fetch; begin and finish do; nobody pushes to the pilot's branch between them).
+every checkpoint and shows the hash unchanged). Review Gate's ruling of 2026-11-27 (tasks/IMPL_C2_OWNER_MESSAGE.md): item
+1 (TEST evaluation calls do not fetch; begin and finish do; nobody pushes to the pilot's branch between them).
 
 Commands (run_pilot.py; every command prints RESULT: PASS / RESULT: FAIL, exit 0 only on PASS):
   smoke          steps 1-7 on the CPU with a random small model of the protocol's class (the pinned config.json
@@ -31,8 +31,16 @@ Directories. <work> (outside the repository; refused inside it) holds the data f
 ledger and the GPU clock (formal), the TEST files and the per-question TEST details (outside the repository: no TEST
 content is committed). Formal records go to the repository's results directory (record.FORMAL_RESULTS_REL): one record
 per step, one per training run (with the DEV summary), the per-question DEV details, the Gate 0 and freeze records, and
-the experiment record of protocol section 10 at the end of each of the commands formal and test-evaluate, stopped runs
-included.
+the experiment record of protocol section 10 (one file per command run, named with its start time) at the end of the
+commands formal, test-evaluate and, for an ST10 stop, test-generate; stopped runs included. A stop inside a step first
+writes that step's record; records written but not yet committed when a run stops are committed with its experiment
+record. One exception (final_record): a formal run that stops before step 1 began writes its experiment record to
+<work> only.
+
+Continuity (start_checks). A formal pilot is one sequence of commands on one machine with one --work: once a formal
+run has committed step records, formal and test-evaluate refuse a --work without the device ledger (the recorded device
+name, ST9, and the GPU clock, ST7, live there), and formal refuses to run again once a freeze record is committed. How
+a stopped pilot is restarted is the Owner's decision (RUNBOOK_A100.md).
 
 Checkpoints (protocol section 7: only the final checkpoint of a run is kept and evaluated). Each run's final state is
 hashed (train.state_sha256, interpretation B25), saved with torch.save, reloaded into a fresh model of the run's
@@ -40,12 +48,16 @@ structure and hashed again; the two hashes must be equal, and the reloaded model
 evaluation reads the saved checkpoint. All 30 are kept (none is deleted: metrix/CLAUDE.md section 7); the RUNBOOK
 gives the disk size.
 
-Preflight (section 8 step 2, ST11; interpretation B17). Besides B17's estimate (compute.estimate_total_hours) the
-preflight measures one model load, one state_sha256, one checkpoint save and one reload of the first configuration's
-model (DEFERRED_MINORS 1.27 CA21: the time of state_sha256 is part of the estimate) and adds
-  CHECKPOINT_OVERHEAD = loads x load + runs x (2 hashes + save + reload) + TEST models x hash
-(loads: N, the 30 runs, the 3 G0.8 re-evaluations, the 16 TEST models; the TEST models are hashed once more by
-testgate.require_test_session). ST11 reads the sum. The sum is never below B17's estimate.
+Preflight (section 8 step 2, ST11; interpretation B17). ST11 reads B17's estimate (compute.estimate_total_hours)
+unchanged. The preflight also measures one model load, one state_sha256, one checkpoint save, one reload and one file
+hash of the first configuration's model (DEFERRED_MINORS 1.27 CA21) and reports, beside B17's estimate,
+  CHECKPOINT_OVERHEAD = loads x load + runs x (2 hashes + save + reload + file hash)
+                        + TEST state hashes x hash + TEST checkpoint files x file hash
+(evaluation_plan: loads of N, the 30 runs, the G0.8 re-evaluations and the 16 TEST models; the TEST models' state
+hashes in testgate.require_test_session plus N's in begin; the 15 TEST checkpoint files) and the sum; whether ST11
+should read the sum is for Review Gate (reports/IMPL_C_REPORT.md). The measured times also give the ST7 look-ahead
+(next_seconds): before a training run its training, save and DEV evaluation; before an evaluation the evaluation; before
+the TEST evaluation begins, the whole TEST evaluation (test_evaluation_seconds), so that ST7 does not stop it half-way.
 """
 import dataclasses
 import gc
@@ -80,11 +92,11 @@ SMOKE_RECORDED_STOPS = ("ST2", "ST3", "ST4", "ST5", "ST11")   # read result valu
 LABEL_FILE = "LABEL.txt"
 DATA_DIR, CHECKPOINT_DIR, TEST_DIR, TEST_DETAILS_DIR, PREFLIGHT_DIR = "data", "checkpoints", "test", "test_details", "preflight"
 SMOKE_RECORDS_DIR = "records"
+STEP1_RECORD_REL = R.FORMAL_RESULTS_REL + "/step1_record.json"
 RUNS_DIR, DETAILS_DIR = "training_runs", "details"     # under the records directory ("runs" is in the repository's
                                                        # .gitignore; tests/test_run_pilot.py checks every record path)
 DEVICE_LEDGER, GPU_CLOCK = "device_ledger.json", "gpu_clock.json"
 GENERATED = "GENERATED"             # DATA_MANIFEST.json files.<name>.status once step 1 has written the hashes
-G08_REEVALUATIONS = 3               # see evaluation_plan(): one per training seed of F's selected configuration
 
 
 # --------------------------------------------------------------------------------------------------- helpers
@@ -154,18 +166,31 @@ def step1_manifests(fz, current, file_hashes):
 
 
 def evaluation_plan(contract):
-    """Counts the preflight overhead uses: model loads (N, the 30 runs, the G0.8 re-evaluations, N and the 15 TEST
-    checkpoints), checkpoints saved (30), models hashed at TEST (16)."""
+    """Counts of the checkpoint overhead: model loads (N, the 30 runs, one G0.8 re-evaluation per training seed, N and
+    the 15 TEST checkpoints), checkpoints saved (30), state hashes at TEST (the 16 models in require_test_session and
+    N's once more in begin), TEST checkpoint files hashed before the marker (15)."""
+    seeds = len(contract.training.training_seeds)
     runs = contract.arms.counts["total_training_runs"]
-    test_models = 1 + len(T.ARMS_TRAINED) * len(contract.training.training_seeds)
-    if G08_REEVALUATIONS != len(contract.training.training_seeds):
-        raise ImplementationFail("G0.8 re-evaluates F's selected configuration once per training seed")
-    return {"loads": 1 + runs + G08_REEVALUATIONS + test_models, "checkpoints": runs, "test_hashes": test_models}
+    test_models = 1 + len(T.ARMS_TRAINED) * seeds
+    return {"loads": 1 + runs + seeds + test_models, "checkpoints": runs, "test_state_hashes": test_models + 1,
+            "test_file_hashes": test_models - 1, "test_models": test_models}
 
 
-def checkpoint_overhead_seconds(contract, load_s, hash_s, save_s, reload_s):
+def checkpoint_overhead_seconds(contract, load_s, hash_s, save_s, reload_s, file_hash_s):
     n = evaluation_plan(contract)
-    return (n["loads"] * load_s + n["checkpoints"] * (2 * hash_s + save_s + reload_s) + n["test_hashes"] * hash_s), n
+    return (n["loads"] * load_s + n["checkpoints"] * (2 * hash_s + save_s + reload_s + file_hash_s)
+            + n["test_state_hashes"] * hash_s + n["test_file_hashes"] * file_hash_s), n
+
+
+def test_evaluation_seconds(contract, pre):
+    """ST7 look-ahead before the TEST evaluation begins: every TEST model loaded and hashed (twice for N), the 15
+    checkpoint files hashed, each model evaluated once on TEST (a DEV evaluation scaled by test / dev questions per
+    fact, as B17). `pre`: the timing block of the committed step 2 record."""
+    n = evaluation_plan(contract)
+    acc = contract.accounting
+    per_eval = pre["dev_evaluation_seconds"] * acc.test_questions_per_fact / acc.dev_questions_per_fact
+    return (n["test_models"] * (pre["load_s"] + per_eval) + n["test_state_hashes"] * pre["hash_s"]
+            + n["test_file_hashes"] * pre["file_hash_s"])
 
 
 # --------------------------------------------------------------------------------------------------- the pilot
@@ -200,7 +225,7 @@ class Pilot:
         self.rows = None
         self.tok = None
         self.base_sha = None
-        self.run_estimate_seconds = 0.0             # next-run estimate for ST7 (from the preflight)
+        self.pre = None                             # preflight timings (ST7 look-ahead), set by preflight()
         self.smoke_stops = []
         self.excluded = []
         self.runs = {}                              # run name -> result of train_and_evaluate (kept for a stopped run)
@@ -208,6 +233,7 @@ class Pilot:
         self.step1_started = False                  # formal: the repository is written only from step 1 on
         self.steps = {}
         self.written = []
+        self.uncommitted = []                       # formal records written and not yet committed
 
     # -- output
     def label_dir(self, d):
@@ -218,21 +244,34 @@ class Pilot:
 
     def write(self, name, obj):
         """A JSON record of this command under the records directory with its mode and label; the formal results
-        directory refuses smoke and preflight records and a formal record goes nowhere else (record.write_record)."""
+        directory refuses smoke and preflight records and a formal record goes nowhere else (record.write_record; the
+        one exception is the experiment record of a formal run that stopped before step 1, final_record)."""
         rec = dict(plain(obj), mode=self.mode.name, label=self.mode.label)
         path = R.write_record(rec, self.records / name, self.root)
         self.written.append(path)
+        if self.mode.formal and path not in self.uncommitted:
+            self.uncommitted.append(path)
         return path
 
     def rel(self, path):
         return Path(path).resolve().relative_to(self.root).as_posix()
 
     def commit(self, paths, message, what):
-        """Formal: commit exactly `paths` and push (testgate.commit_paths; the preconditions were checked before they
-        were written: precommit()). Smoke: nothing is committed."""
+        """Formal: commit those of `paths` whose bytes differ from HEAD (a path equal to its committed version, e.g.
+        a deterministic record written again, is not staged by git and is left out) and push (testgate.commit_paths;
+        the preconditions were checked before they were written: precommit()). Returns the commit, or None when
+        nothing changed. Smoke: nothing is committed."""
         if not self.mode.formal:
             return None
-        head = TG.commit_paths(self.root, [self.rel(p) for p in paths], message, what)
+        rels = [self.rel(x) for x in paths]
+        changed = [r for r in rels if TG._blob(self.root, "HEAD:%s" % r) != (self.root / r).read_bytes()]
+        for x in paths:
+            if x in self.uncommitted:
+                self.uncommitted.remove(x)
+        if not changed:
+            self.log("%s: equal to the committed version, nothing to commit" % what)
+            return None
+        head = TG.commit_paths(self.root, changed, message, what)
         self.log("committed and pushed %s: %s" % (what, head))
         return head
 
@@ -253,6 +292,46 @@ class Pilot:
                 return False
             raise
         return True
+
+    def stop_in_step(self, k, record, paths, fn, *args):
+        """stop_check inside step k: when the stop propagates, the step's record (with what the step computed and the
+        stop) is written and, in formal mode, committed first; then the stop is raised again."""
+        try:
+            return self.stop_check(fn, *args)
+        except STP.Stop as e:
+            rec = dict(record, stopped={"code": e.stop, "status": e.status, "message": str(e)})
+            try:
+                self.step_end(k, rec, paths, "metrix: E1-PILOT formal step %d record (stop %s)" % (k, e.stop))
+            except ProtocolStop as e2:
+                self.log("the step %d record of the stop was not committed: %s" % (k, e2))
+            raise
+
+    def start_checks(self, command):
+        """Continuity of a formal pilot (module docstring): once a formal run committed step records, a --work
+        without the device ledger is refused (ST9 and ST7 read it); formal refuses to run again once a freeze record
+        is committed. Raises a BLOCKED stop before anything is written."""
+        if not self.mode.formal:
+            return
+        if TG._blob(self.root, "HEAD:%s" % STEP1_RECORD_REL) is not None and not self.ledger.path.exists():
+            raise ProtocolStop(None, "BLOCKED", "a formal run has committed step records (%s) but --work %s holds no "
+                               "device ledger: continue only with that run's --work; a restart is the Owner's "
+                               "decision" % (STEP1_RECORD_REL, self.work))
+        if command == "formal" and TG._blob(self.root, "HEAD:%s" % R.SELECTION_FREEZE_REL) is not None:
+            raise ProtocolStop(None, "BLOCKED", "a freeze record is committed (%s): Gate 0 passed and the "
+                               "configurations are frozen; formal is not run again" % R.SELECTION_FREEZE_REL)
+
+    def run_seconds(self):
+        """ST7 look-ahead of a training run: the preflight's per-step time x the contract's steps x the A factor
+        (B17), one save, reload and two hashes, one DEV evaluation (0 before the preflight)."""
+        if self.pre is None:
+            return 0.0
+        q = self.pre
+        return (q["mean_step_s"] * self.contract.training.total_steps * q["a_factor"] + 2 * q["hash_s"] + q["save_s"]
+                + q["reload_s"] + q["load_s"] + q["dev_evaluation_seconds"])
+
+    def eval_seconds(self):
+        """ST7 look-ahead of one DEV evaluation of a loaded model (0 before the preflight)."""
+        return 0.0 if self.pre is None else self.pre["load_s"] + self.pre["dev_evaluation_seconds"]
 
     def step_start(self, k):
         """ST12 before every step (Implementation Task Order V1 section 5): PROTOCOL_FROZEN, the four frozen files,
@@ -303,10 +382,10 @@ class Pilot:
     def first_load(self):
         """Right before the first model load of this command (called by before_run and base_model): records the
         device name at the pilot's first load (section 7) and opens a GPU clock segment (a segment left open by a
-        process that died is closed first, counted up to now)."""
+        process that died is closed first, counted up to now). No CUDA device: ST8."""
         if not self.mode.formal or self.clock_opened:
             return
-        name = CP.device_info()["name"]
+        name = CP.check_device(self.fz, self.contract, self.mode)["name"]
         if self.ledger.recorded() is None:
             self.ledger.record_first(name)
             self.log("device name recorded at the first model load: %r" % name)
@@ -332,11 +411,9 @@ class Pilot:
             if self.model_files is None:
                 self.model_files = check_model_dir(self.fz, self.model_dir, weights=True)
             return T.load_model(self.model_dir, self.device)
-        from transformers import AutoConfig, AutoModelForCausalLM
+        from transformers import AutoModelForCausalLM
         check_model_dir(self.fz, self.model_dir, weights=False)
-        cfg = AutoConfig.from_pretrained(str(self.model_dir), local_files_only=True)
-        for k, v in SMOKE_MODEL_OVERRIDES.items():
-            setattr(cfg, k, v)
+        cfg = smoke_config(self.model_dir)
         torch.manual_seed(SMOKE_INIT_SEED)
         m = AutoModelForCausalLM.from_config(cfg, dtype=torch.float32, attn_implementation="eager")
         return m.to(self.device).eval()
@@ -361,11 +438,7 @@ class Pilot:
         torch.save({"label": self.mode.label, "run": spec.name, "state_sha256": sha, "state_dict": model.state_dict()},
                    path)
         t2 = time.perf_counter()
-        del model
-        gc.collect()
-        if torch.device(self.device).type == "cuda":
-            torch.cuda.empty_cache()
-        reloaded = self.load_checkpoint(spec, path)
+        reloaded = self.load_checkpoint(spec, path)     # the caller still holds `model` (80 GB hold both)
         t3 = time.perf_counter()
         again = T.state_sha256(reloaded)
         t4 = time.perf_counter()
@@ -399,6 +472,15 @@ class Pilot:
         return S.evaluation_summary(ev, self.rows["facts.jsonl"], self.contract.statistics.strata, split)
 
 
+def smoke_config(model_dir):
+    """The pinned config.json with SMOKE_MODEL_OVERRIDES (the smoke test's small model of the protocol's class)."""
+    from transformers import AutoConfig
+    cfg = AutoConfig.from_pretrained(str(model_dir), local_files_only=True)
+    for k, v in SMOKE_MODEL_OVERRIDES.items():
+        setattr(cfg, k, v)
+    return cfg
+
+
 def check_model_dir(fz, model_dir, weights):
     """ST12 for the model: config.json (and, with `weights`, every *.safetensors file and at least one) in model_dir
     was downloaded from the frozen revision (DATA_MANIFEST.json model.revision): the first line of the
@@ -424,8 +506,10 @@ def check_model_dir(fz, model_dir, weights):
 
 def fetch_model(fz, inputs_dir):
     """The pinned revision's files (config, generation config, weights, index) into <inputs>/qwen_model with
-    huggingface_hub; on the A100 host only (Implementation Task Order V1 red line 2: never in the CPU environment)."""
+    huggingface_hub; on the A100 host only (Implementation Task Order V1 red line 2: never in the CPU environment):
+    the ST8 device check runs first and refuses any other host."""
     from huggingface_hub import snapshot_download
+    CP.check_device(fz, C.load(fz), M.FORMAL_MODE)
     m = fz.data_manifest["model"]
     d = Path(inputs_dir) / T.MODEL_CONFIG_DIR
     snapshot_download(m["repo"], revision=m["revision"], local_dir=str(d), allow_patterns=["*.json", "*.safetensors"])
@@ -473,10 +557,14 @@ def step2(p):
     """Section 8 step 2: the Gate 0 leakage checks (ST1); the preflight (ST11)."""
     p.step_start(2)
     report = LK.run_gate0(p.fz.split_manifest, LK.load_data(p.data_dir))
-    STP.st1(p.fz, report)
+    p.stop_in_step(2, {"leakage": report}, [], STP.st1, p.fz, report)
     p.log("step 2: leakage L1-L6 (Gate 0 part) %s" % report["result"])
     pre = preflight(p)
-    p.step_end(2, {"leakage": report, "preflight": pre, "_files": pre.pop("_files")})
+    files = pre.pop("_files")
+    rec = {"leakage": report, "preflight": pre, "_files": files}
+    ok = p.stop_in_step(2, dict(rec, _files=list(files)), [], STP.st11, p.fz, p.contract, pre["b17_estimate_hours"])
+    pre["st11"] = "within bound" if ok else "smoke: would stop"
+    p.step_end(2, rec)
     return report
 
 
@@ -490,11 +578,15 @@ def preflight(p):
     t0 = time.perf_counter()
     model = p.base_model()
     load_s = time.perf_counter() - t0
-    res = T.train_run(model, p.tok, p.rows, spec, p.contract, pmode, p.device)
-    summ = CP.preflight_summary(res.log, p.device)
-    t0 = time.perf_counter()
-    E.evaluate_model(model, p.tok, p.rows, p.fz.templates, p.contract.evaluation, pmode, p.device, split="dev")
-    eval_s = time.perf_counter() - t0
+    try:
+        res = T.train_run(model, p.tok, p.rows, spec, p.contract, pmode, p.device)
+        summ = CP.preflight_summary(res.log, p.device)
+        t0 = time.perf_counter()
+        E.evaluate_model(model, p.tok, p.rows, p.fz.templates, p.contract.evaluation, pmode, p.device, split="dev")
+        eval_s = time.perf_counter() - t0
+    except T.NonFinite as e:            # no estimate, so no ST11 judgement: stopped as for a control (ST6)
+        STP.st6(p.fz, e.values or [float("nan")], "preflight %s: %s" % (spec.name, e), True)
+        raise
     t0 = time.perf_counter()
     T.state_sha256(model)
     hash_s = time.perf_counter() - t0
@@ -504,6 +596,9 @@ def preflight(p):
     t0 = time.perf_counter()
     torch.save({"label": pmode.label, "state_dict": model.state_dict()}, path)
     save_s = time.perf_counter() - t0
+    t0 = time.perf_counter()
+    FZ.file_sha256(path)
+    file_hash_s = time.perf_counter() - t0
     del model
     gc.collect()
     t0 = time.perf_counter()
@@ -519,29 +614,30 @@ def preflight(p):
     used = p.clock.used() if p.clock is not None else 0.0
     hours, parts = CP.estimate_total_hours(p.contract, summ["mean_seconds_per_step_excluding_first"], fact_per_step,
                                            anchor_per_step, eval_s, used)
-    overhead, counts = checkpoint_overhead_seconds(p.contract, load_s, hash_s, save_s, reload_s)
-    total = hours + overhead / 3600.0
-    p.run_estimate_seconds = summ["mean_seconds_per_step_excluding_first"] * p.contract.training.total_steps * parts["a_factor"]
+    overhead, counts = checkpoint_overhead_seconds(p.contract, load_s, hash_s, save_s, reload_s, file_hash_s)
+    p.pre = {"mean_step_s": summ["mean_seconds_per_step_excluding_first"], "a_factor": parts["a_factor"],
+             "dev_evaluation_seconds": eval_s, "load_s": load_s, "hash_s": hash_s, "save_s": save_s,
+             "reload_s": reload_s, "file_hash_s": file_hash_s}
     out = {"label": pmode.label, "mode": pmode.name, "run": spec.name, "steps": res.steps_run, "summary": summ,
            "dev_evaluation_seconds": eval_s, "fact_tokens_per_step": fact_per_step,
            "anchor_tokens_per_step": anchor_per_step, "b17_estimate_hours": hours, "b17_parts": parts,
-           "checkpoint_overhead": {"seconds": overhead, "counts": counts, "load_s": load_s, "hash_s": hash_s,
-                                   "save_s": save_s, "reload_s": reload_s},
-           "estimate_total_hours": total, "st11_bound_hours": p.contract.stops.st11_hours,
-           "checkpoint_file": str(path), "_files": [path]}
-    p.log("preflight (%s): %.4f s/step, DEV evaluation %.1f s, estimate %.3f h (B17 %.3f h + checkpoint overhead "
-          "%.3f h)" % (pmode.name, summ["mean_seconds_per_step_excluding_first"], eval_s, total, hours, overhead / 3600.0))
-    out["st11"] = "within bound" if p.stop_check(STP.st11, p.fz, p.contract, total) else "smoke: would stop"
+           "st11_reads": "b17_estimate_hours", "st11_bound_hours": p.contract.stops.st11_hours,
+           "checkpoint_overhead_report_only": {"seconds": overhead, "counts": counts},
+           "b17_plus_checkpoint_overhead_hours_report_only": hours + overhead / 3600.0,
+           "timing": p.pre, "checkpoint_file": str(path), "_files": [path]}
+    p.log("preflight (%s): %.4f s/step, DEV evaluation %.1f s, B17 estimate %.3f h (ST11); checkpoint overhead %.3f h "
+          "(report only; sum %.3f h)" % (pmode.name, p.pre["mean_step_s"], eval_s, hours, overhead / 3600.0,
+                                        hours + overhead / 3600.0))
     return out
 
 
 def step3(p):
     """Section 8 step 3: N on TRAIN closed book, DEV-QA, general DEV; ST2 on G0.3."""
     p.step_start(3)
-    p.before_run()
+    p.before_run(p.eval_seconds())
     model = p.base_model()
     p.base_sha = T.state_sha256(model)
-    ev = p.evaluate(model, with_em=True)
+    ev = control_evaluation(p, model, "N on DEV", with_em=True)
     summ = p.summary(ev)
     vals = G.n_range_values(summ, p.contract.statistics.strata, "dev")
     ok = G.n_ranges_hold(vals, p.contract, "dev")
@@ -550,10 +646,21 @@ def step3(p):
     gc.collect()
     p.log("step 3: N acc_dev_learned %.4f acc_dev_unread %.4f acc_cb %.4f; G0.3 ranges %s" % (
         vals["acc_dev_learned"], vals["acc_dev_unread"], vals["acc_cb"], "hold" if ok else "do not hold"))
-    stop = p.stop_check(STP.st2, p.fz, ok)
-    p.step_end(3, {"N": {"state_sha256": p.base_sha, "summary": _summary_record(summ), "g03_values": vals,
-                         "g03_holds": ok, "st2": "not triggered" if stop else "smoke: would stop"}}, [det])
+    rec = {"N": {"state_sha256": p.base_sha, "summary": _summary_record(summ), "g03_values": vals, "g03_holds": ok}}
+    stop = p.stop_in_step(3, rec, [det], STP.st2, p.fz, ok)
+    rec["N"]["st2"] = "not triggered" if stop else "smoke: would stop"
+    p.step_end(3, rec, [det])
     return {"ev": ev, "summary": summ}
+
+
+def control_evaluation(p, model, what, split="dev", **kw):
+    """An evaluation of N or of a selected configuration's checkpoint: a non-finite value is ST6 on a control or a
+    selected configuration (IMPLEMENTATION_FAIL)."""
+    try:
+        return p.evaluate(model, split=split, **kw)
+    except T.NonFinite as e:
+        STP.st6(p.fz, e.values or [float("nan")], "%s: %s" % (what, e), True)
+        raise
 
 
 def _summary_record(summ):
@@ -566,16 +673,18 @@ def train_and_evaluate(p, spec, n_general, selected_or_control):
     """One training run (protocol sections 4, 7) and the DEV evaluation of its saved final checkpoint. A non-finite
     value (ST6): outside the selected configurations and the controls the configuration is excluded from selection
     (returns a result with finite False); otherwise IMPLEMENTATION_FAIL (the stop propagates)."""
-    p.before_run(p.run_estimate_seconds)
+    p.before_run(p.run_seconds())
     model = p.base_model()                              # train.train_run sets up the arm (LoRA for L)
     rec = {"kind": "training_run", "run": spec.name, "arm": spec.arm, "config_id": spec.config_id,
            "config": spec.cfg, "seed": spec.seed, "phase": spec.phase, "device_name": p.device_name}
+    ck = None
     try:
         res = T.train_run(model, p.tok, p.rows, spec, p.contract, p.mode, p.device)
         params_forward = sum(q.numel() for q in model.parameters())
         reloaded, ck = p.save_checkpoint(spec, model)
         del model
-        p.before_run()
+        model = None
+        p.before_run(p.eval_seconds())
         ev = p.evaluate(reloaded, with_em=True, with_s_mapping=spec.arm == "S")
     except T.NonFinite as e:
         try:
@@ -583,10 +692,13 @@ def train_and_evaluate(p, spec, n_general, selected_or_control):
         except STP.Stop as stop:
             if not stop.exclude_config:
                 raise
+            if ck is None:                  # stopped in training: the state at the stop is the run's final state
+                _, ck = p.save_checkpoint(spec, model)
             p.excluded.append({"run": spec.name, "reason": str(stop)})
             p.log("ST6: %s excluded from selection: %s" % (spec.name, stop))
-            rec.update(finite=False, excluded=str(stop))
-            return {"spec": spec, "finite": False, "record": p.write("%s/%s.json" % (RUNS_DIR, spec.name), rec)}
+            rec.update(finite=False, excluded=str(stop), checkpoint=ck)
+            return {"spec": spec, "finite": False, "state_sha256": ck["state_sha256"],
+                    "record": p.write("%s/%s.json" % (RUNS_DIR, spec.name), rec)}
         raise ImplementationFail("non-finite values %r without a stop" % (e.values,))
     summ = p.summary(ev)
     dnll, ppl = S.dnll(ev["general_dev"], n_general)
@@ -631,12 +743,12 @@ def step4(p, runs, n_general):
     p.step_start(4)
     res, sel = search(p, "F", n_general)
     runs.update(res)
-    f101 = runs[_name(p, "F", sel["selected"], p.contract.training.search_seed)]["summary"]
+    f101 = runs[_name("F", sel["selected"], p.contract.training.search_seed)]["summary"]
     cb, acc = float(f101["acc_cb"]), float(f101["acc_dev_learned"])
-    stop = p.stop_check(STP.st3, p.fz, p.contract, cb, acc)
-    p.step_end(4, {"selection": sel, "positive_control": {"acc_cb": cb, "acc_dev_learned": acc,
-                                                         "st3": "not triggered" if stop else "smoke: would stop"}},
-               _run_files(res))
+    rec = {"selection": sel, "positive_control": {"acc_cb": cb, "acc_dev_learned": acc}}
+    stop = p.stop_in_step(4, rec, _run_files(res), STP.st3, p.fz, p.contract, cb, acc)
+    rec["positive_control"]["st3"] = "not triggered" if stop else "smoke: would stop"
+    p.step_end(4, rec, _run_files(res))
     return sel["selected"]
 
 
@@ -676,22 +788,26 @@ def step7(p, runs, n, leakage, selected):
     seeds = p.contract.training.training_seeds
     repro, files = {}, []
     for seed in seeds:
-        spec = runs[_name(p, "F", selected["F"], seed)]["spec"]
-        p.before_run()
+        spec = runs[_name("F", selected["F"], seed)]["spec"]
+        p.before_run(p.eval_seconds())
         model = p.load_checkpoint(spec, p.ckpt_dir / ("%s.pt" % spec.name))
-        ev2 = p.evaluate(model, with_em=False)
+        ev2 = control_evaluation(p, model, "G0.8 second evaluation of %s" % spec.name, with_em=False)
         del model
         gc.collect()
         repro[seed] = (runs[spec.name]["ev"], ev2)
         files.append(p.write(DETAILS_DIR + "/%s_dev_g08.json" % spec.name, {"kind": "evaluation_details", "model": spec.name,
                                                                      "split": "dev", "evaluation": ev2,
                                                                      "purpose": "G0.8 second evaluation"}))
+    # G0.2 reads the values used: a non-finite value in a used run (N, a selected configuration, S, Y, the G0.8
+    # re-evaluations) stops the pilot with ST6 before this point; configurations excluded by ST6 during the search
+    # (section 7: "出现非有限损失或分数的配置剔除") are not used and are listed in the step 7 record ("excluded"). How G0.2
+    # reads an excluded configuration is for Review Gate (reports/IMPL_C_REPORT.md).
     inp = {"leakage": leakage, "all_finite": True, "nonfinite": [], "facts": p.rows["facts.jsonl"], "N": n["summary"],
            "repro": repro}
     for arm in ("F", "L", "A"):
-        inp[arm] = {s: runs[_name(p, arm, selected[arm], s)]["summary"] for s in seeds}
+        inp[arm] = {s: runs[_name(arm, selected[arm], s)]["summary"] for s in seeds}
     for arm in p.contract.arms.inheriting:
-        inp[arm] = {s: runs[_name(p, arm, selected["F"], s)]["summary"] for s in seeds}
+        inp[arm] = {s: runs[_name(arm, selected["F"], s)]["summary"] for s in seeds}
     values = G.compute_values(inp, p.contract)
     judged = G.judge(values, p.contract, p.mode)
     comparisons = G.report_comparisons(inp, p.contract, "dev")
@@ -711,17 +827,17 @@ def step8_freeze(p, runs, selected, content):
     """Section 8 step 8, first part (formal, Gate 0 PASS): the freeze record of the selected configurations, the data
     content hashes and the 30 checkpoint hashes, bound to the committed Gate 0 record; committed and pushed. TEST is
     not generated here (test-generate, on the Owner's decision)."""
-    g0, g0_sha = R.committed_json(p.root, R.GATE0_RECORD_REL)
+    p.step_start(8)                                     # ST12, ST13, the commit preconditions
+    _, g0_sha = R.committed_json(p.root, R.GATE0_RECORD_REL)
     plan = T.training_plan(p.contract, selected)
-    checkpoints = {s.name: runs[s.name]["state_sha256"] for s in plan}
+    checkpoints = {s.name: runs[s.name]["state_sha256"] for s in plan}      # excluded runs included (their stop state)
     rec = R.selection_freeze_record(p.fz, p.mode, selected, content, checkpoints, g0_sha)
     problem = R.freeze_record_problem(rec, p.contract, p.fz.check_data_dir(p.data_dir), g0_sha)
     if problem:
         raise ImplementationFail("freeze record: %s" % problem)
-    p.precommit("the freeze record")
     path = p.write(R.SELECTION_FREEZE_RECORD, rec)
-    p.commit([path], "metrix: E1-PILOT formal step 8 freeze record (selected configurations, data hashes, checkpoint "
-             "hashes)", "the freeze record")
+    p.step_end(8, {"freeze_record": p.rel(path), "gate0_record_sha256": g0_sha, "excluded": p.excluded}, [path],
+               "metrix: E1-PILOT formal step 8 freeze record (selected configurations, data hashes, checkpoint hashes)")
     return path
 
 
@@ -733,6 +849,11 @@ def step8_smoke_refusal(p):
     out = p.work / "step8_refused_out"
     if out.exists():
         raise ImplementationFail("%s exists before the refusal test" % out)
+    formal = [rel for rel in (R.GATE0_RECORD_REL, R.SELECTION_FREEZE_REL, TG.ST10_RECORD_REL)
+              if TG._blob(p.root, "HEAD:%s" % rel) is not None or (p.root / rel).exists()]
+    if formal:                          # there the generator's preconditions may hold: it would generate TEST
+        raise ImplementationFail("smoke step 8 refused: this checkout holds formal records %s; the refusal test runs "
+                                 "only where no Gate 0, freeze or ST10 record exists" % formal)
     r = subprocess.run(test_generate_command(p, out), cwd=str(p.root), capture_output=True, text=True, check=False,
                        env=_subprocess_env())
     lines = (r.stdout or "").strip().split("\n")
@@ -748,8 +869,9 @@ def step8_smoke_refusal(p):
     return rec
 
 
-def _name(p, arm, config_id, seed):
-    return "%s-%s-seed%d" % (arm, config_id, seed)
+def _name(arm, config_id, seed):
+    """The run name of train.RunSpec.name."""
+    return T.RunSpec(arm, config_id, (), seed, "").name
 
 
 def _run_files(res):
@@ -819,7 +941,7 @@ def write_experiment_record(p, command, status, actual, next_single, runs=None, 
     values = experiment_values(p, command, status, actual, next_single, runs, stop)
     env = R.environment(p.fz, p.device_name or p.device, CP.determinism_settings())
     rec = R.new_record(p.fz, p.mode, values["Experiment ID"], plain(values), env)
-    name = "experiment_record_%s.json" % command
+    name = "experiment_record_%s_%s.json" % (command, p.started)       # one file per run: none overwritten
     if outside_repo:
         p.work.mkdir(parents=True, exist_ok=True)
         path = p.work / name
@@ -843,9 +965,9 @@ def gate_steps(p):
     step6(p, runs, n_general, selected)
     values, judged, _ = step7(p, runs, n, leakage, selected)
     seeds = p.contract.training.training_seeds
-    f101 = runs[_name(p, "F", selected["F"], p.contract.training.search_seed)]["summary"]
+    f101 = runs[_name("F", selected["F"], p.contract.training.search_seed)]["summary"]
     actual = {"selected": selected, "gate0": judged, "values": values,
-              "positive_control": {"run": _name(p, "F", selected["F"], p.contract.training.search_seed),
+              "positive_control": {"run": _name("F", selected["F"], p.contract.training.search_seed),
                                    "acc_cb": f101["acc_cb"], "acc_dev_learned": f101["acc_dev_learned"]},
               "negative_controls": {"G0.6 (S)": values["G0.6"], "G0.7 (Y)": values["G0.7"], "G0.3 (N)": values["G0.3"]},
               "runs_completed": len(runs), "training_seeds": seeds,
@@ -856,29 +978,34 @@ def gate_steps(p):
         return judged["gate0_status"], actual, "Review Gate reviews the smoke report (C2)", runs
     if judged["gate0_status"] == "PASS":
         actual["freeze_record"] = p.rel(step8_freeze(p, runs, selected, content))
-        return "PASS", actual, ("Owner decides on TEST generation (run_pilot.py test-generate, RUNBOOK_A100.md); "
-                                "the pilot's final status follows the TEST confirmation"), runs
+        # Section 9: PASS is Gate 0 and T1-T3; until TEST the pilot stopped without violating a condition: NOT_TESTED
+        # (Gate 0 PASS is in Actual; the word for this field is for Review Gate, reports/IMPL_C_REPORT.md).
+        actual["gate0_status"] = "PASS"
+        return "NOT_TESTED", actual, ("Owner decides on TEST generation (run_pilot.py test-generate, "
+                                      "RUNBOOK_A100.md); the pilot's final status follows the TEST confirmation"), runs
     return judged["gate0_status"], actual, "report to the Owner: Gate 0 not passed, no TEST", runs
 
 
 def run_gate(p, command):
     """The command formal or smoke: steps 1-7 (+ the step 8 part), then the experiment record (also for a stopped
     or crashed run). Returns (completed without a stop, Gate 0 status or the stop's status)."""
-    crash = None
+    crash, gate0 = None, None
     try:
         p.device_info_record = p.device_check()
         if p.mode.formal:                           # the records name the code that ran (testgate.code_commit)
             p.code_commit = TG.code_commit(p.root)
+            p.start_checks(command)
         status, actual, nxt, _ = gate_steps(p)
+        gate0 = actual["gate0"]["gate0_status"]
         stop = None
     except ProtocolStop as e:
         status = e.status or "NOT_TESTED"
-        actual, nxt = {"stopped": str(e)}, "report to the Owner (stop %s)" % (e.stop,)
+        actual, nxt = stopped_actual(p, e), "report to the Owner (stop %s)" % (e.stop,)
         stop = {"code": e.stop, "status": e.status, "message": str(e), "void_pilot": getattr(e, "void_pilot", False)}
         p.log("STOP: %s" % e)
     except Exception as e:           # a crash: the record is written (section 10: stopped runs too), then re-raised
-        crash = e
-        status, actual, nxt = "NOT_TESTED", {"crashed": repr(e)}, "report to the Owner (the run crashed)"
+        crash = e                    # (NOT_TESTED: the word for a crash is for Review Gate, reports/IMPL_C_REPORT.md)
+        status, actual, nxt = "NOT_TESTED", stopped_actual(p, e), "report to the Owner (the run crashed)"
         stop = {"code": None, "status": None, "message": "crash: %r" % (e,)}
     finally:
         p.close_clock()
@@ -889,7 +1016,14 @@ def run_gate(p, command):
         print_smoke_report(p, report)
     if crash is not None:
         raise crash
-    return stop is None, status
+    return stop is None, gate0 if gate0 is not None else status
+
+
+def stopped_actual(p, e):
+    """Actual of a stopped run: the stop, the steps reached (seconds, files) and the step records written; the
+    step's own numbers are in its record (Pilot.stop_in_step)."""
+    return {"stopped": str(e), "steps": {k: {x: v.get(x) for x in ("seconds", "files")} for k, v in p.steps.items()},
+            "step_records": [str(x) for x in p.written if Path(x).name.startswith("step")]}
 
 
 def final_record(p, command, status, actual, nxt, runs, stop):
@@ -898,7 +1032,11 @@ def final_record(p, command, status, actual, nxt, runs, stop):
     A formal run that stopped before step 1 began (the device check ST8, the code not committed, the commit
     preconditions of step 1) did not start on this machine: its record is written to <work>, outside the repository,
     and nothing is committed (no formal command writes into or pushes from a clone on a machine that is not the
-    pilot's); the operator reports it with the log (RUNBOOK_A100.md section 4)."""
+    pilot's); the operator reports it with the log (RUNBOOK_A100.md section 4). This includes ST8 on the A100 host
+    (e.g. a 40 GB card), ST12 or ST13 at the start of step 1, the continuity checks (start_checks), and ST12 in
+    Pilot() itself (no Pilot, so no record at all: run_pilot.py exits with the traceback). Whether such a record
+    belongs in the repository is for Review Gate (protocol section 10; reports/IMPL_C_REPORT.md).
+    Records written by the run and not yet committed (a stop or crash inside a step) are committed with it."""
     if p.mode.formal and command == "formal" and not p.step1_started:
         paths = write_experiment_record(p, command, status, actual, nxt, runs, stop, outside_repo=True)
         p.log("experiment record: %s (status %s; the run stopped before step 1: not committed)" % (paths[0], status))
@@ -907,8 +1045,9 @@ def final_record(p, command, status, actual, nxt, runs, stop):
     p.log("experiment record: %s (status %s)" % (paths[0], status))
     try:
         p.precommit("the experiment record")
-        p.commit(paths, "metrix: E1-PILOT formal %s experiment record (status %s)" % (command, status),
-                 "the experiment record")
+        left = [x for x in p.uncommitted if x not in paths]
+        p.commit(left + paths, "metrix: E1-PILOT formal %s experiment record (status %s)%s" % (
+            command, status, "; %d records of the stopped step" % len(left) if left else ""), "the experiment record")
     except ProtocolStop as e:
         p.log("the experiment record was not committed: %s; it stays in the working tree; report to the Owner" % e)
         if stop is None:
@@ -961,13 +1100,30 @@ def test_generate_command(p, out):
 
 def run_test_generate(p):
     """Section 8 step 8, TEST generation (formal, on the Owner's decision): test_data.main as a subprocess with --out
-    <work>/test; its output is passed through; the return code is its exit code."""
+    <work>/test; its output is passed through; the return code is its exit code. When the generator stopped with ST10
+    (its committed ST10 record has a count over its frozen limit), the stop is a protocol stop of the pilot: the
+    experiment record (BLOCKED, ST10) is written and committed. A refusal before generation leaves no record."""
     if not p.mode.formal:
         raise ImplementationFail("TEST is generated in formal mode only")
     cmd = test_generate_command(p, p.work / TEST_DIR)
     p.log("running %s" % " ".join(cmd))
     r = subprocess.run(cmd, cwd=str(p.root), check=False, env=_subprocess_env())
+    over = st10_over_limit(p)
+    if over:
+        stop = {"code": "ST10", "status": "BLOCKED", "message": "TEST part over limit %s (committed %s)" % (
+            over, TG.ST10_RECORD_REL)}
+        final_record(p, "test-generate", "BLOCKED", {"stopped": stop["message"], "st10_record": TG.ST10_RECORD_REL},
+                     "report to the Owner (ST10: TEST is not evaluated)", None, stop)
     return r.returncode
+
+
+def st10_over_limit(p):
+    """The checks of the committed ST10 record over their frozen limits ([] when there is no committed record)."""
+    try:
+        rec, _ = R.committed_json(p.root, TG.ST10_RECORD_REL)
+    except R.NotCommitted:
+        return []
+    return TG.over_limit(p.fz, rec.get("counts") or {})
 
 
 def _subprocess_env():
@@ -980,46 +1136,65 @@ def _subprocess_env():
 
 def test_evaluate(p):
     """Section 8 step 8, TEST evaluated once (formal): the generator's preconditions again (test_data.check_preconditions:
-    ST12, the committed Gate 0 and freeze records, every interpretation ruled) give the TestAuthorization; the
-    checkpoint files of the marker's models are checked against their run records before the marker is written;
+    ST12, the committed Gate 0 and freeze records, every interpretation ruled) give the TestAuthorization; before the
+    marker is written: the continuity checks, the checkpoint files of the marker's models against their committed run
+    records, the base model's state hash against N's in the committed step 3 record, and ST7 with the whole TEST
+    evaluation as the look-ahead (test_evaluation_seconds, from the committed step 2 record); then
     testgate.begin_test_evaluation (ST10 from the committed records, the marker committed and pushed); every model of
-    the marker evaluated once with evaluate_model(split="test"); T1-T3 (gate.judge_test) and the section 6 comparisons
-    on TEST; testgate.finish_test_evaluation commits the result: aggregate values and per-fact scores only (no question
-    text, no general-text rows; the per-question details stay in <work>/test_details, outside the repository)."""
+    the marker evaluated once with evaluate_model(split="test") (a non-finite value: ST6 on a selected configuration
+    or a control); T1-T3 (gate.judge_test) and the section 6 comparisons on TEST; testgate.finish_test_evaluation
+    commits the result: aggregate values and per-fact scores only (no question text, no general-text rows; the
+    per-question details stay in <work>/test_details, outside the repository)."""
     from . import test_data as TD
     if not p.mode.formal:
         raise ImplementationFail("TEST is evaluated in formal mode only")
     fz, auth = TD.check_preconditions(p.root, p.inputs, p.data_dir)
     p.fz = fz
     p.code_commit = TG.code_commit(p.root)
+    p.start_checks("test-evaluate")
     p.device_info_record = p.device_check()
     p.load_data()
     tdir = p.work / TEST_DIR
     data = dict(p.rows, **{n: FZ.read_jsonl(tdir / n) for n in D.TEST_FILES})
-    freeze, _ = R.committed_record(p.root, R.SELECTION_FREEZE_REL, "selection_freeze", fz.record.commit)
-    gate0, _ = R.committed_record(p.root, R.GATE0_RECORD_REL, "gate0", fz.record.commit)
-    selected = freeze["selected"]
-    specs = {s.name: s for s in T.training_plan(p.contract, selected)}
-    models = TG.evaluated_models(p.contract, selected)
-    for name in models[1:]:                         # before the marker: the files are the ones of the runs
-        run_rec, _ = R.committed_json(p.root, "%s/%s/%s.json" % (R.FORMAL_RESULTS_REL, RUNS_DIR, name))
-        got = FZ.file_sha256(p.ckpt_dir / ("%s.pt" % name))
-        if got != run_rec["checkpoint"]["file_sha256"] or run_rec["checkpoint"]["state_sha256"] != freeze["checkpoints"][name]:
-            raise ProtocolStop(None, "BLOCKED", "checkpoint %s: file sha256 %s, run record %s / freeze record differs; "
-                               "TEST not started; report to the Owner" % (name, got, run_rec["checkpoint"]["file_sha256"]))
-    p.before_run()
-    base = p.base_model()
-    session = TG.begin_test_evaluation(fz, auth, data, T.state_sha256(base))
-    p.log("TEST marker committed and pushed (%s); evaluating %d models once" % (session.marker_commit, len(models)))
-    p.rows = data
-    summaries, details = {}, p.work / TEST_DETAILS_DIR
-    details.mkdir(parents=True, exist_ok=True)
     try:
+        freeze, _ = R.committed_record(p.root, R.SELECTION_FREEZE_REL, "selection_freeze", fz.record.commit)
+        gate0, _ = R.committed_record(p.root, R.GATE0_RECORD_REL, "gate0", fz.record.commit)
+        step2, _ = R.committed_json(p.root, "%s/step2_record.json" % R.FORMAL_RESULTS_REL)
+        step3, _ = R.committed_json(p.root, "%s/step3_record.json" % R.FORMAL_RESULTS_REL)
+        selected = freeze["selected"]
+        specs = {s.name: s for s in T.training_plan(p.contract, selected)}
+        models = TG.evaluated_models(p.contract, selected)
+        for name in models[1:]:                     # before the marker: the files are the ones of the runs
+            run_rec, _ = R.committed_json(p.root, "%s/%s/%s.json" % (R.FORMAL_RESULTS_REL, RUNS_DIR, name))
+            got = FZ.file_sha256(p.ckpt_dir / ("%s.pt" % name))
+            if (got != run_rec["checkpoint"]["file_sha256"]
+                    or run_rec["checkpoint"]["state_sha256"] != freeze["checkpoints"][name]):
+                raise ProtocolStop(None, "BLOCKED", "checkpoint %s: file sha256 %s, run record %s / freeze record "
+                                   "differs; TEST not started; report to the Owner" % (
+                                       name, got, run_rec["checkpoint"]["file_sha256"]))
+        look_ahead = test_evaluation_seconds(p.contract, step2["preflight"]["timing"])
+        n_sha = step3["N"]["state_sha256"]
+    except (R.NotCommitted, KeyError, OSError, TypeError) as e:
+        raise ProtocolStop(None, "BLOCKED", "TEST not started: a committed record or a checkpoint file is missing or "
+                           "incomplete (%r); report to the Owner" % (e,)) from e
+    head = None
+    try:
+        p.before_run(look_ahead)                    # ST7: the whole TEST evaluation must fit before it begins
+        base = p.base_model()
+        base_sha = T.state_sha256(base)
+        if base_sha != n_sha:
+            raise ProtocolStop(None, "BLOCKED", "the base model's state sha256 %s is not N's %s of the step 3 record; "
+                               "TEST not started; report to the Owner" % (base_sha, n_sha))
+        session = TG.begin_test_evaluation(fz, auth, data, base_sha)
+        p.log("TEST marker committed and pushed (%s); evaluating %d models once" % (session.marker_commit, len(models)))
+        p.rows = data
+        summaries, details = {}, p.work / TEST_DETAILS_DIR
+        details.mkdir(parents=True, exist_ok=True)
         for name in models:
             p.before_run()
             model = base if name == TG.BASE_MODEL else p.load_checkpoint(specs[name], p.ckpt_dir / ("%s.pt" % name))
-            ev = p.evaluate(model, split="test", with_em=True, test_authorization=auth, fz=fz, test_session=session,
-                            checkpoint_name=name)
+            ev = control_evaluation(p, model, "TEST evaluation of %s" % name, split="test", with_em=True,
+                                    test_authorization=auth, fz=fz, test_session=session, checkpoint_name=name)
             (details / ("%s_test.json" % name)).write_text(json.dumps(plain(ev), ensure_ascii=False) + "\n",
                                                           encoding="utf-8")
             summaries[name] = p.summary(ev, "test")
@@ -1031,9 +1206,9 @@ def test_evaluate(p):
         inp = {"facts": p.rows["facts.jsonl"], "N": summaries[TG.BASE_MODEL]}
         seeds = p.contract.training.training_seeds
         for arm in ("F", "L", "A"):
-            inp[arm] = {s: summaries[_name(p, arm, selected[arm], s)] for s in seeds}
+            inp[arm] = {s: summaries[_name(arm, selected[arm], s)] for s in seeds}
         for arm in p.contract.arms.inheriting:
-            inp[arm] = {s: summaries[_name(p, arm, selected["F"], s)] for s in seeds}
+            inp[arm] = {s: summaries[_name(arm, selected["F"], s)] for s in seeds}
         values = G.compute_test_values(inp, p.contract)
         final = G.judge_test(values, gate0["gate0"]["gate0_status"], p.contract, p.mode)
         comparisons = G.report_comparisons(inp, p.contract, "test")
@@ -1051,22 +1226,37 @@ def test_evaluate(p):
 
 
 def run_test_evaluate(p):
-    """The command test-evaluate. A refusal before the TEST marker exists (a precondition of the generator, a
-    checkpoint file, the ST10 gate or the commit preconditions checked by begin) leaves no experiment record: nothing
-    was evaluated. Once the marker exists TEST counts as evaluated, and the experiment record is written and committed
-    whatever happens after. Returns (completed without a stop, final status or the stop's status)."""
+    """The command test-evaluate. A refusal before the TEST marker exists (a precondition of the generator, the
+    continuity checks, a checkpoint file, a committed record, ST7, the commit preconditions checked by begin) leaves
+    no experiment record: nothing was evaluated; an ST10 stop (begin's ST10 gate) is a protocol stop and gets one.
+    Once the marker exists TEST counts as evaluated, and the experiment record is written and committed whatever
+    happens after, a crash included (BLOCKED; the exception is raised again). Returns (completed without a stop,
+    final status or the stop's status)."""
     from . import test_data as TD
+    crash = None
     try:
         status, actual = test_evaluate(p)
         nxt, stop = "Owner and Review Gate read the TEST result (an E1-V1 protocol only after PASS)", None
     except (ProtocolStop, TD.PreconditionFailed) as e:
         p.close_clock()
-        if not (p.root / TG.MARKER_REL).exists():
+        code = getattr(e, "stop", None)
+        if not (p.root / TG.MARKER_REL).exists() and code != "ST10":
             p.log("TEST evaluation refused before the TEST marker was written (nothing evaluated): %s" % e)
             return False, getattr(e, "status", None)
         status = getattr(e, "status", None) or "BLOCKED"
-        actual, nxt = {"stopped": str(e)}, "report to the Owner (stop %s)" % getattr(e, "stop", None)
-        stop = {"code": getattr(e, "stop", None), "status": getattr(e, "status", None), "message": str(e)}
-        p.log("STOP after the TEST marker (TEST counts as evaluated): %s" % e)
+        actual, nxt = {"stopped": str(e)}, "report to the Owner (stop %s)" % code
+        stop = {"code": code, "status": getattr(e, "status", None), "message": str(e)}
+        p.log("STOP (%s): %s" % ("after the TEST marker: TEST counts as evaluated" if code != "ST10" or
+                                 (p.root / TG.MARKER_REL).exists() else "ST10, TEST not evaluated", e))
+    except Exception as e:           # noqa: BLE001 -- a crash after the marker is recorded, then raised again
+        p.close_clock()
+        if not (p.root / TG.MARKER_REL).exists():
+            raise
+        crash = e
+        status, actual, nxt = "BLOCKED", {"crashed": repr(e)}, "report to the Owner (crash after the TEST marker)"
+        stop = {"code": None, "status": "BLOCKED", "message": "crash after the TEST marker: %r" % (e,)}
+        p.log("CRASH after the TEST marker (TEST counts as evaluated): %r" % (e,))
     final_record(p, "test-evaluate", status, actual, nxt, None, stop)
+    if crash is not None:
+        raise crash
     return stop is None, status

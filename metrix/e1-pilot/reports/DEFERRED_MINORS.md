@@ -549,6 +549,43 @@ code-reviewer 结论 PASS(1.30 CD1 的 MAJOR 沿用、交 Review Gate;6 MINOR);d
 | CE10 | 描述 | Executor 的修复说明 | 写“新增 3 个变异”,实为 4 个变异名(含 `finish: any session`),总数 78 无误 | IC5-DA MINOR-C | 登记 |
 | CE11 | 提示 | `evaluate_model` | with_s_mapping 的新顺序无法用探针黑盒验证(探针没有这个参数) | IC5-DA | 登记;静态核对与测试、变异覆盖 |
 
+### 1.32 Implementation 阶段 C:C2 工作提交 `5219ff77`(暂存树 `b80c9062`)的第 1 轮审查(`reviews/5219ff77…/code-reviewer_round1.md` 记 `IC7-CR`,`data-auditor_round1.md` 记 `IC7-DA`)
+
+code-reviewer 结论 PASS(12 MAJOR、22 MINOR;下表 CF13–CF29 中有几项合并);data-auditor 结论 PASS(仅作参考;IC7-M1、IC7-M2)。按 Implementation Task Order V1 第 9 节,影响协议一致性、数据、指标或隔离的项在修复提交中修;协议的读法交 Review Gate(`IMPL_C_REPORT.md` C2 节“待 Review Gate 决定”);其余登记。
+
+| # | 严重度 | 位置 | 问题 | 来源 | 处理 |
+|---|---|---|---|---|---|
+| CF1 | MAJOR | `pilot.final_record` | 第 1 步之前停止的 formal 运行只在 <work> 写记录,与第 10 节“含被停止的”不相容;情形列举不全;`Pilot()` 中的 ST12 没有记录 | IC7-CR | 读法交 Review Gate(待决第 1 项);文档补全情形(含 A100 上的 ST8、第 1 步开始时的 ST12/ST13、连续性检查、`Pilot()` 中的 ST12) |
+| CF2 | MAJOR | `run_test_generate`、`run_test_evaluate` | ST10 停止没有实验记录 | IC7-CR | 已修:test-generate 在已提交的 ST10 记录超限时写并提交记录(BLOCKED、ST10);test-evaluate 在 begin 的 ST10 闸门停止时写记录;测试与变异 |
+| CF3 | MAJOR | 第 2–4 步 | ST1、ST11、ST2、ST3 在 step_end 之前抛出:该步记录不写,已写的训练记录与明细不提交,Actual 只有一句话 | IC7-CR | 已修:`Pilot.stop_in_step` 先写并提交该步记录(含 leakage、预检、G0.3 值、阳性对照);停止或崩溃时未提交的记录与实验记录一起提交;Actual 含已到达的步与步记录;测试与变异 |
+| CF4 | MAJOR | `run_test_evaluate` | 标记之后的非 ProtocolStop 崩溃不写记录 | IC7-CR;IC7-DA IC7-M1 | 已修:标记存在时捕获任何异常,写并提交 BLOCKED 记录后重新抛出;测试与变异 |
+| CF5 | MAJOR | ST7 | 事前判断只用训练时间;评测前 next_seconds=0;TEST 在 begin 之前不判断能否评完 | IC7-CR | 已修:训练前含保存、重载、哈希与 DEV 评测;评测前含加载与评测;begin 之前以已提交的第 2 步记录估计整个 TEST 评测(`test_evaluation_seconds`)作为 ST7 的 next_seconds |
+| CF6 | MAJOR | N、G0.8、预检、TEST 的评测 | 非有限值不经 stops.st6,状态成为 NOT_TESTED / BLOCKED | IC7-CR | 已修:`control_evaluation` 经 st6(选定配置或对照,IMPLEMENTATION_FAIL);预检的非有限值同样处理(没有预估就不能判 ST11;读法交 Review Gate,待决第 4 项) |
+| CF7 | MAJOR | 第 7 步 G0.2、`step8_freeze` | 被剔除的配置:G0.2 输入写死;冻结记录取哈希 KeyError | IC7-CR | 已修 KeyError:剔除的运行保存停止时的状态并记录其 state_sha256,冻结记录有 30 个哈希(测试:提交链测试中注入 F6 非有限);G0.2 的读法(剔除的配置不算“用到”)写在代码注释,交 Review Gate(待决第 3 项) |
+| CF8 | MAJOR | `step8_freeze` | 冻结记录前没有 ST12、ST13,没有第 8 步记录 | IC7-CR | 已修:`step_start(8)` / `step_end(8)` |
+| CF9 | MAJOR | 冒烟第 8 步 | 在已有 formal 记录的检出上,冒烟的“拒绝”测试会真的生成 TEST | IC7-CR | 已修:HEAD 或工作区中有 Gate 0、冻结或 ST10 记录时拒绝启动子进程;测试与变异 |
+| CF10 | MAJOR | 预检 | ST11 读“B17 + checkpoint 开销”,与已裁决的 B17 不一致;文件哈希与 begin 的哈希漏计 | IC7-CR | 已改:ST11 只读 B17 的估算(原样);checkpoint 开销(补上文件哈希与 begin 的哈希)与两者之和只报告,并用于 ST7 的事前判断;是否让 ST11 读和,交 Review Gate(待决第 2 项) |
+| CF11 | MAJOR | 重跑 | 同一 --work 因 checkpoint 存在而失败;换 --work 则 ledger/clock 从头;确定性记录与 HEAD 相同导致 BLOCKED | IC7-CR | 已修:只提交与 HEAD 不同的路径;连续性检查(已有 formal 步记录而 --work 中没有 device ledger 时拒绝;已有冻结记录时 formal 拒绝);重跑方式由 Owner 决定(RUNBOOK) |
+| CF12 | MAJOR | 测试 | formal 独有的提交链、冻结记录、实验记录提交没有执行过 | IC7-CR | 已修:`test_formal_commit_chain_through_the_freeze_record`(临时克隆 + 裸远端,第 1–8 步的提交、冻结记录、TEST 生成器的前提成立);变异 |
+| CF13 | MINOR | `gate_steps` | Gate 0 PASS 时实验记录 Status 写 PASS | IC7-CR | 已改为 NOT_TESTED(Actual 写 Gate 0 PASS);交 Review Gate(待决第 5 项) |
+| CF14 | MINOR | 实验记录文件名 | 固定,重跑覆盖 | IC7-CR | 已修:文件名带开始时间 |
+| CF15 | MINOR | `test_evaluate` | 标记之前 NotCommitted/KeyError 以 traceback 退出 | IC7-CR | 已修:转为 BLOCKED 拒绝 |
+| CF16 | MINOR | `first_load` | 没有 CUDA 时 TypeError | IC7-CR | 已修:经 `compute.check_device`(ST8) |
+| CF17 | MINOR | `test_evaluate` | GPU 时钟段在 try/finally 之外打开 | IC7-CR | 已修 |
+| CF18 | MINOR | `_name`、`g0`、`G08_REEVALUATIONS`、smoke 配置重复 | 可读性 | IC7-CR | 已修 |
+| CF19 | MINOR | 文档 | outside_repo 的例外;引用尚不存在的报告与 RUNBOOK 节 | IC7-CR | 已改(2026-11-27 裁决改引 `tasks/IMPL_C2_OWNER_MESSAGE.md`;RUNBOOK 在 C3) |
+| CF20 | MINOR | 测试 | 路径清单含 formal 不写的 step8;负向检查对本仓库写 | IC7-CR | formal 现在写第 8 步记录;负向检查改用测试自己的目录 |
+| CF21 | MINOR | `run_pilot.py` | 指令写 `--smoke`,实现为子命令 smoke | IC7-CR | 登记;报告与 RUNBOOK 写明 |
+| CF22 | MINOR | fetch-model | 下载前不做设备检查 | IC7-CR | 已修:先做 ST8 |
+| CF23 | MINOR | `save_checkpoint` | `del model` 不能释放调用方的引用 | IC7-CR | 已改:删去,注释写明 |
+| CF24 | MINOR | e2e 测试 | 没有检查实验记录 | IC7-CR | 已补 |
+| CF25 | MINOR | formal 重跑 | 冻结后可再次运行 formal | IC7-CR | 已修(连续性检查) |
+| CF26 | MINOR | `test_evaluate` | N 的哈希没有与第 3 步记录比对 | IC7-CR | 已修:begin 之前比对,不符 BLOCKED |
+| CF27 | MINOR | 崩溃的状态词 | NOT_TESTED | IC7-CR | formal 的崩溃仍为 NOT_TESTED,标记之后的崩溃为 BLOCKED;交 Review Gate(待决第 5 项) |
+| CF28 | MINOR | 原始输出 | 录制在 write-tree 05a76f57 上,送审树 b80c9062 | IC7-CR | 修复提交的录制在送审树上首尾记录 STATE |
+| CF29 | MINOR | `c2_mutate.py` | 在本仓库工作区改写源文件 | IC7-CR | 登记(finally 恢复并比对哈希;未发生) |
+| CF30 | MINOR | 标记之前的拒绝不写记录 | 第 10 节的读法 | IC7-DA IC7-M2 | 交 Review Gate(待决第 1 项一并) |
+
 ## 2. 已在第 5–7 轮解决(核对用)
 
 | 原条目 | 来源 | 处理 |

@@ -1,0 +1,84 @@
+# Stage C, C2 fix commit (staged; parent 1900b1fe): the CPU smoke test (Implementation Task Order V1 section 7) on the staged code, 3 optimizer steps per training run; work directory outside the repository. Executor, host vm (Anthropic cloud container, CPU only, no GPU). Fri Nov 27 04:36:34 UTC 2026
+# stdout+stderr merged, unedited. Commands recorded by reports/round5/logrun.sh.
+$ bash -c git\ rev-parse\ HEAD\;\ git\ write-tree\;\ git\ diff\ --quiet\ --\ metrix/e1-pilot/src\ metrix/e1-pilot/tests\ metrix/e1-pilot/run_pilot.py\ \&\&\ echo\ WORKTREE_EQUALS_INDEX_FOR_SRC_TESTS_RUN_PILOT\;\ git\ diff\ --cached\ HEAD\ --\ metrix/e1-pilot/src\ metrix/e1-pilot/tests\ metrix/e1-pilot/run_pilot.py\ \|\ sha256sum
+1900b1fe3fc1c24f0d3b6b15c3ba3cb7e5069f46
+6071ea727fec6bf2eedff62f184a02bfc1a4ac64
+WORKTREE_EQUALS_INDEX_FOR_SRC_TESTS_RUN_PILOT
+3920af52f4d3bfd7269d7fa280599137ac315d74f2117e28168fe88d9cd1e33d  -
+exit=0
+$ /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/venv/bin/python metrix/e1-pilot/run_pilot.py smoke --steps 3 --inputs /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/inputs --work /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/c2b_smoke
+[2026-11-27T04:36:36Z] step 1: ST12 passed (frozen files)
+[2026-11-27T04:36:40Z] step 1 done in 3.7 s
+[2026-11-27T04:36:42Z] step 2: ST12 passed (frozen files, inputs, data)
+[2026-11-27T04:36:42Z] step 2: leakage L1-L6 (Gate 0 part) PASS
+[2026-11-27T04:38:05Z] preflight (smoke): 0.6439 s/step, DEV evaluation 79.4 s, B17 estimate 5.359 h (ST11); checkpoint overhead 0.010 h (report only; sum 5.369 h)
+[2026-11-27T04:38:05Z] smoke: ST11 would stop here (smoke value, not a result): ST11 -> BLOCKED: preflight estimate 5.359 h > 3.5 h [停止;报告 Owner]
+[2026-11-27T04:38:05Z] step 2 done in 83.0 s
+[2026-11-27T04:38:07Z] step 3: ST12 passed (frozen files, inputs, data)
+[2026-11-27T04:39:52Z] step 3: N acc_dev_learned 0.2500 acc_dev_unread 0.2250 acc_cb 0.2500; G0.3 ranges hold
+[2026-11-27T04:39:52Z] step 3 done in 105.5 s
+[2026-11-27T04:39:55Z] step 4: ST12 passed (frozen files, inputs, data)
+[2026-11-27T04:42:00Z] F-F1-seed101: 3 steps, acc_dev_learned 0.2500 acc_cb 0.2500 dNLL 0.00000, state sha256 8a4b04d9818d6b72 (unchanged after reload)
+[2026-11-27T04:44:04Z] F-F2-seed101: 3 steps, acc_dev_learned 0.2500 acc_cb 0.2500 dNLL 0.00000, state sha256 b1621636fa0b6be0 (unchanged after reload)
+[2026-11-27T04:46:11Z] F-F3-seed101: 3 steps, acc_dev_learned 0.2500 acc_cb 0.2500 dNLL 0.00001, state sha256 2cb8cc3b022c9c01 (unchanged after reload)
+[2026-11-27T04:48:17Z] F-F4-seed101: 3 steps, acc_dev_learned 0.2500 acc_cb 0.2500 dNLL 0.00001, state sha256 a8e6d6b2515f829e (unchanged after reload)
+[2026-11-27T04:50:15Z] F-F5-seed101: 3 steps, acc_dev_learned 0.2500 acc_cb 0.2500 dNLL 0.00002, state sha256 fed3bc7654a2a942 (unchanged after reload)
+[2026-11-27T04:52:10Z] F-F6-seed101: 3 steps, acc_dev_learned 0.2500 acc_cb 0.2500 dNLL 0.00002, state sha256 745994fe528178a0 (unchanged after reload)
+[2026-11-27T04:52:10Z] selection F: F2 (ranking ['F2', 'F1', 'F4', 'F3', 'F6', 'F5'])
+[2026-11-27T04:52:10Z] smoke: ST3 would stop here (smoke value, not a result): ST3 -> PIPELINE_NOT_QUALIFIED: positive control: Acc_CB 0.2500 (min 0.9), Acc(F, DEV-QA, learned) 0.2500 (min 0.7) [阳性对照未过:停;不跑 L、A、S、Y] reason OPTIMIZATION_FAIL
+[2026-11-27T04:52:10Z] step 4 done in 735.7 s
+[2026-11-27T04:52:12Z] step 5: ST12 passed (frozen files, inputs, data)
+exit=137
+$ bash -c cd\ /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/c2b_smoke\ \&\&\ find\ .\ -type\ f\ \|\ sort\ \|\ xargs\ ls\ -l\ \|\ awk\ \'\{print\ \$5\,\ \$9\}\'
+39202289 ./checkpoints/F-F1-seed101.pt
+39202289 ./checkpoints/F-F2-seed101.pt
+39202289 ./checkpoints/F-F3-seed101.pt
+39202289 ./checkpoints/F-F4-seed101.pt
+39202289 ./checkpoints/F-F5-seed101.pt
+39202289 ./checkpoints/F-F6-seed101.pt
+39277673 ./checkpoints/L-L1-seed101.pt
+23 ./checkpoints/LABEL.txt
+23 ./data/LABEL.txt
+639712 ./data/anchor_text.jsonl
+10453 ./data/candidates.json
+37176 ./data/dev_qa.jsonl
+21489 ./data/facts.jsonl
+233241 ./data/general_dev.jsonl
+14073 ./data/train_F.jsonl
+15033 ./data/train_S.jsonl
+28203 ./data/train_Y.jsonl
+23 ./preflight/LABEL.txt
+39202401 ./preflight/preflight_checkpoint.pt
+350936 ./records/details/F-F1-seed101_dev.json
+350974 ./records/details/F-F2-seed101_dev.json
+350884 ./records/details/F-F3-seed101_dev.json
+350849 ./records/details/F-F4-seed101_dev.json
+350816 ./records/details/F-F5-seed101_dev.json
+350808 ./records/details/F-F6-seed101_dev.json
+350946 ./records/details/N_dev.json
+3732 ./records/step1_manifest_fields.json
+26540 ./records/step1_record.json
+3554 ./records/step2_record.json
+15586 ./records/step3_record.json
+2869 ./records/step4_record.json
+16487 ./records/training_runs/F-F1-seed101.json
+16490 ./records/training_runs/F-F2-seed101.json
+16439 ./records/training_runs/F-F3-seed101.json
+16438 ./records/training_runs/F-F4-seed101.json
+16474 ./records/training_runs/F-F5-seed101.json
+16475 ./records/training_runs/F-F6-seed101.json
+exit=0
+$ bash -c cd\ /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/c2b_smoke\ \&\&\ echo\ TEST\ files:\ \$\(find\ .\ -name\ test_qa.jsonl\ -o\ -name\ general_test.jsonl\ \|\ wc\ -l\)\;\ cat\ checkpoints/LABEL.txt\ data/LABEL.txt\ preflight/LABEL.txt
+TEST files: 0
+SMOKE — NOT A RESULT
+SMOKE — NOT A RESULT
+SMOKE — NOT A RESULT
+exit=0
+$ bash -c git\ rev-parse\ HEAD\;\ git\ write-tree\;\ git\ diff\ --quiet\ --\ metrix/e1-pilot/src\ metrix/e1-pilot/tests\ metrix/e1-pilot/run_pilot.py\ \&\&\ echo\ WORKTREE_EQUALS_INDEX_FOR_SRC_TESTS_RUN_PILOT\;\ git\ diff\ --cached\ HEAD\ --\ metrix/e1-pilot/src\ metrix/e1-pilot/tests\ metrix/e1-pilot/run_pilot.py\ \|\ sha256sum\;\ ls\ metrix/e1-pilot/results\ 2\>\&1
+1900b1fe3fc1c24f0d3b6b15c3ba3cb7e5069f46
+6071ea727fec6bf2eedff62f184a02bfc1a4ac64
+WORKTREE_EQUALS_INDEX_FOR_SRC_TESTS_RUN_PILOT
+3920af52f4d3bfd7269d7fa280599137ac315d74f2117e28168fe88d9cd1e33d  -
+ls: cannot access 'metrix/e1-pilot/results': No such file or directory
+exit=2
+# (appended by the Executor after the recording) Killed for lack of memory during step 5 (exit=137 above) while c2b_01 ran in parallel; re-recorded alone as c2b_04_smoke.txt. Kept as a superseded record (C1 ruling item 7).

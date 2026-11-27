@@ -1,0 +1,33 @@
+# Stage C, C2 fix commit: after the c2b_01 recording was stopped (pkill), the working-tree pilot.py held the mutation that was running (c2_mutate_fix1.py restores the file in its finally block, which a killed process does not reach; DEFERRED_MINORS 1.32 CF29). Diff against the index, restore from the index, check. Executor, host vm. Fri Nov 27 04:57:23 UTC 2026
+# stdout+stderr merged, unedited. Commands recorded by reports/round5/logrun.sh.
+$ git diff -- metrix/e1-pilot/src metrix/e1-pilot/tests metrix/e1-pilot/run_pilot.py
+diff --git a/metrix/e1-pilot/src/metrix_e1/pilot.py b/metrix/e1-pilot/src/metrix_e1/pilot.py
+index a6633d1..05a6cd9 100644
+--- a/metrix/e1-pilot/src/metrix_e1/pilot.py
++++ b/metrix/e1-pilot/src/metrix_e1/pilot.py
+@@ -1167,8 +1167,7 @@ def test_evaluate(p):
+         for name in models[1:]:                     # before the marker: the files are the ones of the runs
+             run_rec, _ = R.committed_json(p.root, "%s/%s/%s.json" % (R.FORMAL_RESULTS_REL, RUNS_DIR, name))
+             got = FZ.file_sha256(p.ckpt_dir / ("%s.pt" % name))
+-            if (got != run_rec["checkpoint"]["file_sha256"]
+-                    or run_rec["checkpoint"]["state_sha256"] != freeze["checkpoints"][name]):
++            if False:
+                 raise ProtocolStop(None, "BLOCKED", "checkpoint %s: file sha256 %s, run record %s / freeze record "
+                                    "differs; TEST not started; report to the Owner" % (
+                                        name, got, run_rec["checkpoint"]["file_sha256"]))
+exit=0
+$ git checkout -- metrix/e1-pilot/src/metrix_e1/pilot.py
+exit=0
+$ bash -c git\ diff\ --quiet\ --\ metrix/e1-pilot/src\ metrix/e1-pilot/tests\ metrix/e1-pilot/run_pilot.py\ \&\&\ echo\ WORKTREE_EQUALS_INDEX_FOR_SRC_TESTS_RUN_PILOT\;\ git\ status\ --short
+WORKTREE_EQUALS_INDEX_FOR_SRC_TESTS_RUN_PILOT
+M  metrix/e1-pilot/reports/DEFERRED_MINORS.md
+A  metrix/e1-pilot/reports/impl_c/c2_mutate_fix1.py
+A  metrix/e1-pilot/reports/impl_c/c2b_checks.sh
+M  metrix/e1-pilot/src/metrix_e1/pilot.py
+M  metrix/e1-pilot/tests/test_run_pilot.py
+?? metrix/e1-pilot/RUNBOOK_A100.md
+?? metrix/e1-pilot/reports/impl_c/c2b_01_checks_superseded_oom.txt
+?? metrix/e1-pilot/reports/impl_c/c2b_01b_restore_after_kill.txt
+?? metrix/e1-pilot/reports/impl_c/c2b_02_smoke_superseded_oom.txt
+?? metrix/e1-pilot/reports/impl_c/c3_hf_tree_70d244cc.txt
+exit=0
