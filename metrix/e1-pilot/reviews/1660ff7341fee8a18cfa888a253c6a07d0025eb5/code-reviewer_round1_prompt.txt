@@ -1,0 +1,27 @@
+先读仓库中的 .claude/agents/code-reviewer.md，以它为你的完整定义；它与你已加载的定义冲突时，以仓库文件为准。
+
+审查对象：METRIX E1-PILOT 阶段 C 的 C5 文档提交（只改文档）。暂存区内容（尚未提交），暂存树 8e86167ca30dda8fc059585a2025036856bd3d20，父提交 377bc736e32f19ec003813db8a431da25ef9f660。仓库 /home/user/OpenMythos。按裁决第 4 项只送 code-reviewer 一轮：有 BLOCKER 则 Executor 修复后再送；没有则直接提交，新的 MAJOR、MINOR 只登记（DEFERRED_MINORS 1.43，其后的证据提交）。
+
+Review Gate 对 C1 的裁决（tasks/IMPL_C1_RULING.md）中的防范对象，原文如下：
+防范对象：TEST 闸门要防的是「按规则办事的 Executor 在按 RUNBOOK 操作时，意外评测 TEST 两次，或在 ST10 不成立时评测 TEST」；不防有仓库写权限者的故意篡改（改写历史、伪造记录），这类风险由 GitHub 分支保护和审查记录承担。审查按此范围判定：范围外的边缘情况记为 MINOR 并登记，不作为 BLOCKER。调用两份审查时，把本段防范对象原文写进调用文字。
+
+Owner 本次转达的 Review Gate 裁决（本次暂存为 tasks/IMPL_C5_RULING.md），全文如下：
+读 metrix/CLAUDE.md、tasks/IMPL_C4_RULING.md、RUNBOOK_A100.md、reports/DEFERRED_MINORS.md 1.38 与 1.42 节。直接在 metrix-e1-pilot-protocol-v1 上工作，只做快进推送，不推送标签，不经 PR。本段原文入库为 tasks/IMPL_C5_RULING.md。
+
+Review Gate 裁决（2026-11-28，作用范围：E1 Pilot 直至结束）：
+1. pilot.py 中 4 处过时注释：不改，登记。正式运行之前不再提交任何代码改动。
+2. 做一次纯文档提交，按 DEFERRED_MINORS 中各条「处理应为」修正 RUNBOOK：CL2、CL3、CL4、CL5、CL6、CP1、CP2、CP3、CP4。另在 RUNBOOK 第 4 节加一条总则：「任何命令以回溯或非 0 退出码结束，或出现本手册没有写到的情况：不重跑、不修补，保留输出，报告 Owner。」
+3. CP5：确认。主机有 CPython 3.13.18 但不能建 venv（缺 ensurepip）时，同样用 uv 安装该精确版本；第 1 节与 3.0 的说明同步。
+4. 本次提交只送 code-reviewer 一轮：有 BLOCKER 则修复后再送，否则直接提交；新的 MAJOR、MINOR 只登记。不改 src/、tests/、run_pilot.py。
+5. 完成后状态仍为 IMPLEMENTATION_READY，停下。
+
+审查输入（目录 /tmp/claude-0/-home-user/307aad45-73e9-5051-90eb-46f88bd6bab7/scratchpad/review_c5/）：input_round1.diff（git diff --cached --stat 与完整 diff，相对父提交 377bc736）；tree_round1.txt（暂存树）。暂存的全部路径的 blob 与暂存 diff 的 sha256 记在 reports/impl_c/c5_02_docs_checks.txt 首尾（c5_02 中的写树是暂存 c5_02 本身之前的树）。src/、tests/、run_pilot.py 与父提交相同（c5_02 首尾 INDEX_EQUALS_HEAD_FOR_SRC_TESTS_RUN_PILOT）。
+背景：reports/DEFERRED_MINORS.md 1.38（CL2–CL6）与 1.42（CP1–CP5）各行的“处理”列（本次在各行末尾追加“已修(C5 文档提交)…”）；提出这些项的原文：reviews/6dc572f5…/code-reviewer_round3.md（C3R3-CR，CL 各项）、reviews/6726bac0…/code-reviewer_round3.md（C4D3-CR，CP 各项）。相关代码：src/metrix_e1/pilot.py（run_gate、run_test_evaluate、final_record）、src/metrix_e1/_cli.py、run_pilot.py、src/metrix_e1/compute.py（GpuClock）。
+
+本次改动（Executor 的说明，不作为证据；请逐条核对）：
+- RUNBOOK_A100.md：CL2（变量 VENV，venv 在所选分区；两次 pip 加 --no-cache-dir，锁定文件的安装以 TMPDIR=$VENV.tmp 运行；第 1 节磁盘一行；3.0 核对加 glibc；env.txt、fetch.txt 只用 tee -a 追加、每段 date -u 开头）；CL3（第 3.5 节之后第三种情况）；CL4（第 3.8 节以回溯结束的三种情况）；CL5（第 3.7 节第 3 项与第 5 节列入转录）；CL6（第 4 节例外加 Ctrl-C/SIGHUP 一条）；CP1（8 条长命令逐条标窗口名，3.2 拆为 s3_2a/s3_2，3.4 拆为三条；.end 只反映最后一行；前一条 exit=0 且核对通过才发下一条；git pull --ff-only 前台运行；s3_2a 与 s3_2 之后的核对；send 一行的两个前提）；CP2（第 5 节列入 <窗口名>.sh.txt、<窗口名>.end.txt 与 git check-ignore；占位符 <窗口名>/<输出文件名>）；CP3（第 1 节措辞）；CP4（GPU 秒数命令：t = time.time() 经 GpuClock 的构造参数 now 传入并打印，不再调用 _state()）；CP5（裁决第 3 项：第 1 节、3.0、3.2a 的说明同步）；第 4 节总则（裁决第 2 项原文）及其后 Executor 加的一句（与已写处理的关系）；开头“依据”。
+- 处理列之外的补充（报告 C5 节“待 Review Gate 决定(C5)”第 2、3 项提请注意）：总则之后的说明句；TMPDIR；send 一行的两个前提写明。
+- DEFERRED_MINORS.md：1.38、1.39（CM3 与首段，裁决第 1 项）、1.42 的首段与处理列；第 3 节加 C5 一条。IMPL_C_REPORT.md：开头、“Review Gate 对 C4 待决事项的裁决”、C4 节待决标题、C5 节、验收第 8 项、最终状态。
+- 证据：reports/impl_c/c5_00_session_start.txt；c5_runbook_sim.sh → c5_01_runbook_sim.txt（从 RUNBOOK 原样取出 3.0 的变量文件与 env.txt 一行、3.1 的 REPO 与身份两行、s3_2a、s3_2（真实安装 requirements.lock）、s3_4_data、s3_4_config 四条长命令按第 1 节写脚本并用 send 一行在 env -i 的 shell 中发送、两个核对、GPU 秒数命令（两个人造 gpu_clock.json）、git check-ignore；没有覆盖 3.3、s3_4_model、formal、test-generate、test-evaluate 与 3.2a 的 uv 分支；tmux 服务器从模拟脚本的 shell 启动，以便窗口带上本容器的代理设置）；c5_docs_checks.sh → c5_02_docs_checks.txt；被取代的第一次文档检查 c5_docs_checks_trial1.sh → c5_02_docs_checks_trial1_script_error.txt（总则一项在 POSIX locale 下取到空串，报告 C5 节“本节执行中出现的问题”第 2 项）。
+
+请：(1) 逐条核对 CL2–CL6、CP1–CP5 与总则是否按裁决与“处理”列落实（已修且正确 / 已修但有问题 / 未修）；(2) 新写的命令与说明有无新问题，特别是在防范对象范围内（按 RUNBOOK 操作时会不会意外评测 TEST 两次，或在 ST10 不成立时评测 TEST），以及新文字与 RUNBOOK 其余各节、与代码是否一致；(3) c5_01 是否真的检验了 RUNBOOK 中的命令；(4) 报告与 DEFERRED_MINORS 是否如实。范围外的边缘情况记为 MINOR 并登记，不作为 BLOCKER。按定义的输出格式给出，每条注明“已验证/未验证”；原文即你的完整输出。最后一行给出结论 PASS 或 BLOCK。不要修改任何文件。

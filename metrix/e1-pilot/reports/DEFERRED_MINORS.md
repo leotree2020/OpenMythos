@@ -782,6 +782,25 @@ code-reviewer 结论 PASS(没有 BLOCKER、MAJOR;7 个 MINOR,都在防范对象�
 | CP6 | MINOR | `impl_c/c4_runbook_sim_r3.sh` | 只靠 `TMUX_TMPDIR` 隔离;若在 tmux 会话内运行,`TMUX` 优先,会在真实服务器上建会话并 `kill-server` | C4D3-CR 6 | 登记;`c4_08` 不是在 tmux 中录制的,结果不受影响。脚本保持运行时的样子;日后重跑先 `unset TMUX` |
 | CP7 | MINOR | `DEFERRED_MINORS.md` 1.40、1.41;`IMPL_C_REPORT.md` C4 节 | 措辞夸大或过时:(a) 1.41 首段 “会在租用机器上造成实际问题” 应为“可能”;(b) 1.40 CN2、CN6、CN10 的处理列描述的是第 3 轮已替换的文字;(c) 报告的交付清单只列 1.39、1.40,没有 1.41 与 c4_04 的第 3 轮说明;(d) 报告 C4 表 “除 CO6、CO9 外在文档中修正” 应为“除 CO6、CO9 与 CO10 第四处外”;(e) 报告第 4 条只提 c4_07 的主机分支取到 `/root/.local/bin/python3.13`,`c4_08` 也是如此 | C4D3-CR 7 | 登记并更正如下:(a) 为“可能”;(b) CN2、CN6、CN10 在第 3 轮分别改为 1.41 CO2(以 `.end` 判断)、CO4(`UV_*` 只记名字)、CO5(`GpuClock.used()`);(c) 交付另含 1.41 与 `c4_04` 末尾第 3 轮追加的说明;(d) 为“除 CO6、CO9 与 CO10 第四处(`c4_docs_checks_r2.sh` 的说明)外”;(e) `c4_08` 的主机分支同样取到该链接 |
 
+### 1.43 Implementation 阶段 C:C5 文档提交 `1660ff73`(暂存树 `8e86167c`,即该提交的树)的唯一一轮审查(`reviews/1660ff73…/code-reviewer_round1.md` 记 `C5D1-CR`)
+
+code-reviewer 结论 PASS(没有 BLOCKER、MAJOR;12 个 MINOR,都在防范对象之外;CL2、CL5、CP1–CP4 已修且正确,CL3、CL4 已修但带出下列问题,CL6、CP5 与总则已落实)。按 C5 裁决第 4 项,只送一轮,没有 BLOCKER 即提交,新的 MINOR 只登记,不改文档(本节写入 C5 文档提交之后的证据提交)。其中 CQ4、CQ5、CQ7 涉及总则与裁决第 3 项的读法,提请 Review Gate 注意(第 3 节)。
+
+| # | 严重度 | 位置 | 问题 | 来源 | 处理 |
+|---|---|---|---|---|---|
+| CQ1 | MINOR | RUNBOOK 第 3.5 节之后的引导句 | 加了第三种情况后仍写“命令输出的处理分两种” | C5D1-CR 1 | 登记(应为“分三种”) |
+| CQ2 | MINOR | RUNBOOK 第 3.5 节之后第三种情况、第 3.8 节以回溯结束一段、第 4 节 CL6 一条 | 在 tmux 窗口中按 Ctrl-C,SIGINT 也发给 `tee`:输出可能没有回溯与 `RESULT: FAIL`,`.end` 可能不出现,test-evaluate 写出标记之后 `p.log` 写入断开的管道可能在 `final_record` 之前抛出,BLOCKED 记录可能缺失(原文标为未验证,推理) | C5D1-CR 2 | 登记;处理仍安全(`.end` 不存在按状态不明、总则报告 Owner;标记已推送,代码拒绝第二次运行)。应补一句:窗口中 Ctrl-C 时输出可能被截断、`.end` 可能不出现、BLOCKED 记录可能缺失,按 `.end` 不存在与总则处理 |
+| CQ3 | MINOR | RUNBOOK 第 3.8 节以回溯结束一段 | “有三种情况”不全:还有本进程写出标记之前的崩溃或中断(不写记录,TEST 未评),以及 `Pilot()` 中的 ST12、确定性设置失败、`--work` 在仓库内;动作已覆盖它们 | C5D1-CR 3 | 登记(应为“至少有以下情况”,或补上这两种) |
+| CQ4 | MINOR | RUNBOOK 第 4 节总则之后的一句 | 按总则字面,非 0 退出码即报告 Owner;但第 5 节的 `git check-ignore -v` 以退出码 1 为通过,formal 在 Gate 0 不是 PASS、test-evaluate 在 HYPOTHESIS_FAIL 时也以 1 正常结束;说明句所举例子不含 check-ignore | C5D1-CR 4 | 登记,提请 Review Gate 注意(与 `IMPL_C_REPORT.md` C5 节“待 Review Gate 决定(C5)”第 2 项同一处):应写明以非 0 为预期的命令(check-ignore)不适用总则,formal 或 test-evaluate 的 `RESULT: FAIL` 照常报告 |
+| CQ5 | MINOR | RUNBOOK 第 4 节总则之后的一句 | 说明句把“保留输出”收窄为“不删除、不改动 `<work>/command_output/` 中的文件”;工作区 `results/` 中未提交的记录、本地未推送的提交(ST10 记录、TEST 标记)、`<work>/experiment_record_formal_*`、`<work>/test/` 不在其内(部分另有条文与“不修补”保护);报告待决(C5)第 2 项没有提到这一收窄 | C5D1-CR 5 | 登记,提请 Review Gate 注意(同上第 2 项):应为“不删除、不改动 `<work>` 与工作区中的任何输出(含未推送的提交)” |
+| CQ6 | MINOR | RUNBOOK 第 3 节开头;第 1 节启动后的核对、3.2a 的 uv 分支、3.2 续的 venv 一行 | “`env.txt` 每段以 `date -u` 开头”不处处成立:这三处追加到 `env.txt` 而不以 `date -u` 开头 | C5D1-CR 6 | 登记(应在这三处加 `date -u;`,或改为“各条命令的分组以 `date -u` 开头”) |
+| CQ7 | MINOR | RUNBOOK 3.2a 的 uv 分支;第 1 节 Python 一行、3.0、3.2a 的说明 | uv 分支的第一步 `python3 -m venv ~/uv-tool` 本身也要系统 python3 带 ensurepip;缺 ensurepip 的常见原因(没装 pythonX-venv)通常同样作用于 python3,于是“有 3.13.18 但缺 ensurepip”时这条分支多半在第一步失败、停下报告(安全),裁决第 3 项的“同样用 uv 安装”在常见情形下可能做不到(原文标为未验证,推理;c5_01 没有运行这条分支) | C5D1-CR 7 | 登记,提请 Review Gate 注意;若要可达,需另定不依赖 venv 的 uv 安装方式(新的命令,须裁决) |
+| CQ8 | MINOR | `IMPL_C_REPORT.md` C5 节开头“运行环境”;“待 Review Gate 决定(C5)”第 3 项 (b) | (a) “`/usr/local/bin/python3.13`,有 ensurepip”标的出处 `c5_00` 只记了版本;(b) 说 send 一行的两个前提“在第 1 节与第 3.0 节写明”,但 3.0 只写了路径不含空格 | C5D1-CR 8 | 登记并更正如下:(a) 路径见 `c5_01` 开头的 host 一行,有 ensurepip 由 `c5_01` 中 s3_2a 走了主机分支(其条件含 `import ensurepip, venv`)推出;(b) 第 1 节写明两项,第 3.0 节写明前一项 |
+| CQ9 | MINOR | RUNBOOK 第 3.7 节第 5 项 GPU 秒数的命令 | (a) `open` 以 Unix 秒打印,`t` 另给 UTC,两者格式不一致;(b) `gpu_clock.json` 读两次(3.7 时没有进程在写,不受影响);(c) 文件不存在时 `json.load` 抛错(3.7 时文件必然存在) | C5D1-CR 9 | 登记(日后可让 `open` 也打印 UTC,或写明 `<open>` 为 Unix 秒) |
+| CQ10 | MINOR | RUNBOOK 第 4 节“例外”的标题 | CL6 一条放在“例外(现行实现;C4 裁决第 2 项接受)”之下,依据却是 C5 裁决第 2 项(条内已写明) | C5D1-CR 10 | 登记 |
+| CQ11 | MINOR | RUNBOOK 第 3.5 节之后第一、三种情况 | 边缘情况:formal 在第 1 步之后停止,`final_record` 写出实验记录但提交失败(不再抛出),记录在工作区 `results/` 中未提交,两种情况的条件都不符;按总则停下报告,安全 | C5D1-CR 11 | 登记(第三种情况的条件可写为“没有本次已提交的实验记录”) |
+| CQ12 | MINOR | RUNBOOK 第 1 节磁盘一行 | “家目录只放变量文件,以及 uv 与解释器”说得过满:uv 分支的 `pip install uv` 没有 `--no-cache-dir`(缓存小);模拟后 scratch HOME 下有 `.cache/huggingface/xet/logs/`;A100 上下载权重时 xet 是否在家目录建 chunk cache 未验证 | C5D1-CR 12 | 登记(应为“家目录只放少量文件”;正式运行时可在 `env.txt` 加一次 `du -sh ~`) |
+
 ## 2. 已在第 5–7 轮解决(核对用)
 
 | 原条目 | 来源 | 处理 |
@@ -815,4 +834,4 @@ code-reviewer 结论 PASS(没有 BLOCKER、MAJOR;7 个 MINOR,都在防范对象�
 - Implementation 阶段 B:1.22 节 BA1–BA3、BA7、BA9,1.23 节 BB2、BB4、BB6,1.24 节 BC1 须由 Review Gate 决定;1.25 节 BD10 请 Review Gate 备案。都列于 `IMPL_B_REPORT.md`“待 Review Gate 决定”(第 1–5 项)。BB1 / BC2 / BD8(ST10 凭据与“TEST 只评一次”)是阶段 C 的硬性前提。
 - Implementation 阶段 B 报告提交:1.26 节 BE1(待决第 3 项的运行清单)与 BE6(推送记录的证据提交不经审查,待决第 6 项)请 Review Gate 决定或确认。
 - Implementation 阶段 C(C4):1.39 节 CM3(只改注释是否属于“不改代码”)、1.38 节 CL2–CL6(RUNBOOK 操作细节的修正时机)与 1.41 节 CO6(RUNBOOK 中的分工,请 Owner 确认)列于 `IMPL_C_REPORT.md` C4 节“待 Review Gate 决定(C4)”第 1–3 项。1.42 节 CP5(缺 ensurepip 时也用 uv,比裁决第 6 项的字面宽)请 Review Gate 确认;1.42 节其余 RUNBOOK 项与 1.38 CL2–CL6 一并修正(同一第 2 项)。1.38 节 CL7 由 Review Gate 2026-11-27 的裁决(`tasks/IMPL_C4_RULING.md`)第 4 项回答。
-- Implementation 阶段 C(C5):Review Gate 2026-11-28 的裁决(`tasks/IMPL_C5_RULING.md`)回答了上一条的第 1、2 项与 CP5:CM3 不改,登记(第 1 项);CL2–CL6、CP1–CP4 在 C5 文档提交中按处理列修正(第 2 项);CP5 确认(第 3 项)。1.41 节 CO6(分工,请 Owner 确认)仍未回答,列于 `IMPL_C_REPORT.md` C5 节“待 Review Gate 决定(C5)”。
+- Implementation 阶段 C(C5):Review Gate 2026-11-28 的裁决(`tasks/IMPL_C5_RULING.md`)回答了上一条的第 1、2 项与 CP5:CM3 不改,登记(第 1 项);CL2–CL6、CP1–CP4 在 C5 文档提交中按处理列修正(第 2 项);CP5 确认(第 3 项)。1.41 节 CO6(分工,请 Owner 确认)仍未回答,列于 `IMPL_C_REPORT.md` C5 节“待 Review Gate 决定(C5)”。C5 文档提交的审查(1.43)按裁决第 4 项只登记;其中 CQ4、CQ5(总则之后 Executor 加的一句,同该节第 2 项)与 CQ7(“有 3.13.18 但缺 ensurepip”时 uv 分支的第一步多半同样失败)提请 Review Gate 注意。
