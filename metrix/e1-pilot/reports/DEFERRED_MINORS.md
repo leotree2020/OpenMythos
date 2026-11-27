@@ -586,6 +586,35 @@ code-reviewer 结论 PASS(12 MAJOR、22 MINOR;下表 CF13–CF29 中有几项合
 | CF29 | MINOR | `c2_mutate.py` | 在本仓库工作区改写源文件 | IC7-CR | 登记(finally 恢复并比对哈希;未发生) |
 | CF30 | MINOR | 标记之前的拒绝不写记录 | 第 10 节的读法 | IC7-DA IC7-M2 | 交 Review Gate(待决第 1 项一并) |
 
+### 1.33 Implementation 阶段 C:C2 修复提交 `49fc9a35`(暂存树 `b40224e6`)的第 1 轮审查(`reviews/49fc9a35…/code-reviewer_round1.md` 记 `IC8-CR`,`data-auditor_round1.md` 记 `IC8-DA`)
+
+code-reviewer 结论 PASS(4 MAJOR、18 MINOR);data-auditor 结论 PASS(仅作参考;IC8-M1–M4)。处理原则同 1.32。**1.32 的两处更正**(IC8-DA IC8-M3):CF28 的处理写“修复提交的录制在送审树上首尾记录 STATE”,实际录制时的写树是 `6071ea72`,送审树 `b40224e6` 多出的是证据文件,两者代码相同(data-auditor `ic8_00`);CF29 写“未发生”,实际在 `c2b_01` 被杀时发生了一次,已恢复(`c2b_01b_restore_after_kill.txt`;data-auditor `ic8_07` 无残留)。1.32 的文字保持原样,以本段为准。
+
+| # | 严重度 | 位置 | 问题 | 来源 | 处理 |
+|---|---|---|---|---|---|
+| CG1 | MAJOR | `Pilot.run_seconds` | 对每个训练都乘 A 因子(B17 只对 A) | IC8-CR;IC8-DA IC8-M4 | 已修:只对 arm A;`eval_seconds` 按先加载什么(load / reload / 已在内存)计;补 file_hash_s;测试与变异 |
+| CG2 | MAJOR | `test_evaluation_seconds` | 15 个 checkpoint 按 load_s 计(实际为 reload_s);没有余量 | IC8-CR | 已修 reload_s;是否加余量交 Review Gate(待决第 2 项一并);测试与变异 |
+| CG3 | MAJOR | `run_test_evaluate` | 以“工作区有标记”判断已开始:TEST 评过之后再运行,TestAlreadyEvaluated 被记成崩溃,提交 BLOCKED 记录 | IC8-CR;IC8-DA IC8-M1 | 已修:`begun_by_this_process`(本进程调用了 begin、调用前没有标记、现在有);TestAlreadyEvaluated 单独处理(不写记录,原样抛出);e2e 断言该次拒绝不推送任何提交;变异 |
+| CG4 | MAJOR | 测试 | formal 下步内停止的提交、未提交记录的补交、test-generate 的 ST10 记录、ST7 事前判断的接线、N 哈希不符都没有测试 | IC8-CR;IC8-DA IC8-M2 | 已补:`test_formal_stop_and_crash_commit_what_was_written[st3/crash]`、`test_test_generate_records_an_st10_stop_of_its_own_run`、提交链与 e2e 中对 before_run 收到的 next_seconds 的断言、e2e 中 N 哈希不符的拒绝;变异 |
+| CG5 | MINOR | `run_test_evaluate` | begin 之前的 ST7、ST8、ST9、ST12 不写记录 | IC8-CR | 已改:begin 之前带停止码的协议停止写记录;没有停止码的拒绝不写(交 Review Gate,待决第 1 项一并) |
+| CG6 | MINOR | `run_seconds`、`eval_seconds` | 漏计 file_hash_s;G0.8 前用 load_s;内存中的模型多计 load_s | IC8-CR | 已修(CG1) |
+| CG7 | MINOR | `run_test_generate` | 不设 code_commit;已有的超限 ST10 记录会再记一次 | IC8-CR;IC8-DA IC8-M2 | 已修:设 code_commit;只在本次运行之前 HEAD 没有 ST10 记录时记录;测试 |
+| CG8 | MINOR | `start_checks` | 第 1 步提交后、第一次加载模型前停止,同一 --work 重跑被拒,消息不准确 | IC8-CR | 消息写明两种可能;登记(重跑由 Owner 决定) |
+| CG9 | MINOR | 重跑 | 同一 --work 重跑到第 4 步才失败 | IC8-CR | 已修:formal 在 --work 中已有 checkpoint 时于第 1 步之前拒绝;测试与变异 |
+| CG10 | MINOR | `smoke_model_config` | 没有用 smoke_config | IC8-CR | 已修 |
+| CG11 | MINOR | `Pilot.commit` | 提交之前就从 uncommitted 中移除 | IC8-CR | 已修:提交成功之后移除 |
+| CG12 | MINOR | `final_record` | 补交可能包括 Gate 0 与冻结记录 | IC8-CR | 登记(内容在写出前已校验;范围外) |
+| CG13 | MINOR | `test_evaluate` | 读 TEST 文件与 load_data 在 try 之外 | IC8-CR | 已修:一并转为 BLOCKED |
+| CG14 | MINOR | `pilot.py` | 调用 testgate 私有的 `_blob` | IC8-CR | 登记 |
+| CG15 | MINOR | 引用 | 指向尚未写入的 IMPL_C_REPORT C2 节 | IC8-CR | 报告提交写入 C2 节与 2026-11-27 裁决 |
+| CG16 | MINOR | `c2b_checks.sh` | 用法行文件名错 | IC8-CR | 保持原样(已运行);`c2c_checks.sh` 改正,STATE 加 `git ls-files -s` |
+| CG17 | MINOR | `c2_mutate_fix1.py` | parse 的成对替换分支是死代码 | IC8-CR | 保持原样(已运行);`c2_mutate_fix2.py` 删去 |
+| CG18 | MINOR | 录制 | 写树与送审树不同 | IC8-CR;IC8-DA IC8-M3 | 同 CF28 更正;`c2c_checks.sh` 的 STATE 记录 `git ls-files -s` |
+| CG19 | MINOR | 变异 | 在本仓库工作区改写源文件,已发生一次 | IC8-CR | 登记;录制单独运行、不与冒烟并行 |
+| CG20 | MINOR | 标记之后的处理 | 不包括 KeyboardInterrupt | IC8-CR | 已修:begin 之后捕获 BaseException,写记录后原样抛出;测试 |
+| CG21 | MINOR | 预检的非有限值 | 记为 IMPLEMENTATION_FAIL | IC8-CR | 交 Review Gate(待决第 4 项) |
+| CG22 | MINOR | `run_test_generate` | 不做 start_checks | IC8-CR | 已修:检查 device ledger(同一个 --work) |
+
 ## 2. 已在第 5–7 轮解决(核对用)
 
 | 原条目 | 来源 | 处理 |

@@ -1,0 +1,281 @@
+# Stage C, C2 second fix commit (staged; parent 0cbee197, the evidence commit after the fix commit 49fc9a35): checks on the staged tree (the working tree of src/, tests/ and run_pilot.py equals the index, checked first and last). Executor, host vm (Anthropic cloud container, CPU only). Fri Nov 27 07:23:41 UTC 2026
+# stdout+stderr merged, unedited. Commands recorded by reports/round5/logrun.sh. METRIX_INPUTS_DIR=/tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/inputs
+$ git ls-remote origin refs/heads/metrix-e1-pilot-protocol-v1
+0cbee1978a76c82691e48516ddf97549e361fc2c	refs/heads/metrix-e1-pilot-protocol-v1
+exit=0
+$ git rev-parse HEAD
+0cbee1978a76c82691e48516ddf97549e361fc2c
+exit=0
+$ git status --short --untracked-files=all
+M  metrix/e1-pilot/reports/DEFERRED_MINORS.md
+A  metrix/e1-pilot/reports/impl_c/c2_mutate_fix2.py
+A  metrix/e1-pilot/reports/impl_c/c2c_checks.sh
+M  metrix/e1-pilot/src/metrix_e1/pilot.py
+M  metrix/e1-pilot/tests/test_run_pilot.py
+?? metrix/e1-pilot/RUNBOOK_A100.md
+?? metrix/e1-pilot/reports/impl_c/c2c_01_checks_superseded.txt
+?? metrix/e1-pilot/reports/impl_c/c2c_02_smoke.txt
+?? metrix/e1-pilot/reports/impl_c/c2c_03_checks.txt
+?? metrix/e1-pilot/reports/impl_c/c3_hf_tree_70d244cc.txt
+exit=0
+$ bash -c git\ diff\ --quiet\ --\ metrix/e1-pilot/src\ metrix/e1-pilot/tests\ metrix/e1-pilot/run_pilot.py\ \&\&\ echo\ WORKTREE_EQUALS_INDEX_FOR_SRC_TESTS_RUN_PILOT\;\ git\ diff\ --cached\ HEAD\ --\ metrix/e1-pilot/src\ metrix/e1-pilot/tests\ metrix/e1-pilot/run_pilot.py\ \|\ sha256sum\;\ git\ write-tree\;\ git\ ls-files\ -s\ --\ metrix/e1-pilot/src\ metrix/e1-pilot/tests\ metrix/e1-pilot/run_pilot.py
+WORKTREE_EQUALS_INDEX_FOR_SRC_TESTS_RUN_PILOT
+a479c73c826d6a5c47a721e73c120d6ec8c5c634bda0b8c6e10915740ac218b2  -
+0838508ebfd0df82922b999a98a272996db75f13
+100644 3ee2e0b43e4d763e5758f7658a36109733ec3363 0	metrix/e1-pilot/run_pilot.py
+100644 3e5469f54da836a3efc2d48c05e3b6e6e5918c96 0	metrix/e1-pilot/src/metrix/e1_pilot/__init__.py
+100644 8bb2c5dc888ab9fbab41f0ce62a4f9440a21d386 0	metrix/e1-pilot/src/metrix/e1_pilot/check_leakage.py
+100644 5c5d9cdca67e6e02c62c47a60f8609d4691365b3 0	metrix/e1-pilot/src/metrix_e1/__init__.py
+100644 7458503748e724c250eadba2caa302acd063b51a 0	metrix/e1-pilot/src/metrix_e1/_cli.py
+100644 771cc28e1de02e78b0afddc133ee0a987741b968 0	metrix/e1-pilot/src/metrix_e1/compute.py
+100644 98315baa6a68b7aed2c38bc392331ea64fcf91d8 0	metrix/e1-pilot/src/metrix_e1/contract.py
+100644 ac9c65c798887192775fd8ca76d34b2c17538889 0	metrix/e1-pilot/src/metrix_e1/data.py
+100644 4c4eb1ec6408f726d36b35ef7533d1a13b3af2b9 0	metrix/e1-pilot/src/metrix_e1/errors.py
+100644 8ee841488de640ddbde27acf84827967b7704f04 0	metrix/e1-pilot/src/metrix_e1/evaluate.py
+100644 9acd9b361bdbf7eea04ca3819086394ff0d496a3 0	metrix/e1-pilot/src/metrix_e1/frozen.py
+100644 3874499a870f13510262843bcb6c6f2e8da344af 0	metrix/e1-pilot/src/metrix_e1/gate.py
+100644 ecf8afb382b87b78400e886932f175d7914b4b8b 0	metrix/e1-pilot/src/metrix_e1/interpretations.py
+100644 884b934253ab8f91d3d58b14a9c729183cbf1019 0	metrix/e1-pilot/src/metrix_e1/leakage.py
+100644 3e865297f2ed9d3114e7525dea8493c29fdb726f 0	metrix/e1-pilot/src/metrix_e1/mode.py
+100644 219292ae90e9c67b613d2da6ce0dbdc1fccef575 0	metrix/e1-pilot/src/metrix_e1/pilot.py
+100644 aa914ca8d3dafd420fab68cf42766ebe4dc7e216 0	metrix/e1-pilot/src/metrix_e1/record.py
+100644 37999e59bec1dd6de76fdc9b4f7262218ef741b9 0	metrix/e1-pilot/src/metrix_e1/stats.py
+100644 9c9e64bc7abb9417796c738f3b96f5b4bdce6e1e 0	metrix/e1-pilot/src/metrix_e1/stops.py
+100644 ce354d7444d5cfa86100ea4c7548e08f61ed2714 0	metrix/e1-pilot/src/metrix_e1/test_data.py
+100644 14a03a16c3c83727a204e6dd5849b93980843776 0	metrix/e1-pilot/src/metrix_e1/testgate.py
+100644 635d9b431000ca1c9a3da51d0ad2f760f4904d98 0	metrix/e1-pilot/src/metrix_e1/train.py
+100644 0d05dda468216eac845a96b72c3d179684a88672 0	metrix/e1-pilot/tests/conftest.py
+100644 41d80624f9256977c8f6728b2de4e570b1a7069a 0	metrix/e1-pilot/tests/test_arm_a.py
+100644 fffa474e2a7e40c9830708353808440cf4c811d4 0	metrix/e1-pilot/tests/test_contract.py
+100644 5501d8a8ec3a6b0f7f2b94564bd44d552cb58d6e 0	metrix/e1-pilot/tests/test_data_hashes.py
+100644 28340bcf5bb22815b28549c3d35beae9830e6b7a 0	metrix/e1-pilot/tests/test_environment.py
+100644 997521052485d86936b8d0088702024d34896c9c 0	metrix/e1-pilot/tests/test_evaluate.py
+100644 97fff917eff245fb76f83f1fee19cfe64704268d 0	metrix/e1-pilot/tests/test_gate.py
+100644 548d43602937d5110af431e1d31939711b41ac04 0	metrix/e1-pilot/tests/test_leakage.py
+100644 3c80f23a99f2e0e3d3e70df71ce9e11c9fe03c15 0	metrix/e1-pilot/tests/test_lora.py
+100644 da6f7b17ebed2d8e09e06a1a806bbeb1d795da52 0	metrix/e1-pilot/tests/test_record.py
+100644 7ee181946948a562abf8d6bc997fdfe5504dd9d0 0	metrix/e1-pilot/tests/test_run_pilot.py
+100644 800bc5d047ad1e650b9641769c5b9ae6d7c63f03 0	metrix/e1-pilot/tests/test_scoring.py
+100644 7b599e2b2871778e8ecd27319197b4d9330f4bfb 0	metrix/e1-pilot/tests/test_st12.py
+100644 dc7d581d20a7be217d17305b64015f146c6a60c1 0	metrix/e1-pilot/tests/test_stats.py
+100644 f2542efaef0d7e6127a980ef2ad8d4d978fffaec 0	metrix/e1-pilot/tests/test_stops.py
+100644 344b0db34afa89d62bfd47c74d0bdc6fe9844cb4 0	metrix/e1-pilot/tests/test_test_data.py
+100644 123148c05eb3944cd610487ac5911e11a8ab17ca 0	metrix/e1-pilot/tests/test_testgate.py
+100644 fe03f85fa089089cd811e90fc5f93d0d5bffea14 0	metrix/e1-pilot/tests/test_train.py
+exit=0
+$ env PYTHONPATH=metrix/e1-pilot/src METRIX_INPUTS_DIR=/tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/inputs /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/venv/bin/python -m metrix_e1.data generate --inputs /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/inputs --out /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/c2c_data
+frozen: PROTOCOL_FROZEN v1.1, commit 87a244db28a901f9e89282b50df76778ab5c2887; four frozen files match by git cat-file
+python 3.13.18; libraries {"torch": "2.11.0", "transformers": "5.22.2"} (protocol section 0: {"torch": "2.11.0", "transformers": "5.22.2"})
+name generation per cell: [{"cell": "capital/natural", "entity_draws": 28, "target_pair": [3, 3], "answer_draws": 84}, {"cell": "capital/random", "entity_draws": 20, "target_pair": [5, 5], "answer_draws": 52}, {"cell": "currency/natural", "entity_draws": 31, "target_pair": [3, 3], "answer_draws": 82}, {"cell": "currency/random", "entity_draws": 20, "target_pair": [6, 6], "answer_draws": 46}, {"cell": "founder/natural", "entity_draws": 30, "target_pair": [3, 3], "answer_draws": 81}, {"cell": "founder/random", "entity_draws": 21, "target_pair": [5, 5], "answer_draws": 45}, {"cell": "river/natural", "entity_draws": 34, "target_pair": [3, 3], "answer_draws": 89}, {"cell": "river/random", "entity_draws": 20, "target_pair": [6, 6], "answer_draws": 42}]
+S derangement attempts per cell: {"capital/natural": 3, "capital/random": 5, "currency/natural": 1, "currency/random": 6, "founder/natural": 2, "founder/random": 1, "river/natural": 2, "river/random": 6}
+Y / F token ratio: F 1889, Y 2260, ratio 1.1964
+Y / F token ratio without <|endoftext|> (report only): F 1769, Y 2020, ratio 1.1419
+both ratios within [0.8, 1.25]: with True, without True
+eval_sets.jsonl rows by split (row prefix only): {'dev': 400, 'test': 800}; DEV rows decoded and parsed: 400; windows kept (decoded with the parcae tokenizer): 100
+facts.jsonl        rows  160  byte_sha256 e05561ac2d49dcc3c8f59743c5df64151983a540a32ae135fd1b10f5e0fdc828  canonical_sha256 e05561ac2d49dcc3c8f59743c5df64151983a540a32ae135fd1b10f5e0fdc828
+train_F.jsonl      rows  120  byte_sha256 3aa9ab3ca313c0a1113b91e927af51342c915e3e40dd2f20992f3d9e59b0e373  canonical_sha256 3aa9ab3ca313c0a1113b91e927af51342c915e3e40dd2f20992f3d9e59b0e373
+train_S.jsonl      rows  120  byte_sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e  canonical_sha256 686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e
+train_Y.jsonl      rows  240  byte_sha256 c7430cadb2b06dd5c144af381a8183d4c186f27f2b5acfa9d8d39da0b7626d15  canonical_sha256 c7430cadb2b06dd5c144af381a8183d4c186f27f2b5acfa9d8d39da0b7626d15
+dev_qa.jsonl       rows  320  byte_sha256 9761eb60d6c9155c2f56394aa228b1e9dfea0ae3926ab50cb21d903108bc7fde  canonical_sha256 9761eb60d6c9155c2f56394aa228b1e9dfea0ae3926ab50cb21d903108bc7fde
+candidates.json    rows  160  byte_sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705  canonical_sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705
+general_dev.jsonl  rows  100  byte_sha256 957666920c91ef5b9328984d26ed0628c8a80b439d461bea49b54c2235635e73  canonical_sha256 957666920c91ef5b9328984d26ed0628c8a80b439d461bea49b54c2235635e73
+anchor_text.jsonl  rows  512  byte_sha256 2089e656819d1fe0f6ececcc26e5cade09ee80a92c50e7c8f607fa4e0ef46da5  canonical_sha256 2089e656819d1fe0f6ececcc26e5cade09ee80a92c50e7c8f607fa4e0ef46da5
+frozen content hash facts        406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 = PROTOCOL_FROZEN (read back from /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/c2c_data)
+frozen content hash train_S      686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e = PROTOCOL_FROZEN (read back from /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/c2c_data)
+frozen content hash candidates   e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 = PROTOCOL_FROZEN (read back from /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/c2c_data)
+frozen content hash anchor_texts 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 = PROTOCOL_FROZEN (read back from /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/c2c_data)
+RESULT: PASS
+exit=0
+$ env PYTHONPATH=metrix/e1-pilot/src METRIX_INPUTS_DIR=/tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/inputs /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/venv/bin/python -m metrix_e1.data verify --inputs /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/inputs --data /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/c2c_data
+frozen: PROTOCOL_FROZEN v1.1, commit 87a244db28a901f9e89282b50df76778ab5c2887; four frozen files match by git cat-file
+frozen content hash facts        406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 = PROTOCOL_FROZEN
+frozen content hash train_S      686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e = PROTOCOL_FROZEN
+frozen content hash candidates   e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 = PROTOCOL_FROZEN
+frozen content hash anchor_texts 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 = PROTOCOL_FROZEN
+all 8 data files byte-identical to their regeneration from the frozen inputs
+RESULT: PASS
+exit=0
+$ env PYTHONPATH=metrix/e1-pilot/src METRIX_INPUTS_DIR=/tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/inputs /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/venv/bin/python -m metrix_e1.test_data --inputs /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/inputs --data /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/c2c_data --out /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/c2c_test_out
+TEST generator refused: metrix/e1-pilot/results/gate0_record.json is not committed at HEAD
+no TEST content was generated, read or written
+RESULT: FAIL
+exit=1
+$ bash -c ls\ -la\ /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/c2c_test_out\ 2\>\&1\;\ ls\ /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/c2c_data\;\ git\ status\ --short\ --\ metrix/e1-pilot/results\ 2\>\&1\;\ ls\ metrix/e1-pilot/results\ 2\>\&1
+ls: cannot access '/tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/c2c_test_out': No such file or directory
+anchor_text.jsonl
+candidates.json
+dev_qa.jsonl
+facts.jsonl
+general_dev.jsonl
+train_F.jsonl
+train_S.jsonl
+train_Y.jsonl
+ls: cannot access 'metrix/e1-pilot/results': No such file or directory
+exit=2
+$ /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/venv/bin/python metrix/e1-pilot/reports/round3/outside_metrix_check.py
+changed outside metrix/ (base 61d3c767 .. HEAD):
+  A	.claude/agents/code-reviewer.md
+  A	.claude/agents/data-auditor.md
+  M	CLAUDE.md
+charter: base 3065 bytes, new 3586 bytes, base is exact prefix: True
+charter: appended 521 bytes; level-1/2 headings in appended part: ['## 6. Metrix 子项目(2026-11-13 负责人决定)']
+ignore rules below come from the working-tree .gitignore; identical to .gitignore at HEAD: True
+agent .claude/agents/code-reviewer.md: tracked at HEAD: True; ignore rule: .gitignore:14:.claude/	.claude/agents/code-reviewer.md
+agent .claude/agents/data-auditor.md: tracked at HEAD: True; ignore rule: .gitignore:14:.claude/	.claude/agents/data-auditor.md
+RESULT: PASS
+exit=0
+$ env PYTHONPATH=metrix/e1-pilot/src METRIX_INPUTS_DIR=/tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/inputs /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/venv/bin/python -m pytest -q -p no:cacheprovider --durations=8 metrix/e1-pilot/tests
+........................................................................ [ 22%]
+........................................................................ [ 44%]
+........................................................................ [ 67%]
+........................................................................ [ 89%]
+.................................                                        [100%]
+============================= slowest 8 durations ==============================
+204.07s call     metrix/e1-pilot/tests/test_run_pilot.py::test_test_evaluate_end_to_end_once
+109.98s call     metrix/e1-pilot/tests/test_run_pilot.py::test_formal_commit_chain_through_the_freeze_record
+52.33s call     metrix/e1-pilot/tests/test_run_pilot.py::test_formal_stop_and_crash_commit_what_was_written[st3]
+47.82s call     metrix/e1-pilot/tests/test_run_pilot.py::test_formal_stop_and_crash_commit_what_was_written[crash]
+12.97s setup    metrix/e1-pilot/tests/test_run_pilot.py::test_test_evaluate_end_to_end_once
+11.99s call     metrix/e1-pilot/tests/test_data_hashes.py::test_byte_identical_to_reference_scripts
+10.83s call     metrix/e1-pilot/tests/test_st12.py::test_cli_stops_on_tampered_data
+9.51s call     metrix/e1-pilot/tests/test_train.py::test_kl_term_moves_the_parameters
+321 passed in 622.57s (0:10:22)
+exit=0
+$ env PYTHONPATH=metrix/e1-pilot/src METRIX_INPUTS_DIR=/tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/inputs /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/venv/bin/python metrix/e1-pilot/reports/impl_c/c2_mutate_fix2.py /tmp/claude-0/-home-user/14ee74de-5799-5f8c-a07c-f9bcdb0676fe/scratchpad/venv/bin/python
+checkpoint: reload hash not compared             -> CAUGHT exit 1 | 1 failed in 4.91s
+       FAILED test_a_checkpoint_that_does_not_reload_identically_is_refused
+checkpoint: label not checked                    -> CAUGHT exit 1 | 1 failed in 4.77s
+       FAILED test_a_checkpoint_that_does_not_reload_identically_is_refused
+checkpoint: an existing file overwritten         -> CAUGHT exit 1 | 1 failed in 24.53s
+       FAILED test_every_checkpoint_reloads_with_the_same_state_hash
+work directory inside the repository             -> CAUGHT exit 1 | 1 failed in 1.89s
+       FAILED test_work_directory_inside_the_repository_is_refused
+formal records value stops as smoke              -> CAUGHT exit 1 | 1 failed in 1.82s
+       FAILED test_smoke_records_the_value_stops_and_formal_raises_them
+smoke records ST1                                -> CAUGHT exit 1 | 1 failed in 1.92s
+       FAILED test_smoke_records_the_value_stops_and_formal_raises_them
+formal: no device check before step 1            -> CAUGHT exit 1 | 1 failed in 3.80s
+       FAILED test_formal_on_the_cpu_stops_with_st8_before_anything
+step 1: manifest change outside the step-1 field -> CAUGHT exit 1 | 1 failed in 3.96s
+       FAILED test_step1_writes_only_the_fields_st12_leaves_out
+step 1: split_sha256 not written                 -> CAUGHT exit 1 | 1 failed in 3.85s
+       FAILED test_step1_writes_only_the_fields_st12_leaves_out
+model directory: revision not compared           -> CAUGHT exit 1 | 1 failed in 1.31s
+       FAILED test_model_directory_against_the_frozen_revision
+smoke records without their label                -> CAUGHT exit 1 | 1 failed in 1.86s
+       FAILED test_smoke_outputs_are_labelled_and_stay_in_the_work_directory
+run records under 'runs' (git-ignored)           -> CAUGHT exit 1 | 2 failed in 23.52s
+       FAILED test_no_formal_record_path_is_ignored_by_git
+       FAILED test_test_evaluate_end_to_end_once
+formal takes a step count                        -> CAUGHT exit 1 | 1 failed in 2.60s
+       FAILED test_formal_commands_have_no_step_option
+TEST: checkpoint files not checked before the marker -> CAUGHT exit 1 | 1 failed in 211.18s (0:03:31)
+       FAILED test_test_evaluate_end_to_end_once
+TEST: general-text rows in the committed result  -> CAUGHT exit 1 | 1 failed in 233.15s (0:03:53)
+       FAILED test_test_evaluate_end_to_end_once
+formal: a run stopped before step 1 writes into the repository -> CAUGHT exit 1 | 1 failed in 3.76s
+       FAILED test_formal_on_the_cpu_stops_with_st8_before_anything
+TEST: a refusal before the begin writes a record -> CAUGHT exit 1 | 2 failed in 27.23s
+       FAILED test_test_evaluate_end_to_end_once
+       FAILED test_test_evaluate_records_after_the_marker_and_for_st10
+TEST: a protocol stop before the begin not recorded -> CAUGHT exit 1 | 1 failed in 4.64s
+       FAILED test_test_evaluate_records_after_the_marker_and_for_st10
+TEST: a crash after the begin not recorded       -> CAUGHT exit 1 | 1 failed in 3.93s
+       FAILED test_test_evaluate_records_after_the_marker_and_for_st10
+TEST: begun read from the marker file alone      -> NOT CAUGHT exit 1 | 1 failed, 1 passed in 235.26s (0:03:55)
+       FAILED test_test_evaluate_records_after_the_marker_and_for_st10
+       passed test_test_evaluate_end_to_end_once
+TEST: no ST7 look-ahead before the begin         -> CAUGHT exit 1 | 1 failed in 232.73s (0:03:52)
+       FAILED test_test_evaluate_end_to_end_once
+TEST: N's hash not compared before the begin     -> CAUGHT exit 1 | 1 failed in 220.14s (0:03:40)
+       FAILED test_test_evaluate_end_to_end_once
+TEST look-ahead: checkpoints counted as base loads -> CAUGHT exit 1 | 1 failed in 1.43s
+       FAILED test_preflight_overhead_counts
+run look-ahead: A factor for every arm           -> CAUGHT exit 1 | 1 failed in 3.66s
+       FAILED test_st7_look_ahead_of_a_run
+run look-ahead not passed to before_run          -> CAUGHT exit 1 | 1 failed in 115.76s (0:01:55)
+       FAILED test_formal_commit_chain_through_the_freeze_record
+test-generate: no ST10 record                    -> CAUGHT exit 1 | 1 failed in 7.44s
+       FAILED test_test_generate_records_an_st10_stop_of_its_own_run
+test-generate: an earlier run's ST10 record counted -> CAUGHT exit 1 | 1 failed in 6.93s
+       FAILED test_test_generate_records_an_st10_stop_of_its_own_run
+a stop inside a step: step record not written first -> CAUGHT exit 1 | 2 failed in 66.35s (0:01:06)
+       FAILED test_a_stop_inside_a_step_writes_the_step_record_first
+       FAILED test_formal_stop_and_crash_commit_what_was_written[st3]
+stopped run: written records not committed       -> CAUGHT exit 1 | 1 failed in 56.74s
+       FAILED test_formal_stop_and_crash_commit_what_was_written[crash]
+continuity: a --work with checkpoints accepted   -> CAUGHT exit 1 | 1 failed in 4.87s
+       FAILED test_continuity_checks_before_anything
+continuity: no device ledger accepted            -> CAUGHT exit 1 | 2 failed in 132.32s (0:02:12)
+       FAILED test_continuity_checks_before_anything
+       FAILED test_formal_commit_chain_through_the_freeze_record
+continuity: formal runs again after the freeze   -> CAUGHT exit 1 | 2 failed in 120.74s (0:02:00)
+       FAILED test_continuity_checks_before_anything
+       FAILED test_formal_commit_chain_through_the_freeze_record
+smoke step 8 started on a checkout with formal records -> CAUGHT exit 1 | 1 failed in 15.56s
+       FAILED test_smoke_step8_refuses_where_formal_records_exist
+excluded run without a checkpoint hash           -> CAUGHT exit 1 | 1 failed in 123.68s (0:02:03)
+       FAILED test_formal_commit_chain_through_the_freeze_record
+unchanged paths committed                        -> CAUGHT exit 1 | 1 failed in 132.19s (0:02:12)
+       FAILED test_formal_commit_chain_through_the_freeze_record
+mutations 35, caught 34
+src+tests+run_pilot sha256 before ff94c7af5b89d446369c531fea7fe586665fa5a7ad8608b27a176b9eca498628 after ff94c7af5b89d446369c531fea7fe586665fa5a7ad8608b27a176b9eca498628 EQUAL
+RESULT: FAIL
+exit=0
+$ git status --short --untracked-files=all
+M  metrix/e1-pilot/reports/DEFERRED_MINORS.md
+A  metrix/e1-pilot/reports/impl_c/c2_mutate_fix2.py
+A  metrix/e1-pilot/reports/impl_c/c2c_checks.sh
+M  metrix/e1-pilot/src/metrix_e1/pilot.py
+M  metrix/e1-pilot/tests/test_run_pilot.py
+?? metrix/e1-pilot/RUNBOOK_A100.md
+?? metrix/e1-pilot/reports/impl_c/c2c_01_checks_superseded.txt
+?? metrix/e1-pilot/reports/impl_c/c2c_02_smoke.txt
+?? metrix/e1-pilot/reports/impl_c/c2c_03_checks.txt
+?? metrix/e1-pilot/reports/impl_c/c3_hf_tree_70d244cc.txt
+exit=0
+$ bash -c git\ diff\ --quiet\ --\ metrix/e1-pilot/src\ metrix/e1-pilot/tests\ metrix/e1-pilot/run_pilot.py\ \&\&\ echo\ WORKTREE_EQUALS_INDEX_FOR_SRC_TESTS_RUN_PILOT\;\ git\ diff\ --cached\ HEAD\ --\ metrix/e1-pilot/src\ metrix/e1-pilot/tests\ metrix/e1-pilot/run_pilot.py\ \|\ sha256sum\;\ git\ write-tree\;\ git\ ls-files\ -s\ --\ metrix/e1-pilot/src\ metrix/e1-pilot/tests\ metrix/e1-pilot/run_pilot.py
+WORKTREE_EQUALS_INDEX_FOR_SRC_TESTS_RUN_PILOT
+a479c73c826d6a5c47a721e73c120d6ec8c5c634bda0b8c6e10915740ac218b2  -
+0838508ebfd0df82922b999a98a272996db75f13
+100644 3ee2e0b43e4d763e5758f7658a36109733ec3363 0	metrix/e1-pilot/run_pilot.py
+100644 3e5469f54da836a3efc2d48c05e3b6e6e5918c96 0	metrix/e1-pilot/src/metrix/e1_pilot/__init__.py
+100644 8bb2c5dc888ab9fbab41f0ce62a4f9440a21d386 0	metrix/e1-pilot/src/metrix/e1_pilot/check_leakage.py
+100644 5c5d9cdca67e6e02c62c47a60f8609d4691365b3 0	metrix/e1-pilot/src/metrix_e1/__init__.py
+100644 7458503748e724c250eadba2caa302acd063b51a 0	metrix/e1-pilot/src/metrix_e1/_cli.py
+100644 771cc28e1de02e78b0afddc133ee0a987741b968 0	metrix/e1-pilot/src/metrix_e1/compute.py
+100644 98315baa6a68b7aed2c38bc392331ea64fcf91d8 0	metrix/e1-pilot/src/metrix_e1/contract.py
+100644 ac9c65c798887192775fd8ca76d34b2c17538889 0	metrix/e1-pilot/src/metrix_e1/data.py
+100644 4c4eb1ec6408f726d36b35ef7533d1a13b3af2b9 0	metrix/e1-pilot/src/metrix_e1/errors.py
+100644 8ee841488de640ddbde27acf84827967b7704f04 0	metrix/e1-pilot/src/metrix_e1/evaluate.py
+100644 9acd9b361bdbf7eea04ca3819086394ff0d496a3 0	metrix/e1-pilot/src/metrix_e1/frozen.py
+100644 3874499a870f13510262843bcb6c6f2e8da344af 0	metrix/e1-pilot/src/metrix_e1/gate.py
+100644 ecf8afb382b87b78400e886932f175d7914b4b8b 0	metrix/e1-pilot/src/metrix_e1/interpretations.py
+100644 884b934253ab8f91d3d58b14a9c729183cbf1019 0	metrix/e1-pilot/src/metrix_e1/leakage.py
+100644 3e865297f2ed9d3114e7525dea8493c29fdb726f 0	metrix/e1-pilot/src/metrix_e1/mode.py
+100644 219292ae90e9c67b613d2da6ce0dbdc1fccef575 0	metrix/e1-pilot/src/metrix_e1/pilot.py
+100644 aa914ca8d3dafd420fab68cf42766ebe4dc7e216 0	metrix/e1-pilot/src/metrix_e1/record.py
+100644 37999e59bec1dd6de76fdc9b4f7262218ef741b9 0	metrix/e1-pilot/src/metrix_e1/stats.py
+100644 9c9e64bc7abb9417796c738f3b96f5b4bdce6e1e 0	metrix/e1-pilot/src/metrix_e1/stops.py
+100644 ce354d7444d5cfa86100ea4c7548e08f61ed2714 0	metrix/e1-pilot/src/metrix_e1/test_data.py
+100644 14a03a16c3c83727a204e6dd5849b93980843776 0	metrix/e1-pilot/src/metrix_e1/testgate.py
+100644 635d9b431000ca1c9a3da51d0ad2f760f4904d98 0	metrix/e1-pilot/src/metrix_e1/train.py
+100644 0d05dda468216eac845a96b72c3d179684a88672 0	metrix/e1-pilot/tests/conftest.py
+100644 41d80624f9256977c8f6728b2de4e570b1a7069a 0	metrix/e1-pilot/tests/test_arm_a.py
+100644 fffa474e2a7e40c9830708353808440cf4c811d4 0	metrix/e1-pilot/tests/test_contract.py
+100644 5501d8a8ec3a6b0f7f2b94564bd44d552cb58d6e 0	metrix/e1-pilot/tests/test_data_hashes.py
+100644 28340bcf5bb22815b28549c3d35beae9830e6b7a 0	metrix/e1-pilot/tests/test_environment.py
+100644 997521052485d86936b8d0088702024d34896c9c 0	metrix/e1-pilot/tests/test_evaluate.py
+100644 97fff917eff245fb76f83f1fee19cfe64704268d 0	metrix/e1-pilot/tests/test_gate.py
+100644 548d43602937d5110af431e1d31939711b41ac04 0	metrix/e1-pilot/tests/test_leakage.py
+100644 3c80f23a99f2e0e3d3e70df71ce9e11c9fe03c15 0	metrix/e1-pilot/tests/test_lora.py
+100644 da6f7b17ebed2d8e09e06a1a806bbeb1d795da52 0	metrix/e1-pilot/tests/test_record.py
+100644 7ee181946948a562abf8d6bc997fdfe5504dd9d0 0	metrix/e1-pilot/tests/test_run_pilot.py
+100644 800bc5d047ad1e650b9641769c5b9ae6d7c63f03 0	metrix/e1-pilot/tests/test_scoring.py
+100644 7b599e2b2871778e8ecd27319197b4d9330f4bfb 0	metrix/e1-pilot/tests/test_st12.py
+100644 dc7d581d20a7be217d17305b64015f146c6a60c1 0	metrix/e1-pilot/tests/test_stats.py
+100644 f2542efaef0d7e6127a980ef2ad8d4d978fffaec 0	metrix/e1-pilot/tests/test_stops.py
+100644 344b0db34afa89d62bfd47c74d0bdc6fe9844cb4 0	metrix/e1-pilot/tests/test_test_data.py
+100644 123148c05eb3944cd610487ac5911e11a8ab17ca 0	metrix/e1-pilot/tests/test_testgate.py
+100644 fe03f85fa089089cd811e90fc5f93d0d5bffea14 0	metrix/e1-pilot/tests/test_train.py
+exit=0

@@ -263,8 +263,22 @@ def test_preflight_overhead_counts(contract):
                  "test_models": 16}
     seconds, counts = P.checkpoint_overhead_seconds(contract, 1.0, 2.0, 3.0, 4.0, 5.0)
     assert counts == n and seconds == 50 * 1.0 + 30 * (2 * 2.0 + 3.0 + 4.0 + 5.0) + 17 * 2.0 + 15 * 5.0
-    pre = {"dev_evaluation_seconds": 10.0, "load_s": 1.0, "hash_s": 2.0, "file_hash_s": 5.0}
-    assert P.test_evaluation_seconds(contract, pre) == 16 * (1.0 + 10.0 * 3 / 2) + 17 * 2.0 + 15 * 5.0
+    pre = {"dev_evaluation_seconds": 10.0, "load_s": 1.0, "reload_s": 3.0, "hash_s": 2.0, "file_hash_s": 5.0}
+    assert P.test_evaluation_seconds(contract, pre) == 1.0 + 15 * 3.0 + 16 * 10.0 * 3 / 2 + 17 * 2.0 + 15 * 5.0
+
+
+def test_st7_look_ahead_of_a_run(inputs_dir, tmp_path, contract):
+    """run_seconds: the A factor only for arm A (B17); eval_seconds by what is loaded first (code-reviewer MAJOR 1 of
+    the fix commit's round 1)."""
+    p = P.Pilot(M.FORMAL_MODE, inputs_dir, tmp_path / "w", "cpu")
+    f, a = T.search_runs(contract, "F")[0], T.search_runs(contract, "A")[0]
+    assert p.run_seconds(f) == 0.0 and p.eval_seconds("load") == 0.0           # before the preflight
+    p.pre = {"mean_step_s": 0.1, "a_factor": 5.0, "dev_evaluation_seconds": 7.0, "load_s": 1.0, "hash_s": 2.0,
+             "save_s": 3.0, "reload_s": 4.0, "file_hash_s": 6.0}
+    rest = 1.0 + 2 * 2.0 + 3.0 + 6.0 + 4.0 + 7.0
+    assert p.run_seconds(f) == pytest.approx(0.1 * 300 + rest)
+    assert p.run_seconds(a) == pytest.approx(0.1 * 300 * 5.0 + rest)
+    assert (p.eval_seconds("load"), p.eval_seconds("reload"), p.eval_seconds(None)) == (8.0, 11.0, 7.0)
 
 
 # ------------------------------------------------------------------------------- TEST evaluation end to end
@@ -368,6 +382,10 @@ def eval_clone(fz, inputs_dir, generated, tmp_path, monkeypatch):
 def test_test_evaluate_end_to_end_once(eval_clone):
     c = eval_clone
     p, root, remote = c["p"], c["root"], c["remote"]
+    real_base = p.base_model
+    p.base_model = lambda: tiny_model(1)               # not N's weights of the step 3 record: refused before the marker
+    assert P.run_test_evaluate(p) == (False, "BLOCKED") and not (root / TG.MARKER_REL).exists()
+    p.base_model = real_base
     ckpt = p.ckpt_dir / ("%s.pt" % c["models"][1])
     good = ckpt.read_bytes()
     ckpt.write_bytes(good + b"x")                      # a changed checkpoint file: refused before the marker
@@ -376,7 +394,11 @@ def test_test_evaluate_end_to_end_once(eval_clone):
         "test_evaluation_marker") == 0
     assert not list((root / R.FORMAL_RESULTS_REL).glob("experiment_record_test-evaluate_*"))
     ckpt.write_bytes(good)
+    looks = []
+    p.before_run = lambda next_seconds=0.0: looks.append(next_seconds)
     ok, status = P.run_test_evaluate(p)
+    timing = json.loads((root / R.FORMAL_RESULTS_REL / "step2_record.json").read_text(encoding="utf-8"))
+    assert looks[0] == P.test_evaluation_seconds(p.contract, timing["preflight"]["timing"]) > 0    # before the begin
     assert ok and status in ("PASS", "PIPELINE_NOT_QUALIFIED")
     tree = git(remote, "ls-tree", "-r", "--name-only", "main").split("\n")
     assert TG.MARKER_REL in tree and TG.RESULT_REL in tree
@@ -395,8 +417,10 @@ def test_test_evaluate_end_to_end_once(eval_clone):
     assert sorted(x.name for x in (p.work / P.TEST_DETAILS_DIR).iterdir()) == sorted(
         "%s_test.json" % m for m in c["models"])
     git(root, "pull", "-q", "--ff-only", "origin", "main")
+    tip = git(remote, "rev-parse", "main")
     with pytest.raises(TG.TestAlreadyEvaluated):       # TEST is evaluated once
         P.run_test_evaluate(p)
+    assert git(remote, "rev-parse", "main") == tip     # and that refusal writes no record
 
 
 def test_test_evaluate_refuses_outside_formal_mode(inputs_dir, tmp_path):
@@ -438,6 +462,12 @@ def test_continuity_checks_before_anything(fz, inputs_dir, tmp_path):
     p.ledger.path.parent.mkdir(parents=True)
     p.ledger.record_first("test device")
     p.start_checks("formal")
+    q = P.Pilot(M.FORMAL_MODE, inputs_dir, tmp_path / "work2", "cpu", repo_root=root)
+    q.ckpt_dir.mkdir(parents=True)
+    q.ledger.record_first("test device")
+    (q.ckpt_dir / "F-F1-seed101.pt").write_bytes(b"a checkpoint of an earlier run")
+    with pytest.raises(ProtocolStop, match="already holds checkpoints"):    # no freeze record yet
+        q.start_checks("formal")
     write(root, R.SELECTION_FREEZE_REL, {"kind": "selection_freeze"})
     git(root, "add", "-A")
     git(root, "commit", "-q", "-m", "a freeze record")
@@ -474,12 +504,14 @@ def test_test_evaluate_records_after_the_marker_and_for_st10(fz, inputs_dir, tmp
 
     def run(exc, with_marker):
         def fake(p_):
-            if with_marker:
+            if with_marker:                             # as test_evaluate: begin called, the marker written
+                p_.marker_before_begin, p_.begin_called = False, True
                 marker.parent.mkdir(parents=True, exist_ok=True)
                 marker.write_text("{}", encoding="utf-8")
             raise exc
         monkeypatch.setattr(P, "test_evaluate", fake)
         seen.clear()
+        p.begin_called, p.marker_before_begin = False, None
         try:
             return P.run_test_evaluate(p)
         finally:
@@ -495,6 +527,33 @@ def test_test_evaluate_records_after_the_marker_and_for_st10(fz, inputs_dir, tmp
     with pytest.raises(RuntimeError):
         run(RuntimeError("injected crash"), True)
     assert seen[0][1] == "BLOCKED" and "injected crash" in seen[0][2]["message"]
+    with pytest.raises(KeyboardInterrupt):
+        run(KeyboardInterrupt(), True)
+    assert seen[0][1] == "BLOCKED"
+    assert run(STP.Stop("ST7", "BLOCKED", "a", "injected ST7 look-ahead"), False) == (False, "BLOCKED")
+    assert seen[0][2]["code"] == "ST7"                  # a protocol stop before the begin is recorded
+
+    def already(p_):                                    # an earlier run evaluated TEST: the marker was there before
+        p_.marker_before_begin, p_.begin_called = True, True
+        marker.parent.mkdir(parents=True, exist_ok=True)
+        marker.write_text("{}", encoding="utf-8")
+        raise TG.TestAlreadyEvaluated("evaluated")
+    monkeypatch.setattr(P, "test_evaluate", already)
+    seen.clear()
+    with pytest.raises(TG.TestAlreadyEvaluated):
+        P.run_test_evaluate(p)
+    assert seen == []
+    marker.unlink()
+
+    def started_earlier(p_):                            # an earlier run began TEST and left no result: begin refuses
+        p_.marker_before_begin, p_.begin_called = True, True        # (BLOCKED, no stop code); this run began nothing
+        marker.parent.mkdir(parents=True, exist_ok=True)
+        marker.write_text("{}", encoding="utf-8")
+        raise ProtocolStop(None, "BLOCKED", "TEST evaluation was already started and no result was committed")
+    monkeypatch.setattr(P, "test_evaluate", started_earlier)
+    seen.clear()
+    assert P.run_test_evaluate(p) == (False, "BLOCKED") and seen == []
+    marker.unlink()
 
 
 def test_formal_commit_chain_through_the_freeze_record(fz, inputs_dir, generated, tmp_path, monkeypatch):
@@ -518,7 +577,8 @@ def test_formal_commit_chain_through_the_freeze_record(fz, inputs_dir, generated
     p.contract = dataclasses.replace(p.contract, arms=dataclasses.replace(p.contract.arms, lora_layers=2))
     p.device_check = lambda: {"name": "test (CPU)", "total_memory": 0}
     p.first_load = lambda: None
-    p.before_run = lambda next_seconds=0.0: None
+    looks = []
+    p.before_run = lambda next_seconds=0.0: looks.append(next_seconds)
     p.base_model = s.base_model
     calls = itertools.count()
 
@@ -548,6 +608,11 @@ def test_formal_commit_chain_through_the_freeze_record(fz, inputs_dir, generated
     ok, status = P.run_gate(p, "formal")
     assert (ok, status) == (True, "PASS")
     assert git(root, "status", "--porcelain") == "" and git(root, "rev-parse", "HEAD") == git(remote, "rev-parse", "main")
+    plan = T.training_plan(p.contract, {"F": "F1", "L": "L1", "A": "A1"})
+    expected = [p.run_seconds(sp) for sp in plan if sp.phase == "search" and sp.arm == "F"]
+    assert p.pre is not None and expected[0] > 0 and expected[0] in looks      # the ST7 look-ahead reaches before_run
+    a_look = p.run_seconds(T.search_runs(p.contract, "A")[0])
+    assert a_look in looks and a_look > expected[0]
     tree = git(remote, "ls-tree", "-r", "--name-only", "main").split("\n")
     res = R.FORMAL_RESULTS_REL
     for k in range(1, 9):
@@ -570,3 +635,100 @@ def test_formal_commit_chain_through_the_freeze_record(fz, inputs_dir, generated
     p.ledger.record_first("test device")
     with pytest.raises(ProtocolStop, match="freeze record"):
         p.start_checks("formal")
+
+
+def _formal_on_clone(fz, inputs_dir, generated, tmp_path, monkeypatch):
+    """The replacements of test_formal_commit_chain_through_the_freeze_record (device, model, 1 smoke step, copies of
+    one real evaluation, Gate 0 verdict); the stops that read result values are left to the caller."""
+    import copy
+    import itertools
+    import random
+    remote, root = clone_with_remote(fz, tmp_path, monkeypatch)
+    s = P.Pilot(M.smoke_mode(1), inputs_dir, tmp_path / "smoke_work", "cpu")
+    D.write(generated["files"], s.data_dir)
+    s.load_data()
+    base_ev = s.evaluate(s.base_model(), with_em=True)
+    p = P.Pilot(M.FORMAL_MODE, inputs_dir, tmp_path / "work", "cpu", repo_root=root)
+    p.contract = dataclasses.replace(p.contract, arms=dataclasses.replace(p.contract.arms, lora_layers=2))
+    p.device_check = lambda: {"name": "test (CPU)", "total_memory": 0}
+    p.first_load = lambda: None
+    p.before_run = lambda next_seconds=0.0: None
+    p.base_model = s.base_model
+    calls = itertools.count()
+
+    def fake_eval(model, tok, data, templates, ev, mode, device, split="dev", with_em=True, with_s_mapping=False, **kw):
+        out = copy.deepcopy(base_ev)
+        rng = random.Random(next(calls))
+        for row in out["dev_qa"]:
+            row["correct"] = rng.random() < 0.5
+        return out
+    monkeypatch.setattr(E, "evaluate_model", fake_eval)
+    return remote, root, p
+
+
+@pytest.mark.parametrize("how", ["st3", "crash"])
+def test_formal_stop_and_crash_commit_what_was_written(fz, inputs_dir, generated, tmp_path, monkeypatch, how):
+    """Formal on a clone with a bare remote (code-reviewer MAJOR 4 of the fix commit's round 1): ST3 at step 4 (the real
+    stop: the small model's positive control fails) commits the step 4 record with the stop and the six F runs; a crash
+    in the third F run commits the two finished runs' records with the experiment record (Pilot.uncommitted). The
+    clone is left clean and the remote holds everything."""
+    remote, root, p = _formal_on_clone(fz, inputs_dir, generated, tmp_path, monkeypatch)
+    monkeypatch.setattr(STP, "st2", lambda *a, **k: None)
+    real_train = T.train_run
+
+    def train(model, tok, data, spec, contract, mode, device, log_fn=None):
+        if how == "crash" and spec.name == "F-F3-seed101":
+            raise RuntimeError("injected crash")
+        return real_train(model, tok, data, spec, contract, M.smoke_mode(1), device, log_fn)
+    monkeypatch.setattr(T, "train_run", train)
+    res = R.FORMAL_RESULTS_REL
+    if how == "st3":
+        assert P.run_gate(p, "formal") == (False, "PIPELINE_NOT_QUALIFIED")
+    else:
+        with pytest.raises(RuntimeError, match="injected crash"):
+            P.run_gate(p, "formal")
+    assert git(root, "status", "--porcelain") == "" and git(root, "rev-parse", "HEAD") == git(remote, "rev-parse", "main")
+    tree = git(remote, "ls-tree", "-r", "--name-only", "main").split("\n")
+    runs = sorted(x.rsplit("/", 1)[1] for x in tree if x.startswith("%s/%s/" % (res, P.RUNS_DIR)))
+    (exp,) = [x for x in tree if x.startswith(res + "/experiment_record_formal_") and x.endswith(".json")]
+    rec = json.loads(git(remote, "show", "main:%s" % exp))
+    if how == "st3":
+        step4 = json.loads(git(remote, "show", "main:%s/step4_record.json" % res))
+        assert step4["stopped"]["code"] == "ST3" and "acc_cb" in step4["positive_control"]
+        assert runs == ["F-F%d-seed101.json" % i for i in range(1, 7)]
+        assert rec["template"]["Stop Conditions"]["stop"]["code"] == "ST3"
+    else:
+        assert "%s/step4_record.json" % res not in tree
+        assert runs == ["F-F1-seed101.json", "F-F2-seed101.json"]
+        assert "%s/%s/F-F2-seed101_dev.json" % (res, P.DETAILS_DIR) in tree
+        assert "injected crash" in rec["template"]["Stop Conditions"]["stop"]["message"]
+
+
+def test_test_generate_records_an_st10_stop_of_its_own_run(fz, inputs_dir, tmp_path, monkeypatch):
+    """run_test_generate (code-reviewer MAJOR 2 of round 1, MINOR of the fix commit): an over-limit ST10 record
+    committed by this run gives an experiment record (BLOCKED, ST10); one already committed before the run, or none,
+    gives none. pilot's subprocess module is replaced (the generator is not started; nothing is generated)."""
+    import types
+    remote, root = clone_with_remote(fz, tmp_path, monkeypatch)
+    p = P.Pilot(M.FORMAL_MODE, inputs_dir, tmp_path / "work", "cpu", repo_root=root)
+    seen = []
+    monkeypatch.setattr(P, "final_record", lambda p_, command, status, actual, nxt, runs, stop: seen.append(
+        (command, status, stop)))
+    over = {"kind": "st10", "counts": {c: 0 for c in LK.TEST_CHECKS}}
+    over["counts"]["L4"] = 1
+
+    def generator(commits):
+        def run(cmd, **kw):
+            if commits:
+                write(root, TG.ST10_RECORD_REL, over)
+                commit_all(root, "ST10 record (test)")
+            return types.SimpleNamespace(returncode=1)
+        return run
+    monkeypatch.setattr(P, "subprocess", types.SimpleNamespace(run=generator(False)))
+    assert P.run_test_generate(p) == 1 and seen == []
+    monkeypatch.setattr(P, "subprocess", types.SimpleNamespace(run=generator(True)))
+    assert P.run_test_generate(p) == 1
+    assert seen[0][:2] == ("test-generate", "BLOCKED") and seen[0][2]["code"] == "ST10"
+    seen.clear()
+    monkeypatch.setattr(P, "subprocess", types.SimpleNamespace(run=generator(False)))
+    assert P.run_test_generate(p) == 1 and seen == []       # the earlier run's ST10 record is not this run's stop

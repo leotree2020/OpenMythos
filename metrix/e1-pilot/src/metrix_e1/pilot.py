@@ -183,14 +183,15 @@ def checkpoint_overhead_seconds(contract, load_s, hash_s, save_s, reload_s, file
 
 
 def test_evaluation_seconds(contract, pre):
-    """ST7 look-ahead before the TEST evaluation begins: every TEST model loaded and hashed (twice for N), the 15
-    checkpoint files hashed, each model evaluated once on TEST (a DEV evaluation scaled by test / dev questions per
-    fact, as B17). `pre`: the timing block of the committed step 2 record."""
+    """ST7 look-ahead before the TEST evaluation begins: N loaded (load_s) and the 15 checkpoints loaded
+    (load_checkpoint: reload_s), the state hashes (N twice), the 15 checkpoint files hashed, each model evaluated once
+    on TEST (a DEV evaluation scaled by test / dev questions per fact, as B17). No margin is added (for Review Gate,
+    reports/IMPL_C_REPORT.md). `pre`: the timing block of the committed step 2 record."""
     n = evaluation_plan(contract)
     acc = contract.accounting
     per_eval = pre["dev_evaluation_seconds"] * acc.test_questions_per_fact / acc.dev_questions_per_fact
-    return (n["test_models"] * (pre["load_s"] + per_eval) + n["test_state_hashes"] * pre["hash_s"]
-            + n["test_file_hashes"] * pre["file_hash_s"])
+    return (pre["load_s"] + n["test_file_hashes"] * pre["reload_s"] + n["test_models"] * per_eval
+            + n["test_state_hashes"] * pre["hash_s"] + n["test_file_hashes"] * pre["file_hash_s"])
 
 
 # --------------------------------------------------------------------------------------------------- the pilot
@@ -234,6 +235,8 @@ class Pilot:
         self.steps = {}
         self.written = []
         self.uncommitted = []                       # formal records written and not yet committed
+        self.begin_called = False                   # test_evaluate called testgate.begin_test_evaluation
+        self.marker_before_begin = None
 
     # -- output
     def label_dir(self, d):
@@ -265,14 +268,14 @@ class Pilot:
             return None
         rels = [self.rel(x) for x in paths]
         changed = [r for r in rels if TG._blob(self.root, "HEAD:%s" % r) != (self.root / r).read_bytes()]
-        for x in paths:
+        head = TG.commit_paths(self.root, changed, message, what) if changed else None
+        for x in paths:                             # after a successful commit (or nothing to commit) only
             if x in self.uncommitted:
                 self.uncommitted.remove(x)
-        if not changed:
+        if head is None:
             self.log("%s: equal to the committed version, nothing to commit" % what)
-            return None
-        head = TG.commit_paths(self.root, changed, message, what)
-        self.log("committed and pushed %s: %s" % (what, head))
+        else:
+            self.log("committed and pushed %s: %s" % (what, head))
         return head
 
     def precommit(self, what):
@@ -314,24 +317,34 @@ class Pilot:
             return
         if TG._blob(self.root, "HEAD:%s" % STEP1_RECORD_REL) is not None and not self.ledger.path.exists():
             raise ProtocolStop(None, "BLOCKED", "a formal run has committed step records (%s) but --work %s holds no "
-                               "device ledger: continue only with that run's --work; a restart is the Owner's "
-                               "decision" % (STEP1_RECORD_REL, self.work))
+                               "device ledger: either this is not that run's --work, or that run stopped before its "
+                               "first model load (step 2); a restart is the Owner's decision" % (
+                                   STEP1_RECORD_REL, self.work))
         if command == "formal" and TG._blob(self.root, "HEAD:%s" % R.SELECTION_FREEZE_REL) is not None:
             raise ProtocolStop(None, "BLOCKED", "a freeze record is committed (%s): Gate 0 passed and the "
                                "configurations are frozen; formal is not run again" % R.SELECTION_FREEZE_REL)
+        if command == "formal" and self.ckpt_dir.is_dir() and any(self.ckpt_dir.glob("*.pt")):
+            raise ProtocolStop(None, "BLOCKED", "--work %s already holds checkpoints of a formal run: each run is "
+                               "trained once; a restart is the Owner's decision" % self.work)
 
-    def run_seconds(self):
-        """ST7 look-ahead of a training run: the preflight's per-step time x the contract's steps x the A factor
-        (B17), one save, reload and two hashes, one DEV evaluation (0 before the preflight)."""
+    def run_seconds(self, spec):
+        """ST7 look-ahead of a training run: the base model loaded, the preflight's per-step time x the contract's
+        steps (x the A factor for arm A only, as B17), the checkpoint hashed, saved, file-hashed, reloaded and hashed,
+        one DEV evaluation (0 before the preflight)."""
         if self.pre is None:
             return 0.0
         q = self.pre
-        return (q["mean_step_s"] * self.contract.training.total_steps * q["a_factor"] + 2 * q["hash_s"] + q["save_s"]
-                + q["reload_s"] + q["load_s"] + q["dev_evaluation_seconds"])
+        factor = q["a_factor"] if spec.arm == "A" else 1.0
+        return (q["load_s"] + q["mean_step_s"] * self.contract.training.total_steps * factor + 2 * q["hash_s"]
+                + q["save_s"] + q["file_hash_s"] + q["reload_s"] + q["dev_evaluation_seconds"])
 
-    def eval_seconds(self):
-        """ST7 look-ahead of one DEV evaluation of a loaded model (0 before the preflight)."""
-        return 0.0 if self.pre is None else self.pre["load_s"] + self.pre["dev_evaluation_seconds"]
+    def eval_seconds(self, load):
+        """ST7 look-ahead of one DEV evaluation (0 before the preflight); `load`: "load" (the base model loaded
+        first), "reload" (a checkpoint loaded first, load_checkpoint) or None (the model is in memory)."""
+        if self.pre is None:
+            return 0.0
+        return {"load": self.pre["load_s"], "reload": self.pre["reload_s"], None: 0.0}[load] + \
+            self.pre["dev_evaluation_seconds"]
 
     def step_start(self, k):
         """ST12 before every step (Implementation Task Order V1 section 5): PROTOCOL_FROZEN, the four frozen files,
@@ -634,7 +647,7 @@ def preflight(p):
 def step3(p):
     """Section 8 step 3: N on TRAIN closed book, DEV-QA, general DEV; ST2 on G0.3."""
     p.step_start(3)
-    p.before_run(p.eval_seconds())
+    p.before_run(p.eval_seconds("load"))
     model = p.base_model()
     p.base_sha = T.state_sha256(model)
     ev = control_evaluation(p, model, "N on DEV", with_em=True)
@@ -673,7 +686,7 @@ def train_and_evaluate(p, spec, n_general, selected_or_control):
     """One training run (protocol sections 4, 7) and the DEV evaluation of its saved final checkpoint. A non-finite
     value (ST6): outside the selected configurations and the controls the configuration is excluded from selection
     (returns a result with finite False); otherwise IMPLEMENTATION_FAIL (the stop propagates)."""
-    p.before_run(p.run_seconds())
+    p.before_run(p.run_seconds(spec))
     model = p.base_model()                              # train.train_run sets up the arm (LoRA for L)
     rec = {"kind": "training_run", "run": spec.name, "arm": spec.arm, "config_id": spec.config_id,
            "config": spec.cfg, "seed": spec.seed, "phase": spec.phase, "device_name": p.device_name}
@@ -684,7 +697,7 @@ def train_and_evaluate(p, spec, n_general, selected_or_control):
         reloaded, ck = p.save_checkpoint(spec, model)
         del model
         model = None
-        p.before_run(p.eval_seconds())
+        p.before_run(p.eval_seconds(None))
         ev = p.evaluate(reloaded, with_em=True, with_s_mapping=spec.arm == "S")
     except T.NonFinite as e:
         try:
@@ -789,7 +802,7 @@ def step7(p, runs, n, leakage, selected):
     repro, files = {}, []
     for seed in seeds:
         spec = runs[_name("F", selected["F"], seed)]["spec"]
-        p.before_run(p.eval_seconds())
+        p.before_run(p.eval_seconds("reload"))
         model = p.load_checkpoint(spec, p.ckpt_dir / ("%s.pt" % spec.name))
         ev2 = control_evaluation(p, model, "G0.8 second evaluation of %s" % spec.name, with_em=False)
         del model
@@ -1072,10 +1085,7 @@ def smoke_report(p, runs, actual):
 
 
 def smoke_model_config(p):
-    from transformers import AutoConfig
-    cfg = AutoConfig.from_pretrained(str(p.model_dir), local_files_only=True)
-    for k, v in SMOKE_MODEL_OVERRIDES.items():
-        setattr(cfg, k, v)
+    cfg = smoke_config(p.model_dir)
     return {"config_json_sha256": FZ.file_sha256(p.model_dir / "config.json"), "overrides": SMOKE_MODEL_OVERRIDES,
             "init_seed": SMOKE_INIT_SEED, "config": cfg.to_dict()}
 
@@ -1105,10 +1115,13 @@ def run_test_generate(p):
     experiment record (BLOCKED, ST10) is written and committed. A refusal before generation leaves no record."""
     if not p.mode.formal:
         raise ImplementationFail("TEST is generated in formal mode only")
+    p.code_commit = TG.code_commit(p.root)
+    p.start_checks("test-generate")                 # the same --work as the formal run (device ledger)
+    before = TG._blob(p.root, "HEAD:%s" % TG.ST10_RECORD_REL)
     cmd = test_generate_command(p, p.work / TEST_DIR)
     p.log("running %s" % " ".join(cmd))
     r = subprocess.run(cmd, cwd=str(p.root), check=False, env=_subprocess_env())
-    over = st10_over_limit(p)
+    over = st10_over_limit(p) if before is None else []       # only an ST10 record committed by this run
     if over:
         stop = {"code": "ST10", "status": "BLOCKED", "message": "TEST part over limit %s (committed %s)" % (
             over, TG.ST10_RECORD_REL)}
@@ -1153,10 +1166,10 @@ def test_evaluate(p):
     p.code_commit = TG.code_commit(p.root)
     p.start_checks("test-evaluate")
     p.device_info_record = p.device_check()
-    p.load_data()
-    tdir = p.work / TEST_DIR
-    data = dict(p.rows, **{n: FZ.read_jsonl(tdir / n) for n in D.TEST_FILES})
     try:
+        p.load_data()
+        tdir = p.work / TEST_DIR
+        data = dict(p.rows, **{n: FZ.read_jsonl(tdir / n) for n in D.TEST_FILES})
         freeze, _ = R.committed_record(p.root, R.SELECTION_FREEZE_REL, "selection_freeze", fz.record.commit)
         gate0, _ = R.committed_record(p.root, R.GATE0_RECORD_REL, "gate0", fz.record.commit)
         step2, _ = R.committed_json(p.root, "%s/step2_record.json" % R.FORMAL_RESULTS_REL)
@@ -1174,9 +1187,9 @@ def test_evaluate(p):
                                        name, got, run_rec["checkpoint"]["file_sha256"]))
         look_ahead = test_evaluation_seconds(p.contract, step2["preflight"]["timing"])
         n_sha = step3["N"]["state_sha256"]
-    except (R.NotCommitted, KeyError, OSError, TypeError) as e:
-        raise ProtocolStop(None, "BLOCKED", "TEST not started: a committed record or a checkpoint file is missing or "
-                           "incomplete (%r); report to the Owner" % (e,)) from e
+    except (R.NotCommitted, KeyError, OSError, TypeError, ValueError) as e:
+        raise ProtocolStop(None, "BLOCKED", "TEST not started: a committed record, a TEST file or a checkpoint file is "
+                           "missing or incomplete (%r); report to the Owner" % (e,)) from e
     head = None
     try:
         p.before_run(look_ahead)                    # ST7: the whole TEST evaluation must fit before it begins
@@ -1185,6 +1198,8 @@ def test_evaluate(p):
         if base_sha != n_sha:
             raise ProtocolStop(None, "BLOCKED", "the base model's state sha256 %s is not N's %s of the step 3 record; "
                                "TEST not started; report to the Owner" % (base_sha, n_sha))
+        p.marker_before_begin = (p.root / TG.MARKER_REL).exists()
+        p.begin_called = True                       # run_test_evaluate: TEST counts as begun by this process
         session = TG.begin_test_evaluation(fz, auth, data, base_sha)
         p.log("TEST marker committed and pushed (%s); evaluating %d models once" % (session.marker_commit, len(models)))
         p.rows = data
@@ -1225,13 +1240,20 @@ def test_evaluate(p):
     return final["final_status"], actual
 
 
+def begun_by_this_process(p):
+    """TEST counts as begun by this process: begin_test_evaluation was called, the marker did not exist before and
+    exists now (it may have raised after writing it: commit, push or the pushed-bytes check)."""
+    return p.begin_called and not p.marker_before_begin and (p.root / TG.MARKER_REL).exists()
+
+
 def run_test_evaluate(p):
-    """The command test-evaluate. A refusal before the TEST marker exists (a precondition of the generator, the
-    continuity checks, a checkpoint file, a committed record, ST7, the commit preconditions checked by begin) leaves
-    no experiment record: nothing was evaluated; an ST10 stop (begin's ST10 gate) is a protocol stop and gets one.
-    Once the marker exists TEST counts as evaluated, and the experiment record is written and committed whatever
-    happens after, a crash included (BLOCKED; the exception is raised again). Returns (completed without a stop,
-    final status or the stop's status)."""
+    """The command test-evaluate. Before this process began the TEST evaluation (begun_by_this_process), a refusal
+    without a stop code (a precondition of the generator, the continuity checks, a committed record or a file, the
+    checkout and commit preconditions in begin) leaves no experiment record: nothing was evaluated; a protocol stop
+    (ST7 look-ahead, ST8, ST9, ST10, ST12) gets one. TestAlreadyEvaluated (TEST was evaluated by an earlier run) writes
+    nothing and is raised: the pilot's status is the one of its result. Once this process began the evaluation, the
+    experiment record (BLOCKED for a stop or a crash, KeyboardInterrupt included) is written and committed whatever
+    happens; the exception is raised again. Returns (completed without a stop, final status or the stop's status)."""
     from . import test_data as TD
     crash = None
     try:
@@ -1240,20 +1262,25 @@ def run_test_evaluate(p):
     except (ProtocolStop, TD.PreconditionFailed) as e:
         p.close_clock()
         code = getattr(e, "stop", None)
-        if not (p.root / TG.MARKER_REL).exists() and code != "ST10":
-            p.log("TEST evaluation refused before the TEST marker was written (nothing evaluated): %s" % e)
+        begun = begun_by_this_process(p)
+        if not begun and code is None:
+            p.log("TEST evaluation refused before it began (nothing evaluated): %s" % e)
             return False, getattr(e, "status", None)
         status = getattr(e, "status", None) or "BLOCKED"
-        actual, nxt = {"stopped": str(e)}, "report to the Owner (stop %s)" % code
+        actual, nxt = {"stopped": str(e), "test_begun": begun}, "report to the Owner (stop %s)" % code
         stop = {"code": code, "status": getattr(e, "status", None), "message": str(e)}
-        p.log("STOP (%s): %s" % ("after the TEST marker: TEST counts as evaluated" if code != "ST10" or
-                                 (p.root / TG.MARKER_REL).exists() else "ST10, TEST not evaluated", e))
-    except Exception as e:           # noqa: BLE001 -- a crash after the marker is recorded, then raised again
+        p.log("STOP (%s): %s" % ("after this process began TEST: TEST counts as evaluated" if begun
+                                 else "before TEST began, a protocol stop", e))
+    except TG.TestAlreadyEvaluated:
         p.close_clock()
-        if not (p.root / TG.MARKER_REL).exists():
+        raise
+    except BaseException as e:       # noqa: BLE001 -- a crash or interrupt after the begin is recorded, then raised
+        p.close_clock()
+        if not begun_by_this_process(p):
             raise
         crash = e
-        status, actual, nxt = "BLOCKED", {"crashed": repr(e)}, "report to the Owner (crash after the TEST marker)"
+        status, actual, nxt = "BLOCKED", {"crashed": repr(e), "test_begun": True}, ("report to the Owner (crash after "
+                                                                                    "the TEST marker)")
         stop = {"code": None, "status": "BLOCKED", "message": "crash after the TEST marker: %r" % (e,)}
         p.log("CRASH after the TEST marker (TEST counts as evaluated): %r" % (e,))
     final_record(p, "test-evaluate", status, actual, nxt, None, stop)
