@@ -1,0 +1,77 @@
+# Stage C, C4 documentation commit, round 3: simulation of RUNBOOK commands (see the script's header for what is and is not covered). Executor, host vm (Anthropic cloud container, CPU only). Fri Nov 27 14:34:34 UTC 2026
+# stdout+stderr merged, unedited. Commands recorded by reports/round5/logrun.sh.
+$ bash metrix/e1-pilot/reports/impl_c/c4_runbook_sim_r3.sh /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/runbook_sim3 /home/user/OpenMythos/metrix/e1-pilot/RUNBOOK_A100.md /home/user/OpenMythos /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/venv/bin/python
+--- 3.0 variable file (heredoc from the RUNBOOK, placeholder replaced):
+cat > ~/metrix-vars.sh <<'EOF'
+export WORK=<该分区上的目录>/metrix-work INPUTS=<该分区上的目录>/metrix-inputs
+export E="$WORK/command_output/env.txt"
+EOF
+E=/tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/runbook_sim3/part/metrix-work/command_output/env.txt
+--- 3.1 REPO line (from the RUNBOOK):
+echo "export REPO=$(pwd)" >> ~/metrix-vars.sh
+--- 3.2a block from the RUNBOOK:
+if [ "$(python3.13 --version 2>&1)" = "Python 3.13.18" ] && python3.13 -c 'import ensurepip, venv' 2>/dev/null; then
+  echo "export PY313=$(command -v python3.13)" >> ~/metrix-vars.sh
+else
+  python3 -m venv ~/uv-tool && ~/uv-tool/bin/python -m pip install uv==0.13.10 \
+  && { ~/uv-tool/bin/uv --version; env | grep '^UV_' | sed 's/=.*/=<set>/'; ~/uv-tool/bin/uv python list 3.13.18 --only-downloads --show-urls; ~/uv-tool/bin/uv python install 3.13.18; } 2>&1 | tee -a "$E" \
+  && echo "export PY313=$(~/uv-tool/bin/uv python find --managed-python 3.13.18)" >> ~/metrix-vars.sh
+fi
+=== branch host
+PY313=/root/.local/bin/python3.13
+CPython 3.13.18
+3.13.18 (main, Nov 24 2026, 16:58:49) [Clang 23.1.3 ]
+venv ok
+=== branch uv
+Collecting uv==0.13.10
+  Downloading uv-0.13.10-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (11 kB)
+Downloading uv-0.13.10-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (17.7 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 17.7/17.7 MB 30.8 MB/s  0:00:00
+Installing collected packages: uv
+Successfully installed uv-0.13.10
+
+[notice] A new release of pip is available: 26.2.2 -> 26.3
+[notice] To update, run: /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/runbook_sim3/home/uv-tool/bin/python -m pip install --upgrade pip
+uv 0.13.10 (x86_64-unknown-linux-gnu)
+UV_NATIVE_TLS=<set>
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+cpython-3.13.18-linux-x86_64-gnu    https://releases.astral.sh/github/python-build-standalone/releases/download/20261124/cpython-3.13.18%2B20261124-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+Downloading cpython-3.13.18-linux-x86_64-gnu (download) (34.0MiB)
+ Downloaded cpython-3.13.18-linux-x86_64-gnu (download)
+Installed Python 3.13.18 in 1.41s
+ + cpython-3.13.18-linux-x86_64-gnu (python3.13)
+warning: `/tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/runbook_sim3/home/.local/bin` is not on your PATH. To use installed Python executables, run `export PATH="/tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/runbook_sim3/home/.local/bin:$PATH"` or `uv python update-shell`.
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+PY313=/tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/runbook_sim3/home/.local/share/uv/python/cpython-3.13.18-linux-x86_64-gnu/bin/python3.13
+CPython 3.13.18
+3.13.18 (main, Nov 24 2026, 16:58:49) [Clang 23.1.3 ]
+venv ok
+--- ~/metrix-vars.sh:
+export WORK=/tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/runbook_sim3/part/metrix-work INPUTS=/tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/runbook_sim3/part/metrix-inputs
+export E="$WORK/command_output/env.txt"
+export REPO=/home/user/OpenMythos
+export PY313=/root/.local/bin/python3.13
+export PY=/tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/venv/bin/python
+--- a fresh shell after source:
+WORK=/tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/runbook_sim3/part/metrix-work INPUTS=/tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/runbook_sim3/part/metrix-inputs E=/tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/runbook_sim3/part/metrix-work/command_output/env.txt REPO=/home/user/OpenMythos PY313=/root/.local/bin/python3.13 PY=/tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/venv/bin/python
+/home/user/OpenMythos
+Python 3.13.18
+--- long command (section 1) with a script containing single quotes:
+source ~/metrix-vars.sh && tmux new-window -d -t metrix -n s_test -c "$REPO" && tmux send-keys -t metrix:s_test "bash $WORK/command_output/s_test.sh; echo exit=\$? >> $WORK/command_output/s_test.end" Enter
+s_test.txt:
+quoted ok (3, 13, 18) ['a b']
+s_test.end:
+exit=3
+capture-pane (last lines):
+.sh; echo exit=$? >> /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea6280
+9e/scratchpad/runbook_sim3/part/metrix-work/command_output/s_test.end
+quoted ok (3, 13, 18) ['a b']
+root@vm:/home/user/OpenMythos#
+--- GPU seconds command (3.7 item 5) from the RUNBOOK:
+source ~/metrix-vars.sh && cd "$REPO" && PYTHONPATH=metrix/e1-pilot/src "$PY" -c "import sys; from metrix_e1.compute import GpuClock; c = GpuClock(sys.argv[1]); print(c.used(), c._state()['open'])" "$WORK/gpu_clock.json"
+closed only (expected 15.0 None):
+15.0 None
+with an open segment started 100 s ago (expected about 110.5 and a timestamp):
+111.76449942588806 1795789991.1158764
+exit=0

@@ -1,0 +1,106 @@
+# Stage C, C4 documentation commit, round 2 (staged; parent c9481c85ed30e2615be86e86559f5107f114dd5b; code of a09e154ee8808663a894e1930c83c25b8bc46c0d): checks on the staged tree. Executor, host vm (Anthropic cloud container, CPU only, no GPU). Fri Nov 27 14:22:03 UTC 2026
+# stdout+stderr merged, unedited. Commands recorded by reports/round5/logrun.sh. METRIX_INPUTS_DIR=/tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/inputs
+$ git ls-remote origin refs/heads/metrix-e1-pilot-protocol-v1
+c9481c85ed30e2615be86e86559f5107f114dd5b	refs/heads/metrix-e1-pilot-protocol-v1
+exit=0
+$ git status --short --untracked-files=all
+M  metrix/e1-pilot/RUNBOOK_A100.md
+M  metrix/e1-pilot/reports/DEFERRED_MINORS.md
+M  metrix/e1-pilot/reports/IMPL_C_REPORT.md
+A  metrix/e1-pilot/reports/impl_c/c4_04_uv_check.txt
+A  metrix/e1-pilot/reports/impl_c/c4_05_docs_checks.txt
+A  metrix/e1-pilot/reports/impl_c/c4_07_runbook_sim.txt
+A  metrix/e1-pilot/reports/impl_c/c4_07_runbook_sim_trial1_script_error.txt
+A  metrix/e1-pilot/reports/impl_c/c4_docs_checks.sh
+A  metrix/e1-pilot/reports/impl_c/c4_docs_checks_r2.sh
+A  metrix/e1-pilot/reports/impl_c/c4_runbook_sim.sh
+?? metrix/e1-pilot/reports/impl_c/c4_06_docs_checks_r2.txt
+exit=0
+$ bash -c git\ rev-parse\ HEAD\;\ git\ write-tree\;\ git\ diff\ --quiet\ --\ metrix/e1-pilot/src\ metrix/e1-pilot/tests\ metrix/e1-pilot/run_pilot.py\ \&\&\ echo\ WORKTREE_EQUALS_INDEX_FOR_SRC_TESTS_RUN_PILOT\;\ git\ diff\ --cached\ --quiet\ a09e154ee8808663a894e1930c83c25b8bc46c0d\ --\ metrix/e1-pilot/src\ metrix/e1-pilot/tests\ metrix/e1-pilot/run_pilot.py\ \&\&\ echo\ INDEX_EQUALS_a09e154ee8808663a894e1930c83c25b8bc46c0d_FOR_SRC_TESTS_RUN_PILOT\;\ git\ diff\ --cached\ --stat\ HEAD\;\ sha256sum\ metrix/e1-pilot/reports/impl_c/c4_docs_checks_r2.sh\;\ git\ ls-files\ -s\ --\ metrix/e1-pilot/RUNBOOK_A100.md\ metrix/e1-pilot/reports/IMPL_C_REPORT.md\ metrix/e1-pilot/reports/DEFERRED_MINORS.md\ metrix/e1-pilot/reports/impl_c/c4_04_uv_check.txt\ metrix/e1-pilot/reports/impl_c/c4_07_runbook_sim.txt\ metrix/e1-pilot/reports/impl_c/c4_runbook_sim.sh\;\ git\ diff\ --cached\ HEAD\ --\ metrix/e1-pilot/RUNBOOK_A100.md\ metrix/e1-pilot/reports/IMPL_C_REPORT.md\ metrix/e1-pilot/reports/DEFERRED_MINORS.md\ metrix/e1-pilot/reports/impl_c/c4_04_uv_check.txt\ metrix/e1-pilot/reports/impl_c/c4_07_runbook_sim.txt\ metrix/e1-pilot/reports/impl_c/c4_runbook_sim.sh\ \|\ sha256sum
+c9481c85ed30e2615be86e86559f5107f114dd5b
+84d20d6c7c5de82b6a3003150647fbcf1d1c7dba
+WORKTREE_EQUALS_INDEX_FOR_SRC_TESTS_RUN_PILOT
+INDEX_EQUALS_a09e154ee8808663a894e1930c83c25b8bc46c0d_FOR_SRC_TESTS_RUN_PILOT
+ metrix/e1-pilot/RUNBOOK_A100.md                    |  99 +++++++++++++++----
+ metrix/e1-pilot/reports/DEFERRED_MINORS.md         |  41 +++++++-
+ metrix/e1-pilot/reports/IMPL_C_REPORT.md           | 106 ++++++++++++++++++---
+ metrix/e1-pilot/reports/impl_c/c4_04_uv_check.txt  |  43 +++++++++
+ .../e1-pilot/reports/impl_c/c4_05_docs_checks.txt  |  72 ++++++++++++++
+ .../e1-pilot/reports/impl_c/c4_07_runbook_sim.txt  |  52 ++++++++++
+ .../c4_07_runbook_sim_trial1_script_error.txt      |  11 +++
+ metrix/e1-pilot/reports/impl_c/c4_docs_checks.sh   |  33 +++++++
+ .../e1-pilot/reports/impl_c/c4_docs_checks_r2.sh   |  34 +++++++
+ metrix/e1-pilot/reports/impl_c/c4_runbook_sim.sh   |  30 ++++++
+ 10 files changed, 489 insertions(+), 32 deletions(-)
+3e9bb7ce009f6d7eb3fe23aaa80d9b5748311ac728e3edea4bbb6b0ce036a3d2  metrix/e1-pilot/reports/impl_c/c4_docs_checks_r2.sh
+100644 f4148409e1dd39a02a729ddc815a881e857c5298 0	metrix/e1-pilot/RUNBOOK_A100.md
+100644 902187f7eb1a8d9cef51447a8c927d24f506934c 0	metrix/e1-pilot/reports/DEFERRED_MINORS.md
+100644 08d5915dfd31284adae4a5b8b155491f7e22cb7f 0	metrix/e1-pilot/reports/IMPL_C_REPORT.md
+100644 f84905342ce051de149ad85c0ef3b808472dca0d 0	metrix/e1-pilot/reports/impl_c/c4_04_uv_check.txt
+100644 e208bfaa70133eb136f49a5633a8214e9ddbc435 0	metrix/e1-pilot/reports/impl_c/c4_07_runbook_sim.txt
+100644 7b77e4e469ddafea7b6e1c1a2ece72ad71369da8 0	metrix/e1-pilot/reports/impl_c/c4_runbook_sim.sh
+f45cc27c3b977059ec2e402bd3bfe6e235268174b34e78863fcc1069d643122f  -
+exit=0
+$ bash -c $'echo \'pending wording in the RUNBOOK (expected none):\'; grep -n \'\345\276\205 Review Gate\\|\345\276\205\345\206\263\\|report_only\\|b17_plus\' metrix/e1-pilot/RUNBOOK_A100.md; echo "grep exit $?"'
+pending wording in the RUNBOOK (expected none):
+grep exit 1
+exit=0
+$ env PYTHONPATH=metrix/e1-pilot/src METRIX_INPUTS_DIR=/tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/inputs /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/venv/bin/python -c $'\nimport re, sys\nfrom metrix_e1 import frozen as FZ, record as R\nfields = R.template_fields(FZ.load().protocol_text)\nrb = open(\'metrix/e1-pilot/RUNBOOK_A100.md\', encoding=\'utf-8\').read()\nblock = re.search(r\'\\n```\\n(Experiment ID: METRIX-E1-PILOT-l6-compare-.*?)\\n```\\n\', rb, flags=re.S).group(1).split(\'\\n\')\nnames = [ln.split(\': \', 1)[0] for ln in block]\nprint(\'protocol section 10 fields\', len(fields), \'| RUNBOOK 3.7 item 5 template lines\', len(block))\nprint(\'same names in the same order:\', names == fields)\nprint(\'every line is Field: value:\', all(\': \' in ln for ln in block))\nsys.exit(0 if names == fields else 1)'
+protocol section 10 fields 20 | RUNBOOK 3.7 item 5 template lines 20
+same names in the same order: True
+every line is Field: value: True
+exit=0
+$ /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/venv/bin/python metrix/e1-pilot/reports/round3/outside_metrix_check.py
+changed outside metrix/ (base 61d3c767 .. HEAD):
+  A	.claude/agents/code-reviewer.md
+  A	.claude/agents/data-auditor.md
+  M	CLAUDE.md
+charter: base 3065 bytes, new 3586 bytes, base is exact prefix: True
+charter: appended 521 bytes; level-1/2 headings in appended part: ['## 6. Metrix 子项目(2026-11-13 负责人决定)']
+ignore rules below come from the working-tree .gitignore; identical to .gitignore at HEAD: True
+agent .claude/agents/code-reviewer.md: tracked at HEAD: True; ignore rule: .gitignore:14:.claude/	.claude/agents/code-reviewer.md
+agent .claude/agents/data-auditor.md: tracked at HEAD: True; ignore rule: .gitignore:14:.claude/	.claude/agents/data-auditor.md
+RESULT: PASS
+exit=0
+$ env PYTHONPATH=metrix/e1-pilot/src METRIX_INPUTS_DIR=/tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/inputs /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/venv/bin/python -m pytest -q -p no:cacheprovider metrix/e1-pilot/tests/test_test_data.py::test_interpretations_ruled_by_review_gate metrix/e1-pilot/tests/test_environment.py
+....                                                                     [100%]
+4 passed in 1.30s
+exit=0
+$ git status --short --untracked-files=all
+M  metrix/e1-pilot/RUNBOOK_A100.md
+M  metrix/e1-pilot/reports/DEFERRED_MINORS.md
+M  metrix/e1-pilot/reports/IMPL_C_REPORT.md
+A  metrix/e1-pilot/reports/impl_c/c4_04_uv_check.txt
+A  metrix/e1-pilot/reports/impl_c/c4_05_docs_checks.txt
+A  metrix/e1-pilot/reports/impl_c/c4_07_runbook_sim.txt
+A  metrix/e1-pilot/reports/impl_c/c4_07_runbook_sim_trial1_script_error.txt
+A  metrix/e1-pilot/reports/impl_c/c4_docs_checks.sh
+A  metrix/e1-pilot/reports/impl_c/c4_docs_checks_r2.sh
+A  metrix/e1-pilot/reports/impl_c/c4_runbook_sim.sh
+?? metrix/e1-pilot/reports/impl_c/c4_06_docs_checks_r2.txt
+exit=0
+$ bash -c git\ rev-parse\ HEAD\;\ git\ write-tree\;\ git\ diff\ --quiet\ --\ metrix/e1-pilot/src\ metrix/e1-pilot/tests\ metrix/e1-pilot/run_pilot.py\ \&\&\ echo\ WORKTREE_EQUALS_INDEX_FOR_SRC_TESTS_RUN_PILOT\;\ git\ diff\ --cached\ --quiet\ a09e154ee8808663a894e1930c83c25b8bc46c0d\ --\ metrix/e1-pilot/src\ metrix/e1-pilot/tests\ metrix/e1-pilot/run_pilot.py\ \&\&\ echo\ INDEX_EQUALS_a09e154ee8808663a894e1930c83c25b8bc46c0d_FOR_SRC_TESTS_RUN_PILOT\;\ git\ diff\ --cached\ --stat\ HEAD\;\ sha256sum\ metrix/e1-pilot/reports/impl_c/c4_docs_checks_r2.sh\;\ git\ ls-files\ -s\ --\ metrix/e1-pilot/RUNBOOK_A100.md\ metrix/e1-pilot/reports/IMPL_C_REPORT.md\ metrix/e1-pilot/reports/DEFERRED_MINORS.md\ metrix/e1-pilot/reports/impl_c/c4_04_uv_check.txt\ metrix/e1-pilot/reports/impl_c/c4_07_runbook_sim.txt\ metrix/e1-pilot/reports/impl_c/c4_runbook_sim.sh\;\ git\ diff\ --cached\ HEAD\ --\ metrix/e1-pilot/RUNBOOK_A100.md\ metrix/e1-pilot/reports/IMPL_C_REPORT.md\ metrix/e1-pilot/reports/DEFERRED_MINORS.md\ metrix/e1-pilot/reports/impl_c/c4_04_uv_check.txt\ metrix/e1-pilot/reports/impl_c/c4_07_runbook_sim.txt\ metrix/e1-pilot/reports/impl_c/c4_runbook_sim.sh\ \|\ sha256sum
+c9481c85ed30e2615be86e86559f5107f114dd5b
+84d20d6c7c5de82b6a3003150647fbcf1d1c7dba
+WORKTREE_EQUALS_INDEX_FOR_SRC_TESTS_RUN_PILOT
+INDEX_EQUALS_a09e154ee8808663a894e1930c83c25b8bc46c0d_FOR_SRC_TESTS_RUN_PILOT
+ metrix/e1-pilot/RUNBOOK_A100.md                    |  99 +++++++++++++++----
+ metrix/e1-pilot/reports/DEFERRED_MINORS.md         |  41 +++++++-
+ metrix/e1-pilot/reports/IMPL_C_REPORT.md           | 106 ++++++++++++++++++---
+ metrix/e1-pilot/reports/impl_c/c4_04_uv_check.txt  |  43 +++++++++
+ .../e1-pilot/reports/impl_c/c4_05_docs_checks.txt  |  72 ++++++++++++++
+ .../e1-pilot/reports/impl_c/c4_07_runbook_sim.txt  |  52 ++++++++++
+ .../c4_07_runbook_sim_trial1_script_error.txt      |  11 +++
+ metrix/e1-pilot/reports/impl_c/c4_docs_checks.sh   |  33 +++++++
+ .../e1-pilot/reports/impl_c/c4_docs_checks_r2.sh   |  34 +++++++
+ metrix/e1-pilot/reports/impl_c/c4_runbook_sim.sh   |  30 ++++++
+ 10 files changed, 489 insertions(+), 32 deletions(-)
+3e9bb7ce009f6d7eb3fe23aaa80d9b5748311ac728e3edea4bbb6b0ce036a3d2  metrix/e1-pilot/reports/impl_c/c4_docs_checks_r2.sh
+100644 f4148409e1dd39a02a729ddc815a881e857c5298 0	metrix/e1-pilot/RUNBOOK_A100.md
+100644 902187f7eb1a8d9cef51447a8c927d24f506934c 0	metrix/e1-pilot/reports/DEFERRED_MINORS.md
+100644 08d5915dfd31284adae4a5b8b155491f7e22cb7f 0	metrix/e1-pilot/reports/IMPL_C_REPORT.md
+100644 f84905342ce051de149ad85c0ef3b808472dca0d 0	metrix/e1-pilot/reports/impl_c/c4_04_uv_check.txt
+100644 e208bfaa70133eb136f49a5633a8214e9ddbc435 0	metrix/e1-pilot/reports/impl_c/c4_07_runbook_sim.txt
+100644 7b77e4e469ddafea7b6e1c1a2ece72ad71369da8 0	metrix/e1-pilot/reports/impl_c/c4_runbook_sim.sh
+f45cc27c3b977059ec2e402bd3bfe6e235268174b34e78863fcc1069d643122f  -
+exit=0

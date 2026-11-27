@@ -708,8 +708,65 @@ code-reviewer 结论 PASS(没有 BLOCKER、MAJOR;8 个 MINOR;第 2 轮 CK1–CK1
 | CL4 | MINOR | RUNBOOK 第 3.8 节 | 输出说明没有覆盖以回溯结束的三种情况(TestAlreadyEvaluated、标记之后崩溃或 Ctrl-C、finish 之后实验记录提交失败) | C3R3-CR | 登记;处理应为:以回溯结束时看 `results/` 中是否已有标记或结果,有则 TEST 视为已评,不得重跑,报告 Owner(代码同样拒绝第二次运行) |
 | CL5 | MINOR | RUNBOOK 第 3.7、5 节 | 要求逐行查看 data-auditor 的“原文与转录”,但第 3.7 节列出的 `reviews/<该提交>/` 内容没有转录 | C3R3-CR | 登记;本阶段惯例是转录入库(`reviews/<提交>/*_transcript.jsonl`),第 3.7 节应列入 |
 | CL6 | MINOR | RUNBOOK 第 4 节一般规则 | formal 被 Ctrl-C(或 SIGHUP)结束时没有实验记录(`run_gate` 只捕获 Exception) | C3R3-CR | 登记;应补入例外:没有实验记录,不得重跑,连同命令输出报告 Owner |
-| CL7 | MINOR | RUNBOOK 第 5 节后备规则 | 存放审查原文的提交按同一规则也要先审(递归);没有写运行期间审查 BLOCK 时怎么办 | C3R3-CR | 登记;并入 C3 待决第 2 项请 Review Gate 一并裁决。在裁决之前的读法:存放审查原文的提交按本阶段先例视为证据提交;BLOCK 时停下,不修改输出,不运行 3.8,报告 Owner |
+| CL7 | MINOR | RUNBOOK 第 5 节后备规则 | 存放审查原文的提交按同一规则也要先审(递归);没有写运行期间审查 BLOCK 时怎么办 | C3R3-CR | 登记;并入 C3 待决第 2 项请 Review Gate 一并裁决。在裁决之前的读法:存放审查原文的提交按本阶段先例视为证据提交;BLOCK 时停下,不修改输出,不运行 3.8,报告 Owner(已由 Review Gate 2026-11-27 的裁决 `tasks/IMPL_C4_RULING.md` 第 4 项回答,C4 文档提交注) |
 | CL8 | MINOR | `IMPL_C_REPORT.md` C3 节“交付” | 只列 1.35、1.36,没有列 1.37 | C3R3-CR | 登记(应为 1.35–1.38) |
+
+### 1.39 Implementation 阶段 C:C4 代码提交 `a09e154e`(暂存树 `63121c79`,即该提交的树)的第 1 轮审查(`reviews/a09e154e…/code-reviewer_round1.md` 记 `IC11-CR`,`data-auditor_round1.md` 记 `IC11-DA`)
+
+code-reviewer PASS(没有 BLOCKER、MAJOR;10 个 MINOR);data-auditor PASS(仅作参考;3 个 MINOR、1 条说明)。都在防范对象之外;除 CM1(RUNBOOK 与代码不一致,由 C4 文档提交修正)外,都不影响协议一致性、数据、指标或隔离(Task Order 第 9 节),登记。两份审查重复的项合为一条,来源并列。
+
+| # | 严重度 | 位置 | 问题 | 来源 | 处理 |
+|---|---|---|---|---|---|
+| CM1 | MINOR | `RUNBOOK_A100.md` 第 6 节时长表与其后一行 | 代码提交之后,RUNBOOK 仍写 ST11 读 `b17_estimate_hours`、引用已删除的字段 `b17_plus_checkpoint_overhead_hours_report_only`,并保留“只报告;C2 待决第 2 项”的措辞 | IC11-CR 1;IC11-DA 2 | 已修(C4 文档提交:时长表改为 ST11 读 `st11_estimate_hours` = B17 估算 + 开销,写明区间上端会触发 ST11;第 4 节、ST11 一行同改) |
+| CM2 | MINOR | `audit/ic8_06`、`ic9_06`、`ic10_06_smoke_labels.py`,`ic10_04e_lookahead.py` | data-auditor 的历史脚本读取已改名的两个字段,用在 C4 及以后的冒烟记录上会 KeyError | IC11-CR 2 | 登记;它们是历史证据,不改。C4 的调用文字已写明新字段名,data-auditor 另写了 `ic11_04_st11.py`、`ic11_08_smoke_labels.py` |
+| CM3 | MINOR | `src/metrix_e1/pilot.py` 4 处注释或文档字符串(`step7` 中 G0.2 对剔除配置的读法、`gate_steps` 中 Gate 0 PASS 时实验记录的状态词、`run_gate` 中崩溃的状态词、`final_record` 中第 1 步之前停止的记录是否入库);冒烟实验记录 “Next (single)” 的 “Review Gate reviews the smoke report (C2)” | 仍写 “is for Review Gate”,而这些事项已由 C4 裁决第 2 项按现行实现接受 | IC11-CR 3;IC11-DA 3 | 登记;按裁决第 2 项“不改代码”的字面不改。是否允许只改注释,列入 `IMPL_C_REPORT.md` C4 节“待 Review Gate 决定(C4)”第 1 项 |
+| CM4 | MINOR | `pilot.py` 模块文档(Preflight 一段) | 括号 “(st11_estimate_hours)” 挂在 “the checkpoint overhead” 后面;开销由 `checkpoint_overhead_seconds` 计算,`st11_estimate_hours` 是两者之和 | IC11-CR 4 | 登记;下一个代码提交改为 “ST11 reads st11_estimate_hours = B17's estimate (compute.estimate_total_hours) + the checkpoint overhead (checkpoint_overhead_seconds)” |
+| CM5 | MINOR | `tests/test_test_data.py`;`interpretations.py` B17 | B17 文字中写死的计数(32、30、18、17、15)与 `evaluation_plan` 没有测试关联;只删开销组成那一句的变异测不出 | IC11-CR 5 | 登记;计数本身由 `test_preflight_overhead_counts` 钉住,文字与它的对应由两份审查核对过(IC11-CR 第二节、IC11-DA 第 2 节“静态核对”)。下一个代码提交可加断言 |
+| CM6 | MINOR | `compute.py` 模块文档;`tests/test_stops.py` 模块文档 | 仍把 `compute.estimate_total_hours` 称为 ST11 读的预检估算;修订后 ST11 读的是两者之和 | IC11-CR 6 | 登记;下一个代码提交改为 “B17's estimate (one part of ST11's estimate, pilot.st11_estimate_hours)” |
+| CM7 | MINOR | `pilot.step2` 冒烟分支 | 冒烟模式下 ST11 “would stop” 的分支没有测试(原有缺口;读和之后更容易触发) | IC11-CR 7 | 登记;C4 冒烟为 “within bound”,没有走到它。通用的 `stop_check` 记录路径已由 ST2 的测试覆盖 |
+| CM8 | MINOR | `pilot.preflight` | 局部变量 `st11_hours`(估算)与 `contract.stops.st11_hours`(上限)同名不同义 | IC11-CR 8 | 登记;下一个代码提交改名为 `st11_estimate` |
+| CM9 | MINOR | `stops.st11` 的消息 | `%.3f` 使 3.50028 h 显示为 “3.500 h > 3.5 h”;判定用未舍入的值,结果正确(原有) | IC11-CR 9;IC11-DA 1 | 登记;RUNBOOK 第 6 节写明以第 2 步记录中的 `st11_estimate_hours` 为准 |
+| CM10 | MINOR | `interpretations.py` 模块文档 | B17 修订的说明没有记裁决的作用范围(“E1 Pilot 直至结束”) | IC11-CR 10 | 登记;作用范围记在决定记录 `IMPL_C_REPORT.md`“Review Gate 对 C2、C3 待决事项的裁决”的标题与 `tasks/IMPL_C4_RULING.md` 中;下一个代码提交在文档字符串中补上 |
+| CM11 | 说明 | 正式运行中 ST11 停止时的第 2 步记录;`final_record` 的提交信息 | ST11 停止时第 2 步记录没有 `st11` 字段(停止信息在 `stopped` 中,预期行为);formal 的实验记录提交信息为 “formal formal experiment record”,多一个词(原有) | IC11-DA 4 | 登记,不改 |
+
+### 1.40 Implementation 阶段 C:C4 文档提交第 1 轮审查(暂存树 `7501c291`;`reviews/<C4 文档提交>/code-reviewer_round1.md` 记 `C4D1-CR`)
+
+code-reviewer 结论 PASS(没有 BLOCKER;1 个 MAJOR、12 个 MINOR,MAJOR 在防范对象之外)。都只涉及文档与操作,不影响代码;MAJOR 可能使 RUNBOOK 照做时在租用机器上失败(原文标为未验证),按 C3 的先例全部在文档中修正,第 2 轮送审。
+
+| # | 严重度 | 位置 | 问题 | 来源 | 处理 |
+|---|---|---|---|---|---|
+| CN1 | MAJOR | RUNBOOK 第 1 节 Claude Code 一段、第 3.0–3.2 节 | `E`、`PY`、`PY313`、`UV` 没有 export,`WORK`、`INPUTS` 在 `tmux new` 之后才 export;新的 tmux 窗口或 Claude Code 的下一次命令调用可能拿不到这些变量 | C4D1-CR | 已修:变量写入 `~/metrix-vars.sh`(3.0 建立,3.1 追加 `REPO`,3.2 追加 `PY313`、`PY`),每条命令与每个 tmux 窗口以 `source ~/metrix-vars.sh && cd "$REPO" &&` 开头;tmux 例子用 `-c "$REPO"` 并在窗口中 source。在会话临时目录中模拟了 3.0 的变量文件(重写的等价 heredoc)、3.1 的 REPO 一行、从 RUNBOOK 原样取出的 3.2a(两个分支)与一个新 shell(`impl_c/c4_07_runbook_sim.txt`;没有运行依赖安装与 tmux 一行;第 3 轮的 `c4_08` 覆盖更多,见 1.41) |
+| CN2 | MINOR | RUNBOOK 第 1 节 | 没有写长命令只发送一次、重发前怎样确认它不在运行 | C4D1-CR | 已修:每个长命令只发送一次、窗口名各不相同;重发前 `tmux list-windows`、`pgrep -af run_pilot.py` 与输出文件;不确定时不重发,报告 Owner |
+| CN3 | MINOR | RUNBOOK 第 1 节 | 长命令只列了 formal、test-generate、test-evaluate | C4D1-CR | 已修:加入第 3.2 节依赖安装与 3.2a、第 3.4 节下载 |
+| CN4 | MINOR | RUNBOOK 3.2a | “仅当没有 3.13.18”只在注释中,代码块无条件执行 | C4D1-CR | 已修:改为 `if [ "$(python3.13 --version 2>&1)" = "Python 3.13.18" ]; then … else … fi`(两个分支都在模拟中运行) |
+| CN5 | MINOR | RUNBOOK 3.2a | uv 不锁版本;解释器构建没有记下;缺少 venv 模块时的处理 | C4D1-CR | 已修:`uv==0.13.10`;`sys.version`(含构建日期)写入 `env.txt`;缺少 venv 模块时停下报告 |
+| CN6 | MINOR | RUNBOOK 第 1 节网络一行;`c4_04` | 没有记录 `UV_*` 变量,不能确认 releases.astral.sh 是默认地址 | C4D1-CR | 已修:`c4_04` 追加 `env | grep ^UV_`(只有 `UV_NATIVE_TLS`,没有镜像变量);网络一行改为以 `--show-urls` 显示的主机及其重定向目标为准;3.2a 把 `UV_*` 与 `--show-urls` 写入 `env.txt` |
+| CN7 | MINOR | RUNBOOK 第 1 节 Claude Code 一段 | Claude Code 的安装、登录与网络没有列;没有写由谁做 3.0–3.1;“普通 shell”与“tmux 会话”不一致 | C4D1-CR | 已修:安装与登录由 Owner 完成,其网络以 Claude Code 的文档为准;3.0–3.1 由 Owner 或其指定的人在 tmux 会话中执行 |
+| CN8 | MINOR | RUNBOOK 第 4、6 节 | 字段在第 2 步记录的 `preflight` 之下,没有写前缀 | C4D1-CR | 已修:`preflight.st11_estimate_hours` 等 |
+| CN9 | MINOR | RUNBOOK 第 4 节 | ST7 训练前的事前估计漏写基座模型的加载(原有措辞) | C4D1-CR | 已修:“基座模型加载 + 训练 + 两次 `state_sha256`、保存、文件哈希、重载 + 一次 DEV 评测” |
+| CN10 | MINOR | RUNBOOK 第 3.7 节第 5 项 | 手写记录的 Compute accounting 只指向不提交的文件;Input 没有 split SHA | C4D1-CR | 已修:填入从 `gpu_clock.json` 算出的累计秒数(给出命令);Input 加 HEAD 中 `SPLIT_MANIFEST.json` 的 `split_sha256` |
+| CN11 | MINOR | `DEFERRED_MINORS.md` 1.39 CM5;1.38 CL7 | “IC11-DA 第 2 项”与 CM1 的 “IC11-DA 2” 含义不同;CL7 的处理列仍写请 Review Gate 裁决 | C4D1-CR | 已修:CM5 改为“IC11-DA 第 2 节‘静态核对’”;CL7 的处理列注明已由 C4 裁决第 4 项回答 |
+| CN12 | MINOR | `IMPL_C_REPORT.md` C4 节 | 注释位置写得不准(剔除配置的注释在 `step7`);交付清单没有列 `c4_docs_checks.sh` | C4D1-CR | 已修 |
+| CN13 | MINOR | `impl_c/c4_05_docs_checks.txt` | 只有 stat,没有文档的 blob,不能证明被审树的内容与录制时相同 | C4D1-CR | 已修:第 2 轮的检查(`c4_docs_checks_r2.sh`、`c4_06_docs_checks_r2.txt`)首尾记录各文档路径的 `git ls-files -s` 与暂存 diff 的 sha256 |
+
+### 1.41 Implementation 阶段 C:C4 文档提交第 2 轮审查(暂存树 `26e3556b`;`reviews/<C4 文档提交>/code-reviewer_round2.md` 记 `C4D2-CR`)
+
+code-reviewer 结论 PASS(没有 BLOCKER、MAJOR;12 个 MINOR,都在防范对象之外;第 1 轮 CN1–CN13 都已处理)。其中 CO4(`env.txt` 会记下 `UV_*` 变量的值并推送)与 CO1(含引号的命令拼进 `send-keys` 会断开)会在租用机器上造成实际问题,按 C3 的先例在文档中修正,第 3 轮送审;第 3 轮之后的新问题登记,不再改文档。
+
+| # | 严重度 | 位置 | 问题 | 来源 | 处理 |
+|---|---|---|---|---|---|
+| CO1 | MINOR | RUNBOOK 第 1 节长命令 | 照例子把第 3.2 节的命令放进单引号交给 `send-keys`,命令自带的单引号会断开;venv、uv 的输出不经 `tee` | C4D2-CR | 已修:长命令先原样写入 `$WORK/command_output/<名称>.sh`(第一行 `set -o pipefail; source … && cd "$REPO" || exit 1`),窗口中只发送 `bash <脚本>; echo exit=\$? >> <名称>.end`;进度看输出文件或 `tmux capture-pane`。`c4_08` 中以含单引号的脚本按 RUNBOOK 原文运行,输出与退出码正确 |
+| CO2 | MINOR | RUNBOOK 第 1 节 | `pgrep -af run_pilot.py` 可能自匹配、查不到 3.2 与 3.4;`tmux list-windows` 不能说明命令是否在运行;输出文件没有结束标记与退出码 | C4D2-CR | 已修:以 `<名称>.end`(含退出码,`pipefail`)判断结束;不存在即视为仍在运行或状态不明 |
+| CO3 | MINOR | RUNBOOK 第 1 节 | “不确定时不重发”读来像确认后可自行重发;括号漏了 test-generate | C4D2-CR | 已修:中断、失败或状态不明之后是否重发都由 Owner 决定;test-generate 与 test-evaluate 不得重跑 |
+| CO4 | MINOR | RUNBOOK 3.2a | `env | grep '^UV_'` 把值写入要提交的 `env.txt`,可能含凭据 | C4D2-CR | 已修:只记变量名(`sed 's/=.*/=<set>/'`) |
+| CO5 | MINOR | RUNBOOK 第 3.7 节第 5 项 | 累计 GPU 秒数的命令只加已关闭的段,与代码口径不同 | C4D2-CR | 已修:改用 `metrix_e1.compute.GpuClock(…).used()`;有未关闭的段时照实写明并报告 Owner。`c4_08` 用两个人造的 `gpu_clock.json` 运行了 RUNBOOK 中的命令 |
+| CO6 | MINOR | RUNBOOK 第 1 节 | Claude Code 的安装、登录与第 3.0–3.1 节由 Owner 做,仓库中没有 Owner 接受这项分工的记录 | C4D2-CR | 登记;列入 `IMPL_C_REPORT.md` C4 节“待 Review Gate 决定(C4)”第 3 项,请 Owner 确认 |
+| CO7 | MINOR | RUNBOOK 3.2a | 主机分支不核对能否建 venv(可能缺 ensurepip) | C4D2-CR | 已修:主机分支的条件同时要求 `python3.13 -c 'import ensurepip, venv'` 成功,否则走 uv 分支 |
+| CO8 | MINOR | RUNBOOK 第 3.8 节 | begin 到 finish 之间重启 Claude Code 可能与 finish 争用 git 的 index.lock | C4D2-CR | 已修:期间不启动、不重启 Claude Code |
+| CO9 | MINOR | `impl_c/c4_runbook_sim.sh` | 不建 HOME 目录(第一次运行前由没有录制的步骤建好);只有 3.2a 是从 RUNBOOK 原样取出;最后的变量文件没有 PY313 | C4D2-CR | 登记;脚本保持运行时的样子。第 3 轮的 `c4_runbook_sim_r3.sh`(`c4_08`)自己建目录,从 RUNBOOK 原样取出 3.0 的 heredoc、3.1 的一行、3.2a、长命令的 `send-keys` 一行与 GPU 秒数的命令,保留主机分支的 PY313 并在新 shell 中核对 |
+| CO10 | MINOR | `DEFERRED_MINORS.md` 1.40;`IMPL_C_REPORT.md` C4 节;`c4_docs_checks_r2.sh` 的说明 | “会使…失败”把原文的“可能”写成肯定;“模拟了 3.0–3.2”宽于实际;报告仍写“从 PyPI 新装 uv”;脚本说明没有 1.40 | C4D2-CR | 已修前三处(1.40 与报告);脚本保持运行时的样子 |
+| CO11 | MINOR | `impl_c/c4_04_uv_check.txt` | 第 2 轮追加的命令没有时间;结论只排除了环境变量,没有排除 uv 的配置文件 | C4D2-CR | 已修:追加一条带时间的说明(第 2 轮追加的时间与结论的范围);RUNBOOK 以 `--show-urls` 为准 |
+| CO12 | MINOR | `impl_c/c4_06_docs_checks_r2.txt` | blob 与 diff 的 sha256 只覆盖 11 个暂存路径中的 6 个 | C4D2-CR | 已修:第 3 轮的检查(`c4_docs_checks_r3.sh` → `c4_09_docs_checks_r3.txt`)记录 `git diff --cached --name-only HEAD` 的全部路径 |
 
 ## 2. 已在第 5–7 轮解决(核对用)
 
@@ -743,3 +800,4 @@ code-reviewer 结论 PASS(没有 BLOCKER、MAJOR;8 个 MINOR;第 2 轮 CK1–CK1
 - Implementation 阶段 A:1.18 节 AA1、AA2、AA6、AA7,1.19 节 AB1、AB2 须由 Review Gate 决定;AA9(命令路径)、AA11(记录字段)、L4 的语料含 `anchor_text`、1.21 节 AD14(修复提交没有调用 data-auditor)请 Review Gate 备案。都列于 `IMPL_A_REPORT.md`“待 Review Gate 决定”(第 1–8 项)。
 - Implementation 阶段 B:1.22 节 BA1–BA3、BA7、BA9,1.23 节 BB2、BB4、BB6,1.24 节 BC1 须由 Review Gate 决定;1.25 节 BD10 请 Review Gate 备案。都列于 `IMPL_B_REPORT.md`“待 Review Gate 决定”(第 1–5 项)。BB1 / BC2 / BD8(ST10 凭据与“TEST 只评一次”)是阶段 C 的硬性前提。
 - Implementation 阶段 B 报告提交:1.26 节 BE1(待决第 3 项的运行清单)与 BE6(推送记录的证据提交不经审查,待决第 6 项)请 Review Gate 决定或确认。
+- Implementation 阶段 C(C4):1.39 节 CM3(只改注释是否属于“不改代码”)、1.38 节 CL2–CL6(RUNBOOK 操作细节的修正时机)与 1.41 节 CO6(RUNBOOK 中的分工,请 Owner 确认)列于 `IMPL_C_REPORT.md` C4 节“待 Review Gate 决定(C4)”第 1–3 项。1.38 节 CL7 由 Review Gate 2026-11-27 的裁决(`tasks/IMPL_C4_RULING.md`)第 4 项回答。

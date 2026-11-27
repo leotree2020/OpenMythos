@@ -1,0 +1,47 @@
+# Stage C, C4: check of the RUNBOOK 3.2a route (Review Gate 2026-11-27, tasks/IMPL_C4_RULING.md item 6: CPython 3.13.18 installed with uv when the host has none). Executor, host vm (Anthropic cloud container, CPU only; this host already has CPython 3.13.18, so the check only shows whether uv offers and installs that exact build). Fri Nov 27 12:46:58 UTC 2026
+# stdout+stderr merged, unedited. Commands recorded by reports/round5/logrun.sh.
+$ bash -c command\ -v\ uv\;\ uv\ --version\ 2\>\&1\ \|\ grep\ -v\ UV_NATIVE_TLS\;\ uv\ python\ list\ --only-downloads\ --all-versions\ 2\>/dev/null\ \|\ grep\ -c\ cpython-3.13.18
+/root/.local/bin/uv
+uv 0.11.32 (x86_64-unknown-linux-gnu)
+0
+exit=1
+$ python3 -m venv /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/uv-tool
+exit=0
+$ /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/uv-tool/bin/python -m pip install -q uv
+
+[notice] A new release of pip is available: 26.2.2 -> 26.3
+[notice] To update, run: /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/uv-tool/bin/python -m pip install --upgrade pip
+exit=0
+$ /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/uv-tool/bin/uv --version
+uv 0.13.10 (x86_64-unknown-linux-gnu)
+exit=0
+$ bash -c /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/uv-tool/bin/uv\ python\ list\ 3.13.18\ --only-downloads\ 2\>\&1\ \|\ grep\ -v\ UV_NATIVE_TLS
+cpython-3.13.18-linux-x86_64-gnu    <download available>
+exit=0
+$ env UV_PYTHON_INSTALL_DIR=/tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/uvpy /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/uv-tool/bin/uv python install 3.13.18
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+Downloading cpython-3.13.18-linux-x86_64-gnu (download) (34.0MiB)
+ Downloaded cpython-3.13.18-linux-x86_64-gnu (download)
+Installed Python 3.13.18 in 1.78s
+ + cpython-3.13.18-linux-x86_64-gnu (python3.13)
+exit=0
+$ bash -c P=\$\(UV_PYTHON_INSTALL_DIR=/tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/uvpy\ /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/uv-tool/bin/uv\ python\ find\ --managed-python\ 3.13.18\ 2\>/dev/null\)\;\ echo\ \$P\;\ \$P\ --version\;\ \$P\ -c\ \'import\ platform\,\ ssl\,\ venv\;\ print\(platform.python_implementation\(\)\,\ platform.python_version\(\)\)\'\;\ \$P\ -m\ venv\ /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/uvpy-venv\ \&\&\ /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/uvpy-venv/bin/python\ --version
+/tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/uvpy/cpython-3.13.18-linux-x86_64-gnu/bin/python3.13
+Python 3.13.18
+CPython 3.13.18
+Python 3.13.18
+exit=0
+$ bash -c grep\ -m1\ \'\^#\ python:\'\ metrix/e1-pilot/requirements.lock
+# python: CPython 3.13.18
+exit=0
+$ bash -c /tmp/claude-0/-home-user/0be8a08f-8c8b-5a8d-a54c-95f2ea62809e/scratchpad/uv-tool/bin/uv\ python\ list\ 3.13.18\ --only-downloads\ --show-urls\ 2\>\&1\ \|\ grep\ -v\ UV_NATIVE_TLS
+cpython-3.13.18-linux-x86_64-gnu    https://releases.astral.sh/github/python-build-standalone/releases/download/20261124/cpython-3.13.18%2B20261124-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz
+exit=0
+$ bash -c env\ \|\ grep\ \'\^UV_\'\ \|\ sed\ \'s/=.\*/=\<set\;\ value\ not\ shown\>/\'\;\ echo\ \'UV_\*\ variables\ listed\ above\;\ no\ UV_PYTHON_INSTALL_MIRROR\ among\ them\ means\ the\ URL\ shown\ by\ --show-urls\ is\ uv\'\\\'\'s\ default\ download\ location\'
+UV_NATIVE_TLS=<set; value not shown>
+UV_* variables listed above; no UV_PYTHON_INSTALL_MIRROR among them means the URL shown by --show-urls is uv's default download location
+exit=0
+$ bash -c date\ -u\;\ echo\ \'Note\ added\ in\ round\ 3\ of\ the\ C4\ documentation\ commit:\ the\ env\ \|\ grep\ \^UV_\ command\ above\ was\ appended\ in\ round\ 2\ \(about\ 14:20\ UTC\)\,\ after\ the\ header\ time\ of\ this\ file.\ Its\ conclusion\ covers\ environment\ variables\ only:\ no\ UV_PYTHON_INSTALL_MIRROR\ is\ set\ in\ the\ environment\;\ uv\ configuration\ files\ \(uv.toml\)\ were\ not\ inspected.\ The\ RUNBOOK\ takes\ the\ host\ shown\ by\ --show-urls\ as\ authoritative.\'
+Fri Nov 27 14:35:00 UTC 2026
+Note added in round 3 of the C4 documentation commit: the env | grep ^UV_ command above was appended in round 2 (about 14:20 UTC), after the header time of this file. Its conclusion covers environment variables only: no UV_PYTHON_INSTALL_MIRROR is set in the environment; uv configuration files (uv.toml) were not inspected. The RUNBOOK takes the host shown by --show-urls as authoritative.
+exit=0

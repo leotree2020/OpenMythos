@@ -1,6 +1,6 @@
 # E1-PILOT Implementation 阶段 C 报告
 
-**状态:IMPLEMENTATION_READY(Implementation Task Order V1 第 13 节;阶段 C 验收见文末“阶段 C 验收”)。** C1 完成(第二次送审通过:工作提交 `ae60e0f7`、修复提交 `b48fe842`);C2 完成(工作提交 `5219ff77`,修复提交 `49fc9a35`、`dd65a361`、`a0e04d1f`,见 C2 节);C3 完成(`RUNBOOK_A100.md` 与本报告,见 C3 节)。C1 结束时曾因审查额度用尽在 C1 与 C2 之间停下;Owner 2026-11-27 的指令(`tasks/IMPL_C2_OWNER_MESSAGE.md`)之后,C2、C3 在第三个阶段 C 会话中执行(C2 节开头)。C1 的第一次送审在连续 3 轮未 PASS 后停止(`5f5cd51e`,只提交了证据);Review Gate 对 C1 的裁决(2026-11-25,`tasks/IMPL_C1_RULING.md`)之后按裁决修改、重新送审,见 C1 节“第二次送审(按裁决修改)”。C1 节其余各小节记录第一次送审,保持原样。以下开头各项是 C1(第二个阶段 C 会话)的情况;C2、C3 的会话与运行环境见 C2 节开头。
+**状态:IMPLEMENTATION_READY(Implementation Task Order V1 第 13 节;阶段 C 验收见文末“阶段 C 验收”)。** C4 按 Review Gate 2026-11-27 对 C2、C3 待决事项的裁决(`tasks/IMPL_C4_RULING.md`)完成:代码提交 `a09e154e`(ST11 读 B17 估算 + checkpoint 开销,B17 修订)与文档提交(RUNBOOK 等),见 C4 节;状态仍为 IMPLEMENTATION_READY。C1 完成(第二次送审通过:工作提交 `ae60e0f7`、修复提交 `b48fe842`);C2 完成(工作提交 `5219ff77`,修复提交 `49fc9a35`、`dd65a361`、`a0e04d1f`,见 C2 节);C3 完成(`RUNBOOK_A100.md` 与本报告,见 C3 节)。C1 结束时曾因审查额度用尽在 C1 与 C2 之间停下;Owner 2026-11-27 的指令(`tasks/IMPL_C2_OWNER_MESSAGE.md`)之后,C2、C3 在第三个阶段 C 会话中执行(C2 节开头)。C1 的第一次送审在连续 3 轮未 PASS 后停止(`5f5cd51e`,只提交了证据);Review Gate 对 C1 的裁决(2026-11-25,`tasks/IMPL_C1_RULING.md`)之后按裁决修改、重新送审,见 C1 节“第二次送审(按裁决修改)”。C1 节其余各小节记录第一次送审,保持原样。以下开头各项是 C1(第二个阶段 C 会话)的情况;C2、C3 的会话与运行环境见 C2 节开头。
 
 - 指令:`tasks/IMPLEMENTATION_TASK_ORDER_V1.md` 第 10 节表中 C 行、第 7、8、11 节;Owner 下达阶段 C 的消息原文 `tasks/IMPL_C_OWNER_MESSAGE.md`(两段:本会话开头的消息,含 Review Gate 补充裁决 1–6;上次阶段 C 指令原文,含 Review Gate 对阶段 B 的裁决 1–5 与阶段 C 的要求 6–10)。阶段 C 分 C1、C2、C3 三段,每段结束提交、推送、写入本报告。
 - 执行会话:session_01J5mxaXeqjRSkJj9ZuGh8EJ(第二个阶段 C 会话;上一个会话 session_01J5mxaXE1WCWBQiUWaFsd9w 在第一个代码提交的两份审查 BLOCK 后停止,代码已撤回,见 `reviews/tree-65225a5a…/` 与 `1435a74..eb05e42`)。本地分支 `metrix-e1-pilot-protocol-v1` 设为 `origin/metrix-e1-pilot-protocol-v1`(`eb05e422`)后在其上工作;会话分支 `claude/brave-meitner-436eh9` 没有使用。
@@ -69,6 +69,32 @@ Owner 在下达 C2、C3 时转达,原文连同首段入库为 `tasks/IMPL_C2_OWN
    落实:C1 节“待 Review Gate 决定”第 2 项结案;`f8139f9` 不补审。
 
 C1 节“待 Review Gate 决定”第 3 项(C2 的时间)由本次指令回答:C2、C3 在本会话执行。
+
+## Review Gate 对 C2、C3 待决事项的裁决(2026-11-27,作用范围:E1 Pilot 直至结束)
+
+Owner 转达,原文连同首段入库为 `tasks/IMPL_C4_RULING.md`(下称“C4 裁决”)。以下逐字照录第 1–7 项,每项后写明落实情况;执行见“C4”节。
+
+1. 「ST11 改为读「B17 估算 + checkpoint 开销」之和，超过 3.5 小时即停。B17 的解释文字相应修订，status 记为 ACCEPTED（Review Gate 2026-11-27 修订）。ST7 的事前判断不变，TEST 的事前估计不加余量。补测试与变异。」
+
+   落实(C4 代码提交):C2 节“待 Review Gate 决定”第 2 项由此结案。`pilot.st11_estimate_hours` = B17 估算 + checkpoint 开销 / 3600,预检写入第 2 步记录(`st11_estimate_hours`、`checkpoint_overhead`),`step2` 的 ST11 读它;`stops.st11` 不变(超过 3.5 小时停止)。B17 的 text 写明两部分及其组成,status `ACCEPTED（Review Gate 2026-11-27 修订）`,ruling `tasks/IMPL_C4_RULING.md 第 1 项`。ST7 的事前判断(`run_seconds`、`eval_seconds`、`test_evaluation_seconds`)不变,只改文档字符串。测试与变异见“C4”节。
+2. 「C2 待决第 1、3、4、5、6、7 项：全部按现行实现接受，不改代码。」
+
+   落实:C2 节“待 Review Gate 决定”第 1、3–7 项由此结案,没有改动相关代码(包括其中写着 “for Review Gate” 的注释,见“C4”节)。
+3. 「A100 上的依赖安装、输入与权重下载属于正式流程；metrix/CLAUDE.md 第 4 节「租卡后只跑正式流程」指不在租用机器上开发调试。」
+
+   落实:C3 节“待 Review Gate 决定”第 1 项结案;RUNBOOK 开头“与 metrix/CLAUDE.md 第 4 节的关系”按此改写。
+4. 「正式运行期间只含输出的手工提交（results/command_output/、audit/、reviews/）按证据提交处理，不经 code-reviewer；此前各项「本阶段」裁决在 A100 运行期间继续有效。」
+
+   落实:C3 节“待 Review Gate 决定”第 2 项与 `DEFERRED_MINORS.md` 1.38 CL7 结案;RUNBOOK 开头“此前裁决的效力”与第 5 节“审查方式”按此改写。
+5. 「两份 L6 计数不同：ST10，不运行 test-evaluate；Executor 按协议第 10 节模板手写一份 BLOCKED 实验记录，作为证据提交。」
+
+   落实:C3 节“待 Review Gate 决定”第 3 项结案;RUNBOOK 第 3.7 节第 4、5 项(手写记录的路径、20 个字段的模板、提交方式),第 4 节例外与 ST10 一行。
+6. 「主机没有 CPython 3.13.18 时，允许用 uv 安装该精确版本；装不到即停下报告 Owner。」
+
+   落实:RUNBOOK 第 1 节 Python 与网络两行、第 3.0 节核对说明、第 3.2 节的 3.2a。本会话在 CPU 容器中核对了这条路径(`impl_c/c4_04_uv_check.txt`):容器预装的 uv 0.11.32 不列出 3.13.18 的下载;PyPI 上的 uv 0.13.10 列出(下载地址 `releases.astral.sh`)并装成,解释器报告 `Python 3.13.18`、`CPython 3.13.18`,能建 venv。所以 3.2a 用从 PyPI 新装的 uv,网络一行加入 `releases.astral.sh`(只在 3.2a 时)。没有在这个解释器上安装依赖或运行测试。
+7. 「RUNBOOK 按 1、3–6 更新，删去「待 Review Gate 决定」的措辞，时长表改为 ST11 读两者之和；另写明在 A100 主机上运行 Claude Code 的前提（从仓库根目录、本分支启动，使两个 agent 定义直接加载）。」
+
+   落实(C4 文档提交):RUNBOOK 开头与第 1、3、4、5、6 节;第 1 节新增“在 A100 主机上运行 Claude Code”。RUNBOOK 中不再有“待 Review Gate 决定”或“待决”的措辞。
 
 ## C1:BE 修复、interpretations 标记、TEST 闸门
 
@@ -188,7 +214,7 @@ C1 节“待 Review Gate 决定”第 3 项(C2 的时间)由本次指令回答:C
 - `gate.py`:新增 `n_range_values`、`n_ranges_hold`(G0.3 / T3 读的数,ST2 使用),数值不变。
 - 测试 `tests/test_run_pilot.py`(23 个测试函数,参数化后 26 项;全部测试由 C1 结束时的 298 项增至 324 项),变异 `reports/impl_c/c2_mutate.py`(工作提交,17 个)、`c2_mutate_fix1.py`(修复提交,25 个)、`c2_mutate_fix2.py` 与 `c2_mutate_fix2b.py`(第二个修复提交,35 + 1 个)、`c2_mutate_fix3.py`(第三个修复提交,43 个)。
 
-### 待 Review Gate 决定(C2)
+### 待 Review Gate 决定(C2;已由 2026-11-27 的裁决回答,见“Review Gate 对 C2、C3 待决事项的裁决”第 1、2 项)
 
 1. **第 10 节“每次运行(含被停止的)提交一份”的范围(1.32 CF1、CF30;1.33 CG5)。** 现行做法:formal 在第 1 步开始之前停止(设备检查 ST8、代码未提交、连续性检查、第 1 步开始时的 ST12/ST13)时,实验记录只写到 `<work>`,不写入仓库、不推送;`Pilot()` 本身的 ST12 没有记录。理由是 c2_02 的事故:开发容器上的检出同样能通过远端与分支检查,误在别的机器上运行 formal 会把一份 BLOCKED 记录推送到本分支。test-evaluate 在本进程写入标记之前、没有停止码的拒绝不写记录(TEST 未评),其中包括第三个修复提交新增的一类:TEST 已开始或已评之后再运行,在任何带停止码的检查之前拒绝(1.34 CH1;1.35 CI8);带停止码的协议停止(ST7、ST8、ST9、ST10、ST12)写记录并推送,其中 ST8 与 formal 第 1 步之前只写 `<work>` 的做法不一致(1.34 CH6)。test-generate 成功时不写实验记录(ST10 记录即其输出),只在 ST10 超限时写(1.36 CJ11)。协议第 10 节“每次运行(含被停止的)提交一份”是否涵盖这些不写记录的拒绝,请确认,或指示区分“非 Pilot 机器”与“Pilot 机器上的第 1 步之前停止”。
 2. **ST11 与 ST7 的估计量(1.32 CF10;1.33 CG2)。** ST11 读 B17 的估算(原样);checkpoint 开销(模型加载、`state_sha256`、保存、重载、文件哈希)与两者之和只报告,另用于 ST7 的事前判断(每次训练、每次评测之前;TEST 开始之前按整个 TEST 评测)。是否让 ST11 读两者之和,TEST 的事前估计是否加余量,请决定。
@@ -253,11 +279,71 @@ C1 节“待 Review Gate 决定”第 3 项(C2 的时间)由本次指令回答:C
 - 第 1 轮的 BLOCKER:RUNBOOK 没有写上次阶段 C 指令第 9 项的“确定性模式下 CUDA 算子报错时的处理(停下报告,不得关闭确定性)”。已在 RUNBOOK 第 4 节补写;并在下文“Owner 阶段 C 各项要求的落实”中逐项核对补充裁决 1–6 与上次阶段 C 指令第 1、6、7、9、10 项,以免再漏。
 - 本报告写于各轮审查之前。按 metrix/CLAUDE.md 第 5 节,审查为 PASS 才提交本提交(BLOCK 则修复后重审;连续 3 轮未 PASS 则停止),所以本提交存在即表示 C3 的 code-reviewer 在最后一轮为 PASS;最后一轮的新 MAJOR / MINOR 若不改文档,登记写入其后的证据提交。
 
-### 待 Review Gate 决定(C3)
+### 待 Review Gate 决定(C3;已由 2026-11-27 的裁决回答,见“Review Gate 对 C2、C3 待决事项的裁决”第 3–5 项)
 
 1. **租卡前:A100 上的环境安装与下载(1.36 CJ6)。** metrix/CLAUDE.md 第 4 节写“环境、下载、冒烟测试先在 CPU 环境完成;租卡后只跑正式流程”。依赖锁定、输入文件的下载与哈希核对、冒烟都已在 CPU 环境完成;A100 主机是另一台机器,须重新安装依赖、下载输入并由代码再次核对,模型权重只能在 A100 主机下载(Task Order 红线 2)。RUNBOOK 第 3.1–3.4 节因此在租用的机器上执行(约 0.5 小时,计入租用时长)。请确认。
 2. **租卡前:运行期间手工提交的审查方式(1.36 CJ5)。** 命令输出(`results/command_output/`)、data-auditor 的计数文件与 audit 输出、审查原文的提交只含输出、不含代码。补充裁决 1 的“证据提交”只限 `reports/`、`reviews/`、`audit/`,作用范围是阶段 C。请决定这些提交是否按证据提交处理(不经 code-reviewer);未裁决时 RUNBOOK 第 5 节按 metrix/CLAUDE.md 第 5 节,每次提交前调用 code-reviewer(frontmatter 比对、固定第一句、原文入 `reviews/<提交>/`,都不在 begin 与 finish 之间推送)。另请一并说明:补充裁决 1,以及 RUNBOOK 依赖的其他“作用范围:本阶段”的裁决(C1 裁决第 2、6 项,2026-11-27 裁决第 1 项),在 A100 运行期间是否仍然有效(“本阶段”指 Implementation 阶段 C 还是 metrix/CLAUDE.md 第 2 节的 E1 Pilot;1.37 CK4)。
 3. **两份 L6 计数不同时的实验记录(1.36 CJ11)。** RUNBOOK 第 3.7 节:Executor 比较两份计数,不同则 ST10、BLOCKED、不运行 test-evaluate、报告 Owner。这次停止没有 run_pilot 写的实验记录(协议第 10 节)。可选:由 Owner 批准运行 test-evaluate,让 begin 在写标记之前判 ST10 并写 BLOCKED 记录;或 Executor 手写一份记录。请决定。
+
+## C4:按 Review Gate 2026-11-27 裁决(`tasks/IMPL_C4_RULING.md`)的修改
+
+- 指令:Owner 本次消息(`tasks/IMPL_C4_RULING.md`,首段与裁决第 1–7 项):代码提交送两份审查,调用文字写入 C1 裁决的防范对象原文;只改文档的提交只送 code-reviewer;完成后状态仍为 IMPLEMENTATION_READY,停下。
+- 执行会话:session_01J5mxaYCbCJdFzWS6Pah7n5(第四个阶段 C 会话)。本地分支 `metrix-e1-pilot-protocol-v1` 设为 `origin/metrix-e1-pilot-protocol-v1`(`3bc761ea`)后在其上工作;会话分支 `claude/review-gate-ruling-c4-u1cyxh` 没有使用。
+- 运行环境:Claude Code on the web 云容器,hostname `vm`,4 CPU,15 GiB 内存,没有 nvidia 设备与 `nvidia-smi`(`impl_c/c4_01_env_fetch.txt`);Python 3.13.18;依赖按 `requirements.lock` 以 `--require-hashes --no-deps` 装入会话临时目录的 venv(pip 先固定为 26.3),`pip check` 通过,torch `2.11.0+cu130`(`torch.cuda.is_available()` False),transformers 5.22.2。下载的只有 4 个分词器文件、parcae `tokenizer.json`、锚文本 parquet 与固定 revision 的 `config.json`(哈希与冻结值相同,`c4_01`);没有下载或加载任何权重,没有使用 GPU,没有生成、读取或统计 TEST。
+
+### 交付
+
+- **代码提交 `a09e154e`**(树 `63121c79`;C4 裁决第 1 项):
+  - `pilot.st11_estimate_hours` = B17 估算 + checkpoint 开销 / 3600。预检把它与两部分写入第 2 步记录(`b17_estimate_hours`、`checkpoint_overhead {seconds, counts}`、`st11_estimate_hours`、`st11_reads`;原来只报告的两个字段 `checkpoint_overhead_report_only`、`b17_plus_checkpoint_overhead_hours_report_only` 由这些字段取代),`step2` 的 ST11 读 `st11_estimate_hours`。`stops.st11` 不变:超过 3.5 小时停止,等于 3.5 小时不停。
+  - ST7 的事前判断(`run_seconds`、`eval_seconds`、`test_evaluation_seconds`)不变,只改文档字符串;TEST 的事前估计不加余量。`checkpoint_overhead_seconds`、`evaluation_plan` 的计算不变。
+  - B17:text 写明 ST11 读两者之和及 checkpoint 开销的组成;status `ACCEPTED（Review Gate 2026-11-27 修订）`(`interpretations.ACCEPTED_C4`),ruling `tasks/IMPL_C4_RULING.md 第 1 项`(`RULING_REF_C4`)。`pending()` 仍为空。
+  - 测试:`test_preflight_overhead_counts` 加 `st11_estimate_hours` 的数值断言;新增 `test_formal_st11_reads_b17_plus_the_checkpoint_overhead[sum_over_bound, sum_at_bound]`(formal 在带裸远端的临时克隆上,真实的预检;B17 估算设为 3.0 h、开销设为 1801 s / 1800 s:前者 ST11、BLOCKED、第 2 步记录带停止并已推送、没有第 3 步;后者正好 3.5 h,不停);`test_interpretations_ruled_by_review_gate` 改为 B17 的 status、ruling 与裁决原文。全部测试由 324 项增至 326 项。
+  - 变异 `impl_c/c4_mutate.py` 9 个(ST11 只读 B17、不加开销、开销按分钟、预检只取 B17、在上限处即停、B17 的 status 或 text 未修订、TEST 事前估计加 10% 余量、ST7 的训练事前估计少算保存),全部测出。
+  - 裁决原文 `tasks/IMPL_C4_RULING.md`(本次消息全文)随该提交入库。
+- **裁决第 2 项**:没有改代码。`pilot.py` 中仍写着这些事项 “is for Review Gate” 的注释与文档字符串(`step7` 中 G0.2 对剔除配置的读法、`gate_steps` 中 Gate 0 PASS 的状态词、`run_gate` 中崩溃的状态词、`final_record` 中第 1 步之前停止的记录是否入库)按“不改代码”的字面保留,登记为 `DEFERRED_MINORS.md` 1.39 CM3,见下文“待 Review Gate 决定(C4)”第 1 项。
+- **文档提交(本提交)**:`RUNBOOK_A100.md`(C4 裁决第 1、3–7 项,逐项见“Review Gate 对 C2、C3 待决事项的裁决”的落实;第 2 轮按第 1 轮审查修改,见下文);本报告;`DEFERRED_MINORS.md` 1.39、1.40;`impl_c/c4_04_uv_check.txt`(第 6 项的 uv 路径核对,第 2 轮追加 `UV_*` 变量);检查脚本与输出 `impl_c/c4_docs_checks.sh` → `c4_05_docs_checks.txt`(第 1 轮)、`c4_docs_checks_r2.sh` → `c4_06_docs_checks_r2.txt`(第 2 轮)、`c4_docs_checks_r3.sh` → `c4_09_docs_checks_r3.txt`(第 3 轮);RUNBOOK 命令的模拟:`impl_c/c4_runbook_sim.sh` → `c4_07_runbook_sim.txt`(第 2 轮:3.0 的变量文件、3.1 的 REPO 一行、3.2a 两个分支与一个新 shell;被取代的第一次运行 `c4_07_runbook_sim_trial1_script_error.txt`),`c4_runbook_sim_r3.sh` → `c4_08_runbook_sim_r3.txt`(第 3 轮:另加长命令的 `send-keys` 一行与 GPU 秒数的命令,都从 RUNBOOK 原样取出;都不含依赖安装、下载与 run_pilot.py)。
+
+### 检查(代码提交的被审暂存树;运行环境见本节开头)
+
+| 项 | 结果 | 位置 |
+|---|---|---|
+| 被测代码即暂存内容 | 首尾都有 `WORKTREE_EQUALS_INDEX_FOR_SRC_TESTS_RUN_PILOT`,代码 diff 的 sha256 首尾都是 `e8df1988…`,写树 `178c9a2f`(暂存录制与冒烟记录副本之前的树) | `impl_c/c4_02_checks.txt`、`c4_03_smoke.txt` 首尾 |
+| 数据重新生成、verify、四个冻结内容哈希 | PASS | `c4_02` |
+| TEST 生成器(当前状态) | 拒绝(Gate 0 记录未提交),`--out` 未创建,没有 `results/` | `c4_02` |
+| outside_metrix_check | PASS | `c4_02` |
+| pytest 全部 | `326 passed` | `c4_02` |
+| 变异(`c4_mutate.py`) | 9 个全部测出,前后 src/tests/run_pilot 的 sha256 相同 | `c4_02` |
+| 冒烟(`run_pilot.py smoke --steps 3`,单独运行) | 第 1–8 步各一行 “done”;30 次训练,30 行 “unchanged after reload”;预检一行 “B17 estimate 2.008 h + checkpoint overhead 0.010 h = 2.019 h (ST11, bound 3.5 h)”,第 2 步记录 `st11` 为 “within bound”;第 8 步生成器拒绝,`TEST files: 0`;`RESULT: PASS`(冒烟值,不构成结论) | `c4_03`;记录副本 `impl_c/c4_smoke_records/`(不含逐题明细、checkpoint 与数据文件) |
+
+### 提交与审查(C4)
+
+| 提交 | 内容 | 被审暂存树 | code-reviewer | data-auditor(仅作参考) |
+|---|---|---|---|---|
+| `a09e154e` 代码提交 | 见“交付” | `63121c79` | PASS(没有 BLOCKER、MAJOR;10 MINOR) | PASS(3 MINOR、1 条说明) |
+| `c9481c85` 证据提交 | `reviews/a09e154e…/`、`audit/ic11_*` 与其 stdout、推送记录 `impl_c/c4_push_code_commit.txt` | 不送审(只含 `reports/`、`reviews/`、`audit/`,补充裁决 1) | — | — |
+| 本提交(文档),第 1 轮 | 见“交付” | `7501c291` | PASS(没有 BLOCKER;1 MAJOR、12 MINOR) | 不送(只改文档;C4 裁决末段) |
+| 本提交(文档),第 2 轮 | 第 1 轮的问题全部在文档中修正(`DEFERRED_MINORS.md` 1.40) | `26e3556b` | PASS(没有 BLOCKER、MAJOR;12 MINOR) | 不送 |
+| 本提交(文档),第 3 轮 | 第 2 轮的问题除 CO6、CO9 外在文档中修正(`DEFERRED_MINORS.md` 1.41) | 见 `reviews/<本提交>/` | 见该目录 | 不送 |
+
+- 代码提交的两份审查:调用文字第一句按 metrix/CLAUDE.md 第 5 节第 6 条,含 C1 裁决的防范对象原文与 `tasks/IMPL_C4_RULING.md` 全文;调用前的 tools 行核对、审查输入、原始转录与原文在 `reviews/a09e154e…/`(`README.txt`、`notes.txt`)。data-auditor 独立复算了冒烟第 2 步的 B17 估算、checkpoint 开销与两者之和(与记录相同)、以新测试的两个参数为驱动的预期(运行前写出,与结果相同)、冒烟数据与 30 次训练(`audit/stdout/impl_c/ic11_*`)。
+- 文档提交只送 code-reviewer(C4 裁决末段)。本报告写于审查之前;按 metrix/CLAUDE.md 第 5 节,审查为 PASS 才提交,所以本提交存在即表示最后一轮为 PASS;各轮的调用文字、核对、输入、转录与原文,以及本提交的推送记录,在其后的证据提交的 `reviews/<本提交>/` 与 `impl_c/` 中。
+- 问题与处理:`DEFERRED_MINORS.md` 1.39(代码提交两份审查的 MINOR)、1.40(文档提交第 1 轮,MAJOR CN1 为 RUNBOOK 中的变量在新的 tmux 窗口或命令调用中可能为空,已修并在会话临时目录中模拟)、1.41(文档提交第 2 轮)。第 3 轮之后的新问题登记于其后的证据提交,不再改文档(C3 的先例)。按 Task Order 第 9 节,影响协议一致性、数据、指标或隔离的已修;其中 RUNBOOK 与代码不一致(CM1)由本提交修正,其余登记。
+
+### 本节执行中出现的问题(都已记录)
+
+1. **过早的提取。** 等待 data-auditor 时,Executor 的等待条件匹配到转录中的工具名 “SubagentHandback”(不是调用),提取脚本提前运行,取到一条 50 字的中间文字。该结果作废,保存为 `reviews/a09e154e…/premature_extract_data-auditor_discarded.md`;正式原文是 data-auditor 交回之后重新提取的(`extract_log_round1.txt`,`notes.txt`)。
+2. **会话进程重启。** 等待 data-auditor 期间本会话的工作进程重启过一次;重启后核对暂存树仍为 `63121c79`、HEAD 为 `3bc761ea`,再提交(`impl_c/c4_push_code_commit.txt` 中 `HEAD^{tree}` 为 `63121c79`)。
+3. **uv 的版本。** 容器预装的 uv 0.11.32 不列出 CPython 3.13.18 的下载,PyPI 上的 uv 0.13.10 列出并装成(`c4_04`)。RUNBOOK 的 3.2a 因此从 PyPI 安装 uv(第 2 轮起固定为 0.13.10),网络一行以 `--show-urls` 显示的主机及其重定向目标为准(本阶段为 `releases.astral.sh`,只在 3.2a 时)。没有在 uv 装的解释器上安装依赖或运行测试。
+4. **uv 在容器中留下的链接。** `c4_04` 中的 `uv python install`(安装目录设在会话临时目录)另在 `/root/.local/bin/python3.13` 建了指向该解释器的链接(12:47),此后本容器中 `python3.13` 先解析到它(同为 CPython 3.13.18)。所有测试、冒烟与 data-auditor 的运行都用会话开始时由 `/usr/local/bin/python3.13` 建的 venv,不受影响;`c4_07` 模拟中“主机已有 3.13.18”的分支取到的是这个链接(版本核对同样通过)。该链接在会话临时目录之外,没有删除(metrix/CLAUDE.md 第 7 节)。
+5. **模拟脚本的第一次运行。** `c4_runbook_sim.sh` 在 `cd` 之后以相对路径读 RUNBOOK,第一次运行失败(`c4_07_runbook_sim_trial1_script_error.txt`,按 C1 裁决第 7 项保留);改为传绝对路径后重跑为 `c4_07`,脚本本身没有改。
+6. **会话中删除的文件。** 只有会话临时目录中的文件(过早提取时复制的转录副本、模拟的临时目录);没有删除任何受跟踪或作为证据的文件。
+
+### 待 Review Gate 决定(C4)
+
+1. **只改注释是否属于“不改代码”(1.39 CM3)。** C2 待决第 1、3、5 项已按现行实现接受,但 `pilot.py` 中 4 处注释或文档字符串仍写 “is for Review Gate”;冒烟实验记录的 “Next (single)” 为 “Review Gate reviews the smoke report (C2)”(只出现在冒烟记录中)。Executor 按裁决第 2 项的字面没有改动。请指示:允许时,在下一个代码提交中只改这些措辞为“按现行实现接受(`tasks/IMPL_C4_RULING.md` 第 2 项)”,送两份审查。
+2. **1.38 中 RUNBOOK 的操作细节(CL2–CL6)。** C3 第 3 轮登记、处理列写“正式运行指令之前修正”的几项(venv 与 pip 缓存的分区、glibc、`env.txt` 与 `fetch.txt` 带时间;`Pilot()` 内失败、以回溯结束的 test-evaluate、Ctrl-C 结束的 formal 怎样处理;第 3.7 节列入转录)不在 C4 裁决第 7 项所列的修改之内,本提交没有改。请指示是否在下达正式运行指令之前,以只改文档的提交修正(送 code-reviewer)。
+3. **RUNBOOK 中的分工(1.41 CO6)。** RUNBOOK 第 1 节写为:Claude Code 在 A100 主机上的安装与登录,以及第 3.0–3.1 节(驱动检查、tmux 会话、变量文件、克隆与检出),由 Owner 或 Owner 指定的人完成,之后由 Claude Code 接手。C4 裁决第 7 项只要求写明前提,没有指定由谁做。请 Owner 确认这一分工,或指定其他做法。
+4. **提请注意(不需裁决):** 按 RUNBOOK 第 6 节的规划区间,ST11 读到的和约 1.6–4.2 小时,区间上端超过 3.5 小时。若 A100 上实测落在上端,`formal` 会在第 2 步以 ST11 停止(BLOCKED),此时已用掉环境安装、下载与预检的租用时间(约 0.6 小时)。
 
 ## Owner 阶段 C 各项要求的落实
 
@@ -280,17 +366,17 @@ C1 节“待 Review Gate 决定”第 3 项(C2 的时间)由本次指令回答:C
 
 | # | 验收项 | 结果 | 证据(原始输出) |
 |---|---|---|---|
-| 1 | 单元测试全部通过,原始输出入库 | 满足 | 第三个修复提交的被审暂存树:`impl_c/c2d_01_checks.txt`(`324 passed`);C3 的暂存树(代码相同):`impl_c/c3_01_final_checks.txt`(`324 passed`;首尾 `INDEX_EQUALS_a0e04d1f…`) |
-| 2 | 四个冻结哈希由正式代码重新生成,完全一致;data-auditor 独立复算一致 | 满足(data-auditor 的结论仅作参考,metrix/CLAUDE.md 第 10 节) | `c2d_01`、`c3_01`:`metrix_e1.data generate` 与 `verify`;冒烟第 1 步(`c2d_02`);data-auditor:`audit/stdout/impl_c/ic10_01_hashes.txt`(以及 `ic7_*`–`ic9_*`) |
-| 3 | `run_pilot.py --smoke` 从第 1 步跑到第 7 步无中断,30 次训练全部完成,冒烟报告完整 | 满足(入口为子命令 `run_pilot.py smoke --steps 3`,C2 待决第 7 项) | `impl_c/c2d_02_smoke.txt`:第 1–8 步各一行 “done”,30 行训练(每行 “unchanged after reload”),冒烟报告(每步耗时、峰值内存、文件数,G0.1–G0.10 的冒烟值,`trainings completed: 30`),work 目录文件清单与标签;记录副本 `impl_c/c2d_smoke_records/` |
-| 4 | TEST 生成器在当前状态下拒绝运行;全程没有任何 TEST 内容产生 | 满足 | `c2d_01`、`c3_01`:`metrix_e1.test_data` 退出码 1、`RESULT: FAIL`、`--out` 未创建;冒烟第 8 步以子进程运行生成器,拒绝,work 下没有 TEST 文件(`c2d_02`);测试中的 TEST 行都是测试自写的人造行,在临时仓库中 |
+| 1 | 单元测试全部通过,原始输出入库 | 满足 | 第三个修复提交的被审暂存树:`impl_c/c2d_01_checks.txt`(`324 passed`);C3 的暂存树(代码相同):`impl_c/c3_01_final_checks.txt`(`324 passed`;首尾 `INDEX_EQUALS_a0e04d1f…`);C4 代码提交的被审暂存树:`impl_c/c4_02_checks.txt`(`326 passed`) |
+| 2 | 四个冻结哈希由正式代码重新生成,完全一致;data-auditor 独立复算一致 | 满足(data-auditor 的结论仅作参考,metrix/CLAUDE.md 第 10 节) | `c2d_01`、`c3_01`:`metrix_e1.data generate` 与 `verify`;冒烟第 1 步(`c2d_02`);C4:`c4_02`、冒烟 `c4_03`;data-auditor:`audit/stdout/impl_c/ic10_01_hashes.txt`、`ic11_01_hashes.txt`(以及 `ic7_*`–`ic9_*`) |
+| 3 | `run_pilot.py --smoke` 从第 1 步跑到第 7 步无中断,30 次训练全部完成,冒烟报告完整 | 满足(入口为子命令 `run_pilot.py smoke --steps 3`,C2 待决第 7 项) | `impl_c/c2d_02_smoke.txt`:第 1–8 步各一行 “done”,30 行训练(每行 “unchanged after reload”),冒烟报告(每步耗时、峰值内存、文件数,G0.1–G0.10 的冒烟值,`trainings completed: 30`),work 目录文件清单与标签;记录副本 `impl_c/c2d_smoke_records/`。C4 代码提交上重跑:`impl_c/c4_03_smoke.txt`、`c4_smoke_records/`(同样完整) |
+| 4 | TEST 生成器在当前状态下拒绝运行;全程没有任何 TEST 内容产生 | 满足 | `c2d_01`、`c3_01`:`metrix_e1.test_data` 退出码 1、`RESULT: FAIL`、`--out` 未创建;冒烟第 8 步以子进程运行生成器,拒绝,work 下没有 TEST 文件(`c2d_02`;C4:`c4_02`、`c4_03`);测试中的 TEST 行都是测试自写的人造行,在临时仓库中 |
 | 5 | 正式模式下无法使用冒烟的缩减参数(有测试证明) | 满足 | `tests/test_run_pilot.py::test_formal_commands_have_no_step_option`、`test_only_smoke_builds_a_shortened_mode`;变异 “formal takes a step count” 等被测出(`c2d_01` 变异段) |
-| 6 | 每个工作提交的 code-reviewer 为 PASS 且无 BLOCKER | 满足 | 阶段 A:工作提交 `602a39e8`、修复提交 `219c4a60`(`reports/IMPL_A_REPORT.md`;`reviews/602a39e8…/code-reviewer_round1.md`、`_round2.md`,`reviews/219c4a60…/code-reviewer.md`)。阶段 B:`74a4d444`、`fdbb9def`、`493d7f9c`(`reports/IMPL_B_REPORT.md`;`reviews/74a4d444…/code-reviewer_round1.md`、`_round2.md`,`reviews/fdbb9def…/`、`reviews/493d7f9c…/code-reviewer.md`)。阶段 C:`ae60e0f7`、`b48fe842`(C1),`5219ff77`、`49fc9a35`、`dd65a361`、`a0e04d1f`(C2),各 `reviews/<提交>/code-reviewer_round1.md`;C3 提交(只改文档,最后一轮 PASS 才提交,见 C3 节)。另:第一次阶段 C 尝试中误入代码的 `1435a74` 已向前撤回并由补充裁决 1 追认(本报告开头);C1 第一次送审的 3 轮未 PASS 没有提交代码(停止提交 `5f5cd51e`) |
-| 7 | `outside_metrix_check.py` 通过 | 满足 | `c2d_01`、`c3_01`:`reports/round3/outside_metrix_check.py` 输出 `RESULT: PASS` |
-| 8 | `RUNBOOK_A100.md` 完整,含时长与费用估算 | 满足(C3 提交在 code-reviewer PASS 之后才提交) | `RUNBOOK_A100.md` 第 1–6 节对应 Task Order 第 8 节第 1–6 项;第 6 节:实际 GPU wall-clock 约 1.2–3.1 小时,GPU 部分费用约 2.2–5.6 美元(按租用时长约 3.6–9.0 美元);另列预检时 ST11 读到的 B17 估算约 1.2–3.0 小时 |
+| 6 | 每个工作提交的 code-reviewer 为 PASS 且无 BLOCKER | 满足 | 阶段 A:工作提交 `602a39e8`、修复提交 `219c4a60`(`reports/IMPL_A_REPORT.md`;`reviews/602a39e8…/code-reviewer_round1.md`、`_round2.md`,`reviews/219c4a60…/code-reviewer.md`)。阶段 B:`74a4d444`、`fdbb9def`、`493d7f9c`(`reports/IMPL_B_REPORT.md`;`reviews/74a4d444…/code-reviewer_round1.md`、`_round2.md`,`reviews/fdbb9def…/`、`reviews/493d7f9c…/code-reviewer.md`)。阶段 C:`ae60e0f7`、`b48fe842`(C1),`5219ff77`、`49fc9a35`、`dd65a361`、`a0e04d1f`(C2),各 `reviews/<提交>/code-reviewer_round1.md`;C3 提交(只改文档,最后一轮 PASS 才提交,见 C3 节);C4 代码提交 `a09e154e`(`reviews/a09e154e…/code-reviewer_round1.md`)与 C4 文档提交(见 C4 节)。另:第一次阶段 C 尝试中误入代码的 `1435a74` 已向前撤回并由补充裁决 1 追认(本报告开头);C1 第一次送审的 3 轮未 PASS 没有提交代码(停止提交 `5f5cd51e`) |
+| 7 | `outside_metrix_check.py` 通过 | 满足 | `c2d_01`、`c3_01`、`c4_02`、`c4_05`:`reports/round3/outside_metrix_check.py` 输出 `RESULT: PASS` |
+| 8 | `RUNBOOK_A100.md` 完整,含时长与费用估算 | 满足(C3 提交在 code-reviewer PASS 之后才提交) | `RUNBOOK_A100.md` 第 1–6 节对应 Task Order 第 8 节第 1–6 项;第 6 节:实际 GPU wall-clock 约 1.2–3.1 小时,GPU 部分费用约 2.2–5.6 美元(按租用时长约 3.6–9.0 美元);另列预检时 ST11 读到的估算(B17 估算 + checkpoint 开销,C4 裁决第 1 项)约 1.6–4.2 小时,区间上端超过 3.5 小时会触发 ST11。C4 文档提交按 C4 裁决第 7 项更新 |
 
 ## 最终状态
 
 **IMPLEMENTATION_READY**(Task Order 第 13 节)。之后由 Owner 决定是否租用 A100 并执行正式运行;正式运行另发运行指令。
 
-尚待 Review Gate 决定的事项:C2 节“待 Review Gate 决定”第 1–7 项与 C3 节第 1–3 项。其中 C3 第 1、2 项须在租卡前裁决(RUNBOOK 开头);C2 第 1 项(不写记录的停止与拒绝)、第 2 项(ST11 是否读含 checkpoint 开销的和:按 RUNBOOK 第 6 节的区间,上端会触发 ST11;TEST 的事前估计是否加余量)、第 6 项(重跑与恢复)直接影响 RUNBOOK 第 4 节的操作。Executor 认为这些事项不阻碍 IMPLEMENTATION_READY,请 Review Gate 确认;若某项裁决要求修改代码,状态退回 C2,修改后重新送审与验收。
+C2 节“待 Review Gate 决定”第 1–7 项与 C3 节第 1–3 项已由 Review Gate 2026-11-27 的裁决(`tasks/IMPL_C4_RULING.md`)回答:第 2 项(ST11)改了代码并经两份审查(C4 代码提交 `a09e154e`),其余按现行实现接受或只改 RUNBOOK(C4 文档提交)。新的待决事项见 C4 节“待 Review Gate 决定(C4)”:只改注释是否允许(第 1 项),1.38 中 RUNBOOK 操作细节的修正时机(第 2 项),RUNBOOK 中第 3.0–3.1 节与 Claude Code 安装的分工(第 3 项,请 Owner 确认)。Executor 认为这些都不阻碍 IMPLEMENTATION_READY。
