@@ -1,0 +1,2 @@
+set -o pipefail; source ~/metrix-vars.sh && cd "$REPO" || exit 1
+{ date -u; $PY metrix/e1-pilot/run_pilot.py fetch-model --inputs "$INPUTS"; } 2>&1 | tee -a "$WORK/command_output/fetch.txt"

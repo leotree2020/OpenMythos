@@ -1,0 +1,4 @@
+set -o pipefail; source ~/metrix-vars.sh && cd "$REPO" || exit 1
+"$PY313" -m venv "$VENV" 2>&1 | tee -a "$E"
+echo 'export PY="$VENV/bin/python"' >> ~/metrix-vars.sh && source ~/metrix-vars.sh
+mkdir -p "$VENV.tmp" && { date -u; $PY -m pip install --no-cache-dir pip==26.3 && TMPDIR="$VENV.tmp" $PY -m pip install --no-cache-dir --require-hashes --no-deps -r metrix/e1-pilot/requirements.lock && $PY -m pip check; } 2>&1 | tee -a "$E"

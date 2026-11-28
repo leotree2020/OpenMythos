@@ -1,0 +1,10 @@
+set -o pipefail; source ~/metrix-vars.sh && cd "$REPO" || exit 1
+if [ "$(python3.13 --version 2>&1)" = "Python 3.13.18" ] && python3.13 -c 'import ensurepip, venv' 2>/dev/null; then
+  echo "export PY313=$(command -v python3.13)" >> ~/metrix-vars.sh
+else
+  python3 -m venv ~/uv-tool && ~/uv-tool/bin/python -m pip install uv==0.13.10 \
+  && { ~/uv-tool/bin/uv --version; env | grep '^UV_' | sed 's/=.*/=<set>/'; ~/uv-tool/bin/uv python list 3.13.18 --only-downloads --show-urls; ~/uv-tool/bin/uv python install 3.13.18; } 2>&1 | tee -a "$E" \
+  && echo "export PY313=$(~/uv-tool/bin/uv python find --managed-python 3.13.18)" >> ~/metrix-vars.sh
+fi
+source ~/metrix-vars.sh
+{ date -u; echo "PY313=$PY313"; "$PY313" -c 'import platform, sys; print(platform.python_implementation(), platform.python_version()); print(sys.version)'; } 2>&1 | tee -a "$E"
