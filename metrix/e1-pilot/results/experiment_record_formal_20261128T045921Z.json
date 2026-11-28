@@ -1,0 +1,1420 @@
+{
+ "environment": {
+  "cuda": {
+   "available": true,
+   "cudnn": 91900,
+   "torch_cuda": "13.0"
+  },
+  "data_hashes": null,
+  "determinism": {
+   "CUBLAS_WORKSPACE_CONFIG": ":4096:8",
+   "cuda_matmul_allow_tf32": false,
+   "cudnn_allow_tf32": false,
+   "cudnn_benchmark": false,
+   "cudnn_deterministic": true,
+   "deterministic_algorithms": true,
+   "float32_matmul_precision": "highest"
+  },
+  "device": "NVIDIA A100 80GB PCIe",
+  "git": {
+   "branch": "metrix-e1-pilot-protocol-v1",
+   "dirty": false,
+   "head": "36106eefc2238cee77976e6afbd8632cbbab2257",
+   "status_porcelain": ""
+  },
+  "hostname": "9e51659ac3ff",
+  "interpretations": [
+   {
+    "id": "B1",
+    "protocol": "2.7, 4, 7",
+    "ruling": "reports/IMPL_C_REPORT.md「Review Gate 对阶段 B 的裁决」第 1 项",
+    "status": "ACCEPTED（Review Gate 2026-11-24）",
+    "text": "Optimizer steps are numbered s = 1..300 (the protocol's '第 300 步' is the last step). Step s of arm A uses anchor documents (4s + i) mod 512, i = 0..3, documents numbered 0..511 in anchor_text.jsonl order (step 1: documents 4-7; with s = 0..299 the first step would use 0-3 and every step's documents would differ).",
+    "where": "train.step_numbers (used by train.batch_schedule), train.anchor_docs"
+   },
+   {
+    "id": "B2",
+    "protocol": "7 (warmup, scheduler)",
+    "ruling": "reports/IMPL_C_REPORT.md「Review Gate 对阶段 B 的裁决」第 1 项",
+    "status": "ACCEPTED（Review Gate 2026-11-24）",
+    "text": "lr(s) = peak * s / 15 for s <= 15 (rises linearly from 0; step 1 already has peak/15); for s >= 15, lr(s) = peak * (0.1 + 0.9 * 0.5 * (1 + cos(pi * (s - 15) / (300 - 15)))), so lr(15) = peak and lr(300) = 0.1 * peak. Set on every parameter group before optimizer step s.",
+    "where": "train.lr_at"
+   },
+   {
+    "id": "B3",
+    "protocol": "7 (order)",
+    "ruling": "reports/IMPL_C_REPORT.md「Review Gate 对阶段 B 的裁决」第 1 项",
+    "ruling_note": "Review Gate 2026-11-24: in the formal run, section 8 step 1 writes the canonical hash of train_Y.jsonl into the manifest (DATA_MANIFEST.json files, the field written by step 1).",
+    "status": "ACCEPTED（Review Gate 2026-11-24）",
+    "text": "Epochs are numbered e = 1..20 and the purpose is 'order:<e>' with TRAIN_SEED = the run's seed; permutation p = list(range(N)); r.shuffle(p) (the same call as protocol 2.6 detail 4); the batches of epoch e are p[0:B], p[B:2B], ... (B = 8 for F, L, A, S; B = 16 for Y), rows indexed in the file order of the corpus. The row order of train_Y.jsonl (fact order, the Y_ENTITY sentence before the Y_ANSWER one) is a stage A choice without a frozen hash (DEFERRED_MINORS AA11), so Y's batches depend on it.",
+    "where": "train.epoch_batches, train.batch_schedule"
+   },
+   {
+    "id": "B4",
+    "protocol": "4 (CE), 7 (sequence)",
+    "ruling": "reports/IMPL_C_REPORT.md「Review Gate 对阶段 B 的裁决」第 1 项",
+    "status": "ACCEPTED（Review Gate 2026-11-24）",
+    "text": "CE(batch) = sum of -log p(x_t | x_<t) over every non-padding target position (t = 2..n of each sequence, the final <|endoftext|> included) divided by the number of those positions (token-weighted over the batch, like the anchor KL); sequences are not averaged first.",
+    "where": "train.token_ce"
+   },
+   {
+    "id": "B5",
+    "protocol": "4 (arm L), 0 (rng_rule)",
+    "ruling": "reports/IMPL_C_REPORT.md「Review Gate 对阶段 B 的裁决」第 1 项",
+    "status": "ACCEPTED（Review Gate 2026-11-24）",
+    "text": "LoRA A is initialised uniformly in [-1/sqrt(in_features), 1/sqrt(in_features)] (the Kaiming-uniform default of torch.nn.Linear and peft): every value is r.uniform(-b, b) of r = rng_rule(TRAIN_SEED, 'lora_A:<module path>'), row by row, stored as float32; B = 0; scaling alpha / rank = 2; the adapter output B(A x) * scaling is added to the frozen base output; LoRA parameters are float32. The distribution and the purpose string are not in the protocol.",
+    "where": "train.lora_a_init, train.apply_lora"
+   },
+   {
+    "id": "B6",
+    "protocol": "4 (arm A), 7 (precision)",
+    "ruling": "reports/IMPL_C_REPORT.md「Review Gate 对阶段 B 的裁决」第 1 项",
+    "status": "ACCEPTED（Review Gate 2026-11-24）",
+    "text": "The base copy's forward and the trained model's forward on the anchor documents both run under the same bf16 autocast as the rest of training; their logits are cast to float32 before log_softmax and the KL is computed in float32.",
+    "where": "train.anchor_kl, train.train_run"
+   },
+   {
+    "id": "B7",
+    "protocol": "7 (weight decay)",
+    "ruling": "reports/IMPL_C_REPORT.md「Review Gate 对阶段 B 的裁决」第 1 项",
+    "status": "ACCEPTED（Review Gate 2026-11-24）",
+    "text": "'2-D weight matrices' = every trainable parameter with ndim == 2, including the tied embedding / lm_head matrix for F, S, Y; 1-D parameters (RMSNorm weights) get no weight decay.",
+    "where": "train.make_optimizer"
+   },
+   {
+    "id": "B8",
+    "protocol": "5 (EM)",
+    "ruling": "reports/IMPL_C_REPORT.md「Review Gate 对阶段 B 的裁决」第 1 项",
+    "status": "ACCEPTED（Review Gate 2026-11-24）",
+    "text": "'去结尾的 . , ; : ! ?' removes every trailing character of that set (str.rstrip('.,;:!?'), as in the data-auditor's audit/r4_scoring_em.py and r5_em_stop.py); a leading 'the ' is removed once; a <think> without a later </think> is left as it is.",
+    "where": "evaluate.em_normalize"
+   },
+   {
+    "id": "B9",
+    "protocol": "5 (TRAIN closed book)",
+    "ruling": "reports/IMPL_C_REPORT.md「Review Gate 对阶段 B 的裁决」第 1 项",
+    "status": "ACCEPTED（Review Gate 2026-11-24）",
+    "text": "The candidates c of CB(f) are the 4 candidates C_f of candidates.json (protocol 2.5: one candidate list for all templates, splits and arms).",
+    "where": "evaluate.score_cb"
+   },
+   {
+    "id": "B10",
+    "protocol": "6",
+    "ruling": "reports/IMPL_C_REPORT.md「Review Gate 对阶段 B 的裁决」第 1 项",
+    "status": "ACCEPTED（Review Gate 2026-11-24）",
+    "text": "One generator r = rng_rule(BOOTSTRAP_SEED, purpose) per comparison; for each of the 10,000 replicates, for each stratum in the order natural, random: r.choices(d_stratum, k=len(d_stratum)) with the facts of the stratum in facts.jsonl order; Delta* = mean of the 120 drawn values.",
+    "where": "stats.stratified_draws, stats.paired_bootstrap"
+   },
+   {
+    "id": "B11",
+    "protocol": "6",
+    "ruling": "reports/IMPL_C_REPORT.md「Review Gate 对阶段 B 的裁决」第 1 项",
+    "status": "ACCEPTED（Review Gate 2026-11-24）",
+    "text": "Percentile = linear interpolation between order statistics at position (B - 1) * p / 100 of the sorted replicates (numpy's default 'linear' method).",
+    "where": "stats.percentile"
+   },
+   {
+    "id": "B12",
+    "protocol": "6",
+    "ruling": "reports/IMPL_C_REPORT.md「Review Gate 对阶段 B 的裁决」第 1 项",
+    "status": "ACCEPTED（Review Gate 2026-11-24）",
+    "text": "Purpose '<比较>:<split>:<seed 或 avg>' is written '<X>-<Y>:<split>:<seed>' with ASCII '-', split 'DEV' or 'TEST', seed the integer or 'avg' (e.g. 'F-N:DEV:101', 'F-N:DEV:avg'); the Spill of an arm, compared with N on the unread facts, is written 'Spill-<arm>:<split>:<seed>'.",
+    "where": "stats.purpose"
+   },
+   {
+    "id": "B13",
+    "protocol": "8 (G0.10)",
+    "ruling": "reports/IMPL_C_REPORT.md「Review Gate 对阶段 B 的裁决」第 1 项",
+    "status": "ACCEPTED（Review Gate 2026-11-24）",
+    "text": "sigma_d = sample standard deviation (ddof 1) of the 120 seed-average d_f; its bootstrap 2.5 / 97.5 percentiles from the stratified resampling of B10 with purpose 'sigma:<X>-<Y>:DEV:avg'; n = ceil(((1.96 + 0.84) * sigma / delta)^2); planning n = the largest n over the three sigma values, the three deltas and both comparisons; the CI half-width check resamples n facts (stratified, n/2 per stratum rounded up) with purpose 'halfwidth:<X>-<Y>:DEV:avg:<n>' and reports the half-width of the 95% CI of the mean (report only; skipped and noted when n = 0, i.e. sigma_d = 0). G0.10 holds iff sigma_d, both percentiles and every n are finite.",
+    "where": "stats.size_estimate, stats.halfwidth_check, gate.judge (G0.10)"
+   },
+   {
+    "id": "B14",
+    "protocol": "8, 9",
+    "ruling": "reports/IMPL_C_REPORT.md「Review Gate 对阶段 B 的裁决」第 1 项",
+    "ruling_note": "Review Gate 2026-11-24: G0.3 and G0.9 have reason null with the note '需重新校准' (gate.RECALIBRATION_NOTE), consistent with Task Order V1.2 section 15.8.",
+    "status": "ACCEPTED（Review Gate 2026-11-24）",
+    "text": "Gate 0 status words: all G0 satisfied -> gate0 'PASS' (the pilot's final status still needs T1-T3); any G0 not satisfied -> 'PIPELINE_NOT_QUALIFIED' with the reasons of section 9 (G0.1, G0.2, G0.6, G0.7, G0.8 -> IMPLEMENTATION_FAIL; G0.4 -> OPTIMIZATION_FAIL; G0.5 with G0.4 satisfied -> OPTIMIZATION_OR_CAPACITY_UNRESOLVED for any of its three parts, not only the accuracy; G0.5 with G0.4 not satisfied -> OPTIMIZATION_FAIL, although section 8 calls [0.40, 0.70) UNRESOLVED without naming G0.4; seed-average Acc(F) < 0.40 adds the section 8 note '对该模型与该训练量过难'). Section 9 lists no reason for G0.3, G0.9 (section 8: benchmark recalibration, noted) and G0.10: their reason is null, although section 9 says one reason is given. Several unsatisfied conditions give several reasons (section 9 says 'a reason').",
+    "where": "gate.judge"
+   },
+   {
+    "id": "B15",
+    "protocol": "8 (G0.8)",
+    "ruling": "reports/IMPL_C_REPORT.md「Review Gate 对阶段 B 的裁决」第 1 项",
+    "status": "ACCEPTED（Review Gate 2026-11-24）",
+    "text": "'候选分数' = every candidate score of the evaluation (s_QA on DEV-QA and s_ST of the TRAIN closed book); '预测' = the index of the highest candidate, or 'tie' when the top score is shared (tie = wrong).",
+    "where": "gate.repro_compare"
+   },
+   {
+    "id": "B16",
+    "protocol": "11",
+    "ruling": "reports/IMPL_C_REPORT.md「Review Gate 对阶段 B 的裁决」第 1 项",
+    "status": "ACCEPTED（Review Gate 2026-11-24）",
+    "text": "Statuses section 11 does not state: ST3 -> PIPELINE_NOT_QUALIFIED with reason OPTIMIZATION_FAIL (Acc_CB < 0.90) or OPTIMIZATION_OR_CAPACITY_UNRESOLVED (otherwise); ST4, ST5 -> PIPELINE_NOT_QUALIFIED with reason IMPLEMENTATION_FAIL (section 9 for G0.6, G0.7); ST6 outside the selected configurations and the controls -> that configuration is excluded from selection (section 7), no pilot status; ST7, ST11 -> BLOCKED (resources).",
+    "where": "stops"
+   },
+   {
+    "id": "B17",
+    "protocol": "8 step 2 (preflight), 11 ST11",
+    "ruling": "tasks/IMPL_C4_RULING.md 第 1 项",
+    "status": "ACCEPTED（Review Gate 2026-11-27 修订）",
+    "text": "Preflight estimate (the value ST11 compares with 3.5 hours; Review Gate 2026-11-27 revision) = B17's estimate + the checkpoint overhead. B17's estimate = (measured mean seconds per step of the first configuration's first 20 steps, the first step excluded as warm-up, CUDA synchronised before each timestamp) x sum over the 30 runs of 300 steps x the run's FLOP factor (F, S, Y, L: 1; A: 1 + (2 + 6) * anchor tokens / (6 * fact tokens) per step, section 10 coefficients) + (measured seconds of one float32 DEV evaluation, timed in the preflight) x evaluation units (N, 30 runs and the 3 G0.8 re-evaluations on DEV; N and the 15 final checkpoints of the 5 arms x 3 seeds on TEST, at test / dev questions per fact = 1.5) + the GPU time already used. Checkpoint overhead = load x 32 base-model loads (N, the 30 runs, N at TEST) + 30 checkpoints x (2 x hash + save + reload + file hash) + reload x 18 further checkpoint reloads (the 3 G0.8 re-evaluations, the 15 TEST checkpoints) + hash x 17 TEST state hashes (the 16 TEST models and N once more at the TEST begin) + file hash x 15 TEST checkpoint files, with load, hash (state_sha256, B25), save (torch.save), reload (torch.load into a fresh model) and file hash (SHA-256 of the checkpoint file) each measured once in the preflight on the first configuration's model. Both parts and their sum are written into the step 2 record. The ST7 look-ahead is not changed by this revision; the look-ahead before the TEST evaluation adds no margin.",
+    "where": "compute.estimate_total_hours, compute.evaluation_units, pilot.evaluation_plan, pilot.checkpoint_overhead_seconds, pilot.st11_estimate_hours, pilot.preflight, pilot.step2"
+   },
+   {
+    "id": "B18",
+    "protocol": "10 (compute accounting)",
+    "ruling": "reports/IMPL_C_REPORT.md「Review Gate 对阶段 B 的裁决」第 1 项",
+    "status": "ACCEPTED（Review Gate 2026-11-24）",
+    "text": "P = parameters taking part in the forward pass (for L: base plus adapters); T = non-padding tokens fed (training: fact tokens of the batch; anchor: anchor tokens). Arm A's anchor compute is listed separately: base forward 2 * P * T_anchor + trained-model forward and backward 6 * P * T_anchor.",
+    "where": "compute.flops"
+   },
+   {
+    "id": "B19",
+    "protocol": "8 step 8 ('对 TEST 运行 L3–L5'), 3",
+    "ruling": "reports/IMPL_C_REPORT.md「Review Gate 对阶段 B 的裁决」第 1 项",
+    "status": "ACCEPTED（Review Gate 2026-11-24）",
+    "text": "Announced in reports/IMPL_A_REPORT.md for this stage: the protocol does not say what L3 and L5 count on TEST. Implemented: L4 on every instantiated TEST question (verbatim in train_F, train_S, train_Y, anchor_text); L3a, L3b and L5 re-run as at Gate 0 (they read no TEST content, so the TEST part cannot change them); L6 TEST part as protocol section 3.",
+    "where": "leakage.run_test_part"
+   },
+   {
+    "id": "B20",
+    "protocol": "8 (report only: S on its own permuted mapping)",
+    "ruling": "reports/IMPL_C_REPORT.md「Review Gate 对阶段 B 的裁决」第 1 项",
+    "status": "ACCEPTED（Review Gate 2026-11-24）",
+    "text": "S's accuracy on its own mapping: for each learned fact f with S answer a' = answer of answer_fact_id, the DEV-QA questions of f and the TRAIN-statement prefix of f are scored with the candidate list of the fact a' belongs to (it contains a' and has 4 equal-length candidates); correct iff a' scores strictly highest. Report only.",
+    "where": "evaluate.score_s_mapping"
+   },
+   {
+    "id": "B21",
+    "protocol": "0 (determinism), 8 (G0.8)",
+    "ruling": "reports/IMPL_C_REPORT.md「Review Gate 对阶段 B 的裁决」第 1 项",
+    "status": "ACCEPTED（Review Gate 2026-11-24）",
+    "text": "The model is loaded with attn_implementation='eager' (not the default 'sdpa') so that attention uses plain matmul and softmax under torch.use_deterministic_algorithms(True); this changes numbers at the 1e-6 level, not the definitions.",
+    "where": "train.load_model"
+   },
+   {
+    "id": "B22",
+    "protocol": "8 (G0.3, T3)",
+    "ruling": "reports/IMPL_C_REPORT.md「Review Gate 对阶段 B 的裁决」第 1 项",
+    "status": "ACCEPTED（Review Gate 2026-11-24）",
+    "text": "'每个 stratum ∈ [0.10, 0.40]' is read as Acc(N, DEV-QA, learned) of each stratum (the clause follows the learned accuracy); the unread accuracy is checked overall only.",
+    "where": "gate._g3_ranges"
+   },
+   {
+    "id": "B23",
+    "protocol": "5 (EM)",
+    "ruling": "reports/IMPL_C_REPORT.md「Review Gate 对阶段 B 的裁决」第 1 项",
+    "status": "ACCEPTED（Review Gate 2026-11-24）",
+    "text": "'取第一行' splits at the first '\\n' only ('\\r' is not a line break here).",
+    "where": "evaluate.em_normalize"
+   },
+   {
+    "id": "B24",
+    "protocol": "8 (T1-T3), 9",
+    "ruling": "reports/IMPL_C_REPORT.md「Review Gate 对阶段 B 的裁决」第 1 项",
+    "status": "ACCEPTED（Review Gate 2026-11-24）",
+    "text": "Final status: PASS iff Gate 0 is PASS and T1-T3 hold; otherwise PIPELINE_NOT_QUALIFIED with reasons T1 -> OPTIMIZATION_OR_CAPACITY_UNRESOLVED (section 9 names T1's accuracy; the CI part is given the same reason), T2 -> IMPLEMENTATION_FAIL (the G0.6 / G0.7 numbers), T3 -> null with the recalibration note (as G0.3). T3's 'G0.3 的同样范围' is read as all four G0.3 ranges, Acc_CB(N) included (a TRAIN closed-book value that does not depend on TEST). TEST comparisons use the purpose split 'TEST'.",
+    "where": "gate.judge_test"
+   },
+   {
+    "id": "B25",
+    "protocol": "8 step 8 ('提交冻结记录(选定配置、数据哈希、checkpoint 哈希)')",
+    "ruling": "tasks/IMPL_C1_RULING.md 第 3 项(reports/IMPL_C_REPORT.md「Review Gate 对 C1 的裁决」)",
+    "status": "ACCEPTED（Review Gate 2026-11-25）",
+    "text": "A run's checkpoint hash is train.state_sha256 of the trained model (for arm L the LoRA-wrapped model, base weights and adapters; N's is the loaded base model's). It is not a file-byte hash. Computation: h = SHA-256(); for each key k of module.state_dict() in sorted order (Python string order), with t = the tensor detached, moved to the CPU and made contiguous: h.update(UTF-8 bytes of k + b'\\0' + str(t.dtype) + b'\\0' + str(tuple(t.shape)) + b'\\0'), then h.update(the raw bytes of t, flattened and viewed as uint8, in the host's byte order); the hash is h.hexdigest() (64 lowercase hex). TEST evaluation recomputes it on the model loaded from the saved checkpoint and requires equality with the freeze record (through the TEST marker) before the model is evaluated.",
+    "where": "record.selection_freeze_record, testgate.require_test_session, train.state_sha256"
+   }
+  ],
+  "libraries": {
+   "huggingface_hub": {
+    "metadata": "2.4.0"
+   },
+   "jinja2": {
+    "metadata": "3.1.6"
+   },
+   "numpy": {
+    "metadata": "2.5.4"
+   },
+   "pyarrow": {
+    "metadata": "26.0.1"
+   },
+   "safetensors": {
+    "metadata": "0.8.0"
+   },
+   "tokenizers": {
+    "metadata": "0.23.3"
+   },
+   "torch": {
+    "__version__": "2.11.0+cu130",
+    "metadata": "2.11.0"
+   },
+   "transformers": {
+    "__version__": "5.22.2",
+    "metadata": "5.22.2"
+   }
+  },
+  "platform": "Linux-6.8.0-138-generic-x86_64-with-glibc2.39",
+  "protocol_frozen": {
+   "PROTOCOL_FROZEN_lf_normalized_sha256": "3f8a3bbaaafa0b451483bb88baa012c77e8b106dd3b157a152ffa675856906ff",
+   "PROTOCOL_FROZEN_parsed_bytes_sha256": "3f8a3bbaaafa0b451483bb88baa012c77e8b106dd3b157a152ffa675856906ff",
+   "PROTOCOL_FROZEN_working_tree_bytes_sha256": "3f8a3bbaaafa0b451483bb88baa012c77e8b106dd3b157a152ffa675856906ff",
+   "commit": "87a244db28a901f9e89282b50df76778ab5c2887",
+   "data_sha256": {
+    "anchor_parquet": "6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22",
+    "anchor_texts": "8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408",
+    "candidates": "e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705",
+    "eval_sets": "8816fe5a39d8b89e8c4203bf7d660e798faa471d2b72b5ce43c411cf5925a155",
+    "facts": "406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97",
+    "parcae_tokenizer": "e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77",
+    "qwen:merges.txt": "8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5",
+    "qwen:tokenizer.json": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4",
+    "qwen:tokenizer_config.json": "d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101",
+    "qwen:vocab.json": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910",
+    "template_set": "2b52411326c218e9c51d947b2f4e0d77b0cdd5d6237f9ce25b57a872c48ce28f",
+    "train_S": "686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e"
+   },
+   "file_sha256": {
+    "metrix/e1-pilot/DATA_MANIFEST.json": "d1c32cdd297f70f418c4f7ad7b67742ac18482b4f0a57fd6b7bebe67b11ab911",
+    "metrix/e1-pilot/METRIX_E1_PROTOCOL.md": "1e80ca31ed8bb95dca4c09bc74d424a92ed85417f1285512d521cf5315831308",
+    "metrix/e1-pilot/SEARCH_SPACE.json": "aa59e2e7d6599d8605f40513d702f3c4b1ccb98ab0678155e91d65f243259462",
+    "metrix/e1-pilot/SPLIT_MANIFEST.json": "8c2c46a1d012beb4afe4e0ed0466689297fb97caaee3cda4c55b4261338caf5f"
+   },
+   "version": "v1.1"
+  },
+  "python": "3.13.18 (main, Oct 26 2026, 15:28:15) [GCC 13.3.0]",
+  "python_implementation": "CPython"
+ },
+ "experiment_id": "METRIX-E1-PILOT-formal-20261128T045921Z",
+ "label": null,
+ "mode": "formal",
+ "template": {
+  "Acceptance (quantified)": {
+   "g3_cb": [
+    0.15,
+    0.35
+   ],
+   "g3_learned": [
+    0.15,
+    0.35
+   ],
+   "g3_stratum": [
+    0.1,
+    0.4
+   ],
+   "g3_unread": [
+    0.1,
+    0.4
+   ],
+   "g4_cb_min": 0.9,
+   "g5_acc_min": 0.7,
+   "g6_point_max": 0.05,
+   "g6_upper_max": 0.12,
+   "g7_point_max": 0.05,
+   "g7_upper_max": 0.12,
+   "g8_nll_tol": 1e-05,
+   "g8_score_tol": 0.0001,
+   "g8_top2_tol": 0.0001,
+   "g9_acc_max": 0.95,
+   "t1_acc_min": 0.7,
+   "too_hard_below": 0.4
+  },
+  "Actual": {
+   "freeze_record": "metrix/e1-pilot/results/selection_freeze_record.json",
+   "gate0": {
+    "conditions": {
+     "G0.1": {
+      "note": null,
+      "reason": null,
+      "satisfied": true
+     },
+     "G0.10": {
+      "note": null,
+      "reason": null,
+      "satisfied": true
+     },
+     "G0.2": {
+      "note": null,
+      "reason": null,
+      "satisfied": true
+     },
+     "G0.3": {
+      "note": null,
+      "reason": null,
+      "satisfied": true
+     },
+     "G0.4": {
+      "note": null,
+      "reason": null,
+      "satisfied": true
+     },
+     "G0.5": {
+      "note": null,
+      "reason": null,
+      "satisfied": true
+     },
+     "G0.6": {
+      "note": null,
+      "reason": null,
+      "satisfied": true
+     },
+     "G0.7": {
+      "note": null,
+      "reason": null,
+      "satisfied": true
+     },
+     "G0.8": {
+      "note": null,
+      "reason": null,
+      "satisfied": true
+     },
+     "G0.9": {
+      "note": null,
+      "reason": null,
+      "satisfied": true
+     }
+    },
+    "gate0_status": "PASS",
+    "note": null,
+    "reasons": []
+   },
+   "gate0_status": "PASS",
+   "interpretation": {
+    "notes": {},
+    "reasons": []
+   },
+   "negative_controls": {
+    "G0.3 (N)": {
+     "acc_cb": 0.275,
+     "acc_dev_learned": 0.29583333333333334,
+     "acc_dev_learned:natural": 0.25,
+     "acc_dev_learned:random": 0.3416666666666667,
+     "acc_dev_unread": 0.275
+    },
+    "G0.6 (S)": {
+     "ci_high": -0.005555555555555559,
+     "delta_avg": {
+      "ci_high": -0.005555555555555559,
+      "ci_low": -0.17222222222222222,
+      "n_facts": 120,
+      "n_per_stratum": {
+       "natural": 60,
+       "random": 60
+      },
+      "point": -0.08888888888888889,
+      "point_exact": "-4/45",
+      "purpose": "S-N:DEV:avg",
+      "replicates": 10000
+     },
+     "point": -0.08888888888888889
+    },
+    "G0.7 (Y)": {
+     "ci_high": 0.0625,
+     "delta_avg": {
+      "ci_high": 0.0625,
+      "ci_low": -0.11527777777777778,
+      "n_facts": 120,
+      "n_per_stratum": {
+       "natural": 60,
+       "random": 60
+      },
+      "point": -0.02638888888888889,
+      "point_exact": "-19/720",
+      "purpose": "Y-N:DEV:avg",
+      "replicates": 10000
+     },
+     "point": -0.02638888888888889
+    }
+   },
+   "positive_control": {
+    "acc_cb": 1.0,
+    "acc_dev_learned": 0.9291666666666667,
+    "run": "F-F3-seed101"
+   },
+   "runs_completed": 30,
+   "selected": {
+    "A": "A5",
+    "F": "F3",
+    "L": "L6"
+   },
+   "training_seeds": [
+    101,
+    202,
+    303
+   ],
+   "values": {
+    "G0.1": {
+     "leakage_result": "PASS",
+     "over_limit": []
+    },
+    "G0.10": {
+     "estimates": {
+      "A-F": {
+       "comparison": "A-F",
+       "finite": true,
+       "halfwidth_at_planning_n": {
+        "halfwidth": 0.0298132183908046,
+        "n": 231,
+        "per_stratum": 116
+       },
+       "n": {
+        "p2.5|delta=0.05": 113,
+        "p2.5|delta=0.1": 29,
+        "p2.5|delta=0.15": 13,
+        "p97.5|delta=0.05": 231,
+        "p97.5|delta=0.1": 58,
+        "p97.5|delta=0.15": 26,
+        "point|delta=0.05": 169,
+        "point|delta=0.1": 43,
+        "point|delta=0.15": 19
+       },
+       "n_max": 231,
+       "sigma": {
+        "p2.5": 0.1898206821841333,
+        "p97.5": 0.2708903373178214,
+        "point": 0.23200485495633824
+       }
+      },
+      "L-F": {
+       "comparison": "L-F",
+       "finite": true,
+       "halfwidth_at_planning_n": {
+        "halfwidth": 0.022629310344827583,
+        "n": 231,
+        "per_stratum": 116
+       },
+       "n": {
+        "p2.5|delta=0.05": 62,
+        "p2.5|delta=0.1": 16,
+        "p2.5|delta=0.15": 7,
+        "p97.5|delta=0.05": 141,
+        "p97.5|delta=0.1": 36,
+        "p97.5|delta=0.15": 16,
+        "point|delta=0.05": 100,
+        "point|delta=0.1": 25,
+        "point|delta=0.15": 12
+       },
+       "n_max": 141,
+       "sigma": {
+        "p2.5": 0.14002800840280097,
+        "p97.5": 0.2116303076191481,
+        "point": 0.17816870242413027
+       }
+      }
+     },
+     "planning_n": 231
+    },
+    "G0.2": {
+     "all_finite": true,
+     "nonfinite": []
+    },
+    "G0.3": {
+     "acc_cb": 0.275,
+     "acc_dev_learned": 0.29583333333333334,
+     "acc_dev_learned:natural": 0.25,
+     "acc_dev_learned:random": 0.3416666666666667,
+     "acc_dev_unread": 0.275
+    },
+    "G0.4": {
+     "acc_cb_by_seed": {
+      "101": 1.0,
+      "202": 1.0,
+      "303": 1.0
+     }
+    },
+    "G0.5": {
+     "acc_avg": 0.9236111111111112,
+     "delta_avg": {
+      "ci_high": 0.7069444444444444,
+      "ci_low": 0.548611111111111,
+      "n_facts": 120,
+      "n_per_stratum": {
+       "natural": 60,
+       "random": 60
+      },
+      "point": 0.6277777777777778,
+      "point_exact": "113/180",
+      "purpose": "F-N:DEV:avg",
+      "replicates": 10000
+     },
+     "delta_by_seed": {
+      "101": 0.6333333333333333,
+      "202": 0.6333333333333333,
+      "303": 0.6166666666666667
+     }
+    },
+    "G0.6": {
+     "ci_high": -0.005555555555555559,
+     "delta_avg": {
+      "ci_high": -0.005555555555555559,
+      "ci_low": -0.17222222222222222,
+      "n_facts": 120,
+      "n_per_stratum": {
+       "natural": 60,
+       "random": 60
+      },
+      "point": -0.08888888888888889,
+      "point_exact": "-4/45",
+      "purpose": "S-N:DEV:avg",
+      "replicates": 10000
+     },
+     "point": -0.08888888888888889
+    },
+    "G0.7": {
+     "ci_high": 0.0625,
+     "delta_avg": {
+      "ci_high": 0.0625,
+      "ci_low": -0.11527777777777778,
+      "n_facts": 120,
+      "n_per_stratum": {
+       "natural": 60,
+       "random": 60
+      },
+      "point": -0.02638888888888889,
+      "point_exact": "-19/720",
+      "purpose": "Y-N:DEV:avg",
+      "replicates": 10000
+     },
+     "point": -0.02638888888888889
+    },
+    "G0.8": {
+     "checkpoints": {
+      "101": {
+       "items": 440,
+       "max_nll_diff": 0.0,
+       "max_score_diff": 0.0,
+       "prediction_differences_allowed": 0,
+       "prediction_differences_not_allowed": [],
+       "satisfied": true
+      },
+      "202": {
+       "items": 440,
+       "max_nll_diff": 0.0,
+       "max_score_diff": 0.0,
+       "prediction_differences_allowed": 0,
+       "prediction_differences_not_allowed": [],
+       "satisfied": true
+      },
+      "303": {
+       "items": 440,
+       "max_nll_diff": 0.0,
+       "max_score_diff": 0.0,
+       "prediction_differences_allowed": 0,
+       "prediction_differences_not_allowed": [],
+       "satisfied": true
+      }
+     }
+    },
+    "G0.9": {
+     "acc_avg": 0.9236111111111112
+    }
+   }
+  },
+  "Compute accounting (tokens / steps / FLOPs / wall-clock)": {
+   "gpu_wall_clock_seconds": 6261.268887281418,
+   "runs": [
+    {
+     "fact_tokens": 37780,
+     "params_forward": 1720574976,
+     "steps": 300,
+     "train_flops": 390019935559680,
+     "wall_seconds": 75.8904848069651
+    },
+    {
+     "fact_tokens": 37780,
+     "params_forward": 1720574976,
+     "steps": 300,
+     "train_flops": 390019935559680,
+     "wall_seconds": 76.1881267039571
+    },
+    {
+     "fact_tokens": 37780,
+     "params_forward": 1720574976,
+     "steps": 300,
+     "train_flops": 390019935559680,
+     "wall_seconds": 75.05896124907304
+    },
+    {
+     "fact_tokens": 37780,
+     "params_forward": 1720574976,
+     "steps": 300,
+     "train_flops": 390019935559680,
+     "wall_seconds": 76.26622520398814
+    },
+    {
+     "fact_tokens": 37780,
+     "params_forward": 1720574976,
+     "steps": 300,
+     "train_flops": 390019935559680,
+     "wall_seconds": 75.25473389902618
+    },
+    {
+     "fact_tokens": 37780,
+     "params_forward": 1720574976,
+     "steps": 300,
+     "train_flops": 390019935559680,
+     "wall_seconds": 78.49353067402262
+    },
+    {
+     "fact_tokens": 37780,
+     "params_forward": 1729291264,
+     "steps": 300,
+     "train_flops": 391995743723520,
+     "wall_seconds": 77.16447643295396
+    },
+    {
+     "fact_tokens": 37780,
+     "params_forward": 1755440128,
+     "steps": 300,
+     "train_flops": 397923168215040,
+     "wall_seconds": 72.40812167699914
+    },
+    {
+     "fact_tokens": 37780,
+     "params_forward": 1729291264,
+     "steps": 300,
+     "train_flops": 391995743723520,
+     "wall_seconds": 85.87443933601025
+    },
+    {
+     "fact_tokens": 37780,
+     "params_forward": 1755440128,
+     "steps": 300,
+     "train_flops": 397923168215040,
+     "wall_seconds": 87.05049425992183
+    },
+    {
+     "fact_tokens": 37780,
+     "params_forward": 1729291264,
+     "steps": 300,
+     "train_flops": 391995743723520,
+     "wall_seconds": 84.56626273598522
+    },
+    {
+     "fact_tokens": 37780,
+     "params_forward": 1755440128,
+     "steps": 300,
+     "train_flops": 397923168215040,
+     "wall_seconds": 84.41327698598616
+    },
+    {
+     "anchor_flops": 2114104884510720,
+     "anchor_tokens": 153590,
+     "fact_tokens": 37780,
+     "params_forward": 1720574976,
+     "steps": 300,
+     "train_flops": 390019935559680,
+     "wall_seconds": 143.63214748399332
+    },
+    {
+     "anchor_flops": 2114104884510720,
+     "anchor_tokens": 153590,
+     "fact_tokens": 37780,
+     "params_forward": 1720574976,
+     "steps": 300,
+     "train_flops": 390019935559680,
+     "wall_seconds": 144.11197246599477
+    },
+    {
+     "anchor_flops": 2114104884510720,
+     "anchor_tokens": 153590,
+     "fact_tokens": 37780,
+     "params_forward": 1720574976,
+     "steps": 300,
+     "train_flops": 390019935559680,
+     "wall_seconds": 144.80864498007577
+    },
+    {
+     "anchor_flops": 2114104884510720,
+     "anchor_tokens": 153590,
+     "fact_tokens": 37780,
+     "params_forward": 1720574976,
+     "steps": 300,
+     "train_flops": 390019935559680,
+     "wall_seconds": 143.73911843600217
+    },
+    {
+     "anchor_flops": 2114104884510720,
+     "anchor_tokens": 153590,
+     "fact_tokens": 37780,
+     "params_forward": 1720574976,
+     "steps": 300,
+     "train_flops": 390019935559680,
+     "wall_seconds": 149.38810345204547
+    },
+    {
+     "anchor_flops": 2114104884510720,
+     "anchor_tokens": 153590,
+     "fact_tokens": 37780,
+     "params_forward": 1720574976,
+     "steps": 300,
+     "train_flops": 390019935559680,
+     "wall_seconds": 142.39369189506397
+    },
+    {
+     "fact_tokens": 37780,
+     "params_forward": 1720574976,
+     "steps": 300,
+     "train_flops": 390019935559680,
+     "wall_seconds": 79.81106296996586
+    },
+    {
+     "fact_tokens": 37780,
+     "params_forward": 1720574976,
+     "steps": 300,
+     "train_flops": 390019935559680,
+     "wall_seconds": 79.92368177801836
+    },
+    {
+     "fact_tokens": 37780,
+     "params_forward": 1755440128,
+     "steps": 300,
+     "train_flops": 397923168215040,
+     "wall_seconds": 86.77795702498406
+    },
+    {
+     "fact_tokens": 37780,
+     "params_forward": 1755440128,
+     "steps": 300,
+     "train_flops": 397923168215040,
+     "wall_seconds": 86.2420524979243
+    },
+    {
+     "anchor_flops": 2114104884510720,
+     "anchor_tokens": 153590,
+     "fact_tokens": 37780,
+     "params_forward": 1720574976,
+     "steps": 300,
+     "train_flops": 390019935559680,
+     "wall_seconds": 147.16602391807828
+    },
+    {
+     "anchor_flops": 2114104884510720,
+     "anchor_tokens": 153590,
+     "fact_tokens": 37780,
+     "params_forward": 1720574976,
+     "steps": 300,
+     "train_flops": 390019935559680,
+     "wall_seconds": 143.5318904099986
+    },
+    {
+     "fact_tokens": 37780,
+     "params_forward": 1720574976,
+     "steps": 300,
+     "train_flops": 390019935559680,
+     "wall_seconds": 81.39947500394192
+    },
+    {
+     "fact_tokens": 37780,
+     "params_forward": 1720574976,
+     "steps": 300,
+     "train_flops": 390019935559680,
+     "wall_seconds": 80.33458794897888
+    },
+    {
+     "fact_tokens": 37780,
+     "params_forward": 1720574976,
+     "steps": 300,
+     "train_flops": 390019935559680,
+     "wall_seconds": 81.48477077193093
+    },
+    {
+     "fact_tokens": 45200,
+     "params_forward": 1720574976,
+     "steps": 300,
+     "train_flops": 466619933491200,
+     "wall_seconds": 79.7085095550865
+    },
+    {
+     "fact_tokens": 45200,
+     "params_forward": 1720574976,
+     "steps": 300,
+     "train_flops": 466619933491200,
+     "wall_seconds": 76.91949402098544
+    },
+    {
+     "fact_tokens": 45200,
+     "params_forward": 1720574976,
+     "steps": 300,
+     "train_flops": 466619933491200,
+     "wall_seconds": 75.84195344604086
+    }
+   ],
+   "steps": {
+    "1": 3.677392560057342,
+    "2": 70.26959762501065,
+    "3": 45.010234176996164,
+    "4": 915.3766661799746,
+    "5": 2855.873852560995,
+    "6": 2248.0512879649177,
+    "7": 88.89454894594382,
+    "8": 0.019681198988109827
+   }
+  },
+  "Controls": "N (no learning), S (shuffled label), Y (style only); unread facts (protocol sections 4, 5)",
+  "Environment (CPU/GPU, commit, seed)": {
+   "code_commit": "0a67c2c4382847cdc8dff1bbc8b607551a2b58e4",
+   "device": "NVIDIA A100 80GB PCIe",
+   "environment": {
+    "cuda": {
+     "available": true,
+     "cudnn": 91900,
+     "torch_cuda": "13.0"
+    },
+    "data_hashes": null,
+    "determinism": {
+     "CUBLAS_WORKSPACE_CONFIG": ":4096:8",
+     "cuda_matmul_allow_tf32": false,
+     "cudnn_allow_tf32": false,
+     "cudnn_benchmark": false,
+     "cudnn_deterministic": true,
+     "deterministic_algorithms": true,
+     "float32_matmul_precision": "highest"
+    },
+    "device": "NVIDIA A100 80GB PCIe",
+    "git": {
+     "branch": "metrix-e1-pilot-protocol-v1",
+     "dirty": false,
+     "head": "36106eefc2238cee77976e6afbd8632cbbab2257",
+     "status_porcelain": ""
+    },
+    "hostname": "9e51659ac3ff",
+    "interpretations": [
+     {
+      "id": "B1",
+      "protocol": "2.7, 4, 7",
+      "ruling": "reports/IMPL_C_REPORT.md「Review Gate 对阶段 B 的裁决」第 1 项",
+      "status": "ACCEPTED（Review Gate 2026-11-24）",
+      "text": "Optimizer steps are numbered s = 1..300 (the protocol's '第 300 步' is the last step). Step s of arm A uses anchor documents (4s + i) mod 512, i = 0..3, documents numbered 0..511 in anchor_text.jsonl order (step 1: documents 4-7; with s = 0..299 the first step would use 0-3 and every step's documents would differ).",
+      "where": "train.step_numbers (used by train.batch_schedule), train.anchor_docs"
+     },
+     {
+      "id": "B2",
+      "protocol": "7 (warmup, scheduler)",
+      "ruling": "reports/IMPL_C_REPORT.md「Review Gate 对阶段 B 的裁决」第 1 项",
+      "status": "ACCEPTED（Review Gate 2026-11-24）",
+      "text": "lr(s) = peak * s / 15 for s <= 15 (rises linearly from 0; step 1 already has peak/15); for s >= 15, lr(s) = peak * (0.1 + 0.9 * 0.5 * (1 + cos(pi * (s - 15) / (300 - 15)))), so lr(15) = peak and lr(300) = 0.1 * peak. Set on every parameter group before optimizer step s.",
+      "where": "train.lr_at"
+     },
+     {
+      "id": "B3",
+      "protocol": "7 (order)",
+      "ruling": "reports/IMPL_C_REPORT.md「Review Gate 对阶段 B 的裁决」第 1 项",
+      "ruling_note": "Review Gate 2026-11-24: in the formal run, section 8 step 1 writes the canonical hash of train_Y.jsonl into the manifest (DATA_MANIFEST.json files, the field written by step 1).",
+      "status": "ACCEPTED（Review Gate 2026-11-24）",
+      "text": "Epochs are numbered e = 1..20 and the purpose is 'order:<e>' with TRAIN_SEED = the run's seed; permutation p = list(range(N)); r.shuffle(p) (the same call as protocol 2.6 detail 4); the batches of epoch e are p[0:B], p[B:2B], ... (B = 8 for F, L, A, S; B = 16 for Y), rows indexed in the file order of the corpus. The row order of train_Y.jsonl (fact order, the Y_ENTITY sentence before the Y_ANSWER one) is a stage A choice without a frozen hash (DEFERRED_MINORS AA11), so Y's batches depend on it.",
+      "where": "train.epoch_batches, train.batch_schedule"
+     },
+     {
+      "id": "B4",
+      "protocol": "4 (CE), 7 (sequence)",
+      "ruling": "reports/IMPL_C_REPORT.md「Review Gate 对阶段 B 的裁决」第 1 项",
+      "status": "ACCEPTED（Review Gate 2026-11-24）",
+      "text": "CE(batch) = sum of -log p(x_t | x_<t) over every non-padding target position (t = 2..n of each sequence, the final <|endoftext|> included) divided by the number of those positions (token-weighted over the batch, like the anchor KL); sequences are not averaged first.",
+      "where": "train.token_ce"
+     },
+     {
+      "id": "B5",
+      "protocol": "4 (arm L), 0 (rng_rule)",
+      "ruling": "reports/IMPL_C_REPORT.md「Review Gate 对阶段 B 的裁决」第 1 项",
+      "status": "ACCEPTED（Review Gate 2026-11-24）",
+      "text": "LoRA A is initialised uniformly in [-1/sqrt(in_features), 1/sqrt(in_features)] (the Kaiming-uniform default of torch.nn.Linear and peft): every value is r.uniform(-b, b) of r = rng_rule(TRAIN_SEED, 'lora_A:<module path>'), row by row, stored as float32; B = 0; scaling alpha / rank = 2; the adapter output B(A x) * scaling is added to the frozen base output; LoRA parameters are float32. The distribution and the purpose string are not in the protocol.",
+      "where": "train.lora_a_init, train.apply_lora"
+     },
+     {
+      "id": "B6",
+      "protocol": "4 (arm A), 7 (precision)",
+      "ruling": "reports/IMPL_C_REPORT.md「Review Gate 对阶段 B 的裁决」第 1 项",
+      "status": "ACCEPTED（Review Gate 2026-11-24）",
+      "text": "The base copy's forward and the trained model's forward on the anchor documents both run under the same bf16 autocast as the rest of training; their logits are cast to float32 before log_softmax and the KL is computed in float32.",
+      "where": "train.anchor_kl, train.train_run"
+     },
+     {
+      "id": "B7",
+      "protocol": "7 (weight decay)",
+      "ruling": "reports/IMPL_C_REPORT.md「Review Gate 对阶段 B 的裁决」第 1 项",
+      "status": "ACCEPTED（Review Gate 2026-11-24）",
+      "text": "'2-D weight matrices' = every trainable parameter with ndim == 2, including the tied embedding / lm_head matrix for F, S, Y; 1-D parameters (RMSNorm weights) get no weight decay.",
+      "where": "train.make_optimizer"
+     },
+     {
+      "id": "B8",
+      "protocol": "5 (EM)",
+      "ruling": "reports/IMPL_C_REPORT.md「Review Gate 对阶段 B 的裁决」第 1 项",
+      "status": "ACCEPTED（Review Gate 2026-11-24）",
+      "text": "'去结尾的 . , ; : ! ?' removes every trailing character of that set (str.rstrip('.,;:!?'), as in the data-auditor's audit/r4_scoring_em.py and r5_em_stop.py); a leading 'the ' is removed once; a <think> without a later </think> is left as it is.",
+      "where": "evaluate.em_normalize"
+     },
+     {
+      "id": "B9",
+      "protocol": "5 (TRAIN closed book)",
+      "ruling": "reports/IMPL_C_REPORT.md「Review Gate 对阶段 B 的裁决」第 1 项",
+      "status": "ACCEPTED（Review Gate 2026-11-24）",
+      "text": "The candidates c of CB(f) are the 4 candidates C_f of candidates.json (protocol 2.5: one candidate list for all templates, splits and arms).",
+      "where": "evaluate.score_cb"
+     },
+     {
+      "id": "B10",
+      "protocol": "6",
+      "ruling": "reports/IMPL_C_REPORT.md「Review Gate 对阶段 B 的裁决」第 1 项",
+      "status": "ACCEPTED（Review Gate 2026-11-24）",
+      "text": "One generator r = rng_rule(BOOTSTRAP_SEED, purpose) per comparison; for each of the 10,000 replicates, for each stratum in the order natural, random: r.choices(d_stratum, k=len(d_stratum)) with the facts of the stratum in facts.jsonl order; Delta* = mean of the 120 drawn values.",
+      "where": "stats.stratified_draws, stats.paired_bootstrap"
+     },
+     {
+      "id": "B11",
+      "protocol": "6",
+      "ruling": "reports/IMPL_C_REPORT.md「Review Gate 对阶段 B 的裁决」第 1 项",
+      "status": "ACCEPTED（Review Gate 2026-11-24）",
+      "text": "Percentile = linear interpolation between order statistics at position (B - 1) * p / 100 of the sorted replicates (numpy's default 'linear' method).",
+      "where": "stats.percentile"
+     },
+     {
+      "id": "B12",
+      "protocol": "6",
+      "ruling": "reports/IMPL_C_REPORT.md「Review Gate 对阶段 B 的裁决」第 1 项",
+      "status": "ACCEPTED（Review Gate 2026-11-24）",
+      "text": "Purpose '<比较>:<split>:<seed 或 avg>' is written '<X>-<Y>:<split>:<seed>' with ASCII '-', split 'DEV' or 'TEST', seed the integer or 'avg' (e.g. 'F-N:DEV:101', 'F-N:DEV:avg'); the Spill of an arm, compared with N on the unread facts, is written 'Spill-<arm>:<split>:<seed>'.",
+      "where": "stats.purpose"
+     },
+     {
+      "id": "B13",
+      "protocol": "8 (G0.10)",
+      "ruling": "reports/IMPL_C_REPORT.md「Review Gate 对阶段 B 的裁决」第 1 项",
+      "status": "ACCEPTED（Review Gate 2026-11-24）",
+      "text": "sigma_d = sample standard deviation (ddof 1) of the 120 seed-average d_f; its bootstrap 2.5 / 97.5 percentiles from the stratified resampling of B10 with purpose 'sigma:<X>-<Y>:DEV:avg'; n = ceil(((1.96 + 0.84) * sigma / delta)^2); planning n = the largest n over the three sigma values, the three deltas and both comparisons; the CI half-width check resamples n facts (stratified, n/2 per stratum rounded up) with purpose 'halfwidth:<X>-<Y>:DEV:avg:<n>' and reports the half-width of the 95% CI of the mean (report only; skipped and noted when n = 0, i.e. sigma_d = 0). G0.10 holds iff sigma_d, both percentiles and every n are finite.",
+      "where": "stats.size_estimate, stats.halfwidth_check, gate.judge (G0.10)"
+     },
+     {
+      "id": "B14",
+      "protocol": "8, 9",
+      "ruling": "reports/IMPL_C_REPORT.md「Review Gate 对阶段 B 的裁决」第 1 项",
+      "ruling_note": "Review Gate 2026-11-24: G0.3 and G0.9 have reason null with the note '需重新校准' (gate.RECALIBRATION_NOTE), consistent with Task Order V1.2 section 15.8.",
+      "status": "ACCEPTED（Review Gate 2026-11-24）",
+      "text": "Gate 0 status words: all G0 satisfied -> gate0 'PASS' (the pilot's final status still needs T1-T3); any G0 not satisfied -> 'PIPELINE_NOT_QUALIFIED' with the reasons of section 9 (G0.1, G0.2, G0.6, G0.7, G0.8 -> IMPLEMENTATION_FAIL; G0.4 -> OPTIMIZATION_FAIL; G0.5 with G0.4 satisfied -> OPTIMIZATION_OR_CAPACITY_UNRESOLVED for any of its three parts, not only the accuracy; G0.5 with G0.4 not satisfied -> OPTIMIZATION_FAIL, although section 8 calls [0.40, 0.70) UNRESOLVED without naming G0.4; seed-average Acc(F) < 0.40 adds the section 8 note '对该模型与该训练量过难'). Section 9 lists no reason for G0.3, G0.9 (section 8: benchmark recalibration, noted) and G0.10: their reason is null, although section 9 says one reason is given. Several unsatisfied conditions give several reasons (section 9 says 'a reason').",
+      "where": "gate.judge"
+     },
+     {
+      "id": "B15",
+      "protocol": "8 (G0.8)",
+      "ruling": "reports/IMPL_C_REPORT.md「Review Gate 对阶段 B 的裁决」第 1 项",
+      "status": "ACCEPTED（Review Gate 2026-11-24）",
+      "text": "'候选分数' = every candidate score of the evaluation (s_QA on DEV-QA and s_ST of the TRAIN closed book); '预测' = the index of the highest candidate, or 'tie' when the top score is shared (tie = wrong).",
+      "where": "gate.repro_compare"
+     },
+     {
+      "id": "B16",
+      "protocol": "11",
+      "ruling": "reports/IMPL_C_REPORT.md「Review Gate 对阶段 B 的裁决」第 1 项",
+      "status": "ACCEPTED（Review Gate 2026-11-24）",
+      "text": "Statuses section 11 does not state: ST3 -> PIPELINE_NOT_QUALIFIED with reason OPTIMIZATION_FAIL (Acc_CB < 0.90) or OPTIMIZATION_OR_CAPACITY_UNRESOLVED (otherwise); ST4, ST5 -> PIPELINE_NOT_QUALIFIED with reason IMPLEMENTATION_FAIL (section 9 for G0.6, G0.7); ST6 outside the selected configurations and the controls -> that configuration is excluded from selection (section 7), no pilot status; ST7, ST11 -> BLOCKED (resources).",
+      "where": "stops"
+     },
+     {
+      "id": "B17",
+      "protocol": "8 step 2 (preflight), 11 ST11",
+      "ruling": "tasks/IMPL_C4_RULING.md 第 1 项",
+      "status": "ACCEPTED（Review Gate 2026-11-27 修订）",
+      "text": "Preflight estimate (the value ST11 compares with 3.5 hours; Review Gate 2026-11-27 revision) = B17's estimate + the checkpoint overhead. B17's estimate = (measured mean seconds per step of the first configuration's first 20 steps, the first step excluded as warm-up, CUDA synchronised before each timestamp) x sum over the 30 runs of 300 steps x the run's FLOP factor (F, S, Y, L: 1; A: 1 + (2 + 6) * anchor tokens / (6 * fact tokens) per step, section 10 coefficients) + (measured seconds of one float32 DEV evaluation, timed in the preflight) x evaluation units (N, 30 runs and the 3 G0.8 re-evaluations on DEV; N and the 15 final checkpoints of the 5 arms x 3 seeds on TEST, at test / dev questions per fact = 1.5) + the GPU time already used. Checkpoint overhead = load x 32 base-model loads (N, the 30 runs, N at TEST) + 30 checkpoints x (2 x hash + save + reload + file hash) + reload x 18 further checkpoint reloads (the 3 G0.8 re-evaluations, the 15 TEST checkpoints) + hash x 17 TEST state hashes (the 16 TEST models and N once more at the TEST begin) + file hash x 15 TEST checkpoint files, with load, hash (state_sha256, B25), save (torch.save), reload (torch.load into a fresh model) and file hash (SHA-256 of the checkpoint file) each measured once in the preflight on the first configuration's model. Both parts and their sum are written into the step 2 record. The ST7 look-ahead is not changed by this revision; the look-ahead before the TEST evaluation adds no margin.",
+      "where": "compute.estimate_total_hours, compute.evaluation_units, pilot.evaluation_plan, pilot.checkpoint_overhead_seconds, pilot.st11_estimate_hours, pilot.preflight, pilot.step2"
+     },
+     {
+      "id": "B18",
+      "protocol": "10 (compute accounting)",
+      "ruling": "reports/IMPL_C_REPORT.md「Review Gate 对阶段 B 的裁决」第 1 项",
+      "status": "ACCEPTED（Review Gate 2026-11-24）",
+      "text": "P = parameters taking part in the forward pass (for L: base plus adapters); T = non-padding tokens fed (training: fact tokens of the batch; anchor: anchor tokens). Arm A's anchor compute is listed separately: base forward 2 * P * T_anchor + trained-model forward and backward 6 * P * T_anchor.",
+      "where": "compute.flops"
+     },
+     {
+      "id": "B19",
+      "protocol": "8 step 8 ('对 TEST 运行 L3–L5'), 3",
+      "ruling": "reports/IMPL_C_REPORT.md「Review Gate 对阶段 B 的裁决」第 1 项",
+      "status": "ACCEPTED（Review Gate 2026-11-24）",
+      "text": "Announced in reports/IMPL_A_REPORT.md for this stage: the protocol does not say what L3 and L5 count on TEST. Implemented: L4 on every instantiated TEST question (verbatim in train_F, train_S, train_Y, anchor_text); L3a, L3b and L5 re-run as at Gate 0 (they read no TEST content, so the TEST part cannot change them); L6 TEST part as protocol section 3.",
+      "where": "leakage.run_test_part"
+     },
+     {
+      "id": "B20",
+      "protocol": "8 (report only: S on its own permuted mapping)",
+      "ruling": "reports/IMPL_C_REPORT.md「Review Gate 对阶段 B 的裁决」第 1 项",
+      "status": "ACCEPTED（Review Gate 2026-11-24）",
+      "text": "S's accuracy on its own mapping: for each learned fact f with S answer a' = answer of answer_fact_id, the DEV-QA questions of f and the TRAIN-statement prefix of f are scored with the candidate list of the fact a' belongs to (it contains a' and has 4 equal-length candidates); correct iff a' scores strictly highest. Report only.",
+      "where": "evaluate.score_s_mapping"
+     },
+     {
+      "id": "B21",
+      "protocol": "0 (determinism), 8 (G0.8)",
+      "ruling": "reports/IMPL_C_REPORT.md「Review Gate 对阶段 B 的裁决」第 1 项",
+      "status": "ACCEPTED（Review Gate 2026-11-24）",
+      "text": "The model is loaded with attn_implementation='eager' (not the default 'sdpa') so that attention uses plain matmul and softmax under torch.use_deterministic_algorithms(True); this changes numbers at the 1e-6 level, not the definitions.",
+      "where": "train.load_model"
+     },
+     {
+      "id": "B22",
+      "protocol": "8 (G0.3, T3)",
+      "ruling": "reports/IMPL_C_REPORT.md「Review Gate 对阶段 B 的裁决」第 1 项",
+      "status": "ACCEPTED（Review Gate 2026-11-24）",
+      "text": "'每个 stratum ∈ [0.10, 0.40]' is read as Acc(N, DEV-QA, learned) of each stratum (the clause follows the learned accuracy); the unread accuracy is checked overall only.",
+      "where": "gate._g3_ranges"
+     },
+     {
+      "id": "B23",
+      "protocol": "5 (EM)",
+      "ruling": "reports/IMPL_C_REPORT.md「Review Gate 对阶段 B 的裁决」第 1 项",
+      "status": "ACCEPTED（Review Gate 2026-11-24）",
+      "text": "'取第一行' splits at the first '\\n' only ('\\r' is not a line break here).",
+      "where": "evaluate.em_normalize"
+     },
+     {
+      "id": "B24",
+      "protocol": "8 (T1-T3), 9",
+      "ruling": "reports/IMPL_C_REPORT.md「Review Gate 对阶段 B 的裁决」第 1 项",
+      "status": "ACCEPTED（Review Gate 2026-11-24）",
+      "text": "Final status: PASS iff Gate 0 is PASS and T1-T3 hold; otherwise PIPELINE_NOT_QUALIFIED with reasons T1 -> OPTIMIZATION_OR_CAPACITY_UNRESOLVED (section 9 names T1's accuracy; the CI part is given the same reason), T2 -> IMPLEMENTATION_FAIL (the G0.6 / G0.7 numbers), T3 -> null with the recalibration note (as G0.3). T3's 'G0.3 的同样范围' is read as all four G0.3 ranges, Acc_CB(N) included (a TRAIN closed-book value that does not depend on TEST). TEST comparisons use the purpose split 'TEST'.",
+      "where": "gate.judge_test"
+     },
+     {
+      "id": "B25",
+      "protocol": "8 step 8 ('提交冻结记录(选定配置、数据哈希、checkpoint 哈希)')",
+      "ruling": "tasks/IMPL_C1_RULING.md 第 3 项(reports/IMPL_C_REPORT.md「Review Gate 对 C1 的裁决」)",
+      "status": "ACCEPTED（Review Gate 2026-11-25）",
+      "text": "A run's checkpoint hash is train.state_sha256 of the trained model (for arm L the LoRA-wrapped model, base weights and adapters; N's is the loaded base model's). It is not a file-byte hash. Computation: h = SHA-256(); for each key k of module.state_dict() in sorted order (Python string order), with t = the tensor detached, moved to the CPU and made contiguous: h.update(UTF-8 bytes of k + b'\\0' + str(t.dtype) + b'\\0' + str(tuple(t.shape)) + b'\\0'), then h.update(the raw bytes of t, flattened and viewed as uint8, in the host's byte order); the hash is h.hexdigest() (64 lowercase hex). TEST evaluation recomputes it on the model loaded from the saved checkpoint and requires equality with the freeze record (through the TEST marker) before the model is evaluated.",
+      "where": "record.selection_freeze_record, testgate.require_test_session, train.state_sha256"
+     }
+    ],
+    "libraries": {
+     "huggingface_hub": {
+      "metadata": "2.4.0"
+     },
+     "jinja2": {
+      "metadata": "3.1.6"
+     },
+     "numpy": {
+      "metadata": "2.5.4"
+     },
+     "pyarrow": {
+      "metadata": "26.0.1"
+     },
+     "safetensors": {
+      "metadata": "0.8.0"
+     },
+     "tokenizers": {
+      "metadata": "0.23.3"
+     },
+     "torch": {
+      "__version__": "2.11.0+cu130",
+      "metadata": "2.11.0"
+     },
+     "transformers": {
+      "__version__": "5.22.2",
+      "metadata": "5.22.2"
+     }
+    },
+    "platform": "Linux-6.8.0-138-generic-x86_64-with-glibc2.39",
+    "protocol_frozen": {
+     "PROTOCOL_FROZEN_lf_normalized_sha256": "3f8a3bbaaafa0b451483bb88baa012c77e8b106dd3b157a152ffa675856906ff",
+     "PROTOCOL_FROZEN_parsed_bytes_sha256": "3f8a3bbaaafa0b451483bb88baa012c77e8b106dd3b157a152ffa675856906ff",
+     "PROTOCOL_FROZEN_working_tree_bytes_sha256": "3f8a3bbaaafa0b451483bb88baa012c77e8b106dd3b157a152ffa675856906ff",
+     "commit": "87a244db28a901f9e89282b50df76778ab5c2887",
+     "data_sha256": {
+      "anchor_parquet": "6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22",
+      "anchor_texts": "8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408",
+      "candidates": "e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705",
+      "eval_sets": "8816fe5a39d8b89e8c4203bf7d660e798faa471d2b72b5ce43c411cf5925a155",
+      "facts": "406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97",
+      "parcae_tokenizer": "e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77",
+      "qwen:merges.txt": "8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5",
+      "qwen:tokenizer.json": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4",
+      "qwen:tokenizer_config.json": "d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101",
+      "qwen:vocab.json": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910",
+      "template_set": "2b52411326c218e9c51d947b2f4e0d77b0cdd5d6237f9ce25b57a872c48ce28f",
+      "train_S": "686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e"
+     },
+     "file_sha256": {
+      "metrix/e1-pilot/DATA_MANIFEST.json": "d1c32cdd297f70f418c4f7ad7b67742ac18482b4f0a57fd6b7bebe67b11ab911",
+      "metrix/e1-pilot/METRIX_E1_PROTOCOL.md": "1e80ca31ed8bb95dca4c09bc74d424a92ed85417f1285512d521cf5315831308",
+      "metrix/e1-pilot/SEARCH_SPACE.json": "aa59e2e7d6599d8605f40513d702f3c4b1ccb98ab0678155e91d65f243259462",
+      "metrix/e1-pilot/SPLIT_MANIFEST.json": "8c2c46a1d012beb4afe4e0ed0466689297fb97caaee3cda4c55b4261338caf5f"
+     },
+     "version": "v1.1"
+    },
+    "python": "3.13.18 (main, Oct 26 2026, 15:28:15) [GCC 13.3.0]",
+    "python_implementation": "CPython"
+   },
+   "mode": "formal",
+   "seeds": {
+    "BOOTSTRAP_SEED": 20261112,
+    "CANDIDATE_SEED": 20261111,
+    "DATA_SEED": 20261110,
+    "TRAIN_SEEDS": [
+     101,
+     202,
+     303
+    ],
+    "rng_rule": "random.Random(int.from_bytes(sha256(f'{SEED}:{purpose}'.encode('utf-8')).digest()[:8], 'big'))"
+   },
+   "training_seeds": [
+    101,
+    202,
+    303
+   ]
+  },
+  "Expected (pre-registered)": "protocol section 8 Gate 0 table and T1-T3 (thresholds below, from the frozen protocol text)",
+  "Experiment ID": "METRIX-E1-PILOT-formal-20261128T045921Z",
+  "Hyperparameter budget": {
+   "configs": {
+    "A": [
+     {
+      "anchor_lambda": 0.3,
+      "id": "A1",
+      "learning_rate": 3e-05,
+      "weight_decay": 0.0
+     },
+     {
+      "anchor_lambda": 1.0,
+      "id": "A2",
+      "learning_rate": 3e-05,
+      "weight_decay": 0.0
+     },
+     {
+      "anchor_lambda": 3.0,
+      "id": "A3",
+      "learning_rate": 3e-05,
+      "weight_decay": 0.0
+     },
+     {
+      "anchor_lambda": 0.3,
+      "id": "A4",
+      "learning_rate": 0.0001,
+      "weight_decay": 0.0
+     },
+     {
+      "anchor_lambda": 1.0,
+      "id": "A5",
+      "learning_rate": 0.0001,
+      "weight_decay": 0.0
+     },
+     {
+      "anchor_lambda": 3.0,
+      "id": "A6",
+      "learning_rate": 0.0001,
+      "weight_decay": 0.0
+     }
+    ],
+    "F": [
+     {
+      "id": "F1",
+      "learning_rate": 1e-05,
+      "weight_decay": 0.0
+     },
+     {
+      "id": "F2",
+      "learning_rate": 1e-05,
+      "weight_decay": 0.1
+     },
+     {
+      "id": "F3",
+      "learning_rate": 3e-05,
+      "weight_decay": 0.0
+     },
+     {
+      "id": "F4",
+      "learning_rate": 3e-05,
+      "weight_decay": 0.1
+     },
+     {
+      "id": "F5",
+      "learning_rate": 0.0001,
+      "weight_decay": 0.0
+     },
+     {
+      "id": "F6",
+      "learning_rate": 0.0001,
+      "weight_decay": 0.1
+     }
+    ],
+    "L": [
+     {
+      "id": "L1",
+      "learning_rate": 0.0001,
+      "rank": 8,
+      "weight_decay": 0.0
+     },
+     {
+      "id": "L2",
+      "learning_rate": 0.0001,
+      "rank": 32,
+      "weight_decay": 0.0
+     },
+     {
+      "id": "L3",
+      "learning_rate": 0.0003,
+      "rank": 8,
+      "weight_decay": 0.0
+     },
+     {
+      "id": "L4",
+      "learning_rate": 0.0003,
+      "rank": 32,
+      "weight_decay": 0.0
+     },
+     {
+      "id": "L5",
+      "learning_rate": 0.001,
+      "rank": 8,
+      "weight_decay": 0.0
+     },
+     {
+      "id": "L6",
+      "learning_rate": 0.001,
+      "rank": 32,
+      "weight_decay": 0.0
+     }
+    ]
+   },
+   "counts": {
+    "S_runs": 3,
+    "Y_runs": 3,
+    "extra_seed_runs_F_L_A": 6,
+    "search_runs": 18,
+    "total_training_runs": 30
+   }
+  },
+  "Hypothesis": "none: E1-PILOT has no mechanism hypothesis (protocol sections 1 and 9); it qualifies the training-evaluation system",
+  "Independent Variable": "arm (N, F, L, A, S, Y; protocol section 4)",
+  "Input (data SHA, split SHA)": {
+   "content_hashes": {
+    "anchor_texts": "8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408",
+    "candidates": "e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705",
+    "facts": "406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97",
+    "train_S": "686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e"
+   },
+   "file_hashes": {
+    "anchor_text.jsonl": {
+     "byte_sha256": "2089e656819d1fe0f6ececcc26e5cade09ee80a92c50e7c8f607fa4e0ef46da5",
+     "canonical_sha256": "2089e656819d1fe0f6ececcc26e5cade09ee80a92c50e7c8f607fa4e0ef46da5"
+    },
+    "candidates.json": {
+     "byte_sha256": "e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705",
+     "canonical_sha256": "e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705"
+    },
+    "dev_qa.jsonl": {
+     "byte_sha256": "9761eb60d6c9155c2f56394aa228b1e9dfea0ae3926ab50cb21d903108bc7fde",
+     "canonical_sha256": "9761eb60d6c9155c2f56394aa228b1e9dfea0ae3926ab50cb21d903108bc7fde"
+    },
+    "facts.jsonl": {
+     "byte_sha256": "e05561ac2d49dcc3c8f59743c5df64151983a540a32ae135fd1b10f5e0fdc828",
+     "canonical_sha256": "e05561ac2d49dcc3c8f59743c5df64151983a540a32ae135fd1b10f5e0fdc828"
+    },
+    "general_dev.jsonl": {
+     "byte_sha256": "957666920c91ef5b9328984d26ed0628c8a80b439d461bea49b54c2235635e73",
+     "canonical_sha256": "957666920c91ef5b9328984d26ed0628c8a80b439d461bea49b54c2235635e73"
+    },
+    "train_F.jsonl": {
+     "byte_sha256": "3aa9ab3ca313c0a1113b91e927af51342c915e3e40dd2f20992f3d9e59b0e373",
+     "canonical_sha256": "3aa9ab3ca313c0a1113b91e927af51342c915e3e40dd2f20992f3d9e59b0e373"
+    },
+    "train_S.jsonl": {
+     "byte_sha256": "686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e",
+     "canonical_sha256": "686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e"
+    },
+    "train_Y.jsonl": {
+     "byte_sha256": "c7430cadb2b06dd5c144af381a8183d4c186f27f2b5acfa9d8d39da0b7626d15",
+     "canonical_sha256": "c7430cadb2b06dd5c144af381a8183d4c186f27f2b5acfa9d8d39da0b7626d15"
+    }
+   },
+   "model_files_sha256": {
+    "model-00001-of-00002.safetensors": "169ad53ec313c3a34b06c0809216e4fc072cce444a5d4ff2b59690d064130ed5",
+    "model-00002-of-00002.safetensors": "912becff8d60672aa8628ef08c05898d9adf17c2ad4ae3caf99b065622fdeff9"
+   },
+   "split_manifest_split_sha256": {
+    "dev_qa.jsonl": "9761eb60d6c9155c2f56394aa228b1e9dfea0ae3926ab50cb21d903108bc7fde",
+    "test_qa.jsonl": null,
+    "train_F.jsonl": "3aa9ab3ca313c0a1113b91e927af51342c915e3e40dd2f20992f3d9e59b0e373",
+    "train_S.jsonl": "686fdd2f62edc2115b74a8074a305ddd09b99f11d4f8a267bc80b61c7f73bc1e",
+    "train_Y.jsonl": "c7430cadb2b06dd5c144af381a8183d4c186f27f2b5acfa9d8d39da0b7626d15"
+   }
+  },
+  "Interpretation": {
+   "notes": {},
+   "reasons": []
+  },
+  "Negative control result": {
+   "G0.3 (N)": {
+    "acc_cb": 0.275,
+    "acc_dev_learned": 0.29583333333333334,
+    "acc_dev_learned:natural": 0.25,
+    "acc_dev_learned:random": 0.3416666666666667,
+    "acc_dev_unread": 0.275
+   },
+   "G0.6 (S)": {
+    "ci_high": -0.005555555555555559,
+    "delta_avg": {
+     "ci_high": -0.005555555555555559,
+     "ci_low": -0.17222222222222222,
+     "n_facts": 120,
+     "n_per_stratum": {
+      "natural": 60,
+      "random": 60
+     },
+     "point": -0.08888888888888889,
+     "point_exact": "-4/45",
+     "purpose": "S-N:DEV:avg",
+     "replicates": 10000
+    },
+    "point": -0.08888888888888889
+   },
+   "G0.7 (Y)": {
+    "ci_high": 0.0625,
+    "delta_avg": {
+     "ci_high": 0.0625,
+     "ci_low": -0.11527777777777778,
+     "n_facts": 120,
+     "n_per_stratum": {
+      "natural": 60,
+      "random": 60
+     },
+     "point": -0.02638888888888889,
+     "point_exact": "-19/720",
+     "purpose": "Y-N:DEV:avg",
+     "replicates": 10000
+    },
+    "point": -0.02638888888888889
+   }
+  },
+  "Next (single)": "Owner decides on TEST generation (run_pilot.py test-generate, RUNBOOK_A100.md); the pilot's final status follows the TEST confirmation",
+  "Non-claims": "protocol section 1 Non-claims",
+  "Positive control result": {
+   "acc_cb": 1.0,
+   "acc_dev_learned": 0.9291666666666667,
+   "run": "F-F3-seed101"
+  },
+  "Purpose": "**唯一问题**:这套训练—评测系统,能否可靠地测量“参数更新让模型获得了具体事实”,而不是测到模板、文风或先验。",
+  "Statistical plan": {
+   "bootstrap_seed": 20261112,
+   "ci_high_pct": 97.5,
+   "ci_low_pct": 2.5,
+   "deltas": [
+    0.05,
+    0.1,
+    0.15
+   ],
+   "n_boot": 10000,
+   "purpose_format": "<比较>:<split>:<seed 或 avg>",
+   "strata": [
+    "natural",
+    "random"
+   ],
+   "z_sum": 2.8
+  },
+  "Status": "NOT_TESTED",
+  "Stop Conditions": {
+   "excluded_by_st6": [],
+   "protocol": "section 11, ST1-ST13",
+   "smoke_recorded": [],
+   "stop": null
+  }
+ }
+}
