@@ -1,0 +1,35 @@
+先读仓库中的 .claude/agents/data-auditor.md，以它为你的完整定义；它与你已加载的定义冲突时，以仓库文件为准。
+
+任务（Owner 指令 metrix/e1-pilot/tasks/PILOT_REPORT_ORDER.md 第 3 项，请先读原文）：E1-PILOT 的正式运行已结束（机器已终止）。请只用 metrix/e1-pilot/results/ 中已提交的逐 fact 分数，用你自写的脚本，按协议 metrix/e1-pilot/METRIX_E1_PROTOCOL.md 第 6 节与第 0 节的 rng_rule，独立重算 Gate 0 与 T1–T3 涉及的全部点估计和 95% CI，以及 Δ(L−F)、Δ(A−F)，再与 results/step7_record.json、results/test_evaluation_result.json 中的对应值逐项比对，报告不一致数。
+
+运行环境：本会话的 Claude Code 云容器（CPU，无 GPU；仓库在 /home/user/OpenMythos，分支 metrix-e1-pilot-protocol-v1）。python3 为 3.13.18，有 numpy。
+
+范围：
+- DEV（Gate 0）：G0.3 的各正确率；G0.4 每个种子的 Acc_CB(F)；G0.5 的 seed-average Acc(F, DEV-QA, learned)、每个种子的 Δ(F−N) 与 seed-average Δ(F−N) 的点估计和 CI；G0.6 Δ(S−N)、G0.7 Δ(Y−N) 的 seed-average 点估计与 CI；G0.9；G0.10 的 σ_d（点估计、bootstrap 2.5/97.5 分位）、各 δ 下的 n、planning n 与 CI 半宽检查；Δ(L−F)、Δ(A−F) 每个种子与 seed-average 的点估计与 CI。
+- TEST：T1（seed-average Acc(F, TEST-QA, learned)、Δ(F−N) 的点估计与 CI）、T2（Δ(S−N)、Δ(Y−N) 的 seed-average 点估计与 CI）、T3 的各正确率；Δ(L−F)、Δ(A−F) 每个种子与 seed-average 的点估计与 CI。若记录中还有其它种子的 Δ(F−N)、Δ(S−N)、Δ(Y−N)，也一并比对。
+- 不在范围内：G0.1、G0.2、G0.8（没有点估计或 CI）；Spill、EM、dNLL。
+- 每个比对项写明：记录文件与 JSON 路径、记录值、你的值、差值、是否一致。点估计另与记录中的 point_exact（分数）做精确比较（例如用 fractions.Fraction）。一致的判据请你自己定并写在 stdout 里（浮点值建议 |差| ≤ 1e-12，并报告最大绝对差）；比对项总数与不一致数都要打印。
+
+口径来源（请自己读原文，不要从 Executor 的结论推断）：
+- 协议第 5 节（Score、Acc、Acc_CB 的定义）、第 6 节（bootstrap：fact 为单位、配对、分层、10,000 次、2.5/97.5 分位、rng_rule 的 purpose）、第 8 节（Gate 0 与 T1–T3 的定义）、第 0 节（rng_rule、种子）。
+- 协议没有写死的实现细节，由 Review Gate 接受的解释 B10（分层重抽的调用顺序与 fact 顺序）、B11（分位数插值）、B12（purpose 字符串格式）、B13（G0.10）、B22、B24 给出；原文在 results/experiment_record_formal_20261128T045921Z.json 的 environment.interpretations 中。
+- B10 要求 fact 按 facts.jsonl 的顺序排列。facts.jsonl 没有入库（它在已终止机器的 <work>/data 中）。请你从仓库中已提交的文件确定这个顺序，并在 stdout 中写明来源以及你如何确认它就是 facts.jsonl 的顺序（例如：manifest 中的 fact_ids，或你在之前各轮用过的、你自己的 audit/ 脚本在 CPU 上重新生成非 TEST 的 facts.jsonl 并核对 results/step1_record.json 中记录的 facts.jsonl 字节哈希）。确认不了时如实写明，并说明对比对结果的影响。
+- learned / unread、natural / random 的归属、种子 101/202/303、各 arm 选定配置（F3、L6、A5；S、Y 沿用 F3）请从已提交的记录与 manifest 自行确定。
+
+输入：
+- DEV 逐 fact 分数：results/training_runs/<run>.json 的 dev.scores_dev、dev.scores_cb；N 的在 results/step3_record.json（N.summary）。
+- TEST 逐 fact 分数：results/test_evaluation_result.json 的 summaries.<model>.scores_test、scores_cb。
+- 可以读 results/details/ 作交叉核对，但重算的输入应是上面的逐 fact 分数。
+
+限制：
+- 不得 import、复制或运行 Executor 的代码（metrix/e1-pilot/src/、run_pilot.py、tests/）；预期结果由你独立算出。Python 请用 -I。
+- 不得重新生成 TEST 数据，不得寻找或打开任何 TEST 文件（test_qa.jsonl、general_test.jsonl、leakage_test_report.json、<work>/test_details/ 之类）；本任务只需要已提交的逐 fact 分数。
+- 不加载模型权重，不使用 GPU，不访问网络下载模型。
+- 不做任何 git 操作；不修改已有文件。
+
+产出（写在仓库内，由 Executor 提交）：
+1. 自写脚本：metrix/e1-pilot/audit/pilot_final_recompute.py（新文件；如需多个脚本，都放在 audit/ 下，以 pilot_final_ 开头）。
+2. 脚本的完整 stdout（含 stderr）：metrix/e1-pilot/audit/stdout/pilot_final_recompute.txt（用 tee 或重定向保存全部输出；脚本的命令行与退出码也写进去）。
+3. 可选：机器可读的比对表 metrix/e1-pilot/audit/pilot_final_recompute.json。
+
+最终答复：列出你创建的文件路径、运行的命令、退出码、fact 顺序的来源与确认方式、比对项总数、不一致数（逐项列出不一致者）、最大绝对差，以及结论（PASS：不一致数为 0 / FAIL）。

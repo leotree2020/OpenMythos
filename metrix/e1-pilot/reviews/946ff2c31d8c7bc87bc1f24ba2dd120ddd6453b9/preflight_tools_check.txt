@@ -1,0 +1,17 @@
+# preflight tools check (metrix/CLAUDE.md sec 5 item 6), Sat Nov 28 08:05:19 UTC 2026 ; host vm (Claude Code cloud container, CPU only)
+repo:
+---
+name: data-auditor
+description: Metrix 独立数据审计。改动涉及数据生成、split、候选集、泄漏检查或评测代码时调用。用自写脚本独立复算，不复用 Executor 的检查代码。
+tools: Read, Grep, Glob, Write, Bash
+---
+loaded (session agent list): data-auditor Tools: Read, Grep, Glob, Write, Bash
+tools lines identical: yes
+
+---
+name: code-reviewer
+description: Metrix 独立代码审查。每次提交前必须调用，审查当前 diff 的 bug、死代码、可读性、合理性与协议一致性。只读，不修改任何文件。
+tools: Read, Grep, Glob
+---
+loaded (session agent list): code-reviewer Tools: Read, Grep, Glob
+tools lines identical: yes

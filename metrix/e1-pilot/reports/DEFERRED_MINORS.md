@@ -801,6 +801,35 @@ code-reviewer 结论 PASS(没有 BLOCKER、MAJOR;12 个 MINOR,都在防范对象
 | CQ11 | MINOR | RUNBOOK 第 3.5 节之后第一、三种情况 | 边缘情况:formal 在第 1 步之后停止,`final_record` 写出实验记录但提交失败(不再抛出),记录在工作区 `results/` 中未提交,两种情况的条件都不符;按总则停下报告,安全 | C5D1-CR 11 | 登记(第三种情况的条件可写为“没有本次已提交的实验记录”) |
 | CQ12 | MINOR | RUNBOOK 第 1 节磁盘一行 | “家目录只放变量文件,以及 uv 与解释器”说得过满:uv 分支的 `pip install uv` 没有 `--no-cache-dir`(缓存小);模拟后 scratch HOME 下有 `.cache/huggingface/xet/logs/`;A100 上下载权重时 xet 是否在家目录建 chunk cache 未验证 | C5D1-CR 12 | 登记(应为“家目录只放少量文件”;正式运行时可在 `env.txt` 加一次 `du -sh ~`) |
 
+### 1.44 E1-PILOT 最终报告提交 `946ff2c3`(暂存树 `f90600cf`,即该提交的树)的唯一一轮审查(`reviews/946ff2c3…/code-reviewer_round1.md` 记 `PFR-CR`)
+
+code-reviewer 结论 PASS(没有 BLOCKER;4 个 MAJOR、19 个 MINOR(PR5–PR22,其中 PR19 合并了 MINOR 15、16);报告中的数值逐项对照 `results/` 原始记录,未发现不一致;Non-claims 与原文逐字相同,未发现机制结论或优劣判断)。按 `tasks/PILOT_REPORT_ORDER.md` 第 5 项,只送一轮,没有 BLOCKER 即提交,其余只登记,不改报告(本节写入最终报告提交之后的证据提交)。PR1–PR4 与 PR21、PR22 涉及 Review Gate 的决定,列于第 3 节。
+
+| # | 严重度 | 位置 | 问题 | 来源 | 处理 |
+|---|---|---|---|---|---|
+| PR1 | MAJOR | `PILOT_FINAL_REPORT.md` Gate 0 与 T1–T3 表的“门槛(协议第 8 节)”列(`report_fragments.py` 中的门槛字符串);“Expected”一段 | 门槛列是改写与删节,不是协议原文(G0.1 的 TEST 部分说明、G0.2 的“用到的”、G0.6/G0.7 的“(真实映射,DEV-QA,learned)”、G0.8 的评测方式与确定性要求、G0.10 的公式与半宽验证被省略;T3 列混入解释 B24);数值都对 | PFR-CR MAJOR 1 | 登记,交 Review Gate:改为逐字引用协议第 8 节表格,或把列名改为“门槛摘要” |
+| PR2 | MAJOR | `PILOT_FINAL_REPORT.md` 偏差第 7 项 | “这些提交之间……协议与冻结文件无改动”不准确:`DATA_MANIFEST.json`、`SPLIT_MANIFEST.json` 由第 1 步(`f6e875a1`)按协议写入哈希(ST12 比对范围外),所引核对的路径表不含这两个 manifest;Environment 一节列出的具体路径是准确的 | PFR-CR MAJOR 2 | 登记,交 Review Gate;更正如下:应为“`src/`、`run_pilot.py`、`tests/`、`requirements.lock`、协议、`SEARCH_SPACE.json`、`PROTOCOL_FROZEN`、`RUNBOOK_A100.md`、`.claude/`、两个 `CLAUDE.md` 无改动;两个 manifest 由第 1 步按协议第 8 节写入哈希字段” |
+| PR3 | MAJOR(不确定) | `metrix/CLAUDE.md` 第 2 节新句 | 只写了时间与出处,没有写原因与作用范围(文件头“记录原因与时间”、第 8 节“须注明作用范围”);文字为 Owner 指令第 4 项逐字给定,且要求只改这一句 | PFR-CR MAJOR 3 | 登记,交 Review Gate 决定是否补注;在此之前不改 |
+| PR4 | MAJOR(不确定) | `PILOT_FINAL_REPORT.md` 偏差第 9 项 | 正式运行指令的停止点 C(`FORMAL_RUN_OWNER_MESSAGE.md`)要求等待 Owner 批准 TEST 评测;test-evaluate 在 `772b9247` 之后 33 秒启动;报告没有写明有条件批准替代了停止点 C,也没有写明该批准原文在本提交才首次入库 | PFR-CR MAJOR 4 | 登记,交 Review Gate 决定是否作为偏差列出;事实补充:有条件批准的原文首次入库于 `946ff2c3`(`tasks/PILOT_REPORT_ORDER.md`) |
+| PR5 | MINOR | 报告“表格的生成方式”一段 | “下文的数值表由脚本生成,未手工录入”说得过宽:选定配置表、Stop Conditions 表、没有入库的内容表、data-auditor 一节的表是手写的(值已由审查逐项核对) | PFR-CR MINOR 1 | 登记(应写明由脚本生成的是 12 个片段:environment、commits、hashes、checkpoints、gate0、test、comparisons、spill、per_model、dnll、g010、compute) |
+| PR6 | MINOR | 同上;`report_fragments.py` docstring | “小数为 %.4f(另注明者除外)”与实际的 %.5f(dNLL)、%.2f(PPL、秒数)、%.4e(FLOPs)、%.6f(G0.10)不符且未注明 | PFR-CR MINOR 2 | 登记 |
+| PR7 | MINOR | 报告 Purpose 一节 | 称“原文”但省略记录中的前缀“**唯一问题**:” | PFR-CR MINOR 3 | 登记 |
+| PR8 | MINOR | 报告 Stop Conditions 表 ST12 行 | “`fetch.txt` 的各项下载哈希 `= frozen`”不准确:权重与 `config.json` 没有标 `= frozen`(偏差第 4 项的表述准确) | PFR-CR MINOR 4 | 登记 |
+| PR9 | MINOR | 报告偏差第 3 项 | “主机预装 pip 26.2.2”不确切:被替换的是新建 venv 中的 pip | PFR-CR MINOR 5 | 登记 |
+| PR10 | MINOR | 报告偏差第 1 项 | “与全部训练、评测记录一致”:仓库中含设备名的只有 `step1_record.json`、30 条训练记录与两份实验记录(Stop Conditions 表 ST8、ST9 行的表述准确) | PFR-CR MINOR 6 | 登记 |
+| PR11 | MINOR | 报告 Hyperparameter budget 一节 | 字段路径 `selection.*.ranking` / `selection.*.rows`:step4 为 `selection.ranking`、`selection.rows`,step5 为 `selection.<L 或 A>.ranking` | PFR-CR MINOR 7 | 登记 |
+| PR12 | MINOR | 报告 Positive control 一节 | `run F-F3-seed101` 只在实验记录模板中有,`step4_record.json` `positive_control` 没有 run 字段 | PFR-CR MINOR 8 | 登记 |
+| PR13 | MINOR | 报告“没有入库的内容”导语 | 导语说都在 `<work>` 或 `<inputs>` 中,但表中的 venv 两者都不是 | PFR-CR MINOR 9 | 登记 |
+| PR14 | MINOR | 报告 Actual 只报告的指标 | 协议第 8 节列为只报告的 AllCorrect、第 5 节规定记为 NOT_TESTED 的 Retention 没有提到(Owner 指令第 2 项未要求) | PFR-CR MINOR 10 | 登记(AllCorrect 的逐 fact 值在 `summaries.*.all_correct_*` 与 `training_runs/*.json` `dev.all_correct_dev`;Retention 为 NOT_TESTED) |
+| PR15 | MINOR | 报告 Input 冻结身份表 | 没有列出两个冻结标签与提交的对应关系(只在表头引用 `step0_ls_remote.txt`) | PFR-CR MINOR 11 | 登记(`metrix-e1-pilot-frozen-v1.1^{}` → `87a244db`,`metrix-e1-pilot-frozen^{}` → `6a474e4a`) |
+| PR16 | MINOR | `report_fragments.py` 若干输出文字 | 文字声称某些值“均为”“两字段同值”“同字段”“stepN_record.json step_info.seconds”相同,代码只打印其中一处而不比较(审查已手工核对这些值确实相同) | PFR-CR MINOR 12 | 登记 |
+| PR17 | MINOR | `report_fragments.py` 预检一行 | “F-F1-seed101 前 20 步”是硬编码,记录中有 `preflight.run`、`preflight.steps` | PFR-CR MINOR 13 | 登记 |
+| PR18 | MINOR | `report_fragments.py` G0.10 一段 | `def ns` 定义在循环体内,依赖闭包中的 `n` | PFR-CR MINOR 14 | 登记 |
+| PR19 | MINOR | `report_tables.py` | RUNS 列表硬编码,与 `report_fragments.py` 读取的 `step6_record.json` `training_plan` 重复;“30 runs”是字面量;步数合计用 `accounting.steps`,另一脚本用 `steps_run`(当前都为 300) | PFR-CR MINOR 15、16 | 登记 |
+| PR20 | MINOR | `report_tables.py` 第 5 节末行 | RUNBOOK 的规划数值是打印出的字面量,在 `report_tables.txt` 中看起来像计算结果(数值与 `RUNBOOK_A100.md` 第 6 节一致) | PFR-CR MINOR 17 | 登记 |
+| PR21 | MINOR | `metrix/CLAUDE.md` 第 2 节新句 | 路径 `reports/PILOT_FINAL_REPORT.md` 从 `metrix/CLAUDE.md` 看会解析成 `metrix/reports/…`;本文件其他引用写全 `metrix/e1-pilot/…`;为 Owner 给定的原文 | PFR-CR MINOR 18 | 登记,交 Review Gate;在此之前不改 |
+| PR22 | MINOR(未验证) | `metrix/CLAUDE.md` 第 2 节新句 | 状态改为“已完成”后,按第 8 节,“本阶段”的裁决(第 4 节末句、第 5 节第 6 条、第 10 节)是否随之失效,本提交没有说明 | PFR-CR MINOR 19 | 登记,交 Review Gate 确认阶段是否已结束 |
+
 ## 2. 已在第 5–7 轮解决(核对用)
 
 | 原条目 | 来源 | 处理 |
@@ -835,3 +864,5 @@ code-reviewer 结论 PASS(没有 BLOCKER、MAJOR;12 个 MINOR,都在防范对象
 - Implementation 阶段 B 报告提交:1.26 节 BE1(待决第 3 项的运行清单)与 BE6(推送记录的证据提交不经审查,待决第 6 项)请 Review Gate 决定或确认。
 - Implementation 阶段 C(C4):1.39 节 CM3(只改注释是否属于“不改代码”)、1.38 节 CL2–CL6(RUNBOOK 操作细节的修正时机)与 1.41 节 CO6(RUNBOOK 中的分工,请 Owner 确认)列于 `IMPL_C_REPORT.md` C4 节“待 Review Gate 决定(C4)”第 1–3 项。1.42 节 CP5(缺 ensurepip 时也用 uv,比裁决第 6 项的字面宽)请 Review Gate 确认;1.42 节其余 RUNBOOK 项与 1.38 CL2–CL6 一并修正(同一第 2 项)。1.38 节 CL7 由 Review Gate 2026-11-27 的裁决(`tasks/IMPL_C4_RULING.md`)第 4 项回答。
 - Implementation 阶段 C(C5):Review Gate 2026-11-28 的裁决(`tasks/IMPL_C5_RULING.md`)回答了上一条的第 1、2 项与 CP5:CM3 不改,登记(第 1 项);CL2–CL6、CP1–CP4 在 C5 文档提交中按处理列修正(第 2 项);CP5 确认(第 3 项)。1.41 节 CO6(分工,请 Owner 确认)仍未回答,列于 `IMPL_C_REPORT.md` C5 节“待 Review Gate 决定(C5)”。C5 文档提交的审查(1.43)按裁决第 4 项只登记;其中 CQ4、CQ5(总则之后 Executor 加的一句,同该节第 2 项)与 CQ7(“有 3.13.18 但缺 ensurepip”时 uv 分支的第一步多半同样失败)提请 Review Gate 注意。
+
+- E1-PILOT 最终报告(1.44):PR1(门槛列为摘要而非原文)、PR2(偏差第 7 项对两个 manifest 的表述,更正见该行)、PR3 与 PR21(`metrix/CLAUDE.md` 新句的作用范围、原因与路径写法,Owner 给定原文)、PR4(停止点 C 由有条件批准替代)、PR22(“本阶段”的裁决是否随阶段结束失效)提请 Review Gate 决定;报告与 `metrix/CLAUDE.md` 在裁决之前不改。

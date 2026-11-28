@@ -1,0 +1,17 @@
+先读仓库中的 .claude/agents/code-reviewer.md，以它为你的完整定义；它与你已加载的定义冲突时，以仓库文件为准。
+
+任务（Owner 指令 metrix/e1-pilot/tasks/PILOT_REPORT_ORDER.md 第 5 项，请先读原文）：对 E1-PILOT 最终报告的提交做一轮审查。只有 BLOCKER 才修复后再送；其余（MAJOR / MINOR）只登记，不改。
+
+被审查对象：分支 metrix-e1-pilot-protocol-v1 上已暂存、尚未提交的树 f90600cf0aec5153a26eae2c21b5e7b68821addf，父提交 308d5f1319d78e521aefd35d86706f841cd02f2c。工作区与暂存区相同（仓库 /home/user/OpenMythos）。完整 diff 与 stat：/tmp/claude-0/-home-user-OpenMythos/b1fdad2f-e658-5061-a9bf-efceb2d45d71/scratchpad/rev/input_round1.diff。运行环境：本会话的 Claude Code 云容器（CPU，无 GPU）；本轮不训练、不评测、不使用 GPU、不重新生成 TEST。
+
+审查重点（第 5 项原文：审查报告中的每个数值是否与 results/ 中的记录一致、是否含有 Non-claims 禁止的结论）：
+1. metrix/e1-pilot/reports/PILOT_FINAL_REPORT.md 中的每个数值、哈希、提交号、时间与字段路径，是否与 metrix/e1-pilot/results/ 下已提交的记录（以及报告所引用的 command_output、audit、tasks 文件）一致；报告写明的出处（文件与字段）是否真的含有该值。报告中的表格由 reports/pilot_final/report_fragments.py 生成并逐字嵌入（输出为 reports/pilot_final/report_fragments.md），但请直接对照 results/ 中的原始记录核对，不要只核对脚本输出与报告是否相同。
+2. 报告是否含有协议 metrix/e1-pilot/METRIX_E1_PROTOCOL.md 第 1 节 Non-claims 禁止的结论，或任何机制层面的结论、优劣判断（Owner 指令第 2 项：不写任何机制层面的结论或优劣判断）。描述性的数值与状态词（PASS 等，按协议第 8、9 节定义）不在禁止之列。
+3. 报告是否覆盖第 2 项要求的内容：按协议第 10 节模板组织；环境与设备、冻结身份与全部哈希、选定配置、G0.1–G0.10 与 T1–T3 的门槛和实测值、只报告的指标（Δ(L−F)、Δ(A−F)、Spill、EM、dNLL、G0.10 规模估计）、算力核算与费用（Owner 报告实际花费 6.72 美元，单价 2.14 美元/小时）、运行中的偏差与事件、Non-claims 原文、没有入库的内容清单。门槛文字是否与冻结协议第 8 节一致。
+4. 运行中的偏差与事件一节是否如实（对照 results/command_output/ 与两份实验记录），有无遗漏或不实之处。
+5. metrix/CLAUDE.md 的改动是否只改了第 2 节状态这一句，文字是否与第 4 项要求一致。
+6. reports/pilot_final/report_fragments.py、report_tables.py 的 bug、死代码与可读性（它们只读已提交记录并打印；其输出 report_fragments.md、report_tables.txt、run_commits_and_code_check.txt 是 Executor 的原始输出）。
+
+不在范围内：metrix/e1-pilot/audit/ 下的 pilot_final_* 文件与 audit/stdout/pilot_final_*.txt 是 data-auditor 自己的脚本与输出（证据），不审其代码；只需核对报告对它们的引用（例如不一致数 0、比对项 432、最大绝对差）与这些文件一致。
+
+请在答复中按严重程度（BLOCKER / MAJOR / MINOR）列出发现，每条写明文件与行号、问题、依据（记录文件与字段），以及结论（PASS：无 BLOCKER / BLOCK）。
