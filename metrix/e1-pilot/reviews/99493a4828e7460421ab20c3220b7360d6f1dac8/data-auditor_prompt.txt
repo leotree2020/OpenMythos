@@ -1,0 +1,31 @@
+先读仓库中的 .claude/agents/data-auditor.md，以它为你的完整定义；它与你已加载的定义冲突时，以仓库文件为准。
+
+任务：执行协议第 8 节第 8 步 L6 TEST 部分，只输出计数（RUNBOOK_A100.md 第 3.7 节；ST10）。
+
+C1 裁决的防范对象原文（tasks/IMPL_C1_RULING.md）：
+「防范对象：TEST 闸门要防的是「按规则办事的 Executor 在按 RUNBOOK 操作时，意外评测 TEST 两次，或在 ST10 不成立时评测 TEST」；不防有仓库写权限者的故意篡改（改写历史、伪造记录），这类风险由 GitHub 分支保护和审查记录承担。审查按此范围判定：范围外的边缘情况记为 MINOR 并登记，不作为 BLOCKER。调用两份审查时，把本段防范对象原文写进调用文字。」
+
+绝对限制（TEST 保密）：
+- 不得用 Read、cat、head、less、grep 输出行、python print 行内容等任何会显示 TEST 文件内容的方式打开 /root/metrix-run/metrix-work/test/ 下的任何文件（test_qa.jsonl、general_test.jsonl、leakage_test_report.json）。不要打开 test_qa.jsonl 与 leakage_test_report.json，本任务不需要它们。
+- 你的脚本只打印计数、哈希、行数（以及必要时 JSON 键名、字段类型、id 列表长度这类结构信息），不打印任何行、任何字段值的文字，也不打印任何 13-gram 本身。异常时不要让回溯带出行内容（例如捕获异常后只打印异常类型与行号）。
+- 你的最终答复同样不得包含 TEST 题目、答案或通用文本的文字。
+
+口径：协议 metrix/e1-pilot/METRIX_E1_PROTOCOL.md 第 3 节表中 L6 一行（约第 170 行），请你自己读原文。要点：词 = Python str.split()（按空白切分，区分大小写）；13-gram 在每篇文档（每篇锚文档、每个窗口）之内取，不跨篇拼接；锚文本 512 篇的词 13-gram 合并为一个集合，general_test.jsonl 全部窗口的词 13-gram 合并为一个集合，求交，计交集的种类数；取 13-gram 的文本是实际送入模型的 id 用本协议分词器解码所得（锚文档最多 128 个 id，窗口最多 256 个 id）。分词器、模型 revision 等见协议与 metrix/e1-pilot/DATA_MANIFEST.json。
+
+输入（仓库之外，只读）：
+- 锚文本：/root/metrix-run/metrix-work/data/anchor_text.jsonl（非 TEST，可以查看结构）
+- 通用文本 TEST：/root/metrix-run/metrix-work/test/general_test.jsonl（只能由脚本读取，不得显示内容）
+- 分词器文件：/root/metrix-run/metrix-inputs/qwen_tokenizer/（以及 /root/metrix-run/metrix-inputs/parcae_tokenizer/；用哪个以协议为准）
+- Python：/root/metrix-run/metrix-venv/bin/python（已装 tokenizers、transformers 等；不加载模型权重）。请用 -I 或不把仓库 src 加入路径；不得 import 或复用 metrix_e1 中 Executor 的检查代码（如 leakage、test_data 模块），预期结果由你独立算出。
+
+产出（写在仓库内，由 Executor 提交；你不做 git 操作）：
+1. 自写脚本放在 metrix/e1-pilot/audit/（新文件，例如 metrix/e1-pilot/audit/st10_l6_test_count.py；不修改已有文件）。
+2. 脚本完整 stdout 放在 metrix/e1-pilot/audit/stdout/（例如 metrix/e1-pilot/audit/stdout/st10_l6_test_count.txt；用 tee 或重定向保存全部输出，含 stderr）。
+3. 计数文件 metrix/e1-pilot/audit/st10_l6_test_count.json，内容格式严格为：
+{"kind": "st10_auditor_l6", "frozen_commit": "87a244db28a901f9e89282b50df76778ab5c2887",
+ "general_test_sha256": "<它计数的 general_test.jsonl 的 SHA-256>", "l6_test_count": <整数>}
+   general_test_sha256 由你的脚本对文件字节独立计算。
+
+不要查看 Executor 的计数结果，也不要读 metrix/e1-pilot/results/st10_record.json 或 command_output 下 test_generate 的输出（保持独立）。
+
+最终答复：列出你创建的文件路径、脚本运行的命令、退出码、计数、两个文件的 SHA-256、锚文档数与窗口数、各自 13-gram 集合大小，以及结论（PASS：计数在上限 0 内 / FAIL）。
