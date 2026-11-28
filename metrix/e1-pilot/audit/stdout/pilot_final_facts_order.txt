@@ -1,0 +1,87 @@
+# Data Auditor run (PILOT_REPORT_ORDER item 3, part 1: fact order). host vm, Claude Code cloud container, CPU only (no GPU, no torch, no transformers, no model weights); 2026-11-28 08:18:13 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit
+# wrapper: bash /home/user/OpenMythos/metrix/e1-pilot/audit/pilot_final_run_logged.sh /home/user/OpenMythos /tmp/claude-0/-home-user-OpenMythos/b1fdad2f-e658-5061-a9bf-efceb2d45d71/scratchpad /tmp/claude-0/-home-user-OpenMythos/b1fdad2f-e658-5061-a9bf-efceb2d45d71/scratchpad/venv/bin/python
+# stdout and stderr merged, complete, unedited
+$ mkdir -p /tmp/claude-0/-home-user-OpenMythos/b1fdad2f-e658-5061-a9bf-efceb2d45d71/scratchpad/pilot_final_tok_20261128T081813Z && curl -sS -L -o /tmp/claude-0/-home-user-OpenMythos/b1fdad2f-e658-5061-a9bf-efceb2d45d71/scratchpad/pilot_final_tok_20261128T081813Z/tokenizer.json https://huggingface.co/Qwen/Qwen3-1.7B/resolve/70d244cc86ccca08cf5af4e1e306ecf908b1ad5e/tokenizer.json
+exit=0
+$ ls -la /tmp/claude-0/-home-user-OpenMythos/b1fdad2f-e658-5061-a9bf-efceb2d45d71/scratchpad/pilot_final_tok_20261128T081813Z
+total 11164
+drwxr-xr-x 2 root root     4096 Nov 28 08:18 .
+drwx------ 6 root root     4096 Nov 28 08:18 ..
+-rw-r--r-- 1 root root 11422654 Nov 28 08:18 tokenizer.json
+$ sha256sum /tmp/claude-0/-home-user-OpenMythos/b1fdad2f-e658-5061-a9bf-efceb2d45d71/scratchpad/pilot_final_tok_20261128T081813Z/tokenizer.json
+aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4  /tmp/claude-0/-home-user-OpenMythos/b1fdad2f-e658-5061-a9bf-efceb2d45d71/scratchpad/pilot_final_tok_20261128T081813Z/tokenizer.json
+$ /tmp/claude-0/-home-user-OpenMythos/b1fdad2f-e658-5061-a9bf-efceb2d45d71/scratchpad/venv/bin/python -I -c 'import sys, tokenizers; print(sys.version); print(tokenizers.__version__)'
+3.13.18 (main, Oct 26 2026, 14:08:19) [Clang 23.1.3 ]
+0.23.3
+$ /tmp/claude-0/-home-user-OpenMythos/b1fdad2f-e658-5061-a9bf-efceb2d45d71/scratchpad/venv/bin/python -I -c 'import importlib.util as u; print({m: u.find_spec(m) is not None for m in ("torch", "transformers")})'
+{'torch': False, 'transformers': False}
+$ /tmp/claude-0/-home-user-OpenMythos/b1fdad2f-e658-5061-a9bf-efceb2d45d71/scratchpad/venv/bin/python -I -B /home/user/OpenMythos/metrix/e1-pilot/audit/pilot_final_facts_order.py /home/user/OpenMythos /tmp/claude-0/-home-user-OpenMythos/b1fdad2f-e658-5061-a9bf-efceb2d45d71/scratchpad/pilot_final_tok_20261128T081813Z/tokenizer.json /home/user/OpenMythos/metrix/e1-pilot/audit/pilot_final_fact_order.json
+host vm | Linux-6.18.44-fc-v880-x86_64-with-glibc2.39 | python 3.13.18 | CPU only
+tokenizers 0.23.3 (tokenizer.json only; no transformers, no torch, no weights)
+
+== 0. tokenizer file
+tokenizer.json bytes 11422654 sha256 aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4 | DATA_MANIFEST model.tokenizer.files_sha256 aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4 | MATCH True
+DATA_MANIFEST model.tokenizer repo/revision: Qwen/Qwen3-1.7B@70d244cc86ccca08cf5af4e1e306ecf908b1ad5e
+
+== 1. constants transcribed from protocol 2.2 vs DATA_MANIFEST
+  seeds.DATA_SEED: manifest == transcribed True
+  seeds.CANDIDATE_SEED: manifest == transcribed True
+  facts.relations: manifest == transcribed True
+  facts.strata: manifest == transcribed True
+  name_generation.natural.onsets: manifest == transcribed True
+  name_generation.natural.nuclei: manifest == transcribed True
+  name_generation.natural.codas: manifest == transcribed True
+  name_generation.random.letters: manifest == transcribed True
+  name_generation.random.digits: manifest == transcribed True
+  name_generation.max_draws_per_stream: manifest == transcribed True
+  name_generation.expected_facts_fields: manifest == transcribed True
+  name_generation.order: cells in the order relation (capital, currency, founder, river) x stratum (natural, random); within a cell entities first, then answers; within a role the first 15 accepted strings are learned, the next 5 unread
+
+== 2. regeneration (protocol 2.2, anchor rule NOT applied)
+note: the anchor rule (reject strings occurring in the 512 anchor texts) is not applied because the anchor
+      texts are not available on this host without downloading the parquet. This cannot make a wrong list
+      pass: the result is accepted only if its canonical hash equals the frozen fact hash below. My own
+      round-9 regeneration WITH the anchor rule recorded 'anchor-rule rejections: 0'
+      (metrix/e1-pilot/audit/stdout/87a244db28a901f9e89282b50df76778ab5c2887/04_r8_facts.txt).
+  cell capital/natural   entity draws  28 | target (K_st, K_qa) (3, 3) | answer draws  84
+  cell capital/random    entity draws  20 | target (K_st, K_qa) (5, 5) | answer draws  52
+  cell currency/natural  entity draws  31 | target (K_st, K_qa) (3, 3) | answer draws  82
+  cell currency/random   entity draws  20 | target (K_st, K_qa) (6, 6) | answer draws  46
+  cell founder/natural   entity draws  30 | target (K_st, K_qa) (3, 3) | answer draws  81
+  cell founder/random    entity draws  21 | target (K_st, K_qa) (5, 5) | answer draws  45
+  cell river/natural     entity draws  34 | target (K_st, K_qa) (3, 3) | answer draws  89
+  cell river/random      entity draws  20 | target (K_st, K_qa) (6, 6) | answer draws  42
+facts 160 {'learned': 120, 'unread': 40} | distinct strings 320
+
+== 3. canonical hash of the fact list (protocol 2.2 method)
+regenerated list canonical sha256: 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97
+  protocol 2.2 '复现' sentence: 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 | MATCH True
+  DATA_MANIFEST name_generation.expected_facts_canonical_sha256: 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 | MATCH True
+  results/step1_record.json content_hashes.facts: 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 | MATCH True
+  results/selection_freeze_record.json data_content_hashes.facts: 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 | MATCH True
+
+== 4. facts.jsonl bytes (protocol 0 JSONL rule) vs the byte hash recorded by the formal run
+facts.jsonl rebuilt in memory: 21489 bytes, 160 lines, sha256 e05561ac2d49dcc3c8f59743c5df64151983a540a32ae135fd1b10f5e0fdc828
+  results/step1_record.json environment.data_hashes['facts.jsonl'].byte_sha256: e05561ac2d49dcc3c8f59743c5df64151983a540a32ae135fd1b10f5e0fdc828 | MATCH True
+  results/step1_record.json environment.data_hashes['facts.jsonl'].canonical_sha256: e05561ac2d49dcc3c8f59743c5df64151983a540a32ae135fd1b10f5e0fdc828 | MATCH True
+  DATA_MANIFEST.json files['facts.jsonl'].byte_sha256: e05561ac2d49dcc3c8f59743c5df64151983a540a32ae135fd1b10f5e0fdc828 | MATCH True
+  DATA_MANIFEST.json files['facts.jsonl'].canonical_sha256: e05561ac2d49dcc3c8f59743c5df64151983a540a32ae135fd1b10f5e0fdc828 | MATCH True
+results/step1_record.json data_generation.rows['facts.jsonl']: 160
+lines read back in file order == regenerated list: True | every line has exactly the six 2.2 fields: True
+
+== 5. cross-check with committed DEV details (results/details/N_dev.json)
+fact_ids in details 160 | == regenerated ids True | facts whose details answer != regenerated answer: []
+rebuilt candidates.json canonical sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | SPLIT_MANIFEST candidates.candidate_mapping_sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | MATCH True
+rebuilt candidates.json canonical sha256 e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | results/step1_record.json content_hashes.candidates e5d15c9952d8124f2b246ffc76e655be9bf3b0193f048bd8368671d71a6f3705 | MATCH True
+facts whose candidate list in N_dev.json differs from the rebuilt one: []
+
+== 6. fact order
+order of facts.jsonl (confirmed by the byte hash above) == protocol 2.2 generation-order rule (cells capital..river x natural, random; per cell L-01..15 then U-01..05): True
+exposure / stratum / relation fields agree with the fact_id pattern of SPLIT_MANIFEST fact_ids: True
+  learned natural:  60 facts, in facts.jsonl order first ['E1P-L-capital-nat-01', 'E1P-L-capital-nat-02'] ... last E1P-L-river-nat-15
+  learned random :  60 facts, in facts.jsonl order first ['E1P-L-capital-rnd-01', 'E1P-L-capital-rnd-02'] ... last E1P-L-river-rnd-15
+  unread  natural:  20 facts, in facts.jsonl order first ['E1P-U-capital-nat-01', 'E1P-U-capital-nat-02'] ... last E1P-U-river-nat-05
+  unread  random :  20 facts, in facts.jsonl order first ['E1P-U-capital-rnd-01', 'E1P-U-capital-rnd-02'] ... last E1P-U-river-rnd-05
+wrote /home/user/OpenMythos/metrix/e1-pilot/audit/pilot_final_fact_order.json (fact_id, exposure, relation, stratum of the 160 facts in facts.jsonl order)
+RESULT: PASS
+exit=0

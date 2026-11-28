@@ -1,0 +1,34 @@
+# host vm (Claude Code cloud container, CPU only) ; 2026-11-28T08:07:44Z
+# code, tests, protocol, frozen files, RUNBOOK and CLAUDE files between the formal-run start commit (0a67c2c4, env.txt line 33) and the last run commit 53800ef7
+$ git diff --stat 0a67c2c4382847cdc8dff1bbc8b607551a2b58e4 53800ef7ba5070fb1bb571c4a96a1130acebdf04 -- metrix/e1-pilot/src metrix/e1-pilot/run_pilot.py metrix/e1-pilot/tests metrix/e1-pilot/requirements.lock metrix/e1-pilot/METRIX_E1_PROTOCOL.md metrix/e1-pilot/SEARCH_SPACE.json metrix/e1-pilot/PROTOCOL_FROZEN metrix/e1-pilot/RUNBOOK_A100.md .claude CLAUDE.md metrix/CLAUDE.md
+exit=0 (empty stat = no change)
+$ git diff --name-only 0a67c2c4382847cdc8dff1bbc8b607551a2b58e4 53800ef7ba5070fb1bb571c4a96a1130acebdf04 | sed 's#/[^/]*$##' | sort | uniq -c
+      2 metrix/e1-pilot
+      2 metrix/e1-pilot/audit
+      1 metrix/e1-pilot/audit/stdout
+     17 metrix/e1-pilot/results
+     22 metrix/e1-pilot/results/command_output
+     34 metrix/e1-pilot/results/details
+     30 metrix/e1-pilot/results/training_runs
+      6 metrix/e1-pilot/reviews/99493a4828e7460421ab20c3220b7360d6f1dac8
+      1 metrix/e1-pilot/tasks
+$ git log --format='%H %ad %s' --date=iso-strict 0a67c2c4382847cdc8dff1bbc8b607551a2b58e4..53800ef7ba5070fb1bb571c4a96a1130acebdf04
+53800ef7ba5070fb1bb571c4a96a1130acebdf04 2026-11-28T07:47:37+00:00 metrix: E1-PILOT final <work> retention manifest before machine termination (evidence only)
+aa50cf4b8d9f28d976d6d71a536c2967efac764e 2026-11-28T07:43:44+00:00 metrix: E1-PILOT test-evaluate command output, script and .end marker (evidence only)
+b0d62f8f5ccffad0ec4a38ffc8946d38ed5bdc03 2026-11-28T07:42:47+00:00 metrix: E1-PILOT formal test-evaluate experiment record (status PASS)
+9fc7337b4791cb6fb1323885cc09ac158d87a3df 2026-11-28T07:42:43+00:00 metrix: E1-PILOT TEST evaluation result (section 8 step 8)
+b526312b79c498338020b62c72315e548cb80341 2026-11-28T07:26:50+00:00 metrix: E1-PILOT TEST evaluation marker (section 8 step 8: TEST is evaluated once; every checkpoint hash)
+a7b4f6fe60d046238a1dc9bc0d62239c01587517 2026-11-28T07:24:47+00:00 metrix: E1-PILOT test-generate command output, script and .end marker (evidence only)
+772b9247bc6c84b310022137a8caaa47a7ec0b25 2026-11-28T07:24:30+00:00 metrix: E1-PILOT step 8 data-auditor L6 TEST count review record for 99493a48 (evidence only)
+99493a4828e7460421ab20c3220b7360d6f1dac8 2026-11-28T07:23:49+00:00 metrix: E1-PILOT step 8 data-auditor L6 TEST count (count file, audit script, full stdout; evidence only)
+b8337e7d1923f25a9201c3dc4b2534c2771e1b73 2026-11-28T07:20:52+00:00 metrix: E1-PILOT formal step 8 ST10 record (raw TEST-part counts, TEST file hashes, code commit)
+647a75d54603bfab112a80d89a9d14ed22aa1cbf 2026-11-28T06:44:49+00:00 metrix: E1-PILOT formal command outputs, long-command scripts and .end markers, Owner formal-run message (evidence only)
+0699eac80be4d401cc199feb2966e0f2b7610352 2026-11-28T06:43:55+00:00 metrix: E1-PILOT formal formal experiment record (status NOT_TESTED)
+36106eefc2238cee77976e6afbd8632cbbab2257 2026-11-28T06:43:51+00:00 metrix: E1-PILOT formal step 8 freeze record (selected configurations, data hashes, checkpoint hashes)
+2bbd3126e5aa1b1ae7dfb821067904931c6f99dd 2026-11-28T06:43:45+00:00 metrix: E1-PILOT formal step 7 (Gate 0 record)
+a5c2bb83a821a5a13f92d9c050c5e2cad75251a4 2026-11-28T06:42:10+00:00 metrix: E1-PILOT formal step 6 record
+11d5f673a47804ff719b86a98fb9ad6ee183a0e0 2026-11-28T06:04:35+00:00 metrix: E1-PILOT formal step 5 record
+d555e7024f62505beb8dc3a354f43e1f48b4431e 2026-11-28T05:16:53+00:00 metrix: E1-PILOT formal step 4 record
+0d85fee6cd22af16df3e0e0af492af7d0402de07 2026-11-28T05:01:32+00:00 metrix: E1-PILOT formal step 3 record
+a95b5c94726a2066487aa25e5cfaefbb0213a8e2 2026-11-28T05:00:42+00:00 metrix: E1-PILOT formal step 2 record
+f6e875a10b468aa7a9bdc79e831db40fa8c79f7c 2026-11-28T04:59:26+00:00 metrix: E1-PILOT formal step 1 (non-TEST data hashes written into the manifests)

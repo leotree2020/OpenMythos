@@ -1,0 +1,130 @@
+# host vm (Claude Code cloud container, CPU only) ; 2026-11-28T08:07:30Z
+$ python3 -I metrix/e1-pilot/reports/pilot_final/report_tables.py 53800ef7ba5070fb1bb571c4a96a1130acebdf04
+rev 53800ef7ba5070fb1bb571c4a96a1130acebdf04
+
+== 1. record hashes cited by later records (sha256 of the committed file bytes at rev)
+gate0_record.json              faabb09fe7b9b54b7ea71b1a7c0273d3961d3af6b7a98ca525a3ba3e594c64cc | cited in step8_record.json gate0_record_sha256 faabb09fe7b9b54b7ea71b1a7c0273d3961d3af6b7a98ca525a3ba3e594c64cc | equal
+gate0_record.json              faabb09fe7b9b54b7ea71b1a7c0273d3961d3af6b7a98ca525a3ba3e594c64cc | cited in selection_freeze_record.json gate0_record_sha256 faabb09fe7b9b54b7ea71b1a7c0273d3961d3af6b7a98ca525a3ba3e594c64cc | equal
+gate0_record.json              faabb09fe7b9b54b7ea71b1a7c0273d3961d3af6b7a98ca525a3ba3e594c64cc | cited in st10_record.json authorization.gate0_record_sha256 faabb09fe7b9b54b7ea71b1a7c0273d3961d3af6b7a98ca525a3ba3e594c64cc | equal
+selection_freeze_record.json   609d25cc964b3902878dfc1aaafe4b07c2a1ae46c66d7e9c380ca5580d474dd7 | cited in st10_record.json authorization.selection_record_sha256 609d25cc964b3902878dfc1aaafe4b07c2a1ae46c66d7e9c380ca5580d474dd7 | equal
+st10_record.json               ba152fa85fcad59b71c7fa186a570c7fcac0509632773217ce61a01f2bfab521 | cited in test_evaluation_marker.json st10_record_sha256 ba152fa85fcad59b71c7fa186a570c7fcac0509632773217ce61a01f2bfab521 | equal
+audit/st10_l6_test_count.json  23226d269085c68548b64dba23f8f3e049d1f482ef21a841bef14f186a80a8a1 | cited in test_evaluation_marker.json auditor_count_sha256 23226d269085c68548b64dba23f8f3e049d1f482ef21a841bef14f186a80a8a1 | equal
+
+== 2. checkpoint state_sha256: training_runs/<run>.json checkpoint vs selection_freeze_record.json and test_evaluation_marker.json checkpoints
+30 runs: 30 equal in all four places (state_sha256, reloaded_state_sha256, freeze record, marker)
+N: step3_record.json N.state_sha256 ecf6f12a3a3e32e4dd2a9e60957807efc5e32ab1f3d0daeaec4173ba40b781be | marker checkpoints.N ecf6f12a3a3e32e4dd2a9e60957807efc5e32ab1f3d0daeaec4173ba40b781be | equal
+
+== 3. training runs (training_runs/<run>.json): config, accounting, dev summary, dnll
+run | config | steps_run | fact_tok | anchor_tok | train_flops | anchor_flops | wall_s | acc_dev_learned | acc_cb | em_dev_learned | dnll | ppl_deg_% | device_name | finite
+F-F1-seed101 | {"learning_rate": 1e-05, "weight_decay": 0.0} | 300 | 37780 | - | 3.900199e+14 | - | 75.89 | 0.6208 | 1.0000 | 0.0083 | 1.33567 | 280.25 | NVIDIA A100 80GB PCIe | True
+F-F2-seed101 | {"learning_rate": 1e-05, "weight_decay": 0.1} | 300 | 37780 | - | 3.900199e+14 | - | 76.19 | 0.5625 | 1.0000 | 0.0125 | 1.71853 | 457.63 | NVIDIA A100 80GB PCIe | True
+F-F3-seed101 | {"learning_rate": 3e-05, "weight_decay": 0.0} | 300 | 37780 | - | 3.900199e+14 | - | 75.06 | 0.9292 | 1.0000 | 0.4583 | 1.32006 | 274.36 | NVIDIA A100 80GB PCIe | True
+F-F4-seed101 | {"learning_rate": 3e-05, "weight_decay": 0.1} | 300 | 37780 | - | 3.900199e+14 | - | 76.27 | 0.8542 | 1.0000 | 0.3083 | 1.26318 | 253.67 | NVIDIA A100 80GB PCIe | True
+F-F5-seed101 | {"learning_rate": 0.0001, "weight_decay": 0.0} | 300 | 37780 | - | 3.900199e+14 | - | 75.25 | 0.9000 | 1.0000 | 0.5250 | 3.88915 | 4786.94 | NVIDIA A100 80GB PCIe | True
+F-F6-seed101 | {"learning_rate": 0.0001, "weight_decay": 0.1} | 300 | 37780 | - | 3.900199e+14 | - | 78.49 | 0.6292 | 1.0000 | 0.6792 | 5.55021 | 25629.11 | NVIDIA A100 80GB PCIe | True
+L-L1-seed101 | {"learning_rate": 0.0001, "rank": 8, "weight_decay": 0.0} | 300 | 37780 | - | 3.919957e+14 | - | 77.16 | 0.3667 | 1.0000 | 0.0000 | 1.58846 | 389.62 | NVIDIA A100 80GB PCIe | True
+L-L2-seed101 | {"learning_rate": 0.0001, "rank": 32, "weight_decay": 0.0} | 300 | 37780 | - | 3.979232e+14 | - | 72.41 | 0.4125 | 1.0000 | 0.0000 | 2.67704 | 1354.20 | NVIDIA A100 80GB PCIe | True
+L-L3-seed101 | {"learning_rate": 0.0003, "rank": 8, "weight_decay": 0.0} | 300 | 37780 | - | 3.919957e+14 | - | 85.87 | 0.4625 | 1.0000 | 0.0000 | 2.45315 | 1062.49 | NVIDIA A100 80GB PCIe | True
+L-L4-seed101 | {"learning_rate": 0.0003, "rank": 32, "weight_decay": 0.0} | 300 | 37780 | - | 3.979232e+14 | - | 87.05 | 0.7292 | 1.0000 | 0.1042 | 2.77005 | 1495.94 | NVIDIA A100 80GB PCIe | True
+L-L5-seed101 | {"learning_rate": 0.001, "rank": 8, "weight_decay": 0.0} | 300 | 37780 | - | 3.919957e+14 | - | 84.57 | 0.7333 | 1.0000 | 0.2917 | 2.30738 | 904.80 | NVIDIA A100 80GB PCIe | True
+L-L6-seed101 | {"learning_rate": 0.001, "rank": 32, "weight_decay": 0.0} | 300 | 37780 | - | 3.979232e+14 | - | 84.41 | 0.8750 | 1.0000 | 0.5333 | 3.54453 | 3362.36 | NVIDIA A100 80GB PCIe | True
+A-A1-seed101 | {"anchor_lambda": 0.3, "learning_rate": 3e-05, "weight_decay": 0.0} | 300 | 37780 | 153590 | 3.900199e+14 | 2.114105e+15 | 143.63 | 0.6667 | 1.0000 | 0.0000 | -0.08907 | -8.52 | NVIDIA A100 80GB PCIe | True
+A-A2-seed101 | {"anchor_lambda": 1.0, "learning_rate": 3e-05, "weight_decay": 0.0} | 300 | 37780 | 153590 | 3.900199e+14 | 2.114105e+15 | 144.11 | 0.7000 | 1.0000 | 0.0000 | -0.10387 | -9.87 | NVIDIA A100 80GB PCIe | True
+A-A3-seed101 | {"anchor_lambda": 3.0, "learning_rate": 3e-05, "weight_decay": 0.0} | 300 | 37780 | 153590 | 3.900199e+14 | 2.114105e+15 | 144.81 | 0.7083 | 1.0000 | 0.0000 | -0.08966 | -8.58 | NVIDIA A100 80GB PCIe | True
+A-A4-seed101 | {"anchor_lambda": 0.3, "learning_rate": 0.0001, "weight_decay": 0.0} | 300 | 37780 | 153590 | 3.900199e+14 | 2.114105e+15 | 143.74 | 0.7958 | 1.0000 | 0.4375 | 0.12509 | 13.32 | NVIDIA A100 80GB PCIe | True
+A-A5-seed101 | {"anchor_lambda": 1.0, "learning_rate": 0.0001, "weight_decay": 0.0} | 300 | 37780 | 153590 | 3.900199e+14 | 2.114105e+15 | 149.39 | 0.8958 | 1.0000 | 0.0375 | 0.20142 | 22.31 | NVIDIA A100 80GB PCIe | True
+A-A6-seed101 | {"anchor_lambda": 3.0, "learning_rate": 0.0001, "weight_decay": 0.0} | 300 | 37780 | 153590 | 3.900199e+14 | 2.114105e+15 | 142.39 | 0.6917 | 1.0000 | 0.0083 | 0.30221 | 35.28 | NVIDIA A100 80GB PCIe | True
+F-F3-seed202 | {"learning_rate": 3e-05, "weight_decay": 0.0} | 300 | 37780 | - | 3.900199e+14 | - | 79.81 | 0.9292 | 1.0000 | 0.5000 | 1.08939 | 197.25 | NVIDIA A100 80GB PCIe | True
+F-F3-seed303 | {"learning_rate": 3e-05, "weight_decay": 0.0} | 300 | 37780 | - | 3.900199e+14 | - | 79.92 | 0.9125 | 1.0000 | 0.7417 | 1.46587 | 333.13 | NVIDIA A100 80GB PCIe | True
+L-L6-seed202 | {"learning_rate": 0.001, "rank": 32, "weight_decay": 0.0} | 300 | 37780 | - | 3.979232e+14 | - | 86.78 | 0.9792 | 1.0000 | 0.8125 | 3.38227 | 2843.75 | NVIDIA A100 80GB PCIe | True
+L-L6-seed303 | {"learning_rate": 0.001, "rank": 32, "weight_decay": 0.0} | 300 | 37780 | - | 3.979232e+14 | - | 86.24 | 0.9625 | 1.0000 | 0.7417 | 3.95376 | 5113.11 | NVIDIA A100 80GB PCIe | True
+A-A5-seed202 | {"anchor_lambda": 1.0, "learning_rate": 0.0001, "weight_decay": 0.0} | 300 | 37780 | 153590 | 3.900199e+14 | 2.114105e+15 | 147.17 | 0.7833 | 1.0000 | 0.1375 | 0.22568 | 25.32 | NVIDIA A100 80GB PCIe | True
+A-A5-seed303 | {"anchor_lambda": 1.0, "learning_rate": 0.0001, "weight_decay": 0.0} | 300 | 37780 | 153590 | 3.900199e+14 | 2.114105e+15 | 143.53 | 0.7875 | 1.0000 | 0.1125 | 0.21353 | 23.80 | NVIDIA A100 80GB PCIe | True
+S-F3-seed101 | {"learning_rate": 3e-05, "weight_decay": 0.0} | 300 | 37780 | - | 3.900199e+14 | - | 81.40 | 0.1917 | 0.1833 | 0.0000 | 1.52157 | 357.94 | NVIDIA A100 80GB PCIe | True
+S-F3-seed202 | {"learning_rate": 3e-05, "weight_decay": 0.0} | 300 | 37780 | - | 3.900199e+14 | - | 80.33 | 0.1833 | 0.1583 | 0.0000 | 0.98188 | 166.95 | NVIDIA A100 80GB PCIe | True
+S-F3-seed303 | {"learning_rate": 3e-05, "weight_decay": 0.0} | 300 | 37780 | - | 3.900199e+14 | - | 81.48 | 0.2458 | 0.1417 | 0.0000 | 0.99084 | 169.35 | NVIDIA A100 80GB PCIe | True
+Y-F3-seed101 | {"learning_rate": 3e-05, "weight_decay": 0.0} | 300 | 45200 | - | 4.666199e+14 | - | 79.71 | 0.2542 | 0.2333 | 0.0000 | 2.14499 | 754.19 | NVIDIA A100 80GB PCIe | True
+Y-F3-seed202 | {"learning_rate": 3e-05, "weight_decay": 0.0} | 300 | 45200 | - | 4.666199e+14 | - | 76.92 | 0.2833 | 0.2917 | 0.0000 | 1.45756 | 329.55 | NVIDIA A100 80GB PCIe | True
+Y-F3-seed303 | {"learning_rate": 3e-05, "weight_decay": 0.0} | 300 | 45200 | - | 4.666199e+14 | - | 75.84 | 0.2708 | 0.2500 | 0.0000 | 1.98432 | 627.41 | NVIDIA A100 80GB PCIe | True
+totals over 30 runs: steps 9000, fact_tokens 1155660, anchor_tokens 1228720, train_flops 1.197584e+16, anchor_flops 1.691284e+16, train+anchor flops 2.888868e+16, training wall_seconds 2915.84, checkpoint save/hash/reload seconds 1419.05
+device_name values over the 30 runs: ['NVIDIA A100 80GB PCIe']
+
+== 4. GPU wall-clock and step times
+experiment_record_formal ... gpu_wall_clock_seconds 6261.268887
+experiment_record_test-evaluate ... gpu_wall_clock_seconds 7239.498383
+formal steps seconds: {"1": 3.677392560057342, "2": 70.26959762501065, "3": 45.010234176996164, "4": 915.3766661799746, "5": 2855.873852560995, "6": 2248.0512879649177, "7": 88.89454894594382, "8": 0.019681198988109827} ; sum 6227.173261
+final_work_manifest.txt gpu_clock.json segments: ['6261.268887', '978.229496'] s each; sum 7239.498383 s = 2.010972 h; open None
+ST7 bound 4 h: cumulative 2.010972 h
+step2 preflight: st11_estimate_hours 2.532226 (b17 1.962237 + checkpoint_overhead 2051.961 s / 3600), bound 3.5, within bound
+
+== 5. cost (Owner-reported: USD 6.72 actual, unit price USD 2.14 / h)
+implied rental hours = 6.72 / 2.14 = 3.1402 h
+GPU wall-clock part = 2.010972 h x 2.14 = USD 4.3035
+RUNBOOK_A100.md section 6 planning: unit price 1.8 USD/h; rental 3.6-9.0 USD; GPU part 2.2-5.6 USD
+
+== 6. peak memory (stepN_record.json step_info.peak_memory_bytes; CUDA max_memory_allocated)
+step 2: 34535789568 bytes = 32.164 GiB, seconds 70.270, started 2026-11-28T04:59:32Z
+step 3: 15391566848 bytes = 14.335 GiB, seconds 45.010, started 2026-11-28T05:00:47Z
+step 4: 34535197696 bytes = 32.163 GiB, seconds 915.377, started 2026-11-28T05:01:38Z
+step 5: 46235107328 bytes = 43.060 GiB, seconds 2855.874, started 2026-11-28T05:16:59Z
+step 6: 46236459008 bytes = 43.061 GiB, seconds 2248.051, started 2026-11-28T06:04:42Z
+step 7: 15391566848 bytes = 14.335 GiB, seconds 88.895, started 2026-11-28T06:42:16Z
+step 8: 67108864 bytes = 0.062 GiB, seconds 0.020, started 2026-11-28T06:43:51Z
+
+== 7. report-only values: Spill (comparisons.Spill-<arm>:<split>:<seed>), from step7 / TEST result
+DEV Spill-F: 101 1/40 [-0.1375, 0.1750] ; 202 1/80 [-0.0875, 0.1250] ; 303 0 [-0.1375, 0.1375] ; avg 1/80 [-0.1000, 0.1292]
+DEV Spill-L: 101 3/40 [-0.1000, 0.2500] ; 202 -1/80 [-0.2125, 0.1750] ; 303 -1/20 [-0.2000, 0.1000] ; avg 1/240 [-0.1417, 0.1500]
+DEV Spill-A: 101 1/40 [-0.1125, 0.1625] ; 202 0 [-0.1250, 0.1250] ; 303 -1/40 [-0.1625, 0.1000] ; avg 0 [-0.1125, 0.1208]
+DEV Spill-S: 101 1/80 [-0.1250, 0.1500] ; 202 1/10 [-0.0625, 0.2625] ; 303 -1/40 [-0.1750, 0.1250] ; avg 7/240 [-0.0958, 0.1583]
+DEV Spill-Y: 101 3/80 [-0.0875, 0.1625] ; 202 1/20 [-0.0875, 0.2000] ; 303 1/20 [-0.1125, 0.2125] ; avg 11/240 [-0.0792, 0.1708]
+TEST Spill-F: 101 0 [-0.1333, 0.1417] ; 202 -1/30 [-0.1583, 0.0917] ; 303 -1/30 [-0.1583, 0.0917] ; avg -1/45 [-0.1222, 0.0778]
+TEST Spill-L: 101 1/40 [-0.1500, 0.2000] ; 202 -7/120 [-0.2250, 0.1167] ; 303 -7/60 [-0.2667, 0.0333] ; avg -1/20 [-0.1861, 0.0778]
+TEST Spill-A: 101 -1/40 [-0.1583, 0.1083] ; 202 -1/40 [-0.1417, 0.1000] ; 303 -1/15 [-0.1917, 0.0500] ; avg -7/180 [-0.1528, 0.0694]
+TEST Spill-S: 101 -1/20 [-0.1833, 0.0833] ; 202 1/40 [-0.1333, 0.1833] ; 303 -3/40 [-0.2167, 0.0667] ; avg -1/30 [-0.1528, 0.0833]
+TEST Spill-Y: 101 -7/120 [-0.1833, 0.0667] ; 202 -1/120 [-0.1500, 0.1333] ; 303 1/60 [-0.1333, 0.1667] ; avg -1/60 [-0.1389, 0.1056]
+
+== 8. report-only values: EM and FPR per model
+DEV N (step3_record.json N.summary): em_dev_learned 0.0 em_dev_unread 0.0 fpr_dev 0.2
+F-F3-seed101 DEV em_learned 0.4583 em_unread 0.0000 fpr 0.2750 | TEST em_learned 0.5389 em_unread 0.0000 fpr 0.2750
+F-F3-seed202 DEV em_learned 0.5000 em_unread 0.0000 fpr 0.2000 | TEST em_learned 0.6333 em_unread 0.0000 fpr 0.2250
+F-F3-seed303 DEV em_learned 0.7417 em_unread 0.0000 fpr 0.2500 | TEST em_learned 0.7806 em_unread 0.0000 fpr 0.2500
+L-L6-seed101 DEV em_learned 0.5333 em_unread 0.0000 fpr 0.3500 | TEST em_learned 0.6278 em_unread 0.0000 fpr 0.3500
+L-L6-seed202 DEV em_learned 0.8125 em_unread 0.0000 fpr 0.2250 | TEST em_learned 0.8444 em_unread 0.0000 fpr 0.2250
+L-L6-seed303 DEV em_learned 0.7417 em_unread 0.0000 fpr 0.1500 | TEST em_learned 0.7750 em_unread 0.0000 fpr 0.1750
+A-A5-seed101 DEV em_learned 0.0375 em_unread 0.0000 fpr 0.3000 | TEST em_learned 0.1472 em_unread 0.0000 fpr 0.2750
+A-A5-seed202 DEV em_learned 0.1375 em_unread 0.0000 fpr 0.2250 | TEST em_learned 0.2472 em_unread 0.0000 fpr 0.2500
+A-A5-seed303 DEV em_learned 0.1125 em_unread 0.0000 fpr 0.2500 | TEST em_learned 0.2083 em_unread 0.0000 fpr 0.2500
+S-F3-seed101 DEV em_learned 0.0000 em_unread 0.0000 fpr 0.2250 | TEST em_learned 0.0000 em_unread 0.0000 fpr 0.2000
+S-F3-seed202 DEV em_learned 0.0000 em_unread 0.0000 fpr 0.3500 | TEST em_learned 0.0028 em_unread 0.0000 fpr 0.3000
+S-F3-seed303 DEV em_learned 0.0000 em_unread 0.0000 fpr 0.1750 | TEST em_learned 0.0000 em_unread 0.0000 fpr 0.2250
+Y-F3-seed101 DEV em_learned 0.0000 em_unread 0.0000 fpr 0.2750 | TEST em_learned 0.0028 em_unread 0.0000 fpr 0.2000
+Y-F3-seed202 DEV em_learned 0.0000 em_unread 0.0000 fpr 0.2750 | TEST em_learned 0.0000 em_unread 0.0000 fpr 0.2750
+Y-F3-seed303 DEV em_learned 0.0000 em_unread 0.0000 fpr 0.3000 | TEST em_learned 0.0000 em_unread 0.0000 fpr 0.3000
+TEST N: em_learned 0.0000 em_unread 0.0000 fpr 0.2000
+
+== 9. report-only: S on its own mapping (step7_record.json s_own_mapping)
+{"101": {"s_mapping_cb": 1.0, "s_mapping_dev_learned": 0.9375}, "202": {"s_mapping_cb": 1.0, "s_mapping_dev_learned": 0.8291666666666667}, "303": {"s_mapping_cb": 1.0, "s_mapping_dev_learned": 0.7541666666666667}}
+
+== 10. selection (step4_record.json, step5_record.json)
+F selected F3 ranking ['F3', 'F5', 'F4', 'F6', 'F1', 'F2']
+   {"acc": 0.6208333333333333, "config_id": "F1", "dnll": 1.3356701017188173, "finite": true, "learning_rate": 1e-05}
+   {"acc": 0.5625, "config_id": "F2", "dnll": 1.7185280839175097, "finite": true, "learning_rate": 1e-05}
+   {"acc": 0.9291666666666667, "config_id": "F3", "dnll": 1.320058631928183, "finite": true, "learning_rate": 3e-05}
+   {"acc": 0.8541666666666666, "config_id": "F4", "dnll": 1.2631813120756767, "finite": true, "learning_rate": 3e-05}
+   {"acc": 0.9, "config_id": "F5", "dnll": 3.889150915848989, "finite": true, "learning_rate": 0.0001}
+   {"acc": 0.6291666666666667, "config_id": "F6", "dnll": 5.550208058059066, "finite": true, "learning_rate": 0.0001}
+L selected L6 ranking ['L6', 'L5', 'L4', 'L3', 'L2', 'L1']
+   {"acc": 0.36666666666666664, "config_id": "L1", "dnll": 1.5884589522652297, "finite": true, "learning_rate": 0.0001}
+   {"acc": 0.4125, "config_id": "L2", "dnll": 2.67703846224576, "finite": true, "learning_rate": 0.0001}
+   {"acc": 0.4625, "config_id": "L3", "dnll": 2.453149753930982, "finite": true, "learning_rate": 0.0003}
+   {"acc": 0.7291666666666666, "config_id": "L4", "dnll": 2.770045866172895, "finite": true, "learning_rate": 0.0003}
+   {"acc": 0.7333333333333333, "config_id": "L5", "dnll": 2.3073763492847323, "finite": true, "learning_rate": 0.001}
+   {"acc": 0.875, "config_id": "L6", "dnll": 3.5445346907823896, "finite": true, "learning_rate": 0.001}
+A selected A5 ranking ['A5', 'A4', 'A3', 'A2', 'A6', 'A1']
+   {"acc": 0.6666666666666666, "config_id": "A1", "dnll": -0.0890651736243583, "finite": true, "learning_rate": 3e-05}
+   {"acc": 0.7, "config_id": "A2", "dnll": -0.10387333466405045, "finite": true, "learning_rate": 3e-05}
+   {"acc": 0.7083333333333334, "config_id": "A3", "dnll": -0.0896633439677445, "finite": true, "learning_rate": 3e-05}
+   {"acc": 0.7958333333333333, "config_id": "A4", "dnll": 0.125089569220308, "finite": true, "learning_rate": 0.0001}
+   {"acc": 0.8958333333333334, "config_id": "A5", "dnll": 0.2014150873746817, "finite": true, "learning_rate": 0.0001}
+   {"acc": 0.6916666666666667, "config_id": "A6", "dnll": 0.30220845830804755, "finite": true, "learning_rate": 0.0001}
+exit=0

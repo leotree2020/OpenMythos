@@ -1,0 +1,43 @@
+# Data Auditor evidence (PILOT_REPORT_ORDER item 3): files changed in the working tree during the auditor's run, without git
+# (the task forbids git operations, so 'git status --short' is replaced by a SHA-256 snapshot of every file outside .git).
+# host vm, 2026-11-28 08:19:05 UTC; stdout and stderr merged, complete, unedited
+# before snapshot taken 2026-11-28 08:10:39 UTC (before any audit file was written); start reference 2026-11-28 08:10:33 UTC
+$ find . -path ./.git -prune -o -type f -print0 | sort -z | xargs -0 sha256sum > <scratch>/repo_snapshot_after.txt
+exit=0
+$ wc -l <scratch>/repo_snapshot_before.txt <scratch>/repo_snapshot_after.txt
+7180
+7189
+$ diff <scratch>/repo_snapshot_before.txt <scratch>/repo_snapshot_after.txt
+15c15
+< c20d1b7d05168d6b03ee262704ff896d19e0c678aed31024f255b0bf12ea76a5  ./metrix/CLAUDE.md
+---
+> a10cc68aa1396732cecace45618403c235e46fdcde4a87be03646330e9e93e62  ./metrix/CLAUDE.md
+165a166,170
+> 6e83b5b57980193b2915c90c8361b8f6efa12a3e0b80309521321aaff070cf3a  ./metrix/e1-pilot/audit/pilot_final_fact_order.json
+> 8c83511bb45aaccb95f967c67681c6d59f74fcb9e59d91376c3dbdeba4901809  ./metrix/e1-pilot/audit/pilot_final_facts_order.py
+> 23c2ef71cece38b526e5450c0dc4a50f265ef8b7824e4794973f574a3a129496  ./metrix/e1-pilot/audit/pilot_final_recompute.json
+> 9f2dab5c49f83b98765c56d949d1d4254dbe90641eee527c5a7c5e10c4fda5f4  ./metrix/e1-pilot/audit/pilot_final_recompute.py
+> f1b1a6af04ff3ac127c3832218dc05f645a1e07a6a63ed6cef9b04167a8382e5  ./metrix/e1-pilot/audit/pilot_final_run_logged.sh
+565a571,573
+> 4475136934066aae040d4ec30f0ed9ecf0620ee3cd452d948d65e9ec62e2759b  ./metrix/e1-pilot/audit/stdout/pilot_final_facts_order.txt
+> 2a5717d33c93fa2fb4fbe1e4413796d263df53713062ddf6b3faa18d1a3cfdc5  ./metrix/e1-pilot/audit/stdout/pilot_final_recompute.txt
+> 9344de566249bf0ff8ace1ae94cc45d8692fa52603df6208c32499beff816c2b  ./metrix/e1-pilot/audit/stdout/pilot_final_repo_unchanged.txt
+923c931,932
+< 16c4d396d6d532a2166a553f3699b79b9fae51e9c6d9c5f606c35e30dafa7967  ./metrix/e1-pilot/reports/pilot_final/report_fragments.py
+---
+> 8813fcecc8f03e78bd1811443c2787cc0e02923569e29c84b86831b1fb5cf7a7  ./metrix/e1-pilot/reports/pilot_final/report_fragments.md
+> 6e61e4e2cd81a20d3f1ba3458b8f9693d30f4bc5544df19a652737c8f80f80b6  ./metrix/e1-pilot/reports/pilot_final/report_fragments.py
+exit=1
+$ find . -path ./.git -prune -o -type f -newer <scratch>/start_ref -print | sort
+./metrix/CLAUDE.md
+./metrix/e1-pilot/audit/pilot_final_fact_order.json
+./metrix/e1-pilot/audit/pilot_final_facts_order.py
+./metrix/e1-pilot/audit/pilot_final_recompute.json
+./metrix/e1-pilot/audit/pilot_final_recompute.py
+./metrix/e1-pilot/audit/pilot_final_run_logged.sh
+./metrix/e1-pilot/audit/stdout/pilot_final_facts_order.txt
+./metrix/e1-pilot/audit/stdout/pilot_final_recompute.txt
+./metrix/e1-pilot/audit/stdout/pilot_final_repo_unchanged.txt
+./metrix/e1-pilot/reports/pilot_final/report_fragments.md
+./metrix/e1-pilot/reports/pilot_final/report_fragments.py
+exit=0

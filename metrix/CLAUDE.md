@@ -18,7 +18,7 @@ Metrix 是独立子项目。根目录 `CLAUDE.md`(Mythos 宪章 v2.0)第 1 节�
 
 ## 2. 当前阶段
 
-- E1 Pilot,状态:PROTOCOL_FROZEN（v1.1）（出处：Review Gate 第 8 轮裁决，Owner 批准，2026-11-22 09:44 UTC；作用范围：本阶段（Owner 在第 9 轮答复，见 metrix/e1-pilot/tasks/ROUND9_TASKS.md 第二段）；原因：协议已冻结并发布 v1.1 勘误版，原状态未随冻结更新，见 metrix/e1-pilot/reports/ROUND8_REPORT.md「待 Review Gate 决定」第 9 项）
+- E1 Pilot,状态:E1-PILOT 已完成：PASS（PIPELINE_QUALIFIED），2026-11-28；结果见 reports/PILOT_FINAL_REPORT.md（出处：Review Gate 裁决，Owner 批准，2026-11-28）
 - 分支:metrix-e1-pilot-protocol-v1
 - 基线:leotree2020/OpenMythos mythos-idea-thermo-v1 @ 61d3c76705b28cc2ee334abc5bf1baaac4fc30dc
 - 模型:Qwen/Qwen3-1.7B @ 70d244cc86ccca08cf5af4e1e306ecf908b1ad5e

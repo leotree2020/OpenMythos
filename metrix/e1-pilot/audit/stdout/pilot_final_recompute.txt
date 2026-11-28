@@ -1,0 +1,804 @@
+# Data Auditor run (PILOT_REPORT_ORDER item 3, part 2: recomputation). host vm, Claude Code cloud container, CPU only (no GPU, no model, no tokenizer, no network); 2026-11-28 08:18:15 UTC; cwd /home/user/OpenMythos/metrix/e1-pilot/audit
+# wrapper: bash /home/user/OpenMythos/metrix/e1-pilot/audit/pilot_final_run_logged.sh /home/user/OpenMythos /tmp/claude-0/-home-user-OpenMythos/b1fdad2f-e658-5061-a9bf-efceb2d45d71/scratchpad /tmp/claude-0/-home-user-OpenMythos/b1fdad2f-e658-5061-a9bf-efceb2d45d71/scratchpad/venv/bin/python
+# stdout and stderr merged, complete, unedited
+$ command -v python3; python3 -I -c 'import sys, numpy; print(sys.version); print(numpy.__version__)'
+/usr/local/bin/python3
+3.13.18 (main, Oct 26 2026, 14:08:19) [Clang 23.1.3 ]
+2.5.3
+$ python3 -I -B /home/user/OpenMythos/metrix/e1-pilot/audit/pilot_final_recompute.py /home/user/OpenMythos /home/user/OpenMythos/metrix/e1-pilot/audit/pilot_final_fact_order.json /home/user/OpenMythos/metrix/e1-pilot/audit/pilot_final_recompute.json
+host vm | Linux-6.18.44-fc-v880-x86_64-with-glibc2.39 | python 3.13.18 | CPU only, no GPU, no model
+numpy 2.5.3 (secondary percentile self-check only)
+
+== A. definitions used (verbatim from the committed record / protocol)
+  protocol 0: **种子**:`DATA_SEED = 20261110`,`CANDIDATE_SEED = 20261111`,`TRAIN_SEEDS = [101, 202, 303]`,`BOOTSTRAP_SEED = 20261112`。所有随机数都来自
+  protocol 0: `random.Random(int.from_bytes(sha256(f"{SEED}:{purpose}".encode("utf-8")).digest()[:8], "big"))`,`purpose` 在各处写明。结果不好不得换种子。
+  protocol 6: - **Bootstrap 单位是 fact_id,不是问句。** 同一 fact 的多个问句高度相关,把问句当作独立观测会虚增样本量、使 CI 过窄(伪重复);因此先按第 5 节聚合成 Score(f),再对 fact 重抽样。
+  protocol 6: - 配对:比较 X 与 Y 时,`d_f = Score_X(f) − Score_Y(f)`,两个 arm 使用同一批重抽到的 fact_id。
+  protocol 6: - 次数 **10,000**;在 natural、random 两个 stratum 内分别有放回重抽(保持各自的 fact 数),合并后取 `Δ* = mean(d_f)`;95% CI = 第 2.5 与第 97.5 百分位。随机数:`rng_rule(BOOTSTRAP_SEED, "<比较>:<split>:<seed 或 avg>")`。
+  protocol 6: - **比较项**:Δ(F−N)、Δ(L−F)、Δ(A−F),在 learned fact 上;另报 Δ(S−N)、Δ(Y−N) 与各 arm 的 Spill。
+  protocol 6: - **报告**:每个训练种子单独报告;再报告 seed-average(先对每条 fact 把 3 个种子的 Score 取平均,再 bootstrap)。
+  protocol 6: - 3 个种子只作为方向一致性的证据,不作强推断。
+  protocol 6: - CI 是主要的不确定性描述;不报告 p 值作为判据。
+  protocol 6: - 精度说明:120 条 fact 时,正确率在 0.5 附近的标准误不超过 0.046。
+  B10 [ACCEPTED（Review Gate 2026-11-24）] (protocol 6): One generator r = rng_rule(BOOTSTRAP_SEED, purpose) per comparison; for each of the 10,000 replicates, for each stratum in the order natural, random: r.choices(d_stratum, k=len(d_stratum)) with the facts of the stratum in facts.jsonl order; Delta* = mean of the 120 drawn values.
+  B11 [ACCEPTED（Review Gate 2026-11-24）] (protocol 6): Percentile = linear interpolation between order statistics at position (B - 1) * p / 100 of the sorted replicates (numpy's default 'linear' method).
+  B12 [ACCEPTED（Review Gate 2026-11-24）] (protocol 6): Purpose '<比较>:<split>:<seed 或 avg>' is written '<X>-<Y>:<split>:<seed>' with ASCII '-', split 'DEV' or 'TEST', seed the integer or 'avg' (e.g. 'F-N:DEV:101', 'F-N:DEV:avg'); the Spill of an arm, compared with N on the unread facts, is written 'Spill-<arm>:<split>:<seed>'.
+  B13 [ACCEPTED（Review Gate 2026-11-24）] (protocol 8 (G0.10)): sigma_d = sample standard deviation (ddof 1) of the 120 seed-average d_f; its bootstrap 2.5 / 97.5 percentiles from the stratified resampling of B10 with purpose 'sigma:<X>-<Y>:DEV:avg'; n = ceil(((1.96 + 0.84) * sigma / delta)^2); planning n = the largest n over the three sigma values, the three deltas and both comparisons; the CI half-width check resamples n facts (stratified, n/2 per stratum rounded up) with purpose 'halfwidth:<X>-<Y>:DEV:avg:<n>' and reports the half-width of the 95% CI of the mean (report only; skipped and noted when n = 0, i.e. sigma_d = 0). G0.10 holds iff sigma_d, both percentiles and every n are finite.
+  B22 [ACCEPTED（Review Gate 2026-11-24）] (protocol 8 (G0.3, T3)): '每个 stratum ∈ [0.10, 0.40]' is read as Acc(N, DEV-QA, learned) of each stratum (the clause follows the learned accuracy); the unread accuracy is checked overall only.
+  B24 [ACCEPTED（Review Gate 2026-11-24）] (protocol 8 (T1-T3), 9): Final status: PASS iff Gate 0 is PASS and T1-T3 hold; otherwise PIPELINE_NOT_QUALIFIED with reasons T1 -> OPTIMIZATION_OR_CAPACITY_UNRESOLVED (section 9 names T1's accuracy; the CI part is given the same reason), T2 -> IMPLEMENTATION_FAIL (the G0.6 / G0.7 numbers), T3 -> null with the recalibration note (as G0.3). T3's 'G0.3 的同样范围' is read as all four G0.3 ranges, Acc_CB(N) included (a TRAIN closed-book value that does not depend on TEST). TEST comparisons use the purpose split 'TEST'.
+  DATA_MANIFEST seeds: BOOTSTRAP_SEED 20261112 TRAIN_SEEDS [101, 202, 303] rng_rule random.Random(int.from_bytes(sha256(f'{SEED}:{purpose}'.encode('utf-8')).digest()[:8], 'big'))
+  constants used here: BOOTSTRAP_SEED 20261112, TRAIN_SEEDS [101, 202, 303], replicates 10000 | == manifest True
+  consistency criterion: float |recorded - mine| <= 1e-12 (exact difference from the recorded float); point_exact exact Fraction equality; int / str / bool / dict exact equality
+
+== B. fact order (B10: facts of a stratum in facts.jsonl order)
+  source: /home/user/OpenMythos/metrix/e1-pilot/audit/pilot_final_fact_order.json, written by metrix/e1-pilot/audit/pilot_final_facts_order.py (full stdout: metrix/e1-pilot/audit/stdout/pilot_final_facts_order.txt)
+  how confirmed: the 160 facts were regenerated on CPU from protocol 2.2; the canonical hash of the list is 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97 (frozen value matched: True); the facts.jsonl bytes rebuilt from it by the protocol 0 JSONL rule hash to e05561ac2d49dcc3c8f59743c5df64151983a540a32ae135fd1b10f5e0fdc828 = results/step1_record.json environment.data_hashes['facts.jsonl'].byte_sha256 e05561ac2d49dcc3c8f59743c5df64151983a540a32ae135fd1b10f5e0fdc828 (match: True); a byte-identical file has the same line order.
+  re-checked here: step1 byte_sha256 e05561ac2d49dcc3c8f59743c5df64151983a540a32ae135fd1b10f5e0fdc828 == order file value: True; order == protocol 2.2 generation-order rule: True; 160 distinct ids: True
+  learned / unread and natural / random from the regenerated facts' fields; agree with the SPLIT_MANIFEST fact_id pattern (E1P-<L|U>-<relation>-<nat|rnd>-NN): True
+  learned natural 60 (first E1P-L-capital-nat-01, last E1P-L-river-nat-15) | learned random 60 (first E1P-L-capital-rnd-01, last E1P-L-river-rnd-15) | unread 40
+
+== C. inputs (per-fact scores)
+  results/selection_freeze_record.json selected: {'A': 'A5', 'F': 'F3', 'L': 'L6'} (S and Y use F's configuration, protocol 4)
+  N   DEV : results/step3_record.json N/summary/scores_dev (160) and scores_cb (120)
+  F-F3-seed101   DEV : results/training_runs/F-F3-seed101.json dev/scores_dev (160), dev/scores_cb (120) | run/arm/seed/config_id/steps/finite as expected: True
+  F-F3-seed202   DEV : results/training_runs/F-F3-seed202.json dev/scores_dev (160), dev/scores_cb (120) | run/arm/seed/config_id/steps/finite as expected: True
+  F-F3-seed303   DEV : results/training_runs/F-F3-seed303.json dev/scores_dev (160), dev/scores_cb (120) | run/arm/seed/config_id/steps/finite as expected: True
+  L-L6-seed101   DEV : results/training_runs/L-L6-seed101.json dev/scores_dev (160), dev/scores_cb (120) | run/arm/seed/config_id/steps/finite as expected: True
+  L-L6-seed202   DEV : results/training_runs/L-L6-seed202.json dev/scores_dev (160), dev/scores_cb (120) | run/arm/seed/config_id/steps/finite as expected: True
+  L-L6-seed303   DEV : results/training_runs/L-L6-seed303.json dev/scores_dev (160), dev/scores_cb (120) | run/arm/seed/config_id/steps/finite as expected: True
+  A-A5-seed101   DEV : results/training_runs/A-A5-seed101.json dev/scores_dev (160), dev/scores_cb (120) | run/arm/seed/config_id/steps/finite as expected: True
+  A-A5-seed202   DEV : results/training_runs/A-A5-seed202.json dev/scores_dev (160), dev/scores_cb (120) | run/arm/seed/config_id/steps/finite as expected: True
+  A-A5-seed303   DEV : results/training_runs/A-A5-seed303.json dev/scores_dev (160), dev/scores_cb (120) | run/arm/seed/config_id/steps/finite as expected: True
+  S-F3-seed101   DEV : results/training_runs/S-F3-seed101.json dev/scores_dev (160), dev/scores_cb (120) | run/arm/seed/config_id/steps/finite/config == F config as expected: True
+  S-F3-seed202   DEV : results/training_runs/S-F3-seed202.json dev/scores_dev (160), dev/scores_cb (120) | run/arm/seed/config_id/steps/finite/config == F config as expected: True
+  S-F3-seed303   DEV : results/training_runs/S-F3-seed303.json dev/scores_dev (160), dev/scores_cb (120) | run/arm/seed/config_id/steps/finite/config == F config as expected: True
+  Y-F3-seed101   DEV : results/training_runs/Y-F3-seed101.json dev/scores_dev (160), dev/scores_cb (120) | run/arm/seed/config_id/steps/finite/config == F config as expected: True
+  Y-F3-seed202   DEV : results/training_runs/Y-F3-seed202.json dev/scores_dev (160), dev/scores_cb (120) | run/arm/seed/config_id/steps/finite/config == F config as expected: True
+  Y-F3-seed303   DEV : results/training_runs/Y-F3-seed303.json dev/scores_dev (160), dev/scores_cb (120) | run/arm/seed/config_id/steps/finite/config == F config as expected: True
+  TEST: results/test_evaluation_result.json summaries/<model>/scores_test (160 each) and scores_cb (120 each) for 16 models: ['A-A5-seed101', 'A-A5-seed202', 'A-A5-seed303', 'F-F3-seed101', 'F-F3-seed202', 'F-F3-seed303', 'L-L6-seed101', 'L-L6-seed202', 'L-L6-seed303', 'N', 'S-F3-seed101', 'S-F3-seed202', 'S-F3-seed303', 'Y-F3-seed101', 'Y-F3-seed202', 'Y-F3-seed303']
+  models in TEST summaries not used: []
+  all DEV Scores are k/2, all TEST Scores k/3, all CB values 0/1 (checked exactly when converting): True
+  inputs consistent: True
+  info: models whose TEST-session scores_cb differ from their DEV scores_cb: 0 of 16
+
+== D. DEV (Gate 0) - recomputation and comparison with results/step7_record.json
+ -- comparisons (Delta(F-N), Delta(S-N), Delta(Y-N), Delta(L-F), Delta(A-F); each seed and seed-average)
+  [OK      ] results/step7_record.json :: comparisons/F-N:101/point | recorded 0.6333333333333333 | mine 0.6333333333333333 (=19/30) | diff 0.000e+00 (exact-value diff 3.0e-17)
+  [OK      ] results/step7_record.json :: comparisons/F-N:101/point_exact | recorded "19/30" | mine 0.6333333333333333 (=19/30) | diff 0.000e+00
+  [OK      ] results/step7_record.json :: comparisons/F-N:101/ci_low | recorded 0.55 | mine 0.55 (=11/20) | diff 0.000e+00 (exact-value diff 4.4e-17)
+  [OK      ] results/step7_record.json :: comparisons/F-N:101/ci_high | recorded 0.7166666666666667 | mine 0.7166666666666667 (=43/60) | diff 0.000e+00 (exact-value diff 7.4e-18)
+  [OK      ] results/step7_record.json :: comparisons/F-N:101/purpose | recorded "F-N:DEV:101" | mine "F-N:DEV:101"
+  [OK      ] results/step7_record.json :: comparisons/F-N:101/n_facts | recorded 120 | mine 120
+  [OK      ] results/step7_record.json :: comparisons/F-N:101/n_per_stratum | recorded {"natural": 60, "random": 60} | mine {"natural": 60, "random": 60}
+  [OK      ] results/step7_record.json :: comparisons/F-N:101/replicates | recorded 10000 | mine 10000
+  [OK      ] results/step7_record.json :: comparisons/F-N:202/point | recorded 0.6333333333333333 | mine 0.6333333333333333 (=19/30) | diff 0.000e+00 (exact-value diff 3.0e-17)
+  [OK      ] results/step7_record.json :: comparisons/F-N:202/point_exact | recorded "19/30" | mine 0.6333333333333333 (=19/30) | diff 0.000e+00
+  [OK      ] results/step7_record.json :: comparisons/F-N:202/ci_low | recorded 0.55 | mine 0.55 (=11/20) | diff 0.000e+00 (exact-value diff 4.4e-17)
+  [OK      ] results/step7_record.json :: comparisons/F-N:202/ci_high | recorded 0.7125 | mine 0.7125 (=57/80) | diff 0.000e+00 (exact-value diff 2.2e-17)
+  [OK      ] results/step7_record.json :: comparisons/F-N:202/purpose | recorded "F-N:DEV:202" | mine "F-N:DEV:202"
+  [OK      ] results/step7_record.json :: comparisons/F-N:202/n_facts | recorded 120 | mine 120
+  [OK      ] results/step7_record.json :: comparisons/F-N:202/n_per_stratum | recorded {"natural": 60, "random": 60} | mine {"natural": 60, "random": 60}
+  [OK      ] results/step7_record.json :: comparisons/F-N:202/replicates | recorded 10000 | mine 10000
+  [OK      ] results/step7_record.json :: comparisons/F-N:303/point | recorded 0.6166666666666667 | mine 0.6166666666666667 (=37/60) | diff 0.000e+00 (exact-value diff 3.0e-17)
+  [OK      ] results/step7_record.json :: comparisons/F-N:303/point_exact | recorded "37/60" | mine 0.6166666666666667 (=37/60) | diff 0.000e+00
+  [OK      ] results/step7_record.json :: comparisons/F-N:303/ci_low | recorded 0.5332291666666666 | mine 0.5332291666666666 (=5119/9600) | diff 0.000e+00 (exact-value diff 2.4e-17)
+  [OK      ] results/step7_record.json :: comparisons/F-N:303/ci_high | recorded 0.6958333333333333 | mine 0.6958333333333333 (=167/240) | diff 0.000e+00 (exact-value diff 3.0e-17)
+  [OK      ] results/step7_record.json :: comparisons/F-N:303/purpose | recorded "F-N:DEV:303" | mine "F-N:DEV:303"
+  [OK      ] results/step7_record.json :: comparisons/F-N:303/n_facts | recorded 120 | mine 120
+  [OK      ] results/step7_record.json :: comparisons/F-N:303/n_per_stratum | recorded {"natural": 60, "random": 60} | mine {"natural": 60, "random": 60}
+  [OK      ] results/step7_record.json :: comparisons/F-N:303/replicates | recorded 10000 | mine 10000
+  [OK      ] results/step7_record.json :: comparisons/F-N:avg/point | recorded 0.6277777777777778 | mine 0.6277777777777778 (=113/180) | diff 0.000e+00 (exact-value diff 9.9e-18)
+  [OK      ] results/step7_record.json :: comparisons/F-N:avg/point_exact | recorded "113/180" | mine 0.6277777777777778 (=113/180) | diff 0.000e+00
+  [OK      ] results/step7_record.json :: comparisons/F-N:avg/ci_low | recorded 0.548611111111111 | mine 0.5486111111111112 (=79/144) | diff 1.110e-16 (exact-value diff 6.2e-17)
+  [OK      ] results/step7_record.json :: comparisons/F-N:avg/ci_high | recorded 0.7069444444444444 | mine 0.7069444444444445 (=509/720) | diff 1.110e-16 (exact-value diff 6.9e-17)
+  [OK      ] results/step7_record.json :: comparisons/F-N:avg/purpose | recorded "F-N:DEV:avg" | mine "F-N:DEV:avg"
+  [OK      ] results/step7_record.json :: comparisons/F-N:avg/n_facts | recorded 120 | mine 120
+  [OK      ] results/step7_record.json :: comparisons/F-N:avg/n_per_stratum | recorded {"natural": 60, "random": 60} | mine {"natural": 60, "random": 60}
+  [OK      ] results/step7_record.json :: comparisons/F-N:avg/replicates | recorded 10000 | mine 10000
+  [OK      ] results/step7_record.json :: comparisons/S-N:101/point | recorded -0.10416666666666667 | mine -0.10416666666666667 (=-5/48) | diff 0.000e+00 (exact-value diff 4.6e-18)
+  [OK      ] results/step7_record.json :: comparisons/S-N:101/point_exact | recorded "-5/48" | mine -0.10416666666666667 (=-5/48) | diff 0.000e+00
+  [OK      ] results/step7_record.json :: comparisons/S-N:101/ci_low | recorded -0.20833333333333334 | mine -0.20833333333333334 (=-5/24) | diff 0.000e+00 (exact-value diff 9.3e-18)
+  [OK      ] results/step7_record.json :: comparisons/S-N:101/ci_high | recorded 0.0 | mine 0.0 (=0) | diff 0.000e+00 (exact-value diff 0.0e+00)
+  [OK      ] results/step7_record.json :: comparisons/S-N:101/purpose | recorded "S-N:DEV:101" | mine "S-N:DEV:101"
+  [OK      ] results/step7_record.json :: comparisons/S-N:101/n_facts | recorded 120 | mine 120
+  [OK      ] results/step7_record.json :: comparisons/S-N:101/n_per_stratum | recorded {"natural": 60, "random": 60} | mine {"natural": 60, "random": 60}
+  [OK      ] results/step7_record.json :: comparisons/S-N:101/replicates | recorded 10000 | mine 10000
+  [OK      ] results/step7_record.json :: comparisons/S-N:202/point | recorded -0.1125 | mine -0.1125 (=-9/80) | diff 0.000e+00 (exact-value diff 2.8e-18)
+  [OK      ] results/step7_record.json :: comparisons/S-N:202/point_exact | recorded "-9/80" | mine -0.1125 (=-9/80) | diff 0.000e+00
+  [OK      ] results/step7_record.json :: comparisons/S-N:202/ci_low | recorded -0.2 | mine -0.2 (=-1/5) | diff 0.000e+00 (exact-value diff 1.1e-17)
+  [OK      ] results/step7_record.json :: comparisons/S-N:202/ci_high | recorded -0.020833333333333332 | mine -0.020833333333333332 (=-1/48) | diff 0.000e+00 (exact-value diff 1.2e-18)
+  [OK      ] results/step7_record.json :: comparisons/S-N:202/purpose | recorded "S-N:DEV:202" | mine "S-N:DEV:202"
+  [OK      ] results/step7_record.json :: comparisons/S-N:202/n_facts | recorded 120 | mine 120
+  [OK      ] results/step7_record.json :: comparisons/S-N:202/n_per_stratum | recorded {"natural": 60, "random": 60} | mine {"natural": 60, "random": 60}
+  [OK      ] results/step7_record.json :: comparisons/S-N:202/replicates | recorded 10000 | mine 10000
+  [OK      ] results/step7_record.json :: comparisons/S-N:303/point | recorded -0.05 | mine -0.05 (=-1/20) | diff 0.000e+00 (exact-value diff 2.8e-18)
+  [OK      ] results/step7_record.json :: comparisons/S-N:303/point_exact | recorded "-1/20" | mine -0.05 (=-1/20) | diff 0.000e+00
+  [OK      ] results/step7_record.json :: comparisons/S-N:303/ci_low | recorded -0.15 | mine -0.15 (=-3/20) | diff 0.000e+00 (exact-value diff 5.6e-18)
+  [OK      ] results/step7_record.json :: comparisons/S-N:303/ci_high | recorded 0.05 | mine 0.05 (=1/20) | diff 0.000e+00 (exact-value diff 2.8e-18)
+  [OK      ] results/step7_record.json :: comparisons/S-N:303/purpose | recorded "S-N:DEV:303" | mine "S-N:DEV:303"
+  [OK      ] results/step7_record.json :: comparisons/S-N:303/n_facts | recorded 120 | mine 120
+  [OK      ] results/step7_record.json :: comparisons/S-N:303/n_per_stratum | recorded {"natural": 60, "random": 60} | mine {"natural": 60, "random": 60}
+  [OK      ] results/step7_record.json :: comparisons/S-N:303/replicates | recorded 10000 | mine 10000
+  [OK      ] results/step7_record.json :: comparisons/S-N:avg/point | recorded -0.08888888888888889 | mine -0.08888888888888889 (=-4/45) | diff 0.000e+00 (exact-value diff 3.4e-18)
+  [OK      ] results/step7_record.json :: comparisons/S-N:avg/point_exact | recorded "-4/45" | mine -0.08888888888888889 (=-4/45) | diff 0.000e+00
+  [OK      ] results/step7_record.json :: comparisons/S-N:avg/ci_low | recorded -0.17222222222222222 | mine -0.17222222222222222 (=-31/180) | diff 0.000e+00 (exact-value diff 1.2e-18)
+  [OK      ] results/step7_record.json :: comparisons/S-N:avg/ci_high | recorded -0.005555555555555559 | mine -0.005555555555555556 (=-1/180) | diff 3.469e-18 (exact-value diff 3.7e-18)
+  [OK      ] results/step7_record.json :: comparisons/S-N:avg/purpose | recorded "S-N:DEV:avg" | mine "S-N:DEV:avg"
+  [OK      ] results/step7_record.json :: comparisons/S-N:avg/n_facts | recorded 120 | mine 120
+  [OK      ] results/step7_record.json :: comparisons/S-N:avg/n_per_stratum | recorded {"natural": 60, "random": 60} | mine {"natural": 60, "random": 60}
+  [OK      ] results/step7_record.json :: comparisons/S-N:avg/replicates | recorded 10000 | mine 10000
+  [OK      ] results/step7_record.json :: comparisons/Y-N:101/point | recorded -0.041666666666666664 | mine -0.041666666666666664 (=-1/24) | diff 0.000e+00 (exact-value diff 2.3e-18)
+  [OK      ] results/step7_record.json :: comparisons/Y-N:101/point_exact | recorded "-1/24" | mine -0.041666666666666664 (=-1/24) | diff 0.000e+00
+  [OK      ] results/step7_record.json :: comparisons/Y-N:101/ci_low | recorded -0.14166666666666666 | mine -0.14166666666666666 (=-17/120) | diff 0.000e+00 (exact-value diff 3.7e-18)
+  [OK      ] results/step7_record.json :: comparisons/Y-N:101/ci_high | recorded 0.058333333333333334 | mine 0.058333333333333334 (=7/120) | diff 0.000e+00 (exact-value diff 9.3e-19)
+  [OK      ] results/step7_record.json :: comparisons/Y-N:101/purpose | recorded "Y-N:DEV:101" | mine "Y-N:DEV:101"
+  [OK      ] results/step7_record.json :: comparisons/Y-N:101/n_facts | recorded 120 | mine 120
+  [OK      ] results/step7_record.json :: comparisons/Y-N:101/n_per_stratum | recorded {"natural": 60, "random": 60} | mine {"natural": 60, "random": 60}
+  [OK      ] results/step7_record.json :: comparisons/Y-N:101/replicates | recorded 10000 | mine 10000
+  [OK      ] results/step7_record.json :: comparisons/Y-N:202/point | recorded -0.0125 | mine -0.0125 (=-1/80) | diff 0.000e+00 (exact-value diff 6.9e-19)
+  [OK      ] results/step7_record.json :: comparisons/Y-N:202/point_exact | recorded "-1/80" | mine -0.0125 (=-1/80) | diff 0.000e+00
+  [OK      ] results/step7_record.json :: comparisons/Y-N:202/ci_low | recorded -0.10416666666666667 | mine -0.10416666666666667 (=-5/48) | diff 0.000e+00 (exact-value diff 4.6e-18)
+  [OK      ] results/step7_record.json :: comparisons/Y-N:202/ci_high | recorded 0.08333333333333333 | mine 0.08333333333333333 (=1/12) | diff 0.000e+00 (exact-value diff 4.6e-18)
+  [OK      ] results/step7_record.json :: comparisons/Y-N:202/purpose | recorded "Y-N:DEV:202" | mine "Y-N:DEV:202"
+  [OK      ] results/step7_record.json :: comparisons/Y-N:202/n_facts | recorded 120 | mine 120
+  [OK      ] results/step7_record.json :: comparisons/Y-N:202/n_per_stratum | recorded {"natural": 60, "random": 60} | mine {"natural": 60, "random": 60}
+  [OK      ] results/step7_record.json :: comparisons/Y-N:202/replicates | recorded 10000 | mine 10000
+  [OK      ] results/step7_record.json :: comparisons/Y-N:303/point | recorded -0.025 | mine -0.025 (=-1/40) | diff 0.000e+00 (exact-value diff 1.4e-18)
+  [OK      ] results/step7_record.json :: comparisons/Y-N:303/point_exact | recorded "-1/40" | mine -0.025 (=-1/40) | diff 0.000e+00
+  [OK      ] results/step7_record.json :: comparisons/Y-N:303/ci_low | recorded -0.11666666666666667 | mine -0.11666666666666667 (=-7/60) | diff 0.000e+00 (exact-value diff 1.9e-18)
+  [OK      ] results/step7_record.json :: comparisons/Y-N:303/ci_high | recorded 0.07083333333333333 | mine 0.07083333333333333 (=17/240) | diff 0.000e+00 (exact-value diff 1.9e-18)
+  [OK      ] results/step7_record.json :: comparisons/Y-N:303/purpose | recorded "Y-N:DEV:303" | mine "Y-N:DEV:303"
+  [OK      ] results/step7_record.json :: comparisons/Y-N:303/n_facts | recorded 120 | mine 120
+  [OK      ] results/step7_record.json :: comparisons/Y-N:303/n_per_stratum | recorded {"natural": 60, "random": 60} | mine {"natural": 60, "random": 60}
+  [OK      ] results/step7_record.json :: comparisons/Y-N:303/replicates | recorded 10000 | mine 10000
+  [OK      ] results/step7_record.json :: comparisons/Y-N:avg/point | recorded -0.02638888888888889 | mine -0.02638888888888889 (=-19/720) | diff 0.000e+00 (exact-value diff 7.7e-20)
+  [OK      ] results/step7_record.json :: comparisons/Y-N:avg/point_exact | recorded "-19/720" | mine -0.02638888888888889 (=-19/720) | diff 0.000e+00
+  [OK      ] results/step7_record.json :: comparisons/Y-N:avg/ci_low | recorded -0.11527777777777778 | mine -0.11527777777777778 (=-83/720) | diff 0.000e+00 (exact-value diff 6.8e-18)
+  [OK      ] results/step7_record.json :: comparisons/Y-N:avg/ci_high | recorded 0.0625 | mine 0.0625 (=1/16) | diff 0.000e+00 (exact-value diff 0.0e+00)
+  [OK      ] results/step7_record.json :: comparisons/Y-N:avg/purpose | recorded "Y-N:DEV:avg" | mine "Y-N:DEV:avg"
+  [OK      ] results/step7_record.json :: comparisons/Y-N:avg/n_facts | recorded 120 | mine 120
+  [OK      ] results/step7_record.json :: comparisons/Y-N:avg/n_per_stratum | recorded {"natural": 60, "random": 60} | mine {"natural": 60, "random": 60}
+  [OK      ] results/step7_record.json :: comparisons/Y-N:avg/replicates | recorded 10000 | mine 10000
+  [OK      ] results/step7_record.json :: comparisons/L-F:101/point | recorded -0.05416666666666667 | mine -0.05416666666666667 (=-13/240) | diff 0.000e+00 (exact-value diff 1.9e-18)
+  [OK      ] results/step7_record.json :: comparisons/L-F:101/point_exact | recorded "-13/240" | mine -0.05416666666666667 (=-13/240) | diff 0.000e+00
+  [OK      ] results/step7_record.json :: comparisons/L-F:101/ci_low | recorded -0.11666666666666667 | mine -0.11666666666666667 (=-7/60) | diff 0.000e+00 (exact-value diff 1.9e-18)
+  [OK      ] results/step7_record.json :: comparisons/L-F:101/ci_high | recorded 0.004166666666666667 | mine 0.004166666666666667 (=1/240) | diff 0.000e+00 (exact-value diff 5.8e-20)
+  [OK      ] results/step7_record.json :: comparisons/L-F:101/purpose | recorded "L-F:DEV:101" | mine "L-F:DEV:101"
+  [OK      ] results/step7_record.json :: comparisons/L-F:101/n_facts | recorded 120 | mine 120
+  [OK      ] results/step7_record.json :: comparisons/L-F:101/n_per_stratum | recorded {"natural": 60, "random": 60} | mine {"natural": 60, "random": 60}
+  [OK      ] results/step7_record.json :: comparisons/L-F:101/replicates | recorded 10000 | mine 10000
+  [OK      ] results/step7_record.json :: comparisons/L-F:202/point | recorded 0.05 | mine 0.05 (=1/20) | diff 0.000e+00 (exact-value diff 2.8e-18)
+  [OK      ] results/step7_record.json :: comparisons/L-F:202/point_exact | recorded "1/20" | mine 0.05 (=1/20) | diff 0.000e+00
+  [OK      ] results/step7_record.json :: comparisons/L-F:202/ci_low | recorded 0.0125 | mine 0.0125 (=1/80) | diff 0.000e+00 (exact-value diff 6.9e-19)
+  [OK      ] results/step7_record.json :: comparisons/L-F:202/ci_high | recorded 0.09166666666666666 | mine 0.09166666666666666 (=11/120) | diff 0.000e+00 (exact-value diff 6.5e-18)
+  [OK      ] results/step7_record.json :: comparisons/L-F:202/purpose | recorded "L-F:DEV:202" | mine "L-F:DEV:202"
+  [OK      ] results/step7_record.json :: comparisons/L-F:202/n_facts | recorded 120 | mine 120
+  [OK      ] results/step7_record.json :: comparisons/L-F:202/n_per_stratum | recorded {"natural": 60, "random": 60} | mine {"natural": 60, "random": 60}
+  [OK      ] results/step7_record.json :: comparisons/L-F:202/replicates | recorded 10000 | mine 10000
+  [OK      ] results/step7_record.json :: comparisons/L-F:303/point | recorded 0.05 | mine 0.05 (=1/20) | diff 0.000e+00 (exact-value diff 2.8e-18)
+  [OK      ] results/step7_record.json :: comparisons/L-F:303/point_exact | recorded "1/20" | mine 0.05 (=1/20) | diff 0.000e+00
+  [OK      ] results/step7_record.json :: comparisons/L-F:303/ci_low | recorded 0.0 | mine 0.0 (=0) | diff 0.000e+00 (exact-value diff 0.0e+00)
+  [OK      ] results/step7_record.json :: comparisons/L-F:303/ci_high | recorded 0.10416666666666667 | mine 0.10416666666666667 (=5/48) | diff 0.000e+00 (exact-value diff 4.6e-18)
+  [OK      ] results/step7_record.json :: comparisons/L-F:303/purpose | recorded "L-F:DEV:303" | mine "L-F:DEV:303"
+  [OK      ] results/step7_record.json :: comparisons/L-F:303/n_facts | recorded 120 | mine 120
+  [OK      ] results/step7_record.json :: comparisons/L-F:303/n_per_stratum | recorded {"natural": 60, "random": 60} | mine {"natural": 60, "random": 60}
+  [OK      ] results/step7_record.json :: comparisons/L-F:303/replicates | recorded 10000 | mine 10000
+  [OK      ] results/step7_record.json :: comparisons/L-F:avg/point | recorded 0.015277777777777777 | mine 0.015277777777777777 (=11/720) | diff 0.000e+00 (exact-value diff 5.0e-19)
+  [OK      ] results/step7_record.json :: comparisons/L-F:avg/point_exact | recorded "11/720" | mine 0.015277777777777777 (=11/720) | diff 0.000e+00
+  [OK      ] results/step7_record.json :: comparisons/L-F:avg/ci_low | recorded -0.016666666666666666 | mine -0.016666666666666666 (=-1/60) | diff 0.000e+00 (exact-value diff 2.3e-19)
+  [OK      ] results/step7_record.json :: comparisons/L-F:avg/ci_high | recorded 0.047222222222222214 | mine 0.04722222222222222 (=17/360) | diff 6.939e-18 (exact-value diff 8.2e-18)
+  [OK      ] results/step7_record.json :: comparisons/L-F:avg/purpose | recorded "L-F:DEV:avg" | mine "L-F:DEV:avg"
+  [OK      ] results/step7_record.json :: comparisons/L-F:avg/n_facts | recorded 120 | mine 120
+  [OK      ] results/step7_record.json :: comparisons/L-F:avg/n_per_stratum | recorded {"natural": 60, "random": 60} | mine {"natural": 60, "random": 60}
+  [OK      ] results/step7_record.json :: comparisons/L-F:avg/replicates | recorded 10000 | mine 10000
+  [OK      ] results/step7_record.json :: comparisons/A-F:101/point | recorded -0.03333333333333333 | mine -0.03333333333333333 (=-1/30) | diff 0.000e+00 (exact-value diff 4.6e-19)
+  [OK      ] results/step7_record.json :: comparisons/A-F:101/point_exact | recorded "-1/30" | mine -0.03333333333333333 (=-1/30) | diff 0.000e+00
+  [OK      ] results/step7_record.json :: comparisons/A-F:101/ci_low | recorded -0.0875 | mine -0.0875 (=-7/80) | diff 0.000e+00 (exact-value diff 5.6e-18)
+  [OK      ] results/step7_record.json :: comparisons/A-F:101/ci_high | recorded 0.016666666666666666 | mine 0.016666666666666666 (=1/60) | diff 0.000e+00 (exact-value diff 2.3e-19)
+  [OK      ] results/step7_record.json :: comparisons/A-F:101/purpose | recorded "A-F:DEV:101" | mine "A-F:DEV:101"
+  [OK      ] results/step7_record.json :: comparisons/A-F:101/n_facts | recorded 120 | mine 120
+  [OK      ] results/step7_record.json :: comparisons/A-F:101/n_per_stratum | recorded {"natural": 60, "random": 60} | mine {"natural": 60, "random": 60}
+  [OK      ] results/step7_record.json :: comparisons/A-F:101/replicates | recorded 10000 | mine 10000
+  [OK      ] results/step7_record.json :: comparisons/A-F:202/point | recorded -0.14583333333333334 | mine -0.14583333333333334 (=-7/48) | diff 0.000e+00 (exact-value diff 9.3e-18)
+  [OK      ] results/step7_record.json :: comparisons/A-F:202/point_exact | recorded "-7/48" | mine -0.14583333333333334 (=-7/48) | diff 0.000e+00
+  [OK      ] results/step7_record.json :: comparisons/A-F:202/ci_low | recorded -0.20833333333333334 | mine -0.20833333333333334 (=-5/24) | diff 0.000e+00 (exact-value diff 9.3e-18)
+  [OK      ] results/step7_record.json :: comparisons/A-F:202/ci_high | recorded -0.0875 | mine -0.0875 (=-7/80) | diff 0.000e+00 (exact-value diff 5.6e-18)
+  [OK      ] results/step7_record.json :: comparisons/A-F:202/purpose | recorded "A-F:DEV:202" | mine "A-F:DEV:202"
+  [OK      ] results/step7_record.json :: comparisons/A-F:202/n_facts | recorded 120 | mine 120
+  [OK      ] results/step7_record.json :: comparisons/A-F:202/n_per_stratum | recorded {"natural": 60, "random": 60} | mine {"natural": 60, "random": 60}
+  [OK      ] results/step7_record.json :: comparisons/A-F:202/replicates | recorded 10000 | mine 10000
+  [OK      ] results/step7_record.json :: comparisons/A-F:303/point | recorded -0.125 | mine -0.125 (=-1/8) | diff 0.000e+00 (exact-value diff 0.0e+00)
+  [OK      ] results/step7_record.json :: comparisons/A-F:303/point_exact | recorded "-1/8" | mine -0.125 (=-1/8) | diff 0.000e+00
+  [OK      ] results/step7_record.json :: comparisons/A-F:303/ci_low | recorded -0.20416666666666666 | mine -0.20416666666666666 (=-49/240) | diff 0.000e+00 (exact-value diff 3.7e-18)
+  [OK      ] results/step7_record.json :: comparisons/A-F:303/ci_high | recorded -0.05 | mine -0.05 (=-1/20) | diff 0.000e+00 (exact-value diff 2.8e-18)
+  [OK      ] results/step7_record.json :: comparisons/A-F:303/purpose | recorded "A-F:DEV:303" | mine "A-F:DEV:303"
+  [OK      ] results/step7_record.json :: comparisons/A-F:303/n_facts | recorded 120 | mine 120
+  [OK      ] results/step7_record.json :: comparisons/A-F:303/n_per_stratum | recorded {"natural": 60, "random": 60} | mine {"natural": 60, "random": 60}
+  [OK      ] results/step7_record.json :: comparisons/A-F:303/replicates | recorded 10000 | mine 10000
+  [OK      ] results/step7_record.json :: comparisons/A-F:avg/point | recorded -0.10138888888888889 | mine -0.10138888888888889 (=-73/720) | diff 0.000e+00 (exact-value diff 6.2e-19)
+  [OK      ] results/step7_record.json :: comparisons/A-F:avg/point_exact | recorded "-73/720" | mine -0.10138888888888889 (=-73/720) | diff 0.000e+00
+  [OK      ] results/step7_record.json :: comparisons/A-F:avg/ci_low | recorded -0.14444444444444443 | mine -0.14444444444444443 (=-13/90) | diff 0.000e+00 (exact-value diff 1.4e-17)
+  [OK      ] results/step7_record.json :: comparisons/A-F:avg/ci_high | recorded -0.06111111111111111 | mine -0.06111111111111111 (=-11/180) | diff 0.000e+00 (exact-value diff 2.0e-18)
+  [OK      ] results/step7_record.json :: comparisons/A-F:avg/purpose | recorded "A-F:DEV:avg" | mine "A-F:DEV:avg"
+  [OK      ] results/step7_record.json :: comparisons/A-F:avg/n_facts | recorded 120 | mine 120
+  [OK      ] results/step7_record.json :: comparisons/A-F:avg/n_per_stratum | recorded {"natural": 60, "random": 60} | mine {"natural": 60, "random": 60}
+  [OK      ] results/step7_record.json :: comparisons/A-F:avg/replicates | recorded 10000 | mine 10000
+ -- G0.3 (N, DEV-QA; B22)
+  [OK      ] results/step7_record.json :: values/G0.3/acc_cb | recorded 0.275 | mine 0.275 (=11/40) | diff 0.000e+00 (exact-value diff 2.2e-17)
+  [OK      ] results/step7_record.json :: values/G0.3/acc_dev_learned | recorded 0.29583333333333334 | mine 0.29583333333333334 (=71/240) | diff 0.000e+00 (exact-value diff 3.7e-18)
+  [OK      ] results/step7_record.json :: values/G0.3/acc_dev_learned:natural | recorded 0.25 | mine 0.25 (=1/4) | diff 0.000e+00 (exact-value diff 0.0e+00)
+  [OK      ] results/step7_record.json :: values/G0.3/acc_dev_learned:random | recorded 0.3416666666666667 | mine 0.3416666666666667 (=41/120) | diff 0.000e+00 (exact-value diff 7.4e-18)
+  [OK      ] results/step7_record.json :: values/G0.3/acc_dev_unread | recorded 0.275 | mine 0.275 (=11/40) | diff 0.000e+00 (exact-value diff 2.2e-17)
+ -- G0.4 (Acc_CB(F) per seed)
+  [OK      ] results/step7_record.json :: values/G0.4/acc_cb_by_seed/101 | recorded 1.0 | mine 1.0 (=1) | diff 0.000e+00 (exact-value diff 0.0e+00)
+  [OK      ] results/step7_record.json :: values/G0.4/acc_cb_by_seed/202 | recorded 1.0 | mine 1.0 (=1) | diff 0.000e+00 (exact-value diff 0.0e+00)
+  [OK      ] results/step7_record.json :: values/G0.4/acc_cb_by_seed/303 | recorded 1.0 | mine 1.0 (=1) | diff 0.000e+00 (exact-value diff 0.0e+00)
+ -- G0.5 (seed-average Acc(F, DEV-QA, learned); Delta(F-N) per seed and seed-average)
+  [OK      ] results/step7_record.json :: values/G0.5/acc_avg | recorded 0.9236111111111112 | mine 0.9236111111111112 (=133/144) | diff 0.000e+00 (exact-value diff 4.9e-17)
+  [OK      ] results/step7_record.json :: values/G0.5/delta_avg/point | recorded 0.6277777777777778 | mine 0.6277777777777778 (=113/180) | diff 0.000e+00 (exact-value diff 9.9e-18)
+  [OK      ] results/step7_record.json :: values/G0.5/delta_avg/point_exact | recorded "113/180" | mine 0.6277777777777778 (=113/180) | diff 0.000e+00
+  [OK      ] results/step7_record.json :: values/G0.5/delta_avg/ci_low | recorded 0.548611111111111 | mine 0.5486111111111112 (=79/144) | diff 1.110e-16 (exact-value diff 6.2e-17)
+  [OK      ] results/step7_record.json :: values/G0.5/delta_avg/ci_high | recorded 0.7069444444444444 | mine 0.7069444444444445 (=509/720) | diff 1.110e-16 (exact-value diff 6.9e-17)
+  [OK      ] results/step7_record.json :: values/G0.5/delta_avg/purpose | recorded "F-N:DEV:avg" | mine "F-N:DEV:avg"
+  [OK      ] results/step7_record.json :: values/G0.5/delta_avg/n_facts | recorded 120 | mine 120
+  [OK      ] results/step7_record.json :: values/G0.5/delta_avg/n_per_stratum | recorded {"natural": 60, "random": 60} | mine {"natural": 60, "random": 60}
+  [OK      ] results/step7_record.json :: values/G0.5/delta_avg/replicates | recorded 10000 | mine 10000
+  [OK      ] results/step7_record.json :: values/G0.5/delta_by_seed/101 | recorded 0.6333333333333333 | mine 0.6333333333333333 (=19/30) | diff 0.000e+00 (exact-value diff 3.0e-17)
+  [OK      ] results/step7_record.json :: values/G0.5/delta_by_seed/202 | recorded 0.6333333333333333 | mine 0.6333333333333333 (=19/30) | diff 0.000e+00 (exact-value diff 3.0e-17)
+  [OK      ] results/step7_record.json :: values/G0.5/delta_by_seed/303 | recorded 0.6166666666666667 | mine 0.6166666666666667 (=37/60) | diff 0.000e+00 (exact-value diff 3.0e-17)
+ -- G0.6 (seed-average Delta(S-N))
+  [OK      ] results/step7_record.json :: values/G0.6/point | recorded -0.08888888888888889 | mine -0.08888888888888889 (=-4/45) | diff 0.000e+00 (exact-value diff 3.4e-18)
+  [OK      ] results/step7_record.json :: values/G0.6/ci_high | recorded -0.005555555555555559 | mine -0.005555555555555556 (=-1/180) | diff 3.469e-18 (exact-value diff 3.7e-18)
+  [OK      ] results/step7_record.json :: values/G0.6/delta_avg/point | recorded -0.08888888888888889 | mine -0.08888888888888889 (=-4/45) | diff 0.000e+00 (exact-value diff 3.4e-18)
+  [OK      ] results/step7_record.json :: values/G0.6/delta_avg/point_exact | recorded "-4/45" | mine -0.08888888888888889 (=-4/45) | diff 0.000e+00
+  [OK      ] results/step7_record.json :: values/G0.6/delta_avg/ci_low | recorded -0.17222222222222222 | mine -0.17222222222222222 (=-31/180) | diff 0.000e+00 (exact-value diff 1.2e-18)
+  [OK      ] results/step7_record.json :: values/G0.6/delta_avg/ci_high | recorded -0.005555555555555559 | mine -0.005555555555555556 (=-1/180) | diff 3.469e-18 (exact-value diff 3.7e-18)
+  [OK      ] results/step7_record.json :: values/G0.6/delta_avg/purpose | recorded "S-N:DEV:avg" | mine "S-N:DEV:avg"
+  [OK      ] results/step7_record.json :: values/G0.6/delta_avg/n_facts | recorded 120 | mine 120
+  [OK      ] results/step7_record.json :: values/G0.6/delta_avg/n_per_stratum | recorded {"natural": 60, "random": 60} | mine {"natural": 60, "random": 60}
+  [OK      ] results/step7_record.json :: values/G0.6/delta_avg/replicates | recorded 10000 | mine 10000
+ -- G0.7 (seed-average Delta(Y-N))
+  [OK      ] results/step7_record.json :: values/G0.7/point | recorded -0.02638888888888889 | mine -0.02638888888888889 (=-19/720) | diff 0.000e+00 (exact-value diff 7.7e-20)
+  [OK      ] results/step7_record.json :: values/G0.7/ci_high | recorded 0.0625 | mine 0.0625 (=1/16) | diff 0.000e+00 (exact-value diff 0.0e+00)
+  [OK      ] results/step7_record.json :: values/G0.7/delta_avg/point | recorded -0.02638888888888889 | mine -0.02638888888888889 (=-19/720) | diff 0.000e+00 (exact-value diff 7.7e-20)
+  [OK      ] results/step7_record.json :: values/G0.7/delta_avg/point_exact | recorded "-19/720" | mine -0.02638888888888889 (=-19/720) | diff 0.000e+00
+  [OK      ] results/step7_record.json :: values/G0.7/delta_avg/ci_low | recorded -0.11527777777777778 | mine -0.11527777777777778 (=-83/720) | diff 0.000e+00 (exact-value diff 6.8e-18)
+  [OK      ] results/step7_record.json :: values/G0.7/delta_avg/ci_high | recorded 0.0625 | mine 0.0625 (=1/16) | diff 0.000e+00 (exact-value diff 0.0e+00)
+  [OK      ] results/step7_record.json :: values/G0.7/delta_avg/purpose | recorded "Y-N:DEV:avg" | mine "Y-N:DEV:avg"
+  [OK      ] results/step7_record.json :: values/G0.7/delta_avg/n_facts | recorded 120 | mine 120
+  [OK      ] results/step7_record.json :: values/G0.7/delta_avg/n_per_stratum | recorded {"natural": 60, "random": 60} | mine {"natural": 60, "random": 60}
+  [OK      ] results/step7_record.json :: values/G0.7/delta_avg/replicates | recorded 10000 | mine 10000
+ -- G0.9 (seed-average Acc(F, DEV-QA, learned))
+  [OK      ] results/step7_record.json :: values/G0.9/acc_avg | recorded 0.9236111111111112 | mine 0.9236111111111112 (=133/144) | diff 0.000e+00 (exact-value diff 4.9e-17)
+ -- G0.10 (B13): sigma_d of the seed-average d_f of Delta(L-F), Delta(A-F); n per delta; planning n; half-width
+    L-F: sigma variance (exact) 16319/514080 ; sigma point 0.17816870242413027
+    A-F: sigma variance (exact) 3953/73440 ; sigma point 0.23200485495633824
+    planning n (max over both comparisons, 3 sigmas, 3 deltas) = 231; n values where exact and float ceil differ or the argument is within 1e-9 of an integer: []
+  [OK      ] results/step7_record.json :: values/G0.10/estimates/L-F/comparison | recorded "L-F" | mine "L-F"
+  [OK      ] results/step7_record.json :: values/G0.10/estimates/L-F/sigma/p2.5 | recorded 0.14002800840280097 | mine 0.14002800840280097 | diff 0.000e+00 (exact-value diff 1.2e-17)
+  [OK      ] results/step7_record.json :: values/G0.10/estimates/L-F/sigma/point | recorded 0.17816870242413027 | mine 0.17816870242413027 | diff 0.000e+00 (exact-value diff 1.2e-17)
+  [OK      ] results/step7_record.json :: values/G0.10/estimates/L-F/sigma/p97.5 | recorded 0.2116303076191481 | mine 0.21163030761914814 | diff 2.776e-17 (exact-value diff 1.4e-17)
+  [OK      ] results/step7_record.json :: values/G0.10/estimates/L-F/n/p2.5|delta=0.05 | recorded 62 | mine 62
+  [OK      ] results/step7_record.json :: values/G0.10/estimates/L-F/n/p2.5|delta=0.1 | recorded 16 | mine 16
+  [OK      ] results/step7_record.json :: values/G0.10/estimates/L-F/n/p2.5|delta=0.15 | recorded 7 | mine 7
+  [OK      ] results/step7_record.json :: values/G0.10/estimates/L-F/n/p97.5|delta=0.05 | recorded 141 | mine 141
+  [OK      ] results/step7_record.json :: values/G0.10/estimates/L-F/n/p97.5|delta=0.1 | recorded 36 | mine 36
+  [OK      ] results/step7_record.json :: values/G0.10/estimates/L-F/n/p97.5|delta=0.15 | recorded 16 | mine 16
+  [OK      ] results/step7_record.json :: values/G0.10/estimates/L-F/n/point|delta=0.05 | recorded 100 | mine 100
+  [OK      ] results/step7_record.json :: values/G0.10/estimates/L-F/n/point|delta=0.1 | recorded 25 | mine 25
+  [OK      ] results/step7_record.json :: values/G0.10/estimates/L-F/n/point|delta=0.15 | recorded 12 | mine 12
+  [OK      ] results/step7_record.json :: values/G0.10/estimates/L-F/n_max | recorded 141 | mine 141
+  [OK      ] results/step7_record.json :: values/G0.10/estimates/L-F/finite | recorded true | mine true
+  [OK      ] results/step7_record.json :: values/G0.10/estimates/L-F/halfwidth_at_planning_n/halfwidth | recorded 0.022629310344827583 | mine 0.022629310344827586 (=21/928) | diff 3.469e-18 (exact-value diff 3.3e-18)
+  [OK      ] results/step7_record.json :: values/G0.10/estimates/L-F/halfwidth_at_planning_n/n | recorded 231 | mine 231
+  [OK      ] results/step7_record.json :: values/G0.10/estimates/L-F/halfwidth_at_planning_n/per_stratum | recorded 116 | mine 116
+  [OK      ] results/step7_record.json :: values/G0.10/estimates/A-F/comparison | recorded "A-F" | mine "A-F"
+  [OK      ] results/step7_record.json :: values/G0.10/estimates/A-F/sigma/p2.5 | recorded 0.1898206821841333 | mine 0.1898206821841333 | diff 0.000e+00 (exact-value diff 3.9e-18)
+  [OK      ] results/step7_record.json :: values/G0.10/estimates/A-F/sigma/point | recorded 0.23200485495633824 | mine 0.23200485495633824 | diff 0.000e+00 (exact-value diff 4.1e-18)
+  [OK      ] results/step7_record.json :: values/G0.10/estimates/A-F/sigma/p97.5 | recorded 0.2708903373178214 | mine 0.2708903373178215 | diff 5.551e-17 (exact-value diff 3.1e-17)
+  [OK      ] results/step7_record.json :: values/G0.10/estimates/A-F/n/p2.5|delta=0.05 | recorded 113 | mine 113
+  [OK      ] results/step7_record.json :: values/G0.10/estimates/A-F/n/p2.5|delta=0.1 | recorded 29 | mine 29
+  [OK      ] results/step7_record.json :: values/G0.10/estimates/A-F/n/p2.5|delta=0.15 | recorded 13 | mine 13
+  [OK      ] results/step7_record.json :: values/G0.10/estimates/A-F/n/p97.5|delta=0.05 | recorded 231 | mine 231
+  [OK      ] results/step7_record.json :: values/G0.10/estimates/A-F/n/p97.5|delta=0.1 | recorded 58 | mine 58
+  [OK      ] results/step7_record.json :: values/G0.10/estimates/A-F/n/p97.5|delta=0.15 | recorded 26 | mine 26
+  [OK      ] results/step7_record.json :: values/G0.10/estimates/A-F/n/point|delta=0.05 | recorded 169 | mine 169
+  [OK      ] results/step7_record.json :: values/G0.10/estimates/A-F/n/point|delta=0.1 | recorded 43 | mine 43
+  [OK      ] results/step7_record.json :: values/G0.10/estimates/A-F/n/point|delta=0.15 | recorded 19 | mine 19
+  [OK      ] results/step7_record.json :: values/G0.10/estimates/A-F/n_max | recorded 231 | mine 231
+  [OK      ] results/step7_record.json :: values/G0.10/estimates/A-F/finite | recorded true | mine true
+  [OK      ] results/step7_record.json :: values/G0.10/estimates/A-F/halfwidth_at_planning_n/halfwidth | recorded 0.0298132183908046 | mine 0.029813218390804596 (=83/2784) | diff 3.469e-18 (exact-value diff 1.8e-18)
+  [OK      ] results/step7_record.json :: values/G0.10/estimates/A-F/halfwidth_at_planning_n/n | recorded 231 | mine 231
+  [OK      ] results/step7_record.json :: values/G0.10/estimates/A-F/halfwidth_at_planning_n/per_stratum | recorded 116 | mine 116
+  [OK      ] results/step7_record.json :: values/G0.10/planning_n | recorded 231 | mine 231
+
+== E. TEST (T1-T3) - recomputation and comparison with results/test_evaluation_result.json
+ -- comparisons (Delta(F-N), Delta(S-N), Delta(Y-N), Delta(L-F), Delta(A-F); each seed and seed-average)
+  [OK      ] results/test_evaluation_result.json :: comparisons/F-N:101/point | recorded 0.675 | mine 0.675 (=27/40) | diff 0.000e+00 (exact-value diff 4.4e-17)
+  [OK      ] results/test_evaluation_result.json :: comparisons/F-N:101/point_exact | recorded "27/40" | mine 0.675 (=27/40) | diff 0.000e+00
+  [OK      ] results/test_evaluation_result.json :: comparisons/F-N:101/ci_low | recorded 0.6055555555555556 | mine 0.6055555555555555 (=109/180) | diff 1.110e-16 (exact-value diff 6.9e-17)
+  [OK      ] results/test_evaluation_result.json :: comparisons/F-N:101/ci_high | recorded 0.7416666666666667 | mine 0.7416666666666667 (=89/120) | diff 0.000e+00 (exact-value diff 3.0e-17)
+  [OK      ] results/test_evaluation_result.json :: comparisons/F-N:101/purpose | recorded "F-N:TEST:101" | mine "F-N:TEST:101"
+  [OK      ] results/test_evaluation_result.json :: comparisons/F-N:101/n_facts | recorded 120 | mine 120
+  [OK      ] results/test_evaluation_result.json :: comparisons/F-N:101/n_per_stratum | recorded {"natural": 60, "random": 60} | mine {"natural": 60, "random": 60}
+  [OK      ] results/test_evaluation_result.json :: comparisons/F-N:101/replicates | recorded 10000 | mine 10000
+  [OK      ] results/test_evaluation_result.json :: comparisons/F-N:202/point | recorded 0.6666666666666666 | mine 0.6666666666666666 (=2/3) | diff 0.000e+00 (exact-value diff 3.7e-17)
+  [OK      ] results/test_evaluation_result.json :: comparisons/F-N:202/point_exact | recorded "2/3" | mine 0.6666666666666666 (=2/3) | diff 0.000e+00
+  [OK      ] results/test_evaluation_result.json :: comparisons/F-N:202/ci_low | recorded 0.5972222222222222 | mine 0.5972222222222222 (=43/72) | diff 0.000e+00 (exact-value diff 1.2e-17)
+  [OK      ] results/test_evaluation_result.json :: comparisons/F-N:202/ci_high | recorded 0.736111111111111 | mine 0.7361111111111112 (=53/72) | diff 1.110e-16 (exact-value diff 6.2e-17)
+  [OK      ] results/test_evaluation_result.json :: comparisons/F-N:202/purpose | recorded "F-N:TEST:202" | mine "F-N:TEST:202"
+  [OK      ] results/test_evaluation_result.json :: comparisons/F-N:202/n_facts | recorded 120 | mine 120
+  [OK      ] results/test_evaluation_result.json :: comparisons/F-N:202/n_per_stratum | recorded {"natural": 60, "random": 60} | mine {"natural": 60, "random": 60}
+  [OK      ] results/test_evaluation_result.json :: comparisons/F-N:202/replicates | recorded 10000 | mine 10000
+  [OK      ] results/test_evaluation_result.json :: comparisons/F-N:303/point | recorded 0.6555555555555556 | mine 0.6555555555555556 (=59/90) | diff 0.000e+00 (exact-value diff 2.5e-18)
+  [OK      ] results/test_evaluation_result.json :: comparisons/F-N:303/point_exact | recorded "59/90" | mine 0.6555555555555556 (=59/90) | diff 0.000e+00
+  [OK      ] results/test_evaluation_result.json :: comparisons/F-N:303/ci_low | recorded 0.5833333333333334 | mine 0.5833333333333334 (=7/12) | diff 0.000e+00 (exact-value diff 3.7e-17)
+  [OK      ] results/test_evaluation_result.json :: comparisons/F-N:303/ci_high | recorded 0.7305555555555556 | mine 0.7305555555555555 (=263/360) | diff 1.110e-16 (exact-value diff 6.9e-17)
+  [OK      ] results/test_evaluation_result.json :: comparisons/F-N:303/purpose | recorded "F-N:TEST:303" | mine "F-N:TEST:303"
+  [OK      ] results/test_evaluation_result.json :: comparisons/F-N:303/n_facts | recorded 120 | mine 120
+  [OK      ] results/test_evaluation_result.json :: comparisons/F-N:303/n_per_stratum | recorded {"natural": 60, "random": 60} | mine {"natural": 60, "random": 60}
+  [OK      ] results/test_evaluation_result.json :: comparisons/F-N:303/replicates | recorded 10000 | mine 10000
+  [OK      ] results/test_evaluation_result.json :: comparisons/F-N:avg/point | recorded 0.6657407407407407 | mine 0.6657407407407407 (=719/1080) | diff 0.000e+00 (exact-value diff 3.3e-18)
+  [OK      ] results/test_evaluation_result.json :: comparisons/F-N:avg/point_exact | recorded "719/1080" | mine 0.6657407407407407 (=719/1080) | diff 0.000e+00
+  [OK      ] results/test_evaluation_result.json :: comparisons/F-N:avg/ci_low | recorded 0.5990740740740741 | mine 0.5990740740740741 (=647/1080) | diff 0.000e+00 (exact-value diff 1.8e-17)
+  [OK      ] results/test_evaluation_result.json :: comparisons/F-N:avg/ci_high | recorded 0.7314814814814814 | mine 0.7314814814814815 (=79/108) | diff 1.110e-16 (exact-value diff 8.2e-17)
+  [OK      ] results/test_evaluation_result.json :: comparisons/F-N:avg/purpose | recorded "F-N:TEST:avg" | mine "F-N:TEST:avg"
+  [OK      ] results/test_evaluation_result.json :: comparisons/F-N:avg/n_facts | recorded 120 | mine 120
+  [OK      ] results/test_evaluation_result.json :: comparisons/F-N:avg/n_per_stratum | recorded {"natural": 60, "random": 60} | mine {"natural": 60, "random": 60}
+  [OK      ] results/test_evaluation_result.json :: comparisons/F-N:avg/replicates | recorded 10000 | mine 10000
+  [OK      ] results/test_evaluation_result.json :: comparisons/S-N:101/point | recorded -0.058333333333333334 | mine -0.058333333333333334 (=-7/120) | diff 0.000e+00 (exact-value diff 9.3e-19)
+  [OK      ] results/test_evaluation_result.json :: comparisons/S-N:101/point_exact | recorded "-7/120" | mine -0.058333333333333334 (=-7/120) | diff 0.000e+00
+  [OK      ] results/test_evaluation_result.json :: comparisons/S-N:101/ci_low | recorded -0.15 | mine -0.15 (=-3/20) | diff 0.000e+00 (exact-value diff 5.6e-18)
+  [OK      ] results/test_evaluation_result.json :: comparisons/S-N:101/ci_high | recorded 0.030555555555555558 | mine 0.030555555555555555 (=11/360) | diff 3.469e-18 (exact-value diff 2.5e-18)
+  [OK      ] results/test_evaluation_result.json :: comparisons/S-N:101/purpose | recorded "S-N:TEST:101" | mine "S-N:TEST:101"
+  [OK      ] results/test_evaluation_result.json :: comparisons/S-N:101/n_facts | recorded 120 | mine 120
+  [OK      ] results/test_evaluation_result.json :: comparisons/S-N:101/n_per_stratum | recorded {"natural": 60, "random": 60} | mine {"natural": 60, "random": 60}
+  [OK      ] results/test_evaluation_result.json :: comparisons/S-N:101/replicates | recorded 10000 | mine 10000
+  [OK      ] results/test_evaluation_result.json :: comparisons/S-N:202/point | recorded -0.06111111111111111 | mine -0.06111111111111111 (=-11/180) | diff 0.000e+00 (exact-value diff 2.0e-18)
+  [OK      ] results/test_evaluation_result.json :: comparisons/S-N:202/point_exact | recorded "-11/180" | mine -0.06111111111111111 (=-11/180) | diff 0.000e+00
+  [OK      ] results/test_evaluation_result.json :: comparisons/S-N:202/ci_low | recorded -0.14444444444444443 | mine -0.14444444444444443 (=-13/90) | diff 0.000e+00 (exact-value diff 1.4e-17)
+  [OK      ] results/test_evaluation_result.json :: comparisons/S-N:202/ci_high | recorded 0.01944444444444444 | mine 0.019444444444444445 (=7/360) | diff 3.469e-18 (exact-value diff 3.2e-18)
+  [OK      ] results/test_evaluation_result.json :: comparisons/S-N:202/purpose | recorded "S-N:TEST:202" | mine "S-N:TEST:202"
+  [OK      ] results/test_evaluation_result.json :: comparisons/S-N:202/n_facts | recorded 120 | mine 120
+  [OK      ] results/test_evaluation_result.json :: comparisons/S-N:202/n_per_stratum | recorded {"natural": 60, "random": 60} | mine {"natural": 60, "random": 60}
+  [OK      ] results/test_evaluation_result.json :: comparisons/S-N:202/replicates | recorded 10000 | mine 10000
+  [OK      ] results/test_evaluation_result.json :: comparisons/S-N:303/point | recorded -0.027777777777777776 | mine -0.027777777777777776 (=-1/36) | diff 0.000e+00 (exact-value diff 1.5e-18)
+  [OK      ] results/test_evaluation_result.json :: comparisons/S-N:303/point_exact | recorded "-1/36" | mine -0.027777777777777776 (=-1/36) | diff 0.000e+00
+  [OK      ] results/test_evaluation_result.json :: comparisons/S-N:303/ci_low | recorded -0.1111111111111111 | mine -0.1111111111111111 (=-1/9) | diff 0.000e+00 (exact-value diff 6.2e-18)
+  [OK      ] results/test_evaluation_result.json :: comparisons/S-N:303/ci_high | recorded 0.05555555555555556 | mine 0.05555555555555555 (=1/18) | diff 6.939e-18 (exact-value diff 3.9e-18)
+  [OK      ] results/test_evaluation_result.json :: comparisons/S-N:303/purpose | recorded "S-N:TEST:303" | mine "S-N:TEST:303"
+  [OK      ] results/test_evaluation_result.json :: comparisons/S-N:303/n_facts | recorded 120 | mine 120
+  [OK      ] results/test_evaluation_result.json :: comparisons/S-N:303/n_per_stratum | recorded {"natural": 60, "random": 60} | mine {"natural": 60, "random": 60}
+  [OK      ] results/test_evaluation_result.json :: comparisons/S-N:303/replicates | recorded 10000 | mine 10000
+  [OK      ] results/test_evaluation_result.json :: comparisons/S-N:avg/point | recorded -0.049074074074074076 | mine -0.049074074074074076 (=-53/1080) | diff 0.000e+00 (exact-value diff 1.4e-18)
+  [OK      ] results/test_evaluation_result.json :: comparisons/S-N:avg/point_exact | recorded "-53/1080" | mine -0.049074074074074076 (=-53/1080) | diff 0.000e+00
+  [OK      ] results/test_evaluation_result.json :: comparisons/S-N:avg/ci_low | recorded -0.12407407407407406 | mine -0.12407407407407407 (=-67/540) | diff 1.388e-17 (exact-value diff 1.5e-17)
+  [OK      ] results/test_evaluation_result.json :: comparisons/S-N:avg/ci_high | recorded 0.026851851851851852 | mine 0.026851851851851852 (=29/1080) | diff 0.000e+00 (exact-value diff 5.9e-19)
+  [OK      ] results/test_evaluation_result.json :: comparisons/S-N:avg/purpose | recorded "S-N:TEST:avg" | mine "S-N:TEST:avg"
+  [OK      ] results/test_evaluation_result.json :: comparisons/S-N:avg/n_facts | recorded 120 | mine 120
+  [OK      ] results/test_evaluation_result.json :: comparisons/S-N:avg/n_per_stratum | recorded {"natural": 60, "random": 60} | mine {"natural": 60, "random": 60}
+  [OK      ] results/test_evaluation_result.json :: comparisons/S-N:avg/replicates | recorded 10000 | mine 10000
+  [OK      ] results/test_evaluation_result.json :: comparisons/Y-N:101/point | recorded -0.005555555555555556 | mine -0.005555555555555556 (=-1/180) | diff 0.000e+00 (exact-value diff 2.1e-19)
+  [OK      ] results/test_evaluation_result.json :: comparisons/Y-N:101/point_exact | recorded "-1/180" | mine -0.005555555555555556 (=-1/180) | diff 0.000e+00
+  [OK      ] results/test_evaluation_result.json :: comparisons/Y-N:101/ci_low | recorded -0.09722222222222222 | mine -0.09722222222222222 (=-7/72) | diff 0.000e+00 (exact-value diff 1.5e-18)
+  [OK      ] results/test_evaluation_result.json :: comparisons/Y-N:101/ci_high | recorded 0.08611111111111111 | mine 0.08611111111111111 (=31/360) | diff 0.000e+00 (exact-value diff 6.2e-19)
+  [OK      ] results/test_evaluation_result.json :: comparisons/Y-N:101/purpose | recorded "Y-N:TEST:101" | mine "Y-N:TEST:101"
+  [OK      ] results/test_evaluation_result.json :: comparisons/Y-N:101/n_facts | recorded 120 | mine 120
+  [OK      ] results/test_evaluation_result.json :: comparisons/Y-N:101/n_per_stratum | recorded {"natural": 60, "random": 60} | mine {"natural": 60, "random": 60}
+  [OK      ] results/test_evaluation_result.json :: comparisons/Y-N:101/replicates | recorded 10000 | mine 10000
+  [OK      ] results/test_evaluation_result.json :: comparisons/Y-N:202/point | recorded 0.002777777777777778 | mine 0.002777777777777778 (=1/360) | diff 0.000e+00 (exact-value diff 1.1e-19)
+  [OK      ] results/test_evaluation_result.json :: comparisons/Y-N:202/point_exact | recorded "1/360" | mine 0.002777777777777778 (=1/360) | diff 0.000e+00
+  [OK      ] results/test_evaluation_result.json :: comparisons/Y-N:202/ci_low | recorded -0.08618055555555557 | mine -0.08618055555555555 (=-1241/14400) | diff 1.388e-17 (exact-value diff 1.0e-17)
+  [OK      ] results/test_evaluation_result.json :: comparisons/Y-N:202/ci_high | recorded 0.09166666666666666 | mine 0.09166666666666666 (=11/120) | diff 0.000e+00 (exact-value diff 6.5e-18)
+  [OK      ] results/test_evaluation_result.json :: comparisons/Y-N:202/purpose | recorded "Y-N:TEST:202" | mine "Y-N:TEST:202"
+  [OK      ] results/test_evaluation_result.json :: comparisons/Y-N:202/n_facts | recorded 120 | mine 120
+  [OK      ] results/test_evaluation_result.json :: comparisons/Y-N:202/n_per_stratum | recorded {"natural": 60, "random": 60} | mine {"natural": 60, "random": 60}
+  [OK      ] results/test_evaluation_result.json :: comparisons/Y-N:202/replicates | recorded 10000 | mine 10000
+  [OK      ] results/test_evaluation_result.json :: comparisons/Y-N:303/point | recorded 0.0 | mine 0.0 (=0) | diff 0.000e+00 (exact-value diff 0.0e+00)
+  [OK      ] results/test_evaluation_result.json :: comparisons/Y-N:303/point_exact | recorded "0" | mine 0.0 (=0) | diff 0.000e+00
+  [OK      ] results/test_evaluation_result.json :: comparisons/Y-N:303/ci_low | recorded -0.08611111111111111 | mine -0.08611111111111111 (=-31/360) | diff 0.000e+00 (exact-value diff 6.2e-19)
+  [OK      ] results/test_evaluation_result.json :: comparisons/Y-N:303/ci_high | recorded 0.08888888888888888 | mine 0.08888888888888889 (=4/45) | diff 1.388e-17 (exact-value diff 1.0e-17)
+  [OK      ] results/test_evaluation_result.json :: comparisons/Y-N:303/purpose | recorded "Y-N:TEST:303" | mine "Y-N:TEST:303"
+  [OK      ] results/test_evaluation_result.json :: comparisons/Y-N:303/n_facts | recorded 120 | mine 120
+  [OK      ] results/test_evaluation_result.json :: comparisons/Y-N:303/n_per_stratum | recorded {"natural": 60, "random": 60} | mine {"natural": 60, "random": 60}
+  [OK      ] results/test_evaluation_result.json :: comparisons/Y-N:303/replicates | recorded 10000 | mine 10000
+  [OK      ] results/test_evaluation_result.json :: comparisons/Y-N:avg/point | recorded -0.000925925925925926 | mine -0.000925925925925926 (=-1/1080) | diff 0.000e+00 (exact-value diff 3.5e-20)
+  [OK      ] results/test_evaluation_result.json :: comparisons/Y-N:avg/point_exact | recorded "-1/1080" | mine -0.000925925925925926 (=-1/1080) | diff 0.000e+00
+  [OK      ] results/test_evaluation_result.json :: comparisons/Y-N:avg/ci_low | recorded -0.08055555555555555 | mine -0.08055555555555556 (=-29/360) | diff 1.388e-17 (exact-value diff 8.6e-18)
+  [OK      ] results/test_evaluation_result.json :: comparisons/Y-N:avg/ci_high | recorded 0.07962962962962963 | mine 0.07962962962962963 (=43/540) | diff 0.000e+00 (exact-value diff 3.9e-18)
+  [OK      ] results/test_evaluation_result.json :: comparisons/Y-N:avg/purpose | recorded "Y-N:TEST:avg" | mine "Y-N:TEST:avg"
+  [OK      ] results/test_evaluation_result.json :: comparisons/Y-N:avg/n_facts | recorded 120 | mine 120
+  [OK      ] results/test_evaluation_result.json :: comparisons/Y-N:avg/n_per_stratum | recorded {"natural": 60, "random": 60} | mine {"natural": 60, "random": 60}
+  [OK      ] results/test_evaluation_result.json :: comparisons/Y-N:avg/replicates | recorded 10000 | mine 10000
+  [OK      ] results/test_evaluation_result.json :: comparisons/L-F:101/point | recorded -0.058333333333333334 | mine -0.058333333333333334 (=-7/120) | diff 0.000e+00 (exact-value diff 9.3e-19)
+  [OK      ] results/test_evaluation_result.json :: comparisons/L-F:101/point_exact | recorded "-7/120" | mine -0.058333333333333334 (=-7/120) | diff 0.000e+00
+  [OK      ] results/test_evaluation_result.json :: comparisons/L-F:101/ci_low | recorded -0.11666666666666667 | mine -0.11666666666666667 (=-7/60) | diff 0.000e+00 (exact-value diff 1.9e-18)
+  [OK      ] results/test_evaluation_result.json :: comparisons/L-F:101/ci_high | recorded -0.002777777777777779 | mine -0.002777777777777778 (=-1/360) | diff 1.301e-18 (exact-value diff 1.4e-18)
+  [OK      ] results/test_evaluation_result.json :: comparisons/L-F:101/purpose | recorded "L-F:TEST:101" | mine "L-F:TEST:101"
+  [OK      ] results/test_evaluation_result.json :: comparisons/L-F:101/n_facts | recorded 120 | mine 120
+  [OK      ] results/test_evaluation_result.json :: comparisons/L-F:101/n_per_stratum | recorded {"natural": 60, "random": 60} | mine {"natural": 60, "random": 60}
+  [OK      ] results/test_evaluation_result.json :: comparisons/L-F:101/replicates | recorded 10000 | mine 10000
+  [OK      ] results/test_evaluation_result.json :: comparisons/L-F:202/point | recorded 0.05277777777777778 | mine 0.05277777777777778 (=19/360) | diff 0.000e+00 (exact-value diff 1.5e-19)
+  [OK      ] results/test_evaluation_result.json :: comparisons/L-F:202/point_exact | recorded "19/360" | mine 0.05277777777777778 (=19/360) | diff 0.000e+00
+  [OK      ] results/test_evaluation_result.json :: comparisons/L-F:202/ci_low | recorded 0.011111111111111108 | mine 0.011111111111111112 (=1/90) | diff 3.469e-18 (exact-value diff 3.0e-18)
+  [OK      ] results/test_evaluation_result.json :: comparisons/L-F:202/ci_high | recorded 0.09722222222222222 | mine 0.09722222222222222 (=7/72) | diff 0.000e+00 (exact-value diff 1.5e-18)
+  [OK      ] results/test_evaluation_result.json :: comparisons/L-F:202/purpose | recorded "L-F:TEST:202" | mine "L-F:TEST:202"
+  [OK      ] results/test_evaluation_result.json :: comparisons/L-F:202/n_facts | recorded 120 | mine 120
+  [OK      ] results/test_evaluation_result.json :: comparisons/L-F:202/n_per_stratum | recorded {"natural": 60, "random": 60} | mine {"natural": 60, "random": 60}
+  [OK      ] results/test_evaluation_result.json :: comparisons/L-F:202/replicates | recorded 10000 | mine 10000
+  [OK      ] results/test_evaluation_result.json :: comparisons/L-F:303/point | recorded 0.06666666666666667 | mine 0.06666666666666667 (=1/15) | diff 0.000e+00 (exact-value diff 9.3e-19)
+  [OK      ] results/test_evaluation_result.json :: comparisons/L-F:303/point_exact | recorded "1/15" | mine 0.06666666666666667 (=1/15) | diff 0.000e+00
+  [OK      ] results/test_evaluation_result.json :: comparisons/L-F:303/ci_low | recorded 0.019444444444444445 | mine 0.019444444444444445 (=7/360) | diff 0.000e+00 (exact-value diff 3.1e-19)
+  [OK      ] results/test_evaluation_result.json :: comparisons/L-F:303/ci_high | recorded 0.11666666666666667 | mine 0.11666666666666667 (=7/60) | diff 0.000e+00 (exact-value diff 1.9e-18)
+  [OK      ] results/test_evaluation_result.json :: comparisons/L-F:303/purpose | recorded "L-F:TEST:303" | mine "L-F:TEST:303"
+  [OK      ] results/test_evaluation_result.json :: comparisons/L-F:303/n_facts | recorded 120 | mine 120
+  [OK      ] results/test_evaluation_result.json :: comparisons/L-F:303/n_per_stratum | recorded {"natural": 60, "random": 60} | mine {"natural": 60, "random": 60}
+  [OK      ] results/test_evaluation_result.json :: comparisons/L-F:303/replicates | recorded 10000 | mine 10000
+  [OK      ] results/test_evaluation_result.json :: comparisons/L-F:avg/point | recorded 0.020370370370370372 | mine 0.020370370370370372 (=11/540) | diff 0.000e+00 (exact-value diff 1.6e-18)
+  [OK      ] results/test_evaluation_result.json :: comparisons/L-F:avg/point_exact | recorded "11/540" | mine 0.020370370370370372 (=11/540) | diff 0.000e+00
+  [OK      ] results/test_evaluation_result.json :: comparisons/L-F:avg/ci_low | recorded -0.010185185185185184 | mine -0.010185185185185186 (=-11/1080) | diff 1.735e-18 (exact-value diff 9.1e-19)
+  [OK      ] results/test_evaluation_result.json :: comparisons/L-F:avg/ci_high | recorded 0.05277777777777778 | mine 0.05277777777777778 (=19/360) | diff 0.000e+00 (exact-value diff 1.5e-19)
+  [OK      ] results/test_evaluation_result.json :: comparisons/L-F:avg/purpose | recorded "L-F:TEST:avg" | mine "L-F:TEST:avg"
+  [OK      ] results/test_evaluation_result.json :: comparisons/L-F:avg/n_facts | recorded 120 | mine 120
+  [OK      ] results/test_evaluation_result.json :: comparisons/L-F:avg/n_per_stratum | recorded {"natural": 60, "random": 60} | mine {"natural": 60, "random": 60}
+  [OK      ] results/test_evaluation_result.json :: comparisons/L-F:avg/replicates | recorded 10000 | mine 10000
+  [OK      ] results/test_evaluation_result.json :: comparisons/A-F:101/point | recorded -0.005555555555555556 | mine -0.005555555555555556 (=-1/180) | diff 0.000e+00 (exact-value diff 2.1e-19)
+  [OK      ] results/test_evaluation_result.json :: comparisons/A-F:101/point_exact | recorded "-1/180" | mine -0.005555555555555556 (=-1/180) | diff 0.000e+00
+  [OK      ] results/test_evaluation_result.json :: comparisons/A-F:101/ci_low | recorded -0.04444444444444444 | mine -0.044444444444444446 (=-2/45) | diff 6.939e-18 (exact-value diff 5.2e-18)
+  [OK      ] results/test_evaluation_result.json :: comparisons/A-F:101/ci_high | recorded 0.030555555555555555 | mine 0.030555555555555555 (=11/360) | diff 0.000e+00 (exact-value diff 1.0e-18)
+  [OK      ] results/test_evaluation_result.json :: comparisons/A-F:101/purpose | recorded "A-F:TEST:101" | mine "A-F:TEST:101"
+  [OK      ] results/test_evaluation_result.json :: comparisons/A-F:101/n_facts | recorded 120 | mine 120
+  [OK      ] results/test_evaluation_result.json :: comparisons/A-F:101/n_per_stratum | recorded {"natural": 60, "random": 60} | mine {"natural": 60, "random": 60}
+  [OK      ] results/test_evaluation_result.json :: comparisons/A-F:101/replicates | recorded 10000 | mine 10000
+  [OK      ] results/test_evaluation_result.json :: comparisons/A-F:202/point | recorded -0.09722222222222222 | mine -0.09722222222222222 (=-7/72) | diff 0.000e+00 (exact-value diff 1.5e-18)
+  [OK      ] results/test_evaluation_result.json :: comparisons/A-F:202/point_exact | recorded "-7/72" | mine -0.09722222222222222 (=-7/72) | diff 0.000e+00
+  [OK      ] results/test_evaluation_result.json :: comparisons/A-F:202/ci_low | recorded -0.15277777777777776 | mine -0.1527777777777778 (=-11/72) | diff 2.776e-17 (exact-value diff 1.5e-17)
+  [OK      ] results/test_evaluation_result.json :: comparisons/A-F:202/ci_high | recorded -0.041666666666666664 | mine -0.041666666666666664 (=-1/24) | diff 0.000e+00 (exact-value diff 2.3e-18)
+  [OK      ] results/test_evaluation_result.json :: comparisons/A-F:202/purpose | recorded "A-F:TEST:202" | mine "A-F:TEST:202"
+  [OK      ] results/test_evaluation_result.json :: comparisons/A-F:202/n_facts | recorded 120 | mine 120
+  [OK      ] results/test_evaluation_result.json :: comparisons/A-F:202/n_per_stratum | recorded {"natural": 60, "random": 60} | mine {"natural": 60, "random": 60}
+  [OK      ] results/test_evaluation_result.json :: comparisons/A-F:202/replicates | recorded 10000 | mine 10000
+  [OK      ] results/test_evaluation_result.json :: comparisons/A-F:303/point | recorded -0.08055555555555556 | mine -0.08055555555555556 (=-29/360) | diff 0.000e+00 (exact-value diff 5.2e-18)
+  [OK      ] results/test_evaluation_result.json :: comparisons/A-F:303/point_exact | recorded "-29/360" | mine -0.08055555555555556 (=-29/360) | diff 0.000e+00
+  [OK      ] results/test_evaluation_result.json :: comparisons/A-F:303/ci_low | recorded -0.1472222222222222 | mine -0.14722222222222223 (=-53/360) | diff 2.776e-17 (exact-value diff 2.3e-17)
+  [OK      ] results/test_evaluation_result.json :: comparisons/A-F:303/ci_high | recorded -0.016666666666666666 | mine -0.016666666666666666 (=-1/60) | diff 0.000e+00 (exact-value diff 2.3e-19)
+  [OK      ] results/test_evaluation_result.json :: comparisons/A-F:303/purpose | recorded "A-F:TEST:303" | mine "A-F:TEST:303"
+  [OK      ] results/test_evaluation_result.json :: comparisons/A-F:303/n_facts | recorded 120 | mine 120
+  [OK      ] results/test_evaluation_result.json :: comparisons/A-F:303/n_per_stratum | recorded {"natural": 60, "random": 60} | mine {"natural": 60, "random": 60}
+  [OK      ] results/test_evaluation_result.json :: comparisons/A-F:303/replicates | recorded 10000 | mine 10000
+  [OK      ] results/test_evaluation_result.json :: comparisons/A-F:avg/point | recorded -0.06111111111111111 | mine -0.06111111111111111 (=-11/180) | diff 0.000e+00 (exact-value diff 2.0e-18)
+  [OK      ] results/test_evaluation_result.json :: comparisons/A-F:avg/point_exact | recorded "-11/180" | mine -0.06111111111111111 (=-11/180) | diff 0.000e+00
+  [OK      ] results/test_evaluation_result.json :: comparisons/A-F:avg/ci_low | recorded -0.0962962962962963 | mine -0.0962962962962963 (=-13/135) | diff 0.000e+00 (exact-value diff 2.1e-19)
+  [OK      ] results/test_evaluation_result.json :: comparisons/A-F:avg/ci_high | recorded -0.02777777777777778 | mine -0.027777777777777776 (=-1/36) | diff 3.469e-18 (exact-value diff 1.9e-18)
+  [OK      ] results/test_evaluation_result.json :: comparisons/A-F:avg/purpose | recorded "A-F:TEST:avg" | mine "A-F:TEST:avg"
+  [OK      ] results/test_evaluation_result.json :: comparisons/A-F:avg/n_facts | recorded 120 | mine 120
+  [OK      ] results/test_evaluation_result.json :: comparisons/A-F:avg/n_per_stratum | recorded {"natural": 60, "random": 60} | mine {"natural": 60, "random": 60}
+  [OK      ] results/test_evaluation_result.json :: comparisons/A-F:avg/replicates | recorded 10000 | mine 10000
+ -- T1 (seed-average Acc(F, TEST-QA, learned); seed-average Delta(F-N))
+  [OK      ] results/test_evaluation_result.json :: values/T1/acc_avg | recorded 0.9296296296296296 | mine 0.9296296296296296 (=251/270) | diff 0.000e+00 (exact-value diff 4.6e-17)
+  [OK      ] results/test_evaluation_result.json :: values/T1/delta_avg/point | recorded 0.6657407407407407 | mine 0.6657407407407407 (=719/1080) | diff 0.000e+00 (exact-value diff 3.3e-18)
+  [OK      ] results/test_evaluation_result.json :: values/T1/delta_avg/point_exact | recorded "719/1080" | mine 0.6657407407407407 (=719/1080) | diff 0.000e+00
+  [OK      ] results/test_evaluation_result.json :: values/T1/delta_avg/ci_low | recorded 0.5990740740740741 | mine 0.5990740740740741 (=647/1080) | diff 0.000e+00 (exact-value diff 1.8e-17)
+  [OK      ] results/test_evaluation_result.json :: values/T1/delta_avg/ci_high | recorded 0.7314814814814814 | mine 0.7314814814814815 (=79/108) | diff 1.110e-16 (exact-value diff 8.2e-17)
+  [OK      ] results/test_evaluation_result.json :: values/T1/delta_avg/purpose | recorded "F-N:TEST:avg" | mine "F-N:TEST:avg"
+  [OK      ] results/test_evaluation_result.json :: values/T1/delta_avg/n_facts | recorded 120 | mine 120
+  [OK      ] results/test_evaluation_result.json :: values/T1/delta_avg/n_per_stratum | recorded {"natural": 60, "random": 60} | mine {"natural": 60, "random": 60}
+  [OK      ] results/test_evaluation_result.json :: values/T1/delta_avg/replicates | recorded 10000 | mine 10000
+ -- T2 (seed-average Delta(S-N), Delta(Y-N) on TEST)
+  [OK      ] results/test_evaluation_result.json :: values/T2/S/point | recorded -0.049074074074074076 | mine -0.049074074074074076 (=-53/1080) | diff 0.000e+00 (exact-value diff 1.4e-18)
+  [OK      ] results/test_evaluation_result.json :: values/T2/S/ci_high | recorded 0.026851851851851852 | mine 0.026851851851851852 (=29/1080) | diff 0.000e+00 (exact-value diff 5.9e-19)
+  [OK      ] results/test_evaluation_result.json :: values/T2/S/delta_avg/point | recorded -0.049074074074074076 | mine -0.049074074074074076 (=-53/1080) | diff 0.000e+00 (exact-value diff 1.4e-18)
+  [OK      ] results/test_evaluation_result.json :: values/T2/S/delta_avg/point_exact | recorded "-53/1080" | mine -0.049074074074074076 (=-53/1080) | diff 0.000e+00
+  [OK      ] results/test_evaluation_result.json :: values/T2/S/delta_avg/ci_low | recorded -0.12407407407407406 | mine -0.12407407407407407 (=-67/540) | diff 1.388e-17 (exact-value diff 1.5e-17)
+  [OK      ] results/test_evaluation_result.json :: values/T2/S/delta_avg/ci_high | recorded 0.026851851851851852 | mine 0.026851851851851852 (=29/1080) | diff 0.000e+00 (exact-value diff 5.9e-19)
+  [OK      ] results/test_evaluation_result.json :: values/T2/S/delta_avg/purpose | recorded "S-N:TEST:avg" | mine "S-N:TEST:avg"
+  [OK      ] results/test_evaluation_result.json :: values/T2/S/delta_avg/n_facts | recorded 120 | mine 120
+  [OK      ] results/test_evaluation_result.json :: values/T2/S/delta_avg/n_per_stratum | recorded {"natural": 60, "random": 60} | mine {"natural": 60, "random": 60}
+  [OK      ] results/test_evaluation_result.json :: values/T2/S/delta_avg/replicates | recorded 10000 | mine 10000
+  [OK      ] results/test_evaluation_result.json :: values/T2/Y/point | recorded -0.000925925925925926 | mine -0.000925925925925926 (=-1/1080) | diff 0.000e+00 (exact-value diff 3.5e-20)
+  [OK      ] results/test_evaluation_result.json :: values/T2/Y/ci_high | recorded 0.07962962962962963 | mine 0.07962962962962963 (=43/540) | diff 0.000e+00 (exact-value diff 3.9e-18)
+  [OK      ] results/test_evaluation_result.json :: values/T2/Y/delta_avg/point | recorded -0.000925925925925926 | mine -0.000925925925925926 (=-1/1080) | diff 0.000e+00 (exact-value diff 3.5e-20)
+  [OK      ] results/test_evaluation_result.json :: values/T2/Y/delta_avg/point_exact | recorded "-1/1080" | mine -0.000925925925925926 (=-1/1080) | diff 0.000e+00
+  [OK      ] results/test_evaluation_result.json :: values/T2/Y/delta_avg/ci_low | recorded -0.08055555555555555 | mine -0.08055555555555556 (=-29/360) | diff 1.388e-17 (exact-value diff 8.6e-18)
+  [OK      ] results/test_evaluation_result.json :: values/T2/Y/delta_avg/ci_high | recorded 0.07962962962962963 | mine 0.07962962962962963 (=43/540) | diff 0.000e+00 (exact-value diff 3.9e-18)
+  [OK      ] results/test_evaluation_result.json :: values/T2/Y/delta_avg/purpose | recorded "Y-N:TEST:avg" | mine "Y-N:TEST:avg"
+  [OK      ] results/test_evaluation_result.json :: values/T2/Y/delta_avg/n_facts | recorded 120 | mine 120
+  [OK      ] results/test_evaluation_result.json :: values/T2/Y/delta_avg/n_per_stratum | recorded {"natural": 60, "random": 60} | mine {"natural": 60, "random": 60}
+  [OK      ] results/test_evaluation_result.json :: values/T2/Y/delta_avg/replicates | recorded 10000 | mine 10000
+ -- T3 (N on TEST-QA; B24: all four G0.3 ranges, Acc_CB(N) included)
+  [OK      ] results/test_evaluation_result.json :: values/T3/acc_cb | recorded 0.275 | mine 0.275 (=11/40) | diff 0.000e+00 (exact-value diff 2.2e-17)
+  [OK      ] results/test_evaluation_result.json :: values/T3/acc_test_learned | recorded 0.2638888888888889 | mine 0.2638888888888889 (=19/72) | diff 0.000e+00 (exact-value diff 6.2e-18)
+  [OK      ] results/test_evaluation_result.json :: values/T3/acc_test_learned:natural | recorded 0.2222222222222222 | mine 0.2222222222222222 (=2/9) | diff 0.000e+00 (exact-value diff 1.2e-17)
+  [OK      ] results/test_evaluation_result.json :: values/T3/acc_test_learned:random | recorded 0.3055555555555556 | mine 0.3055555555555556 (=11/36) | diff 0.000e+00 (exact-value diff 2.5e-17)
+  [OK      ] results/test_evaluation_result.json :: values/T3/acc_test_unread | recorded 0.325 | mine 0.325 (=13/40) | diff 0.000e+00 (exact-value diff 1.1e-17)
+
+== F. supplementary cross-checks (not in the ordered scope; counted separately)
+ -- F1. gate decisions recomputed from my values and the protocol 8 thresholds vs recorded 'satisfied'
+  [OK      ] results/step7_record.json :: gate0/conditions/G0.3/satisfied | recorded true | mine true
+  [OK      ] results/gate0_record.json :: gate0/conditions/G0.3/satisfied | recorded true | mine true
+  [OK      ] results/step7_record.json :: gate0/conditions/G0.4/satisfied | recorded true | mine true
+  [OK      ] results/gate0_record.json :: gate0/conditions/G0.4/satisfied | recorded true | mine true
+  [OK      ] results/step7_record.json :: gate0/conditions/G0.5/satisfied | recorded true | mine true
+  [OK      ] results/gate0_record.json :: gate0/conditions/G0.5/satisfied | recorded true | mine true
+  [OK      ] results/step7_record.json :: gate0/conditions/G0.6/satisfied | recorded true | mine true
+  [OK      ] results/gate0_record.json :: gate0/conditions/G0.6/satisfied | recorded true | mine true
+  [OK      ] results/step7_record.json :: gate0/conditions/G0.7/satisfied | recorded true | mine true
+  [OK      ] results/gate0_record.json :: gate0/conditions/G0.7/satisfied | recorded true | mine true
+  [OK      ] results/step7_record.json :: gate0/conditions/G0.9/satisfied | recorded true | mine true
+  [OK      ] results/gate0_record.json :: gate0/conditions/G0.9/satisfied | recorded true | mine true
+  [OK      ] results/step7_record.json :: gate0/conditions/G0.10/satisfied | recorded true | mine true
+  [OK      ] results/gate0_record.json :: gate0/conditions/G0.10/satisfied | recorded true | mine true
+  [OK      ] results/test_evaluation_result.json :: final/conditions/T1/satisfied | recorded true | mine true
+  [OK      ] results/test_evaluation_result.json :: final/conditions/T2/satisfied | recorded true | mine true
+  [OK      ] results/test_evaluation_result.json :: final/conditions/T3/satisfied | recorded true | mine true
+ -- F2. per-model accuracies in the records (DEV: training_runs dev.* and step3 N.summary / g03_values; TEST: summaries.*)
+  [OK      ] results/training_runs/A-A5-seed101.json :: dev/acc_cb | recorded 1.0 | mine 1.0 (=1) | diff 0.000e+00 (exact-value diff 0.0e+00)
+  [OK      ] results/training_runs/A-A5-seed101.json :: dev/acc_dev_learned | recorded 0.8958333333333334 | mine 0.8958333333333334 (=43/48) | diff 0.000e+00 (exact-value diff 3.7e-17)
+  [OK      ] results/training_runs/A-A5-seed101.json :: dev/acc_dev_learned:natural | recorded 0.8916666666666667 | mine 0.8916666666666667 (=107/120) | diff 0.000e+00 (exact-value diff 5.2e-17)
+  [OK      ] results/training_runs/A-A5-seed101.json :: dev/acc_dev_learned:random | recorded 0.9 | mine 0.9 (=9/10) | diff 0.000e+00 (exact-value diff 2.2e-17)
+  [OK      ] results/training_runs/A-A5-seed101.json :: dev/acc_dev_unread | recorded 0.3 | mine 0.3 (=3/10) | diff 0.000e+00 (exact-value diff 1.1e-17)
+  [OK      ] results/training_runs/A-A5-seed101.json :: dev/acc_dev_unread:natural | recorded 0.3 | mine 0.3 (=3/10) | diff 0.000e+00 (exact-value diff 1.1e-17)
+  [OK      ] results/training_runs/A-A5-seed101.json :: dev/acc_dev_unread:random | recorded 0.3 | mine 0.3 (=3/10) | diff 0.000e+00 (exact-value diff 1.1e-17)
+  [OK      ] results/training_runs/A-A5-seed202.json :: dev/acc_cb | recorded 1.0 | mine 1.0 (=1) | diff 0.000e+00 (exact-value diff 0.0e+00)
+  [OK      ] results/training_runs/A-A5-seed202.json :: dev/acc_dev_learned | recorded 0.7833333333333333 | mine 0.7833333333333333 (=47/60) | diff 0.000e+00 (exact-value diff 7.4e-18)
+  [OK      ] results/training_runs/A-A5-seed202.json :: dev/acc_dev_learned:natural | recorded 0.7333333333333333 | mine 0.7333333333333333 (=11/15) | diff 0.000e+00 (exact-value diff 5.2e-17)
+  [OK      ] results/training_runs/A-A5-seed202.json :: dev/acc_dev_learned:random | recorded 0.8333333333333334 | mine 0.8333333333333334 (=5/6) | diff 0.000e+00 (exact-value diff 3.7e-17)
+  [OK      ] results/training_runs/A-A5-seed202.json :: dev/acc_dev_unread | recorded 0.275 | mine 0.275 (=11/40) | diff 0.000e+00 (exact-value diff 2.2e-17)
+  [OK      ] results/training_runs/A-A5-seed202.json :: dev/acc_dev_unread:natural | recorded 0.25 | mine 0.25 (=1/4) | diff 0.000e+00 (exact-value diff 0.0e+00)
+  [OK      ] results/training_runs/A-A5-seed202.json :: dev/acc_dev_unread:random | recorded 0.3 | mine 0.3 (=3/10) | diff 0.000e+00 (exact-value diff 1.1e-17)
+  [OK      ] results/training_runs/A-A5-seed303.json :: dev/acc_cb | recorded 1.0 | mine 1.0 (=1) | diff 0.000e+00 (exact-value diff 0.0e+00)
+  [OK      ] results/training_runs/A-A5-seed303.json :: dev/acc_dev_learned | recorded 0.7875 | mine 0.7875 (=63/80) | diff 0.000e+00 (exact-value diff 2.2e-17)
+  [OK      ] results/training_runs/A-A5-seed303.json :: dev/acc_dev_learned:natural | recorded 0.7833333333333333 | mine 0.7833333333333333 (=47/60) | diff 0.000e+00 (exact-value diff 7.4e-18)
+  [OK      ] results/training_runs/A-A5-seed303.json :: dev/acc_dev_learned:random | recorded 0.7916666666666666 | mine 0.7916666666666666 (=19/24) | diff 0.000e+00 (exact-value diff 3.7e-17)
+  [OK      ] results/training_runs/A-A5-seed303.json :: dev/acc_dev_unread | recorded 0.25 | mine 0.25 (=1/4) | diff 0.000e+00 (exact-value diff 0.0e+00)
+  [OK      ] results/training_runs/A-A5-seed303.json :: dev/acc_dev_unread:natural | recorded 0.15 | mine 0.15 (=3/20) | diff 0.000e+00 (exact-value diff 5.6e-18)
+  [OK      ] results/training_runs/A-A5-seed303.json :: dev/acc_dev_unread:random | recorded 0.35 | mine 0.35 (=7/20) | diff 0.000e+00 (exact-value diff 2.2e-17)
+  [OK      ] results/training_runs/F-F3-seed101.json :: dev/acc_cb | recorded 1.0 | mine 1.0 (=1) | diff 0.000e+00 (exact-value diff 0.0e+00)
+  [OK      ] results/training_runs/F-F3-seed101.json :: dev/acc_dev_learned | recorded 0.9291666666666667 | mine 0.9291666666666667 (=223/240) | diff 0.000e+00 (exact-value diff 3.0e-17)
+  [OK      ] results/training_runs/F-F3-seed101.json :: dev/acc_dev_learned:natural | recorded 0.925 | mine 0.925 (=37/40) | diff 0.000e+00 (exact-value diff 4.4e-17)
+  [OK      ] results/training_runs/F-F3-seed101.json :: dev/acc_dev_learned:random | recorded 0.9333333333333333 | mine 0.9333333333333333 (=14/15) | diff 0.000e+00 (exact-value diff 1.5e-17)
+  [OK      ] results/training_runs/F-F3-seed101.json :: dev/acc_dev_unread | recorded 0.3 | mine 0.3 (=3/10) | diff 0.000e+00 (exact-value diff 1.1e-17)
+  [OK      ] results/training_runs/F-F3-seed101.json :: dev/acc_dev_unread:natural | recorded 0.375 | mine 0.375 (=3/8) | diff 0.000e+00 (exact-value diff 0.0e+00)
+  [OK      ] results/training_runs/F-F3-seed101.json :: dev/acc_dev_unread:random | recorded 0.225 | mine 0.225 (=9/40) | diff 0.000e+00 (exact-value diff 5.6e-18)
+  [OK      ] results/training_runs/F-F3-seed202.json :: dev/acc_cb | recorded 1.0 | mine 1.0 (=1) | diff 0.000e+00 (exact-value diff 0.0e+00)
+  [OK      ] results/training_runs/F-F3-seed202.json :: dev/acc_dev_learned | recorded 0.9291666666666667 | mine 0.9291666666666667 (=223/240) | diff 0.000e+00 (exact-value diff 3.0e-17)
+  [OK      ] results/training_runs/F-F3-seed202.json :: dev/acc_dev_learned:natural | recorded 0.9083333333333333 | mine 0.9083333333333333 (=109/120) | diff 0.000e+00 (exact-value diff 7.4e-18)
+  [OK      ] results/training_runs/F-F3-seed202.json :: dev/acc_dev_learned:random | recorded 0.95 | mine 0.95 (=19/20) | diff 0.000e+00 (exact-value diff 4.4e-17)
+  [OK      ] results/training_runs/F-F3-seed202.json :: dev/acc_dev_unread | recorded 0.2875 | mine 0.2875 (=23/80) | diff 0.000e+00 (exact-value diff 2.2e-17)
+  [OK      ] results/training_runs/F-F3-seed202.json :: dev/acc_dev_unread:natural | recorded 0.275 | mine 0.275 (=11/40) | diff 0.000e+00 (exact-value diff 2.2e-17)
+  [OK      ] results/training_runs/F-F3-seed202.json :: dev/acc_dev_unread:random | recorded 0.3 | mine 0.3 (=3/10) | diff 0.000e+00 (exact-value diff 1.1e-17)
+  [OK      ] results/training_runs/F-F3-seed303.json :: dev/acc_cb | recorded 1.0 | mine 1.0 (=1) | diff 0.000e+00 (exact-value diff 0.0e+00)
+  [OK      ] results/training_runs/F-F3-seed303.json :: dev/acc_dev_learned | recorded 0.9125 | mine 0.9125 (=73/80) | diff 0.000e+00 (exact-value diff 2.2e-17)
+  [OK      ] results/training_runs/F-F3-seed303.json :: dev/acc_dev_learned:natural | recorded 0.8666666666666667 | mine 0.8666666666666667 (=13/15) | diff 0.000e+00 (exact-value diff 3.0e-17)
+  [OK      ] results/training_runs/F-F3-seed303.json :: dev/acc_dev_learned:random | recorded 0.9583333333333334 | mine 0.9583333333333334 (=23/24) | diff 0.000e+00 (exact-value diff 3.7e-17)
+  [OK      ] results/training_runs/F-F3-seed303.json :: dev/acc_dev_unread | recorded 0.275 | mine 0.275 (=11/40) | diff 0.000e+00 (exact-value diff 2.2e-17)
+  [OK      ] results/training_runs/F-F3-seed303.json :: dev/acc_dev_unread:natural | recorded 0.275 | mine 0.275 (=11/40) | diff 0.000e+00 (exact-value diff 2.2e-17)
+  [OK      ] results/training_runs/F-F3-seed303.json :: dev/acc_dev_unread:random | recorded 0.275 | mine 0.275 (=11/40) | diff 0.000e+00 (exact-value diff 2.2e-17)
+  [OK      ] results/training_runs/L-L6-seed101.json :: dev/acc_cb | recorded 1.0 | mine 1.0 (=1) | diff 0.000e+00 (exact-value diff 0.0e+00)
+  [OK      ] results/training_runs/L-L6-seed101.json :: dev/acc_dev_learned | recorded 0.875 | mine 0.875 (=7/8) | diff 0.000e+00 (exact-value diff 0.0e+00)
+  [OK      ] results/training_runs/L-L6-seed101.json :: dev/acc_dev_learned:natural | recorded 0.85 | mine 0.85 (=17/20) | diff 0.000e+00 (exact-value diff 2.2e-17)
+  [OK      ] results/training_runs/L-L6-seed101.json :: dev/acc_dev_learned:random | recorded 0.9 | mine 0.9 (=9/10) | diff 0.000e+00 (exact-value diff 2.2e-17)
+  [OK      ] results/training_runs/L-L6-seed101.json :: dev/acc_dev_unread | recorded 0.35 | mine 0.35 (=7/20) | diff 0.000e+00 (exact-value diff 2.2e-17)
+  [OK      ] results/training_runs/L-L6-seed101.json :: dev/acc_dev_unread:natural | recorded 0.3 | mine 0.3 (=3/10) | diff 0.000e+00 (exact-value diff 1.1e-17)
+  [OK      ] results/training_runs/L-L6-seed101.json :: dev/acc_dev_unread:random | recorded 0.4 | mine 0.4 (=2/5) | diff 0.000e+00 (exact-value diff 2.2e-17)
+  [OK      ] results/training_runs/L-L6-seed202.json :: dev/acc_cb | recorded 1.0 | mine 1.0 (=1) | diff 0.000e+00 (exact-value diff 0.0e+00)
+  [OK      ] results/training_runs/L-L6-seed202.json :: dev/acc_dev_learned | recorded 0.9791666666666666 | mine 0.9791666666666666 (=47/48) | diff 0.000e+00 (exact-value diff 3.7e-17)
+  [OK      ] results/training_runs/L-L6-seed202.json :: dev/acc_dev_learned:natural | recorded 0.9583333333333334 | mine 0.9583333333333334 (=23/24) | diff 0.000e+00 (exact-value diff 3.7e-17)
+  [OK      ] results/training_runs/L-L6-seed202.json :: dev/acc_dev_learned:random | recorded 1.0 | mine 1.0 (=1) | diff 0.000e+00 (exact-value diff 0.0e+00)
+  [OK      ] results/training_runs/L-L6-seed202.json :: dev/acc_dev_unread | recorded 0.2625 | mine 0.2625 (=21/80) | diff 0.000e+00 (exact-value diff 1.1e-17)
+  [OK      ] results/training_runs/L-L6-seed202.json :: dev/acc_dev_unread:natural | recorded 0.2 | mine 0.2 (=1/5) | diff 0.000e+00 (exact-value diff 1.1e-17)
+  [OK      ] results/training_runs/L-L6-seed202.json :: dev/acc_dev_unread:random | recorded 0.325 | mine 0.325 (=13/40) | diff 0.000e+00 (exact-value diff 1.1e-17)
+  [OK      ] results/training_runs/L-L6-seed303.json :: dev/acc_cb | recorded 1.0 | mine 1.0 (=1) | diff 0.000e+00 (exact-value diff 0.0e+00)
+  [OK      ] results/training_runs/L-L6-seed303.json :: dev/acc_dev_learned | recorded 0.9625 | mine 0.9625 (=77/80) | diff 0.000e+00 (exact-value diff 2.2e-17)
+  [OK      ] results/training_runs/L-L6-seed303.json :: dev/acc_dev_learned:natural | recorded 0.975 | mine 0.975 (=39/40) | diff 0.000e+00 (exact-value diff 2.2e-17)
+  [OK      ] results/training_runs/L-L6-seed303.json :: dev/acc_dev_learned:random | recorded 0.95 | mine 0.95 (=19/20) | diff 0.000e+00 (exact-value diff 4.4e-17)
+  [OK      ] results/training_runs/L-L6-seed303.json :: dev/acc_dev_unread | recorded 0.225 | mine 0.225 (=9/40) | diff 0.000e+00 (exact-value diff 5.6e-18)
+  [OK      ] results/training_runs/L-L6-seed303.json :: dev/acc_dev_unread:natural | recorded 0.275 | mine 0.275 (=11/40) | diff 0.000e+00 (exact-value diff 2.2e-17)
+  [OK      ] results/training_runs/L-L6-seed303.json :: dev/acc_dev_unread:random | recorded 0.175 | mine 0.175 (=7/40) | diff 0.000e+00 (exact-value diff 1.1e-17)
+  [OK      ] results/step3_record.json :: N/summary/acc_cb | recorded 0.275 | mine 0.275 (=11/40) | diff 0.000e+00 (exact-value diff 2.2e-17)
+  [OK      ] results/step3_record.json :: N/summary/acc_dev_learned | recorded 0.29583333333333334 | mine 0.29583333333333334 (=71/240) | diff 0.000e+00 (exact-value diff 3.7e-18)
+  [OK      ] results/step3_record.json :: N/summary/acc_dev_learned:natural | recorded 0.25 | mine 0.25 (=1/4) | diff 0.000e+00 (exact-value diff 0.0e+00)
+  [OK      ] results/step3_record.json :: N/summary/acc_dev_learned:random | recorded 0.3416666666666667 | mine 0.3416666666666667 (=41/120) | diff 0.000e+00 (exact-value diff 7.4e-18)
+  [OK      ] results/step3_record.json :: N/summary/acc_dev_unread | recorded 0.275 | mine 0.275 (=11/40) | diff 0.000e+00 (exact-value diff 2.2e-17)
+  [OK      ] results/step3_record.json :: N/summary/acc_dev_unread:natural | recorded 0.275 | mine 0.275 (=11/40) | diff 0.000e+00 (exact-value diff 2.2e-17)
+  [OK      ] results/step3_record.json :: N/summary/acc_dev_unread:random | recorded 0.275 | mine 0.275 (=11/40) | diff 0.000e+00 (exact-value diff 2.2e-17)
+  [OK      ] results/training_runs/S-F3-seed101.json :: dev/acc_cb | recorded 0.18333333333333332 | mine 0.18333333333333332 (=11/60) | diff 0.000e+00 (exact-value diff 1.3e-17)
+  [OK      ] results/training_runs/S-F3-seed101.json :: dev/acc_dev_learned | recorded 0.19166666666666668 | mine 0.19166666666666668 (=23/120) | diff 0.000e+00 (exact-value diff 1.3e-17)
+  [OK      ] results/training_runs/S-F3-seed101.json :: dev/acc_dev_learned:natural | recorded 0.23333333333333334 | mine 0.23333333333333334 (=7/30) | diff 0.000e+00 (exact-value diff 3.7e-18)
+  [OK      ] results/training_runs/S-F3-seed101.json :: dev/acc_dev_learned:random | recorded 0.15 | mine 0.15 (=3/20) | diff 0.000e+00 (exact-value diff 5.6e-18)
+  [OK      ] results/training_runs/S-F3-seed101.json :: dev/acc_dev_unread | recorded 0.2875 | mine 0.2875 (=23/80) | diff 0.000e+00 (exact-value diff 2.2e-17)
+  [OK      ] results/training_runs/S-F3-seed101.json :: dev/acc_dev_unread:natural | recorded 0.275 | mine 0.275 (=11/40) | diff 0.000e+00 (exact-value diff 2.2e-17)
+  [OK      ] results/training_runs/S-F3-seed101.json :: dev/acc_dev_unread:random | recorded 0.3 | mine 0.3 (=3/10) | diff 0.000e+00 (exact-value diff 1.1e-17)
+  [OK      ] results/training_runs/S-F3-seed202.json :: dev/acc_cb | recorded 0.15833333333333333 | mine 0.15833333333333333 (=19/120) | diff 0.000e+00 (exact-value diff 7.4e-18)
+  [OK      ] results/training_runs/S-F3-seed202.json :: dev/acc_dev_learned | recorded 0.18333333333333332 | mine 0.18333333333333332 (=11/60) | diff 0.000e+00 (exact-value diff 1.3e-17)
+  [OK      ] results/training_runs/S-F3-seed202.json :: dev/acc_dev_learned:natural | recorded 0.15 | mine 0.15 (=3/20) | diff 0.000e+00 (exact-value diff 5.6e-18)
+  [OK      ] results/training_runs/S-F3-seed202.json :: dev/acc_dev_learned:random | recorded 0.21666666666666667 | mine 0.21666666666666667 (=13/60) | diff 0.000e+00 (exact-value diff 7.4e-18)
+  [OK      ] results/training_runs/S-F3-seed202.json :: dev/acc_dev_unread | recorded 0.375 | mine 0.375 (=3/8) | diff 0.000e+00 (exact-value diff 0.0e+00)
+  [OK      ] results/training_runs/S-F3-seed202.json :: dev/acc_dev_unread:natural | recorded 0.35 | mine 0.35 (=7/20) | diff 0.000e+00 (exact-value diff 2.2e-17)
+  [OK      ] results/training_runs/S-F3-seed202.json :: dev/acc_dev_unread:random | recorded 0.4 | mine 0.4 (=2/5) | diff 0.000e+00 (exact-value diff 2.2e-17)
+  [OK      ] results/training_runs/S-F3-seed303.json :: dev/acc_cb | recorded 0.14166666666666666 | mine 0.14166666666666666 (=17/120) | diff 0.000e+00 (exact-value diff 3.7e-18)
+  [OK      ] results/training_runs/S-F3-seed303.json :: dev/acc_dev_learned | recorded 0.24583333333333332 | mine 0.24583333333333332 (=59/240) | diff 0.000e+00 (exact-value diff 1.3e-17)
+  [OK      ] results/training_runs/S-F3-seed303.json :: dev/acc_dev_learned:natural | recorded 0.25833333333333336 | mine 0.25833333333333336 (=31/120) | diff 0.000e+00 (exact-value diff 2.6e-17)
+  [OK      ] results/training_runs/S-F3-seed303.json :: dev/acc_dev_learned:random | recorded 0.23333333333333334 | mine 0.23333333333333334 (=7/30) | diff 0.000e+00 (exact-value diff 3.7e-18)
+  [OK      ] results/training_runs/S-F3-seed303.json :: dev/acc_dev_unread | recorded 0.25 | mine 0.25 (=1/4) | diff 0.000e+00 (exact-value diff 0.0e+00)
+  [OK      ] results/training_runs/S-F3-seed303.json :: dev/acc_dev_unread:natural | recorded 0.275 | mine 0.275 (=11/40) | diff 0.000e+00 (exact-value diff 2.2e-17)
+  [OK      ] results/training_runs/S-F3-seed303.json :: dev/acc_dev_unread:random | recorded 0.225 | mine 0.225 (=9/40) | diff 0.000e+00 (exact-value diff 5.6e-18)
+  [OK      ] results/training_runs/Y-F3-seed101.json :: dev/acc_cb | recorded 0.23333333333333334 | mine 0.23333333333333334 (=7/30) | diff 0.000e+00 (exact-value diff 3.7e-18)
+  [OK      ] results/training_runs/Y-F3-seed101.json :: dev/acc_dev_learned | recorded 0.25416666666666665 | mine 0.25416666666666665 (=61/240) | diff 0.000e+00 (exact-value diff 1.5e-17)
+  [OK      ] results/training_runs/Y-F3-seed101.json :: dev/acc_dev_learned:natural | recorded 0.2 | mine 0.2 (=1/5) | diff 0.000e+00 (exact-value diff 1.1e-17)
+  [OK      ] results/training_runs/Y-F3-seed101.json :: dev/acc_dev_learned:random | recorded 0.30833333333333335 | mine 0.30833333333333335 (=37/120) | diff 0.000e+00 (exact-value diff 1.5e-17)
+  [OK      ] results/training_runs/Y-F3-seed101.json :: dev/acc_dev_unread | recorded 0.3125 | mine 0.3125 (=5/16) | diff 0.000e+00 (exact-value diff 0.0e+00)
+  [OK      ] results/training_runs/Y-F3-seed101.json :: dev/acc_dev_unread:natural | recorded 0.375 | mine 0.375 (=3/8) | diff 0.000e+00 (exact-value diff 0.0e+00)
+  [OK      ] results/training_runs/Y-F3-seed101.json :: dev/acc_dev_unread:random | recorded 0.25 | mine 0.25 (=1/4) | diff 0.000e+00 (exact-value diff 0.0e+00)
+  [OK      ] results/training_runs/Y-F3-seed202.json :: dev/acc_cb | recorded 0.2916666666666667 | mine 0.2916666666666667 (=7/24) | diff 0.000e+00 (exact-value diff 1.9e-17)
+  [OK      ] results/training_runs/Y-F3-seed202.json :: dev/acc_dev_learned | recorded 0.2833333333333333 | mine 0.2833333333333333 (=17/60) | diff 0.000e+00 (exact-value diff 7.4e-18)
+  [OK      ] results/training_runs/Y-F3-seed202.json :: dev/acc_dev_learned:natural | recorded 0.25833333333333336 | mine 0.25833333333333336 (=31/120) | diff 0.000e+00 (exact-value diff 2.6e-17)
+  [OK      ] results/training_runs/Y-F3-seed202.json :: dev/acc_dev_learned:random | recorded 0.30833333333333335 | mine 0.30833333333333335 (=37/120) | diff 0.000e+00 (exact-value diff 1.5e-17)
+  [OK      ] results/training_runs/Y-F3-seed202.json :: dev/acc_dev_unread | recorded 0.325 | mine 0.325 (=13/40) | diff 0.000e+00 (exact-value diff 1.1e-17)
+  [OK      ] results/training_runs/Y-F3-seed202.json :: dev/acc_dev_unread:natural | recorded 0.35 | mine 0.35 (=7/20) | diff 0.000e+00 (exact-value diff 2.2e-17)
+  [OK      ] results/training_runs/Y-F3-seed202.json :: dev/acc_dev_unread:random | recorded 0.3 | mine 0.3 (=3/10) | diff 0.000e+00 (exact-value diff 1.1e-17)
+  [OK      ] results/training_runs/Y-F3-seed303.json :: dev/acc_cb | recorded 0.25 | mine 0.25 (=1/4) | diff 0.000e+00 (exact-value diff 0.0e+00)
+  [OK      ] results/training_runs/Y-F3-seed303.json :: dev/acc_dev_learned | recorded 0.2708333333333333 | mine 0.2708333333333333 (=13/48) | diff 0.000e+00 (exact-value diff 1.9e-17)
+  [OK      ] results/training_runs/Y-F3-seed303.json :: dev/acc_dev_learned:natural | recorded 0.225 | mine 0.225 (=9/40) | diff 0.000e+00 (exact-value diff 5.6e-18)
+  [OK      ] results/training_runs/Y-F3-seed303.json :: dev/acc_dev_learned:random | recorded 0.31666666666666665 | mine 0.31666666666666665 (=19/60) | diff 0.000e+00 (exact-value diff 1.5e-17)
+  [OK      ] results/training_runs/Y-F3-seed303.json :: dev/acc_dev_unread | recorded 0.325 | mine 0.325 (=13/40) | diff 0.000e+00 (exact-value diff 1.1e-17)
+  [OK      ] results/training_runs/Y-F3-seed303.json :: dev/acc_dev_unread:natural | recorded 0.325 | mine 0.325 (=13/40) | diff 0.000e+00 (exact-value diff 1.1e-17)
+  [OK      ] results/training_runs/Y-F3-seed303.json :: dev/acc_dev_unread:random | recorded 0.325 | mine 0.325 (=13/40) | diff 0.000e+00 (exact-value diff 1.1e-17)
+  [OK      ] results/step3_record.json :: N/g03_values/acc_cb | recorded 0.275 | mine 0.275 (=11/40) | diff 0.000e+00 (exact-value diff 2.2e-17)
+  [OK      ] results/step3_record.json :: N/g03_values/acc_dev_learned | recorded 0.29583333333333334 | mine 0.29583333333333334 (=71/240) | diff 0.000e+00 (exact-value diff 3.7e-18)
+  [OK      ] results/step3_record.json :: N/g03_values/acc_dev_learned:natural | recorded 0.25 | mine 0.25 (=1/4) | diff 0.000e+00 (exact-value diff 0.0e+00)
+  [OK      ] results/step3_record.json :: N/g03_values/acc_dev_learned:random | recorded 0.3416666666666667 | mine 0.3416666666666667 (=41/120) | diff 0.000e+00 (exact-value diff 7.4e-18)
+  [OK      ] results/step3_record.json :: N/g03_values/acc_dev_unread | recorded 0.275 | mine 0.275 (=11/40) | diff 0.000e+00 (exact-value diff 2.2e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/A-A5-seed101/acc_cb | recorded 1.0 | mine 1.0 (=1) | diff 0.000e+00 (exact-value diff 0.0e+00)
+  [OK      ] results/test_evaluation_result.json :: summaries/A-A5-seed101/acc_test_learned | recorded 0.9333333333333333 | mine 0.9333333333333333 (=14/15) | diff 0.000e+00 (exact-value diff 1.5e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/A-A5-seed101/acc_test_learned:natural | recorded 0.9166666666666666 | mine 0.9166666666666666 (=11/12) | diff 0.000e+00 (exact-value diff 3.7e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/A-A5-seed101/acc_test_learned:random | recorded 0.95 | mine 0.95 (=19/20) | diff 0.000e+00 (exact-value diff 4.4e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/A-A5-seed101/acc_test_unread | recorded 0.3 | mine 0.3 (=3/10) | diff 0.000e+00 (exact-value diff 1.1e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/A-A5-seed101/acc_test_unread:natural | recorded 0.3 | mine 0.3 (=3/10) | diff 0.000e+00 (exact-value diff 1.1e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/A-A5-seed101/acc_test_unread:random | recorded 0.3 | mine 0.3 (=3/10) | diff 0.000e+00 (exact-value diff 1.1e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/A-A5-seed202/acc_cb | recorded 1.0 | mine 1.0 (=1) | diff 0.000e+00 (exact-value diff 0.0e+00)
+  [OK      ] results/test_evaluation_result.json :: summaries/A-A5-seed202/acc_test_learned | recorded 0.8333333333333334 | mine 0.8333333333333334 (=5/6) | diff 0.000e+00 (exact-value diff 3.7e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/A-A5-seed202/acc_test_learned:natural | recorded 0.7944444444444444 | mine 0.7944444444444444 (=143/180) | diff 0.000e+00 (exact-value diff 4.7e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/A-A5-seed202/acc_test_learned:random | recorded 0.8722222222222222 | mine 0.8722222222222222 (=157/180) | diff 0.000e+00 (exact-value diff 9.9e-18)
+  [OK      ] results/test_evaluation_result.json :: summaries/A-A5-seed202/acc_test_unread | recorded 0.3 | mine 0.3 (=3/10) | diff 0.000e+00 (exact-value diff 1.1e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/A-A5-seed202/acc_test_unread:natural | recorded 0.2833333333333333 | mine 0.2833333333333333 (=17/60) | diff 0.000e+00 (exact-value diff 7.4e-18)
+  [OK      ] results/test_evaluation_result.json :: summaries/A-A5-seed202/acc_test_unread:random | recorded 0.31666666666666665 | mine 0.31666666666666665 (=19/60) | diff 0.000e+00 (exact-value diff 1.5e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/A-A5-seed303/acc_cb | recorded 1.0 | mine 1.0 (=1) | diff 0.000e+00 (exact-value diff 0.0e+00)
+  [OK      ] results/test_evaluation_result.json :: summaries/A-A5-seed303/acc_test_learned | recorded 0.8388888888888889 | mine 0.8388888888888889 (=151/180) | diff 0.000e+00 (exact-value diff 1.7e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/A-A5-seed303/acc_test_learned:natural | recorded 0.8111111111111111 | mine 0.8111111111111111 (=73/90) | diff 0.000e+00 (exact-value diff 4.9e-18)
+  [OK      ] results/test_evaluation_result.json :: summaries/A-A5-seed303/acc_test_learned:random | recorded 0.8666666666666667 | mine 0.8666666666666667 (=13/15) | diff 0.000e+00 (exact-value diff 3.0e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/A-A5-seed303/acc_test_unread | recorded 0.25833333333333336 | mine 0.25833333333333336 (=31/120) | diff 0.000e+00 (exact-value diff 2.6e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/A-A5-seed303/acc_test_unread:natural | recorded 0.16666666666666666 | mine 0.16666666666666666 (=1/6) | diff 0.000e+00 (exact-value diff 9.3e-18)
+  [OK      ] results/test_evaluation_result.json :: summaries/A-A5-seed303/acc_test_unread:random | recorded 0.35 | mine 0.35 (=7/20) | diff 0.000e+00 (exact-value diff 2.2e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/F-F3-seed101/acc_cb | recorded 1.0 | mine 1.0 (=1) | diff 0.000e+00 (exact-value diff 0.0e+00)
+  [OK      ] results/test_evaluation_result.json :: summaries/F-F3-seed101/acc_test_learned | recorded 0.9388888888888889 | mine 0.9388888888888889 (=169/180) | diff 0.000e+00 (exact-value diff 4.9e-18)
+  [OK      ] results/test_evaluation_result.json :: summaries/F-F3-seed101/acc_test_learned:natural | recorded 0.9277777777777778 | mine 0.9277777777777778 (=167/180) | diff 0.000e+00 (exact-value diff 3.5e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/F-F3-seed101/acc_test_learned:random | recorded 0.95 | mine 0.95 (=19/20) | diff 0.000e+00 (exact-value diff 4.4e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/F-F3-seed101/acc_test_unread | recorded 0.325 | mine 0.325 (=13/40) | diff 0.000e+00 (exact-value diff 1.1e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/F-F3-seed101/acc_test_unread:natural | recorded 0.4 | mine 0.4 (=2/5) | diff 0.000e+00 (exact-value diff 2.2e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/F-F3-seed101/acc_test_unread:random | recorded 0.25 | mine 0.25 (=1/4) | diff 0.000e+00 (exact-value diff 0.0e+00)
+  [OK      ] results/test_evaluation_result.json :: summaries/F-F3-seed202/acc_cb | recorded 1.0 | mine 1.0 (=1) | diff 0.000e+00 (exact-value diff 0.0e+00)
+  [OK      ] results/test_evaluation_result.json :: summaries/F-F3-seed202/acc_test_learned | recorded 0.9305555555555556 | mine 0.9305555555555556 (=67/72) | diff 0.000e+00 (exact-value diff 2.5e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/F-F3-seed202/acc_test_learned:natural | recorded 0.9 | mine 0.9 (=9/10) | diff 0.000e+00 (exact-value diff 2.2e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/F-F3-seed202/acc_test_learned:random | recorded 0.9611111111111111 | mine 0.9611111111111111 (=173/180) | diff 0.000e+00 (exact-value diff 2.7e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/F-F3-seed202/acc_test_unread | recorded 0.2916666666666667 | mine 0.2916666666666667 (=7/24) | diff 0.000e+00 (exact-value diff 1.9e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/F-F3-seed202/acc_test_unread:natural | recorded 0.25 | mine 0.25 (=1/4) | diff 0.000e+00 (exact-value diff 0.0e+00)
+  [OK      ] results/test_evaluation_result.json :: summaries/F-F3-seed202/acc_test_unread:random | recorded 0.3333333333333333 | mine 0.3333333333333333 (=1/3) | diff 0.000e+00 (exact-value diff 1.9e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/F-F3-seed303/acc_cb | recorded 1.0 | mine 1.0 (=1) | diff 0.000e+00 (exact-value diff 0.0e+00)
+  [OK      ] results/test_evaluation_result.json :: summaries/F-F3-seed303/acc_test_learned | recorded 0.9194444444444444 | mine 0.9194444444444444 (=331/360) | diff 0.000e+00 (exact-value diff 4.7e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/F-F3-seed303/acc_test_learned:natural | recorded 0.8611111111111112 | mine 0.8611111111111112 (=31/36) | diff 0.000e+00 (exact-value diff 4.9e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/F-F3-seed303/acc_test_learned:random | recorded 0.9777777777777777 | mine 0.9777777777777777 (=44/45) | diff 0.000e+00 (exact-value diff 3.2e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/F-F3-seed303/acc_test_unread | recorded 0.2916666666666667 | mine 0.2916666666666667 (=7/24) | diff 0.000e+00 (exact-value diff 1.9e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/F-F3-seed303/acc_test_unread:natural | recorded 0.3 | mine 0.3 (=3/10) | diff 0.000e+00 (exact-value diff 1.1e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/F-F3-seed303/acc_test_unread:random | recorded 0.2833333333333333 | mine 0.2833333333333333 (=17/60) | diff 0.000e+00 (exact-value diff 7.4e-18)
+  [OK      ] results/test_evaluation_result.json :: summaries/L-L6-seed101/acc_cb | recorded 1.0 | mine 1.0 (=1) | diff 0.000e+00 (exact-value diff 0.0e+00)
+  [OK      ] results/test_evaluation_result.json :: summaries/L-L6-seed101/acc_test_learned | recorded 0.8805555555555555 | mine 0.8805555555555555 (=317/360) | diff 0.000e+00 (exact-value diff 2.0e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/L-L6-seed101/acc_test_learned:natural | recorded 0.8666666666666667 | mine 0.8666666666666667 (=13/15) | diff 0.000e+00 (exact-value diff 3.0e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/L-L6-seed101/acc_test_learned:random | recorded 0.8944444444444445 | mine 0.8944444444444445 (=161/180) | diff 0.000e+00 (exact-value diff 4.2e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/L-L6-seed101/acc_test_unread | recorded 0.35 | mine 0.35 (=7/20) | diff 0.000e+00 (exact-value diff 2.2e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/L-L6-seed101/acc_test_unread:natural | recorded 0.3 | mine 0.3 (=3/10) | diff 0.000e+00 (exact-value diff 1.1e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/L-L6-seed101/acc_test_unread:random | recorded 0.4 | mine 0.4 (=2/5) | diff 0.000e+00 (exact-value diff 2.2e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/L-L6-seed202/acc_cb | recorded 1.0 | mine 1.0 (=1) | diff 0.000e+00 (exact-value diff 0.0e+00)
+  [OK      ] results/test_evaluation_result.json :: summaries/L-L6-seed202/acc_test_learned | recorded 0.9833333333333333 | mine 0.9833333333333333 (=59/60) | diff 0.000e+00 (exact-value diff 5.2e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/L-L6-seed202/acc_test_learned:natural | recorded 0.9666666666666667 | mine 0.9666666666666667 (=29/30) | diff 0.000e+00 (exact-value diff 7.4e-18)
+  [OK      ] results/test_evaluation_result.json :: summaries/L-L6-seed202/acc_test_learned:random | recorded 1.0 | mine 1.0 (=1) | diff 0.000e+00 (exact-value diff 0.0e+00)
+  [OK      ] results/test_evaluation_result.json :: summaries/L-L6-seed202/acc_test_unread | recorded 0.26666666666666666 | mine 0.26666666666666666 (=4/15) | diff 0.000e+00 (exact-value diff 3.7e-18)
+  [OK      ] results/test_evaluation_result.json :: summaries/L-L6-seed202/acc_test_unread:natural | recorded 0.18333333333333332 | mine 0.18333333333333332 (=11/60) | diff 0.000e+00 (exact-value diff 1.3e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/L-L6-seed202/acc_test_unread:random | recorded 0.35 | mine 0.35 (=7/20) | diff 0.000e+00 (exact-value diff 2.2e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/L-L6-seed303/acc_cb | recorded 1.0 | mine 1.0 (=1) | diff 0.000e+00 (exact-value diff 0.0e+00)
+  [OK      ] results/test_evaluation_result.json :: summaries/L-L6-seed303/acc_test_learned | recorded 0.9861111111111112 | mine 0.9861111111111112 (=71/72) | diff 0.000e+00 (exact-value diff 4.9e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/L-L6-seed303/acc_test_learned:natural | recorded 0.9833333333333333 | mine 0.9833333333333333 (=59/60) | diff 0.000e+00 (exact-value diff 5.2e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/L-L6-seed303/acc_test_learned:random | recorded 0.9888888888888889 | mine 0.9888888888888889 (=89/90) | diff 0.000e+00 (exact-value diff 3.9e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/L-L6-seed303/acc_test_unread | recorded 0.20833333333333334 | mine 0.20833333333333334 (=5/24) | diff 0.000e+00 (exact-value diff 9.3e-18)
+  [OK      ] results/test_evaluation_result.json :: summaries/L-L6-seed303/acc_test_unread:natural | recorded 0.25 | mine 0.25 (=1/4) | diff 0.000e+00 (exact-value diff 0.0e+00)
+  [OK      ] results/test_evaluation_result.json :: summaries/L-L6-seed303/acc_test_unread:random | recorded 0.16666666666666666 | mine 0.16666666666666666 (=1/6) | diff 0.000e+00 (exact-value diff 9.3e-18)
+  [OK      ] results/test_evaluation_result.json :: summaries/N/acc_cb | recorded 0.275 | mine 0.275 (=11/40) | diff 0.000e+00 (exact-value diff 2.2e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/N/acc_test_learned | recorded 0.2638888888888889 | mine 0.2638888888888889 (=19/72) | diff 0.000e+00 (exact-value diff 6.2e-18)
+  [OK      ] results/test_evaluation_result.json :: summaries/N/acc_test_learned:natural | recorded 0.2222222222222222 | mine 0.2222222222222222 (=2/9) | diff 0.000e+00 (exact-value diff 1.2e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/N/acc_test_learned:random | recorded 0.3055555555555556 | mine 0.3055555555555556 (=11/36) | diff 0.000e+00 (exact-value diff 2.5e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/N/acc_test_unread | recorded 0.325 | mine 0.325 (=13/40) | diff 0.000e+00 (exact-value diff 1.1e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/N/acc_test_unread:natural | recorded 0.2833333333333333 | mine 0.2833333333333333 (=17/60) | diff 0.000e+00 (exact-value diff 7.4e-18)
+  [OK      ] results/test_evaluation_result.json :: summaries/N/acc_test_unread:random | recorded 0.36666666666666664 | mine 0.36666666666666664 (=11/30) | diff 0.000e+00 (exact-value diff 2.6e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/S-F3-seed101/acc_cb | recorded 0.18333333333333332 | mine 0.18333333333333332 (=11/60) | diff 0.000e+00 (exact-value diff 1.3e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/S-F3-seed101/acc_test_learned | recorded 0.20555555555555555 | mine 0.20555555555555555 (=37/180) | diff 0.000e+00 (exact-value diff 8.6e-18)
+  [OK      ] results/test_evaluation_result.json :: summaries/S-F3-seed101/acc_test_learned:natural | recorded 0.23333333333333334 | mine 0.23333333333333334 (=7/30) | diff 0.000e+00 (exact-value diff 3.7e-18)
+  [OK      ] results/test_evaluation_result.json :: summaries/S-F3-seed101/acc_test_learned:random | recorded 0.17777777777777778 | mine 0.17777777777777778 (=8/45) | diff 0.000e+00 (exact-value diff 6.8e-18)
+  [OK      ] results/test_evaluation_result.json :: summaries/S-F3-seed101/acc_test_unread | recorded 0.275 | mine 0.275 (=11/40) | diff 0.000e+00 (exact-value diff 2.2e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/S-F3-seed101/acc_test_unread:natural | recorded 0.2833333333333333 | mine 0.2833333333333333 (=17/60) | diff 0.000e+00 (exact-value diff 7.4e-18)
+  [OK      ] results/test_evaluation_result.json :: summaries/S-F3-seed101/acc_test_unread:random | recorded 0.26666666666666666 | mine 0.26666666666666666 (=4/15) | diff 0.000e+00 (exact-value diff 3.7e-18)
+  [OK      ] results/test_evaluation_result.json :: summaries/S-F3-seed202/acc_cb | recorded 0.15833333333333333 | mine 0.15833333333333333 (=19/120) | diff 0.000e+00 (exact-value diff 7.4e-18)
+  [OK      ] results/test_evaluation_result.json :: summaries/S-F3-seed202/acc_test_learned | recorded 0.20277777777777778 | mine 0.20277777777777778 (=73/360) | diff 0.000e+00 (exact-value diff 1.2e-18)
+  [OK      ] results/test_evaluation_result.json :: summaries/S-F3-seed202/acc_test_learned:natural | recorded 0.17222222222222222 | mine 0.17222222222222222 (=31/180) | diff 0.000e+00 (exact-value diff 1.2e-18)
+  [OK      ] results/test_evaluation_result.json :: summaries/S-F3-seed202/acc_test_learned:random | recorded 0.23333333333333334 | mine 0.23333333333333334 (=7/30) | diff 0.000e+00 (exact-value diff 3.7e-18)
+  [OK      ] results/test_evaluation_result.json :: summaries/S-F3-seed202/acc_test_unread | recorded 0.35 | mine 0.35 (=7/20) | diff 0.000e+00 (exact-value diff 2.2e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/S-F3-seed202/acc_test_unread:natural | recorded 0.31666666666666665 | mine 0.31666666666666665 (=19/60) | diff 0.000e+00 (exact-value diff 1.5e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/S-F3-seed202/acc_test_unread:random | recorded 0.38333333333333336 | mine 0.38333333333333336 (=23/60) | diff 0.000e+00 (exact-value diff 2.6e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/S-F3-seed303/acc_cb | recorded 0.14166666666666666 | mine 0.14166666666666666 (=17/120) | diff 0.000e+00 (exact-value diff 3.7e-18)
+  [OK      ] results/test_evaluation_result.json :: summaries/S-F3-seed303/acc_test_learned | recorded 0.2361111111111111 | mine 0.2361111111111111 (=17/72) | diff 0.000e+00 (exact-value diff 6.2e-18)
+  [OK      ] results/test_evaluation_result.json :: summaries/S-F3-seed303/acc_test_learned:natural | recorded 0.2611111111111111 | mine 0.2611111111111111 (=47/180) | diff 0.000e+00 (exact-value diff 1.6e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/S-F3-seed303/acc_test_learned:random | recorded 0.2111111111111111 | mine 0.2111111111111111 (=19/90) | diff 0.000e+00 (exact-value diff 6.2e-19)
+  [OK      ] results/test_evaluation_result.json :: summaries/S-F3-seed303/acc_test_unread | recorded 0.25 | mine 0.25 (=1/4) | diff 0.000e+00 (exact-value diff 0.0e+00)
+  [OK      ] results/test_evaluation_result.json :: summaries/S-F3-seed303/acc_test_unread:natural | recorded 0.3 | mine 0.3 (=3/10) | diff 0.000e+00 (exact-value diff 1.1e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/S-F3-seed303/acc_test_unread:random | recorded 0.2 | mine 0.2 (=1/5) | diff 0.000e+00 (exact-value diff 1.1e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/Y-F3-seed101/acc_cb | recorded 0.23333333333333334 | mine 0.23333333333333334 (=7/30) | diff 0.000e+00 (exact-value diff 3.7e-18)
+  [OK      ] results/test_evaluation_result.json :: summaries/Y-F3-seed101/acc_test_learned | recorded 0.25833333333333336 | mine 0.25833333333333336 (=31/120) | diff 0.000e+00 (exact-value diff 2.6e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/Y-F3-seed101/acc_test_learned:natural | recorded 0.20555555555555555 | mine 0.20555555555555555 (=37/180) | diff 0.000e+00 (exact-value diff 8.6e-18)
+  [OK      ] results/test_evaluation_result.json :: summaries/Y-F3-seed101/acc_test_learned:random | recorded 0.3111111111111111 | mine 0.3111111111111111 (=14/45) | diff 0.000e+00 (exact-value diff 4.9e-18)
+  [OK      ] results/test_evaluation_result.json :: summaries/Y-F3-seed101/acc_test_unread | recorded 0.26666666666666666 | mine 0.26666666666666666 (=4/15) | diff 0.000e+00 (exact-value diff 3.7e-18)
+  [OK      ] results/test_evaluation_result.json :: summaries/Y-F3-seed101/acc_test_unread:natural | recorded 0.31666666666666665 | mine 0.31666666666666665 (=19/60) | diff 0.000e+00 (exact-value diff 1.5e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/Y-F3-seed101/acc_test_unread:random | recorded 0.21666666666666667 | mine 0.21666666666666667 (=13/60) | diff 0.000e+00 (exact-value diff 7.4e-18)
+  [OK      ] results/test_evaluation_result.json :: summaries/Y-F3-seed202/acc_cb | recorded 0.2916666666666667 | mine 0.2916666666666667 (=7/24) | diff 0.000e+00 (exact-value diff 1.9e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/Y-F3-seed202/acc_test_learned | recorded 0.26666666666666666 | mine 0.26666666666666666 (=4/15) | diff 0.000e+00 (exact-value diff 3.7e-18)
+  [OK      ] results/test_evaluation_result.json :: summaries/Y-F3-seed202/acc_test_learned:natural | recorded 0.23333333333333334 | mine 0.23333333333333334 (=7/30) | diff 0.000e+00 (exact-value diff 3.7e-18)
+  [OK      ] results/test_evaluation_result.json :: summaries/Y-F3-seed202/acc_test_learned:random | recorded 0.3 | mine 0.3 (=3/10) | diff 0.000e+00 (exact-value diff 1.1e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/Y-F3-seed202/acc_test_unread | recorded 0.31666666666666665 | mine 0.31666666666666665 (=19/60) | diff 0.000e+00 (exact-value diff 1.5e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/Y-F3-seed202/acc_test_unread:natural | recorded 0.31666666666666665 | mine 0.31666666666666665 (=19/60) | diff 0.000e+00 (exact-value diff 1.5e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/Y-F3-seed202/acc_test_unread:random | recorded 0.31666666666666665 | mine 0.31666666666666665 (=19/60) | diff 0.000e+00 (exact-value diff 1.5e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/Y-F3-seed303/acc_cb | recorded 0.25 | mine 0.25 (=1/4) | diff 0.000e+00 (exact-value diff 0.0e+00)
+  [OK      ] results/test_evaluation_result.json :: summaries/Y-F3-seed303/acc_test_learned | recorded 0.2638888888888889 | mine 0.2638888888888889 (=19/72) | diff 0.000e+00 (exact-value diff 6.2e-18)
+  [OK      ] results/test_evaluation_result.json :: summaries/Y-F3-seed303/acc_test_learned:natural | recorded 0.2 | mine 0.2 (=1/5) | diff 0.000e+00 (exact-value diff 1.1e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/Y-F3-seed303/acc_test_learned:random | recorded 0.3277777777777778 | mine 0.3277777777777778 (=59/180) | diff 0.000e+00 (exact-value diff 1.2e-18)
+  [OK      ] results/test_evaluation_result.json :: summaries/Y-F3-seed303/acc_test_unread | recorded 0.3416666666666667 | mine 0.3416666666666667 (=41/120) | diff 0.000e+00 (exact-value diff 7.4e-18)
+  [OK      ] results/test_evaluation_result.json :: summaries/Y-F3-seed303/acc_test_unread:natural | recorded 0.3333333333333333 | mine 0.3333333333333333 (=1/3) | diff 0.000e+00 (exact-value diff 1.9e-17)
+  [OK      ] results/test_evaluation_result.json :: summaries/Y-F3-seed303/acc_test_unread:random | recorded 0.35 | mine 0.35 (=7/20) | diff 0.000e+00 (exact-value diff 2.2e-17)
+ -- F3. DEV details (results/details/<run>_dev.json): correct = s(answer) > max s(other), ties wrong; Score and CB
+  [OK      ] results/details/A-A5-seed101_dev.json: rows dev_qa 320 train_cb 120 | 2 DEV questions per fact, ids complete: True | 'correct' flags != recomputed: 0 | Scores / CB != committed scores_dev / scores_cb: 0
+  [OK      ] results/details/A-A5-seed202_dev.json: rows dev_qa 320 train_cb 120 | 2 DEV questions per fact, ids complete: True | 'correct' flags != recomputed: 0 | Scores / CB != committed scores_dev / scores_cb: 0
+  [OK      ] results/details/A-A5-seed303_dev.json: rows dev_qa 320 train_cb 120 | 2 DEV questions per fact, ids complete: True | 'correct' flags != recomputed: 0 | Scores / CB != committed scores_dev / scores_cb: 0
+  [OK      ] results/details/F-F3-seed101_dev.json: rows dev_qa 320 train_cb 120 | 2 DEV questions per fact, ids complete: True | 'correct' flags != recomputed: 0 | Scores / CB != committed scores_dev / scores_cb: 0
+  [OK      ] results/details/F-F3-seed202_dev.json: rows dev_qa 320 train_cb 120 | 2 DEV questions per fact, ids complete: True | 'correct' flags != recomputed: 0 | Scores / CB != committed scores_dev / scores_cb: 0
+  [OK      ] results/details/F-F3-seed303_dev.json: rows dev_qa 320 train_cb 120 | 2 DEV questions per fact, ids complete: True | 'correct' flags != recomputed: 0 | Scores / CB != committed scores_dev / scores_cb: 0
+  [OK      ] results/details/L-L6-seed101_dev.json: rows dev_qa 320 train_cb 120 | 2 DEV questions per fact, ids complete: True | 'correct' flags != recomputed: 0 | Scores / CB != committed scores_dev / scores_cb: 0
+  [OK      ] results/details/L-L6-seed202_dev.json: rows dev_qa 320 train_cb 120 | 2 DEV questions per fact, ids complete: True | 'correct' flags != recomputed: 0 | Scores / CB != committed scores_dev / scores_cb: 0
+  [OK      ] results/details/L-L6-seed303_dev.json: rows dev_qa 320 train_cb 120 | 2 DEV questions per fact, ids complete: True | 'correct' flags != recomputed: 0 | Scores / CB != committed scores_dev / scores_cb: 0
+  [OK      ] results/details/N_dev.json: rows dev_qa 320 train_cb 120 | 2 DEV questions per fact, ids complete: True | 'correct' flags != recomputed: 0 | Scores / CB != committed scores_dev / scores_cb: 0
+  [OK      ] results/details/S-F3-seed101_dev.json: rows dev_qa 320 train_cb 120 | 2 DEV questions per fact, ids complete: True | 'correct' flags != recomputed: 0 | Scores / CB != committed scores_dev / scores_cb: 0
+  [OK      ] results/details/S-F3-seed202_dev.json: rows dev_qa 320 train_cb 120 | 2 DEV questions per fact, ids complete: True | 'correct' flags != recomputed: 0 | Scores / CB != committed scores_dev / scores_cb: 0
+  [OK      ] results/details/S-F3-seed303_dev.json: rows dev_qa 320 train_cb 120 | 2 DEV questions per fact, ids complete: True | 'correct' flags != recomputed: 0 | Scores / CB != committed scores_dev / scores_cb: 0
+  [OK      ] results/details/Y-F3-seed101_dev.json: rows dev_qa 320 train_cb 120 | 2 DEV questions per fact, ids complete: True | 'correct' flags != recomputed: 0 | Scores / CB != committed scores_dev / scores_cb: 0
+  [OK      ] results/details/Y-F3-seed202_dev.json: rows dev_qa 320 train_cb 120 | 2 DEV questions per fact, ids complete: True | 'correct' flags != recomputed: 0 | Scores / CB != committed scores_dev / scores_cb: 0
+  [OK      ] results/details/Y-F3-seed303_dev.json: rows dev_qa 320 train_cb 120 | 2 DEV questions per fact, ids complete: True | 'correct' flags != recomputed: 0 | Scores / CB != committed scores_dev / scores_cb: 0
+  (TEST per-question details were not committed; no TEST detail cross-check is possible or attempted)
+
+== H. sensitivity of the CI comparison (negative controls; information only, not counted)
+  Each variant changes one implementation detail and recomputes the 40 comparisons (DEV and TEST, 5 pairs x
+  4 seeds); shown is how many of the 80 recorded CI endpoints it still reproduces within the tolerance.
+  as implemented above (B10-B12)                            : 80 of 80 recorded CI endpoints reproduced
+  reversed fact order within each stratum                   : 38 of 80 recorded CI endpoints reproduced
+  stratum order random, then natural                        : 45 of 80 recorded CI endpoints reproduced
+  unstratified resampling (120 from all learned facts)      : 39 of 80 recorded CI endpoints reproduced
+  purpose with U+2212 minus instead of ASCII '-'            : 47 of 80 recorded CI endpoints reproduced
+  percentile without interpolation (lower order statistic)  : 78 of 80 recorded CI endpoints reproduced
+  note: within each stratum the learned facts in plain fact_id sort order are in the same order as in facts.jsonl: True (so a sorted-fact_id implementation would give the same draws; the order variant above is a reversal)
+
+== G. summary
+numpy.percentile (default 'linear') vs my exact percentiles over all 42 bootstraps of means: max |diff| 1.110e-16 (self-check of B11)
+main items: DEV (step7_record.json) 238, TEST (test_evaluation_result.json) 194
+MAIN (ordered scope): items 432 | inconsistent 0 | max |diff| 1.110e-16 | max exact-value diff of float items 8.224e-17 | by kind {'float': 173, 'exact': 46, 'eq': 213} | float items bit-identical (diff exactly 0): 140 of 173
+SUPPLEMENTARY F1-F2: items 246 | inconsistent 0 | max |diff| 0.000e+00 | max exact-value diff of float items 5.181e-17 | by kind {'float': 229, 'exact': 0, 'eq': 17} | float items bit-identical (diff exactly 0): 229 of 229
+SUPPLEMENTARY F3 (DEV details): checked values 11520 | inconsistent 0
+setup checks: fact order confirmed True | inputs consistent True | seeds == manifest True
+wrote /home/user/OpenMythos/metrix/e1-pilot/audit/pilot_final_recompute.json
+TOTAL items 678 (+ 11520 detail values) | inconsistent 0 | main inconsistent 0
+RESULT: PASS
+exit=0
