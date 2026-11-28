@@ -1,0 +1,98 @@
+ metrix/CLAUDE.md                              |  3 ++-
+ metrix/e1-pilot/reports/PILOT_FINAL_REPORT.md | 34 ++++++++++++++-------------
+ 2 files changed, 20 insertions(+), 17 deletions(-)
+diff --git a/metrix/CLAUDE.md b/metrix/CLAUDE.md
+index 599d838..669bc4a 100644
+--- a/metrix/CLAUDE.md
++++ b/metrix/CLAUDE.md
+@@ -18,7 +18,7 @@ Metrix 是独立子项目。根目录 `CLAUDE.md`(Mythos 宪章 v2.0)第 1 节
+ 
+ ## 2. 当前阶段
+ 
+-- E1 Pilot,状态:E1-PILOT 已完成：PASS（PIPELINE_QUALIFIED），2026-11-28；结果见 reports/PILOT_FINAL_REPORT.md（出处：Review Gate 裁决，Owner 批准，2026-11-28）
++- E1 Pilot,状态:E1-PILOT 已完成：PASS（PIPELINE_QUALIFIED），2026-11-28；结果见 metrix/e1-pilot/reports/PILOT_FINAL_REPORT.md（出处：Review Gate 裁决，Owner 批准，2026-11-28；原因：正式运行与报告完成；作用范围：永久）
+ - 分支:metrix-e1-pilot-protocol-v1
+ - 基线:leotree2020/OpenMythos mythos-idea-thermo-v1 @ 61d3c76705b28cc2ee334abc5bf1baaac4fc30dc
+ - 模型:Qwen/Qwen3-1.7B @ 70d244cc86ccca08cf5af4e1e306ecf908b1ad5e
+@@ -60,6 +60,7 @@ PROTOCOL_FROZEN 的发出与修改、租用 GPU、生成或评测 TEST、删除
+ - Reviewer / Auditor 与 Executor 意见不同:由 Review Gate 裁决。
+ - 协议未覆盖的情况:停止并报告,由 Review Gate 提出方案。
+ - Review Gate 的裁决写入决定记录时须注明作用范围:本次提交 / 本阶段 / 永久。「永久」与「本阶段」的裁决可写入本文件,写入时须注明作用范围;「本阶段」的裁决在本阶段结束时失效。（出处：Review Gate 第 7 轮裁决（第 8 轮指令第 1e 项），Owner 批准，2026-11-22 05:27 UTC；原因：原文只允许「永久」的裁决写入本文件，与已写入的第 5 节第 6 条、第 10 节的「本阶段」裁决矛盾，见 metrix/e1-pilot/reports/ROUND7_REPORT.md「待 Review Gate 决定」第 4 项）（作用范围：永久。出处：Review Gate 第 8 轮裁决，Owner 批准，2026-11-22 09:44 UTC；原因：1e 写入时未注明这条裁决自己的作用范围，见 metrix/e1-pilot/reports/ROUND8_REPORT.md「待 Review Gate 决定」第 1 项）
++- E1 Pilot 结束后，第 4 节（算力，含 4 小时上限）只适用于 E1 Pilot，不延续；第 5、6、7、9、10 节的做法在 E1-V1 阶段继续适用，直到 E1-V1 的协议或 Task Order 另有规定（出处：Review Gate 裁决，Owner 批准，2026-11-28，永久）。
+ 
+ ## 9. 汇报格式
+ 
+diff --git a/metrix/e1-pilot/reports/PILOT_FINAL_REPORT.md b/metrix/e1-pilot/reports/PILOT_FINAL_REPORT.md
+index be4700b..bf7427e 100644
+--- a/metrix/e1-pilot/reports/PILOT_FINAL_REPORT.md
++++ b/metrix/e1-pilot/reports/PILOT_FINAL_REPORT.md
+@@ -11,7 +11,7 @@
+ 
+ **本报告只汇总记录,不含任何机制层面的结论或优劣判断**(协议第 1 节 Non-claims,原文见下)。
+ 
+-**表格的生成方式**:下文的数值表由 `reports/pilot_final/report_fragments.py` 从提交 `53800ef7` 的记录直接生成(`git show`),未手工录入;脚本的完整输出为 `reports/pilot_final/report_fragments.md`,本报告逐字嵌入其中各段。小数为记录值经 Python `%.4f` 格式化(另注明者除外),CI 端点同;分数为记录中的 `point_exact`。求和、交叉核对与费用算术见 `reports/pilot_final/report_tables.py` 及其完整输出 `reports/pilot_final/report_tables.txt`。
++**表格的生成方式**:下文的数值表由 `reports/pilot_final/report_fragments.py` 从提交 `53800ef7` 的记录直接生成(`git show`),未手工录入;脚本的完整输出为 `reports/pilot_final/report_fragments.md`,本报告逐字嵌入其中各段。小数为记录值经 Python `%.4f` 格式化(另注明者除外),CI 端点同;分数为记录中的 `point_exact`。求和、交叉核对与费用算术见 `reports/pilot_final/report_tables.py` 及其完整输出 `reports/pilot_final/report_tables.txt`。例外:Gate 0 与 T1–T3 两张表的“门槛(协议第 8 节)”一列已在勘误提交中按 Review Gate 2026-11-28 的裁决(A1,`reports/DEFERRED_MINORS.md` 1.44 节 PR1)替换为协议第 8 节对应行的原文,与 `report_fragments.md` 中该列不同。
+ 
+ ---
+ 
+@@ -278,16 +278,16 @@ GPU 计时分两段(`final_work_manifest.txt` 中 `gpu_clock.json` 的 `segments
+ 
+ | 编号 | 门槛(协议第 8 节) | 实测值 | 出处(results/) | 代码判定 |
+ |---|---|---|---|---|
+-| G0.1 | 泄漏检查 L1–L6 全部在上限内 | L1 0(上限 0); L2 0.2(上限 0.25); L3a 0(上限 0); L3b 0(上限 0); L4 0(上限 0); L5 0(上限 0); L6 0(上限 0);结果 PASS,over_limit [] | step2_record.json `leakage.checks.*`、`leakage.result`;step7_record.json `values.G0.1` | True |
+-| G0.2 | 所有损失、分数、NLL 为有限值 | all_finite True,nonfinite [] | step7_record.json `values.G0.2` | True |
+-| G0.3 | Acc(N, DEV-QA, learned) ∈ [0.15, 0.35];每个 stratum ∈ [0.10, 0.40];Acc(N, DEV-QA, unread) ∈ [0.10, 0.40];Acc_CB(N) ∈ [0.15, 0.35] | learned 0.2958;natural 0.2500;random 0.3417;unread 0.2750;Acc_CB 0.2750 | step7_record.json `values.G0.3` | True |
+-| G0.4 | Acc_CB(F) ≥ 0.90,3 个种子 | 101: 1.0000;202: 1.0000;303: 1.0000 | step7_record.json `values.G0.4.acc_cb_by_seed` | True |
+-| G0.5 | seed-average Acc(F, DEV-QA, learned) ≥ 0.70;seed-average Δ(F−N) 95% CI 下界 > 0;每个种子 Δ(F−N) > 0 | Acc 0.9236;Δ(F−N) avg 113/180 (0.6278) [0.5486, 0.7069];每个种子 0.6333 / 0.6333 / 0.6167 | step7_record.json `values.G0.5.acc_avg`、`.delta_avg`、`.delta_by_seed` | True |
+-| G0.6 | seed-average Δ(S−N) 点估计 ≤ +0.05 且 95% CI 上界 ≤ +0.12 | -4/45 (-0.0889) [-0.1722, -0.0056] | step7_record.json `values.G0.6.delta_avg` | True |
+-| G0.7 | seed-average Δ(Y−N) 点估计 ≤ +0.05 且 95% CI 上界 ≤ +0.12 | -19/720 (-0.0264) [-0.1153, 0.0625] | step7_record.json `values.G0.7.delta_avg` | True |
+-| G0.8 | 复现:候选分数差 ≤ 1e-4;预测相同(最高两候选差 ≤ 1e-4 时允许不同);通用窗口 NLL 差 ≤ 1e-5 | 种子 101:items 440,max_score_diff 0.0,max_nll_diff 0.0,允许的预测差 0,不允许的预测差 0 个; 种子 202:items 440,max_score_diff 0.0,max_nll_diff 0.0,允许的预测差 0,不允许的预测差 0 个; 种子 303:items 440,max_score_diff 0.0,max_nll_diff 0.0,允许的预测差 0,不允许的预测差 0 个 | step7_record.json `values.G0.8.checkpoints` | True |
+-| G0.9 | seed-average Acc(F, DEV-QA, learned) ≤ 0.95 | 0.9236 | step7_record.json `values.G0.9.acc_avg` | True |
+-| G0.10 | 能估计 E1-V1 的规模:σ_d 有限,按公式算出所需 fact 数 | L−F:σ_d 0.1782 [0.1400, 0.2116],n_max 141;A−F:σ_d 0.2320 [0.1898, 0.2709],n_max 231;planning_n 231(数值见下节) | step7_record.json `values.G0.10` | True |
++| G0.1 | 泄漏检查 L1–L6 全部在上限内;L1–L6 中涉及 TEST 的部分在 Gate 0 不要求,按第 8 步运行 | L1 0(上限 0); L2 0.2(上限 0.25); L3a 0(上限 0); L3b 0(上限 0); L4 0(上限 0); L5 0(上限 0); L6 0(上限 0);结果 PASS,over_limit [] | step2_record.json `leakage.checks.*`、`leakage.result`;step7_record.json `values.G0.1` | True |
++| G0.2 | 所有用到的损失、分数、NLL 都是有限值 | all_finite True,nonfinite [] | step7_record.json `values.G0.2` | True |
++| G0.3 | N 的下限检查:`Acc(N, DEV-QA, learned)` ∈ [0.15, 0.35],每个 stratum ∈ [0.10, 0.40];`Acc(N, DEV-QA, unread)` ∈ [0.10, 0.40];`Acc_CB(N)` ∈ [0.15, 0.35] | learned 0.2958;natural 0.2500;random 0.3417;unread 0.2750;Acc_CB 0.2750 | step7_record.json `values.G0.3` | True |
++| G0.4 | `Acc_CB(F)` ≥ 0.90,3 个种子都满足 | 101: 1.0000;202: 1.0000;303: 1.0000 | step7_record.json `values.G0.4.acc_cb_by_seed` | True |
++| G0.5 | seed-average `Acc(F, DEV-QA, learned)` ≥ 0.70;seed-average Δ(F−N) 的 95% CI 下界 > 0;每个种子的 Δ(F−N) > 0 | Acc 0.9236;Δ(F−N) avg 113/180 (0.6278) [0.5486, 0.7069];每个种子 0.6333 / 0.6333 / 0.6167 | step7_record.json `values.G0.5.acc_avg`、`.delta_avg`、`.delta_by_seed` | True |
++| G0.6 | seed-average Δ(S−N)(真实映射,DEV-QA,learned):点估计 ≤ +0.05 且 95% CI 上界 ≤ +0.12 | -4/45 (-0.0889) [-0.1722, -0.0056] | step7_record.json `values.G0.6.delta_avg` | True |
++| G0.7 | seed-average Δ(Y−N)(DEV-QA,learned):点估计 ≤ +0.05 且 95% CI 上界 ≤ +0.12 | -19/720 (-0.0264) [-0.1153, 0.0625] | step7_record.json `values.G0.7.delta_avg` | True |
++| G0.8 | 复现：对 F 选定配置的 3 个 checkpoint 各评测两次；候选分数差 ≤ 1e-4；某题两次中任一次最高两个候选分数差 ≤ 1e-4 时允许预测不同，其余预测须完全相同；并列判为错；每个通用窗口的 NLL 差 ≤ 1e-5。实现须开启 PyTorch 确定性设置并记录。 | 种子 101:items 440,max_score_diff 0.0,max_nll_diff 0.0,允许的预测差 0,不允许的预测差 0 个; 种子 202:items 440,max_score_diff 0.0,max_nll_diff 0.0,允许的预测差 0,不允许的预测差 0 个; 种子 303:items 440,max_score_diff 0.0,max_nll_diff 0.0,允许的预测差 0,不允许的预测差 0 个 | step7_record.json `values.G0.8.checkpoints` | True |
++| G0.9 | 上限检查:seed-average `Acc(F, DEV-QA, learned)` ≤ 0.95 | 0.9236 | step7_record.json `values.G0.9.acc_avg` | True |
++| G0.10 | 能估计 E1-V1 的规模:对 Δ(L−F)、Δ(A−F) 的 seed-average 配对差 d_f 算出标准差 σ_d(有限);分别用 σ_d 的 bootstrap 2.5 分位、点估计、97.5 分位,按 `n = ((1.96 + 0.84) · σ_d / δ)²`(双侧 0.05、功效 0.80)计算 δ ∈ {0.05, 0.10, 0.15} 下的所需 fact 数,以最大者作为 E1-V1 规划依据;再用 Pilot 的 fact 按 n 重抽样验证 CI 半宽。Pilot 的规模估计是规划估计,不是保证 | L−F:σ_d 0.1782 [0.1400, 0.2116],n_max 141;A−F:σ_d 0.2320 [0.1898, 0.2709],n_max 231;planning_n 231(数值见下节) | step7_record.json `values.G0.10` | True |
+ 
+ Gate 0 状态:`PASS`(step7_record.json `gate0.gate0_status`;gate0_record.json `gate0.gate0_status` = `PASS`;`reasons` [])。
+ 
+@@ -295,9 +295,9 @@ Gate 0 状态:`PASS`(step7_record.json `gate0.gate0_status`;gate0_record.json `g
+ 
+ | 编号 | 门槛(协议第 8 节) | 实测值 | 出处(results/test_evaluation_result.json) | 代码判定 |
+ |---|---|---|---|---|
+-| T1 | seed-average Acc(F, TEST-QA, learned) ≥ 0.70,且 seed-average Δ(F−N) 95% CI 下界 > 0 | Acc 0.9296;Δ(F−N) avg 719/1080 (0.6657) [0.5991, 0.7315] | `values.T1.acc_avg`、`values.T1.delta_avg` | True |
+-| T2 | S、Y 在 TEST-QA 上满足 G0.6、G0.7 的数值(点估计 ≤ +0.05 且 CI 上界 ≤ +0.12) | Δ(S−N) avg -53/1080 (-0.0491) [-0.1241, 0.0269];Δ(Y−N) avg -1/1080 (-0.0009) [-0.0806, 0.0796] | `values.T2.S.delta_avg`、`values.T2.Y.delta_avg` | True |
+-| T3 | N 在 TEST-QA 上满足 G0.3 的同样范围(含 Acc_CB(N),解释 B24) | learned 0.2639;natural 0.2222;random 0.3056;unread 0.3250;Acc_CB 0.2750 | `values.T3` | True |
++| T1 | seed-average `Acc(F, TEST-QA, learned)` ≥ 0.70,且 seed-average Δ(F−N) 的 95% CI 下界 > 0 | Acc 0.9296;Δ(F−N) avg 719/1080 (0.6657) [0.5991, 0.7315] | `values.T1.acc_avg`、`values.T1.delta_avg` | True |
++| T2 | S、Y 在 TEST-QA 上满足 G0.6、G0.7 的同样数值 | Δ(S−N) avg -53/1080 (-0.0491) [-0.1241, 0.0269];Δ(Y−N) avg -1/1080 (-0.0009) [-0.0806, 0.0796] | `values.T2.S.delta_avg`、`values.T2.Y.delta_avg` | True |
++| T3 | N 在 TEST-QA 上满足 G0.3 的同样范围 | learned 0.2639;natural 0.2222;random 0.3056;unread 0.3250;Acc_CB 0.2750 | `values.T3` | True |
+ 
+ 最终状态:`PASS`(test_evaluation_result.json `final.final_status`;`final.reasons` [];experiment_record_test-evaluate_20261128T072505Z.json `template.Status` = `PASS`)。
+ 
+@@ -446,9 +446,9 @@ Review Gate 已从仓库记录独立核对 G0.3–G0.9 与 T1–T3 的数值和
+ 4. **下载警告**:`fetch.txt` 中两次出现 `Warning: You are sending unauthenticated requests to the HF Hub`;三条下载命令均为 `RESULT: PASS`,分词器、锚文本 parquet 与两个权重文件的哈希为 `= frozen` / 来自冻结 revision。
+ 5. **驱动版本**:`nvidia-smi` 报告 CUDA Version 13.2,torch 的 CUDA 为 13.0(`env.txt`;`environment.cuda.torch_cuda`)。
+ 6. **长命令退出码**:`s3_2a`、`s3_2`、`s3_4_data`、`s3_4_config`、`s3_4_model`、`formal`、`test_generate`、`test_evaluate` 的 `.end.txt` 均为 `exit=0`;三份长命令输出均以 `RESULT: PASS` 结束;命令输出中没有回溯或 error 行(`formal_20261128T045919Z.txt`、`test_generate_20261128T072042Z.txt`、`test_evaluate_20261128T072503Z.txt`)。
+-7. **code_commit 不同**:三个命令记录的 code_commit 分别为 `0a67c2c4`(formal)、`647a75d5`(test-generate)、`a7b4f6fe`(test-evaluate),因为每次命令之前 HEAD 已随记录提交与证据提交前进;这些提交之间代码、测试、依赖锁定、协议与冻结文件无改动(`reports/pilot_final/run_commits_and_code_check.txt`)。
++7. **code_commit 不同**:三个命令记录的 code_commit 分别为 `0a67c2c4`(formal)、`647a75d5`(test-generate)、`a7b4f6fe`(test-evaluate),因为每次命令之前 HEAD 已随记录提交与证据提交前进;这些提交之间 `src/`、`run_pilot.py`、`tests/`、`requirements.lock`、协议、`SEARCH_SPACE.json`、`PROTOCOL_FROZEN`、`RUNBOOK_A100.md`、`.claude/`、两个 `CLAUDE.md` 无改动;两个 manifest 由第 1 步按协议第 8 节写入哈希字段(`reports/pilot_final/run_commits_and_code_check.txt`)。
+ 8. **formal 实验记录的状态**:`NOT_TESTED`(写入于 06:43:54Z,TEST 之前),最终状态写在 test-evaluate 实验记录中(`PASS`)。
+-9. **停止点与等待**:formal 日志的最后一条时间戳为 06:43:57Z(`formal.end` 的修改时间 06:43:58Z,`final_work_manifest.txt`),证据提交 `647a75d5` 于 06:44:49Z;test-generate 于 07:20:42Z 启动(长命令输出文件名时间)、07:20:52Z 推送 ST10 记录 `b8337e7d`;data-auditor 的 L6 计数提交 `99493a48`(07:23:49Z)与其审查记录 `772b9247`(07:24:30Z);test-evaluate 于 07:25:03Z 启动,TEST 标记提交 `b526312b`(07:26:50Z),结果提交 `9fc7337b`(07:42:43Z)。仓库中没有 Owner 批准 TEST 生成的原文记录;TEST 评测采用 Review Gate 的有条件批准(test-generate 正常结束、ST10 记录已推送、两份 L6 计数相同且不超限时直接进入第 3.8 节;`tasks/PILOT_REPORT_ORDER.md`)。等待期间 GPU 计时不累计(两段 `segments`)。
++9. **停止点与等待**:formal 日志的最后一条时间戳为 06:43:57Z(`formal.end` 的修改时间 06:43:58Z,`final_work_manifest.txt`),证据提交 `647a75d5` 于 06:44:49Z;test-generate 于 07:20:42Z 启动(长命令输出文件名时间)、07:20:52Z 推送 ST10 记录 `b8337e7d`;data-auditor 的 L6 计数提交 `99493a48`(07:23:49Z)与其审查记录 `772b9247`(07:24:30Z);test-evaluate 于 07:25:03Z 启动,TEST 标记提交 `b526312b`(07:26:50Z),结果提交 `9fc7337b`(07:42:43Z)。仓库中没有 Owner 批准 TEST 生成的原文记录;TEST 评测采用 Review Gate 的有条件批准(test-generate 正常结束、ST10 记录已推送、两份 L6 计数相同且不超限时直接进入第 3.8 节;`tasks/PILOT_REPORT_ORDER.md`)。等待期间 GPU 计时不累计(两段 `segments`)。Review Gate 的决定记录已把该有条件批准记为 Owner 于 2026-11-28 约 16:19–16:20 JST 作出、17:24 JST 由 Owner 确认。
+ 10. **data-auditor 的 L6 TEST 计数**:计数 0,与 Executor 的 L6 计数 0 相同(`audit/st10_l6_test_count.json`、`st10_record.json` `counts.L6`)。其审查记录 `reviews/99493a4828e7460421ab20c3220b7360d6f1dac8/README.txt` 写明:Executor 逐行查看了其 stdout、答复与转录,脚本之外它对 `general_test.jsonl` 的唯一访问只打印了键名、类型、一个 id 列表长度与行数。
+ 11. **单价**:Owner 报告的单价 2.14 美元/小时,高于 `RUNBOOK_A100.md` 第 6 节的规划单价 1.8 美元/小时;实际花费 6.72 美元。
+ 12. **机器终止**:Owner 在留存清单提交 `53800ef7`(07:47:37Z)之后终止机器;checkpoint、`<work>/test/`、`<work>/test_details/` 未入库(Review Gate 裁决,Owner 批准,`tasks/PILOT_REPORT_ORDER.md`)。留存清单中这三类文件按 Owner 指示未计算哈希(`final_work_manifest.txt` 表头说明,哈希列为 `-`)。
+@@ -471,6 +471,8 @@ Review Gate 已从仓库记录独立核对 G0.3–G0.9 与 T1–T3 的数值和
+ 
+ `<work>/command_output/` 中的命令输出、长命令脚本与结束标记已复制入库(`results/command_output/`,RUNBOOK 第 5 节)。
+ 
++责任说明(Review Gate 裁决,2026-11-28,原文):“TEST 通用文本的 NLL 与 dNLL 未写入入库的结果文件，机器终止后无法恢复。终止机器的建议由 Review Gate 提出，当时称汇总结果均已入库，这一说法对 TEST 的 dNLL 不成立。该数值在 Pilot 中只报告、不进 T1–T3，最终状态不受影响。”
++
+ ## data-auditor 独立复算
+ 
+ `tasks/PILOT_REPORT_ORDER.md` 第 3 项。data-auditor 在本会话的 Claude Code 云容器(主机名 `vm`,只有 CPU)中,只用 `results/` 中已提交的逐 fact 分数(DEV:`training_runs/<run>.json` `dev.scores_dev`、`dev.scores_cb` 与 `step3_record.json` `N.summary`;TEST:`test_evaluation_result.json` `summaries.<模型>.scores_test`、`scores_cb`),用自写脚本按协议第 6 节、rng_rule 与解释 B10–B13 重算,并与 `step7_record.json`、`test_evaluation_result.json` 逐项比对。它没有导入或运行 Executor 的代码,没有加载模型权重,没有打开、寻找或生成任何 TEST 文件。

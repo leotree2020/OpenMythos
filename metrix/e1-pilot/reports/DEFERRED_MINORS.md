@@ -830,6 +830,23 @@ code-reviewer 结论 PASS(没有 BLOCKER;4 个 MAJOR、19 个 MINOR(PR5–PR22,�
 | PR21 | MINOR | `metrix/CLAUDE.md` 第 2 节新句 | 路径 `reports/PILOT_FINAL_REPORT.md` 从 `metrix/CLAUDE.md` 看会解析成 `metrix/reports/…`;本文件其他引用写全 `metrix/e1-pilot/…`;为 Owner 给定的原文 | PFR-CR MINOR 18 | 登记,交 Review Gate;在此之前不改 |
 | PR22 | MINOR(未验证) | `metrix/CLAUDE.md` 第 2 节新句 | 状态改为“已完成”后,按第 8 节,“本阶段”的裁决(第 4 节末句、第 5 节第 6 条、第 10 节)是否随之失效,本提交没有说明 | PFR-CR MINOR 19 | 登记,交 Review Gate 确认阶段是否已结束 |
 
+### 1.45 E1-PILOT 报告勘误提交(暂存树 `c20acf56`;`reviews/tree-c20acf5690579241c76100f2a7363b1cda103041/code-reviewer_round1.md` 记 `PER-CR`)
+
+Review Gate 2026-11-28 的裁决(Owner 转达;A1–A5)处理了 1.44 节的 PR1(A1)、PR2(A2)、PR4(A3)、PR3 与 PR21(A4 第一句)、PR22(A4 第 8 节新增一条),另补 A5 的责任说明;1.44 节各行的“处理”一栏保持原文,以本节为准。裁决原文(Owner 消息“=====”之前的部分)按 Owner 指令入库于分支 `metrix-e1-v1-protocol-v1` 第一个工作提交的 `metrix/e1-v1/tasks/E1V1_AUTHORING_OWNER_MESSAGE.md`;本分支此后不再提交。code-reviewer 结论 PASS(没有 BLOCKER;2 个 MAJOR,都标为不确定;8 个 MINOR)。按 Owner 的修改次数上限(A 部分只有 1 个文档提交、1 轮 code-reviewer,除 BLOCKER 外不再修改),以下各项只登记,不改。
+
+| # | 严重度 | 位置 | 问题 | 来源 | 处理 |
+|---|---|---|---|---|---|
+| PE1 | MAJOR(不确定) | `metrix/CLAUDE.md` 第 8 节新增一条;第 2 节状态句 | 新增一条只写出处、时间与作用范围,没有写原因(文件头要求“记录原因与时间”);第 2 节一个括注同时对应两次 2026-11-28 的裁决(`PILOT_REPORT_ORDER` 第 4 项的原句与本次勘误),路径改写(PR21)的原因没有写 | PER-CR MAJOR 1 | 登记,交 Review Gate 决定是否补原因、是否分开标注;两处文字为 A4 逐字给定,不改 |
+| PE2 | MAJOR(不确定) | 报告第 14 行“A1”、第 451 行“Review Gate 的决定记录”、第 474 行“原文”;`metrix/CLAUDE.md` 两处出处 | 本次裁决(A1–A5)的原文不在本分支,这些引用在本分支内无法核对;报告第 5 行“依据”只列 `tasks/PILOT_REPORT_ORDER.md` | PER-CR MAJOR 2 | 登记;原文入库位置见本节导语(新分支,Owner 指令的位置);报告依据行不改 |
+| PE3 | MINOR | 报告第 300 行 T3 | 按 A1 逐字替换后,报告中不再提到解释 B24,实测值列仍含 Acc_CB(协议“满足 G0.3 的同样范围”本身已含 Acc_CB(N)) | PER-CR MINOR 1 | 登记(B24 见 `results/experiment_record_formal_20261128T045921Z.json` 的 interpretations) |
+| PE4 | MINOR | 报告第 449 行偏差第 7 项 | A2 新句后半(两个 manifest 由第 1 步写入哈希)所引的 `run_commits_and_code_check.txt` 中没有两个 manifest 的文件名;事实成立 | PER-CR MINOR 2 | 登记(直接证据:`results/step1_record.json` 的 `manifests_changed`;正文与 1.44 节 PR2 的更正写法逐字一致,不改) |
+| PE5 | MINOR | 报告“本轮产出”表 `metrix/CLAUDE.md` 一行;第 14、490 行的自指 | 该行仍写“状态一句按 `PILOT_REPORT_ORDER` 第 4 项改写”,没有反映本次勘误与第 8 节新增一条;“本提交”“勘误提交”的称呼不统一,勘误提交没有写 hash | PER-CR MINOR 3 | 登记(勘误提交的 hash 见 E1-V1 分支的报告) |
+| PE6 | MINOR | 报告第 451 行 | 该节导语说按命令输出与实验记录、以 UTC 列出,A3 新句的来源是仓库外的决定记录,时间为 JST;16:19–16:20 JST = 07:19–07:20Z,17:24 JST = 08:24Z,与第 9 项时间线不矛盾(审查为心算,未验证) | PER-CR MINOR 4 | 登记(文字为 A3 给定) |
+| PE7 | MINOR | `metrix/CLAUDE.md` 第 8 节新增一条,对照第 5 节第 6 条、第 10 节的“本阶段”与第 8 节第 3 条 | 新条目规定第 5、10 节的做法延续到 E1-V1,但没有写明它取代这些“本阶段”标注;第 1–3 节(例如第 3 节以“收到 PROTOCOL_FROZEN 之前”为条件)是否适用于 E1-V1 没有说明;只部分回答 PR22 | PER-CR MINOR 5 | 登记,交 Review Gate 确认(文字为 A4 逐字给定) |
+| PE8 | MINOR | `reports/pilot_final/report_fragments.py` 第 140–179 行 | 生成脚本仍硬编码旧的门槛摘要,`report_fragments.md` 与报告的门槛列不一致(报告第 14 行的“例外”已说明) | PER-CR MINOR 6 | 登记(E1-V1 复用时改为逐字引用协议) |
+| PE9 | MINOR | 本文件 1.44 节 PR1–PR4、PR21、PR22 与第 3 节末条 | 本次勘误之后这些条目的“处理”与“在裁决之前不改”已过时 | PER-CR MINOR 7 | 本节导语与第 3 节新增一条说明,原行不改 |
+| PE10 | MINOR | 报告第 14 行“例外”一句 | 不在 A1–A5 的字面范围内,是 Executor 为使“未手工录入”“逐字嵌入”在 A1 之后仍成立而加的;内容属实 | PER-CR MINOR 8 | 登记,请 Review Gate 事后确认 |
+
 ## 2. 已在第 5–7 轮解决(核对用)
 
 | 原条目 | 来源 | 处理 |
@@ -866,3 +883,4 @@ code-reviewer 结论 PASS(没有 BLOCKER;4 个 MAJOR、19 个 MINOR(PR5–PR22,�
 - Implementation 阶段 C(C5):Review Gate 2026-11-28 的裁决(`tasks/IMPL_C5_RULING.md`)回答了上一条的第 1、2 项与 CP5:CM3 不改,登记(第 1 项);CL2–CL6、CP1–CP4 在 C5 文档提交中按处理列修正(第 2 项);CP5 确认(第 3 项)。1.41 节 CO6(分工,请 Owner 确认)仍未回答,列于 `IMPL_C_REPORT.md` C5 节“待 Review Gate 决定(C5)”。C5 文档提交的审查(1.43)按裁决第 4 项只登记;其中 CQ4、CQ5(总则之后 Executor 加的一句,同该节第 2 项)与 CQ7(“有 3.13.18 但缺 ensurepip”时 uv 分支的第一步多半同样失败)提请 Review Gate 注意。
 
 - E1-PILOT 最终报告(1.44):PR1(门槛列为摘要而非原文)、PR2(偏差第 7 项对两个 manifest 的表述,更正见该行)、PR3 与 PR21(`metrix/CLAUDE.md` 新句的作用范围、原因与路径写法,Owner 给定原文)、PR4(停止点 C 由有条件批准替代)、PR22(“本阶段”的裁决是否随阶段结束失效)提请 Review Gate 决定;报告与 `metrix/CLAUDE.md` 在裁决之前不改。
+- E1-PILOT 报告勘误(1.45):上一条各项已由 Review Gate 2026-11-28 的裁决 A1–A4 处理(A5 另补责任说明)。PE1(`metrix/CLAUDE.md` 两处出处的原因与分开标注)、PE7(第 8 节新增一条与“本阶段”标注、第 1–3 节对 E1-V1 的适用)、PE10(报告第 14 行 Executor 附加的一句)提请 Review Gate 决定或确认;PE2 的裁决原文在 `metrix-e1-v1-protocol-v1` 分支入库。

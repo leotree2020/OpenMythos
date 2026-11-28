@@ -1,0 +1,19 @@
+先读仓库中的 .claude/agents/code-reviewer.md，以它为你的完整定义；它与你已加载的定义冲突时，以仓库文件为准。
+
+仓库：/home/user/OpenMythos，分支 metrix-e1-pilot-protocol-v1，HEAD = 4535fd0985b03f6fcaf3e5f600726bfbaaef3816。审查对象：已暂存、尚未提交的改动（暂存树 c20acf5690579241c76100f2a7363b1cda103041），完整 diff 存在 /tmp/claude-0/-home-user/1e17bf44-a265-5c2d-b2f8-f9d45e7efe94/scratchpad/a/a_staged.diff（也可在仓库中运行等价的 `git diff --cached` 查看；你只有 Read/Grep/Glob，请直接读该 diff 文件与仓库中的文件）。改动只涉及两个文档：metrix/e1-pilot/reports/PILOT_FINAL_REPORT.md 与 metrix/CLAUDE.md。这是一个纯文档勘误提交，本轮是唯一一轮审查。
+
+本次改动所依据的指令（Owner 转达的 Review Gate 裁决，2026-11-28，原文如下，作为需求而非作者的解释）：
+
+---
+A1（PR1）PILOT_FINAL_REPORT.md 中 Gate 0 与 T1–T3 两张表的「门槛」一列：替换为协议第 8 节对应行的原文，不改写、不删节。
+A2（PR2）报告偏差第 7 项中「协议与冻结文件无改动」一句：替换为 DEFERRED_MINORS 1.44 中已登记的更正写法（两个 manifest 由第 8 节第 1 步按协议写入哈希；协议正文与 SEARCH_SPACE.json 无改动）。
+A3（PR4）在报告「运行中的偏差与事件」中保留现有记述，并补一句：Review Gate 的决定记录已把该有条件批准记为 Owner 于 2026-11-28 约 16:19–16:20 JST 作出、17:24 JST 由 Owner 确认。
+A4（PR3、PR21、PR22）metrix/CLAUDE.md 第 2 节的状态句：把其中的「reports/PILOT_FINAL_REPORT.md」替换为「metrix/e1-pilot/reports/PILOT_FINAL_REPORT.md」，并在句末括注内补「原因：正式运行与报告完成；作用范围：永久」。另在第 8 节末尾追加一条：「E1 Pilot 结束后，第 4 节（算力，含 4 小时上限）只适用于 E1 Pilot，不延续；第 5、6、7、9、10 节的做法在 E1-V1 阶段继续适用，直到 E1-V1 的协议或 Task Order 另有规定（出处：Review Gate 裁决，Owner 批准，2026-11-28，永久）。」
+A5 在报告「没有入库的内容」一节补记责任说明原文：「TEST 通用文本的 NLL 与 dNLL 未写入入库的结果文件，机器终止后无法恢复。终止机器的建议由 Review Gate 提出，当时称汇总结果均已入库，这一说法对 TEST 的 dNLL 不成立。该数值在 Pilot 中只报告、不进 T1–T3，最终状态不受影响。」
+---
+
+相关文件：协议 metrix/e1-pilot/METRIX_E1_PROTOCOL.md 第 8 节（Gate 0 表约第 534–545 行，T1–T3 表约第 554–558 行）；metrix/e1-pilot/reports/DEFERRED_MINORS.md 1.44 节（PR1–PR4、PR21、PR22）与第 3 节末条；metrix/e1-pilot/reports/pilot_final/run_commits_and_code_check.txt。报告第 14 行「表格的生成方式」一段末尾新增的“例外”一句不在 A1–A5 的字面之内，是 Executor 为使该段与 A1 后的表格一致而加的，请一并审查。
+
+请按定义检查：（1）每处改动是否与上述指令字面一致（A1 是否逐字取自协议第 8 节对应行、没有改写或删节；A2 的新句是否与 1.44 节登记的更正写法一致且符合 git 事实；A3、A5 的文字是否与指令一致；A4 两处是否与指令一致）；（2）改动是否引入新的不一致或错误（例如 Markdown 表格结构、与报告其余部分的矛盾）；（3）是否有指令要求而 diff 遗漏的改动。
+
+注意：按 Owner 的修改次数上限，本提交只有这一轮审查，除 BLOCKER 外不再修改；你的原文将原样保存到仓库 metrix/e1-pilot/reviews/ 下并随本提交推送，非 BLOCKER 项登记到 DEFERRED_MINORS.md。请按定义的输出格式给出逐条结果与最后一行结论。

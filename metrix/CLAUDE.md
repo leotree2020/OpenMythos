@@ -18,7 +18,7 @@ Metrix 是独立子项目。根目录 `CLAUDE.md`(Mythos 宪章 v2.0)第 1 节�
 
 ## 2. 当前阶段
 
-- E1 Pilot,状态:E1-PILOT 已完成：PASS（PIPELINE_QUALIFIED），2026-11-28；结果见 reports/PILOT_FINAL_REPORT.md（出处：Review Gate 裁决，Owner 批准，2026-11-28）
+- E1 Pilot,状态:E1-PILOT 已完成：PASS（PIPELINE_QUALIFIED），2026-11-28；结果见 metrix/e1-pilot/reports/PILOT_FINAL_REPORT.md（出处：Review Gate 裁决，Owner 批准，2026-11-28；原因：正式运行与报告完成；作用范围：永久）
 - 分支:metrix-e1-pilot-protocol-v1
 - 基线:leotree2020/OpenMythos mythos-idea-thermo-v1 @ 61d3c76705b28cc2ee334abc5bf1baaac4fc30dc
 - 模型:Qwen/Qwen3-1.7B @ 70d244cc86ccca08cf5af4e1e306ecf908b1ad5e
@@ -60,6 +60,7 @@ PROTOCOL_FROZEN 的发出与修改、租用 GPU、生成或评测 TEST、删除�
 - Reviewer / Auditor 与 Executor 意见不同:由 Review Gate 裁决。
 - 协议未覆盖的情况:停止并报告,由 Review Gate 提出方案。
 - Review Gate 的裁决写入决定记录时须注明作用范围:本次提交 / 本阶段 / 永久。「永久」与「本阶段」的裁决可写入本文件,写入时须注明作用范围;「本阶段」的裁决在本阶段结束时失效。（出处：Review Gate 第 7 轮裁决（第 8 轮指令第 1e 项），Owner 批准，2026-11-22 05:27 UTC；原因：原文只允许「永久」的裁决写入本文件，与已写入的第 5 节第 6 条、第 10 节的「本阶段」裁决矛盾，见 metrix/e1-pilot/reports/ROUND7_REPORT.md「待 Review Gate 决定」第 4 项）（作用范围：永久。出处：Review Gate 第 8 轮裁决，Owner 批准，2026-11-22 09:44 UTC；原因：1e 写入时未注明这条裁决自己的作用范围，见 metrix/e1-pilot/reports/ROUND8_REPORT.md「待 Review Gate 决定」第 1 项）
+- E1 Pilot 结束后，第 4 节（算力，含 4 小时上限）只适用于 E1 Pilot，不延续；第 5、6、7、9、10 节的做法在 E1-V1 阶段继续适用，直到 E1-V1 的协议或 Task Order 另有规定（出处：Review Gate 裁决，Owner 批准，2026-11-28，永久）。
 
 ## 9. 汇报格式
 
