@@ -51,7 +51,7 @@
       "per_domain": 100,
       "available_per_domain_after_skip": 175
     },
-    "reading_rule": "test rows are matched on the row-prefix bytes only until section 10 step 10 (protocol section 0)"
+    "reading_rule": "before section 10 step 10: whole-file sha256 allowed; test rows are only matched on the row-prefix bytes (the regex of protocol section 0) and counted, never decoded or JSON-parsed"
   },
   "d2": {
     "status": "PENDING_OWNER (protocol section 15 item 2)",
@@ -149,7 +149,7 @@
       "rule": "in test_order, exclude the same and items whose prompt equals a DEV prompt; take the first 800; fewer -> ST10",
       "items": 800
     },
-    "reading_rule": "before section 10 step 10 only the parquet footer (row count) of a TEST source is read (protocol section 0)"
+    "reading_rule": "before section 10 step 10: whole-file sha256 of a TEST source allowed; only the parquet footer (row count) is read; no row is read or decoded (protocol section 0)"
   },
   "leakage": {
     "L6": "SPLIT_MANIFEST.json: leakage_checks.L6_anchor_ngram",
@@ -174,7 +174,8 @@
       "rule": "per seed: reloaded state_sha256 == N's; per-unit differences to N: candidate scores <= 1e-4, D1 window NLL <= 1e-5, D2 letter scores <= 1e-4; predictions identical except near-ties (top-2 gap <= 1e-4 in either evaluation, Pilot G0.8)"
     },
     "G-D2": {
-      "rule": "sigma_N(D1-all), sigma_N(D1-diff), sigma_N(D1-same), sigma_N(D2) finite and > 0"
+      "rule": "sigma_N(D1-all), sigma_N(D1-diff), sigma_N(D1-same), sigma_N(D2) finite and > 0; m(D1-all) <= 0.10, m(D1-diff) <= 0.10, m(D1-same) <= 0.20 (m(D2) <= 2 * sqrt(0.25 / 800) by construction, no bound); P+ seed SD of D1-diff and D2 reported",
+      "planning": "reports/authoring/sigma_planning.txt (expected m: D1-all 0.045, D1-diff 0.052, D1-same 0.090)"
     },
     "G-D3": {
       "control": "P+",
@@ -206,7 +207,7 @@
   },
   "comparison": {
     "primary": "TEST, t = 0.80, D1-diff, Delta(L-F) and Delta(A-F); Bonferroni over the 2: 97.5% CI",
-    "secondary": "all other points, metrics, DEV comparisons and per-method damages: 95% CI, words marked secondary",
-    "words": "superior: hi < 0 and all 3 seed estimates < 0; non-inferior: not superior, hi < m and all 3 seed estimates < m; inferior: lo > m and all 3 seed estimates > m; inconclusive otherwise"
+    "secondary": "all other points, metrics, DEV comparisons, per-domain metrics D1-books, D1-c4, D1-wikitext and per-method damages: 95% CI; words only for method comparisons on D1-all, D1-diff, D1-same, D2, marked secondary",
+    "words": "for a comparison on metric M with m = m(M): superior: hi < 0 and all 3 seed estimates < 0; non-inferior: not superior, hi < m and all 3 seed estimates < m; inferior: lo > m and all 3 seed estimates > m; inconclusive otherwise; per-method damages (X vs N) and per-domain metrics get no word"
   }
 }

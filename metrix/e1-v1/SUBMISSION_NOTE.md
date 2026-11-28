@@ -22,7 +22,8 @@
 | `SUBMISSION_NOTE.md` | 本文件 |
 | `tasks/` | 两份指令原文 |
 | `reports/authoring/v1_data_check.py` 与 `v1_data_check.txt`、`v1_data_check_repeat.txt` | 非 TEST 数据规则的参考构建与撰写时的检查;完整 stdout;两次独立运行的比对 |
-| `reports/authoring/compute_estimate.py` 与 `compute_estimate.txt` | 第 12 节的算力、磁盘与费用估算及其完整输出 |
+| `reports/authoring/compute_estimate.py` 与 `compute_estimate.txt` | 第 12 节的算力、磁盘与费用估算及其完整输出(含 ST11 公式的两个固定比值) |
+| `reports/authoring/sigma_planning.py` 与 `sigma_planning.txt` | 第 7.5 节 G-D2 上界的规划估计:由 Pilot 的 N 在 Pilot DEV 窗口上的逐窗口 NLL 推出预计的 `σ_N` 与 margin |
 | `reports/authoring/d2_dataset_metadata.txt` | D2 两个数据集的 revision、许可证、文件 LFS oid 与本地下载文件 sha256 的原始输出 |
 | `reports/authoring/build_manifests.py` | 生成四个 JSON 的脚本(模板与 Pilot 的模型、名字生成、锚文本块从 Pilot 冻结 manifest 读取,不手抄) |
 | `reports/pilot_erratum/push_erratum_commit.txt` | 本指令 A 部分勘误提交的推送输出(该分支此后不再提交,所以放在这里) |
@@ -46,7 +47,7 @@
 - 输入:4 个分词器文件、锚文本 parquet、parcae 分词器、`eval_sets.jsonl` 的 sha256 都等于 Pilot 冻结值;锚文本 512 篇解码文本的规范化 SHA-256 等于 Pilot 冻结值 `8828bc4f…`;按 Pilot 规则重新生成的 Pilot fact 哈希等于 `406c8801…`。
 - V1 的 320 条 fact:规范化 SHA-256 `0fc5ad81…`;每个 cell 的 entity 抽取 40–83 次、answer 80–270 次(上限 20,000)。`candidates.json` `79600769…`(池 learned 29、unread 9);`train_S.jsonl` `7ac254f6…`;Y / F token 比 1.1944;暴露匹配违规 0;480 个 (learned fact, DEV 问句) 的打分 token 与 TRAIN 陈述句中的答案片段不一致数 0;模板集合哈希与 Pilot 相同。
 - 泄漏:L1 0、L2 0.2、L3a 0、L3b 0、L4 0、L5 0、L6(D1 DEV、D2 DEV)0、L7 (a)(b)(c) 0、L8(D1 DEV、D2 DEV)0。
-- D1 DEV 400 个窗口(每领域 100,排除 0,平均 248.9 个 id);D2 DEV:MMLU 800 题(排除 0,57 个学科,上下文平均 134.2 个 token);备选 ARC 800 题(6 题因不是 4 个选项被排除)。
+- D1 DEV 400 个窗口(每领域 100,排除 0,平均 248.9 个 id);D2 DEV:MMLU 800 题(排除 0,57 个学科,上下文平均 134.2 个 token);备选 ARC 800 题(按打乱顺序访问 806 行,其中 6 行因不是 4 个选项被排除;DEV 来源 869 行中共有 7 行不是 4 个选项,`audit/stdout/a5_damage.txt`)。
 - 两次独立运行的 stdout 与 10 个生成文件逐字节一致(`reports/authoring/v1_data_check_repeat.txt`)。
 
 ## 4. 事件与偏差(如实列出)
@@ -65,4 +66,7 @@
 
 - 第 15 节三项待决:GPU 累计时间上限 H(建议 9 小时);D2 数据集(建议 MMLU,备选 ARC);剂量点与配置的数量(主方案与缩减方案 R1–R4 见第 12 节)。
 - 第 4 节第 1、5、8 项。
+- D2 的打分方式:协议第 7.1 节把 Task Order 7.1 的“用候选的条件对数似然打分”解释为列出选项后对选项字母打分(不是对选项文本打分),理由见该节。
+- 主比较 `D1-diff` 是否保留 c4:c4 与锚文本来源不同但同为网页文本(Stage 1 标为“近分布”);本协议保留 books、c4、wikitext 三个领域,另逐领域报告;备选为只用 books 与 wikitext(协议第 7.4 节)。
+- G-D2 的上界(`m(D1-all)`、`m(D1-diff)` ≤ 0.10,`m(D1-same)` ≤ 0.20)与训练种子波动的处理(Z0 的波动按构造为 0;P+ 三个种子的标准差只报告;Gate M 要求每个种子的点估计同向),协议第 7.5 节。
 - 本指令 A 部分的勘误提交 `6e034689…` 的审查中登记的 PE1、PE7、PE10(`metrix/e1-pilot/reports/DEFERRED_MINORS.md` 1.45 节与第 3 节末条)。

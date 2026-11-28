@@ -91,7 +91,9 @@ def plan(name, doses, max_passes, d_scale=1.0, test_brackets_per_run=5, test_poi
     disk_worst = 6.88 * (6 * doses + 3 + 6 + 3 + 3)
     print("PLAN %s: %d dose points up to %d passes, damage sets x %.2f, TEST brackets/run %d (points %d)" % (
         name, doses, max_passes, d_scale, test_brackets_per_run, test_points))
-    print("  one DEV evaluation %.1f s; one full TEST evaluation %.1f s" % (ev_dev, ev_test_full))
+    print("  one DEV evaluation %.1f s; one full TEST evaluation %.1f s; one fact-only TEST evaluation %.1f s" % (ev_dev, ev_test_full, ev_test_fact))
+    print("  ratios used as fixed constants in the ST11 formula (protocol section 12): full TEST / DEV %.2f, fact-only TEST / DEV %.2f" % (
+        ev_test_full / ev_dev, ev_test_fact / ev_dev))
     print("  runs: curves 9 (F, L, A x 3 seeds), S 3, Y 3, Z0 3, P+ 3 = 21 training runs; DEV evaluations %d" % (9 * doses + 1 + 3 + 3 + 1 + 6 + 3))
     print("  hours: Gate D %.2f, curves %.2f, S/Y %.2f, G0.8 %.2f, TEST %.2f, preflight %.2f -> GPU %.2f; x %.1f = %.2f" % (
         gate_d / 3600, curves / 3600, sy / 3600, g08 / 3600, test / 3600, preflight / 3600, total / 3600, SAFETY, SAFETY * total / 3600))

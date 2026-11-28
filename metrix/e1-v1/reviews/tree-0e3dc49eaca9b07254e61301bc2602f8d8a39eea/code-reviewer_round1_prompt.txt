@@ -1,0 +1,13 @@
+先读仓库中的 .claude/agents/code-reviewer.md，以它为你的完整定义；它与你已加载的定义冲突时，以仓库文件为准。
+
+仓库 /home/user/OpenMythos，分支 metrix-e1-v1-protocol-v1，HEAD = 6e03468956208c422d0d41c08edaaf116166338c。审查对象：已暂存、尚未提交的改动（暂存树 0e3dc49eaca9b07254e61301bc2602f8d8a39eea），全部在 metrix/e1-v1/ 下新建（16 个文件）。完整 diff：/tmp/claude-0/-home-user/1e17bf44-a265-5c2d-b2f8-f9d45e7efe94/scratchpad/b/input_round1.diff；也可直接读工作区中的文件。这是 E1-V1 协议撰写（PROTOCOL DESIGN 阶段，不训练、不评测、不实现实验）的第 1 轮审查。
+
+依据（需求，不是作者的解释）：metrix/e1-v1/tasks/E1V1_PROTOCOL_TASK_ORDER_V1.md（Task Order 原文）与 metrix/e1-v1/tasks/E1V1_AUTHORING_OWNER_MESSAGE.md（Owner 消息原文，其中“修改次数上限”一段与 Task Order 冲突时优先）。你的定义写的是 E1-PILOT 的协议文件；本阶段的被审对象就是新协议 metrix/e1-v1/METRIX_E1V1_PROTOCOL.md 与 4 个 JSON，Task Order 要求它们逐条“沿用 Pilot 第几节”，所以请以 Task Order、Owner 消息与冻结的 Pilot 协议 metrix/e1-pilot/METRIX_E1_PROTOCOL.md（及其 manifest、results/ 下的 Pilot 记录）为对照依据。按 metrix/CLAUDE.md 第 8 节 2026-11-28 的新条目，第 5、9、10 节的做法在 E1-V1 阶段继续适用。
+
+请重点检查：
+1. 协议与 4 个 JSON（DATA_MANIFEST、SPLIT_MANIFEST、DOSE_SPACE、DAMAGE_MANIFEST）及 SUBMISSION_NOTE 是否互相一致；每个数值、阈值、规则是否前后一致；“沿用 Pilot 第 x 节”是否真的与 Pilot 原文一致。
+2. Task Order 的每一项要求（第 3 节红线、第 5–14 节）是否都被满足，是否有遗漏、矛盾或 TBD（第 15 节三项待决除外）；每个 PROPOSED 值是否附了理由或来源，引用的 Pilot 记录（文件与字段）数值是否正确。
+3. Review Gate 将检查的六项：泄漏防护；统计伪重复；调参与剂量预算的公平；可执行的停止条件；iso-acquisition 匹配的有效性；损伤测量的合格条件。是否存在让未来 Executor 无法不依赖聊天记录执行、或执行结果不可解释的缺口。
+4. metrix/e1-v1/reports/authoring/ 下三个脚本（v1_data_check.py、compute_estimate.py、build_manifests.py）的 bug、死代码与合理性，以及它们的输出（*.txt）是否支撑协议中引用的数字；脚本是否可能读取 TEST 内容（按 Pilot 第 3 节“读取 TEST 数据”的定义）。
+
+按 Owner 的修改次数上限：本轮之后只修 BLOCKER，以及影响数据、指标、门槛、可复现性、iso-acquisition 匹配或损伤测量的 MAJOR；其余 MAJOR 与全部 MINOR 只登记不修。因此请对每个 MAJOR 注明它是否影响上述六类之一（写“影响：数据/指标/门槛/可复现性/iso 匹配/损伤测量”或“不影响”）。你的原文将原样保存到仓库并推送。请按定义的输出格式逐条给出，最后一行给结论。

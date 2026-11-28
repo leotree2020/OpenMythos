@@ -276,116 +276,80 @@
   "files": {
     "facts.jsonl": {
       "content": "all 320 facts",
-      "status": "NOT_GENERATED",
-      "record": "{fact_id, exposure, relation, stratum, entity, answer}, generation order",
+      "record": "{fact_id, exposure ('learned' or 'unread'), relation, stratum ('natural' or 'random'), entity, answer}, generation order",
       "reference_canonical_sha256": "4eeee6d198dede289886b9cd7941f362f3b9fba611aea551223289781de307a9",
-      "byte_sha256": null,
-      "canonical_sha256": null,
       "canonical_check": "the canonical_sha256 of the generated file must equal reference_canonical_sha256 (ST12)"
     },
     "train_F.jsonl": {
       "content": "240 TRAIN statements (arms F, L, A, Z0, P+)",
-      "status": "NOT_GENERATED",
       "record": "{fact_id, template_id, text}, fact order",
       "reference_canonical_sha256": "fb1d80064c4c779609ef40a29151bbf1fd1f5f1e1c768c6c5360412f38819511",
-      "byte_sha256": null,
-      "canonical_sha256": null,
       "canonical_check": "the canonical_sha256 of the generated file must equal reference_canonical_sha256 (ST12)"
     },
     "train_S.jsonl": {
       "content": "240 statements with permuted answers (arm S)",
-      "status": "NOT_GENERATED",
       "record": "{fact_id, answer_fact_id, text} (Pilot 2.6)",
       "reference_canonical_sha256": "7ac254f6e87e017ecc6ce9945006cda1c5310c7358d69da88e5c81cfdc907bd6",
-      "byte_sha256": null,
-      "canonical_sha256": null,
       "canonical_check": "the canonical_sha256 of the generated file must equal reference_canonical_sha256 (ST12)"
     },
     "train_Y.jsonl": {
       "content": "480 style-only sentences (arm Y)",
-      "status": "NOT_GENERATED",
       "record": "{fact_id, template_id, kind, text}; fact order, Y_ENTITY before Y_ANSWER",
       "reference_canonical_sha256": "82314e6b4a5917d0d4e62e3f34f4ab80e330c8dc5b5c7395e1183809c4daf96b",
-      "byte_sha256": null,
-      "canonical_sha256": null,
       "canonical_check": "the canonical_sha256 of the generated file must equal reference_canonical_sha256 (ST12)"
     },
     "dev_qa.jsonl": {
       "content": "DEV questions: 320 facts x 2 templates",
-      "status": "NOT_GENERATED",
       "record": "{fact_id, template_id, question}; fact order, then template order",
       "reference_canonical_sha256": "39ea5ea1ff730cbc73d12542e10173baee83759aa4477cc930574ce93ce5c7ce",
-      "byte_sha256": null,
-      "canonical_sha256": null,
       "canonical_check": "the canonical_sha256 of the generated file must equal reference_canonical_sha256 (ST12)"
     },
     "candidates.json": {
       "content": "candidate lists of all 320 facts",
-      "status": "NOT_GENERATED",
       "record": "one JSON object {fact_id: [4 candidates]} (Pilot 2.5)",
       "reference_canonical_sha256": "79600769eef1876b54bc3d174874880e8e05bab11290f97360559f99324235c3",
-      "byte_sha256": null,
-      "canonical_sha256": null,
       "canonical_check": "the canonical_sha256 of the generated file must equal reference_canonical_sha256 (ST12)"
     },
     "anchor_text.jsonl": {
       "content": "512 anchor documents (arm A)",
-      "status": "NOT_GENERATED",
-      "record": "{doc, source_row, ids, text}",
+      "record": "{doc: 0-based document number (anchor order), source_row: 0-based row index in the parquet file order, ids: the first at most 128 ids of encode(text, add_special_tokens=False), text: tokenizer.decode(ids) with default arguments}",
       "reference_canonical_sha256": "2089e656819d1fe0f6ececcc26e5cade09ee80a92c50e7c8f607fa4e0ef46da5",
-      "byte_sha256": null,
-      "canonical_sha256": null,
       "canonical_check": "the canonical_sha256 of the generated file must equal reference_canonical_sha256 (ST12)"
     },
     "general_dev.jsonl": {
       "content": "D1 DEV windows (DAMAGE_MANIFEST.json: d1.dev)",
-      "status": "NOT_GENERATED",
-      "record": "{domain, doc_id, ids, text}",
+      "record": "{domain, doc_id (of eval_sets.jsonl), ids: the first at most 256 ids fed to the model, text: tokenizer.decode(ids) with default arguments}",
       "reference_canonical_sha256": "e8350160464963e684e0c58826d53250dec4de366a716d3111aa8ec5089ce281",
-      "byte_sha256": null,
-      "canonical_sha256": null,
       "canonical_check": "the canonical_sha256 of the generated file must equal reference_canonical_sha256 (ST12)"
     },
     "d2_dev.jsonl": {
       "content": "D2 DEV items (DAMAGE_MANIFEST.json: d2.dev); the reference hash is that of the dataset the Owner approves",
-      "status": "NOT_GENERATED",
-      "record": "{item, source_row, subject, prompt, answer}",
+      "record": "{item: 0-based position in the file, source_row: 0-based row index in the source list (MMLU: parquet row; ARC: index in Challenge then Easy), subject (MMLU subject; ARC item id), prompt: the D2 prompt p, answer: the correct letter}",
       "reference_canonical_sha256": {
         "mmlu": "f40c146a3da500f13797dcfedfb2932e8a5dc88a6b43cbd423bf8fb549a688be",
         "arc": "1ea77c8adeb84b6d5f7a3aa699ab02951e4f43bd27ba14f36c3a32287e04ac32"
       },
-      "byte_sha256": null,
-      "canonical_sha256": null,
       "canonical_check": "the canonical_sha256 of the generated file must equal reference_canonical_sha256 (ST12)"
     },
     "test_qa.jsonl": {
       "content": "TEST questions: 320 facts x 3 templates",
-      "status": "NOT_GENERATED",
       "record": "{fact_id, template_id, question}",
       "generation_allowed": "only in protocol section 10 step 10: after results/selection_freeze_record.json is committed and pushed and the Owner approvals of TEST generation are committed",
       "reference_canonical_sha256": null,
-      "byte_sha256": null,
-      "canonical_sha256": null,
       "canonical_check": "sha256 recorded in st10_record.json and the TEST marker"
     },
     "general_test.jsonl": {
       "content": "D1 TEST windows (DAMAGE_MANIFEST.json: d1.test)",
-      "status": "NOT_GENERATED",
-      "record": "{domain, doc_id, ids, text}",
+      "record": "as general_dev.jsonl",
       "generation_allowed": "only in protocol section 10 step 10: after results/selection_freeze_record.json is committed and pushed and the Owner approvals of TEST generation are committed",
       "reference_canonical_sha256": null,
-      "byte_sha256": null,
-      "canonical_sha256": null,
       "canonical_check": "sha256 recorded in st10_record.json and the TEST marker"
     },
     "d2_test.jsonl": {
       "content": "D2 TEST items (DAMAGE_MANIFEST.json: d2.test)",
-      "status": "NOT_GENERATED",
-      "record": "{item, source_row, subject, prompt, answer}",
+      "record": "as d2_dev.jsonl",
       "generation_allowed": "only in protocol section 10 step 10: after results/selection_freeze_record.json is committed and pushed and the Owner approvals of TEST generation are committed",
       "reference_canonical_sha256": null,
-      "byte_sha256": null,
-      "canonical_sha256": null,
       "canonical_check": "sha256 recorded in st10_record.json and the TEST marker"
     }
   },

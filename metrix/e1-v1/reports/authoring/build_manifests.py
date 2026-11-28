@@ -78,20 +78,19 @@ anchor["file_canonical_sha256_authoring"] = "2089e656819d1fe0f6ececcc26e5cade09e
 
 
 def f(content, ref, record, test=False):
-    d = {"content": content, "status": "NOT_GENERATED", "record": record}
+    d = {"content": content, "record": record}
     if test:
         d["generation_allowed"] = ("only in protocol section 10 step 10: after results/selection_freeze_record.json "
                                    "is committed and pushed and the Owner approvals of TEST generation are committed")
         d["reference_canonical_sha256"] = None
     else:
         d["reference_canonical_sha256"] = ref
-    d.update({"byte_sha256": None, "canonical_sha256": None})
     return d
 
 
 files = {
     "facts.jsonl": f("all 320 facts", "4eeee6d198dede289886b9cd7941f362f3b9fba611aea551223289781de307a9",
-                     "{fact_id, exposure, relation, stratum, entity, answer}, generation order"),
+                     "{fact_id, exposure ('learned' or 'unread'), relation, stratum ('natural' or 'random'), entity, answer}, generation order"),
     "train_F.jsonl": f("240 TRAIN statements (arms F, L, A, Z0, P+)", "fb1d80064c4c779609ef40a29151bbf1fd1f5f1e1c768c6c5360412f38819511",
                        "{fact_id, template_id, text}, fact order"),
     "train_S.jsonl": f("240 statements with permuted answers (arm S)", "7ac254f6e87e017ecc6ce9945006cda1c5310c7358d69da88e5c81cfdc907bd6",
@@ -103,16 +102,16 @@ files = {
     "candidates.json": f("candidate lists of all 320 facts", "79600769eef1876b54bc3d174874880e8e05bab11290f97360559f99324235c3",
                          "one JSON object {fact_id: [4 candidates]} (Pilot 2.5)"),
     "anchor_text.jsonl": f("512 anchor documents (arm A)", "2089e656819d1fe0f6ececcc26e5cade09ee80a92c50e7c8f607fa4e0ef46da5",
-                           "{doc, source_row, ids, text}"),
+                           "{doc: 0-based document number (anchor order), source_row: 0-based row index in the parquet file order, ids: the first at most 128 ids of encode(text, add_special_tokens=False), text: tokenizer.decode(ids) with default arguments}"),
     "general_dev.jsonl": f("D1 DEV windows (DAMAGE_MANIFEST.json: d1.dev)", "e8350160464963e684e0c58826d53250dec4de366a716d3111aa8ec5089ce281",
-                           "{domain, doc_id, ids, text}"),
+                           "{domain, doc_id (of eval_sets.jsonl), ids: the first at most 256 ids fed to the model, text: tokenizer.decode(ids) with default arguments}"),
     "d2_dev.jsonl": f("D2 DEV items (DAMAGE_MANIFEST.json: d2.dev); the reference hash is that of the dataset the Owner approves",
                       {"mmlu": "f40c146a3da500f13797dcfedfb2932e8a5dc88a6b43cbd423bf8fb549a688be",
                        "arc": "1ea77c8adeb84b6d5f7a3aa699ab02951e4f43bd27ba14f36c3a32287e04ac32"},
-                      "{item, source_row, subject, prompt, answer}"),
+                      "{item: 0-based position in the file, source_row: 0-based row index in the source list (MMLU: parquet row; ARC: index in Challenge then Easy), subject (MMLU subject; ARC item id), prompt: the D2 prompt p, answer: the correct letter}"),
     "test_qa.jsonl": f("TEST questions: 320 facts x 3 templates", None, "{fact_id, template_id, question}", test=True),
-    "general_test.jsonl": f("D1 TEST windows (DAMAGE_MANIFEST.json: d1.test)", None, "{domain, doc_id, ids, text}", test=True),
-    "d2_test.jsonl": f("D2 TEST items (DAMAGE_MANIFEST.json: d2.test)", None, "{item, source_row, subject, prompt, answer}", test=True),
+    "general_test.jsonl": f("D1 TEST windows (DAMAGE_MANIFEST.json: d1.test)", None, "as general_dev.jsonl", test=True),
+    "d2_test.jsonl": f("D2 TEST items (DAMAGE_MANIFEST.json: d2.test)", None, "as d2_dev.jsonl", test=True),
 }
 for k in files:
     files[k]["canonical_check"] = "the canonical_sha256 of the generated file must equal reference_canonical_sha256 (ST12)" \
@@ -181,14 +180,15 @@ leak = {
                         "limit": 0, "report_only": lc["L6_general_text"]["report_only"],
                         "test_part": {"pairs": ["anchor_text vs general_test.jsonl", "anchor_text vs d2_test.jsonl"],
                                       "when": "protocol section 10 step 10, after the TEST files are generated and before the TEST evaluation",
-                                      "count": lc["L6_general_text"]["test_part"]["count"],
+                                      "count": "for each of general_test.jsonl and d2_test.jsonl separately: the word 13-grams of the 512 anchor documents merged into one set, those of all windows (D1) or all prompts (D2) of the file merged into another, 13-grams within each document, no concatenation across documents; the number of distinct elements of the intersection; texts = the decoded ids fed to the model (anchor <= 128 ids, window <= 256 ids) or the prompt p",
                                       "computed_by": "Executor and data-auditor, each on its own; the results must be equal"},
                         "authoring_result": {"d1_dev": 0, "d1_dev_token_id_13grams_report_only": 0, "d2_dev": 0}},
     "L7_pilot_disjoint": {"rule": "(a) V1 strings equal (lowercased) to one of the 320 Pilot strings + (b) V1 strings that trigger the 2.2 reject_if against a Pilot string of the same stratum + (c) fact_ids shared with the Pilot",
                           "limit": 0, "authoring_result": {"a": 0, "b": 0, "c": 0}},
     "L8_fictional_strings_in_damage_sets": {"rule": "D1 windows and D2 items whose text contains one of the 640 V1 strings case-insensitively with no ASCII letter or digit immediately before or after (or at a text boundary); one unit counts 1",
                                             "limit": 0, "applies_to": ["general_dev", "general_test", "d2_dev", "d2_test"],
-                                            "test_part": "as L6: counted by Executor and data-auditor in section 10 step 10; must be equal",
+                                            "text": "D1: the text field of the window (decode of the ids fed to the model, not the whole source document); D2: the prompt p",
+                                            "test_part": "as L6: counted for general_test.jsonl and d2_test.jsonl separately by Executor and data-auditor in section 10 step 10; must be equal",
                                             "authoring_result": {"d1_dev": 0, "d2_dev": 0}},
 }
 split_manifest = dict(HEAD)
@@ -217,7 +217,7 @@ split_manifest.update({
         "test_part_over_limit": "any TEST part over its limit, or Executor and data-auditor results of L6 / L8 differ: stop, do not evaluate TEST, BLOCKED, report to the Owner (ST10)",
         "generation_rule": "names occurring in anchor_text or equal / close to a Pilot string are rejected at generation; D1 / D2 units triggering L8 or L6 are excluded at generation (DAMAGE_MANIFEST.json); the checks still run"}),
     "hashing": HASHING,
-    "split_sha256": {k: None for k in ("train_F.jsonl", "train_S.jsonl", "train_Y.jsonl", "dev_qa.jsonl", "test_qa.jsonl")},
+    "actual_hashes": "the manifests are not rewritten during execution; the actual hashes of generated files go into results/step1_record.json (non-TEST) and results/st10_record.json (TEST); protocol section 13 ST12",
 })
 split_manifest["template_freeze"]["note"] = "the 32 Pilot templates, unchanged (protocol 2.4)"
 dump("SPLIT_MANIFEST.json", split_manifest)
@@ -279,7 +279,7 @@ dose_space.update({
         "early_stopping": "not allowed",
         "hardware": {"gpu": "NVIDIA A100 80GB", "count": 1, "device_name_rule": "Pilot section 7 (ST9)"},
         "gpu_hours_limit": "PENDING_OWNER (protocol section 15 item 1; proposal 9 hours)",
-        "st11_bound": "0.875 * gpu_hours_limit"},
+        "st11_bound": "0.875 * gpu_hours_limit; estimate E by the formula of protocol section 12 (replaces interpretation B17)"},
     "compute_matching": {"same": ["1 configuration per method", "the same 10 dose points", "the same fact tokens at every dose point (k passes over train_F; 3,802 tokens per pass with <|endoftext|>)"],
                          "different": ["L trains adapters only (about 34.86M parameters at rank 32); forward parameters base plus adapters",
                                        "A adds per step the forward of 4 anchor documents through the frozen base and the trained model and the backward of the latter"],
@@ -308,7 +308,7 @@ damage.update({
                    "per_domain": 100, "authoring": {"kept": 400, "excluded": 0, "canonical_sha256": "e8350160464963e684e0c58826d53250dec4de366a716d3111aa8ec5089ce281", "ids_per_window_mean": 248.893}},
            "test": {"file": "general_test.jsonl", "rule": "per domain the rows with split == 'test' in file order, skipping the first 25 test rows of the domain (the E1-PILOT TEST windows); exclude units triggering L8, then L6, then windows whose ids equal those of a DEV window; take the first 100 per domain; fewer than 100 -> ST10",
                     "per_domain": 100, "available_per_domain_after_skip": 175},
-           "reading_rule": "test rows are matched on the row-prefix bytes only until section 10 step 10 (protocol section 0)"},
+           "reading_rule": "before section 10 step 10: whole-file sha256 allowed; test rows are only matched on the row-prefix bytes (the regex of protocol section 0) and counted, never decoded or JSON-parsed"},
     "d2": {
         "status": "PENDING_OWNER (protocol section 15 item 2)", "selected": None, "preferred": "mmlu", "alternative": "arc",
         "metric": "c_theta(i) = 1[s(i, correct letter) > max over other letters] (ties wrong); Acc_D2 = mean; damage e_theta(i) = c_N(i) - c_theta(i), D2 = mean e = -dAcc",
@@ -334,7 +334,7 @@ damage.update({
         "verification": "reports/authoring/d2_dataset_metadata.txt (Hub API revision, license, LFS oids; sha256 of the downloaded files equal the oids)",
         "dev": {"file": "d2_dev.jsonl", "rule": "in dev_order, exclude: " + "; ".join(excl_dev) + "; take the first 800", "items": 800},
         "test": {"file": "d2_test.jsonl", "rule": "in test_order, exclude the same and items whose prompt equals a DEV prompt; take the first 800; fewer -> ST10", "items": 800},
-        "reading_rule": "before section 10 step 10 only the parquet footer (row count) of a TEST source is read (protocol section 0)"},
+        "reading_rule": "before section 10 step 10: whole-file sha256 of a TEST source allowed; only the parquet footer (row count) is read; no row is read or decoded (protocol section 0)"},
     "leakage": {"L6": "SPLIT_MANIFEST.json: leakage_checks.L6_anchor_ngram", "L8": "SPLIT_MANIFEST.json: leakage_checks.L8_fictional_strings_in_damage_sets"},
     "statistics": {
         "unit": {"D1": "window", "D2": "item"}, "replicates": 10000, "seed": "BOOTSTRAP_SEED = 20261130",
@@ -345,7 +345,8 @@ damage.update({
         "sigma_N": "sample SD (denominator B - 1) of the 10,000 bootstrap values of N's level statistic on the DEV set: D1 metrics: mean of domain means of NLL_N(w); D2: Acc_D2(N)"},
     "gate_d": {
         "G-D1": {"control": "Z0", "rule": "per seed: reloaded state_sha256 == N's; per-unit differences to N: candidate scores <= 1e-4, D1 window NLL <= 1e-5, D2 letter scores <= 1e-4; predictions identical except near-ties (top-2 gap <= 1e-4 in either evaluation, Pilot G0.8)"},
-        "G-D2": {"rule": "sigma_N(D1-all), sigma_N(D1-diff), sigma_N(D1-same), sigma_N(D2) finite and > 0"},
+        "G-D2": {"rule": "sigma_N(D1-all), sigma_N(D1-diff), sigma_N(D1-same), sigma_N(D2) finite and > 0; m(D1-all) <= 0.10, m(D1-diff) <= 0.10, m(D1-same) <= 0.20 (m(D2) <= 2 * sqrt(0.25 / 800) by construction, no bound); P+ seed SD of D1-diff and D2 reported",
+                 "planning": "reports/authoring/sigma_planning.txt (expected m: D1-all 0.045, D1-diff 0.052, D1-same 0.090)"},
         "G-D3": {"control": "P+", "D1-diff": {"seed_average_min": 1.0, "ci95_lower_gt": 0.0, "per_seed_min": 0.5},
                  "D2": {"seed_average_min": 0.05, "ci95_lower_gt": 0.0, "per_seed_gt": 0.0}},
         "G-D4": {"rule": "P+ seed 101: evaluation at the end of training and after save / reload (state_sha256 equal); tolerances as G-D1"},
@@ -355,7 +356,7 @@ damage.update({
                "input_record": "metrix/e1-v1/results/gate_d_record.json (noise)", "output_record": "metrix/e1-v1/results/margin_record.json (MARGIN_RECORD)",
                "timing": "after Gate D passes; committed and pushed before any training of section 10 step 6 (ST15)"},
     "comparison": {"primary": "TEST, t = 0.80, D1-diff, Delta(L-F) and Delta(A-F); Bonferroni over the 2: 97.5% CI",
-                   "secondary": "all other points, metrics, DEV comparisons and per-method damages: 95% CI, words marked secondary",
-                   "words": "superior: hi < 0 and all 3 seed estimates < 0; non-inferior: not superior, hi < m and all 3 seed estimates < m; inferior: lo > m and all 3 seed estimates > m; inconclusive otherwise"},
+                   "secondary": "all other points, metrics, DEV comparisons, per-domain metrics D1-books, D1-c4, D1-wikitext and per-method damages: 95% CI; words only for method comparisons on D1-all, D1-diff, D1-same, D2, marked secondary",
+                   "words": "for a comparison on metric M with m = m(M): superior: hi < 0 and all 3 seed estimates < 0; non-inferior: not superior, hi < m and all 3 seed estimates < m; inferior: lo > m and all 3 seed estimates > m; inconclusive otherwise; per-method damages (X vs N) and per-domain metrics get no word"},
 })
 dump("DAMAGE_MANIFEST.json", damage)

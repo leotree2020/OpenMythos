@@ -6,7 +6,7 @@
 | 状态 | **AWAITING_REVIEW_GATE**(未冻结;Owner 批准后改为 PROTOCOL_FROZEN,冻结提交与本文件、四个 JSON 的 sha256 写入同目录的 `PROTOCOL_FROZEN` 文件) |
 | 本文件的作用 | 执行 E1-V1 只需要本文件、同目录四个 JSON(`DATA_MANIFEST.json`、`SPLIT_MANIFEST.json`、`DOSE_SPACE.json`、`DAMAGE_MANIFEST.json`),以及第 0 节固定的外部来源 |
 | 本文件不包含 | 任何训练、评测结果或结论;任何 TEST 数据 |
-| 记号 | “沿用 Pilot 第 x 节” = 冻结协议 `metrix/e1-pilot/METRIX_E1_PROTOCOL.md` v1.1(冻结提交 `87a244db28a901f9e89282b50df76778ab5c2887`)第 x 节的规则原样适用,本文件只列出改动;“解释 Bn” = Pilot 实现阶段经 Review Gate 接受的解释(原文在 `metrix/e1-pilot/results/experiment_record_formal_20261128T045921Z.json` 的 `environment.interpretations`),在 E1-V1 中作为协议条文适用 |
+| 记号 | “沿用 Pilot 第 x 节” = 冻结协议 `metrix/e1-pilot/METRIX_E1_PROTOCOL.md` v1.1(冻结提交 `87a244db28a901f9e89282b50df76778ab5c2887`)第 x 节的规则原样适用,本文件只列出改动;“解释 Bn” = Pilot 实现阶段经 Review Gate 接受的解释(原文在 `metrix/e1-pilot/results/experiment_record_formal_20261128T045921Z.json` 的 `environment.interpretations`);哪些在 E1-V1 中作为协议条文适用,见第 0 节“Pilot 解释的适用” |
 | 待决字段 | 只有第 15 节三项(GPU 累计时间上限、D2 数据集、剂量点与配置的数量);其余可执行参数均为 PROPOSED 值,附理由 |
 
 路径约定:本文件中的 `results/…`、`approvals/…`、`audit/…`、`reviews/…` 均相对于 `metrix/e1-v1/`。
@@ -34,7 +34,9 @@
 
 **哈希**:沿用 Pilot 第 0 节(规范化 JSON、JSONL、`byte_sha256` 与 `canonical_sha256`)。checkpoint 的哈希为解释 B25 的 `state_sha256`(按 `state_dict()` 键排序,逐键写入键名、dtype、shape 与张量原始字节的 SHA-256;不是文件字节哈希)。
 
-**“读取 TEST 数据”的定义**:沿用 Pilot 第 3 节(解码 test 行的内容,或用其内容做任何计算;解析 split 字段、计数、对整个文件求哈希不算),适用于本协议的全部 TEST 来源:`eval_sets.jsonl` 中 `split == "test"` 的行(只允许按行首字节匹配 domain 与 split 字段,与 Pilot 实现阶段 B 的做法相同,`metrix/e1-pilot/src/metrix_e1/data.py: _ROW_HEAD`)、D2 的 TEST 来源文件(只允许读 parquet 文件尾的行数)。
+**“读取 TEST 数据”的定义**:沿用 Pilot 第 3 节(解码 test 行的内容,或用其内容做任何计算;解析 split 字段、计数、对整个文件求哈希不算),适用于本协议的全部 TEST 来源。第 10 节第 10 步之前,对 TEST 来源允许且只允许:对整个文件求 sha256(第 1 步核对来源文件哈希需要);`eval_sets.jsonl` 按行首字节匹配 domain 与 split 字段后计数(行首必须匹配字节正则 `^\{"domain": "([^"\\]*)", "split": "([^"\\]*)", `,与 Pilot 实现阶段 B 的做法相同),test 行不解码、不做 JSON 解析;D2 的 TEST 来源 parquet 只读文件尾的行数。不得解码或读取任何 test 行或 TEST 题目的内容。
+
+**Pilot 解释的适用**(冻结):照原文适用 B4、B5、B6、B7、B8、B9、B10(每个 stratum 120 条 learned、40 条 unread)、B11、B12(purpose 另按第 8 节扩充)、B14、B15(“候选分数”另包括 D1 窗口 NLL 与 D2 字母分数,见 G0.8、G-D1)、B16(ST3–ST7、ST11 的状态;ST3 的对象见第 13 节)、B18、B19、B20、B21(以 `attn_implementation='eager'` 加载模型)、B22、B23、B24、B25。按 E1-V1 的数值改写后适用:B1(优化器步 s = 1..960,第 2.6 节)、B3(遍号 k = 1..32,第 11 节)。被替换、不适用:B2(余弦调度,由第 11 节的 warmup 加常数学习率替换:`lr(s) = peak · s / 30`(s ≤ 30),`lr(s) = peak`(s > 30))、B13(G0.10,E1-V1 不使用)、B17(Pilot 的预检公式,由第 12 节的 ST11 公式替换)。
 
 ## 1. 科学问题、Scope 与 Non-claims
 
@@ -108,13 +110,13 @@
 | L5 | 沿用 Pilot L5(learned 与 unread 的 fact_id 交集;640 个字符串中的重复数) | 0 | 0 |
 | L6 | 沿用 Pilot L6 的定义(词 = `str.split()`,区分大小写;13-gram 在每篇文档之内取;取 13-gram 的文本是送入模型的 id 解码所得;Qwen token 13-gram 只报告),比较对象为锚文本 512 篇对:D1 的 `general_dev.jsonl`、`general_test.jsonl`,D2 的 `d2_dev.jsonl`、`d2_test.jsonl`(题面文本 `p`) | 0 | D1 DEV 0,D2 DEV 0 |
 | L7 | 第 2.7 节 (a)(b)(c) 三项之和 | 0 | 0 |
-| L8 | 损伤评测集中含 V1 字符串的单位数:一个 D1 窗口或一道 D2 题,只要其文本中出现 640 个 V1 字符串之一(不分大小写,且紧前、紧后的字符都不是 ASCII 字母或数字,或为文本边界)即计 1 | 0 | D1 DEV 0,D2 DEV 0 |
+| L8 | 损伤评测集中含 V1 字符串的单位数:一个 D1 窗口或一道 D2 题,只要其文本中出现 640 个 V1 字符串之一(不分大小写,且紧前、紧后的字符都不是 ASCII 字母或数字,或为文本边界)即计 1。“文本”:D1 窗口为送入模型的 id(最多 256 个)用本协议分词器解码所得的 `text` 字段(与 L6 相同,不是整篇源文档);D2 为题面 `p` | 0 | D1 DEV 0,D2 DEV 0 |
 
 learned fact 的 entity 与 answer 同时出现在 TRAIN 陈述句和 QA 中是被测对象,不算泄漏。
 
 **损伤评测集的排除规则(生成规则)**:D1 窗口与 D2 题目在生成时按第 7.2 节依次排除触发 L8、触发 L6(与锚文本共享任一词 13-gram)、以及(TEST)与 DEV 某单位相同的单位,因此 L6、L8 在构造上为 0,检查仍然执行。撰写时 D1 DEV 与 D2 DEV 都没有单位被排除(`reports/authoring/v1_data_check.txt`)。
 
-**时机**:L1、L2 只用模板;L3a–L8 的 DEV 部分在第 10 节第 1 步运行(G0.1);L3a–L5 涉及 TEST 的部分在 `test_qa.jsonl` 生成之后运行;L6、L8 的 TEST 部分在 `general_test.jsonl`、`d2_test.jsonl` 生成之后、TEST 评测之前,由 Executor 与 data-auditor 各自计算,只输出计数,两者结果须一致(计数口径沿用 Pilot L6 的 TEST 部分);任一 TEST 部分超限或两者不一致 → ST10。
+**时机**:L1、L2 只用模板;L3a–L8 的 DEV 部分在第 10 节第 1 步运行(G0.1);L3a–L5 涉及 TEST 的部分在 `test_qa.jsonl` 生成之后运行;L6、L8 的 TEST 部分在 `general_test.jsonl`、`d2_test.jsonl` 生成之后、TEST 评测之前,由 Executor 与 data-auditor 各自计算,只输出计数,两者结果须一致(L6 的计数口径沿用 Pilot L6 的 TEST 部分,对 D1 TEST 与 D2 TEST 各自单独计数:锚文本的词 13-gram 集合分别与 `general_test.jsonl` 全部窗口、`d2_test.jsonl` 全部题面的词 13-gram 集合求交,各计交集的种类数;L8 对两个文件各计单位数);任一 TEST 部分超限或两者不一致 → ST10。
 
 ## 4. Arms 与对照
 
@@ -129,7 +131,7 @@ learned fact 的 entity 与 answer 同时出现在 TRAIN 陈述句和 QA 中是�
 | Z0 | 阴性对照:F 的完整训练流程(数据、优化器步、梯度裁剪、checkpoint 保存与重载、哈希),learning rate 0 | learning rate 0,weight decay 0,2 遍 | Gate D(G-D1) |
 | P+ | 阳性对照:F 的训练流程,Pilot F6 的数值 | learning rate 1e-4,weight decay 0.1,11 遍 | Gate D(G-D3、G-D4) |
 
-**配置的理由**:每种方法只用一个配置,即 Pilot 在同一搜索预算(每种方法 6 个配置、同一 DEV 选择规则)下选出的配置(`metrix/e1-pilot/results/selection_freeze_record.json: selected` = F3、L6、A5;数值见 `metrix/e1-pilot/SEARCH_SPACE.json`)。三种方法的调参预算相同(都是 Pilot 的 6 个配置),选择规则相同且只看学习量(DEV 准确率),不看损伤;E1-V1 不再调参。因此 Gate M 中没有按损伤挑选配置的步骤(第 6.6 节)。P+ 的数值与 Pilot F6 相同(`metrix/e1-pilot/results/training_runs/F-F6-seed101.json: config`,DEV dNLL 5.55021);训练长度见第 6.3 节。Z0 的 learning rate 为 0:AdamW 的更新量与 weight decay 项都乘以 learning rate,参数逐位不变,因此 Z0 的 `state_sha256` 必须与 N 相同(G-D1)。
+**配置的理由**:每种方法只用一个配置,即 Pilot 在同一搜索预算(每种方法 6 个配置、同一 DEV 选择规则)下选出的配置(`metrix/e1-pilot/results/selection_freeze_record.json: selected` = F3、L6、A5;数值见 `metrix/e1-pilot/SEARCH_SPACE.json`)。三种方法的调参预算相同(都是 Pilot 的 6 个配置),选择规则相同且只看学习量(DEV 准确率),不看损伤;E1-V1 不再调参。因此 Gate M 中没有按损伤挑选配置的步骤(第 6.6 节)。P+ 的数值与 Pilot F6 相同(`metrix/e1-pilot/results/training_runs/F-F6-seed101.json: config`,DEV dNLL 5.55021);训练长度见第 6.3 节。Z0 的 learning rate 为 0:AdamW 的更新量与 weight decay 项都乘以 learning rate,参数逐位不变,因此 Z0 的 `state_sha256` 必须与 N 相同(G-D1)。Z0 跑 2 遍(60 步)的理由:2 遍已经走过训练流程的每一段代码(warmup 结束、进入常数学习率、跨越遍的边界与样本重排、优化器状态的建立),再长的训练不经过新的代码路径,参数在 learning rate 为 0 时也不会改变。
 
 S、Y 不单独调参(沿用 Pilot 第 4 节)。不得新增 arm、机制或阶段。
 
@@ -157,8 +159,8 @@ S、Y 不单独调参(沿用 Pilot 第 4 节)。不得新增 arm、机制或阶�
 
 - **剂量维度**:训练遍数 k(对 240 条 TRAIN 陈述句读 k 遍;batch 8,每遍 30 步)。学习率在前 30 步(第 1 遍)从 0 线性升到峰值,之后**保持不变**(不衰减)。一次训练按最大剂量跑到底,在每个剂量点(第 30·k 步结束时)当场做一次 DEV 评测;因为学习率不衰减,第 k 个剂量点的模型就是“以该学习率训练 k 遍”的模型,与总长度无关。评测在 `model.eval()`、`torch.no_grad()`、FP32、不用 autocast 下进行,不改变参数、梯度、优化器状态与任何随机流,评测后回到训练模式继续。
 - **剂量点**(F、L、A 相同):k ∈ {1, 2, 3, 4, 6, 8, 11, 16, 23, 32},共 10 个;最大 32 遍 = 960 步。相邻两点之比约 1.4(1–4 遍逐遍取,保证低端有点)。
-- **d0**(Gate 0、S、Y 用的 F 剂量点)= 11 遍。
-- **为什么预计能覆盖 0.70–0.90**(Pilot 的训练记录;以“学习率 × 步数”的累积量粗略换算:Pilot 的余弦从峰值降到 10%,20 遍的平均倍数约 0.55,相当于常数学习率约 11 遍):F:Pilot F1(1e-5,20 遍)DEV 0.6208,相当于 3e-5 约 3.7 遍;F3(3e-5)三个种子 0.9125–0.9292,相当于约 11 遍(`training_runs/F-F1-seed101.json`、`F-F3-seed*.json: dev.acc_dev_learned`)。L:L4(3e-4,rank 32)0.7292,相当于 1e-3 约 3.3 遍;L6(1e-3,rank 32)0.8750–0.9792,相当于约 11 遍。A:A2(3e-5,λ 1)0.7000,相当于 1e-4 约 3.3 遍;A5(1e-4,λ 1)0.7833–0.8958,相当于约 11 遍。因此预计三种方法在 3–4 遍附近越过 0.70,F、L 在约 11 遍内越过 0.90;A 在 11 遍时约 0.82,阶梯延长到 32 遍(约 Pilot 累积量的 2.9 倍)是为了让 A 越过 0.90。这只是规划估计:没有越过的点按第 6.4 节记为 NOT_REACHED,不外推。
+- **d0**(Gate 0、S、Y 用的 F 剂量点)= 11 遍。理由:按下面“按遍”的换算,11 遍约等于 Pilot 选定配置 20 遍余弦训练的累积量,Pilot 的 G0.4–G0.7 正是在这一训练量上确认的;S、Y 在同一剂量点训练,与 Pilot 第 4 节“S、Y 沿用 F 的配置与训练量”的做法一致。
+- **为什么预计能覆盖 0.70–0.90**(Pilot 的训练记录)。**换算口径**:按“遍”换算,即比较每条 fact 被训练时所用学习率的累积量(每遍每条 fact 恰好被更新一次,Pilot 与 V1 相同;V1 每遍 30 步只是因为 fact 数加倍)。Pilot 的余弦从峰值降到 10%,20 遍的平均倍数约 0.55,所以 Pilot 的 20 遍约等于常数学习率 11 遍。若改按“步”换算(累积量 = 学习率 × 步数,V1 每遍的步数是 Pilot 的 2 倍),Pilot 的 20 遍约等于 V1 的 5.5 遍,下面各方法越过 0.70 的遍数约减半(F 约 2 遍,L、A 约 1.7 遍),越过 0.90 的 F、L 约 5.5 遍;两种口径下,1、2、3、4 遍逐遍设点都能在 0.70 之前与之后各有剂量点。按遍换算时:F:Pilot F1(1e-5,20 遍)DEV 0.6208,相当于 3e-5 约 3.7 遍;F3(3e-5)三个种子 0.9125–0.9292,相当于约 11 遍(`training_runs/F-F1-seed101.json`、`F-F3-seed*.json: dev.acc_dev_learned`)。L:L4(3e-4,rank 32)0.7292,相当于 1e-3 约 3.3 遍;L6(1e-3,rank 32)0.8750–0.9792,相当于约 11 遍。A:A2(3e-5,λ 1)0.7000,相当于 1e-4 约 3.3 遍;A5(1e-4,λ 1)0.7833–0.8958,相当于约 11 遍。因此预计三种方法在 3–4 遍附近越过 0.70,F、L 在约 11 遍内越过 0.90;A 在 11 遍时约 0.82,阶梯延长到 32 遍(约 Pilot 累积量的 2.9 倍)是为了让 A 越过 0.90。这只是规划估计:没有越过的点按第 6.4 节记为 NOT_REACHED,不外推。
 - **种子**:每种方法 3 个训练种子(101、202、303),每个种子一条独立的曲线(样本顺序 `rng_rule(TRAIN_SEED, "order:<k>")`,k = 1..32;L 另用于 A 矩阵初始化)。iso 点按种子分别确定(第 6.4 节),比较时先对种子取平均(第 8 节)。
 - **计算量匹配(Amendment F)**:F、L、A 的配置数相同(各 1 个)、剂量点相同(同一组 10 个遍数)、事实 token 预算规则相同(第 k 个剂量点都恰好读过 k 遍 `train_F`,事实 token 数相同,撰写时每遍 3,802 token,含 `<|endoftext|>`)。不相同之处:(1)L 只训练适配器(rank 32 时约 3,486 万参数),前向参数量略大(base + 适配器);(2)A 每步另有 4 篇锚文档的前向(base 与训练模型)和反向。按“事实 token 相同”匹配的理由:学习量由读过的事实文本决定,三种方法读到的事实文本逐 token 相同;方法本身的额外计算(A 的锚文本、L 的适配器)是方法的组成部分,不折算成更多或更少的事实遍数,在算力记录中单列(沿用 Pilot 第 10 节与解释 B18 的算法)。
 
@@ -167,7 +169,8 @@ S、Y 不单独调参(沿用 Pilot 第 4 节)。不得新增 arm、机制或阶�
 记方法 X、种子 s 的 10 个剂量点为 j = 1..10(遍数 k_j 递增),其 DEV 学习量为 a_j = Acq(X_s@k_j)。对每个比较点 t:
 
 1. **夹逼区间**:j* = 满足 a_{j−1} < t ≤ a_j 的最小 j(j ≥ 2)。不存在这样的 j(曲线从未从下方越过 t,包括第 1 个剂量点已 ≥ t 的情形)→ 该种子在 t 为 NOT_REACHED。
-2. **匹配容差(DEV)**:τ_DEV = 0.10。若 t − a_{j*−1} > 0.10 或 a_{j*} − t > 0.10 → 该种子在 t 为 NOT_REACHED。理由:两个比较点相距 0.10,夹逼两端都不离 t 超过一个比较点间距,插值才是在 t 附近的局部估计;按第 6.3 节的估计,相邻剂量点之间 Acq 的跳变在 0.05–0.15 之间。
+2. **匹配容差(DEV)**:τ_DEV = 0.10。若 t − a_{j*−1} > 0.10 或 a_{j*} − t > 0.10 → 该种子在 t 为 NOT_REACHED。理由:两个比较点相距 0.10,夹逼两端都不离 t 超过一个比较点间距,线性插值才是在 t 附近的局部估计;这个理由不依赖对剂量点之间跳变大小的预测。若某方法在相邻两个剂量点之间的跳变超过 0.20,该点按本条记为 NOT_REACHED,这是安全的结果(不比较),风险由第 6.3 节逐遍设置的低端剂量点降低。
+2a. **算术**(冻结,第 6.4 节与第 6.7 节、第 6.5 节共用):Acq 与 TEST 学习量按精确有理数计算(`fractions.Fraction`:每条 fact 的 Score 为答对问句数 / 问句数,Acc 为 Score 之和 / fact 数),t、τ_DEV、τ_TEST 取 `Fraction("0.70")`、`Fraction("0.80")`、`Fraction("0.90")`、`Fraction("0.10")`、`Fraction("0.05")`;第 1、2 条与第 6.7 节的比较、w、第 6.5 节的插值与比较都用精确有理数完成。逐单位的浮点量(窗口 NLL、D2 字母分数、`d`、`e`)与 w 相乘时用 `float(w)`(IEEE 双精度)。
 3. **插值(在相邻两点间线性插值;不选最近点)**:权重 w = (t − a_{j*−1}) / (a_{j*} − a_{j*−1}) ∈ (0, 1]。任何逐单位的量 v(一个窗口的 d,一道 D2 题的 e,一条 fact 的 Score)在 t 处的值为 v_t = (1 − w) · v(X_s@k_{j*−1}) + w · v(X_s@k_{j*})。DEV 上 Acq 的插值值按构造等于 t。TEST 上沿用同一个 w(由 DEV 确定)。
 4. **方法层面**:3 个种子都不是 NOT_REACHED,方法 X 在 t 才可比较;否则 X 在 t 记为 NOT_REACHED,不参与 t 的任何比较,不得外推,不得用其余种子代替。
 5. **只用 DEV**:以上全部只用 DEV-QA 的学习量;损伤的数值不参与 iso 点的确定。
@@ -202,11 +205,12 @@ PPL_degradation% 沿用 Pilot,只作展示。
 **D2:能力测验**(公开选择题数据集上的正确率下降;用候选的条件对数似然打分):
 
 - 题面 `p = I + "\n\n" + question.strip() + "\n" + "A. " + c_0 + "\n" + "B. " + c_1 + "\n" + "C. " + c_2 + "\n" + "D. " + c_3`,`I = "Answer the following multiple choice question with the letter of the correct option."`,`c_i = str(选项 i).strip()`,选项按数据集原顺序。
-- `s_D2(θ, i, ℓ) = log p_θ(" " + ℓ | chat(p_i) + "The answer is")`,ℓ ∈ {A, B, C, D}(第 0 节);`c_θ(i) = 1[s_D2(θ, i, ℓ*_i) > max_{ℓ ≠ ℓ*_i} s_D2(θ, i, ℓ)]`,并列判为错;`Acc_D2(θ) = mean_i c_θ(i)`。
+- 指令 `I` 的理由:一句话写明题型与作答方式(给出选项字母),不加示例(0-shot),使 N 与各训练模型看到完全相同的题面;措辞不针对任何模型调过。
+- `s_D2(θ, i, ℓ) = log p_θ(" " + ℓ | chat(p_i) + "The answer is")`,ℓ ∈ {A, B, C, D}(第 0 节)。这是对 Task Order 7.1“用候选的条件对数似然打分”的一种解释:候选是 4 个选项字母,在列出选项的题面之后对字母打分(MMLU 的通行做法),而不是对选项文本本身打分。理由:选项文本长度不一,直接比较其对数似然有长度偏差;字母打分每题只需一次前向;答案前缀 `The answer is` 与事实 QA 的打分输入一致。请 Review Gate 确认这一解释(`SUBMISSION_NOTE.md` 第 5 节)。`c_θ(i) = 1[s_D2(θ, i, ℓ*_i) > max_{ℓ ≠ ℓ*_i} s_D2(θ, i, ℓ)]`,并列判为错;`Acc_D2(θ) = mean_i c_θ(i)`。
 - `dAcc(θ) = Acc_D2(θ) − Acc_D2(N)`(Task Order 7.1)。为与 D1 同向(数值越大损伤越大),本协议的 **D2 损伤**定义为逐题 `e_θ(i) = c_N(i) − c_θ(i)`、`D2(θ) = mean_i e_θ(i) = −dAcc(θ)`。
 - **数据集**(第 15 节待决第 2 项):首选 MMLU,备选 ARC;两者的 revision、文件 sha256、许可证、行数均已在撰写环境中核实(`reports/authoring/d2_dataset_metadata.txt`;下载文件的 sha256 等于 Hub 记录的 LFS oid):
   - 首选 `cais/mmlu` @ `c30699e8356da336a370243923dbaf21066bb9fe`,许可证 MIT(允许研究使用);DEV 来源 `all/validation-00000-of-00001.parquet`(sha256 `66cdf0b090ccb657d18d13cd81e31fdc55c3467da9642ffb178653268a97c8ef`,1,531 行),TEST 来源 `all/test-00000-of-00001.parquet`(sha256 `74a41822ce7d3def56e1682f958469c04642a5336a5ce912fa375fdb90fb25d7`,14,042 行)。理由:57 个学科的真实世界知识与推理题,四选一,与虚构事实无关;字母打分每题只需一次前向;撰写时 DEV 抽样的上下文平均 134 个 token。
-  - 备选 `allenai/ai2_arc` @ `210d026faf9955653af8916fad021475a3f00453`,许可证 CC-BY-SA-4.0(允许研究使用,署名与相同方式共享);DEV 来源 ARC-Challenge 与 ARC-Easy 的 validation(299 + 570 行),TEST 来源两者的 test(1,172 + 2,376 行);文件 sha256 见 `DAMAGE_MANIFEST.json`。只用恰好 4 个选项的题(撰写时 DEV 来源中 6 题不是 4 个选项),标签按原顺序对应 A–D。
+  - 备选 `allenai/ai2_arc` @ `210d026faf9955653af8916fad021475a3f00453`,许可证 CC-BY-SA-4.0(允许研究使用,署名与相同方式共享);DEV 来源 ARC-Challenge 与 ARC-Easy 的 validation(299 + 570 行),TEST 来源两者的 test(1,172 + 2,376 行);文件 sha256 见 `DAMAGE_MANIFEST.json`。只用恰好 4 个选项的题(DEV 来源 869 行中 862 行为 4 个选项、7 行不是,`audit/stdout/a5_damage.txt`;撰写时按打乱顺序访问到第 806 行即凑满 800 题,其间排除 6 行),标签按原顺序对应 A–D。
 - **与虚构事实无关**:V1 的 entity 与 answer 是按第 2.2 节随机生成的虚构字符串(natural 为随机音节,random 为随机字母段加数字),D2 是已有的真实题目;可执行检查为 L8(含任一 V1 字符串的题目在生成时排除,撰写时 MMLU 与 ARC 的 DEV 抽样中都是 0 题)。
 
 ### 7.2 评测集与划分(PROPOSED;`DAMAGE_MANIFEST.json`)
@@ -228,25 +232,25 @@ D1 以窗口为单位、D2 以题目为单位做配对 bootstrap,10,000 次(第 
 
 ### 7.4 与锚文本隔离
 
-D1 的 books、c4、wikitext 三个领域与锚文本来源不同,fineweb 与锚文本同来源,D2 与锚文本来源不同;`D1-diff` 与 `D1-same` 分开报告,主比较用 `D1-diff`(第 9.4 节),因此 A 的结论不依赖它被约束的分布。与锚文本的 n-gram 重叠检查沿用 L6 的做法(第 3 节,扩大到 D1 与 D2 的全部划分)。
+D1 的 books、c4、wikitext 三个领域与锚文本来源不同,fineweb 与锚文本同来源,D2 与锚文本来源不同;`D1-diff` 与 `D1-same` 分开报告,主比较用 `D1-diff`(第 9.4 节),因此 A 的结论不依赖它被约束的分布。需要注意:c4(C4 英文 validation)虽然来源不同,但与 FineWeb-Edu 同为网页文本,Stage 1 把它标为“网页,近分布”(`research/mini_mythos/stage1/README.md` 评测集表),books(PG-19)与 wikitext 离锚文本更远。因此 Gate M 另把四个领域的逐领域损伤(`D1-books`、`D1-c4`、`D1-fineweb`、`D1-wikitext`,每个领域的窗口均值)与它们的方法间比较作为次要比较单独报告(第 9.3 节),读者可以看到 A 的差异是否集中在 fineweb 与 c4。是否把主比较改为只用 books 与 wikitext,请 Review Gate 决定(本协议的提案保留三个领域:窗口数 300 对 200,抽样标准误较小)。与锚文本的 n-gram 重叠检查沿用 L6 的做法(第 3 节,扩大到 D1 与 D2 的全部划分)。
 
 ### 7.5 Gate D 的条件(全部为数值,冻结;PROPOSED)
 
 | 编号 | 条件 |
 |---|---|
 | G-D1 阴性对照 Z0(种子 101、202、303) | 每个种子:重载后的 `state_sha256` 等于 N 的 `state_sha256`;Z0 与 N 的 DEV 评测逐单位比较:每个候选分数差 ≤ 1e-4、每个 D1 窗口的 NLL 差 ≤ 1e-5、每个 D2 字母分数差 ≤ 1e-4;预测(事实 QA、D2)须完全相同,只有某题在两者中任一次最高两个分数之差 ≤ 1e-4 时允许不同(沿用 Pilot G0.8 的规则)。由此 Z0 的 `D1-all`、`D1-diff`、`D1-same` 的绝对值 ≤ 1e-5,`D2` 只能由允许的近似并列造成,3 个种子之间的波动为 0(在上述容差内) |
-| G-D2 噪声基线 | `σ_N(M)` = N 在 M 的 DEV 集上的水平统计量的 bootstrap 标准差(10,000 次,第 8 节):M = `D1-all`(4 领域分层的窗口 NLL 均值的平均)、`D1-diff`(3 领域)、`D1-same`(fineweb)、`D2`(`Acc_D2(N)`)。四个值都必须有限且 > 0 |
+| G-D2 噪声基线 | `σ_N(M)` = N 在 M 的 DEV 集上的水平统计量的 bootstrap 标准差(10,000 次,第 8 节):M = `D1-all`(4 领域分层的窗口 NLL 均值的平均)、`D1-diff`(3 领域)、`D1-same`(fineweb)、`D2`(`Acc_D2(N)`)。四个值都必须有限且 > 0;并且由它们按第 7.6 节算出的 `m(D1-all)`、`m(D1-diff)` ≤ 0.10,`m(D1-same)` ≤ 0.20(`m(D2)` 由题数决定,最大为 2 × sqrt(0.25/800) ≈ 0.035,不另设上界)。训练种子之间的波动:P+ 三个种子的 `D1-diff`、`D2` 的样本标准差只报告;Gate M 用“每个种子的点估计同向”的要求处理种子波动(第 9.4 节) |
 | G-D3 阳性对照 P+(种子 101、202、303) | `D1-diff`:seed-average ≥ +1.00,其 95% CI 下界 > 0,且每个种子 ≥ +0.50;`D2`:seed-average ≥ +0.05(即 dAcc ≤ −0.05),其 95% CI 下界 > 0,且每个种子 > 0 |
 | G-D4 复现 | P+ 种子 101:训练结束时当场评测一次,保存、重载后重算 `state_sha256`(须相同)再评测一次;两次逐单位比较,容差同 G-D1(候选分数 1e-4、D1 窗口 NLL 1e-5、D2 字母分数 1e-4、预测规则同 Pilot G0.8) |
 | G-D5 D1 与 D2 的一致性 | 只报告,不设门槛:P+ 的三个种子的 (`D1-diff`, `D2`);Gate M 的 DEV 评测全部完成后,另报全部训练模型 DEV 评测(10 个剂量点 × 9 条曲线、S、Y、P+)上 `D1-diff` 与 `D2` 的 Spearman 秩相关 |
 
 **Gate D 通过** = G-D1、G-D2、G-D3、G-D4 全部满足。任一不满足 → ST14:停止,不运行第 6 步起的任何训练,状态 PIPELINE_NOT_QUALIFIED(原因:G-D1 或 G-D4 不满足为 IMPLEMENTATION_FAIL;G-D2 或 G-D3 不满足时写明失败的条件编号)。
 
-**阈值的理由**:G-D1、G-D4 的容差沿用 Pilot G0.8(Pilot 实测的复评差为 0,`metrix/e1-pilot/results/step7_record.json: values.G0.8`)。P+ 用 Pilot F6 的学习率与 weight decay,11 遍常数学习率约等于 F6 在 Pilot 中 20 遍余弦的累积量(第 6.3 节的换算),F6 的 DEV dNLL 为 +5.55(`training_runs/F-F6-seed101.json: dnll`),下限 +1.00 远低于这个值,只要求“明显的损伤”能被量到;每个种子 ≥ +0.50 防止只靠一个种子过线。D2 没有 Pilot 数据可依,+0.05 约为 `σ_N(D2)` 预计值(约 0.017)的 3 倍。G-D2 的“不该造成损伤的对照在种子之间的波动”由 Z0 给出:learning rate 为 0 时参数逐位不变,波动按构造为 0,G-D1 检查它确实为 0。
+**阈值的理由**:G-D1、G-D4 的容差沿用 Pilot G0.8(Pilot 实测的复评差为 0,`metrix/e1-pilot/results/step7_record.json: values.G0.8`)。P+ 用 Pilot F6 的学习率与 weight decay,11 遍常数学习率约等于 F6 在 Pilot 中 20 遍余弦的累积量(第 6.3 节的换算),F6 的 DEV dNLL 为 +5.55(`training_runs/F-F6-seed101.json: dnll`),下限 +1.00 远低于这个值,只要求“明显的损伤”能被量到;每个种子 ≥ +0.50 防止只靠一个种子过线。D2 没有 Pilot 数据可依,+0.05 约为 `σ_N(D2)` 预计值(约 0.017)的 3 倍。G-D2 的“不该造成损伤的对照在种子之间的波动”由 Z0 给出:learning rate 为 0 时参数逐位不变,波动按构造为 0,G-D1 检查它确实为 0;这只证明流程本身不引入波动,不测量训练带来的种子波动,后者由 P+ 的三个种子报告、在 Gate M 中按第 9.4 节处理。G-D2 上界的理由:Pilot 冻结的 general-damage margin 为 dNLL ≤ +0.03(Pilot 第 13 节第 2 项);若 `m(D1)` 超过它的约 3 倍(0.10),说明这组窗口分辨不出 Pilot 认为有意义的差异的量级,尺子过粗,Gate D 不通过;fineweb 单领域的窗口数是 4 个领域合计的四分之一,标准误约为 2 倍,上界取 0.20。规划估计(只作规划,不进记录;Task Order 红线 7):按 Pilot 的 N 在 Pilot DEV 窗口上的逐窗口 NLL(`metrix/e1-pilot/results/details/N_dev.json: evaluation.general_dev[*].nll`,每领域 25 个)的领域标准差换算到每领域 100 个窗口,预计 `m(D1-all)` 约 0.045、`m(D1-diff)` 约 0.052、`m(D1-same)` 约 0.090,都在上界之内(`reports/authoring/sigma_planning.py` 及其输出 `sigma_planning.txt`)。
 
 ### 7.6 non-inferiority margin
 
-- **公式(冻结)**:对每个损伤指标 M ∈ {`D1-all`, `D1-diff`, `D1-same`, `D2`},`m(M) = 2 × σ_N(M)`,`σ_N(M)` 取自 Gate D 记录 `results/gate_d_record.json` 的 G-D2 一项(第 10 节第 4 步)。理由:2 倍抽样标准差约为 N 自身水平的 95% 抽样区间半宽;方法间小于这一幅度的损伤差,与评测集抽样造成的波动不可区分,不视为有实际意义。撰写时按 Pilot 与 Stage 1 的窗口 NLL 离散程度估计,`m(D1-diff)` 约 0.05 nat,`m(D2)` 约 0.035(只作规划,不进记录)。
+- **公式(冻结)**:对每个损伤指标 M ∈ {`D1-all`, `D1-diff`, `D1-same`, `D2`},`m(M) = 2 × σ_N(M)`,`σ_N(M)` 取自 Gate D 记录 `results/gate_d_record.json` 的 G-D2 一项(第 10 节第 4 步)。理由:m 是预先登记的“最小有实际意义的损伤差”,按这组评测单位自身的分辨率定标。`σ_N` 是 N 的水平统计量的抽样标准差,含单位之间的异质性;方法间的比较是逐单位的配对差,其抽样波动通常小于 `σ_N`,所以 m 不是“与抽样波动不可区分”的界限,而是比配对比较的分辨率更宽、偏保守的实际意义阈值;倍数 2 是预先登记的选择(约为 N 水平的 95% 抽样区间半宽)。与 Pilot 第 13 节第 2 项(dNLL ≤ +0.03,固定数值,Pilot 中只报告)的关系:V1 的评测集扩大并按领域分层,margin 改为由同一组单位的分辨率推出,并由 G-D2 的上界(0.10)保证它不比 Pilot 的值宽出一个数量级。
 - **时机**:Gate D 通过后,Executor 计算四个 margin,写入 `results/margin_record.json`(MARGIN_RECORD:公式、输入值、输入记录的文件 sha256 与提交、四个 margin),提交并推送;之后才允许第 6 步起的任何训练(ST15)。margin 不得在看到任何方法比较之后确定或修改。
 
 ## 8. 统计计划
@@ -276,7 +280,7 @@ D1 的 books、c4、wikitext 三个领域与锚文本来源不同,fineweb 与锚
 | G0.8 | 复现:F@d0 的 3 个 checkpoint 各评测两次(训练中当场一次,重载后一次);候选分数差 ≤ 1e-4;某题两次中任一次最高两个候选分数差 ≤ 1e-4 时允许预测不同,其余预测须完全相同;并列判为错;每个 D1 窗口的 NLL 差 ≤ 1e-5;每个 D2 字母分数差 ≤ 1e-4(D2 的预测规则同候选)。实现须开启 PyTorch 确定性设置并记录 |
 | G0.9 | **只报告,不设门槛**:seed-average `Acc(F@32 遍, DEV-QA, learned)`。理由:Pilot 的上限 0.95 用来防止题目过易;E1-V1 的题目难度不变是 Owner 的决定(2026-11-28),且剂量阶梯有意延长到学习量很高的区域,上限检查失去原来的作用 |
 
-任一不满足 → PIPELINE_NOT_QUALIFIED,TEST 不生成、不评测;越过 G0.3 的界限触发 benchmark 重新校准(新协议版本);F 的正确率 < 0.40 与 [0.40, 0.70) 的标注沿用 Pilot 第 8 节。只报告:各 arm 的 Spill 与 FPR、AllCorrect、S 在它自己的置换映射上的正确率。
+任一不满足 → PIPELINE_NOT_QUALIFIED,按 ST19 停止(不运行 L、A 的曲线),TEST 不生成、不评测;越过 G0.3 的界限触发 benchmark 重新校准(新协议版本);F 的正确率 < 0.40 与 [0.40, 0.70) 的标注沿用 Pilot 第 8 节。只报告:各 arm 的 Spill 与 FPR、AllCorrect、S 在它自己的置换映射上的正确率。
 
 **TEST 确认**(第 10 节第 11 步,与 Gate M 的 TEST 评测同一次):T1 seed-average `Acc(F@d0, TEST-QA, learned)` ≥ 0.70,且 seed-average Δ(F@d0−N) 的 95% CI 下界 > 0;T2 S、Y 在 TEST-QA 上满足 G0.6、G0.7 的同样数值;T3 N 在 TEST-QA 上满足 G0.3 的同样范围(含 `Acc_CB(N)`,解释 B24)。
 
@@ -284,7 +288,7 @@ D1 的 books、c4、wikitext 三个领域与锚文本来源不同,fineweb 与锚
 
 ### 9.3 Gate M 的比较
 
-只在 Gate D 通过、MARGIN_RECORD 已提交、Gate 0 通过之后进行。对每个比较点 t、每个指标 M ∈ {`D1-all`, `D1-diff`, `D1-same`, `D2`}、DEV 与 TEST 两个 split:
+只在 Gate D 通过、MARGIN_RECORD 已提交、Gate 0 通过之后进行。对每个比较点 t、每个指标 M ∈ {`D1-all`, `D1-diff`, `D1-same`, `D2`} 以及逐领域指标 `D1-books`、`D1-c4`、`D1-wikitext`(`D1-fineweb` 即 `D1-same`;第 7.4 节)、DEV 与 TEST 两个 split:
 
 - 每个方法 X ∈ {F, L, A} 在 t 处的损伤(相对 N):seed-average 与每个种子,含 95% CI(“损伤各有多大”);
 - Δ损伤(L−F)、Δ损伤(A−F):seed-average 与每个种子,含 95% CI(主比较为 97.5%,见第 9.4 节);
@@ -295,8 +299,8 @@ D1 的 books、c4、wikitext 三个领域与锚文本来源不同,fineweb 与锚
 ### 9.4 主比较、多重比较与结论词汇
 
 - **主比较族(唯一)**:TEST 上、t = 0.80、指标 `D1-diff` 的两个比较 Δ(L−F) 与 Δ(A−F)。理由:0.80 位于三个比较点中间,按第 6.3 节的估计三种方法都最可能被夹逼;`D1-diff` 是 Pilot 已有的指标在与锚文本来源不同的领域上的版本(第 7.4 节)。
-- **多重比较**:主比较族的两个比较按 Bonferroni 处理,各用 97.5% CI(第 1.25 与 98.75 百分位)。其余全部为次要比较(其它比较点、其它指标、DEV 上的全部比较、每个方法自身的损伤),报告 95% CI,结论词汇照常计算但标为“次要”,不作确证性结论,不影响最终状态,不做多重比较校正。
-- **结论词汇**(对 Δ = D(X) − D(F),X ∈ {L, A};D 越大损伤越大;[lo, hi] 为该比较的 CI,Δ_s 为每个种子的点估计,m = m(`D1-diff`) 取自 MARGIN_RECORD):
+- **多重比较**:主比较族的两个比较按 Bonferroni 处理,各用 97.5% CI(第 1.25 与 98.75 百分位)。其余全部为次要比较(其它比较点、其它指标、DEV 上的全部比较、每个方法自身的损伤),报告 95% CI,结论词汇在下条规定的范围内计算并标为“次要”,不作确证性结论,不影响最终状态,不做多重比较校正。
+- **结论词汇**(对指标 M 上的 Δ = D(X) − D(F),X ∈ {L, A};D 越大损伤越大;[lo, hi] 为该比较的 CI,Δ_s 为每个种子的点估计,m = m(M) 取自 MARGIN_RECORD,主比较为 m(`D1-diff`))。只有 M ∈ {`D1-all`, `D1-diff`, `D1-same`, `D2`} 的方法间比较给结论词;每个方法自身的损伤(X 相对 N)与逐领域指标 `D1-books`、`D1-c4`、`D1-wikitext` 的比较只报告点估计与 CI,不给结论词:
   - **superior**:hi < 0,且 3 个 Δ_s 都 < 0;
   - **non-inferior**:不是 superior,hi < m,且 3 个 Δ_s 都 < m;
   - **inferior**:lo > m,且 3 个 Δ_s 都 > m;
@@ -328,12 +332,12 @@ Gate 0、Gate D、iso 点的确定都只用 TRAIN 与 DEV。TEST(事实 QA 与�
 每一步的停止规则见第 13 节;每一步的记录提交并推送之后才进入下一步(Pilot 实现的做法)。
 
 1. 记录环境与出处;GPU 检查(沿用 Pilot 第 8 节第 1 步);在 CPU 上生成第 2.8 节的非 TEST 文件,核对第 2 节与 `DAMAGE_MANIFEST.json` 的参考哈希(ST12);运行 L1–L8 的 DEV 部分(ST1)。记录 `results/step1_record.json`。
-2. 预检(ST11):在 A100 上跑 F、L、A 各前 20 步并计时,计时一次 DEV 评测;按第 12 节的公式估算总 GPU 时间。记录 `results/preflight_record.json`。
+2. 预检(ST11):在 A100 上跑 F、L、A 各前 20 步并计时,计时一次 base 加载、N 的一次 DEV 评测、一个完整 checkpoint 的保存与重载(各含 `state_sha256`);按第 12 节的 ST11 公式估算总 GPU 时间。记录 `results/preflight_record.json`。
 3. 评测 N(DEV);G0.3(ST2)。记录 `results/n_dev_record.json`(含逐单位值)。
 4. Gate D:Z0 三个种子、P+ 三个种子、G-D4、G-D2 的 `σ_N`;判定 Gate D(ST14)。记录 `results/gate_d_record.json`。
 5. 计算 margin,提交并推送 `results/margin_record.json`(MARGIN_RECORD)。
 6. F 的种子 101 曲线(32 遍,10 个剂量点);ST3:`Acc_CB(F@d0)` < 0.90 或 `Acq(F@d0)` < 0.70 → 停,不跑其余训练。然后 F 的种子 202、303;S、Y 各三个种子(到 d0)。每次训练一条记录 `results/runs/<run>.json`。
-7. G0.8 复评;判定 Gate 0(ST4、ST5)。记录 `results/gate0_record.json`。
+7. G0.8 复评;判定 Gate 0(ST4、ST5、ST19)。记录 `results/gate0_record.json`。
 8. L、A 各三个种子的曲线(32 遍,10 个剂量点)。
 9. 按第 6.4 节确定全部 iso 点;计算 DEV 上第 9.3 节的全部比较与 G-D5;提交并推送 `results/selection_freeze_record.json`。之后停下,等待 Owner 对 TEST 生成与评测的批准入库(第 16 节)。
 10. 生成 `test_qa.jsonl`、`general_test.jsonl`、`d2_test.jsonl`;对 TEST 运行 L3a–L5、L6、L8(L6、L8 由 Executor 与 data-auditor 各自计算,ST10)。记录 `results/st10_record.json`。
@@ -392,11 +396,26 @@ Gate 0、Gate D、iso 点的确定都只用 TRAIN 与 DEV。TEST(事实 QA 与�
 | R3 | TEST 只评 t = 0.80 的括号 checkpoint | 1.35 | 0.70、0.90 两个比较点只有 DEV 上的次要比较,没有 TEST 上的匹配验证与比较 |
 | R4 | R1 + R2 + R3 | 3.47(GPU 约 4.52 小时) | 以上全部 |
 
-- **预检与超时即停**:ST11 的界限为 0.875 × H(Pilot 为 3.5 / 4 = 0.875),预检估算 = 第 12 节估算公式用预检实测的每步时间、一次 DEV 评测时间代入(不乘安全系数);ST7 的上限为 H(从第一次加载模型到 TEST 评测结束的累计 GPU 时间)。
+- **预检与超时即停**:ST7 的上限为 H(从第一次加载模型到 TEST 评测结束的累计 GPU 时间)。ST11 的界限为 0.875 × H(Pilot 为 3.5 / 4 = 0.875)。**ST11 的预检估算 E(小时)**(冻结;替换解释 B17):
+
+  E = [ G + 26·t_load + 2880·t_F + 2880·t_L + 2880·t_A + 3150·t_F + 107·t_ev + 45·t_save + 61·t_reload + 46 × 1.26·t_ev + 9 × 0.53·t_ev ] / 3600
+
+  实测量(第 10 节第 2 步,在 A100 上用 E1-V1 的配置测得;预检的模型与数值只用于计时,不是结果,标为 PREFLIGHT):t_F、t_L、t_A = F、L、A 各跑 20 步时第 2–20 步每步秒数的平均(第 1 步作为预热不计;每次计时前 `torch.cuda.synchronize()`;沿用 B17 的计时方法);t_ev = N 的一次完整 DEV 评测(第 5 节的 DEV 评测内容)的秒数;t_load = 加载一次 base 模型的秒数;t_save = 保存一个完整 FP32 checkpoint 并计算其 `state_sha256` 的秒数;t_reload = 重载该 checkpoint 并重算 `state_sha256` 的秒数;G = 预检结束时已累计的 GPU 秒数。固定常数(主方案的计数,第 11、12 节):26 次 base 加载(N、Z0 3、P+ 3、曲线 9、A 的 base 副本 3、S/Y 6、TEST 的 N 1);曲线每种方法 3 × 960 步;3150 步 = S、Y 6 × 330 + Z0 3 × 60 + P+ 3 × 330(都按 t_F);107 次 DEV 评测;45 次完整保存(预计值,第 6.7 节);61 次重载(G-D1 3、G-D4 1、G0.8 3、TEST 的 F@d0、S、Y 9 与括号 checkpoint 45);46 次完整 TEST 评测(N 与 45 个括号 checkpoint)与 9 次只有事实 QA 的 TEST 评测,时间分别按 1.26 × t_ev 与 0.53 × t_ev(两个比值由 token 数推出,`reports/authoring/compute_estimate.txt`)。E 不乘安全系数;E > 0.875 × H → ST11。采用缩减方案时,按该方案的计数代入同一公式。
 
 ## 13. 停止条件
 
-ST1–ST13 **沿用 Pilot 第 11 节**,其中:ST3 的对象改为 F 的种子 101 在 d0(第 10 节第 6 步);ST7 的上限改为 H;ST10 的范围扩大到 L6、L8 的 D1 / D2 TEST 部分与第 7.2 节 TEST 集合不足;ST11 的界限改为 0.875 × H;ST13 的“配置冻结前”改为“选择冻结记录提交并推送之前”。新增:
+ST1–ST13 **沿用 Pilot 第 11 节**的事件与动作(各自的状态词沿用解释 B16),按 E1-V1 改写如下;未列出的 ST4、ST5、ST6、ST8 原样适用,ST2 的“第 3 步”即本协议第 10 节第 3 步:
+
+- ST1:第 10 节第 1 步任一泄漏检查的 DEV 部分超限 → 停;不训练;IMPLEMENTATION_FAIL。
+- ST3:对象改为 F 的种子 101 在 d0(第 10 节第 6 步)。
+- ST7:上限改为 H。
+- ST9:某次运行开始时读到的设备全名与首次记录不同 → 整批作废(本次 E1-V1 的全部结果不得用于任何判断);BLOCKED;在设备全名一致的机器上从第 10 节第 2 步重新开始。
+- ST10:范围扩大到 L6、L8 的 D1 / D2 TEST 部分,以及第 7.2 节的 TEST 集合不足。
+- ST11:界限改为 0.875 × H,估算按第 12 节的公式。
+- ST12:任何数据、manifest、模板或候选的哈希,或模型、分词器版本与冻结值不一致 → 停止;BLOCKED。比对范围:(1)第 2 节与三个 manifest(`DATA_MANIFEST.json`、`SPLIT_MANIFEST.json`、`DAMAGE_MANIFEST.json`)列出的输入文件 sha256 与生成文件的参考哈希(fact 哈希的比对方法见第 2.2 节;D2 只比对 Owner 选定的数据集);(2)冻结提交下本协议文件与四个 JSON 的原始字节哈希,用 `git cat-file` 从冻结提交读取,与执行时工作区中的文件逐字节比对。执行中不改写本协议与四个 JSON 中的任何字段(生成文件的实际哈希只写入 `results/step1_record.json` 等记录),所以 (2) 没有豁免。
+- ST13:“配置冻结前”改为“`results/selection_freeze_record.json` 提交并推送之前”。
+
+新增:
 
 | 编号 | 事件(可立即判断) | 动作 |
 |---|---|---|
@@ -404,7 +423,8 @@ ST1–ST13 **沿用 Pilot 第 11 节**,其中:ST3 的对象改为 F 的种子 10
 | ST15 | `results/margin_record.json` 未提交并推送即开始第 6 步起的任何训练 | IMPLEMENTATION_FAIL;本次 E1-V1 的 Gate M 结果全部作废 |
 | ST16 | Owner 的某次批准(第 16 节)未入库即执行被批准的动作 | IMPLEMENTATION_FAIL;该动作的结果作废 |
 | ST17 | 第 10 节第 13 步的终止前核对不通过 | 不得终止机器;把缺失的数值从 `<work>` 写入入库的结果文件,重新核对 |
-| ST18 | 保存 checkpoint 之前的可用磁盘少于 2 × 6.88 GB | 停;BLOCKED;报告 Owner(不删除任何文件以腾出空间) |
+| ST18 | 保存 checkpoint 之前的可用磁盘少于 2 × 6.88 GB(理由:一次保存最多写一个 6.88 GB 的完整 checkpoint,另留一个的余量,保证正在写入的文件不会因磁盘写满而残缺) | 停;BLOCKED;报告 Owner(不删除任何文件以腾出空间) |
+| ST19 | 第 10 节第 7 步 Gate 0 的任一条件不满足 | 停;不运行第 8 步(L、A 的曲线)与之后的任何步骤;PIPELINE_NOT_QUALIFIED(原因按解释 B14);TEST 不生成、不评测 |
 
 ## 14. 实验记录、入库的结果与终止前核对
 
@@ -418,7 +438,7 @@ ST1–ST13 **沿用 Pilot 第 11 节**,其中:ST3 的对象改为 F 的种子 10
 | # | 字段 | 建议 | 理由 |
 |---|---|---|---|
 | 1 | GPU 累计时间上限 H(Owner) | 9 小时;ST11 界限 7.875 小时 | 主方案估算 6.66 小时,乘 1.2 为 7.99 小时(第 12 节) |
-| 2 | D2 数据集(Owner 批准其一) | 首选 MMLU(`cais/mmlu` @ `c30699e8…`,MIT);备选 ARC(`allenai/ai2_arc` @ `210d026f…`,CC-BY-SA-4.0) | 两者均已核实 revision、文件 sha256 与许可证;MMLU 覆盖 57 个学科、题量足以抽出互不相交的 800 + 800 题;ARC 的 DEV 来源只有 869 题(其中 863 题为 4 个选项),抽 800 题后余量很小 |
+| 2 | D2 数据集(Owner 批准其一) | 首选 MMLU(`cais/mmlu` @ `c30699e8…`,MIT);备选 ARC(`allenai/ai2_arc` @ `210d026f…`,CC-BY-SA-4.0) | 两者均已核实 revision、文件 sha256 与许可证;MMLU 覆盖 57 个学科、题量足以抽出互不相交的 800 + 800 题;ARC 的 DEV 来源只有 869 题(其中 862 题为 4 个选项),抽 800 题后只余 62 题 |
 | 3 | 剂量点与配置的数量 | 主方案:每种方法 1 个配置、10 个剂量点、3 个种子;H 不足时按第 12 节 R1–R4 缩减 | 第 6.3 节、第 12 节 |
 
 Owner 批准第 2 项之后,`DAMAGE_MANIFEST.json: d2.selected` 改为所选数据集,`d2_dev.jsonl` 的参考哈希为第 7.2 节对应的值;冻结时这三项都必须有值。

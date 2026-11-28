@@ -1,0 +1,19 @@
+先读仓库中的 .claude/agents/data-auditor.md，以它为你的完整定义；它与你已加载的定义冲突时，以仓库文件为准。
+
+仓库 /home/user/OpenMythos，分支 metrix-e1-v1-protocol-v1，HEAD = 6e03468956208c422d0d41c08edaaf116166338c；被审对象是已暂存、尚未提交的改动（暂存树 0e3dc49eaca9b07254e61301bc2602f8d8a39eea），即 metrix/e1-v1/ 下的 E1-V1 协议草案 METRIX_E1V1_PROTOCOL.md 与 DATA_MANIFEST.json、SPLIT_MANIFEST.json、DOSE_SPACE.json、DAMAGE_MANIFEST.json（PROTOCOL DESIGN 阶段，协议未冻结）。需求见 metrix/e1-v1/tasks/ 下两份原文。这是第 1 轮审计。
+
+本阶段的路径对应（请先确认你接受；不接受就停下，在结论中说明）：Task Order 第 3 节红线 3 禁止修改 metrix/e1-pilot/ 下任何文件，所以你定义中的“只写入 metrix/e1-pilot/audit/”在本阶段对应为“只写入 metrix/e1-v1/audit/”（脚本放 metrix/e1-v1/audit/，每个脚本的完整 stdout 放 metrix/e1-v1/audit/stdout/）；除此之外不写任何文件。依据：metrix/CLAUDE.md 第 8 节 2026-11-28 的新条目（第 5、9、10 节的做法在 E1-V1 阶段继续适用）；这一对应将作为待决事项报告 Review Gate。
+
+硬性限制（与你的定义一致）：只在 CPU 上运行；只可加载分词器，禁止加载模型权重（本容器没有安装 torch）；禁止 import、调用或复制 Executor 的检查代码——包括 metrix/e1-v1/reports/authoring/*.py 与 metrix/e1-pilot/src/、metrix/e1-pilot/reports/ 下的脚本；规则只按协议与 manifest 的文字独立实现。禁止读取任何 TEST 内容：metrix/e1-pilot 协议第 3 节的定义适用；research/mini_mythos/stage1/results/r1/eval_sets.jsonl 中 split 为 test 的行只能按行首字节匹配 domain 与 split 字段计数，不得解码或 json 解析；MMLU 的 all/test 与 ARC 的两个 test parquet 只能对整个文件求 sha256、读取 parquet 文件尾的行数，不得读取任何行。
+
+输入：可以使用 Executor 已下载到 /tmp/claude-0/-home-user/1e17bf44-a265-5c2d-b2f8-f9d45e7efe94/scratchpad/inputs/ 的文件（qwen/ 下 4 个分词器文件、anchor_source/ 下锚文本 parquet、parcae/tokenizer.json、d2/ 下 MMLU 与 ARC 的 parquet），但须自己核对它们的 sha256 与 manifest 一致；Python 可以用 /tmp/claude-0/-home-user/1e17bf44-a265-5c2d-b2f8-f9d45e7efe94/scratchpad/venv/bin/python（只装了 transformers 5.22.2、tokenizers 0.23.3、huggingface-hub、pyarrow、numpy、jinja2，与 Pilot 锁定版本一致），用 -I 运行。生成的数据文件不要写进仓库（只把计数与哈希写进 stdout）；如需写临时数据，写到 metrix/e1-v1/audit/ 下的一个子目录并在最后报告其路径（这些数据文件不会入库）。
+
+复算项目（按协议与 manifest 文字独立实现）：
+1. 哈希：按 Pilot 协议 2.2 以 DATA_SEED 20261110 重新生成 Pilot 的 160 条 fact，核对 406c8801…；按 V1 协议 2.2（含三处改动，特别是已接受集合预置 Pilot 的 320 个字符串）生成 V1 的 320 条 fact，核对 DATA_MANIFEST.json 的 expected_facts_canonical_sha256；candidates.json、train_S.jsonl 的规范化哈希；train_F、train_Y、dev_qa、facts.jsonl、anchor_text.jsonl 的参考哈希；锚文本解码文本哈希 8828bc4f…；32 个模板的 normalized_sha256 与 template_set_sha256；Y/F token 比；暴露匹配。
+2. 泄漏：独立实现 L1–L8 的 DEV 部分（L6、L8 对 D1 DEV 与 D2 DEV），与 SPLIT_MANIFEST.json 的 authoring_result 比对。
+3. 候选可行性：每个 cell 在四重约束（同 relation、同 stratum、同暴露类别、答案 token 数相同）下的候选池大小，报告最小值和不足 4 个的 cell。
+4. split：fact_id 互斥、每个 cell 的 learned/unread 数量、各 split 的数量是否符合协议。
+5. 损伤评测集：按 DAMAGE_MANIFEST.json 的规则独立构建 D1 DEV（general_dev.jsonl）与 D2 DEV（MMLU 与备选 ARC 两种），核对参考哈希、数量与排除数；只用行首匹配统计 eval_sets.jsonl 各领域 test 行数并核对“跳过前 25 行后每领域可用 175 行”；核对 D2 来源文件的 sha256 与行数（test 只读文件尾）。
+6. 协议与 JSON 的一致性中与数据有关的部分（种子、数量、规则文字、哈希）。
+
+请按定义的输出格式给出每个项目的命令、原始输出、与 Executor 结果是否一致、不一致时的差异；最后附 git status --short 的原始输出。对每个不一致或问题，请注明它是否影响数据、指标、门槛、可复现性、iso-acquisition 匹配或损伤测量（Owner 的修改规则只允许修这些）。你的原文将原样保存到仓库并推送。最后一行给结论。

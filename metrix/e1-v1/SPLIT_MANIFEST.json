@@ -386,7 +386,7 @@
           "anchor_text vs d2_test.jsonl"
         ],
         "when": "protocol section 10 step 10, after the TEST files are generated and before the TEST evaluation",
-        "count": "number of distinct shared word 13-grams across all documents: 13-grams are taken within each document (each anchor document, each window), never across documents; the word 13-grams of the 512 anchor documents are merged into one set, those of all general_test.jsonl windows into another, and the number of distinct elements of their intersection is counted",
+        "count": "for each of general_test.jsonl and d2_test.jsonl separately: the word 13-grams of the 512 anchor documents merged into one set, those of all windows (D1) or all prompts (D2) of the file merged into another, 13-grams within each document, no concatenation across documents; the number of distinct elements of the intersection; texts = the decoded ids fed to the model (anchor <= 128 ids, window <= 256 ids) or the prompt p",
         "computed_by": "Executor and data-auditor, each on its own; the results must be equal"
       },
       "authoring_result": {
@@ -413,7 +413,8 @@
         "d2_dev",
         "d2_test"
       ],
-      "test_part": "as L6: counted by Executor and data-auditor in section 10 step 10; must be equal",
+      "text": "D1: the text field of the window (decode of the ids fed to the model, not the whole source document); D2: the prompt p",
+      "test_part": "as L6: counted for general_test.jsonl and d2_test.jsonl separately by Executor and data-auditor in section 10 step 10; must be equal",
       "authoring_result": {
         "d1_dev": 0,
         "d2_dev": 0
@@ -433,11 +434,5 @@
     "byte_sha256": "SHA-256 of the file bytes exactly as stored (LF newlines)",
     "canonical_sha256": "SHA-256 of the canonical serialization of the parsed content; identifies the content independently of formatting"
   },
-  "split_sha256": {
-    "train_F.jsonl": null,
-    "train_S.jsonl": null,
-    "train_Y.jsonl": null,
-    "dev_qa.jsonl": null,
-    "test_qa.jsonl": null
-  }
+  "actual_hashes": "the manifests are not rewritten during execution; the actual hashes of generated files go into results/step1_record.json (non-TEST) and results/st10_record.json (TEST); protocol section 13 ST12"
 }
