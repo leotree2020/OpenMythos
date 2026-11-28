@@ -1,0 +1,2 @@
+set -o pipefail; source ~/metrix-vars.sh && cd "$REPO" || exit 1
+$PY metrix/e1-pilot/run_pilot.py test-evaluate --inputs "$INPUTS" --work "$WORK" 2>&1 | tee "$WORK/command_output/test_evaluate_$(date -u +%Y%m%dT%H%M%SZ).txt"
