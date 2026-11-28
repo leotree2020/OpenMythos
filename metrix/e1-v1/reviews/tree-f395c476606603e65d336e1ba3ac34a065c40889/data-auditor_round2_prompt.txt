@@ -1,0 +1,13 @@
+先读仓库中的 .claude/agents/data-auditor.md，以它为你的完整定义；它与你已加载的定义冲突时，以仓库文件为准。
+
+仓库 /home/user/OpenMythos，分支 metrix-e1-v1-protocol-v1，HEAD = 59761ad923674d43725167a8c79f6bdf16f531ee（工作提交，即你第 1 轮审计的暂存树 0e3dc49e…）。本轮审计对象：已暂存、尚未提交的修复（暂存树 f395c476606603e65d336e1ba3ac34a065c40889）；交付物 diff 在 /tmp/claude-0/-home-user/1e17bf44-a265-5c2d-b2f8-f9d45e7efe94/scratchpad/c/input_round2.diff。你第 1 轮的脚本与完整 stdout 已暂存在 metrix/e1-v1/audit/，原文在 metrix/e1-v1/reviews/tree-0e3dc49eaca9b07254e61301bc2602f8d8a39eea/data-auditor_round1.md。你第 1 轮写的临时数据 metrix/e1-v1/audit/tmpdata/ 已被 Executor 移出仓库（到 /tmp/claude-0/-home-user/1e17bf44-a265-5c2d-b2f8-f9d45e7efe94/scratchpad/auditor_tmpdata/tmpdata/，内容未改），以免误入库；如需临时数据，请重新生成到 metrix/e1-v1/audit/ 下的子目录，并在最后报告路径。
+
+这是第 2 轮，也是最后一轮：按 Owner 的修改次数上限，本轮之后无论结论如何都停止修改。路径对应、硬性限制、输入与 Python 环境与第 1 轮相同（只写入 metrix/e1-v1/audit/；只用 CPU、只加载分词器；不 import、调用或复制 Executor 的代码；不读取任何 TEST 内容：eval_sets.jsonl 的 test 行只按行首字节计数，MMLU/ARC 的 test parquet 只求整文件 sha256 与读文件尾行数）。你可以运行你自己第 1 轮写的脚本，也可以新写；本轮的完整 stdout 请另存为新文件（例如 audit/stdout/*_round2.txt），不要覆盖第 1 轮的文件。
+
+请核对：
+1. 你第 1 轮的 B1 是否已解决（协议第 7.1、15 节的 ARC 数字），M2、M3、M4 的修改（SPLIT_MANIFEST.json 的 L8 text 与 L6/L8 test_part、DATA_MANIFEST.json 的 files.*.record 字段定义）是否与你独立实现的规则和参考哈希一致。
+2. 修改后的四个 JSON 中与数据有关的内容（种子、数量、规则文字、全部参考哈希、DAMAGE_MANIFEST 的读取规则与 G-D2 上界）是否仍与你独立复算的结果一致；删去占位字段（files 中的 status、byte_sha256、canonical_sha256，SPLIT_MANIFEST 的 split_sha256）之后，是否有任何与数据有关的信息丢失。
+3. 新增的 reports/authoring/sigma_planning.txt：用你自己的脚本从 metrix/e1-pilot/results/details/N_dev.json 的 evaluation.general_dev 独立复算每领域 NLL 标准差与预计的 σ_N、m，核对协议第 7.5 节引用的 0.045、0.052、0.090。
+4. 协议第 6.4 节第 2a 条（精确有理数算术）对 DEV 学习量的取值：确认 Acq 为 1/480 的整数倍时，按该算术，第 6.7 节的保存规则与第 6.4 节的夹逼规则对同一组 a_j 给出一致的结果（可用构造的 a_j 序列演示，不需要模型）。
+
+按定义的输出格式给出每项的命令、原始输出、与 Executor 结果是否一致及差异；对每个问题注明是否影响数据/指标/门槛/可复现性/iso-acquisition 匹配/损伤测量；最后附 git status --short 的原始输出。你的原文将原样保存到仓库并推送。最后一行给结论。

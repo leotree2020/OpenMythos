@@ -1,0 +1,31 @@
+# host: vm (Claude Code cloud container, CPU only, no GPU, torch not installed); 2026-11-28T10:12:03Z; round 2, staged tree f395c476606603e65d336e1ba3ac34a065c40889; second run: part (5) construction made deterministic (first run's random construction had no target in (a_lo, a_hi]); first run kept as r2_item4_fraction_round2_firstrun.txt
+$ /tmp/claude-0/-home-user/1e17bf44-a265-5c2d-b2f8-f9d45e7efe94/scratchpad/venv/bin/python -I -B metrix/e1-v1/audit/r2_item4_fraction.py
+grid: Acq = (sum over 240 learned facts of correct/2) / 240 -> multiples of 1/480
+  7/10 * 480 = 336 (integer: True); * 720 = 504 (TEST grid 1/720: True)
+  4/5 * 480 = 384 (integer: True); * 720 = 576 (TEST grid 1/720: True)
+  9/10 * 480 = 432 (integer: True); * 720 = 648 (TEST grid 1/720: True)
+  1/10 * 480 = 48 (integer: True); * 720 = 72 (TEST grid 1/720: True)
+  1/20 * 480 = 24 (integer: True); * 720 = 36 (TEST grid 1/720: True)
+  constructed Acq from per-fact Scores: 79/160 = 237/480, denominator divides 480: True
+critical values (16): ['0', '1/2', '287/480', '3/5', '289/480', '67/96', '7/10', '337/480', '383/480', '4/5', '77/96', '431/480', '9/10', '433/480', '479/480', '1']
+(1) exhaustive, length 5 over the critical values: sequences 1048576 | qualifying brackets 491328 | sequences with a bracket endpoint not saved 0 | saved but unused checkpoints (sum) 2422256
+(2) random length 10, critical values, any order: sequences 50000 | brackets 30725 | sequences with an unsaved bracket endpoint: formal reading 0, other reading of the item-1 parenthesis 0 | sequences where the two readings give different iso results 10610
+(2) random length 10, grid k/480, any order: sequences 50000 | brackets 8375 | sequences with an unsaved bracket endpoint: formal reading 0, other reading of the item-1 parenthesis 0 | sequences where the two readings give different iso results 1448
+(2) random length 10, grid k/480, non-decreasing: sequences 50000 | brackets 62172 | sequences with an unsaved bracket endpoint: formal reading 0, other reading of the item-1 parenthesis 0 | sequences where the two readings give different iso results 0
+(2) random length 10, grid, curve-like: increments k/480 with k in -24..72: sequences 50000 | brackets 94467 | sequences with an unsaved bracket endpoint: formal reading 0, other reading of the item-1 parenthesis 0 | sequences where the two readings give different iso results 718
+(3) edge cases (t = 0.70 unless stated), exact Fraction vs float with a_j = float mean of per-fact Scores
+    a_j* - t = 0.10 exactly (0.65 -> 0.80): a = ['1/2', '13/20', '4/5'] float a = [0.5, 0.65, 0.8] | exact iso (2, 3) saved [2, 3] consistent True | float iso None saved [2] | exact 6.4 with float 6.7 leaves an endpoint unsaved: True
+    t - a_j*-1 = 0.10 exactly (0.60 -> 0.75): a = ['1/2', '3/5', '3/4'] float a = [0.5, 0.6, 0.75] | exact iso (2, 3) saved [2, 3] consistent True | float iso (2, 3) saved [2, 3] | exact 6.4 with float 6.7 leaves an endpoint unsaved: False
+    a_j* = t exactly, w = 1 (0.65 -> 0.70): a = ['1/2', '13/20', '7/10'] float a = [0.5, 0.65, 0.7] | exact iso (2, 3) saved [2, 3] consistent True | float iso (2, 3) saved [2, 3] | exact 6.4 with float 6.7 leaves an endpoint unsaved: False
+    a_j*-1 = t exactly is not below t (0.70 -> 0.75): a = ['1/2', '7/10', '3/4'] float a = [0.5, 0.7, 0.75] | exact iso None saved [2] consistent True | float iso None saved [2] | exact 6.4 with float 6.7 leaves an endpoint unsaved: False
+    both ends exactly 0.10 away (0.60 -> 0.80): a = ['1/2', '3/5', '4/5'] float a = [0.5, 0.6, 0.8] | exact iso (2, 3) saved [2, 3] consistent True | float iso None saved [2] | exact 6.4 with float 6.7 leaves an endpoint unsaved: True
+    t = 0.80: 0.70 -> 0.90: a = ['1/2', '7/10', '9/10'] float a = [0.5, 0.7, 0.9] | exact iso (2, 3) saved [2, 3] consistent True | float iso None saved [3] | exact 6.4 with float 6.7 leaves an endpoint unsaved: True
+    t = 0.90: 0.80 -> 1.00: a = ['1/2', '4/5', '1'] float a = [0.5, 0.8, 1.0] | exact iso (2, 3) saved [2, 3] consistent True | float iso (2, 3) saved [2, 3] | exact 6.4 with float 6.7 leaves an endpoint unsaved: False
+(4) DOSE_SPACE iso.targets[0] = 0.7, tau_dev = 0.1
+    Fraction(float) gives t = 3152519739159347/4503599627370496 (== 7/10: False), tau = 3602879701896397/36028797018963968 (== 1/10: False)
+    json.loads(parse_float=Fraction) gives t = 7/10, tau = 1/10 (exact: True)
+    sequence ['1/2', '13/20', '4/5']: iso with Fraction('0.70'), Fraction('0.10') -> (2, 3); with Fraction(0.7), Fraction(0.1) -> None
+(5) constructed facts: a_lo 317/480 (0.660417), a_hi 35/48 (0.729167), t 7/10, w 19/33; per-fact interpolated Acq = 7/10 == t: True; float(w) = 0.5757575757575758
+elapsed 114.0 s
+ITEM4 round 2: CONSISTENT (sequences with an unsaved bracket endpoint over (1) and (2): 0)
+exit=0

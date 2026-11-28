@@ -1,0 +1,102 @@
+# host: vm (Claude Code cloud container, CPU only, no GPU, torch not installed); 2026-11-28T10:04:32Z; round 2, staged tree f395c476606603e65d336e1ba3ac34a065c40889
+$ /tmp/claude-0/-home-user/1e17bf44-a265-5c2d-b2f8-f9d45e7efe94/scratchpad/venv/bin/python -I -B metrix/e1-v1/audit/r2_item1_fixes.py
+[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
+=== B1: ARC DEV source numbers
+OK   ARC ARC-Challenge/validation-00000-of-00001.parquet sha256: got 395a5c88d1580d69855fbaee9450270578df1ad5af6259771cd0a42c20e99f05 | expected 395a5c88d1580d69855fbaee9450270578df1ad5af6259771cd0a42c20e99f05
+OK   ARC ARC-Easy/validation-00000-of-00001.parquet sha256: got ed890ff1e4cef7a7140d3a30dcea3ed2c9d467c6458f447ad9ef0176d8dcbb74 | expected ed890ff1e4cef7a7140d3a30dcea3ed2c9d467c6458f447ad9ef0176d8dcbb74
+  ARC-Challenge/validation-00000-of-00001.parquet: rows 299 by number of options {3: 3, 4: 295, 5: 1}
+  ARC-Easy/validation-00000-of-00001.parquet: rows 570 by number of options {3: 1, 4: 567, 5: 2}
+  computed: DEV source rows 869, 4-option rows 862, other 7; shuffled order: visited 806 rows to reach 800 items, excluded 6; 4-option rows left after DEV 62; rows not visited 63
+  protocol 7.1 sentence: 只用恰好 4 个选项的题(DEV 来源 869 行中 862 行为 4 个选项、7 行不是,`audit/stdout/a5_damage.txt`;撰写时按打乱顺序访问到第 806 行即凑满 800 题,其间排除 6 行)
+OK   protocol 7.1 (source rows, 4-option, other, visited, items, excluded): got [869, 862, 7, 806, 800, 6] | expected [869, 862, 7, 806, 800, 6]
+OK   cited file audit/stdout/a5_damage.txt contains the 869 / 862 line: got True | expected True
+  protocol 15 sentence: ARC 的 DEV 来源只有 869 题(其中 862 题为 4 个选项),抽 800 题后只余 62 题
+OK   protocol 15 (source rows, 4-option, drawn, left): got [869, 862, 800, 62] | expected [869, 862, 800, 62]
+  SUBMISSION_NOTE sentence: 备选 ARC 800 题(按打乱顺序访问 806 行,其中 6 行因不是 4 个选项被排除;DEV 来源 869 行中共有 7 行不是 4 个选项
+OK   SUBMISSION_NOTE (items, visited, excluded, source rows, other): got [800, 806, 6, 869, 7] | expected [800, 806, 6, 869, 7]
+OK   DAMAGE_MANIFEST arc.authoring_dev.excluded.not_4_choices: got 6 | expected 6
+OK   round-1 wrong numbers ('863', 'DEV 来源中 6 题', '余 63') left in protocol / SUBMISSION_NOTE: got [] | expected []
+=== M2: L8 'text'
+  SPLIT_MANIFEST L8.text: D1: the text field of the window (decode of the ids fed to the model, not the whole source document); D2: the prompt p
+  protocol L8 row: | L8 | 损伤评测集中含 V1 字符串的单位数:一个 D1 窗口或一道 D2 题,只要其文本中出现 640 个 V1 字符串之一(不分大小写,且紧前、紧后的字符都不是 ASCII 字母或数字,或为文本边界)即计 1。“文本”:D1 窗口为送入模型的 id(最多 256 个)用本协议分词器解码所得的 `text` 字段(与 L6 相同,不是整篇源文档);D2 为题面 `p` | 0 | D1 DEV 0,D2 DEV 0 |
+OK   protocol L8 row defines D1 text as the decoded <= 256 model ids (text field), not the source document; D2 = prompt p: got True | expected True
+OK   SPLIT_MANIFEST L8.text says the same: got True | expected True
+OK   DATA_MANIFEST general_dev record: text = tokenizer.decode(ids) with default arguments: got True | expected True
+OK   V1 strings (distinct, lowercased): got 640 | expected 640
+input qwen/tokenizer.json sha256 aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4 manifest aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4 equal True
+input qwen/tokenizer_config.json sha256 d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101 manifest d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101 equal True
+input qwen/vocab.json sha256 ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910 manifest ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910 equal True
+input qwen/merges.txt sha256 8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5 manifest 8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5 equal True
+OK   general_dev.jsonl (auditor) canonical sha256 = reference: got e8350160464963e684e0c58826d53250dec4de366a716d3111aa8ec5089ce281 | expected e8350160464963e684e0c58826d53250dec4de366a716d3111aa8ec5089ce281
+OK   general_dev windows whose text != tokenizer.decode(ids): got 0 | expected 0
+OK   general_dev windows with more than 256 ids: got 0 | expected 0
+OK   L8 D1 DEV (window text field) = SPLIT authoring_result.d1_dev: got 0 | expected 0
+OK   L8 D2 DEV MMLU (prompt p) = SPLIT authoring_result.d2_dev: got 0 | expected 0
+OK   L8 D2 DEV ARC (prompt p), no manifest value, expected 0: got 0 | expected 0
+  report only: L8 on the whole source document (reading excluded by the new text) D1 DEV 0; windows whose source document is longer than the window text 131 of 400
+=== M3: L6 / L8 test_part
+  SPLIT_MANIFEST L6.test_part.count: for each of general_test.jsonl and d2_test.jsonl separately: the word 13-grams of the 512 anchor documents merged into one set, those of all windows (D1) or all prompts (D2) of the file merged into another, 13-grams within each document, no concatenation across documents; the number of distinct elements of the intersection; texts = the decoded ids fed to the model (anchor <= 128 ids, window <= 256 ids) or the prompt p
+  SPLIT_MANIFEST L8.test_part: as L6: counted for general_test.jsonl and d2_test.jsonl separately by Executor and data-auditor in section 10 step 10; must be equal
+  protocol section 3 timing: **时机**:L1、L2 只用模板;L3a–L8 的 DEV 部分在第 10 节第 1 步运行(G0.1);L3a–L5 涉及 TEST 的部分在 `test_qa.jsonl` 生成之后运行;L6、L8 的 TEST 部分在 `general_test.jsonl`、`d2_test.jsonl` 生成之后、TEST 评测之前,由 Executor 与 data-auditor 各自计算,只输出计数,两者结果须一致(L6 的计数口径沿用 Pilot L6 的 TEST 部分,对 D1 TEST 与 D2 TEST 各自单独计数:锚文本的词 13-gram 集合分别与 `general_test.jsonl` 全部窗口、`d2_test.jsonl` 全部题面的词 13-gram 集合求交,各计交集的种类数;L8 对两个文件各计单位数);任一 TEST 部分超限或两者不一致 → ST10。
+OK   L6 count: each file separately, anchor set vs the file's set, distinct elements of the intersection: got True | expected True
+OK   L8 test_part: each file separately: got True | expected True
+OK   protocol section 3 says the same (D1 TEST and D2 TEST counted separately; L8 per file): got True | expected True
+OK   anchor_text.jsonl (auditor) canonical sha256 = reference: got 2089e656819d1fe0f6ececcc26e5cade09ee80a92c50e7c8f607fa4e0ef46da5 | expected 2089e656819d1fe0f6ececcc26e5cade09ee80a92c50e7c8f607fa4e0ef46da5
+OK   anchor docs whose text != tokenizer.decode(ids): got 0 | expected 0
+OK   anchor docs with more than 128 ids: got 0 | expected 0
+OK   L6 count on general_dev.jsonl (DEV stand-in for general_test.jsonl) = authoring_result.d1_dev: got 0 | expected 0
+OK   L6 count on d2_dev.jsonl MMLU (DEV stand-in for d2_test.jsonl) = authoring_result.d2_dev: got 0 | expected 0
+OK   L6 count on d2_dev.jsonl ARC, no manifest value, expected 0: got 0 | expected 0
+  report only: the other reading (D1 and D2 merged into one set) gives 0 on DEV; separate counts 0, 0
+OK   count function on a constructed unit holding the first 13 words of anchor doc 0: got 1 | expected 1
+OK   13-gram spanning the end of anchor doc 0 and the start of doc 1 is not an anchor 13-gram (no concatenation across documents): got 0 | expected 0
+=== M4: DATA_MANIFEST files.*.record
+  facts.jsonl: {fact_id, exposure ('learned' or 'unread'), relation, stratum ('natural' or 'random'), entity, answer}, generation order
+  train_F.jsonl: {fact_id, template_id, text}, fact order
+  train_S.jsonl: {fact_id, answer_fact_id, text} (Pilot 2.6)
+  train_Y.jsonl: {fact_id, template_id, kind, text}; fact order, Y_ENTITY before Y_ANSWER
+  dev_qa.jsonl: {fact_id, template_id, question}; fact order, then template order
+  candidates.json: one JSON object {fact_id: [4 candidates]} (Pilot 2.5)
+  anchor_text.jsonl: {doc: 0-based document number (anchor order), source_row: 0-based row index in the parquet file order, ids: the first at most 128 ids of encode(text, add_special_tokens=False), text: tokenizer.decode(ids) with default arguments}
+  general_dev.jsonl: {domain, doc_id (of eval_sets.jsonl), ids: the first at most 256 ids fed to the model, text: tokenizer.decode(ids) with default arguments}
+  d2_dev.jsonl: {item: 0-based position in the file, source_row: 0-based row index in the source list (MMLU: parquet row; ARC: index in Challenge then Easy), subject (MMLU subject; ARC item id), prompt: the D2 prompt p, answer: the correct letter}[transformers] Ignoring clean_up_tokenization_spaces=True for BPE tokenizer Qwen2Tokenizer. The clean_up_tokenization post-processing step is designed for WordPiece tokenizers and is destructive for BPE (it strips spaces before punctuation). Set clean_up_tokenization_spaces=False to suppress this warning, or set clean_up_tokenization_spaces_for_bpe_even_though_it_will_corrupt_output=True to force cleanup anyway.
+
+  test_qa.jsonl: {fact_id, template_id, question}
+  general_test.jsonl: as general_dev.jsonl
+  d2_test.jsonl: as d2_dev.jsonl
+OK   facts.jsonl built per record text = reference: got 4eeee6d198dede289886b9cd7941f362f3b9fba611aea551223289781de307a9 | expected 4eeee6d198dede289886b9cd7941f362f3b9fba611aea551223289781de307a9
+OK   facts exposure values: got ['learned', 'unread'] | expected ['learned', 'unread']
+OK   facts stratum values: got ['natural', 'random'] | expected ['natural', 'random']
+OK   alternative reading exposure 'L'/'U' differs from reference: got True | expected True
+OK   alternative reading stratum 'nat'/'rnd' differs from reference: got True | expected True
+OK   train_F.jsonl (auditor) = reference: got fb1d80064c4c779609ef40a29151bbf1fd1f5f1e1c768c6c5360412f38819511 | expected fb1d80064c4c779609ef40a29151bbf1fd1f5f1e1c768c6c5360412f38819511
+OK   train_S.jsonl (auditor) = reference: got 7ac254f6e87e017ecc6ce9945006cda1c5310c7358d69da88e5c81cfdc907bd6 | expected 7ac254f6e87e017ecc6ce9945006cda1c5310c7358d69da88e5c81cfdc907bd6
+OK   train_Y.jsonl (auditor) = reference: got 82314e6b4a5917d0d4e62e3f34f4ab80e330c8dc5b5c7395e1183809c4daf96b | expected 82314e6b4a5917d0d4e62e3f34f4ab80e330c8dc5b5c7395e1183809c4daf96b
+OK   dev_qa.jsonl (auditor) = reference: got 39ea5ea1ff730cbc73d12542e10173baee83759aa4477cc930574ce93ce5c7ce | expected 39ea5ea1ff730cbc73d12542e10173baee83759aa4477cc930574ce93ce5c7ce
+OK   candidates.json (auditor) = reference: got 79600769eef1876b54bc3d174874880e8e05bab11290f97360559f99324235c3 | expected 79600769eef1876b54bc3d174874880e8e05bab11290f97360559f99324235c3
+OK   anchor parquet sha256: got 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22 | expected 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22
+OK   anchor_text.jsonl rebuilt per record text = reference: got 2089e656819d1fe0f6ececcc26e5cade09ee80a92c50e7c8f607fa4e0ef46da5 | expected 2089e656819d1fe0f6ececcc26e5cade09ee80a92c50e7c8f607fa4e0ef46da5
+  anchor alternative 'doc 1-based': equal to reference False
+  anchor alternative 'source_row = index among selected documents': equal to reference False
+  anchor alternative 'source_row 1-based': equal to reference False
+  anchor alternative 'ids = encode(text) with add_special_tokens=True': equal to reference True
+  anchor alternative 'text = decode(ids, skip_special_tokens=True)': equal to reference True
+  anchor alternative 'text = decode(ids, clean_up_tokenization_spaces=True)': equal to reference True
+  general_dev alternative 'text = whole parcae-decoded document': equal to reference False
+  general_dev alternative 'text = decode(ids, clean_up_tokenization_spaces=True)': equal to reference True
+  general_dev alternative 'text = decode(ids, skip_special_tokens=True)': equal to reference True
+  general_dev alternative 'ids = encode(document) with add_special_tokens=True, first 256': equal to reference True
+OK   d2_dev MMLU (auditor) = reference: got f40c146a3da500f13797dcfedfb2932e8a5dc88a6b43cbd423bf8fb549a688be | expected f40c146a3da500f13797dcfedfb2932e8a5dc88a6b43cbd423bf8fb549a688be
+OK   d2_dev ARC (auditor) = reference: got 1ea77c8adeb84b6d5f7a3aa699ab02951e4f43bd27ba14f36c3a32287e04ac32 | expected 1ea77c8adeb84b6d5f7a3aa699ab02951e4f43bd27ba14f36c3a32287e04ac32
+OK   d2_dev item = 0-based position (MMLU, ARC): got (True, True) | expected (True, True)
+OK   d2_dev MMLU subject = parquet subject of source_row: got True | expected True
+OK   d2_dev ARC subject = item id of source_row (Challenge then Easy): got True | expected True
+OK   d2_dev answer = correct letter (MMLU): got True | expected True
+OK   d2_dev answer = correct letter (ARC): got True | expected True
+  d2 alternative 'item 1-based' MMLU: equal to reference False
+  d2 alternative 'ARC source_row = row within its own file': equal to reference False
+  d2 alternative 'ARC subject = ARC-Challenge / ARC-Easy': equal to reference False
+OK   TEST records defined by reference to the DEV records: got ('as general_dev.jsonl', 'as d2_dev.jsonl') | expected ('as general_dev.jsonl', 'as d2_dev.jsonl')
+OK   ARC TEST order text: Challenge test then Easy test (so 'as d2_dev.jsonl' gives source_row = index in Challenge then Easy): got True | expected True
+ITEM1 round 2: ALL MATCH
+exit=0

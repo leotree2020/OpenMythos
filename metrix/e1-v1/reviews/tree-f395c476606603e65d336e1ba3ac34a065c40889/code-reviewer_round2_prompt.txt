@@ -1,0 +1,9 @@
+先读仓库中的 .claude/agents/code-reviewer.md，以它为你的完整定义；它与你已加载的定义冲突时，以仓库文件为准。
+
+仓库 /home/user/OpenMythos，分支 metrix-e1-v1-protocol-v1，HEAD = 59761ad923674d43725167a8c79f6bdf16f531ee（E1-V1 协议撰写的工作提交，即你第 1 轮审查的暂存树 0e3dc49e…）。本轮审查对象：已暂存、尚未提交的修复（暂存树 f395c476606603e65d336e1ba3ac34a065c40889）。相对 HEAD 的交付物 diff（不含记录目录）在 /tmp/claude-0/-home-user/1e17bf44-a265-5c2d-b2f8-f9d45e7efe94/scratchpad/c/input_round2.diff；暂存区另有第 1 轮的记录：metrix/e1-v1/reviews/tree-0e3dc49e…/（两份审查原文与转录）与 metrix/e1-v1/audit/（data-auditor 的脚本与完整 stdout），它们是记录，不是本轮被审的交付物，只作为核对依据。
+
+这是第 2 轮，也是最后一轮：按 Owner 的修改次数上限，本轮之后无论结论如何都停止修改，现状与审查原文交 Review Gate。依据与第 1 轮相同：metrix/e1-v1/tasks/ 下 Task Order 与 Owner 消息原文、冻结的 Pilot 协议 metrix/e1-pilot/METRIX_E1_PROTOCOL.md 及 Pilot 记录；被审对象为 metrix/e1-v1/METRIX_E1V1_PROTOCOL.md、4 个 JSON、SUBMISSION_NOTE.md 与 reports/authoring/ 下的脚本和输出。
+
+第 1 轮的处理：你的 BLOCKER（第 7.6 节无来源的 margin 估计）与 13 个 MAJOR 都做了修改；你的 18 个 MINOR 按 Owner 规则只登记、未修改（将写入 metrix/e1-v1/reports/DEFERRED_MINORS.md，不在本轮 diff 中）。data-auditor 第 1 轮的 B1（ARC 两个数字）与它的 M2（L8 中 D1 的“文本”）、M3（L6/L8 的 TEST 部分按集合分别计数）、M4（记录字段的定义）也做了修改。你的第 1 轮原文：metrix/e1-v1/reviews/tree-0e3dc49eaca9b07254e61301bc2602f8d8a39eea/code-reviewer_round1.md；data-auditor 原文：同目录 data-auditor_round1.md。
+
+请检查：(1) 第 1 轮的 BLOCKER 与每个 MAJOR 是否已被正确解决，逐条给出“已解决 / 部分解决 / 未解决”与证据；(2) 修复是否引入新的错误、矛盾或与 Task Order / Pilot 协议的不一致（例如新加的 ST11 公式的计数与第 11、12 节和 compute_estimate.txt 是否一致，第 6.4 节第 2a 条的精确算术是否可执行，ST1/ST9/ST12/ST19 是否与第 10 节的步骤一致，G-D2 的上界与 sigma_planning.txt 是否一致，解释 B1–B25 的适用表是否完整且与正文一致，manifest 中删去占位字段后与 ST12 的说法是否一致）。对每个 MAJOR 仍请注明是否影响数据/指标/门槛/可复现性/iso 匹配/损伤测量。你的原文将原样保存到仓库并推送。按定义的输出格式逐条给出，最后一行给结论。

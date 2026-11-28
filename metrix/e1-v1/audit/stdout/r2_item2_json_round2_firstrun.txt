@@ -1,0 +1,214 @@
+# host: vm (Claude Code cloud container, CPU only, no GPU, torch not installed); 2026-11-28T10:07:22Z; round 2, staged tree f395c476606603e65d336e1ba3ac34a065c40889
+$ /tmp/claude-0/-home-user/1e17bf44-a265-5c2d-b2f8-f9d45e7efe94/scratchpad/venv/bin/python -I -B metrix/e1-v1/audit/r2_item2_json.py
+=== (a) leaf diff HEAD (tree 0e3dc49e) -> index (tree f395c476)
+OK   DATA_MANIFEST.json: working tree parses equal to index: got True | expected True
+  DATA_MANIFEST.json: leaves HEAD 320 index 284 | removed 36 added 0 changed 6
+    removed files.facts.jsonl.status = "NOT_GENERATED"
+    removed files.facts.jsonl.byte_sha256 = null
+    removed files.facts.jsonl.canonical_sha256 = null
+    removed files.train_F.jsonl.status = "NOT_GENERATED"
+    removed files.train_F.jsonl.byte_sha256 = null
+    removed files.train_F.jsonl.canonical_sha256 = null
+    removed files.train_S.jsonl.status = "NOT_GENERATED"
+    removed files.train_S.jsonl.byte_sha256 = null
+    removed files.train_S.jsonl.canonical_sha256 = null
+    removed files.train_Y.jsonl.status = "NOT_GENERATED"
+    removed files.train_Y.jsonl.byte_sha256 = null
+    removed files.train_Y.jsonl.canonical_sha256 = null
+    removed files.dev_qa.jsonl.status = "NOT_GENERATED"
+    removed files.dev_qa.jsonl.byte_sha256 = null
+    removed files.dev_qa.jsonl.canonical_sha256 = null
+    removed files.candidates.json.status = "NOT_GENERATED"
+    removed files.candidates.json.byte_sha256 = null
+    removed files.candidates.json.canonical_sha256 = null
+    removed files.anchor_text.jsonl.status = "NOT_GENERATED"
+    removed files.anchor_text.jsonl.byte_sha256 = null
+    removed files.anchor_text.jsonl.canonical_sha256 = null
+    removed files.general_dev.jsonl.status = "NOT_GENERATED"
+    removed files.general_dev.jsonl.byte_sha256 = null
+    removed files.general_dev.jsonl.canonical_sha256 = null
+    removed files.d2_dev.jsonl.status = "NOT_GENERATED"
+    removed files.d2_dev.jsonl.byte_sha256 = null
+    removed files.d2_dev.jsonl.canonical_sha256 = null
+    removed files.test_qa.jsonl.status = "NOT_GENERATED"
+    removed files.test_qa.jsonl.byte_sha256 = null
+    removed files.test_qa.jsonl.canonical_sha256 = null
+    removed files.general_test.jsonl.status = "NOT_GENERATED"
+    removed files.general_test.jsonl.byte_sha256 = null
+    removed files.general_test.jsonl.canonical_sha256 = null
+    removed files.d2_test.jsonl.status = "NOT_GENERATED"
+    removed files.d2_test.jsonl.byte_sha256 = null
+    removed files.d2_test.jsonl.canonical_sha256 = null
+    changed files.facts.jsonl.record: "{fact_id, exposure, relation, stratum, entity, answer}, generation order" -> "{fact_id, exposure ('learned' or 'unread'), relation, stratum ('natural' or 'random'), entity, answer}, gener…
+    changed files.anchor_text.jsonl.record: "{doc, source_row, ids, text}" -> "{doc: 0-based document number (anchor order), source_row: 0-based row index in the parquet file order, ids: t…
+    changed files.general_dev.jsonl.record: "{domain, doc_id, ids, text}" -> "{domain, doc_id (of eval_sets.jsonl), ids: the first at most 256 ids fed to the model, text: tokenizer.decode…
+    changed files.d2_dev.jsonl.record: "{item, source_row, subject, prompt, answer}" -> "{item: 0-based position in the file, source_row: 0-based row index in the source list (MMLU: parquet row; ARC…
+    changed files.general_test.jsonl.record: "{domain, doc_id, ids, text}" -> "as general_dev.jsonl"
+    changed files.d2_test.jsonl.record: "{item, source_row, subject, prompt, answer}" -> "as d2_dev.jsonl"
+OK   DATA_MANIFEST.json: every numeric leaf unchanged: got True | expected True
+OK   SPLIT_MANIFEST.json: working tree parses equal to index: got True | expected True
+  SPLIT_MANIFEST.json: leaves HEAD 321 index 318 | removed 5 added 2 changed 2
+    removed split_sha256.train_F.jsonl = null
+    removed split_sha256.train_S.jsonl = null
+    removed split_sha256.train_Y.jsonl = null
+    removed split_sha256.dev_qa.jsonl = null
+    removed split_sha256.test_qa.jsonl = null
+    added   leakage_checks.L8_fictional_strings_in_damage_sets.text = "D1: the text field of the window (decode of the ids fed to the model, not the whole source document); D2: the prompt p"
+    added   actual_hashes = "the manifests are not rewritten during execution; the actual hashes of generated files go into results/step1_record.json (non-TEST) and results/st10_…
+    changed leakage_checks.L6_anchor_ngram.test_part.count: "number of distinct shared word 13-grams across all documents: 13-grams are taken within each document (each a… -> "for each of general_test.jsonl and d2_test.jsonl separately: the word 13-grams of the 512 anchor documents me…
+    changed leakage_checks.L8_fictional_strings_in_damage_sets.test_part: "as L6: counted by Executor and data-auditor in section 10 step 10; must be equal" -> "as L6: counted for general_test.jsonl and d2_test.jsonl separately by Executor and data-auditor in section 10…
+OK   SPLIT_MANIFEST.json: every numeric leaf unchanged: got True | expected True
+OK   DOSE_SPACE.json: working tree parses equal to index: got True | expected True
+  DOSE_SPACE.json: leaves HEAD 146 index 146 | removed 0 added 0 changed 1
+    changed training_contract.st11_bound: "0.875 * gpu_hours_limit" -> "0.875 * gpu_hours_limit; estimate E by the formula of protocol section 12 (replaces interpretation B17)"
+OK   DOSE_SPACE.json: every numeric leaf unchanged: got True | expected True
+OK   DAMAGE_MANIFEST.json: working tree parses equal to index: got True | expected True
+  DAMAGE_MANIFEST.json: leaves HEAD 130 index 131 | removed 0 added 1 changed 5
+    added   gate_d.G-D2.planning = "reports/authoring/sigma_planning.txt (expected m: D1-all 0.045, D1-diff 0.052, D1-same 0.090)"
+    changed d1.reading_rule: "test rows are matched on the row-prefix bytes only until section 10 step 10 (protocol section 0)" -> "before section 10 step 10: whole-file sha256 allowed; test rows are only matched on the row-prefix bytes (the…
+    changed d2.reading_rule: "before section 10 step 10 only the parquet footer (row count) of a TEST source is read (protocol section 0)" -> "before section 10 step 10: whole-file sha256 of a TEST source allowed; only the parquet footer (row count) is…
+    changed gate_d.G-D2.rule: "sigma_N(D1-all), sigma_N(D1-diff), sigma_N(D1-same), sigma_N(D2) finite and > 0" -> "sigma_N(D1-all), sigma_N(D1-diff), sigma_N(D1-same), sigma_N(D2) finite and > 0; m(D1-all) <= 0.10, m(D1-diff…
+    changed comparison.secondary: "all other points, metrics, DEV comparisons and per-method damages: 95% CI, words marked secondary" -> "all other points, metrics, DEV comparisons, per-domain metrics D1-books, D1-c4, D1-wikitext and per-method da…
+    changed comparison.words: "superior: hi < 0 and all 3 seed estimates < 0; non-inferior: not superior, hi < m and all 3 seed estimates < … -> "for a comparison on metric M with m = m(M): superior: hi < 0 and all 3 seed estimates < 0; non-inferior: not …
+OK   DAMAGE_MANIFEST.json: every numeric leaf unchanged: got True | expected True
+OK   64-hex values (path, value) changed between HEAD and index: got [] | expected []
+OK   removed leaves whose value is not null / 'NOT_GENERATED': got [] | expected []
+  removed leaves by (file, field, value): {('DATA_MANIFEST.json', 'status', 'NOT_GENERATED'): 12, ('DATA_MANIFEST.json', 'byte_sha256', None): 12, ('DATA_MANIFEST.json', 'canonical_sha256', None): 12, ('SPLIT_MANIFEST.json', 'split_sha256.*', None): 5}
+=== (b) every 64-hex value vs the auditor's own computation
+  64-hex occurrences in the four JSON files: 65 | distinct 59
+    DATA_MANIFEST.json:model.tokenizer.files_sha256.tokenizer.json aeb13307a71acd8f… = auditor ['file qwen/tokenizer.json']
+    DATA_MANIFEST.json:model.tokenizer.files_sha256.tokenizer_config.json d5d09f07b48c3086… = auditor ['file qwen/tokenizer_config.json']
+    DATA_MANIFEST.json:model.tokenizer.files_sha256.vocab.json ca10d7e9fb3ed185… = auditor ['file qwen/vocab.json']
+    DATA_MANIFEST.json:model.tokenizer.files_sha256.merges.txt 8831e4f1a0444713… = auditor ['file qwen/merges.txt']
+    DATA_MANIFEST.json:name_generation.expected_facts_canonical_sha256 0fc5ad819500e8a9… = auditor ['V1 facts list (canonical JSON list)']
+    DATA_MANIFEST.json:name_generation.preseed.pilot_facts_canonical_sha256 406c8801c5b69ed2… = auditor ['Pilot facts list (canonical JSON list, DATA_SEED 20261110)']
+    DATA_MANIFEST.json:s_permutation.expected_train_S_canonical_sha256 7ac254f6e87e017e… = auditor ['train_S.jsonl']
+    DATA_MANIFEST.json:anchor_text.source 6a3450ea745ee6b6… = auditor ['file anchor parquet']
+    DATA_MANIFEST.json:anchor_text.decoded_texts_canonical_sha256 8828bc4fcc5a3552… = auditor ['anchor decoded texts (canonical JSON list)']
+    DATA_MANIFEST.json:anchor_text.file_canonical_sha256_authoring 2089e656819d1fe0… = auditor ['anchor_text.jsonl']
+    DATA_MANIFEST.json:files.facts.jsonl.reference_canonical_sha256 4eeee6d198dede28… = auditor ['facts.jsonl']
+    DATA_MANIFEST.json:files.train_F.jsonl.reference_canonical_sha256 fb1d80064c4c7796… = auditor ['train_F.jsonl']
+    DATA_MANIFEST.json:files.train_S.jsonl.reference_canonical_sha256 7ac254f6e87e017e… = auditor ['train_S.jsonl']
+    DATA_MANIFEST.json:files.train_Y.jsonl.reference_canonical_sha256 82314e6b4a5917d0… = auditor ['train_Y.jsonl']
+    DATA_MANIFEST.json:files.dev_qa.jsonl.reference_canonical_sha256 39ea5ea1ff730cbc… = auditor ['dev_qa.jsonl']
+    DATA_MANIFEST.json:files.candidates.json.reference_canonical_sha256 79600769eef1876b… = auditor ['candidates.json']
+    DATA_MANIFEST.json:files.anchor_text.jsonl.reference_canonical_sha256 2089e656819d1fe0… = auditor ['anchor_text.jsonl']
+    DATA_MANIFEST.json:files.general_dev.jsonl.reference_canonical_sha256 e8350160464963e6… = auditor ['general_dev.jsonl']
+    DATA_MANIFEST.json:files.d2_dev.jsonl.reference_canonical_sha256.mmlu f40c146a3da500f1… = auditor ['d2_dev.jsonl MMLU']
+    DATA_MANIFEST.json:files.d2_dev.jsonl.reference_canonical_sha256.arc 1ea77c8adeb84b6d… = auditor ['d2_dev.jsonl ARC']
+    SPLIT_MANIFEST.json:template_freeze.template_set_sha256 2b52411326c218e9… = auditor ['template set']
+    SPLIT_MANIFEST.json:candidates.candidate_mapping_sha256 79600769eef1876b… = auditor ['candidates.json']
+    DAMAGE_MANIFEST.json:d1.source_file_sha256 8816fe5a39d8b89e… = auditor ['file eval_sets.jsonl (whole file)']
+    DAMAGE_MANIFEST.json:d1.decode_tokenizer_json_sha256 e0021e26057088d6… = auditor ['file parcae tokenizer.json']
+    DAMAGE_MANIFEST.json:d1.dev.authoring.canonical_sha256 e8350160464963e6… = auditor ['general_dev.jsonl']
+    DAMAGE_MANIFEST.json:d2.datasets.mmlu.dev_source.sha256 66cdf0b090ccb657… = auditor ['file MMLU all/validation']
+    DAMAGE_MANIFEST.json:d2.datasets.mmlu.test_source.sha256 74a41822ce7d3def… = auditor ['file MMLU all/test (whole file)']
+    DAMAGE_MANIFEST.json:d2.datasets.mmlu.authoring_dev.canonical_sha256 f40c146a3da500f1… = auditor ['d2_dev.jsonl MMLU']
+    DAMAGE_MANIFEST.json:d2.datasets.arc.dev_source[0].sha256 395a5c88d1580d69… = auditor ['file ARC ARC-Challenge/validation']
+    DAMAGE_MANIFEST.json:d2.datasets.arc.dev_source[1].sha256 ed890ff1e4cef7a7… = auditor ['file ARC ARC-Easy/validation']
+    DAMAGE_MANIFEST.json:d2.datasets.arc.test_source[0].sha256 62f03257e737aed2… = auditor ['file ARC ARC-Challenge/test']
+    DAMAGE_MANIFEST.json:d2.datasets.arc.test_source[1].sha256 4160597d618ae851… = auditor ['file ARC ARC-Easy/test']
+    DAMAGE_MANIFEST.json:d2.datasets.arc.authoring_dev.canonical_sha256 1ea77c8adeb84b6d… = auditor ['d2_dev.jsonl ARC']
+    templates[*].normalized_sha256: 32 occurrences, all equal to the auditor's value: True
+OK   64-hex values in the JSON files not equal to an auditor-computed value: got [] | expected []
+OK   fields of a known meaning (32) whose value differs from the auditor's value of that meaning: got [] | expected []
+    embedded in text (not a hash field): DATA_MANIFEST.json:anchor_text.source 6a3450ea745ee6b6… = ['file anchor parquet']
+OK   TEST reference hashes (test_qa, general_test, d2_test) are null: got [None, None, None] | expected [None, None, None]
+OK   64-hex values in the protocol (12) not equal to an auditor-computed value: got [] | expected []
+    protocol 0fc5ad819500e8a9… = auditor ['V1 facts list (canonical JSON list)']
+    protocol 1ea77c8adeb84b6d… = auditor ['d2_dev.jsonl ARC']
+    protocol 2b52411326c218e9… = auditor ['template set']
+    protocol 406c8801c5b69ed2… = auditor ['Pilot facts list (canonical JSON list, DATA_SEED 20261110)']
+    protocol 66cdf0b090ccb657… = auditor ['file MMLU all/validation']
+    protocol 74a41822ce7d3def… = auditor ['file MMLU all/test (whole file)']
+    protocol 79600769eef1876b… = auditor ['candidates.json']
+    protocol 7ac254f6e87e017e… = auditor ['train_S.jsonl']
+    protocol 82314e6b4a5917d0… = auditor ['train_Y.jsonl']
+    protocol 8828bc4fcc5a3552… = auditor ['anchor decoded texts (canonical JSON list)']
+    protocol e8350160464963e6… = auditor ['general_dev.jsonl']
+    protocol f40c146a3da500f1… = auditor ['d2_dev.jsonl MMLU']
+=== (c) seeds, counts, rule text
+OK   DATA_SEED protocol section 0 vs DATA_MANIFEST: got 20261128 | expected 20261128
+OK   CANDIDATE_SEED protocol section 0 vs DATA_MANIFEST: got 20261129 | expected 20261129
+OK   BOOTSTRAP_SEED protocol section 0 vs DATA_MANIFEST: got 20261130 | expected 20261130
+OK   seed assignments in the protocol differing from DATA_MANIFEST outside the Pilot regeneration sentence: got [] | expected []
+  seed assignments differing from DATA_MANIFEST (Pilot regeneration only): [(66, 'DATA_SEED', 20261110)]
+OK   TRAIN_SEEDS protocol / DATA_MANIFEST / DOSE_SPACE / Z0 / P+: got (True, [101, 202, 303], [101, 202, 303], [101, 202, 303], [101, 202, 303]) | expected (True, [101, 202, 303], [101, 202, 303], [101, 202, 303], [101, 202, 303])
+OK   DAMAGE_MANIFEST bootstrap seed / SPLIT_MANIFEST candidate seed text: got ('BOOTSTRAP_SEED = 20261130', 'CANDIDATE_SEED = 20261129') | expected ('BOOTSTRAP_SEED = 20261130', 'CANDIDATE_SEED = 20261129')
+OK   name_generation rule fields equal to Pilot: got [] | expected []
+OK   s_permutation rule = Pilot with 15 -> 30: got per cell, a derangement of the 30 learned answers drawn with rng_rule(DATA_SEED, 's-permutation:<relation>:<stratum>'); redraw until no fixed point | expected per cell, a derangement of the 30 learned answers drawn with rng_rule(DATA_SEED, 's-permutation:<relation>:<stratum>'); redraw until no fixed point
+OK   templates identical to Pilot: got True | expected True
+OK   candidates.way identical to Pilot: got True | expected True
+OK   candidates.pool identical to Pilot: got True | expected True
+OK   candidates.draw identical to Pilot: got True | expected True
+OK   candidates.shared_by identical to Pilot: got True | expected True
+OK   candidates.duplicates identical to Pilot: got True | expected True
+OK   candidates.pool_too_small identical to Pilot: got True | expected True
+OK   candidates.exposure_matching identical to Pilot: got True | expected True
+OK   hashing rules identical to Pilot (both manifests): got True | expected True
+OK   anchor_text.source identical to Pilot: got True | expected True
+OK   anchor_text.selection identical to Pilot: got True | expected True
+OK   anchor_text.truncate_to_model_tokens identical to Pilot: got True | expected True
+OK   anchor_text.document_rule identical to Pilot: got True | expected True
+OK   anchor_text.decoded_texts_canonical_sha256 identical to Pilot: got True | expected True
+OK   D1 source_file identical to Pilot general_text: got True | expected True
+OK   D1 source_file_sha256 identical to Pilot general_text: got True | expected True
+OK   D1 decode_with identical to Pilot general_text: got True | expected True
+OK   D1 decode_tokenizer_json_sha256 identical to Pilot general_text: got True | expected True
+OK   D1 window_rule identical to Pilot general_text: got True | expected True
+OK   facts counts (total, learned, unread, per cell): got (320, 240, 80, 30, 10) | expected (320, 240, 80, 30, 10)
+OK   protocol counts 320 = 240 + 80, 30 + 10, pool 29 / 9, Y 480: got (True, True, True, True) | expected (True, True, True, True)
+OK   pool sizes SPLIT_MANIFEST: got {'learned': 29, 'unread': 9} | expected {'learned': 29, 'unread': 9}
+OK   Y/F authoring numbers protocol / DATA_MANIFEST: got (True, {'F_tokens': 3802, 'Y_tokens': 4541, 'ratio': 1.1944}) | expected (True, {'F_tokens': 3802, 'Y_tokens': 4541, 'ratio': 1.1944})
+OK   D1 DEV 400 / D2 DEV 800 / D1 TEST 175 per domain (protocol vs DAMAGE_MANIFEST): got (True, True, True, 400, 800, 175) | expected (True, True, True, 400, 800, 175)
+OK   MMLU / ARC source rows (protocol vs DAMAGE_MANIFEST): got (True, [1531, 14042, 299, 570, 1172, 2376]) | expected (True, [1531, 14042, 299, 570, 1172, 2376])
+OK   ARC dev_order / test_order index ranges = rows - 1: got (True, True) | expected (True, True)
+OK   MMLU dev_order / test_order list lengths: got (True, True) | expected (True, True)
+OK   letter ids / prompt instruction (protocol vs DAMAGE_MANIFEST): got (True, {'A': 362, 'B': 425, 'C': 356, 'D': 422}, True, True) | expected (True, {'A': 362, 'B': 425, 'C': 356, 'D': 422}, True, True)
+OK   dose ladder (protocol 6.3 vs DOSE_SPACE; steps = 30 x passes): got (True, [1, 2, 3, 4, 6, 8, 11, 16, 23, 32], True, 11) | expected (True, [1, 2, 3, 4, 6, 8, 11, 16, 23, 32], True, 11)
+OK   iso parameters DOSE_SPACE (targets, tau_dev, tau_test) vs protocol 6.2 / 6.4 / 6.5: got ([0.7, 0.8, 0.9], 0.1, 0.05, True, True, True) | expected ([0.7, 0.8, 0.9], 0.1, 0.05, True, True, True)
+OK   DOSE_SPACE checkpoint_retention.rule = protocol 6.7 condition: got (True, True) | expected (True, True)
+  report only: DOSE_SPACE iso has no field for the exact arithmetic of protocol 6.4 item 2a: []
+=== (d) reading rules
+  DAMAGE d1.reading_rule: before section 10 step 10: whole-file sha256 allowed; test rows are only matched on the row-prefix bytes (the regex of protocol section 0) and counted, never decoded or JSON-parsed
+  DAMAGE d2.reading_rule: before section 10 step 10: whole-file sha256 of a TEST source allowed; only the parquet footer (row count) is read; no row is read or decoded (protocol section 0)
+OK   protocol section 0 allows exactly: whole-file sha256; eval_sets row-prefix match + count; parquet footer row count: got True | expected True
+OK   DAMAGE d1.reading_rule matches (sha256 allowed; prefix bytes only; counted; never decoded or parsed): got True | expected True
+OK   DAMAGE d2.reading_rule matches (sha256 allowed; parquet footer only; no row read or decoded): got True | expected True
+  protocol regex (literal): ^\{"domain": "([^"\\]*)", "split": "([^"\\]*)", 
+  eval_sets.jsonl lines 1200 | protocol-regex counts {('books', 'dev'): 100, ('books', 'test'): 200, ('c4', 'dev'): 100, ('c4', 'test'): 200, ('fineweb', 'dev'): 100, ('fineweb', 'test'): 200, ('wikitext', 'dev'): 100, ('wikitext', 'test'): 200}
+OK   lines where the protocol regex and the round-1 auditor regex capture different (domain, split): got 0 | expected 0
+OK   lines not matched by the protocol regex: got 0 | expected 0
+OK   per (domain, split) counts protocol regex = round-1 regex: got {('fineweb', 'dev'): 100, ('c4', 'dev'): 100, ('wikitext', 'dev'): 100, ('books', 'dev'): 100, ('fineweb', 'test'): 200, ('c4', 'test'): 200, ('wikitext', 'test'): 200, ('books', 'test'): 200} | expected {('fineweb', 'dev'): 100, ('c4', 'dev'): 100, ('wikitext', 'dev'): 100, ('books', 'dev'): 100, ('fineweb', 'test'): 200, ('c4', 'test'): 200, ('wikitext', 'test'): 200, ('books', 'test'): 200}
+OK   test rows per domain after skipping 25 (protocol regex): got {'books': 175, 'c4': 175, 'fineweb': 175, 'wikitext': 175} | expected {'books': 175, 'c4': 175, 'fineweb': 175, 'wikitext': 175}
+=== (e) G-D2 bounds
+  protocol G-D2 row: | G-D2 噪声基线 | `σ_N(M)` = N 在 M 的 DEV 集上的水平统计量的 bootstrap 标准差(10,000 次,第 8 节):M = `D1-all`(4 领域分层的窗口 NLL 均值的平均)、`D1-diff`(3 领域)、`D1-same`(fineweb)、`D2`(`Acc_D2(N)`)。四个值都必须有限且 > 0;并且由它们按第 7.6 节算出的 `m(D1-all)`、`m(D1-diff)` ≤ 0.10,`m(D1-same)` ≤ 0.20(`m(D2)` 由题数决定,最大为 2 × sqrt(0.25/800) ≈ 0.035,不另设上界)。训练种子之间的波动:P+ 三个种子的 `D1-diff`、`D2` 的样本标准差只报告;Gate M 用“每个种子的点估计同向”的要求处理种子波动(第 9.4 节) |
+  DAMAGE G-D2: {'rule': 'sigma_N(D1-all), sigma_N(D1-diff), sigma_N(D1-same), sigma_N(D2) finite and > 0; m(D1-all) <= 0.10, m(D1-diff) <= 0.10, m(D1-same) <= 0.20 (m(D2) <= 2 * sqrt(0.25 / 800) by construction, no bound); P+ seed SD of D1-diff and D2 reported', 'planning': 'reports/authoring/sigma_planning.txt (expected m: D1-all 0.045, D1-diff 0.052, D1-same 0.090)'}
+OK   bounds protocol (D1-all, D1-diff, D1-same) = DAMAGE_MANIFEST: got (0.1, 0.1, 0.2) | expected (0.1, 0.1, 0.2)
+  2 * sqrt(0.25 / 800) = 0.035355; sqrt(0.25 / 800) = 0.017678
+OK   protocol '2 × sqrt(0.25/800) ≈ 0.035' and DAMAGE '2 * sqrt(0.25 / 800)': got (True, True, 0.035) | expected (True, True, 0.035)
+OK   G-D2 planning numbers protocol 7.5 vs DAMAGE planning: got (True, True) | expected (True, True)
+OK   sigma_N definition: sample SD (B - 1) of 10,000 bootstrap values; m = 2 sigma_N: got (10000, True, 2) | expected (10000, True, 2)
+  report only: Acc_D2(N) = 0.5 (worst case), 20 simulated 10,000-replicate bootstraps: sigma min 0.017327 max 0.018001; above sqrt(0.25/800) in 7 of 20 (2 sigma max 0.036003)
+=== (f) removed placeholder fields: information lost?
+OK   old files.*.{status, byte_sha256, canonical_sha256} were all NOT_GENERATED / null / null: got True | expected True
+OK   old SPLIT_MANIFEST.split_sha256 values: got {'train_F.jsonl': None, 'train_S.jsonl': None, 'train_Y.jsonl': None, 'dev_qa.jsonl': None, 'test_qa.jsonl': None} | expected {'train_F.jsonl': None, 'train_S.jsonl': None, 'train_Y.jsonl': None, 'dev_qa.jsonl': None, 'test_qa.jsonl': None}
+OK   files kept (same 12 entries): got ['facts.jsonl', 'train_F.jsonl', 'train_S.jsonl', 'train_Y.jsonl', 'dev_qa.jsonl', 'candidates.json', 'anchor_text.jsonl', 'general_dev.jsonl', 'd2_dev.jsonl', 'test_qa.jsonl', 'general_test.jsonl', 'd2_test.jsonl'] | expected ['facts.jsonl', 'train_F.jsonl', 'train_S.jsonl', 'train_Y.jsonl', 'dev_qa.jsonl', 'candidates.json', 'anchor_text.jsonl', 'general_dev.jsonl', 'd2_dev.jsonl', 'test_qa.jsonl', 'general_test.jsonl', 'd2_test.jsonl']
+OK   every file entry keeps content / reference_canonical_sha256 / canonical_check, values unchanged: got True | expected True
+OK   TEST entries keep generation_allowed unchanged: got True | expected True
+OK   every split_sha256 file still has a reference hash (non-TEST) or an st10_record rule (TEST) in DATA_MANIFEST files: got [] | expected []
+OK   where actual hashes go: step1_record (9 non-TEST files) and st10_record (TEST file sha256) in reported_values; SPLIT actual_hashes: got (True, True, True) | expected (True, True, True)
+DIFF protocol 2.8 lists 9 non-TEST files: got 6 | expected 9
+OK   hashing definitions of byte_sha256 / canonical_sha256 still in both manifests: got (True, True) | expected (True, True)
+OK   remaining references to split_sha256 / NOT_GENERATED in protocol and JSON files: got [] | expected []
+OK   ST12: manifests not rewritten during execution; actual hashes go to results records: got (True, True) | expected (True, True)
+=== (g) provenance (read-only git commands)
+OK   HEAD: got 59761ad923674d43725167a8c79f6bdf16f531ee | expected 59761ad923674d43725167a8c79f6bdf16f531ee
+OK   HEAD tree = round-1 staged tree: got 0e3dc49eaca9b07254e61301bc2602f8d8a39eea | expected 0e3dc49eaca9b07254e61301bc2602f8d8a39eea
+OK   branch: got metrix-e1-v1-protocol-v1 | expected metrix-e1-v1-protocol-v1
+OK   index entries equal tree f395c476… (git ls-files -s vs git ls-tree -r): got True | expected True
+OK   unstaged changes to tracked files (git diff --name-only): got [] | expected []
+OK   staged changes outside metrix/e1-v1/: got [] | expected []
+OK   deliverable diff: per-file hunks equal to 'git diff --cached HEAD -- <file>' (11 files): got [] | expected []
+ITEM2 round 2: MISMATCH PRESENT
+exit=0

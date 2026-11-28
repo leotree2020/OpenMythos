@@ -1,0 +1,30 @@
+# host: vm (Claude Code cloud container, CPU only, no GPU, torch not installed); 2026-11-28T10:08:28Z; round 2, staged tree f395c476606603e65d336e1ba3ac34a065c40889
+$ /tmp/claude-0/-home-user/1e17bf44-a265-5c2d-b2f8-f9d45e7efe94/scratchpad/venv/bin/python -I -B metrix/e1-v1/audit/r2_item3_sigma.py
+input /home/user/OpenMythos/metrix/e1-pilot/results/details/N_dev.json sha256 32c963faef4d9b78a5257c5f444010e6b7a7bf113f40d968994fd9daa9fc4ade
+fields: kind evaluation_details | label None | mode formal | model N | split dev
+OK   split of the file: got DEV | expected DEV
+OK   windows per domain: got {'books': 25, 'c4': 25, 'fineweb': 25, 'wikitext': 25} | expected {'books': 25, 'c4': 25, 'fineweb': 25, 'wikitext': 25}
+OK   doc_ids are <domain>-dev-000..024 (the first 25 DEV rows, contained in V1 D1 DEV): got True | expected True
+OK   all NLL finite: got True | expected True
+domain books    n 25 mean NLL 3.5531 SD(n-1) 0.5516 SD(n) 0.5404
+domain c4       n 25 mean NLL 2.9840 SD(n-1) 0.4317 SD(n) 0.4230
+domain fineweb  n 25 mean NLL 2.9414 SD(n-1) 0.4517 SD(n) 0.4426
+domain wikitext n 25 mean NLL 2.8912 SD(n-1) 0.3520 SD(n) 0.3449
+OK   Executor per-domain mean / SD (4 d.p.) = auditor mean / SD(n-1): got {'books': (3.5531, 0.5516), 'c4': (2.984, 0.4317), 'fineweb': (2.9414, 0.4517), 'wikitext': (2.8912, 0.352)} | expected {'books': (3.5531, 0.5516), 'c4': (2.984, 0.4317), 'fineweb': (2.9414, 0.4517), 'wikitext': (2.8912, 0.352)}
+D1-all   analytic, SD(n-1), 100 windows per domain: sigma_N 0.0226  m = 2 sigma 0.0452
+D1-all   analytic, SD(n), 100 windows per domain: sigma_N 0.0222  m = 2 sigma 0.0443
+D1-diff  analytic, SD(n-1), 100 windows per domain: sigma_N 0.0261  m = 2 sigma 0.0523
+D1-diff  analytic, SD(n), 100 windows per domain: sigma_N 0.0256  m = 2 sigma 0.0512
+D1-same  analytic, SD(n-1), 100 windows per domain: sigma_N 0.0452  m = 2 sigma 0.0903
+D1-same  analytic, SD(n), 100 windows per domain: sigma_N 0.0443  m = 2 sigma 0.0885
+OK   Executor sigma_N / m (4 d.p.) = auditor analytic with SD(n-1): got {'D1-all': (0.0226, 0.0452), 'D1-diff': (0.0261, 0.0523), 'D1-same': (0.0452, 0.0903)} | expected {'D1-all': (0.0226, 0.0452), 'D1-diff': (0.0261, 0.0523), 'D1-same': (0.0452, 0.0903)}
+OK   protocol 7.5 planning m (D1-all, D1-diff, D1-same) = auditor 2 sigma rounded to 3 d.p.: got (0.045, 0.052, 0.09) | expected (0.045, 0.052, 0.09)
+OK   planning m within the G-D2 bounds (0.10, 0.10, 0.20): got (True, True, True) | expected (True, True, True)
+ratio sigma(D1-same) / sigma(D1-all) = 1.997 (protocol 7.5: 'about 2 times')
+OK   Executor D2 line (sigma bound, m bound) = auditor: got (0.0177, 0.0354) | expected (0.0177, 0.0354)
+G-D3 D2 threshold 0.05 / sigma bound 0.0177 = 2.83 (protocol 7.5: 'about 3 times')
+D1-all   bootstrap (10,000): 25 windows/domain sigma 0.0441 -> x 1/2 for 100/domain 0.0220; 100 windows/domain (Pilot windows x 4) sigma 0.0225  m 0.0449
+D1-diff  bootstrap (10,000): 25 windows/domain sigma 0.0516 -> x 1/2 for 100/domain 0.0258; 100 windows/domain (Pilot windows x 4) sigma 0.0257  m 0.0514
+D1-same  bootstrap (10,000): 25 windows/domain sigma 0.0875 -> x 1/2 for 100/domain 0.0437; 100 windows/domain (Pilot windows x 4) sigma 0.0446  m 0.0892
+ITEM3 round 2: ALL MATCH
+exit=0
