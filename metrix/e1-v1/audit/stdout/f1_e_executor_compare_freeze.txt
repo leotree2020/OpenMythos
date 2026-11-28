@@ -1,0 +1,21 @@
+# host: vm (Claude Code cloud container, CPU only); 2026-11-28T12:34:24Z; freeze audit (D2): comparison of the auditor's results with the Executor's recorded OUTPUT reports/freeze/rebuild_check.txt (only the text output is read; no Executor script is read, imported or run)
+$ git rev-parse 9a19e70e^{tree}; git cat-file -t 69ff2c43...; blob ids of the five files in the Executor staged tree 69ff2c43 and in the freeze commit
+freeze commit tree: 814316d55fd559949eb9d9793e2a36e1d04dfeaf | 69ff2c43 type: tree
+metrix/e1-v1/METRIX_E1V1_PROTOCOL.md staged-tree 2e648d8a6e02ebfa44f175ba7058d0d2e6b6e844 | freeze-commit 2e648d8a6e02ebfa44f175ba7058d0d2e6b6e844 | same blob True
+metrix/e1-v1/DATA_MANIFEST.json staged-tree 6276314ec1993f15e9bcbad7c71f1002585ada23 | freeze-commit 6276314ec1993f15e9bcbad7c71f1002585ada23 | same blob True
+metrix/e1-v1/SPLIT_MANIFEST.json staged-tree 158145cc3b61dc9b51bd6aa766a32cfb3f1dc412 | freeze-commit 158145cc3b61dc9b51bd6aa766a32cfb3f1dc412 | same blob True
+metrix/e1-v1/DOSE_SPACE.json staged-tree cf07ace2bd0e2b7d219c363cf3105cf258b740cd | freeze-commit cf07ace2bd0e2b7d219c363cf3105cf258b740cd | same blob True
+metrix/e1-v1/DAMAGE_MANIFEST.json staged-tree 624d4f63e798986c7958326c4545e5d3dc1e647e | freeze-commit 624d4f63e798986c7958326c4545e5d3dc1e647e | same blob True
+$ grep committed metrix/e1-v1/reports/freeze/rebuild_check.txt  (Executor values) vs the auditor values of stdout/f1_a_bytes_freeze.txt
+DATA_MANIFEST.json Executor 2a35d40c7192b4f8df2dfa765714340009070d9b3e4b750cee994ae78c3e6767 | auditor (git cat-file blob | sha256sum) 2a35d40c7192b4f8df2dfa765714340009070d9b3e4b750cee994ae78c3e6767 | equal True
+SPLIT_MANIFEST.json Executor 667943a503204d689dc7baef48583652b6947ad62694825995ac6a0d9d64a40b | auditor (git cat-file blob | sha256sum) 667943a503204d689dc7baef48583652b6947ad62694825995ac6a0d9d64a40b | equal True
+DOSE_SPACE.json Executor 44923d80614d780a010cd9742689e2fccdc949b4144b221a8de6469e898a7bc2 | auditor (git cat-file blob | sha256sum) 44923d80614d780a010cd9742689e2fccdc949b4144b221a8de6469e898a7bc2 | equal True
+DAMAGE_MANIFEST.json Executor 5a05e5e7ffef7829328f2edbed2c15d4a52f2d99c4052cf30ef57a4a672588cd | auditor (git cat-file blob | sha256sum) 5a05e5e7ffef7829328f2edbed2c15d4a52f2d99c4052cf30ef57a4a672588cd | equal True
+$ grep "distinct hex" rebuild_check.txt (Executor: 40+64 hex together) vs auditor f1_d_compare counts (64 + 40)
+METRIX_E1V1_PROTOCOL.md: base 17 distinct hex strings, target 17; only in base: []; only in target: []
+DATA_MANIFEST.json: base 22 distinct hex strings, target 22; only in base: []; only in target: []
+SPLIT_MANIFEST.json: base 36 distinct hex strings, target 36; only in base: []; only in target: []
+DOSE_SPACE.json: base 2 distinct hex strings, target 2; only in base: []; only in target: []
+DAMAGE_MANIFEST.json: base 16 distinct hex strings, target 16; only in base: []; only in target: []
+auditor: protocol 12+5=17, DATA_MANIFEST 18+4=22, SPLIT_MANIFEST 34+2=36, DOSE_SPACE 0+2=2, DAMAGE_MANIFEST 11+5=16 (stdout/f1_d_compare_freeze.txt); set differences empty in both
+exit=0

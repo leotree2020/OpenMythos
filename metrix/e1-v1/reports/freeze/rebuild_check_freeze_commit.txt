@@ -1,0 +1,41 @@
+# Rebuild check on the freeze commit itself (code-reviewer round 1, MAJOR on rebuild_check.txt). Claude Code cloud container, CPU only.
+$ bash metrix/e1-v1/reports/freeze/rebuild_check.sh 9a19e70e1bc16130368caa00bd1bf6fbc126bc8c
+$ date -u
+2026-11-28T12:33:58Z
+$ git rev-parse 9a19e70e1bc16130368caa00bd1bf6fbc126bc8c
+9a19e70e1bc16130368caa00bd1bf6fbc126bc8c
+$ git archive 9a19e70e1bc16130368caa00bd1bf6fbc126bc8c metrix/e1-pilot/DATA_MANIFEST.json metrix/e1-pilot/SPLIT_MANIFEST.json metrix/e1-v1 | tar -x -C <tmp>
+$ rm metrix/e1-v1/{DATA,SPLIT,DAMAGE}_MANIFEST.json metrix/e1-v1/DOSE_SPACE.json
+$ python3 metrix/e1-v1/reports/authoring/build_manifests.py   (Python 3.13.18)
+wrote metrix/e1-v1/DATA_MANIFEST.json
+wrote metrix/e1-v1/SPLIT_MANIFEST.json
+wrote metrix/e1-v1/DOSE_SPACE.json
+wrote metrix/e1-v1/DAMAGE_MANIFEST.json
+exit=0
+DATA_MANIFEST.json  committed 2a35d40c7192b4f8df2dfa765714340009070d9b3e4b750cee994ae78c3e6767  regenerated 2a35d40c7192b4f8df2dfa765714340009070d9b3e4b750cee994ae78c3e6767  IDENTICAL
+SPLIT_MANIFEST.json  committed 667943a503204d689dc7baef48583652b6947ad62694825995ac6a0d9d64a40b  regenerated 667943a503204d689dc7baef48583652b6947ad62694825995ac6a0d9d64a40b  IDENTICAL
+DOSE_SPACE.json  committed 44923d80614d780a010cd9742689e2fccdc949b4144b221a8de6469e898a7bc2  regenerated 44923d80614d780a010cd9742689e2fccdc949b4144b221a8de6469e898a7bc2  IDENTICAL
+DAMAGE_MANIFEST.json  committed 5a05e5e7ffef7829328f2edbed2c15d4a52f2d99c4052cf30ef57a4a672588cd  regenerated 5a05e5e7ffef7829328f2edbed2c15d4a52f2d99c4052cf30ef57a4a672588cd  IDENTICAL
+RESULT: all four regenerated JSON files are byte-identical to the tree-ish
+
+# The JSON, protocol and builder blobs of the staged tree 69ff2c43 (checked in rebuild_check.txt) and of the freeze commit
+$ git rev-parse 69ff2c43…:metrix/e1-v1/METRIX_E1V1_PROTOCOL.md / 9a19e70e…:metrix/e1-v1/METRIX_E1V1_PROTOCOL.md -> 2e648d8a6e02ebfa44f175ba7058d0d2e6b6e844 / 2e648d8a6e02ebfa44f175ba7058d0d2e6b6e844 SAME
+$ git rev-parse 69ff2c43…:metrix/e1-v1/DATA_MANIFEST.json / 9a19e70e…:metrix/e1-v1/DATA_MANIFEST.json -> 6276314ec1993f15e9bcbad7c71f1002585ada23 / 6276314ec1993f15e9bcbad7c71f1002585ada23 SAME
+$ git rev-parse 69ff2c43…:metrix/e1-v1/SPLIT_MANIFEST.json / 9a19e70e…:metrix/e1-v1/SPLIT_MANIFEST.json -> 158145cc3b61dc9b51bd6aa766a32cfb3f1dc412 / 158145cc3b61dc9b51bd6aa766a32cfb3f1dc412 SAME
+$ git rev-parse 69ff2c43…:metrix/e1-v1/DOSE_SPACE.json / 9a19e70e…:metrix/e1-v1/DOSE_SPACE.json -> cf07ace2bd0e2b7d219c363cf3105cf258b740cd / cf07ace2bd0e2b7d219c363cf3105cf258b740cd SAME
+$ git rev-parse 69ff2c43…:metrix/e1-v1/DAMAGE_MANIFEST.json / 9a19e70e…:metrix/e1-v1/DAMAGE_MANIFEST.json -> 624d4f63e798986c7958326c4545e5d3dc1e647e / 624d4f63e798986c7958326c4545e5d3dc1e647e SAME
+$ git rev-parse 69ff2c43…:metrix/e1-v1/reports/authoring/build_manifests.py / 9a19e70e…:metrix/e1-v1/reports/authoring/build_manifests.py -> 59e29c6109e82706ce4005b6c9f8867f8fe7ea28 / 59e29c6109e82706ce4005b6c9f8867f8fe7ea28 SAME
+
+$ git diff --stat 69ff2c43b2b0fa9c5ea76ee25bcfe44835006533 9a19e70e1bc16130368caa00bd1bf6fbc126bc8c
+ metrix/e1-v1/reports/freeze/hash_invariance.py | 15 ++++++++++++++
+ metrix/e1-v1/reports/freeze/rebuild_check.sh   | 26 ++++++++++++++++++++++++
+ metrix/e1-v1/reports/freeze/rebuild_check.txt  | 28 ++++++++++++++++++++++++++
+ 3 files changed, 69 insertions(+)
+
+$ python3 metrix/e1-v1/reports/freeze/hash_invariance.py bc03348ad8b2390ac3df452631d63b8bfe66ad67 9a19e70e1bc16130368caa00bd1bf6fbc126bc8c
+METRIX_E1V1_PROTOCOL.md: base 17 distinct hex strings, target 17; only in base: []; only in target: []
+DATA_MANIFEST.json: base 22 distinct hex strings, target 22; only in base: []; only in target: []
+SPLIT_MANIFEST.json: base 36 distinct hex strings, target 36; only in base: []; only in target: []
+DOSE_SPACE.json: base 2 distinct hex strings, target 2; only in base: []; only in target: []
+DAMAGE_MANIFEST.json: base 16 distinct hex strings, target 16; only in base: []; only in target: []
+RESULT: SAME hex-string sets in all five files

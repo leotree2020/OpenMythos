@@ -1,0 +1,17 @@
+# Owner message part D3: generation of metrix/e1-v1/PROTOCOL_FROZEN
+$ python3 metrix/e1-v1/reports/freeze/make_protocol_frozen.py 9a19e70e1bc16130368caa00bd1bf6fbc126bc8c metrix/e1-v1/PROTOCOL_FROZEN
+wrote metrix/e1-v1/PROTOCOL_FROZEN | freeze commit 9a19e70e1bc16130368caa00bd1bf6fbc126bc8c
+df710d1c7ccf3acba4b2ae25df0a0c5f8a07d3cd8d1c02f3de65eae3c40a504e metrix/e1-v1/METRIX_E1V1_PROTOCOL.md
+2a35d40c7192b4f8df2dfa765714340009070d9b3e4b750cee994ae78c3e6767 metrix/e1-v1/DATA_MANIFEST.json
+667943a503204d689dc7baef48583652b6947ad62694825995ac6a0d9d64a40b metrix/e1-v1/SPLIT_MANIFEST.json
+44923d80614d780a010cd9742689e2fccdc949b4144b221a8de6469e898a7bc2 metrix/e1-v1/DOSE_SPACE.json
+5a05e5e7ffef7829328f2edbed2c15d4a52f2d99c4052cf30ef57a4a672588cd metrix/e1-v1/DAMAGE_MANIFEST.json
+
+# Check: regenerate from the committed generator into a temporary file and compare with the committed PROTOCOL_FROZEN (e97ce77e)
+$ python3 metrix/e1-v1/reports/freeze/make_protocol_frozen.py 9a19e70e1bc16130368caa00bd1bf6fbc126bc8c <tmp> && git cat-file blob e97ce77e:metrix/e1-v1/PROTOCOL_FROZEN | cmp - <tmp>
+identical (exit=0)
+$ git cat-file blob e97ce77e:metrix/e1-v1/PROTOCOL_FROZEN | sha256sum
+b2bce28552650f20bb0f35c164aa6416436db419ca319414a2e1379fd40f80c4  -
+
+# Cross-check: every 64-hex value in PROTOCOL_FROZEN occurs in the data-auditor's freeze stdout (f1_a, f1_b, f1_c, f1_d)
+distinct 64-hex in PROTOCOL_FROZEN: 32 | not found in data-auditor freeze stdout: []

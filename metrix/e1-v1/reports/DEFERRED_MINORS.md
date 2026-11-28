@@ -73,3 +73,27 @@ code-reviewer:PASS(第 1 轮 BLOCKER 与 13 个 MAJOR 逐条为“已解决”�
 ## 3. 合计
 
 登记未修 45 条(第 1 轮 21 条,第 2 轮 24 条)。交 Review Gate 决定或确认的:V2-1 至 V2-4(第 2 轮的 4 个 MAJOR)、V1-18、V1-22、V2-22、V2-24,以及 `SUBMISSION_NOTE.md` 第 4、5 节列出的事项。
+
+## 4. 冻结轮(冻结提交 `9a19e70e1bc16130368caa00bd1bf6fbc126bc8c`;指令 `tasks/E1V1_FREEZE_OWNER_MESSAGE.md`)
+
+本节写于冻结轮的报告提交。依据:指令 D2(有 BLOCKER 才修复;其余 MAJOR、MINOR 只登记)与 B(本文件第 1–3 节的条目一律不修,本节之前的内容未改动)。code-reviewer 第 1 轮:PASS,无 BLOCKER(1 个 MAJOR、13 个 MINOR);data-auditor 第 1 轮:PASS,无 BLOCKER(只作参考),只有 1 条观察。没有修复提交;协议与四个 JSON 在冻结提交之后没有任何改动。来源记法:`F-CR M1` = `reviews/9a19e70e1bc16130368caa00bd1bf6fbc126bc8c/code-reviewer_round1.md` 的 MAJOR,`F-CR m<n>` = 同一文件中第 n 个 MINOR(按出现顺序);`F-DA` = 同目录 `data-auditor_round1.md`。
+
+| # | 来源 | 严重度 | 位置 | 问题(摘要;原文见来源) | 处理 |
+|---|---|---|---|---|---|
+| F-1 | F-CR M1 | MAJOR | `reports/freeze/rebuild_check.txt` | D1 的逐字节相同证明是对暂存树 `69ff2c43` 做的,不是对冻结提交本身 | 登记;冻结提交不改。按审查的建议,报告提交另附同一检查直接对冻结提交运行的原始输出 `reports/freeze/rebuild_check_freeze_commit.txt`(四个 JSON 均 IDENTICAL;暂存树与冻结提交中协议、四个 JSON 与 `build_manifests.py` 的 blob 相同);data-auditor 独立复算的四个 sha256 与审查列出的值相同(`audit/stdout/f1_a_bytes_freeze.txt`)。审查所写“任一不等即升为 BLOCKER”的条件没有出现 |
+| F-2 | F-CR m1 | MINOR | 协议第 1 行 | 标题去掉“(草案)”不在 B 的字面清单内(审查:与 JSON 版本同步同义,已记入第 17 节;请 Review Gate 知悉) | 登记,交 Review Gate 知悉 |
+| F-3 | F-CR m2 | MINOR | 协议第 7.5 节 | A3 替换句之后的一句(“任一不满足 → ST14”与原因括注)也改了 | 登记 |
+| F-4 | F-CR m3 | MINOR | `DAMAGE_MANIFEST.json: gate_d.G-D1.rule`、`DATA_MANIFEST.json: reported_values`、`DOSE_SPACE.json: owner_decisions` | A2、A3、A5 的同步扩展到指令未列出的 JSON 字段 | 登记 |
+| F-5 | F-CR m4 | MINOR | `DATA_MANIFEST.json: files["d2_dev.jsonl"]`、`DAMAGE_MANIFEST.json: d2` | 键名与结构改动;副作用:撰写阶段的 audit 脚本(`audit/a5_damage.py`、`a6_consistency.py`、`r2_item1_fixes.py`)按旧结构取值,在冻结提交上重跑会出错(未验证);它们的 stdout 已入库,结论不受影响 | 登记 |
+| F-6 | F-CR m5 | MINOR | 协议第 4 节 Z0 理由、第 7.5 节阈值的理由 | A2 只替换了“因此……”半句,前提“参数逐位不变”仍保留,与第 17 节记录的 A2 原因相互矛盾;判定以 G-D1 条文为准 | 登记(B:不改) |
+| F-7 | F-CR m6 | MINOR | `DAMAGE_MANIFEST.json: comparison.secondary` | 没有写 D2_NOT_QUALIFIED 的例外(同一对象的 `words` 写了) | 登记 |
+| F-8 | F-CR m7 | MINOR | 协议第 12 节 ST11 一段末句 | “采用缩减方案时,按该方案的计数代入同一公式”在冻结协议内已没有可执行的对象(与 A5 不矛盾) | 登记(A5:ST11 公式不改) |
+| F-9 | F-CR m8 | MINOR | 协议第 7.1、7.4 节 | 冻结正文中仍有两处给 Review Gate 的开放请求,答复只在第 17 节 | 登记(A6:不改协议) |
+| F-10 | F-CR m9 | MINOR | 协议第 17 节 A1、A2 两行的“原因” | 写作“Review Gate 裁决 2026-11-28: …”,但所写原因取自本文件 V2-1、V2-3(V2-3 自标“未验证”),指令 A1、A2 本身没有给原因 | 登记 |
+| F-11 | F-CR m10 | MINOR | 协议第 17 节 A3 一行 | 没有注明 A3 改变了 Task Order 7.5 对阳性对照的要求(“其 D1、D2 必须超过冻结的下限”);建议在 FREEZE_REPORT 中注明 | 登记;已在 `reports/FREEZE_REPORT.md` 注明 |
+| F-12 | F-CR m11 | MINOR | 协议第 16 节 | 第 16 节要求批准写入 `approvals/<序号>_<事件>.md` 并记 JST 与 UTC;本次冻结批准按 Owner 消息记在 `tasks/` 下,只有 UTC;请 Review Gate 确认第 16 节从冻结之后的批准开始适用 | 登记,交 Review Gate |
+| F-13 | F-CR m12 | MINOR | `reports/freeze/rebuild_check.sh` | 输出中打印的“$ 命令”与实际执行的命令不完全相同(`date -u` 的格式参数、`tar -x -C <tmp>` 占位、rm 的花括号写法) | 登记 |
+| F-14 | F-CR m13 | MINOR | `reports/freeze/hash_invariance.py` | 按集合比较,发现不了某个哈希被移到另一个字段(审查已按 diff 逐处核对,未发现移位;data-auditor 按字段路径逐个比较,79 个字段全部相同,`audit/stdout/f1_d_compare_freeze.txt`) | 登记 |
+| F-15 | F-DA | 观察 | data-auditor 项目 (c) | Executor 提供的 venv 没有 jinja2,`apply_chat_template` 无法运行,MMLU / ARC 的 `context_ids_mean`(134.221、82.989)本轮没有复算;它不是哈希,不影响任何数据哈希;data-auditor 第一次运行的两处脚本错误与此中止的输出都已入库(`audit/stdout/*_firstrun_freeze.txt`) | 登记(披露) |
+
+冻结轮登记未修:15 条(F-1 至 F-15;code-reviewer 1 个 MAJOR、13 个 MINOR,data-auditor 1 条观察)。交 Review Gate 决定或知悉的:F-2、F-12。
