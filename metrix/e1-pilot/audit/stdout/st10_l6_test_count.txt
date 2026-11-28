@@ -1,0 +1,29 @@
+== tokenizer files (sha256 vs DATA_MANIFEST model.tokenizer.files_sha256)
+  tokenizer.json aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4 MATCH
+  tokenizer_config.json d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101 MATCH
+  vocab.json ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910 MATCH
+  merges.txt 8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5 MATCH
+transformers 5.22.2
+tokenizer class Qwen2Tokenizer
+== input files
+  anchor_text.jsonl sha256 2089e656819d1fe0f6ececcc26e5cade09ee80a92c50e7c8f607fa4e0ef46da5 MATCH manifest
+  general_test.jsonl sha256 41e4ad29cadce84c02da6b8d469107804a2145b3eaa046a569125bf31a13ec44
+  anchor docs 512
+  general_test windows 100
+  anchor ids len min/max 123 128
+  window ids len min/max 202 256
+== anchor decoded-text canonical sha256 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408 MATCH manifest
+  anchor docs whose stored 'text' == decode(ids): 512 / 512
+  windows whose stored 'text' == decode(ids): 100 / 100
+  raw-tokenizers decode agreement: anchor 512 / 512  windows 100 / 100
+== word 13-grams (str.split, per document, union)
+  anchor set size 44255
+  general_test set size 18074
+  intersection size (L6 TEST count) 0
+== Qwen token 13-grams (report only, no limit)
+  anchor set size 59331  general_test set size 23666  intersection 0
+== wrote /root/OpenMythos/metrix/e1-pilot/audit/st10_l6_test_count.json
+  sha256 23226d269085c68548b64dba23f8f3e049d1f482ef21a841bef14f186a80a8a1
+checks (tokenizer, anchor hashes, 512 docs, 100 windows): OK
+RESULT: PASS
+exit=0
