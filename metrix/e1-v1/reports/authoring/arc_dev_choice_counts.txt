@@ -1,0 +1,15 @@
+# host vm; 2026-11-28T10:21:32Z; ARC validation (D2 DEV source of the alternative) rows by number of choices; DEV data only
+$ <S>/venv/bin/python -I -c "
+import pyarrow.parquet as pq, collections
+tot=collections.Counter()
+for sub in ('ARC-Challenge','ARC-Easy'):
+    rows=pq.read_table('<S>/inputs/d2/allenai__ai2_arc/%s/validation-00000-of-00001.parquet'%sub).to_pylist()
+    c=collections.Counter(len(r['choices']['label']) for r in rows); tot+=c
+    print(sub, 'rows', len(rows), 'by number of choices', dict(sorted(c.items())), 'answerKey not in labels', sum(r['answerKey'] not in r['choices']['label'] for r in rows))
+print('total rows', sum(tot.values()), 'by number of choices', dict(sorted(tot.items())))
+"
+# <S> = /tmp/claude-0/-home-user/1e17bf44-a265-5c2d-b2f8-f9d45e7efe94/scratchpad
+ARC-Challenge rows 299 by number of choices {3: 3, 4: 295, 5: 1} answerKey not in labels 0
+ARC-Easy rows 570 by number of choices {3: 1, 4: 567, 5: 2} answerKey not in labels 0
+total rows 869 by number of choices {3: 4, 4: 862, 5: 3}
+exit=0
