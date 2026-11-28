@@ -1,8 +1,15 @@
 {
   "protocol": "METRIX-E1-V1",
-  "version": "v1-draft",
-  "status": "AWAITING_REVIEW_GATE",
-  "frozen": null,
+  "version": "v1",
+  "status": "PROTOCOL_FROZEN",
+  "frozen": {
+    "approved_by": "Owner",
+    "approval_utc": "2026-11-28T12:13:25Z",
+    "approval_record": "metrix/e1-v1/tasks/E1V1_FREEZE_OWNER_MESSAGE.md (C1-C4)",
+    "review_gate_ruling": "2026-11-28, items A1-A6 of the same record (protocol section 17)",
+    "condition": "A and C done and no BLOCKER in the review of the freeze commit (C4)",
+    "freeze_record": "metrix/e1-v1/PROTOCOL_FROZEN (full hash of the freeze commit; sha256 of the protocol and the four JSON files at that commit)"
+  },
   "origin": {
     "repository": "leotree2020/OpenMythos",
     "start_branch": "metrix-e1-pilot-protocol-v1",
@@ -65,7 +72,7 @@
       "candidates": "CANDIDATE_SEED, 'cand:<fact_id>' (Pilot 2.5)",
       "order": "TRAIN_SEED, 'order:<k>', k = 1..32 (interpretation B3)",
       "lora_A": "TRAIN_SEED, 'lora_A:<module path>' (interpretation B5)",
-      "d2_order": "DATA_SEED, 'd2:mmlu:validation:order', 'd2:mmlu:test:order' (alternative: 'd2:arc:validation:order', 'd2:arc:test:order')",
+      "d2_order": "DATA_SEED, 'd2:mmlu:validation:order', 'd2:mmlu:test:order' (ARC, not adopted alternative, verification record only: 'd2:arc:validation:order', 'd2:arc:test:order')",
       "bootstrap": "BOOTSTRAP_SEED, '<X>-<Y>:<split>:<metric>:<t>:<seed or avg>', 'P+-N:DEV:<metric>:-:<seed or avg>', 'N:DEV:<metric>:level'; fact metrics '<X>-<Y>:<split>:<seed or avg>' (interpretation B12)"
     }
   },
@@ -323,11 +330,14 @@
       "canonical_check": "the canonical_sha256 of the generated file must equal reference_canonical_sha256 (ST12)"
     },
     "d2_dev.jsonl": {
-      "content": "D2 DEV items (DAMAGE_MANIFEST.json: d2.dev); the reference hash is that of the dataset the Owner approves",
-      "record": "{item: 0-based position in the file, source_row: 0-based row index in the source list (MMLU: parquet row; ARC: index in Challenge then Easy), subject (MMLU subject; ARC item id), prompt: the D2 prompt p, answer: the correct letter}",
-      "reference_canonical_sha256": {
-        "mmlu": "f40c146a3da500f13797dcfedfb2932e8a5dc88a6b43cbd423bf8fb549a688be",
-        "arc": "1ea77c8adeb84b6d5f7a3aa699ab02951e4f43bd27ba14f36c3a32287e04ac32"
+      "content": "D2 DEV items (DAMAGE_MANIFEST.json: d2.dev); dataset MMLU (Owner approval 2026-11-28 12:13:25 UTC (metrix/e1-v1/tasks/E1V1_FREEZE_OWNER_MESSAGE.md), C2)",
+      "record": "{item: 0-based position in the file, source_row: 0-based row index in the source list (MMLU: parquet row; ARC, not adopted: index in Challenge then Easy), subject (MMLU subject; ARC, not adopted: item id), prompt: the D2 prompt p, answer: the correct letter}",
+      "reference_canonical_sha256": "f40c146a3da500f13797dcfedfb2932e8a5dc88a6b43cbd423bf8fb549a688be",
+      "not_adopted_alternative": {
+        "arc": {
+          "reference_canonical_sha256": "1ea77c8adeb84b6d5f7a3aa699ab02951e4f43bd27ba14f36c3a32287e04ac32",
+          "status": "not adopted alternative (C2); verification record kept, not used in E1-V1"
+        }
       },
       "canonical_check": "the canonical_sha256 of the generated file must equal reference_canonical_sha256 (ST12)"
     },
@@ -370,7 +380,7 @@
       "field": "summary, units"
     },
     {
-      "value": "Gate D: Z0 state hashes and maximal differences per seed; P+ D1-all / D1-diff / D1-same / D2 per seed and seed-average with 95% CI, per-unit values; G-D4 differences; sigma_N for the four metrics; G-D5 pairs; G-D1..G-D4 decisions",
+      "value": "Gate D: Z0 per-tensor numerical equality to N (torch.equal; -0.0 equals +0.0), state hashes (report only) and maximal differences per seed; P+ D1-all / D1-diff / D1-same / D2 per seed and seed-average with 95% CI, per-unit values; G-D4 differences; sigma_N for the four metrics; G-D5 pairs; G-D1..G-D4 decisions; Gate D decision and the D2 qualification status (D2_NOT_QUALIFIED or not)",
       "file": "metrix/e1-v1/results/gate_d_record.json",
       "field": "z0, p_plus, reproducibility, noise, gate_d"
     },
@@ -388,6 +398,11 @@
       "value": "S own-mapping accuracy at d0; G0.1-G0.9 values (G0.9 report only); fact comparisons F-N, S-N, Y-N per seed and seed-average; Spill per arm; AllCorrect on DEV",
       "file": "metrix/e1-v1/results/gate0_record.json",
       "field": "values, comparisons"
+    },
+    {
+      "value": "S, Y and F at d0 side by side (protocol section 1 Non-claims; Review Gate ruling 2026-11-28 A4): D1-all, D1-diff, D1-same, D1-books, D1-c4, D1-fineweb, D1-wikitext and D2 (with Acc_D2) on DEV, per seed and seed-average",
+      "file": "metrix/e1-v1/results/gate0_record.json",
+      "field": "d0_damage"
     },
     {
       "value": "iso brackets, weights and checkpoint hashes per (method, seed, t); NOT_REACHED flags; DEV per-method iso damage and DEV Gate M comparisons for all metrics and points (seed-average and per seed, CI, conclusion words marked secondary); G-D5 Spearman correlation; list of TEST checkpoints",

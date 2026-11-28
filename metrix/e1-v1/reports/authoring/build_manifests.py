@@ -5,6 +5,10 @@ anchor blocks are copied from the frozen Pilot manifests (read from the reposito
 value printed in reports/authoring/v1_data_check.txt and d2_dataset_metadata.txt. Run from the repository root:
 
   python3 metrix/e1-v1/reports/authoring/build_manifests.py
+
+Freeze (Review Gate ruling 2026-11-28 A1-A5, Owner approval 2026-11-28 12:13:25 UTC C1-C4, recorded in
+metrix/e1-v1/tasks/E1V1_FREEZE_OWNER_MESSAGE.md): version v1, status PROTOCOL_FROZEN; protocol section 17 lists the
+changes made to the four JSON files at the freeze.
 """
 import copy
 import json
@@ -15,8 +19,13 @@ V1 = Path("metrix/e1-v1")
 pdm = json.loads((PILOT / "DATA_MANIFEST.json").read_text(encoding="utf-8"))
 psm = json.loads((PILOT / "SPLIT_MANIFEST.json").read_text(encoding="utf-8"))
 
-HEAD = {"protocol": "METRIX-E1-V1", "version": "v1-draft", "status": "AWAITING_REVIEW_GATE",
-        "frozen": None,
+OWNER_APPROVAL = "Owner approval 2026-11-28 12:13:25 UTC (metrix/e1-v1/tasks/E1V1_FREEZE_OWNER_MESSAGE.md)"
+HEAD = {"protocol": "METRIX-E1-V1", "version": "v1", "status": "PROTOCOL_FROZEN",
+        "frozen": {"approved_by": "Owner", "approval_utc": "2026-11-28T12:13:25Z",
+                   "approval_record": "metrix/e1-v1/tasks/E1V1_FREEZE_OWNER_MESSAGE.md (C1-C4)",
+                   "review_gate_ruling": "2026-11-28, items A1-A6 of the same record (protocol section 17)",
+                   "condition": "A and C done and no BLOCKER in the review of the freeze commit (C4)",
+                   "freeze_record": "metrix/e1-v1/PROTOCOL_FROZEN (full hash of the freeze commit; sha256 of the protocol and the four JSON files at that commit)"},
         "origin": {"repository": "leotree2020/OpenMythos", "start_branch": "metrix-e1-pilot-protocol-v1",
                    "start_commit": "6e03468956208c422d0d41c08edaaf116166338c",
                    "authoring_branch": "metrix-e1-v1-protocol-v1",
@@ -105,14 +114,16 @@ files = {
                            "{doc: 0-based document number (anchor order), source_row: 0-based row index in the parquet file order, ids: the first at most 128 ids of encode(text, add_special_tokens=False), text: tokenizer.decode(ids) with default arguments}"),
     "general_dev.jsonl": f("D1 DEV windows (DAMAGE_MANIFEST.json: d1.dev)", "e8350160464963e684e0c58826d53250dec4de366a716d3111aa8ec5089ce281",
                            "{domain, doc_id (of eval_sets.jsonl), ids: the first at most 256 ids fed to the model, text: tokenizer.decode(ids) with default arguments}"),
-    "d2_dev.jsonl": f("D2 DEV items (DAMAGE_MANIFEST.json: d2.dev); the reference hash is that of the dataset the Owner approves",
-                      {"mmlu": "f40c146a3da500f13797dcfedfb2932e8a5dc88a6b43cbd423bf8fb549a688be",
-                       "arc": "1ea77c8adeb84b6d5f7a3aa699ab02951e4f43bd27ba14f36c3a32287e04ac32"},
-                      "{item: 0-based position in the file, source_row: 0-based row index in the source list (MMLU: parquet row; ARC: index in Challenge then Easy), subject (MMLU subject; ARC item id), prompt: the D2 prompt p, answer: the correct letter}"),
+    "d2_dev.jsonl": f("D2 DEV items (DAMAGE_MANIFEST.json: d2.dev); dataset MMLU (" + OWNER_APPROVAL + ", C2)",
+                      "f40c146a3da500f13797dcfedfb2932e8a5dc88a6b43cbd423bf8fb549a688be",
+                      "{item: 0-based position in the file, source_row: 0-based row index in the source list (MMLU: parquet row; ARC, not adopted: index in Challenge then Easy), subject (MMLU subject; ARC, not adopted: item id), prompt: the D2 prompt p, answer: the correct letter}"),
     "test_qa.jsonl": f("TEST questions: 320 facts x 3 templates", None, "{fact_id, template_id, question}", test=True),
     "general_test.jsonl": f("D1 TEST windows (DAMAGE_MANIFEST.json: d1.test)", None, "as general_dev.jsonl", test=True),
     "d2_test.jsonl": f("D2 TEST items (DAMAGE_MANIFEST.json: d2.test)", None, "as d2_dev.jsonl", test=True),
 }
+files["d2_dev.jsonl"]["not_adopted_alternative"] = {
+    "arc": {"reference_canonical_sha256": "1ea77c8adeb84b6d5f7a3aa699ab02951e4f43bd27ba14f36c3a32287e04ac32",
+            "status": "not adopted alternative (C2); verification record kept, not used in E1-V1"}}
 for k in files:
     files[k]["canonical_check"] = "the canonical_sha256 of the generated file must equal reference_canonical_sha256 (ST12)" \
         if not k.startswith(("test_", "general_test", "d2_test")) else "sha256 recorded in st10_record.json and the TEST marker"
@@ -122,10 +133,11 @@ reported = [
     {"value": "data hashes of the 9 non-TEST files; L1-L8 DEV counts", "file": RES + "step1_record.json", "field": "files, leakage"},
     {"value": "preflight step seconds (F, L, A), DEV evaluation seconds, peak memory, estimate, ST11 bound", "file": RES + "preflight_record.json", "field": "preflight"},
     {"value": "N on DEV: Acc learned / unread / per stratum, Acc_CB, per-fact Score and CB, per-window NLL, D1-all / D1-diff / D1-same levels, per-item D2 letter scores, Acc_D2", "file": RES + "n_dev_record.json", "field": "summary, units"},
-    {"value": "Gate D: Z0 state hashes and maximal differences per seed; P+ D1-all / D1-diff / D1-same / D2 per seed and seed-average with 95% CI, per-unit values; G-D4 differences; sigma_N for the four metrics; G-D5 pairs; G-D1..G-D4 decisions", "file": RES + "gate_d_record.json", "field": "z0, p_plus, reproducibility, noise, gate_d"},
+    {"value": "Gate D: Z0 per-tensor numerical equality to N (torch.equal; -0.0 equals +0.0), state hashes (report only) and maximal differences per seed; P+ D1-all / D1-diff / D1-same / D2 per seed and seed-average with 95% CI, per-unit values; G-D4 differences; sigma_N for the four metrics; G-D5 pairs; G-D1..G-D4 decisions; Gate D decision and the D2 qualification status (D2_NOT_QUALIFIED or not)", "file": RES + "gate_d_record.json", "field": "z0, p_plus, reproducibility, noise, gate_d"},
     {"value": "MARGIN_RECORD: formula, sigma_N inputs, input record sha256 and commit, m(D1-all), m(D1-diff), m(D1-same), m(D2)", "file": RES + "margin_record.json", "field": "margin"},
     {"value": "every training run: per dose point Acq (learned, per stratum), Acc unread, Spill, FPR, Acc_CB, D1-all / D1-diff / D1-same / per-domain dNLL and PPL_degradation%, Acc_D2, D2; per-unit Score, CB, window NLL, D2 letter scores; compute accounting; saved checkpoint state_sha256; finite flags", "file": RES + "runs/<run>.json", "field": "dose_points, accounting, checkpoints"},
     {"value": "S own-mapping accuracy at d0; G0.1-G0.9 values (G0.9 report only); fact comparisons F-N, S-N, Y-N per seed and seed-average; Spill per arm; AllCorrect on DEV", "file": RES + "gate0_record.json", "field": "values, comparisons"},
+    {"value": "S, Y and F at d0 side by side (protocol section 1 Non-claims; Review Gate ruling 2026-11-28 A4): D1-all, D1-diff, D1-same, D1-books, D1-c4, D1-fineweb, D1-wikitext and D2 (with Acc_D2) on DEV, per seed and seed-average", "file": RES + "gate0_record.json", "field": "d0_damage"},
     {"value": "iso brackets, weights and checkpoint hashes per (method, seed, t); NOT_REACHED flags; DEV per-method iso damage and DEV Gate M comparisons for all metrics and points (seed-average and per seed, CI, conclusion words marked secondary); G-D5 Spearman correlation; list of TEST checkpoints", "file": RES + "selection_freeze_record.json", "field": "iso, dev_comparisons, g_d5, test_checkpoints"},
     {"value": "TEST-part counts L3a, L3b, L4, L5, L6, L8 (Executor and data-auditor); TEST file sha256; exclusion counts of D1 / D2 TEST", "file": RES + "st10_record.json", "field": "counts, files, exclusions"},
     {"value": "TEST: per model per-fact Score, EM, AllCorrect (N also CB), per-window NLL and per-item D2 letter scores of N and every bracket checkpoint; Acc, EM, FPR, Spill on TEST; T1-T3; Acq_TEST(X, t) and match status; all Gate M TEST comparisons (seed-average and per seed, CI, conclusion words); per-method iso damage on TEST; final status", "file": RES + "test_evaluation_result.json and " + RES + "test_details/", "field": "summaries, units, values, iso_test, comparisons, final"},
@@ -145,7 +157,7 @@ data_manifest.update({
                   "candidates": "CANDIDATE_SEED, 'cand:<fact_id>' (Pilot 2.5)",
                   "order": "TRAIN_SEED, 'order:<k>', k = 1..32 (interpretation B3)",
                   "lora_A": "TRAIN_SEED, 'lora_A:<module path>' (interpretation B5)",
-                  "d2_order": "DATA_SEED, 'd2:mmlu:validation:order', 'd2:mmlu:test:order' (alternative: 'd2:arc:validation:order', 'd2:arc:test:order')",
+                  "d2_order": "DATA_SEED, 'd2:mmlu:validation:order', 'd2:mmlu:test:order' (ARC, not adopted alternative, verification record only: 'd2:arc:validation:order', 'd2:arc:test:order')",
                   "bootstrap": "BOOTSTRAP_SEED, '<X>-<Y>:<split>:<metric>:<t>:<seed or avg>', 'P+-N:DEV:<metric>:-:<seed or avg>', 'N:DEV:<metric>:level'; fact metrics '<X>-<Y>:<split>:<seed or avg>' (interpretation B12)"}},
     "facts": {"total": 320, "learned": 240, "unread": 80, "relations": pdm["facts"]["relations"], "strata": pdm["facts"]["strata"],
               "per_cell": {"cell": "relation x stratum (8 cells)", "learned": 30, "unread": 10},
@@ -240,7 +252,7 @@ dose_space.update({
         "S": {"corpus": "train_S", "config": "F", "passes": 11},
         "Y": {"corpus": "train_Y", "batch": 16, "config": "F", "passes": 11},
         "Z0": {"purpose": "negative control (Gate D, G-D1)", "code_path": "F", "corpus": "train_F", "learning_rate": 0.0, "weight_decay": 0.0, "passes": 2, "seeds": [101, 202, 303],
-               "expectation": "parameters bit-identical to N: state_sha256(Z0) == state_sha256(N)"},
+               "expectation": "every reloaded parameter tensor numerically equal to N's corresponding tensor (torch.equal; -0.0 and +0.0 count as equal); whether state_sha256(Z0) equals state_sha256(N) is reported only"},
         "P+": {"purpose": "positive control (Gate D, G-D3, G-D4)", "code_path": "F", "corpus": "train_F", "learning_rate": 0.0001, "weight_decay": 0.1, "passes": 11, "seeds": [101, 202, 303],
                "source": "E1-PILOT F6 (metrix/e1-pilot/results/training_runs/F-F6-seed101.json: config, dnll 5.55021)"}},
     "dose": {"dimension": "passes over the 240 TRAIN statements (batch 8, 30 optimizer steps per pass); one run per (method, seed) trained to the largest dose, evaluated in place at every dose point",
@@ -278,15 +290,16 @@ dose_space.update({
         "evaluation": "DEV evaluation in place after step 30 * k of every dose point, under model.eval() and torch.no_grad(); it changes no parameter, gradient, optimizer state or random stream",
         "early_stopping": "not allowed",
         "hardware": {"gpu": "NVIDIA A100 80GB", "count": 1, "device_name_rule": "Pilot section 7 (ST9)"},
-        "gpu_hours_limit": "PENDING_OWNER (protocol section 15 item 1; proposal 9 hours)",
-        "st11_bound": "0.875 * gpu_hours_limit; estimate E by the formula of protocol section 12 (replaces interpretation B17)"},
+        "gpu_hours_limit": 9,
+        "gpu_hours_limit_source": OWNER_APPROVAL + ", C1; ST7 = 9 hours (protocol sections 12, 13, 15 item 1)",
+        "st11_bound": "0.875 * gpu_hours_limit = 7.875 hours; estimate E by the formula of protocol section 12 (replaces interpretation B17)"},
     "compute_matching": {"same": ["1 configuration per method", "the same 10 dose points", "the same fact tokens at every dose point (k passes over train_F; 3,802 tokens per pass with <|endoftext|>)"],
                          "different": ["L trains adapters only (about 34.86M parameters at rank 32); forward parameters base plus adapters",
                                        "A adds per step the forward of 4 anchor documents through the frozen base and the trained model and the backward of the latter"],
                          "rationale": "acquisition is driven by the fact text read, identical token by token across methods; the extra compute of A and L is part of the method and is reported separately (Pilot section 10, interpretation B18), not converted into fact passes"},
     "counts": {"curve_runs": 9, "S_runs": 3, "Y_runs": 3, "Z0_runs": 3, "P_plus_runs": 3, "total_training_runs": 21,
                "dev_evaluations": 107, "test_evaluations": "N, F@d0 x3, S x3, Y x3 and the bracket checkpoints of the selection freeze record"},
-    "pending": {"dose_points_and_configs": "protocol section 15 item 3: reduce per section 12 R1-R4 if the estimate exceeds what the Owner accepts"},
+    "owner_decisions": {"dose_points_and_configs": "main plan: 1 configuration per method, 10 dose points, 3 seeds (" + OWNER_APPROVAL + ", C3; protocol section 15 item 3); the reduction plans R1-R4 of protocol section 12 are for reference only, not part of the frozen protocol; adopting one requires a new protocol version"},
 })
 dump("DOSE_SPACE.json", dose_space)
 
@@ -310,19 +323,19 @@ damage.update({
                     "per_domain": 100, "available_per_domain_after_skip": 175},
            "reading_rule": "before section 10 step 10: whole-file sha256 allowed; test rows are only matched on the row-prefix bytes (the regex of protocol section 0) and counted, never decoded or JSON-parsed"},
     "d2": {
-        "status": "PENDING_OWNER (protocol section 15 item 2)", "selected": None, "preferred": "mmlu", "alternative": "arc",
+        "status": "FROZEN: mmlu (" + OWNER_APPROVAL + ", C2; protocol section 15 item 2)", "selected": "mmlu", "alternative_not_adopted": "arc",
         "metric": "c_theta(i) = 1[s(i, correct letter) > max over other letters] (ties wrong); Acc_D2 = mean; damage e_theta(i) = c_N(i) - c_theta(i), D2 = mean e = -dAcc",
         "prompt": d2_prompt, "scoring": model["input_convention"]["d2_scoring"], "letter_token_ids": {"A": 362, "B": 425, "C": 356, "D": 422},
         "unrelated_to_facts": "the V1 entities and answers are randomly generated fictional strings; D2 items are existing real-world questions; L8 excludes any item containing a V1 string",
         "datasets": {
-            "mmlu": {"repo": "cais/mmlu", "revision": "c30699e8356da336a370243923dbaf21066bb9fe", "license": "mit", "research_use": "allowed (MIT)",
+            "mmlu": {"adoption": "selected (C2)", "repo": "cais/mmlu", "revision": "c30699e8356da336a370243923dbaf21066bb9fe", "license": "mit", "research_use": "allowed (MIT)",
                      "dev_source": {"file": "all/validation-00000-of-00001.parquet", "sha256": "66cdf0b090ccb657d18d13cd81e31fdc55c3467da9642ffb178653268a97c8ef", "rows": 1531},
                      "test_source": {"file": "all/test-00000-of-00001.parquet", "sha256": "74a41822ce7d3def56e1682f958469c04642a5336a5ce912fa375fdb90fb25d7", "rows": 14042},
                      "fields": "question, subject, choices (list of 4), answer (0-3)",
                      "dev_order": "rng_rule(DATA_SEED, 'd2:mmlu:validation:order').shuffle(list(range(1531)))",
                      "test_order": "rng_rule(DATA_SEED, 'd2:mmlu:test:order').shuffle(list(range(14042)))",
                      "authoring_dev": {"items": 800, "excluded": 0, "rows_visited": 800, "canonical_sha256": "f40c146a3da500f13797dcfedfb2932e8a5dc88a6b43cbd423bf8fb549a688be", "context_ids_mean": 134.221, "subjects": 57}},
-            "arc": {"repo": "allenai/ai2_arc", "revision": "210d026faf9955653af8916fad021475a3f00453", "license": "cc-by-sa-4.0", "research_use": "allowed (CC-BY-SA-4.0: attribution, share-alike)",
+            "arc": {"adoption": "not adopted alternative (C2): verification record kept, not used in E1-V1", "repo": "allenai/ai2_arc", "revision": "210d026faf9955653af8916fad021475a3f00453", "license": "cc-by-sa-4.0", "research_use": "allowed (CC-BY-SA-4.0: attribution, share-alike)",
                     "dev_source": [{"file": "ARC-Challenge/validation-00000-of-00001.parquet", "sha256": "395a5c88d1580d69855fbaee9450270578df1ad5af6259771cd0a42c20e99f05", "rows": 299},
                                    {"file": "ARC-Easy/validation-00000-of-00001.parquet", "sha256": "ed890ff1e4cef7a7140d3a30dcea3ed2c9d467c6458f447ad9ef0176d8dcbb74", "rows": 570}],
                     "test_source": [{"file": "ARC-Challenge/test-00000-of-00001.parquet", "sha256": "62f03257e737aed263f55c6abf87c7bb0028a44a6bdd2a26eb1279eb42c1d1e9", "rows": 1172},
@@ -344,19 +357,20 @@ damage.update({
         "seed_average": "average the 3 seeds' values per unit, then bootstrap; per-seed bootstraps reported; seed min, max and sample SD of the point estimates reported",
         "sigma_N": "sample SD (denominator B - 1) of the 10,000 bootstrap values of N's level statistic on the DEV set: D1 metrics: mean of domain means of NLL_N(w); D2: Acc_D2(N)"},
     "gate_d": {
-        "G-D1": {"control": "Z0", "rule": "per seed: reloaded state_sha256 == N's; per-unit differences to N: candidate scores <= 1e-4, D1 window NLL <= 1e-5, D2 letter scores <= 1e-4; predictions identical except near-ties (top-2 gap <= 1e-4 in either evaluation, Pilot G0.8)"},
+        "G-D1": {"control": "Z0", "rule": "per seed: every reloaded parameter tensor numerically equal to N's corresponding tensor (torch.equal; -0.0 and +0.0 count as equal); whether state_sha256 equals N's is reported only; per-unit differences to N: candidate scores <= 1e-4, D1 window NLL <= 1e-5, D2 letter scores <= 1e-4; predictions identical except near-ties (top-2 gap <= 1e-4 in either evaluation, Pilot G0.8)"},
         "G-D2": {"rule": "sigma_N(D1-all), sigma_N(D1-diff), sigma_N(D1-same), sigma_N(D2) finite and > 0; m(D1-all) <= 0.10, m(D1-diff) <= 0.10, m(D1-same) <= 0.20 (m(D2) <= 2 * sqrt(0.25 / 800) by construction, no bound); P+ seed SD of D1-diff and D2 reported",
                  "planning": "reports/authoring/sigma_planning.txt (expected m: D1-all 0.045, D1-diff 0.052, D1-same 0.090)"},
         "G-D3": {"control": "P+", "D1-diff": {"seed_average_min": 1.0, "ci95_lower_gt": 0.0, "per_seed_min": 0.5},
                  "D2": {"seed_average_min": 0.05, "ci95_lower_gt": 0.0, "per_seed_gt": 0.0}},
         "G-D4": {"rule": "P+ seed 101: evaluation at the end of training and after save / reload (state_sha256 equal); tolerances as G-D1"},
         "G-D5": {"rule": "report only: P+ (D1-diff, D2) per seed; after the DEV curves, Spearman correlation of D1-diff and D2 over all trained-model DEV evaluations"},
-        "pass": "G-D1 and G-D2 and G-D3 and G-D4; otherwise ST14"},
+        "pass": "G-D1 and G-D4 hold, and the D1 conditions of G-D2 and G-D3 hold (sigma_N of D1-all, D1-diff, D1-same finite and > 0; the three margin upper bounds; the P+ D1-diff condition); otherwise ST14. If a D2 condition of G-D2 or G-D3 fails (sigma_N(D2) finite and > 0; the P+ D2 condition), Gate D can still pass and D2 is D2_NOT_QUALIFIED (protocol 7.5)",
+        "D2_NOT_QUALIFIED": "Gate D passed but a D2 condition of G-D2 or G-D3 failed: all D2 values are computed, committed and reported as usual; D2 comparisons in Gate M get no conclusion word and no interpretation; not a final status (protocol 7.5, 9.6)"},
     "margin": {"formula": "m(M) = 2 * sigma_N(M), M in D1-all, D1-diff, D1-same, D2", "multiplier": 2,
                "input_record": "metrix/e1-v1/results/gate_d_record.json (noise)", "output_record": "metrix/e1-v1/results/margin_record.json (MARGIN_RECORD)",
                "timing": "after Gate D passes; committed and pushed before any training of section 10 step 6 (ST15)"},
     "comparison": {"primary": "TEST, t = 0.80, D1-diff, Delta(L-F) and Delta(A-F); Bonferroni over the 2: 97.5% CI",
                    "secondary": "all other points, metrics, DEV comparisons, per-domain metrics D1-books, D1-c4, D1-wikitext and per-method damages: 95% CI; words only for method comparisons on D1-all, D1-diff, D1-same, D2, marked secondary",
-                   "words": "for a comparison on metric M with m = m(M): superior: hi < 0 and all 3 seed estimates < 0; non-inferior: not superior, hi < m and all 3 seed estimates < m; inferior: lo > m and all 3 seed estimates > m; inconclusive otherwise; per-method damages (X vs N) and per-domain metrics get no word"},
+                   "words": "for a comparison on metric M with m = m(M): superior: hi < 0 and all 3 seed estimates < 0; non-inferior: not superior, hi < m and all 3 seed estimates < m; inferior: lo > m and all 3 seed estimates > m; inconclusive otherwise; per-method damages (X vs N) and per-domain metrics get no word; when D2 is D2_NOT_QUALIFIED, D2 method comparisons get no word (protocol 7.5, 9.4)"},
 })
 dump("DAMAGE_MANIFEST.json", damage)

@@ -1,13 +1,13 @@
-# METRIX · E1-V1 · PROTOCOL v1(草案)
+# METRIX · E1-V1 · PROTOCOL v1
 
 | 字段 | 值 |
 |---|---|
 | Task ID | METRIX-E1-V1-PROTOCOL-AUTHORING-V1.0(`tasks/E1V1_PROTOCOL_TASK_ORDER_V1.md`) |
-| 状态 | **AWAITING_REVIEW_GATE**(未冻结;Owner 批准后改为 PROTOCOL_FROZEN,冻结提交与本文件、四个 JSON 的 sha256 写入同目录的 `PROTOCOL_FROZEN` 文件) |
+| 状态 | **PROTOCOL_FROZEN**(Owner 批准,2026-11-28 12:13:25 UTC,`tasks/E1V1_FREEZE_OWNER_MESSAGE.md` C4;条件:A、C 完成且冻结提交的审查无 BLOCKER。冻结提交的完整 hash 与该提交下本文件、四个 JSON 的 sha256 写在同目录的 `PROTOCOL_FROZEN` 文件) |
 | 本文件的作用 | 执行 E1-V1 只需要本文件、同目录四个 JSON(`DATA_MANIFEST.json`、`SPLIT_MANIFEST.json`、`DOSE_SPACE.json`、`DAMAGE_MANIFEST.json`),以及第 0 节固定的外部来源 |
 | 本文件不包含 | 任何训练、评测结果或结论;任何 TEST 数据 |
 | 记号 | “沿用 Pilot 第 x 节” = 冻结协议 `metrix/e1-pilot/METRIX_E1_PROTOCOL.md` v1.1(冻结提交 `87a244db28a901f9e89282b50df76778ab5c2887`)第 x 节的规则原样适用,本文件只列出改动;“解释 Bn” = Pilot 实现阶段经 Review Gate 接受的解释(原文在 `metrix/e1-pilot/results/experiment_record_formal_20261128T045921Z.json` 的 `environment.interpretations`);哪些在 E1-V1 中作为协议条文适用,见第 0 节“Pilot 解释的适用” |
-| 待决字段 | 只有第 15 节三项(GPU 累计时间上限、D2 数据集、剂量点与配置的数量);其余可执行参数均为 PROPOSED 值,附理由 |
+| 待决字段 | 无。原第 15 节的三项待决(GPU 累计时间上限、D2 数据集、剂量点与配置的数量)与其余全部 PROPOSED 值均已改为冻结值(Owner 批准,2026-11-28 12:13:25 UTC,`tasks/E1V1_FREEZE_OWNER_MESSAGE.md` C1–C4;第 15、17 节);各处的理由保留 |
 
 路径约定:本文件中的 `results/…`、`approvals/…`、`audit/…`、`reviews/…` 均相对于 `metrix/e1-v1/`。
 
@@ -28,7 +28,7 @@
 | D2 打分输入(新) | `chat(p) + "The answer is" + " " + ℓ`,`p` 为第 7.1 节的 D2 题面,`chat` 与问答输入相同(单个 user 回合,`add_generation_prompt=true`,`enable_thinking=false`,不加 system prompt);`ℓ ∈ {A, B, C, D}`,`" A"`、`" B"`、`" C"`、`" D"` 各是一个 token(id 362、425、356、422,`reports/authoring/v1_data_check.txt`);只对这一个 token 打分 |
 | 库版本 | torch 2.11.0,transformers 5.22.2(沿用 Pilot 第 0 节;依赖锁定沿用 `metrix/e1-pilot/requirements.lock` 的版本);实际版本写入实验记录,不一致即 BLOCKED(ST8) |
 
-**种子(PROPOSED)**:`DATA_SEED = 20261128`,`CANDIDATE_SEED = 20261129`,`BOOTSTRAP_SEED = 20261130`,`TRAIN_SEEDS = [101, 202, 303]`。理由:前三个为新值(Task Order 5.2 要求新的 DATA_SEED;三个都与 Pilot 的 20261110–20261112 不同);训练种子只决定样本顺序与 LoRA A 的初始化,不决定数据,沿用 Pilot 的三个值。所有随机数都来自 `rng_rule(SEED, purpose) = random.Random(int.from_bytes(sha256(f"{SEED}:{purpose}".encode("utf-8")).digest()[:8], "big"))`(沿用 Pilot 第 0 节);全部 purpose 列在 `DATA_MANIFEST.json: seeds.purposes`。结果不好不得换种子。
+**种子(冻结值;Owner 批准,2026-11-28 12:13:25 UTC)**:`DATA_SEED = 20261128`,`CANDIDATE_SEED = 20261129`,`BOOTSTRAP_SEED = 20261130`,`TRAIN_SEEDS = [101, 202, 303]`。理由:前三个为新值(Task Order 5.2 要求新的 DATA_SEED;三个都与 Pilot 的 20261110–20261112 不同);训练种子只决定样本顺序与 LoRA A 的初始化,不决定数据,沿用 Pilot 的三个值。所有随机数都来自 `rng_rule(SEED, purpose) = random.Random(int.from_bytes(sha256(f"{SEED}:{purpose}".encode("utf-8")).digest()[:8], "big"))`(沿用 Pilot 第 0 节);全部 purpose 列在 `DATA_MANIFEST.json: seeds.purposes`。结果不好不得换种子。
 
 **环境**:所有模型训练与评测只在**一张 NVIDIA A100 80GB** 上执行;设备全名规则、GPU 检查、确定性设置(`torch.use_deterministic_algorithms(True)`、关闭 TF32、`CUBLAS_WORKSPACE_CONFIG=:4096:8`)沿用 Pilot 第 0、7 节(ST8、ST9)。CPU 只做数据生成、泄漏检查与分词器检查,不加载模型权重。
 
@@ -36,7 +36,7 @@
 
 **“读取 TEST 数据”的定义**:沿用 Pilot 第 3 节(解码 test 行的内容,或用其内容做任何计算;解析 split 字段、计数、对整个文件求哈希不算),适用于本协议的全部 TEST 来源。第 10 节第 10 步之前,对 TEST 来源允许且只允许:对整个文件求 sha256(第 1 步核对来源文件哈希需要);`eval_sets.jsonl` 按行首字节匹配 domain 与 split 字段后计数(行首必须匹配字节正则 `^\{"domain": "([^"\\]*)", "split": "([^"\\]*)", `,与 Pilot 实现阶段 B 的做法相同),test 行不解码、不做 JSON 解析;D2 的 TEST 来源 parquet 只读文件尾的行数。不得解码或读取任何 test 行或 TEST 题目的内容。
 
-**Pilot 解释的适用**(冻结):照原文适用 B4、B5、B6、B7、B8、B9、B10(每个 stratum 120 条 learned、40 条 unread)、B11、B12(purpose 另按第 8 节扩充)、B14、B15(“候选分数”另包括 D1 窗口 NLL 与 D2 字母分数,见 G0.8、G-D1)、B16(ST3–ST7、ST11 的状态;ST3 的对象见第 13 节)、B18、B19、B20、B21(以 `attn_implementation='eager'` 加载模型)、B22、B23、B24、B25。按 E1-V1 的数值改写后适用:B1(优化器步 s = 1..960,第 2.6 节)、B3(遍号 k = 1..32,第 11 节)。被替换、不适用:B2(余弦调度,由第 11 节的 warmup 加常数学习率替换:`lr(s) = peak · s / 30`(s ≤ 30),`lr(s) = peak`(s > 30))、B13(G0.10,E1-V1 不使用)、B17(Pilot 的预检公式,由第 12 节的 ST11 公式替换)。
+**Pilot 解释的适用**(冻结):照原文适用 B4、B5、B6、B7、B8、B9、B10(每个 stratum 120 条 learned、40 条 unread)、B11、B12(purpose 另按第 8 节扩充)、B14、B15(“候选分数”另包括 D1 窗口 NLL 与 D2 字母分数,见 G0.8、G-D1)、B16(ST3–ST7、ST11 的状态;ST3 的对象见第 13 节)、B18、B19、B20、B21(以 `attn_implementation='eager'` 加载模型)、B22、B23、B25。B24:只适用其中 T1–T3 的原因词与 T3 的读法；最终状态按本协议第 9.7 节。按 E1-V1 的数值改写后适用:B1(优化器步 s = 1..960,第 2.6 节)、B3(遍号 k = 1..32,第 11 节)。被替换、不适用:B2(余弦调度,由第 11 节的 warmup 加常数学习率替换:`lr(s) = peak · s / 30`(s ≤ 30),`lr(s) = peak`(s > 30))、B13(G0.10,E1-V1 不使用)、B17(Pilot 的预检公式,由第 12 节的 ST11 公式替换)。
 
 ## 1. 科学问题、Scope 与 Non-claims
 
@@ -46,7 +46,7 @@
 
 **两个 Gate**:Gate D(第 7.5 节)证明损伤的测量合格;Gate M(第 9.3–9.4 节)只在 Gate D 通过、margin 记录提交之后进行。事实测量另由 Gate 0 再确认(第 9.1 节)。
 
-**Non-claims**(无论结果如何都不得推出;Task Order 第 12 节):持续学习是否有效;旧事实的保留(Retention,归 E2);长期记忆;成长与扩容的价值;巩固机制的价值;多跳推理;在其他模型或更大规模上的表现;Metrix 架构的优越性。另:结论只对第 4 节冻结的三个配置、第 6.3 节的剂量阶梯与本协议的事实类型成立,不推广到其它学习率、rank、λ 或训练长度。
+**Non-claims**(无论结果如何都不得推出;Task Order 第 12 节):持续学习是否有效;旧事实的保留(Retention,归 E2);长期记忆;成长与扩容的价值;巩固机制的价值;多跳推理;在其他模型或更大规模上的表现;Metrix 架构的优越性。另:结论只对第 4 节冻结的三个配置、第 6.3 节的剂量阶梯与本协议的事实类型成立,不推广到其它学习率、rank、λ 或训练长度。另:Pilot 中只学文风的 Y 与打乱映射的 S 也有 0.98–2.14 的 DEV dNLL（`metrix/e1-pilot/results/training_runs/{S,Y}-F3-*.json: dnll`），因此本协议量到的损伤中，有多少来自学到事实本身、多少来自在模板句上训练，本协议不区分，不得就此下结论；S、Y 在 d0 的 D1、D2 与 F 在 d0 的值并列报告。bootstrap 的 CI 不含训练种子之间的变化。
 
 **范围外**:E2 及之后的阶段;第二批事实;任何新机制(Growth、Consolidation、RAG、多跳推理、learned controller、agent 等);部署与推理服务;模型结构改动;题目加难;NONE / 拒答任务。本协议不定义、不报告 Retention 的任何数字(红线 6)。
 
@@ -120,7 +120,7 @@ learned fact 的 entity 与 answer 同时出现在 TRAIN 陈述句和 QA 中是�
 
 ## 4. Arms 与对照
 
-| Arm | 定义 | 配置(PROPOSED,`DOSE_SPACE.json`) | 用途 |
+| Arm | 定义 | 配置(冻结值,Owner 批准,2026-11-28 12:13:25 UTC;`DOSE_SPACE.json`) | 用途 |
 |---|---|---|---|
 | N | 固定的 base 模型,不更新参数 | — | 学习量与损伤的基线 |
 | F | 全部参数可训练,在 `train_F` 上训练 | learning rate 3e-5,weight decay 0.0 | 剂量曲线 |
@@ -131,7 +131,7 @@ learned fact 的 entity 与 answer 同时出现在 TRAIN 陈述句和 QA 中是�
 | Z0 | 阴性对照:F 的完整训练流程(数据、优化器步、梯度裁剪、checkpoint 保存与重载、哈希),learning rate 0 | learning rate 0,weight decay 0,2 遍 | Gate D(G-D1) |
 | P+ | 阳性对照:F 的训练流程,Pilot F6 的数值 | learning rate 1e-4,weight decay 0.1,11 遍 | Gate D(G-D3、G-D4) |
 
-**配置的理由**:每种方法只用一个配置,即 Pilot 在同一搜索预算(每种方法 6 个配置、同一 DEV 选择规则)下选出的配置(`metrix/e1-pilot/results/selection_freeze_record.json: selected` = F3、L6、A5;数值见 `metrix/e1-pilot/SEARCH_SPACE.json`)。三种方法的调参预算相同(都是 Pilot 的 6 个配置),选择规则相同且只看学习量(DEV 准确率),不看损伤;E1-V1 不再调参。因此 Gate M 中没有按损伤挑选配置的步骤(第 6.6 节)。P+ 的数值与 Pilot F6 相同(`metrix/e1-pilot/results/training_runs/F-F6-seed101.json: config`,DEV dNLL 5.55021);训练长度见第 6.3 节。Z0 的 learning rate 为 0:AdamW 的更新量与 weight decay 项都乘以 learning rate,参数逐位不变,因此 Z0 的 `state_sha256` 必须与 N 相同(G-D1)。Z0 跑 2 遍(60 步)的理由:2 遍已经走过训练流程的每一段代码(warmup 结束、进入常数学习率、跨越遍的边界与样本重排、优化器状态的建立),再长的训练不经过新的代码路径,参数在 learning rate 为 0 时也不会改变。
+**配置的理由**:每种方法只用一个配置,即 Pilot 在同一搜索预算(每种方法 6 个配置、同一 DEV 选择规则)下选出的配置(`metrix/e1-pilot/results/selection_freeze_record.json: selected` = F3、L6、A5;数值见 `metrix/e1-pilot/SEARCH_SPACE.json`)。三种方法的调参预算相同(都是 Pilot 的 6 个配置),选择规则相同且只看学习量(DEV 准确率),不看损伤;E1-V1 不再调参。因此 Gate M 中没有按损伤挑选配置的步骤(第 6.6 节)。P+ 的数值与 Pilot F6 相同(`metrix/e1-pilot/results/training_runs/F-F6-seed101.json: config`,DEV dNLL 5.55021);训练长度见第 6.3 节。Z0 的 learning rate 为 0:AdamW 的更新量与 weight decay 项都乘以 learning rate,参数逐位不变,因此 Z0 的每个参数张量必须与 N 数值相等(G-D1)。Z0 跑 2 遍(60 步)的理由:2 遍已经走过训练流程的每一段代码(warmup 结束、进入常数学习率、跨越遍的边界与样本重排、优化器状态的建立),再长的训练不经过新的代码路径,参数在 learning rate 为 0 时也不会改变。
 
 S、Y 不单独调参(沿用 Pilot 第 4 节)。不得新增 arm、机制或阶段。
 
@@ -155,7 +155,7 @@ S、Y 不单独调参(沿用 Pilot 第 4 节)。不得新增 arm、机制或阶�
 
 ### 6.2 比较点(Owner 决定,2026-11-28):t ∈ {0.70, 0.80, 0.90}。
 
-### 6.3 剂量阶梯(PROPOSED;`DOSE_SPACE.json: dose`)
+### 6.3 剂量阶梯(冻结值,Owner 批准,2026-11-28 12:13:25 UTC;`DOSE_SPACE.json: dose`)
 
 - **剂量维度**:训练遍数 k(对 240 条 TRAIN 陈述句读 k 遍;batch 8,每遍 30 步)。学习率在前 30 步(第 1 遍)从 0 线性升到峰值,之后**保持不变**(不衰减)。一次训练按最大剂量跑到底,在每个剂量点(第 30·k 步结束时)当场做一次 DEV 评测;因为学习率不衰减,第 k 个剂量点的模型就是“以该学习率训练 k 遍”的模型,与总长度无关。评测在 `model.eval()`、`torch.no_grad()`、FP32、不用 autocast 下进行,不改变参数、梯度、优化器状态与任何随机流,评测后回到训练模式继续。
 - **剂量点**(F、L、A 相同):k ∈ {1, 2, 3, 4, 6, 8, 11, 16, 23, 32},共 10 个;最大 32 遍 = 960 步。相邻两点之比约 1.4(1–4 遍逐遍取,保证低端有点)。
@@ -208,19 +208,19 @@ PPL_degradation% 沿用 Pilot,只作展示。
 - 指令 `I` 的理由:一句话写明题型与作答方式(给出选项字母),不加示例(0-shot),使 N 与各训练模型看到完全相同的题面;措辞不针对任何模型调过。
 - `s_D2(θ, i, ℓ) = log p_θ(" " + ℓ | chat(p_i) + "The answer is")`,ℓ ∈ {A, B, C, D}(第 0 节)。这是对 Task Order 7.1“用候选的条件对数似然打分”的一种解释:候选是 4 个选项字母,在列出选项的题面之后对字母打分(MMLU 的通行做法),而不是对选项文本本身打分。理由:选项文本长度不一,直接比较其对数似然有长度偏差;字母打分每题只需一次前向;答案前缀 `The answer is` 与事实 QA 的打分输入一致。请 Review Gate 确认这一解释(`SUBMISSION_NOTE.md` 第 5 节)。`c_θ(i) = 1[s_D2(θ, i, ℓ*_i) > max_{ℓ ≠ ℓ*_i} s_D2(θ, i, ℓ)]`,并列判为错;`Acc_D2(θ) = mean_i c_θ(i)`。
 - `dAcc(θ) = Acc_D2(θ) − Acc_D2(N)`(Task Order 7.1)。为与 D1 同向(数值越大损伤越大),本协议的 **D2 损伤**定义为逐题 `e_θ(i) = c_N(i) − c_θ(i)`、`D2(θ) = mean_i e_θ(i) = −dAcc(θ)`。
-- **数据集**(第 15 节待决第 2 项):首选 MMLU,备选 ARC;两者的 revision、文件 sha256、许可证、行数均已在撰写环境中核实(`reports/authoring/d2_dataset_metadata.txt`;下载文件的 sha256 等于 Hub 记录的 LFS oid):
-  - 首选 `cais/mmlu` @ `c30699e8356da336a370243923dbaf21066bb9fe`,许可证 MIT(允许研究使用);DEV 来源 `all/validation-00000-of-00001.parquet`(sha256 `66cdf0b090ccb657d18d13cd81e31fdc55c3467da9642ffb178653268a97c8ef`,1,531 行),TEST 来源 `all/test-00000-of-00001.parquet`(sha256 `74a41822ce7d3def56e1682f958469c04642a5336a5ce912fa375fdb90fb25d7`,14,042 行)。理由:57 个学科的真实世界知识与推理题,四选一,与虚构事实无关;字母打分每题只需一次前向;撰写时 DEV 抽样的上下文平均 134 个 token。
-  - 备选 `allenai/ai2_arc` @ `210d026faf9955653af8916fad021475a3f00453`,许可证 CC-BY-SA-4.0(允许研究使用,署名与相同方式共享);DEV 来源 ARC-Challenge 与 ARC-Easy 的 validation(299 + 570 行),TEST 来源两者的 test(1,172 + 2,376 行);文件 sha256 见 `DAMAGE_MANIFEST.json`。只用恰好 4 个选项的题(DEV 来源 869 行中 862 行为 4 个选项、7 行不是,`audit/stdout/a5_damage.txt`;撰写时按打乱顺序访问到第 806 行即凑满 800 题,其间排除 6 行),标签按原顺序对应 A–D。
+- **数据集**(冻结值:MMLU;Owner 批准,2026-11-28 12:13:25 UTC,`tasks/E1V1_FREEZE_OWNER_MESSAGE.md` C2;第 15 节第 2 项):采用 MMLU;ARC 为未采用的备选(核实记录保留,不用于 E1-V1);两者的 revision、文件 sha256、许可证、行数均已在撰写环境中核实(`reports/authoring/d2_dataset_metadata.txt`;下载文件的 sha256 等于 Hub 记录的 LFS oid):
+  - 采用 `cais/mmlu` @ `c30699e8356da336a370243923dbaf21066bb9fe`,许可证 MIT(允许研究使用);DEV 来源 `all/validation-00000-of-00001.parquet`(sha256 `66cdf0b090ccb657d18d13cd81e31fdc55c3467da9642ffb178653268a97c8ef`,1,531 行),TEST 来源 `all/test-00000-of-00001.parquet`(sha256 `74a41822ce7d3def56e1682f958469c04642a5336a5ce912fa375fdb90fb25d7`,14,042 行)。理由:57 个学科的真实世界知识与推理题,四选一,与虚构事实无关;字母打分每题只需一次前向;撰写时 DEV 抽样的上下文平均 134 个 token。
+  - 未采用的备选 `allenai/ai2_arc` @ `210d026faf9955653af8916fad021475a3f00453`,许可证 CC-BY-SA-4.0(允许研究使用,署名与相同方式共享);DEV 来源 ARC-Challenge 与 ARC-Easy 的 validation(299 + 570 行),TEST 来源两者的 test(1,172 + 2,376 行);文件 sha256 见 `DAMAGE_MANIFEST.json`。只用恰好 4 个选项的题(DEV 来源 869 行中 862 行为 4 个选项、7 行不是,`audit/stdout/a5_damage.txt`;撰写时按打乱顺序访问到第 806 行即凑满 800 题,其间排除 6 行),标签按原顺序对应 A–D。
 - **与虚构事实无关**:V1 的 entity 与 answer 是按第 2.2 节随机生成的虚构字符串(natural 为随机音节,random 为随机字母段加数字),D2 是已有的真实题目;可执行检查为 L8(含任一 V1 字符串的题目在生成时排除,撰写时 MMLU 与 ARC 的 DEV 抽样中都是 0 题)。
 
-### 7.2 评测集与划分(PROPOSED;`DAMAGE_MANIFEST.json`)
+### 7.2 评测集与划分(冻结值,Owner 批准,2026-11-28 12:13:25 UTC;`DAMAGE_MANIFEST.json`)
 
 | 集合 | 来源 | 规则 | 数量 |
 |---|---|---|---|
 | D1 DEV `general_dev.jsonl` | Pilot 第 2.7 节的通用文本来源(`research/mini_mythos/stage1/results/r1/eval_sets.jsonl`,sha256 `8816fe5a…a155`;parcae 分词器解码,全值见 manifest) | 每个领域(books、c4、fineweb、wikitext)按文件顺序取 `split == "dev"` 的全部 100 行;窗口 = 本协议分词器切分后的前 256 个 id(不足取全长,送入模型的就是这些 id),记录 `{"domain", "doc_id", "ids", "text"}`(沿用 Pilot 第 2.7 节与其实现格式);依次排除触发 L8、L6 的窗口 | 撰写时 400(每领域 100,排除 0);规范化 SHA-256 `e8350160464963e684e0c58826d53250dec4de366a716d3111aa8ec5089ce281` |
 | D1 TEST `general_test.jsonl` | 同上 | 每个领域按文件顺序取 `split == "test"` 的行,**跳过该领域的前 25 行**(Pilot 的 TEST 窗口,不复用);窗口同上;依次排除触发 L8、L6、与某个 DEV 窗口 id 序列相同的窗口;每个领域取前 100 个 | 400(每领域可用 175 行);不足 100 → ST10 |
-| D2 DEV `d2_dev.jsonl` | 首选:MMLU `all/validation` | 行号 0..1530 用 `rng_rule(DATA_SEED, "d2:mmlu:validation:order")` 做一次 `shuffle`;按此顺序依次排除不是恰好 4 个选项或答案不在 0–3 的题、触发 L8、触发 L6 的题;取前 800 题;记录 `{"item", "source_row", "subject", "prompt", "answer"}`(answer 为字母) | 800;撰写时排除 0;规范化 SHA-256 `f40c146a3da500f13797dcfedfb2932e8a5dc88a6b43cbd423bf8fb549a688be`(备选 ARC:purpose `d2:arc:validation:order`,行号为 Challenge validation 之后接 Easy validation 的序号,`subject` 字段记题目 id;`1ea77c8adeb84b6d5f7a3aa699ab02951e4f43bd27ba14f36c3a32287e04ac32`) |
-| D2 TEST `d2_test.jsonl` | 首选:MMLU `all/test` | 行号用 `rng_rule(DATA_SEED, "d2:mmlu:test:order")` 做一次 `shuffle`;同样的排除规则,另排除题面与某个 DEV 题面完全相同的题;取前 800 题(备选:`d2:arc:test:order`,Challenge test 接 Easy test) | 800;不足 → ST10 |
+| D2 DEV `d2_dev.jsonl` | MMLU `all/validation`(Owner 批准,C2) | 行号 0..1530 用 `rng_rule(DATA_SEED, "d2:mmlu:validation:order")` 做一次 `shuffle`;按此顺序依次排除不是恰好 4 个选项或答案不在 0–3 的题、触发 L8、触发 L6 的题;取前 800 题;记录 `{"item", "source_row", "subject", "prompt", "answer"}`(answer 为字母) | 800;撰写时排除 0;规范化 SHA-256 `f40c146a3da500f13797dcfedfb2932e8a5dc88a6b43cbd423bf8fb549a688be`(未采用的备选 ARC,只保留核实记录:purpose `d2:arc:validation:order`,行号为 Challenge validation 之后接 Easy validation 的序号,`subject` 字段记题目 id;`1ea77c8adeb84b6d5f7a3aa699ab02951e4f43bd27ba14f36c3a32287e04ac32`) |
+| D2 TEST `d2_test.jsonl` | MMLU `all/test`(Owner 批准,C2) | 行号用 `rng_rule(DATA_SEED, "d2:mmlu:test:order")` 做一次 `shuffle`;同样的排除规则,另排除题面与某个 DEV 题面完全相同的题;取前 800 题(未采用的备选 ARC:`d2:arc:test:order`,Challenge test 接 Easy test) | 800;不足 → ST10 |
 
 D1 的 DEV 与 TEST 来自 `eval_sets.jsonl` 的不同 split,D2 的 DEV 与 TEST 来自数据集的不同 split,文档或题目不相交;TEST 另排除与 DEV 相同的单位。DEV 与 TEST 数量相同,使第 7.6 节由 DEV 推出的 margin 与 TEST 上的抽样波动同一尺度。数量的理由:D1 每领域 100 个窗口是 DEV 来源的全部;D2 800 题使 `Acc_D2(N)` 的抽样标准误约 0.017(按正确率 0.5–0.6 估算),与 D1 的 margin 量级相当;更大的集合会使每次评测的时间超出第 12 节估算的主要部分(每次 DEV 评测约 101 秒中,D1 与 D2 合计约 70 秒)。
 
@@ -234,17 +234,17 @@ D1 以窗口为单位、D2 以题目为单位做配对 bootstrap,10,000 次(第 
 
 D1 的 books、c4、wikitext 三个领域与锚文本来源不同,fineweb 与锚文本同来源,D2 与锚文本来源不同;`D1-diff` 与 `D1-same` 分开报告,主比较用 `D1-diff`(第 9.4 节),因此 A 的结论不依赖它被约束的分布。需要注意:c4(C4 英文 validation)虽然来源不同,但与 FineWeb-Edu 同为网页文本,Stage 1 把它标为“网页,近分布”(`research/mini_mythos/stage1/README.md` 评测集表),books(PG-19)与 wikitext 离锚文本更远。因此 Gate M 另把四个领域的逐领域损伤(`D1-books`、`D1-c4`、`D1-fineweb`、`D1-wikitext`,每个领域的窗口均值)与它们的方法间比较作为次要比较单独报告(第 9.3 节),读者可以看到 A 的差异是否集中在 fineweb 与 c4。是否把主比较改为只用 books 与 wikitext,请 Review Gate 决定(本协议的提案保留三个领域:窗口数 300 对 200,抽样标准误较小)。与锚文本的 n-gram 重叠检查沿用 L6 的做法(第 3 节,扩大到 D1 与 D2 的全部划分)。
 
-### 7.5 Gate D 的条件(全部为数值,冻结;PROPOSED)
+### 7.5 Gate D 的条件(全部为数值;冻结值,Owner 批准,2026-11-28 12:13:25 UTC)
 
 | 编号 | 条件 |
 |---|---|
-| G-D1 阴性对照 Z0(种子 101、202、303) | 每个种子:重载后的 `state_sha256` 等于 N 的 `state_sha256`;Z0 与 N 的 DEV 评测逐单位比较:每个候选分数差 ≤ 1e-4、每个 D1 窗口的 NLL 差 ≤ 1e-5、每个 D2 字母分数差 ≤ 1e-4;预测(事实 QA、D2)须完全相同,只有某题在两者中任一次最高两个分数之差 ≤ 1e-4 时允许不同(沿用 Pilot G0.8 的规则)。由此 Z0 的 `D1-all`、`D1-diff`、`D1-same` 的绝对值 ≤ 1e-5,`D2` 只能由允许的近似并列造成,3 个种子之间的波动为 0(在上述容差内) |
+| G-D1 阴性对照 Z0(种子 101、202、303) | 每个种子:重载后的每个参数张量与 N 的对应张量数值相等（`torch.equal`；−0.0 与 +0.0 视为相等）；`state_sha256` 是否与 N 相同只报告;Z0 与 N 的 DEV 评测逐单位比较:每个候选分数差 ≤ 1e-4、每个 D1 窗口的 NLL 差 ≤ 1e-5、每个 D2 字母分数差 ≤ 1e-4;预测(事实 QA、D2)须完全相同,只有某题在两者中任一次最高两个分数之差 ≤ 1e-4 时允许不同(沿用 Pilot G0.8 的规则)。由此 Z0 的 `D1-all`、`D1-diff`、`D1-same` 的绝对值 ≤ 1e-5,`D2` 只能由允许的近似并列造成,3 个种子之间的波动为 0(在上述容差内) |
 | G-D2 噪声基线 | `σ_N(M)` = N 在 M 的 DEV 集上的水平统计量的 bootstrap 标准差(10,000 次,第 8 节):M = `D1-all`(4 领域分层的窗口 NLL 均值的平均)、`D1-diff`(3 领域)、`D1-same`(fineweb)、`D2`(`Acc_D2(N)`)。四个值都必须有限且 > 0;并且由它们按第 7.6 节算出的 `m(D1-all)`、`m(D1-diff)` ≤ 0.10,`m(D1-same)` ≤ 0.20(`m(D2)` 由题数决定,最大为 2 × sqrt(0.25/800) ≈ 0.035,不另设上界)。训练种子之间的波动:P+ 三个种子的 `D1-diff`、`D2` 的样本标准差只报告;Gate M 用“每个种子的点估计同向”的要求处理种子波动(第 9.4 节) |
 | G-D3 阳性对照 P+(种子 101、202、303) | `D1-diff`:seed-average ≥ +1.00,其 95% CI 下界 > 0,且每个种子 ≥ +0.50;`D2`:seed-average ≥ +0.05(即 dAcc ≤ −0.05),其 95% CI 下界 > 0,且每个种子 > 0 |
 | G-D4 复现 | P+ 种子 101:训练结束时当场评测一次,保存、重载后重算 `state_sha256`(须相同)再评测一次;两次逐单位比较,容差同 G-D1(候选分数 1e-4、D1 窗口 NLL 1e-5、D2 字母分数 1e-4、预测规则同 Pilot G0.8) |
 | G-D5 D1 与 D2 的一致性 | 只报告,不设门槛:P+ 的三个种子的 (`D1-diff`, `D2`);Gate M 的 DEV 评测全部完成后,另报全部训练模型 DEV 评测(10 个剂量点 × 9 条曲线、S、Y、P+)上 `D1-diff` 与 `D2` 的 Spearman 秩相关 |
 
-**Gate D 通过** = G-D1、G-D2、G-D3、G-D4 全部满足。任一不满足 → ST14:停止,不运行第 6 步起的任何训练,状态 PIPELINE_NOT_QUALIFIED(原因:G-D1 或 G-D4 不满足为 IMPLEMENTATION_FAIL;G-D2 或 G-D3 不满足时写明失败的条件编号)。
+**Gate D 通过** = G-D1、G-D4 满足，且 G-D2、G-D3 中关于 D1 的条件（`σ_N` 有限且 > 0、三个 margin 上界、P+ 的 `D1-diff` 条件）全部满足。G-D2、G-D3 中关于 D2 的条件（`σ_N(D2)` 有限且 > 0、P+ 的 `D2` 条件）不满足时，Gate D 仍可通过，但 D2 记为 `D2_NOT_QUALIFIED`：D2 的全部数值照常计算、入库并报告，Gate M 中 D2 的比较不给结论词，不作解释。Gate D 不通过(上述通过条件任一不满足)→ ST14:停止,不运行第 6 步起的任何训练,状态 PIPELINE_NOT_QUALIFIED(原因:G-D1 或 G-D4 不满足为 IMPLEMENTATION_FAIL;G-D2 或 G-D3 中关于 D1 的条件不满足时写明失败的条件编号)。
 
 **阈值的理由**:G-D1、G-D4 的容差沿用 Pilot G0.8(Pilot 实测的复评差为 0,`metrix/e1-pilot/results/step7_record.json: values.G0.8`)。P+ 用 Pilot F6 的学习率与 weight decay,11 遍常数学习率约等于 F6 在 Pilot 中 20 遍余弦的累积量(第 6.3 节的换算),F6 的 DEV dNLL 为 +5.55(`training_runs/F-F6-seed101.json: dnll`),下限 +1.00 远低于这个值,只要求“明显的损伤”能被量到;每个种子 ≥ +0.50 防止只靠一个种子过线。D2 没有 Pilot 数据可依,+0.05 约为 `σ_N(D2)` 预计值(约 0.017)的 3 倍。G-D2 的“不该造成损伤的对照在种子之间的波动”由 Z0 给出:learning rate 为 0 时参数逐位不变,波动按构造为 0,G-D1 检查它确实为 0;这只证明流程本身不引入波动,不测量训练带来的种子波动,后者由 P+ 的三个种子报告、在 Gate M 中按第 9.4 节处理。G-D2 上界的理由:Pilot 冻结的 general-damage margin 为 dNLL ≤ +0.03(Pilot 第 13 节第 2 项);若 `m(D1)` 超过它的约 3 倍(0.10),说明这组窗口分辨不出 Pilot 认为有意义的差异的量级,尺子过粗,Gate D 不通过;fineweb 单领域的窗口数是 4 个领域合计的四分之一,标准误约为 2 倍,上界取 0.20。规划估计(只作规划,不进记录;Task Order 红线 7):按 Pilot 的 N 在 Pilot DEV 窗口上的逐窗口 NLL(`metrix/e1-pilot/results/details/N_dev.json: evaluation.general_dev[*].nll`,每领域 25 个)的领域标准差换算到每领域 100 个窗口,预计 `m(D1-all)` 约 0.045、`m(D1-diff)` 约 0.052、`m(D1-same)` 约 0.090,都在上界之内(`reports/authoring/sigma_planning.py` 及其输出 `sigma_planning.txt`)。
 
@@ -300,7 +300,7 @@ D1 的 books、c4、wikitext 三个领域与锚文本来源不同,fineweb 与锚
 
 - **主比较族(唯一)**:TEST 上、t = 0.80、指标 `D1-diff` 的两个比较 Δ(L−F) 与 Δ(A−F)。理由:0.80 位于三个比较点中间,按第 6.3 节的估计三种方法都最可能被夹逼;`D1-diff` 是 Pilot 已有的指标在与锚文本来源不同的领域上的版本(第 7.4 节)。
 - **多重比较**:主比较族的两个比较按 Bonferroni 处理,各用 97.5% CI(第 1.25 与 98.75 百分位)。其余全部为次要比较(其它比较点、其它指标、DEV 上的全部比较、每个方法自身的损伤),报告 95% CI,结论词汇在下条规定的范围内计算并标为“次要”,不作确证性结论,不影响最终状态,不做多重比较校正。
-- **结论词汇**(对指标 M 上的 Δ = D(X) − D(F),X ∈ {L, A};D 越大损伤越大;[lo, hi] 为该比较的 CI,Δ_s 为每个种子的点估计,m = m(M) 取自 MARGIN_RECORD,主比较为 m(`D1-diff`))。只有 M ∈ {`D1-all`, `D1-diff`, `D1-same`, `D2`} 的方法间比较给结论词;每个方法自身的损伤(X 相对 N)与逐领域指标 `D1-books`、`D1-c4`、`D1-wikitext` 的比较只报告点估计与 CI,不给结论词:
+- **结论词汇**(对指标 M 上的 Δ = D(X) − D(F),X ∈ {L, A};D 越大损伤越大;[lo, hi] 为该比较的 CI,Δ_s 为每个种子的点估计,m = m(M) 取自 MARGIN_RECORD,主比较为 m(`D1-diff`))。只有 M ∈ {`D1-all`, `D1-diff`, `D1-same`, `D2`} 的方法间比较给结论词(D2 记为 `D2_NOT_QUALIFIED` 时,D2 的方法间比较不给结论词,不作解释,第 7.5 节);每个方法自身的损伤(X 相对 N)与逐领域指标 `D1-books`、`D1-c4`、`D1-wikitext` 的比较只报告点估计与 CI,不给结论词:
   - **superior**:hi < 0,且 3 个 Δ_s 都 < 0;
   - **non-inferior**:不是 superior,hi < m,且 3 个 Δ_s 都 < m;
   - **inferior**:lo > m,且 3 个 Δ_s 都 > m;
@@ -313,10 +313,11 @@ Gate 0、Gate D、iso 点的确定都只用 TRAIN 与 DEV。TEST(事实 QA 与�
 
 ### 9.6 失败分类
 
-固定词汇沿用 Pilot 第 9 节:`PASS` / `HYPOTHESIS_FAIL` / `IMPLEMENTATION_FAIL` / `OPTIMIZATION_FAIL` / `CAPACITY_LIMIT` / `OPTIMIZATION_OR_CAPACITY_UNRESOLVED` / `BLOCKED` / `NOT_TESTED` / `PIPELINE_NOT_QUALIFIED`,各自的使用条件沿用 Pilot 第 9 节,其中 IMPLEMENTATION_FAIL 另包括 G-D1、G-D4 不满足、ST13、ST15、ST16;BLOCKED 另包括 ST10 的 D1 / D2 部分与 ST18。HYPOTHESIS_FAIL 不使用:E1-V1 的主比较是带结论词汇的估计,没有预先登记的方向性假设。本协议新增两个词:
+固定词汇沿用 Pilot 第 9 节:`PASS` / `HYPOTHESIS_FAIL` / `IMPLEMENTATION_FAIL` / `OPTIMIZATION_FAIL` / `CAPACITY_LIMIT` / `OPTIMIZATION_OR_CAPACITY_UNRESOLVED` / `BLOCKED` / `NOT_TESTED` / `PIPELINE_NOT_QUALIFIED`,各自的使用条件沿用 Pilot 第 9 节,其中 IMPLEMENTATION_FAIL 另包括 G-D1、G-D4 不满足、ST13、ST15、ST16;BLOCKED 另包括 ST10 的 D1 / D2 部分与 ST18。HYPOTHESIS_FAIL 不使用:E1-V1 的主比较是带结论词汇的估计,没有预先登记的方向性假设。本协议新增三个词:
 
 - **NOT_REACHED**:某方法在某比较点上没有合格的夹逼区间(第 6.4 节第 1、2 条,任一种子即算);该方法在该点不参与任何比较,不外推。
 - **MATCH_FAILED**:两方法在某比较点上都可比较,但 TEST 学习量之差超过 τ_TEST = 0.05(第 6.5 节);该比较的损伤差照常报告,不给结论词,不作解释。
+- **D2_NOT_QUALIFIED**:Gate D 通过,但 G-D2、G-D3 中关于 D2 的条件(`σ_N(D2)` 有限且 > 0、P+ 的 `D2` 条件)不满足(第 7.5 节);D2 的全部数值照常计算、入库并报告,Gate M 中 D2 的比较不给结论词,不作解释。它不是最终状态,不改变 Gate D 的通过与第 9.7 节的最终状态(主比较只用 `D1-diff`)。
 
 ### 9.7 最终状态
 
@@ -347,7 +348,7 @@ Gate 0、Gate D、iso 点的确定都只用 TRAIN 与 DEV。TEST(事实 QA 与�
 
 **算力边界**:第 2–11 步全部在设备全名与首次记录逐字相同的一张 A100 80GB 上执行,累计 GPU 时间 ≤ H(第 12 节);任何一步若会使累计时间超过 H,按 ST7 停下,不得为节省时间删减本节的任何一步。
 
-## 11. 训练契约(PROPOSED;`DOSE_SPACE.json: training_contract`)
+## 11. 训练契约(冻结值,Owner 批准,2026-11-28 12:13:25 UTC;`DOSE_SPACE.json: training_contract`)
 
 | 项 | 值 | 理由或来源 |
 |---|---|---|
@@ -374,7 +375,7 @@ Gate 0、Gate D、iso 点的确定都只用 TRAIN 与 DEV。TEST(事实 QA 与�
 ## 12. 算力与硬件
 
 - **硬件**:沿用单张 NVIDIA A100 80GB;设备全名在一次运行内不得改变(ST9)。显存:最大的 arm A 沿用 Pilot 第 7 节的估计约 39 GB,Pilot 实测峰值 46.2 GB(`metrix/e1-pilot/results/step5_record.json: step_info.peak_memory_bytes`);V1 的 batch 与序列长度与 Pilot 相同,D2 最长上下文 781 个 token、评测不保留梯度。
-- **GPU 累计时间上限 H:OWNER 待决**(第 15 节第 1 项)。本协议不沿用 Pilot 的 4 小时,也不自行填写;以下只给估算与建议。
+- **GPU 累计时间上限 H = 9 小时**(冻结值;Owner 批准,2026-11-28 12:13:25 UTC,`tasks/E1V1_FREEZE_OWNER_MESSAGE.md` C1;第 15 节第 1 项):ST7 = 9 小时,ST11 界限 = 0.875 × 9 = 7.875 小时。不沿用 Pilot 的 4 小时。以下估算是 Owner 决定 H 时的依据。
 - **估算**(`reports/authoring/compute_estimate.py` 及其完整输出 `compute_estimate.txt`;输入全部取自 Pilot 的入库记录,文件与字段在输出中列出):F、L、A 每步 0.261、0.286、0.489 秒(`training_runs/{F-F3,L-L6,A-A5}-*.json: accounting.wall_seconds / steps_run`);checkpoint 保存加哈希 21.8 秒、重载 8.2 秒、`state_sha256` 15.2 秒(`training_runs/F-F3-*.json: checkpoint.seconds`);base 模型加载 19.4 秒(`step3_record.json`);由 G0.8 复评的计时(`step7_record.json: step_info.seconds`)推出的 FP32 打分吞吐约 3,286 token/s、EM 每问约 0.013 秒(`step2_record.json: preflight.dev_evaluation_seconds`)。V1 的工作量取自 `reports/authoring/v1_data_check.txt` 的 token 统计。
 
 | 项 | 主方案 |
@@ -386,8 +387,8 @@ Gate 0、Gate D、iso 点的确定都只用 TRAIN 与 DEV。TEST(事实 QA 与�
 | GPU 时间 | 6.66 小时(Gate D 0.40、曲线 3.60、S/Y 0.40、G0.8 0.09、TEST 2.11、预检 0.06);乘 1.2 的安全系数为 7.99 小时 |
 | 租用时间与费用 | 约 10.0 小时(GPU × 1.2 + 2 小时的环境、CPU 数据步骤与等待批准);按 2.14 美元/小时约 21.4 美元,其中 GPU 部分约 17.1 美元 |
 
-- **建议的 H**:9 小时(主方案估算乘安全系数后为 7.99 小时,另留约 1 小时余量)。由 Owner 决定。
-- **缩减方案**(节省量为乘安全系数后的 GPU 小时,出处同上):
+- **H 的依据**:撰写时建议 9 小时(主方案估算乘安全系数后为 7.99 小时,另留约 1 小时余量);Owner 批准 9 小时(C1)。
+- **缩减方案**(节省量为乘安全系数后的 GPU 小时,出处同上):缩减方案 R1–R4 只供 Owner 决定时参考，不属于冻结的协议；本协议冻结的是主方案。采用任何缩减方案须开新的协议版本。
 
 | 方案 | 做法 | 节省 | 损失 |
 |---|---|---|---|
@@ -396,7 +397,7 @@ Gate 0、Gate D、iso 点的确定都只用 TRAIN 与 DEV。TEST(事实 QA 与�
 | R3 | TEST 只评 t = 0.80 的括号 checkpoint | 1.35 | 0.70、0.90 两个比较点只有 DEV 上的次要比较,没有 TEST 上的匹配验证与比较 |
 | R4 | R1 + R2 + R3 | 3.47(GPU 约 4.52 小时) | 以上全部 |
 
-- **预检与超时即停**:ST7 的上限为 H(从第一次加载模型到 TEST 评测结束的累计 GPU 时间)。ST11 的界限为 0.875 × H(Pilot 为 3.5 / 4 = 0.875)。**ST11 的预检估算 E(小时)**(冻结;替换解释 B17):
+- **预检与超时即停**:ST7 的上限为 H = 9 小时(从第一次加载模型到 TEST 评测结束的累计 GPU 时间)。ST11 的界限为 0.875 × H = 7.875 小时(Pilot 为 3.5 / 4 = 0.875)。**ST11 的预检估算 E(小时)**(冻结;替换解释 B17):
 
   E = [ G + 26·t_load + 2880·t_F + 2880·t_L + 2880·t_A + 3150·t_F + 107·t_ev + 45·t_save + 61·t_reload + 46 × 1.26·t_ev + 9 × 0.53·t_ev ] / 3600
 
@@ -408,10 +409,10 @@ ST1–ST13 **沿用 Pilot 第 11 节**的事件与动作(各自的状态词沿�
 
 - ST1:第 10 节第 1 步任一泄漏检查的 DEV 部分超限 → 停;不训练;IMPLEMENTATION_FAIL。
 - ST3:对象改为 F 的种子 101 在 d0(第 10 节第 6 步)。
-- ST7:上限改为 H。
+- ST7:上限改为 H = 9 小时(C1)。
 - ST9:某次运行开始时读到的设备全名与首次记录不同 → 整批作废(本次 E1-V1 的全部结果不得用于任何判断);BLOCKED;在设备全名一致的机器上从第 10 节第 2 步重新开始。
 - ST10:范围扩大到 L6、L8 的 D1 / D2 TEST 部分,以及第 7.2 节的 TEST 集合不足。
-- ST11:界限改为 0.875 × H,估算按第 12 节的公式。
+- ST11:界限改为 0.875 × H = 7.875 小时(C1),估算按第 12 节的公式。
 - ST12:任何数据、manifest、模板或候选的哈希,或模型、分词器版本与冻结值不一致 → 停止;BLOCKED。比对范围:(1)第 2 节与三个 manifest(`DATA_MANIFEST.json`、`SPLIT_MANIFEST.json`、`DAMAGE_MANIFEST.json`)列出的输入文件 sha256 与生成文件的参考哈希(fact 哈希的比对方法见第 2.2 节;D2 只比对 Owner 选定的数据集);(2)冻结提交下本协议文件与四个 JSON 的原始字节哈希,用 `git cat-file` 从冻结提交读取,与执行时工作区中的文件逐字节比对。执行中不改写本协议与四个 JSON 中的任何字段(生成文件的实际哈希只写入 `results/step1_record.json` 等记录),所以 (2) 没有豁免。
 - ST13:“配置冻结前”改为“`results/selection_freeze_record.json` 提交并推送之前”。
 
@@ -433,15 +434,17 @@ ST1–ST13 **沿用 Pilot 第 11 节**的事件与动作(各自的状态词沿�
 - **报告清单**:`DATA_MANIFEST.json: reported_values` 逐项列出每个数值、所在的结果文件与字段;实现不得省略其中任何一项。
 - **终止前核对**(第 10 节第 13 步):全部记录推送之后,data-auditor 在一个新的克隆(只含已推送的分支,不访问 `<work>`)中,用自写脚本:(1)确认报告清单中的每个文件与字段都存在;(2)从入库的逐单位值独立重算报告清单中的全部汇总值、CI、iso 插值、匹配状态、结论词与最终状态,与记录逐项比对(浮点值绝对差 ≤ 1e-12,分数按精确值,整数、字符串、布尔值精确相等);脚本、完整 stdout 与结论入库(`audit/termination_check.*`)。结论为 PASS 之后,Owner 才可终止机器(ST17)。
 
-## 15. 待决字段(只有这三项;Task Order 第 14 节)
+## 15. 原待决字段的冻结值(Task Order 第 14 节)
 
-| # | 字段 | 建议 | 理由 |
+撰写时只有以下三项为待决;现均为冻结值(Owner 批准,2026-11-28 12:13:25 UTC,`tasks/E1V1_FREEZE_OWNER_MESSAGE.md` C1–C3)。
+
+| # | 字段 | 冻结值 | 撰写时的建议与理由 |
 |---|---|---|---|
-| 1 | GPU 累计时间上限 H(Owner) | 9 小时;ST11 界限 7.875 小时 | 主方案估算 6.66 小时,乘 1.2 为 7.99 小时(第 12 节) |
-| 2 | D2 数据集(Owner 批准其一) | 首选 MMLU(`cais/mmlu` @ `c30699e8…`,MIT);备选 ARC(`allenai/ai2_arc` @ `210d026f…`,CC-BY-SA-4.0) | 两者均已核实 revision、文件 sha256 与许可证;MMLU 覆盖 57 个学科、题量足以抽出互不相交的 800 + 800 题;ARC 的 DEV 来源只有 869 题(其中 862 题为 4 个选项),抽 800 题后只余 62 题 |
-| 3 | 剂量点与配置的数量 | 主方案:每种方法 1 个配置、10 个剂量点、3 个种子;H 不足时按第 12 节 R1–R4 缩减 | 第 6.3 节、第 12 节 |
+| 1 | GPU 累计时间上限 H | 9 小时;ST7 = 9 小时;ST11 界限 = 0.875 × 9 = 7.875 小时(Owner 批准,C1) | 建议 9 小时:主方案估算 6.66 小时,乘 1.2 为 7.99 小时(第 12 节) |
+| 2 | D2 数据集 | MMLU(`cais/mmlu` @ `c30699e8356da336a370243923dbaf21066bb9fe`,MIT)(Owner 批准,C2);ARC(`allenai/ai2_arc` @ `210d026faf9955653af8916fad021475a3f00453`,CC-BY-SA-4.0)为未采用的备选,核实记录保留 | 建议首选 MMLU、备选 ARC:两者均已核实 revision、文件 sha256 与许可证;MMLU 覆盖 57 个学科、题量足以抽出互不相交的 800 + 800 题;ARC 的 DEV 来源只有 869 题(其中 862 题为 4 个选项),抽 800 题后只余 62 题 |
+| 3 | 剂量点与配置的数量 | 主方案:每种方法 1 个配置、10 个剂量点、3 个种子(Owner 批准,C3);缩减方案 R1–R4 不属于冻结的协议(第 12 节) | 建议主方案:第 6.3 节、第 12 节 |
 
-Owner 批准第 2 项之后,`DAMAGE_MANIFEST.json: d2.selected` 改为所选数据集,`d2_dev.jsonl` 的参考哈希为第 7.2 节对应的值;冻结时这三项都必须有值。
+按第 2 项,`DAMAGE_MANIFEST.json: d2.selected` = `mmlu`,`d2_dev.jsonl` 的参考哈希为第 7.2 节 MMLU 的值 `f40c146a3da500f13797dcfedfb2932e8a5dc88a6b43cbd423bf8fb549a688be`;三项都已有值。
 
 ## 16. 治理
 
@@ -457,3 +460,22 @@ Owner 批准第 2 项之后,`DAMAGE_MANIFEST.json: d2.selected` 改为所选数�
 | 版本 | 时间 | 提交 | 节 | 改动 | 原因 |
 |---|---|---|---|---|---|
 | v1(草案) | 工作提交的提交时间 | 工作提交(hash 见 `SUBMISSION_NOTE.md` 之后的报告) | 全部 | 初稿(撰写任务 METRIX-E1-V1-PROTOCOL-AUTHORING-V1.0) | — |
+| v1 | 2026-11-28 12:13:25(收到裁决与批准的时间) | 冻结提交(完整 hash 见 `PROTOCOL_FROZEN`) | 第 0 节“Pilot 解释的适用” | A1(V2-1):B24 由“照原文适用”改为“只适用其中 T1–T3 的原因词与 T3 的读法；最终状态按本协议第 9.7 节”。该段不是逐行的表,B24 原在“照原文适用”的列表中:从列表中移出,另写一句 | Review Gate 裁决 2026-11-28:B24 的最终状态规则与第 9.7 节冲突 |
+| v1 | 2026-11-28 12:13:25(收到裁决与批准的时间) | 冻结提交(完整 hash 见 `PROTOCOL_FROZEN`) | 第 4 节 Z0 的理由、第 7.5 节 G-D1;同步:`DOSE_SPACE.json: controls.Z0.expectation`、`DAMAGE_MANIFEST.json: gate_d.G-D1.rule`、`DATA_MANIFEST.json: reported_values`(Gate D 一项) | A2(V2-3):G-D1 的参数一致性由“`state_sha256` 等于 N 的”改为“每个参数张量与 N 的对应张量数值相等(`torch.equal`;−0.0 与 +0.0 视为相等)”,`state_sha256` 是否相同只报告;第 4 节 Z0 理由同步 | Review Gate 裁决 2026-11-28:learning rate 为 0 时 AdamW 可能把 −0.0 的参数变为 +0.0,数值相等而原始字节不同,按 `state_sha256` 判定会误判 G-D1 |
+| v1 | 2026-11-28 12:13:25(收到裁决与批准的时间) | 冻结提交(完整 hash 见 `PROTOCOL_FROZEN`) | 第 7.5 节“Gate D 通过”一句(及其后一句的“任一不满足”与原因括注)、第 9.4 节结论词汇的适用范围、第 9.6 节词汇表;同步:`DAMAGE_MANIFEST.json: gate_d.pass`、`gate_d.D2_NOT_QUALIFIED`(新)、`comparison.words`,`DATA_MANIFEST.json: reported_values`(Gate D 一项加 D2 的合格状态) | A3:损伤指标按指标分别合格:Gate D 只要求 G-D1、G-D4 与 G-D2、G-D3 中关于 D1 的条件;关于 D2 的条件不满足时 D2 记为 `D2_NOT_QUALIFIED`(新增词),D2 的数值照常计算、入库并报告,Gate M 中 D2 的比较不给结论词 | Review Gate 裁决 2026-11-28:D2 的阳性对照阈值没有 Pilot 数据作依据;一把不合格的尺子不应阻止另一把已合格的尺子,主比较只用 `D1-diff` |
+| v1 | 2026-11-28 12:13:25(收到裁决与批准的时间) | 冻结提交(完整 hash 见 `PROTOCOL_FROZEN`) | 第 1 节 Non-claims;`DATA_MANIFEST.json: reported_values` | A4:Non-claims 段末尾追加一句(S、Y 的 DEV dNLL;损伤来源不区分;S、Y、F 在 d0 的 D1、D2 并列报告;CI 不含训练种子之间的变化)。核对 `reported_values`:F 在 d0 的值只隐含在“every training run: per dose point”一项中,S、Y 不是剂量曲线,没有“并列报告”的一项;因此补上一项(`results/gate0_record.json: d0_damage`) | Review Gate 裁决 2026-11-28 |
+| v1 | 2026-11-28 12:13:25(收到裁决与批准的时间) | 冻结提交(完整 hash 见 `PROTOCOL_FROZEN`) | 第 12 节 | A5(V2-2):缩减方案表之前加一句(R1–R4 只供 Owner 决定时参考,不属于冻结的协议;采用须开新的协议版本);ST11 公式不改 | Review Gate 裁决 2026-11-28 |
+| v1 | 2026-11-28 12:13:25(收到裁决与批准的时间) | 冻结提交(完整 hash 见 `PROTOCOL_FROZEN`) | 文件头、第 12 节、第 13 节 ST7 与 ST11、第 15 节;`DOSE_SPACE.json: training_contract.gpu_hours_limit`、`gpu_hours_limit_source`(新)、`st11_bound` | C1:H = 9 小时;ST7 = 9 小时;ST11 界限 = 0.875 × 9 = 7.875 小时 | Owner 批准,2026-11-28 12:13:25 UTC(`tasks/E1V1_FREEZE_OWNER_MESSAGE.md`) |
+| v1 | 2026-11-28 12:13:25(收到裁决与批准的时间) | 冻结提交(完整 hash 见 `PROTOCOL_FROZEN`) | 第 7.1、7.2、15 节;`DAMAGE_MANIFEST.json: d2`(`status`、`selected`、`alternative_not_adopted`、两个数据集的 `adoption`);`DATA_MANIFEST.json: files["d2_dev.jsonl"]`、`seeds.purposes.d2_order` | C2:D2 数据集 = MMLU(`cais/mmlu` @ `c30699e8356da336a370243923dbaf21066bb9fe`);ARC 标为“未采用的备选”,核实记录与参考哈希保留,不删除 | Owner 批准,2026-11-28 12:13:25 UTC(`tasks/E1V1_FREEZE_OWNER_MESSAGE.md`) |
+| v1 | 2026-11-28 12:13:25(收到裁决与批准的时间) | 冻结提交(完整 hash 见 `PROTOCOL_FROZEN`) | 第 15 节;`DOSE_SPACE.json`(原 `pending` 一项改为 `owner_decisions`) | C3:剂量点与配置的数量 = 主方案(每种方法 1 个配置、10 个剂量点、3 个种子) | Owner 批准,2026-11-28 12:13:25 UTC(`tasks/E1V1_FREEZE_OWNER_MESSAGE.md`) |
+| v1 | 2026-11-28 12:13:25(收到裁决与批准的时间) | 冻结提交(完整 hash 见 `PROTOCOL_FROZEN`) | 文件头(标题、状态、待决字段);第 0 节种子、第 4 节表头、第 6.3、7.2、7.5、11 节标题中的 PROPOSED;四个 JSON 的 `version`、`status`、`frozen` | C4 与 D1:全部 PROPOSED 改为冻结值;状态 AWAITING_REVIEW_GATE → PROTOCOL_FROZEN;标题去掉“(草案)”;JSON `version` v1-draft → v1、`status` → PROTOCOL_FROZEN、`frozen`(原为 null)写入批准记录;`reports/authoring/build_manifests.py` 同步,重新生成的四个 JSON 与入库的逐字节相同(`reports/freeze/rebuild_check.txt`) | Owner 批准,2026-11-28 12:13:25 UTC(`tasks/E1V1_FREEZE_OWNER_MESSAGE.md`);冻结的条件:A、C 完成且冻结提交的审查无 BLOCKER(C4) |
+
+**Review Gate 的确认(A6;Review Gate 裁决 2026-11-28;不改正文,只记于此)**
+
+- V2-4:阴性对照 Z0 的种子波动按构造为 0、训练种子波动由「三个种子同向」处理，按现状接受。
+- V2-22:非单调曲线以第 6.4 节的形式规则为准。
+- V2-24:协议可以引用已入库的审查输出作为依据。
+- V1-18 与 SUBMISSION_NOTE 第 4 节第 1 项:整行 json.loads 只取 domain、split 两个字段并计数，按 Pilot 的执行解释（2026-11-24）不属于读取 TEST，不记为偏差；此后一律只匹配行首字节。
+- V1-22:撰写阶段 subagent 的路径对应按现状接受；两个 agent 定义的更新留给 Implementation Task Order。
+- SUBMISSION_NOTE 第 4 节第 5、6、7 项与第 5 节:主比较用 `D1-diff`（books、c4、wikitext 三个领域）接受；每种方法 1 个配置接受；HYPOTHESIS_FAIL 不使用接受；D2 对选项字母打分接受；G-D2 上界与种子波动的处理接受。第 7.1 节“请 Review Gate 确认这一解释”与第 7.4 节“是否把主比较改为只用 books 与 wikitext,请 Review Gate 决定”两处请求由本条答复,正文按第 B 部分不改。
+- PE1、PE7、PE10(Pilot 勘误的登记项):按现状接受，不再修改 Pilot 分支。

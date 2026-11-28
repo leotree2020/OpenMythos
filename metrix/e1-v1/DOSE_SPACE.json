@@ -1,8 +1,15 @@
 {
   "protocol": "METRIX-E1-V1",
-  "version": "v1-draft",
-  "status": "AWAITING_REVIEW_GATE",
-  "frozen": null,
+  "version": "v1",
+  "status": "PROTOCOL_FROZEN",
+  "frozen": {
+    "approved_by": "Owner",
+    "approval_utc": "2026-11-28T12:13:25Z",
+    "approval_record": "metrix/e1-v1/tasks/E1V1_FREEZE_OWNER_MESSAGE.md (C1-C4)",
+    "review_gate_ruling": "2026-11-28, items A1-A6 of the same record (protocol section 17)",
+    "condition": "A and C done and no BLOCKER in the review of the freeze commit (C4)",
+    "freeze_record": "metrix/e1-v1/PROTOCOL_FROZEN (full hash of the freeze commit; sha256 of the protocol and the four JSON files at that commit)"
+  },
   "origin": {
     "repository": "leotree2020/OpenMythos",
     "start_branch": "metrix-e1-pilot-protocol-v1",
@@ -65,7 +72,7 @@
         202,
         303
       ],
-      "expectation": "parameters bit-identical to N: state_sha256(Z0) == state_sha256(N)"
+      "expectation": "every reloaded parameter tensor numerically equal to N's corresponding tensor (torch.equal; -0.0 and +0.0 count as equal); whether state_sha256(Z0) equals state_sha256(N) is reported only"
     },
     "P+": {
       "purpose": "positive control (Gate D, G-D3, G-D4)",
@@ -183,8 +190,9 @@
       "count": 1,
       "device_name_rule": "Pilot section 7 (ST9)"
     },
-    "gpu_hours_limit": "PENDING_OWNER (protocol section 15 item 1; proposal 9 hours)",
-    "st11_bound": "0.875 * gpu_hours_limit; estimate E by the formula of protocol section 12 (replaces interpretation B17)"
+    "gpu_hours_limit": 9,
+    "gpu_hours_limit_source": "Owner approval 2026-11-28 12:13:25 UTC (metrix/e1-v1/tasks/E1V1_FREEZE_OWNER_MESSAGE.md), C1; ST7 = 9 hours (protocol sections 12, 13, 15 item 1)",
+    "st11_bound": "0.875 * gpu_hours_limit = 7.875 hours; estimate E by the formula of protocol section 12 (replaces interpretation B17)"
   },
   "compute_matching": {
     "same": [
@@ -208,7 +216,7 @@
     "dev_evaluations": 107,
     "test_evaluations": "N, F@d0 x3, S x3, Y x3 and the bracket checkpoints of the selection freeze record"
   },
-  "pending": {
-    "dose_points_and_configs": "protocol section 15 item 3: reduce per section 12 R1-R4 if the estimate exceeds what the Owner accepts"
+  "owner_decisions": {
+    "dose_points_and_configs": "main plan: 1 configuration per method, 10 dose points, 3 seeds (Owner approval 2026-11-28 12:13:25 UTC (metrix/e1-v1/tasks/E1V1_FREEZE_OWNER_MESSAGE.md), C3; protocol section 15 item 3); the reduction plans R1-R4 of protocol section 12 are for reference only, not part of the frozen protocol; adopting one requires a new protocol version"
   }
 }

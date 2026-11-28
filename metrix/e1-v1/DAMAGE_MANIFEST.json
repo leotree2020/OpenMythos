@@ -1,8 +1,15 @@
 {
   "protocol": "METRIX-E1-V1",
-  "version": "v1-draft",
-  "status": "AWAITING_REVIEW_GATE",
-  "frozen": null,
+  "version": "v1",
+  "status": "PROTOCOL_FROZEN",
+  "frozen": {
+    "approved_by": "Owner",
+    "approval_utc": "2026-11-28T12:13:25Z",
+    "approval_record": "metrix/e1-v1/tasks/E1V1_FREEZE_OWNER_MESSAGE.md (C1-C4)",
+    "review_gate_ruling": "2026-11-28, items A1-A6 of the same record (protocol section 17)",
+    "condition": "A and C done and no BLOCKER in the review of the freeze commit (C4)",
+    "freeze_record": "metrix/e1-v1/PROTOCOL_FROZEN (full hash of the freeze commit; sha256 of the protocol and the four JSON files at that commit)"
+  },
   "origin": {
     "repository": "leotree2020/OpenMythos",
     "start_branch": "metrix-e1-pilot-protocol-v1",
@@ -54,10 +61,9 @@
     "reading_rule": "before section 10 step 10: whole-file sha256 allowed; test rows are only matched on the row-prefix bytes (the regex of protocol section 0) and counted, never decoded or JSON-parsed"
   },
   "d2": {
-    "status": "PENDING_OWNER (protocol section 15 item 2)",
-    "selected": null,
-    "preferred": "mmlu",
-    "alternative": "arc",
+    "status": "FROZEN: mmlu (Owner approval 2026-11-28 12:13:25 UTC (metrix/e1-v1/tasks/E1V1_FREEZE_OWNER_MESSAGE.md), C2; protocol section 15 item 2)",
+    "selected": "mmlu",
+    "alternative_not_adopted": "arc",
     "metric": "c_theta(i) = 1[s(i, correct letter) > max over other letters] (ties wrong); Acc_D2 = mean; damage e_theta(i) = c_N(i) - c_theta(i), D2 = mean e = -dAcc",
     "prompt": "I + '\\n\\n' + question.strip() + '\\n' + 'A. ' + c0 + '\\n' + 'B. ' + c1 + '\\n' + 'C. ' + c2 + '\\n' + 'D. ' + c3; I = 'Answer the following multiple choice question with the letter of the correct option.'; ci = str(option i).strip(), dataset order",
     "scoring": "chat(p) + 'The answer is' + ' ' + letter, letter in A, B, C, D; chat as for qa; ' A', ' B', ' C', ' D' are single tokens 362, 425, 356, 422; only that token is scored (log-probability of the next token after the context); protocol sections 0 and 7.1",
@@ -70,6 +76,7 @@
     "unrelated_to_facts": "the V1 entities and answers are randomly generated fictional strings; D2 items are existing real-world questions; L8 excludes any item containing a V1 string",
     "datasets": {
       "mmlu": {
+        "adoption": "selected (C2)",
         "repo": "cais/mmlu",
         "revision": "c30699e8356da336a370243923dbaf21066bb9fe",
         "license": "mit",
@@ -97,6 +104,7 @@
         }
       },
       "arc": {
+        "adoption": "not adopted alternative (C2): verification record kept, not used in E1-V1",
         "repo": "allenai/ai2_arc",
         "revision": "210d026faf9955653af8916fad021475a3f00453",
         "license": "cc-by-sa-4.0",
@@ -171,7 +179,7 @@
   "gate_d": {
     "G-D1": {
       "control": "Z0",
-      "rule": "per seed: reloaded state_sha256 == N's; per-unit differences to N: candidate scores <= 1e-4, D1 window NLL <= 1e-5, D2 letter scores <= 1e-4; predictions identical except near-ties (top-2 gap <= 1e-4 in either evaluation, Pilot G0.8)"
+      "rule": "per seed: every reloaded parameter tensor numerically equal to N's corresponding tensor (torch.equal; -0.0 and +0.0 count as equal); whether state_sha256 equals N's is reported only; per-unit differences to N: candidate scores <= 1e-4, D1 window NLL <= 1e-5, D2 letter scores <= 1e-4; predictions identical except near-ties (top-2 gap <= 1e-4 in either evaluation, Pilot G0.8)"
     },
     "G-D2": {
       "rule": "sigma_N(D1-all), sigma_N(D1-diff), sigma_N(D1-same), sigma_N(D2) finite and > 0; m(D1-all) <= 0.10, m(D1-diff) <= 0.10, m(D1-same) <= 0.20 (m(D2) <= 2 * sqrt(0.25 / 800) by construction, no bound); P+ seed SD of D1-diff and D2 reported",
@@ -196,7 +204,8 @@
     "G-D5": {
       "rule": "report only: P+ (D1-diff, D2) per seed; after the DEV curves, Spearman correlation of D1-diff and D2 over all trained-model DEV evaluations"
     },
-    "pass": "G-D1 and G-D2 and G-D3 and G-D4; otherwise ST14"
+    "pass": "G-D1 and G-D4 hold, and the D1 conditions of G-D2 and G-D3 hold (sigma_N of D1-all, D1-diff, D1-same finite and > 0; the three margin upper bounds; the P+ D1-diff condition); otherwise ST14. If a D2 condition of G-D2 or G-D3 fails (sigma_N(D2) finite and > 0; the P+ D2 condition), Gate D can still pass and D2 is D2_NOT_QUALIFIED (protocol 7.5)",
+    "D2_NOT_QUALIFIED": "Gate D passed but a D2 condition of G-D2 or G-D3 failed: all D2 values are computed, committed and reported as usual; D2 comparisons in Gate M get no conclusion word and no interpretation; not a final status (protocol 7.5, 9.6)"
   },
   "margin": {
     "formula": "m(M) = 2 * sigma_N(M), M in D1-all, D1-diff, D1-same, D2",
@@ -208,6 +217,6 @@
   "comparison": {
     "primary": "TEST, t = 0.80, D1-diff, Delta(L-F) and Delta(A-F); Bonferroni over the 2: 97.5% CI",
     "secondary": "all other points, metrics, DEV comparisons, per-domain metrics D1-books, D1-c4, D1-wikitext and per-method damages: 95% CI; words only for method comparisons on D1-all, D1-diff, D1-same, D2, marked secondary",
-    "words": "for a comparison on metric M with m = m(M): superior: hi < 0 and all 3 seed estimates < 0; non-inferior: not superior, hi < m and all 3 seed estimates < m; inferior: lo > m and all 3 seed estimates > m; inconclusive otherwise; per-method damages (X vs N) and per-domain metrics get no word"
+    "words": "for a comparison on metric M with m = m(M): superior: hi < 0 and all 3 seed estimates < 0; non-inferior: not superior, hi < m and all 3 seed estimates < m; inferior: lo > m and all 3 seed estimates > m; inconclusive otherwise; per-method damages (X vs N) and per-domain metrics get no word; when D2 is D2_NOT_QUALIFIED, D2 method comparisons get no word (protocol 7.5, 9.4)"
   }
 }
