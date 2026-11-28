@@ -1,0 +1,91 @@
+# PROTOCOL_FROZEN — METRIX-E1-V1
+
+当前有效版本:v1
+
+本文件中的路径都相对仓库根目录。
+
+Owner 批准,2026-11-28 12:13:25 UTC(收到 Owner 消息的时间;原文与条件见 `metrix/e1-v1/tasks/E1V1_FREEZE_OWNER_MESSAGE.md`,C1–C4)。冻结的条件(C4):A、C 完成且冻结提交的审查无 BLOCKER。对冻结提交的审查(D2)各 1 轮,都没有 BLOCKER(见“依据”),所以没有修复提交,下面的冻结提交即 C4 所说的冻结提交。
+
+## 冻结提交
+
+| 项 | 值 |
+|---|---|
+| 冻结提交(完整 hash) | `9a19e70e1bc16130368caa00bd1bf6fbc126bc8c` |
+| 提交时间(author / committer) | 2026-11-28 12:22:27 UTC / 2026-11-28 12:22:27 UTC |
+| 父提交 | `78e79e4390aa9e465127ca52b57928714abdb633`(证据提交:Owner 消息记录) |
+| 提交说明首行 | metrix: E1-V1 protocol freeze (Review Gate ruling 2026-11-28 A1-A6; Owner approval 2026-11-28 12:13:25 UTC C1-C4) |
+| 标签 | `metrix-e1-v1-frozen`,指向冻结提交(由 Owner 推送;Executor 不推送标签) |
+| 仓库 / 分支 | `leotree2020/OpenMythos` / `metrix-e1-v1-protocol-v1` |
+| 内容 | Review Gate 裁决 2026-11-28 的 A1–A5 与 A6 的记录;Owner 决定 C1(H = 9 小时)、C2(D2 = MMLU)、C3(主方案)、C4(冻结);全部 PROPOSED 改为冻结值;协议状态 PROTOCOL_FROZEN;四个 JSON 的版本与状态;`build_manifests.py` 同步(协议第 17 节) |
+
+## 冻结提交下的协议文件与四个 JSON(文件字节的 SHA-256)
+
+格式与 `sha256sum` 相同。以 `git cat-file blob 9a19e70e1bc16130368caa00bd1bf6fbc126bc8c:<路径> | sha256sum` 为准(检出时若做换行转换,工作区字节会不同)。执行时按协议第 13 节 ST12 (2) 逐字节比对。
+
+```
+df710d1c7ccf3acba4b2ae25df0a0c5f8a07d3cd8d1c02f3de65eae3c40a504e  metrix/e1-v1/METRIX_E1V1_PROTOCOL.md
+2a35d40c7192b4f8df2dfa765714340009070d9b3e4b750cee994ae78c3e6767  metrix/e1-v1/DATA_MANIFEST.json
+667943a503204d689dc7baef48583652b6947ad62694825995ac6a0d9d64a40b  metrix/e1-v1/SPLIT_MANIFEST.json
+44923d80614d780a010cd9742689e2fccdc949b4144b221a8de6469e898a7bc2  metrix/e1-v1/DOSE_SPACE.json
+5a05e5e7ffef7829328f2edbed2c15d4a52f2d99c4052cf30ef57a4a672588cd  metrix/e1-v1/DAMAGE_MANIFEST.json
+```
+
+## 全部数据与输入文件的哈希
+
+每个值都取自冻结提交的 JSON(右列为字段路径),与 Review Gate 审查时的版本 `bc03348ad8b2390ac3df452631d63b8bfe66ad67` 相同。文件 SHA-256 是文件原样字节的哈希;规范化 SHA-256 按协议第 0 节“哈希”的规则。执行第 1 步生成的文件与读取的输入必须等于这些值,否则 ST12。
+
+### 输入文件
+
+| 文件 | 值 | 类型 | 出处 |
+|---|---|---|---|
+| Qwen/Qwen3-1.7B @ `70d244cc86ccca08cf5af4e1e306ecf908b1ad5e` `tokenizer.json` | `aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4` | 文件 SHA-256 | `DATA_MANIFEST.json: model.tokenizer.files_sha256.tokenizer.json` |
+| Qwen/Qwen3-1.7B @ `70d244cc86ccca08cf5af4e1e306ecf908b1ad5e` `tokenizer_config.json` | `d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101` | 文件 SHA-256 | `DATA_MANIFEST.json: model.tokenizer.files_sha256.tokenizer_config.json` |
+| Qwen/Qwen3-1.7B @ `70d244cc86ccca08cf5af4e1e306ecf908b1ad5e` `vocab.json` | `ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910` | 文件 SHA-256 | `DATA_MANIFEST.json: model.tokenizer.files_sha256.vocab.json` |
+| Qwen/Qwen3-1.7B @ `70d244cc86ccca08cf5af4e1e306ecf908b1ad5e` `merges.txt` | `8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5` | 文件 SHA-256 | `DATA_MANIFEST.json: model.tokenizer.files_sha256.merges.txt` |
+| 锚文本来源 parquet `SandyResearch/fineweb-edu-shuffled@4d1138c0e4d51d98813997ce3560e05a32bf91de, data/sample-100BT/train/shard_00000.parquet` | `6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22` | 文件 SHA-256 | `DATA_MANIFEST.json: anchor_text.source` |
+| D1 来源 `research/mini_mythos/stage1/results/r1/eval_sets.jsonl` | `8816fe5a39d8b89e8c4203bf7d660e798faa471d2b72b5ce43c411cf5925a155` | 文件 SHA-256 | `DAMAGE_MANIFEST.json: d1.source_file_sha256` |
+| parcae 分词器 `tokenizer.json`(SandyResearch/parcae-tokenizer@6247b5d0592876b73660f34c2dd16c9db9e9045c, special tokens skipped) | `e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77` | 文件 SHA-256 | `DAMAGE_MANIFEST.json: d1.decode_tokenizer_json_sha256` |
+| MMLU `cais/mmlu` @ `c30699e8356da336a370243923dbaf21066bb9fe` `all/validation-00000-of-00001.parquet`(D2 DEV 来源) | `66cdf0b090ccb657d18d13cd81e31fdc55c3467da9642ffb178653268a97c8ef` | 文件 SHA-256 | `DAMAGE_MANIFEST.json: d2.datasets.mmlu.dev_source.sha256` |
+| MMLU `all/test-00000-of-00001.parquet`(D2 TEST 来源;第 10 节第 10 步之前只许对整个文件求哈希、读文件尾行数) | `74a41822ce7d3def56e1682f958469c04642a5336a5ce912fa375fdb90fb25d7` | 文件 SHA-256 | `DAMAGE_MANIFEST.json: d2.datasets.mmlu.test_source.sha256` |
+| ARC(未采用的备选)`allenai/ai2_arc` @ `210d026faf9955653af8916fad021475a3f00453` `ARC-Challenge/validation-00000-of-00001.parquet` | `395a5c88d1580d69855fbaee9450270578df1ad5af6259771cd0a42c20e99f05` | 文件 SHA-256(只作记录) | `DAMAGE_MANIFEST.json: d2.datasets.arc.dev_source.0.sha256` |
+| ARC(未采用的备选)`allenai/ai2_arc` @ `210d026faf9955653af8916fad021475a3f00453` `ARC-Easy/validation-00000-of-00001.parquet` | `ed890ff1e4cef7a7140d3a30dcea3ed2c9d467c6458f447ad9ef0176d8dcbb74` | 文件 SHA-256(只作记录) | `DAMAGE_MANIFEST.json: d2.datasets.arc.dev_source.1.sha256` |
+| ARC(未采用的备选)`allenai/ai2_arc` @ `210d026faf9955653af8916fad021475a3f00453` `ARC-Challenge/test-00000-of-00001.parquet` | `62f03257e737aed263f55c6abf87c7bb0028a44a6bdd2a26eb1279eb42c1d1e9` | 文件 SHA-256(只作记录) | `DAMAGE_MANIFEST.json: d2.datasets.arc.test_source.0.sha256` |
+| ARC(未采用的备选)`allenai/ai2_arc` @ `210d026faf9955653af8916fad021475a3f00453` `ARC-Easy/test-00000-of-00001.parquet` | `4160597d618ae851c7eb04e281574f3f654776216ac6b6641588d64527b47177` | 文件 SHA-256(只作记录) | `DAMAGE_MANIFEST.json: d2.datasets.arc.test_source.1.sha256` |
+
+模型与分词器的 revision:`Qwen/Qwen3-1.7B` @ `70d244cc86ccca08cf5af4e1e306ecf908b1ad5e`(`DATA_MANIFEST.json: model.revision`)。
+
+### 生成的非 TEST 数据文件
+
+| 文件 | 值 | 类型 | 出处 |
+|---|---|---|---|
+| `facts.jsonl` | `4eeee6d198dede289886b9cd7941f362f3b9fba611aea551223289781de307a9` | 规范化 SHA-256(参考哈希;ST12) | `DATA_MANIFEST.json: files["facts.jsonl"].reference_canonical_sha256` |
+| `train_F.jsonl` | `fb1d80064c4c779609ef40a29151bbf1fd1f5f1e1c768c6c5360412f38819511` | 规范化 SHA-256(参考哈希;ST12) | `DATA_MANIFEST.json: files["train_F.jsonl"].reference_canonical_sha256` |
+| `train_S.jsonl` | `7ac254f6e87e017ecc6ce9945006cda1c5310c7358d69da88e5c81cfdc907bd6` | 规范化 SHA-256(参考哈希;ST12) | `DATA_MANIFEST.json: files["train_S.jsonl"].reference_canonical_sha256` |
+| `train_Y.jsonl` | `82314e6b4a5917d0d4e62e3f34f4ab80e330c8dc5b5c7395e1183809c4daf96b` | 规范化 SHA-256(参考哈希;ST12) | `DATA_MANIFEST.json: files["train_Y.jsonl"].reference_canonical_sha256` |
+| `dev_qa.jsonl` | `39ea5ea1ff730cbc73d12542e10173baee83759aa4477cc930574ce93ce5c7ce` | 规范化 SHA-256(参考哈希;ST12) | `DATA_MANIFEST.json: files["dev_qa.jsonl"].reference_canonical_sha256` |
+| `candidates.json` | `79600769eef1876b54bc3d174874880e8e05bab11290f97360559f99324235c3` | 规范化 SHA-256(参考哈希;ST12) | `DATA_MANIFEST.json: files["candidates.json"].reference_canonical_sha256` |
+| `anchor_text.jsonl` | `2089e656819d1fe0f6ececcc26e5cade09ee80a92c50e7c8f607fa4e0ef46da5` | 规范化 SHA-256(参考哈希;ST12) | `DATA_MANIFEST.json: files["anchor_text.jsonl"].reference_canonical_sha256` |
+| `general_dev.jsonl` | `e8350160464963e684e0c58826d53250dec4de366a716d3111aa8ec5089ce281` | 规范化 SHA-256(参考哈希;ST12) | `DATA_MANIFEST.json: files["general_dev.jsonl"].reference_canonical_sha256` |
+| `d2_dev.jsonl` | `f40c146a3da500f13797dcfedfb2932e8a5dc88a6b43cbd423bf8fb549a688be` | 规范化 SHA-256(参考哈希;ST12) | `DATA_MANIFEST.json: files["d2_dev.jsonl"].reference_canonical_sha256` |
+| `d2_dev.jsonl`(ARC,未采用的备选) | `1ea77c8adeb84b6d5f7a3aa699ab02951e4f43bd27ba14f36c3a32287e04ac32` | 规范化 SHA-256(只作记录) | `DATA_MANIFEST.json: files["d2_dev.jsonl"].not_adopted_alternative.arc.reference_canonical_sha256` |
+
+### 其它内容哈希
+
+| 内容 | 值 | 类型 | 出处 |
+|---|---|---|---|
+| V1 的 320 条 fact(按协议第 2.2 节的比对方法) | `0fc5ad819500e8a9f56771405af67d0fa71bafabba25bf8f4c3e5b6d684e01f4` | 规范化 SHA-256 | `DATA_MANIFEST.json: name_generation.expected_facts_canonical_sha256` |
+| Pilot 的 160 条 fact(DATA_SEED 20261110 重新生成;预置集合) | `406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97` | 规范化 SHA-256 | `DATA_MANIFEST.json: name_generation.preseed.pilot_facts_canonical_sha256` |
+| 锚文本 512 篇解码文本 | `8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408` | 规范化 SHA-256 | `DATA_MANIFEST.json: anchor_text.decoded_texts_canonical_sha256` |
+| 32 个模板的集合 | `2b52411326c218e9c51d947b2f4e0d77b0cdd5d6237f9ce25b57a872c48ce28f` | 规范化 SHA-256 | `SPLIT_MANIFEST.json: template_freeze.template_set_sha256` |
+
+32 个模板各自的 `normalized_sha256` 见 `SPLIT_MANIFEST.json: templates`(与 Pilot 相同)。`SPLIT_MANIFEST.json: candidates.candidate_mapping_sha256` 与上表 `candidates.json` 的值相同。
+
+## TEST
+
+本文件不授权生成或评测 TEST。TEST 文件(`test_qa.jsonl`、`general_test.jsonl`、`d2_test.jsonl`)没有参考哈希;只在协议第 10 节第 10 步、选择冻结记录提交并推送且 Owner 对 TEST 生成与评测的批准入库之后生成,其 sha256 写入 `results/st10_record.json` 与 TEST 标记。
+
+## 依据
+
+- 指令:`metrix/e1-v1/tasks/E1V1_FREEZE_OWNER_MESSAGE.md` D1–D3。
+- 审查(D2,对冻结提交,各 1 轮):`metrix/e1-v1/reviews/9a19e70e1bc16130368caa00bd1bf6fbc126bc8c/code-reviewer_round1.md`(PASS,无 BLOCKER;1 个 MAJOR、13 个 MINOR,按指令只登记)、`metrix/e1-v1/reviews/9a19e70e1bc16130368caa00bd1bf6fbc126bc8c/data-auditor_round1.md`(PASS,无 BLOCKER;按 `metrix/CLAUDE.md` 第 10 节仍为“待验证”,仅作参考;脚本 `metrix/e1-v1/audit/f1_*.py`,完整 stdout `metrix/e1-v1/audit/stdout/*_freeze.txt`)。审查原文、转录与 audit 输出随本文件之后的报告提交入库;报告 `metrix/e1-v1/reports/FREEZE_REPORT.md`。
+- Executor 原始输出:`metrix/e1-v1/reports/freeze/rebuild_check.txt`(冻结提交内;对暂存树 69ff2c43 重新生成的四个 JSON 与入库的逐字节相同;协议与四个 JSON 中全部 40 / 64 位十六进制串与 bc03348a 相同);`metrix/e1-v1/reports/freeze/rebuild_check_freeze_commit.txt`(同一检查直接对冻结提交运行,并显示暂存树与冻结提交中协议、四个 JSON 与 `build_manifests.py` 的 blob 相同;随报告提交入库)。本文件由 `metrix/e1-v1/reports/freeze/make_protocol_frozen.py` 从 git 对象生成(随报告提交入库)。
