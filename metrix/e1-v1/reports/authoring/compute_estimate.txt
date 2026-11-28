@@ -1,0 +1,46 @@
+# host vm; 2026-11-28T09:15:27Z
+$ python3 metrix/e1-v1/reports/authoring/compute_estimate.py
+MEASURED (E1-PILOT records)
+  step seconds F3 0.2609 (training_runs/F-F3-*.json accounting.wall_seconds / steps_run, 3 runs)
+  step seconds L6 0.2860 (training_runs/L-L6-*.json, 3 runs)
+  step seconds A5 0.4890 (training_runs/A-A5-*.json, 3 runs; includes the anchor KL forward/backward)
+  checkpoint save + hash 21.80 s, reload 8.16 s, state hash 15.24 s (training_runs/F-F3-*.json checkpoint.seconds)
+  DEV evaluation with EM 25.59 s (step2_record.json preflight.dev_evaluation_seconds)
+  DEV evaluation without EM 21.47 s (step7_record.json step_info.seconds / 3 - reload; G0.8 re-evaluations)
+  base model load 19.42 s (step3_record.json step_info.seconds - DEV evaluation with EM)
+DERIVED
+  Pilot DEV scoring tokens ~ 70549 (1280 QA x 30.481 + 480 CB x 13.842 + 100 windows x 248.893)
+  float32 scoring throughput ~ 3286 tokens/s; greedy EM ~ 0.0129 s per question
+  V1 DEV workload tokens: QA 78032, closed-book 13288, D1 99557, D2 107377 (x 1.3 padding)
+PLAN MAIN: 10 dose points up to 32 passes, damage sets x 1.00, TEST brackets/run 5 (points 3)
+  one DEV evaluation 100.6 s; one full TEST evaluation 126.6 s
+  runs: curves 9 (F, L, A x 3 seeds), S 3, Y 3, Z0 3, P+ 3 = 21 training runs; DEV evaluations 107
+  hours: Gate D 0.40, curves 3.60, S/Y 0.40, G0.8 0.09, TEST 2.11, preflight 0.06 -> GPU 6.66; x 1.2 = 7.99
+  rental hours ~ GPU x 1.2 + 2.0 (setup, CPU data steps, approval waits) = 9.99; cost at 2.14 USD/h: GPU part 17.10 USD, rental 21.38 USD
+  checkpoints on disk ~310 GB expected, 516 GB worst case (all dose points of F and A saved)
+PLAN R1 (7 dose points): 7 dose points up to 32 passes, damage sets x 1.00, TEST brackets/run 5 (points 3)
+  one DEV evaluation 100.6 s; one full TEST evaluation 126.6 s
+  runs: curves 9 (F, L, A x 3 seeds), S 3, Y 3, Z0 3, P+ 3 = 21 training runs; DEV evaluations 80
+  hours: Gate D 0.40, curves 2.84, S/Y 0.40, G0.8 0.09, TEST 2.11, preflight 0.06 -> GPU 5.90; x 1.2 = 7.08
+  rental hours ~ GPU x 1.2 + 2.0 (setup, CPU data steps, approval waits) = 9.08; cost at 2.14 USD/h: GPU part 15.16 USD, rental 19.44 USD
+  checkpoints on disk ~310 GB expected, 392 GB worst case (all dose points of F and A saved)
+PLAN R2 (D1 200 + D2 400 per split): 10 dose points up to 32 passes, damage sets x 0.50, TEST brackets/run 5 (points 3)
+  one DEV evaluation 64.2 s; one full TEST evaluation 90.2 s
+  runs: curves 9 (F, L, A x 3 seeds), S 3, Y 3, Z0 3, P+ 3 = 21 training runs; DEV evaluations 107
+  hours: Gate D 0.32, curves 2.69, S/Y 0.34, G0.8 0.06, TEST 1.64, preflight 0.05 -> GPU 5.10; x 1.2 = 6.12
+  rental hours ~ GPU x 1.2 + 2.0 (setup, CPU data steps, approval waits) = 8.12; cost at 2.14 USD/h: GPU part 13.10 USD, rental 17.38 USD
+  checkpoints on disk ~310 GB expected, 516 GB worst case (all dose points of F and A saved)
+PLAN R3 (TEST only at Acq 0.80): 10 dose points up to 32 passes, damage sets x 1.00, TEST brackets/run 2 (points 1)
+  one DEV evaluation 100.6 s; one full TEST evaluation 126.6 s
+  runs: curves 9 (F, L, A x 3 seeds), S 3, Y 3, Z0 3, P+ 3 = 21 training runs; DEV evaluations 107
+  hours: Gate D 0.40, curves 3.60, S/Y 0.40, G0.8 0.09, TEST 0.98, preflight 0.06 -> GPU 5.53; x 1.2 = 6.64
+  rental hours ~ GPU x 1.2 + 2.0 (setup, CPU data steps, approval waits) = 8.64; cost at 2.14 USD/h: GPU part 14.21 USD, rental 18.49 USD
+  checkpoints on disk ~310 GB expected, 516 GB worst case (all dose points of F and A saved)
+PLAN R4 (R1 + R2 + R3): 7 dose points up to 32 passes, damage sets x 0.50, TEST brackets/run 2 (points 1)
+  one DEV evaluation 64.2 s; one full TEST evaluation 90.2 s
+  runs: curves 9 (F, L, A x 3 seeds), S 3, Y 3, Z0 3, P+ 3 = 21 training runs; DEV evaluations 80
+  hours: Gate D 0.32, curves 2.21, S/Y 0.34, G0.8 0.06, TEST 0.79, preflight 0.05 -> GPU 3.77; x 1.2 = 4.52
+  rental hours ~ GPU x 1.2 + 2.0 (setup, CPU data steps, approval waits) = 6.52; cost at 2.14 USD/h: GPU part 9.68 USD, rental 13.96 USD
+  checkpoints on disk ~310 GB expected, 392 GB worst case (all dose points of F and A saved)
+SAVINGS vs MAIN (hours, with safety factor): R1 0.91, R2 1.87, R3 1.35, R4 3.47
+exit=0

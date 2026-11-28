@@ -1,0 +1,26 @@
+# host vm; 2026-11-28T09:15:27Z; two independent runs of v1_data_check.py (same command, --out <S>/v1data_run1 and <S>/v1data_run2)
+$ diff <(grep -v PyTorch run1.txt) <(grep -v PyTorch run2.txt)
+exit=0 (0 = stdout identical)
+$ (cd v1data_run1 && sha256sum *); (cd v1data_run2 && sha256sum *); diff
+2089e656819d1fe0f6ececcc26e5cade09ee80a92c50e7c8f607fa4e0ef46da5  anchor_text.jsonl
+79600769eef1876b54bc3d174874880e8e05bab11290f97360559f99324235c3  candidates.json
+f40c146a3da500f13797dcfedfb2932e8a5dc88a6b43cbd423bf8fb549a688be  d2_dev.jsonl
+1ea77c8adeb84b6d5f7a3aa699ab02951e4f43bd27ba14f36c3a32287e04ac32  d2_dev_arc.jsonl
+39ea5ea1ff730cbc73d12542e10173baee83759aa4477cc930574ce93ce5c7ce  dev_qa.jsonl
+4eeee6d198dede289886b9cd7941f362f3b9fba611aea551223289781de307a9  facts.jsonl
+e8350160464963e684e0c58826d53250dec4de366a716d3111aa8ec5089ce281  general_dev.jsonl
+fb1d80064c4c779609ef40a29151bbf1fd1f5f1e1c768c6c5360412f38819511  train_F.jsonl
+7ac254f6e87e017ecc6ce9945006cda1c5310c7358d69da88e5c81cfdc907bd6  train_S.jsonl
+82314e6b4a5917d0d4e62e3f34f4ab80e330c8dc5b5c7395e1183809c4daf96b  train_Y.jsonl
+---
+2089e656819d1fe0f6ececcc26e5cade09ee80a92c50e7c8f607fa4e0ef46da5  anchor_text.jsonl
+79600769eef1876b54bc3d174874880e8e05bab11290f97360559f99324235c3  candidates.json
+f40c146a3da500f13797dcfedfb2932e8a5dc88a6b43cbd423bf8fb549a688be  d2_dev.jsonl
+1ea77c8adeb84b6d5f7a3aa699ab02951e4f43bd27ba14f36c3a32287e04ac32  d2_dev_arc.jsonl
+39ea5ea1ff730cbc73d12542e10173baee83759aa4477cc930574ce93ce5c7ce  dev_qa.jsonl
+4eeee6d198dede289886b9cd7941f362f3b9fba611aea551223289781de307a9  facts.jsonl
+e8350160464963e684e0c58826d53250dec4de366a716d3111aa8ec5089ce281  general_dev.jsonl
+fb1d80064c4c779609ef40a29151bbf1fd1f5f1e1c768c6c5360412f38819511  train_F.jsonl
+7ac254f6e87e017ecc6ce9945006cda1c5310c7358d69da88e5c81cfdc907bd6  train_S.jsonl
+82314e6b4a5917d0d4e62e3f34f4ab80e330c8dc5b5c7395e1183809c4daf96b  train_Y.jsonl
+exit=0 (0 = the 10 generated files identical)

@@ -1,0 +1,212 @@
+{
+  "protocol": "METRIX-E1-V1",
+  "version": "v1-draft",
+  "status": "AWAITING_REVIEW_GATE",
+  "frozen": null,
+  "origin": {
+    "repository": "leotree2020/OpenMythos",
+    "start_branch": "metrix-e1-pilot-protocol-v1",
+    "start_commit": "6e03468956208c422d0d41c08edaaf116166338c",
+    "authoring_branch": "metrix-e1-v1-protocol-v1",
+    "pilot_protocol": "metrix/e1-pilot/METRIX_E1_PROTOCOL.md v1.1, frozen commit 87a244db28a901f9e89282b50df76778ab5c2887"
+  },
+  "d1": {
+    "metric": "per-window d(w) = NLL_theta(w) - NLL_N(w) (Pilot section 5 general damage); D1-all = mean over 4 domains of the domain means; D1-diff = over books, c4, wikitext; D1-same = fineweb",
+    "source_file": "research/mini_mythos/stage1/results/r1/eval_sets.jsonl",
+    "source_file_sha256": "8816fe5a39d8b89e8c4203bf7d660e798faa471d2b72b5ce43c411cf5925a155",
+    "decode_with": "SandyResearch/parcae-tokenizer@6247b5d0592876b73660f34c2dd16c9db9e9045c, special tokens skipped",
+    "decode_tokenizer_json_sha256": "e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77",
+    "domains": [
+      "books",
+      "c4",
+      "fineweb",
+      "wikitext"
+    ],
+    "anchor_source_groups": {
+      "same": [
+        "fineweb"
+      ],
+      "different": [
+        "books",
+        "c4",
+        "wikitext"
+      ],
+      "basis": "the Stage 1 fineweb windows come from the held-out FineWeb-Edu validation shard of SandyResearch/fineweb-edu-shuffled, the anchor source (research/mini_mythos/stage1/README.md evaluation-set table)"
+    },
+    "window_rule": "each window has at most 256 tokens of the protocol tokenizer (the first 256); a window with fewer tokens is used at its full length; the ids fed to the model are these truncated ids themselves, not decoded and re-encoded; n_w (protocol section 5) is their number",
+    "dev": {
+      "file": "general_dev.jsonl",
+      "rule": "per domain all 100 rows with split == 'dev', file order; exclude units triggering L8, then L6",
+      "per_domain": 100,
+      "authoring": {
+        "kept": 400,
+        "excluded": 0,
+        "canonical_sha256": "e8350160464963e684e0c58826d53250dec4de366a716d3111aa8ec5089ce281",
+        "ids_per_window_mean": 248.893
+      }
+    },
+    "test": {
+      "file": "general_test.jsonl",
+      "rule": "per domain the rows with split == 'test' in file order, skipping the first 25 test rows of the domain (the E1-PILOT TEST windows); exclude units triggering L8, then L6, then windows whose ids equal those of a DEV window; take the first 100 per domain; fewer than 100 -> ST10",
+      "per_domain": 100,
+      "available_per_domain_after_skip": 175
+    },
+    "reading_rule": "test rows are matched on the row-prefix bytes only until section 10 step 10 (protocol section 0)"
+  },
+  "d2": {
+    "status": "PENDING_OWNER (protocol section 15 item 2)",
+    "selected": null,
+    "preferred": "mmlu",
+    "alternative": "arc",
+    "metric": "c_theta(i) = 1[s(i, correct letter) > max over other letters] (ties wrong); Acc_D2 = mean; damage e_theta(i) = c_N(i) - c_theta(i), D2 = mean e = -dAcc",
+    "prompt": "I + '\\n\\n' + question.strip() + '\\n' + 'A. ' + c0 + '\\n' + 'B. ' + c1 + '\\n' + 'C. ' + c2 + '\\n' + 'D. ' + c3; I = 'Answer the following multiple choice question with the letter of the correct option.'; ci = str(option i).strip(), dataset order",
+    "scoring": "chat(p) + 'The answer is' + ' ' + letter, letter in A, B, C, D; chat as for qa; ' A', ' B', ' C', ' D' are single tokens 362, 425, 356, 422; only that token is scored (log-probability of the next token after the context); protocol sections 0 and 7.1",
+    "letter_token_ids": {
+      "A": 362,
+      "B": 425,
+      "C": 356,
+      "D": 422
+    },
+    "unrelated_to_facts": "the V1 entities and answers are randomly generated fictional strings; D2 items are existing real-world questions; L8 excludes any item containing a V1 string",
+    "datasets": {
+      "mmlu": {
+        "repo": "cais/mmlu",
+        "revision": "c30699e8356da336a370243923dbaf21066bb9fe",
+        "license": "mit",
+        "research_use": "allowed (MIT)",
+        "dev_source": {
+          "file": "all/validation-00000-of-00001.parquet",
+          "sha256": "66cdf0b090ccb657d18d13cd81e31fdc55c3467da9642ffb178653268a97c8ef",
+          "rows": 1531
+        },
+        "test_source": {
+          "file": "all/test-00000-of-00001.parquet",
+          "sha256": "74a41822ce7d3def56e1682f958469c04642a5336a5ce912fa375fdb90fb25d7",
+          "rows": 14042
+        },
+        "fields": "question, subject, choices (list of 4), answer (0-3)",
+        "dev_order": "rng_rule(DATA_SEED, 'd2:mmlu:validation:order').shuffle(list(range(1531)))",
+        "test_order": "rng_rule(DATA_SEED, 'd2:mmlu:test:order').shuffle(list(range(14042)))",
+        "authoring_dev": {
+          "items": 800,
+          "excluded": 0,
+          "rows_visited": 800,
+          "canonical_sha256": "f40c146a3da500f13797dcfedfb2932e8a5dc88a6b43cbd423bf8fb549a688be",
+          "context_ids_mean": 134.221,
+          "subjects": 57
+        }
+      },
+      "arc": {
+        "repo": "allenai/ai2_arc",
+        "revision": "210d026faf9955653af8916fad021475a3f00453",
+        "license": "cc-by-sa-4.0",
+        "research_use": "allowed (CC-BY-SA-4.0: attribution, share-alike)",
+        "dev_source": [
+          {
+            "file": "ARC-Challenge/validation-00000-of-00001.parquet",
+            "sha256": "395a5c88d1580d69855fbaee9450270578df1ad5af6259771cd0a42c20e99f05",
+            "rows": 299
+          },
+          {
+            "file": "ARC-Easy/validation-00000-of-00001.parquet",
+            "sha256": "ed890ff1e4cef7a7140d3a30dcea3ed2c9d467c6458f447ad9ef0176d8dcbb74",
+            "rows": 570
+          }
+        ],
+        "test_source": [
+          {
+            "file": "ARC-Challenge/test-00000-of-00001.parquet",
+            "sha256": "62f03257e737aed263f55c6abf87c7bb0028a44a6bdd2a26eb1279eb42c1d1e9",
+            "rows": 1172
+          },
+          {
+            "file": "ARC-Easy/test-00000-of-00001.parquet",
+            "sha256": "4160597d618ae851c7eb04e281574f3f654776216ac6b6641588d64527b47177",
+            "rows": 2376
+          }
+        ],
+        "fields": "id, question, choices {text, label}, answerKey; only items with exactly 4 labels; labels in the given order map to A-D; subject field holds the item id",
+        "dev_order": "rows of Challenge validation then Easy validation (indices 0..868), rng_rule(DATA_SEED, 'd2:arc:validation:order').shuffle",
+        "test_order": "rows of Challenge test then Easy test (indices 0..3547), rng_rule(DATA_SEED, 'd2:arc:test:order').shuffle",
+        "authoring_dev": {
+          "items": 800,
+          "excluded": {
+            "not_4_choices": 6
+          },
+          "canonical_sha256": "1ea77c8adeb84b6d5f7a3aa699ab02951e4f43bd27ba14f36c3a32287e04ac32",
+          "context_ids_mean": 82.989
+        }
+      }
+    },
+    "verification": "reports/authoring/d2_dataset_metadata.txt (Hub API revision, license, LFS oids; sha256 of the downloaded files equal the oids)",
+    "dev": {
+      "file": "d2_dev.jsonl",
+      "rule": "in dev_order, exclude: not exactly 4 options or answer outside A-D; L8 hit (a V1 string as a whole word); L6 hit (shares a word 13-gram with anchor_text); take the first 800",
+      "items": 800
+    },
+    "test": {
+      "file": "d2_test.jsonl",
+      "rule": "in test_order, exclude the same and items whose prompt equals a DEV prompt; take the first 800; fewer -> ST10",
+      "items": 800
+    },
+    "reading_rule": "before section 10 step 10 only the parquet footer (row count) of a TEST source is read (protocol section 0)"
+  },
+  "leakage": {
+    "L6": "SPLIT_MANIFEST.json: leakage_checks.L6_anchor_ngram",
+    "L8": "SPLIT_MANIFEST.json: leakage_checks.L8_fictional_strings_in_damage_sets"
+  },
+  "statistics": {
+    "unit": {
+      "D1": "window",
+      "D2": "item"
+    },
+    "replicates": 10000,
+    "seed": "BOOTSTRAP_SEED = 20261130",
+    "d1_resampling": "within domains, in the order books, c4, fineweb, wikitext (only the domains of the metric); r.choices(windows, k=n_domain); statistic = mean of the domain means; both models use the same drawn windows",
+    "d2_resampling": "unstratified, r.choices(items, k=800)",
+    "percentile": "interpretation B11 (linear interpolation at (B - 1) * p / 100)",
+    "seed_average": "average the 3 seeds' values per unit, then bootstrap; per-seed bootstraps reported; seed min, max and sample SD of the point estimates reported",
+    "sigma_N": "sample SD (denominator B - 1) of the 10,000 bootstrap values of N's level statistic on the DEV set: D1 metrics: mean of domain means of NLL_N(w); D2: Acc_D2(N)"
+  },
+  "gate_d": {
+    "G-D1": {
+      "control": "Z0",
+      "rule": "per seed: reloaded state_sha256 == N's; per-unit differences to N: candidate scores <= 1e-4, D1 window NLL <= 1e-5, D2 letter scores <= 1e-4; predictions identical except near-ties (top-2 gap <= 1e-4 in either evaluation, Pilot G0.8)"
+    },
+    "G-D2": {
+      "rule": "sigma_N(D1-all), sigma_N(D1-diff), sigma_N(D1-same), sigma_N(D2) finite and > 0"
+    },
+    "G-D3": {
+      "control": "P+",
+      "D1-diff": {
+        "seed_average_min": 1.0,
+        "ci95_lower_gt": 0.0,
+        "per_seed_min": 0.5
+      },
+      "D2": {
+        "seed_average_min": 0.05,
+        "ci95_lower_gt": 0.0,
+        "per_seed_gt": 0.0
+      }
+    },
+    "G-D4": {
+      "rule": "P+ seed 101: evaluation at the end of training and after save / reload (state_sha256 equal); tolerances as G-D1"
+    },
+    "G-D5": {
+      "rule": "report only: P+ (D1-diff, D2) per seed; after the DEV curves, Spearman correlation of D1-diff and D2 over all trained-model DEV evaluations"
+    },
+    "pass": "G-D1 and G-D2 and G-D3 and G-D4; otherwise ST14"
+  },
+  "margin": {
+    "formula": "m(M) = 2 * sigma_N(M), M in D1-all, D1-diff, D1-same, D2",
+    "multiplier": 2,
+    "input_record": "metrix/e1-v1/results/gate_d_record.json (noise)",
+    "output_record": "metrix/e1-v1/results/margin_record.json (MARGIN_RECORD)",
+    "timing": "after Gate D passes; committed and pushed before any training of section 10 step 6 (ST15)"
+  },
+  "comparison": {
+    "primary": "TEST, t = 0.80, D1-diff, Delta(L-F) and Delta(A-F); Bonferroni over the 2: 97.5% CI",
+    "secondary": "all other points, metrics, DEV comparisons and per-method damages: 95% CI, words marked secondary",
+    "words": "superior: hi < 0 and all 3 seed estimates < 0; non-inferior: not superior, hi < m and all 3 seed estimates < m; inferior: lo > m and all 3 seed estimates > m; inconclusive otherwise"
+  }
+}

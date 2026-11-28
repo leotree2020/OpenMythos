@@ -1,0 +1,81 @@
+# host vm (Claude Code cloud container, CPU only, no GPU; torch not installed); 2026-11-28T09:15:27Z
+# venv: python 3.13.18, transformers 5.22.2, tokenizers 0.23.3, huggingface-hub 2.4.0, pyarrow 26.0.1 (versions of metrix/e1-pilot/requirements.lock)
+# inputs downloaded to the session scratch directory <S>/inputs (hashes printed below); generated data written to <S>/v1data_run1 (not committed)
+$ <S>/venv/bin/python -I metrix/e1-v1/reports/authoring/v1_data_check.py --qwen <S>/inputs/qwen --anchor-parquet <S>/inputs/anchor_source/data/sample-100BT/train/shard_00000.parquet --parcae-tokenizer <S>/inputs/parcae/tokenizer.json --eval-sets research/mini_mythos/stage1/results/r1/eval_sets.jsonl --pilot-split-manifest metrix/e1-pilot/SPLIT_MANIFEST.json --mmlu-validation <S>/inputs/d2/cais__mmlu/all/validation-00000-of-00001.parquet --mmlu-test <S>/inputs/d2/cais__mmlu/all/test-00000-of-00001.parquet --arc-dir <S>/inputs/d2/allenai__ai2_arc --out <S>/v1data_run1
+# <S> = /tmp/claude-0/-home-user/1e17bf44-a265-5c2d-b2f8-f9d45e7efe94/scratchpad
+[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
+python 3.13.18 | transformers 5.22.2 | tokenizers 0.23.3
+input qwen/tokenizer.json sha256 aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4
+input qwen/tokenizer_config.json sha256 d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101
+input qwen/vocab.json sha256 ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910
+input qwen/merges.txt sha256 8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5
+input anchor_parquet sha256 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22
+input parcae_tokenizer sha256 e0021e26057088d68047dbe6e77e2ba1c9fe9ae45bae3df9d67d48c82405ea77
+input eval_sets sha256 8816fe5a39d8b89e8c4203bf7d660e798faa471d2b72b5ce43c411cf5925a155
+input pilot_split_manifest sha256 184dc7b134574c9ef9ab35e0c71675dbfd276e3282b801ee3e1038d55c332c81
+input mmlu_validation sha256 66cdf0b090ccb657d18d13cd81e31fdc55c3467da9642ffb178653268a97c8ef
+input mmlu_test sha256 74a41822ce7d3def56e1682f958469c04642a5336a5ce912fa375fdb90fb25d7
+CHECK tokenizer <|endoftext|> id 151643                          ok 151643
+CHECK anchor decoded texts canonical sha256 = Pilot frozen       ok 8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408
+anchor_text.jsonl sha256 2089e656819d1fe0f6ececcc26e5cade09ee80a92c50e7c8f607fa4e0ef46da5
+CHECK Pilot facts canonical sha256 = 406c8801...                 ok 406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97
+cell capital/natural    entity_draws    81 answer_draws   188 target_pair [3, 3]
+cell capital/random     entity_draws    40 answer_draws    87 target_pair [6, 6]
+cell currency/natural   entity_draws    67 answer_draws   196 target_pair [3, 3]
+cell currency/random    entity_draws    40 answer_draws    80 target_pair [6, 6]
+cell founder/natural    entity_draws    77 answer_draws   270 target_pair [3, 3]
+cell founder/random     entity_draws    40 answer_draws    92 target_pair [5, 5]
+cell river/natural      entity_draws    83 answer_draws   229 target_pair [3, 3]
+cell river/random       entity_draws    40 answer_draws   111 target_pair [6, 6]
+V1 facts: 320 (learned 240, unread 80); canonical sha256 (JSON list, protocol 2.2) 0fc5ad819500e8a9f56771405af67d0fa71bafabba25bf8f4c3e5b6d684e01f4
+facts.jsonl sha256 4eeee6d198dede289886b9cd7941f362f3b9fba611aea551223289781de307a9
+CHECK template_set_sha256 = Pilot frozen                         ok 2b52411326c218e9c51d947b2f4e0d77b0cdd5d6237f9ce25b57a872c48ce28f
+S derangement attempts per cell {'capital/natural': 6, 'capital/random': 1, 'currency/natural': 10, 'currency/random': 2, 'founder/natural': 4, 'founder/random': 2, 'river/natural': 1, 'river/random': 1}
+CHECK DEV templates per relation = 2                             ok 
+CHECK distractor pool >= 4 for every fact                        ok min pool 9, max 29
+CHECK 4 distinct candidates per fact                             ok 
+train_F.jsonl  rows  240 sha256 (byte = canonical) fb1d80064c4c779609ef40a29151bbf1fd1f5f1e1c768c6c5360412f38819511
+train_S.jsonl  rows  240 sha256 (byte = canonical) 7ac254f6e87e017ecc6ce9945006cda1c5310c7358d69da88e5c81cfdc907bd6
+train_Y.jsonl  rows  480 sha256 (byte = canonical) 82314e6b4a5917d0d4e62e3f34f4ab80e330c8dc5b5c7395e1183809c4daf96b
+dev_qa.jsonl   rows  640 sha256 (byte = canonical) 39ea5ea1ff730cbc73d12542e10173baee83759aa4477cc930574ce93ce5c7ce
+candidates.json keys 320 sha256 (byte = canonical) 79600769eef1876b54bc3d174874880e8e05bab11290f97360559f99324235c3
+CHECK Y / F token ratio in [0.80, 1.25]                          ok F 3802 Y 4541 ratio 1.1944
+CHECK exposure matching (every learned candidate once, unread 0) ok violations 0
+CHECK scored answer ids = TRAIN statement answer ids (240 x 2 DEV) ok mismatches 0
+CHECK L1 template hashes pairwise disjoint                       ok 0
+CHECK L2 max word 4-gram Jaccard <= 0.25                         ok 0.2
+CHECK L3a unread strings in training corpora and anchor          ok 0
+CHECK L3b learned answers in anchor                              ok 0
+CHECK L4 DEV questions verbatim in training corpora              ok 0 (questions 640)
+CHECK L5 identity (fact_id overlap + duplicate strings among 640) ok 0
+CHECK L7a V1 strings equal to a Pilot string (case-insensitive)  ok 0
+CHECK L7b V1 strings in conflict (2.2 reject_if) with a Pilot string ok 0
+CHECK L7c fact_id overlap with Pilot                             ok 0
+eval_sets rows by (domain, split) from row prefixes: {('books', 'dev'): 100, ('books', 'test'): 200, ('c4', 'dev'): 100, ('c4', 'test'): 200, ('fineweb', 'dev'): 100, ('fineweb', 'test'): 200, ('wikitext', 'dev'): 100, ('wikitext', 'test'): 200}
+D1 DEV windows kept per domain {'books': 100, 'c4': 100, 'fineweb': 100, 'wikitext': 100} excluded {}
+D1 TEST available after skipping the first 25 test rows per domain: {'books': 175, 'c4': 175, 'fineweb': 175, 'wikitext': 175}
+general_dev.jsonl windows 400 sha256 e8350160464963e684e0c58826d53250dec4de366a716d3111aa8ec5089ce281
+CHECK L6 anchor vs D1 DEV word 13-grams                          ok 0 (token-id 13-grams, report only: 0)
+CHECK L8 D1 DEV windows containing a V1 string (whole word)      ok 0
+D1 DEV ids per window {'n': 400, 'sum': 99557, 'mean': 248.893, 'min': 172, 'median': 253, 'max': 256}
+CHECK ' A'..' D' are single tokens                               ok [[362], [425], [356], [422]]
+MMLU all/validation rows 1531; all/test rows (parquet footer) 14042; validation columns ['answer', 'choices', 'question', 'subject']
+D2 DEV items 800 (from 1531 validation rows in shuffled order, rows visited 800); excluded {}
+d2_dev.jsonl sha256 f40c146a3da500f13797dcfedfb2932e8a5dc88a6b43cbd423bf8fb549a688be
+D2 DEV answer letters {'A': 197, 'B': 195, 'C': 199, 'D': 209} subjects 57
+D2 DEV context ids per item (chat + 'The answer is') {'n': 800, 'sum': 107377, 'mean': 134.221, 'min': 51, 'median': 103, 'max': 781}
+CHECK L6 anchor vs D2 DEV word 13-grams                          ok 
+CHECK L8 D2 DEV items containing a V1 string                     ok 
+ARC ARC-Challenge/validation rows (parquet footer) 299 sha256 395a5c88d1580d69855fbaee9450270578df1ad5af6259771cd0a42c20e99f05
+ARC ARC-Challenge/test rows (parquet footer) 1172 sha256 62f03257e737aed263f55c6abf87c7bb0028a44a6bdd2a26eb1279eb42c1d1e9
+ARC ARC-Easy/validation rows (parquet footer) 570 sha256 ed890ff1e4cef7a7140d3a30dcea3ed2c9d467c6458f447ad9ef0176d8dcbb74
+ARC ARC-Easy/test rows (parquet footer) 2376 sha256 4160597d618ae851c7eb04e281574f3f654776216ac6b6641588d64527b47177
+ARC DEV (alternative) items 800 from 869 validation rows (Challenge then Easy, shuffled); excluded {'not_4_choices': 6}
+CHECK ARC DEV (alternative) reaches 800 items                    ok 
+d2_dev_arc.jsonl sha256 1ea77c8adeb84b6d5f7a3aa699ab02951e4f43bd27ba14f36c3a32287e04ac32
+ARC DEV context ids per item {'n': 800, 'sum': 66391, 'mean': 82.989, 'min': 50, 'median': 78, 'max': 182}
+fact DEV-QA scored sequences {'n': 2560, 'sum': 78032, 'mean': 30.481, 'min': 23, 'median': 30, 'max': 38}
+TRAIN closed-book sequences {'n': 960, 'sum': 13288, 'mean': 13.842, 'min': 8, 'median': 14, 'max': 20}
+train_F tokens per pass (with <|endoftext|>) 3802; train_Y 4541
+RESULT: PASS
+exit=0

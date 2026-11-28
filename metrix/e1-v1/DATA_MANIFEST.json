@@ -1,0 +1,462 @@
+{
+  "protocol": "METRIX-E1-V1",
+  "version": "v1-draft",
+  "status": "AWAITING_REVIEW_GATE",
+  "frozen": null,
+  "origin": {
+    "repository": "leotree2020/OpenMythos",
+    "start_branch": "metrix-e1-pilot-protocol-v1",
+    "start_commit": "6e03468956208c422d0d41c08edaaf116166338c",
+    "authoring_branch": "metrix-e1-v1-protocol-v1",
+    "pilot_protocol": "metrix/e1-pilot/METRIX_E1_PROTOCOL.md v1.1, frozen commit 87a244db28a901f9e89282b50df76778ab5c2887"
+  },
+  "model": {
+    "repo": "Qwen/Qwen3-1.7B",
+    "revision": "70d244cc86ccca08cf5af4e1e306ecf908b1ad5e",
+    "license": "Apache-2.0",
+    "tokenizer": {
+      "repo": "Qwen/Qwen3-1.7B",
+      "revision": "70d244cc86ccca08cf5af4e1e306ecf908b1ad5e",
+      "files_sha256": {
+        "tokenizer.json": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4",
+        "tokenizer_config.json": "d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101",
+        "vocab.json": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910",
+        "merges.txt": "8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5"
+      },
+      "files_note": "all tokenizer files of the pinned revision (the repository tree at this revision has no other tokenizer file); tokenizer_config.json contains the chat template; SHA-256 of the file bytes as downloaded (round 8, Review Gate round 7 ruling, item 1d)"
+    },
+    "architecture": "Qwen3ForCausalLM, 28 layers, hidden size 2048, about 1.72e9 parameters",
+    "recurrence_depth": "not applicable (no recurrent core)",
+    "precision": {
+      "weights": "float32",
+      "training": "bfloat16 autocast, float32 master weights and optimizer state",
+      "evaluation": "float32, no autocast"
+    },
+    "input_convention": {
+      "training": "raw statement text followed by <|endoftext|> (id 151643); no chat template, no system prompt",
+      "qa": "chat template of the pinned revision, one user turn, add_generation_prompt=true, enable_thinking=false (fixed, not a parameter), no system prompt",
+      "candidate_scoring": "chat(q) + 'The answer is' + ' ' + c: the assistant turn opens with the fixed prefix 'The answer is'; only the tokens of ' ' + c are scored; nothing follows the candidate; K = K_st; reference implementation metrix/e1-pilot/reports/round3/scoring_input.py",
+      "train_closed_book": "s_ST scores ' ' + c after prefix(f), the text of the TRAIN statement before the answer without the space before the answer; no special token is prepended to prefix(f) (protocol section 5)",
+      "em_generation": "greedy decoding with do_sample=False (the token of highest probability at each step); fixed, and it overrides the sampling defaults of the pinned generation_config.json (do_sample true, temperature 0.6, top_k 20, top_p 0.95); continues chat(q) + 'The answer is', the same context as candidate scoring; at most 16 new tokens; stops when <|im_end|> (151645) or <|endoftext|> (151643) is generated; the new tokens are decoded with special tokens skipped (skip_special_tokens=True), so neither stop token is in the output; EM compares norm(output) with norm(answer) (protocol section 5); before the normalization every <think>...</think> fragment of the output is deleted (from <think> to the next </think>, both included, every occurrence); <think> (151667) and </think> (151668) are not special tokens, so skip_special_tokens=True does not remove them; after the deletion the normalization first removes the leading whitespace (spaces and newlines), then takes the first line, strips, removes a leading 'the ' (case-insensitive), removes trailing . , ; : ! ? and casefolds (protocol section 5)",
+      "general_text_and_anchor": "general-damage windows and arm A anchor documents: no special token is prepended (no <|endoftext|>); the first token has no context and is not scored and gets no KL term; t starts at 2 (protocol sections 4 and 5)",
+      "d2_scoring": "chat(p) + 'The answer is' + ' ' + letter, letter in A, B, C, D; chat as for qa; ' A', ' B', ' C', ' D' are single tokens 362, 425, 356, 422; only that token is scored (log-probability of the next token after the context); protocol sections 0 and 7.1"
+    },
+    "libraries": {
+      "torch": "2.11.0",
+      "transformers": "5.22.2",
+      "lock": "versions of metrix/e1-pilot/requirements.lock (protocol section 0)"
+    },
+    "specified_by": "Project Owner, 2026-11-10; unchanged for E1-V1 (Task Order section 0)"
+  },
+  "seeds": {
+    "DATA_SEED": 20261128,
+    "CANDIDATE_SEED": 20261129,
+    "TRAIN_SEEDS": [
+      101,
+      202,
+      303
+    ],
+    "BOOTSTRAP_SEED": 20261130,
+    "rng_rule": "random.Random(int.from_bytes(sha256(f'{SEED}:{purpose}'.encode('utf-8')).digest()[:8], 'big'))",
+    "purposes": {
+      "names": "DATA_SEED, 'names:<relation>:<stratum>:entity' and ':answer' (Pilot 2.2)",
+      "pilot_names": "DATA_SEED of E1-PILOT (20261110), same purposes (to regenerate the Pilot strings)",
+      "s_permutation": "DATA_SEED, 's-permutation:<relation>:<stratum>' (Pilot 2.6)",
+      "candidates": "CANDIDATE_SEED, 'cand:<fact_id>' (Pilot 2.5)",
+      "order": "TRAIN_SEED, 'order:<k>', k = 1..32 (interpretation B3)",
+      "lora_A": "TRAIN_SEED, 'lora_A:<module path>' (interpretation B5)",
+      "d2_order": "DATA_SEED, 'd2:mmlu:validation:order', 'd2:mmlu:test:order' (alternative: 'd2:arc:validation:order', 'd2:arc:test:order')",
+      "bootstrap": "BOOTSTRAP_SEED, '<X>-<Y>:<split>:<metric>:<t>:<seed or avg>', 'P+-N:DEV:<metric>:-:<seed or avg>', 'N:DEV:<metric>:level'; fact metrics '<X>-<Y>:<split>:<seed or avg>' (interpretation B12)"
+    }
+  },
+  "facts": {
+    "total": 320,
+    "learned": 240,
+    "unread": 80,
+    "relations": [
+      "capital",
+      "currency",
+      "founder",
+      "river"
+    ],
+    "strata": [
+      "natural",
+      "random"
+    ],
+    "per_cell": {
+      "cell": "relation x stratum (8 cells)",
+      "learned": 30,
+      "unread": 10
+    },
+    "fact_schema": [
+      "fact_id",
+      "exposure",
+      "relation",
+      "stratum",
+      "entity",
+      "answer"
+    ],
+    "fact_id_format": "E1V1-<L|U>-<relation>-<nat|rnd>-<two-digit index starting at 01>",
+    "max_occurrences_of_an_answer_value": 1,
+    "all_entity_and_answer_strings_globally_unique": true,
+    "same_rules_as": "Pilot protocol 2.1, counts changed"
+  },
+  "name_generation": {
+    "natural": {
+      "syllable": "onset + nucleus + coda",
+      "onsets": [
+        "b",
+        "d",
+        "f",
+        "g",
+        "k",
+        "l",
+        "m",
+        "n",
+        "p",
+        "r",
+        "s",
+        "t",
+        "v",
+        "z",
+        "br",
+        "dr",
+        "kr",
+        "tr",
+        "sh",
+        "th"
+      ],
+      "nuclei": [
+        "a",
+        "e",
+        "i",
+        "o",
+        "u",
+        "ae",
+        "ia",
+        "ou"
+      ],
+      "codas": [
+        "",
+        "",
+        "n",
+        "r",
+        "l",
+        "s",
+        "th",
+        "nd"
+      ],
+      "syllables": {
+        "2": 0.5,
+        "3": 0.5
+      },
+      "capitalize": "first letter",
+      "length_chars": [
+        4,
+        10
+      ],
+      "reject_if": [
+        "equals an accepted string after lowercasing both",
+        "same first 4 characters as an accepted string (case-sensitive)",
+        "Levenshtein distance <= 1 to an accepted string after lowercasing both"
+      ],
+      "form_rules": [
+        "length_chars",
+        "len(encode(' ' + s)) > 1 (not a single token with a leading space)"
+      ]
+    },
+    "random": {
+      "letters": "BCDFGHJKLMNPQRSTVWXZ",
+      "digits": "23456789",
+      "form": "<L letters>-<2 digits>",
+      "L": {
+        "3": 0.25,
+        "4": 0.5,
+        "5": 0.25
+      },
+      "length_chars": [
+        6,
+        8
+      ],
+      "reject_if": [
+        "equals an accepted string",
+        "same letter block as an accepted string (letter block = the part before '-'; the whole string if it has no '-')",
+        "Hamming distance <= 1 to an accepted string of the same length"
+      ],
+      "form_rules": [
+        "length_chars"
+      ]
+    },
+    "order": "cells in the order relation (capital, currency, founder, river) x stratum (natural, random); within a cell entities first, then answers; within a role the first 30 accepted strings are learned, the next 10 unread",
+    "answer_token_length_rule": {
+      "survey": "from the start of the answer stream, the first 400 draws that satisfy the form rules (reject_if and the anchor rule are NOT applied; repeats count); count (K_st, K_qa); target = the most frequent pair, ties broken by the smaller pair compared as a tuple",
+      "accept": "RESTART the answer stream (a new generator with the same purpose, not continuing after the survey); accept in order the draws that satisfy the form rules, have (K_st, K_qa) == target and satisfy reject_if and the anchor rule, until 40 are accepted",
+      "purpose": "all 40 answers of a cell have the same token counts in both contexts, so candidate scoring compares sequences of equal length; since round 3 candidate scoring uses K_st only (equal K_st gives equal length); equal K_qa no longer matters for scoring and is kept so that the facts and their hash do not change"
+    },
+    "draw": {
+      "natural": "n = 2 if rng.random() < 0.5 else 3; concatenate n times rng.choice(onsets) + rng.choice(nuclei) + rng.choice(codas); capitalize the first letter",
+      "random": "u = rng.random(); L = 3 if u < 0.25 else 4 if u < 0.75 else 5; L times rng.choice(letters); '-'; 2 times rng.choice(digits)"
+    },
+    "streams": {
+      "entity": "rng_rule(DATA_SEED, 'names:<relation>:<stratum>:entity')",
+      "answer": "rng_rule(DATA_SEED, 'names:<relation>:<stratum>:answer')",
+      "stratum_spelling": "natural | random",
+      "note": "one independent stream per cell and role"
+    },
+    "accepted_strings_scope": "every string accepted so far, in any cell, either role and either stratum",
+    "anchor_rule": "reject a string that occurs (case-insensitive substring) in the anchor text of 2.7 (the 512 decoded texts of at most 128 tokens); the anchor text is therefore built before the names",
+    "token_counts": {
+      "K_st": "len(encode(' ' + s)) - statement context",
+      "K_qa": "len(encode(s)) - no leading space; kept as a generation rule only (changing it would change the facts and their hash); candidate scoring since round 3 scores ' ' + c after 'The answer is', whose token count is K_st",
+      "encode": "pinned tokenizer, add_special_tokens=False"
+    },
+    "entity_procedure": "draw from the entity stream in order; accept draws that satisfy the form rules, reject_if and the anchor rule, until 40 are accepted",
+    "max_draws_per_stream": 20000,
+    "on_exhaustion": "IMPLEMENTATION_FAIL",
+    "reference_implementation": "metrix/e1-v1/reports/authoring/v1_data_check.py (Names.build)",
+    "expected_facts_canonical_sha256": "0fc5ad819500e8a9f56771405af67d0fa71bafabba25bf8f4c3e5b6d684e01f4",
+    "expected_facts_fields": [
+      "fact_id",
+      "exposure",
+      "relation",
+      "stratum",
+      "entity",
+      "answer"
+    ],
+    "preseed": {
+      "rule": "before the first draw the accepted set holds the 320 entity and answer strings of the E1-PILOT facts, so reject_if also rejects strings equal or close to a Pilot string (protocol 2.2 change 3, 2.7)",
+      "pilot_facts": "regenerated with the Pilot rules of metrix/e1-pilot/METRIX_E1_PROTOCOL.md 2.2 and DATA_SEED 20261110",
+      "pilot_facts_canonical_sha256": "406c8801c5b69ed235cbe516658ad9ee3e3a8cfe8e4e348a0c1fd7952f2e6b97",
+      "on_mismatch": "ST12"
+    },
+    "changes_from_pilot": [
+      "DATA_SEED 20261128",
+      "40 accepted per role and cell (30 learned + 10 unread)",
+      "accepted set pre-seeded with the 320 Pilot strings"
+    ],
+    "authoring_draws": "reports/authoring/v1_data_check.txt (entity 40-83, answer 80-270 draws per cell)"
+  },
+  "s_permutation": {
+    "rule": "per cell, a derangement of the 30 learned answers drawn with rng_rule(DATA_SEED, 's-permutation:<relation>:<stratum>'); redraw until no fixed point",
+    "call_order": "cells in the order of name_generation.order; one generator r = rng_rule(DATA_SEED, 's-permutation:<relation>:<stratum>') per cell (stratum spelled natural | random), created once; each attempt starts from p = list(range(30)) and calls r.shuffle(p) once; an attempt with some p[i] == i is redrawn with the same r, again from list(range(30)); learned facts 01..30 of the cell are i = 0..29; statement i = TRAIN template of the relation with {E} = entity of fact i and {A} = answer of fact p[i]",
+    "record": "{\"fact_id\": fact_id of fact i, \"answer_fact_id\": fact_id of fact p[i], \"text\": statement}",
+    "line_order": "cells in order, then i within the cell",
+    "expected_train_S_canonical_sha256": "7ac254f6e87e017ecc6ce9945006cda1c5310c7358d69da88e5c81cfdc907bd6",
+    "reference_implementation": "metrix/e1-v1/reports/authoring/v1_data_check.py",
+    "fixed": "Pilot protocol 2.6 detail 4, unchanged; E1-V1 DATA_SEED"
+  },
+  "y_ratio": {
+    "rule": "Y tokens / F tokens over one pass, each sequence = text ids + 1 <|endoftext|>; must lie in [0.80, 1.25], otherwise IMPLEMENTATION_FAIL (Pilot 2.6)",
+    "authoring": {
+      "F_tokens": 3802,
+      "Y_tokens": 4541,
+      "ratio": 1.1944
+    }
+  },
+  "pilot_disjointness": {
+    "check": "L7 (SPLIT_MANIFEST.json: leakage_checks.L7_pilot_disjoint)",
+    "authoring_result": 0
+  },
+  "templates": {
+    "count": 32,
+    "list": "SPLIT_MANIFEST.json: templates (copied from the Pilot manifest)"
+  },
+  "anchor_text": {
+    "source": "SandyResearch/fineweb-edu-shuffled@4d1138c0e4d51d98813997ce3560e05a32bf91de, data/sample-100BT/train/shard_00000.parquet (sha256 6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22)",
+    "selection": "first 512 documents in file order with at least 600 characters",
+    "truncate_to_model_tokens": 128,
+    "document_rule": "each document has at most 128 tokens of the protocol tokenizer (the first 128); a document with fewer tokens is used at its full length",
+    "schedule": "step s uses documents (4*s + i) mod 512, i = 0..3; optimizer steps are numbered s = 1..960; documents numbered 0..511 in anchor_text.jsonl order (interpretation B1)",
+    "decoded_texts_canonical_sha256": "8828bc4fcc5a3552778839f97909f072050431dd6f74dd08ef47602da11b2408",
+    "decoded_texts_hash_rule": "canonical SHA-256 (hashing rule of this manifest) of the JSON list of the 512 anchor texts in document order; text i = decode of the first at most 128 ids of encode(document i, add_special_tokens=False) with the pinned tokenizer (transformers 5.22.2 decode, default arguments); reference implementation metrix/e1-pilot/reports/round2/anchor_check.py (round 8, Review Gate round 7 ruling, item 1d)",
+    "same_as_pilot": "the same 512 documents as E1-PILOT (protocol 2.6)",
+    "file_canonical_sha256_authoring": "2089e656819d1fe0f6ececcc26e5cade09ee80a92c50e7c8f607fa4e0ef46da5"
+  },
+  "damage_sets": "DAMAGE_MANIFEST.json",
+  "files": {
+    "facts.jsonl": {
+      "content": "all 320 facts",
+      "status": "NOT_GENERATED",
+      "record": "{fact_id, exposure, relation, stratum, entity, answer}, generation order",
+      "reference_canonical_sha256": "4eeee6d198dede289886b9cd7941f362f3b9fba611aea551223289781de307a9",
+      "byte_sha256": null,
+      "canonical_sha256": null,
+      "canonical_check": "the canonical_sha256 of the generated file must equal reference_canonical_sha256 (ST12)"
+    },
+    "train_F.jsonl": {
+      "content": "240 TRAIN statements (arms F, L, A, Z0, P+)",
+      "status": "NOT_GENERATED",
+      "record": "{fact_id, template_id, text}, fact order",
+      "reference_canonical_sha256": "fb1d80064c4c779609ef40a29151bbf1fd1f5f1e1c768c6c5360412f38819511",
+      "byte_sha256": null,
+      "canonical_sha256": null,
+      "canonical_check": "the canonical_sha256 of the generated file must equal reference_canonical_sha256 (ST12)"
+    },
+    "train_S.jsonl": {
+      "content": "240 statements with permuted answers (arm S)",
+      "status": "NOT_GENERATED",
+      "record": "{fact_id, answer_fact_id, text} (Pilot 2.6)",
+      "reference_canonical_sha256": "7ac254f6e87e017ecc6ce9945006cda1c5310c7358d69da88e5c81cfdc907bd6",
+      "byte_sha256": null,
+      "canonical_sha256": null,
+      "canonical_check": "the canonical_sha256 of the generated file must equal reference_canonical_sha256 (ST12)"
+    },
+    "train_Y.jsonl": {
+      "content": "480 style-only sentences (arm Y)",
+      "status": "NOT_GENERATED",
+      "record": "{fact_id, template_id, kind, text}; fact order, Y_ENTITY before Y_ANSWER",
+      "reference_canonical_sha256": "82314e6b4a5917d0d4e62e3f34f4ab80e330c8dc5b5c7395e1183809c4daf96b",
+      "byte_sha256": null,
+      "canonical_sha256": null,
+      "canonical_check": "the canonical_sha256 of the generated file must equal reference_canonical_sha256 (ST12)"
+    },
+    "dev_qa.jsonl": {
+      "content": "DEV questions: 320 facts x 2 templates",
+      "status": "NOT_GENERATED",
+      "record": "{fact_id, template_id, question}; fact order, then template order",
+      "reference_canonical_sha256": "39ea5ea1ff730cbc73d12542e10173baee83759aa4477cc930574ce93ce5c7ce",
+      "byte_sha256": null,
+      "canonical_sha256": null,
+      "canonical_check": "the canonical_sha256 of the generated file must equal reference_canonical_sha256 (ST12)"
+    },
+    "candidates.json": {
+      "content": "candidate lists of all 320 facts",
+      "status": "NOT_GENERATED",
+      "record": "one JSON object {fact_id: [4 candidates]} (Pilot 2.5)",
+      "reference_canonical_sha256": "79600769eef1876b54bc3d174874880e8e05bab11290f97360559f99324235c3",
+      "byte_sha256": null,
+      "canonical_sha256": null,
+      "canonical_check": "the canonical_sha256 of the generated file must equal reference_canonical_sha256 (ST12)"
+    },
+    "anchor_text.jsonl": {
+      "content": "512 anchor documents (arm A)",
+      "status": "NOT_GENERATED",
+      "record": "{doc, source_row, ids, text}",
+      "reference_canonical_sha256": "2089e656819d1fe0f6ececcc26e5cade09ee80a92c50e7c8f607fa4e0ef46da5",
+      "byte_sha256": null,
+      "canonical_sha256": null,
+      "canonical_check": "the canonical_sha256 of the generated file must equal reference_canonical_sha256 (ST12)"
+    },
+    "general_dev.jsonl": {
+      "content": "D1 DEV windows (DAMAGE_MANIFEST.json: d1.dev)",
+      "status": "NOT_GENERATED",
+      "record": "{domain, doc_id, ids, text}",
+      "reference_canonical_sha256": "e8350160464963e684e0c58826d53250dec4de366a716d3111aa8ec5089ce281",
+      "byte_sha256": null,
+      "canonical_sha256": null,
+      "canonical_check": "the canonical_sha256 of the generated file must equal reference_canonical_sha256 (ST12)"
+    },
+    "d2_dev.jsonl": {
+      "content": "D2 DEV items (DAMAGE_MANIFEST.json: d2.dev); the reference hash is that of the dataset the Owner approves",
+      "status": "NOT_GENERATED",
+      "record": "{item, source_row, subject, prompt, answer}",
+      "reference_canonical_sha256": {
+        "mmlu": "f40c146a3da500f13797dcfedfb2932e8a5dc88a6b43cbd423bf8fb549a688be",
+        "arc": "1ea77c8adeb84b6d5f7a3aa699ab02951e4f43bd27ba14f36c3a32287e04ac32"
+      },
+      "byte_sha256": null,
+      "canonical_sha256": null,
+      "canonical_check": "the canonical_sha256 of the generated file must equal reference_canonical_sha256 (ST12)"
+    },
+    "test_qa.jsonl": {
+      "content": "TEST questions: 320 facts x 3 templates",
+      "status": "NOT_GENERATED",
+      "record": "{fact_id, template_id, question}",
+      "generation_allowed": "only in protocol section 10 step 10: after results/selection_freeze_record.json is committed and pushed and the Owner approvals of TEST generation are committed",
+      "reference_canonical_sha256": null,
+      "byte_sha256": null,
+      "canonical_sha256": null,
+      "canonical_check": "sha256 recorded in st10_record.json and the TEST marker"
+    },
+    "general_test.jsonl": {
+      "content": "D1 TEST windows (DAMAGE_MANIFEST.json: d1.test)",
+      "status": "NOT_GENERATED",
+      "record": "{domain, doc_id, ids, text}",
+      "generation_allowed": "only in protocol section 10 step 10: after results/selection_freeze_record.json is committed and pushed and the Owner approvals of TEST generation are committed",
+      "reference_canonical_sha256": null,
+      "byte_sha256": null,
+      "canonical_sha256": null,
+      "canonical_check": "sha256 recorded in st10_record.json and the TEST marker"
+    },
+    "d2_test.jsonl": {
+      "content": "D2 TEST items (DAMAGE_MANIFEST.json: d2.test)",
+      "status": "NOT_GENERATED",
+      "record": "{item, source_row, subject, prompt, answer}",
+      "generation_allowed": "only in protocol section 10 step 10: after results/selection_freeze_record.json is committed and pushed and the Owner approvals of TEST generation are committed",
+      "reference_canonical_sha256": null,
+      "byte_sha256": null,
+      "canonical_sha256": null,
+      "canonical_check": "sha256 recorded in st10_record.json and the TEST marker"
+    }
+  },
+  "reported_values": [
+    {
+      "value": "data hashes of the 9 non-TEST files; L1-L8 DEV counts",
+      "file": "metrix/e1-v1/results/step1_record.json",
+      "field": "files, leakage"
+    },
+    {
+      "value": "preflight step seconds (F, L, A), DEV evaluation seconds, peak memory, estimate, ST11 bound",
+      "file": "metrix/e1-v1/results/preflight_record.json",
+      "field": "preflight"
+    },
+    {
+      "value": "N on DEV: Acc learned / unread / per stratum, Acc_CB, per-fact Score and CB, per-window NLL, D1-all / D1-diff / D1-same levels, per-item D2 letter scores, Acc_D2",
+      "file": "metrix/e1-v1/results/n_dev_record.json",
+      "field": "summary, units"
+    },
+    {
+      "value": "Gate D: Z0 state hashes and maximal differences per seed; P+ D1-all / D1-diff / D1-same / D2 per seed and seed-average with 95% CI, per-unit values; G-D4 differences; sigma_N for the four metrics; G-D5 pairs; G-D1..G-D4 decisions",
+      "file": "metrix/e1-v1/results/gate_d_record.json",
+      "field": "z0, p_plus, reproducibility, noise, gate_d"
+    },
+    {
+      "value": "MARGIN_RECORD: formula, sigma_N inputs, input record sha256 and commit, m(D1-all), m(D1-diff), m(D1-same), m(D2)",
+      "file": "metrix/e1-v1/results/margin_record.json",
+      "field": "margin"
+    },
+    {
+      "value": "every training run: per dose point Acq (learned, per stratum), Acc unread, Spill, FPR, Acc_CB, D1-all / D1-diff / D1-same / per-domain dNLL and PPL_degradation%, Acc_D2, D2; per-unit Score, CB, window NLL, D2 letter scores; compute accounting; saved checkpoint state_sha256; finite flags",
+      "file": "metrix/e1-v1/results/runs/<run>.json",
+      "field": "dose_points, accounting, checkpoints"
+    },
+    {
+      "value": "S own-mapping accuracy at d0; G0.1-G0.9 values (G0.9 report only); fact comparisons F-N, S-N, Y-N per seed and seed-average; Spill per arm; AllCorrect on DEV",
+      "file": "metrix/e1-v1/results/gate0_record.json",
+      "field": "values, comparisons"
+    },
+    {
+      "value": "iso brackets, weights and checkpoint hashes per (method, seed, t); NOT_REACHED flags; DEV per-method iso damage and DEV Gate M comparisons for all metrics and points (seed-average and per seed, CI, conclusion words marked secondary); G-D5 Spearman correlation; list of TEST checkpoints",
+      "file": "metrix/e1-v1/results/selection_freeze_record.json",
+      "field": "iso, dev_comparisons, g_d5, test_checkpoints"
+    },
+    {
+      "value": "TEST-part counts L3a, L3b, L4, L5, L6, L8 (Executor and data-auditor); TEST file sha256; exclusion counts of D1 / D2 TEST",
+      "file": "metrix/e1-v1/results/st10_record.json",
+      "field": "counts, files, exclusions"
+    },
+    {
+      "value": "TEST: per model per-fact Score, EM, AllCorrect (N also CB), per-window NLL and per-item D2 letter scores of N and every bracket checkpoint; Acc, EM, FPR, Spill on TEST; T1-T3; Acq_TEST(X, t) and match status; all Gate M TEST comparisons (seed-average and per seed, CI, conclusion words); per-method iso damage on TEST; final status",
+      "file": "metrix/e1-v1/results/test_evaluation_result.json and metrix/e1-v1/results/test_details/",
+      "field": "summaries, units, values, iso_test, comparisons, final"
+    },
+    {
+      "value": "experiment records (Pilot section 10 template), two",
+      "file": "metrix/e1-v1/results/experiment_record_*.json",
+      "field": "template"
+    },
+    {
+      "value": "termination check (data-auditor, protocol section 14)",
+      "file": "metrix/e1-v1/audit/termination_check.*",
+      "field": "result"
+    }
+  ],
+  "hashing": {
+    "encoding": "UTF-8",
+    "serialization": "json.dumps(obj, sort_keys=True, ensure_ascii=False, separators=(',', ':'), allow_nan=False)",
+    "jsonl": "one canonical object per line, joined by '\\n', one final '\\n'",
+    "hash": "SHA-256",
+    "byte_sha256": "SHA-256 of the file bytes exactly as stored (LF newlines)",
+    "canonical_sha256": "SHA-256 of the canonical serialization of the parsed content; identifies the content independently of formatting"
+  }
+}

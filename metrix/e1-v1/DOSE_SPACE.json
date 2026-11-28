@@ -1,0 +1,214 @@
+{
+  "protocol": "METRIX-E1-V1",
+  "version": "v1-draft",
+  "status": "AWAITING_REVIEW_GATE",
+  "frozen": null,
+  "origin": {
+    "repository": "leotree2020/OpenMythos",
+    "start_branch": "metrix-e1-pilot-protocol-v1",
+    "start_commit": "6e03468956208c422d0d41c08edaaf116166338c",
+    "authoring_branch": "metrix-e1-v1-protocol-v1",
+    "pilot_protocol": "metrix/e1-pilot/METRIX_E1_PROTOCOL.md v1.1, frozen commit 87a244db28a901f9e89282b50df76778ab5c2887"
+  },
+  "methods": {
+    "F": {
+      "definition": "all parameters trainable, trained on train_F",
+      "config": {
+        "learning_rate": 3e-05,
+        "weight_decay": 0.0
+      },
+      "source": "E1-PILOT selected configuration F3 (metrix/e1-pilot/results/selection_freeze_record.json: selected)"
+    },
+    "L": {
+      "definition": "base frozen; LoRA on q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj of all 28 layers; alpha = 2 * rank; dropout 0; B initialised to 0; A per interpretation B5",
+      "config": {
+        "learning_rate": 0.001,
+        "rank": 32,
+        "alpha": 64,
+        "weight_decay": 0.0
+      },
+      "source": "E1-PILOT selected configuration L6"
+    },
+    "A": {
+      "definition": "F plus lambda * KL(p_base || p_theta) on anchor text, 4 anchor documents per step, token-weighted (Pilot section 4; interpretation B6)",
+      "config": {
+        "learning_rate": 0.0001,
+        "anchor_lambda": 1.0,
+        "weight_decay": 0.0
+      },
+      "source": "E1-PILOT selected configuration A5"
+    }
+  },
+  "configs_per_method": 1,
+  "tuning": "none in E1-V1: each method uses the configuration E1-PILOT selected with the same budget (6 configurations each) and the same DEV-accuracy rule; no damage-based selection (protocol 6.6)",
+  "controls": {
+    "S": {
+      "corpus": "train_S",
+      "config": "F",
+      "passes": 11
+    },
+    "Y": {
+      "corpus": "train_Y",
+      "batch": 16,
+      "config": "F",
+      "passes": 11
+    },
+    "Z0": {
+      "purpose": "negative control (Gate D, G-D1)",
+      "code_path": "F",
+      "corpus": "train_F",
+      "learning_rate": 0.0,
+      "weight_decay": 0.0,
+      "passes": 2,
+      "seeds": [
+        101,
+        202,
+        303
+      ],
+      "expectation": "parameters bit-identical to N: state_sha256(Z0) == state_sha256(N)"
+    },
+    "P+": {
+      "purpose": "positive control (Gate D, G-D3, G-D4)",
+      "code_path": "F",
+      "corpus": "train_F",
+      "learning_rate": 0.0001,
+      "weight_decay": 0.1,
+      "passes": 11,
+      "seeds": [
+        101,
+        202,
+        303
+      ],
+      "source": "E1-PILOT F6 (metrix/e1-pilot/results/training_runs/F-F6-seed101.json: config, dnll 5.55021)"
+    }
+  },
+  "dose": {
+    "dimension": "passes over the 240 TRAIN statements (batch 8, 30 optimizer steps per pass); one run per (method, seed) trained to the largest dose, evaluated in place at every dose point",
+    "ladder_passes": [
+      1,
+      2,
+      3,
+      4,
+      6,
+      8,
+      11,
+      16,
+      23,
+      32
+    ],
+    "ladder_steps": [
+      30,
+      60,
+      90,
+      120,
+      180,
+      240,
+      330,
+      480,
+      690,
+      960
+    ],
+    "points": 10,
+    "same_for": [
+      "F",
+      "L",
+      "A"
+    ],
+    "d0_passes": 11,
+    "d0_use": "Gate 0 (G0.4, G0.5, G0.8, T1) on F; S and Y are trained to d0",
+    "coverage_rationale": "protocol 6.3 (Pilot DEV accuracies of F1/F3, L4/L6, A2/A5 at 20 cosine passes, about 11 constant-rate passes)"
+  },
+  "seeds": {
+    "training_seeds": [
+      101,
+      202,
+      303
+    ],
+    "use": "one curve per (method, seed); data order rng_rule(TRAIN_SEED, 'order:<k>'); LoRA A rng_rule(TRAIN_SEED, 'lora_A:<module path>'); iso points per seed; comparisons on the seed-average and per seed"
+  },
+  "iso": {
+    "targets": [
+      0.7,
+      0.8,
+      0.9
+    ],
+    "acquisition": "Acc(model, DEV-QA, learned), fact-level mean (Pilot section 5)",
+    "bracket": "j* = smallest j >= 2 with a_{j-1} < t <= a_j; none -> NOT_REACHED for that seed",
+    "tau_dev": 0.1,
+    "tau_dev_rule": "t - a_{j*-1} <= 0.10 and a_{j*} - t <= 0.10, otherwise NOT_REACHED for that seed",
+    "interpolation": "w = (t - a_{j*-1}) / (a_{j*} - a_{j*-1}); per-unit value v_t = (1 - w) * v(lo) + w * v(hi); the same w on TEST",
+    "method_rule": "a method is comparable at t only if all 3 seeds are bracketed; otherwise NOT_REACHED; no extrapolation",
+    "dev_only": true,
+    "tau_test": 0.05,
+    "tau_test_rule": "|Acq_TEST(X, t) - Acq_TEST(F, t)| > 0.05 (seed-average of interpolated TEST accuracies) -> MATCH_FAILED"
+  },
+  "checkpoint_retention": {
+    "rule": "after the DEV evaluation of dose point j: save (with state_sha256) if some target t not yet crossed before j has |a_j - t| <= 0.10; never delete",
+    "always_saved": [
+      "F at d0 (3 seeds)",
+      "S and Y final (3 seeds each)",
+      "P+ final (3 seeds)",
+      "Z0 final (3 seeds)"
+    ],
+    "format": "full float32 state_dict for F, A, S, Y, P+, Z0; adapter parameters plus the base state_sha256 for L",
+    "disk": "about 310 GB expected, 516 GB worst case; rent >= 600 GB (protocol section 12); ST18"
+  },
+  "training_contract": {
+    "optimizer": "AdamW, betas (0.9, 0.999), eps 1e-8",
+    "batch_size_statements": 8,
+    "batch_size_Y": 16,
+    "steps_per_pass": 30,
+    "passes": {
+      "F": 32,
+      "L": 32,
+      "A": 32,
+      "S": 11,
+      "Y": 11,
+      "P+": 11,
+      "Z0": 2
+    },
+    "example_order": "one permutation of the corpus per pass from rng_rule(TRAIN_SEED, 'order:<k>'), k = 1..; batches are consecutive slices (interpretation B3)",
+    "sequence": "one statement per sequence followed by <|endoftext|>; pad on the right to the longest sequence in the batch; padding excluded from the loss",
+    "loss": "token-weighted CE over all non-padding target positions (interpretation B4); A adds the anchor KL term of Pilot section 4",
+    "gradient_accumulation": 1,
+    "warmup": "linear from 0 over the first 30 steps (pass 1)",
+    "scheduler": "constant after warmup (no decay)",
+    "weight_decay": "per method / control config; applied to 2-D weight matrices only, tied embedding included (interpretation B7)",
+    "gradient_clipping": "global norm 1.0",
+    "precision": "bfloat16 autocast with float32 master weights and optimizer state; evaluation float32 without autocast",
+    "evaluation": "DEV evaluation in place after step 30 * k of every dose point, under model.eval() and torch.no_grad(); it changes no parameter, gradient, optimizer state or random stream",
+    "early_stopping": "not allowed",
+    "hardware": {
+      "gpu": "NVIDIA A100 80GB",
+      "count": 1,
+      "device_name_rule": "Pilot section 7 (ST9)"
+    },
+    "gpu_hours_limit": "PENDING_OWNER (protocol section 15 item 1; proposal 9 hours)",
+    "st11_bound": "0.875 * gpu_hours_limit"
+  },
+  "compute_matching": {
+    "same": [
+      "1 configuration per method",
+      "the same 10 dose points",
+      "the same fact tokens at every dose point (k passes over train_F; 3,802 tokens per pass with <|endoftext|>)"
+    ],
+    "different": [
+      "L trains adapters only (about 34.86M parameters at rank 32); forward parameters base plus adapters",
+      "A adds per step the forward of 4 anchor documents through the frozen base and the trained model and the backward of the latter"
+    ],
+    "rationale": "acquisition is driven by the fact text read, identical token by token across methods; the extra compute of A and L is part of the method and is reported separately (Pilot section 10, interpretation B18), not converted into fact passes"
+  },
+  "counts": {
+    "curve_runs": 9,
+    "S_runs": 3,
+    "Y_runs": 3,
+    "Z0_runs": 3,
+    "P_plus_runs": 3,
+    "total_training_runs": 21,
+    "dev_evaluations": 107,
+    "test_evaluations": "N, F@d0 x3, S x3, Y x3 and the bracket checkpoints of the selection freeze record"
+  },
+  "pending": {
+    "dose_points_and_configs": "protocol section 15 item 3: reduce per section 12 R1-R4 if the estimate exceeds what the Owner accepts"
+  }
+}
